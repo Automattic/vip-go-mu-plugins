@@ -4,7 +4,6 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
-use Automattic\VIP\Utils\Context;
 use WP_Error;
 
 use function Automattic\VIP\Logstash\log2logstash;
@@ -28,7 +27,11 @@ class Concurrency_Limiter {
 	private $backend = null;
 
 	public function __construct() {
-		$this->init();
+		if ( did_action( 'init' ) ) {
+			$this->init();
+		} else {
+			add_action( 'init', [ $this, 'init' ] );
+		}
 	}
 
 	public function init(): bool {
@@ -40,6 +43,8 @@ class Concurrency_Limiter {
 			if ( $backend_class::is_supported() ) {
 				$this->max_concurrent_requests = (int) apply_filters( 'vip_search_max_concurrent_requests', $this->max_concurrent_requests );
 				$this->cache_ttl               = (int) apply_filters( 'vip_search_cache_ttl', $this->cache_ttl );
+
+				$this->max_concurrent_requests = min( 1000, $this->max_concurrent_requests );
 
 				/** @var BackendInterface */
 				$this->backend = new $backend_class();
