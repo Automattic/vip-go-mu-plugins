@@ -126,24 +126,6 @@ class HealthJob {
 
 	}
 
-	private function count_indexable_posts() {
-		$post_indexable = $this->indexables->get( 'post' );
-
-		$post_types    = $post_indexable->get_indexable_post_types();
-		$post_statuses = $post_indexable->get_indexable_post_status();
-
-
-		$sum = 0;
-		foreach ( $post_types as $post_type ) {
-			$counts = wp_count_posts( $post_type );
-			foreach ( $post_statuses as $status ) {
-				$count = $counts->$status ?? 0;
-				$sum  += $count;
-			}
-		}
-		return $sum;
-	}
-
 	/**
 	 * Is health check job enabled
 	 *
