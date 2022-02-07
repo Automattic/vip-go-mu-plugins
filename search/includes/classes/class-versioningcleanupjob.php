@@ -50,7 +50,7 @@ class VersioningCleanupJob {
 			foreach ( $inactive_versions as $version ) {
 				if ( ! ( $version['active'] ?? false ) ) {
 					// double check that it is not active
-					$this->send_notification( $indexable->slug, $version['number'] );
+					$this->delete_stale_inactive_version( $indexable, $version['number'] );
 				}
 			}
 		}
@@ -77,7 +77,7 @@ class VersioningCleanupJob {
 			return [];
 		}
 
-		$time_ago_breakpoint    = time() - \MONTH_IN_SECONDS;
+		$time_ago_breakpoint    = time() - ( 6 * \MONTH_IN_SECONDS );
 		$was_activated_recently = $active_version['activated_time'] > $time_ago_breakpoint;
 		if ( $was_activated_recently ) {
 			// We want to keep the old version for a period of time, even if it's older than the cutoff time period, while the new version proves stable
@@ -90,8 +90,13 @@ class VersioningCleanupJob {
 				continue;
 			}
 
+			if ( ! isset( $version['created_time'] ) && 1 === $version['number'] ) {
+				// If the inactive version doesn't have a created_time and it's 1, we'll use the active version's activation time for cut-off
+				$version['created_time'] = $active_version['activated_time'];
+			}
+
 			if ( ( $version['created_time'] ?? time() ) > $time_ago_breakpoint ) {
-				// If the version was created within within the cutoff period OR doen't have created_time defined it is not inactive
+				// If the version was created within within the cutoff period, it is not inactive
 				continue;
 			}
 
@@ -102,31 +107,40 @@ class VersioningCleanupJob {
 	}
 
 	/**
-	 * Send a notification about version to be deleted
+	 * Delete stale inactive version
 	 *
-	 * @param string $indexable_slug The slug of indexable
-	 * @param int $version The version number
-	 *
-	 * @return bool Bool indicating if sending succeeded, failed or skipped
+	 * @param \ElasticPress\Indexable $indexable The Indexable
+	 * @param int $version The version number of the Indexable we are deleting
 	 */
-	public function send_notification( $indexable_slug, $version ) {
+	public function delete_stale_inactive_version( $indexable, $version ) {
 
-		$message = sprintf(
-			"Application %d - %s we would delete inactive index version %s for '%s' indexable",
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$version,
-			$indexable_slug
-		);
+		$delete_version = $this->versioning->delete_version( $indexable, $version );
 
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'info',
-				'feature'  => 'search_versioning',
-				'message'  => $message,
-			)
-		);
-
-		\Automattic\VIP\Utils\Alerts::chat( self::SEARCH_ALERT_SLACK_CHAT, $message );
+		if ( is_wp_error( $delete_version ) ) {
+			$message = sprintf(
+				"Application %d - %s Unsuccessfully deleted inactive index version %s for '%s' indexable: %s",
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				$version,
+				$indexable->slug,
+				$delete_version->get_error_message()
+			);
+			\Automattic\VIP\Utils\Alerts::chat( self::SEARCH_ALERT_SLACK_CHAT, $message );
+		} else {
+			$message = sprintf(
+				"Application %d - %s Successfully deleted inactive index version %s for '%s' indexable",
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				$version,
+				$indexable->slug
+			);
+			\Automattic\VIP\Logstash\log2logstash(
+				array(
+					'severity' => 'info',
+					'feature'  => 'search_versioning',
+					'message'  => $message,
+				)
+			);
+		}
 	}
 }
