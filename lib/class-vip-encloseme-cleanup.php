@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\VIP\Utils\Alerts;
+
 if ( ! defined( 'VIP_ENCLOSEME_LIMIT_SIZE' ) ) {
 	define( 'VIP_ENCLOSEME_LIMIT_SIZE', 1000 );
 }
@@ -61,11 +63,11 @@ class VIP_Encloseme_Cleanup {
 
 		if ( is_null( $meta_exists ) ) {
 			update_option( self::OPTION_NAME, time() );
-			wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( '_encloseme meta cleanup completed for %s!', get_site_url() ) );
+			Alerts::chat( '#vip-go-encloseme-meta-cleanup', sprintf( '_encloseme meta cleanup completed for %s!', get_site_url() ) );
 			return;
 		}
 
-		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Starting _encloseme meta cleanup for %s.', get_site_url() ) );
+		Alerts::chat( '#vip-go-encloseme-meta-cleanup', sprintf( 'Starting _encloseme meta cleanup for %s.', get_site_url() ) );
 
 		$total = 0;
 		if ( defined( 'ENABLE_VIP_ENCLOSEME_CLEANUP_ENV' ) ) {
@@ -93,6 +95,6 @@ class VIP_Encloseme_Cleanup {
 			}
 		}
 
-		wpcom_vip_irc( '#vip-go-encloseme-meta-cleanup', sprintf( 'Deleted %s _encloseme meta entries for %s.', $total, get_site_url() ) );
+		Alerts::chat( '#vip-go-encloseme-meta-cleanup', sprintf( 'Deleted %s _encloseme meta entries for %s.', $total, get_site_url() ) );
 	}
 }

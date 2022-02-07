@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\Health as Health;
+use Automattic\VIP\Utils\Alerts;
 use \WP_CLI;
 
 require_once __DIR__ . '/class-health.php';
@@ -194,8 +195,6 @@ class SettingsHealthJob {
 	/**
 	 * Send an alert
 	 *
-	 * @see wpcom_vip_irc()
-	 *
 	 * @param string $channel IRC / Slack channel to send message to
 	 * @param string $message The message to send
 	 * @param int $level Alert level
@@ -217,7 +216,7 @@ class SettingsHealthJob {
 			wp_cache_delete( $cache_key, Cache::CACHE_GROUP_KEY );
 		}
 
-		return wpcom_vip_irc( $channel, $message, $level );
+		return Alerts::chat( $channel, $message, $level );
 	}
 
 	/**

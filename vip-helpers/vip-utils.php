@@ -1539,6 +1539,7 @@ function vip_is_jetpack_request() {
  * @param $interval integer Interval in seconds between two messages sent from one DC
  */
 function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
+	_deprecated_function( __FUNCTION__, '', 'Alerts::chat' );
 	if ( $kind && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
 
