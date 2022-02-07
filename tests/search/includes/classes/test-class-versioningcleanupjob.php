@@ -23,10 +23,14 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 			->getMock();
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
+		$versioning_mock = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+		->setMethods( [ 'delete_version' ] )
+		->getMock();
+
 
 		$partially_mocked_instance = $this->getMockBuilder( \Automattic\VIP\Search\VersioningCleanupJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_notification', 'get_stale_inactive_versions' ] )
+			->setMethods( [ 'delete_stale_inactive_version', 'get_stale_inactive_versions' ] )
 			->getMock();
 
 		$partially_mocked_instance
@@ -34,15 +38,15 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 			->willReturn( [ [ 'number' => 1 ], [ 'number' => 2 ] ] );
 
 		$partially_mocked_instance->indexables = $indexables_mock;
-
+		$partially_mocked_instance->versioning = $versioning_mock;
 
 		$partially_mocked_instance->expects( $this->exactly( 4 ) )
-			->method( 'send_notification' )
+			->method( 'delete_stale_inactive_version' )
 			->withConsecutive(
-				[ $this->equalTo( 'foo' ), $this->equalTo( 1 ) ],
-				[ $this->equalTo( 'foo' ), $this->equalTo( 2 ) ],
-				[ $this->equalTo( 'bar' ), $this->equalTo( 1 ) ],
-				[ $this->equalTo( 'bar' ), $this->equalTo( 2 ) ]
+				[ $this->equalTo( $indexables_mocks[0] ), $this->equalTo( 1 ) ],
+				[ $this->equalTo( $indexables_mocks[0] ), $this->equalTo( 2 ) ],
+				[ $this->equalTo( $indexables_mocks[1] ), $this->equalTo( 1 ) ],
+				[ $this->equalTo( $indexables_mocks[1] ), $this->equalTo( 2 ) ]
 			);
 
 		$partially_mocked_instance->versioning_cleanup();
@@ -61,19 +65,19 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 						'number'         => 1,
 						'active'         => true,
 						'created_time'   => null,
-						'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+						'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 					],
 					2 => [
 						'number'       => 2,
 						'active'       => false,
-						'created_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+						'created_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 					],
 				],
 				[
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+					'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 				],
 				[ 2 ],
 			],
@@ -84,7 +88,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 						'number'         => 1,
 						'active'         => true,
 						'created_time'   => null,
-						'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+						'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 					],
 					2 => [
 						'number'       => 2,
@@ -96,7 +100,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+					'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 				],
 				[],
 			],
@@ -112,7 +116,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 					2 => [
 						'number'       => 2,
 						'active'       => false,
-						'created_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+						'created_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 					],
 				],
 				[
@@ -136,9 +140,26 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 					'number'         => 1,
 					'active'         => true,
 					'created_time'   => null,
-					'activated_time' => time() - ( 35 * \DAY_IN_SECONDS ),
+					'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
 				],
 				[],
+			],
+			[
+				// Versions that are 1 without created_time are reported as inactive
+				[
+					2 => [
+						'number'       => 1,
+						'active'       => false,
+						'created_time' => null,
+					],
+				],
+				[
+					'number'         => 2,
+					'active'         => true,
+					'created_time'   => null,
+					'activated_time' => time() - ( 7 * \MONTH_IN_SECONDS ),
+				],
+				[ 1 ],
 			],
 		];
 	}
