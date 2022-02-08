@@ -16,9 +16,14 @@ const selectors = {
 
     // Within the editor body.
     blockAppender: '.block-editor-default-block-appender',
+    blockInserter: '.block-editor-inserter__toggle',
     paragraphBlocks: 'p.wp-block-paragraph',
     block: '.wp-block[id*="block-"][data-empty="false"]',
     blockWarning: '.block-editor-warning',
+    imageBlocks: '.editor-block-list-item-image',
+    uploadImageButton: '.block-editor-media-placeholder__upload-button',
+    firstEmptyBlock: '.wp-block-paragraph[data-empty="true"]',
+    spinner: '.components-spinner',
 
     // Top bar selectors.
     postToolbar: '.edit-post-header',
@@ -127,9 +132,35 @@ export class EditorPage {
     }
 
     /**
+     * Add Image to Post or Page
+     *
+     * @param {string} fileName Name of image file to add
+     */
+    async addImage( fileName: string ): Promise<void> {
+        if ( await this.page.isVisible( selectors.blockAppender ) ) {
+            await this.page.click( selectors.blockAppender );
+        } else {
+            await this.page.keyboard.press( 'Tab' );
+            await this.page.click( selectors.blockInserter );
+        }
+        await this.page.click( selectors.imageBlocks );
+
+        const [ fileChooser ] = await Promise.all( [
+            // It is important to call waitForEvent before click to set up waiting.
+            this.page.waitForEvent( 'filechooser' ),
+            // This has to click twice, the first focuses in the block, the second opens the upload
+            this.page.click( selectors.uploadImageButton ),
+            this.page.click( selectors.uploadImageButton ),
+        ] );
+        await fileChooser.setFiles( fileName );
+        await this.page.waitForSelector( selectors.spinner, { state: 'detached' } );
+    }
+
+    /**
      * Publishes the post or page.
      *
      * @param {boolean} visit Whether to then visit the page.
+     * @returns {string} Url of published post or page
      */
     async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
         await this.page.click( selectors.publishButton( selectors.postToolbar ) );
