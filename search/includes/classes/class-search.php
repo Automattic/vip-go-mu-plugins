@@ -1511,9 +1511,26 @@ class Search {
 	public function filter__ep_default_index_number_of_shards() {
 		$shards = 1;
 
-		$posts_count = wp_count_posts();
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( ! $indexable ) {
+			return $shards;
+		}
+		$types    = $indexable->get_indexable_post_types();
+		$statuses = $indexable->get_indexable_post_status();
 
-		if ( $posts_count->publish > 1000000 ) {
+		$posts_count = 0;
+
+		foreach ( $types as $type ) {
+			$counts = wp_count_posts( $type );
+			foreach ( $counts as $status => $count ) {
+				if ( ! in_array( $status, $statuses, true ) ) {
+					continue;
+				}
+				$posts_count += $count;
+			}
+		}
+
+		if ( $posts_count > 1000000 ) {
 			$shards = 4;
 		}
 
