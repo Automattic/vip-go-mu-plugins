@@ -160,6 +160,10 @@ class Search {
 	private const GLOBAL_QUERY_TIMEOUT_WEB_SEC = 2;
 	private const GLOBAL_QUERY_TIMEOUT_CLI_SEC = 5;
 
+	// Threshold for Indexable counts before increasing shards
+	private const POST_SHARD_THRESHOLD = 1000000;
+	private const USER_SHARD_THRESHOLD = 2000000;
+
 	public $healthcheck;
 	public $settings_healthcheck;
 	public $versioning_cleanup;
@@ -542,9 +546,6 @@ class Search {
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
 
-		// Better shard counts
-		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
-
 		// Better replica counts
 		add_filter( 'ep_default_index_number_of_replicas', array( $this, 'filter__ep_default_index_number_of_replicas' ) );
 
@@ -587,6 +588,11 @@ class Search {
 		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
 		add_filter( 'ep_term_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
 		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
+
+		// Better shard counts
+		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
+		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_post_mapping' ) );
+		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_user_mapping' ) );
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
@@ -1504,16 +1510,25 @@ class Search {
 	}
 
 	/**
-	 * Set the number of shards in the index settings
-	 *
-	 * NOTE - this can only be changed during index creation, not on an existing index
+	 * Set the default number of shards in the index settings
+	 * 
 	 */
 	public function filter__ep_default_index_number_of_shards() {
-		$shards = 1;
+		return 1;
+	}
 
+	/**
+	 * Set the number of shards in the index settings for the post Indexable
+	 *
+	 * NOTE - this can only be changed during index creation, not on an existing index
+	 * 
+	 * @param $mapping Mapping
+	 * @return $mapping New Mapping
+	 */
+	public function filter__ep_post_mapping( $mapping ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		if ( ! $indexable ) {
-			return $shards;
+			return $mapping;
 		}
 		$types    = $indexable->get_indexable_post_types();
 		$statuses = $indexable->get_indexable_post_status();
@@ -1530,11 +1545,29 @@ class Search {
 			}
 		}
 
-		if ( $posts_count > 1000000 ) {
-			$shards = 4;
+		if ( $posts_count > self::POST_SHARD_THRESHOLD ) {
+			$mapping['settings']['index.number_of_shards'] = 4;
 		}
 
-		return $shards;
+		return $mapping;
+	}
+
+	/**
+	 * Set the number of shards in the index settings for the user Indexable
+	 *
+	 * NOTE - this can only be changed during index creation, not on an existing index
+	 * 
+	 * @param $mapping Mapping
+	 * @return $mapping New Mapping
+	 */
+	public function filter__ep_user_mapping( $mapping ) {
+		$users_count = count_users();
+
+		if ( isset( $users_count->total_users ) && ( $users_count->total_users > self::USER_SHARD_THRESHOLD ) ) {
+			$mapping['settings']['index.number_of_shards'] = 4;
+		}
+
+		return $mapping;
 	}
 
 	/**
