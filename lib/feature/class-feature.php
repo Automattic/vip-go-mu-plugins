@@ -19,10 +19,43 @@ class Feature {
 	 */
 	public static $feature_percentages = [];
 
+	/**
+	 * Holds feature slug and then, array of ids E.g.
+	 * // Enable feature for sites 123, 345 and 567
+	 * // 'feature-flag' => [ 123, 345, 567 ],
+	 *
+	 * @var array
+	 */
+	public static $feature_ids = [];
+
 	public static $site_id = false;
 
 	public static function is_enabled( $feature ) {
 		return static::is_enabled_by_percentage( $feature );
+	}
+
+	/**
+	 * Selectively enable feature by certain IDs.
+	 * 
+	 * @param array $ids Site IDs to enable the feature for.
+	 */
+	public static function is_enabled_by_ids( $feature ) {
+		if ( in_array( FILES_CLIENT_SITE_ID, static::$feature_ids[ $feature ], true ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Selectively disable feature for certain IDs.
+	 * 
+	 * @param array $ids Site IDs to enable the feature for.
+	 */
+	public static function is_disabled_by_ids( $feature ) {
+		if ( in_array( FILES_CLIENT_SITE_ID, static::$feature_ids[ $feature ], true ) ) {
+			return false;
+		}
+		return true;
 	}
 
 	public static function is_enabled_by_percentage( $feature ) {
