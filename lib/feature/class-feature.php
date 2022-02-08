@@ -28,8 +28,6 @@ class Feature {
 	 */
 	public static $feature_ids = [];
 
-	public static $site_id = false;
-
 	public static function is_enabled( $feature ) {
 		return static::is_enabled_by_percentage( $feature );
 	}
@@ -40,7 +38,7 @@ class Feature {
 	 * @param array $ids Site IDs to enable the feature for.
 	 */
 	public static function is_enabled_by_ids( $feature ) {
-		if ( in_array( FILES_CLIENT_SITE_ID, static::$feature_ids[ $feature ], true ) ) {
+		if ( in_array( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ], true ) ) {
 			return true;
 		}
 		return false;
@@ -52,7 +50,7 @@ class Feature {
 	 * @param array $ids Site IDs to enable the feature for.
 	 */
 	public static function is_disabled_by_ids( $feature ) {
-		if ( in_array( FILES_CLIENT_SITE_ID, static::$feature_ids[ $feature ], true ) ) {
+		if ( in_array( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ], true ) ) {
 			return false;
 		}
 		return true;
@@ -67,20 +65,11 @@ class Feature {
 
 		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
 		// the feature name so that the same sites aren't always the canaries
-		$bucket = crc32( $feature . '-' . static::site_id() ) % 100;
+		$bucket = crc32( $feature . '-' . constant( 'FILES_CLIENT_SITE_ID' ) ) % 100;
 
 		// Is the bucket enabled?
 		$threshold = $percentage * 100; // $percentage is decimal
 
 		return $bucket < $threshold; // If our 0-based bucket is inside our threshold, it's enabled
-	}
-
-	public static function site_id() {
-		// This is used in tests, so the site id can be easily changed
-		if ( static::$site_id ) {
-			return static::$site_id;
-		}
-
-		return defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : 0;
 	}
 }
