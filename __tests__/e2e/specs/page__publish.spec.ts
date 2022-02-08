@@ -36,6 +36,7 @@ test( 'publish a Page', async ( { page } ) => {
         editorPage = new EditorPage( page );
         await editorPage.enterTitle( titleText );
         await editorPage.enterText( bodyText );
+        await editorPage.addImage( '__tests__/e2e/test_media/image_01.jpg' );
     } );
 
     await test.step( 'Publish and visit page', async () => {
@@ -46,5 +47,6 @@ test( 'publish a Page', async ( { page } ) => {
     await test.step( 'Validate published page', async () => {
         const publishedPagePage = new PublishedPagePage( page );
         await publishedPagePage.validateTextInPost( titleText );
+        expect( await publishedPagePage.isImageDisplayed() ).toBeTruthy();
     } );
 } );

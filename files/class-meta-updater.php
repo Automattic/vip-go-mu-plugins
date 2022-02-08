@@ -109,7 +109,7 @@ class Meta_Updater {
 		$filtered = [];
 		foreach ( $attachments as $attachment_id ) {
 			$meta = wp_get_attachment_metadata( $attachment_id );
-			if ( ( is_array( $meta ) && ! isset( $meta['filesize'] ) ) || '' === $meta ) {
+			if ( ( is_array( $meta ) && ! isset( $meta['filesize'] ) ) || empty( $meta ) ) {
 				$filtered[] = $attachment_id;
 			}
 		}
