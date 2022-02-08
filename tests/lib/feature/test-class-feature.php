@@ -3,6 +3,7 @@
 namespace Automattic\VIP;
 
 use PHPUnit\Framework\TestCase;
+use Automattic\Test\Constant_Mocker;
 
 require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
@@ -182,5 +183,39 @@ class Feature_Test extends TestCase {
 		$enabled = Feature::is_enabled_by_percentage( 'bar' );
 
 		$this->assertEquals( false, $enabled );
+	}
+
+	public function test_is_enabled_by_ids() {
+		Feature::$feature_ids = [
+			'foo' => [ 123, 345 ],
+			'bar' => [ 789 ],
+		];
+
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		$enabled = Feature::is_enabled_by_ids( 'foo' );
+
+		$this->assertEquals( true, $enabled );
+
+		$enabled = Feature::is_enabled_by_ids( 'bar' );
+
+		$this->assertEquals( false, $enabled );
+	}
+
+	public function test_is_disabled_by_ids() {
+		Feature::$feature_ids = [
+			'foo' => [ 123, 345 ],
+			'bar' => [ 789 ],
+		];
+
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		$disabled = Feature::is_disabled_by_ids( 'foo' );
+
+		$this->assertEquals( false, $disabled );
+
+		$disabled = Feature::is_disabled_by_ids( 'bar' );
+
+		$this->assertEquals( true, $disabled );
 	}
 }
