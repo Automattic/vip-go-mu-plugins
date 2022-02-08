@@ -12,6 +12,11 @@ const selectors = {
     publishButton: '#publish',
     viewButton: '#message p a',
     permalink: '#sample-permalink a',
+    insertMediaButton: '#insert-media-button',
+    mediaUploadButton: '#__wp-uploader-id-1',
+    addMediaButton: '.media-button-insert',
+    uploadTab: '#menu-item-upload',
+    postImage: '#tinymce img',
 };
 
 export class ClassicEditorPage {
@@ -47,9 +52,30 @@ export class ClassicEditorPage {
     }
 
     /**
+     * Add Image to post or page
+     *
+     * @param {string} fileName Name of image file
+     */
+    async addImage( fileName: string ): Promise<void> {
+        await this.page.click( selectors.insertMediaButton );
+        await this.page.click( selectors.uploadTab );
+
+        const [ fileChooser ] = await Promise.all( [
+            // It is important to call waitForEvent before click to set up waiting.
+            this.page.waitForEvent( 'filechooser' ),
+            this.page.click( selectors.mediaUploadButton ),
+        ] );
+        await fileChooser.setFiles( fileName );
+        await this.page.click( selectors.addMediaButton );
+        await this.page.waitForLoadState( 'networkidle' );
+        await this.page.frameLocator( selectors.editorFrame ).locator( selectors.postImage );
+    }
+
+    /**
      * Publishes the post or page.
      *
      * @param {boolean} visit Whether to then visit the page.
+     * @returns {string} Url of the published post or page
      */
     async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
         const publishedURL = ( await this.page.locator( selectors.permalink ).textContent() ) as string;
