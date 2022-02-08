@@ -311,6 +311,8 @@ class Search_Test extends WP_UnitTestCase {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 
+		do_action( 'plugins_loaded' );
+
 		// Simulate a large site
 		$return_big_count = function( $counts ) {
 			$counts->publish = 2000000;
