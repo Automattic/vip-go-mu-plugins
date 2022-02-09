@@ -2,6 +2,7 @@
  * External dependencies
  */
 import {
+	activateTheme,
 	activatePlugin,
 	loginUser,
 	visitAdminPage,
@@ -24,7 +25,7 @@ const searchForParselyWidget = async () => {
 		visible: true,
 	} );
 	await page.click( '.block-list-appender' );
-	await page.focus( '#block-editor-inserter__search-0' );
+	await page.focus( '#components-search-control-0' );
 	await page.keyboard.type( 'parse.ly recommended widget' );
 };
 
@@ -49,14 +50,22 @@ const getNonActiveWidgetText = async () => {
 
 describe( 'Recommended widget', () => {
 	beforeAll( () => {
-		page.once( 'dialog', async function( dialog ) {
+		page.on( 'dialog', async function( dialog ) {
 			await dialog.accept();
 		} );
 	} );
 
-	it( 'Widget should be available but inactive without api key and secret', async () => {
+	beforeEach( async () => {
 		await loginUser();
+		await activateTheme( 'twentytwentyone' );
 		await activatePlugin( 'wp-parsely' );
+	} );
+
+	afterEach( async () => {
+		await activateTheme( 'twentytwentytwo' );
+	} );
+
+	it( 'Widget should be available but inactive without api key and secret', async () => {
 		await changeKeysState( false, false );
 
 		await visitAdminPage( '/widgets.php', '' );
@@ -70,8 +79,6 @@ describe( 'Recommended widget', () => {
 	} );
 
 	it( 'Widget should be available but inactive without api secret', async () => {
-		await loginUser();
-		await activatePlugin( 'wp-parsely' );
 		await changeKeysState( true, false );
 
 		await visitAdminPage( '/widgets.php', '' );
