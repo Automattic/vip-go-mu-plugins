@@ -192,37 +192,45 @@ class Feature_Test extends TestCase {
 		$this->assertEquals( false, $enabled );
 	}
 
-	public function test_is_enabled_by_ids() {
-		Feature::$feature_ids = [
-			'foo' => [ 123, 345 ],
-			'bar' => [ 789 ],
-		];
+	public function test_is_enabled_by_percentage_with_is_enabled_by_ids() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
 
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Feature::$feature_percentages = array(
+			'foo' => 1,
+		);
 
-		$enabled = Feature::is_enabled_by_ids( 'foo' );
-
-		$this->assertEquals( true, $enabled );
-
-		$enabled = Feature::is_enabled_by_ids( 'bar' );
+		$enabled = Feature::is_enabled_by_percentage( 'bar' );
 
 		$this->assertEquals( false, $enabled );
 	}
 
-	public function test_is_disabled_by_ids() {
+	public function test_is_enabled_by_ids() {
 		Feature::$feature_ids = [
-			'foo' => [ 123, 345 ],
-			'bar' => [ 789 ],
+			'foo'  => [ 
+				123 => true, 
+				345 => true, 
+				789 => false,
+			],
+			'bar'  => [ 456 => true ],
+			'test' => [ 456 => false ],
 		];
 
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
 
-		$disabled = Feature::is_disabled_by_ids( 'foo' );
+		$result = Feature::is_enabled_by_ids( 'foo' );
 
-		$this->assertEquals( false, $disabled );
+		$this->assertEquals( false, $result );
 
-		$disabled = Feature::is_disabled_by_ids( 'bar' );
+		$result = Feature::is_enabled_by_ids( 'bar' );
 
-		$this->assertEquals( true, $disabled );
+		$this->assertEquals( true, $result );
+
+		$result = Feature::is_enabled_by_ids( 'test' );
+
+		$this->assertEquals( false, $result );
+
+		$result = Feature::is_enabled_by_ids( 'feature-not-exist' );
+
+		$this->assertEquals( false, $result );
 	}
 }
