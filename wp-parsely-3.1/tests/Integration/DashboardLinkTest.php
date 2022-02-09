@@ -52,7 +52,7 @@ final class DashboardLinkTest extends TestCase {
 	 * Test if logic for showing Parse.ly row action accounts for actions not being an array.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to `DashboardLinkTest.php`
+	 * @since 3.1.0 Moved to `DashboardLinkTest.php`
 	 *
 	 * @covers \Parsely\UI\Row_Actions::cannot_show_parsely_link
 	 * @uses \Parsely\Parsely::api_key_is_set
@@ -73,7 +73,7 @@ final class DashboardLinkTest extends TestCase {
 	 * Test if logic for showing Parse.ly row action accounts for post having trackable status.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to `DashboardLinkTest.php`
+	 * @since 3.1.0 Moved to `DashboardLinkTest.php`
 	 *
 	 * @covers \Parsely\UI\Row_Actions::cannot_show_parsely_link
 	 * @uses \Parsely\Parsely::api_key_is_set
@@ -95,7 +95,7 @@ final class DashboardLinkTest extends TestCase {
 	 * Test if logic for showing Parse.ly row action accounts for post not having a viewable type.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to `DashboardLinkTest.php`
+	 * @since 3.1.0 Moved to `DashboardLinkTest.php`
 	 *
 	 * @covers \Parsely\UI\Row_Actions::cannot_show_parsely_link
 	 * @uses \Parsely\Parsely::api_key_is_set
@@ -117,7 +117,7 @@ final class DashboardLinkTest extends TestCase {
 	 * Test if logic for showing Parse.ly row action accounts for API key option being saved or not.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to `DashboardLinkTest.php`
+	 * @since 3.1.0 Moved to `DashboardLinkTest.php`
 	 *
 	 * @covers \Parsely\UI\Row_Actions::cannot_show_parsely_link
 	 * @uses \Parsely\Parsely::api_key_is_set

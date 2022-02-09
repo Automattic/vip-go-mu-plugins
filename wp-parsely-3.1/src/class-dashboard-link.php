@@ -3,7 +3,7 @@
  * Parse.ly Dashboard Link utility class.
  *
  * @package Parsely
- * @since 3.2.0
+ * @since 3.1.0
  */
 
 declare(strict_types=1);
@@ -15,14 +15,14 @@ use WP_Post;
 /**
  * Utility methods to build and generate dashboard links.
  *
- * @since 3.2.0
+ * @since 3.1.0
  */
 class Dashboard_Link {
 	/**
 	 * Generate the Parse.ly dashboard URL for the post.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to class-dashboard-link.php. Added source parameter.
+	 * @since 3.1.0 Moved to class-dashboard-link.php. Added source parameter.
 	 *
 	 * @param WP_Post $post   Which post object or ID to check.
 	 * @param string  $apikey API key or empty string.
@@ -47,7 +47,7 @@ class Dashboard_Link {
 	 * Determine whether Parse.ly dashboard link should be shown or not.
 	 *
 	 * @since 2.6.0
-	 * @since 3.2.0 Moved to class-utils.php. Renamed from `cannot_show_parsely_link`.
+	 * @since 3.1.0 Moved to class-utils.php. Renamed from `cannot_show_parsely_link`.
 	 *
 	 * @param WP_Post $post    Which post object or ID to check.
 	 * @param Parsely $parsely Parsely object.

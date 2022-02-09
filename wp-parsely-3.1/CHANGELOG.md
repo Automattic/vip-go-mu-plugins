@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] 2022-02-09
+
+### Fixed
+
+- Users could not create new instances of the recommended widget on WordPress 5.9. [#651](https://github.com/Parsely/wp-parsely/pull/651)
+- Correct "since" annotations to 3.1.0. [#646](https://github.com/Parsely/wp-parsely/pull/646)
+- Fix recommended widget e2e tests for WordPress 5.9. [#631](https://github.com/Parsely/wp-parsely/pull/631)
+- Bumped dependencies. [#632](https://github.com/Parsely/wp-parsely/pull/632) [#637](https://github.com/Parsely/wp-parsely/pull/637)
+  - `@wordpress/dom-ready` from 2.13.2 to 3.3.0
+  - `@wordpress/babel-preset-default` from 6.4.1 to 6.5.0
+  - `@wordpress/e2e-test-utils` from 5.4.10 to 6.0.0
+  - `@wordpress/env` from 4.1.3 to 4.2.0
+  - `@wordpress/eslint-plugin` from 9.3.0 to 10.0.0
+  - `@wordpress/scripts` from 19.2.3 to 20.0.2
+
+### Removed
+
+- Removed unused dependency `@wordpress/i18n`. [#632](https://github.com/Parsely/wp-parsely/pull/632)
+ 
 ## [3.1.0] 2022-01-21
 
 The 3.1.0 release is a minor release for the plugin that does not introduce any breaking changes coming from the 3.0 branch. This version's primary focus is adding support for WordPress decoupled architectures and a revamped settings page. We have also worked hard on refining our code, testing, and delivery process.
@@ -502,6 +521,7 @@ If you are using the plugin without any code-level customizations (for instance,
 - Initial version.
 - Add support for parsely-page and JavaScript on home page and published pages and posts as well as archive pages (date/author/category/tag).
 
+[3.1.1]: https://github.com/Parsely/wp-parsely/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/Parsely/wp-parsely/compare/3.0.4...3.1.0
 [3.0.4]: https://github.com/Parsely/wp-parsely/compare/3.0.3...3.0.4
 [3.0.3]: https://github.com/Parsely/wp-parsely/compare/3.0.2...3.0.3
