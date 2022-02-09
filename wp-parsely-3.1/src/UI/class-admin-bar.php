@@ -3,7 +3,7 @@
  * Parsely tweaks to WordPress admin bar
  *
  * @package Parsely
- * @since 3.2.0
+ * @since 3.1.0
  */
 
 declare(strict_types=1);
@@ -17,7 +17,7 @@ use Parsely\Dashboard_Link;
 /**
  * Render Parse.ly related buttons in the WordPress administrator top bar.
  *
- * @since 3.2.0
+ * @since 3.1.0
  */
 final class Admin_Bar {
 	/**
@@ -39,7 +39,7 @@ final class Admin_Bar {
 	/**
 	 * Register admin bar buttons.
 	 *
-	 * @since 3.2.0
+	 * @since 3.1.0
 	 *
 	 * @return void
 	 */
