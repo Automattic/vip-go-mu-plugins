@@ -106,7 +106,6 @@ class Concurrency_Limiter {
 
 	/**
 	 * We use this filter to log limit overruns to logstash.
-	 * Currently, we allow all requests to ES while we are gathering stats.
 	 * 
 	 * @param bool $should_fail 
 	 * @return bool 
@@ -118,8 +117,6 @@ class Concurrency_Limiter {
 				'feature'  => 'search_concurrency_limiter',
 				'message'  => 'Concurrency limit exceeded',
 			] );
-
-			$should_fail = false;
 		}
 
 		return $should_fail;
