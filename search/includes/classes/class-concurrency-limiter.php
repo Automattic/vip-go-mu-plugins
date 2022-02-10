@@ -70,17 +70,23 @@ class Concurrency_Limiter {
 	}
 
 	public function cleanup(): void {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
+		remove_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0, 2 );
 		remove_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
 	}
 
 	/**
 	 * Called when ElasticPress calls ElasticSearch API.
 	 * 
-	 * @param mixed $response 
+	 * @param mixed $response
+	 * @param array $query
 	 * @return mixed 
 	 */
-	public function ep_do_intercept_request( $response ) {
+	public function ep_do_intercept_request( $response, array $query ) {
+		$url = $query['url'];
+		if ( ! preg_match( '#/_(search|mget|doc)#', $url ) ) {
+			return $response;
+		}
+
 		// This filter can be called inside a loop; we need to make sure not to increment the counter more than once
 		if ( ! $this->doing_request ) {
 			$this->doing_request = true;
