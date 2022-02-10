@@ -4,6 +4,7 @@
  */
 
 namespace Automattic\VIP\Support_User\Tests;
+
 use Automattic\VIP\Support_User\Role;
 use WP_UnitTestCase;
 
@@ -35,7 +36,7 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		Role::init()->maybe_upgrade_version();
 
 		// Act
-		$roles = get_editable_roles();
+		$roles      = get_editable_roles();
 		$role_names = array_keys( $roles );
 
 		// Assert

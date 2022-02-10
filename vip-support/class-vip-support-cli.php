@@ -4,6 +4,7 @@
  */
 
 namespace Automattic\VIP\Support_User;
+
 use WP_CLI_Command;
 
 /**
@@ -39,14 +40,14 @@ class Command extends WP_CLI_Command {
 			\WP_CLI::error( "User cannot be added as '{$user_email}' is not a valid email address" );
 		}
 
-		$user_data = array();
+		$user_data                 = array();
 		$user_data['user_pass']    = $user_pass;
 		$user_data['user_login']   = $user_login;
 		$user_data['user_email']   = $user_email;
 		$user_data['display_name'] = $display_name;
-		$user_data['first_name'] = ! empty( $display_name ) ? $display_name : $user_login;
-		$user_data['last_name'] = '(VIP Support)';
-		$user_data['locale'] = 'en_US';
+		$user_data['first_name']   = ! empty( $display_name ) ? $display_name : $user_login;
+		$user_data['last_name']    = '(VIP Support)';
+		$user_data['locale']       = 'en_US';
 
 		$user_id = User::add( $user_data );
 
@@ -101,7 +102,7 @@ class Command extends WP_CLI_Command {
 
 		$user_id = absint( $args[0] );
 		if ( ! $user_id ) {
-			\WP_CLI::error( "Please provide the ID of the user to verify" );
+			\WP_CLI::error( 'Please provide the ID of the user to verify' );
 		}
 
 		$user = get_user_by( 'id', $user_id );

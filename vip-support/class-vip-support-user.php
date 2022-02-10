@@ -4,6 +4,7 @@
  */
 
 namespace Automattic\VIP\Support_User;
+
 use WP_Error;
 use WP_User;
 
@@ -18,7 +19,7 @@ class User {
 	 * GET parameter for a message: We blocked this user from the
 	 * support role because they're not an A12n.
 	 */
-	const MSG_BLOCK_UPGRADE_NON_A11N     = 'vip_support_msg_1';
+	const MSG_BLOCK_UPGRADE_NON_A11N = 'vip_support_msg_1';
 
 	/**
 	 * GET parameter for a message: We blocked this user from the
@@ -31,20 +32,20 @@ class User {
 	 * GET parameter for a message: We blocked this NEW user from
 	 * the support role because they're not an A12n.
 	 */
-	const MSG_BLOCK_NEW_NON_VIP_USER     = 'vip_support_msg_3';
+	const MSG_BLOCK_NEW_NON_VIP_USER = 'vip_support_msg_3';
 
 	/**
 	 * GET parameter for a message: We blocked this user from
 	 * LEAVING the support role because they have not verified
 	 * their email address.
 	 */
-	const MSG_BLOCK_DOWNGRADE            = 'vip_support_msg_4';
+	const MSG_BLOCK_DOWNGRADE = 'vip_support_msg_4';
 
 	/**
 	 * GET parameter for a message: This user was added to the
 	 * VIP Support role.
 	 */
-	const MSG_MADE_VIP                   = 'vip_support_msg_5';
+	const MSG_MADE_VIP = 'vip_support_msg_5';
 
 	/**
 	 * GET parameter for a message: We downgraded this user from
@@ -66,17 +67,17 @@ class User {
 	/**
 	 * Meta key for the email which HAS been verified.
 	 */
-	const META_EMAIL_VERIFIED    = '_vip_verified_email';
+	const META_EMAIL_VERIFIED = '_vip_verified_email';
 
 	/**
 	 * GET parameter for the code in the verification link.
 	 */
-	const GET_EMAIL_VERIFY                = 'vip_verify_code';
+	const GET_EMAIL_VERIFY = 'vip_verify_code';
 
 	/**
 	 * GET parameter for the user ID for the user being verified.
 	 */
-	const GET_EMAIL_USER_LOGIN               = 'vip_user_login';
+	const GET_EMAIL_USER_LOGIN = 'vip_user_login';
 
 	/**
 	 * GET parameter to indicate to trigger a resend if true.
@@ -134,11 +135,11 @@ class User {
 	 *
 	 * @return User object The instance of User
 	 */
-	static public function init() {
+	public static function init() {
 		static $instance = false;
 
 		if ( ! $instance ) {
-			$instance = new User;
+			$instance = new User();
 		}
 
 		return $instance;
@@ -150,16 +151,16 @@ class User {
 	 * and sets some properties.
 	 */
 	public function __construct() {
-		add_action( 'admin_notices',      array( $this, 'action_admin_notices' ) );
-		add_action( 'set_user_role',      array( $this, 'action_set_user_role' ), 10, 3 );
-		add_action( 'user_register',      array( $this, 'action_user_register' ) );
-		add_action( 'parse_request',      array( $this, 'action_parse_request' ) );
-		add_action( 'personal_options',   array( $this, 'action_personal_options' ) );
+		add_action( 'admin_notices', array( $this, 'action_admin_notices' ) );
+		add_action( 'set_user_role', array( $this, 'action_set_user_role' ), 10, 3 );
+		add_action( 'user_register', array( $this, 'action_user_register' ) );
+		add_action( 'parse_request', array( $this, 'action_parse_request' ) );
+		add_action( 'personal_options', array( $this, 'action_personal_options' ) );
 		add_action( 'load-user-edit.php', array( $this, 'action_load_user_edit' ) );
-		add_action( 'load-profile.php',   array( $this, 'action_load_profile' ) );
-		add_action( 'profile_update',     array( $this, 'action_profile_update' ) );
-		add_action( 'admin_head',         array( $this, 'action_admin_head' ) );
-		add_action( 'wp_login',           array( $this, 'action_wp_login' ), 10, 2 );
+		add_action( 'load-profile.php', array( $this, 'action_load_profile' ) );
+		add_action( 'profile_update', array( $this, 'action_profile_update' ) );
+		add_action( 'admin_head', array( $this, 'action_admin_head' ) );
+		add_action( 'wp_login', array( $this, 'action_wp_login' ), 10, 2 );
 
 		// May be added by Cron Control, if used together.
 		// Ensure cleanup runs regardless.
@@ -171,14 +172,14 @@ class User {
 			}
 		}
 
-		add_filter( 'wp_redirect',          array( $this, 'filter_wp_redirect' ) );
+		add_filter( 'wp_redirect', array( $this, 'filter_wp_redirect' ) );
 		add_filter( 'removable_query_args', array( $this, 'filter_removable_query_args' ) );
-		add_filter( 'user_email',           array( $this, 'filter_vip_support_email_aliases' ), 10, 2 );
-		add_filter( 'get_avatar_url',       array( $this, 'filter_vip_support_email_gravatars' ), 10, 3 );
+		add_filter( 'user_email', array( $this, 'filter_vip_support_email_aliases' ), 10, 2 );
+		add_filter( 'get_avatar_url', array( $this, 'filter_vip_support_email_gravatars' ), 10, 3 );
 
 		$this->reverting_role   = false;
 		$this->message_replace  = false;
-		$this->registering_a11n  = false;
+		$this->registering_a11n = false;
 	}
 
 	// HOOKS
@@ -214,7 +215,9 @@ class User {
 	 * send verification email if required.
 	 */
 	public function action_load_user_edit() {
-		if ( isset( $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) && $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) && isset( $_GET['user_id'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$user_id = absint( $_GET['user_id'] );
 			$this->send_verification_email( $user_id );
 		}
@@ -225,7 +228,8 @@ class User {
 	 * send verification email if required.
 	 */
 	public function action_load_profile() {
-		if ( isset( $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) && $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
 			$user_id = get_current_user_id();
 			$this->send_verification_email( $user_id );
 		}
@@ -256,13 +260,13 @@ class User {
 			</em>
 			<?php
 		}
-?>
+		?>
 		<script type="text/javascript">
 			jQuery( 'document').ready( function( $ ) {
 				$( '#email' ).after( $( '#vip-support-email-status' ) );
 			} );
 		</script>
-<?php
+		<?php
 	}
 
 	/**
@@ -277,26 +281,24 @@ class User {
 		// Messages on the users list screen
 		if ( in_array( $screen->base, array( 'users', 'user-edit', 'profile' ) ) ) {
 
-			$update = false;
-			if ( isset( $_GET['update'] ) ) {
-				$update = $_GET['update'];
-			}
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$update = sanitize_text_field( $_GET['update'] ?? false );
 
 			switch ( $update ) {
-				case self::MSG_BLOCK_UPGRADE_NON_A11N :
+				case self::MSG_BLOCK_UPGRADE_NON_A11N:
 					$error_html = __( 'Only users with a recognised Automattic email address can be assigned the VIP Support role.', 'vip-support' );
 					break;
-				case    self::MSG_BLOCK_UPGRADE_VERIFY_EMAIL :
-				case self::MSG_MADE_VIP :
+				case self::MSG_BLOCK_UPGRADE_VERIFY_EMAIL:
+				case self::MSG_MADE_VIP:
 					$error_html = __( 'This user’s Automattic email address must be verified before they can be assigned the VIP Support role.', 'vip-support' );
 					break;
-				case self::MSG_BLOCK_NEW_NON_VIP_USER :
+				case self::MSG_BLOCK_NEW_NON_VIP_USER:
 					$error_html = __( 'Only Automattic staff can be assigned the VIP Support role, the new user has been made a "subscriber".', 'vip-support' );
 					break;
-				case self::MSG_BLOCK_DOWNGRADE :
+				case self::MSG_BLOCK_DOWNGRADE:
 					$error_html = __( 'VIP Support users can only be assigned the VIP Support role, or deleted.', 'vip-support' );
 					break;
-				case self::MSG_DOWNGRADE_VIP_USER :
+				case self::MSG_DOWNGRADE_VIP_USER:
 					$error_html = __( 'This user’s email address has changed, and as a result they are no longer in the VIP Support role. Once the user has verified their new email address they will have the VIP Support role restored.', 'vip-support' );
 					break;
 				default:
@@ -306,13 +308,15 @@ class User {
 
 		// Messages on the user's own profile edit screen
 		if ( 'profile' == $screen->base ) {
-			if ( isset( $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) && $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
 				$message_html = __( 'The verification email has been sent, please check your inbox. Delivery may take a few minutes.', 'vip-support' );
 			} else {
-				$user_id = get_current_user_id();
-				$user    = get_user_by( 'id', $user_id );
+				$user_id     = get_current_user_id();
+				$user        = get_user_by( 'id', $user_id );
 				$resend_link = $this->get_trigger_resend_verification_url();
 				if ( $this->is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) ) {
+					// translators: 1 - link to resemd the email
 					$error_html = sprintf( __( 'Your Automattic email address is not verified, <a href="%s">re-send verification email</a>.', 'vip-support' ), esc_url( $resend_link ) );
 				}
 			}
@@ -320,13 +324,16 @@ class User {
 
 		// Messages on the user edit screen for another user
 		if ( 'user-edit' == $screen->base ) {
-			if ( isset( $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) && $_GET[self::GET_TRIGGER_RESEND_VERIFICATION] ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
 				$message_html = __( 'The verification email has been sent, please ask the user to check their inbox. Delivery may take a few minutes.', 'vip-support' );
 			} else {
-				$user_id = absint( $_GET['user_id'] );
-				$user = get_user_by( 'id', $user_id );
+				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$user_id     = absint( $_GET['user_id'] ?? 0 );
+				$user        = get_user_by( 'id', $user_id );
 				$resend_link = $this->get_trigger_resend_verification_url();
 				if ( $this->is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) && self::user_has_vip_support_role( $user->ID ) ) {
+					// translators: 1 - link to resend the email
 					$error_html = sprintf( __( 'This user’s Automattic email address is not verified, <a href="%s">re-send verification email</a>.', 'vip-support' ), esc_url( $resend_link ) );
 				}
 			}
@@ -334,12 +341,13 @@ class User {
 
 		// For is-dismissible see https://make.wordpress.org/core/2015/04/23/spinners-and-dismissible-admin-notices-in-4-2/
 		if ( $error_html ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- we construct the message from the trusted data
 			echo '<div id="message" class="notice is-dismissible error"><p>' . $error_html . '</p></div>';
-
 		}
-		if ( $message_html ) {
-			echo '<div id="message" class="notice is-dismissible updated"><p>' . $message_html . '</p></div>';
 
+		if ( $message_html ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- we construct the message from the trusted data
+			echo '<div id="message" class="notice is-dismissible updated"><p>' . $message_html . '</p></div>';
 		}
 	}
 
@@ -453,7 +461,7 @@ class User {
 
 		// Get the user's email address.
 		if ( is_numeric( $id_or_email ) ) {
-			$user       = get_user_by( 'id', $id_or_email );
+			$user = get_user_by( 'id', $id_or_email );
 			if ( false !== $user ) {
 				$user_email = $user->user_email;
 			}
@@ -505,7 +513,7 @@ class User {
 	 * @param int $user_id The ID of the user whose profile was just updated
 	 */
 	public function action_profile_update( $user_id ) {
-		$user = new WP_User( $user_id );
+		$user           = new WP_User( $user_id );
 		$verified_email = get_user_meta( $user_id, self::META_EMAIL_VERIFIED, true );
 		if ( $user->user_email !== $verified_email && self::user_has_vip_support_role( $user_id ) ) {
 			$this->demote_user_from_vip_support_to( $user->ID, Role::VIP_SUPPORT_INACTIVE_ROLE );
@@ -525,45 +533,48 @@ class User {
 	 *
 	 */
 	public function action_parse_request() {
-		if ( ! isset( $_GET[self::GET_EMAIL_VERIFY] ) ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! isset( $_GET[ self::GET_EMAIL_VERIFY ] ) || ! isset( $_GET[ self::GET_EMAIL_USER_LOGIN ] ) ) {
 			return;
 		}
 
 		$rebuffal_title   = __( 'Verification failed', 'vip-support' );
 		$rebuffal_message = __( 'This email verification link is not for your account, was not recognised, has been invalidated, or has already been used.', 'vip-support' );
 
-		$user_login = $_GET[self::GET_EMAIL_USER_LOGIN];
-		$user = get_user_by( 'login', $user_login );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$user_login = sanitize_text_field( $_GET[ self::GET_EMAIL_USER_LOGIN ] );
+		$user       = get_user_by( 'login', $user_login );
 		if ( ! $user ) {
 			// 403 Forbidden – The server understood the request, but is refusing to fulfill it.
 			// Authorization will not help and the request SHOULD NOT be repeated.
-			wp_die( $rebuffal_message, $rebuffal_title, array( 'response' => 403 ) );
+			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
 		// We only want the user who was sent the email to be able to verify their email
 		// (i.e. not another logged in or anonymous user clicking the link).
 		// @FIXME: Should we expire the link at this point, so an attacker cannot iterate the IDs?
 		if ( get_current_user_id() != $user->ID ) {
-			wp_die( $rebuffal_message, $rebuffal_title, array( 'response' => 403 ) );
+			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
 		if ( ! $this->is_a8c_email( $user->user_email ) ) {
-			wp_die( $rebuffal_message, $rebuffal_title, array( 'response' => 403 ) );
+			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
+		// phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
 		if ( ! A8C_PROXIED_REQUEST ) {
 			$proxy_rebuffal_title   = __( 'Please proxy', 'vip-support' );
 			$proxy_rebuffal_message = __( 'Your IP is not special enough, please proxy.', 'vip-support' );
-			wp_die( $proxy_rebuffal_message, $proxy_rebuffal_title, array( 'response' => 403 ) );
+			wp_die( esc_html( $proxy_rebuffal_message ), esc_html( $proxy_rebuffal_title ), array( 'response' => 403 ) );
 		}
 
 		$stored_verification_code = $this->get_user_email_verification_code( $user->ID );
-		$hash_sent                = (string) sanitize_text_field( $_GET[self::GET_EMAIL_VERIFY] );
+		$hash_sent                = (string) sanitize_text_field( $_GET[ self::GET_EMAIL_VERIFY ] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
 		$check_hash = $this->create_check_hash( get_current_user_id(), $stored_verification_code, $user->user_email );
 
 		if ( ! hash_equals( $check_hash, $hash_sent ) ) {
-			wp_die( $rebuffal_message, $rebuffal_title, array( 'response' => 403 ) );
+			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
 		// It's all looking good. Verify the email.
@@ -575,9 +586,10 @@ class User {
 			$this->promote_user_to_vip_support( $user->ID );
 		}
 
+		// translators: 1 - email address
 		$message = sprintf( __( 'Your email has been verified as %s', 'vip-support' ), $user->user_email );
-		$title = __( 'Verification succeeded', 'vip-support' );
-		wp_die( $message, $title, array( 'response' => 200 ) );
+		$title   = __( 'Verification succeeded', 'vip-support' );
+		wp_die( esc_html( $message ), esc_html( $title ), array( 'response' => 200 ) );
 	}
 
 	/**
@@ -597,12 +609,12 @@ class User {
 	 * Hooks the wp_login action to make any verified VIP Support user
 	 * a Super Admin!
 	 *
-	 * @param $user_login The login for the logging in user
+	 * @param $_user_login The login for the logging in user
 	 * @param WP_User $user The WP_User object for the logging in user
 	 *
 	 * @return void
 	 */
-	public function action_wp_login( $user_login, WP_User $user ) {
+	public function action_wp_login( $_user_login, WP_User $user ) {
 		if ( ! is_multisite() ) {
 			return;
 		}
@@ -611,19 +623,18 @@ class User {
 		// * Is a super admin
 		// …revoke their powers
 		if ( self::user_has_vip_support_role( $user->ID, false ) && is_super_admin( $user->ID ) ) {
-			require_once( ABSPATH . '/wp-admin/includes/ms.php' );
+			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			revoke_super_admin( $user->ID );
 			return;
 		}
-		if ( ! self::user_has_vip_support_role( $user->ID ) ){
+		if ( ! self::user_has_vip_support_role( $user->ID ) ) {
 			// If the user is a super admin, but has been demoted to
 			// the inactive VIP Support role, we should remove
 			// their super powers
-			if ( is_super_admin( $user->ID )
-			     && self::user_has_vip_support_role( $user->ID, false ) ) {
+			if ( is_super_admin( $user->ID ) && self::user_has_vip_support_role( $user->ID, false ) ) {
 				// This user is NOT VIP Support, remove
 				// their powers forthwith
-				require_once( ABSPATH . '/wp-admin/includes/ms.php' );
+				require_once ABSPATH . '/wp-admin/includes/ms.php';
 				revoke_super_admin( $user->ID );
 			}
 			return;
@@ -637,7 +648,7 @@ class User {
 		if ( ! is_super_admin( $user->ID ) ) {
 			// This user is VIP Support, verified, let's give them
 			// great power and responsibility
-			require_once( ABSPATH . '/wp-admin/includes/ms.php' );
+			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			grant_super_admin( $user->ID );
 		}
 	}
@@ -664,20 +675,26 @@ class User {
 
 		$hash              = urlencode( $hash );
 		$user_id           = absint( $user_id );
-		$verification_link = add_query_arg( array( self::GET_EMAIL_VERIFY => urlencode( $hash ), self::GET_EMAIL_USER_LOGIN => urlencode( $user->user_login ) ), site_url() );
+		$verification_link = add_query_arg( array(
+			self::GET_EMAIL_VERIFY     => urlencode( $hash ),
+			self::GET_EMAIL_USER_LOGIN => urlencode( $user->user_login ),
+		), site_url() );
 
 		$user = new WP_User( $user_id );
 
 		$message  = __( 'Dear Automattician,', 'vip-support' );
 		$message .= PHP_EOL . PHP_EOL;
+		// translators: 1: blog name, 2: blog URL
 		$message .= sprintf( __( 'You need to verify your Automattic email address for your user on %1$s (%2$s). If you are expecting this, please click the link below to verify your email address:', 'vip-support' ), get_bloginfo( 'name' ), site_url() );
 		$message .= PHP_EOL;
 		$message .= esc_url_raw( $verification_link );
 		$message .= PHP_EOL . PHP_EOL;
 		$message .= __( 'If you have any questions, please contact the WordPress.com VIP Support Team.' );
 
+		// translators: 1 - site name
 		$subject = sprintf( __( 'Email verification for %s', 'vip-support' ), get_bloginfo( 'name' ) );
 
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
 		wp_mail( $user->user_email, $subject, $message );
 	}
 
@@ -689,7 +706,7 @@ class User {
 	 * @return bool True if the user has a verified email address, otherwise false
 	 */
 	protected function user_has_verified_email( $user_id ) {
-		$user = new WP_User( $user_id );
+		$user           = new WP_User( $user_id );
 		$verified_email = get_user_meta( $user_id, self::META_EMAIL_VERIFIED, true );
 		return ( $user->user_email == $verified_email );
 	}
@@ -715,8 +732,8 @@ class User {
 		if ( ! is_email( $email ) ) {
 			return false;
 		}
-		list( $local, $domain ) = explode( '@', $email, 2 );
-		$a8c_domains = array(
+		list( , $domain ) = explode( '@', $email, 2 );
+		$a8c_domains      = array(
 			'a8c.com',
 			'automattic.com',
 			'matticspace.com',
@@ -771,7 +788,7 @@ class User {
 
 		$instance = self::init();
 
-		$is_a8c_email 	  = $instance->is_a8c_email( $user->user_email );
+		$is_a8c_email     = $instance->is_a8c_email( $user->user_email );
 		$is_allowed_email = $instance->is_allowed_email( $user->user_email );
 		$email_verified   = $instance->user_has_verified_email( $user->ID );
 
@@ -798,10 +815,11 @@ class User {
 		$wp_roles = wp_roles();
 
 		// Filter out caps that are not role names and assign to $user_roles
-		if ( is_array( $user->caps ) )
+		if ( is_array( $user->caps ) ) {
 			$user_roles = array_filter( array_keys( $user->caps ), array( $wp_roles, 'is_role' ) );
+		}
 
-		if ( false === $active_role) {
+		if ( false === $active_role ) {
 			return in_array( Role::VIP_SUPPORT_INACTIVE_ROLE, $user_roles, true );
 		}
 
@@ -824,12 +842,12 @@ class User {
 	 */
 	protected function get_user_email_verification_code( $user_id ) {
 		$generate_new_code = false;
-		$user = get_user_by( 'id', $user_id );
+		$user              = get_user_by( 'id', $user_id );
 
 		$verification_data = get_user_meta( $user_id, self::META_VERIFICATION_DATA, true );
 		if ( ! $verification_data ) {
 			$verification_data = array(
-				'touch' => current_time( 'timestamp', true ), // GPL timestamp
+				'touch' => time(), // GPL timestamp
 			);
 			$generate_new_code = true;
 		}
@@ -840,7 +858,7 @@ class User {
 
 		if ( $generate_new_code ) {
 			$verification_data['code']  = bin2hex( openssl_random_pseudo_bytes( 16 ) );
-			$verification_data['touch'] = current_time( 'timestamp', true );
+			$verification_data['touch'] = time();
 		}
 
 		// Refresh the email, in case it changed since we created the meta
@@ -905,7 +923,7 @@ class User {
 
 		$user->set_role( Role::VIP_SUPPORT_ROLE );
 		if ( is_multisite() ) {
-			require_once( ABSPATH . '/wp-admin/includes/ms.php' );
+			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			grant_super_admin( $user_id );
 		}
 		update_user_meta( $user->ID, $GLOBALS['wpdb']->get_blog_prefix() . 'user_level', 10 );
@@ -923,7 +941,7 @@ class User {
 		$user = new WP_User( $user_id );
 		$user->set_role( $revert_role_to );
 		if ( is_multisite() ) {
-			require_once( ABSPATH . '/wp-admin/includes/ms.php' );
+			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			revoke_super_admin( $user_id );
 		}
 	}
@@ -951,7 +969,7 @@ class User {
 			add_filter( 'send_password_change_email', '__return_false' );
 			$updated_email_for_old_user = str_replace( '@', '+old@', $user->user_email );
 			wp_update_user( [
-				'ID' => $user->ID,
+				'ID'         => $user->ID,
 				'user_email' => $updated_email_for_old_user,
 			] );
 			remove_filter( 'send_password_change_email', '__return_false' );
@@ -1044,7 +1062,7 @@ class User {
 	public static function remove_stale_support_users() {
 		$support_users = get_users( array(
 			'meta_key' => self::VIP_SUPPORT_USER_META_KEY,
-			'fields' => [ 'ID', 'user_registered', 'user_email', 'user_login'  ],
+			'fields'   => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
 		) );
 
 		if ( empty( $support_users ) ) {
@@ -1054,7 +1072,7 @@ class User {
 		$processed_ids = [];
 
 		// Report the users removed.
-		$removed   = array();
+		$removed = array();
 
 		// Remove support user after 8 hours (about 1 shift).
 		$threshold = strtotime( '-8 hours' );
@@ -1094,6 +1112,7 @@ class User {
 		$stale = self::remove_stale_support_users();
 
 		if ( ! empty( $stale ) ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			error_log( "VIP Support user removals attempted: \n" . var_export( compact( 'stale' ), true ) );
 		}
 	}
