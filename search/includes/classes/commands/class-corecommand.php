@@ -387,4 +387,62 @@ class CoreCommand extends \ElasticPress\Command {
 
 		WP_CLI::line( wp_json_encode( $indexes ) );
 	}
+
+	/**
+	 * Activate a feature. If a re-indexing is required, you will need to do it manually.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <feature-slug>
+	 * : The feature slug
+	 *
+	 * @subcommand activate-feature
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function activate_feature( $args, $assoc_args ) {
+		if ( $this->is_unsupported_feature( $args[0] ) ) {
+			WP_CLI::error( "The feature {$args[0]} is not currently supported." );
+		}
+
+		array_unshift( $args, 'elasticpress', 'activate-feature' );
+		WP_CLI::run_command( $args, $assoc_args );
+	}
+
+	/**
+	 * Check if feature is unsupported.
+	 * 
+	 * @param string $feature EP feature
+	 * @return bool Whether feature is unsupported or not.
+	 */
+	private function is_unsupported_feature( $feature ) {
+		$unsupported_features = [ 'autosuggest', 'documents', 'comments' ];
+		if ( in_array( $feature, $unsupported_features, true ) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Dectivate a feature.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <feature-slug>
+	 * : The feature slug
+	 *
+	 * @subcommand deactivate-feature
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function deactivate_feature( $args, $assoc_args ) {
+		if ( 'search' === $args[0] ) {
+			WP_CLI::confirm( "Are you sure you want to deactivate $args[0]? This will break all search-related functionality!" );
+		}
+
+		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
+		WP_CLI::run_command( $args, $assoc_args );
+	}
 }
