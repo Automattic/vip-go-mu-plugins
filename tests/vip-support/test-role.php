@@ -13,7 +13,7 @@ use WP_UnitTestCase;
  */
 class VIPSupportRoleTest extends WP_UnitTestCase {
 
-	public function setUp() {
+	public function setUp(): void {
 		parent::setUp();
 
 		delete_option( 'vipsupportrole_version' );
