@@ -3,10 +3,18 @@
 namespace Automattic\VIP;
 
 use PHPUnit\Framework\TestCase;
+use Automattic\Test\Constant_Mocker;
 
 require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
 class Feature_Test extends TestCase {
+
+	public function setUp(): void {
+		parent::setUp();
+		
+		Constant_Mocker::clear();
+	}
+
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:
@@ -147,7 +155,7 @@ class Feature_Test extends TestCase {
 	 * @dataProvider is_enabled_by_percentage_data
 	 */
 	public function test_is_enabled_by_percentage( $feature, $percentage, $site_id, $expected ) {
-		Feature::$site_id = $site_id;
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', $site_id );
 
 		Feature::$feature_percentages = array(
 			$feature => $percentage,
@@ -159,7 +167,7 @@ class Feature_Test extends TestCase {
 	}
 
 	public function test_is_enabled_by_percentage_using_constant() {
-		Feature::$site_id = false;
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', false );
 
 		// Feature will use FILES_CLIENT_SITE_ID, which is 123 in tests, when it isn't set on the class
 
@@ -173,7 +181,7 @@ class Feature_Test extends TestCase {
 	}
 
 	public function test_is_enabled_by_percentage_with_undefined_feature() {
-		Feature::$site_id = 1;
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
 
 		Feature::$feature_percentages = array(
 			'foo' => 1,
@@ -182,5 +190,47 @@ class Feature_Test extends TestCase {
 		$enabled = Feature::is_enabled_by_percentage( 'bar' );
 
 		$this->assertEquals( false, $enabled );
+	}
+
+	public function test_is_enabled_by_percentage_with_is_enabled_by_ids() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
+
+		Feature::$feature_percentages = array(
+			'foo' => 1,
+		);
+
+		$enabled = Feature::is_enabled_by_percentage( 'bar' );
+
+		$this->assertEquals( false, $enabled );
+	}
+
+	public function test_is_enabled_by_ids() {
+		Feature::$feature_ids = [
+			'foo'  => [ 
+				123 => true, 
+				345 => true, 
+				789 => false,
+			],
+			'bar'  => [ 456 => true ],
+			'test' => [ 456 => false ],
+		];
+
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
+
+		$result = Feature::is_enabled_by_ids( 'foo' );
+
+		$this->assertEquals( false, $result );
+
+		$result = Feature::is_enabled_by_ids( 'bar' );
+
+		$this->assertEquals( true, $result );
+
+		$result = Feature::is_enabled_by_ids( 'test' );
+
+		$this->assertEquals( false, $result );
+
+		$result = Feature::is_enabled_by_ids( 'feature-not-exist' );
+
+		$this->assertEquals( false, $result );
 	}
 }
