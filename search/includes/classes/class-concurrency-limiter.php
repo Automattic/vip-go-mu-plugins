@@ -52,8 +52,6 @@ class Concurrency_Limiter {
 
 				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
 				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
-				// We will remove this one once we have enough stats
-				add_filter( 'vip_search_should_fail_excessive_request', [ $this, 'vip_search_should_fail_excessive_request' ] );
 				return true;
 			}
 
@@ -102,23 +100,5 @@ class Concurrency_Limiter {
 			$this->doing_request = false;
 			$this->should_fail   = false;
 		}
-	}
-
-	/**
-	 * We use this filter to log limit overruns to logstash.
-	 * 
-	 * @param bool $should_fail 
-	 * @return bool 
-	 */
-	public function vip_search_should_fail_excessive_request( bool $should_fail ): bool {
-		if ( $should_fail ) {
-			log2logstash( [
-				'severity' => 'warning',
-				'feature'  => 'search_concurrency_limiter',
-				'message'  => 'Concurrency limit exceeded',
-			] );
-		}
-
-		return $should_fail;
 	}
 }
