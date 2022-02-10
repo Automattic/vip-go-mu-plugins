@@ -17,11 +17,20 @@ done
 vip dev-env destroy --slug=e2e-test-site
 
 # Create and run test site
-vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins=$pluginPath --wordpress="5.8.1" --multisite=false --client-code=$clientCodePath
+vip --slug=e2e-test-site dev-env create --title="E2E Testing site" --phpmyadmin --mu-plugins="${pluginPath}" --wordpress="5.9" --multisite=false --client-code="${clientCodePath}"
 vip --slug=e2e-test-site dev-env start
 
-# Install classic editor plugin
-docker exec e2etestsite_php_1 wp plugin install --activate --allow-root classic-editor
+# Enable Enterprise Search
+docker exec e2etestsite_wordpress_1 sh -c '\
+    echo "define( \"VIP_ENABLE_VIP_SEARCH\", true );" | tee -a /app/config/wp-config.php; \
+    echo "define( \"VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION\", true );" | tee -a /app/config/wp-config.php \
+'
 
+# Install classic editor plugin
 # Install specified version of WordPress
-docker exec e2etestsite_php_1 wp core update --allow-root --version=$version --force
+# Create index
+docker exec e2etestsite_php_1 sh -c '\
+    wp plugin install --activate --allow-root classic-editor; \
+    wp core update --allow-root --version="${version}" --force; \
+    wp --allow-root vip-search index --setup --skip-confirm \
+'

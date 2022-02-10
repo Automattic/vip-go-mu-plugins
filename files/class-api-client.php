@@ -111,8 +111,7 @@ class API_Client {
 
 		$file_size = filesize( $local_path );
 		$file_name = basename( $local_path );
-		$file_info = wp_check_filetype( $file_name );
-		$file_mime = $file_info['type'] ?? '';
+		$file_mime = self::detect_mime_type( $file_name );
 
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
@@ -167,6 +166,29 @@ class API_Client {
 		// Uploads take longer so we need a custom timeout.
 		// Use default timeout plus 1 second per 500kb.
 		return self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
+	}
+
+	private static function detect_mime_type( string $filename ): string {
+		/**
+		 * `wp_check_filetype()` indirectly calls `wp_get_current_user()`, which is loaded from `pluggable.php`
+		 * `pluggable.php` is loaded after all plugins. Therefore, if a plugin creates a file under `wp-content/uploads`
+		 * before `pluggable.php` is loaded, we should not call `wp_check_filetype()` because it will generate
+		 * a fatal error.
+		 */
+		if ( function_exists( 'wp_get_current_user' ) ) {
+			$info = wp_check_filetype( $filename );
+			$mime = $info['type'] ?? '';
+		} else {
+			$mime = '';
+		}
+
+		if ( empty( $mime ) && extension_loaded( 'fileinfo' ) ) {
+			$finfo = finfo_open( FILEINFO_MIME_TYPE );
+			$mime  = finfo_file( $finfo, $filename );
+			finfo_close( $finfo );
+		}
+
+		return is_string( $mime ) ? $mime : '';
 	}
 
 	public function get_file( $file_path ) {

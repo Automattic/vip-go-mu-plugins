@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\Health as Health;
+use Automattic\VIP\Utils\Alerts;
 use \WP_CLI;
 
 require_once __DIR__ . '/class-health.php';
@@ -194,8 +195,6 @@ class SettingsHealthJob {
 	/**
 	 * Send an alert
 	 *
-	 * @see wpcom_vip_irc()
-	 *
 	 * @param string $channel IRC / Slack channel to send message to
 	 * @param string $message The message to send
 	 * @param int $level Alert level
@@ -217,7 +216,7 @@ class SettingsHealthJob {
 			wp_cache_delete( $cache_key, Cache::CACHE_GROUP_KEY );
 		}
 
-		return wpcom_vip_irc( $channel, $message, $level );
+		return Alerts::chat( $channel, $message, $level );
 	}
 
 	/**
@@ -239,8 +238,7 @@ class SettingsHealthJob {
 		}
 
 		// Do not schedule new index build if index version limit is reached (2 versions per Indexable).
-		$search           = \Automattic\VIP\Search\Search::instance();
-		$current_versions = $search->versioning->get_versions( $indexable );
+		$current_versions = $this->search->versioning->get_versions( $indexable );
 		if ( count( $current_versions ) > 1 ) {
 			$message = sprintf(
 				'Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
@@ -250,7 +248,7 @@ class SettingsHealthJob {
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			
 			return;
-		} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable ] ) ) {
+		} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
 			wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		}
 	}
@@ -261,29 +259,71 @@ class SettingsHealthJob {
 	 * @param string $indexable_slug The slug of the Indexable we want to rebuild.
 	 */
 	public function build_new_index( $indexable_slug ) {
-		update_option( self::BUILD_LOCK_NAME, time() ); // Set lock for starting rebuild.
+		update_option( self::BUILD_LOCK_NAME, time(), false ); // Set lock for starting rebuild.
+
+		$indexable = $this->indexables->get( $slug );
+		if ( ! $indexable ) {
+			$indexable = new WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+		}
+		if ( is_wp_error( $indexable ) ) {
+			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $indexable->get_error_message() );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+		$new_version = $this->search->versioning->add_version( $indexable );
+		if ( is_wp_error( $new_version ) ) {
+			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $new_version->get_error_message() );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
+		if ( is_wp_error( $new_version ) ) {
+			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $new_version->get_error_message() );
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		// Delete CLI option for tracking command successfully finished
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			delete_site_option( 'ep_last_cli_index' );
+		} else {
+			delete_option( 'ep_last_cli_index' );
+		}
 
 		// Do the indexing.
+		$cmd        = new \ElasticPress\Command();
+		$args       = [];
 		$assoc_args = [
-			'using-versions' => true,
-			'skip-confirm'   => true,
-			'indexables'     => $indexable_slug,
+			'yes'        => true,
+			'indexables' => $indexable_slug,
 		];
-		$cmd        = 'vip-search index ' . WP_CLI\Utils\assoc_args_to_str( $assoc_args );
-		$result     = WP_CLI::runcommand(
-			$cmd,
-			[
-				'return'     => 'all',
-				'exit_error' => false,
-			],
-		);
+		$cmd->index( $args, $assoc_args );
 
-		if ( '' !== $result->stderr ) {
-			// Surface any error messages that occurred into an alert.
-			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $result->stderr );
+		$option = defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ? get_site_option( 'ep_last_cli_index' ) : get_option( 'ep_last_cli_index' );
+		if ( $option ) {
+			$activate_version = $this->search->versioning->activate_version( $indexable, 'next' );
+			if ( is_wp_error( $activate_version ) ) {
+				$message = sprintf( 'An error occurred during activation of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $activate_version->get_error_message() );
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
+			
+			$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
+			if ( is_wp_error( $versioning ) ) {
+				$message = sprintf( 'An error occurred during deletion of old %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $delete_version->get_error_message() );
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
+
+			$message = sprintf( 'Successfully built new %s index for shard requirements on %s.', $indexable_slug, home_url() );
 		} else {
-			// TODO: Remove this alert eventually.
-			$message = sprintf( 'Successfully built new %s index for shard requirements on %s!', $indexable_slug, home_url() );
+			$message = sprintf( 'Build failure of new %s index on %s for shard requirements!', $indexable_slug, home_url() );
 		}
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 

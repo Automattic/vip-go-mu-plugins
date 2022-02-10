@@ -16,7 +16,7 @@ use Parsely\UI\Admin_Bar;
 /**
  * Admin bar modifications tests.
  *
- * @since 3.2.0
+ * @since 3.1.0
  */
 final class AdminBarTest extends TestCase {
 	/**

@@ -2,6 +2,8 @@
 
 // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
+use Automattic\VIP\Utils\Alerts;
+
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
  *
@@ -1539,6 +1541,7 @@ function vip_is_jetpack_request() {
  * @param $interval integer Interval in seconds between two messages sent from one DC
  */
 function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $interval = 0 ) {
+	trigger_error( esc_html( sprintf( '"%s" is deprecated, please use "%s" instead', __FUNCTION__, Alerts::class . '::chat' ) ), E_USER_WARNING );
 	if ( $kind && $interval && function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
 		wp_cache_add_global_groups( array( 'irc-ratelimit' ) );
 

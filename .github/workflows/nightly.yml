@@ -28,18 +28,18 @@ jobs:
           - "1"
     steps:
       - name: Check out source code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
         with:
           submodules: recursive
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@da0e8547371daac1784abb79f9bb2af76dcdfaf0 # renovate: tag=2.16.0
         with:
           coverage: none
           php-version: ${{ matrix.php }}
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@2.1.0
+        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # renovate: tag=2.1.0
 
       - name: Run tests
         run: ./bin/test.sh --wp nightly --php ${{ matrix.php }} --multisite ${{ matrix.multisite }} --phpunit 9 --order-by=random

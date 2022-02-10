@@ -852,11 +852,7 @@ class Search {
 		 * Serve cached response right away, if available and not stale and the query is cacheable
 		 */
 		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
-
-		// Only enable for subset of sites and all non-prod environements
-		$feature_enabled = \Automattic\VIP\Feature::is_enabled_by_percentage( 'es-query-cache' );
-		$is_non_prod     = ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== VIP_GO_APP_ENVIRONMENT;
-		if ( ( $feature_enabled || $is_non_prod ) && $cached_response ) {
+		if ( $cached_response ) {
 			return $cached_response;
 		}
 
@@ -940,28 +936,6 @@ class Search {
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			update_option( $index_exists_option_name, $response );
-		}
-
-		if ( 'index_exists' === $type && 401 === $response_code ) {
-			$is_cli = defined( 'WP_CLI' ) && WP_CLI;
-			if ( ! $is_cli ) {
-				global $wp;
-				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-				$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
-			}
-			\Automattic\VIP\Logstash\log2logstash( array(
-				'severity' => 'warning',
-				'feature'  => 'search_401_response',
-				'message'  => '401 response returned',
-				'extra'    => [
-					'query'       => wp_json_encode( $query ),
-					'args'        => wp_json_encode( $args ),
-					'backtrace'   => wp_debug_backtrace_summary(), // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
-					'is_cli'      => $is_cli,
-					'request_url' => $request_url_for_logging ?? null,
-					'es_shield'   => defined( 'ES_SHIELD' ) && ES_SHIELD,
-				],
-			) );
 		}
 
 		if ( $is_cacheable ) {

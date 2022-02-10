@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use Automattic\VIP\Utils\Alerts;
 use DateTime;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
@@ -340,7 +341,7 @@ class Connection_Pilot {
 			}
 		}
 
-		return wpcom_vip_irc( '#vip-jp-cxn-monitoring', $message );
+		return Alerts::chat( '#vip-jp-cxn-monitoring', $message );
 	}
 
 	/**
