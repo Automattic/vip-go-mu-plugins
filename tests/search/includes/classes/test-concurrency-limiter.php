@@ -75,14 +75,14 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		$send_request = function() use ( $es, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );
 			$client2   = new Concurrency_Limiter();
-			$response2 = $es->remote_request( '' );
+			$response2 = $es->remote_request( '/_search' );
 			self::assertInstanceOf( $backend, $client2->get_backend() );
 			$client2->cleanup();
 		};
 
 		add_action( 'ep_remote_request', $send_request, 0 );
 
-		$response1 = $es->remote_request( '' );
+		$response1 = $es->remote_request( '/_search' );
 		$client1->cleanup();
 
 		self::assertIsArray( $response1 );
