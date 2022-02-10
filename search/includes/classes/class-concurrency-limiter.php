@@ -50,7 +50,7 @@ class Concurrency_Limiter {
 				$this->backend = new $backend_class();
 				$this->backend->initialize( $this->max_concurrent_requests, $this->cache_ttl );
 
-				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0 );
+				add_filter( 'ep_do_intercept_request', [ $this, 'ep_do_intercept_request' ], 0, 2 );
 				add_action( 'ep_remote_request', [ $this, 'ep_remote_request' ] );
 				return true;
 			}
