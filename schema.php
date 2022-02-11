@@ -19,13 +19,13 @@ add_filter( 'dbdelta_create_queries', function( $queries ) {
 				$status = _get_table_status( $wpdb->postmeta );
 				// For InnoDB, Data_length is the approximate amount of space allocated for the clustered index, in bytes.
 				// Each InnoDB table has a special index called the clustered index that stores row data.
-				if ( isset( $status['Data_length'] ) && $status['Data_length'] < 52428800 ) {
+				if ( defined( 'WP_TESTS_DOMAIN' ) || ( isset( $status['Data_length'] ) && $status['Data_length'] < 52428800 ) ) {
 					$queries[ $k ] = str_replace(
 						$search,
 						sprintf( 'KEY %s', get_postmeta_key_value_index() ),
 						$q
 					);
-				} elseif ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
+				} else {
 					trigger_error( sprintf( 'Skip meta_key index modification because Data_length is %s', esc_html( $status['Data_length'] ?? 'N/A' ) ), E_USER_WARNING );
 				}
 			}
