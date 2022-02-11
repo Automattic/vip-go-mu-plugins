@@ -2,6 +2,13 @@
 
 ### This is a list detailing changes for all Jetpack releases.
 
+## 10.7-a.0 - unreleased
+
+This is an alpha version! The changes listed here are not final.
+
+### Improved compatibility
+- Search: Add deprecated class to prevent third-party integrations from failing after 10.6 updates.
+
 ## 10.6 - 2022-02-01
 ### Enhancements
 - Contact Info and Markdown Blocks: add color, typography and spacing features.
