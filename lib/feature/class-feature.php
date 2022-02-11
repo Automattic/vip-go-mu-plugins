@@ -17,7 +17,9 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [];
+	public static $feature_percentages = [
+		'es-delete-index' => 0.25,
+	];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.
