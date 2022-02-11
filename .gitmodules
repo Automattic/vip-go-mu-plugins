@@ -1,6 +1,3 @@
-[submodule "vip-support"]
-	path = vip-support
-	url = https://github.com/Automattic/vip-support.git
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = https://github.com/Automattic/advanced-post-cache.git
