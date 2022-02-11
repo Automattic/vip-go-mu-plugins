@@ -902,19 +902,16 @@ class Versioning {
 			} else {
 				$this->update_versions( $indexable, $versions );
 
-				$message = sprintf(
-					"Application %d - %s updated index versions for '%s' indexable",
-					FILES_CLIENT_SITE_ID,
-					home_url(),
-					$indexable->slug
-				);
-
 				\Automattic\VIP\Logstash\log2logstash(
 					array(
 						'severity' => 'info',
 						'feature'  => 'search_versioning',
-						'message'  => $message,
-						'extra'    => $versions,
+						'message'  => 'Recreated index versions for persistence',
+						'extra'    => [
+							'homeurl'   => home_url(),
+							'versions'  => $versions,
+							'indexable' => $indexable->slug,
+						],
 					)
 				);
 			}
