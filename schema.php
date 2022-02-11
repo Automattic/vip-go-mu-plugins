@@ -25,7 +25,7 @@ add_filter( 'dbdelta_create_queries', function( $queries ) {
 						sprintf( 'KEY %s', get_postmeta_key_value_index() ),
 						$q
 					);
-				} else {
+				} elseif ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
 					trigger_error( sprintf( 'Skip meta_key index modification because Data_length is %s', esc_html( $status['Data_length'] ?? 'N/A' ) ), E_USER_WARNING );
 				}
 			}
