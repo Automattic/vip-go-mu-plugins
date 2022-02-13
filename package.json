@@ -17,7 +17,7 @@
   },
   "author": "Automattic",
   "devDependencies": {
-    "@playwright/test": "1.18.1",
+    "@playwright/test": "1.19.0",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
     "asana-phrase": "0.0.8",
@@ -29,6 +29,6 @@
     "husky": "7.0.4",
     "lint-staged": "^12.3.2",
     "phplint": "2.0.5",
-    "playwright": "1.18.1"
+    "playwright": "1.19.0"
   }
 }
