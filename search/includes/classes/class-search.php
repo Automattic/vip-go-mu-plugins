@@ -822,6 +822,11 @@ class Search {
 				} else {
 					// Invalidate index_exists caching on certain actions.
 					delete_option( $index_exists_option_name );
+
+					// Ensure the cache for the option was actually deleted.
+					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
+						wp_cache_delete( $index_exists_option_name, 'options' );
+					}
 				}
 			}
 		}
