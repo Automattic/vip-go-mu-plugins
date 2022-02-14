@@ -212,39 +212,6 @@ class Versioning {
 		$slug = $indexable->slug;
 
 		if ( ! $this->versions_array_has_slug( $versions, $slug ) ) {
-
-			if ( Search::is_network_mode() ) {
-				// Check deprecated location
-				$deprecated_versions = get_site_option( self::INDEX_VERSIONS_OPTION, array() );
-
-				if ( $this->versions_array_has_slug( $deprecated_versions, $slug ) ) {
-					// Versions are only stored in the deprecated network storage
-					// TODO remove this deprecated check if it is not executed to simplify the code.
-
-					$message = sprintf(
-						"Application %d - %s found index versions in deprecated global storage for '%s' indexable. I will store versions in correct storage based on global flag.",
-						FILES_CLIENT_SITE_ID,
-						home_url(),
-						$slug
-					);
-
-					\Automattic\VIP\Logstash\log2logstash(
-						array(
-							'severity' => 'warning',
-							'feature'  => 'search_versioning',
-							'message'  => $message,
-						)
-					);
-
-					$normalized_versions = array_map( array( $this, 'normalize_version' ), $deprecated_versions[ $slug ] );
-
-					// Store versions in correct place to avoid triggering this code again
-					$this->update_versions( $indexable, $normalized_versions );
-
-					return $normalized_versions;
-				}
-			}
-
 			if ( $provide_default ) {
 				return array(
 					1 => array(
@@ -902,19 +869,16 @@ class Versioning {
 			} else {
 				$this->update_versions( $indexable, $versions );
 
-				$message = sprintf(
-					"Application %d - %s updated index versions for '%s' indexable",
-					FILES_CLIENT_SITE_ID,
-					home_url(),
-					$indexable->slug
-				);
-
 				\Automattic\VIP\Logstash\log2logstash(
 					array(
 						'severity' => 'info',
 						'feature'  => 'search_versioning',
-						'message'  => $message,
-						'extra'    => $versions,
+						'message'  => 'Recreated index versions for persistence',
+						'extra'    => [
+							'homeurl'   => home_url(),
+							'versions'  => $versions,
+							'indexable' => $indexable->slug,
+						],
 					)
 				);
 			}
