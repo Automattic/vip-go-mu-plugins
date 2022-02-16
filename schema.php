@@ -17,7 +17,7 @@ add_filter( 'dbdelta_create_queries', function( $queries ) {
 			$search = 'KEY meta_key (meta_key(191))';
 			if ( false !== strpos( $q, $search ) ) {
 				$status = _get_table_status( $wpdb->postmeta );
-				/* If the table does not exists, simply replace the index definition */
+				/* If the table does not exist, simply replace the index definition */
 				if ( null === $status ) {
 					$queries[ $k ] = str_replace( $search, get_postmeta_key_value_index( 'meta_key' ), $q );
 				} else {
