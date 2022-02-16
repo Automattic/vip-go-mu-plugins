@@ -38,6 +38,34 @@ function check_file_visibility( $file_visibility, $file_path ) {
 		return FILE_IS_PUBLIC;
 	}
 
+	$attachment_restrict_file_meta = get_post_meta($attachment_id, '_restrict_attachment', true);
+
+	if ($attachment_restrict_file_meta === false){
+		return FILE_IS_PUBLIC;
+	}
+
+	if ( ! empty($attachment_restrict_file_meta)) {
+		
+		if (in_array( $attachment_restrict_file_meta, [true, 'true', 'yes', 1, '1'])) {
+
+			$user_has_edit_capability = current_user_can('edit_posts');
+
+			if ($user_has_edit_capability) {
+				return FILE_IS_PRIVATE_AND_ALLOWED;
+			}
+
+			return FILE_IS_PRIVATE_AND_DENIED;
+
+		}
+
+		else {
+
+			return FILE_IS_PUBLIC;
+
+		}
+	
+	}
+
 	if ( 'inherit' === $attachment->post_status && $attachment->post_parent ) {
 		$parent_post = get_post( $attachment->post_parent );
 		if ( 'publish' === $parent_post->post_status ) {
