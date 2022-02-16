@@ -1062,10 +1062,17 @@ class Search {
 
 	/**
 	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 * Or format parts of the query object to be more readable.
 	 */
 	public function sanitize_ep_query_for_logging( $query ) {
 		if ( isset( $query['args']['headers']['Authorization'] ) ) {
 			$query['args']['headers']['Authorization'] = '<redacted>';
+		}
+
+		// Try to parse the body if possible to make it better readable in the log entry.
+		if ( isset( $query['args']['body'] ) ) {
+			$decoded_body          = json_decode( $query['args']['body'] );
+			$query['args']['body'] = ! json_last_error() ? $decoded_body : $query['args']['body'];
 		}
 
 		return $query;
