@@ -40,10 +40,6 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	$attachment_restrict_file_meta = get_post_meta($attachment_id, '_restrict_attachment', true);
 
-	if ($attachment_restrict_file_meta === false){
-		return FILE_IS_PUBLIC;
-	}
-
 	if ( ! empty($attachment_restrict_file_meta)) {
 		
 		if (in_array( $attachment_restrict_file_meta, [true, 'true', 'yes', 1, '1'])) {
