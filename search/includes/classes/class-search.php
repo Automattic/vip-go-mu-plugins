@@ -958,7 +958,7 @@ class Search {
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
-			update_option( $index_exists_option_name, $response );
+			add_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable ) {
