@@ -632,7 +632,13 @@ class User {
 	 *
 	 * @return void
 	 */
-	public function action_wp_login( $_user_login, WP_User $user ) {
+	public function action_wp_login( $_user_login, $user ) {
+		if ( ! ( $user instanceof WP_User ) ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- gettype() is safe
+			trigger_error( sprintf( '$user must be an instance of WP_User, %s given', gettype( $user ) ), E_USER_WARNING );
+			return;
+		}
+
 		if ( ! is_multisite() ) {
 			return;
 		}
