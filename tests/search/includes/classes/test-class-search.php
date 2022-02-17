@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use Automattic\Test\Constant_Mocker;
 use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
@@ -307,9 +308,12 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, $shards );
 	}
 
-	public function test__vip_search_filter_ep_default_index_number_of_shards_large_site() {
-		$es = new \Automattic\VIP\Search\Search();
-		$es->init();
+	public function test__vip_search_filter_filter__ep_post_mapping__large_site() {
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+		$this->search_instance->init();
+
+		do_action( 'plugins_loaded' );
 
 		// Simulate a large site
 		$return_big_count = function( $counts ) {
@@ -318,13 +322,45 @@ class Search_Test extends WP_UnitTestCase {
 			return $counts;
 		};
 
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
 		add_filter( 'wp_count_posts', $return_big_count );
 
-		$shards = apply_filters( 'ep_default_index_number_of_shards', 5 );
+		$settings = $indexable->build_settings();
 
-		$this->assertEquals( 4, $shards );
+		$this->assertEquals( 4, $settings['index.number_of_shards'] );
 
 		remove_filter( 'wp_count_posts', $return_big_count );
+	}
+
+	public function test__vip_search_filter_filter__ep_user_mapping__large_site() {
+		define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+
+		$this->search_instance->init();
+   
+		do_action( 'plugins_loaded' );
+
+		// Activate and set-up the feature
+		\ElasticPress\Features::factory()->activate_feature( 'users' );
+		\ElasticPress\Features::factory()->setup_features();
+
+		// Simulate a large site
+		$return_big_count = function( $counts ) {
+			$counts              = new \stdClass();
+			$counts->avail_roles = 100;
+			$counts->total_users = 3000000;
+
+			return $counts;
+		};
+
+		add_filter( 'pre_count_users', $return_big_count );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'user' );
+		$settings  = $indexable->build_settings();
+		$this->assertEquals( 4, $settings['index.number_of_shards'] );
+
+		remove_filter( 'pre_count_users', $return_big_count );
 	}
 
 	public function test__vip_search_filter_ep_default_index_number_of_replicas() {
