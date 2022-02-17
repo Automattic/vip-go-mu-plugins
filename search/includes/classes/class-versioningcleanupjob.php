@@ -119,6 +119,11 @@ class VersioningCleanupJob {
 			return;
 		}
 
+		$feature_enabled = \Automattic\VIP\Feature::is_enabled_by_percentage( 'es-delete-index' );
+		if ( ! $feature_enabled ) {
+			return;
+		}
+
 		$delete_version = $this->versioning->delete_version( $indexable, $version );
 
 		if ( is_wp_error( $delete_version ) ) {
@@ -132,18 +137,16 @@ class VersioningCleanupJob {
 			);
 			\Automattic\VIP\Utils\Alerts::chat( self::SEARCH_ALERT_SLACK_CHAT, $message );
 		} else {
-			$message = sprintf(
-				"Application %d - %s Successfully deleted inactive index version %s for '%s' indexable",
-				FILES_CLIENT_SITE_ID,
-				home_url(),
-				$version,
-				$indexable->slug
-			);
 			\Automattic\VIP\Logstash\log2logstash(
 				array(
 					'severity' => 'info',
 					'feature'  => 'search_versioning',
-					'message'  => $message,
+					'message'  => 'Successfully deleted inactive index version',
+					'extra'    => [
+						'homeurl'         => home_url(),
+						'version_deleted' => $version,
+						'indexable'       => $indexable->slug,
+					],
 				)
 			);
 		}

@@ -37,6 +37,7 @@ require_once __DIR__ . '/files/class-meta-updater.php';
 
 use Automattic\VIP\Files\VIP_Filesystem;
 use Automattic\VIP\Files\Meta_Updater;
+use Automattic\VIP\Utils\Alerts;
 
 class A8C_Files {
 
@@ -171,6 +172,10 @@ class A8C_Files {
 	}
 
 	private function use_jetpack_photon() {
+		if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
+			return false;
+		}
+		
 		if ( defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
 			return true;
 		}
@@ -407,7 +412,7 @@ class A8C_Files {
 	 * Cron job to update attachment metadata with file size
 	 */
 	public function update_attachment_meta() {
-		wpcom_vip_irc(
+		Alerts::chat(
 			'#vip-go-filesize-updates',
 			sprintf( 'Starting %s on %s... $vip-go-streams-debug',
 				self::CRON_EVENT_NAME,
@@ -416,7 +421,7 @@ class A8C_Files {
 
 		if ( get_option( self::OPT_ALL_FILESIZE_PROCESSED ) ) {
 			// already done. Nothing to update
-			wpcom_vip_irc(
+			Alerts::chat(
 				'#vip-go-filesize-updates',
 				sprintf( 'Already completed updates on %s. Exiting %s... $vip-go-streams-debug',
 					home_url(),
@@ -449,7 +454,7 @@ class A8C_Files {
 				// This means all attachments have been processed so marking as done
 				update_option( self::OPT_ALL_FILESIZE_PROCESSED, 1 );
 
-				wpcom_vip_irc(
+				Alerts::chat(
 					'#vip-go-filesize-updates',
 					sprintf( 'Passed max ID (%d) on %s. Exiting %s... $vip-go-streams-debug',
 						$max_id,
@@ -482,7 +487,7 @@ class A8C_Files {
 		}
 
 		// All done, update next index option
-		wpcom_vip_irc(
+		Alerts::chat(
 			'#vip-go-filesize-updates',
 			sprintf( 'Batch %d to %d (of %d) completed on %s. Processed %d attachments (%s) $vip-go-streams-debug',
 			$orig_start_index, $start_index, $max_id, home_url(), count( $attachments ), wp_json_encode( $counts ) ),
