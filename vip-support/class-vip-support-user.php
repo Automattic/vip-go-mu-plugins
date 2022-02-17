@@ -617,7 +617,7 @@ class User {
 	public function action_wp_login( $_user_login, $user ) {
 		if ( ! ( $user instanceof WP_User ) ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- gettype() is safe
-			_doing_it_wrong( __METHOD__, sprintf( '$user must be an instance of WP_User, %s given', gettype( $user ) ), '' );
+			trigger_error( sprintf( '$user must be an instance of WP_User, %s given', gettype( $user ) ), E_USER_WARNING );
 			return;
 		}
 
