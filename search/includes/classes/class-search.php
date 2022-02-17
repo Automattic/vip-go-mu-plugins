@@ -591,8 +591,11 @@ class Search {
 
 		// Better shard counts
 		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
-		add_filter( 'ep_post_mapping', array( $this, 'filter__ep_post_mapping' ) );
-		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_user_mapping' ) );
+		if ( defined( 'VIP_GO_ENV' ) && 'production' === VIP_GO_ENV ) {
+			// Only adjust shard count for production environments.
+			add_filter( 'ep_post_mapping', array( $this, 'filter__ep_post_mapping' ) );
+			add_filter( 'ep_user_mapping', array( $this, 'filter__ep_user_mapping' ) );
+		}
 
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
