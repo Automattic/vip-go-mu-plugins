@@ -176,6 +176,7 @@ class User {
 		add_filter( 'removable_query_args', array( $this, 'filter_removable_query_args' ) );
 		add_filter( 'user_email', array( $this, 'filter_vip_support_email_aliases' ), 10, 2 );
 		add_filter( 'get_avatar_url', array( $this, 'filter_vip_support_email_gravatars' ), 10, 3 );
+		add_filter( 'login_redirect', array( $this, 'disable_admin_email_check' ), 10, 3 );
 
 		$this->reverting_role   = false;
 		$this->message_replace  = false;
@@ -476,6 +477,23 @@ class User {
 		}
 
 		return $url;
+	}
+
+	/**
+	 * Don't show the admin email confirmation screen to vip support users.
+	 *
+	 * @param string           $redirect_to The redirect destination URL.
+	 * @param string           $requested   The requested redirect destination URL passed as a parameter.
+	 * @param WP_User|WP_Error $user        WP_User object if login was successful, WP_Error object otherwise.
+	 *
+	 * @return $redirect_to
+	 */
+	public function disable_admin_email_check( $redirect_to, $requested, $user ) {
+		if ( ! is_wp_error( $user ) && $this->has_vip_support_meta( $user->ID ) ) {
+			add_filter( 'admin_email_check_interval', '__return_zero' );
+		}
+
+		return $redirect_to;
 	}
 
 	/**
