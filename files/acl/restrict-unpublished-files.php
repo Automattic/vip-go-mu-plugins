@@ -40,9 +40,12 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	$attachment_restrict_file_meta = get_post_meta($attachment_id, '_restrict_attachment', true);
 
-	if ( ! empty($attachment_restrict_file_meta)) {
+	// Updated conditional to use type specific empty check.
+	if (strlen($attachment_restrict_file_meta) > 0) {
 		
-		if (in_array( $attachment_restrict_file_meta, [true, 'true', 'yes', 1, '1'])) {
+		// Configured in_array strict check.
+		// Reduced possible values to an official value to be checked.
+		if (in_array( $attachment_restrict_file_meta, [1, '1'], true)) {
 
 			$user_has_edit_capability = current_user_can('edit_posts');
 
