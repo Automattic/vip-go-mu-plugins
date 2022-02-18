@@ -860,7 +860,6 @@ class Search {
 			'HTTP_TRUE_CLIENT_IP',
 			'HTTP_X_REQUEST_ID',
 			'HTTP_USER_AGENT',
-			'HTTP_X_REAL_IP',
 		];
 
 		foreach ( $rq_headers as $rq_header ) {
