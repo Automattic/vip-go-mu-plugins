@@ -700,3 +700,17 @@ function add_jetpack_menu_placeholder(): void {
 }
 
 add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );
+
+/**
+ * Remove the page that allows you to toggle Search and Instant Search on and off. 
+ * Use code or CLI instead to toggle Search module and open a ZD ticket for enabling Instant Search.
+ * 
+ * @return void
+ */
+function vip_remove_jetpack_search_menu_page() {
+	remove_submenu_page( 
+		'jetpack',
+		'jetpack-search'
+	);
+}
+add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX ); 
