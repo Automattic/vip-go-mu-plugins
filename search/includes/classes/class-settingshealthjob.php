@@ -263,7 +263,7 @@ class SettingsHealthJob {
 
 		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
-			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
 			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $indexable->get_error_message() );
