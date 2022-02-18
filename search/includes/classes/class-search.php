@@ -879,7 +879,7 @@ class Search {
 		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
 		 */
 		if ( 'query' === $type ) {
-			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
 		} else {
 			$args['timeout'] = $timeout;
 			$response        = wp_remote_request( $query['url'], $args );
