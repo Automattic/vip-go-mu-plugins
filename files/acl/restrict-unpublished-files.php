@@ -38,31 +38,28 @@ function check_file_visibility( $file_visibility, $file_path ) {
 		return FILE_IS_PUBLIC;
 	}
 
-	$attachment_restrict_file_meta = get_post_meta($attachment_id, '_restrict_attachment', true);
+	$attachment_restrict_file_meta = get_post_meta( $attachment_id, '_restrict_attachment', true );
 
 	// Updated conditional to use type specific empty check.
-	if (strlen($attachment_restrict_file_meta) > 0) {
+	if ( strlen( $attachment_restrict_file_meta ) > 0 ) {
 		
 		// Configured in_array strict check.
 		// Reduced possible values to an official value to be checked.
-		if (in_array( $attachment_restrict_file_meta, [1, '1'], true)) {
+		if ( in_array( $attachment_restrict_file_meta, [ 1, '1' ], true ) ) {
 
-			$user_has_edit_capability = current_user_can('edit_posts');
+			$user_has_edit_capability = current_user_can( 'edit_posts' );
 
-			if ($user_has_edit_capability) {
+			if ( $user_has_edit_capability ) {
 				return FILE_IS_PRIVATE_AND_ALLOWED;
 			}
 
 			return FILE_IS_PRIVATE_AND_DENIED;
 
-		}
-
-		else {
+		} else {
 
 			return FILE_IS_PUBLIC;
 
 		}
-	
 	}
 
 	if ( 'inherit' === $attachment->post_status && $attachment->post_parent ) {
