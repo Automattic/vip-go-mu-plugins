@@ -101,6 +101,9 @@ class Health {
 		}
 
 		try {
+			// to avoid an expensive orderby query on large datasets, we can set the orderby to none here.
+			$query_args['orderby'] = 'none';
+			
 			// Get total count in DB
 			$db_result = $indexable->query_db( $query_args );
 
