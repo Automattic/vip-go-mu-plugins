@@ -35,6 +35,7 @@
 .phpcs.xml.dist
 .scrutinizer.yml
 .travis.yml
+.secrets/.svn
 .wordpress-org/
 composer.json
 composer.lock
