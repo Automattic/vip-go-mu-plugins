@@ -879,7 +879,7 @@ class Search {
 		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
 		 */
 		if ( 'query' === $type ) {
-			$response = vip_safe_wp_remote_request( $query['url'], false, 3, $timeout, 20, $args );
+			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
 		} else {
 			$args['timeout'] = $timeout;
 			$response        = wp_remote_request( $query['url'], $args );
@@ -1057,8 +1057,8 @@ class Search {
 			$error_type,
 			$error_message,
 			[
-				'error_type' => ! is_wp_error( $response ) && isset( $response['error']['type'] ) ? $response['error']['type'] : 'Unknown error type',
-				'root_cause' => ! is_wp_error( $response ) && isset( $response['error']['root_cause'] ) ? $response['error']['root_cause'] : null,
+				'error_type' => ! is_wp_error( $response ) && isset( $response_body['error']['type'] ) ? $response_body['error']['type'] : 'Unknown error type',
+				'root_cause' => ! is_wp_error( $response ) && isset( $response_body['error']['root_cause']['reason'] ) ? $response_body['error']['root_cause']['reason'] : null,
 				'query'      => $this->sanitize_ep_query_for_logging( $query ),
 				'backtrace'  => wp_debug_backtrace_summary(),   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
 				'is_cli'     => $is_cli,
@@ -1071,10 +1071,17 @@ class Search {
 
 	/**
 	 * Given an ElasticPress query object, strip out anything that shouldn't be logged
+	 * Or format parts of the query object to be more readable.
 	 */
 	public function sanitize_ep_query_for_logging( $query ) {
 		if ( isset( $query['args']['headers']['Authorization'] ) ) {
 			$query['args']['headers']['Authorization'] = '<redacted>';
+		}
+
+		// Try to parse the body if possible to make it better readable in the log entry.
+		if ( isset( $query['args']['body'] ) ) {
+			$decoded_body          = json_decode( $query['args']['body'] );
+			$query['args']['body'] = ! json_last_error() ? $decoded_body : $query['args']['body'];
 		}
 
 		return $query;
