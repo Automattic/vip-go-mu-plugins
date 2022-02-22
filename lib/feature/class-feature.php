@@ -18,7 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'es-delete-index' => 0.25,
+		'es-delete-index' => 0.5,
 	];
 
 	/**
