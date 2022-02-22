@@ -208,7 +208,8 @@ class SettingsHealthJob {
 						$indexable_slug,
 						$result['index_version'],
 						home_url(),
-						$result['result']->get_error_message() );
+						$result['result']->get_error_message(),
+					);
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 				}
