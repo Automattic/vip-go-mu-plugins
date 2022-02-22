@@ -31,7 +31,6 @@ if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
 		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
 		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
-		add_action( 'admin_menu', array( $search_plugin, 'remove_jetpack_menu_search' ), PHP_INT_MAX );
 	}
 
 	do_action( 'vip_search_loaded' );

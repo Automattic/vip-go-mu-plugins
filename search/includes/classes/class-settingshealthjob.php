@@ -261,9 +261,9 @@ class SettingsHealthJob {
 	public function build_new_index( $indexable_slug ) {
 		update_option( self::BUILD_LOCK_NAME, time(), false ); // Set lock for starting rebuild.
 
-		$indexable = $this->indexables->get( $slug );
+		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
-			$indexable = new WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $slug ) );
+			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
 			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $indexable->get_error_message() );
