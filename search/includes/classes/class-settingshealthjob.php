@@ -106,7 +106,12 @@ class SettingsHealthJob {
 	public function process_indexables_settings_health_results( $results ) {
 		// If the whole thing failed, error
 		if ( is_wp_error( $results ) ) {
-			$message = sprintf( 'Error while validating index settings for %s: %s', home_url(), $results->get_error_message() );
+			$message = sprintf(
+				'Application %s: Error while validating index settings for %s: %s',
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				$results->get_error_message()
+			);
 
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
@@ -116,7 +121,13 @@ class SettingsHealthJob {
 		foreach ( $results as $indexable_slug => $versions ) {
 			// If there's an error, alert
 			if ( is_wp_error( $versions ) ) {
-				$message = sprintf( 'Error while validating index settings for indexable %s on %s: %s', $indexable_slug, home_url(), $versions->get_error_message() );
+				$message = sprintf(
+					'Application %s: Error while validating index settings for indexable %s on %s: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$versions->get_error_message()
+				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 			}
@@ -129,7 +140,8 @@ class SettingsHealthJob {
 				}
 
 				$message = sprintf(
-					'Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					'Application %s: Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
+					FILES_CLIENT_SITE_ID,
 					home_url(),
 					$indexable_slug,
 					$result['index_version'],
@@ -154,7 +166,13 @@ class SettingsHealthJob {
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
 				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
-				$message       = sprintf( 'Failed to load indexable %s when healing index settings on %s: %s', $indexable_slug, home_url(), $error_message );
+				$message       = sprintf(
+					'Application %s: Failed to load indexable %s when healing index settings on %s: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$error_message
+				);
 
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
@@ -184,7 +202,14 @@ class SettingsHealthJob {
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
 				if ( is_wp_error( $result['result'] ) ) {
-					$message = sprintf( 'Failed to heal index settings for indexable %s and index version %d on %s: %s', $indexable_slug, $result['index_version'], home_url(), $result['result']->get_error_message() );
+					$message = sprintf(
+						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
+						FILES_CLIENT_SITE_ID,
+						$indexable_slug,
+						$result['index_version'],
+						home_url(),
+						$result['result']->get_error_message(),
+					);
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 				}
@@ -241,7 +266,8 @@ class SettingsHealthJob {
 		$current_versions = $this->search->versioning->get_versions( $indexable );
 		if ( count( $current_versions ) > 1 ) {
 			$message = sprintf(
-				'Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
+				'Application %s: Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
+				FILES_CLIENT_SITE_ID,
 				$indexable->slug,
 				home_url()
 			);
@@ -266,14 +292,26 @@ class SettingsHealthJob {
 			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
-			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $indexable->get_error_message() );
+			$message = sprintf(
+				'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url(),
+				$indexable->get_error_message()
+			);
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 			return;
 		}
 		$new_version = $this->search->versioning->add_version( $indexable );
 		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $new_version->get_error_message() );
+			$message = sprintf(
+				'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url(),
+				$new_version->get_error_message()
+			);
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 			return;
@@ -281,7 +319,13 @@ class SettingsHealthJob {
 
 		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
 		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf( 'An error occurred during build of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $new_version->get_error_message() );
+			$message = sprintf(
+				'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url(),
+				$new_version->get_error_message()
+			);
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 			return;
@@ -307,7 +351,13 @@ class SettingsHealthJob {
 		if ( $option ) {
 			$activate_version = $this->search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $activate_version ) ) {
-				$message = sprintf( 'An error occurred during activation of new %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $activate_version->get_error_message() );
+				$message = sprintf(
+					'Application %s: An error occurred during activation of new %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$activate_version->get_error_message()
+				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 	
 				return;
@@ -315,15 +365,31 @@ class SettingsHealthJob {
 			
 			$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
 			if ( is_wp_error( $versioning ) ) {
-				$message = sprintf( 'An error occurred during deletion of old %s index on %s for shard requirements: %s', $indexable_slug, home_url(), $delete_version->get_error_message() );
+				$message = sprintf(
+					'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$delete_version->get_error_message()
+				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 	
 				return;
 			}
 
-			$message = sprintf( 'Successfully built new %s index for shard requirements on %s.', $indexable_slug, home_url() );
+			$message = sprintf(
+				'Application %s: Successfully built new %s index for shard requirements on %s.',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url()
+			);
 		} else {
-			$message = sprintf( 'Build failure of new %s index on %s for shard requirements!', $indexable_slug, home_url() );
+			$message = sprintf(
+				'Application %s: Build failure of new %s index on %s for shard requirements!',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url()
+			);
 		}
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
