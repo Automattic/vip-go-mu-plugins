@@ -101,6 +101,11 @@ class Health {
 		}
 
 		try {
+			// to avoid an expensive orderby query on large datasets, we can set the orderby to none here.
+			$query_args['orderby'] = 'none';
+			// Disable advanced pagination so it doesn't override the orderby set
+			$query_args['ep_indexing_advanced_pagination'] = false;
+			
 			// Get total count in DB
 			$db_result = $indexable->query_db( $query_args );
 

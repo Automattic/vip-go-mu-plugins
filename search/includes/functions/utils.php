@@ -40,11 +40,21 @@ function vip_maybe_backfill_ep_option( $value, $option ) {
 							'homeurl' => $home_url,
 							'blog_id' => $blog_id,
 							'option'  => wp_json_encode( $site_option ),
+							'app_id'  => FILES_CLIENT_SITE_ID,
 						],
 					)
 				);
 			} else {
-				Alerts::chat( '#vip-go-es-alerts', "Unsuccessfully added option {$option} to subsite {$blog_id}: {$home_url}" );
+				Alerts::chat(
+					'#vip-go-es-alerts',
+					sprintf(
+						'Application %s: Unsuccessfully added option %s to subsite %d: %s', 
+						FILES_CLIENT_SITE_ID,
+						$option,
+						$blog_id,
+						$home_url,
+					),
+				);
 			}
 
 			return $site_option_value;
