@@ -21,4 +21,4 @@ fi
 
 echo "Creating new jetpack subtree $tree_dir using jetpack tag $jetpack_tag"
 
-git subtree add --squash -P $tree_dir https://github.com/Automattic/jetpack-production $jetpack_tag -m "Add jetpack $tree_version subtree with tag $jetpack_tag"
+git subtree add -P $tree_dir --squash https://github.com/Automattic/jetpack-production $jetpack_tag -m "Add jetpack $tree_version subtree with tag $jetpack_tag"
