@@ -364,7 +364,7 @@ class SettingsHealthJob {
 			}
 			
 			$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
-			if ( is_wp_error( $versioning ) ) {
+			if ( is_wp_error( $delete_version ) ) {
 				$message = sprintf(
 					'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
 					FILES_CLIENT_SITE_ID,

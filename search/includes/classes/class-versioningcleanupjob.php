@@ -119,11 +119,6 @@ class VersioningCleanupJob {
 			return;
 		}
 
-		$feature_enabled = \Automattic\VIP\Feature::is_enabled_by_percentage( 'es-delete-index' );
-		if ( ! $feature_enabled ) {
-			return;
-		}
-
 		$delete_version = $this->versioning->delete_version( $indexable, $version );
 
 		if ( is_wp_error( $delete_version ) ) {
