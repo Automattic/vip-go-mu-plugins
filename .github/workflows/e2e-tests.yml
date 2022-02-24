@@ -32,13 +32,16 @@ jobs:
       - name: Npm install
         run: |
           npm ci
-          npm install -g @wordpress/env
 
-      - name: Install WordPress
+      - name: Start up WordPress environment
         run: |
-          wp-env start
+          npm run dev:start
 
       - name: Running the tests
         run: |
-          $( npm bin )/wp-scripts test-e2e --listTests > ~/.jest-e2e-tests
-          $( npm bin )/wp-scripts test-e2e --cacheDirectory="$HOME/.jest-cache"
+          npm run test:e2e -- --listTests > ~/.jest-e2e-tests
+          npm run test:e2e -- --cacheDirectory="$HOME/.jest-cache"
+
+      - name: Stop WordPress environment
+        run: |
+          npm run dev:stop

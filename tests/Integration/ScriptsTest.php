@@ -14,6 +14,8 @@ use Parsely\Scripts;
 use PHPUnit\Framework\RiskyTestError;
 use WP_Scripts;
 
+use const Parsely\PARSELY_FILE;
+
 /**
  * Parsely Scripts tests.
  */
@@ -42,10 +44,58 @@ final class ScriptsTest extends TestCase {
 	}
 
 	/**
+	 * Test whether the run method adds the register and enqueue actions.
+	 *
+	 * @covers \Parsely\Scripts::run
+	 *
+	 * @group scripts
+	 */
+	public function test_run_adds_actions(): void {
+		self::assertFalse( has_action( 'init', array( self::$scripts, 'register_scripts' ) ) );
+		self::assertFalse( has_action( 'wp_enqueue_scripts', array( self::$scripts, 'enqueue_js_tracker' ) ) );
+
+		self::$scripts->run();
+
+		self::assertSame( 10, has_action( 'init', array( self::$scripts, 'register_scripts' ) ) );
+		self::assertSame( 10, has_action( 'wp_enqueue_scripts', array( self::$scripts, 'enqueue_js_tracker' ) ) );
+	}
+
+	/**
+	 * Test whether the run method adds the register and enqueue actions when no API key is set.
+	 *
+	 * @covers \Parsely\Scripts::run
+	 *
+	 * @group scripts
+	 */
+	public function test_run_not_adds_actions_no_api_key(): void {
+		TestCase::set_options( array( 'apikey' => null ) );
+
+		self::$scripts->run();
+
+		self::assertFalse( has_action( 'init', array( self::$scripts, 'register_scripts' ) ) );
+		self::assertFalse( has_action( 'wp_enqueue_scripts', array( self::$scripts, 'enqueue_js_tracker' ) ) );
+	}
+
+	/**
+	 * Test whether the run method adds the register and enqueue actions when the disable javascript option is set.
+	 *
+	 * @covers \Parsely\Scripts::run
+	 *
+	 * @group scripts
+	 */
+	public function test_run_not_adds_actions_disable_javascript(): void {
+		TestCase::set_options( array( 'disable_javascript' => true ) );
+
+		self::$scripts->run();
+
+		self::assertFalse( has_action( 'init', array( self::$scripts, 'register_scripts' ) ) );
+		self::assertFalse( has_action( 'wp_enqueue_scripts', array( self::$scripts, 'enqueue_js_tracker' ) ) );
+	}
+
+	/**
 	 * Test script registration functionality.
 	 *
 	 * @covers \Parsely\Scripts::register_scripts
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::api_key_is_set
 	 * @uses \Parsely\Parsely::get_options
@@ -56,7 +106,7 @@ final class ScriptsTest extends TestCase {
 
 		// Confirm that API and tracker scripts are not registered.
 		$this->assert_script_statuses(
-			'wp-parsely-api',
+			'wp-parsely-loader',
 			array(),
 			array( 'registered' )
 		);
@@ -72,7 +122,7 @@ final class ScriptsTest extends TestCase {
 		// Confirm that API and tracker scripts are now registered
 		// (but not yet enqueued).
 		$this->assert_script_statuses(
-			'wp-parsely-api',
+			'wp-parsely-loader',
 			array( 'registered' ),
 			array( 'enqueued' )
 		);
@@ -87,7 +137,6 @@ final class ScriptsTest extends TestCase {
 	 * Test the tracker script enqueue.
 	 *
 	 * @covers \Parsely\Scripts::enqueue_js_tracker
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::api_key_is_set
 	 * @uses \Parsely\Parsely::get_options
@@ -98,6 +147,8 @@ final class ScriptsTest extends TestCase {
 	 * @group scripts
 	 */
 	public function test_enqueue_js_tracker(): void {
+		global $wp_scripts;
+
 		$this->go_to_new_post();
 		self::$scripts->register_scripts();
 		self::$scripts->enqueue_js_tracker();
@@ -107,36 +158,15 @@ final class ScriptsTest extends TestCase {
 			'wp-parsely-tracker',
 			array( 'registered', 'enqueued' )
 		);
-	}
 
-	/**
-	 * Test the tracker script enqueue with the disable_javascript option set
-	 * to true.
-	 *
-	 * @covers \Parsely\Scripts::enqueue_js_tracker
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
-	 * @uses \Parsely\Parsely::api_key_is_missing
-	 * @uses \Parsely\Parsely::api_key_is_set
-	 * @uses \Parsely\Parsely::get_options
-	 * @uses \Parsely\Parsely::post_has_trackable_status
-	 * @uses \Parsely\Parsely::update_metadata_endpoint
-	 * @uses \Parsely\Scripts::register_scripts
-	 * @uses \Parsely\Scripts::script_loader_tag
-	 * @group scripts
-	 */
-	public function test_enqueue_js_tracker_with_javascript_option_disabled(): void {
-		TestCase::set_options( array( 'disable_javascript' => true ) );
-
-		$this->go_to_new_post();
-		self::$scripts->register_scripts();
-		self::$scripts->enqueue_js_tracker();
-
-		// Confirm that tracker script is registered but not enqueued.
+		// Confirm that loader script is registered and enqueued.
 		$this->assert_script_statuses(
-			'wp-parsely-tracker',
-			array( 'registered' ),
-			array( 'enqueued' )
+			'wp-parsely-loader',
+			array( 'registered', 'enqueued' )
 		);
+
+		// Since no secret is provided, the extra fields (inline scripts) on the loader should not be populated.
+		self::assertEquals( 1, count( $wp_scripts->registered['wp-parsely-loader']->extra ) );
 	}
 
 	/**
@@ -151,6 +181,8 @@ final class ScriptsTest extends TestCase {
 	 * @uses \Parsely\Parsely::update_metadata_endpoint
 	 */
 	public function test_wp_parsely_load_js_tracker_filter(): void {
+		global $wp_scripts;
+
 		add_filter( 'wp_parsely_load_js_tracker', '__return_false' );
 
 		$this->go_to_new_post();
@@ -164,40 +196,25 @@ final class ScriptsTest extends TestCase {
 			array( 'registered' ),
 			array( 'enqueued' )
 		);
-	}
-
-	/**
-	 * Test the API init script enqueue.
-	 *
-	 * @covers \Parsely\Scripts::enqueue_js_api
-	 * @uses \Parsely\Parsely::api_key_is_missing
-	 * @uses \Parsely\Parsely::api_key_is_set
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
-	 * @uses \Parsely\Parsely::get_options
-	 * @uses \Parsely\Parsely::update_metadata_endpoint
-	 * @uses \Parsely\Scripts::register_scripts
-	 * @group scripts
-	 */
-	public function test_enqueue_js_api_no_secret(): void {
-		self::$scripts->register_scripts();
-		self::$scripts->enqueue_js_api();
 
 		// Since no secret is provided, enqueue should fail.
 		// Confirm that API script is registered but not enqueued.
 		$this->assert_script_statuses(
-			'wp-parsely-api',
+			'wp-parsely-loader',
 			array( 'registered' ),
 			array( 'enqueued' )
 		);
+
+		// Since no secret is provided, the extra fields (inline scripts) on the loader should not be populated.
+		self::assertEquals( 1, count( $wp_scripts->registered['wp-parsely-loader']->extra ) );
 	}
 
 	/**
 	 * Test the API init script enqueue.
 	 *
-	 * @covers \Parsely\Scripts::enqueue_js_api
+	 * @covers \Parsely\Scripts::enqueue_js_tracker
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::api_key_is_set
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
 	 * @uses \Parsely\Parsely::get_options
 	 * @uses \Parsely\Parsely::update_metadata_endpoint
 	 * @uses \Parsely\Scripts::register_scripts
@@ -205,15 +222,21 @@ final class ScriptsTest extends TestCase {
 	 * @group scripts
 	 */
 	public function test_enqueue_js_api_with_secret(): void {
+		global $wp_scripts;
+
+		$this->go_to_new_post();
 		self::$scripts->register_scripts();
 		self::set_options( array( 'api_secret' => 'hunter2' ) );
-		self::$scripts->enqueue_js_api();
+		self::$scripts->enqueue_js_tracker();
 
 		// Confirm that API script is registered and enqueued.
 		$this->assert_script_statuses(
-			'wp-parsely-api',
+			'wp-parsely-tracker',
 			array( 'registered', 'enqueued' )
 		);
+
+		// The variable should be inlined before the script.
+		self::assertEquals( "window.wpParselyApiKey = 'blog.parsely.com';", $wp_scripts->registered['wp-parsely-loader']->extra['before'][1] );
 	}
 
 	/**
@@ -239,7 +262,6 @@ final class ScriptsTest extends TestCase {
 
 		self::$scripts->register_scripts();
 		self::$scripts->enqueue_js_tracker();
-		self::$scripts->enqueue_js_api();
 
 		// As track_authenticated_users options is false, enqueue should fail.
 		// Confirm that tracker script is registered but not enqueued.
@@ -249,11 +271,11 @@ final class ScriptsTest extends TestCase {
 			array( 'enqueued' )
 		);
 
-		// API should be unaffected by track_authenticated_users setting.
-		// Confirm that API script is registered and enqueued.
+		// Confirm that API script is registered but not enqueued.
 		$this->assert_script_statuses(
-			'wp-parsely-api',
-			array( 'registered', 'enqueued' )
+			'wp-parsely-loader',
+			array( 'registered' ),
+			array( 'enqueued' )
 		);
 	}
 
@@ -265,7 +287,6 @@ final class ScriptsTest extends TestCase {
 	 * @covers \Parsely\Scripts::enqueue_js_tracker
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::api_key_is_set
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
 	 * @uses \Parsely\Parsely::get_options
 	 * @uses \Parsely\Parsely::parsely_is_user_logged_in
 	 * @uses \Parsely\Parsely::post_has_trackable_status
@@ -344,7 +365,6 @@ final class ScriptsTest extends TestCase {
 	 * when the wp_parsely_enable_cfasync_attribute filter is used.
 	 *
 	 * @covers \Parsely\Scripts::enqueue_js_tracker
-	 * @uses \Parsely\Parsely::get_asset_cache_buster
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::api_key_is_set
 	 * @uses \Parsely\Parsely::get_options
@@ -366,12 +386,12 @@ final class ScriptsTest extends TestCase {
 		wp_print_scripts();
 		$output = ob_get_clean();
 
-		self::assertSame(
-			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
-			"<script data-cfasync=\"false\" type='text/javascript' data-parsely-site=\"blog.parsely.com\" src='https://cdn.parsely.com/keys/blog.parsely.com/p.js?ver=" . Parsely::VERSION . "' id=\"parsely-cfg\"></script>\n",
-			$output,
-			'Tracker script tag was not printed correctly'
-		);
+		$loader_asset = require plugin_dir_path( PARSELY_FILE ) . 'build/loader.asset.php';
+
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+		self::assertStringContainsString( "<script data-cfasync=\"false\" type='text/javascript' src='http://example.org/wp-content/plugins/wp-parsely/tests/Integration/../../build/loader.js?ver=" . $loader_asset['version'] . "' id='wp-parsely-loader-js'></script>", $output );
+		// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript
+		self::assertStringContainsString( "<script data-cfasync=\"false\" type='text/javascript' data-parsely-site=\"blog.parsely.com\" src='https://cdn.parsely.com/keys/blog.parsely.com/p.js?ver=123456.78.9' id=\"parsely-cfg\"></script>", $output );
 	}
 
 	/**

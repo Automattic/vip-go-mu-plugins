@@ -75,13 +75,13 @@
 			"@php ./vendor/php-parallel-lint/php-parallel-lint/parallel-lint . -e php --exclude vendor --exclude .git --checkstyle"
 		],
 		"prepare-ci": [
-			"bash bin/install-wp-tests.sh wordpress_test root root localhost trunk"
+			"bash bin/install-wp-tests.sh wordpress_test root root localhost"
 		],
 		"test": [
 			"@php ./vendor/bin/phpunit --no-coverage --order-by=random"
 		],
 	   	"static-analysis": [
-		  "@php ./vendor/bin/phpstan analyze --memory-limit 536870912"
+			"@php ./vendor/bin/phpstan analyze --memory-limit 536870912"
 		],
 		"test-ms": [
 			"@putenv WP_MULTISITE=1",
@@ -89,6 +89,9 @@
 		],
 		"testwp": [
 			"@php ./vendor/bin/phpunit --no-coverage --order-by=random -c phpunit-integration.xml.dist"
+		],
+		"testwp-experimental": [
+		  "@php ./vendor/bin/phpunit --no-coverage --order-by=random -c phpunit-experimental.xml.dist"
 		],
 		"testwp-ms": [
 			"@putenv WP_MULTISITE=1",

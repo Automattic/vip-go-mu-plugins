@@ -42,7 +42,7 @@ final class Admin_Warning {
 	 * @return void
 	 */
 	public function run(): void {
-		add_action( 'admin_footer', array( $this, 'display_admin_warning' ) );
+		add_action( 'admin_notices', array( $this, 'display_admin_warning' ) );
 	}
 
 	/**
@@ -61,7 +61,7 @@ final class Admin_Warning {
 			esc_url( Parsely::get_settings_url() )
 		);
 		?>
-		<div id="message" class="error"><p><?php echo wp_kses_post( $message ); ?></p></div>
+		<div id="wp-parsely-apikey-error-notice" class="notice notice-error"><p><?php echo wp_kses_post( $message ); ?></p></div>
 		<?php
 	}
 
@@ -77,7 +77,6 @@ final class Admin_Warning {
 			return false;
 		}
 
-		$options = $this->parsely->get_options();
-		return empty( $options['apikey'] );
+		return $this->parsely->api_key_is_missing();
 	}
 }

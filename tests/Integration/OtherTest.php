@@ -60,9 +60,9 @@ final class OtherTest extends TestCase {
 	 * During tests, this should only return the version constant.
 	 *
 	 * @covers \Parsely\Parsely::get_asset_cache_buster
-	 * @uses \Parsely\Parsely::get_options
 	 */
 	public function test_cache_buster(): void {
+		$this->setExpectedDeprecated( 'Parsely::get_asset_cache_buster' );
 		self::assertSame( Parsely::VERSION, Parsely::get_asset_cache_buster() );
 	}
 

@@ -1,18 +1,14 @@
 /**
  * External dependencies
  */
-import {
-	activateTheme,
-	activatePlugin,
-	loginUser,
-	visitAdminPage,
-} from '@wordpress/e2e-test-utils';
+import { activateTheme, visitAdminPage } from '@wordpress/e2e-test-utils';
 
 /**
  * Internal dependencies
  */
 import {
 	changeKeysState,
+	startUpTest,
 	waitForWpAdmin,
 } from '../utils';
 
@@ -49,19 +45,16 @@ const getNonActiveWidgetText = async () => {
 };
 
 describe( 'Recommended widget', () => {
-	beforeAll( () => {
+	beforeAll( async () => {
 		page.on( 'dialog', async function( dialog ) {
 			await dialog.accept();
 		} );
-	} );
 
-	beforeEach( async () => {
-		await loginUser();
+		await startUpTest();
 		await activateTheme( 'twentytwentyone' );
-		await activatePlugin( 'wp-parsely' );
 	} );
 
-	afterEach( async () => {
+	afterAll( async () => {
 		await activateTheme( 'twentytwentytwo' );
 	} );
 

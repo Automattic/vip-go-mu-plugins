@@ -6,7 +6,7 @@ import domReady from '@wordpress/dom-ready';
 /**
  * Internal dependencies
  */
-import { getUuidFromVisitorCookie } from '../../lib/personalization';
+import { getUuidFromVisitorCookie } from '../lib/personalization';
 
 function constructUrl( apiUrl, permalink, personalized ) {
 	if ( personalized ) {

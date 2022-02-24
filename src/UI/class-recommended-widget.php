@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Parsely\UI;
 
-use Parsely\Parsely;
 use WP_Widget;
 
 use const Parsely\PARSELY_FILE;
@@ -97,8 +96,6 @@ final class Recommended_Widget extends WP_Widget {
 			add_filter( 'widget_title', 'esc_html' );
 		}
 
-		wp_enqueue_style( 'wp-parsely-style' );
-
 		$title_html = $args['before_widget'] . $args['before_title'] . $title . $args['after_title'];
 		echo wp_kses_post( $title_html );
 
@@ -132,11 +129,19 @@ final class Recommended_Widget extends WP_Widget {
 			'wp-parsely-recommended-widget',
 			plugin_dir_url( PARSELY_FILE ) . 'build/recommended-widget.js',
 			$recommended_widget_script_asset['dependencies'],
-			Parsely::get_asset_cache_buster(),
+			$recommended_widget_script_asset['version'],
 			true
 		);
 
+		wp_register_style(
+			'wp-parsely-recommended-widget',
+			plugin_dir_url( PARSELY_FILE ) . 'build/recommended-widget.css',
+			array(),
+			$recommended_widget_script_asset['version']
+		);
+
 		wp_enqueue_script( 'wp-parsely-recommended-widget' );
+		wp_enqueue_style( 'wp-parsely-recommended-widget' );
 
 		echo wp_kses_post( $args['after_widget'] );
 	}

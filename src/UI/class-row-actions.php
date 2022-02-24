@@ -77,7 +77,10 @@ final class Row_Actions {
 			return $actions;
 		}
 
-		$actions['find_in_parsely'] = $this->generate_link_to_parsely( $post );
+		$url = Dashboard_Link::generate_url( $post, $this->parsely->get_api_key(), 'wp-admin-posts-list', 'wp-admin' );
+		if ( '' !== $url ) {
+			$actions['find_in_parsely'] = $this->generate_link_to_parsely( $post, $url );
+		}
 
 		return $actions;
 	}
@@ -86,14 +89,16 @@ final class Row_Actions {
 	 * Generate the HTML link to Parse.ly.
 	 *
 	 * @since 2.6.0
+	 * @since 3.1.2 Added `url` parameter.
 	 *
 	 * @param WP_Post $post Which post object or ID to add link to.
+	 * @param string  $url Generated URL for the post.
 	 * @return string The HTML for the link to Parse.ly.
 	 */
-	private function generate_link_to_parsely( WP_Post $post ): string {
+	private function generate_link_to_parsely( WP_Post $post, string $url ): string {
 		return sprintf(
 			'<a href="%1$s" aria-label="%2$s">%3$s</a>',
-			esc_url( Dashboard_Link::generate_url( $post, $this->parsely->get_api_key(), 'wp-admin-posts-list', 'wp-admin' ) ),
+			esc_url( $url ),
 			esc_attr( $this->generate_aria_label_for_post( $post ) ),
 			esc_html__( 'Parse.ly&nbsp;Stats', 'wp-parsely' )
 		);
