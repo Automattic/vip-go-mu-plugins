@@ -28,13 +28,13 @@ return array(
       'path' => 'jetpack_vendor/automattic/jetpack-identity-crisis',
       'ver' => '0.7.4',
     ),
-    'jetpack-sync' => array(
-      'path' => 'jetpack_vendor/automattic/jetpack-sync',
-      'ver' => '1.30.0',
-    ),
     'jetpack-backup-pkg' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-backup',
       'ver' => '1.2.4',
+    ),
+    'jetpack-sync' => array(
+      'path' => 'jetpack_vendor/automattic/jetpack-sync',
+      'ver' => '1.30.0',
     ),
     'jetpack-config' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-config',
@@ -62,7 +62,7 @@ return array(
     ),
     'jetpack-my-jetpack' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-my-jetpack',
-      'ver' => '0.6.2',
+      'ver' => '0.6.3',
     ),
     'jetpack-search-pkg' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-search',
