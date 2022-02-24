@@ -1,8 +1,8 @@
 # Parse.ly
 
-Stable tag: 3.1.1  
+Stable tag: 3.1.2  
 Requires at least: 5.0  
-Tested up to: 5.9  
+Tested up to: 5.9.1  
 Requires PHP: 7.1  
 License: GPLv2 or later  
 Tags: analytics, parse.ly, parsely, parsley  
@@ -84,7 +84,7 @@ The `parsely` field contains the following fields:
  - `meta`, which is an array of metadata for the specific post, page or other object type.
  - `rendered`, which is the rendered HTML of the metadata for the post, page or other object type. This will be a JSON-LD `<script>` tag, or a set of `<meta>` tags, depending on the format selected in the plugin settings. The decoupled code can consume and use this directly, instead of building the values from the `meta` field values.
 
-The `rendered` field is a convenience field containing the HTML-formatted meta data which can be printed to a decoupled page as is.
+The `rendered` field is a convenience field containing the HTML-formatted metadata which can be printed to a decoupled page as is.
 
 This can be disabled by returning `false` from the `wp_parsely_enable_rest_rendered_support` filter.
 

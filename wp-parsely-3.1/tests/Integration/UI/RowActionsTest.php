@@ -78,8 +78,8 @@ final class RowActionsTest extends TestCase {
 	 * @covers \Parsely\UI\Row_Actions::row_actions_add_parsely_link
 	 * @covers \Parsely\UI\Row_Actions::generate_aria_label_for_post
 	 * @covers \Parsely\UI\Row_Actions::generate_link_to_parsely
-	 * @covers \Parsely\UI\Row_Actions::generate_url
-	 * @uses \Parsely\UI\Row_Actions::cannot_show_parsely_link
+	 * @covers \Parsely\Dashboard_Link::generate_url
+	 * @uses \Parsely\Dashboard_Link::can_show_link
 	 * @uses \Parsely\Parsely::api_key_is_set
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::get_api_key
@@ -114,8 +114,8 @@ final class RowActionsTest extends TestCase {
 	 * @covers \Parsely\UI\Row_Actions::row_actions_add_parsely_link
 	 * @covers \Parsely\UI\Row_Actions::generate_aria_label_for_post
 	 * @covers \Parsely\UI\Row_Actions::generate_link_to_parsely
-	 * @covers \Parsely\UI\Row_Actions::generate_url
-	 * @uses \Parsely\UI\Row_Actions::cannot_show_parsely_link
+	 * @covers \Parsely\Dashboard_Link::generate_url
+	 * @uses \Parsely\Dashboard_Link::can_show_link
 	 * @uses \Parsely\Parsely::api_key_is_set
 	 * @uses \Parsely\Parsely::api_key_is_missing
 	 * @uses \Parsely\Parsely::get_api_key

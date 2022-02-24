@@ -115,6 +115,7 @@ final class RestTest extends TestCase {
 	 * @covers \Parsely\Rest::get_callback
 	 */
 	public function test_get_callback(): void {
+		self::set_options( array( 'apikey' => 'testkey' ) );
 		$post_id = self::factory()->post->create();
 
 		$meta_object = self::$rest->get_callback( get_post( $post_id, 'ARRAY_A' ) );
@@ -128,19 +129,53 @@ final class RestTest extends TestCase {
 	}
 
 	/**
+	 * Test that the get_rest_callback method does not generate metadata when there is no API key.
+	 *
+	 * @covers \Parsely\Rest::get_callback
+	 */
+	public function test_get_callback_no_api_key(): void {
+		$post_id = self::factory()->post->create();
+
+		$meta_object = self::$rest->get_callback( get_post( $post_id, 'ARRAY_A' ) );
+		$expected    = array(
+			'version'  => '1.0.0',
+			'meta'     => '',
+			'rendered' => '',
+		);
+
+		self::assertEquals( $expected, $meta_object );
+	}
+
+	/**
 	 * Test that the get_rest_callback method is able to generate the `parsely` object for the REST API.
 	 *
 	 * @covers \Parsely\Rest::get_callback
 	 */
 	public function test_get_callback_with_filter(): void {
 		add_filter( 'wp_parsely_enable_rest_rendered_support', '__return_false' );
-
+		self::set_options( array( 'apikey' => 'testkey' ) );
 		$post_id = self::factory()->post->create();
 
 		$meta_object = self::$rest->get_callback( get_post( $post_id, 'ARRAY_A' ) );
 		$expected    = array(
 			'version' => '1.0.0',
 			'meta'    => self::$parsely->construct_parsely_metadata( self::$parsely->get_options(), get_post( $post_id ) ),
+		);
+
+		self::assertEquals( $expected, $meta_object );
+	}
+
+	/**
+	 * Test that the get_rest_callback method doesn't crash when the post does not exist.
+	 *
+	 * @covers \Parsely\Rest::get_callback
+	 */
+	public function test_get_callback_with_non_existent_post(): void {
+		$meta_object = self::$rest->get_callback( array() );
+		$expected    = array(
+			'version'  => '1.0.0',
+			'meta'     => '',
+			'rendered' => '',
 		);
 
 		self::assertEquals( $expected, $meta_object );
