@@ -43,6 +43,6 @@ final class PluginsActionsTest extends TestCase {
 		$actions = array();
 		$actions = ( new Plugins_Actions() )->add_plugin_meta_links( $actions );
 
-		self::assertCount( 1, $actions );
+		self::assertCount( 2, $actions );
 	}
 }

@@ -1,23 +1,18 @@
 /**
  * External dependencies
  */
-import {
-	activatePlugin,
-	loginUser,
-	visitAdminPage,
-} from '@wordpress/e2e-test-utils';
+import { visitAdminPage } from '@wordpress/e2e-test-utils';
 
 /**
  * Internal dependencies
  */
-import { waitForWpAdmin } from '../utils';
+import { startUpTest, waitForWpAdmin } from '../utils';
 
 describe( 'Plugin action link', () => {
-	it( 'Should link to plugin settings page', async () => {
-		await loginUser();
-		await activatePlugin( 'wp-parsely' );
-		await visitAdminPage( '/plugins.php', '' );
+	beforeAll( startUpTest );
 
+	it( 'Should link to plugin settings page', async () => {
+		await visitAdminPage( '/plugins.php', '' );
 		await waitForWpAdmin();
 
 		await expect( page ).toClick( '[data-slug=wp-parsely] .settings>a', { text: 'Settings' } );

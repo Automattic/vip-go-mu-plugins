@@ -26,12 +26,18 @@ declare(strict_types=1);
 
 namespace Parsely;
 
+use Parsely\Endpoints\Related_API_Proxy;
 use Parsely\Integrations\Amp;
 use Parsely\Integrations\Facebook_Instant_Articles;
+use Parsely\Integrations\Google_Web_Stories;
 use Parsely\Integrations\Integrations;
+use Parsely\RemoteAPI\Cached_Proxy;
+use Parsely\RemoteAPI\Related_Proxy;
+use Parsely\RemoteAPI\WordPress_Cache;
 use Parsely\UI\Admin_Bar;
 use Parsely\UI\Admin_Warning;
 use Parsely\UI\Plugins_Actions;
+use Parsely\UI\Network_Admin_Sites_List;
 use Parsely\UI\Recommended_Widget;
 use Parsely\UI\Row_Actions;
 use Parsely\UI\Settings_Page;
@@ -83,24 +89,52 @@ function parsely_admin_init_register(): void {
 	$admin_warning = new Admin_Warning( $GLOBALS['parsely'] );
 	$admin_warning->run();
 
-	$GLOBALS['parsely_ui_plugins_actions'] = new Plugins_Actions();
-	$GLOBALS['parsely_ui_plugins_actions']->run();
+	$plugins_actions = new Plugins_Actions();
+	$plugins_actions->run();
 
 	$row_actions = new Row_Actions( $GLOBALS['parsely'] );
 	$row_actions->run();
 }
 
 require __DIR__ . '/src/UI/class-settings-page.php';
+require __DIR__ . '/src/UI/class-network-admin-sites-list.php';
 
-add_action( '_admin_menu', __NAMESPACE__ . '\\parsely_admin_menu_register' );
+add_action( 'init', __NAMESPACE__ . '\\parsely_wp_admin_early_register' );
 /**
- * Register the Parse.ly wp-admin settings page.
+ * Register the additions the Parse.ly wp-admin settings page and Multisite Network Admin Sites List table.
  *
  * @return void
  */
-function parsely_admin_menu_register(): void {
+function parsely_wp_admin_early_register(): void {
 	$settings_page = new Settings_Page( $GLOBALS['parsely'] );
 	$settings_page->run();
+
+	$network_admin_sites_list = new Network_Admin_Sites_List( $GLOBALS['parsely'] );
+	$network_admin_sites_list->run();
+}
+
+require __DIR__ . '/src/RemoteAPI/interface-cache.php';
+require __DIR__ . '/src/RemoteAPI/interface-proxy.php';
+require __DIR__ . '/src/RemoteAPI/class-base-proxy.php';
+require __DIR__ . '/src/RemoteAPI/class-cached-proxy.php';
+require __DIR__ . '/src/RemoteAPI/class-related-proxy.php';
+require __DIR__ . '/src/RemoteAPI/class-wordpress-cache.php';
+require __DIR__ . '/src/Endpoints/class-related-api-proxy.php';
+
+add_action( 'rest_api_init', __NAMESPACE__ . '\\rest_api_init_proxies' );
+/**
+ * Register REST Endpoints that act as a proxy to the Parse.ly API.
+ * This is needed to get around a CORS issues with Firefox.
+ *
+ * @since 3.2.0
+ *
+ * @return void
+ */
+function rest_api_init_proxies(): void {
+	$proxy        = new Related_Proxy( $GLOBALS['parsely'] );
+	$cached_proxy = new Cached_Proxy( $proxy, new WordPress_Cache( $GLOBALS['wp_object_cache'] ) );
+	$endpoint     = new Related_API_Proxy( $GLOBALS['parsely'], $cached_proxy );
+	$endpoint->run();
 }
 
 require __DIR__ . '/src/UI/class-recommended-widget.php';
@@ -119,6 +153,7 @@ require __DIR__ . '/src/Integrations/class-integration.php';
 require __DIR__ . '/src/Integrations/class-integrations.php';
 require __DIR__ . '/src/Integrations/class-amp.php';
 require __DIR__ . '/src/Integrations/class-facebook-instant-articles.php';
+require __DIR__ . '/src/Integrations/class-google-web-stories.php';
 
 add_action( 'init', __NAMESPACE__ . '\\parsely_integrations' );
 /**
@@ -132,6 +167,7 @@ function parsely_integrations(): Integrations {
 	$parsely_integrations = new Integrations();
 	$parsely_integrations->register( 'amp', Amp::class );
 	$parsely_integrations->register( 'fbia', Facebook_Instant_Articles::class );
+	$parsely_integrations->register( 'webstories', Google_Web_Stories::class );
 	$parsely_integrations = apply_filters( 'wp_parsely_add_integration', $parsely_integrations );
 	$parsely_integrations->integrate();
 

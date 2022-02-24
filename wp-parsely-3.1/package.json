@@ -26,6 +26,13 @@
 	"directories": {
 		"test": "tests"
 	},
+	"files": [
+		"build/",
+		"src/",
+		"views/",
+		"uninstall.php",
+		"wp-parsely.php"
+	],
 	"browserslist": [
 		"defaults"
 	],
@@ -34,11 +41,12 @@
 		"js-cookie": "^3.0.1"
 	},
 	"devDependencies": {
-		"@wordpress/babel-preset-default": "^6.5.0",
-		"@wordpress/e2e-test-utils": "^6.0.0",
-		"@wordpress/env": "^4.2.0",
-		"@wordpress/eslint-plugin": "^10.0.0",
-		"@wordpress/scripts": "^20.0.2",
+		"@wordpress/babel-preset-default": "^6.5.1",
+		"@wordpress/e2e-test-utils": "^6.0.1",
+		"@wordpress/env": "^4.2.1",
+		"@wordpress/eslint-plugin": "^10.0.1",
+		"@wordpress/hooks": "^3.3.1",
+		"@wordpress/scripts": "^21.0.2",
 		"concurrently": "^7.0.0",
 		"husky": "^7.0.4",
 		"prettier": "^2.5.1"
@@ -53,6 +61,7 @@
 		"lint:css": "wp-scripts lint-style",
 		"lint:js": "wp-scripts lint-js",
 		"lint:pkg-json": "wp-scripts lint-pkg-json",
+		"plugin-zip": "wp-scripts plugin-zip",
 		"prepare": "husky install",
 		"start": "wp-scripts start",
 		"test": "npm run test:unit",
@@ -64,6 +73,7 @@
 		"test:unit": "wp-scripts test-unit-js",
 		"test:unit:debug": "wp-scripts --inspect-brk test-unit-js --runInBand --no-cache",
 		"test:unit:help": "wp-scripts test-unit-js --help",
-		"test:unit:watch": "wp-scripts test-unit-js --watch"
+		"test:unit:watch": "wp-scripts test-unit-js --watch",
+		"wp-env": "wp-env"
 	}
 }

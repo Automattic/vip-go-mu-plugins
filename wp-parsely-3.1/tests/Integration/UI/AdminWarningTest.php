@@ -43,8 +43,28 @@ final class AdminWarningTest extends TestCase {
 	 * @uses \Parsely\Parsely::get_options
 	 */
 	public function test_display_admin_warning_without_key(): void {
+		if ( version_compare( get_bloginfo( 'version' ), '5.9', '<' ) ) {
+			self::markTestSkipped( "This test can't run below 5.9" );
+		}
+
 		$should_display_admin_warning = self::getMethod( 'should_display_admin_warning', Admin_Warning::class );
 		$this->set_options( array( 'apikey' => '' ) );
+
+		$response = $should_display_admin_warning->invoke( self::$admin_warning );
+		self::assertTrue( $response );
+	}
+
+	/**
+	 * Test that test_display_admin_warning action returns a warning when there is no key
+	 *
+	 * @covers \Parsely\UI\Admin_Warning::should_display_admin_warning
+	 * @uses \Parsely\UI\Admin_Warning::__construct
+	 * @uses \Parsely\Parsely::get_options
+	 */
+	public function test_display_admin_warning_without_key_old_wp(): void {
+		$should_display_admin_warning = self::getMethod( 'should_display_admin_warning', Admin_Warning::class );
+		$this->set_options( array( 'apikey' => '' ) );
+		set_current_screen( 'settings_page_parsely' );
 
 		$response = $should_display_admin_warning->invoke( self::$admin_warning );
 		self::assertTrue( $response );

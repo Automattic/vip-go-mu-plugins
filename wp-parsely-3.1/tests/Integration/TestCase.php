@@ -165,6 +165,22 @@ abstract class TestCase extends WPIntegrationTestCase {
 	}
 
 	/**
+	 * Override the value of a private property on a given object. This is useful when mocking the internals of class.
+	 * Note that the property will no longer be private after setAccessible is called.
+	 *
+	 * @param string $class_name The fully qualified class name (including namespace).
+	 * @param object $object The object instance on which to set the value.
+	 * @param string $property_name The name of the private property to override.
+	 * @param mixed  $value The value to set.
+	 */
+	public static function setPrivateProperty( string $class_name, $object, string $property_name, $value ): void {
+		$class = new \ReflectionClass( $class_name );
+		$prop  = $class->getProperty( $property_name );
+		$prop->setAccessible( true );
+		$prop->setValue( $object, $value );
+	}
+
+	/**
 	 * Create a new post and go to it.
 	 *
 	 * @return int The new post's ID.

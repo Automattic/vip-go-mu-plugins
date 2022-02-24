@@ -17,7 +17,7 @@ foreach ( $parsely_metas as $parsely_meta_key => $parsely_meta_val ) {
 		'<meta name="%s" content="%s" />%s',
 		esc_attr( 'parsely-' . $parsely_meta_key ),
 		esc_attr( $parsely_meta_val ),
-		PHP_EOL
+		"\n"
 	);
 }
 
@@ -26,7 +26,7 @@ if ( isset( $parsely_page_authors ) ) {
 		printf(
 			'<meta name="parsely-author" content="%s" />%s',
 			esc_attr( $parsely_author_name ),
-			PHP_EOL
+			"\n"
 		);
 	}
 }

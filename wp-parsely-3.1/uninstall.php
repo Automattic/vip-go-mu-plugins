@@ -21,3 +21,6 @@ delete_option( $parsely_option_name );
 
 // For site options in Multisite.
 delete_site_option( $parsely_option_name );
+
+// Delete page options.
+delete_metadata( 'user', -1, 'wp_parsely_page', '', true );

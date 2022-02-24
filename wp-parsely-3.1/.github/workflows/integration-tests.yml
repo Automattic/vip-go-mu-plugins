@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
-      WP_VERSION: latest
+      WP_VERSION: ${{ matrix.wp }}
 
     strategy:
       # PHP 7.1 uses PHPUnit 7.5.20
@@ -29,26 +29,29 @@ jobs:
       # PHP 7.4 uses PHPUnit 9.5.10
       # PHP 8.0 uses PHPUnit 9.5.10
       # PHP 8.1 uses PHPUnit 9.5.10
+      # PHP 8.2 uses PHPUnit 9.5.10
       # Keys:
       # - coverage: Whether to run the tests with code coverage.
       # - experimental: Whether the build is "allowed to fail".
       matrix:
-        php: ['7.1', '7.2', '7.3', '7.4']
+        php: [ '7.2', '7.3', '7.4', '8.1']
+        wp: ['latest']
         coverage: [none]
         experimental: [false]
         include:
-          # Separate out PHP 8.0, so it can run with code coverage.
+          - php: '7.1'
+            wp: '5.8.3'
+            coverage: none
+            experimental: false
           - php: '8.0'
             coverage: pcov
             extensions: pcov
             ini-values: pcov.directory=., "pcov.exclude=\"~(vendor|tests)~\""
             experimental: false
-          - php: '8.1'
+          - php: '8.2'
+            wp: 'trunk'
             coverage: none
-            experimental: false
-          # - php: '8.2'
-          #  coverage: none
-          #  experimental: true
+            experimental: true
       fail-fast: false
     continue-on-error: ${{ matrix.experimental }}
     steps:
@@ -70,13 +73,14 @@ jobs:
         run: echo "::add-matcher::${{ runner.tool_cache }}/phpunit.json"
 
       - name: Install Composer dependencies
+        if: ${{ matrix.php < 8.2 }}
         uses: ramsey/composer-install@v2
 
-      # - name: Install Composer dependencies for PHP >= 8.2
-      #  if: ${{ matrix.php >= 8.2 }}
-      #  uses: ramsey/composer-install@v2
-      #  with:
-      #    composer-options: --ignore-platform-reqs
+      - name: Install Composer dependencies for PHP >= 8.2
+        if: ${{ matrix.php >= 8.2 }}
+        uses: ramsey/composer-install@v2
+        with:
+          composer-options: --ignore-platform-reqs
 
       - name: Start MySQL Service
         run: sudo systemctl start mysql.service
@@ -89,8 +93,16 @@ jobs:
         run: composer prepare-ci --no-interaction
 
       - name: Run integration tests (single site)
-        if: ${{ matrix.php != 8.0 }}
+        if: ${{ matrix.php != 8.0 && ! matrix.experimental }}
         run: composer testwp --no-interaction
+
+      - name: Run integration tests experimental
+        if: ${{ matrix.experimental }}
+        run: composer testwp-experimental --no-interaction
+
+      - name: Run integration tests (multi site)
+        if: ${{ ! matrix.experimental }}
+        run: composer testwp-ms --no-interaction
 
       - name: Run integration tests (multisite site with code coverage)
         if: ${{ matrix.php == 8.0 }}

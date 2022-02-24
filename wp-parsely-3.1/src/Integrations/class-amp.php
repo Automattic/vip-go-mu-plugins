@@ -84,20 +84,15 @@ class Amp implements Integration {
 			$analytics = array();
 		}
 
-		$options = get_option( Parsely::OPTIONS_KEY );
-
-		if ( empty( $options['apikey'] ) ) {
+		$config = self::construct_amp_config();
+		if ( array() === $config ) {
 			return $analytics;
 		}
 
 		$analytics['parsely'] = array(
 			'type'        => 'parsely',
 			'attributes'  => array(),
-			'config_data' => array(
-				'vars' => array(
-					'apikey' => $options['apikey'],
-				),
-			),
+			'config_data' => $config,
 		);
 
 		return $analytics;
@@ -118,26 +113,62 @@ class Amp implements Integration {
 
 		$options = get_option( Parsely::OPTIONS_KEY );
 
-		if ( ! empty( $options['disable_amp'] ) && true === $options['disable_amp'] ) {
+		if ( isset( $options['disable_amp'] ) && true === $options['disable_amp'] ) {
 			return $analytics;
 		}
 
-		if ( empty( $options['apikey'] ) ) {
+		$config = self::construct_amp_json();
+		if ( '' === $config ) {
 			return $analytics;
 		}
 
 		$analytics['parsely'] = array(
 			'type'       => 'parsely',
 			'attributes' => array(),
-			'config'     => wp_json_encode(
-				array(
-					'vars' => array(
-						'apikey' => $options['apikey'],
-					),
-				)
-			),
+			'config'     => $config,
 		);
 
 		return $analytics;
+	}
+
+	/**
+	 * Returns a string containing the JSON-encoded configuration required for AMP. It consists of the site's API
+	 * key if that's defined, an empty string otherwise.
+	 *
+	 * @since 3.2.0
+	 *
+	 * @return string
+	 */
+	public static function construct_amp_json(): string {
+		$config = self::construct_amp_config();
+		if ( array() === $config ) {
+			return '';
+		}
+
+		$encoded = wp_json_encode( $config );
+		return is_string( $encoded ) ? $encoded : '';
+	}
+
+	/**
+	 * Returns an array containing the configuration required for AMP. It consists of the site's API key if that's
+	 * defined, or an empty array otherwise.
+	 *
+	 * @since 3.2.0
+	 *
+	 * @return array<string, array<string, string>>
+	 */
+	public static function construct_amp_config(): array {
+		$options = get_option( Parsely::OPTIONS_KEY );
+
+		if ( isset( $options['apikey'] ) && is_string( $options['apikey'] ) && '' !== $options['apikey'] ) {
+			return array(
+				'vars' => array(
+					// This field will be rendered in a JS context.
+					'apikey' => esc_js( $options['apikey'] ),
+				),
+			);
+		}
+
+		return array();
 	}
 }
