@@ -31,7 +31,7 @@ class Parsely {
 	/**
 	 * Declare some class properties
 	 *
-	 * @var array $option_defaults The defaults we need for the class.
+	 * @var array<string, mixed> $option_defaults The defaults we need for the class.
 	 */
 	private $option_defaults = array(
 		'apikey'                      => '',
@@ -247,7 +247,7 @@ class Parsely {
 	 * @deprecated 3.0.0
 	 * @see construct_parsely_metadata()
 	 *
-	 * @return array
+	 * @return array<string, mixed>
 	 */
 	public function insert_parsely_page(): array {
 		_deprecated_function( __FUNCTION__, '3.0', 'construct_parsely_metadata()' );
@@ -322,9 +322,9 @@ class Parsely {
 	/**
 	 * Creates parsely metadata object from post metadata.
 	 *
-	 * @param array   $parsely_options parsely_options array.
-	 * @param WP_Post $post object.
-	 * @return array
+	 * @param array<string, mixed> $parsely_options parsely_options array.
+	 * @param WP_Post              $post object.
+	 * @return array<string, mixed>
 	 */
 	public function construct_parsely_metadata( array $parsely_options, WP_Post $post ): array {
 		$parsely_page      = array(
@@ -694,8 +694,10 @@ class Parsely {
 		if ( $last_tag ) {
 			$tags = explode( '/', $last_tag );
 		}
-		// remove uncategorized value from tags.
-		return array_diff( $tags, array( 'Uncategorized' ) );
+
+		// Remove default category name from tags if needed.
+		$default_category_name = get_cat_name( get_option( 'default_category' ) );
+		return array_diff( $tags, array( $default_category_name ) );
 	}
 
 	/**
@@ -727,8 +729,8 @@ class Parsely {
 		$taxonomy_dropdown_choice = get_the_terms( $post_obj->ID, $parsely_options['custom_taxonomy_section'] );
 		// Get top-level taxonomy name for chosen taxonomy and assign to $parent_name; it will be used
 		// as the category value if 'use_top_level_cats' option is checked.
-		// Assign as "Uncategorized" if no value is checked for the chosen taxonomy.
-		$category = 'Uncategorized';
+		// Assign as the default category name if no value is checked for the chosen taxonomy.
+		$category_name = get_cat_name( get_option( 'default_category' ) );
 		if ( ! empty( $taxonomy_dropdown_choice ) && ! is_wp_error( $taxonomy_dropdown_choice ) ) {
 			if ( $parsely_options['use_top_level_cats'] ) {
 				$first_term = array_shift( $taxonomy_dropdown_choice );
@@ -738,7 +740,7 @@ class Parsely {
 			}
 
 			if ( is_string( $term_name ) && 0 < strlen( $term_name ) ) {
-				$category = $term_name;
+				$category_name = $term_name;
 			}
 		}
 
@@ -751,9 +753,9 @@ class Parsely {
 		 * @param WP_Post $post_obj        Post object.
 		 * @param array   $parsely_options The Parsely options.
 		 */
-		$category = apply_filters( 'wp_parsely_post_category', $category, $post_obj, $parsely_options );
+		$category_name = apply_filters( 'wp_parsely_post_category', $category_name, $post_obj, $parsely_options );
 
-		return $this->get_clean_parsely_page_value( $category );
+		return $this->get_clean_parsely_page_value( $category_name );
 	}
 
 	/**
@@ -921,7 +923,7 @@ class Parsely {
 		$authors = $this->get_coauthor_names( $post->ID );
 		if ( empty( $authors ) ) {
 			$post_author = get_user_by( 'id', $post->post_author );
-			if ( $post_author ) {
+			if ( false !== $post_author ) {
 				$authors = array( $post_author );
 			}
 		}
