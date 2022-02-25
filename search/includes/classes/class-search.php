@@ -631,8 +631,8 @@ class Search {
 
 		// Store last processed id into option and clean up before & after indexing command
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ], 10, 2 );
-		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ], 10, 2 );
-		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ], 10, 2 );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ] );
+		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
 	}
 
 	protected function load_commands() {
@@ -2260,8 +2260,8 @@ class Search {
 	/**
 	 * Store last processed post ID into option during bulk indexing operation.
 	 * 
-	 * @param $objects 
-	 * @param $response 
+	 * @param array $objects Objects being indexed
+	 * @param array $response Elasticsearch bulk index response
 	 * 
 	 * @return void 
 	 */
@@ -2274,7 +2274,7 @@ class Search {
 	 * 
 	 * @return void 
 	 */
-	public function delete_last_processed_post_id_option( $args, $assoc_args ) {
+	public function delete_last_processed_post_id_option() {
 		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {
 			delete_option( self::LAST_INDEXED_POST_ID_OPTION );
 		}
