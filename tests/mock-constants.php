@@ -10,7 +10,7 @@ namespace Automattic\Test {
 
 		public static function clear(): void {
 			self::$constants = [
-				'ABSPATH' => '/tmp/wordpress'
+				'ABSPATH' => '/tmp/wordpress',
 			];
 		}
 
