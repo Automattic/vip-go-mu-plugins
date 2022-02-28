@@ -300,16 +300,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "5.9.0",
+            "version": "5.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "51241ed9138dd1fb552f6b85fc2025e6135fc03f"
+                "reference": "2c3acb773b91a72ab83ee039532d2c7e0b6f2127"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/51241ed9138dd1fb552f6b85fc2025e6135fc03f",
-                "reference": "51241ed9138dd1fb552f6b85fc2025e6135fc03f",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/2c3acb773b91a72ab83ee039532d2c7e0b6f2127",
+                "reference": "2c3acb773b91a72ab83ee039532d2c7e0b6f2127",
                 "shasum": ""
             },
             "require": {
@@ -317,7 +317,7 @@
                 "php": ">=5.6.20"
             },
             "provide": {
-                "wordpress/core-implementation": "5.9.0"
+                "wordpress/core-implementation": "5.9.1"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -344,7 +344,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2022-01-25T20:28:49+00:00"
+            "time": "2022-02-22T15:31:48+00:00"
         },
         {
             "name": "mustache/mustache",
