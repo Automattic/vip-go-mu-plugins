@@ -37,30 +37,6 @@ class HealthJob_Test extends WP_UnitTestCase {
 		require_once __DIR__ . '/../../../../search/includes/classes/class-healthjob.php';
 	}
 
-	public function test_vip_search_healthjob_is_not_enabled_when_indexing_is_occuring() {
-		add_filter( 'ep_is_indexing', '__return_true' );
-
-		$job = new \Automattic\VIP\Search\HealthJob( Search::instance() );
-
-		$enabled = $job->is_enabled();
-
-		$this->assertFalse( $enabled );
-
-		remove_filter( 'ep_is_indexing', '__return_true' );
-	}
-
-	public function test_vip_search_healthjob_is_not_enabled_before_first_index() {
-		add_filter( 'ep_last_sync', '__return_false' );
-
-		$job = new \Automattic\VIP\Search\HealthJob( Search::instance() );
-
-		$enabled = $job->is_enabled();
-
-		$this->assertFalse( $enabled );
-
-		remove_filter( 'ep_last_sync', '__return_false' );
-	}
-
 	public function test_vip_search_healthjob_is_enabled_when_expected() {
 		add_filter( 'ep_is_indexing', '__return_false' );
 		add_filter( 'ep_last_sync', '__return_true' );
