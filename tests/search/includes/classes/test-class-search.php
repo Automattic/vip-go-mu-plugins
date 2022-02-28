@@ -3108,6 +3108,11 @@ class Search_Test extends WP_UnitTestCase {
 		/* Empty */
 	}
 
+	/**
+	 * Helper function to set required constant, initialize the search instance, and do required action for setting up EP indexables.
+	 * 
+	 * @return void
+	 */
 	private function init_es() {
 		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', false );
 		$this->search_instance->init();
