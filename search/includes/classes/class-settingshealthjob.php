@@ -23,7 +23,17 @@ class SettingsHealthJob {
 	/**
 	 * The name of the option lock when an new index version is already being built
 	 */
-	const BUILD_LOCK_NAME = 'vip_search_new_version_building_lock';
+	const BUILD_LOCK_NAME = 'vip_search_cron_new_version_building_lock';
+
+	/**
+	 * The name of the option to store the last ID processed by the re-building job.
+	 */
+	const LAST_PROCESSED_ID = 'vip_search_cron_last_processed_id';
+
+	/**
+	 * The name of the option to store whether a re-building job is in progress.
+	 */
+	const BUILD_IN_PROGRESS = 'vip_search_cron_new_version_building_now';
 
 	/**
 	 * Instance of the Health class
@@ -63,6 +73,12 @@ class SettingsHealthJob {
 
 		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 1 );
 
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ], 10, 2 );
+
+		// Clean-up last processed ID option
+		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] );
+
 		$this->schedule_job();
 	}
 
@@ -90,7 +106,7 @@ class SettingsHealthJob {
 	public function check_settings_health() {
 
 		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+		if ( \ElasticPress\Utils\get_last_sync() ) {
 			return;
 		}
 
@@ -186,7 +202,7 @@ class SettingsHealthJob {
 				}
 				// Check if index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					$this->maybe_schedule_build_new_index( $indexable );
+					$this->maybe_process_build( $indexable );
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
@@ -245,47 +261,99 @@ class SettingsHealthJob {
 	}
 
 	/**
-	 * Determine whether to schedule event to build new index as part of auto healing.
-	 *
-	 * @param object $indexable The Indexable we want to rebuild.
+	 * Store last processed post ID into option during bulk indexing operation.
+	 * 
+	 * @param array $objects Objects being indexed
+	 * @param array $response Elasticsearch bulk index response
+	 * 
+	 * @return void
 	 */
-	public function maybe_schedule_build_new_index( $indexable ) {
-		// Only do for non-production for now.
-		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
-		if ( $is_prod ) {
-			return;
-		}
-		
-		// Bail if new index build is already occurring.
-		$new_index_lock = get_option( self::BUILD_LOCK_NAME );
-		if ( false !== $new_index_lock ) {
+	public function update_last_processed_id( $objects, $response ) {
+		if ( ! wp_doing_cron() ) {
 			return;
 		}
 
-		// Do not schedule new index build if index version limit is reached (2 versions per Indexable).
-		$current_versions = $this->search->versioning->get_versions( $indexable );
-		if ( count( $current_versions ) > 1 ) {
-			$message = sprintf(
-				'Application %s: Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
-				FILES_CLIENT_SITE_ID,
-				$indexable->slug,
-				home_url()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-			
+		update_option( self::LAST_PROCESSED_ID, array_key_last( $objects ) );
+		set_transient( self::BUILD_IN_PROGRESS, true, 5 * MINUTE_IN_SECONDS );
+	}
+
+	/**
+	 * Delete last processed post ID as part of clean-up.
+	 * 
+	 * @return void
+	 */
+	public function delete_last_processed_id() {
+		if ( ! wp_doing_cron() ) {
 			return;
-		} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
-			wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		}
+
+		if ( false !== get_option( self::LAST_PROCESSED_ID ) ) {
+			delete_option( self::LAST_PROCESSED_ID );
+			delete_transient( self::BUILD_IN_PROGRESS );
 		}
 	}
 
 	/**
-	 * Build new index and hot-swap it afterwards as part of auto healing to ensure shard requirements are met.
+	 * Determine whether to schedule an event to build new index as part of auto healing or resume 
+	 * it from where it left off (if the process has unexpectedly died).
+	 *
+	 * @param object $indexable The Indexable we want to rebuild.
+	 */
+	public function maybe_process_build( $indexable ) {
+		// Only do for non-production for now.
+		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
+		if ( $is_prod ) {
+			return;
+		}
+		
+		$build_index_lock = get_option( self::BUILD_LOCK_NAME );
+		if ( false !== $build_index_lock ) {
+			// There's an on-going build in process, so we need to check how to process it.
+			$process_build = $this->check_process_build();
+			switch ( $process_build ) {
+				case 'resume':
+					// Indexing process was interrupted, let's restart it with the 
+					$last_processed_id = get_option( self::LAST_PROCESSED_ID );
+					if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] ) ) {
+						wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
+						break;
+					}
+				case 'swap':
+					$this->swap_index_versions( $indexable );
+					break;
+				case 'in-progress':
+				default:
+					return;
+			}
+		} else {
+			$current_versions = $this->search->versioning->get_versions( $indexable );
+			if ( count( $current_versions ) > 1 ) {
+				// Do not schedule new index build if index version limit is reached (2 versions per Indexable).
+				$message = sprintf(
+					'Application %s: Cannot automatically build new %s index on %s to meet shard requirements. Please ensure there is less than 2 index versions.',
+					FILES_CLIENT_SITE_ID,
+					$indexable->slug,
+					home_url()
+				);
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+				
+				return;
+			} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
+				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+			}
+		}
+	}
+
+	/**
+	 * Build new index or resume index building in progress as part of auto healing to ensure shard requirements are met.
 	 *
 	 * @param string $indexable_slug The slug of the Indexable we want to rebuild.
+	 * @param int|bool $last_processed_id The ID of the last indexed object. Defaults false.
 	 */
-	public function build_new_index( $indexable_slug ) {
-		update_option( self::BUILD_LOCK_NAME, time(), false ); // Set lock for starting rebuild.
+	public function build_new_index( $indexable_slug, $last_processed_id = false ) {
+		if ( false === $last_processed_id ) {
+			add_option( self::BUILD_LOCK_NAME, time() ); // Set lock for starting build.
+		}
 
 		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
@@ -303,18 +371,22 @@ class SettingsHealthJob {
 
 			return;
 		}
-		$new_version = $this->search->versioning->add_version( $indexable );
-		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf(
-				'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url(),
-				$new_version->get_error_message()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
-			return;
+		if ( false === $last_processed_id ) {
+			// Only create new index version if it is a new build.
+			$new_version = $this->search->versioning->add_version( $indexable );
+			if ( is_wp_error( $new_version ) ) {
+				$message = sprintf(
+					'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$new_version->get_error_message()
+				);
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
 		}
 
 		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
@@ -331,13 +403,6 @@ class SettingsHealthJob {
 			return;
 		}
 
-		// Delete CLI option for tracking command successfully finished
-		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
-			delete_site_option( 'ep_last_cli_index' );
-		} else {
-			delete_option( 'ep_last_cli_index' );
-		}
-
 		// Do the indexing.
 		$cmd        = new \ElasticPress\Command();
 		$args       = [];
@@ -345,54 +410,78 @@ class SettingsHealthJob {
 			'yes'        => true,
 			'indexables' => $indexable_slug,
 		];
+		if ( $last_processed_id ) {
+			$assoc_args['upper-limit-object-id'] = (int) $last_processed_id;
+		}
 		$cmd->index( $args, $assoc_args );
 
-		$option = defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ? get_site_option( 'ep_last_cli_index' ) : get_option( 'ep_last_cli_index' );
-		if ( $option ) {
-			$activate_version = $this->search->versioning->activate_version( $indexable, 'next' );
-			if ( is_wp_error( $activate_version ) ) {
-				$message = sprintf(
-					'Application %s: An error occurred during activation of new %s index on %s for shard requirements: %s',
-					FILES_CLIENT_SITE_ID,
-					$indexable_slug,
-					home_url(),
-					$activate_version->get_error_message()
-				);
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-	
-				return;
-			}
-			
-			$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
-			if ( is_wp_error( $delete_version ) ) {
-				$message = sprintf(
-					'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
-					FILES_CLIENT_SITE_ID,
-					$indexable_slug,
-					home_url(),
-					$delete_version->get_error_message()
-				);
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-	
-				return;
-			}
+		update_option( self::LAST_PROCESSED_ID, 'Indexing completed' );
+	}
 
-			$message = sprintf(
-				'Application %s: Successfully built new %s index for shard requirements on %s.',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url()
-			);
-		} else {
-			$message = sprintf(
-				'Application %s: Build failure of new %s index on %s for shard requirements!',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url()
-			);
+	/**
+	 * Check the in-process build and determine how to handle it.
+	 * 
+	 * @return string|bool Returns the next step: 'in-progress', 'resume', or 'swap'.
+	 * 
+	 */
+	protected function check_process_build() {
+		$last_processed_id = get_option( self::LAST_PROCESSED_ID );
+		if ( 'Indexing completed' === $last_processed_id ) {
+			return 'swap';
 		}
-		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		$in_progress = get_transient( self::BUILD_IN_PROGRESS );
+		if ( false !== $in_progress ) {
+			return 'in-progress';
+		} elseif ( is_numeric( $last_processed_id ) ) {
+			return 'resume';
+		}
 
-		delete_option( self::BUILD_LOCK_NAME ); // Remove lock
+		return false;
+	}
+
+	/**
+	 * Activate new index version and delete old one.
+	 * 
+	 * @param object $Indexable Indexable object we want to swap out
+	 */
+	public function swap_index_versions( $indexable ) {
+		$activate_version = $this->search->versioning->activate_version( $indexable, 'next' );
+		if ( is_wp_error( $activate_version ) ) {
+			$message = sprintf(
+				'Application %s: An error occurred during activation of new %s index on %s for shard requirements: %s',
+				FILES_CLIENT_SITE_ID,
+				$indexable->slug,
+				home_url(),
+				$activate_version->get_error_message()
+			);
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+		
+		$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
+		if ( is_wp_error( $delete_version ) ) {
+			$message = sprintf(
+				'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
+				FILES_CLIENT_SITE_ID,
+				$indexable_slug,
+				home_url(),
+				$delete_version->get_error_message()
+			);
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
+		$message = sprintf(
+			'Application %s: Successfully built new %s index for shard requirements on %s.',
+			FILES_CLIENT_SITE_ID,
+			$indexable->slug,
+			home_url()
+		);
+
+		// Clean up
+		$this->delete_last_processed_id();
+		delete_option( self::BUILD_LOCK_NAME );
 	}
 }
