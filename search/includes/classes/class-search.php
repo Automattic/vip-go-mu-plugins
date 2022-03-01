@@ -216,9 +216,9 @@ class Search {
 	 * @return bool true if constants are defined, false otherwise
 	 */
 	public static function are_es_constants_defined() {
-		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
-		$username_defined  = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
-		$password_defined  = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
+		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) && ! empty( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
+		$username_defined  = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && constant( 'VIP_ELASTICSEARCH_USERNAME' );
+		$password_defined  = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && constant( 'VIP_ELASTICSEARCH_PASSWORD' );
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
@@ -440,15 +440,15 @@ class Search {
 			define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 		}
 
-		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host                     = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
-			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
+		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
+			$host                     = $this->get_random_host( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
+			$this->current_host_index = array_search( $host, constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
 
 			define( 'EP_HOST', $host );
 		}
 
 		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
-			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
+			define( 'ES_SHIELD', sprintf( '%s:%s', constant( 'VIP_ELASTICSEARCH_USERNAME' ), constant( 'VIP_ELASTICSEARCH_PASSWORD' ) ) );
 		}
 
 		// Do not allow sync via Dashboard (WP-CLI is preferred for indexing).
@@ -1148,9 +1148,9 @@ class Search {
 		}
 
 		// Legacy constant name
-		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === constant( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' );
 
-		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
+		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' );
 
 		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
 
@@ -1175,7 +1175,7 @@ class Search {
 	 */
 	public static function is_network_mode() {
 		// NOTE - Not using strict equality check here so that we match EP
-		return defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK;
+		return defined( 'EP_IS_NETWORK' ) && constant( 'EP_IS_NETWORK' );
 	}
 
 	public static function ep_skip_query_integration( $skip, $query = null ) {
@@ -1404,11 +1404,11 @@ class Search {
 			return $host;
 		}
 
-		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+		if ( ! is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
 			return $host;
 		}
 
-		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+		if ( 0 === count( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
 			return $host;
 		}
 
@@ -1793,23 +1793,25 @@ class Search {
 	public function get_current_host() {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			if ( defined( 'EP_HOST' ) ) {
-				return EP_HOST;
+				return constant( 'EP_HOST' );
 			}
 
 			return new \WP_Error( 'vip-search-no-host-found', 'No Elasticsearch hosts found' );
 		}
 
-		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			return VIP_ELASTICSEARCH_ENDPOINTS;
+		if ( ! is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
+			return constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
 		}
 
 		if ( ! is_int( $this->current_host_index ) ) {
 			$this->current_host_index = 0;
 		}
 
-		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
+		$this->current_host_index = $this->current_host_index % count( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
 
-		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+		$endpoints = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
+
+		return $endpoints[ $this->current_host_index ];
 	}
 
 	/**
@@ -1945,7 +1947,7 @@ class Search {
 	}
 
 	public function is_jetpack_migration() {
-		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === VIP_SEARCH_MIGRATION_SOURCE;
+		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === constant( 'VIP_SEARCH_MIGRATION_SOURCE' );
 	}
 
 	/**
@@ -2021,7 +2023,7 @@ class Search {
 	}
 
 	public function get_index_routing_allocation_include_dc() {
-		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? constant( 'VIP_ORIGIN_DATACENTER' ) : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
 
 		$dc = strtolower( $dc );
 
