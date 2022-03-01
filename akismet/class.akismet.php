@@ -64,6 +64,10 @@ class Akismet {
 		add_filter( 'wpcf7_form_elements', array( 'Akismet', 'append_custom_form_fields' ) );
 		add_filter( 'wpcf7_akismet_parameters', array( 'Akismet', 'prepare_custom_form_values' ) );
 
+		// Formidable Forms
+		add_filter( 'frm_filter_final_form', array( 'Akismet', 'inject_custom_form_fields' ) );
+		add_filter( 'frm_akismet_values', array( 'Akismet', 'prepare_custom_form_values' ) );
+
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
 
@@ -410,8 +414,12 @@ class Akismet {
 
 			$wpdb->queries = array();
 
+			$comments = array();
+
 			foreach ( $comment_ids as $comment_id ) {
-				do_action( 'delete_comment', $comment_id );
+				$comments[ $comment_id ] = get_comment( $comment_id );
+
+				do_action( 'delete_comment', $comment_id, $comments[ $comment_id ] );
 				do_action( 'akismet_batch_delete_count', __FUNCTION__ );
 			}
 
@@ -421,12 +429,13 @@ class Akismet {
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 
+			foreach ( $comment_ids as $comment_id ) {
+				do_action( 'deleted_comment', $comment_id, $comments[ $comment_id ] );
+				unset( $comments[ $comment_id ] );
+			}
+
 			clean_comment_cache( $comment_ids );
 			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
-
-			foreach ( $comment_ids as $comment_id ) {
-				do_action( 'deleted_comment', $comment_id );
-			}
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->comments ) ) // lucky number
@@ -504,11 +513,38 @@ class Akismet {
 	public static function get_user_comments_approved( $user_id, $comment_author_email, $comment_author, $comment_author_url ) {
 		global $wpdb;
 
-		if ( !empty( $user_id ) )
-			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE user_id = %d AND comment_approved = 1", $user_id ) );
+		/**
+		 * Which comment types should be ignored when counting a user's approved comments?
+		 *
+		 * Some plugins add entries to the comments table that are not actual
+		 * comments that could have been checked by Akismet. Allow these comments
+		 * to be excluded from the "approved comment count" query in order to
+		 * avoid artificially inflating the approved comment count.
+		 *
+		 * @param array $comment_types An array of comment types that won't be considered
+		 *                             when counting a user's approved comments.
+		 *
+		 * @since 4.2.2
+		 */
+		$excluded_comment_types = apply_filters( 'akismet_excluded_comment_types', array() );
 
-		if ( !empty( $comment_author_email ) )
-			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_author_email = %s AND comment_author = %s AND comment_author_url = %s AND comment_approved = 1", $comment_author_email, $comment_author, $comment_author_url ) );
+		$comment_type_where = '';
+
+		if ( is_array( $excluded_comment_types ) && ! empty( $excluded_comment_types ) ) {
+			$excluded_comment_types = array_unique( $excluded_comment_types );
+
+			foreach ( $excluded_comment_types as $excluded_comment_type ) {
+				$comment_type_where .= $wpdb->prepare( ' AND comment_type <> %s ', $excluded_comment_type );
+			}
+		}
+
+		if ( ! empty( $user_id ) ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE user_id = %d AND comment_approved = 1" . $comment_type_where, $user_id ) );
+		}
+
+		if ( ! empty( $comment_author_email ) ) {
+			return (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->comments} WHERE comment_author_email = %s AND comment_author = %s AND comment_author_url = %s AND comment_approved = 1" . $comment_type_where, $comment_author_email, $comment_author, $comment_author_url ) );
+		}
 
 		return 0;
 	}
@@ -1327,8 +1363,14 @@ class Akismet {
 		$fields .= '<label>&#916;<textarea name="' . $prefix . 'hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label>';
 
 		if ( ! function_exists( 'amp_is_request' ) || ! amp_is_request() ) {
-			$fields .= '<input type="hidden" id="ak_js" name="' . $prefix . 'js" value="' . mt_rand( 0, 250 ) . '"/>';
-			$fields .= '<script>document.getElementById( "ak_js" ).setAttribute( "value", ( new Date() ).getTime() );</script>';
+			// Keep track of how many ak_js fields are in this page so that we don't re-use
+			// the same ID.
+			static $field_count = 0;
+
+			$field_count++;
+
+			$fields .= '<input type="hidden" id="ak_js_' . $field_count . '" name="' . $prefix . 'js" value="' . mt_rand( 0, 250 ) . '"/>';
+			$fields .= '<script>document.getElementById( "ak_js_' . $field_count . '" ).setAttribute( "value", ( new Date() ).getTime() );</script>';
 		}
 
 		$fields .= '</p>';
