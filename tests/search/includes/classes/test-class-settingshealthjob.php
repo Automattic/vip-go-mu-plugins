@@ -224,7 +224,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->method( 'check_process_build' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status = $stub->maybe_process_build( $indexable );
+		$status    = $stub->maybe_process_build( $indexable );
 	}
 
 	public function test__maybe_process_build__in_progress() {
@@ -241,7 +241,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->willReturn( 'in-progress' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status = $stub->maybe_process_build( $indexable );
+		$status    = $stub->maybe_process_build( $indexable );
 
 		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
@@ -263,7 +263,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->willReturn( 'resume' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status = $stub->maybe_process_build( $indexable );
+		$status    = $stub->maybe_process_build( $indexable );
 
 		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
 		$this->assertIsInt( $event );
@@ -288,7 +288,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->method( 'swap_index_versions' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status = $stub->maybe_process_build( $indexable );
+		$status    = $stub->maybe_process_build( $indexable );
 
 		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $completed_status ] );
 		$this->assertFalse( $event );

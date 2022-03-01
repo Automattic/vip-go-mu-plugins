@@ -316,8 +316,8 @@ class SettingsHealthJob {
 					$last_processed_id = get_option( self::LAST_PROCESSED_ID );
 					if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] ) ) {
 						wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
-						break;
 					}
+					break;
 				case 'swap':
 					$this->swap_index_versions( $indexable );
 					break;
