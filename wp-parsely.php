@@ -51,7 +51,7 @@ function maybe_load_plugin() {
 	}
 
 	// Bail if the plugin has already initialized elsewhere
-	if ( class_exists( 'Parsely' ) ) {
+	if ( class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ) ) {
 		return;
 	}
 
