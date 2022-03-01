@@ -78,7 +78,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Install VIP CLI
-        run: npm install --prefix=$HOME/.local -g @automattic/vip
+        run: npm install --prefix=$HOME/.local -g @automattic/vip@2.8.2
 
       - name: Determine WP version
         id: wpver
