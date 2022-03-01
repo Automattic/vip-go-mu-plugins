@@ -445,4 +445,24 @@ class CoreCommand extends \ElasticPress\Command {
 		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
 		WP_CLI::run_command( $args, $assoc_args );
 	}
+
+	/**
+	 * Get the last indexed post ID on an incomplete indexing operation.
+	 * 
+	 * @subcommand get-last-indexed-post-id
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_last_indexed_post_id( $args, $assoc_args ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
+		
+		if ( false === $last_id ) {
+			WP_CLI::line( 'No last indexed object ID found!' );
+		} else {
+			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+		}
+	}
 }

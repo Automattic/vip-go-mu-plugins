@@ -136,6 +136,9 @@ class Search {
 		'ams',
 	];
 
+	// Option for storing last processed post ID
+	public const LAST_INDEXED_POST_ID_OPTION = 'vip_es_index_last_indexed_post_id';
+
 	private static $query_count_ttl;
 
 	private const MAX_SEARCH_LENGTH              = 255;
@@ -625,6 +628,11 @@ class Search {
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
 
 		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
+
+		// Store last processed id into option and clean up before & after indexing command
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ], 10, 2 );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ] );
+		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
 	}
 
 	protected function load_commands() {
@@ -2249,5 +2257,28 @@ class Search {
 
 	public function action__init() {
 		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+	}
+
+	/**
+	 * Store last processed post ID into option during bulk indexing operation.
+	 * 
+	 * @param array $objects Objects being indexed
+	 * @param array $response Elasticsearch bulk index response
+	 * 
+	 * @return void 
+	 */
+	public function update_last_processed_post_id_option( $objects, $response ) {
+		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
+	}
+
+	/**
+	 * Delete last processed post ID option before & after indexing.
+	 * 
+	 * @return void 
+	 */
+	public function delete_last_processed_post_id_option() {
+		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {
+			delete_option( self::LAST_INDEXED_POST_ID_OPTION );
+		}
 	}
 }
