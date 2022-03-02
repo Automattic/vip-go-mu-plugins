@@ -17,20 +17,18 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		self::$search = \Automattic\VIP\Search\Search::instance();
 		self::$search->init();
 
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { // Need to define endpoints for versioning usage
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+		if ( ! Constant_Mocker::defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { // Need to define endpoints for versioning usage
+			Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 				'https://es-endpoint1',
 				'https://es-endpoint2',
 			) );
 		}
-
+		
 		self::$version_instance = self::$search->versioning;
 
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
 		do_action( 'init' );
-
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'test' );
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {

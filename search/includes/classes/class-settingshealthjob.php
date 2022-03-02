@@ -202,7 +202,9 @@ class SettingsHealthJob {
 				}
 				// Check if index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					$this->maybe_process_build( $indexable );
+					if ( \Automattic\VIP\Feature::is_enabled_by_ids( 'rebuild-index' ) ) {
+						$this->maybe_process_build( $indexable );
+					}
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
@@ -300,12 +302,6 @@ class SettingsHealthJob {
 	 * @param object $indexable The Indexable we want to rebuild.
 	 */
 	public function maybe_process_build( $indexable ) {
-		// Only do for non-production for now.
-		$is_prod = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
-		if ( $is_prod ) {
-			return;
-		}
-		
 		$build_index_lock = get_option( self::BUILD_LOCK_NAME );
 		if ( false !== $build_index_lock ) {
 			// There's an on-going build in process, so we need to check how to process it.
