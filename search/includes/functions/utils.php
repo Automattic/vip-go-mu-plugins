@@ -24,9 +24,9 @@ function vip_es_get_related_posts( $post_id, $return = 5 ) {
  */
 function vip_maybe_backfill_ep_option( $value, $option ) {
 	if ( empty( $value ) ) {
-		$site_option_value = get_site_option( $option );
+		$site_option = get_site_option( $option );
 		if ( ! empty( $site_option ) ) {
-			$option_added = add_option( $option, $site_option_value );
+			$option_added = add_option( $option, $site_option );
 
 			$blog_id  = get_current_blog_id();
 			$home_url = home_url();
@@ -57,7 +57,7 @@ function vip_maybe_backfill_ep_option( $value, $option ) {
 				);
 			}
 
-			return $site_option_value;
+			return $site_option;
 		}
 	}
 
