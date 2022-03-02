@@ -4,14 +4,14 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta
+class ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7
 {
     public static $files = array (
         '3773ef3f09c37da5478d578e32b03a4b' => __DIR__ . '/../..' . '/jetpack_vendor/automattic/jetpack-assets/actions.php',
         'd4eb94df91a729802d18373ee8cdc79f' => __DIR__ . '/../..' . '/jetpack_vendor/automattic/jetpack-backup/actions.php',
         '009de6aaa0d497eacea41fab13fc05f1' => __DIR__ . '/../..' . '/jetpack_vendor/automattic/jetpack-compat/functions.php',
-        'c41c8291342c1bc5fcb32cf6fda33a14' => __DIR__ . '/../..' . '/jetpack_vendor/automattic/jetpack-search/search.php',
         'd7b298d70ab0e8605f5d5b6edeab1bd2' => __DIR__ . '/..' . '/automattic/jetpack-waf/actions.php',
+        'c41c8291342c1bc5fcb32cf6fda33a14' => __DIR__ . '/../..' . '/jetpack_vendor/automattic/jetpack-search/search.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -231,10 +231,10 @@ class ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta::$prefixDirsPsr4;
-            $loader->prefixesPsr0 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta::$prefixesPsr0;
-            $loader->classMap = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7_beta::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInitf11009ded9fc4592b6a05b61ce272b3c_jetpackⓥ10_7::$classMap;
 
         }, null, ClassLoader::class);
     }
