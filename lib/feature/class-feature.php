@@ -26,7 +26,12 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		'rebuild-index' => [
+			4785 => true,
+			4927 => true,
+		],
+	];
 
 	public static function is_enabled( $feature ) {
 		return static::is_enabled_by_percentage( $feature );
