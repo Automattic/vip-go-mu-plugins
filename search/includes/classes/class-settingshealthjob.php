@@ -104,12 +104,6 @@ class SettingsHealthJob {
 	 * Check settings health
 	 */
 	public function check_settings_health() {
-
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\get_last_sync() ) {
-			return;
-		}
-
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
 		if ( empty( $unhealthy_indexables ) ) {
