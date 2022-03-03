@@ -28,12 +28,12 @@ class SettingsHealthJob {
 	/**
 	 * The name of the option to store the last ID processed by the re-building job.
 	 */
-	const LAST_PROCESSED_ID = 'vip_search_cron_last_processed_id';
+	const LAST_PROCESSED_ID_OPTION = 'vip_search_cron_last_processed_id';
 
 	/**
-	 * The name of the option to store whether a re-building job is in progress.
+	 * The name of the transient to store whether a re-building job is in progress.
 	 */
-	const BUILD_IN_PROGRESS = 'vip_search_cron_new_version_building_now';
+	const BUILD_IN_PROGRESS_TRANSIENT = 'vip_search_cron_new_version_building_now';
 
 	/**
 	 * Instance of the Health class
@@ -275,8 +275,8 @@ class SettingsHealthJob {
 			return;
 		}
 
-		update_option( self::LAST_PROCESSED_ID, array_key_last( $objects ) );
-		set_transient( self::BUILD_IN_PROGRESS, true, 5 * MINUTE_IN_SECONDS );
+		update_option( self::LAST_PROCESSED_ID_OPTION, array_key_last( $objects ) );
+		set_transient( self::BUILD_IN_PROGRESS_TRANSIENT, true, 5 * MINUTE_IN_SECONDS );
 	}
 
 	/**
@@ -289,9 +289,9 @@ class SettingsHealthJob {
 			return;
 		}
 
-		if ( false !== get_option( self::LAST_PROCESSED_ID ) ) {
-			delete_option( self::LAST_PROCESSED_ID );
-			delete_transient( self::BUILD_IN_PROGRESS );
+		if ( false !== get_option( self::LAST_PROCESSED_ID_OPTION ) ) {
+			delete_option( self::LAST_PROCESSED_ID_OPTION );
+			delete_transient( self::BUILD_IN_PROGRESS_TRANSIENT );
 		}
 	}
 
@@ -309,7 +309,7 @@ class SettingsHealthJob {
 			switch ( $process_build ) {
 				case 'resume':
 					// Indexing process was interrupted, let's restart it with the 
-					$last_processed_id = get_option( self::LAST_PROCESSED_ID );
+					$last_processed_id = get_option( self::LAST_PROCESSED_ID_OPTION );
 					if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] ) ) {
 						wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
 					}
@@ -411,7 +411,7 @@ class SettingsHealthJob {
 		}
 		$cmd->index( $args, $assoc_args );
 
-		update_option( self::LAST_PROCESSED_ID, 'Indexing completed' );
+		update_option( self::LAST_PROCESSED_ID_OPTION, 'Indexing completed' );
 	}
 
 	/**
@@ -421,11 +421,11 @@ class SettingsHealthJob {
 	 * 
 	 */
 	protected function check_process_build() {
-		$last_processed_id = get_option( self::LAST_PROCESSED_ID );
+		$last_processed_id = get_option( self::LAST_PROCESSED_ID_OPTION );
 		if ( 'Indexing completed' === $last_processed_id ) {
 			return 'swap';
 		}
-		$in_progress = get_transient( self::BUILD_IN_PROGRESS );
+		$in_progress = get_transient( self::BUILD_IN_PROGRESS_TRANSIENT );
 		if ( false !== $in_progress ) {
 			return 'in-progress';
 		} elseif ( is_numeric( $last_processed_id ) ) {

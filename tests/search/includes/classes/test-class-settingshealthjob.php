@@ -248,7 +248,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function test__maybe_process_build__resume() {
 		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
 		$last_processed_id = '1234';
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID, $last_processed_id );
+		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
 			->setMethods( [ 'check_process_build' ] ) 
@@ -270,7 +270,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function test__maybe_process_build__swap() {
 		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
 		$completed_status = 'Indexing completed';
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID, $completed_status );
+		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $completed_status );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
 			->disableOriginalConstructor()
