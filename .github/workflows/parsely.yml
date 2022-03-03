@@ -28,7 +28,7 @@ jobs:
           - "0"
         parsely:
           - "2.6"
-          - "3.0"
+          - "3.1"
         mode:
           - "filter_enabled"
           - "option_enabled"
@@ -36,7 +36,7 @@ jobs:
           - php: "7.4"
             wp: "latest"
             multisite: "0"
-            parsely: "3.0"
+            parsely: "3.1"
             mode: "filter_and_option_enabled"
     steps:
       - name: Check out source code
