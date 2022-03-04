@@ -113,12 +113,8 @@ class HealthJob {
 		}
 
 		$post_indexable = $this->indexables->get( 'post' );
-		// Don't run the checks if the index is not built.
-		if ( ! $post_indexable || ! $post_indexable->index_exists() ) {
-			return;
-		}
-
-		if ( \ElasticPress\Utils\is_indexing() ) {
+		// Don't run the checks if the index is not built or is indexing.
+		if ( ! $post_indexable || ! $post_indexable->index_exists() || \ElasticPress\Utils\is_indexing() ) {
 			return;
 		}
 
