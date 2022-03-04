@@ -463,11 +463,16 @@ class SettingsHealthJob {
 			return;
 		}
 
-		$message = sprintf(
-			'Application %s: Successfully built new %s index for shard requirements on %s.',
-			FILES_CLIENT_SITE_ID,
-			$indexable->slug,
-			home_url()
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_versioning',
+				'message'  => 'Built new index to meet shard requirements',
+				'extra'    => [
+					'homeurl'   => home_url(),
+					'indexable' => $indexable->slug,
+				],
+			)
 		);
 
 		// Clean up
