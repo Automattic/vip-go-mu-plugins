@@ -171,9 +171,6 @@ function vip_contact_form_handler() {
 	$content .= "\nSite URLs: " . site_url() . ' | ' . admin_url();
 	$content .= "\nTheme: " . get_option( 'stylesheet' ) . ' | ' . $theme->get( 'Name' );
 
-	// added for VIPv2.
-	$content .= "\nPlatform: VIP Go";
-
 	// send date and time.
 	// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- ISO 8601 date includes the TZ info
 	$content .= sprintf( "\n\nSent from %s on %s", home_url(), date( 'c', time() ) );
