@@ -17,7 +17,9 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [];
+	public static $feature_percentages = [
+		'rebuild-index' => 0.25,
+	];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.
@@ -26,12 +28,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [
-		'rebuild-index' => [
-			4785 => true,
-			4927 => true,
-		],
-	];
+	public static $feature_ids = [];
 
 	public static function is_enabled( $feature ) {
 		return static::is_enabled_by_percentage( $feature );

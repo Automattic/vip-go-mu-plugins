@@ -196,7 +196,8 @@ class SettingsHealthJob {
 				}
 				// Check if index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					if ( \Automattic\VIP\Feature::is_enabled_by_ids( 'rebuild-index' ) ) {
+					// Rollout for 25% of non-production environments.
+					if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT && \Automattic\VIP\Feature::is_enabled_by_percentage( 'rebuild-index' ) ) {
 						$this->maybe_process_build( $indexable );
 					}
 				}
