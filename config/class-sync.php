@@ -90,11 +90,6 @@ class Sync {
 
 		if ( $value_from_option !== $expected ) {
 			$this->sync_jetpack_privacy_settings( $expected, $value_from_option );
-		} else {
-			$this->log( 'info', 'Privacy Settings were determined to be consistent', array(
-				'expected'    => $expected,
-				'from_option' => $value_from_option,
-			) );
 		}
 	}
 
