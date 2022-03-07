@@ -114,8 +114,8 @@ class VersioningCleanupJob {
 	 */
 	public function delete_stale_inactive_version( $indexable, $version ) {
 
-		if ( ! defined( 'VIP_GO_ENV' ) || 'production' === VIP_GO_ENV ) {
-			// Only do for non-production environments for the time being.
+		// Rollout to 25% of production environments.
+		if ( ( ! defined( 'VIP_GO_ENV' ) || 'production' === VIP_GO_ENV ) && ! \Automattic\VIP\Feature::is_enabled_by_percentage( 'delete-stale-index' ) ) {
 			return;
 		}
 
