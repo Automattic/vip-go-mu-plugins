@@ -218,15 +218,6 @@ class Site_Details_Index {
 
 			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
 		}
-
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'info',
-				'feature'  => self::LOG_FEATURE_NAME,
-				'message'  => 'Site details update',
-				'extra'    => $site_details,
-			)
-		);
 	}
 
 	/**

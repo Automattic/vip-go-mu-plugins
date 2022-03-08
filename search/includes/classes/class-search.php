@@ -795,7 +795,7 @@ class Search {
 
 	/**
 	 * Generate option name for cached index_exists request.
-	 * 
+	 *
 	 * @return string $option_name Name of generated option.
 	 */
 	private function get_index_exists_option_name( $url ) {
@@ -808,7 +808,7 @@ class Search {
 
 	/**
 	 * Filter to intercept EP remote requests.
-	 * 
+	 *
 	 * @param  array  $request  New remote request response
 	 * @param  array  $query    Remote request arguments
 	 * @param  array  $args     Request arguments
@@ -847,7 +847,7 @@ class Search {
 				}
 			}
 		}
-		
+
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -987,9 +987,9 @@ class Search {
 
 		/**
 		 * Filter if request is cacheable
-		 * 
+		 *
 		 * @hook vip_search_cache_es_response
-		 * 
+		 *
 		 * @param  $url  Remote request URL
 		 * @param  $args Remote request arguments
 		 * @return $is_cacheable bool New cacheable status
@@ -998,7 +998,7 @@ class Search {
 	}
 
 	/**
-	 * Handle failed requests 
+	 * Handle failed requests
 	 *
 	 * @param mixed $request
 	 * @param mixed $response
@@ -1046,7 +1046,7 @@ class Search {
 			} else {
 				$response_code    = wp_remote_retrieve_response_code( $response );
 				$response_message = wp_remote_retrieve_response_message( $response );
-				$error_message    = $response_code && ! empty( $response_message ) ? 
+				$error_message    = $response_code && ! empty( $response_message ) ?
 				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
 			}
 
@@ -1296,7 +1296,10 @@ class Search {
 					$queue_stats->queue_count,
 					$queue_stats->longest_wait_time
 				);
-				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+				if ( ! is_wp_error( $this->alerts ) ) {
+					$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+				}
 
 				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
 			}
@@ -1323,7 +1326,9 @@ class Search {
 			$query_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		if ( ! is_wp_error( $this->alerts ) ) {
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -1355,7 +1360,10 @@ class Search {
 				home_url(),
 				$current_field_count
 			);
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 	}
 
@@ -1522,7 +1530,7 @@ class Search {
 
 	/**
 	 * Set the default number of shards in the index settings
-	 * 
+	 *
 	 */
 	public function filter__ep_default_index_number_of_shards() {
 		return 1;
@@ -1532,7 +1540,7 @@ class Search {
 	 * Set the number of shards in the index settings for the post Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -1567,7 +1575,7 @@ class Search {
 	 * Set the number of shards in the index settings for the user Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -2241,11 +2249,11 @@ class Search {
 
 	/**
 	 * Do not sync if index does not exist for Indexable.
-	 * 
+	 *
 	 * @param {boolean} $kill Whether to kill the sync or not.
 	 * @param {string} $indexable_slug Indexable slug.
-	 * 
-	 * @return bool 
+	 *
+	 * @return bool
 	 */
 	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
@@ -2261,11 +2269,11 @@ class Search {
 
 	/**
 	 * Store last processed post ID into option during bulk indexing operation.
-	 * 
+	 *
 	 * @param array $objects Objects being indexed
 	 * @param array $response Elasticsearch bulk index response
-	 * 
-	 * @return void 
+	 *
+	 * @return void
 	 */
 	public function update_last_processed_post_id_option( $objects, $response ) {
 		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
@@ -2273,8 +2281,8 @@ class Search {
 
 	/**
 	 * Delete last processed post ID option before & after indexing.
-	 * 
-	 * @return void 
+	 *
+	 * @return void
 	 */
 	public function delete_last_processed_post_id_option() {
 		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {

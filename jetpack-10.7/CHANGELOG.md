@@ -2,6 +2,13 @@
 
 ### This is a list detailing changes for all Jetpack releases.
 
+## 10.8-a.0 - unreleased
+
+This is an alpha version! The changes listed here are not final.
+
+### Bug fixes
+- Remove the duplicated jetpack_relatedposts_returned_results filter
+
 ## 10.7 - 2022-02-28
 ### Enhancements
 - Dashboard: improve performance of plugins page.
