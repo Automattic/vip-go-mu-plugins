@@ -71,7 +71,7 @@ class SettingsHealthJob {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_EVENT_NAME, [ $this, 'check_settings_health' ] );
 
-		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 1 );
+		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 2 );
 
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ], 10, 2 );
 
