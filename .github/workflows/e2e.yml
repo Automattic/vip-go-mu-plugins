@@ -55,6 +55,8 @@ jobs:
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
+            update.containous.cloud:443
+            update.traefik.io:443
             vaultpress.com:443
             wordpress.org:443
             dns.google:53
