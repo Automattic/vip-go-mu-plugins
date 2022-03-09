@@ -18,7 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'rebuild-index'      => 0.25,
+		'rebuild-index'      => 0.5,
 		'delete-stale-index' => 0.5,
 	];
 
