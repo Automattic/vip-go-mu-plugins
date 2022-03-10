@@ -135,7 +135,6 @@ class VersioningCleanupJob {
 						'homeurl'         => home_url(),
 						'version_deleted' => $version,
 						'indexable'       => $indexable->slug,
-						'app_id'          => FILES_CLIENT_SITE_ID,
 					],
 				)
 			);
