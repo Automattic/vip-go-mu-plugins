@@ -32,11 +32,10 @@ jobs:
       - name: Npm install
         run: |
           npm ci
-          npm install -g @wordpress/env
 
       - name: Install WordPress
         run: |
-          wp-env start
+          npm run dev:start
 
       - name: Running the tests
         run: |

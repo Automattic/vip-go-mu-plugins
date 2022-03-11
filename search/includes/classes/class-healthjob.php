@@ -112,8 +112,9 @@ class HealthJob {
 			return;
 		}
 
-		// Don't run the checks if the index is not built.
-		if ( \ElasticPress\Utils\is_indexing() || ! \ElasticPress\Utils\get_last_sync() ) {
+		$post_indexable = $this->indexables->get( 'post' );
+		// Don't run the checks if the index is not built or is indexing.
+		if ( ! $post_indexable || ! $post_indexable->index_exists() || \ElasticPress\Utils\is_indexing() ) {
 			return;
 		}
 
@@ -132,17 +133,17 @@ class HealthJob {
 	 * @return bool True if job is enabled. Else, false
 	 */
 	public function is_enabled() {
-		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === DISABLE_VIP_SEARCH_HEALTHCHECKS ) {
+		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === constant( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) ) {
 			return false;
 		}
 
-		if ( defined( 'VIP_GO_APP_ID' ) && in_array( VIP_GO_APP_ID, $this->health_check_disabled_sites, true ) ) {
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), $this->health_check_disabled_sites, true ) ) {
 			return false;
 		}
 
 		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
 
-		$enabled = in_array( VIP_GO_ENV, $enabled_environments, true );
+		$enabled = in_array( constant( 'VIP_GO_ENV' ), $enabled_environments, true );
 
 		/**
 		 * Filter whether to enable VIP search healthcheck

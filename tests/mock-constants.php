@@ -4,10 +4,14 @@ namespace Automattic\Test {
 	use InvalidArgumentException;
 
 	abstract class Constant_Mocker {
-		private static $constants = [];
+		private static $constants = [
+			'ABSPATH' => '/tmp/wordpress',
+		];
 
 		public static function clear(): void {
-			self::$constants = [];
+			self::$constants = [
+				'ABSPATH' => '/tmp/wordpress',
+			];
 		}
 
 		public static function define( string $constant, $value ): void {
@@ -101,5 +105,21 @@ namespace Automattic\VIP\Feature {
 
 	function constant( $constant ) {
 		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Search {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+
+	function define( $constant, $value ) {
+		return Constant_Mocker::define( $constant, $value );
 	}
 }

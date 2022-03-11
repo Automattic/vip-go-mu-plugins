@@ -445,4 +445,45 @@ class CoreCommand extends \ElasticPress\Command {
 		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
 		WP_CLI::run_command( $args, $assoc_args );
 	}
+
+	/**
+	 * Get the last indexed post ID on an incomplete indexing operation.
+	 * 
+	 * @subcommand get-last-indexed-post-id
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_last_indexed_post_id( $args, $assoc_args ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
+		
+		if ( false === $last_id ) {
+			WP_CLI::line( 'No last indexed object ID found!' );
+		} else {
+			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+		}
+	}
+
+	/**
+	 * Clean the ep_feature_settings individual blog option if it exists for sites with EP_IS_NETWORK.
+	 * 
+	 * @subcommand clean-ep-feature-settings
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function clean_ep_feature_settings( $args, $assoc_args ) {
+		if ( is_multisite() && defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' ) ) {
+			$delete_option = delete_option( 'ep_feature_settings' );
+			if ( $delete_option ) {
+				WP_CLI::success( 'Deleted ep_feature_settings blog option!' );
+			} else {
+				WP_CLI::error( 'Failed to delete ep_feature_settings_blog_option!' );
+			}
+		} else {
+			WP_CLI::error( 'Not a multisite or EP_IS_NETWORK is not enabled!' );
+		}
+	}
 }

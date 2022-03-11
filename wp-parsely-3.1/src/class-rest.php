@@ -86,17 +86,23 @@ class Rest {
 	 * the `parsely` object in the REST API.
 	 *
 	 * @param array $object The WordPress object to extract to render the metadata for, usually a post or a page.
-	 * @return array The `parsely` object to be rendered in the REST API. Contains a version number describing the
+	 * @return array<string, mixed> The `parsely` object to be rendered in the REST API. Contains a version number describing the
 	 * response and the `meta` object containing the actual metadata.
 	 */
 	public function get_callback( array $object ): array {
-		$post_id = $object['ID'] ?? $object['id'];
-		$options = $this->parsely->get_options();
+		$post_id = $object['ID'] ?? $object['id'] ?? 0;
 		$post    = WP_Post::get_instance( $post_id );
+
+		if ( false === $post || $this->parsely->api_key_is_missing() ) {
+			$meta = '';
+		} else {
+			$options = $this->parsely->get_options();
+			$meta    = $this->parsely->construct_parsely_metadata( $options, $post );
+		}
 
 		$response = array(
 			'version' => self::REST_VERSION,
-			'meta'    => $this->parsely->construct_parsely_metadata( $options, $post ),
+			'meta'    => $meta,
 		);
 
 		/**
