@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0
+class ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_1
 {
     public static $prefixLengthsPsr4 = array (
         'A' => 
@@ -33,9 +33,9 @@ class ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_0::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_1::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_1::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInit9559eef123208b7d1b9c15b978567267_vaultpressⓥ2_2_1::$classMap;
 
         }, null, ClassLoader::class);
     }

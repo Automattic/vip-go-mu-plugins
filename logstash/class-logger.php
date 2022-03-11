@@ -305,15 +305,59 @@ class Logger {
 		];
 
 		if ( ! isset( $params['file'] ) && ! isset( $params['line'] ) ) {
+			/*
+			 * Stack frames:
+			 *   - 0: Logger::log2logstash()
+			 *   - 1: Caller of Logger::log2logstash(); it could be \Automattic\VIP\Logstash\log2logstash() function
+			 *   - 2: Caller of the caller
+			 */
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
-			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 1 );
+			$backtrace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 3 );
 
-			if ( isset( $backtrace[0]['file'] ) ) {
-				$default_params['file'] = $backtrace[0]['file'];
+			/**
+			 * For
+			 *
+			 *     log2logstash( [ 'message' => 'test' ] );
+			 *
+			 * the backtrace will look like this:
+			 * [
+			 *     0 => [
+			 *         'file'     => '/chroot/var/www/wp-content/mu-plugins/logstash/class-logger.php',
+			 *         'line'     => 402,
+			 *         'function' => 'parse_params',
+			 *         'class'    => 'Automattic\VIP\Logstash\Logger',
+			 *         'type'     => '::',
+			 *     ],
+			 *     1 => [
+			 *         'file'     => '/chroot/var/www/wp-content/mu-plugins/logstash/logstash.php',
+			 *         'line'     => 22,
+			 *         'function' => 'log2logstash',
+			 *         'class'    => 'Automattic\VIP\Logstash\Logger',
+			 *         'type'     => '::',
+			 *     ],
+			 *     2 => [
+			 *         'file'     => '/chroot/var/www/test.php',
+			 *         'line'     => 9,
+			 *         'function' => 'Automattic\VIP\Logstash\log2logstash',
+			 *     ],
+			 * ];
+			 * 
+			 * We need to skip Frame 0 as it is useless for debugging.
+			 * If the user invoked `log2logstash()` function (check $frame[1]['file']), we need to go one frame down to see the actual caller (Frame 2);
+			 * otherwise, Frame 1 will point to the caller.
+			 */
+
+			$index = 1;
+			if ( isset( $backtrace[ $index ]['file'] ) && wp_endswith( $backtrace[ $index ]['file'], '/mu-plugins/logstash/logstash.php' ) ) {
+				$index = 2;
 			}
 
-			if ( isset( $backtrace[0]['line'] ) ) {
-				$default_params['line'] = $backtrace[0]['line'];
+			if ( isset( $backtrace[ $index ]['file'] ) ) {
+				$default_params['file'] = $backtrace[ $index ]['file'];
+			}
+
+			if ( isset( $backtrace[ $index ]['line'] ) ) {
+				$default_params['line'] = $backtrace[ $index ]['line'];
 			}
 		}
 

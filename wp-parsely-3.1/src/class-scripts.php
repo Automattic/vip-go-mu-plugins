@@ -195,7 +195,7 @@ class Scripts {
 			}
 		}
 
-		if ( 'wp-parsely-tracker' === $handle ) {
+		if ( null !== $tag && 'wp-parsely-tracker' === $handle ) {
 			$tag = preg_replace( '/ id=(["\'])wp-parsely-tracker-js\1/', ' id="parsely-cfg"', $tag );
 			$tag = preg_replace(
 				'/ src=/',
@@ -203,6 +203,7 @@ class Scripts {
 				$tag
 			);
 		}
-		return $tag;
+
+		return $tag ?? '';
 	}
 }

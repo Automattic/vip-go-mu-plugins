@@ -16,7 +16,6 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.1',
-	'3.0',
 	'2.6',
 ];
 
@@ -51,7 +50,7 @@ function maybe_load_plugin() {
 	}
 
 	// Bail if the plugin has already initialized elsewhere
-	if ( class_exists( 'Parsely' ) ) {
+	if ( class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ) ) {
 		return;
 	}
 
