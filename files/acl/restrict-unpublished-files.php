@@ -45,7 +45,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 		
 		// Configured in_array strict check.
 		// Reduced possible values to an official value to be checked.
-		if ( in_array( $attachment_restrict_file_meta, [ 1, '1' ], true ) ) {
+		if ( $attachment_restrict_file_meta ) {
 
 			$user_has_edit_capability = current_user_can( 'edit_posts' );
 
