@@ -68,7 +68,7 @@ const createProductionReleaseDraft = async (promotedPosts) => {
 
 	let content = '<ul>';
 	for (const {link, titleText} of promotedPosts) {
-		content += `<li>${titleText}</li>`
+		content += `<li><a href="${link}">${titleText}</a></li>`
 	}
 
 	content += '</ul>'
