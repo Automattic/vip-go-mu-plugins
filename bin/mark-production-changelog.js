@@ -64,7 +64,15 @@ const updateReleaseChannels = async (id, releaseChannels) => {
 	});
 };
 
-const createProductionReleaseDraft = async () => {
+const createProductionReleaseDraft = async (promotedPosts) => {
+
+	let content = '<ul>';
+	for (const {link, titleText} of promotedPosts) {
+		content += `<li>${titleText}</li>`
+	}
+
+	content += '</ul>'
+
 	const headers = {
 		Authorization: `Bearer ${CHANGELOG_BEARER_TOKEN}`,
 		'Content-Type': 'application/json',
@@ -73,7 +81,7 @@ const createProductionReleaseDraft = async () => {
 	const bodyObj = {
 		title,
 		excerpt: title,
-		content: 'TODO',
+		content,
 
 		status: 'draft',
 		'release-channel': [RELEASE_CHANNEL_PRODUCTION],
@@ -87,12 +95,13 @@ const createProductionReleaseDraft = async () => {
 		body,
 	});
 
+	console.log(`Created a post: ${title}`);
 }
 
 const main = async () => {
 	let pageResult = [];
 	let page = 1;
-
+	const promotedPosts = [];
 	do {
 		pageResult = await fetchPage(page);
 
@@ -102,6 +111,8 @@ const main = async () => {
 			const titleText = title.rendered;
 			console.log('post', titleText, link);
 
+			// TODO move after next line
+			promotedPosts.push({link, titleText});
 			if (releaseChannels.includes(RELEASE_CHANNEL_PRODUCTION)) {
 				continue;
 			}
@@ -115,7 +126,7 @@ const main = async () => {
 	// } while (pageResult.length > 0);
 	} while (pageResult.length > 10000);
 
-	await createProductionReleaseDraft();
+	await createProductionReleaseDraft(promotedPosts);
 };
 
 main().catch((e) => console.error(e));
