@@ -11,6 +11,7 @@ const CHANGELOG_ENDPOINT = 'https://public-api.wordpress.com/wp/v2/sites/wpvipch
 const REST_END_PAGE_ERROR = 'rest_post_invalid_page_number';
 const RELEASE_CHANNEL_STAGING = 267076;
 const RELEASE_CHANNEL_PRODUCTION = 5905;
+const MU_PLUGINS_TAG = 1784989;
 
 const fetchPage = async page => {
 	const headers = {
@@ -18,8 +19,9 @@ const fetchPage = async page => {
 	};
 	const queryArgs = {
 		// 'release-channel': RELEASE_CHANNEL_STAGING,
-		tags: 1784989, // mu-plugins
-		per_page: 100,
+		tags: MU_PLUGINS_TAG,
+		per_page: 10,
+		// per_page: 100,
 		status: 'draft,publish',
 		page,
 	}
@@ -62,6 +64,31 @@ const updateReleaseChannels = async (id, releaseChannels) => {
 	});
 };
 
+const createProductionReleaseDraft = async () => {
+	const headers = {
+		Authorization: `Bearer ${CHANGELOG_BEARER_TOKEN}`,
+		'Content-Type': 'application/json',
+	};
+	const title = `Mu-plugins release ${RELEASE_ID}`
+	const bodyObj = {
+		title,
+		excerpt: title,
+		content: 'TODO',
+
+		status: 'draft',
+		'release-channel': [RELEASE_CHANNEL_PRODUCTION],
+		tags: [MU_PLUGINS_TAG],
+	};
+	const body = JSON.stringify(bodyObj);
+
+	await fetch(`${CHANGELOG_ENDPOINT}`, {
+		headers,
+		method: "POST",
+		body,
+	});
+
+}
+
 const main = async () => {
 	let pageResult = [];
 	let page = 1;
@@ -88,7 +115,7 @@ const main = async () => {
 	// } while (pageResult.length > 0);
 	} while (pageResult.length > 10000);
 
-	console.log('RELEASE', RELEASE_ID);
+	await createProductionReleaseDraft();
 };
 
 main().catch((e) => console.error(e));
