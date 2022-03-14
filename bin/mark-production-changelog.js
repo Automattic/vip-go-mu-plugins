@@ -16,7 +16,7 @@ const fetchPage = async page => {
 		Authorization: `Bearer ${CHANGELOG_BEARER_TOKEN}`,
 	};
 	const queryArgs = {
-		'release-channel': RELEASE_CHANNEL_STAGING,
+		// 'release-channel': RELEASE_CHANNEL_STAGING,
 		tags: 1784989, // mu-plugins
 		per_page: 100,
 		status: 'draft,publish',
@@ -71,6 +71,7 @@ const main = async () => {
 		for (const post of pageResult) {
 			const { id, status } = post;
 			const releaseChannels = post['release-channel'];
+			console.log('post', post);
 
 			if (releaseChannels.includes(RELEASE_CHANNEL_PRODUCTION)) {
 				continue;
@@ -82,7 +83,8 @@ const main = async () => {
 		}
 
 		page++;
-	} while (pageResult.length > 0);
+	// } while (pageResult.length > 0);
+	} while (pageResult.length > 10000);
 };
 
 main().catch((e) => console.error(e));
