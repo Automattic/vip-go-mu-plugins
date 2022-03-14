@@ -1,53 +1,56 @@
 name: release-changelog
 
-on: workflow_dispatch
+on:
+  pull_request
+# on:
+#   workflow_dispatch
 
 permissions:
   contents: read
 
 jobs:
-  tag-release:
-    name: Tag Release
-    permissions:
-      contents: write
-    runs-on: ubuntu-latest
-    outputs:
-      id: ${{ steps.id-generator.outputs.id }}
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
-        with:
-          egress-policy: audit
+  # tag-release:
+  #   name: Tag Release
+  #   permissions:
+  #     contents: write
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     id: ${{ steps.id-generator.outputs.id }}
+  #   steps:
+  #     - name: Harden Runner
+  #       uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
+  #       with:
+  #         egress-policy: audit
 
-      - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+  #     - name: Check out source code
+  #       uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
 
-      - name: Retrieve tags
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+  #     - name: Retrieve tags
+  #       run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
-      - name: Get tag name
-        id: id-generator
-        run: |
-          current_date=$(date '+v%Y%m%d.')
-          minor_version=0
-          tag=$(git tag -l "${current_date}*" --sort=-version:refname | head -n 1)
-          if [ -n "${tag}" ]; then
-              minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
-          fi
+  #     - name: Get tag name
+  #       id: id-generator
+  #       run: |
+  #         current_date=$(date '+v%Y%m%d.')
+  #         minor_version=0
+  #         tag=$(git tag -l "${current_date}*" --sort=-version:refname | head -n 1)
+  #         if [ -n "${tag}" ]; then
+  #             minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
+  #         fi
 
-          echo "::set-output name=id::${current_date}${minor_version}"
+  #         echo "::set-output name=id::${current_date}${minor_version}"
 
-      - name: Tag release
-        run: git tag ${{ steps.id-generator.outputs.id }}
+  #     - name: Tag release
+  #       run: git tag ${{ steps.id-generator.outputs.id }}
 
-      - name: Push tags
-        run: git push --tag
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # renovate: tag=v0.1.14
-        with:
-          generate_release_notes: true
-          tag_name: ${{ steps.id-generator.outputs.id }}
+  #     - name: Push tags
+  #       run: git push --tag
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # renovate: tag=v0.1.14
+  #       with:
+  #         generate_release_notes: true
+  #         tag_name: ${{ steps.id-generator.outputs.id }}
 
   release-changelog:
     name: Publish Changelog

@@ -77,7 +77,7 @@ const main = async () => {
 			}
 
 			console.log('Adding prod release schedule for post', id, status, releaseChannels);
-			await updateReleaseChannels(id, [...releaseChannels, RELEASE_CHANNEL_PRODUCTION]);
+			// await updateReleaseChannels(id, [...releaseChannels, RELEASE_CHANNEL_PRODUCTION]);
 			console.log('Updated:', id);
 		}
 
