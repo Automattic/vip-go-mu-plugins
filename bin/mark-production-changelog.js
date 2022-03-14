@@ -70,9 +70,10 @@ const main = async () => {
 		pageResult = await fetchPage(page);
 
 		for (const post of pageResult) {
-			const { id, status, link } = post;
+			const { id, status, link, title } = post;
 			const releaseChannels = post['release-channel'];
-			console.log('post', post);
+			const titleText = title.rendered;
+			console.log('post', titleText, link);
 
 			if (releaseChannels.includes(RELEASE_CHANNEL_PRODUCTION)) {
 				continue;
