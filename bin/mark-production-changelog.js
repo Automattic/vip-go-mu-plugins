@@ -5,6 +5,7 @@
 import fetch from 'node-fetch';
 
 const CHANGELOG_BEARER_TOKEN = process.env.CHANGELOG_BEARER_TOKEN;
+const RELEASE_ID = process.env.RELEASE_ID;
 const CHANGELOG_ENDPOINT = 'https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts';
 
 const REST_END_PAGE_ERROR = 'rest_post_invalid_page_number';
@@ -69,7 +70,7 @@ const main = async () => {
 		pageResult = await fetchPage(page);
 
 		for (const post of pageResult) {
-			const { id, status } = post;
+			const { id, status, link } = post;
 			const releaseChannels = post['release-channel'];
 			console.log('post', post);
 
@@ -85,6 +86,8 @@ const main = async () => {
 		page++;
 	// } while (pageResult.length > 0);
 	} while (pageResult.length > 10000);
+
+	console.log('RELEASE', RELEASE_ID);
 };
 
 main().catch((e) => console.error(e));
