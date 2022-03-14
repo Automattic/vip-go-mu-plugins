@@ -126,5 +126,3 @@ const main = async () => {
 };
 
 main().catch((e) => console.error(e));
-
-\
