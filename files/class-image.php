@@ -32,6 +32,9 @@ class Image {
 	/** @var bool $is_resized Whether the attachment has been resized yet, or not. */
 	private $is_resized = false;
 
+	/** @var int $filesize Image original filesize */
+	private $filesize;
+
 	/**
 	 * Constructs the image object.
 	 *
@@ -50,6 +53,7 @@ class Image {
 		$this->width           = $data['width'];
 		$this->height          = $data['height'];
 		$this->mime_type       = $mime_type;
+		$this->filesize        = isset( $data['filesize'] ) ? $data['filesize'] : 0;
 	}
 
 	/**
@@ -82,7 +86,7 @@ class Image {
 	 *
 	 * @param array $size_data Array of width, height, and crop properties of a size.
 	 *
-	 * @return array|\WP_Error An array containing file, width, height, and mime-type keys and it's values. WP_Error on failure.
+	 * @return array|\WP_Error An array containing file, width, height, filesize, and mime-type keys and it's values. WP_Error on failure.
 	 */
 	public function get_size( $size_data ) {
 
@@ -97,6 +101,7 @@ class Image {
 			'width'     => $this->get_width(),
 			'height'    => $this->get_height(),
 			'mime-type' => $this->get_mime_type(),
+			'filesize'  => $this->get_filesize(),
 		];
 	}
 
@@ -155,6 +160,18 @@ class Image {
 	 */
 	public function get_mime_type() {
 		return $this->mime_type;
+	}
+
+	/**
+	 * Returns the images filesize.
+	 *
+	 * Since we don't actually create new files for different attachment sizes,
+	 * the filesize on each entry in the attachment sizes array will just be that of the original.
+	 *
+	 * @return int
+	 */
+	public function get_filesize() {
+		return (int) $this->filesize;
 	}
 
 	/**
