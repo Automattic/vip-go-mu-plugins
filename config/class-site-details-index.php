@@ -89,36 +89,65 @@ class Site_Details_Index {
 	 * Does not contain anything from vip-go-mu-plugins.
 	 */
 	public function get_plugin_info() {
-		// Needed or get_plugins can't be found in some instances
+		// Ensure get_plugins() & wp_update_plugins() are available.
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		require_once ABSPATH . 'wp-admin/includes/update.php';
 
 		$all_plugins                = get_plugins();
+		$wporg_slugs                = $this->get_wporg_plugin_slugs();
 		$active_plugins             = get_option( 'active_plugins' );
 		$network_plugins            = get_site_option( 'active_sitewide_plugins' );
 		$plugins_activated_via_code = wpcom_vip_get_filtered_loaded_plugins();
 
 		$plugin_info = array();
-
-		foreach ( $all_plugins as $key => $value ) {
+		foreach ( $all_plugins as $plugin_path => $plugin_data ) {
 			$activated_by = null;
-			if ( in_array( $key, $plugins_activated_via_code, true ) ) {
+			if ( in_array( $plugin_path, $plugins_activated_via_code, true ) ) {
 				$activated_by = 'code';
-			} elseif ( isset( $network_plugins[ $key ] ) ) {
+			} elseif ( isset( $network_plugins[ $plugin_path ] ) ) {
 				$activated_by = 'network';
-			} elseif ( in_array( $key, $active_plugins, true ) ) {
+			} elseif ( in_array( $plugin_path, $active_plugins, true ) ) {
 				$activated_by = 'option';
 			}
 
 			$plugin_info[] = array(
-				'path'         => $key,
-				'name'         => $value['Name'],
-				'version'      => $value['Version'],
+				'path'         => $plugin_path,
+				'name'         => $plugin_data['Name'],
+				'wporg_slug'   => $wporg_slugs[ $plugin_path ] ?? null,
+				'version'      => $plugin_data['Version'],
 				'active'       => null !== $activated_by,
 				'activated_by' => $activated_by,
 			);
 		}
 
 		return $plugin_info;
+	}
+
+	/**
+	 * Get a list of $plugin_path -> $wporg_slug mappings.
+	 *
+	 * Offical WP.org plugin slugs require a pretty technical process to properly find.
+	 * WP core does this by querying a WPorg endpoint that checks for a valid plugin
+	 * based on various factors like name, author, path, and plugin header values.
+	 * So here we just piggyback off of the above process to locate the proper slugs.
+	 */
+	private function get_wporg_plugin_slugs() {
+		// Ensure the update cache is fresh.
+		wp_update_plugins();
+		$update_cache = get_site_transient( 'update_plugins' );
+
+		// Note that these lists only contains plugins that were properly matched to a WPorg-registered plugin.
+		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
+		$no_update  = isset( $update_cache->no_update ) && is_array( $update_cache->no_update ) ? $update_cache->no_update : [];
+
+		$wporg_plugins = array_merge( $has_update, $no_update );
+
+		$plugin_slugs = [];
+		foreach ( $wporg_plugins as $plugin_path => $plugin_data ) {
+			$plugin_slugs[ $plugin_path ] = $plugin_data->slug;
+		}
+
+		return $plugin_slugs;
 	}
 
 	/**
