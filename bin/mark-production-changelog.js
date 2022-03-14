@@ -18,10 +18,9 @@ const fetchPage = async page => {
 		Authorization: `Bearer ${CHANGELOG_BEARER_TOKEN}`,
 	};
 	const queryArgs = {
-		// 'release-channel': RELEASE_CHANNEL_STAGING,
+		'release-channel': RELEASE_CHANNEL_STAGING,
 		tags: MU_PLUGINS_TAG,
-		per_page: 10,
-		// per_page: 100,
+		per_page: 100,
 		status: 'draft,publish',
 		page,
 	}
@@ -111,14 +110,13 @@ const main = async () => {
 			const titleText = title.rendered;
 			console.log('post', titleText, link);
 
-			// TODO move after next line
-			promotedPosts.push({link, titleText});
 			if (releaseChannels.includes(RELEASE_CHANNEL_PRODUCTION)) {
 				continue;
 			}
 
+			promotedPosts.push({link, titleText});
 			console.log('Adding prod release schedule for post', id, status, releaseChannels);
-			// await updateReleaseChannels(id, [...releaseChannels, RELEASE_CHANNEL_PRODUCTION]);
+			await updateReleaseChannels(id, [...releaseChannels, RELEASE_CHANNEL_PRODUCTION]);
 			console.log('Updated:', id);
 		}
 
