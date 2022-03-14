@@ -108,7 +108,6 @@ const main = async () => {
 			const { id, status, link, title } = post;
 			const releaseChannels = post['release-channel'];
 			const titleText = title.rendered;
-			console.log('post', titleText, link);
 
 			if (releaseChannels.includes(RELEASE_CHANNEL_PRODUCTION)) {
 				continue;
@@ -121,11 +120,11 @@ const main = async () => {
 		}
 
 		page++;
-	// } while (pageResult.length > 0);
-	} while (pageResult.length > 10000);
+	} while (pageResult.length > 0);
 
 	await createProductionReleaseDraft(promotedPosts);
 };
 
 main().catch((e) => console.error(e));
 
+\
