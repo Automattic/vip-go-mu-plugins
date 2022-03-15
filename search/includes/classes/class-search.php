@@ -856,6 +856,7 @@ class Search {
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
 				'X-Client-Env'     => VIP_GO_ENV,
 				'Accept-Encoding'  => 'gzip, deflate',
+				'X-Opaque-Id'      => 'vip-' . FILES_CLIENT_SITE_ID, // for IDing tasks: https://www.elastic.co/guide/en/elasticsearch/reference/master/tasks.html#_identifying_running_tasks
 			]
 		);
 
