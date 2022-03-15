@@ -17,6 +17,13 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
+	 * The test image's filesize in bytes.
+	 *
+	 * @var int
+	 */
+	public $test_image_filesize = 6941712;
+
+	/**
 	 * Set the test to the original initial state of the VIP Go.
 	 *
 	 * 1. A8C files being in place, no srcset.
@@ -50,7 +57,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 
 	/**
 	 * Helper function for accessing protected method.
-	 * 
+	 *
 	 * Renamed from `getMethod` to `get_method` for consistency with `get_property` (see below)
 	 *
 	 * @param string $name Name of the method.
@@ -66,7 +73,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 
 	/**
 	 * Helper function for accessing protected property.
-	 * 
+	 *
 	 * Renamed from `getProperty` `to `get_property` to avoid conflicts with PHPUnit Polyfill's `getProperty()` method
 	 * which is used by `assertAttributeXXX` assertions.
 	 *
@@ -102,7 +109,14 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 		$this->assertEquals( $postmeta['width'], $image->get_width(), 'Wrong image width.' );
 		$this->assertEquals( $postmeta['height'], $image->get_height(), 'Wrong image height.' );
 		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Wrong image mime type.' );
+		$this->assertEquals( $postmeta['filesize'], $image->get_filesize(), 'Wrong image filesize.' );
 		$this->assertFalse( $image->is_resized(), 'Non-resized image is marked as resized.' );
+
+		// If no filesize is passed in, it defaults to 0.
+		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		unset( $postmeta['filesize'] );
+		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
+		$this->assertSame( 0, $image->get_filesize(), 'Filesize did not default to 0' );
 	}
 
 	/**
@@ -172,7 +186,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Unit test covering the object initialisation.
+	 * Test the resize method.
 	 *
 	 * @covers Automattic\VIP\Files\Image::resize
 	 * @dataProvider get_data_for_generate_sizes
@@ -223,6 +237,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'width'     => $expected_resize['width'],
 			'height'    => $expected_resize['height'],
 			'mime-type' => 'image/jpeg',
+			'filesize'  => $this->test_image_filesize,
 		];
 		$this->assertEquals( $expected_size_array, $new_size_array, 'The size array does not match the expected one.' );
 	}
