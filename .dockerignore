@@ -123,6 +123,7 @@ yarn.lock
 /wp-parsely-*/.prettierrc
 /wp-parsely-*/bin
 /wp-parsely-*/CHANGELOG.md
+/wp-parsely-*/WINDOWS.md
 /wp-parsely-*/init.py
 /wp-parsely-*/tests
 /wp-parsely-*/phpunit-integration.xml.dist

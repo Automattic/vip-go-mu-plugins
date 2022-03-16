@@ -136,6 +136,9 @@ class Search {
 		'ams',
 	];
 
+	// Option for storing last processed post ID
+	public const LAST_INDEXED_POST_ID_OPTION = 'vip_es_index_last_indexed_post_id';
+
 	private static $query_count_ttl;
 
 	private const MAX_SEARCH_LENGTH              = 255;
@@ -216,9 +219,9 @@ class Search {
 	 * @return bool true if constants are defined, false otherwise
 	 */
 	public static function are_es_constants_defined() {
-		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) && ! empty( VIP_ELASTICSEARCH_ENDPOINTS );
-		$username_defined  = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && VIP_ELASTICSEARCH_USERNAME;
-		$password_defined  = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && VIP_ELASTICSEARCH_PASSWORD;
+		$endpoints_defined = defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) && ! empty( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
+		$username_defined  = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && constant( 'VIP_ELASTICSEARCH_USERNAME' );
+		$password_defined  = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && constant( 'VIP_ELASTICSEARCH_PASSWORD' );
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
@@ -440,15 +443,15 @@ class Search {
 			define( 'EP_SYNC_CHUNK_LIMIT', 500 );
 		}
 
-		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			$host                     = $this->get_random_host( VIP_ELASTICSEARCH_ENDPOINTS );
-			$this->current_host_index = array_search( $host, VIP_ELASTICSEARCH_ENDPOINTS );
+		if ( ! defined( 'EP_HOST' ) && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
+			$host                     = $this->get_random_host( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
+			$this->current_host_index = array_search( $host, constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
 
 			define( 'EP_HOST', $host );
 		}
 
 		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
-			define( 'ES_SHIELD', sprintf( '%s:%s', VIP_ELASTICSEARCH_USERNAME, VIP_ELASTICSEARCH_PASSWORD ) );
+			define( 'ES_SHIELD', sprintf( '%s:%s', constant( 'VIP_ELASTICSEARCH_USERNAME' ), constant( 'VIP_ELASTICSEARCH_PASSWORD' ) ) );
 		}
 
 		// Do not allow sync via Dashboard (WP-CLI is preferred for indexing).
@@ -540,9 +543,6 @@ class Search {
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
 
-		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
-		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
-
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
 
@@ -625,6 +625,11 @@ class Search {
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
 
 		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
+
+		// Store last processed id into option and clean up before & after indexing command
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ], 10, 2 );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ] );
+		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
 	}
 
 	protected function load_commands() {
@@ -787,7 +792,7 @@ class Search {
 
 	/**
 	 * Generate option name for cached index_exists request.
-	 * 
+	 *
 	 * @return string $option_name Name of generated option.
 	 */
 	private function get_index_exists_option_name( $url ) {
@@ -800,7 +805,7 @@ class Search {
 
 	/**
 	 * Filter to intercept EP remote requests.
-	 * 
+	 *
 	 * @param  array  $request  New remote request response
 	 * @param  array  $query    Remote request arguments
 	 * @param  array  $args     Request arguments
@@ -839,7 +844,7 @@ class Search {
 				}
 			}
 		}
-		
+
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
@@ -996,9 +1001,9 @@ class Search {
 
 		/**
 		 * Filter if request is cacheable
-		 * 
+		 *
 		 * @hook vip_search_cache_es_response
-		 * 
+		 *
 		 * @param  $url  Remote request URL
 		 * @param  $args Remote request arguments
 		 * @return $is_cacheable bool New cacheable status
@@ -1007,7 +1012,7 @@ class Search {
 	}
 
 	/**
-	 * Handle failed requests 
+	 * Handle failed requests
 	 *
 	 * @param mixed $request
 	 * @param mixed $response
@@ -1055,7 +1060,7 @@ class Search {
 			} else {
 				$response_code    = wp_remote_retrieve_response_code( $response );
 				$response_message = wp_remote_retrieve_response_message( $response );
-				$error_message    = $response_code && ! empty( $response_message ) ? 
+				$error_message    = $response_code && ! empty( $response_message ) ?
 				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
 			}
 
@@ -1165,9 +1170,9 @@ class Search {
 		}
 
 		// Legacy constant name
-		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION;
+		$query_integration_enabled_legacy = defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) && true === constant( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' );
 
-		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION;
+		$query_integration_enabled = defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' );
 
 		$enabled_by_constant = ( $query_integration_enabled || $query_integration_enabled_legacy );
 
@@ -1192,7 +1197,7 @@ class Search {
 	 */
 	public static function is_network_mode() {
 		// NOTE - Not using strict equality check here so that we match EP
-		return defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK;
+		return defined( 'EP_IS_NETWORK' ) && constant( 'EP_IS_NETWORK' );
 	}
 
 	public static function ep_skip_query_integration( $skip, $query = null ) {
@@ -1206,22 +1211,6 @@ class Search {
 		 */
 		if ( $skip ) {
 			return true;
-		}
-
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-					return true;
-				}
-			}
 		}
 
 		$integration_enabled = self::is_query_integration_enabled();
@@ -1305,7 +1294,10 @@ class Search {
 					$queue_stats->queue_count,
 					$queue_stats->longest_wait_time
 				);
-				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+				if ( ! is_wp_error( $this->alerts ) ) {
+					$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+				}
 
 				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
 			}
@@ -1332,7 +1324,9 @@ class Search {
 			$query_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		if ( ! is_wp_error( $this->alerts ) ) {
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -1364,7 +1358,10 @@ class Search {
 				home_url(),
 				$current_field_count
 			);
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 	}
 
@@ -1421,11 +1418,11 @@ class Search {
 			return $host;
 		}
 
-		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+		if ( ! is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
 			return $host;
 		}
 
-		if ( 0 === count( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
+		if ( 0 === count( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
 			return $host;
 		}
 
@@ -1531,7 +1528,7 @@ class Search {
 
 	/**
 	 * Set the default number of shards in the index settings
-	 * 
+	 *
 	 */
 	public function filter__ep_default_index_number_of_shards() {
 		return 1;
@@ -1541,7 +1538,7 @@ class Search {
 	 * Set the number of shards in the index settings for the post Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -1576,7 +1573,7 @@ class Search {
 	 * Set the number of shards in the index settings for the user Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -1715,34 +1712,6 @@ class Search {
 		return implode( '.', $key_parts );
 	}
 
-	/**
-	 * Filter for formatted_args in queries
-	 */
-	public function filter__ep_formatted_args( $formatted_args, $args ) {
-		// Check for expected structure, ie: this filters first
-		if ( ! isset( $formatted_args['query']['bool']['should'][0]['multi_match'] ) ) {
-			return $formatted_args;
-		}
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			$allow_exact_search_site_ids = array(
-				1284,
-			);
-
-			// Only allow exact search for whitelisted site ids
-			if ( ! in_array( VIP_GO_APP_ID, $allow_exact_search_site_ids, true ) ) {
-				return $formatted_args;
-			}
-		}
-
-		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
-		$formatted_args['query']['bool']['must']                               = $formatted_args['query']['bool']['should'];
-		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
-		unset( $formatted_args['query']['bool']['should'] );
-
-		return $formatted_args;
-	}
-
 	public function truncate_search_string_length( &$query ) {
 		if ( $query->is_search() ) {
 			$search = $query->get( 's' );
@@ -1810,23 +1779,25 @@ class Search {
 	public function get_current_host() {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
 			if ( defined( 'EP_HOST' ) ) {
-				return EP_HOST;
+				return constant( 'EP_HOST' );
 			}
 
 			return new \WP_Error( 'vip-search-no-host-found', 'No Elasticsearch hosts found' );
 		}
 
-		if ( ! is_array( VIP_ELASTICSEARCH_ENDPOINTS ) ) {
-			return VIP_ELASTICSEARCH_ENDPOINTS;
+		if ( ! is_array( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) ) {
+			return constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
 		}
 
 		if ( ! is_int( $this->current_host_index ) ) {
 			$this->current_host_index = 0;
 		}
 
-		$this->current_host_index = $this->current_host_index % count( VIP_ELASTICSEARCH_ENDPOINTS );
+		$this->current_host_index = $this->current_host_index % count( constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ) );
 
-		return VIP_ELASTICSEARCH_ENDPOINTS[ $this->current_host_index ];
+		$endpoints = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
+
+		return $endpoints[ $this->current_host_index ];
 	}
 
 	/**
@@ -1962,7 +1933,7 @@ class Search {
 	}
 
 	public function is_jetpack_migration() {
-		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === VIP_SEARCH_MIGRATION_SOURCE;
+		return defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) && 'jetpack' === constant( 'VIP_SEARCH_MIGRATION_SOURCE' );
 	}
 
 	/**
@@ -2038,7 +2009,7 @@ class Search {
 	}
 
 	public function get_index_routing_allocation_include_dc() {
-		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? VIP_ORIGIN_DATACENTER : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
+		$dc = defined( 'VIP_ORIGIN_DATACENTER' ) ? constant( 'VIP_ORIGIN_DATACENTER' ) : $this->get_origin_dc_from_es_endpoint( $this->get_current_host() );
 
 		$dc = strtolower( $dc );
 
@@ -2248,11 +2219,11 @@ class Search {
 
 	/**
 	 * Do not sync if index does not exist for Indexable.
-	 * 
+	 *
 	 * @param {boolean} $kill Whether to kill the sync or not.
 	 * @param {string} $indexable_slug Indexable slug.
-	 * 
-	 * @return bool 
+	 *
+	 * @return bool
 	 */
 	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
@@ -2264,5 +2235,28 @@ class Search {
 
 	public function action__init() {
 		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+	}
+
+	/**
+	 * Store last processed post ID into option during bulk indexing operation.
+	 *
+	 * @param array $objects Objects being indexed
+	 * @param array $response Elasticsearch bulk index response
+	 *
+	 * @return void
+	 */
+	public function update_last_processed_post_id_option( $objects, $response ) {
+		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
+	}
+
+	/**
+	 * Delete last processed post ID option before & after indexing.
+	 *
+	 * @return void
+	 */
+	public function delete_last_processed_post_id_option() {
+		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {
+			delete_option( self::LAST_INDEXED_POST_ID_OPTION );
+		}
 	}
 }

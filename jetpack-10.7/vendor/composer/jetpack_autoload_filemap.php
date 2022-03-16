@@ -18,12 +18,12 @@ return array(
 		'version' => '1.6.8.0',
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-compat/functions.php'
 	),
-	'c41c8291342c1bc5fcb32cf6fda33a14' => array(
-		'version' => '0.9.0.0',
-		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-search/search.php'
-	),
 	'd7b298d70ab0e8605f5d5b6edeab1bd2' => array(
 		'version' => '0.1.0.0',
 		'path'    => $vendorDir . '/automattic/jetpack-waf/actions.php'
+	),
+	'c41c8291342c1bc5fcb32cf6fda33a14' => array(
+		'version' => '0.9.1.0',
+		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-search/search.php'
 	),
 );

@@ -113,12 +113,6 @@ class VersioningCleanupJob {
 	 * @param int $version The version number of the Indexable we are deleting
 	 */
 	public function delete_stale_inactive_version( $indexable, $version ) {
-
-		if ( ! defined( 'VIP_GO_ENV' ) || 'production' === VIP_GO_ENV ) {
-			// Only do for non-production environments for the time being.
-			return;
-		}
-
 		$delete_version = $this->versioning->delete_version( $indexable, $version );
 
 		if ( is_wp_error( $delete_version ) ) {
@@ -141,7 +135,6 @@ class VersioningCleanupJob {
 						'homeurl'         => home_url(),
 						'version_deleted' => $version,
 						'indexable'       => $indexable->slug,
-						'app_id'          => FILES_CLIENT_SITE_ID,
 					],
 				)
 			);

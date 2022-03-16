@@ -930,6 +930,10 @@ class Health {
 		$unhealthy = array();
 
 		foreach ( $indexables as $indexable ) {
+			if ( ! $indexable->index_exists() ) {
+				continue;
+			}
+
 			$diff = $this->get_active_index_settings_diff_for_indexable( $indexable );
 
 			if ( is_wp_error( $diff ) ) {
