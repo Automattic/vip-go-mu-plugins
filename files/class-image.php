@@ -163,7 +163,7 @@ class Image {
 	}
 
 	/**
-	 * Returns the images filesize.
+	 * Returns the images filesize (in bytes).
 	 *
 	 * Since we don't actually create new files for different attachment sizes,
 	 * the filesize on each entry in the attachment sizes array will just be that of the original.

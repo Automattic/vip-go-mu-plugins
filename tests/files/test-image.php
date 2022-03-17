@@ -24,12 +24,24 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	public $test_image_filesize = 6941712;
 
 	/**
+	 * @var Automattic\VIP\Files\VIP_Filesystem
+	 */
+	private $vip_filesystem;
+
+	/**
 	 * Set the test to the original initial state of the VIP Go.
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Add filters so we have consistent filesize meta handling.
+		// (backporting WP 6.0 feature: https://core.trac.wordpress.org/ticket/49412)
+		$this->vip_filesystem = new Automattic\VIP\Files\VIP_Filesystem();
+		$add_filters          = self::getVIPFilesystemMethod( 'add_filters' );
+		$add_filters->invoke( $this->vip_filesystem );
+
 
 		$this->enable_a8c_files();
 	}
@@ -40,10 +52,24 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	 * Remove added uploads.
 	 */
 	public function tearDown(): void {
+		// Remove vip filesystem filters.
+		$remove_filters = self::getVIPFilesystemMethod( 'remove_filters' );
+		$remove_filters->invoke( $this->vip_filesystem );
+		$this->vip_filesystem = null;
 
 		$this->remove_added_uploads();
 
 		parent::tearDown();
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function getVIPFilesystemMethod( $name ) {
+		$class  = new \ReflectionClass( 'Automattic\VIP\Files\VIP_Filesystem' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
 	}
 
 	/**

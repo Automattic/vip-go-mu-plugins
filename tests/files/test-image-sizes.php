@@ -37,12 +37,23 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	public $test_pdf = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/pdf.pdf';
 
 	/**
+	 * @var Automattic\VIP\Files\VIP_Filesystem
+	 */
+	private $vip_filesystem;
+
+	/**
 	 * Set the test to the original initial state of the VIP Go.
 	 *
 	 * 1. A8C files being in place, no srcset.
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Add filters so we have consistent filesize meta handling.
+		// (backporting WP 6.0 feature: https://core.trac.wordpress.org/ticket/49412)
+		$this->vip_filesystem = new Automattic\VIP\Files\VIP_Filesystem();
+		$add_filters          = self::getVIPFilesystemMethod( 'add_filters' );
+		$add_filters->invoke( $this->vip_filesystem );
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
@@ -54,6 +65,10 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * Remove added uploads.
 	 */
 	public function tearDown(): void {
+		// Remove vip filesystem filters.
+		$remove_filters = self::getVIPFilesystemMethod( 'remove_filters' );
+		$remove_filters->invoke( $this->vip_filesystem );
+		$this->vip_filesystem = null;
 
 		$this->remove_added_uploads();
 
@@ -76,6 +91,16 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 */
 	protected static function getMethod( $name ) {
 		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function getVIPFilesystemMethod( $name ) {
+		$class  = new \ReflectionClass( 'Automattic\VIP\Files\VIP_Filesystem' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -191,13 +216,51 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 	/**
 	 * Data Provider for testing the Automattic\VIP\Files\ImageSizes::resize
+	 * Filsize is included in this one.
 	 *
 	 * @return mixed
 	 */
 	public function get_data_for_resize() {
-		// Now we need the sizes in separate arrays
-		$sizes = $this->get_data_for_generate_sizes();
-		return array_shift( $sizes );
+		return [
+			[
+				'thumbnail'    => [
+					'width'    => '150',
+					'height'   => '150',
+					'crop'     => '1',
+					'filesize' => $this->test_image_filesize,
+				],
+				'medium'       => [
+					'width'    => '300',
+					'height'   => '300',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'medium_large' => [
+					'width'    => '768',
+					'height'   => '0',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'large'        => [
+					'width'    => '1024',
+					'height'   => '1024',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'1536x1536'    => [
+					'width'    => '1536',
+					'height'   => '1536',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'2048x2048'    => [
+					'width'    => '2048',
+					'height'   => '2048',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+			],
+		];
 	}
 
 	/**
