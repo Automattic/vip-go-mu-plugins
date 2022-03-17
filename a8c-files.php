@@ -175,7 +175,7 @@ class A8C_Files {
 		if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
 			return false;
 		}
-		
+
 		if ( defined( 'WPCOM_VIP_USE_JETPACK_PHOTON' ) && true === WPCOM_VIP_USE_JETPACK_PHOTON ) {
 			return true;
 		}

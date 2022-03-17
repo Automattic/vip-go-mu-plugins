@@ -16,7 +16,7 @@ class ImageSizes {
 
 	/** @var Image Image to be resized. */
 	public $image;
-	
+
 	/** @var int Attachment ID. */
 	public $attachment_id;
 
