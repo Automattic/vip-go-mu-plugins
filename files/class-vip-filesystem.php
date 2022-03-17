@@ -330,7 +330,10 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Filters the generated attachment metadata
+	 * Filters the generated attachment metadata and adds "filesize".
+	 *
+	 * WP 6.0+ will be handling this automatically.
+	 * @see https://core.trac.wordpress.org/ticket/49412
 	 *
 	 * @return array
 	 */
