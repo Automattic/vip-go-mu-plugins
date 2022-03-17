@@ -859,6 +859,23 @@ class Search {
 			]
 		);
 
+		// These are the headers we should pass to better identify the request.
+		$rq_headers = [
+			'HTTP_X_FORWARDED_FOR',
+			'HTTP_TRUE_CLIENT_IP',
+			'HTTP_X_REQUEST_ID',
+			'HTTP_USER_AGENT',
+		];
+
+		foreach ( $rq_headers as $rq_header ) {
+			if ( ! isset( $_SERVER[ $rq_header ] ) ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$args['headers'][ $rq_header ] = $_SERVER[ $rq_header ];
+		}
+
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );

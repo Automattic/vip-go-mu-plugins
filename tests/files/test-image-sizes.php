@@ -23,11 +23,23 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
+	 * The test image's filesize in bytes.
+	 *
+	 * @var int
+	 */
+	public $test_image_filesize = 6941712;
+
+	/**
 	 * The test PDF file.
 	 *
 	 * @var string
 	 */
 	public $test_pdf = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/pdf.pdf';
+
+	/**
+	 * @var Automattic\VIP\Files\VIP_Filesystem
+	 */
+	private $vip_filesystem;
 
 	/**
 	 * Set the test to the original initial state of the VIP Go.
@@ -36,6 +48,12 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 */
 	public function setUp(): void {
 		parent::setUp();
+
+		// Add filters so we have consistent filesize meta handling.
+		// (backporting WP 6.0 feature: https://core.trac.wordpress.org/ticket/49412)
+		$this->vip_filesystem = new Automattic\VIP\Files\VIP_Filesystem();
+		$add_filters          = self::getVIPFilesystemMethod( 'add_filters' );
+		$add_filters->invoke( $this->vip_filesystem );
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
@@ -47,6 +65,10 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * Remove added uploads.
 	 */
 	public function tearDown(): void {
+		// Remove vip filesystem filters.
+		$remove_filters = self::getVIPFilesystemMethod( 'remove_filters' );
+		$remove_filters->invoke( $this->vip_filesystem );
+		$this->vip_filesystem = null;
 
 		$this->remove_added_uploads();
 
@@ -69,6 +91,16 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 */
 	protected static function getMethod( $name ) {
 		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
+		$method = $class->getMethod( $name );
+		$method->setAccessible( true );
+		return $method;
+	}
+
+	/**
+	 * Helper function for accessing protected methods.
+	 */
+	protected static function getVIPFilesystemMethod( $name ) {
+		$class  = new \ReflectionClass( 'Automattic\VIP\Files\VIP_Filesystem' );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 		return $method;
@@ -184,13 +216,51 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 	/**
 	 * Data Provider for testing the Automattic\VIP\Files\ImageSizes::resize
+	 * Filsize is included in this one.
 	 *
 	 * @return mixed
 	 */
 	public function get_data_for_resize() {
-		// Now we need the sizes in separate arrays
-		$sizes = $this->get_data_for_generate_sizes();
-		return array_shift( $sizes );
+		return [
+			[
+				'thumbnail'    => [
+					'width'    => '150',
+					'height'   => '150',
+					'crop'     => '1',
+					'filesize' => $this->test_image_filesize,
+				],
+				'medium'       => [
+					'width'    => '300',
+					'height'   => '300',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'medium_large' => [
+					'width'    => '768',
+					'height'   => '0',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'large'        => [
+					'width'    => '1024',
+					'height'   => '1024',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'1536x1536'    => [
+					'width'    => '1536',
+					'height'   => '1536',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+				'2048x2048'    => [
+					'width'    => '2048',
+					'height'   => '2048',
+					'crop'     => false,
+					'filesize' => $this->test_image_filesize,
+				],
+			],
+		];
 	}
 
 	/**
@@ -221,6 +291,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 			'width'     => intval( $data['width'] ),
 			'height'    => intval( $data['height'] ),
 			'mime-type' => 'image/jpeg',
+			'filesize'  => $this->test_image_filesize,
 		];
 		$this->assertEquals( $expected_resize, $generate_sizes->invokeArgs( $image_sizes, [ $data ] ) );
 	}
@@ -239,36 +310,42 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 						'width'     => 150,
 						'height'    => 150,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 					'medium'       => [
 						'file'      => 'image.jpg?resize=300,169',
 						'width'     => 300,
 						'height'    => 169,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 					'medium_large' => [
 						'file'      => 'image.jpg?resize=768,432',
 						'width'     => 768,
 						'height'    => 432,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 					'large'        => [
 						'file'      => 'image.jpg?resize=1024,576',
 						'width'     => 1024,
 						'height'    => 576,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 					'1536x1536'    => [
 						'file'      => 'image.jpg?resize=1536,865',
 						'width'     => 1536,
 						'height'    => 865,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 					'2048x2048'    => [
 						'file'      => 'image.jpg?resize=2048,1153',
 						'width'     => 2048,
 						'height'    => 1153,
 						'mime-type' => 'image/jpeg',
+						'filesize'  => $this->test_image_filesize,
 					],
 				],
 			],
@@ -479,17 +556,15 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
 		$this->assertEmpty( $postmeta['sizes'], 'Intermediate image sizes has been physically created.' );
 
 		$metadata = wp_get_attachment_metadata( $attachment_id );
-
 		$this->assertNotEmpty( $metadata['sizes'], 'Virtual copies were not created.' );
 	}
 
 	/**
 	 * Integration test of the virtual creation of intermediate sizes for non-image files.
-	 * No physical copies are being created.
+	 * No physical or virtual copies should be created.
 	 *
 	 * @group srcset-pdf
 	 */
@@ -502,14 +577,13 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		);
 		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_pdf ) );
 
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		$postmeta          = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+		$postmeta['sizes'] = $postmeta['sizes'] ?? [];
+		$this->assertEmpty( $postmeta['sizes'], 'Intermediate image sizes has been physically created.' );
 
-		$this->assertEmpty( $postmeta, 'Intermediate image sizes has been physically created.' );
-
-		$metadata = wp_get_attachment_metadata( $attachment_id );
-
-		$this->assertEmpty( $metadata, 'Virtual copies were created.' );
-
+		$metadata          = wp_get_attachment_metadata( $attachment_id );
+		$metadata['sizes'] = $metadata['sizes'] ?? [];
+		$this->assertEmpty( $metadata['sizes'], 'Virtual copies were created.' );
 	}
 
 	/**
