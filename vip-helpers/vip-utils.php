@@ -74,7 +74,7 @@ function wpcom_vip_noncdn_uri( $path ) {
  */
 function vip_powered_wpcom_img_html( $image ) {
 	//Stores constant to allow cache breaking if images need replaced
-	$IMG_VERSION = "20220317";
+	$img_version = "20220317";
 
 	$vip_powered_wpcom_images = array(
 		//image file, width, height
@@ -87,7 +87,7 @@ function vip_powered_wpcom_img_html( $image ) {
 	);
 
 	if ( array_key_exists( $image, $vip_powered_wpcom_images ) ) {
-		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '?ver=' . $IMG_VERSION . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) . '" /></a>';
+		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '?ver=' . rawurlencode($img_version) . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) . '" /></a>';
 	} else {
 		return '';
 	}
