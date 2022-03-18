@@ -1,11 +1,12 @@
 # Parse.ly
 
-Stable tag: 3.1.2  
+Stable tag: 3.1.3  
 Requires at least: 5.0  
-Tested up to: 5.9.1  
+Tested up to: 5.9.2  
 Requires PHP: 7.1  
 License: GPLv2 or later  
-Tags: analytics, parse.ly, parsely, parsley  
+License URI: https://www.gnu.org/licenses/gpl-2.0.html  
+Tags: analytics, content marketing, parse.ly, parsely, parsley  
 Contributors: parsely, hbbtstar, jblz, mikeyarce, GaryJ, parsely_mike, pauargelaguet, acicovic
 
 The Parse.ly plugin facilitates real-time and historical analytics to your content through a platform designed and built for digital publishing.
@@ -27,9 +28,15 @@ Join industry leaders -- like Mashable, Slate, News Corp, and Conde Nast -- who 
 
 Feedback, suggestions, questions or concerns? Open a new [GitHub issue](https://github.com/Parsely/wp-parsely/issues) or email us at [support@parsely.com](mailto:support@parsely.com). We always want to hear from you!
 
+### Documentation
+
+If you are looking for the plugin's documentation and how to set up your WordPress site with Parse.ly, take a look at [the Parse.ly integration docs](https://www.parsely.com/help/integration/wordpress).
+
+In case you are a WordPress VIP customer, [VIP's documentation](https://docs.wpvip.com/technical-references/plugins/parse-ly/) will be also useful for you.
+
 ## Installation
 
-The plugin requires an active Parse.ly account. Parse.ly gives creators, marketers, and developers the tools to understand content performance, prove content value, and deliver tailored content experiences that drive meaningful results. [Sign up for a free demo of Parse.ly](https://www.parsely.com/getdemo?utm_medium=referral&utm_source=wordpress.org&utm_content=wp-parsely).
+The plugin requires an active Parse.ly account. [Sign up for a free demo of Parse.ly](https://www.parsely.com/getdemo?utm_medium=referral&utm_source=wordpress.org&utm_content=wp-parsely).
 
 ### Install the plugin from within WordPress
 
@@ -46,104 +53,37 @@ The plugin requires an active Parse.ly account. Parse.ly gives creators, markete
 4. Visit the Plugins page from your WordPress dashboard and look for the newly installed Parse.ly plugin.
 5. Click _Activate_ to activate the plugin on your site.
 
+Note that this method is the recommended one for installing old versions of the plugin. Those can be downloaded from [WordPress.org](https://wordpress.org/plugins/wp-parsely/advanced/) or the GitHub Releases page.
+
 ## Local development
 
-To run the plugin locally or to contribute to it, please check the instructions in the [CONTRIBUTING](CONTRIBUTING.md) file.
+Development, code hosting and issue tracking of this plugin happens on the [wp-parsely GitHub repository](https://github.com/Parsely/wp-parsely/). Active development happens on the `develop` branch and releases are made off the `trunk` branch.
 
-## REST API
+To run the plugin locally or to contribute to it, please check the instructions in the [CONTRIBUTING](https://github.com/parsely/wp-parsely/blob/trunk/CONTRIBUTING.md) file.
 
-The plugin adds a `parsely` field to certain REST API responses. This can be disabled by returning `false` from the `wp_parsely_enable_rest_api_support` filter.
+## Sample Parse.ly metadata
 
-Example:
+The standard Parse.ly JavaScript tracker inserted before the closing `body` tag:
 
-```
-// Disable all REST API output from the Parse.ly plugin.
-add_filter( 'wp_parsely_enable_rest_api_support', '__return_false' );
-```
+~~~html
+<script id="parsely-cfg" data-parsely-site="example.com" src="https://cdn.parsely.com/keys/example.com/p.js"></script>
+~~~
 
-The plugin adds the `parsely` field to endpoints corresponding to the Tracked Post Types and Tracked Page Types selected in the plugin settings. By default, this would be the `/wp-json/wp/v2/pages` and `/wp-json/wp/v2/posts` endpoints along with the corresponding single resource endpoints.
+A sample `JSON-LD` structured data for a home page or section page:
 
-This choice of objects types can be further changed by using the `wp_parsely_rest_object_types` filter.
+~~~html
+<script type="application/ld+json">
+{"@context":"http:\/\/schema.org","@type":"WebPage","headline":"WordPress VIP","url":"http:\/\/wpvip.com\/"}
+</script>
+~~~
 
-Example:
+A sample `JSON-LD` meta tag and structured data for an article or post:
 
-```
-// Disable REST API output from pages, but enable for term archives.
-add_filter(
-	'wp_parsely_rest_object_types',
-	function( $object_types ) {
-		$object_types = array_diff( $object_types, array( 'page' ) );
-		$object_types[] = 'term';
-		return $object_types;
-	}
-);
-```
-
-The `parsely` field contains the following fields:
- - `version`, which is a string identifying the version of the REST API output; this will be updated if changes are made to the output, so consuming applications can check against it.
- - `meta`, which is an array of metadata for the specific post, page or other object type.
- - `rendered`, which is the rendered HTML of the metadata for the post, page or other object type. This will be a JSON-LD `<script>` tag, or a set of `<meta>` tags, depending on the format selected in the plugin settings. The decoupled code can consume and use this directly, instead of building the values from the `meta` field values.
-
-The `rendered` field is a convenience field containing the HTML-formatted metadata which can be printed to a decoupled page as is.
-
-This can be disabled by returning `false` from the `wp_parsely_enable_rest_rendered_support` filter.
-
-Example:
-
-```
-// Disable rendered field output from the REST API output.
-add_filter( 'wp_parsely_enable_rest_rendered_support', '__return_false' );
-```
-
-## Frequently Asked Questions
-
-### Where do I find my Site ID?
-
-Your Site ID is likely your own site domain name (e.g., `mysite.com`). You can find this in your Parse.ly account.
-
-### Why can't I see Parse.ly code on my post when I preview?
-
-The code will only be placed on posts and pages which have been published in WordPress to ensure we don't track traffic generated while you're still writing a post or page.
-
-You may also be not tracking logged-in users, via one of the settings.
-
-### How can I edit the values passed to the JSON-LD metadata?
-
-You can use the `wp_parsely_metadata` filter, which sends three arguments: the array of metadata, the post object, and the `parsely_options` array:
-
-    add_filter( 'wp_parsely_metadata', 'filter_parsely_metadata', 10, 3 );
-    function filter_parsely_metadata( $parsely_metadata, $post, $parsely_options ) {
-        $parsely_metadata['articleSection'] = '...'; // Whatever values you want Parse.ly's Section to be.
-        return $parsely_metadata;
-    }
-
-This filter can go anywhere in your codebase, provided it always gets loaded.
-
-### Is the plugin compatible with AMP and Facebook Instant Articles?
-
-It is! The plugin hooks into Automattic's official plugins for [AMP](https://wordpress.org/plugins/amp/) and [Facebook Instant Articles](https://wordpress.org/plugins/fb-instant-articles/).
-
-AMP support is enabled automatically if the Automattic AMP plugin is installed.
-
-For Facebook Instant Articles support, enable "Parsely Analytics" in the "Advanced Settings" menu of the Facebook Instant Articles plugin.
-
-### Does the plugin support dynamic tracking?
-
-This plugin does not currently support dynamic tracking (the tracking of multiple pageviews on a single page).
-
-Some common use-cases for dynamic tracking are slideshows or articles loaded via AJAX calls in single-page applications -- situations in which new content is loaded without a full page refresh.
-
-Tracking these events requires manually implementing additional JavaScript above [the standard Parse.ly include](http://www.parsely.com/help/integration/basic/) that the plugin injects into your page source. Please consult [the Parse.ly documentation on dynamic tracking](https://www.parsely.com/help/integration/dynamic/) for instructions on implementing dynamic tracking, or contact Parse.ly support for additional assistance.
-
-### Cloudflare support
-
-If the site is running behind a Cloudflare DNS, their Rocket Loader technology will alter how JavaScript files are loaded. [A JavaScript file can be ignored by Rocket Loader](https://support.cloudflare.com/hc/en-us/articles/200169436-How-can-I-have-Rocket-Loader-ignore-specific-JavaScripts) by using `data-cfasync="false"`.
-
-Previous versions of this plugin would mark all scripts with that tag by default. Starting in version 3.0, that behavior has become optional and scripts won't be annotated with `data-cfasync="false"`. The previous behavior can be restored by adding the following filter:
-
-```
-add_filter( 'wp_parsely_enable_cfasync_attribute', '__return_true' );
-```
+~~~html
+<script type="application/ld+json">
+{"@context":"http:\/\/schema.org","@type":"NewsArticle","mainEntityOfPage":{"@type":"WebPage","@id":"http:\/\/wpvip.com\/2021\/04\/09\/how-the-wordpress-gutenberg-block-editor-empowers-enterprise-content-creators\/"},"headline":"How the WordPress Gutenberg Block Editor Empowers Enterprise Content Creators","url":"http:\/\/wpvip.com\/2021\/04\/09\/how-the-wordpress-gutenberg-block-editor-empowers-enterprise-content-creators\/","thumbnailUrl":"https:\/\/wpvip.com\/wp-content\/uploads\/2021\/04\/ladyatdesk.png?w=120","image":{"@type":"ImageObject","url":"https:\/\/wpvip.com\/wp-content\/uploads\/2021\/04\/ladyatdesk.png?w=120"},"dateCreated":"2021-04-09T15:13:13Z","datePublished":"2021-04-09T15:13:13Z","dateModified":"2021-04-09T15:13:13Z","articleSection":"Gutenberg","author":[{"@type":"Person","name":"Sam Wendland"}],"creator":["Sam Wendland"],"publisher":{"@type":"Organization","name":"The Enterprise Content Management Platform | WordPress VIP","logo":"https:\/\/wpvip.com\/wp-content\/uploads\/2020\/11\/cropped-favicon-dark.png"},"keywords":[]}
+</script>
+~~~
 
 ## Screenshots
 
@@ -158,23 +98,9 @@ add_filter( 'wp_parsely_enable_cfasync_attribute', '__return_true' );
 5. A view of the Parse.ly Dashboard Overview. Parse.ly offers analytics that empowers you to better understand how your content is peforming.  
    ![The Parsely Dashboard Overview](.wordpress-org/screenshot-5.png)
 
-## Sample Parse.ly metadata
+## Frequently Asked Questions
 
-The standard Parse.ly JavaScript tracker inserted before the closing `body` tag:
-
-    <script id="parsely-cfg" data-parsely-site="example.com" src="https://cdn.parsely.com/keys/example.com/p.js"></script>
-
-A sample `JSON-LD` structured data for a home page or section page:
-
-    <script type="application/ld+json">
-    {"@context":"http:\/\/schema.org","@type":"WebPage","headline":"WordPress VIP","url":"http:\/\/wpvip.com\/"}
-    </script>
-
-A sample `JSON-LD` meta tag and structured data for an article or post:
-
-    <script type="application/ld+json">
-    {"@context":"http:\/\/schema.org","@type":"NewsArticle","mainEntityOfPage":{"@type":"WebPage","@id":"http:\/\/wpvip.com\/2021\/04\/09\/how-the-wordpress-gutenberg-block-editor-empowers-enterprise-content-creators\/"},"headline":"How the WordPress Gutenberg Block Editor Empowers Enterprise Content Creators","url":"http:\/\/wpvip.com\/2021\/04\/09\/how-the-wordpress-gutenberg-block-editor-empowers-enterprise-content-creators\/","thumbnailUrl":"https:\/\/wpvip.com\/wp-content\/uploads\/2021\/04\/ladyatdesk.png?w=120","image":{"@type":"ImageObject","url":"https:\/\/wpvip.com\/wp-content\/uploads\/2021\/04\/ladyatdesk.png?w=120"},"dateCreated":"2021-04-09T15:13:13Z","datePublished":"2021-04-09T15:13:13Z","dateModified":"2021-04-09T15:13:13Z","articleSection":"Gutenberg","author":[{"@type":"Person","name":"Sam Wendland"}],"creator":["Sam Wendland"],"publisher":{"@type":"Organization","name":"The Enterprise Content Management Platform | WordPress VIP","logo":"https:\/\/wpvip.com\/wp-content\/uploads\/2020\/11\/cropped-favicon-dark.png"},"keywords":[]}
-    </script>
+See [frequently asked questions](https://www.parse.ly/help/integration/wordpress#frequently-asked-questions) on the Parse.ly Technical Documentation.
 
 ## Changelog
 
