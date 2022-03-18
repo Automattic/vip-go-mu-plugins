@@ -850,12 +850,22 @@ class Search {
 			$args['headers'] = [];
 		}
 
+		// See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/api-conventions.html#x-opaque-id
+		$x_opaque_id = FILES_CLIENT_SITE_ID;
+		if ( null !== $type ) {
+			$x_opaque_id .= "_{$type}";
+		}
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$x_opaque_id .= '_cli';
+		}
+
 		$args['headers'] = array_merge(
 			$args['headers'],
 			[
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
 				'X-Client-Env'     => VIP_GO_ENV,
 				'Accept-Encoding'  => 'gzip, deflate',
+				'X-Opaque-Id'      => $x_opaque_id,
 			]
 		);
 
