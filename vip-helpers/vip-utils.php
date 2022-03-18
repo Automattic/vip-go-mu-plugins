@@ -73,9 +73,6 @@ function wpcom_vip_noncdn_uri( $path ) {
  * @return string HTML
  */
 function vip_powered_wpcom_img_html( $image ) {
-	//Stores string to allow cache breaking if images need replaced
-	$img_version = "20220317";
-
 	$vip_powered_wpcom_images = array(
 		//image file, width, height
 		1 => array( 'vip-powered-light-small.png', 187, 26 ),
@@ -85,7 +82,8 @@ function vip_powered_wpcom_img_html( $image ) {
 		5 => array( 'vip-powered-dark-normal.png', 209, 56 ),
 		6 => array( 'vip-powered-dark-long.png', 305, 56 ),
 	);
-
+	//Stores string to allow cache breaking if images need replaced
+	$img_version = "20220317";
 	if ( array_key_exists( $image, $vip_powered_wpcom_images ) ) {
 		return '<a href="' . esc_url( vip_powered_wpcom_url() ) . '" rel="generator nofollow" class="powered-by-wpcom"><img src="' . esc_url( plugins_url( 'images/' . $vip_powered_wpcom_images[ $image ][0], __FILE__ ) ) . '?ver=' . rawurlencode( $img_version ) . '" width="' . esc_attr( $vip_powered_wpcom_images[ $image ][1] ) . '" height="' . esc_attr( $vip_powered_wpcom_images[ $image ][2] ) . '" alt="' . esc_attr__( 'Powered by WordPress VIP', 'vip-helpers' ) . '" /></a>';
 	} else {
