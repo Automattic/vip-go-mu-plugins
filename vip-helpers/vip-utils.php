@@ -73,7 +73,7 @@ function wpcom_vip_noncdn_uri( $path ) {
  * @return string HTML
  */
 function vip_powered_wpcom_img_html( $image ) {
-	//Stores constant to allow cache breaking if images need replaced
+	//Stores string to allow cache breaking if images need replaced
 	$img_version = "20220317";
 
 	$vip_powered_wpcom_images = array(
