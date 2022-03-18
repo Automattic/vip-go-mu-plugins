@@ -2013,6 +2013,12 @@ class Search {
 		if ( $origin_datacenter ) {
 			// We want all indexes to live in the site's origin datacenter
 			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		} else {
+			$message = sprintf( 'No origin DC detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+			// Alert when it is unavailable
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 
 		return $mapping;
