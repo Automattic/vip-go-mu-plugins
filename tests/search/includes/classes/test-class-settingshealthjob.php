@@ -23,7 +23,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 				'https://es-endpoint2',
 			) );
 		}
-		
+
 		self::$version_instance = self::$search->versioning;
 
 		// Required so that EP registers the Indexables
@@ -229,7 +229,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
-			->setMethods( [ 'check_process_build' ] ) 
+			->setMethods( [ 'check_process_build' ] )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -251,7 +251,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
-			->setMethods( [ 'check_process_build' ] ) 
+			->setMethods( [ 'check_process_build' ] )
 			->disableOriginalConstructor()
 			->getMock();
 

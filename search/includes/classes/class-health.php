@@ -936,7 +936,7 @@ class Health {
 				continue;
 			}
 
-			$diff = $this->get_active_index_settings_diff_for_indexable( $indexable );
+			$diff = $this->get_index_versions_settings_diff_for_indexable( $indexable );
 
 			if ( is_wp_error( $diff ) ) {
 				$unhealthy[ $indexable->slug ] = $diff;
@@ -954,17 +954,19 @@ class Health {
 		return $unhealthy;
 	}
 
-	public function get_active_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$version = $this->search->versioning->get_active_version_number( $indexable );
-
-		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
-			'index_version' => $version,
-		) );
+	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
+		$versions = $this->search->versioning->get_versions( $indexable );
 
 		$diff = [];
 
-		if ( ! empty( $version_result ) ) {
-			$diff[] = $version_result;
+		foreach ( $versions as $version ) {
+			$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
+				'index_version' => $version['number'],
+			) );
+
+			if ( is_array( $version_result ) && ! empty( $version_result ) ) {
+				$diff[] = $version_result;
+			}
 		}
 
 		return $diff;
