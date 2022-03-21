@@ -231,7 +231,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.14.0
+      - image: cimg/node:16.14.2
     steps:
       - checkout
       - run:
