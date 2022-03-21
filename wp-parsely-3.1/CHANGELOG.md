@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.3] - 2022-03-17
+
+### Fixed
+
+- Fix rare errors when getting authors metadata. The error occurred on posts that contained malformed authors. [#722](https://github.com/Parsely/wp-parsely/pull/722)
+- Improve type definitions on categories metadata generation. [#723](https://github.com/Parsely/wp-parsely/pull/723)
+
 ## [3.1.2] - 2022-02-24
 
 ### Added
@@ -541,6 +548,7 @@ If you are using the plugin without any code-level customizations (for instance,
 - Initial version.
 - Add support for parsely-page and JavaScript on home page and published pages and posts as well as archive pages (date/author/category/tag).
 
+[3.1.3]: https://github.com/Parsely/wp-parsely/compare/3.1.2...3.1.3
 [3.1.2]: https://github.com/Parsely/wp-parsely/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/Parsely/wp-parsely/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/Parsely/wp-parsely/compare/3.0.4...3.1.0
