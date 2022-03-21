@@ -964,7 +964,7 @@ class Health {
 				'index_version' => $version['number'],
 			) );
 
-			if ( ! empty( $version_result ) ) {
+			if ( is_array( $version_result ) && ! empty( $version_result ) ) {
 				$diff[] = $version_result;
 			}
 		}
