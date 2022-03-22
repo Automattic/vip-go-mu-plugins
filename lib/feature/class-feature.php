@@ -17,9 +17,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [
-		'rebuild-index' => 0.75,
-	];
+	public static $feature_percentages = [];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.

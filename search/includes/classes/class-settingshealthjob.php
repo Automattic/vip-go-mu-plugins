@@ -196,12 +196,7 @@ class SettingsHealthJob {
 				}
 				// Check if active index needs to be re-built in the background.
 				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
-					// Rollout for 10% of production environments.
-					if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) &&
-						( 'production' !== VIP_GO_APP_ENVIRONMENT || ( 'production' === VIP_GO_APP_ENVIRONMENT && \Automattic\VIP\Feature::is_enabled_by_percentage( 'rebuild-index' ) ) )
-					) {
-						$this->maybe_process_build( $indexable );
-					}
+					$this->maybe_process_build( $indexable );
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
