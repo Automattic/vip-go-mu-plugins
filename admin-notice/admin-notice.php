@@ -26,3 +26,21 @@ add_action(
 		do_action( 'vip_admin_notice_init', $admin_notice_controller );
 	}
 );
+
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				'Jetpack Search custom indexes are targeted for end-of-life on May 4, 2022. <a href="https://lobby.vip.wordpress.com/2022/02/02/enterprise-search-as-default-elasticsearch-solution/" target="_blank" title="Enterprise Search as default Elasticsearch solution">Please use Enterprise Search or Jetpack Instant Search instead.</a>',
+				[
+					new Date_Condition( '2022-01-01', '2022-05-04' ),
+					new Expression_Condition( defined( 'JETPACK_SEARCH_VIP_INDEX' ) && JETPACK_SEARCH_VIP_INDEX ),
+					new Capability_Condition( 'administrator' ),
+				],
+				'search-migrations',
+				'error'
+			)
+		);
+	}
+);
