@@ -13,6 +13,7 @@ require_once __DIR__ . '/conditions/class-expression-condition.php';
 require_once __DIR__ . '/conditions/class-date-condition.php';
 require_once __DIR__ . '/conditions/class-capability-condition.php';
 require_once __DIR__ . '/conditions/class-wp-version-condition.php';
+require_once __DIR__ . '/conditions/class-constant-condition.php';
 
 $admin_notice_controller = new Admin_Notice_Controller();
 
