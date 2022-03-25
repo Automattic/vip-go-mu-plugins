@@ -1,16 +1,12 @@
 <?php
 
 class VIP_Feed_Cache_Test extends WP_UnitTestCase {
-	public function setUp(): void {
-		parent::setUp();
-	}
-
 	public function test__fetch_feed_build() {
 		// Mock remote request made in fetch_feed()
 		add_filter( 'pre_http_request', function() {
 			return [
 				'headers'     => [
-					'content-type' => 'application/rss+xml; charset=utf-8'
+					'content-type' => 'application/rss+xml; charset=utf-8',
 				],
 				'cookies'     => [],
 				'filename'    => null,
@@ -21,8 +17,8 @@ class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 			];
 		}, 10, 3 );
 
-		$url = 'https://www.example.com/test.rss';
-		$feed = fetch_feed( $url );
+		$url   = 'https://www.example.com/test.rss';
+		$feed  = fetch_feed( $url );
 		$build = $feed->data['build'];
 		$this->assertIsNumeric( $build );
 
@@ -36,13 +32,12 @@ class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 	 * @param $url string
 	 * @return $url string
 	 */
-	function get_cache_filename( $url ) {
-		$options = array();
+	private function get_cache_filename( $url ) {
+		$options                    = [];
 		$options[ CURLOPT_TIMEOUT ] = 3;
-		if ( ! empty( $options ) )
-		{
+		if ( ! empty( $options ) ) {
 			ksort( $options );
-			$url .= '#' . urlencode( var_export( $options, true ) );
+			$url .= '#' . urlencode( var_export( $options, true ) ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		}
 		return $url;
 	}
