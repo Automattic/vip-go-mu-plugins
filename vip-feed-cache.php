@@ -15,10 +15,10 @@
  * @return void
  */
 function vipgo_feed_options( &$feed ) {
-	require_once __DIR__ . '/vip-feed-cache/class-vip-go-feed-cache.php';
 	require_once __DIR__ . '/vip-feed-cache/class-vip-go-feed-transient.php';
 
-	$feed->set_cache_class( VIP_Go_Feed_Cache::class );
+	SimplePie_Cache::register( 'vip_go_feed_cache', VIP_Go_Feed_Cache_Transient::class );
+	$feed->set_cache_location( 'vip_go_feed_cache' );
 }
 
 add_action( 'wp_feed_options', 'vipgo_feed_options' );
