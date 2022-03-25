@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" ?> <rss version="2.0" xml:base="http://www.nasa.gov/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:media="http://search.yahoo.com/mrss/"> <channel> <title>NASA Breaking News</title>
+ <description>A RSS news feed containing the latest NASA news articles and press releases.</description>
+ <link>http://www.nasa.gov/</link>
+ <atom:link rel="self" href="http://www.nasa.gov/rss/dyn/breaking_news.rss" />
+ <language>en-us</language>
+ <managingEditor>jim.wilson@nasa.gov</managingEditor>
+ <webMaster>brian.dunbar@nasa.gov</webMaster>
+ <docs>http://blogs.harvard.edu/tech/rss</docs>
+ <item> <title>NASA to Provide Live Coverage of Record-Setting US Astronaut Return</title>
+ <link>http://www.nasa.gov/press-release/nasa-to-provide-live-coverage-of-record-setting-us-astronaut-return</link>
+ <description>NASA astronaut Mark Vande Hei and two Roscosmos cosmonauts are scheduled to end their mission aboard the International Space Station and return to Earth on Wednesday, March 30.</description>
+ <enclosure url="http://www.nasa.gov/sites/default/files/styles/1x1_cardfeed/public/thumbnails/image/iss066e139638_0.jpg?itok=8DVt-Ame" length="2694723" type="image/jpeg" />
+ <guid isPermaLink="false">http://www.nasa.gov/press-release/nasa-to-provide-live-coverage-of-record-setting-us-astronaut-return</guid>
+ <pubDate>Thu, 24 Mar 2022 15:22 EDT</pubDate>
+ <source url="http://www.nasa.gov/rss/dyn/breaking_news.rss">NASA Breaking News</source>
+ <dc:identifier>478304</dc:identifier>
+</item>
+ <item> <title>NASA, ESA Assign Astronauts to Space Station Mission on Crew Dragon</title>
+ <link>http://www.nasa.gov/press-release/nasa-esa-assign-astronauts-to-space-station-mission-on-crew-dragon</link>
+ <description>NASA and ESA (European Space Agency) have selected two astronauts to launch on NASA’s SpaceX Crew-7 mission to the International Space Station.</description>
+ <enclosure url="http://www.nasa.gov/sites/default/files/styles/1x1_cardfeed/public/thumbnails/image/mogensen_and_moghbeli_1x1_final.jpg?itok=HIMTyLpq" length="360500" type="image/jpeg" />
+ <guid isPermaLink="false">http://www.nasa.gov/press-release/nasa-esa-assign-astronauts-to-space-station-mission-on-crew-dragon</guid>
+ <pubDate>Thu, 24 Mar 2022 09:17 EDT</pubDate>
+ <source url="http://www.nasa.gov/rss/dyn/breaking_news.rss">NASA Breaking News</source>
+ <dc:identifier>478297</dc:identifier>
+</item>
+</channel>
+</rss>
