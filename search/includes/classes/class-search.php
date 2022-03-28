@@ -871,19 +871,21 @@ class Search {
 
 		// These are the headers we should pass to better identify the request.
 		$rq_headers = [
-			'HTTP_X_FORWARDED_FOR',
-			'HTTP_TRUE_CLIENT_IP',
-			'HTTP_X_REQUEST_ID',
-			'HTTP_USER_AGENT',
+			'X-Forwarded-For',
+			'True-Client-IP',
+			'X-Request-Id',
+			'User-Agent',
 		];
 
+		$allheaders = function_exists( 'getallheaders' ) ? getallheaders() : [];
+
 		foreach ( $rq_headers as $rq_header ) {
-			if ( ! isset( $_SERVER[ $rq_header ] ) ) {
+			if ( ! isset( $allheaders[ $rq_header ] ) ) {
 				continue;
 			}
 
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			$args['headers'][ $rq_header ] = $_SERVER[ $rq_header ];
+			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
 		}
 
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
