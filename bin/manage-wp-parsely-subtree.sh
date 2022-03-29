@@ -19,7 +19,7 @@ parsely_tag=$2
 
 tree_dir="wp-parsely-${tree_version}"
 if [ -e "$tree_dir" ]; then
-  echo "Updating existing wp-parsely folder $tree_dir to the tag $parsely_tag"
+  echo "Removing existing wp-parsely folder $tree_dir with tag $parsely_tag"
 
   rm -rf $tree_dir
 fi
