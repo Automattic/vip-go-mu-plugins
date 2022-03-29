@@ -84,6 +84,6 @@ if ( ! function_exists( 'es_get_posts' ) ) {
  */
 function es_wp_query_load_adapter( $adapter ) {
 	if ( in_array( $adapter, array( 'searchpress', 'travis', 'jetpack-search', 'vip-search' ), true ) ) {
-		require_once ES_WP_QUERY_PATH . "/adapters/{$adapter}.php";
+		require_once ES_WP_QUERY_PATH . "/adapters/vip-search.php"; // VIP: Load vip-search adapter no matter what.
 	}
 }
