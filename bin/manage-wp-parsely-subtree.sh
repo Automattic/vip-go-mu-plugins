@@ -21,10 +21,10 @@ tree_dir="wp-parsely-${tree_version}"
 if [ -e "$tree_dir" ]; then
   echo "Updating existing wp-parsely subtree $tree_dir to the tag $parsely_tag"
 
-  git subtree pull --squash -P $tree_dir https://github.com/Parsely/wp-parsely $parsely_tag -m "Update wp-parsely $tree_version subtree to tag $parsely_tag"
-  exit
+  rm -rf $tree_dir
 fi
 
 echo "Creating new wp-parsely subtree $tree_dir using tag: $parsely_tag"
 
-git subtree add --squash -P $tree_dir https://github.com/Parsely/wp-parsely $parsely_tag -m "Add wp-parsely $tree_version subtree with tag $parsely_tag"
+wget "https://downloads.wordpress.org/plugin/wp-parsely.$parsely_tag.zip"
+unzip "wp-parsely-$parsely_tag.zip" -d $tree_dir
