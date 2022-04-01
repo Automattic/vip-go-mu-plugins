@@ -20,6 +20,10 @@ return array(
       'path' => 'jetpack_vendor/automattic/jetpack-admin-ui',
       'ver' => '0.2.5',
     ),
+    'jetpack-connection' => array(
+      'path' => 'jetpack_vendor/automattic/jetpack-connection',
+      'ver' => '1.37.3',
+    ),
     'jetpack-password-checker' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-password-checker',
       'ver' => '0.2.3',
@@ -36,17 +40,9 @@ return array(
       'path' => 'jetpack_vendor/automattic/jetpack-backup',
       'ver' => '1.2.5',
     ),
-    'jetpack-connection' => array(
-      'path' => 'jetpack_vendor/automattic/jetpack-connection',
-      'ver' => '1.37.3',
-    ),
     'jetpack-compat' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-compat',
       'ver' => '1.7.0',
-    ),
-    'jetpack-connection-ui' => array(
-      'path' => 'jetpack_vendor/automattic/jetpack-connection-ui',
-      'ver' => '2.3.12',
     ),
     'jetpack-google-fonts-provider' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-google-fonts-provider',
@@ -72,13 +68,17 @@ return array(
       'path' => 'jetpack_vendor/automattic/jetpack-config',
       'ver' => '1.7.0',
     ),
+    'jetpack-connection-ui' => array(
+      'path' => 'jetpack_vendor/automattic/jetpack-connection-ui',
+      'ver' => '2.3.12',
+    ),
     'jetpack-my-jetpack' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-my-jetpack',
-      'ver' => '0.6.12',
+      'ver' => '0.6.13',
     ),
     'jetpack-search-pkg' => array(
       'path' => 'jetpack_vendor/automattic/jetpack-search',
-      'ver' => '0.12.0',
+      'ver' => '0.12.1',
     ),
   ),
 );
