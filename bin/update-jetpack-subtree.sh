@@ -19,4 +19,6 @@ fi
 
 echo "Updating jetpack subtree $tree_dir to the jetpack tag $jetpack_tag"
 
-git subtree pull -P $tree_dir --squash https://github.com/Automattic/jetpack-production $jetpack_tag -m "Update jetpack $tree_version subtree to tag $jetpack_tag"
+git rm -r $tree_dir
+git commit -m "Removing $tree_dir for subtree replacement to $jetpack_tag"
+git subtree add -P $tree_dir --squash https://github.com/Automattic/jetpack-production $jetpack_tag -m "Update jetpack $tree_version subtree to tag $jetpack_tag"
