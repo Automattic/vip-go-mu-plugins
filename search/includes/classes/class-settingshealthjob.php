@@ -150,7 +150,7 @@ class SettingsHealthJob {
 				}
 
 				$indexable = $this->indexables->get( $indexable_slug );
-				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) && 1 === count( $result['diff'] )
+				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
 					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
 					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
 						// Don't keep alerting if it's an active index in process of being re-built.
