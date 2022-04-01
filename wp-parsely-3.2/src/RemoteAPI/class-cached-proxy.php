@@ -10,8 +10,6 @@ declare(strict_types=1);
 
 namespace Parsely\RemoteAPI;
 
-use WP_Error;
-
 /**
  * Caching Decorator for the remote /related endpoint.
  */
