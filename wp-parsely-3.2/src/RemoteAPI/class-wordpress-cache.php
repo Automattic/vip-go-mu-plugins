@@ -10,27 +10,10 @@ declare(strict_types=1);
 
 namespace Parsely\RemoteAPI;
 
-use WP_Object_Cache;
-
 /**
  * Remote API Adapter for the WordPress Object Cache.
  */
 class WordPress_Cache implements Cache {
-	/**
-	 * The WordPress Object Cache.
-	 *
-	 * @var WP_Object_Cache
-	 */
-	private $cache;
-
-	/**
-	 * Constructor.
-	 *
-	 * @param WP_Object_Cache $cache A class that's compatible with the Cache Interface.
-	 */
-	public function __construct( WP_Object_Cache $cache ) {
-		$this->cache = $cache;
-	}
 
 	/**
 	 * Retrieves the cache contents from the cache by key and group.
@@ -46,7 +29,7 @@ class WordPress_Cache implements Cache {
 	 * @return mixed|false The cache contents on success, false on failure to retrieve contents.
 	 */
 	public function get( $key, string $group = '', bool $force = false, bool $found = null ) {
-		return $this->cache->get( $key, $group, $force, $found );
+		return wp_cache_get( $key, $group, $force, $found );
 	}
 
 	/**
@@ -62,7 +45,8 @@ class WordPress_Cache implements Cache {
 	 *                           Default 0 (no expiration).
 	 * @return bool True on success, false on failure.
 	 */
-	public function set( $key, $data, string $group = '', int $expire = 0 ): bool {
-		return $this->cache->set( $key, $data, $group, $expire );
+	public function set( $key, $data, string $group = '', $expire = 0 ): bool {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		return wp_cache_set( $key, $data, $group, $expire );
 	}
 }
