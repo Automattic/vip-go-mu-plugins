@@ -203,7 +203,7 @@ class SettingsHealthJob {
 					continue;
 				}
 				// Check if active index needs to be re-built in the background.
-				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
+				if ( isset( $result['diff']['index.number_of_shards'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
 					$this->maybe_process_build( $indexable );
 				}
 
