@@ -149,6 +149,14 @@ class SettingsHealthJob {
 					continue;
 				}
 
+				$indexable = $this->indexables->get( $indexable_slug );
+				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
+					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
+					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
+						// Don't keep alerting if it's an active index in process of being re-built.
+						continue;
+				}
+
 				$message = sprintf(
 					'Application %s: Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					FILES_CLIENT_SITE_ID,
@@ -195,7 +203,7 @@ class SettingsHealthJob {
 					continue;
 				}
 				// Check if active index needs to be re-built in the background.
-				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
+				if ( isset( $result['diff']['index.number_of_shards'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
 					$this->maybe_process_build( $indexable );
 				}
 
