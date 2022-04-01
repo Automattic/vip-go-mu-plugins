@@ -62,8 +62,8 @@ function jetpack_get_module_i18n( $key ) {
 			),
 
 			'google-fonts' => array(
-				'name' => _x( 'Google Fonts', 'Module Name', 'jetpack' ),
-				'description' => _x( 'A selection of Google fonts for block enabled themes.', 'Module Description', 'jetpack' ),
+				'name' => _x( 'Google Fonts (Beta)', 'Module Name', 'jetpack' ),
+				'description' => _x( 'A selection of Google fonts for block enabled themes. This feature is still being developed.', 'Module Description', 'jetpack' ),
 			),
 
 			'gravatar-hovercards' => array(
@@ -514,8 +514,8 @@ function jetpack_get_module_info( $key ) {
 	  ),
 	  'google-fonts' => 
 	  array (
-	    'name' => 'Google Fonts',
-	    'description' => 'A selection of Google fonts for block enabled themes.',
+	    'name' => 'Google Fonts (Beta)',
+	    'description' => 'A selection of Google fonts for block enabled themes. This feature is still being developed.',
 	    'sort' => '1',
 	    'recommendation_order' => '2',
 	    'introduced' => '10.8.0',

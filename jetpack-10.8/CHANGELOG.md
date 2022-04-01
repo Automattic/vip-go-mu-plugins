@@ -2,9 +2,21 @@
 
 ### This is a list detailing changes for all Jetpack releases.
 
+## 10.9-a.0 - unreleased
+
+This is an alpha version! The changes listed here are not final.
+
+### Bug fixes
+- Fixing carousel comments issue due to nonce check
+- Form Block: do not display the CRM integration option to non-admins.
+- Subscribe Block: ensure subscription panels are not shown in the page editor, or when the site is private.
+
+### Other changes <!-- Non-user-facing changes go here. This section will not be copied to readme.txt. -->
+- Add support for WordPress.com Pro plan.
+- Google Fonts: mark the feature as Beta, and remove toggle from dashboard.
+
 ## 10.8-beta - 2022-03-29
 ### Enhancements
-
 - Blocks: make settings discoverable and toggleable, and add a card to highlight the blocks available from Jetpack on the dashboard.
 - Form Block: offer option to install/activate the Jetpack CRM plugin from the Form block settings panel.
 - Payments Block: introduce new post-publish panel to highlight the options available with Payments blocks.
