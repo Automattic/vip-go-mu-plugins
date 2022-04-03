@@ -149,6 +149,14 @@ class SettingsHealthJob {
 					continue;
 				}
 
+				$indexable = $this->indexables->get( $indexable_slug );
+				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
+					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
+					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
+						// Don't keep alerting if it's an active index in process of being re-built.
+						continue;
+				}
+
 				$message = sprintf(
 					'Application %s: Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					FILES_CLIENT_SITE_ID,
@@ -194,12 +202,9 @@ class SettingsHealthJob {
 				if ( empty( $result['diff'] ) ) {
 					continue;
 				}
-				// Check if index needs to be re-built in the background.
-				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					// Rollout for 25% of non-production environments.
-					if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT && \Automattic\VIP\Feature::is_enabled_by_percentage( 'rebuild-index' ) ) {
-						$this->maybe_process_build( $indexable );
-					}
+				// Check if active index needs to be re-built in the background.
+				if ( isset( $result['diff']['index.number_of_shards'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
+					$this->maybe_process_build( $indexable );
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );

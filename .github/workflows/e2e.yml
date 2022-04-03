@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
+        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
         with:
           egress-policy: block
           allowed-endpoints: 
@@ -55,6 +55,8 @@ jobs:
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
+            update.containous.cloud:443
+            update.traefik.io:443
             vaultpress.com:443
             wordpress.org:443
             dns.google:53

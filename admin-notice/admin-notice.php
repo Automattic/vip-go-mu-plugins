@@ -30,15 +30,21 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
+		if ( defined( 'SEARCH_MIGRATIONS_EXTENDED_IDS' ) && in_array( FILES_CLIENT_SITE_ID, SEARCH_MIGRATIONS_EXTENDED_IDS, true ) ) {
+			return;
+		}
+
+		$message = 'Howdy! <br> We have detected the JETPACK_SEARCH_VIP_INDEX constant is still defined on this application. As a friendly reminder, <a href="https://lobby.vip.wordpress.com/2022/02/02/enterprise-search-as-default-elasticsearch-solution/" target="_blank" title="Enterprise Search as default Elasticsearch solution">Jetpack Search custom indexes will no longer be supported on VIP as of May 4, 2022</a>. Please use <a href="https://docs.wpvip.com/how-tos/vip-search/enable/#jetpack-migration-support-path" target="_blank" title="Jetpack migration support path">Enterprise Search</a> or Jetpack Instant Search instead.';
 		$admin_notice_controller->add(
 			new Admin_Notice(
-				'WordPress 5.9 is targeted for release on January 25, 2022. The latest Release Candidate (RC) is available now. Open a ticket to upgrade a non-prod environment to the latest version for testing.',
+				$message,
 				[
-					new Date_Condition( '2022-01-01', '2022-02-01' ),
-					new WP_Version_Condition( '5.8', '5.9' ),
+					new Date_Condition( '2022-01-01', '2022-05-04' ),
+					new Expression_Condition( defined( 'JETPACK_SEARCH_VIP_INDEX' ) && JETPACK_SEARCH_VIP_INDEX ),
 					new Capability_Condition( 'administrator' ),
 				],
-				'wp-5.9'
+				'search-migrations',
+				'error'
 			)
 		);
 	}

@@ -543,9 +543,6 @@ class Search {
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
 
-		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
-		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
-
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
 
@@ -853,14 +850,43 @@ class Search {
 			$args['headers'] = [];
 		}
 
+		// See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/api-conventions.html#x-opaque-id
+		$x_opaque_id = FILES_CLIENT_SITE_ID;
+		if ( null !== $type ) {
+			$x_opaque_id .= "_{$type}";
+		}
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$x_opaque_id .= '_cli';
+		}
+
 		$args['headers'] = array_merge(
 			$args['headers'],
 			[
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
 				'X-Client-Env'     => VIP_GO_ENV,
 				'Accept-Encoding'  => 'gzip, deflate',
+				'X-Opaque-Id'      => $x_opaque_id,
 			]
 		);
+
+		// These are the headers we should pass to better identify the request.
+		$rq_headers = [
+			'X-Forwarded-For',
+			'True-Client-IP',
+			'X-Request-Id',
+			'User-Agent',
+		];
+
+		$allheaders = function_exists( 'getallheaders' ) ? getallheaders() : [];
+
+		foreach ( $rq_headers as $rq_header ) {
+			if ( ! isset( $allheaders[ $rq_header ] ) ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
+		}
 
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
@@ -1197,22 +1223,6 @@ class Search {
 		 */
 		if ( $skip ) {
 			return true;
-		}
-
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-					return true;
-				}
-			}
 		}
 
 		$integration_enabled = self::is_query_integration_enabled();
@@ -1714,34 +1724,6 @@ class Search {
 		return implode( '.', $key_parts );
 	}
 
-	/**
-	 * Filter for formatted_args in queries
-	 */
-	public function filter__ep_formatted_args( $formatted_args, $args ) {
-		// Check for expected structure, ie: this filters first
-		if ( ! isset( $formatted_args['query']['bool']['should'][0]['multi_match'] ) ) {
-			return $formatted_args;
-		}
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			$allow_exact_search_site_ids = array(
-				1284,
-			);
-
-			// Only allow exact search for whitelisted site ids
-			if ( ! in_array( VIP_GO_APP_ID, $allow_exact_search_site_ids, true ) ) {
-				return $formatted_args;
-			}
-		}
-
-		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
-		$formatted_args['query']['bool']['must']                               = $formatted_args['query']['bool']['should'];
-		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
-		unset( $formatted_args['query']['bool']['should'] );
-
-		return $formatted_args;
-	}
-
 	public function truncate_search_string_length( &$query ) {
 		if ( $query->is_search() ) {
 			$search = $query->get( 's' );
@@ -2025,6 +2007,12 @@ class Search {
 	 */
 	public function filter__ep_indexable_mapping( $mapping ) {
 		if ( ! is_array( $mapping['settings'] ) ) {
+			// Alert when it is unavailable
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$message = sprintf( 'No settings detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
+
 			return $mapping;
 		}
 
@@ -2033,6 +2021,12 @@ class Search {
 		if ( $origin_datacenter ) {
 			// We want all indexes to live in the site's origin datacenter
 			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		} else {
+			// Alert when it is unavailable
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$message = sprintf( 'No origin DC detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 
 		return $mapping;
