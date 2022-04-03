@@ -15,7 +15,7 @@ const selectors = {
     devToolsClose: () => '.search-dev-tools__overlay__close',
     queryCount: () => 'h2[class^="vip-h2 query_count"]',
     resultCount: () => 'div[class^="query_handle"] > h3.vip-h3',
-    queryWrap: () => 'div[class^="query_wrap"]',
+    queryWrap: () => 'div[class^="query_wrap"] >> nth=0',
     queryHandle: () => 'div[class^="query_handle"]',
     queryExtras: () => 'div[class^="query_src_extra"]',
     queryExtrasExpand: () => 'strong.vip-h4',
@@ -96,8 +96,8 @@ export class SearchPage {
      *
      * @returns {Promise<number>} Resolves with the number of results or -1 if the number is unavailable
      */
-    async getNumberOfResults(): Promise<number> {
-        const text = ( await this.devToolsContainerLocator.locator( selectors.resultCount() ).innerText() ).trim();
+    async getNumberOfFirstResults(): Promise<number> {
+        const text = ( await this.devToolsContainerLocator.locator( selectors.resultCount() ).first().innerText() ).trim();
         const matches = /^(\d+)/.exec( text );
         return matches ? +matches[ 1 ] : -1;
     }
@@ -107,8 +107,8 @@ export class SearchPage {
      *
      * @returns {Promise<boolean>} Whether the panel has been shown
      */
-    async expandResults(): Promise<boolean> {
-        const queryHandleLocator = this.queryWrapLocator.locator( selectors.queryHandle() );
+    async expandFirstResults(): Promise<boolean> {
+        const queryHandleLocator = this.queryWrapLocator.locator( selectors.queryHandle() ).first();
 
         let classes = await getClassList( this.queryWrapLocator );
         const isCollapsed = classes.some( className => className.startsWith( 'query_collapsed' ) );

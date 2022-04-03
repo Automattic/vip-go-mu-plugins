@@ -18,7 +18,7 @@ function vipgo_feed_options( &$feed ) {
 	require_once __DIR__ . '/vip-feed-cache/class-vip-go-feed-cache.php';
 	require_once __DIR__ . '/vip-feed-cache/class-vip-go-feed-transient.php';
 
-	$feed->set_cache_class( VIP_Go_Feed_Cache::class );
+	$feed->registry->register( 'Cache', VIP_Go_Feed_Cache::class, false );
 }
 
 add_action( 'wp_feed_options', 'vipgo_feed_options' );

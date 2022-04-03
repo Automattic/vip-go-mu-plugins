@@ -17,10 +17,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [
-		'rebuild-index'      => 0.25,
-		'delete-stale-index' => 0.25,
-	];
+	public static $feature_percentages = [];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.
@@ -37,11 +34,11 @@ class Feature {
 
 	/**
 	 * Selectively enable or disable feature by certain IDs.
-	 * 
+	 *
 	 * @param string $feature The feature we are targeting.
 	 * @param mixed $default Default return value if ID is not on list.
-	 * 
-	 * @return mixed Returns bool if on list and if not, $default value.  
+	 *
+	 * @return mixed Returns bool if on list and if not, $default value.
 	 */
 	public static function is_enabled_by_ids( $feature, $default = false ) {
 		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
@@ -57,10 +54,10 @@ class Feature {
 
 	/**
 	 * Roll out based on percentage.
-	 * 
+	 *
 	 * @param string $feature The feature we are targeting.
-	 * 
-	 * @return bool Whether it is enabled or not. 
+	 *
+	 * @return bool Whether it is enabled or not.
 	 */
 	public static function is_enabled_by_percentage( $feature ) {
 		if ( ! isset( static::$feature_percentages[ $feature ] ) ) {

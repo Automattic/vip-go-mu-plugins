@@ -543,9 +543,6 @@ class Search {
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
 
-		// Replace base 'should' with 'must' in Elasticsearch query if formatted args structure matches what's expected
-		add_filter( 'ep_formatted_args', array( $this, 'filter__ep_formatted_args' ), 0, 2 );
-
 		// Disable indexing of filtered content by default, as it's not searched by default
 		add_filter( 'ep_allow_post_content_filtered_index', '__return_false' );
 
@@ -795,7 +792,7 @@ class Search {
 
 	/**
 	 * Generate option name for cached index_exists request.
-	 * 
+	 *
 	 * @return string $option_name Name of generated option.
 	 */
 	private function get_index_exists_option_name( $url ) {
@@ -808,7 +805,7 @@ class Search {
 
 	/**
 	 * Filter to intercept EP remote requests.
-	 * 
+	 *
 	 * @param  array  $request  New remote request response
 	 * @param  array  $query    Remote request arguments
 	 * @param  array  $args     Request arguments
@@ -847,10 +844,19 @@ class Search {
 				}
 			}
 		}
-		
+
 		// Add custom headers to identify authorized traffic
 		if ( ! isset( $args['headers'] ) || ! is_array( $args['headers'] ) ) {
 			$args['headers'] = [];
+		}
+
+		// See https://www.elastic.co/guide/en/elasticsearch/reference/7.17/api-conventions.html#x-opaque-id
+		$x_opaque_id = FILES_CLIENT_SITE_ID;
+		if ( null !== $type ) {
+			$x_opaque_id .= "_{$type}";
+		}
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			$x_opaque_id .= '_cli';
 		}
 
 		$args['headers'] = array_merge(
@@ -859,8 +865,28 @@ class Search {
 				'X-Client-Site-ID' => FILES_CLIENT_SITE_ID,
 				'X-Client-Env'     => VIP_GO_ENV,
 				'Accept-Encoding'  => 'gzip, deflate',
+				'X-Opaque-Id'      => $x_opaque_id,
 			]
 		);
+
+		// These are the headers we should pass to better identify the request.
+		$rq_headers = [
+			'X-Forwarded-For',
+			'True-Client-IP',
+			'X-Request-Id',
+			'User-Agent',
+		];
+
+		$allheaders = function_exists( 'getallheaders' ) ? getallheaders() : [];
+
+		foreach ( $rq_headers as $rq_header ) {
+			if ( ! isset( $allheaders[ $rq_header ] ) ) {
+				continue;
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
+		}
 
 		$statsd_mode            = $this->get_statsd_request_mode_for_request( $query['url'], $args );
 		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
@@ -987,9 +1013,9 @@ class Search {
 
 		/**
 		 * Filter if request is cacheable
-		 * 
+		 *
 		 * @hook vip_search_cache_es_response
-		 * 
+		 *
 		 * @param  $url  Remote request URL
 		 * @param  $args Remote request arguments
 		 * @return $is_cacheable bool New cacheable status
@@ -998,7 +1024,7 @@ class Search {
 	}
 
 	/**
-	 * Handle failed requests 
+	 * Handle failed requests
 	 *
 	 * @param mixed $request
 	 * @param mixed $response
@@ -1046,7 +1072,7 @@ class Search {
 			} else {
 				$response_code    = wp_remote_retrieve_response_code( $response );
 				$response_message = wp_remote_retrieve_response_message( $response );
-				$error_message    = $response_code && ! empty( $response_message ) ? 
+				$error_message    = $response_code && ! empty( $response_message ) ?
 				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
 			}
 
@@ -1199,22 +1225,6 @@ class Search {
 			return true;
 		}
 
-		// Bypass a bug in EP Facets that causes aggregations to be run on the main query
-		// This is intended to be a temporary workaround until a better fix is made
-		$bypassed_on_main_query_site_ids = [
-			1284,
-			1286,
-		];
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			if ( in_array( VIP_GO_APP_ID, $bypassed_on_main_query_site_ids, true ) ) {
-				// Prevent integration on non-search main queries (Facets can wrongly enable itself here)
-				if ( $query && $query->is_main_query() && ! $query->is_search() ) {
-					return true;
-				}
-			}
-		}
-
 		$integration_enabled = self::is_query_integration_enabled();
 
 		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
@@ -1296,7 +1306,10 @@ class Search {
 					$queue_stats->queue_count,
 					$queue_stats->longest_wait_time
 				);
-				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+				if ( ! is_wp_error( $this->alerts ) ) {
+					$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+				}
 
 				wp_cache_set( 'vip_search_queue_count_alert', $queue_stats->queue_count, 'vip', 45 * MINUTE_IN_SECONDS );
 			}
@@ -1323,7 +1336,9 @@ class Search {
 			$query_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		if ( ! is_wp_error( $this->alerts ) ) {
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -1355,7 +1370,10 @@ class Search {
 				home_url(),
 				$current_field_count
 			);
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 	}
 
@@ -1522,7 +1540,7 @@ class Search {
 
 	/**
 	 * Set the default number of shards in the index settings
-	 * 
+	 *
 	 */
 	public function filter__ep_default_index_number_of_shards() {
 		return 1;
@@ -1532,7 +1550,7 @@ class Search {
 	 * Set the number of shards in the index settings for the post Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -1567,7 +1585,7 @@ class Search {
 	 * Set the number of shards in the index settings for the user Indexable
 	 *
 	 * NOTE - this can only be changed during index creation, not on an existing index
-	 * 
+	 *
 	 * @param $mapping Mapping
 	 * @return $mapping New Mapping
 	 */
@@ -1704,34 +1722,6 @@ class Search {
 
 		// returns prefix only e.g. 'com.wordpress.elasticsearch.bur.9235_vipgo.search'
 		return implode( '.', $key_parts );
-	}
-
-	/**
-	 * Filter for formatted_args in queries
-	 */
-	public function filter__ep_formatted_args( $formatted_args, $args ) {
-		// Check for expected structure, ie: this filters first
-		if ( ! isset( $formatted_args['query']['bool']['should'][0]['multi_match'] ) ) {
-			return $formatted_args;
-		}
-
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			$allow_exact_search_site_ids = array(
-				1284,
-			);
-
-			// Only allow exact search for whitelisted site ids
-			if ( ! in_array( VIP_GO_APP_ID, $allow_exact_search_site_ids, true ) ) {
-				return $formatted_args;
-			}
-		}
-
-		// Replace base 'should' with 'must' and then remove the 'should' from formatted args
-		$formatted_args['query']['bool']['must']                               = $formatted_args['query']['bool']['should'];
-		$formatted_args['query']['bool']['must'][0]['multi_match']['operator'] = 'AND';
-		unset( $formatted_args['query']['bool']['should'] );
-
-		return $formatted_args;
 	}
 
 	public function truncate_search_string_length( &$query ) {
@@ -2017,6 +2007,12 @@ class Search {
 	 */
 	public function filter__ep_indexable_mapping( $mapping ) {
 		if ( ! is_array( $mapping['settings'] ) ) {
+			// Alert when it is unavailable
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$message = sprintf( 'No settings detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
+
 			return $mapping;
 		}
 
@@ -2025,6 +2021,12 @@ class Search {
 		if ( $origin_datacenter ) {
 			// We want all indexes to live in the site's origin datacenter
 			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
+		} else {
+			// Alert when it is unavailable
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$message = sprintf( 'No origin DC detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
 		}
 
 		return $mapping;
@@ -2241,11 +2243,11 @@ class Search {
 
 	/**
 	 * Do not sync if index does not exist for Indexable.
-	 * 
+	 *
 	 * @param {boolean} $kill Whether to kill the sync or not.
 	 * @param {string} $indexable_slug Indexable slug.
-	 * 
-	 * @return bool 
+	 *
+	 * @return bool
 	 */
 	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
@@ -2261,11 +2263,11 @@ class Search {
 
 	/**
 	 * Store last processed post ID into option during bulk indexing operation.
-	 * 
+	 *
 	 * @param array $objects Objects being indexed
 	 * @param array $response Elasticsearch bulk index response
-	 * 
-	 * @return void 
+	 *
+	 * @return void
 	 */
 	public function update_last_processed_post_id_option( $objects, $response ) {
 		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
@@ -2273,8 +2275,8 @@ class Search {
 
 	/**
 	 * Delete last processed post ID option before & after indexing.
-	 * 
-	 * @return void 
+	 *
+	 * @return void
 	 */
 	public function delete_last_processed_post_id_option() {
 		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {

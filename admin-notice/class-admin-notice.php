@@ -42,7 +42,17 @@ class Admin_Notice {
 		}
 
 		printf( '<div %s="%s" class="%s">', esc_html( self::DISMISS_DATA_ATTRIBUTE ), esc_attr( $this->dismiss_identifier ), esc_attr( $notice_class ) );
-		printf( '<p>%s</p>', esc_html( $this->message ) );
+		printf( '<p>%s</p>', wp_kses(
+			$this->message,
+			[
+				'a' => [
+					'href'   => [],
+					'title'  => [],
+					'target' => [],
+				],
+				'br',
+			]
+		) );
 		printf( '</div>' );
 	}
 

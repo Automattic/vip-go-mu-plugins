@@ -71,7 +71,7 @@ class SettingsHealthJob {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_EVENT_NAME, [ $this, 'check_settings_health' ] );
 
-		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 1 );
+		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 2 );
 
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ], 10, 2 );
 
@@ -149,6 +149,14 @@ class SettingsHealthJob {
 					continue;
 				}
 
+				$indexable = $this->indexables->get( $indexable_slug );
+				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
+					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
+					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
+						// Don't keep alerting if it's an active index in process of being re-built.
+						continue;
+				}
+
 				$message = sprintf(
 					'Application %s: Index settings inconsistencies found for %s: (indexable: %s, index_version: %d, index_name: %s, diff: %s)',
 					FILES_CLIENT_SITE_ID,
@@ -194,12 +202,9 @@ class SettingsHealthJob {
 				if ( empty( $result['diff'] ) ) {
 					continue;
 				}
-				// Check if index needs to be re-built in the background.
-				if ( true === array_key_exists( 'index.number_of_shards', $result['diff'] ) ) {
-					// Rollout for 25% of non-production environments.
-					if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT && \Automattic\VIP\Feature::is_enabled_by_percentage( 'rebuild-index' ) ) {
-						$this->maybe_process_build( $indexable );
-					}
+				// Check if active index needs to be re-built in the background.
+				if ( isset( $result['diff']['index.number_of_shards'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
+					$this->maybe_process_build( $indexable );
 				}
 
 				$diff = $this->health::limit_index_settings_to_keys( $result['diff'], $this->health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
@@ -259,10 +264,10 @@ class SettingsHealthJob {
 
 	/**
 	 * Store last processed post ID into option during bulk indexing operation.
-	 * 
+	 *
 	 * @param array $objects Objects being indexed
 	 * @param array $response Elasticsearch bulk index response
-	 * 
+	 *
 	 * @return void
 	 */
 	public function update_last_processed_id( $objects, $response ) {
@@ -276,7 +281,7 @@ class SettingsHealthJob {
 
 	/**
 	 * Delete last processed post ID as part of clean-up.
-	 * 
+	 *
 	 * @return void
 	 */
 	public function delete_last_processed_id() {
@@ -291,7 +296,7 @@ class SettingsHealthJob {
 	}
 
 	/**
-	 * Determine whether to schedule an event to build new index as part of auto healing or resume 
+	 * Determine whether to schedule an event to build new index as part of auto healing or resume
 	 * it from where it left off (if the process has unexpectedly died).
 	 *
 	 * @param object $indexable The Indexable we want to rebuild.
@@ -303,7 +308,7 @@ class SettingsHealthJob {
 			$process_build = $this->check_process_build();
 			switch ( $process_build ) {
 				case 'resume':
-					// Indexing process was interrupted, let's restart it with the 
+					// Indexing process was interrupted, let's restart it with the
 					$last_processed_id = get_option( self::LAST_PROCESSED_ID_OPTION );
 					if ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] ) ) {
 						wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
@@ -327,7 +332,7 @@ class SettingsHealthJob {
 					home_url()
 				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-				
+
 				return;
 			} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
 				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
@@ -368,14 +373,14 @@ class SettingsHealthJob {
 			$new_version = $this->search->versioning->add_version( $indexable );
 			if ( is_wp_error( $new_version ) ) {
 				$message = sprintf(
-					'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+					'Application %s: An error occurred during adding new %s index on %s for shard requirements: %s',
 					FILES_CLIENT_SITE_ID,
 					$indexable_slug,
 					home_url(),
 					$new_version->get_error_message()
 				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-	
+
 				return;
 			}
 		}
@@ -383,7 +388,7 @@ class SettingsHealthJob {
 		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
 		if ( is_wp_error( $new_version ) ) {
 			$message = sprintf(
-				'Application %s: An error occurred during build of new %s index on %s for shard requirements: %s',
+				'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
 				FILES_CLIENT_SITE_ID,
 				$indexable_slug,
 				home_url(),
@@ -411,9 +416,9 @@ class SettingsHealthJob {
 
 	/**
 	 * Check the in-process build and determine how to handle it.
-	 * 
+	 *
 	 * @return string|bool Returns the next step: 'in-progress', 'resume', or 'swap'.
-	 * 
+	 *
 	 */
 	protected function check_process_build() {
 		$last_processed_id = get_option( self::LAST_PROCESSED_ID_OPTION );
@@ -432,7 +437,7 @@ class SettingsHealthJob {
 
 	/**
 	 * Activate new index version and delete old one.
-	 * 
+	 *
 	 * @param object $Indexable Indexable object we want to swap out
 	 */
 	public function swap_index_versions( $indexable ) {
@@ -449,7 +454,7 @@ class SettingsHealthJob {
 
 			return;
 		}
-		
+
 		$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
 		if ( is_wp_error( $delete_version ) ) {
 			$message = sprintf(
