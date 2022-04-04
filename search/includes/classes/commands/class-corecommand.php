@@ -145,7 +145,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 *
 	 * [--blog-ids]
 	 * : Index a list of specific blog ids in your multisite work.
-	 * 
+	 *
 	 * [--version]
 	 * : The index version to index into. Used to build up a new index in parallel with the currently active index version.
 	 *
@@ -218,8 +218,6 @@ class CoreCommand extends \ElasticPress\Command {
 
 			$start = microtime( true );
 
-			$all_sites = get_sites( [ 'fields' => 'ids' ] );
-
 			if ( $batch_mode ) {
 				$blog_ids = $assoc_args['blog-ids'];
 				unset( $assoc_args['blog-ids'] );
@@ -232,14 +230,21 @@ class CoreCommand extends \ElasticPress\Command {
 					}
 					$sites = [ $blog_ids ];
 				}
+				$valid_sites = get_sites(
+					[
+						'fields'   => 'ids',
+						'site__in' => $sites,
+						'number'   => count( $sites ),
+					]
+				);
 				foreach ( $sites as $site ) {
 					// Verify it's a valid blog ID before proceeding.
-					if ( ! in_array( (int) $site, $all_sites, true ) ) {
+					if ( ! in_array( (int) $site, $valid_sites, true ) ) {
 						WP_CLI::error( "Blog ID {$site} does not exist!" );
 					}
 				}
 			} else {
-				$sites = $all_sites;
+				$sites = get_sites( [ 'fields' => 'ids' ] );
 			}
 
 			foreach ( $sites as $blog_id ) {
@@ -361,9 +366,9 @@ class CoreCommand extends \ElasticPress\Command {
 
 	/**
 	 * Return all index names as a JSON object.
-	 * 
+	 *
 	 * @subcommand get-indexes
-	 * 
+	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
@@ -397,7 +402,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * : The feature slug
 	 *
 	 * @subcommand activate-feature
-	 * 
+	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
@@ -412,7 +417,7 @@ class CoreCommand extends \ElasticPress\Command {
 
 	/**
 	 * Check if feature is unsupported.
-	 * 
+	 *
 	 * @param string $feature EP feature
 	 * @return bool Whether feature is unsupported or not.
 	 */
@@ -433,7 +438,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * : The feature slug
 	 *
 	 * @subcommand deactivate-feature
-	 * 
+	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
@@ -448,9 +453,9 @@ class CoreCommand extends \ElasticPress\Command {
 
 	/**
 	 * Get the last indexed post ID on an incomplete indexing operation.
-	 * 
+	 *
 	 * @subcommand get-last-indexed-post-id
-	 * 
+	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
@@ -458,7 +463,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
-		
+
 		if ( false === $last_id ) {
 			WP_CLI::line( 'No last indexed object ID found!' );
 		} else {
@@ -468,9 +473,9 @@ class CoreCommand extends \ElasticPress\Command {
 
 	/**
 	 * Clean the ep_feature_settings individual blog option if it exists for sites with EP_IS_NETWORK.
-	 * 
+	 *
 	 * @subcommand clean-ep-feature-settings
-	 * 
+	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
