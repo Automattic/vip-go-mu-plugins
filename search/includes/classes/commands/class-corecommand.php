@@ -230,14 +230,14 @@ class CoreCommand extends \ElasticPress\Command {
 					}
 					$sites = [ $blog_ids ];
 				}
+				$valid_sites = get_sites(
+					[
+						'fields'   => 'ids',
+						'site__in' => $sites,
+						'number'   => count( $sites ),
+					]
+				);
 				foreach ( $sites as $site ) {
-					$valid_sites = get_sites(
-						[
-							'fields'   => 'ids',
-							'site__in' => $sites,
-							'number'   => count( $sites ),
-						]
-					);
 					// Verify it's a valid blog ID before proceeding.
 					if ( ! in_array( (int) $site, $valid_sites, true ) ) {
 						WP_CLI::error( "Blog ID {$site} does not exist!" );
