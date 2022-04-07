@@ -129,3 +129,12 @@ function send_pixel( $stats ) {
 		'timeout'  => 1,
 	) );
 }
+
+/**
+ * Add extra hp=vip to allow for better tracking via gl
+ */
+add_filter( 'stats_array', __NAMESPACE__ . '\\add_hp' );
+function add_hp( $kvs ) {
+	$kvs['hp'] = 'vip';
+	return $kvs;
+}
