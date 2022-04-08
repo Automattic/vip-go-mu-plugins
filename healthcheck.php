@@ -26,7 +26,7 @@ class Healthcheck {
 		/**
 		 * Filters the errors that would indicate the app is unhealthy.
 		 *
-		 * @param string[]     $errors either empty array (no errors) or array of strings: [ 'an error has occurred', 'another error' ]
+		 * @param string[] $errors Either empty array (no errors) or array of strings: [ 'an error has occurred', 'another error' ].
 		 */
 		$this->errors = apply_filters( 'vip_site_healthcheck_errors_array', $this->errors );
 		if ( ! is_array( $this->errors ) ) {
