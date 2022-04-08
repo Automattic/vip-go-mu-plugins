@@ -9,7 +9,7 @@ class Healthcheck {
 	/**
 	 * By default, an app is considered healthy unless filter value returns a non-empty array
 	 *
-	 * @var array
+	 * @var string[] - Either empty array (no errors) or array of strings: [ 'an error has occurred', 'another error' ].
 	 */
 	protected array $errors = [];
 
