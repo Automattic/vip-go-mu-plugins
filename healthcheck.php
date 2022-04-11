@@ -28,10 +28,12 @@ class Healthcheck {
 		 *
 		 * @param string[] $errors Either empty array (no errors) or array of strings: [ 'an error has occurred', 'another error' ].
 		 */
-		$this->errors = apply_filters( 'vip_site_healthcheck_errors_array', $this->errors );
-		if ( ! is_array( $this->errors ) ) {
-			$this->errors = [ 'Unexpected value in Healthcheck->errors' ];
+		$errors = apply_filters( 'vip_site_healthcheck_errors_array', $this->errors );
+		if ( ! is_array( $errors ) ) {
+			$errors = [ 'Unexpected value in Healthcheck->errors' ];
 		}
+
+		$this->add_errors( $errors );
 	}
 
 	/**
@@ -40,6 +42,25 @@ class Healthcheck {
 	 */
 	public function is_healthy() {
 		return 0 === count( $this->errors );
+	}
+
+	/**
+	 * Public setter for errors
+	 *
+	 * @param array<string> $errors
+	 * @return void
+	 */
+	public function add_errors( array $errors = [] ) {
+		$this->errors = $errors;
+	}
+
+	/**
+	 * Public getters for errors
+	 *
+	 * @return string[] array of errors
+	 */
+	public function get_errors() {
+		return $this->errors;
 	}
 
 	/**
