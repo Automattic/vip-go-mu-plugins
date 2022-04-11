@@ -47,11 +47,11 @@ class Healthcheck {
 	/**
 	 * Public setter for errors
 	 *
-	 * @param array<string> $errors
+	 * @param null|string $error error description.
 	 * @return void
 	 */
-	public function add_errors( array $errors = [] ) {
-		$this->errors = $errors;
+	public function add_error( ?string $error = 'unspecified error' ) {
+		$this->errors[] = $error;
 	}
 
 	/**
