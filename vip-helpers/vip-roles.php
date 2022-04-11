@@ -88,6 +88,11 @@ function wpcom_vip_override_role_caps( $role, $caps ) {
 
 	$role_obj->capabilities = (array) $caps;
 
+	$roles = wp_roles();
+
+	$roles->roles[ $role ]['capabilities'] = $caps;
+	update_option( $roles->role_key, $roles->roles );
+
 	_wpcom_vip_maybe_refresh_current_user_caps( $role );
 }
 
