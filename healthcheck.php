@@ -39,7 +39,7 @@ class Healthcheck {
 	 * @return bool True if there are no errors, false if there are.
 	 */
 	public function is_healthy() {
-		return is_array( $this->errors ) && empty( $this->errors );
+		return 0 === count( $this->errors );
 	}
 
 	/**
