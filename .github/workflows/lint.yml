@@ -1,0 +1,63 @@
+name: Lint files
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-php:
+    name: Lint PHP files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
+        with:
+          coverage: none
+          php-version: "7.4"
+
+      - name: Setup Node
+        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # tag=v2.5.1
+        with:
+          node-version: 'lts/*'
+          cache: npm
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
+
+      - name: Lint files
+        run: npm run lint
+
+  lint-search-dev-tools:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+
+      - name: Setup Node
+        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # tag=v2.5.1
+        with:
+          node-version: 'lts/*'
+          cache: npm
+          cache-dependency-path: search/search-dev-tools/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+        working-directory: search/search-dev-tools
+
+      - name: Lint files
+        run: npm run lint
+        working-directory: search/search-dev-tools

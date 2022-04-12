@@ -13,6 +13,10 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  PHPUNIT_VERSION: "7"
+  PHP_VERSION: "7.4"
+
 jobs:
   test:
     name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, JetPack: ${{ matrix.jetpack }}"
@@ -50,7 +54,7 @@ jobs:
         uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
         with:
           coverage: none
-          php-version: "7.4"
+          php-version: ${{ env.PHP_VERSION }}
 
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
@@ -64,9 +68,9 @@ jobs:
           fi
           if [ "${{ matrix.jetpack }}" = "no" ]; then
             echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${MULTISITE} --phpunit 7 --order-by=random --exclude-group jetpack-required
+            ./bin/test.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE} --order-by=random --exclude-group jetpack-required
           else
-            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${MULTISITE} --phpunit 7 --order-by=random
+            ./bin/test.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE} --order-by=random
           fi
 
   search-dev-tools:
@@ -91,10 +95,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --ignore-scripts
-        working-directory: search/search-dev-tools
-
-      - name: Lint files
-        run: npm run lint
         working-directory: search/search-dev-tools
 
       - name: Build files
