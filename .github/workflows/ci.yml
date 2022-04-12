@@ -73,7 +73,34 @@ jobs:
             ./bin/test.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE} --order-by=random
           fi
 
+  wp-core:
+    name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        wp:
+          - latest
+        multisite:
+          - "no"
+          - "yes"
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.multisite }}" = "yes" ]; then
+            MULTISITE=1
+          else
+            MULTISITE=0
+          fi
+          ./bin/run-core-tests.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE}
+
   search-dev-tools:
+    name: Build Search Dev Tools
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
