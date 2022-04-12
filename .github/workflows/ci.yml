@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - "**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DISABLE_XDEBUG: "1"
+
+jobs:
+  test:
+    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, JetPack: ${{ matrix.jetpack }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        wp:
+          - "5.5"
+          - "5.6"
+          - "5.7"
+          - "5.8"
+          - "latest"
+        multisite:
+          - "0"
+        jetpack:
+          - "1"
+        include:
+          - wp: "latest"
+            multisite: "1"
+            jetpack: "1"
+          - wp: "latest"
+            multisite: "0"
+            jetpack: "0"
+          - wp: "latest"
+            multisite: "1"
+            jetpack: "0"
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        with:
+          submodules: recursive
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
+        with:
+          coverage: none
+          php-version: "7.4"
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.jetpack }}" = "0" ]; then
+            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${{ matrix.multisite }} --phpunit 7 --order-by=random --exclude-group jetpack-required
+          else
+            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${{ matrix.multisite }} --phpunit 7 --order-by=random
+          fi
