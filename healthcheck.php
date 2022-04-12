@@ -33,7 +33,9 @@ class Healthcheck {
 			$errors = [ 'Unexpected value in Healthcheck->errors' ];
 		}
 
-		$this->add_errors( $errors );
+		foreach ( $errors as $error ) {
+			$this->add_error( $error );
+		}
 	}
 
 	/**
