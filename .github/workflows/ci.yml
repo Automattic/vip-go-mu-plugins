@@ -13,9 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  DISABLE_XDEBUG: "1"
-
 jobs:
   test:
     name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, JetPack: ${{ matrix.jetpack }}"
@@ -30,19 +27,19 @@ jobs:
           - "5.8"
           - "latest"
         multisite:
-          - "0"
+          - "no"
         jetpack:
-          - "1"
+          - "yes"
         include:
           - wp: "latest"
-            multisite: "1"
-            jetpack: "1"
+            multisite: "yes"
+            jetpack: "yes"
           - wp: "latest"
-            multisite: "0"
-            jetpack: "0"
+            multisite: "no"
+            jetpack: "no"
           - wp: "latest"
-            multisite: "1"
-            jetpack: "0"
+            multisite: "yes"
+            jetpack: "no"
     steps:
       - name: Check out source code
         uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
@@ -60,9 +57,14 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ matrix.jetpack }}" = "0" ]; then
-            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${{ matrix.multisite }} --phpunit 7 --order-by=random --exclude-group jetpack-required
+          if [ "${{ matrix.multisite }}" = "yes" ]; then
+            MULTISITE=1
           else
-            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${{ matrix.multisite }} --phpunit 7 --order-by=random
+            MULTISITE=0
+          fi
+          if [ "${{ matrix.jetpack }}" = "no" ]; then
+            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${MULTISITE} --phpunit 7 --order-by=random --exclude-group jetpack-required
+          else
+            ./bin/test.sh --wp ${{ matrix.wp }} --php 7.4 --multisite ${MULTISITE} --phpunit 7 --order-by=random
           fi

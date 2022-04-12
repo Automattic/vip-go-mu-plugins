@@ -13,9 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  DISABLE_XDEBUG: "1"
-
 jobs:
   test:
     name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, Parse.ly: ${{ matrix.parsely }} ${{ matrix.mode }}, PHP ${{ matrix.php }}"
