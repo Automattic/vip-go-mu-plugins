@@ -26,7 +26,7 @@ jobs:
       matrix:
         wp:
           - "latest"
-          - "trunk"
+          - "nightly"
         multisite:
           - "yes"
           - "no"
