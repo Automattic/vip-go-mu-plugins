@@ -91,6 +91,7 @@ job-references:
   php_core_job: &php_core_job
     steps:
       - checkout
+      - run: *prepare_repo
       - run:
           name: "Run Tests"
           command: |
