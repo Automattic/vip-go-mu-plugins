@@ -46,7 +46,7 @@ jobs:
           submodules: recursive
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
+        uses: shivammathur/setup-php@448bd61c6fe9db2113173467e4c22b87ddc2971a # tag=2.18.1
         with:
           coverage: none
           php-version: ${{ matrix.php }}
