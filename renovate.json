@@ -19,6 +19,10 @@
 			"matchUpdateTypes": ["minor"],
 			"groupName": "all non-major eslint",
 			"groupSlug": "all-minor-patch-eslint"
+		},
+		{
+			"matchDepTypes": ["action"],
+			"pinDigests": true
 		}
 	],
 	"ignorePaths": [
