@@ -94,7 +94,7 @@ job-references:
       - run:
           name: "Run Tests"
           command: |
-            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/build/wp-content/mu-plugins"
+            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins"
             /usr/local/bin/runner
           environment:
             MYSQL_HOST: << pipeline.parameters.db_host >>
