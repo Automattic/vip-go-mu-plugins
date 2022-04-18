@@ -133,7 +133,7 @@ jobs:
   php74-lint:
     <<: *lint_job
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.1-node
 
   php74-build-multisite:
     <<: *php_job
@@ -248,7 +248,7 @@ jobs:
 
   push-code-to-build:
       docker:
-        - image: cimg/php:7.4
+        - image: cimg/php:8.1
       environment:
         GIT_REVISION: << pipeline.git.revision >>
       steps:
