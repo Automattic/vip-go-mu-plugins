@@ -218,7 +218,7 @@ jobs:
       CIRCLE_PROJECT_USERNAME: Automattic
       CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
     docker:
-      - image: circleci/php:7.4-node
+      - image: circleci/php:8.0-node
     steps:
       - run: composer require automattic/vip-build-tools:1.0.7
       - run:
