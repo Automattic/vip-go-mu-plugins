@@ -20,15 +20,29 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 		return;
 	}
 
-	if ( ! is_array( $db_servers ) || empty( $db_servers ) ) {
+	if ( ! is_array( $db_servers ) ) {
 		return;
 	}
 
-	$server = end( $db_servers );
+	// Remove any servers that can't both read and write.
+	$_db_servers = array_filter( $db_servers, function ( $candidate ) {
+		return is_array( $candidate ) &&
+			6 === count( $candidate ) &&
+			$candidate[4] > 0 &&
+			$candidate[5] > 0;
+	} );
 
-	if ( empty( $server ) ) {
+	if ( empty( $_db_servers ) ) {
 		return;
 	}
+
+	// Sort the replicas in ascending order of WritePriority
+	usort( $_db_servers, function ( $c0, $c1 ) {
+		return $c0[5] <=> $c1[5];
+	} );
+
+	// Select the server with the higest write priority
+	$server = end( $_db_servers );
 
 	if ( ! defined( 'DB_HOST' ) ) {
 		define( 'DB_HOST', $server[0] );
