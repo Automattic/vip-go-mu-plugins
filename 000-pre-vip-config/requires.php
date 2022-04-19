@@ -13,6 +13,7 @@ $files = [
 	'/lib/class-vip-request-block.php',
 	'/lib/environment/class-environment.php',
 	'/lib/helpers/environment.php',
+	'/lib/helpers/wp-cli-db.php',
 	'/lib/utils/class-context.php',
 ];
 
