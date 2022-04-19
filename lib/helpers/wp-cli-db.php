@@ -17,11 +17,13 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 	global $db_servers;
 
 	if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
+		// Don't do anything for any command other than `db`
 		return;
 	}
 
 	if ( ! is_array( $db_servers ) ) {
-		return;
+		echo "Error: No database servers are configured for this environment.\n";
+		exit( 10 );
 	}
 
 	// Remove any servers that can't both read and write.
@@ -33,7 +35,8 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 	} );
 
 	if ( empty( $_db_servers ) ) {
-		return;
+		echo "Error: No database servers are available to fulfill this request.\n";
+		exit( 20 );
 	}
 
 	// Sort the replicas in ascending order of WritePriority
