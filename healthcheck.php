@@ -28,7 +28,7 @@ class Healthcheck {
 		 *
 		 * @param string[] $errors Either empty array (no errors) or array of strings: [ 'an error has occurred', 'another error' ].
 		 */
-		$errors = apply_filters( 'vip_site_healthcheck_errors_array', $this->errors );
+		$errors = [];
 		if ( ! is_array( $errors ) ) {
 			$errors = [ 'Unexpected value in Healthcheck->errors' ];
 		}
