@@ -50,7 +50,7 @@ class Admin_Notice {
 					'title'  => [],
 					'target' => [],
 				],
-				'br',
+				'strong',
 			]
 		) );
 		printf( '</div>' );
