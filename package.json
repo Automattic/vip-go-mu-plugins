@@ -17,7 +17,7 @@
   },
   "author": "Automattic",
   "devDependencies": {
-    "@playwright/test": "1.21.0",
+    "@playwright/test": "1.21.1",
     "@typescript-eslint/eslint-plugin": "^5.19.0",
     "@typescript-eslint/parser": "^5.19.0",
     "asana-phrase": "0.0.8",
