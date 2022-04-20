@@ -634,6 +634,8 @@ class Search {
 
 		// Use default ES version as fallback
 		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
+
+		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
 	}
 
 	protected function load_commands() {
@@ -2291,9 +2293,8 @@ class Search {
 	/**
 	 * Fallback to a default Elasticsearch version string if none is returned.
 	 *
-	 * @param string|bool $version
-	 *
-	 * @return string $version
+	 * @param string|bool $version Elasticsearch version
+	 * @return string $version New Elasticsearch version
 	 */
 	public function fallback_elasticsearch_version( $version ) {
 		if ( ! is_string( $version ) ) {
@@ -2301,5 +2302,15 @@ class Search {
 		}
 
 		return $version;
+	}
+
+	/**
+	 * Extend default elasticsearch info cache expiration from 5 minutes.
+	 *
+	 * @param int $time Cache time in seconds
+	 * @return int $time New cache time in seconds
+	 */
+	public function filter__es_info_cache_expiration( $time ) {
+		return wp_rand( 24 * HOUR_IN_SECONDS, 36 * HOUR_IN_SECONDS );
 	}
 }
