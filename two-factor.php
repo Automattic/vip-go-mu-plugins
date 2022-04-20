@@ -6,6 +6,11 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+	// Two Factor is incompatible with core tests (phpunit/tests/admin/includesPlugin.php)
+	return;
+}
+
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
