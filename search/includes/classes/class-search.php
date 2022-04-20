@@ -6,6 +6,7 @@ use \WP_CLI;
 use WP_Post;
 
 class Search {
+	public const DEFAULT_ELASTICSEARCH_VERSION      = '7.5.1';
 	public const QUERY_COUNT_CACHE_KEY              = 'query_count';
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const SEARCH_CACHE_GROUP                 = 'vip_search';
@@ -630,6 +631,9 @@ class Search {
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ], 10, 2 );
 		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ] );
 		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
+
+		// Use default ES version as fallback
+		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
 	}
 
 	protected function load_commands() {
@@ -2282,5 +2286,20 @@ class Search {
 		if ( false !== get_option( self::LAST_INDEXED_POST_ID_OPTION ) ) {
 			delete_option( self::LAST_INDEXED_POST_ID_OPTION );
 		}
+	}
+
+	/**
+	 * Fallback to a default Elasticsearch version string if none is returned.
+	 *
+	 * @param string|bool $version
+	 *
+	 * @return string $version
+	 */
+	public function fallback_elasticsearch_version( $version ) {
+		if ( ! is_string( $version ) ) {
+			$version = self::DEFAULT_ELASTICSEARCH_VERSION;
+		}
+
+		return $version;
 	}
 }
