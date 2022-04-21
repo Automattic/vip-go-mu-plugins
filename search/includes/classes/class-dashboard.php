@@ -17,7 +17,7 @@ class Dashboard {
 	public static function admin_footer_text( $text ) {
 		$screen = get_current_screen();
 		if ( false !== strpos( $screen->base, 'elasticpress' ) || 'ep-pointer' === $screen->post_type ) {
-			$text = '<p>Search on VIP is powered by <a href="https://10up.com/plugins/elasticpress/">10up\'s ElasticPress plugin</a>.</p>';
+			$text = '<p>Enterprise Search is powered by <a href="https://10up.com/plugins/elasticpress/">10up\'s ElasticPress plugin</a>.</p>';
 		}
 		return $text;
 	}
