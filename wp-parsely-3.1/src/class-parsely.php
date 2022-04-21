@@ -396,7 +396,7 @@ class Parsely {
 			if ( $parsely_options['cats_as_tags'] ) {
 				$tags = array_merge( $tags, $this->get_categories( $post->ID ) );
 				// add custom taxonomy values.
-				$tags = array_merge( $tags, $this->get_custom_taxonomy_values( $post, $parsely_options ) );
+				$tags = array_merge( $tags, $this->get_custom_taxonomy_values( $post ) );
 			}
 			// the function 'mb_strtolower' is not enabled by default in php, so this check
 			// falls back to the native php function 'strtolower' if necessary.
@@ -678,7 +678,7 @@ class Parsely {
 	 *
 	 * @param int    $post_id The id of the post you're trying to get categories for.
 	 * @param string $delimiter What character will delimit the categories.
-	 * @return array All the child categories of the current post.
+	 * @return array<string> All the child categories of the current post.
 	 */
 	private function get_categories( int $post_id, string $delimiter = '/' ): array {
 		$tags = array();
@@ -691,7 +691,7 @@ class Parsely {
 		// take last element in the hierarchy, a string representing the full parent->child tree,
 		// and split it into individual category names.
 		$last_tag = end( $tags );
-		if ( $last_tag ) {
+		if ( false !== $last_tag ) {
 			$tags = explode( '/', $last_tag );
 		}
 
@@ -814,24 +814,22 @@ class Parsely {
 	 * Get all term values from custom taxonomies.
 	 *
 	 * @param WP_Post $post_obj The post object.
-	 * @param array   $parsely_options Unused? The parsely options.
-	 * @return array
+	 * @return array<string>
 	 */
-	private function get_custom_taxonomy_values( WP_Post $post_obj, array $parsely_options ): array {
+	private function get_custom_taxonomy_values( WP_Post $post_obj ): array {
 		// filter out default WordPress taxonomies.
 		$all_taxonomies = array_diff( get_taxonomies(), array( 'post_tag', 'nav_menu', 'author', 'link_category', 'post_format' ) );
 		$all_values     = array();
 
-		if ( is_array( $all_taxonomies ) ) {
-			foreach ( $all_taxonomies as $taxonomy ) {
-				$custom_taxonomy_objects = get_the_terms( $post_obj->ID, $taxonomy );
-				if ( is_array( $custom_taxonomy_objects ) ) {
-					foreach ( $custom_taxonomy_objects as $custom_taxonomy_object ) {
-						array_push( $all_values, $custom_taxonomy_object->name );
-					}
+		foreach ( $all_taxonomies as $taxonomy ) {
+			$custom_taxonomy_objects = get_the_terms( $post_obj->ID, $taxonomy );
+			if ( is_array( $custom_taxonomy_objects ) ) {
+				foreach ( $custom_taxonomy_objects as $custom_taxonomy_object ) {
+					$all_values[] = $custom_taxonomy_object->name;
 				}
 			}
 		}
+
 		return $all_values;
 	}
 
@@ -841,7 +839,7 @@ class Parsely {
 	 * https://github.com/Automattic/Co-Authors-Plus/blob/master/template-tags.php#L3-35
 	 *
 	 * @param int $post_id The id of the post.
-	 * @return array
+	 * @return array<WP_User>
 	 */
 	private function get_coauthor_names( int $post_id ): array {
 		$coauthors = array();
@@ -889,14 +887,13 @@ class Parsely {
 	 * @return string
 	 */
 	private function get_author_name( ?WP_User $author ): string {
-		// gracefully handle situation where no author is available.
-		if ( empty( $author ) || ! is_object( $author ) ) {
+		// Gracefully handle situation where no author is available.
+		if ( null === $author ) {
 			return '';
 		}
 
-		$author_name = $author->display_name;
-		if ( ! empty( $author_name ) ) {
-			return $author_name;
+		if ( ! empty( $author->display_name ) ) {
+			return $author->display_name;
 		}
 
 		$author_name = $author->user_firstname . ' ' . $author->user_lastname;
@@ -904,12 +901,15 @@ class Parsely {
 			return $author_name;
 		}
 
-		$author_name = $author->nickname;
-		if ( ! empty( $author_name ) ) {
-			return $author_name;
+		if ( ! empty( $author->nickname ) ) {
+			return $author->nickname;
 		}
 
-		return $author->user_nicename;
+		if ( ! empty( $author->user_nicename ) ) {
+			return $author->user_nicename;
+		}
+
+		return '';
 	}
 
 	/**
@@ -917,11 +917,11 @@ class Parsely {
 	 * authors if coauthors plugin is in use.
 	 *
 	 * @param WP_Post $post The post object.
-	 * @return array
+	 * @return array<string>
 	 */
 	private function get_author_names( WP_Post $post ): array {
 		$authors = $this->get_coauthor_names( $post->ID );
-		if ( empty( $authors ) ) {
+		if ( 0 === count( $authors ) ) {
 			$post_author = get_user_by( 'id', $post->post_author );
 			if ( false !== $post_author ) {
 				$authors = array( $post_author );
@@ -950,8 +950,8 @@ class Parsely {
 		 * @param WP_Post  $post    Post object.
 		 */
 		$authors = apply_filters( 'wp_parsely_post_authors', $authors, $post );
-		$authors = array_map( array( $this, 'get_clean_parsely_page_value' ), $authors );
-		return $authors;
+
+		return array_map( array( $this, 'get_clean_parsely_page_value' ), $authors );
 	}
 
 	/**

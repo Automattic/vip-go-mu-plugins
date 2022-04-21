@@ -1,6 +1,7 @@
 name: release-changelog
 
-on: workflow_dispatch
+on:
+  workflow_dispatch
 
 permissions:
   contents: read
@@ -15,12 +16,12 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
+        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -52,17 +53,18 @@ jobs:
   release-changelog:
     name: Publish Changelog
     runs-on: ubuntu-latest
+    needs: tag-release
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
+        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
 
       - name: Set up Node.js environment
-        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # renovate: tag=v2.5.1
+        uses: actions/setup-node@56337c425554a6be30cdef71bf441f15be286854 # tag=v3.1.1
         with:
           node-version: 14
           cache: npm
@@ -74,5 +76,6 @@ jobs:
       - name: Promote changelog entries
         env:
           CHANGELOG_BEARER_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+          RELEASE_ID: ${{ needs.tag-release.outputs.id }}
         working-directory: ./bin
         run: node ./mark-production-changelog.js

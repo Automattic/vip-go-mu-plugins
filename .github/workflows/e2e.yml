@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@bdb12b622a910dfdc99a31fdfe6f45a16bc287a4 # tag=v1.4.0
+        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
         with:
           egress-policy: block
           allowed-endpoints: 
@@ -55,19 +55,21 @@ jobs:
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
+            update.containous.cloud:443
+            update.traefik.io:443
             vaultpress.com:443
             wordpress.org:443
             dns.google:53
             e2e-test-site.vipdev.lndo.site:80
 
       - name: Check out repository code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
         with:
           submodules: true
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # renovate: tag=v2.5.1
+        uses: actions/setup-node@56337c425554a6be30cdef71bf441f15be286854 # tag=v3.1.1
         with:
           node-version: 'lts/*'
           cache: npm
@@ -106,7 +108,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2 # renovate: tag=v2.3.1
+        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # tag=v3.0.0
         if: failure()
         with:
           name: test-results
