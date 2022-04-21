@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Check out the source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@3df53dd32d858478710a6127bcd8b9d8b7182e16 # tag=v3
 
       - name: Review dependencies
-        uses: actions/dependency-review-action@v1
+        uses: actions/dependency-review-action@3f943b86c9a289f4e632c632695e2e0898d9d67d # tag=v1
