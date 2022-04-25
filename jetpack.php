@@ -36,8 +36,34 @@ if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
-if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || ! constant( 'WPCOM_IS_VIP_ENV' ) ) {
-	add_filter( 'jetpack_is_staging_site', '__return_true' );
+/**
+ * Decide whether we need to enable JP staging mode, or prevent it.
+ *
+ * Mainly used to help prevent a site from accidentlay taking over the connection
+ * of another site. Happens if the database is copied over, and the "auth" keys are then shared.
+ *
+ * @see https://jetpack.com/support/staging-sites/
+ */
+function vip_toggle_jetpack_staging_mode() {
+	$is_vip_site = defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' );
+
+	if ( ! $is_vip_site ) {
+		// Default non-VIP sites to staging mode (likely local dev or custom staging).
+		add_filter( 'jetpack_is_staging_site', '__return_true' );
+		return;
+	}
+
+	$is_maintenance_mode = defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE;
+	$is_production_site  = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+	if ( $is_maintenance_mode && ! $is_production_site ) {
+		// Specifically targetting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
+		add_filter( 'jetpack_is_staging_site', '__return_true' );
+		return;
+	}
+
+	// By default, JP will set all non-production sites to staging. But on VIP, the preprod/develop sites should still have their own real connections.
+	// So we'll ensure here it's not set to staging mode since it will break SSO and prevent data from being passed to WPcom.
+	add_filter( 'jetpack_is_staging_site', '__return_false' );
 }
 
 /**
@@ -142,6 +168,9 @@ function vip_jetpack_load() {
 	}
 
 	if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) && 'none' !== VIP_JETPACK_LOADED_VERSION ) {
+		// Configure the staging mode flag before we load the plugin, preventing any load order issues.
+		vip_toggle_jetpack_staging_mode();
+
 		require_once __DIR__ . '/vip-jetpack/vip-jetpack.php';
 	}
 }
