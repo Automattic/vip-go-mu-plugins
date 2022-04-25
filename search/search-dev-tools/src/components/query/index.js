@@ -59,7 +59,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 
 		if ( ! state.editing ) {
-			fetchForQuery( state.query, url );
+			fetchForQuery( state.query );
 		}
 	}, [ state.query, state.editing ] );
 
