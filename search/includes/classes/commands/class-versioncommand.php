@@ -181,6 +181,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$type = $args[0];
 
 		$search = \Automattic\VIP\Search\Search::instance();
+		$health = new \Automattic\VIP\Search\Health( $search );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
@@ -220,11 +221,15 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		} else {
 			$versions = $search->versioning->get_versions( $indexable );
 
+			foreach ( $versions as &$version ) {
+				$version['document_count'] = $health->index_count( $indexable, [ 'index_version' => $version['number'] ] );
+			}
+
 			if ( is_wp_error( $versions ) ) {
 				return WP_CLI::error( $versions->get_error_message() );
 			}
 
-			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time', 'document_count' ) );
 		}
 	}
 
