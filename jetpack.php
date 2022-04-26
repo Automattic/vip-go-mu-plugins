@@ -39,8 +39,8 @@ add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 /**
  * Decide whether we need to enable JP staging mode, or prevent it.
  *
- * Mainly used to help prevent a site from accidentlay taking over the connection
- * of another site. Happens if the database is copied over, and the "auth" keys are then shared.
+ * Mainly used to help prevent a site from accidentally taking over the connection
+ * of another site. Happens if the database is copied over and the "auth" keys are then shared.
  *
  * @see https://jetpack.com/support/staging-sites/
  */
