@@ -1,0 +1,44 @@
+name: CodeQL Analysis
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "search/search-dev-tools/src/**.js"
+      - ".github/workflows/codeql-analysis.yml"
+  pull_request:
+    branches:
+      - master
+    paths:
+      - "search/search-dev-tools/src/**.js"
+      - ".github/workflows/codeql-analysis.yml"
+  schedule:
+    - cron: '24 2 * * 6'
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Static Code Analysis with CodeQL
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@1ed1437484560351c5be56cf73a48a279d116b78 # tag=v2.1.8
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql-config.yml
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@1ed1437484560351c5be56cf73a48a279d116b78 # tag=v2.1.8

@@ -16,12 +16,12 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
+        uses: step-security/harden-runner@34cbc43f0b10c9dda284e663cf43c2ebaf83e956 # tag=v1.4.1
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -56,15 +56,15 @@ jobs:
     needs: tag-release
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
+        uses: step-security/harden-runner@34cbc43f0b10c9dda284e663cf43c2ebaf83e956 # tag=v1.4.1
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # renovate: tag=v2.4.0
+        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
 
       - name: Set up Node.js environment
-        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # renovate: tag=v2.5.1
+        uses: actions/setup-node@56337c425554a6be30cdef71bf441f15be286854 # tag=v3.1.1
         with:
           node-version: 14
           cache: npm
