@@ -61,7 +61,6 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 		return $c0[4] <=> $c1[4];
 	} );
 
-	// Select the server with the higest write priority
 	$server = end( $_db_servers );
 
 	if ( ! defined( 'DB_HOST' ) ) {
