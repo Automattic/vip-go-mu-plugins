@@ -334,18 +334,15 @@ class CoreCommand extends \ElasticPress\Command {
 	}
 
 	/**
-	 * Delete the index for each indexable. !!Warning!! This removes your elasticsearch index(s)
-	 * for the entire site.
+	 * Throw error when delete-index command is attempted to be used.
 	 *
-	 * @synopsis [--index-name] [--network-wide] [--skip-confirm]
 	 * @subcommand delete-index
 	 *
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function delete_index( $args, $assoc_args ) {
-		self::confirm_destructive_operation( $assoc_args );
-		parent::delete_index( $args, $assoc_args );
+		WP_CLI::error( 'Please use index versioning to manage your indices: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/' );
 	}
 
 	/**

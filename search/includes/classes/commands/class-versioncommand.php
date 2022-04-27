@@ -181,6 +181,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$type = $args[0];
 
 		$search = \Automattic\VIP\Search\Search::instance();
+		$health = new \Automattic\VIP\Search\Health( $search );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
@@ -202,29 +203,35 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 				$site_versions = $search->versioning->get_versions( $indexable );
 
-				restore_current_blog();
-
 				if ( is_wp_error( $site_versions ) ) {
+					restore_current_blog();
 					return WP_CLI::error( $site_versions->get_error_message() );
 				}
 
 				foreach ( $site_versions as &$version ) {
-					$version['blog_id'] = $site['blog_id'];
-					$version['url']     = $site['domain'] . $site['path'];
+					$version['blog_id']        = $site['blog_id'];
+					$version['url']            = $site['domain'] . $site['path'];
+					$version['document_count'] = $health->index_count( $indexable, [ 'index_version' => $version['number'] ] );
 				}
+
+				restore_current_blog();
 
 				$versions = array_merge( $versions, $site_versions );
 			}
 
-			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'blog_id', 'url', 'number', 'active', 'created_time', 'activated_time' ) );
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'blog_id', 'url', 'number', 'active', 'created_time', 'activated_time', 'document_count' ) );
 		} else {
 			$versions = $search->versioning->get_versions( $indexable );
+
+			foreach ( $versions as &$version ) {
+				$version['document_count'] = $health->index_count( $indexable, [ 'index_version' => $version['number'] ] );
+			}
 
 			if ( is_wp_error( $versions ) ) {
 				return WP_CLI::error( $versions->get_error_message() );
 			}
 
-			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time' ) );
+			\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', $versions, array( 'number', 'active', 'created_time', 'activated_time', 'document_count' ) );
 		}
 	}
 

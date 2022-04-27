@@ -1,0 +1,25 @@
+version: 2
+
+updates:
+  - directory: /
+    package-ecosystem: github-actions
+    schedule:
+      interval: daily
+
+  - directory: /
+    package-ecosystem: npm
+    schedule:
+      interval: daily
+    versioning-strategy: increase-if-necessary
+
+  - directory: /search/search-dev-tools/
+    package-ecosystem: npm
+    schedule:
+      interval: daily
+    versioning-strategy: increase-if-necessary
+
+  - directory: /
+    package-ecosystem: composer
+    schedule:
+      interval: daily
+    versioning-strategy: increase-if-necessary
