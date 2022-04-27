@@ -1091,7 +1091,7 @@ class Health {
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
 		$result = 0;
-		if ( 200 == $response_code ) {
+		if ( 200 === $response_code ) {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
 
