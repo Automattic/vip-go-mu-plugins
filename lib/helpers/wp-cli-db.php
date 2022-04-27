@@ -92,4 +92,6 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 	if ( ! defined( 'DB_NAME' ) ) {
 		define( 'DB_NAME', $server[3] );
 	}
+
+	// TODO: Logging
 } );
