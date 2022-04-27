@@ -134,7 +134,8 @@ function send_pixel( $stats ) {
  * Add extra hp=vip to allow for better tracking via gl
  */
 add_filter( 'stats_array', __NAMESPACE__ . '\\add_hp' );
-function add_hp( $kvs ) {
-	$kvs['hp'] = 'vip';
-	return $kvs;
+add_filter( 'jetpack_stats_footer_amp_data', __NAMESPACE__ . '\\add_hp' );
+function add_hp( $data ) {
+	$data['hp'] = 'vip';
+	return $data;
 }
