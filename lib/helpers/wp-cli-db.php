@@ -28,6 +28,22 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 
 	$allow_writes = defined( 'WPVIP_WP_DB_ALLOW_WRITES' ) && WPVIP_WP_DB_ALLOW_WRITES;
 
+	$write_specific_subcommands = [
+		'clean',
+		'create',
+		'drop',
+		'import',
+		'optimize',
+		'repair',
+		'reset',
+	];
+
+	$subcommand = $command[1];
+	if ( ! $allow_writes && in_array( $subcommand, $write_specific_subcommands ) ) {
+		echo "Error: The 'wp db $subcommand' subcommand is not currently allowed for this site.\n.";
+		exit( 20 );
+	}
+
 	$_db_servers = array_filter( $db_servers, function ( $candidate ) use ( $allow_writes ) {
 		if ( ! ( is_array( $candidate ) && 6 === count( $candidate ) ) ) {
 			// This value isn't correctly formed. Remove.
@@ -50,7 +66,7 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 
 	if ( empty( $_db_servers ) ) {
 		echo "Error: No database servers are available to fulfill this request.\n";
-		exit( 20 );
+		exit( 30 );
 	}
 
 	// Sort the replicas in ascending order of the write priority (if allowed), else sort by read priority.
