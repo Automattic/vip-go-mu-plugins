@@ -40,6 +40,7 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 
 	$subcommand = $command[1];
 	if ( ! $allow_writes && in_array( $subcommand, $write_specific_subcommands ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo "Error: The 'wp db $subcommand' subcommand is not currently allowed for this site.\n.";
 		exit( 20 );
 	}
