@@ -26,12 +26,26 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 		exit( 10 );
 	}
 
-	// Remove any servers that can't both read and write.
-	$_db_servers = array_filter( $db_servers, function ( $candidate ) {
-		return is_array( $candidate ) &&
-			6 === count( $candidate ) &&
-			$candidate[4] > 0 &&
-			$candidate[5] > 0;
+	$allow_writes = defined( 'WPVIP_WP_DB_ALLOW_WRITES' ) && WPVIP_WP_DB_ALLOW_WRITES;
+
+	$_db_servers = array_filter( $db_servers, function ( $candidate ) use ( $allow_writes ) {
+		if ( ! ( is_array( $candidate ) && 6 === count( $candidate ) ) ) {
+			// This value isn't correctly formed. Remove.
+			return false;
+		}
+
+		if ( $candidate[4] < 1 ) {
+			// This server cannot read. Remove.
+			return false;
+		}
+
+		if ( ! $allow_writes && $candidate[5] > 0 ) {
+			// This server can write and it's not allowed. Remove.
+			return false;
+		}
+
+		// Include the candidate in the list to sort.
+		return true;
 	} );
 
 	if ( empty( $_db_servers ) ) {
@@ -39,9 +53,12 @@ WP_CLI::add_hook( 'before_run_command', function ( $command ) {
 		exit( 20 );
 	}
 
-	// Sort the replicas in ascending order of WritePriority
-	usort( $_db_servers, function ( $c0, $c1 ) {
-		return $c0[5] <=> $c1[5];
+	// Sort the replicas in ascending order of the write priority (if allowed), else sort by read priority.
+	usort( $_db_servers, function ( $c0, $c1 ) use ( $allow_writes ) {
+		if ( $allow_writes ) {
+			return $c0[5] <=> $c1[5];
+		}
+		return $c0[4] <=> $c1[4];
 	} );
 
 	// Select the server with the higest write priority
