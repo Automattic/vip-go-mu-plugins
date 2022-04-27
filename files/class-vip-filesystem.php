@@ -311,12 +311,16 @@ class VIP_Filesystem {
 	 */
 	private function clean_file_path( $file_path ) {
 		$upload_path = wp_get_upload_dir();
+		$basedir     = $upload_path['basedir'];
+		$basedir_len = strlen( $basedir );
 
-		// Find 2nd occurrence of `basedir`
-		$pos = strpos( $file_path, $upload_path['basedir'], strlen( $upload_path['basedir'] ) );
-		if ( false !== $pos ) {
-			// +1 to account far trailing slash
-			$file_path = substr( $file_path, strlen( $upload_path['basedir'] ) + 1 );
+		// Find 2nd occurrence of `basedir`; `$file_path` should be at least twice as long as `basedir`
+		if ( strlen( $file_path ) >= 2 * $basedir_len ) {
+			$pos = strpos( $file_path, $basedir, $basedir_len );
+			if ( false !== $pos ) {
+				// +1 to account far trailing slash
+				$file_path = substr( $file_path, $basedir_len + 1 );
+			}
 		}
 
 		// Strip any query params that snuck through
