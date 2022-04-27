@@ -13,10 +13,6 @@ class Healthcheck {
 	 */
 	protected array $errors = [];
 
-	public function __construct() {
-		$this->check();
-	}
-
 	/**
 	 * Apply the filters to and set the `$errors` property accordingly.
 	 *
@@ -85,13 +81,4 @@ class Healthcheck {
 
 		exit;
 	}
-}
-
-/**
- * `parse_request` provides a good balance between making sure the codebase is loaded and not running the main query.
- */
-if ( isset( $_SERVER['REQUEST_URI'] ) && '/vip-healthcheck' === $_SERVER['REQUEST_URI'] ) {
-	add_action( 'parse_request', fn( $wp ) =>
-		( new Healthcheck() )->render(),
-	PHP_INT_MIN );
 }
