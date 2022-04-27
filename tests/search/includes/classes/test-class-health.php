@@ -8,6 +8,7 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
+require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 
 /**
  * @runTestsInSeparateProcesses
@@ -254,7 +255,7 @@ class Health_Test extends WP_UnitTestCase {
 								'boolean'  => false,
 								'date'     => '1971-01-01',
 								'datetime' => '1971-01-01 00:00:01',
-								'time'     => '00:00:01', 
+								'time'     => '00:00:01',
 							],
 						],
 					],

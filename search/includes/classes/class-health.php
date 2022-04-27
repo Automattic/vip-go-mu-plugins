@@ -46,8 +46,9 @@ class Health {
 	public $search;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
-		$this->search     = $search;
-		$this->indexables = \ElasticPress\Indexables::factory();
+		$this->search        = $search;
+		$this->indexables    = \ElasticPress\Indexables::factory();
+		$this->elasticsearch = \ElasticPress\Elasticsearch::factory();
 	}
 
 	/**
@@ -1069,5 +1070,38 @@ class Health {
 			'index_version' => $index_version,
 			'result'        => $result,
 		);
+	}
+	/**
+	 * Fetches the count of entities in ES indexable
+	 *
+	 * @since   1.0.0
+	 * @access  public
+	 * @param mixed $indexable Instance of an ElasticPress Indexable Object to search on
+	 * @param array $options options:
+	 *     index_version: if provided that version will be use instead of default
+	 * @return int
+	 */
+	public function index_count( \ElasticPress\Indexable $indexable, array $options = array() ) {
+		if ( isset( $options['index_version'] ) ) {
+			$this->search->versioning->set_current_version_number( $indexable, $options['index_version'] );
+		}
+		$index = $indexable->get_index_name();
+
+		$response      = $this->elasticsearch->remote_request( $index . '/_count' );
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+
+		$result = 0;
+		if ( 200 === $response_code ) {
+			$response_body_json = wp_remote_retrieve_body( $response );
+			$response_body      = json_decode( $response_body_json, true );
+
+			$result = $response_body['count'] ?? 0;
+		}
+
+		if ( isset( $options['index_version'] ) ) {
+			$this->search->versioning->reset_current_version_number( $indexable );
+		}
+
+		return $result;
 	}
 }
