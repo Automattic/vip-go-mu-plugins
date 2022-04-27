@@ -9,6 +9,7 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
 
 class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
+	/** @var VIP_Filesystem_Stream_Wrapper */
 	private $stream_wrapper;
 
 	/** @var MockObject&Api_Client */
@@ -180,5 +181,14 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $this->stream_wrapper->validate( $path, 'x' ) );
 		$this->assertError( "fopen mode validation failed for mode x on path $path with error: Test error #vip-go-streams", E_USER_WARNING );
+	}
+
+	public function test_open_non_existing_file_ro(): void {
+		$ignore = null;
+		$path   = 'wp-content/uploads/non-existing-asset.jpg';
+		$this->api_client_mock->expects( self::once() )->method( 'get_file' )->with( $path )->willReturn( new WP_Error( 'file-not-found', 'error' ) );
+		$actual = $this->stream_wrapper->stream_open( 'vip://' . $path, 'r', 0, $ignore );
+
+		self::assertFalse( $actual );
 	}
 }
