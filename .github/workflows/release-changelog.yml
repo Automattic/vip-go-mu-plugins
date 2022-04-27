@@ -16,7 +16,7 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
+        uses: step-security/harden-runner@34cbc43f0b10c9dda284e663cf43c2ebaf83e956 # tag=v1.4.1
         with:
           egress-policy: audit
 
@@ -56,7 +56,7 @@ jobs:
     needs: tag-release
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9b0655f430fba8c7001d4e38f8d4306db5c6e0ab # tag=v1.4.1
+        uses: step-security/harden-runner@34cbc43f0b10c9dda284e663cf43c2ebaf83e956 # tag=v1.4.1
         with:
           egress-policy: audit
 

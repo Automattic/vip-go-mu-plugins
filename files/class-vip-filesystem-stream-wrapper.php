@@ -186,7 +186,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) ) {
-				if ( 'file-not-found' !== $result->get_error_code() ) {
+				if ( 'file-not-found' !== $result->get_error_code() || 'r' === $mode ) {
 					trigger_error(
 						sprintf( 'stream_open/get_file failed for %s with error: %s #vip-go-streams', esc_html( $path ), esc_html( $result->get_error_message() ) ),
 						E_USER_WARNING
