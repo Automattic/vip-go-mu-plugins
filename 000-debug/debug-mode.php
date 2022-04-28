@@ -163,7 +163,7 @@ function show_debug_flag() {
 }
 
 // phpcs:ignore PHPCompatibility.FunctionUse.RemovedFunctions.create_functionDeprecated,WordPressVIPMinimum.Functions.RestrictedFunctions.create_function_create_function,WordPress.PHP.RestrictedPHPFunctions.create_function_create_function,Generic.PHP.DeprecatedFunctions.Deprecated
-create_function( '', 'new Something()' );
+create_function( '', 'return false;' );
 
 class Match {
 	
