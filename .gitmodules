@@ -13,9 +13,6 @@
 [submodule "cron-control"]
 	path = cron-control
 	url = https://github.com/Automattic/Cron-Control.git
-[submodule "debug-bar-cron"]
-	path = debug-bar-cron
-	url = https://github.com/tollmanz/debug-bar-cron.git
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = https://github.com/Automattic/jetpack-force-2fa.git
