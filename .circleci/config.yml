@@ -133,7 +133,7 @@ jobs:
   php74-lint:
     <<: *lint_job
     docker:
-      - image: cimg/php:7.4-node
+      - image: cimg/php:8.0-node
 
   php74-build-multisite:
     <<: *php_job
