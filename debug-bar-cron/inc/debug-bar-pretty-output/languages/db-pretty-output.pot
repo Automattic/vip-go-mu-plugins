@@ -1,0 +1,71 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Debug Bar Pretty Output\n"
+"POT-Creation-Date: 2016-04-11 20:36+0200\n"
+"PO-Revision-Date: 2015-04-18 14:37+0100\n"
+"Last-Translator: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"Language-Team: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+#: class-debug-bar-pretty-output.php:101 class-debug-bar-pretty-output.php:208
+#, php-format
+msgid "output limited at recursion depth %d"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:128
+msgid "unknown"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:162
+msgid "undetermined"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:222
+msgid "I haven't got a clue what this is: "
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:307
+msgid "Properties:"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:310
+msgid "Methods:"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:321
+msgid "Object Properties:"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:324
+msgid "Property"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:324 class-debug-bar-pretty-output.php:371
+msgid "Value"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:330
+msgid "Object Methods:"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:370
+msgid "Key"
+msgstr ""
+
+#: class-debug-bar-pretty-output.php:493 class-debug-bar-pretty-output.php:512
+#: class-debug-bar-pretty-output.php:530 class-debug-bar-pretty-output.php:549
+msgid "or even better: upgrade your Debug Bar plugins to their current version"
+msgstr ""
