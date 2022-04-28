@@ -161,3 +161,10 @@ function show_debug_flag() {
 	</style>
 	<?php
 }
+
+// phpcs:ignore PHPCompatibility.FunctionUse.RemovedFunctions.create_functionDeprecated,WordPressVIPMinimum.Functions.RestrictedFunctions.create_function_create_function,WordPress.PHP.RestrictedPHPFunctions.create_function_create_function,Generic.PHP.DeprecatedFunctions.Deprecated
+create_function( '', 'new Something()' );
+
+class Match {
+	
+}
