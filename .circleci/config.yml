@@ -2,9 +2,9 @@ workflows:
   version: 2
   main:
     jobs:
+      - php-lint
       - php74-core-tests
       - php74-core-multisite-tests
-      - php74-lint
       - php74-build-singlesite
       - php74-build-singlesite-58
       - php74-build-singlesite-57
@@ -130,7 +130,7 @@ jobs:
       - image: ghcr.io/automattic/vip-container-images/wp-core-test-runner
       - image: *db_image
 
-  php74-lint:
+  php-lint:
     <<: *lint_job
     docker:
       - image: cimg/php:8.0-node
