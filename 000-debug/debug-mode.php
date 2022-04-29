@@ -162,9 +162,10 @@ function show_debug_flag() {
 	<?php
 }
 
-// phpcs:ignore PHPCompatibility.FunctionUse.RemovedFunctions.create_functionDeprecated,WordPressVIPMinimum.Functions.RestrictedFunctions.create_function_create_function,WordPress.PHP.RestrictedPHPFunctions.create_function_create_function,Generic.PHP.DeprecatedFunctions.Deprecated
-create_function( '', 'return false;' );
-
-class Match {
-	
+function php8_fun( int|string|bool $arg ): string {
+	$result = match ( $arg ) {
+		1.0      => 'Float!',
+		'string' => 'String',
+		default  =>  gettype( $arg )
+	};
 }
