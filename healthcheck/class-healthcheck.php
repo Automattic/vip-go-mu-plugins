@@ -4,6 +4,10 @@ namespace Automattic\VIP;
 /**
  * Utility Healthcheck class that runs further than cache-healthcheck,
  * and allows to verify the app code is working as expected.
+ *
+ * This functionality is not intended for public use.
+ * Please DO NOT try to implement your healthchecks on top of it,
+ * It may lead to unintended consequences.
  */
 class Healthcheck {
 	/**

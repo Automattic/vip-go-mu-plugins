@@ -1,4 +1,9 @@
 <?php
+/**
+ * This functionality is not intended for public use.
+ * Please DO NOT try to implement your healthchecks on top of it,
+ * It may lead to unintended consequences.
+ */
 require_once __DIR__ . '/class-healthcheck.php';
 
 // Execute the cache-healthcheck as quickly as possible
