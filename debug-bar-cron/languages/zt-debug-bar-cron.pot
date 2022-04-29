@@ -1,0 +1,157 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"Project-Id-Version: Debug Bar Cron\n"
+"POT-Creation-Date: 2015-12-07 07:04+0100\n"
+"PO-Revision-Date: 2015-12-07 02:34+0100\n"
+"Last-Translator: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"Language-Team: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.5\n"
+"X-Poedit-Basepath: ..\n"
+"X-Poedit-WPHeader: debug-bar-cron.php\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-KeywordsList: __;_e;_n:1,2;_x:1,2c;_ex:1,2c;_nx:4c,1,2;esc_attr__;"
+"esc_attr_e;esc_attr_x:1,2c;esc_html__;esc_html_e;esc_html_x:1,2c;_n_noop:1,2;"
+"_nx_noop:3c,1,2;__ngettext_noop:1,2\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: *.js\n"
+
+#: class-debug-bar-cron.php:51
+msgid "Cron"
+msgstr ""
+
+#: class-debug-bar-cron.php:83
+msgid "Yes"
+msgstr ""
+
+#: class-debug-bar-cron.php:83
+msgid "No"
+msgstr ""
+
+#: class-debug-bar-cron.php:96
+msgid "Total Events"
+msgstr ""
+
+#: class-debug-bar-cron.php:97
+msgid "Doing Cron"
+msgstr ""
+
+#: class-debug-bar-cron.php:98
+msgid "Next Event"
+msgstr ""
+
+#: class-debug-bar-cron.php:99
+msgid "Current Time"
+msgstr ""
+
+#: class-debug-bar-cron.php:102
+msgid "Custom Events"
+msgstr ""
+
+#: class-debug-bar-cron.php:107
+msgid "No Custom Events scheduled."
+msgstr ""
+
+#: class-debug-bar-cron.php:109
+msgid "Schedules"
+msgstr ""
+
+#: class-debug-bar-cron.php:113
+msgid "Core Events"
+msgstr ""
+
+#: class-debug-bar-cron.php:118
+msgid "No Core Events scheduled."
+msgstr ""
+
+#: class-debug-bar-cron.php:184
+msgid "Next Execution"
+msgstr ""
+
+#: class-debug-bar-cron.php:185
+msgid "Hook"
+msgstr ""
+
+#: class-debug-bar-cron.php:186 class-debug-bar-cron.php:280
+msgid "Interval Hook"
+msgstr ""
+
+#: class-debug-bar-cron.php:187
+msgid "Interval Value"
+msgstr ""
+
+#: class-debug-bar-cron.php:188
+msgid "Args"
+msgstr ""
+
+#: class-debug-bar-cron.php:207 class-debug-bar-cron.php:220
+msgid "Single Event"
+msgstr ""
+
+#. TRANSLATORS: %s is number of seconds.
+#: class-debug-bar-cron.php:214
+#, php-format
+msgid "%ss"
+msgstr ""
+
+#. TRANSLATORS: %s is number of minutes.
+#: class-debug-bar-cron.php:216
+#, php-format
+msgid "%sm"
+msgstr ""
+
+#. TRANSLATORS: %s is number of hours.
+#: class-debug-bar-cron.php:218
+#, php-format
+msgid "%sh"
+msgstr ""
+
+#: class-debug-bar-cron.php:233
+msgid "No Args"
+msgstr ""
+
+#: class-debug-bar-cron.php:281
+msgid "Interval (S)"
+msgstr ""
+
+#: class-debug-bar-cron.php:282
+msgid "Interval (M)"
+msgstr ""
+
+#: class-debug-bar-cron.php:283
+msgid "Interval (H)"
+msgstr ""
+
+#: class-debug-bar-cron.php:284
+msgid "Display Name"
+msgstr ""
+
+#. TRANSLATORS: %s is a human readable time difference.
+#: class-debug-bar-cron.php:313
+#, php-format
+msgid "%s ago"
+msgstr ""
+
+#. Plugin Name of the plugin/theme
+msgid "Debug Bar Cron"
+msgstr ""
+
+#. Plugin URI of the plugin/theme
+msgid "http://github.com/tollmanz/"
+msgstr ""
+
+#. Description of the plugin/theme
+msgid "Adds information about WP scheduled events to Debug Bar."
+msgstr ""
+
+#. Author of the plugin/theme
+msgid "Zack Tollman, Helen Hou-Sandi"
+msgstr ""
+
+#. Author URI of the plugin/theme
+msgid "http://github.com/tollmanz"
+msgstr ""
