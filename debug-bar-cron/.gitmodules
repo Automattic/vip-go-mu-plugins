@@ -1,0 +1,3 @@
+[submodule "inc/debug-bar-pretty-output"]
+	path = inc/debug-bar-pretty-output
+	url = https://github.com/jrfnl/debug-bar-pretty-output

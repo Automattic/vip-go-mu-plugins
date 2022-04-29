@@ -1,0 +1,128 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Debug Bar Pretty Output\n"
+"POT-Creation-Date: 2016-04-11 20:36+0200\n"
+"PO-Revision-Date: 2016-04-11 20:36+0200\n"
+"Last-Translator: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"Language-Team: Juliette Reinders Folmer <wpplugins_nospam@adviesenzo.nl>\n"
+"Language: nl_NL\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7\n"
+"X-Poedit-KeywordsList: __;esc_html__;esc_html_e;esc_attr__;esc_attr_e;_e\n"
+"X-Poedit-Basepath: .\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPath-1: ..\n"
+
+#: class-debug-bar-pretty-output.php:101 class-debug-bar-pretty-output.php:208
+#, php-format
+msgid "output limited at recursion depth %d"
+msgstr "output beperkt tot recursiediepte %d"
+
+#: class-debug-bar-pretty-output.php:128
+msgid "unknown"
+msgstr "onbekend"
+
+#: class-debug-bar-pretty-output.php:162
+msgid "undetermined"
+msgstr "niet bepaald"
+
+#: class-debug-bar-pretty-output.php:222
+msgid "I haven't got a clue what this is: "
+msgstr "Geen idee wat dit is:"
+
+#: class-debug-bar-pretty-output.php:307
+msgid "Properties:"
+msgstr "Eigenschappen:"
+
+#: class-debug-bar-pretty-output.php:310
+msgid "Methods:"
+msgstr "Methoden:"
+
+#: class-debug-bar-pretty-output.php:321
+msgid "Object Properties:"
+msgstr "Object eigenschappen:"
+
+#: class-debug-bar-pretty-output.php:324
+msgid "Property"
+msgstr "Eigenschap"
+
+#: class-debug-bar-pretty-output.php:324 class-debug-bar-pretty-output.php:371
+msgid "Value"
+msgstr "Waarde"
+
+#: class-debug-bar-pretty-output.php:330
+msgid "Object Methods:"
+msgstr "Object Methoden:"
+
+#: class-debug-bar-pretty-output.php:370
+msgid "Key"
+msgstr "Sleutel"
+
+#: class-debug-bar-pretty-output.php:493 class-debug-bar-pretty-output.php:512
+#: class-debug-bar-pretty-output.php:530 class-debug-bar-pretty-output.php:549
+msgid "or even better: upgrade your Debug Bar plugins to their current version"
+msgstr ""
+"of better nog: upgrade de geïnstalleerde Debug Bar plugins naar hun huidige "
+"versie"
+
+#~ msgid "Empty array()"
+#~ msgstr "Leeg array()"
+
+#~ msgid "Name"
+#~ msgstr "Naam"
+
+#~ msgid "WP Constants"
+#~ msgstr "WP Constants"
+
+#~ msgid "Constants within WP:"
+#~ msgstr "Constants binnen WP:"
+
+#~ msgid "No constants found... this is really weird..."
+#~ msgstr "Geen constants gevonden... dit is vreemd..."
+
+#~ msgid "WP Class Constants"
+#~ msgstr "WP Class Constants"
+
+#~ msgid ""
+#~ "<strong>Please note</strong>: these may be both native WordPress classes "
+#~ "as well as classes which may be declared by plugins or Themes.<br />You "
+#~ "can use these constants in your code using <code>class_name::"
+#~ "constant_name</code>."
+#~ msgstr ""
+#~ "<strong>Toelichting:</strong>: dit kunnen zowel de WordPress eigen "
+#~ "classes zijn als ook de classes welke door plugins of themes gedeclareerd "
+#~ "zijn.<br />Je kan deze constants in je eigen code gebruiken door middel "
+#~ "van <code>class_name::constant_name</code>."
+
+#~ msgid "See the <a %s>FAQ</a> for more information."
+#~ msgstr "Lees de <a %s>FAQ</a> voor meer informatie."
+
+#~ msgid "Constants:"
+#~ msgstr "Constants:"
+
+#~ msgid "No classes nor class constants found... this is kinda strange..."
+#~ msgstr "Geen classes of class constants gevonden... dit is vreemd..."
+
+#~ msgid "PHP Constants"
+#~ msgstr "PHP Constants"
+
+#~ msgid "Visit the PHP manual page about the %s constants."
+#~ msgstr "Bezoek de PHP handleiding pagina over de %s constants."
+
+#~ msgid "No PHP constants found... this is really weird..."
+#~ msgstr "Geen PHP constants gevonden... dit is vreemd..."
+
+#~ msgid ""
+#~ "Debug Bar must be activated to use the Debug Bar Constants Plugin. <a "
+#~ "href=\"%s\">Visit your plugins page to activate</a>."
+#~ msgstr ""
+#~ "Debug Bar moet geactiveerd zijn om de Debug Bar Constants Plugin te "
+#~ "kunnen gebruiken. <a href=\"%s\">Ga naar de plugins pagina om deze te "
+#~ "activeren</a>."
+
+#~ msgid "Nothing to display"
+#~ msgstr "Niets om weer te geven"
