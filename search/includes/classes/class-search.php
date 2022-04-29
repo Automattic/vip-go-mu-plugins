@@ -436,6 +436,9 @@ class Search {
 			// Set to default rather than to one of the bounds since this setting has serious performance and user impact.
 			self::$query_db_fallback_value = self::DEFAULT_QUERY_DB_FALLBACK_VALUE;
 		}
+
+		// Disable toggling indexing option in multisite admin UI.
+		add_filter( 'ep_show_indexing_option_on_multisite', '__return_false' );
 	}
 
 	protected function setup_constants() {
