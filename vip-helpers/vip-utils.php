@@ -766,13 +766,11 @@ function vip_get_random_posts( $number = 1, $post_type = 'post', $return_ids = f
 		return $post_ids;
 	}
 
-	$random_posts = get_posts( array(
+	return get_posts( array(
 		'post__in'    => $post_ids,
-		'numberposts' => count( $post_ids ),
+		'numberposts' => count( $post_ids ), // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_numberposts
 		'post_type'   => $post_type,
 	) );
-
-	return $random_posts;
 }
 
 /**
