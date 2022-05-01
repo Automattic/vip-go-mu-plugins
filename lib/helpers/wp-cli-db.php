@@ -70,7 +70,7 @@ class DB_Server {
 	}
 }
 
-function init() {
+function early_init() {
 	if ( defined( 'WPINC' ) ) {
 		// Don't do anything when WordPress is loaded.
 		return;
@@ -80,7 +80,7 @@ function init() {
 		return;
 	}
 
-	add_db_before_run_command( new Config() );
+	add_before_run_db_command( new Config() );
 }
 
 function get_database_server( Config $config ): DB_Server {
@@ -116,7 +116,7 @@ function get_database_server( Config $config ): DB_Server {
 	return end( $server_objects );
 }
 
-function add_db_before_run_command( Config $config ) {
+function add_before_run_db_command( Config $config ) {
 	WP_CLI::add_hook( 'before_run_command', function ( $command ) use ( $config ) {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
 			// Don't do anything for any command other than `db`
@@ -144,4 +144,4 @@ function add_db_before_run_command( Config $config ) {
 	} );
 }
 
-init();
+early_init();
