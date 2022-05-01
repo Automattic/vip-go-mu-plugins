@@ -28,16 +28,16 @@ class DB_Server {
 	private $read_priority;
 	private $write_priority;
 
-	function __construct( string $host, string $user, string $password, string $name, int $read_priority, int $write_priority ) {
-		$this->host = $host;
-		$this->user = $user;
-		$this->password = $password;
-		$this->name = $name;
-		$this->read_priority = $read_priority;
+	public function __construct( string $host, string $user, string $password, string $name, int $read_priority, int $write_priority ) {
+		$this->host           = $host;
+		$this->user           = $user;
+		$this->password       = $password;
+		$this->name           = $name;
+		$this->read_priority  = $read_priority;
 		$this->write_priority = $write_priority;
 	}
 
-	function define_variables() {
+	public function define_variables() {
 		if ( ! defined( 'DB_HOST' ) ) {
 			define( 'DB_HOST', $this->host );
 		}
@@ -52,19 +52,19 @@ class DB_Server {
 		}
 	}
 
-	function can_read() {
+	public function can_read() {
 		return $this->read_priority > 0;
 	}
 
-	function can_write() {
+	public function can_write() {
 		return $this->write_priority > 0;
 	}
 
-	function read_priority() {
+	public function read_priority() {
 		return $this->read_priority;
 	}
 
-	function write_priority() {
+	public function write_priority() {
 		return $this->write_priority;
 	}
 }
