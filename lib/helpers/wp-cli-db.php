@@ -7,12 +7,13 @@ namespace Automattic\VIP\Helpers;
 
 use Exception;
 use WP_CLI;
+use Automattic\VIP\Environment;
 
 class Config {
 	private bool $allow_writes = false;
 
 	public function __construct() {
-		$this->allow_writes = defined( 'WPVIP_WP_DB_ALLOW_WRITES' ) && WPVIP_WP_DB_ALLOW_WRITES;
+		$this->allow_writes = defined( 'WPVIP_WP_DB_ALLOW_WRITES' ) && constant( 'WPVIP_WP_DB_ALLOW_WRITES' );
 	}
 
 	public function allow_writes(): bool {
