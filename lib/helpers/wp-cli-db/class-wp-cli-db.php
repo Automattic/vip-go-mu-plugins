@@ -46,16 +46,22 @@ class Wp_Cli_Db {
 		}
 	
 		$server_objects = array_map(
-			fn ( $server_tuple ) => new DB_Server( ...$server_tuple ),
+			function ( $server_tuple ) {
+				if ( ! is_array( $server_tuple ) ) {
+					return false;
+				}
+				return new DB_Server( ...$server_tuple );
+			},
 			$db_servers
 		);
 	
 		$server_objects = array_filter( $server_objects, function ( $candidate ) {
-			return $candidate->can_read() && ! (
-				$candidate->can_write() && ! $this->config->allow_writes()
-			);
+			return $candidate instanceof DB_Server &&
+				$candidate->can_read() && ! (
+					$candidate->can_write() && ! $this->config->allow_writes()
+				);
 		} );
-	
+
 		// Sort the replicas in ascending order of the write priority (if allowed), else sort by read priority.
 		usort( $server_objects, function ( $c0, $c1 ) {
 			if ( $this->config->allow_writes() ) {

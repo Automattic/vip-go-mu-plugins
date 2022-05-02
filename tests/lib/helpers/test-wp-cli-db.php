@@ -8,15 +8,33 @@ require_once __DIR__ . '/../../../lib/helpers/wp-cli-db/class-wp-cli-db.php';
 
 use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
+use Exception;
 use ArgumentCountError;
 use TypeError;
 
+const SERVERS = [
+	'no_access' => [ 'n-0-0', 'user123', 'hunter2', 'treasure_trove', 0, 0 ],
+	'r' => [ 'r-1-0', 'user123', 'hunter2', 'treasure_trove', 1, 0 ],
+	'r_high_priority' => [ 'r-99-0', 'user123', 'hunter2', 'treasure_trove', 99, 0 ],
+	'rw' => [ 'rw-1-1', 'user123', 'hunter2', 'treasure_trove', 1, 1 ],
+	'w' => [ 'w-0-1', 'user123', 'hunter2', 'treasure_trove', 0, 1 ],
+	'rw_high_both_priority' => [ 'rw-99-99', 'user123', 'hunter2', 'treasure_trove', 99, 99 ],
+	'rw_high_r_priority' => [ 'rw-99-1', 'user123', 'hunter2', 'treasure_trove', 99, 1 ],
+	'rw_high_w_priority' => [ 'rw-1-99', 'user123', 'hunter2', 'treasure_trove', 1, 99 ],
+	'w_high_priority' => [ 'w-0-99', 'user123', 'hunter2', 'treasure_trove', 0, 99 ],
+];
+
 class WP_Cli_Db_Test extends TestCase {
-	//use ExpectPHPException;
+	private $db_server_backup;
 
 	public function setUp(): void {
 		parent::setUp();
 		Constant_Mocker::clear();
+		$this->db_server_backup = $GLOBALS['db_servers'] ?? null;
+	}
+
+	public function tearDown(): void {
+		$GLOBALS['db_servers'] = $this->db_server_backup;
 	}
 
 	public function test_config_not_enabled_writes_disallowed_by_default() {
@@ -60,26 +78,114 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_db_server_cannot_read_or_write() {
-		$server = new DB_Server( 'host0', 'user123', 'hunter2', 'treasure_trove', 0, 0 );
+		$server = new DB_Server( ...SERVERS['no_access'] );
 		$this->assertFalse( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
 
 	public function test_db_server_can_read_not_write() {
-		$server = new DB_Server( 'host0', 'user123', 'hunter2', 'treasure_trove', 1, 0 );
+		$server = new DB_Server( ...SERVERS['r'] );
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
 
 	public function test_db_server_can_write_not_read() {
-		$server = new DB_Server( 'host0', 'user123', 'hunter2', 'treasure_trove', 0, 1 );
+		$server = new DB_Server( ...SERVERS['w'] );
 		$this->assertFalse( $server->can_read() );
 		$this->assertTrue( $server->can_write() );
 	}
 
 	public function test_db_server_can_read_and_write() {
-		$server = new DB_Server( 'host0', 'user123', 'hunter2', 'treasure_trove', 1, 1 );
+		$server = new DB_Server( ...SERVERS['rw'] );
 		$this->assertTrue( $server->can_read() );
 		$this->assertTrue( $server->can_write() );
+	}
+
+	public function test_no_config() {
+		$this->expectException( ArgumentCountError::class );
+		new Wp_Cli_Db();
+	}
+
+	public function test_get_database_server_unset() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		unset( $GLOBALS['db_servers'] );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The database configuration is missing.' );
+		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+	}
+
+	public function test_get_database_server_empty_array() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [];
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The database configuration is empty.' );
+		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+	}
+
+	public function test_get_database_server_array_invalid_type() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [
+			'not an array',
+		];
+		$this->expectException( TypeError::class );
+		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+	}
+
+	public function test_get_database_server_array_params() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [
+			[ 'a', 'b', 'c', 'd', 'e', 'f' ],
+		];
+		$this->expectException( TypeError::class );
+		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+	}
+
+	public function test_get_database_server_single_read() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [
+			SERVERS['r'],
+		];
+		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$this->assertTrue( $server->can_read() );
+		$this->assertFalse( $server->can_write() );
+	}
+
+	public function test_get_database_server_prioritized_read() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [
+			SERVERS['r_high_priority'],
+			SERVERS['r'],
+		];
+		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$this->assertTrue( $server->can_read() );
+		$this->assertFalse( $server->can_write() );
+		$this->assertEquals( 99, $server->read_priority() );
+	}
+
+	public function test_get_database_server_read_replica_when_write_not_allowed() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		$GLOBALS['db_servers'] = [
+			SERVERS['rw_high_both_priority'],
+			SERVERS['r'],
+			SERVERS['rw'],
+		];
+		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$this->assertTrue( $server->can_read() );
+		$this->assertFalse( $server->can_write() );
+	}
+
+	public function test_get_database_server_prioritized_rw() {
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES', '1' );
+		$GLOBALS['db_servers'] = [
+			SERVERS['rw_high_both_priority'],
+			SERVERS['r'],
+			SERVERS['rw'],
+		];
+		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$this->assertTrue( $server->can_read() );
+		$this->assertTrue( $server->can_write() );
+		$this->assertEquals( 99, $server->read_priority() );
+		$this->assertEquals( 99, $server->write_priority() );
 	}
 }
