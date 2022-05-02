@@ -10,10 +10,16 @@ use WP_CLI;
 use Automattic\VIP\Environment;
 
 class Config {
+	private bool $enabled = false;
 	private bool $allow_writes = false;
 
 	public function __construct() {
-		$this->allow_writes = defined( 'WPVIP_WP_DB_ALLOW_WRITES' ) && constant( 'WPVIP_WP_DB_ALLOW_WRITES' );
+		$this->enabled = defined( 'VIP_ENV_VAR_WP_DB_ENABLED' ) && constant( 'VIP_ENV_VAR_WP_DB_ENABLED' );
+		$this->allow_writes = defined( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' ) && constant( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' );
+	}
+
+	public function enabled(): bool {
+		return $this->enabled;
 	}
 
 	public function allow_writes(): bool {
@@ -133,6 +139,11 @@ function add_before_run_db_command( Config $config ) {
 			return;
 		}
 
+		if ( ! $config->enabled() ) {
+			echo 'ERROR: The db command is not currently supported in this environment.';
+			exit( 1 );
+		}
+
 		$write_specific_subcommands = [
 			'clean',
 			'create',
@@ -145,7 +156,8 @@ function add_before_run_db_command( Config $config ) {
 
 		$subcommand = $command[1];
 		if ( ! $config->allow_writes() && in_array( $subcommand, $write_specific_subcommands ) ) {
-			throw new Exception( "Error: The 'wp db $subcommand' subcommand is not currently allowed for this site." );
+			echo 'ERROR: That db subcommand is not currently permitted for this site.';
+			exit( 2 );
 		}
 
 		$server = get_database_server( $config );
