@@ -7,8 +7,8 @@ class Config {
 	private bool $allow_writes = false;
 
 	public function __construct() {
-		$this->enabled = defined( 'VIP_ENV_VAR_WP_DB_ENABLED' ) && constant( 'VIP_ENV_VAR_WP_DB_ENABLED' );
-		$this->allow_writes = defined( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' ) && constant( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' );
+		$this->enabled = defined( 'VIP_ENV_VAR_WP_DB_ENABLED' ) && '1' === constant( 'VIP_ENV_VAR_WP_DB_ENABLED' );
+		$this->allow_writes = defined( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' ) && '1' === constant( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES' );
 	}
 
 	public function enabled(): bool {
