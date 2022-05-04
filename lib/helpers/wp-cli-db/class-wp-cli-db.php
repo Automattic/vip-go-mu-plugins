@@ -18,7 +18,7 @@ class Wp_Cli_Db {
 		}
 	
 		$hostname = gethostname();
-		$env = getenv();
+		$env      = getenv();
 	
 		if ( ! (
 			Environment::is_sandbox_container( $hostname, $env ) ||

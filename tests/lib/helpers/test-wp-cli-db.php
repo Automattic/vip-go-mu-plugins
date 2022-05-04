@@ -13,15 +13,15 @@ use ArgumentCountError;
 use TypeError;
 
 const SERVERS = [
-	'no_access' => [ 'n-0-0', 'user123', 'hunter2', 'treasure_trove', 0, 0 ],
-	'r' => [ 'r-1-0', 'user123', 'hunter2', 'treasure_trove', 1, 0 ],
-	'r_high_priority' => [ 'r-99-0', 'user123', 'hunter2', 'treasure_trove', 99, 0 ],
-	'rw' => [ 'rw-1-1', 'user123', 'hunter2', 'treasure_trove', 1, 1 ],
-	'w' => [ 'w-0-1', 'user123', 'hunter2', 'treasure_trove', 0, 1 ],
+	'no_access'             => [ 'n-0-0', 'user123', 'hunter2', 'treasure_trove', 0, 0 ],
+	'r'                     => [ 'r-1-0', 'user123', 'hunter2', 'treasure_trove', 1, 0 ],
+	'r_high_priority'       => [ 'r-99-0', 'user123', 'hunter2', 'treasure_trove', 99, 0 ],
+	'rw'                    => [ 'rw-1-1', 'user123', 'hunter2', 'treasure_trove', 1, 1 ],
+	'w'                     => [ 'w-0-1', 'user123', 'hunter2', 'treasure_trove', 0, 1 ],
 	'rw_high_both_priority' => [ 'rw-99-99', 'user123', 'hunter2', 'treasure_trove', 99, 99 ],
-	'rw_high_r_priority' => [ 'rw-99-1', 'user123', 'hunter2', 'treasure_trove', 99, 1 ],
-	'rw_high_w_priority' => [ 'rw-1-99', 'user123', 'hunter2', 'treasure_trove', 1, 99 ],
-	'w_high_priority' => [ 'w-0-99', 'user123', 'hunter2', 'treasure_trove', 0, 99 ],
+	'rw_high_r_priority'    => [ 'rw-99-1', 'user123', 'hunter2', 'treasure_trove', 99, 1 ],
+	'rw_high_w_priority'    => [ 'rw-1-99', 'user123', 'hunter2', 'treasure_trove', 1, 99 ],
+	'w_high_priority'       => [ 'w-0-99', 'user123', 'hunter2', 'treasure_trove', 0, 99 ],
 ];
 
 class WP_Cli_Db_Test extends TestCase {
@@ -145,7 +145,7 @@ class WP_Cli_Db_Test extends TestCase {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 		];
-		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
@@ -156,7 +156,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r_high_priority'],
 			SERVERS['r'],
 		];
-		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 		$this->assertEquals( 99, $server->read_priority() );
@@ -169,7 +169,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
-		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
@@ -182,7 +182,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
-		$server = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertTrue( $server->can_write() );
 		$this->assertEquals( 99, $server->read_priority() );
