@@ -44,24 +44,24 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_config_not_enabled_writes_disallowed_non_1_values() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '0' );
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES', '0' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 0 );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 0 );
 		$config = new Config();
 		$this->assertFalse( $config->enabled() );
 		$this->assertFalse( $config->allow_writes() );
 	}
 
 	public function test_config_enabled_writes_disallowed() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES', '0' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 0 );
 		$config = new Config();
 		$this->assertTrue( $config->enabled() );
 		$this->assertFalse( $config->allow_writes() );
 	}
 
 	public function test_config_enabled_writes_allowed() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 1 );
 		$config = new Config();
 		$this->assertTrue( $config->enabled() );
 		$this->assertTrue( $config->allow_writes() );
@@ -107,7 +107,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_unset() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		unset( $GLOBALS['db_servers'] );
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The database configuration is missing.' );
@@ -115,7 +115,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_empty_array() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [];
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The database configuration is empty.' );
@@ -123,7 +123,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_array_invalid_type() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [
 			'not an array',
 		];
@@ -132,7 +132,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_array_params() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [
 			[ 'a', 'b', 'c', 'd', 'e', 'f' ],
 		];
@@ -141,7 +141,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_single_read() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 		];
@@ -151,7 +151,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_prioritized_read() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [
 			SERVERS['r_high_priority'],
 			SERVERS['r'],
@@ -163,7 +163,7 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_read_replica_when_write_not_allowed() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		$GLOBALS['db_servers'] = [
 			SERVERS['rw_high_both_priority'],
 			SERVERS['r'],
@@ -175,8 +175,8 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_get_database_server_prioritized_rw() {
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ENABLED', '1' );
-		Constant_Mocker::define( 'VIP_ENV_VAR_WP_DB_ALLOW_WRITES', '1' );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 1 );
 		$GLOBALS['db_servers'] = [
 			SERVERS['rw_high_both_priority'],
 			SERVERS['r'],
