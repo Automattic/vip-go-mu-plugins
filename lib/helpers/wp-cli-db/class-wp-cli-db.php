@@ -113,6 +113,5 @@ class Wp_Cli_Db {
 
 		$server = $this->get_database_server();
 		$server->define_variables();
-		// TODO: Logging
 	}
 }
