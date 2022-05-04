@@ -11,6 +11,10 @@ class Wp_Cli_Db {
 		$this->config = $config;
 	}
 
+	/**
+	 * If conditions are correct, hook into WP-CLI before_run_command to use the correct configuration.
+	 * This is intended to be called before WordPress is loaded (e.g. in wp-config.php).
+	 */
 	public function early_init() {
 		if ( defined( 'WPINC' ) ) {
 			// Don't do anything when WordPress is loaded.
@@ -31,9 +35,12 @@ class Wp_Cli_Db {
 			return;
 		}
 	
-		$this->add_before_run_db_command();
+		WP_CLI::add_hook( 'before_run_command', [ $this, 'before_run_command' ] );
 	}
-	
+
+	/**
+	 * Get the database server from the environment.
+	 */
 	public function get_database_server(): DB_Server {
 		global $db_servers;
 	
@@ -72,38 +79,40 @@ class Wp_Cli_Db {
 	
 		return end( $server_objects );
 	}
-	
-	public function add_before_run_db_command() {
-		WP_CLI::add_hook( 'before_run_command', function ( $command ) {
-			if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
-				// Don't do anything for any command other than `db`
-				return;
-			}
-	
-			if ( ! $this->config->enabled() ) {
-				echo 'ERROR: The db command is not currently supported in this environment.';
-				exit( 1 );
-			}
-	
-			$write_specific_subcommands = [
-				'clean',
-				'create',
-				'drop',
-				'import',
-				'optimize',
-				'repair',
-				'reset',
-			];
-	
-			$subcommand = $command[1];
-			if ( ! $this->config->allow_writes() && in_array( $subcommand, $write_specific_subcommands ) ) {
-				echo 'ERROR: That db subcommand is not currently permitted for this site.';
-				exit( 2 );
-			}
-	
-			$server = $this->get_database_server();
-			$server->define_variables();
-			// TODO: Logging
-		} );
+
+	/**
+	 * Customize handling of the `wp db` command.
+	 * Added to the WP_CLI `before_run_command` hook.
+	 */
+	public function before_run_command( $command ) {
+		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
+			// Don't do anything for any command other than `db`
+			return;
+		}
+
+		if ( ! $this->config->enabled() ) {
+			echo 'ERROR: The db command is not currently supported in this environment.';
+			exit( 1 );
+		}
+
+		$write_specific_subcommands = [
+			'clean',
+			'create',
+			'drop',
+			'import',
+			'optimize',
+			'repair',
+			'reset',
+		];
+
+		$subcommand = $command[1];
+		if ( ! $this->config->allow_writes() && in_array( $subcommand, $write_specific_subcommands ) ) {
+			echo 'ERROR: That db subcommand is not currently permitted for this site.';
+			exit( 2 );
+		}
+
+		$server = $this->get_database_server();
+		$server->define_variables();
+		// TODO: Logging
 	}
 }
