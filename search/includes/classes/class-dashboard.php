@@ -4,8 +4,10 @@ namespace Automattic\VIP\Search;
 
 class Dashboard {
 	public function __construct() {
-		// Ensure Search menu is available on a per-site basis, whether EP_IS_NETWORK is defined or not. 
-		add_action( 'admin_menu', '\ElasticPress\Dashboard\action_admin_menu' );
+		// Ensure Search menu should be available on a per-site basis when EP_IS_NETWORK is defined.
+		if ( defined( 'EP_IS_NETWORK' ) && EP_IS_NETWORK ) {
+			add_action( 'admin_menu', '\ElasticPress\Dashboard\action_admin_menu' );
+		}
 
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'network_admin_menu', array( __CLASS__, 'network_admin_menu' ) );
