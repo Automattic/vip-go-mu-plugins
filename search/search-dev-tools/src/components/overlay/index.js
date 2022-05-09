@@ -7,8 +7,9 @@ import close from '../../assets/close.svg';
 
 /**
  * Overlay. Borrowed from Jetpack Instant Search.
+ *
  * @param {Object} props needed by the component
- * @returns {preact.VNode} Overlay that contains Dev Tools UI
+ * @return {import('preact').VNode} Overlay that contains Dev Tools UI
  */
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme = 'light', isVisible } = props;
@@ -27,7 +28,7 @@ const Overlay = props => {
 				className={`search-dev-tools__overlay search-dev-tools__overlay--${ colorTheme }`}
 				role="dialog"
 			>
-				<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } /></button>
+				<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } alt="Close" /></button>
 				{ children }
 			</div>
 		)
