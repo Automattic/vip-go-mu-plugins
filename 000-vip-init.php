@@ -22,6 +22,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+if ( file_exists( __DIR__ . '/healthcheck/healthcheck.php' ) ) {
+	require_once __DIR__ . '/healthcheck/healthcheck.php';
+}
+
 // Execute the healthcheck as quickly as possible
 if ( isset( $_SERVER['REQUEST_URI'] ) && '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
 	if ( function_exists( 'newrelic_end_transaction' ) ) {
