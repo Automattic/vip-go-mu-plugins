@@ -164,9 +164,14 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
 			$expected_metadata = array();
-		} else {
+		} elseif ( version_compare( $parsely::VERSION, '3.3.0', '<' ) ) {
 			$expected_metadata = array(
 				'@context' => 'http://schema.org',
+				'@type'    => 'WebPage',
+			);
+		} else {
+			$expected_metadata = array(
+				'@context' => 'https://schema.org',
 				'@type'    => 'WebPage',
 			);
 		}
