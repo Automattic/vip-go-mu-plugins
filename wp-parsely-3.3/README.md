@@ -1,6 +1,6 @@
 # Parse.ly
 
-Stable tag: 3.3.0  
+Stable tag: 3.3.1  
 Requires at least: 5.0  
 Tested up to: 5.9.3  
 Requires PHP: 7.1  
@@ -89,7 +89,7 @@ A sample `JSON-LD` meta tag and structured data for an article or post:
 
 **IMPORTANT:** The Recommendations Block is available only in WordPress 5.9 and later.
 
-The plugin includes a Recommendations Block that uses the [Parse.ly API](https://www.parse.ly/help/api/recommendations#get-related) to showcase links to content on your site. More information about the Block [can be found here](https://github.com/Parsely/wp-parsely/blob/trunk/src/blocks/recommendations/README.md).
+The plugin includes a Recommendations Block that uses the [Parse.ly API](https://www.parse.ly/help/api/recommendations#get-related) to showcase links to content on your site. More information about the Block [can be found here](https://www.parse.ly/help/integration/recommendations-block).
 
 ## Screenshots
 

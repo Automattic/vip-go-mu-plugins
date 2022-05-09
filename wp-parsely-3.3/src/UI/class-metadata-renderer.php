@@ -113,7 +113,7 @@ final class Metadata_Renderer {
 
 		// Insert JSON-LD or repeated metas.
 		if ( 'json_ld' === $meta_type ) {
-			include plugin_dir_path( PARSELY_FILE ) . 'views/json-ld.php';
+			echo '<script type="application/ld+json">' . wp_json_encode( $metadata ) . '</script>';
 		} else {
 			// Assume `meta_type` is `repeated_metas`.
 			$parsely_post_type = $this->parsely->convert_jsonld_to_parsely_type( $metadata['@type'] );
@@ -143,7 +143,7 @@ final class Metadata_Renderer {
 
 		// Add any custom metadata.
 		if ( isset( $metadata['custom_metadata'] ) ) {
-			include plugin_dir_path( PARSELY_FILE ) . 'views/custom-metadata.php';
+			echo '<meta name="parsely-metadata" content="' . esc_attr( $metadata['custom_metadata'] ) . '" />';
 		}
 	}
 
