@@ -11,7 +11,7 @@ class Search {
 	public const QUERY_RATE_LIMITED_START_CACHE_KEY = 'query_rate_limited_start';
 	public const SEARCH_CACHE_GROUP                 = 'vip_search';
 	public const QUERY_INTEGRATION_FORCE_ENABLE_KEY = 'vip-search-enabled';
-	public const QUERY_FORCE_VERSION_PATTERN        = 'vip_search_%s_version';
+	public const QUERY_FORCE_VERSION_PATTERN        = 'vip-search-%s-version';
 	public const SEARCH_ALERT_SLACK_CHAT            = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW                  = 10000;
