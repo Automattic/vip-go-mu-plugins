@@ -933,7 +933,9 @@ Once you have changed a value and saved, please contact support@parsely.com to r
 			$input['disable_javascript'] = 'true' === $input['disable_javascript'];
 		}
 
-		if ( 'true' !== $input['disable_autotrack'] && 'false' !== $input['disable_autotrack'] ) {
+		if ( ! isset( $input['disable_autotrack'] ) ) {
+			$input['disable_autotrack'] = $options['disable_autotrack'];
+		} elseif ( 'true' !== $input['disable_autotrack'] && 'false' !== $input['disable_autotrack'] ) {
 			add_settings_error(
 				Parsely::OPTIONS_KEY,
 				'disable_autotrack',
