@@ -1,6 +1,14 @@
 
 {
-	"extends": "wpvip",
+	"parser": "@babel/eslint-parser",
+	"parserOptions": {
+		"requireConfigFile": false
+	},
+	"extends": [
+		"plugin:@wordpress/eslint-plugin/recommended",
+		"plugin:@automattic/wpvip/base",
+		"plugin:@automattic/wpvip/react"
+	],
 	"rules": {
 		// Override our default settings just for this directory
 		"react/react-in-jsx-scope": "off",
@@ -8,5 +16,10 @@
 		"react/prop-types": "off",
 		"jest/require-to-throw-message": "off",
 		"no-unused-vars": [ 2, { "varsIgnorePattern": "^h|React$", "args": "none" } ]
+	},
+	"settings": {
+		"jsdoc": {
+			"mode": "typescript"
+		}
 	}
 }

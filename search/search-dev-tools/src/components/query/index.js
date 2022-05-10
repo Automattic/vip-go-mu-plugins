@@ -1,4 +1,6 @@
-import { Fragment, h } from 'preact';
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+import { h } from 'preact';
 import { useContext, useEffect, useState, useRef } from 'preact/hooks';
 import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
@@ -17,7 +19,13 @@ import '../../style/prism.scss';
 /**
  * A single query
  *
- * @returns {preact.VNode} A query component.
+ * @param {Object} root0
+ * @param {Object} root0.args
+ * @param {Object} root0.request
+ * @param {string} root0.url
+ * @param {Object} root0.query_args
+ * @param {Array}  root0.backtrace
+ * @return {import('preact').VNode} A query component.
  */
 const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const txtQuery = JSON.stringify( args.body, null, 2 );
@@ -104,8 +112,10 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					value={state.query}
 					onValueChange={code => setState( { ...state, query: code, editing: true } )}
 					highlight={
-						/** Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
-						'complete' hook doesn't run, so we use a trick here */
+						/**
+						  Prism has line-numbers plugin, unfortunately it doesn't work with low-level highlight function:
+						  'complete' hook doesn't run, so we use a trick here
+						 */
 						code => highlight( code, languages.json, 'json' )
 							.split( '\n' )
 							.map(
@@ -135,7 +145,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 /**
  * Query list component
  *
- * @returns {preact.VNode} query list.
+ * @return {import('preact').VNode} query list.
  */
 export const Queries = () => {
 	const { queries } = useContext( SearchContext );
