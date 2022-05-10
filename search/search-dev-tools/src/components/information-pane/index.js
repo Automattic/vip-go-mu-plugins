@@ -1,4 +1,7 @@
-import { h, Fragment } from 'preact';
+/* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
+/* eslint-disable jsx-a11y/no-static-element-interactions */
+/* eslint-disable jsx-a11y/click-events-have-key-events */
+import { h } from 'preact';
 import { useContext, useState } from 'preact/hooks';
 import pluralize from 'pluralize';
 import cx from 'classnames';
@@ -11,7 +14,7 @@ const EXPAND_THRESHOLD = 2;
 
 /**
  *
- * @returns {preact.VNode} General useful debug info.
+ * @return {import('preact').VNode} General useful debug info.
  */
 export const GeneralInformation = () => {
 	const { queries, information } = useContext( SearchContext );
@@ -27,8 +30,11 @@ export const GeneralInformation = () => {
 /**
  * Represents a single collaplsible info block.
  *
- * @param {Object} props including label, value and options
- * @returns {preact.VNode} A collapsible block of information.
+ * @param {Object} props         including label, value and options
+ * @param {string} props.label
+ * @param {*}      props.value
+ * @param {Object} props.options
+ * @return {import('preact').VNode} A collapsible block of information.
  */
 export const InfoBlock = ( { label, value, options = { collapsible: false } } ) => {
 	const [ collapsed, setCollapsed ] = useState( true );
