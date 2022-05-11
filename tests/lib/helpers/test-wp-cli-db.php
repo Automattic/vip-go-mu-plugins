@@ -188,4 +188,31 @@ class WP_Cli_Db_Test extends TestCase {
 		$this->assertEquals( 99, $server->read_priority() );
 		$this->assertEquals( 99, $server->write_priority() );
 	}
+
+	public function test_console_is_blocked_for_cli_alone() {
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
+	}
+
+	public function test_console_is_blocked_for_cli_with_extra_commands() {
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
+	}
+
+	public function test_console_is_blocked_for_query_alone() {
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
+	}
+
+	public function test_console_is_allowed_for_query_with_extra_commands() {
+		$this->expectNotToPerformAssertions();
+		try {
+			( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query', 'whatever' ] );
+		} catch ( Exception $e ) {
+			$this->fail( '`wp db query whatever` should not have thrown' );
+		}
+	}
 }
