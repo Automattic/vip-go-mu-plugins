@@ -17,7 +17,6 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 const SUPPORTED_VERSIONS = [
 	'3.5',
 	'3.3',
-	'3.2',
 	'3.1',
 ];
 

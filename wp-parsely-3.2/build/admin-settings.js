@@ -1,1 +1,0 @@
-document.querySelector(".media-single-image button.browse").addEventListener("click",(function(){var e=this.dataset.option,t=wp.media({multiple:!1,library:{type:"image"}});t.on("select",(function(){var i=t.state().get("selection").first().toJSON().url,n="#media-single-image-"+e+" input.file-path";document.querySelector(n).value=i})),t.open()}));
