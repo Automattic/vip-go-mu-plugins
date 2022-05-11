@@ -57,11 +57,11 @@ class Wp_Cli_Db {
 		$subcommand = $command[1] ?? '';
 
 		if ( ! $this->config->allow_writes() && in_array( $subcommand, WRITE_SPECIFIC_SUBCOMMANDS ) ) {
-			throw new Exception( "ERROR: That db subcommand is not currently permitted for this site." );
+			throw new Exception( 'ERROR: That db subcommand is not currently permitted for this site.' );
 		}
 
 		if ( 'cli' === $subcommand || ( 'query' === $subcommand && 2 === count( $command ) ) ) {
-			throw new Exception( "ERROR: Direct access to the db console is not permitted at this time." );
+			throw new Exception( 'ERROR: Direct access to the db console is not permitted at this time.' );
 		}
 	}
 
