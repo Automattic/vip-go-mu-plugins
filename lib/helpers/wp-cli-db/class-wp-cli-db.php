@@ -112,6 +112,11 @@ class Wp_Cli_Db {
 			exit( 2 );
 		}
 
+		if ( 'cli' === $subcommand || ( 'query' === $subcommand && 2 === count( $command ) ) ) {
+			echo "ERROR: Direct access to the db console is not permitted at this time.\n";
+			exit( 3 );
+		}
+
 		$server = $this->get_database_server();
 		$server->define_variables();
 	}
