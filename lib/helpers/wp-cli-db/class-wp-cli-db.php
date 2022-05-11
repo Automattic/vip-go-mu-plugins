@@ -68,6 +68,8 @@ class Wp_Cli_Db {
 	/**
 	 * Customize handling of the `wp db` command.
 	 * Added to the WP_CLI `before_run_command` hook.
+	 *
+	 * @throws Exception if an uncaught error occurs in any of the called functions.
 	 */
 	public function before_run_command( array $command ): void {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
@@ -75,19 +77,12 @@ class Wp_Cli_Db {
 			return;
 		}
 
-		if ( ! $this->config->enabled() ) {
-			echo "ERROR: The db command is not currently supported in this environment.\n";
-			exit( 1 );
-		}
-
-		try {
-			$this->validate_subcommand( $command );
-		} catch ( Exception $e ) {
-			echo $e->getMessage() . PHP_EOL;
-			exit( 2 );
-		}
-
+		// This will throw an exception if db commands are not enabled for this env:
 		$server = $this->config->get_database_server();
+
+		// This will throw an exception if the db subcommand is not valid:
+		$this->validate_subcommand( $command );
+
 		$server->define_variables();
 	}
 }

@@ -37,6 +37,121 @@ class WP_Cli_Db_Test extends TestCase {
 		$GLOBALS['db_servers'] = $this->db_server_backup;
 	}
 
+	public function test_before_run_command_returns_early_for_non_db_subcommand() {
+		$config_mock = $this->createMock( Config::class );
+		$config_mock
+			->expects( $this->never() )
+			->method( 'enabled' );
+		$config_mock
+			->expects( $this->never() )
+			->method( 'get_database_server' );
+
+		$wp_cli_db_mock = $this->getMockBuilder( Wp_Cli_Db::class )
+			->setConstructorArgs( [ $config_mock ] )
+			->getMock();
+		$wp_cli_db_mock
+			->expects( $this->never() )
+			->method( 'validate_subcommand' );
+
+		$wp_cli_db_mock->before_run_command( [ 'notdb', 'something', '--something="else"' ] );
+	}
+
+	public function test_before_run_command_db_not_enabled() {
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
+		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'something', '--something="else"' ] );
+	}
+
+	public function test_before_run_command_db_not_enabled_non_1_const() {
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 'gibberish' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
+		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'something', '--something="else"' ] );
+	}
+
+	public function test_before_run_command_db_blocked_command_no_write() {
+		$GLOBALS['db_servers'] = [
+			SERVERS['r'],
+			SERVERS['rw'],
+		];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		try {
+			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'drop', 'really_important_table' ] );
+		} catch ( Exception $e ) {
+			$this->assertEquals( 'ERROR: That db subcommand is not currently permitted for this site.', $e->getMessage() );
+			$this->addToAssertionCount( 1 );
+		}
+		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+	}
+
+	public function test_before_run_command_db_read_query() {
+		$GLOBALS['db_servers'] = [
+			SERVERS['rw'],
+			SERVERS['r'],
+		];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query', 'SELECT * FROM crypto_wallet_keys' ] );
+		$this->assertEquals( SERVERS['r'][0], Constant_Mocker::constant( 'DB_HOST' ) );
+		$this->assertEquals( SERVERS['r'][1], Constant_Mocker::constant( 'DB_USER' ) );
+		$this->assertEquals( SERVERS['r'][2], Constant_Mocker::constant( 'DB_PASSWORD' ) );
+		$this->assertEquals( SERVERS['r'][3], Constant_Mocker::constant( 'DB_NAME' ) );
+	}
+
+	public function test_before_run_command_db_can_write() {
+		$GLOBALS['db_servers'] = [
+			SERVERS['r'],
+			SERVERS['rw'],
+		];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 1 );
+		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'drop', 'really_important_table' ] );
+
+		$this->assertEquals( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
+		$this->assertEquals( SERVERS['rw'][1], Constant_Mocker::constant( 'DB_USER' ) );
+		$this->assertEquals( SERVERS['rw'][2], Constant_Mocker::constant( 'DB_PASSWORD' ) );
+		$this->assertEquals( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
+	}
+
+	public function test_before_run_command_no_console_cli() {
+		$GLOBALS['db_servers'] = [
+			SERVERS['r'],
+		];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		try {
+			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'cli' ] );
+		} catch ( Exception $e ) {
+			$this->assertEquals( 'ERROR: Direct access to the db console is not permitted at this time.', $e->getMessage() );
+			$this->addToAssertionCount( 1 );
+		}
+		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+	}
+
+	public function test_before_run_command_no_console_query_and_no_querystring() {
+		$GLOBALS['db_servers'] = [
+			SERVERS['r'],
+		];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		try {
+			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query' ] );
+		} catch ( Exception $e ) {
+			$this->assertEquals( 'ERROR: Direct access to the db console is not permitted at this time.', $e->getMessage() );
+			$this->addToAssertionCount( 1 );
+		}
+		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+	}
+
 	public function test_config_not_enabled_writes_disallowed_by_default() {
 		$config = new Config();
 		$this->assertFalse( $config->enabled() );
@@ -104,6 +219,19 @@ class WP_Cli_Db_Test extends TestCase {
 	public function test_no_config() {
 		$this->expectException( ArgumentCountError::class );
 		new Wp_Cli_Db();
+	}
+
+	public function test_get_database_server_not_enabled_no_const() {
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
+		( new Config() )->get_database_server();
+	}
+
+	public function test_get_database_server_not_enabled_non_1_const() {
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 'gibberish' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
+		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_unset() {

@@ -27,6 +27,10 @@ class Config {
 	public function get_database_server(): DB_Server {
 		global $db_servers;
 
+		if ( ! $this->enabled ) {
+			throw new Exception( 'The db command is not currently supported in this environment.' );
+		}
+
 		if ( ! is_array( $db_servers ) ) {
 			throw new Exception( 'The database configuration is missing.' );
 		}

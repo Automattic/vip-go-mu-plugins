@@ -127,6 +127,10 @@ namespace Automattic\VIP\Search {
 namespace Automattic\VIP\Helpers\WP_CLI_DB {
 	use Automattic\Test\Constant_Mocker;
 
+	function define( $constant, $value ) {
+		return Constant_Mocker::define( $constant, $value );
+	}
+
 	function defined( $constant ) {
 		return Constant_Mocker::defined( $constant );
 	}
