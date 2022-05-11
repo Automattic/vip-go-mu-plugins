@@ -24,7 +24,7 @@ const AdminBarButton = props => {
  * It mounts onto an existing DOM node in the Admin Bar and then renders into a Portal
  * to avoid any interference of Admin Bar CSS.
  *
- * @returns {preact.VNode} Top-level app component
+ * @return {import('preact').VNode} Top-level app component
  */
 const App = () => {
 	const [ visible, setVisible ] = useState( false );
