@@ -35,10 +35,10 @@ jobs:
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@75b4f1c4669133dc294b06c2794e969efa2e5316 # tag=v2.1.10
+        uses: github/codeql-action/init@2f58583a1b24a7d3c7034f6bf9fa506d23b1183b # tag=v2.1.10
         with:
           languages: ${{ matrix.language }}
           config-file: ./.github/codeql-config.yml
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@75b4f1c4669133dc294b06c2794e969efa2e5316 # tag=v2.1.10
+        uses: github/codeql-action/analyze@2f58583a1b24a7d3c7034f6bf9fa506d23b1183b # tag=v2.1.10
