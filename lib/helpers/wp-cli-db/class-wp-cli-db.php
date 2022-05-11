@@ -6,6 +6,16 @@ use Exception;
 use WP_CLI;
 use Automattic\VIP\Environment;
 
+const WRITE_SPECIFIC_SUBCOMMANDS = [
+	'clean',
+	'create',
+	'drop',
+	'import',
+	'optimize',
+	'repair',
+	'reset',
+];
+
 class Wp_Cli_Db {
 	public function __construct( Config $config ) {
 		$this->config = $config;
@@ -80,11 +90,23 @@ class Wp_Cli_Db {
 		return end( $server_objects );
 	}
 
+	public function validate_subcommand( array $command ): void {
+		$subcommand = $command[1] ?? '';
+
+		if ( ! $this->config->allow_writes() && in_array( $subcommand, WRITE_SPECIFIC_SUBCOMMANDS ) ) {
+			throw new Exception( "ERROR: That db subcommand is not currently permitted for this site." );
+		}
+
+		if ( 'cli' === $subcommand || ( 'query' === $subcommand && 2 === count( $command ) ) ) {
+			throw new Exception( "ERROR: Direct access to the db console is not permitted at this time." );
+		}
+	}
+
 	/**
 	 * Customize handling of the `wp db` command.
 	 * Added to the WP_CLI `before_run_command` hook.
 	 */
-	public function before_run_command( $command ) {
+	public function before_run_command( array $command ): void {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
 			// Don't do anything for any command other than `db`
 			return;
@@ -95,27 +117,7 @@ class Wp_Cli_Db {
 			exit( 1 );
 		}
 
-		$write_specific_subcommands = [
-			'clean',
-			'create',
-			'drop',
-			'import',
-			'optimize',
-			'repair',
-			'reset',
-		];
-
-		$subcommand = $command[1];
-
-		if ( ! $this->config->allow_writes() && in_array( $subcommand, $write_specific_subcommands ) ) {
-			echo "ERROR: That db subcommand is not currently permitted for this site.\n";
-			exit( 2 );
-		}
-
-		if ( 'cli' === $subcommand || ( 'query' === $subcommand && 2 === count( $command ) ) ) {
-			echo "ERROR: Direct access to the db console is not permitted at this time.\n";
-			exit( 3 );
-		}
+		$this->validate_subcommand( $command );
 
 		$server = $this->get_database_server();
 		$server->define_variables();
