@@ -111,7 +111,7 @@ class WP_Cli_Db_Test extends TestCase {
 		unset( $GLOBALS['db_servers'] );
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The database configuration is missing.' );
-		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_empty_array() {
@@ -119,7 +119,7 @@ class WP_Cli_Db_Test extends TestCase {
 		$GLOBALS['db_servers'] = [];
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The database configuration is empty.' );
-		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_array_invalid_type() {
@@ -128,7 +128,7 @@ class WP_Cli_Db_Test extends TestCase {
 			'not an array',
 		];
 		$this->expectException( TypeError::class );
-		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_array_params() {
@@ -137,7 +137,7 @@ class WP_Cli_Db_Test extends TestCase {
 			[ 'a', 'b', 'c', 'd', 'e', 'f' ],
 		];
 		$this->expectException( TypeError::class );
-		( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_single_read() {
@@ -145,7 +145,7 @@ class WP_Cli_Db_Test extends TestCase {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 		];
-		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Config() )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
@@ -156,7 +156,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r_high_priority'],
 			SERVERS['r'],
 		];
-		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Config() )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 		$this->assertEquals( 99, $server->read_priority() );
@@ -169,7 +169,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
-		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Config() )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertFalse( $server->can_write() );
 	}
@@ -182,7 +182,7 @@ class WP_Cli_Db_Test extends TestCase {
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
-		$server                = ( new Wp_Cli_Db( new Config() ) )->get_database_server();
+		$server                = ( new Config() )->get_database_server();
 		$this->assertTrue( $server->can_read() );
 		$this->assertTrue( $server->can_write() );
 		$this->assertEquals( 99, $server->read_priority() );

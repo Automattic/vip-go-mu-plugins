@@ -49,48 +49,6 @@ class Wp_Cli_Db {
 	}
 
 	/**
-	 * Get the database server from the environment.
-	 */
-	public function get_database_server(): DB_Server {
-		global $db_servers;
-
-		if ( ! is_array( $db_servers ) ) {
-			throw new Exception( 'The database configuration is missing.' );
-		}
-
-		if ( empty( $db_servers ) ) {
-			throw new Exception( 'The database configuration is empty.' );
-		}
-
-		$server_objects = array_map(
-			function ( $server_tuple ) {
-				if ( ! is_array( $server_tuple ) ) {
-					return false;
-				}
-				return new DB_Server( ...$server_tuple );
-			},
-			$db_servers
-		);
-
-		$server_objects = array_filter( $server_objects, function ( $candidate ) {
-			return $candidate instanceof DB_Server &&
-				$candidate->can_read() && ! (
-					$candidate->can_write() && ! $this->config->allow_writes()
-				);
-		} );
-
-		// Sort the replicas in ascending order of the write priority (if allowed), else sort by read priority.
-		usort( $server_objects, function ( $c0, $c1 ) {
-			if ( $this->config->allow_writes() ) {
-				return $c0->write_priority() <=> $c1->write_priority();
-			}
-			return $c0->read_priority() <=> $c1->read_priority();
-		} );
-
-		return end( $server_objects );
-	}
-
-	/**
 	 * Ensure the command is allowed for the current Config.
 	 *
 	 * @throws Exception if the command is not allowed.
@@ -129,7 +87,7 @@ class Wp_Cli_Db {
 			exit( 2 );
 		}
 
-		$server = $this->get_database_server();
+		$server = $this->config->get_database_server();
 		$server->define_variables();
 	}
 }
