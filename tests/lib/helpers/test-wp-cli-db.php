@@ -208,9 +208,9 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_console_is_allowed_for_query_with_extra_commands() {
-		$this->expectNotToPerformAssertions();
 		try {
 			( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query', 'whatever' ] );
+			$this->addToAssertionCount( 1 );
 		} catch ( Exception $e ) {
 			$this->fail( '`wp db query whatever` should not have thrown' );
 		}
