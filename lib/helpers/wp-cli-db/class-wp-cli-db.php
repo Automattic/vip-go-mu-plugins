@@ -122,7 +122,12 @@ class Wp_Cli_Db {
 			exit( 1 );
 		}
 
-		$this->validate_subcommand( $command );
+		try {
+			$this->validate_subcommand( $command );
+		} catch ( Exception $e ) {
+			echo $e->getMessage() . PHP_EOL;
+			exit( 2 );
+		}
 
 		$server = $this->get_database_server();
 		$server->define_variables();
