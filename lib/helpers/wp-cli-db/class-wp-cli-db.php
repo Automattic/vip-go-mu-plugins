@@ -90,6 +90,11 @@ class Wp_Cli_Db {
 		return end( $server_objects );
 	}
 
+	/**
+	 * Ensure the command is allowed for the current Config.
+	 *
+	 * @throws Exception if the command is not allowed.
+	 */
 	public function validate_subcommand( array $command ): void {
 		$subcommand = $command[1] ?? '';
 
