@@ -20,21 +20,21 @@ class Wp_Cli_Db {
 			// Don't do anything when WordPress is loaded.
 			return;
 		}
-	
+
 		$hostname = gethostname();
 		$env      = getenv();
-	
+
 		if ( ! (
 			Environment::is_sandbox_container( $hostname, $env ) ||
 			Environment::is_batch_container( $hostname, $env )
 		) ) {
 			return;
 		}
-	
+
 		if ( ! class_exists( 'WP_CLI' ) ) {
 			return;
 		}
-	
+
 		WP_CLI::add_hook( 'before_run_command', [ $this, 'before_run_command' ] );
 	}
 
@@ -43,15 +43,15 @@ class Wp_Cli_Db {
 	 */
 	public function get_database_server(): DB_Server {
 		global $db_servers;
-	
+
 		if ( ! is_array( $db_servers ) ) {
 			throw new Exception( 'The database configuration is missing.' );
 		}
-	
+
 		if ( empty( $db_servers ) ) {
 			throw new Exception( 'The database configuration is empty.' );
 		}
-	
+
 		$server_objects = array_map(
 			function ( $server_tuple ) {
 				if ( ! is_array( $server_tuple ) ) {
@@ -61,7 +61,7 @@ class Wp_Cli_Db {
 			},
 			$db_servers
 		);
-	
+
 		$server_objects = array_filter( $server_objects, function ( $candidate ) {
 			return $candidate instanceof DB_Server &&
 				$candidate->can_read() && ! (
@@ -76,7 +76,7 @@ class Wp_Cli_Db {
 			}
 			return $c0->read_priority() <=> $c1->read_priority();
 		} );
-	
+
 		return end( $server_objects );
 	}
 
@@ -91,7 +91,7 @@ class Wp_Cli_Db {
 		}
 
 		if ( ! $this->config->enabled() ) {
-			echo 'ERROR: The db command is not currently supported in this environment.';
+			echo "ERROR: The db command is not currently supported in this environment.\n";
 			exit( 1 );
 		}
 
@@ -106,8 +106,9 @@ class Wp_Cli_Db {
 		];
 
 		$subcommand = $command[1];
+
 		if ( ! $this->config->allow_writes() && in_array( $subcommand, $write_specific_subcommands ) ) {
-			echo 'ERROR: That db subcommand is not currently permitted for this site.';
+			echo "ERROR: That db subcommand is not currently permitted for this site.\n";
 			exit( 2 );
 		}
 
