@@ -172,13 +172,13 @@ class Versioning {
 	 * Grab just the version number for the active version
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable to get the active version number for
-	 * @return int The currently active version number
+	 * @return int|bool The currently active version number, false for no active index number.
 	 */
 	public function get_active_version_number( Indexable $indexable ) {
 		$active_version = $this->get_active_version( $indexable );
 
 		if ( ! $active_version ) {
-			return 1;
+			return false;
 		}
 
 		return $active_version['number'];

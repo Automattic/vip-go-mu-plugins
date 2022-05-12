@@ -775,6 +775,17 @@ class Search {
 
 		$current_version = $this->versioning->get_current_version_number( $indexable );
 
+		if ( ! $current_version ) {
+			// No active index found.
+			$current_version = 'no-active-index';
+			_doing_it_wrong(
+				'filter__ep_index_name',
+				'Search: No active index version found! Please activate one for search to work: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/',
+				null
+			);
+			$index_name .= sprintf( '-%s', $current_version );
+		}
+
 		if ( is_int( $current_version ) && $current_version > 1 ) {
 			$index_name .= sprintf( '-v%d', $current_version );
 		}
