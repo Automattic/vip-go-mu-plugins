@@ -223,7 +223,7 @@ class Versioning {
 				);
 			} else {
 				return [];
-			}       
+			}
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
@@ -553,6 +553,39 @@ class Versioning {
 	}
 
 	/**
+	 * Deactivate a new version of an index
+	 *
+	 * Verifies that the new target index does in-fact exist, then marks it as inactive
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to deactivate the new index
+	 * @param int|string $version_number The index version to deactivate
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error
+	 */
+	public function deactivate_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
+		$versions = $this->get_versions( $indexable );
+
+		// If this wasn't a valid version, abort with error
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return new WP_Error( 'invalid-index-version', sprintf( 'The index version %d was not found', $version_number ) );
+		}
+
+		// Mark as inactive.
+		$versions[ $version_number ]['active'] = false;
+
+		if ( ! $this->update_versions( $indexable, $versions ) ) {
+			return new WP_Error( 'failed-deactivating-version', sprintf( 'The index version %d failed to deactivate', $version_number ) );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Delete the version of an index and remove the index from Elasticsearch
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
@@ -807,7 +840,7 @@ class Versioning {
 			if ( $indexable->get( $object_id ) ) {
 				$indexable->delete( $object_id );
 			}
-			
+
 			$this->reset_current_version_number( $indexable );
 		}
 
