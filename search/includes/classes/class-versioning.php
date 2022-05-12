@@ -318,10 +318,6 @@ class Versioning {
 
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
 
-		if ( false === $active_version_array_index ) {
-			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
-		}
-
 		$target_array_index = $active_version_array_index + 1;
 
 		// Is there another?
@@ -352,10 +348,6 @@ class Versioning {
 		sort( $version_numbers );
 
 		$active_version_array_index = array_search( $active_version_number, $version_numbers, true );
-
-		if ( false === $active_version_array_index ) {
-			return new WP_Error( 'active-index-not-found-in-versions-list', 'Active index not found in list of index versions' );
-		}
 
 		$target_array_index = $active_version_array_index - 1;
 
