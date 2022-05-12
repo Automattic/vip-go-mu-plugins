@@ -31,7 +31,7 @@ export class SettingsWritingPage {
     /**
      * Checks to see if Classic Editor Settings are available
      *
-     * @returns { boolean } Whether classic editor settings are visible
+     * @return { boolean } Whether classic editor settings are visible
      */
     async hasClassicEditor(): Promise<boolean> {
         const editorSettings = await this.page.locator( selectors.classicEditorBlock );
