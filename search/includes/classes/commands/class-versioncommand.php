@@ -338,6 +338,112 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Deactivate a version of an index
+	 *
+	 * ## OPTIONS
+	 *
+	 * <type>
+	 * : The index type (the slug of the Indexable, such as 'post', 'user', etc)
+	 *
+	 * <version_number>
+	 * : The version number of the index to deactivate
+	 *
+	 * [--skip-confirm]
+	 * : Skip confirmation
+	 *
+	 * [--network-wide]
+	 * : Optional - Deactivate the version to all subsites. Best used with version aliases like `next` instead of individual version numbers
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search index-versions deactivate post <version>
+	 *
+	 * @subcommand deactivate
+	 */
+	public function deactivate( $args, $assoc_args ) {
+		$type                   = $args[0];
+		$desired_version_number = $args[1];
+		if ( $assoc_args['skip-confirm'] ?? '' ) {
+			// WP_CLI::confirm looks for 'yes', but we use skip-confirm to be consistent with other commands
+			$assoc_args['yes'] = true;
+		}
+
+
+		$indexable = \ElasticPress\Indexables::factory()->get( $type );
+
+		if ( ! $indexable ) {
+			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
+		}
+
+		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
+			WP_CLI::confirm( sprintf( 'Are you sure you want to deactivate index version %s for type %s on all sites in this network?', $desired_version_number, $type ), $assoc_args );
+
+			if ( ! is_numeric( $assoc_args['network-wide'] ) ) {
+				$assoc_args['network-wide'] = 0;
+			}
+
+			$sites = \ElasticPress\Utils\get_sites( $assoc_args['network-wide'] );
+
+			foreach ( $sites as $site ) {
+				switch_to_blog( $site['blog_id'] );
+
+				$result = $this->deactivate_helper( $indexable, $desired_version_number );
+
+				restore_current_blog();
+
+				if ( is_wp_error( $result ) ) {
+					return WP_CLI::error( sprintf( 'Received error for index version %s on site %s - %s', $desired_version_number, $site['domain'] . $site['path'], $result->get_error_message() ) );
+				}
+
+				if ( ! $result ) {
+					return WP_CLI::error( sprintf( 'Failed to deactivate index version %s for type %s on blog %d (%s)', $desired_version_number, $type, $site['domain'] . $site['path'] ) );
+				}
+
+				WP_CLI::line( sprintf( 'Successfully deactivated index version %s for type %s on blog %d (%s)', $desired_version_number, $type, $site['blog_id'], $site['domain'] . $site['path'] ) );
+			}
+
+			WP_CLI::success( 'Done!' );
+		} else {
+			WP_CLI::confirm( sprintf( 'Are you sure you want to deactivate index version %s for type %s?', $desired_version_number, $type ), $assoc_args );
+
+			$result = $this->deactivate_helper( $indexable, $desired_version_number );
+
+			if ( is_wp_error( $result ) ) {
+				return WP_CLI::error( sprintf( 'Received error for index version %s - %s', $desired_version_number, $result->get_error_message() ) );
+			}
+
+			if ( ! $result ) {
+				return WP_CLI::error( sprintf( 'Failed to deactivate index version %s for type %s', $desired_version_number, $type ) );
+			}
+
+			WP_CLI::success( sprintf( 'Successfully deactivated index version %s for type %s', $desired_version_number, $type ) );
+		}
+	}
+
+	protected function deactivate_helper( Indexable $indexable, $version_number_to_deactivate ) {
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$version_number = $search->versioning->normalize_version_number( $indexable, $version_number_to_deactivate );
+
+		if ( is_wp_error( $version_number ) ) {
+			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $version_number_to_deactivate, $version_number->get_error_message() ) );
+		}
+
+		$versions = $search->versioning->get_versions( $indexable );
+
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return WP_CLI::error( sprintf( 'Index version %d does not exist for type %s!', $version_number, $indexable->slug ) );
+		}
+
+		if ( ! $versions[ $version_number ]['active'] ) {
+			return WP_CLI::error( sprintf( 'Index version %d for type %s is already inactive!', $version_number, $indexable->slug ) );
+		}
+
+		$result = $search->versioning->deactivate_version( $indexable, $version_number );
+
+		return $result;
+	}
+
+	/**
 	 * Delete a version of an index. This will unregister the index version and delete it from Elasticsearch
 	 *
 	 * ## OPTIONS
