@@ -117,13 +117,18 @@ class Search_Test extends WP_UnitTestCase {
 				// Expected index name
 				'vip-123-post-2-v2',
 			),
+		);
+	}
+
+	public function vip_search_filter_ep_index_name_with_no_versions_data() {
+		return array(
 			array(
 				// Active index number
 				null,
 				// Blog id
 				null,
 				// Expected index name
-				'vip-123-post',
+				'vip-123-post-no-active-index',
 			),
 			array(
 				// Active index number
@@ -131,7 +136,7 @@ class Search_Test extends WP_UnitTestCase {
 				// Blog id
 				null,
 				// Expected index name
-				'vip-123-post',
+				'vip-123-post-no-active-index',
 			),
 		);
 	}
@@ -205,6 +210,40 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
 	}
+
+	/**
+	 * Test `ep_index_name` filter when versioning with no active indexes
+	 *
+	 * When current version returns false, the index name should have `no-active-index` appended to it
+	 *
+	 * @dataProvider vip_search_filter_ep_index_name_with_no_versions_data
+	 *
+	 * @expectedIncorrectUsage filter__ep_index_name
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__vip_search_filter_ep_index_name_with_inactive_versions( $current_version, $blog_id, $expected_index_name ) {
+		$this->init_es();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+
+		// Mock the Versioning class so we can control which version it returns
+		$stub = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
+				->setMethods( [ 'get_current_version_number' ] )
+				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'get_current_version_number' )
+				->with( $indexable )
+				->will( $this->returnValue( $current_version ) );
+
+		$this->search_instance->versioning = $stub;
+
+		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
+
+		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
 
 	/**
 	 * Test `ep_index_name` filter with versioning

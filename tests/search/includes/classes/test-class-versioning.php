@@ -150,7 +150,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Indexable slug
 				'post',
 				// Expected active version
-				1,
+				false,
 			),
 
 			// No versions tracked
@@ -451,7 +451,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'active',
 				// Expected active version
-				1, // NOTE - expect 1 because get_active_version_number() returns 1 by default. This behavior is likely to change
+				false,
 			),
 
 			// No active, trying to get next
@@ -472,7 +472,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected active version
-				new \WP_Error( 'active-index-not-found-in-versions-list' ), // NOTE - like above, this is because the default active version is 1, even if it doesn't exist in the list. Likely to change
+				new \WP_Error( 'no-active-index-found' ),
 			),
 		);
 	}
