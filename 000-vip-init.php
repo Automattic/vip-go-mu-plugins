@@ -246,6 +246,14 @@ add_filter( 'wp_headers', function( $headers ) {
 	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
 	$headers['Host-Header']  = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
+	// By default, the 'vip_index_noprod_domains' filter returns an empty array (to prevent indexing any non-production sites).
+	$index_noprod_domains = apply_filters( 'vip_index_noprod_domains', '__return_empty_array' );
+
+	// Skip "noindex" and "nofollow" the site if the filter 'vip_index_noprod_domains' returns true or contains the current domain.
+	if ( true === $index_noprod_domains || in_array( $_SERVER['SERVER_NAME'], $index_noprod_domains, true ) ) {
+		return $headers;
+	}
+
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- should be safe, because we are only looking for a substring and don't use the variable for anything else
 	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER['HTTP_HOST'] ?? '', '.go-vip.' ) ) {
