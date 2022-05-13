@@ -329,7 +329,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$active_version_number = $search->versioning->get_active_version_number( $indexable );
 
 		if ( $active_version_number === $new_version_number ) {
-			return WP_CLI::error( sprintf( 'Index version %d is already active for type %s', $new_version_number, $type ) );
+			return WP_CLI::error( sprintf( 'Index version %d is already active for type %s', $new_version_number, $indexable->slug ) );
 		}
 
 		$result = $search->versioning->activate_version( $indexable, $new_version_number );
