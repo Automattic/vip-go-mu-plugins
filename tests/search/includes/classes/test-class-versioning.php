@@ -807,6 +807,99 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertEquals( wp_list_pluck( $versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
 	}
 
+	public function deactivate_version_data() {
+		return array(
+			// No index marked active
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => true,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				2,
+				// Expected inactive versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+			),
+
+			// Target index is already marked inactive
+			array(
+				// Input array of versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+				),
+			),
+
+			// Non-existent version option
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				1,
+				// Expected new versions
+				array(
+					1 => array(
+						'number' => 1,
+						'active' => false,
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider deactivate_version_data
+	 */
+	public function test_deactivate_version( $versions, $indexable_slug, $version_to_deactivate, $expected_inactive_versions ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		self::$version_instance->update_versions( $indexable, $versions );
+
+		// Deactivate the new version
+		$succeeded = self::$version_instance->deactivate_version( $indexable, $version_to_deactivate );
+
+		$this->assertTrue( $succeeded, 'Deactivating version failed, but it should have succeeded' );
+
+		$new_versions = self::$version_instance->get_inactive_versions( $indexable );
+
+		// Can only compare the deterministic parts of the version info (not activated_time, for example)
+		$this->assertEquals( wp_list_pluck( $expected_inactive_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
+		$this->assertEquals( wp_list_pluck( $expected_inactive_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+	}
+
 	public function delete_version_data() {
 		return array(
 			// No index marked active
