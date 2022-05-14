@@ -25,6 +25,7 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 			$wp_object_cache->stats();
 			?>
 		</div>
+		</div>
 		<?php
 	}
 

@@ -33,7 +33,7 @@ add_action( 'plugins_loaded', function() {
 } );
 
 function qm_object_cache_assets() {
-	wp_enqueue_style( 'qm-objectcache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', null, '0.1' );
+	wp_enqueue_style( 'qm-objectcache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', array(), '0.1' );
 }
 
 /**
