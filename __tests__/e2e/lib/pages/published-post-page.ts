@@ -35,7 +35,7 @@ export class PublishedPostPage {
         /* eslint-disable no-await-in-loop */
         while ( pageTry < 3 ) {
             await this.page.waitForSelector( selectors.entryTitle );
-            if ( await this.page.locator( selectors.postText( text ) ).isVisible() ) {
+            if ( await this.page.locator( selectors.postText( text ) ).first().isVisible() ) {
                 break;
             } else {
                 await this.page.reload();
