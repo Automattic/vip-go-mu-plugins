@@ -32,17 +32,17 @@ export class PublishedPagePage {
     async validateTextInPost( text: string ): Promise<void> {
         // If text isn't found the first time, reload and check again up to 2 more times.
         let postTry = 0;
+        /* eslint-disable no-await-in-loop */
         while ( postTry < 3 ) {
-            // eslint-disable-next-line no-await-in-loop
             await this.page.waitForSelector( selectors.entryTitle );
-            if ( this.page.locator( selectors.pageText( text ) ) ) {
+            if ( await this.page.locator( selectors.pageText( text ) ).isVisible() ) {
                 break;
             } else {
-                // eslint-disable-next-line no-await-in-loop
                 await this.page.reload();
                 postTry++;
             }
         }
+        /* eslint-enable no-await-in-loop */
     }
 
     /**
