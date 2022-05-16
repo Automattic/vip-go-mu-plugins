@@ -9,6 +9,10 @@
 		":maintainLockFilesMonthly",
 		":dependencyDashboard"
 	],
+	"labels": ["dependencies"],
+	"postUpdateOptions": ["npmDedupe"],
+	"rangeStrategy": "update-lockfile",
+	"rollbackPrs": true,
 	"composerIgnorePlatformReqs": null,
 	"reviewers": ["team:Automattic/vip-platform-cantina"],
 	"packageRules": [
