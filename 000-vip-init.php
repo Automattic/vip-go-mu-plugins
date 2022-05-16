@@ -250,7 +250,7 @@ add_filter( 'wp_headers', function( $headers ) {
 	$index_noprod_domains = apply_filters( 'vip_index_noprod_domains', [] );
 
 	// Skip "noindex" and "nofollow" the site if the filter 'vip_index_noprod_domains' returns true or contains the current domain.
-	if ( true === $index_noprod_domains || in_array( $_SERVER['SERVER_NAME'], $index_noprod_domains, true ) ) {
+	if ( true === $index_noprod_domains || ( is_array( $index_noprod_domains ) && in_array( $_SERVER['SERVER_NAME'], $index_noprod_domains, true ) ) ) {
 		return $headers;
 	}
 
