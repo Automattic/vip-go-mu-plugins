@@ -74,6 +74,7 @@ export class EditorPage {
 
     /**
      * Enter Title of page or post
+     *
      * @param {string} title Page/Post Title
      */
     async enterTitle( title: string ): Promise<void> {
@@ -83,6 +84,7 @@ export class EditorPage {
 
     /**
      * Enter text in to page or post
+     *
      * @param {string} text Text to enter
      */
     async enterText( text: string ): Promise<void> {
@@ -121,6 +123,7 @@ export class EditorPage {
      * Clear text of page or post
      */
     async clearText(): Promise<void> {
+        /* eslint-disable no-await-in-loop */
         while ( await this.page.isVisible( selectors.block ) ) {
             await this.page.click( selectors.block );
             await this.page.keyboard.down( 'Shift' );
@@ -129,6 +132,7 @@ export class EditorPage {
             await this.page.keyboard.press( 'Backspace' );
             await this.page.keyboard.press( 'Backspace' );
         }
+        /* eslint-enable no-await-in-loop */
     }
 
     /**
@@ -160,7 +164,7 @@ export class EditorPage {
      * Publishes the post or page.
      *
      * @param {boolean} visit Whether to then visit the page.
-     * @returns {string} Url of published post or page
+     * @return {string} Url of published post or page
      */
     async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
         await this.page.click( selectors.publishButton( selectors.postToolbar ) );
@@ -183,11 +187,12 @@ export class EditorPage {
 
     /**
      * Visits the published entry from the post-publish sidebar.
+     *
      * @param {string} url Url to visit
      */
     private async visitPublishedPost( url: string ): Promise<void> {
         await Promise.all( [
-            this.page.waitForNavigation( { waitUntil: 'networkidle', url: url } ),
+            this.page.waitForNavigation( { waitUntil: 'networkidle', url } ),
             this.page.click( selectors.viewButton ),
         ] );
     }
