@@ -39,6 +39,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 	/**
 	 * Register API routes
+	 *
+	 * Please check the logs for usage/consult the wider team before considering the removal of these endpoints.
 	 */
 	public function rest_api_init() {
 		register_rest_route( $this->namespace, '/sites/', array(
@@ -248,13 +250,18 @@ class WPCOM_VIP_REST_API_Endpoints {
 	 * @return array
 	 */
 	protected function get_jetpack_details_for_site(): array {
-		$connection = new Automattic\Jetpack\Connection\Manager();
-		$data       = [
-			'site_id'       => get_current_blog_id(),
-			'cache_site_id' => Jetpack::get_option( 'id' ),
-			'home_url'      => home_url(),
-			'is_active'     => $connection->is_active(),
+		$data = [
+			'site_id'  => get_current_blog_id(),
+			'home_url' => home_url(),
 		];
+
+		if ( class_exists( 'Jetpack' ) ) {
+			$connection = new Automattic\Jetpack\Connection\Manager();
+			$data       = array_merge( $data, [
+				'cache_site_id' => Jetpack::get_option( 'id' ),
+				'is_active'     => $connection->is_active(),
+			] );
+		}
 
 		return $data;
 	}
