@@ -9,6 +9,7 @@
 		":maintainLockFilesMonthly",
 		":dependencyDashboard"
 	],
+	"composerIgnorePlatformReqs": null,
 	"reviewers": ["team:Automattic/vip-platform-cantina"],
 	"packageRules": [
 		{
