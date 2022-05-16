@@ -26,6 +26,7 @@
     "lint-staged": "^12.3.2",
     "phplint": "2.0.5",
     "playwright": "1.22.0",
+    "prettier": "^2.6.2",
     "typescript": "^4.6.2"
   }
 }

@@ -112,6 +112,6 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function test__get_current_timestamp() {
 		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
 
-		$this->assertEquals( gmdate( 'd-m-Y', $timestamp / 1000 ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
+		$this->assertEquals( gmdate( 'd-m-Y', (int) ( $timestamp / 1000 ) ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
 	}
 }

@@ -104,7 +104,7 @@ final class Metadata_Renderer {
 
 		// Assign default values for LD+JSON
 		// TODO: Mapping of an install's post types to Parse.ly post types (namely page/post).
-		$metadata = ( new Metadata( $this->parsely ) )->construct_metadata( $post );
+		$metadata = ( new Metadata( $this->parsely ) )->construct_metadata( $parsed_post );
 
 		// Something went wrong - abort.
 		if ( 0 === count( $metadata ) || ! isset( $metadata['headline'] ) ) {
