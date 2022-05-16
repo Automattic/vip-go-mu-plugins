@@ -63,7 +63,7 @@ export class SearchPage {
      * Perform a search.
      *
      * @param {string} searchTerm Search term
-     * @returns {Promise<*>} Resolves after DOMContentLoaded event fires
+     * @return {Promise<*>} Resolves after DOMContentLoaded event fires
      */
     visit( searchTerm: string ): Promise<unknown> {
         return this.page.goto( `/?s=${ encodeURIComponent( searchTerm ) }`, { waitUntil: 'domcontentloaded' } );
@@ -72,7 +72,7 @@ export class SearchPage {
     /**
      * Opens the Search DevTools panel
      *
-     * @returns {Promise<*>} Resolves when Search DevTools panel is visible
+     * @return {Promise<*>} Resolves when Search DevTools panel is visible
      */
     async openSearchDevTools(): Promise<unknown> {
         await this.devToolsMenuLocator.waitFor( { state: 'visible' } );
@@ -83,7 +83,7 @@ export class SearchPage {
     /**
      * Returns the number of queries run by the page.
      *
-     * @returns {Promise<number>} Resolves with the number of queries or -1 if the number is unavailable
+     * @return {Promise<number>} Resolves with the number of queries or -1 if the number is unavailable
      */
     async getNumberOfQueries(): Promise<number> {
         const text = ( await this.devToolsContainerLocator.locator( selectors.queryCount() ).innerText() ).trim();
@@ -94,7 +94,7 @@ export class SearchPage {
     /**
      * Returns the number of results (should match the number of queries).
      *
-     * @returns {Promise<number>} Resolves with the number of results or -1 if the number is unavailable
+     * @return {Promise<number>} Resolves with the number of results or -1 if the number is unavailable
      */
     async getNumberOfFirstResults(): Promise<number> {
         const text = ( await this.devToolsContainerLocator.locator( selectors.resultCount() ).first().innerText() ).trim();
@@ -105,7 +105,7 @@ export class SearchPage {
     /**
      * Expands search results panel.
      *
-     * @returns {Promise<boolean>} Whether the panel has been shown
+     * @return {Promise<boolean>} Whether the panel has been shown
      */
     async expandFirstResults(): Promise<boolean> {
         const queryHandleLocator = this.queryWrapLocator.locator( selectors.queryHandle() ).first();
@@ -125,7 +125,7 @@ export class SearchPage {
     /**
      * Get the list of WP_Query parameters.
      *
-     * @returns {Promise<string>} Parameters as a string
+     * @return {Promise<string>} Parameters as a string
      */
     async getWPQuery(): Promise<string> {
         return this.getQueryExtrasHelper( 0 );
@@ -134,7 +134,7 @@ export class SearchPage {
     /**
      * Returns the backtrace for the query.
      *
-     * @returns {Promise<string>} Backtrace as a string
+     * @return {Promise<string>} Backtrace as a string
      */
     async getTrace(): Promise<string> {
         return this.getQueryExtrasHelper( 1 );
@@ -143,7 +143,7 @@ export class SearchPage {
     /**
      * Returns the query.
      *
-     * @returns {Promise<string>} Query
+     * @return {Promise<string>} Query
      */
     async getQuery(): Promise<string> {
         return this.sourceQueryLocator.inputValue();
@@ -153,7 +153,7 @@ export class SearchPage {
      * Updates the query box with a new query.
      *
      * @param {string} newQuery New Query
-     * @returns {Promise<*>} Resolves on success
+     * @return {Promise<*>} Resolves on success
      */
     async editQuery( newQuery: string ): Promise<unknown> {
         return this.sourceQueryLocator.fill( newQuery );
@@ -162,7 +162,7 @@ export class SearchPage {
     /**
      * Resets the query to the original value.
      *
-     * @returns {Promise<string>} Original query
+     * @return {Promise<string>} Original query
      */
     async resetQuery(): Promise<string> {
         await this.queryActionsLocator.nth( 1 ).click();
@@ -187,7 +187,7 @@ export class SearchPage {
      * Waits until the query response contains the specific substring.
      *
      * @param {string} substring Substring to check
-     * @returns {Promise<*>} Resolves on success
+     * @return {Promise<*>} Resolves on success
      */
     ensureQueryResponse( substring: string ): Promise<unknown> {
         return this.page.waitForSelector( selectors.queryResultText( substring ) );
@@ -196,7 +196,7 @@ export class SearchPage {
     /**
      * Closes the DevTools panel
      *
-     * @returns {Promise<*>} Resolves on success
+     * @return {Promise<*>} Resolves on success
      */
     async closeSearchDevTools(): Promise<unknown> {
         await this.devToolsCloseButtonLocator.waitFor( { state: 'visible' } );
@@ -207,7 +207,7 @@ export class SearchPage {
      * Gets the data from the specific block in the Query Extra section.
      *
      * @param {number} index Number of the block, zero-based
-     * @returns {Promise<string>} Resolves with the block data
+     * @return {Promise<string>} Resolves with the block data
      */
     private async getQueryExtrasHelper( index: number ): Promise<string> {
         await this.queryExtrasExpandLocator.nth( index ).click();
