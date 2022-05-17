@@ -55,11 +55,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		if ( $class_should_exist ) {
 			global $parsely;
 
-			if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
-				$class_name = 'Parsely';
-			} else {
-				$class_name = 'Parsely\Parsely';
-			}
+			$class_name = 'Parsely\Parsely';
 
 			$this->assertTrue( class_exists( $class_name ) );
 		} else {
@@ -162,9 +158,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$post_id  = wp_insert_post( $post, true );
 		$metadata = $this->get_post_metadata( $post_id );
 
-		if ( version_compare( $parsely::VERSION, '3.0.0', '<' ) ) {
-			$expected_metadata = array();
-		} elseif ( version_compare( $parsely::VERSION, '3.3.0', '<' ) ) {
+		if ( version_compare( $parsely::VERSION, '3.3.0', '<' ) ) {
 			$expected_metadata = array(
 				'@context' => 'http://schema.org',
 				'@type'    => 'WebPage',
