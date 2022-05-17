@@ -232,7 +232,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.14.2
+      - image: cimg/node:16.15.0
     steps:
       - checkout
       - run:

@@ -32,21 +32,23 @@ export class PublishedPagePage {
     async validateTextInPost( text: string ): Promise<void> {
         // If text isn't found the first time, reload and check again up to 2 more times.
         let postTry = 0;
+        /* eslint-disable no-await-in-loop */
         while ( postTry < 3 ) {
             await this.page.waitForSelector( selectors.entryTitle );
-            if ( await this.page.locator( selectors.pageText( text ) ) ) {
+            if ( await this.page.locator( selectors.pageText( text ) ).first().isVisible() ) {
                 break;
             } else {
                 await this.page.reload();
                 postTry++;
             }
         }
+        /* eslint-enable no-await-in-loop */
     }
 
     /**
      * Returns boolean of whether or not image was found in page
      *
-     * @returns {boolean} True if image is found, otherwise false
+     * @return {boolean} True if image is found, otherwise false
      */
     async isImageDisplayed(): Promise<boolean> {
         return this.page.isVisible( selectors.pageImage );
