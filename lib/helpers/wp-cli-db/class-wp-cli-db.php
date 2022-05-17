@@ -6,16 +6,6 @@ use Exception;
 use WP_CLI;
 use Automattic\VIP\Environment;
 
-const WRITE_SPECIFIC_SUBCOMMANDS = [
-	'clean',
-	'create',
-	'drop',
-	'import',
-	'optimize',
-	'repair',
-	'reset',
-];
-
 class Wp_Cli_Db {
 	public function __construct( Config $config ) {
 		$this->config = $config;
@@ -56,12 +46,12 @@ class Wp_Cli_Db {
 	public function validate_subcommand( array $command ): void {
 		$subcommand = $command[1] ?? '';
 
-		if ( ! $this->config->allow_writes() && in_array( $subcommand, WRITE_SPECIFIC_SUBCOMMANDS ) ) {
-			throw new Exception( 'ERROR: That db subcommand is not currently permitted for this site.' );
+		if ( 'query' !== $subcommand ) {
+			throw new Exception( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
 		}
 
-		if ( 'cli' === $subcommand || ( 'query' === $subcommand && 2 === count( $command ) ) ) {
-			throw new Exception( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		if ( 2 === count( $command ) ) {
+			throw new Exception( 'ERROR: Please provide the database query as a part of the command.' );
 		}
 	}
 

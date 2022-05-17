@@ -78,7 +78,7 @@ class WP_Cli_Db_Test extends TestCase {
 		try {
 			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'drop', 'really_important_table' ] );
 		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: That db subcommand is not currently permitted for this site.', $e->getMessage() );
+			$this->assertEquals( 'ERROR: Only the `wp db query` subcommand is permitted for this site.', $e->getMessage() );
 			$this->addToAssertionCount( 1 );
 		}
 		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
@@ -108,7 +108,7 @@ class WP_Cli_Db_Test extends TestCase {
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 1 );
-		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'drop', 'really_important_table' ] );
+		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query', 'DROP TABLE really_important_table' ] );
 
 		$this->assertEquals( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
 		$this->assertEquals( SERVERS['rw'][1], Constant_Mocker::constant( 'DB_USER' ) );
@@ -124,7 +124,7 @@ class WP_Cli_Db_Test extends TestCase {
 		try {
 			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'cli' ] );
 		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: Direct access to the db console is not permitted at this time.', $e->getMessage() );
+			$this->assertEquals( 'ERROR: Only the `wp db query` subcommand is permitted for this site.', $e->getMessage() );
 			$this->addToAssertionCount( 1 );
 		}
 		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
@@ -142,7 +142,7 @@ class WP_Cli_Db_Test extends TestCase {
 		try {
 			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query' ] );
 		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: Direct access to the db console is not permitted at this time.', $e->getMessage() );
+			$this->assertEquals( 'ERROR: Please provide the database query as a part of the command.', $e->getMessage() );
 			$this->addToAssertionCount( 1 );
 		}
 		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
@@ -319,19 +319,19 @@ class WP_Cli_Db_Test extends TestCase {
 
 	public function test_console_is_blocked_for_cli_alone() {
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		$this->expectExceptionMessage( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
 		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
 	}
 
 	public function test_console_is_blocked_for_cli_with_extra_commands() {
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		$this->expectExceptionMessage( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
 		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
 	}
 
 	public function test_console_is_blocked_for_query_alone() {
 		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Direct access to the db console is not permitted at this time.' );
+		$this->expectExceptionMessage( 'ERROR: Please provide the database query as a part of the command.' );
 		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
 	}
 
