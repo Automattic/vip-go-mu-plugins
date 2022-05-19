@@ -25,7 +25,8 @@ class WPComVIP_Restrictions {
 		$wpcomvip = get_user_by( 'login', 'wpcomvip' );
 
 		if ( false !== $wpcomvip && isset( $data['post_author'] ) && $data['post_author'] == $wpcomvip->ID ) {
-			$data['post_author'] = get_current_user_id();
+			$current_user_id     = get_current_user_id();
+			$data['post_author'] = $current_user_id == $wpcomvip->ID ? 0 : $current_user_id;
 		}
 
 		return $data;
@@ -36,14 +37,14 @@ class WPComVIP_Restrictions {
 	
 		if ( false !== $wpcomvip ) {
 			if ( empty( $query_args['exclude'] ) ) {
-                // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
 				$query_args['exclude'] = [ $wpcomvip->ID ];
 			} else {
 				$exclude = is_array( $query_args['exclude'] ) ? $query_args['exclude'] : (string) $query_args['exclude'];
 				$list    = wp_parse_id_list( $exclude );
 				$list[]  = $wpcomvip->ID;
 
-                // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+				// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
 				$query_args['exclude'] = $list;
 			}
 		}

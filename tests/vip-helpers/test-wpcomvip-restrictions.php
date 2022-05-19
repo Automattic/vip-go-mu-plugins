@@ -127,4 +127,21 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 		self::assertArrayHasKey( 'id', $data[0] );
 		self::assertEquals( 1, $data[0]['id'] );
 	}
+
+	public function test_insert_post_wpcomvip(): void {
+		wp_set_current_user( self::$user_id );
+		$data = [
+			'post_author'  => self::$user_id,
+			'post_title'   => 'Test',
+			'post_content' => 'Test',
+		];
+
+		$post_id = wp_insert_post( $data );
+		self::assertNotInstanceOf( WP_Error::class, $post_id );
+
+		$post = get_post( $post_id );
+		self::assertInstanceOf( WP_Post::class, $post );
+
+		self::assertEquals( 0, $post->post_author );
+	}
 }
