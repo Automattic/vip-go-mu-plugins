@@ -36,14 +36,14 @@ class WPComVIP_Restrictions {
 	
 		if ( false !== $wpcomvip ) {
 			if ( empty( $query_args['exclude'] ) ) {
-                // phpcs:disable WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+                // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
 				$query_args['exclude'] = [ $wpcomvip->ID ];
 			} else {
 				$exclude = is_array( $query_args['exclude'] ) ? $query_args['exclude'] : (string) $query_args['exclude'];
 				$list    = wp_parse_id_list( $exclude );
 				$list[]  = $wpcomvip->ID;
 
-                // phpcs:disable WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
+                // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude
 				$query_args['exclude'] = $list;
 			}
 		}
