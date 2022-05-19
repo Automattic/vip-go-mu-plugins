@@ -20,14 +20,8 @@ class Environment {
 		$key       = strtoupper( $key );
 		$env_const = sprintf( '%s_%s', self::VAR_PREFIX, $key );
 
-		// First check to see if the VIP_ENV_VAR constant exists and return it
-		// If constant does not exist fallback to const without the prefix
-		// If neither constant exist, return default
 		if ( defined( $env_const ) ) {
 			return constant( $env_const );
-		} elseif ( defined( $key ) ) {
-			// interim migration step
-			return constant( $key );
 		}
 
 		// The call was not able to retrieve an env variable
