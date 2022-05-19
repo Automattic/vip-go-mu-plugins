@@ -21,16 +21,6 @@ class Wp_Cli_Db {
 			return;
 		}
 
-		$hostname = gethostname();
-		$env      = getenv();
-
-		if ( ! (
-			Environment::is_sandbox_container( $hostname, $env ) ||
-			Environment::is_batch_container( $hostname, $env )
-		) ) {
-			return;
-		}
-
 		if ( ! class_exists( 'WP_CLI' ) ) {
 			return;
 		}
