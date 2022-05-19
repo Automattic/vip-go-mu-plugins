@@ -42,15 +42,6 @@ class Environment_Test extends TestCase {
 		$this->assertEquals( 'default_value', $val );
 	}
 
-	// tests the use-case where $key parameter does not have the prefix
-	public function test_get_var_legacy_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
-		$this->get_var_legacy_env();
-		$val = Environment::get_var( 'MY_VAR', 'default_value' );
-		$this->assertEquals( 'MY_VAR', $val );
-	}
-
 	// tests the use-case where $key parameter is lower case
 	public function test_get_var_lower_key() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
