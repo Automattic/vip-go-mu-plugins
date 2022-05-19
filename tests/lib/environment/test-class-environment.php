@@ -30,10 +30,6 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
-	public function get_var_legacy_env() {
-		Constant_Mocker::define( 'MY_VAR', 'MY_VAR' );
-	}
-
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
