@@ -52,3 +52,23 @@ add_action(
 		);
 	}
 );
+
+// PHP 8 migration nudge on non-prods
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. On this date, all sites on WordPress VIP still using PHP 7.4 will be upgraded to PHP 8.0 to minimize the risk from unpatched security vulnerabilities. To learn more, please see the <a href="https://lobby.vip.wordpress.com/2022/05/02/php-8-0-available-on-wordpress-vip/" target="_blank">Lobby announcement</a> and the guide on <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">how to prepare your application for a PHP version upgrade</a>.';
+
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				$message,
+				[
+					new Expression_Condition( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ),
+					new Expression_Condition( version_compare( PHP_VERSION, '8.0', '<' ) ),
+				],
+				'php8-migrations',
+				'info'
+			)
+		);
+	}
+);
