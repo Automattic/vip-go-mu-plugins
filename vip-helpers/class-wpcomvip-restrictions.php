@@ -1,5 +1,7 @@
 <?php
 
+namespace Automattic\VIP\Utils;
+
 class WPComVIP_Restrictions {
 	protected static $instance = null;
 

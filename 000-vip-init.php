@@ -10,6 +10,7 @@
  */
 
 use Automattic\VIP\Utils\Context;
+use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
 /**
  * By virtue of the filename, this file is included first of
