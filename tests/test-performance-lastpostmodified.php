@@ -8,8 +8,18 @@ use WP_UnitTestCase;
 class lastpostmodified_Test extends WP_UnitTestCase {
 	protected $post;
 
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+		Last_Post_Modified::init();
+	}
+
 	public function setUp(): void {
+		/** @var wpdb $wpdb */
+		global $wpdb;
 		parent::setUp();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", Last_Post_Modified::OPTION_PREFIX . '%' ) );
 
 		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
 	}
