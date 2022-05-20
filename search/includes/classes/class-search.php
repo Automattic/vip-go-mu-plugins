@@ -1064,7 +1064,7 @@ class Search {
 			// TODO: Report actual request, once we make sure all its fields are sanitized and publishable
 			$encoded_request = 'Not an error.';
 		}
-		
+
 		if ( is_wp_error( $response ) ) {
 			$error_messages        = $response->get_error_messages();
 			$response_failure_code = $response->get_error_code();
