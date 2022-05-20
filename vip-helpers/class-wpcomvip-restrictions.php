@@ -21,7 +21,11 @@ class WPComVIP_Restrictions {
 		add_filter( 'coauthors_edit_ignored_authors', [ $this, 'restrict_post_author_dropdown_coauthors' ], PHP_INT_MAX );
 	}
 
-	public function restrict_post_author( array $data ): array {
+	public function restrict_post_author( $data ) {
+		if ( ! is_array( $data ) ) {
+			return $data;
+		}
+
 		$wpcomvip = get_user_by( 'login', 'wpcomvip' );
 
 		if ( false !== $wpcomvip && isset( $data['post_author'] ) && $data['post_author'] == $wpcomvip->ID ) {
@@ -32,7 +36,11 @@ class WPComVIP_Restrictions {
 		return $data;
 	}
 
-	public function restrict_post_author_dropdown( array $query_args ): array {
+	public function restrict_post_author_dropdown( $query_args ) {
+		if ( ! is_array( $query_args ) ) {
+			return $query_args;
+		}
+
 		$wpcomvip = get_user_by( 'login', 'wpcomvip' );
 	
 		if ( false !== $wpcomvip ) {
@@ -52,7 +60,11 @@ class WPComVIP_Restrictions {
 		return $query_args;
 	}
 
-	public function restrict_post_author_dropdown_coauthors( array $ignored_authors ): array {
+	public function restrict_post_author_dropdown_coauthors( $ignored_authors ) {
+		if ( ! is_array( $ignored_authors ) ) {
+			return $ignored_authors;
+		}
+
 		$wpcomvip = get_user_by( 'login', 'wpcomvip' );
 	
 		if ( false !== $wpcomvip ) {
