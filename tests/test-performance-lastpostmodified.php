@@ -9,18 +9,17 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 	protected $post;
 
 	public function setUp(): void {
+		/** @var wpdb $wpdb */
+		global $wpdb;
 		parent::setUp();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", Last_Post_Modified::OPTION_PREFIX . '%' ) );
 
 		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
 	}
 
 	public function test__transition_post_status__save_on_publish() {
-		\wp_transition_post_status( 'publish', 'publish', $this->post );
-
-		$this->assertEquals( 1, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
-	}
-
-	public function test__transition_post_status__save_on_update() {
 		\wp_transition_post_status( 'publish', 'publish', $this->post );
 
 		$this->assertEquals( 1, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
