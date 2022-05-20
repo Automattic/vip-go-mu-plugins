@@ -15,10 +15,6 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 	private static $post_id;
 
 	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
-		remove_all_filters( 'pre_get_lastpostmodified' );
-		remove_all_filters( 'transition_post_status' );
-		remove_all_filters( 'wpcom_vip_bump_lastpostmodified' );
-
 		$user = get_user_by( 'login', 'wpcomvip' );
 		if ( false === $user ) {
 			self::$user_id = $factory->user->create([

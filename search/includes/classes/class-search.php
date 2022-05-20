@@ -1053,6 +1053,9 @@ class Search {
 			return;
 		}
 
+		// The error code for  the failed response.
+		$response_failure_code = '';
+
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
@@ -1063,7 +1066,8 @@ class Search {
 		}
 
 		if ( is_wp_error( $response ) ) {
-			$error_messages = $response->get_error_messages();
+			$error_messages        = $response->get_error_messages();
+			$response_failure_code = $response->get_error_code();
 
 			foreach ( $error_messages as $error_message ) {
 				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
@@ -1088,6 +1092,11 @@ class Search {
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
 			$error_type = 'search_query_error';
+		}
+
+		// remote_request_disabled is noisy and doesn't necessarily mean that backend is timing out because the request is never made.
+		if ( 'remote_request_disabled' === $response_failure_code ) {
+			return;
 		}
 
 		if ( ! $is_cli ) {
