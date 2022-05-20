@@ -30,12 +30,6 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
 	}
 
-	public function test__transition_post_status__save_on_update() {
-		\wp_transition_post_status( 'publish', 'publish', $this->post );
-
-		$this->assertEquals( 1, did_action( 'wpcom_vip_bump_lastpostmodified' ) );
-	}
-
 	public function test__transition_post_status__ignore_non_publish_status() {
 		\wp_transition_post_status( 'draft', 'future', $this->post );
 
