@@ -8,11 +8,6 @@ use WP_UnitTestCase;
 class lastpostmodified_Test extends WP_UnitTestCase {
 	protected $post;
 
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		Last_Post_Modified::init();
-	}
-
 	public function setUp(): void {
 		/** @var wpdb $wpdb */
 		global $wpdb;
