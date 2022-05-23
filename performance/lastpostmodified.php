@@ -8,7 +8,8 @@ class Last_Post_Modified {
 	const LOCK_TIME_IN_SECONDS = 30;
 
 	public static function init() {
-		if ( true === apply_filters( 'wpcom_vip_disable_lastpostmodified', false ) ) {
+		$disable = defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS;
+		if ( true === apply_filters( 'wpcom_vip_disable_lastpostmodified', $disable ) ) {
 			return;
 		}
 

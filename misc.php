@@ -7,6 +7,10 @@ Version: 1.1
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
 */
 
+if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+	return;
+}
+
 // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.upload_mimes
 add_filter( 'upload_mimes', function( $mimes ) {
 	unset( $mimes['flv'] );
