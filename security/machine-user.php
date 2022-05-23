@@ -16,7 +16,7 @@ function prevent_machine_user_mods( $caps, $requested_cap, $user_id, $args ) {
 		$user_to_edit_id = $args[0];
 		$user_to_edit    = get_userdata( $user_to_edit_id );
 
-		if ( WPCOM_VIP_MACHINE_USER_LOGIN === $user_to_edit->user_login ) {
+		if ( false !== $user_to_edit && WPCOM_VIP_MACHINE_USER_LOGIN === $user_to_edit->user_login ) {
 			return [ 'do_not_allow' ];
 		}
 	}
