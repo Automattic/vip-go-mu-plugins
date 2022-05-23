@@ -175,4 +175,6 @@ function vip_jetpack_load() {
 	}
 }
 
-vip_jetpack_load();
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	vip_jetpack_load();
+}

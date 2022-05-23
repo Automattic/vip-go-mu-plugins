@@ -6,4 +6,7 @@ function vip_filter_query_attachment_filenames() {
 	remove_filter( 'posts_clauses', '_filter_query_attachment_filenames' );
 }
 
-add_action( 'pre_get_posts', 'vip_filter_query_attachment_filenames' );
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	// This breaks query search tests.
+	add_action( 'pre_get_posts', 'vip_filter_query_attachment_filenames' );
+}

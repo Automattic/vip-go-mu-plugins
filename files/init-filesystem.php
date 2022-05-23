@@ -25,9 +25,11 @@ require_once __DIR__ . '/class-api-client.php';
 // it does a check for class_exists() of the filesystem method i.e. `WP_Filesystem_{type}`
 class WP_Filesystem_VIP extends Automattic\VIP\Files\WP_Filesystem_VIP {}
 
+$priority = ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) ? PHP_INT_MAX : 10;
 add_filter( 'filesystem_method', function() {
 	return VIP_FILESYSTEM_METHOD; // The VIP base class transparently handles using the direct filesystem as well as the VIP Go File API
-}, PHP_INT_MAX );
+}, $priority );
+unset( $priority );
 
 add_filter( 'request_filesystem_credentials', function( $credentials, $form_post, $type ) {
 	// Handle the default `''` case which we'll override thanks to the `filesystem_method` filter.
