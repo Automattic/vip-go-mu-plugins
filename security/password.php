@@ -21,7 +21,7 @@ function validate_current_password( WP_Error &$errors, bool $update, &$user ) {
 	}
 
 	$screen = get_current_screen();
-	if ( 'profile' != $screen->id ) {
+	if ( ! $screen || 'profile' != $screen->id ) {
 		return;
 	}
 

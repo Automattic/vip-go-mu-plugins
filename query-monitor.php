@@ -111,7 +111,9 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
-add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+}
 
 /**
  * Hooks the wp action to avoid showing Query Monitor on 404 pages

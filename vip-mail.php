@@ -61,7 +61,9 @@ class VIP_SMTP {
 		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ) );
 		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ) );
 
-		add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
+		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
+		}
 	}
 
 	public function phpmailer_init( &$phpmailer ) {

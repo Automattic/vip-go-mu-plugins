@@ -12,4 +12,6 @@
  * @package         Lightweight_Term_Count_Update
  */
 
-require_once __DIR__ . '/lightweight-term-count-update/lightweight-term-count-update.php';
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	require_once __DIR__ . '/lightweight-term-count-update/lightweight-term-count-update.php';
+}
