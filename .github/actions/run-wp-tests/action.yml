@@ -15,7 +15,7 @@ inputs:
     required: false
   jetpack:
     description: Whether to test with Jetpack or not.
-    default: 'no'
+    default: 'yes'
     required: false
   phpunit-version:
     description: PHPUnit version to use.
