@@ -51,6 +51,10 @@ jobs:
             multisite: "yes"
             jetpack: "yes"
     steps:
+      - name: Check out source code
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        with:
+          submodules: recursive
       - name: Run tests
         uses: ./.github/actions/run-wp-tests
         with:
