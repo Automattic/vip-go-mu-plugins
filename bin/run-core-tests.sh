@@ -110,7 +110,8 @@ docker run \
     -e MYSQL_PASSWORD \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
+    -e PRETEST_SCRIPT=/mu-plugins/bin/core-tests-pre.sh \
     ${DOCKER_OPTIONS} \
-    -v "$(pwd):/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins" \
+    -v "$(pwd):/mu-plugins" \
     ghcr.io/automattic/vip-container-images/wp-core-test-runner:latest \
     ${ARGS}
