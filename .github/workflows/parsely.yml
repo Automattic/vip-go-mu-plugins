@@ -1,4 +1,4 @@
-name: Run Tests with Parse.ly
+name: CI (Parse.ly)
 
 on:
   push:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   test:
-    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, Parse.ly: ${{ matrix.parsely }} ${{ matrix.mode }}, PHP ${{ matrix.php }}"
+    name: "Parse.ly: ${{ matrix.parsely }} ${{ matrix.mode }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -25,7 +25,7 @@ jobs:
         wp:
           - "latest"
         multisite:
-          - "0"
+          - "no"
         parsely:
           - "2.6"
           - "3.1"
@@ -37,7 +37,7 @@ jobs:
         include:
           - php: "7.4"
             wp: "latest"
-            multisite: "0"
+            multisite: "no"
             parsely: "3.3"
             mode: "filter_and_option_enabled"
     steps:
@@ -57,9 +57,14 @@ jobs:
 
       - name: Run tests
         run: |
+          if [ "${{ matrix.multisite }}" = "yes" ]; then
+            MULTISITE=1
+          else
+            MULTISITE=0
+          fi
           ./bin/test.sh \
             --wp ${{ matrix.wp }} \
             --php ${{ matrix.php }} \
-            --multisite ${{ matrix.multisite }} \
+            --multisite ${MULTISITE} \
             --docker-options "-e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION=${{ matrix.parsely }} -e WPVIP_PARSELY_INTEGRATION_TEST_MODE=${{ matrix.mode }}" \
             --order-by=random
