@@ -27,7 +27,7 @@ jobs:
         uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
         with:
           coverage: none
-          php-version: "7.4"
+          php-version: "8.0"
 
       - name: Setup Node
         uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # tag=v2.5.1
