@@ -1,0 +1,56 @@
+name: Run Tests
+description: Runs WordPress tests.
+inputs:
+  wordpress-version:
+    description: WordPress version to test against.
+    default: latest
+    required: false
+  multisite:
+    description: Whether to test multisite or not.
+    default: 'no'
+    required: false
+  php-version:
+    description: PHP version to test against.
+    default: '7.4'
+    required: false
+  jetpack:
+    description: Whether to test with Jetpack or not.
+    default: 'no'
+    required: false
+  phpunit-version:
+    description: PHPUnit version to use.
+    default: '7'
+    required: false
+runs:
+  using: composite
+  steps:
+    - name: Check out source code
+      uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+      with:
+        submodules: recursive
+    - name: Set up PHP
+      uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
+      with:
+        coverage: none
+        php-version: ${{ inputs.php-version }}
+    - name: Install PHP Dependencies
+      uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
+    - name: Run tests
+      shell: bash
+      run: |
+        if [ "${{ inputs.multisite }}" = "yes" ]; then
+          MULTISITE=1
+        else
+          MULTISITE=0
+        fi
+        OPTIONS="--order-by=random"
+        if [ "${{ inputs.jetpack }}" = "no" ]; then
+          echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+          OPTIONS="--exclude-group jetpack-required"
+        fi
+        ./bin/test.sh \
+          --wp ${{ inputs.wordpress-version }} \
+          --multisite ${MULTISITE} \
+          --php ${{ inputs.php-version }} \
+          --phpunit ${{ inputs.phpunit-version }} \
+          ${OPTIONS}

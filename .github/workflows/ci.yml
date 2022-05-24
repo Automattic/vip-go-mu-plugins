@@ -44,34 +44,21 @@ jobs:
           - wp: "latest"
             multisite: "yes"
             jetpack: "no"
+          - wp: "nightly"
+            multisite: "no"
+            jetpack: "yes"
+          - wp: "nightly"
+            multisite: "yes"
+            jetpack: "yes"
     steps:
-      - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
-        with:
-          submodules: recursive
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@7854a0cae7fa7a5f3feac66d27bae2dc42d1067a # tag=2.17.0
-        with:
-          coverage: none
-          php-version: ${{ env.PHP_VERSION }}
-
-      - name: Install PHP Dependencies
-        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
-
       - name: Run tests
-        run: |
-          if [ "${{ matrix.multisite }}" = "yes" ]; then
-            MULTISITE=1
-          else
-            MULTISITE=0
-          fi
-          if [ "${{ matrix.jetpack }}" = "no" ]; then
-            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
-            ./bin/test.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE} --order-by=random --exclude-group jetpack-required
-          else
-            ./bin/test.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE} --order-by=random
-          fi
+        uses: ./.github/actions/run-wp-tests
+        with:
+          wordpress-version: ${{ matrix.wp }}
+          multisite: ${{ matrix.multisite }}
+          jetpack: ${{ matrix.jetpack }}
+          php-version: ${{ env.PHP_VERSION }}
+          phpunit-version: ${{ env.PHPUNIT_VERSION }}
 
   wp-core:
     name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
