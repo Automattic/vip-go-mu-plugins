@@ -5,6 +5,9 @@ namespace Automattic\VIP\Jetpack;
 use DateTime;
 use WP_UnitTestCase;
 
+/**
+ * @requires function Jetpack_Options::get_option
+ */
 class Connection_Pilot_Test extends WP_UnitTestCase {
 	protected static function getMethod( $name ) {
 		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );

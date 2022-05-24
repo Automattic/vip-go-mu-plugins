@@ -18,75 +18,83 @@ env:
   PHP_VERSION: "7.4"
 
 jobs:
-  test:
-    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, JetPack: ${{ matrix.jetpack }}"
+  unit-tests:
+    name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php:
-          - "7.4"
-        phpiunit:
-          - "7"
-        wp:
-          - "5.5.9"
-          - "5.6.8"
-          - "5.7.6"
-          - "5.8.4"
-          - "latest"
-        multisite:
-          - "no"
-        jetpack:
-          - "yes"
-        include:
-          - wp: "latest"
-            multisite: "yes"
-            jetpack: "yes"
-          - wp: "latest"
-            multisite: "no"
-            jetpack: "no"
-          - wp: "latest"
-            multisite: "yes"
-            jetpack: "no"
-          - wp: "nightly"
-            multisite: "no"
-            jetpack: "yes"
-          - wp: "nightly"
-            multisite: "yes"
-            jetpack: "yes"
-          - wp: "nightly"
-            multisite: "no"
-            jetpack: "yes"
-            php: "8.0"
-            phpunit: "9"
-          - wp: "nightly"
-            multisite: "yes"
-            jetpack: "yes"
-            php: "8.0"
-            phpunit: "9"
-          - wp: "latest"
-            multisite: "no"
-            jetpack: "yes"
-            php: "8.0"
-            phpunit: "9"
-          - wp: "latest"
-            multisite: "yes"
-            jetpack: "yes"
-            php: "8.0"
-            phpunit: "9"
+        config:
+        # JetPack, Single-Site, PHP 7.4
+          - { wp: 5.5.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.6.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.7.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.8.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.9.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+        # JetPack, Multi-Site, PHP 7.4
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
+        # No JetPack, WP latest, PHP 7.4
+          - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
+          - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
+        # PHP 8.0, JetPack 
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
+    services:
+      mysql:
+        image: mariadb:10.3
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MARIADB_INITDB_SKIP_TZINFO: 1
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        uses: actions/checkout@v3.0.2
         with:
           submodules: recursive
-      - name: Run tests
-        uses: ./.github/actions/run-wp-tests
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.18.1
         with:
-          wordpress-version: ${{ matrix.wp }}
-          multisite: ${{ matrix.multisite }}
-          jetpack: ${{ matrix.jetpack }}
-          php-version: ${{ env.PHP_VERSION }}
-          phpunit-version: ${{ env.PHPUNIT_VERSION }}
+          coverage: none
+          php-version: ${{ matrix.config.php }}
+          tools: phpunit:${{ matrix.config.phpunit }}
+        env:
+          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@2.1.0
+
+      - name: Set up WordPress and WordPress Test Library
+        uses: sjinks/setup-wordpress-test-library@1.1.2
+        with:
+          version: ${{ matrix.config.wp }}
+
+      - name: Set up multisite mode
+        run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
+        if: matrix.config.ms == 'yes'
+
+      - name: Disable JetPack
+        run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
+        if: matrix.config.jp == 'no'
+
+      - name: Verify MariaDB connection
+        run: |
+          while ! mysqladmin ping -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --silent; do
+            sleep 1
+          done
+        timeout-minutes: 1
+
+      - name: Run tests
+        run: phpunit --order-by=random
 
   wp-core:
     name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
@@ -101,7 +109,7 @@ jobs:
           - "yes"
     steps:
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        uses: actions/checkout@v3.0.2
         with:
           submodules: recursive
 
@@ -119,7 +127,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        uses: actions/checkout@v3.0.2
 
       - name: Sanity check
         run: |
@@ -129,7 +137,7 @@ jobs:
           fi
 
       - name: Setup Node
-        uses: actions/setup-node@1f8c6b94b26d0feae1e387ca63ccbdc44d27b561 # tag=v2.5.1
+        uses: actions/setup-node@v2.5.1
         with:
           node-version: 'lts/*'
           cache: npm

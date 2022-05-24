@@ -7,6 +7,10 @@ if ( ! $_tests_dir ) {
 	$_tests_dir = '/tmp/wordpress-tests-lib';
 }
 
+if ( '1' === getenv( 'VIP_JETPACK_SKIP_LOAD' ) ) {
+	define( 'VIP_JETPACK_SKIP_LOAD', true );
+}
+
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
@@ -148,3 +152,7 @@ require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
 
 require $_tests_dir . '/includes/bootstrap.php';
+
+if ( isset( $GLOBALS['wp_version'] ) ) {
+	echo PHP_EOL, 'WordPress version: ' . esc_html( $GLOBALS['wp_version'] ), PHP_EOL;
+}
