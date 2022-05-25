@@ -94,7 +94,7 @@ class Site_Details_Index {
 		require_once ABSPATH . 'wp-admin/includes/update.php';
 
 		$all_plugins                = get_plugins();
-		$wporg_slugs                = $this->get_wporg_plugin_slugs();
+		$update_data                = $this->get_plugin_update_data();
 		$active_plugins             = get_option( 'active_plugins' );
 		$network_plugins            = get_site_option( 'active_sitewide_plugins' );
 		$plugins_activated_via_code = wpcom_vip_get_filtered_loaded_plugins();
@@ -111,12 +111,16 @@ class Site_Details_Index {
 			}
 
 			$plugin_info[] = array(
-				'path'         => $plugin_path,
-				'name'         => $plugin_data['Name'],
-				'wporg_slug'   => $wporg_slugs[ $plugin_path ] ?? null,
-				'version'      => $plugin_data['Version'],
-				'active'       => null !== $activated_by,
-				'activated_by' => $activated_by,
+				'path'          => $plugin_path,
+				'name'          => $plugin_data['Name'],
+				'version'       => $plugin_data['Version'],
+				'active'        => null !== $activated_by,
+				'activated_by'  => $activated_by,
+				'wporg_slug'    => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['slug'] : null, // legacy, can be later removed.
+				'slug'          => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['slug'] : null,
+				'marketplace'   => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['marketplace'] : null,
+				'has_update'    => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['new_version'] : null,
+				'download_link' => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['package'] : null,
 			);
 		}
 
@@ -124,30 +128,64 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Get a list of $plugin_path -> $wporg_slug mappings.
+	 * Get plugin information related to updates, such as their proper slug / marketplace / and download package url.
 	 *
 	 * Offical WP.org plugin slugs require a pretty technical process to properly find.
 	 * WP core does this by querying a WPorg endpoint that checks for a valid plugin
 	 * based on various factors like name, author, path, and plugin header values.
 	 * So here we just piggyback off of the above process to locate the proper slugs.
+	 *
+	 * Third party plugins also tend to hook into this process and insert their own slugs / urls.
 	 */
-	private function get_wporg_plugin_slugs() {
+	private function get_plugin_update_data() {
+		$update_data = [];
+
 		// Ensure the update cache is fresh.
 		wp_update_plugins();
 		$update_cache = get_site_transient( 'update_plugins' );
 
-		// Note that these lists only contains plugins that were properly matched to a WPorg-registered plugin.
-		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
+		// Note that these lists only contain plugins that have been matched with a "marketplace", usually WPorg.
 		$no_update  = isset( $update_cache->no_update ) && is_array( $update_cache->no_update ) ? $update_cache->no_update : [];
+		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
 
-		$wporg_plugins = array_merge( $has_update, $no_update );
-
-		$plugin_slugs = [];
-		foreach ( $wporg_plugins as $plugin_path => $plugin_data ) {
-			$plugin_slugs[ $plugin_path ] = $plugin_data->slug;
+		foreach ( $no_update as $plugin_path => $plugin_data ) {
+			$update_data[ $plugin_path ] = [
+				'slug'        => $plugin_data->slug ?? null,
+				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'new_version' => null,
+				'package'     => null,
+			];
 		}
 
-		return $plugin_slugs;
+		foreach ( $has_update as $plugin_path => $plugin_data ) {
+			$update_data[ $plugin_path ] = [
+				'slug'        => $plugin_data->slug ?? null,
+				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'new_version' => $plugin_data->new_version ?? null,
+				'package'     => wp_http_validate_url( $plugin_data->package ) !== false ? $plugin_data->package : null,
+			];
+		}
+
+		return $update_data;
+	}
+
+	/**
+	 * There is no "official" marketplace slug system. To help with our searches, we'll try to standardize them here.
+	 */
+	private function get_plugin_marketplace( $plugin_url ) {
+		if ( false !== strpos( $plugin_url, '//wordpress.org' ) ) {
+			return 'wp-org';
+		}
+
+		if ( false !== strpos( $plugin_url, '//woocommerce.com' ) ) {
+			return 'woocommerce-com';
+		}
+
+		if ( false !== strpos( $plugin_url, '//www.advancedcustomfields.com' ) ) {
+			return 'advancedcustomfields';
+		}
+
+		return null;
 	}
 
 	/**
