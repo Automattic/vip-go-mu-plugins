@@ -58,7 +58,8 @@ class Debug_Bar_WP_Http extends Debug_Bar_Panel {
 
 	function is_request_error( $response ) {
 		if (
-			is_wp_error( $response )
+			empty( $response )
+			|| is_wp_error( $response )
 			|| $response['response']['code'] >= 400
 		) {
 			return true;
@@ -157,8 +158,8 @@ HTML;
 		foreach( $this->requests as $i => $r ) {
 			$class = '';
 			if (
-				$this->is_request_error( $r['r'] )
-				|| $r['args']['duration'] > $this->time_limit
+				( ! empty( $r['r'] ) && $this->is_request_error( $r['r'] ) )
+				|| ( ! empty( $r['args']['duration'] ) && $r['args']['duration'] > $this->time_limit )
 			) {
 				$class = 'err';
 			}
@@ -167,14 +168,20 @@ HTML;
 			$start *= 1000;
 			$start = number_format( $start, 1 );
 
-			$duration = number_format( $r['args']['duration'], 1 );
+			$duration = 'error getting request duration';
+			if ( ! empty( $r['args']['duration'] ) ) {
+				$duration = number_format( $r['args']['duration'], 1 ) . ' ms';
+			}
 			$method = esc_html( $r['args']['method'] );
 			$url = esc_html( $r['url'] );
 
-			if ( is_wp_error( $r['r'] ) ) {
+			if ( ! empty( $r['r'] ) && is_wp_error( $r['r'] ) ) {
 				$code = esc_html( $r['r']->get_error_code() );
 			} else {
-				$code = esc_html( $r['r']['response']['code'] );
+				$code = 'error getting response code, most likely a stopped request';
+				if ( ! empty( $r['r']['response']['code'] ) ) {
+					$code = esc_html( $r['r']['response']['code'] );
+				}
 			}
 
 			$details = esc_html( print_r( $r, true ) );
@@ -184,7 +191,7 @@ HTML;
 		<tr class="{$class}">
 			<td><a onclick="debug_bar_http_toggle( '{$record_id}' );">Toggle</a></td>
 			<td>{$start} ms</td>
-			<td>{$duration} ms</td>
+			<td>{$duration}</td>
 			<td>{$method}</td>
 			<td>{$url}</td>
 			<td>{$code}</td>
