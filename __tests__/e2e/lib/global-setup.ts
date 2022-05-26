@@ -17,7 +17,7 @@ async function globalSetup( config: FullConfig ) {
     const browser = await chromium.launch();
     const context = await browser.newContext( { recordVideo: { dir: artifactsDir } } );
     const page = await context.newPage();
-    const user = process.env.E2E_USER ? process.env.E2E_USER : 'vipgo3';
+    const user = process.env.E2E_USER ? process.env.E2E_USER : 'vipgo';
     const pass = process.env.E2E_PASSWORD ? process.env.E2E_PASSWORD : 'password';
     let success = true;
     page.setDefaultNavigationTimeout( timeout );
