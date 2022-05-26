@@ -434,7 +434,7 @@ class Akismet_Admin {
 		
 		if ( ! wp_verify_nonce( $_POST['nonce'], 'akismet_check_for_spam' ) ) {
 			wp_send_json( array(
-				'error' => __( "You don't have permission to do that."),
+				'error' => __( 'You don&#8217;t have permission to do that.', 'akismet' ),
 			));
 			return;
 		}
@@ -584,10 +584,8 @@ class Akismet_Admin {
 
 		if ( $history ) {
 			foreach ( $history as $row ) {
-				$time = date( 'D d M Y @ h:i:s a', $row['time'] ) . ' GMT';
-				
 				$message = '';
-				
+
 				if ( ! empty( $row['message'] ) ) {
 					// Old versions of Akismet stored the message as a literal string in the commentmeta.
 					// New versions don't do that for two reasons:
@@ -595,96 +593,112 @@ class Akismet_Admin {
 					// 2) The message can be translated into the current language of the blog, not stuck 
 					//    in the language of the blog when the comment was made.
 					$message = esc_html( $row['message'] );
-				}
-				
-				// If possible, use a current translation.
-				switch ( $row['event'] ) {
-					case 'recheck-spam';
-						$message = esc_html( __( 'Akismet re-checked and caught this comment as spam.', 'akismet' ) );
-					break;
-					case 'check-spam':
-						$message = esc_html( __( 'Akismet caught this comment as spam.', 'akismet' ) );
-					break;
-					case 'recheck-ham':
-						$message = esc_html( __( 'Akismet re-checked and cleared this comment.', 'akismet' ) );
-					break;
-					case 'check-ham':
-						$message = esc_html( __( 'Akismet cleared this comment.', 'akismet' ) );
-					break;
-					case 'wp-blacklisted':
-					case 'wp-disallowed':
-						$message = sprintf(
-							/* translators: The placeholder is a WordPress PHP function name. */
-							esc_html( __( 'Comment was caught by %s.', 'akismet' ) ),
-							function_exists( 'wp_check_comment_disallowed_list' ) ? '<code>wp_check_comment_disallowed_list</code>' : '<code>wp_blacklist_check</code>'
-						);
-					break;
-					case 'report-spam':
-						if ( isset( $row['user'] ) ) {
-							$message = esc_html( sprintf( __( '%s reported this comment as spam.', 'akismet' ), $row['user'] ) );
-						}
-						else if ( ! $message ) {
-							$message = esc_html( __( 'This comment was reported as spam.', 'akismet' ) );
-						}
-					break;
-					case 'report-ham':
-						if ( isset( $row['user'] ) ) {
-							$message = esc_html( sprintf( __( '%s reported this comment as not spam.', 'akismet' ), $row['user'] ) );
-						}
-						else if ( ! $message ) {
-							$message = esc_html( __( 'This comment was reported as not spam.', 'akismet' ) );
-						}
-					break;
-					case 'cron-retry-spam':
-						$message = esc_html( __( 'Akismet caught this comment as spam during an automatic retry.' , 'akismet') );
-					break;
-					case 'cron-retry-ham':
-						$message = esc_html( __( 'Akismet cleared this comment during an automatic retry.', 'akismet') );
-					break;
-					case 'check-error':
-						if ( isset( $row['meta'], $row['meta']['response'] ) ) {
-							$message = sprintf( esc_html( __( 'Akismet was unable to check this comment (response: %s) but will automatically retry later.', 'akismet') ), '<code>' . esc_html( $row['meta']['response'] ) . '</code>' );
-						}
-						else {
-							$message = esc_html( __( 'Akismet was unable to check this comment but will automatically retry later.', 'akismet' ) );
-						}
-					break;
-					case 'recheck-error':
-						if ( isset( $row['meta'], $row['meta']['response'] ) ) {
-							$message = sprintf( esc_html( __( 'Akismet was unable to recheck this comment (response: %s).', 'akismet') ), '<code>' . esc_html( $row['meta']['response'] ) . '</code>' );
-						}
-						else {
-							$message = esc_html( __( 'Akismet was unable to recheck this comment.', 'akismet' ) );
-						}
-					break;
-					default:
-						if ( preg_match( '/^status-changed/', $row['event'] ) ) {
-							// Half of these used to be saved without the dash after 'status-changed'.
-							// See https://plugins.trac.wordpress.org/changeset/1150658/akismet/trunk
-							$new_status = preg_replace( '/^status-changed-?/', '', $row['event'] );
-							$message = sprintf( esc_html( __( 'Comment status was changed to %s', 'akismet' ) ), '<code>' . esc_html( $new_status ) . '</code>' );
-						}
-						else if ( preg_match( '/^status-/', $row['event'] ) ) {
-							$new_status = preg_replace( '/^status-/', '', $row['event'] );
-
+				} else if ( ! empty( $row['event'] ) ) {
+					// If possible, use a current translation.
+					switch ( $row['event'] ) {
+						case 'recheck-spam':
+							$message = esc_html( __( 'Akismet re-checked and caught this comment as spam.', 'akismet' ) );
+							break;
+						case 'check-spam':
+							$message = esc_html( __( 'Akismet caught this comment as spam.', 'akismet' ) );
+							break;
+						case 'recheck-ham':
+							$message = esc_html( __( 'Akismet re-checked and cleared this comment.', 'akismet' ) );
+							break;
+						case 'check-ham':
+							$message = esc_html( __( 'Akismet cleared this comment.', 'akismet' ) );
+							break;
+						case 'wp-blacklisted':
+						case 'wp-disallowed':
+							$message = sprintf(
+								/* translators: The placeholder is a WordPress PHP function name. */
+								esc_html( __( 'Comment was caught by %s.', 'akismet' ) ),
+								function_exists( 'wp_check_comment_disallowed_list' ) ? '<code>wp_check_comment_disallowed_list</code>' : '<code>wp_blacklist_check</code>'
+							);
+							break;
+						case 'report-spam':
 							if ( isset( $row['user'] ) ) {
-								$message = sprintf( esc_html( __( '%1$s changed the comment status to %2$s.', 'akismet' ) ), $row['user'], '<code>' . esc_html( $new_status ) . '</code>' );
+								/* translators: The placeholder is a username. */
+								$message = esc_html( sprintf( __( '%s reported this comment as spam.', 'akismet' ), $row['user'] ) );
+							} else if ( ! $message ) {
+								$message = esc_html( __( 'This comment was reported as spam.', 'akismet' ) );
 							}
-						}
-					break;
-					
+							break;
+						case 'report-ham':
+							if ( isset( $row['user'] ) ) {
+								/* translators: The placeholder is a username. */
+								$message = esc_html( sprintf( __( '%s reported this comment as not spam.', 'akismet' ), $row['user'] ) );
+							} else if ( ! $message ) {
+								$message = esc_html( __( 'This comment was reported as not spam.', 'akismet' ) );
+							}
+							break;
+						case 'cron-retry-spam':
+							$message = esc_html( __( 'Akismet caught this comment as spam during an automatic retry.', 'akismet' ) );
+							break;
+						case 'cron-retry-ham':
+							$message = esc_html( __( 'Akismet cleared this comment during an automatic retry.', 'akismet' ) );
+							break;
+						case 'check-error':
+							if ( isset( $row['meta'], $row['meta']['response'] ) ) {
+								/* translators: The placeholder is an error response returned by the API server. */
+								$message = sprintf( esc_html( __( 'Akismet was unable to check this comment (response: %s) but will automatically retry later.', 'akismet' ) ), '<code>' . esc_html( $row['meta']['response'] ) . '</code>' );
+							} else {
+								$message = esc_html( __( 'Akismet was unable to check this comment but will automatically retry later.', 'akismet' ) );
+							}
+							break;
+						case 'recheck-error':
+							if ( isset( $row['meta'], $row['meta']['response'] ) ) {
+								/* translators: The placeholder is an error response returned by the API server. */
+								$message = sprintf( esc_html( __( 'Akismet was unable to recheck this comment (response: %s).', 'akismet' ) ), '<code>' . esc_html( $row['meta']['response'] ) . '</code>' );
+							} else {
+								$message = esc_html( __( 'Akismet was unable to recheck this comment.', 'akismet' ) );
+							}
+							break;
+						default:
+							if ( preg_match( '/^status-changed/', $row['event'] ) ) {
+								// Half of these used to be saved without the dash after 'status-changed'.
+								// See https://plugins.trac.wordpress.org/changeset/1150658/akismet/trunk
+								$new_status = preg_replace( '/^status-changed-?/', '', $row['event'] );
+								/* translators: The placeholder is a short string (like 'spam' or 'approved') denoting the new comment status. */
+								$message = sprintf( esc_html( __( 'Comment status was changed to %s', 'akismet' ) ), '<code>' . esc_html( $new_status ) . '</code>' );
+							} else if ( preg_match( '/^status-/', $row['event'] ) ) {
+								$new_status = preg_replace( '/^status-/', '', $row['event'] );
+
+								if ( isset( $row['user'] ) ) {
+									/* translators: %1$s is a username; %2$s is a short string (like 'spam' or 'approved') denoting the new comment status. */
+									$message = sprintf( esc_html( __( '%1$s changed the comment status to %2$s.', 'akismet' ) ), $row['user'], '<code>' . esc_html( $new_status ) . '</code>' );
+								}
+							}
+							break;
+					}
 				}
 
 				if ( ! empty( $message ) ) {
 					echo '<p>';
-					echo '<span style="color: #999;" alt="' . $time . '" title="' . $time . '">' . sprintf( esc_html__('%s ago', 'akismet'), human_time_diff( $row['time'] ) ) . '</span>';
-					echo ' - ';
-					echo $message; // esc_html() is done above so that we can use HTML in some messages.
+
+					if ( isset( $row['time'] ) ) {
+						$time = gmdate( 'D d M Y @ h:i:s a', $row['time'] ) . ' GMT';
+
+						/* translators: The placeholder is an amount of time, like "7 seconds" or "3 days" returned by the function human_time_diff(). */
+						$time_html = '<span style="color: #999;" alt="' . esc_attr( $time ) . '" title="' . esc_attr( $time ) . '">' . sprintf( esc_html__( '%s ago', 'akismet' ), human_time_diff( $row['time'] ) ) . '</span>';
+
+						echo sprintf(
+							/* translators: %1$s is a human-readable time difference, like "3 hours ago", and %2$s is an already-translated phrase describing how a comment's status changed, like "This comment was reported as spam." */
+							esc_html( __( '%1$s - %2$s', 'akismet' ) ),
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							$time_html,
+							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+							$message
+						); // esc_html() is done above so that we can use HTML in $message.
+					} else {
+						// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						echo $message; // esc_html() is done above so that we can use HTML in $message.
+					}
+
 					echo '</p>';
 				}
 			}
-		}
-		else {
+		} else {
 			echo '<p>';
 			echo esc_html( __( 'No comment history.', 'akismet' ) );
 			echo '</p>';
