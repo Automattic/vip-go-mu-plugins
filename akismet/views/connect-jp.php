@@ -62,8 +62,8 @@
 		<?php Akismet::view( 'setup' );?>
 	</div>
 	<div class="centered akismet-toggles">
-		<a href="#" class="toggle-jp-connect"><?php esc_html_e( 'Connect with Jetpack' ); ?></a>
-		<a href="#" class="toggle-ak-connect"><?php esc_html_e( 'Set up a different account' ); ?></a>
+		<a href="#" class="toggle-jp-connect"><?php esc_html_e( 'Connect with Jetpack', 'akismet' ); ?></a>
+		<a href="#" class="toggle-ak-connect"><?php esc_html_e( 'Set up a different account', 'akismet' ); ?></a>
 	</div>
 </div>
 <br/>

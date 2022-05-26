@@ -35,7 +35,7 @@
 				</div>
 				
 				<div class="akismet-new-snapshot">
-					<iframe allowtransparency="true" scrolling="no" frameborder="0" style="width: 100%; height: 220px; overflow: hidden;" src="<?php printf( '//akismet.com/web/1.0/snapshot.php?blog=%s&api_key=%s&height=200&locale=%s', urlencode( get_option( 'home' ) ), Akismet::get_api_key(), get_locale() );?>"></iframe>
+					<iframe allowtransparency="true" scrolling="no" frameborder="0" style="width: 100%; height: 220px; overflow: hidden;" src="<?php echo esc_url( sprintf( 'https://tools.akismet.com/1.0/snapshot.php?blog=%s&api_key=%s&height=200&locale=%s', urlencode( get_option( 'home' ) ), Akismet::get_api_key(), get_locale() ) ); ?>"></iframe>
 					<ul>
 						<li>
 							<h3><?php esc_html_e( 'Past six months' , 'akismet');?></h3>
@@ -73,7 +73,9 @@
 							<tbody>
 								<?php if ( ! Akismet::predefined_api_key() ) { ?>
 								<tr>
-									<th class="akismet-api-key" width="10%" align="left" scope="row"><?php esc_html_e('API Key', 'akismet');?></th>
+									<th class="akismet-api-key" width="10%" align="left" scope="row">
+										<label for="key"><?php esc_html_e( 'API Key', 'akismet' ); ?></label>
+									</th>
 									<td width="5%"/>
 									<td align="left">
 										<span class="api-key"><input id="key" name="key" type="text" size="15" value="<?php echo esc_attr( get_option('wordpress_api_key') ); ?>" class="<?php echo esc_attr( 'regular-text code ' . $akismet_user->status ); ?>"></span>

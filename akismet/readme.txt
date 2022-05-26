@@ -2,8 +2,8 @@
 Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
 Tags: comments, spam, antispam, anti-spam, contact form, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 5.0
-Tested up to: 5.9
-Stable tag: 4.2.2
+Tested up to: 6.0
+Stable tag: 4.2.4
 License: GPLv2 or later
 
 The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.
@@ -30,13 +30,27 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 
 == Changelog ==
 
+= 4.2.4 =
+*Release Date - 20 May 2022*
+
+* Improved translator instructions for comment history.
+* Bumped the "Tested up to" tag to WP 6.0.
+
+= 4.2.3 =
+*Release Date - 25 April 2022*
+
+* Improved compatibility with Fluent Forms
+* Fixed missing translation domains
+* Updated stats URL.
+* Improved accessibility of elements on the config page.
+
 = 4.2.2 =
 *Release Date - 24 January 2022*
 
 * Improved compatibility with Formidable Forms
 * Fixed a bug that could cause issues when multiple contact forms appear on one page.
 * Updated delete_comment and deleted_comment actions to pass two arguments to match WordPress core since 4.9.0.
-* Add a filter that allows comment types to be excluded when counting users' approved comments.
+* Added a filter that allows comment types to be excluded when counting users' approved comments.
 
 = 4.2.1 =
 *Release Date - 1 October 2021*
@@ -93,6 +107,6 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 *Release Date - 4 June 2020*
 
 * Disable "Check for Spam" button until the page is loaded to avoid errors with clicking through to queue recheck endpoint directly.
-* Add filter "akismet_enable_mshots" to allow disabling screenshot popups on the edit comments admin page.
+* Added filter "akismet_enable_mshots" to allow disabling screenshot popups on the edit comments admin page.
 
 For older changelog entries, please see the [additional changelog.txt file](https://plugins.svn.wordpress.org/akismet/trunk/changelog.txt) delivered with the plugin.
