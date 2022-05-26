@@ -35,11 +35,12 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$test_plugins = [
 			'hello.php' => [ 'Name' => 'Hello Tests', 'Version' => '4.5', 'UpdateURI' => '' ],
-			'world.php' => [ 'Name' => 'Testing World', 'Version' => '8.6', 'UpdateURI' => '' ],
-			'woocommerce/woocommerce.php' => [ 'Name' => 'WooCommerce', 'Version' => '1.2.3', 'UpdateURI' => '' ],
+			'world.php' => [ 'Name' => 'Test Plugin', 'Version' => '1.2', 'UpdateURI' => '' ],
+			'woocommerce-subscriptions/woocommerce-subscriptions.php' => [ 'Name' => 'WooCommerce Subscriptions', 'Version' => '4.1.0', 'UpdateURI' => '' ],
+			'custom.php' => [ 'Name' => 'Custom Plugin', 'Version' => '8.6', 'UpdateURI' => '' ],
 		];
 
-		// Mock the list of plugins, which are active, and which have available updates from WPorg.
+		// Mock the list of plugins, setting which are active and which have available updates.
 		wp_cache_set( 'plugins', array( '' => $test_plugins ), 'plugins' );
 		update_option( 'active_plugins', array( 'hello.php' ) );
 		add_filter( 'pre_site_transient_update_plugins', [ $this, 'mock_update_plugins_transient' ], 999 );
@@ -59,28 +60,56 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertEquals(
 			[
 				[
-					'path'         => 'hello.php',
-					'name'         => 'Hello Tests',
-					'wporg_slug'   => 'hello-wporg-slug',
-					'version'      => '4.5',
-					'active'       => true,
-					'activated_by' => 'option',
+					// Normal WPorg plugin with an available update.
+					'path'          => 'hello.php',
+					'name'          => 'Hello Tests',
+					'version'       => '4.5',
+					'active'        => true,
+					'activated_by'  => 'option',
+					'wporg_slug'    => 'hello-wporg-slug',
+					'slug'          => 'hello-wporg-slug',
+					'marketplace'   => 'wp-org',
+					'has_update'    => '4.6',
+					'download_link' => 'https://downloads.wordpress.org/plugin/hello-wporg-slug4.6.zip',
 				],
 				[
-					'path'         => 'world.php',
-					'name'         => 'Testing World',
-					'wporg_slug'   => null, // wasn't present in the update_plugins transient
-					'version'      => '8.6',
-					'active'       => false,
-					'activated_by' => null,
+					// Normal WPorg plugin with no available update.
+					'path'          => 'world.php',
+					'name'          => 'Test Plugin',
+					'version'       => '1.2',
+					'active'        => false,
+					'activated_by'  => null,
+					'wporg_slug'    => 'test-wporg-slug',
+					'slug'          => 'test-wporg-slug',
+					'marketplace'   => 'wp-org',
+					'has_update'    => null,
+					'download_link' => null,
 				],
+				// Third party plugin with an available update.
 				[
-					'path'         => 'woocommerce/woocommerce.php',
-					'name'         => 'WooCommerce',
-					'wporg_slug'   => 'woocommerce',
-					'version'      => '1.2.3',
+					'path'         => 'woocommerce-subscriptions/woocommerce-subscriptions.php',
+					'name'         => 'WooCommerce Subscriptions',
+					'version'      => '4.1.0',
 					'active'       => false,
 					'activated_by' => null,
+					'wporg_slug'    => 'woocommerce-com-woocommerce-subscriptions',
+					'slug'          => 'woocommerce-com-woocommerce-subscriptions',
+					'marketplace'   => 'woocommerce-com',
+					'has_update'    => '4.2.0',
+					'download_link' => 'https://woocommerce.com/path/to/download.zip?secret=abc123',
+				],
+				/// Custom plugin. Not found in the update_plugins transient.
+				[
+					'path'          => 'custom.php',
+					'name'          => 'Custom Plugin',
+					'version'       => '8.6',
+					'active'        => false,
+					'activated_by'  => null,
+					'wporg_slug'    => null,
+					'slug'          => null,
+					'marketplace'   => null,
+					'has_update'    => null,
+					'download_link' => null,
 				],
 			],
 			$site_details['plugins']
@@ -91,15 +120,31 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 	public function mock_update_plugins_transient() {
 		$updates_available = [
-			'hello.php' => (object) [ 'slug' => 'hello-wporg-slug' ],
+			'hello.php' => (object) [
+				'slug' => 'hello-wporg-slug',
+				'url' => 'https://wordpress.org/plugins/hello-wporg-slug/',
+				'package' => 'https://downloads.wordpress.org/plugin/hello-wporg-slug4.6.zip',
+				'new_version' => '4.6',
+			],
+			'woocommerce-subscriptions/woocommerce-subscriptions.php' => (object) [
+				'slug' => 'woocommerce-com-woocommerce-subscriptions',
+				'url' => 'https://woocommerce.com/products/woocommerce-subscriptions/',
+				'package' => 'https://woocommerce.com/path/to/download.zip?secret=abc123',
+				'new_version' => '4.2.0',
+			],
 		];
 
 		$no_updates = [
-			'woocommerce/woocommerce.php' => (object) [ 'slug' => 'woocommerce' ],
+			'world.php' => (object) [
+				'slug' => 'test-wporg-slug',
+				'url' => 'https://wordpress.org/plugins/test-wporg-slug/',
+				'package' => null,
+				'new_version' => null,
+			],
 		];
 
 		// Helps prevent the wp_update_plugins() call from needing to do an actual remote lookup.
-		$checked_plugins = [ 'hello.php' => '4.5', 'world.php' => '8.6', 'woocommerce' => '1.2.3' ];
+		$checked_plugins = [ 'hello.php' => '4.5', 'world.php' => '1.2', 'woocommerce-subscriptions/woocommerce-subscriptions.php' => '4.1.0', 'custom.php' => '8.6' ];
 
 		return (object) [
 			'last_checked' => time(),

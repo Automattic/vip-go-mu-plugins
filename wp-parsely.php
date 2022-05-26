@@ -118,12 +118,15 @@ function maybe_disable_some_features() {
 				remove_action( 'admin_footer', array( $GLOBALS['parsely'], 'display_admin_warning' ) );
 				remove_action( 'widgets_init', 'parsely_recommended_widget_register' );
 			} else {
-				remove_action( '_admin_menu', 'Parsely\parsely_admin_menu_register' );
+				remove_action( 'init', 'Parsely\parsely_wp_admin_early_register' );
+				remove_action( 'init', 'Parsely\init_recommendations_block' );
 				remove_action( 'admin_init', 'Parsely\parsely_admin_init_register' );
 				remove_action( 'widgets_init', 'Parsely\parsely_recommended_widget_register' );
 
 				// If we're disabled, we want to make sure we don't show the row action links.
 				add_filter( 'wp_parsely_enable_row_action_links', '__return_false' );
+				add_filter( 'wp_parsely_enable_rest_api_support', '__return_false' );
+				add_filter( 'wp_parsely_enable_related_api_proxy', '__return_false' );
 			}
 
 			// ..& default to "repeated metas"

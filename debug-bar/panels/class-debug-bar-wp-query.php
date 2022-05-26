@@ -10,7 +10,7 @@ class Debug_Bar_WP_Query extends Debug_Bar_Panel {
 	}
 
 	function render() {
-		global $template, $wp_query;
+		global $template, $wp_query, $wpdb;
 
 		$queried_object = get_queried_object();
 		if ( $queried_object && isset( $queried_object->post_type ) ) {
@@ -87,7 +87,11 @@ class Debug_Bar_WP_Query extends Debug_Bar_Panel {
 
 		if ( ! empty( $wp_query->request ) ) {
 			echo '<h3>', __( 'Query SQL:', 'debug-bar' ), '</h3>';
-			echo '<p>' . esc_html( $wp_query->request ) . '</p>';
+			if ( is_callable( array( $wpdb, 'remove_placeholder_escape' ) ) ) {
+				echo '<p>' . esc_html( $wpdb->remove_placeholder_escape( $wp_query->request ) ) . '</p>';
+			} else {
+				echo '<p>' . esc_html( $wp_query->request ) . '</p>';
+			}
 		}
 
 		if ( ! is_null( $queried_object ) ) {
