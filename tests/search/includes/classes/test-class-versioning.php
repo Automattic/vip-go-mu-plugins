@@ -1223,7 +1223,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			}
 
 			// For linting, always have to return something
-			return null;
+			return $request;
 		}, 10, 3 );
 
 		$indexable->delete( 1 );
