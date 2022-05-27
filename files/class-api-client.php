@@ -110,8 +110,7 @@ class API_Client {
 		clearstatcache( false, $local_path );
 
 		$file_size = filesize( $local_path );
-		$file_name = basename( $local_path );
-		$file_mime = self::detect_mime_type( $file_name );
+		$file_mime = self::detect_mime_type( $local_path );
 
 		$request_timeout = $this->calculate_upload_timeout( $file_size );
 
