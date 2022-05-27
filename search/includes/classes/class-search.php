@@ -906,7 +906,9 @@ class Search {
 		$cached_response = false;
 
 		if ( $is_cacheable ) {
-			$cache_key = 'es_query_cache:' . md5( $query['url'] . $args['body'] ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+			// Some requests may not have body
+			$body      = $args['body'] ?? '';
+			$cache_key = 'es_query_cache:' . md5( $query['url'] . $body ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
 			/**
 			 * Serve cached response right away, if available
 			 */
