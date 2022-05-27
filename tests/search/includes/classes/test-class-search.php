@@ -144,6 +144,9 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/_search',
 				),
+				[
+					'method' => 'POST',
+				],
 				// The expected result
 				true,
 			),
@@ -153,6 +156,10 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/_mget',
 				),
+				[
+					'method' => 'POST',
+				],
+
 				// The expected result
 				true,
 			),
@@ -162,8 +169,23 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/type/_doc/_mget',
 				),
+				[
+					'method' => 'POST',
+				],
 				// The expected result
 				true,
+			),
+			// Regular entity multiget
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_doc/123456',
+				),
+				[
+					'method' => 'DELETE',
+				],
+				// The expected result
+				false,
 			),
 			// Bulk index
 			array(
@@ -171,6 +193,9 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/_bulk',
 				),
+				[
+					'method' => 'POST',
+				],
 				// The expected result
 				false,
 			),
@@ -180,6 +205,9 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/_bulk/bar?_mget',
 				),
+				[
+					'method' => 'POST',
+				],
 				// The expected result
 				false,
 			),
@@ -189,6 +217,9 @@ class Search_Test extends WP_UnitTestCase {
 				array(
 					'url' => 'https://foo.com/index/type/_anything',
 				),
+				[
+					'method' => 'GET',
+				],
 				// The expected result
 				false,
 			),
@@ -200,8 +231,8 @@ class Search_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider vip_search_is_url_query_cacheable_data()
 	 */
-	public function test__is_url_query_cacheable( $query, $expected_is_cacheable ) {
-		$is_cacheable = $this->search_instance->is_url_query_cacheable( $query['url'], array() );
+	public function test__is_url_query_cacheable( $query, $args, $expected_is_cacheable ) {
+		$is_cacheable = $this->search_instance->is_url_query_cacheable( $query['url'], $args );
 
 		$this->assertEquals( $expected_is_cacheable, $is_cacheable );
 	}

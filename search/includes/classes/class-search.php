@@ -902,15 +902,21 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		// Cache handling
-		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key    = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
+		$cached_response = false;
 
-		/**
-		 * Serve cached response right away, if available and not stale and the query is cacheable
-		 */
-		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
-		if ( $cached_response ) {
-			return $cached_response;
+		if ( $is_cacheable ) {
+			// Some requests may not have body
+			$body      = $args['body'] ?? '';
+			$cache_key = 'es_query_cache:' . md5( $query['url'] . $body ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+			/**
+			 * Serve cached response right away, if available
+			 */
+			$cached_response = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
+
+			if ( $cached_response ) {
+				return $cached_response;
+			}
 		}
 
 		$start_time = microtime( true );
@@ -1017,7 +1023,7 @@ class Search {
 			return $is_cacheable;
 		}
 
-		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url );
+		$is_cacheable = boolval( preg_match( '#/_(search|mget|doc)#', $url ) ) && ! in_array( $args['method'], [ 'DELETE', 'PUT' ], true );
 
 
 		/**
