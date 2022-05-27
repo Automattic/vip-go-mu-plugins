@@ -903,7 +903,17 @@ class Search {
 
 		// Cache handling
 		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key    = 'es_query_cache:' . md5( $query['url'] . $args['body'] ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+		if ( $is_cacheable ) {
+			$cache_key = 'es_query_cache:' . md5( $query['url'] . $args['body'] ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+			/**
+			 * Serve cached response right away, if available and not stale and the query is cacheable
+			 */
+			$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
+
+			if ( $cached_response ) {
+				return $cached_response;
+			}
+		}
 
 		/**
 		 * Serve cached response right away, if available and not stale and the query is cacheable
