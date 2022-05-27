@@ -902,7 +902,9 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		// Cache handling
-		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
+		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
+		$cached_response = false;
+
 		if ( $is_cacheable ) {
 			$cache_key = 'es_query_cache:' . md5( $query['url'] . $args['body'] ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
 			/**
