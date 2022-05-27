@@ -903,7 +903,7 @@ class Search {
 
 		// Cache handling
 		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key    = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+		$cache_key    = 'es_query_cache:' . md5( $query['url'] . $args['body'] ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
 
 		/**
 		 * Serve cached response right away, if available and not stale and the query is cacheable
