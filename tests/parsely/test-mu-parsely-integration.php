@@ -5,28 +5,6 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 use Parsely\UI\Row_Actions;
 use WP_UnitTestCase;
 
-// Copied from https://github.com/Automattic/vip-go-mu-plugins/blob/ffa8669aa4c9fabfb67815c53110f229dcd049b7/wp-parsely-2.6/src/class-parsely.php#L28-L51
-// This can be removed and replaced by `$parsely->get_options()` once these are running against v3.0+
-const OPTION_DEFAULTS = array(
-	'apikey'                      => '',
-	'content_id_prefix'           => '',
-	'api_secret'                  => '',
-	'use_top_level_cats'          => false,
-	'custom_taxonomy_section'     => 'category',
-	'cats_as_tags'                => false,
-	'track_authenticated_users'   => true,
-	'lowercase_tags'              => true,
-	'force_https_canonicals'      => false,
-	'track_post_types'            => array( 'post' ),
-	'track_page_types'            => array( 'page' ),
-	'disable_javascript'          => false,
-	'disable_amp'                 => false,
-	'meta_type'                   => 'json_ld',
-	'logo'                        => '',
-	'metadata_secret'             => '',
-	'parsely_wipe_metadata_cache' => false,
-);
-
 function test_mode() {
 	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
 	return $mode ?: 'disabled';
@@ -53,11 +31,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$class_should_exist = 'disabled' !== self::$test_mode;
 
 		if ( $class_should_exist ) {
-			global $parsely;
-
-			$class_name = 'Parsely\Parsely';
-
-			$this->assertTrue( class_exists( $class_name ) );
+			$this->assertTrue( class_exists( 'Parsely\Parsely' ) );
 		} else {
 			$this->assertFalse( class_exists( 'Parsely' ) );
 			$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
@@ -176,7 +150,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	private function get_post_metadata( int $post_id ) {
 		global $parsely;
 
-		$options = array_merge( [ 'apikey' => 'testing123' ], OPTION_DEFAULTS );
+		$options = array_merge( [ 'apikey' => 'testing123' ], $parsely->get_options() );
 		return $parsely->construct_parsely_metadata( $options, get_post( $post_id ) );
 	}
 }
