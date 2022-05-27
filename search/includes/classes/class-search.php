@@ -1021,7 +1021,7 @@ class Search {
 			return $is_cacheable;
 		}
 
-		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url );
+		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url ) && in_array( $args['method'], [ 'DELETE', 'PUT' ], true );
 
 
 		/**
