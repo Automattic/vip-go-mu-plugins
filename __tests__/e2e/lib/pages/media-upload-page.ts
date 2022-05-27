@@ -23,6 +23,7 @@ export class MediaUploadPage {
 
     /**
      * Upload File
+     *
      * @param { string } mediaFile Media file name
      */
     async uploadFile( mediaFile: string ): Promise<void> {
@@ -37,7 +38,7 @@ export class MediaUploadPage {
     /**
      * Get Meduia URL
      *
-     * @returns { string } Url of uploaded media
+     * @return { string } Url of uploaded media
      */
     async getMediaUrl(): Promise<string> {
         await this.page.waitForSelector( selectors.attachedMediaDetails );

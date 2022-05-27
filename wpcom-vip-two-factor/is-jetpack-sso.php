@@ -29,8 +29,10 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 }, 10, 2 );
 
 add_action( 'clear_auth_cookie', function() {
-	setcookie( VIP_IS_JETPACK_SSO_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
-	setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+	if ( ! headers_sent() ) {
+		setcookie( VIP_IS_JETPACK_SSO_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
+	}
 } );
 
 function is_jetpack_sso() {

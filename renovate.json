@@ -1,0 +1,43 @@
+{
+	"extends": [
+		"github>whitesource/merge-confidence:beta",
+		"config:base",
+		"schedule:weekly",
+		":preserveSemverRanges",
+		":separateMultipleMajorReleases",
+		":semanticPrefixChore",
+		":maintainLockFilesMonthly",
+		":dependencyDashboard"
+	],
+	"labels": ["dependencies"],
+	"postUpdateOptions": ["npmDedupe"],
+	"rangeStrategy": "update-lockfile",
+	"rollbackPrs": true,
+	"composerIgnorePlatformReqs": null,
+	"reviewers": ["team:Automattic/vip-platform-cantina"],
+	"packageRules": [
+		{
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch"],
+			"groupName": "all non-major devDependencies",
+			"groupSlug": "all-minor-patch-devDependencies"
+		},
+		{
+			"extends": ["packages:eslint"],
+			"matchDepTypes": ["devDependencies"],
+			"matchUpdateTypes": ["minor", "patch"],
+			"groupName": "all non-major eslint",
+			"groupSlug": "all-minor-patch-eslint"
+		},
+		{
+			"matchDepTypes": ["action"],
+			"pinDigests": true
+		}
+	],
+	"ignorePaths": [
+		"akismet/**",
+		"jetpack*/**",
+		"vaultpress/**",
+		"wp-parsely-*/**"
+	]
+}

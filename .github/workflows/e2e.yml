@@ -63,13 +63,13 @@ jobs:
             e2e-test-site.vipdev.lndo.site:80
 
       - name: Check out repository code
-        uses: actions/checkout@dcd71f646680f2efd8db4afa5ad64fdcba30e748 # tag=v3.0.1
+        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
         with:
           submodules: true
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@56337c425554a6be30cdef71bf441f15be286854 # tag=v3.1.1
+        uses: actions/setup-node@17f8bd926464a1afa4c6a11669539e9c1ba77048 # tag=v3.2.0
         with:
           node-version: 'lts/*'
           cache: npm

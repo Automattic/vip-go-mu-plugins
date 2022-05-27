@@ -75,7 +75,7 @@ export class ClassicEditorPage {
      * Publishes the post or page.
      *
      * @param {boolean} visit Whether to then visit the page.
-     * @returns {string} Url of the published post or page
+     * @return {string} Url of the published post or page
      */
     async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
         const publishedURL = ( await this.page.locator( selectors.permalink ).textContent() ) as string;
@@ -94,7 +94,7 @@ export class ClassicEditorPage {
      */
     private async visitPublishedPost( url: string ): Promise<void> {
         await Promise.all( [
-            this.page.waitForNavigation( { waitUntil: 'networkidle', url: url } ),
+            this.page.waitForNavigation( { waitUntil: 'networkidle', url } ),
             this.page.click( selectors.viewButton ),
         ] );
     }

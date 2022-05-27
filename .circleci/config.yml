@@ -91,10 +91,12 @@ job-references:
   php_core_job: &php_core_job
     steps:
       - checkout
+      - run: *prepare_repo
       - run:
           name: "Run Tests"
           command: |
-            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/build/wp-content/mu-plugins"
+            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins"
+            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins/000-vip-init.php"
             /usr/local/bin/runner
           environment:
             MYSQL_HOST: << pipeline.parameters.db_host >>
@@ -232,7 +234,7 @@ jobs:
 
   search-dev-tools:
     docker:
-      - image: cimg/node:16.14.2
+      - image: cimg/node:16.15.0
     steps:
       - checkout
       - run:

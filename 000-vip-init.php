@@ -10,6 +10,7 @@
  */
 
 use Automattic\VIP\Utils\Context;
+use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
 /**
  * By virtue of the filename, this file is included first of
@@ -131,13 +132,15 @@ defined( 'WPCOM_VIP_MACHINE_USER_NAME' ) || define( 'WPCOM_VIP_MACHINE_USER_NAME
 defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) || define( 'WPCOM_VIP_MACHINE_USER_EMAIL', 'donotreply@wordpress.com' );
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
-add_action( 'set_current_user', function() {
-	$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
+if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
+	add_action( 'set_current_user', function() {
+		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 
-	if ( $user && $user->ID ) {
-		defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
-	}
-}, PHP_INT_MIN );
+		if ( $user && $user->ID ) {
+			defined( 'WPCOM_VIP_MACHINE_USER_ID' ) || define( 'WPCOM_VIP_MACHINE_USER_ID', $user->ID );
+		}
+	}, PHP_INT_MIN );
+}
 
 // Support a limited number of additional "Internal Events" in Cron Control.
 // These events run regardless of the number of pending events, and they cannot be deleted.
@@ -195,6 +198,9 @@ require_once __DIR__ . '/vip-helpers/vip-deprecated.php';
 require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
 require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
+require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
+
+add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
@@ -262,9 +268,11 @@ add_filter( 'wp_headers', function( $headers ) {
 	return $headers;
 } );
 
-// Disable core sitemaps
-//
-// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
-add_filter( 'wp_sitemaps_enabled', '__return_false' );
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	// Disable core sitemaps
+	//
+	// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
+	add_filter( 'wp_sitemaps_enabled', '__return_false' );
+}
 
 do_action( 'vip_loaded' );

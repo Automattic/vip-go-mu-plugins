@@ -46,7 +46,9 @@ add_filter( 'pre_scan_file', function( $should_skip_file, $file ) {
 	return $should_skip_file;
 }, 10, 2 );
 
-require_once __DIR__ . '/vaultpress/vaultpress.php';
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	require_once __DIR__ . '/vaultpress/vaultpress.php';
+}
 
 add_filter( 'in_admin_header', 'vip_remove_vaultpress_connect_notice' );
 

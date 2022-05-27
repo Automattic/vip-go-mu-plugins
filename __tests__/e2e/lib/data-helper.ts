@@ -7,7 +7,7 @@ import phrase from 'asana-phrase';
  * Given either a string or array of strings, returns a single string with each word in TitleCase.
  *
  * @param {string[]|string} words Either string or array of strings to be converted to TitleCase.
- * @returns {string} String with each distinct word converted to TitleCase.
+ * @return {string} String with each distinct word converted to TitleCase.
  */
 export function toTitleCase( words: string[] | string ): string {
     if ( typeof words === 'string' ) {
@@ -24,7 +24,7 @@ export function toTitleCase( words: string[] | string ): string {
 /**
  * Generates a random phrase in proper case (Sample Sentence Text).
  *
- * @returns {string} Generated text.
+ * @return {string} Generated text.
  */
 export function getRandomPhrase(): string {
     const generated: Array<string> = phrase.default32BitFactory().randomPhrase();

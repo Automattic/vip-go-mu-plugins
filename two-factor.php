@@ -6,6 +6,11 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+	// Two Factor is incompatible with core tests (phpunit/tests/admin/includesPlugin.php)
+	return;
+}
+
 // Custom list of providers
 require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 
@@ -155,7 +160,10 @@ function wpcom_vip_enforce_two_factor_plugin() {
 	}
 }
 
-add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	add_action( 'muplugins_loaded', 'wpcom_enable_two_factor_plugin' );
+}
+
 function wpcom_enable_two_factor_plugin() {
 	$enable_two_factor = apply_filters( 'wpcom_vip_enable_two_factor', true );
 	if ( true !== $enable_two_factor ) {

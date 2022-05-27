@@ -111,7 +111,9 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
-add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+}
 
 /**
  * Hooks the wp action to avoid showing Query Monitor on 404 pages
@@ -156,4 +158,7 @@ add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MA
  */
 if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
 	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+}
+if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
 }

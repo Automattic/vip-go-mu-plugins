@@ -913,15 +913,21 @@ class Search {
 		$statsd_prefix          = $this->get_statsd_prefix( $query['url'], $statsd_mode );
 
 		// Cache handling
-		$is_cacheable = $this->is_url_query_cacheable( $query['url'], $args );
-		$cache_key    = 'es_query_cache:' . md5( $query['url'] . wp_json_encode( $args ) ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
+		$cached_response = false;
 
-		/**
-		 * Serve cached response right away, if available and not stale and the query is cacheable
-		 */
-		$cached_response = $is_cacheable ? wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP ) : false;
-		if ( $cached_response ) {
-			return $cached_response;
+		if ( $is_cacheable ) {
+			// Some requests may not have body
+			$body      = $args['body'] ?? '';
+			$cache_key = 'es_query_cache:' . md5( $query['url'] . $body ) . ':' . wp_cache_get_last_changed( self::SEARCH_CACHE_GROUP );
+			/**
+			 * Serve cached response right away, if available
+			 */
+			$cached_response = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
+
+			if ( $cached_response ) {
+				return $cached_response;
+			}
 		}
 
 		$start_time = microtime( true );
@@ -1028,7 +1034,7 @@ class Search {
 			return $is_cacheable;
 		}
 
-		$is_cacheable = (bool) preg_match( '#/_(search|mget|doc)#', $url );
+		$is_cacheable = boolval( preg_match( '#/_(search|mget|doc)#', $url ) ) && ! in_array( $args['method'], [ 'DELETE', 'PUT' ], true );
 
 
 		/**
@@ -1064,6 +1070,9 @@ class Search {
 			return;
 		}
 
+		// The error code for  the failed response.
+		$response_failure_code = '';
+
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
@@ -1074,7 +1083,8 @@ class Search {
 		}
 
 		if ( is_wp_error( $response ) ) {
-			$error_messages = $response->get_error_messages();
+			$error_messages        = $response->get_error_messages();
+			$response_failure_code = $response->get_error_code();
 
 			foreach ( $error_messages as $error_message ) {
 				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
@@ -1099,6 +1109,11 @@ class Search {
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
 
 			$error_type = 'search_query_error';
+		}
+
+		// remote_request_disabled is noisy and doesn't necessarily mean that backend is timing out because the request is never made.
+		if ( 'remote_request_disabled' === $response_failure_code ) {
+			return;
 		}
 
 		if ( ! $is_cli ) {

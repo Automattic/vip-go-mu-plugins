@@ -68,6 +68,10 @@ class Akismet {
 		add_filter( 'frm_filter_final_form', array( 'Akismet', 'inject_custom_form_fields' ) );
 		add_filter( 'frm_akismet_values', array( 'Akismet', 'prepare_custom_form_values' ) );
 
+		// Fluent Forms
+		add_filter( 'fluentform_form_element_start', array( 'Akismet', 'output_custom_form_fields' ) );
+		add_filter( 'fluentform_akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ), 10, 2 );
+
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
 
@@ -1399,9 +1403,16 @@ class Akismet {
 	 * Ensure that any Akismet-added form fields are included in the comment-check call.
 	 *
 	 * @param array $form
+	 * @param array $data Some plugins will supply the POST data via the filter, since they don't
+	 *                    read it directly from $_POST.
 	 * @return array $form
 	 */
-	public static function prepare_custom_form_values( $form ) {
+	public static function prepare_custom_form_values( $form, $data = null ) {
+		if ( is_null( $data ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Missing
+			$data = $_POST;
+		}
+
 		$prefix = 'ak_';
 
 		// Contact Form 7 uses _wpcf7 as a prefix to know which fields to exclude from comment_content.
@@ -1409,8 +1420,7 @@ class Akismet {
 			$prefix = '_wpcf7_ak_';
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Missing
-		foreach ( $_POST as $key => $val ) {
+		foreach ( $data as $key => $val ) {
 			if ( 0 === strpos( $key, $prefix ) ) {
 				$form[ 'POST_ak_' . substr( $key, strlen( $prefix ) ) ] = $val;
 			}
