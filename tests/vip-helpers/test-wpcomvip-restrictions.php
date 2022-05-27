@@ -85,18 +85,19 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_wp_dropdown_users
+	 * @dataProvider data_wp_dropdown_users_edit
 	 */
-	public function test_wp_dropdown_users( array $args ): void {
+	public function test_wp_dropdown_users_edit( array $args ): void {
 		$html = wp_dropdown_users( $args + [
 			'show' => 'user_login',
 			'echo' => false,
+			'name' => 'post_author_override',
 		] );
 
 		self::assertStringNotContainsString( 'wpcomvip', $html );
 	}
 
-	public function data_wp_dropdown_users(): iterable {
+	public function data_wp_dropdown_users_edit(): iterable {
 		return [
 			[
 				[],
@@ -111,6 +112,15 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 				[ 'exclude' => [ 1048576 ] ],
 			],
 		];
+	}
+
+	public function test_wp_dropdown_users_normal(): void {
+		$html = wp_dropdown_users( [
+			'show' => 'user_login',
+			'echo' => false,
+		] );
+
+		self::assertStringContainsString( 'wpcomvip', $html );
 	}
 
 	public function test_rest_api(): void {
