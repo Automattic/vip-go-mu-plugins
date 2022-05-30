@@ -6,6 +6,7 @@ workflows:
       - php74-core-tests
       - php74-core-multisite-tests
       - php74-build-singlesite
+      - php74-build-singlesite-59
       - php74-build-singlesite-58
       - php74-build-singlesite-57
       - php74-build-singlesite-56
@@ -191,6 +192,16 @@ jobs:
     environment:
       WP_MULTISITE: "0"
       WP_VERSION: "5.8.4"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-59:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.9.3"
       PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
