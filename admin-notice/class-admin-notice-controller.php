@@ -31,7 +31,7 @@ class Admin_Notice_Controller {
 	}
 
 	public function enqueue_scripts() {
-		wp_enqueue_script( 'vip-admin-notice-script', plugins_url( '/js/script.js', __FILE__ ), [], '1.0', true );
+		wp_enqueue_script( 'vip-admin-notice-script', plugins_url( '/js/script.js', __FILE__ ), [ 'common' ], '1.1', true );
 		wp_localize_script( 'vip-admin-notice-script', 'dismissal_data', [
 			'nonce'          => wp_create_nonce( self::DISMISS_NONCE_ACTION ),
 			'data_attribute' => Admin_Notice::DISMISS_DATA_ATTRIBUTE,
