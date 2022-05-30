@@ -13,6 +13,8 @@ class API_Client_Test extends WP_UnitTestCase {
 	use ArraySubsetAsserts;
 	use AssertionRenames;
 
+	/** @var API_Client|null */
+	private $api_client;
 	private $http_requests;
 
 	public function setUp(): void {
@@ -601,5 +603,23 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertArraySubset( [
 			'X-Action' => 'unique_filename',
 		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
+	}
+
+	/**
+	 * @ticket GH-3174
+	 */
+	public function test_upload_unknown_mime(): void {
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 200,
+			],
+			'body'     => '{"filename":"/wp-content/uploads/file.txt"}',
+		] );
+
+		$file_path   = __DIR__ . '/../fixtures/files/upload.some-unmatched-extension';
+		$upload_path = '/wp-content/uploads/file.some-unmatched-extension';
+
+		$result = $this->api_client->upload_file( $file_path, $upload_path );
+		self::assertNotInstanceOf( WP_Error::class, $result );
 	}
 }
