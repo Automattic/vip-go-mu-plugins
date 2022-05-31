@@ -36,7 +36,7 @@ test( 'publish a Post', async ( { page } ) => {
         classicEditorPage = new ClassicEditorPage( page );
         await classicEditorPage.enterTitle( titleText );
         await classicEditorPage.enterText( bodyText );
-        await classicEditorPage.addImage( '__tests__/e2e/test_media/image_01.jpg' );
+        await classicEditorPage.addImage( 'test_media/image_01.jpg' );
     } );
 
     await test.step( 'Publish and visit post', async () => {
