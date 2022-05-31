@@ -2,6 +2,7 @@
  * External dependencies
  */
 import { chromium, FullConfig } from '@playwright/test';
+import fs from 'fs';
 
 /**
  * Internal dependencies
@@ -48,7 +49,7 @@ async function globalSetup( config: FullConfig ) {
         const editorPage = new EditorPage( page );
         await editorPage.dismissWelcomeTour();
 
-    } catch( error ) {
+    } catch ( error ) {
         // eslint-disable-next-line no-console
         console.log( error );
         success = false;
@@ -60,7 +61,11 @@ async function globalSetup( config: FullConfig ) {
     await context.tracing.stop( { path: artifactsDir + 'trace.zip' } );
     await context.close();
 
-    if ( ! success ) {
+    if ( success ) {
+        // Clean up files if successful
+        fs.rmSync( artifactsDir, { recursive: true, force: true } );
+    } else {
+        // Stop test run if login fails
         throw new Error( 'Setup unsuccessful - Tests will not run' )
     }
 }
