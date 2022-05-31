@@ -148,6 +148,8 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 					continue;
 				}
 
+				switch_to_blog( $site['blog_id'] );
+
 				if ( ! $indexable->index_exists( $site['blog_id'] ) ) {
 					$blog_id = $site['blog_id'];
 					WP_CLI::line( "Skipping validation of '$indexable_slug' index for site $blog_id as it doesn't exist.\n\n" );
@@ -155,8 +157,6 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				}
 
 				WP_CLI::line( "\nValidating $indexable_slug count for site " . $site['blog_id'] . ' (' . $site['domain'] . $site['path'] . ')\n' );
-
-				switch_to_blog( $site['blog_id'] );
 
 				$this->validate_indexable_count_for_site( $indexable_slug, $version );
 
@@ -327,9 +327,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 * options:
 	 *   - missing
 	 *   - mismatch
-	 * 
+	 *
 	 * ## EXAMPLES
-	 * 
+	 *
 	 *     # Simultaneously check for and fix any index inconsistencies (e.g. missing posts and content mismatches) between DB and ES.
 	 *     $ wp vip-search health validate-contents
 	 *     ...✘
@@ -337,7 +337,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	 *     type,id,issue
 	 *     post,5,missing_from_index
 	 *     post,1,mismatch
-	 * 
+	 *
 	 * @link https://docs.wpvip.com/how-tos/vip-search/check-index-health/
 	 *
 	 * @subcommand validate-contents
