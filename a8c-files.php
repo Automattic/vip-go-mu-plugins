@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: Automattic File Hosting Service
+Plugin Name: VIP File Service
 Description: Provides a hosted, distributed and fault tolerant files service
 Author: Automattic
 Version: 0.2
