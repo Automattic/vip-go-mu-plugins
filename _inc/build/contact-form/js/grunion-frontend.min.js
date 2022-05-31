@@ -1,0 +1,1 @@
+jQuery((function(t){t(".contact-form input.jp-contact-form-date").datepicker()}));
