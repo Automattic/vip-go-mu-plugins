@@ -2,6 +2,7 @@
  * External dependencies
  */
 import { chromium, FullConfig } from '@playwright/test';
+import fs from 'fs';
 
 /**
  * Internal dependencies
@@ -12,40 +13,61 @@ import { SettingsWritingPage } from './pages/settings-writing-page';
 
 async function globalSetup( config: FullConfig ) {
     const timeout = 30000;
+    const artifactsDir = 'test-results/setup/';
     const { baseURL, storageState } = config.projects[ 0 ].use;
     const browser = await chromium.launch();
-    const page = await browser.newPage();
+    const context = await browser.newContext( { recordVideo: { dir: artifactsDir } } );
+    const page = await context.newPage();
     const user = process.env.E2E_USER ? process.env.E2E_USER : 'vipgo';
     const pass = process.env.E2E_PASSWORD ? process.env.E2E_PASSWORD : 'password';
+    let success = true;
     page.setDefaultNavigationTimeout( timeout );
+    await context.tracing.start( { name: 'global-setup', screenshots: true, snapshots: true } );
 
-    // Log in to wp-admin
-    await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
-    const loginPage = new LoginPage( page );
-    await loginPage.login( user, pass );
+    try {
 
-    // Save API Nonce to Env Var
-    process.env.WP_E2E_NONCE = await page.evaluate( 'wpApiSettings.nonce' );
+        // Log in to wp-admin
+        await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
+        const loginPage = new LoginPage( page );
+        await loginPage.login( user, pass );
 
-    // Adjust Classic Editor plugin settings if is available
-    await page.goto( baseURL + '/wp-admin/options-writing.php', { waitUntil: 'networkidle' } );
+        // Save API Nonce to Env Var
+        process.env.WP_E2E_NONCE = await page.evaluate( 'wpApiSettings.nonce' );
 
-    const settingsWritingPage = new SettingsWritingPage( page );
-    if ( await settingsWritingPage.hasClassicEditor() ) {
-        await settingsWritingPage.allowBothEditors();
-    } else {
-        process.env.E2E_CLASSIC_TESTS = 'false';
+        // Adjust Classic Editor plugin settings if is available
+        await page.goto( baseURL + '/wp-admin/options-writing.php', { waitUntil: 'networkidle' } );
+
+        const settingsWritingPage = new SettingsWritingPage( page );
+        if ( await settingsWritingPage.hasClassicEditor() ) {
+            await settingsWritingPage.allowBothEditors();
+        } else {
+            process.env.E2E_CLASSIC_TESTS = 'false';
+        }
+
+        // Dismiss editor welcome
+        await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
+        const editorPage = new EditorPage( page );
+        await editorPage.dismissWelcomeTour();
+
+    } catch ( error ) {
+        // eslint-disable-next-line no-console
+        console.log( error );
+        success = false;
     }
-
-    // Dismiss editor welcome
-    await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
-    const editorPage = new EditorPage( page );
-    await editorPage.dismissWelcomeTour();
 
     // Save signed-in state
     await page.context().storageState( { path: storageState as string } );
 
-    await browser.close();
+    await context.tracing.stop( { path: artifactsDir + 'trace.zip' } );
+    await context.close();
+
+    if ( success ) {
+        // Clean up files if successful
+        fs.rmSync( artifactsDir, { recursive: true, force: true } );
+    } else {
+        // Stop test run if login fails
+        throw new Error( 'Setup unsuccessful - Tests will not run' )
+    }
 }
 
 export default globalSetup;
