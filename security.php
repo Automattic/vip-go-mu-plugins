@@ -173,15 +173,25 @@ function wpcom_set_status_header_on_xmlrpc_failed_login_requests( $error ) {
 }
 add_action( 'xmlrpc_login_error', 'wpcom_set_status_header_on_xmlrpc_failed_login_requests' );
 
-function wpcom_vip_lost_password_limit( $errors ) {
+/**
+ * @param WP_Error $errors
+ * @param WP_User|false $user_data
+ */
+function wpcom_vip_lost_password_limit( $errors, $user_data ) {
 	// Don't bother checking if we're already error-ing out
-	if ( $errors->get_error_code() ) {
+	if ( $errors->has_errors() ) {
 		return $errors;
 	}
 
-	// Do some sanitization on the username.
-	// ignoring WordPress.Security.NonceVerification.Missing and WordPress.Security.ValidatedSanitizedInput.InputNotValidated below
-	$username         = vip_strict_sanitize_username( $_POST['user_login'] ); // phpcs:ignore
+	if ( false !== $user_data ) {
+		$username = $user_data->user_login;
+	} elseif ( ! empty( $_POST['user_login'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- vip_strict_sanitize_username does sanitization
+		$username = vip_strict_sanitize_username( wp_unslash( $_POST['user_login'] ) );
+	} else {
+		return $errors;
+	}
+
 	$is_login_limited = wpcom_vip_username_is_limited( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	if ( is_wp_error( $is_login_limited ) ) {
@@ -193,7 +203,7 @@ function wpcom_vip_lost_password_limit( $errors ) {
 
 	return $errors;
 }
-add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit' );
+add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit', 10, 2 );
 
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders

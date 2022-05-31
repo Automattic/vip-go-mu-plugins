@@ -75,7 +75,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$errors              = new WP_Error();
 		$errors->add( $original_error_code, $original_error_text );
 
-		do_action( 'lostpassword_post', $errors );
+		do_action( 'lostpassword_post', $errors, false );
 
 		$actual_error_codes = $errors;
 
@@ -103,7 +103,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		for ( $i = 0; $i <= $just_under_threshold; $i++ ) {
 
-			do_action( 'lostpassword_post', $errors );
+			do_action( 'lostpassword_post', $errors, false );
 
 			// Make sure we haven't received an error yet
 			$this->assertEquals( $errors->get_error_code(), false );
@@ -111,7 +111,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		}
 
 		// Do the lostpassword_post one more time to reach our threshold.
-		do_action( 'lostpassword_post', $errors );
+		do_action( 'lostpassword_post', $errors, false );
 
 		// Now we should have an error.
 		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );

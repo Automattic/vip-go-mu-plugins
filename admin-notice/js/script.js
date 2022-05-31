@@ -1,14 +1,7 @@
-function tryGetNoticeContainer(currentElement) {
-	if (currentElement === null || currentElement.hasAttribute(dismissal_data.data_attribute)) {
-		return currentElement;
-	}
-	return tryGetNoticeContainer(currentElement.parentElement);
-}
-
 function persistDismissedNotice(containerElement) {
 	const dismissIdentifier = containerElement && containerElement.getAttribute(dismissal_data.data_attribute);
 	if (dismissIdentifier) {
-		var formData = new FormData();
+		const formData = new FormData();
 
 		formData.append('_ajax_nonce', dismissal_data.nonce);
 		formData.append('action', 'dismiss_vip_notice');
@@ -21,19 +14,18 @@ function persistDismissedNotice(containerElement) {
 	}
 }
 
-function onDismissed(event) {
-	const noticeContainer = tryGetNoticeContainer(event && event.target);
-	if (noticeContainer) {
-		persistDismissedNotice(noticeContainer);
+function vipNoticeClickHandler( ev ) {
+	const button = ev.target.closest( '.notice-dismiss' );
+	if ( button ) {
+		const noticeContainer = button.closest( `[data="${dismissal_data.data_attribute}"]` );
+		if (noticeContainer) {
+			persistDismissedNotice(noticeContainer);
+		}
 	}
 }
 
 function registerDismissHooks() {
-	const notices = document.querySelectorAll( '.vip-notice .notice-dismiss' );
-
-	for ( const notice of notices ) {
-		notice.addEventListener( "click", onDismissed );
-	}
+	document.querySelectorAll( '.vip-notice' ).forEach( notice => notice.addEventListener( 'click', vipNoticeClickHandler ) );
 }
 
 window.onload = (function (oldLoad) {

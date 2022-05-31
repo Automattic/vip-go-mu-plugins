@@ -6,6 +6,7 @@ workflows:
       - php74-core-tests
       - php74-core-multisite-tests
       - php74-build-singlesite
+      - php74-build-singlesite-59
       - php74-build-singlesite-58
       - php74-build-singlesite-57
       - php74-build-singlesite-56
@@ -50,8 +51,9 @@ job-references:
   setup_environment: &setup_environment
     name: "Setup Environment Variables"
     command: |
-      echo "export PATH=$HOME/.composer/vendor/bin:$PATH" >> $BASH_ENV
       source /home/circleci/.bashrc
+      source "${NVM_DIR}/nvm.sh"
+      echo "export PATH=$HOME/.composer/vendor/bin:$PATH" >> $BASH_ENV
 
   install_dependencies: &install_dependencies
     name: "Install Dependencies"
@@ -160,7 +162,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.5.9"
+      WP_VERSION: "5.5.x"
       PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
@@ -170,7 +172,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.6.8"
+      WP_VERSION: "5.6.x"
       PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
@@ -180,7 +182,7 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.7.6"
+      WP_VERSION: "5.7.x"
       PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
@@ -190,7 +192,17 @@ jobs:
     <<: *php_job
     environment:
       WP_MULTISITE: "0"
-      WP_VERSION: "5.8.4"
+      WP_VERSION: "5.8.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-59:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.9.x"
       PHPUNIT_VERSION: "7"
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
