@@ -27,7 +27,7 @@ test( 'Add Media', async ( { page } ) => {
 
     await test.step( 'Upload Image', async () => {
         mediaUploadPage = new MediaUploadPage( page );
-        await mediaUploadPage.uploadFile( '__tests__/e2e/test_media/image_02.jpg' );
+        await mediaUploadPage.uploadFile( 'test_media/image_02.jpg' );
     } );
 
     await test.step( 'Verify image url', async () => {

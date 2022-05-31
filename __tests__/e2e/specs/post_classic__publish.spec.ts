@@ -19,6 +19,7 @@ test( 'publish a Post', async ( { page } ) => {
         'those who mind don’t matter and those who matter don’t mind." \n' +
         '– Bernard M. Baruch';
 
+    // eslint-disable-next-line playwright/no-skipped-test
     test.skip( process.env.E2E_CLASSIC_TESTS === 'false', 'Classic Tests skipped, plugin not installed' );
 
     await test.step( 'Go to WP-admin', async () => {
@@ -35,7 +36,7 @@ test( 'publish a Post', async ( { page } ) => {
         classicEditorPage = new ClassicEditorPage( page );
         await classicEditorPage.enterTitle( titleText );
         await classicEditorPage.enterText( bodyText );
-        await classicEditorPage.addImage( '__tests__/e2e/test_media/image_01.jpg' );
+        await classicEditorPage.addImage( 'test_media/image_01.jpg' );
     } );
 
     await test.step( 'Publish and visit post', async () => {

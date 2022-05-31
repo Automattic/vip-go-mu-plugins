@@ -13,7 +13,7 @@
     "prepare": "husky install",
     "setup-e2e-env": "./__tests__/e2e/bin/setup-env.sh",
     "destroy-e2e-env": "vip dev-env destroy --slug=e2e-test-site",
-    "test-e2e": "playwright test -c '__tests__/e2e/playwright.config.ts'"
+    "test-e2e": "cd __tests__/e2e/ && playwright test -c 'playwright.config.ts'"
   },
   "author": "Automattic",
   "devDependencies": {
