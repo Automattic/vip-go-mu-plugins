@@ -34,7 +34,8 @@ class VersioningCleanupJob {
 	 */
 	public function schedule_job() {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), 'weekly', self::CRON_EVENT_NAME );
+			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
+			wp_schedule_event( time() + ( mt_rand( 1, 7 ) * DAY_IN_SECONDS ), 'weekly', self::CRON_EVENT_NAME );
 		}
 	}
 
