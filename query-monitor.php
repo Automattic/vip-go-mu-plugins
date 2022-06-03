@@ -53,6 +53,10 @@ function wpcom_vip_qm_enable( $enable ) {
 		define( 'QM_COOKIE', 'query_monitor_' . COOKIEHASH );
 	}
 
+	if ( defined( 'WP_INSTALLING' ) ) {
+		return false;
+	}
+
 	if ( current_user_can( 'view_query_monitor' ) ) {
 		return true;
 	}
@@ -111,9 +115,7 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
-if ( ! defined( 'WP_INSTALLING' ) ) {
-	add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
-}
+add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
 /**
  * Hooks the wp action to avoid showing Query Monitor on 404 pages
@@ -127,7 +129,6 @@ function wpcom_vip_qm_disable_on_404() {
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
-
 
 // We are putting dispatchers as last so that QM still can catch other operations in shutdown action
 // See https://github.com/johnbillion/query-monitor/pull/549
