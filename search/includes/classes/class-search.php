@@ -1602,6 +1602,13 @@ class Search {
 			$mapping['settings']['index.number_of_shards'] = 4;
 		}
 
+		// Add slowlog settings
+		$mapping['settings']['index.search.slowlog.threshold.query.warn']   = '1900ms';
+		$mapping['settings']['index.search.slowlog.threshold.query.info']   = '1s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.warn']   = '800ms';
+		$mapping['settings']['index.indexing.slowlog.threshold.index.warn'] = '4900ms';
+		$mapping['settings']['index.indexing.slowlog.source']               = '1000';
+
 		return $mapping;
 	}
 
