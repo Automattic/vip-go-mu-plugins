@@ -2,8 +2,8 @@
 Contributors: johnbillion
 Tags: debug, debug-bar, debugging, development, developer, performance, profiler, queries, query monitor, rest-api
 Requires at least: 3.7
-Tested up to: 5.9
-Stable tag: 3.8.2
+Tested up to: 6.0
+Stable tag: 3.9.0
 License: GPLv2 or later
 Requires PHP: 5.3
 Donate link: https://johnblackbourn.com/donations/
@@ -141,10 +141,17 @@ In addition, if you like the plugin then I'd love for you to [leave a review](ht
 
 ## Changelog ##
 
+### 3.9.0 ###
+
+* Introduces a dark mode toggle on the Settings panel, which replaces the `QM_DARK_MODE` constant
+* Prevents errors with undefined constants being reported in `db.php`
+* Adds more comprehensive handling of unexpected values in stack traces
+* Fixes PHP Warning 'Header may not contain NUL bytes' when outputting headers
+
 ### 3.8.2 ###
 
-* Fix some deprecated notices with PHP 8.1
-* Improve the handling of SQL queries that consist only of MySQL comments
+* Fixes some deprecated notices with PHP 8.1
+* Improves the handling of SQL queries that consist only of MySQL comments
 
 ### 3.8.1 ###
 
@@ -419,11 +426,3 @@ New features! Read about them here: https://querymonitor.com/blog/2019/02/new-fe
 * Min width CSS for buttons.
 * First pass at documenting filters and hooks.
 * More coding standards updates.
-
-### 3.1.1 ###
-
-* Add a dark mode for the UI which is used via the Dark Mode plugin.
-* Display Query Monitor's output in the user's selected language, instead of the site language.
-* Add extended support for the Members and User Role Editor plugins.
-* Fix link hover and focus styles.
-* Reset some more CSS styles.
