@@ -7,12 +7,13 @@
  */
 
 add_action( 'plugins_loaded', function() {
-	add_action( 'wp_enqueue_scripts', 'qm_object_cache_assets' );
-	add_action( 'admin_enqueue_scripts', 'qm_object_cache_assets' );
 	/**
-	 * Register collector, only if Query Monitor is enabled.
+	 * Register collector and css, only if Query Monitor is enabled.
 	 */
 	if ( class_exists( 'QM_Collectors' ) ) {
+		add_action( 'wp_enqueue_scripts', 'qm_object_cache_assets' );
+		add_action( 'admin_enqueue_scripts', 'qm_object_cache_assets' );
+
 		include_once 'class-qm-collector-object-cache.php';
 
 		QM_Collectors::add( new QM_Collector_ObjectCache() );
