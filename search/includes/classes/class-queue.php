@@ -303,9 +303,14 @@ class Queue {
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable type, defaults to 'post'
 	 * @param array $options
-	 * @return int ID of the queued object, 0 on failure
+	 * @return int|WP_Error ID of the queued object, 0 or WP_Error on failure
 	 */
 	public function queue_object( $object_id, $indexable_slug = 'post', $options = array() ) {
+		$indexable = Indexables::factory()->get( $indexable_slug );
+		if ( ! $indexable ) {
+			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
+		}
+
 		global $wpdb;
 
 		$next_index_time = $this->get_next_index_time( $object_id, $indexable_slug );
