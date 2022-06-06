@@ -69,7 +69,7 @@ jobs:
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@17f8bd926464a1afa4c6a11669539e9c1ba77048 # tag=v3.2.0
+        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
         with:
           node-version: 'lts/*'
           cache: npm
@@ -108,7 +108,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@6673cd052c4cd6fcf4b4e6e60ea986c889389535 # tag=v3.0.0
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
         if: failure()
         with:
           name: test-results
