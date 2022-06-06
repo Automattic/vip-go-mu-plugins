@@ -108,7 +108,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.0.0
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
         if: failure()
         with:
           name: test-results
