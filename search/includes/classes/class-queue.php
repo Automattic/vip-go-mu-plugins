@@ -276,14 +276,14 @@ class Queue {
 	 * This returns $options['index_version'] if set, or defaults to the current index version. Extracted
 	 * here b/c it is reused all over
 	 */
-	public function get_index_version_number_from_options( $object_type, $options = array() ) {
+	public function get_index_version_number_from_options( $indexable_slug, $options = array() ) {
 		$index_version = isset( $options['index_version'] ) ? $options['index_version'] : null;
 
 		if ( ! is_int( $index_version ) ) {
-			$indexable = Indexables::factory()->get( $object_type );
+			$indexable = Indexables::factory()->get( $indexable_slug );
 
 			if ( ! $indexable ) {
-				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $object_type ) );
+				return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 			}
 
 			$index_version = \Automattic\VIP\Search\Search::instance()->versioning->get_current_version_number( $indexable );
@@ -301,14 +301,14 @@ class Queue {
 	 * in the future representing the earliest time the queue processor can index the object
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable type, defaults to 'post'
 	 * @param array $options
 	 * @return int ID of the queued object, 0 on failure
 	 */
-	public function queue_object( $object_id, $object_type = 'post', $options = array() ) {
+	public function queue_object( $object_id, $indexable_slug = 'post', $options = array() ) {
 		global $wpdb;
 
-		$next_index_time = $this->get_next_index_time( $object_id, $object_type );
+		$next_index_time = $this->get_next_index_time( $object_id, $indexable_slug );
 
 		if ( is_int( $next_index_time ) ) {
 			$next_index_time = gmdate( 'Y-m-d H:i:s', $next_index_time );
@@ -316,7 +316,7 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version      = $this->get_index_version_number_from_options( $object_type, $options );
+		$index_version      = $this->get_index_version_number_from_options( $indexable_slug, $options );
 		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
 		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
@@ -332,7 +332,7 @@ class Queue {
 		$wpdb->query(
 			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
 				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
-				[ $object_id, $object_type, $index_version, $priority, $priority ]
+				[ $object_id, $indexable_slug, $index_version, $priority, $priority ]
 			)
 		);
 		// phpcs:enable
@@ -344,11 +344,11 @@ class Queue {
 		 * as it may have already been in the queue (and a new db row was not actually created)
 		 *
 		 * @param int $object_id Object id
-		 * @param string $object_type Object type (the Indexable slug)
+		 * @param string $indexable_slug The Indexable type
 		 * @param array $options The options passed to queue_object()
 		 * @param int $index_version The index version that was used when queuing the object
 		 */
-		do_action( 'vip_search_indexing_object_queued', $object_id, $object_type, $options, $index_version );
+		do_action( 'vip_search_indexing_object_queued', $object_id, $indexable_slug, $options, $index_version );
 
 		$wpdb->suppress_errors( $original_suppress );
 
@@ -366,16 +366,16 @@ class Queue {
 	 * in the future representing the earliest time the queue processor can index the object
 	 *
 	 * @param array $object_ids The ids of the objects
-	 * @param string $object_type The type of objects
+	 * @param string $indexable_slug The Indexable slug, defaults to 'post'
 	 * @param array $options
 	 */
-	public function queue_objects( $object_ids, $object_type = 'post', $options = array() ) {
+	public function queue_objects( $object_ids, $indexable_slug = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
 			return;
 		}
 
 		foreach ( $object_ids as $object_id ) {
-			$this->queue_object( $object_id, $object_type, $options );
+			$this->queue_object( $object_id, $indexable_slug, $options );
 		}
 	}
 
@@ -386,18 +386,18 @@ class Queue {
 	 * and applying the defined minimum interval between successive indexing jobs
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable slug
 	 *
 	 * @return int The soonest unix timestamp when the object can be indexed again
 	 */
-	public function get_next_index_time( $object_id, $object_type, $options = array() ) {
-		$last_index_time = $this->get_last_index_time( $object_id, $object_type, $options );
+	public function get_next_index_time( $object_id, $indexable_slug, $options = array() ) {
+		$last_index_time = $this->get_last_index_time( $object_id, $indexable_slug, $options );
 
 		$next_index_time = null;
 
 		if ( is_int( $last_index_time ) && $last_index_time ) {
 			// Next index time is last index time + interval
-			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $object_type, $options );
+			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $indexable_slug, $options );
 		}
 
 		return $next_index_time;
@@ -407,12 +407,12 @@ class Queue {
 	 * Retrieve the unix timestamp representing the most recent time an object was indexed
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable slug
 	 *
 	 * @return int The unix timestamp when the object was last indexed
 	 */
-	public function get_last_index_time( $object_id, $object_type, $options = array() ) {
-		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type, $options );
+	public function get_last_index_time( $object_id, $indexable_slug, $options = array() ) {
+		$cache_key = $this->get_last_index_time_cache_key( $object_id, $indexable_slug, $options );
 
 		$last_index_time = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
@@ -427,11 +427,11 @@ class Queue {
 	 * Set the unix timestamp when the object was last indexed
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable slug
 	 * @param int $time Unix timestamp when the object was last indexed
 	 */
-	public function set_last_index_time( $object_id, $object_type, $time, $options = array() ) {
-		$cache_key = $this->get_last_index_time_cache_key( $object_id, $object_type, $options );
+	public function set_last_index_time( $object_id, $indexable_slug, $time, $options = array() ) {
+		$cache_key = $this->get_last_index_time_cache_key( $object_id, $indexable_slug, $options );
 
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		wp_cache_set( $cache_key, $time, self::CACHE_GROUP, self::OBJECT_LAST_INDEX_TIMESTAMP_TTL );
@@ -441,25 +441,25 @@ class Queue {
 	 * Get the cache key used to track an object's last indexed timestamp
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable slug
 	 *
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
-	public function get_last_index_time_cache_key( $object_id, $object_type, $options = array() ) {
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+	public function get_last_index_time_cache_key( $object_id, $indexable_slug, $options = array() ) {
+		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
 
-		return sprintf( '%s-%d-v%d', $object_type, $object_id, $index_version );
+		return sprintf( '%s-%d-v%d', $indexable_slug, $object_id, $index_version );
 	}
 
 	/**
 	 * Get the interval between successive index operations on a given object
 	 *
 	 * @param int $object_id The id of the object
-	 * @param string $object_type The type of object
+	 * @param string $indexable_slug The Indexable slug
 	 *
 	 * @return int Minimum number of seconds between re-indexes
 	 */
-	public function get_index_interval_time( $object_id, $object_type, $options = array() ) {
+	public function get_index_interval_time( $object_id, $indexable_slug, $options = array() ) {
 		// Room for future improvement - on non-active index versions, increase the time between re-indexing a given object
 
 		return 60;
@@ -516,7 +516,7 @@ class Queue {
 		return $wpdb->query( "DELETE FROM {$table_name}" ); // Cannot prepare table name. @codingStandardsIgnoreLine
 	}
 
-	public function count_jobs( $status, $object_type = 'post', $options = array() ) {
+	public function count_jobs( $status, $indexable_slug = 'post', $options = array() ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -525,25 +525,25 @@ class Queue {
 
 		// TODO should we support $index_version here? Is there a better way to structure these conditionals?
 		if ( 'all' === strtolower( $status ) ) {
-			if ( 'all' === strtolower( $object_type ) ) {
+			if ( 'all' === strtolower( $indexable_slug ) ) {
 				$query = "SELECT COUNT(*) FROM {$table_name} WHERE 1"; // Cannot prepare table name. @codingStandardsIgnoreLine
 			} else {
 				$query = $wpdb->prepare(
 					"SELECT COUNT(*) FROM {$table_name} WHERE `object_type` = %s", // Cannot prepare table name. @codingStandardsIgnoreLine
-					$object_type
+					$indexable_slug
 				);
 			}
 		}
 
 		// If query has not already been set, it's a "normal" query. This is done after b/c the index version lookup will fail
-		// when $object_type is equal to 'all' since this is not a valid Indexable
+		// when $indexable_slug is equal to 'all' since this is not a valid Indexable
 		if ( ! $query ) {
-			$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+			$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
 
 			$query = $wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = %s AND `object_type` = %s AND `index_version` = %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$status,
-				$object_type,
+				$indexable_slug,
 				$index_version
 			);
 		}
@@ -553,7 +553,7 @@ class Queue {
 		return intval( $job_count );
 	}
 
-	public function count_jobs_due_now( $object_type = 'post' ) {
+	public function count_jobs_due_now( $indexable_slug = 'post' ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -562,24 +562,24 @@ class Queue {
 		return $wpdb->get_var(
 			$wpdb->prepare(
 				"SELECT COUNT(*) FROM {$table_name} WHERE `status` = 'queued' AND `object_type` = %s AND ( `start_time` <= NOW() OR `start_time` IS NULL )", // Cannot prepare table name. @codingStandardsIgnoreLine
-				$object_type
+				$indexable_slug
 			)
 		);
 	}
 
-	public function get_next_job_for_object( $object_id, $object_type, $options = array() ) {
+	public function get_next_job_for_object( $object_id, $indexable_slug, $options = array() ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
 
-		$index_version = $this->get_index_version_number_from_options( $object_type, $options );
+		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$job = $wpdb->get_row(
 			$wpdb->prepare(
 				"SELECT * FROM {$table_name} WHERE `object_id` = %d AND `object_type` = %s AND `index_version` = %d AND `status` = 'queued' LIMIT 1", // Cannot prepare table name. @codingStandardsIgnoreLine
 				$object_id,
-				$object_type,
+				$indexable_slug,
 				$index_version
 			)
 		);
