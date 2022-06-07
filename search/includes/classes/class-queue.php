@@ -397,7 +397,8 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable slug
-	 * @return int $next_index_time The soonest unix timestamp when the object can be indexed again
+	 * @param array $options (optional) Array of options
+	 * @return int|null $next_index_time The soonest unix timestamp when the object can be indexed again
 	 */
 	public function get_next_index_time( $object_id, $indexable_slug, $options = array() ) {
 		$last_index_time = $this->get_last_index_time( $object_id, $indexable_slug, $options );
@@ -417,6 +418,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable slug
+	 * @param array $options (optional) Array of options
 	 * @return int $last_index_time The unix timestamp when the object was last indexed
 	 */
 	public function get_last_index_time( $object_id, $indexable_slug, $options = array() ) {
@@ -437,6 +439,7 @@ class Queue {
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable slug
 	 * @param int $time Unix timestamp when the object was last indexed
+	 * @param array $options (optional) Array of options
 	 */
 	public function set_last_index_time( $object_id, $indexable_slug, $time, $options = array() ) {
 		$cache_key = $this->get_last_index_time_cache_key( $object_id, $indexable_slug, $options );
@@ -450,6 +453,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable slug
+	 * @param array $options (optional) Array of options
 	 * @return string The cache key to use for the object's last indexed timestamp
 	 */
 	public function get_last_index_time_cache_key( $object_id, $indexable_slug, $options = array() ) {
@@ -463,6 +467,7 @@ class Queue {
 	 *
 	 * @param int $object_id The id of the object
 	 * @param string $indexable_slug The Indexable slug
+	 * @param array $options (optional) Array of options
 	 * @return int Minimum number of seconds between re-indexes
 	 */
 	public function get_index_interval_time( $object_id, $indexable_slug, $options = array() ) {
