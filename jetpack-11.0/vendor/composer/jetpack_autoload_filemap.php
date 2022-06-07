@@ -19,11 +19,11 @@ return array(
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-compat/functions.php'
 	),
 	'd7b298d70ab0e8605f5d5b6edeab1bd2' => array(
-		'version' => '0.6.0.0',
+		'version' => '0.6.2.0',
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-waf/actions.php'
 	),
 	'3d45c7e6a7f0e71849e33afe4b3b3ede' => array(
-		'version' => '0.6.0.0',
+		'version' => '0.6.2.0',
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-waf/cli.php'
 	),
 );
