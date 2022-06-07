@@ -1,3 +1,9 @@
+<?php
+
+//phpcs:disable VariableAnalysis
+// There are "undefined" variables here because they're defined in the code that includes this file as a template.
+
+?>
 <div id="akismet-plugin-container">
 	<div class="akismet-masthead">
 		<div class="akismet-masthead__inside-container">
@@ -29,7 +35,7 @@
 				</div>
 				
 				<div class="akismet-new-snapshot">
-					<iframe allowtransparency="true" scrolling="no" frameborder="0" style="width: 100%; height: 220px; overflow: hidden;" src="<?php printf( '//akismet.com/web/1.0/snapshot.php?blog=%s&api_key=%s&height=200&locale=%s', urlencode( get_option( 'home' ) ), Akismet::get_api_key(), get_locale() );?>"></iframe>
+					<iframe allowtransparency="true" scrolling="no" frameborder="0" style="width: 100%; height: 220px; overflow: hidden;" src="<?php echo esc_url( sprintf( 'https://tools.akismet.com/1.0/snapshot.php?blog=%s&api_key=%s&height=200&locale=%s', urlencode( get_option( 'home' ) ), Akismet::get_api_key(), get_locale() ) ); ?>"></iframe>
 					<ul>
 						<li>
 							<h3><?php esc_html_e( 'Past six months' , 'akismet');?></h3>
@@ -53,7 +59,7 @@
 			</div>
 		<?php endif;?>
 
-		<?php if ( $akismet_user ):?>
+		<?php if ( $akismet_user ) : ?>
 			<div class="akismet-card">
 				<div class="akismet-section-header">
 					<div class="akismet-section-header__label">
@@ -67,7 +73,9 @@
 							<tbody>
 								<?php if ( ! Akismet::predefined_api_key() ) { ?>
 								<tr>
-									<th class="akismet-api-key" width="10%" align="left" scope="row"><?php esc_html_e('API Key', 'akismet');?></th>
+									<th class="akismet-api-key" width="10%" align="left" scope="row">
+										<label for="key"><?php esc_html_e( 'API Key', 'akismet' ); ?></label>
+									</th>
 									<td width="5%"/>
 									<td align="left">
 										<span class="api-key"><input id="key" name="key" type="text" size="15" value="<?php echo esc_attr( get_option('wordpress_api_key') ); ?>" class="<?php echo esc_attr( 'regular-text code ' . $akismet_user->status ); ?>"></span>
@@ -151,6 +159,17 @@
 										?>
 									</td>
 								</tr>
+								<tr>
+									<th class="comment-form-privacy-notice" align="left" scope="row"><?php esc_html_e('Privacy', 'akismet'); ?></th>
+									<td></td>
+									<td align="left">
+										<fieldset><legend class="screen-reader-text"><span><?php esc_html_e('Akismet privacy notice', 'akismet'); ?></span></legend>
+										<p><label for="akismet_comment_form_privacy_notice_display"><input type="radio" name="akismet_comment_form_privacy_notice" id="akismet_comment_form_privacy_notice_display" value="display" <?php checked('display', get_option('akismet_comment_form_privacy_notice')); ?> /> <?php esc_html_e('Display a privacy notice under your comment forms.', 'akismet'); ?></label></p>
+										<p><label for="akismet_comment_form_privacy_notice_hide"><input type="radio" name="akismet_comment_form_privacy_notice" id="akismet_comment_form_privacy_notice_hide" value="hide" <?php echo in_array( get_option('akismet_comment_form_privacy_notice'), array('display', 'hide') ) ? checked('hide', get_option('akismet_comment_form_privacy_notice'), false) : 'checked="checked"'; ?> /> <?php esc_html_e('Do not display privacy notice.', 'akismet'); ?></label></p>
+										</fieldset>
+										<span class="akismet-note"><?php esc_html_e( 'To help your site with transparency under privacy laws like the GDPR, Akismet can display a notice to your users under your comment forms. This feature is disabled by default, however, you can turn it on above.', 'akismet' );?></span>
+									</td>
+								</tr>
 							</tbody>
 						</table>
 						<div class="akismet-card-actions">
@@ -162,7 +181,7 @@
 							<?php wp_nonce_field(Akismet_Admin::NONCE) ?>
 							<div id="publishing-action">
 								<input type="hidden" name="action" value="enter-key">
-								<input type="submit" name="submit" id="submit" class="akismet-button akismet-is-primary" value="<?php esc_attr_e('Save Changes', 'akismet');?>">
+								<input type="submit" name="submit" id="submit" class="akismet-button akismet-could-be-primary" value="<?php esc_attr_e('Save Changes', 'akismet');?>">
 							</div>
 							<div class="clear"></div>
 						</div>

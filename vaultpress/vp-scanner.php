@@ -100,7 +100,10 @@ function vp_is_interesting_file($file) {
  * @return array An array with 3 arrays of lines
  */
 function split_file_to_php_html( $file ) {
-	$source = file_get_contents( $file );
+	$source = @file_get_contents( $file );
+	if ( $source === false ) {
+		$source = '';
+	}
 	return split_to_php_html( $source );
 }
 
@@ -112,7 +115,7 @@ function split_file_to_php_html( $file ) {
  * @return array An array with 3 arrays of lines
  */
 function split_to_php_html( $source ) {
-	$tokens = token_get_all( $source );
+	$tokens = @token_get_all( $source );
 
 	$ret = array( 'php' => array(), 'php-with-comments' => array(), 'html' => array() );
 	$current_line = 0;
@@ -252,7 +255,11 @@ function vp_scan_file( $file, $tmp_file = null, $use_parser = false ) {
 		// if there is no filename_regex, we assume it's the same of vp_is_interesting_file().
 		if ( empty( $signature->filename_regex ) || preg_match( '#' . addcslashes( $signature->filename_regex, '#' ) . '#i', $file ) ) {
 			if ( null === $file_content || !is_array( $file_content ) ) {
-				$file_content = file( $real_file );
+				$file_content = @file( $real_file );
+
+				if ( $file_content === false ) {
+					return false;
+				}
 
 				if ( $use_parser ) {
 					$file_parsed = split_file_to_php_html( $real_file );
@@ -260,44 +267,42 @@ function vp_scan_file( $file, $tmp_file = null, $use_parser = false ) {
 			}
 
 			$is_vulnerable = true;
-			$matches = array ();
-			if ( is_array( $file_content ) && ( $signature->patterns ) && is_array( $signature->patterns ) ) {
-				if ( ! $use_parser ) {
-					reset( $signature->patterns );
-					while ( $is_vulnerable && list( , $pattern ) = each( $signature->patterns ) ) {
-						if ( ! $match = preg_grep( '#' . addcslashes( $pattern, '#' ) . '#im', $file_content ) ) {
-							$is_vulnerable = false;
-							break;
-						}
-						$matches += $match;
-					}
-				} else {
-					// use the language specified in the signature if it has one
-					if ( ! empty( $signature->target_language ) && array_key_exists( $signature->target_language, $file_parsed ) ) {
-						$code = $file_parsed[ $signature->target_language ];
-					} else {
-						$code = $file_content;
-					}
-					// same code as the '! $use_parser' branch above
-					reset( $signature->patterns );
-					while ( $is_vulnerable && list( , $pattern ) = each( $signature->patterns ) ) {
-						if ( ! $match = preg_grep( '#' . addcslashes( $pattern, '#' ) . '#im', $code ) ) {
-							$is_vulnerable = false;
-							break;
-						}
-						$matches += $match;
-					}
+
+			$code = $file_content;
+
+			if ( $use_parser ) {
+				// use the language specified in the signature if it has one
+				if ( ! empty( $signature->target_language ) && array_key_exists( $signature->target_language, $file_parsed ) ) {
+					$code = $file_parsed[ $signature->target_language ];
+
+
 				}
-			} else {
-				$is_vulnerable = false;
+			}
+
+			$matches = array();
+			if ( ! empty( $signature->patterns ) ) {
+				foreach ( $signature->patterns as $pattern ) {
+					$match = preg_grep( '#' . addcslashes( $pattern, '#' ) . '#im', $code );
+					if ( empty( $match ) ) {
+						$is_vulnerable = false;
+						break;
+					}
+
+					$matches += $match;
+				}
 			}
 
 			// convert the matched line to an array of details showing context around the lines
 			$lines = array();
+
+			$lines_parsed = array();
+
+			$line_indices_parsed = array();
+
 			if ( $use_parser ) {
-				$lines_parsed = array();
 				$line_indices_parsed = array_keys( $code );
 			}
+
 			foreach ( $matches as $line => $text ) {
 				$lines = array_merge( $lines, range( $line - 1, $line + 1 ) );
 				if ( $use_parser ) {
@@ -317,7 +322,11 @@ function vp_scan_file( $file, $tmp_file = null, $use_parser = false ) {
 					$lines_parsed = array_merge( $lines_parsed, $idx_around );
 				}
 			}
+
 			$details = array_intersect_key( $file_content, array_flip( $lines ) );
+
+			$details_parsed = array();
+
 			if ( $use_parser ) {
 				$details_parsed = array_intersect_key( $code, array_flip( $lines_parsed ) );
 			}

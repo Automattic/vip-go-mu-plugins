@@ -1,0 +1,284 @@
+/**
+ *
+ * VIP Dashboard SCSS
+ *
+ * CSS Coding Guidelines: https://wpcalypso.wordpress.com/devdocs/docs/coding-guidelines/css.md
+ *
+ */
+#wpbody-content,
+body.toplevel_page_vip-dashboard {
+  background: #f3f6f8;
+}
+
+body.toplevel_page_vip-dashboard #wpcontent {
+  padding-left: 0;
+}
+
+body.toplevel_page_vip-dashboard #vp-notice {
+  display: none;
+}
+
+@media screen and (max-width: 782px) {
+  .auto-fold #wpcontent {
+    padding-left: 0;
+  }
+}
+/**
+ * Top Header
+ */
+.top-header {
+  padding: 0.5em 3em;
+  background: #151E25;
+}
+
+.top-header__logo {
+  width: 82px;
+  height: auto;
+  margin: 0;
+}
+
+/*
+ * Widgets
+ */
+.widgets-area {
+  padding: 1%;
+  max-width: 1250px;
+  margin: 0 auto;
+}
+@media screen and (max-width: 600px) {
+  .widgets-area {
+    padding: 2%;
+  }
+}
+
+.widget {
+  display: block;
+  float: left;
+  width: 48%;
+  margin: 1%;
+  padding: 2em;
+  background: #ffffff;
+  border: 1px solid #d7dee2;
+}
+@media screen and (max-width: 600px) {
+  .widget {
+    width: 100%;
+    margin: 0 0 2%;
+  }
+}
+.widget a {
+  color: #c29c69;
+  text-decoration: underline;
+}
+.widget a:hover {
+  text-decoration: underline;
+  color: #62707a;
+}
+.widget p {
+  color: #62707a;
+}
+.widget.widget-small {
+  width: 22%;
+  min-height: 200px;
+  padding: 0;
+}
+.widget.widget-small .widget__content {
+  padding: 0 2em;
+}
+@media screen and (max-width: 768px) {
+  .widget.widget-small {
+    width: 48%;
+  }
+}
+@media screen and (max-width: 600px) {
+  .widget.widget-small {
+    width: 100%;
+    margin: 0 0 2%;
+  }
+}
+
+.widget__title,
+.widget__subtitle {
+  margin-top: 0;
+  font-weight: 600;
+}
+
+.widget__subtitle {
+  margin-top: 2em;
+  font-size: 1.2em;
+}
+
+.widget__col-2 {
+  float: left;
+  width: 45%;
+  margin-right: 10%;
+}
+@media screen and (max-width: 768px) {
+  .widget__col-2 {
+    float: none;
+    width: 100%;
+    margin: 0;
+  }
+}
+.widget__col-2:last-of-type {
+  margin: 0;
+}
+
+/* Widget List */
+.widget__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.widget__list li {
+  margin-bottom: 1.5em;
+}
+.widget__list a,
+.widget__list span {
+  display: block;
+}
+.widget__list a {
+  margin-bottom: 0.2em;
+  font-size: 1.1em;
+}
+.widget__list span {
+  font-size: 0.9em;
+  color: #a3aFB5;
+}
+
+/* Widget Contact Form */
+.widget__contact-form {
+  font-weight: 600;
+  color: #62707a;
+}
+.widget__contact-form label {
+  display: inline-block;
+  padding: 1em 0;
+  font-size: 12px;
+  color: #62707a;
+  vertical-align: top;
+}
+.widget__contact-form input,
+.widget__contact-form textarea,
+.widget__contact-form select,
+.widget__contact-form label {
+  box-sizing: border-box;
+}
+.widget__contact-form input,
+.widget__contact-form textarea,
+.widget__contact-form select {
+  width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.5em;
+  background: #f3f6f8;
+  border: 1px solid #d7dee2;
+  font-weight: normal;
+}
+.widget__contact-form input:focus,
+.widget__contact-form textarea:focus,
+.widget__contact-form select:focus {
+  border-color: #c29c69;
+  box-shadow: 0 0 4px 2px rgba(194, 156, 105, 0.3);
+}
+.widget__contact-form textarea {
+  resize: vertical;
+}
+.widget__contact-form select {
+  cursor: pointer;
+  height: auto;
+  background: #f3f6f8 url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDIwIDIwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggc3R5bGU9ImZpbGw6I0Q4RTJFOTsiIGQ9Ik0xMy41IDcuMjVsMSAxbC00LjUgNC41bC00LjUtNC41bDEtMWwzLjUgMy41TDEzLjUgNy4yNXoiLz48L3N2Zz4=) no-repeat center right 10px;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  font-weight: normal;
+}
+.widget__contact-form select:hover {
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDIwIDIwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggc3R5bGU9ImZpbGw6Izk4QUVCRDsiIGQ9Ik0xMy41IDcuMjVsMSAxbC00LjUgNC41bC00LjUtNC41bDEtMWwzLjUgMy41TDEzLjUgNy4yNXoiLz48L3N2Zz4=);
+}
+.widget__contact-form select:focus {
+  background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjBweCIgaGVpZ2h0PSIyMHB4IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2ZXJzaW9uPSIxLjEiIHg9IjBweCIgeT0iMHB4IiB2aWV3Qm94PSIwIDAgMjAgMjAiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDIwIDIwOyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggc3R5bGU9ImZpbGw6IzQwNDA0MDsiIGQ9Ik0xMy41IDcuMjVsMSAxbC00LjUgNC41bC00LjUtNC41bDEtMWwzLjUgMy41TDEzLjUgNy4yNXoiLz48L3N2Zz4=);
+}
+.widget__contact-form input[type=submit] {
+  cursor: pointer;
+  position: relative;
+  width: auto;
+  padding: 10px 20px;
+  color: #151e25;
+  background: #ffffff;
+  border: 2px solid #c29c69;
+  font-weight: bold;
+  outline: none;
+}
+.widget__contact-form input[type=submit]:hover {
+  background: #c29c69;
+}
+.widget__contact-form input[type=submit]:active {
+  top: 1px;
+}
+.widget__contact-form input[type=submit]:disabled {
+  background: #ffffff;
+  color: #d7dee2;
+  border-color: #d7dee2;
+}
+.widget__contact-form ::-webkit-input-placeholder {
+  color: #98aebd;
+}
+.widget__contact-form :-moz-placeholder {
+  color: #98aebd;
+  opacity: 1;
+}
+.widget__contact-form ::-moz-placeholder {
+  color: #98aebd;
+  opacity: 1;
+}
+.widget__contact-form :-ms-input-placeholder {
+  color: #98aebd;
+}
+
+@media screen and (max-width: 782px) {
+  #wpbody .widget__contact-form select {
+    height: auto;
+    font-size: 13px;
+  }
+}
+.contact-form__row {
+  clear: both;
+}
+.contact-form__row.submit-button {
+  padding-top: 12px;
+}
+
+.contact-form__label,
+.contact-form__input {
+  float: left;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.contact-form__label {
+  width: 30%;
+}
+
+.contact-form__input {
+  width: 69.9%;
+}
+
+.contact-form__error,
+.contact-form__success {
+  padding: 10px;
+  margin-bottom: 1.3em;
+  font-weight: normal;
+  border: 1px solid #d7dee2;
+  color: #62707a;
+  background: #ffffff;
+}
+
+.contact-form__error {
+  border-left: 3px solid #d94f4f;
+}
+
+.contact-form__success {
+  border-left: 3px solid #4ab866;
+}

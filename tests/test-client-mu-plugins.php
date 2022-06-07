@@ -2,12 +2,17 @@
 
 namespace Automattic\VIP\Tests;
 
+use WP_UnitTestCase;
+
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+// phpcs:disable PEAR.NamingConventions.ValidClassName.Invalid
+
 /**
  * Tests for the wpcom_vip_get_client_mu_plugins()
  *
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
-class Client_Mu_Plugins__Get__Tests extends \WP_UnitTestCase {
+class Client_Mu_Plugins__Get__Tests extends WP_UnitTestCase {
 	public function test__invalid_dir() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/this-doesnt-exist/';
 
@@ -25,7 +30,7 @@ class Client_Mu_Plugins__Get__Tests extends \WP_UnitTestCase {
 	}
 
 	public function test__valid() {
-		$dir = __DIR__ . '/fixtures/client-mu-plugins/valid';
+		$dir      = __DIR__ . '/fixtures/client-mu-plugins/valid';
 		$expected = [
 			$dir . '/0-first-plugin.php',
 			$dir . '/index.php',
@@ -45,8 +50,8 @@ class Client_Mu_Plugins__Get__Tests extends \WP_UnitTestCase {
  *
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
-class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
-	function test__empty() {
+class Client_Mu_Plugins__Get_Data__Tests extends WP_UnitTestCase {
+	public function test__empty() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/empty/';
 
 		$actual = wpcom_vip_get_client_mu_plugins_data( $dir );
@@ -54,7 +59,7 @@ class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
 		$this->assertEmpty( $actual );
 	}
 
-	function test__valid() {
+	public function test__valid() {
 		$dir = __DIR__ . '/fixtures/client-mu-plugins/valid/';
 
 		$actual = wpcom_vip_get_client_mu_plugins_data( $dir );
@@ -64,7 +69,7 @@ class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
 			// index.php is stripped out
 			// not-php.txt is stripped out
 			'with-headers.php',
-			'z-last-plugin.php'
+			'z-last-plugin.php',
 		];
 		$this->assertEquals( $expected_keys, array_keys( $actual ), 'Returned array keys for plugins don\'t match expected values' );
 
@@ -79,19 +84,19 @@ class Client_Mu_Plugins__Get_Data__Tests extends \WP_UnitTestCase {
 /**
  * Tests for `plugins_url` override
  */
-class Client_Mu_Plugins__Plugins_Url__Tests extends \WP_UnitTestCase {
+class Client_Mu_Plugins__Plugins_Url__Tests extends WP_UnitTestCase {
 	public function get_test_data() {
 		return [
-			'not-client-mu-plugins-path' => [
+			'not-client-mu-plugins-path'     => [
 				'script.js',
 				WP_PLUGIN_DIR . '/file.php',
 				WP_CONTENT_URL . '/plugins/script.js',
 			],
 
-			'client-mu-plugins-path_root' => [
+			'client-mu-plugins-path_root'    => [
 				'script.js',
 				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/file.php',
-				WP_CONTENT_URL . '/client-mu-plugins/script.js'
+				WP_CONTENT_URL . '/client-mu-plugins/script.js',
 			],
 
 			'client-mu-plugins-path_subpath' => [
@@ -105,14 +110,14 @@ class Client_Mu_Plugins__Plugins_Url__Tests extends \WP_UnitTestCase {
 				'/script.js',
 				WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/plugin/file.php',
 				WP_CONTENT_URL . '/client-mu-plugins/plugin/script.js',
-			]
+			],
 		];
 	}
 
 	/**
 	 * @dataProvider get_test_data
 	 */
-	function test__client_mu_plugins_url( $url_path, $plugin_path, $expected_url ) {
+	public function test__client_mu_plugins_url( $url_path, $plugin_path, $expected_url ) {
 		$actual_url = plugins_url( $url_path, $plugin_path );
 
 		$this->assertEquals( $expected_url, $actual_url );

@@ -5,10 +5,14 @@
 	convertErrorsToExceptions="true"
 	convertNoticesToExceptions="true"
 	convertWarningsToExceptions="true"
+	cacheResult="false"
 	>
 	<testsuites>
-		<testsuite>
+		<testsuite name="unit">
 			<directory prefix="test-" suffix=".php">./tests/</directory>
 		</testsuite>
 	</testsuites>
+	<extensions>
+		<extension class="SpeedUp_Isolated_WP_Tests"/>
+	</extensions>
 </phpunit>

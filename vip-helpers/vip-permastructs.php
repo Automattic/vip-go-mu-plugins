@@ -5,7 +5,7 @@
  *
  * Usage: wpcom_vip_load_permastruct( '/%category%/%postname%/' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_permastruct
  */
 function wpcom_vip_load_permastruct( $new_permastruct ) {
@@ -18,11 +18,10 @@ function wpcom_vip_load_permastruct( $new_permastruct ) {
 /**
  * Applies the new permalink structure to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
- * @param string $permastruct The new permastruct
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @return string The new permastruct
  */
-function _wpcom_vip_filter_permalink_structure( $permastruct ) {
+function _wpcom_vip_filter_permalink_structure() {
 	global $wpcom_vip_permalink_structure;
 	return $wpcom_vip_permalink_structure;
 }
@@ -34,7 +33,7 @@ function _wpcom_vip_filter_permalink_structure( $permastruct ) {
  *     wpcom_vip_load_category_base( '' );
  *     wpcom_vip_load_category_base( 'section' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_category_base New category base prefix
  */
 function wpcom_vip_load_category_base( $new_category_base ) {
@@ -55,11 +54,10 @@ function wpcom_vip_load_category_base( $new_category_base ) {
 /**
  * Applies the new category base to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
- * @param string $category_base New category base prefix
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @return string The category base prefix
  */
-function _wpcom_vip_filter_category_base( $category_base ) {
+function _wpcom_vip_filter_category_base() {
 	global $wpcom_vip_category_base;
 	return $wpcom_vip_category_base;
 }
@@ -70,7 +68,7 @@ function _wpcom_vip_filter_category_base( $category_base ) {
  * Usage:
  *     wpcom_vip_load_tag_base( 'section' );
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @param string $new_tag_base New tag base prefix
  */
 function wpcom_vip_load_tag_base( $new_tag_base ) {
@@ -83,11 +81,10 @@ function wpcom_vip_load_tag_base( $new_tag_base ) {
 /**
  * Applies the new tag base to the option value
  *
- * @link http://vip.wordpress.com/documentation/change-your-pretty-permalinks-or-add-custom-rewrite-rules/ Change Your Pretty Permalinks
- * @param string $tag_base New tag base prefix
+ * @link https://lobby.vip.wordpress.com/wordpress-com-documentation/pretty-permalinks-and-custom-rewrite-rules/ Change Your Pretty Permalinks
  * @return string The tag base prefix
  */
-function _wpcom_vip_filter_tag_base( $tag_base ) {
+function _wpcom_vip_filter_tag_base() {
 	global $wpcom_vip_tag_base;
 	return $wpcom_vip_tag_base;
 }
@@ -118,42 +115,44 @@ function wpcom_vip_refresh_wp_rewrite() {
 
 	// Permastructs available in the options table and their core defaults
 	$permastructs = array(
-			'permalink_structure' => '/%year%/%monthnum%/%day%/%postname%/',
-			'category_base' => '',
-			'tag_base' => '',
-		);
-	foreach( $permastructs as $option_key => $default_value ) {
-		$filter = 'pre_option_' . $option_key;
+		'permalink_structure' => '/%year%/%monthnum%/%day%/%postname%/',
+		'category_base'       => '',
+		'tag_base'            => '',
+	);
+	foreach ( $permastructs as $option_key => $default_value ) {
+		$filter   = 'pre_option_' . $option_key;
 		$callback = '_wpcom_vip_filter_' . $option_key;
 
 		$option_value = get_option( $option_key );
 
 		$reapply = has_filter( $filter, $callback );
 		// If this value isn't filtered by the VIP, used the default wpcom value
-		if ( !$reapply )
+		if ( ! $reapply ) {
 			$option_value = $default_value;
-		else
+		} else {
 			remove_filter( $filter, $callback, 99 );
+		}
 		// Save the precious
 		update_option( $option_key, $option_value );
 		// Only reapply the filter if it was applied previously
 		// as it overrides the option value with a global variable
-		if ( $reapply )
+		if ( $reapply ) {
 			add_filter( $filter, $callback, 99 );
+		}
 	}
 
 	// Reconstruct WP_Rewrite and make sure we persist any custom endpoints, etc.
-	$old_values = array();
+	$old_values   = array();
 	$custom_rules = array(
-			'extra_rules',
-			'non_wp_rules',
-			'endpoints',
-		);
-	foreach( $custom_rules as $key ) {
-		$old_values[$key] = $wp_rewrite->$key;
+		'extra_rules',
+		'non_wp_rules',
+		'endpoints',
+	);
+	foreach ( $custom_rules as $key ) {
+		$old_values[ $key ] = $wp_rewrite->$key;
 	}
 	$wp_rewrite->init();
-	foreach( $custom_rules as $key ) {
-		$wp_rewrite->$key = array_merge( $old_values[$key], $wp_rewrite->$key );
+	foreach ( $custom_rules as $key ) {
+		$wp_rewrite->$key = array_merge( $old_values[ $key ], $wp_rewrite->$key );
 	}
 }

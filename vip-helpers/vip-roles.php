@@ -1,9 +1,6 @@
 <?php
 /**
- * Helper functions that make it easy to add roles for WordPress.com sites.
- *
- * We use the core API functions as well as modifying the $wp_user_roles global
- * in case roles are re-initialized and our mods are lost.
+ * Helper functions that make it easy to add roles for VIP sites.
  */
 
 /**
@@ -13,11 +10,12 @@
  * @return array Array of caps for the role
  */
 function wpcom_vip_get_role_caps( $role ) {
-	$caps = array();
+	$caps     = array();
 	$role_obj = get_role( $role );
 
-	if ( $role_obj && isset( $role_obj->capabilities ) )
+	if ( $role_obj && isset( $role_obj->capabilities ) ) {
 		$caps = $role_obj->capabilities;
+	}
 
 	return $caps;
 }
@@ -32,19 +30,11 @@ function wpcom_vip_get_role_caps( $role ) {
  * @param array $capabilities Key/value array of capabilities for the role
  */
 function wpcom_vip_add_role( $role, $name, $capabilities ) {
-	global $wp_user_roles;
-
 	$role_obj = get_role( $role );
 
 	if ( ! $role_obj ) {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.custom_role_add_role
 		add_role( $role, $name, $capabilities );
-
-		if ( ! isset( $wp_user_roles[ $role ] ) ) {
-			$wp_user_roles[ $role ] = array(
-				'name' => $name,
-				'capabilities' => $capabilities,
-			);
-		}
 
 		_wpcom_vip_maybe_refresh_current_user_caps( $role );
 	} else {
@@ -61,25 +51,21 @@ function wpcom_vip_add_role( $role, $name, $capabilities ) {
  * @param array $caps Key/value array of capabilities for this role
  */
 function wpcom_vip_merge_role_caps( $role, $caps ) {
-	global $wp_user_roles;
-
 	$role_obj = get_role( $role );
 
-	if ( ! $role_obj )
+	if ( ! $role_obj ) {
 		return;
-
-	$current_caps = (array) wpcom_vip_get_role_caps( $role );
-	$new_caps = array_merge( $current_caps, (array) $caps );
-
-	foreach ( $new_caps as $cap => $role_can ) {
-		if ( $role_can )
-			$role_obj->add_cap( $cap );
-		else
-			$role_obj->remove_cap( $cap );
 	}
 
-	if ( isset( $wp_user_roles[ $role ] ) ) {
-		$wp_user_roles[ $role ][ 'capabilities' ] = array_merge( $current_caps, (array) $caps );
+	$current_caps = (array) wpcom_vip_get_role_caps( $role );
+	$new_caps     = array_merge( $current_caps, (array) $caps );
+
+	foreach ( $new_caps as $cap => $role_can ) {
+		if ( $role_can ) {
+			$role_obj->add_cap( $cap );
+		} else {
+			$role_obj->remove_cap( $cap );
+		}
 	}
 
 	_wpcom_vip_maybe_refresh_current_user_caps( $role );
@@ -94,18 +80,18 @@ function wpcom_vip_merge_role_caps( $role, $caps ) {
  * @param array $caps Key/value array of capabilities for this role
  */
 function wpcom_vip_override_role_caps( $role, $caps ) {
-	global $wp_user_roles;
-
 	$role_obj = get_role( $role );
 
-	if ( ! $role_obj )
+	if ( ! $role_obj ) {
 		return;
+	}
 
 	$role_obj->capabilities = (array) $caps;
 
-	if ( isset( $wp_user_roles[ $role ] ) ) {
-		$wp_user_roles[ $role ][ 'capabilities' ] = (array) $caps;
-	}
+	$roles = wp_roles();
+
+	$roles->roles[ $role ]['capabilities'] = $caps;
+	update_option( $roles->role_key, $roles->roles );
 
 	_wpcom_vip_maybe_refresh_current_user_caps( $role );
 }

@@ -11,8 +11,8 @@ function apply_filters_ref_array($tag, $args) {
 
 	// Do 'all' actions first
 	if ( isset($wp_filter['all']) ) {
-		$wp_current_filter[] = $tag;
 		$all_args = func_get_args();
+		$wp_current_filter[] = $tag;
 		_wp_call_all_hook($all_args);
 	}
 
@@ -107,8 +107,18 @@ class VP_Site_Scanner {
 		if ( empty( $paths ) || $this->_scan_clean_up( $paths ) )
 			return false;
 
+		if ( ! is_array( $paths ) ) {
+			return false;
+		}
+
 		reset( $paths );
-		list( $type, $current ) = each( $paths );
+
+		$type    = null;
+		$current = false;
+		foreach ( $paths as $type => $current ) {
+			break;
+		}
+
 		if ( !is_object( $current ) || empty( $current->last_dir ) )
 			return $this->_scan_clean_up( $paths, $type );
 

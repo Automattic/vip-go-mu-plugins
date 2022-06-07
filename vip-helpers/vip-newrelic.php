@@ -24,19 +24,19 @@ function wpcom_vip_disable_new_relic_js() {
 
 
 /**
- * The following functions are for platform level changes and should only be changed after consulting with WordPress.com VIP
+ * The following functions are for platform level changes and should only be changed after consulting with WordPress VIP
  */
-
-if ( extension_loaded( 'newrelic' ) ){
+if ( extension_loaded( 'newrelic' ) ) {
 	add_action( 'muplugins_loaded', 'wpcom_vip_add_uri_to_newrelic' );
+
 	// We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
 	add_action( 'muplugins_loaded', 'wpcom_vip_cron_for_newrelic', 11 );
-	// We are attaching this at muplugins_loaded because Cron-Control is loaded at muplugins_loaded priority 10
+
 	// This must be hooked later than wpcom_vip_cron_for_newrelic to allow values to be overwritten
 	add_action( 'muplugins_loaded', 'wpcom_vip_wpcli_for_newrelic', 12 );
-	add_action( 'rest_dispatch_request', 'wpcom_vip_rest_routes_for_newrelic', 10,4);
-}
 
+	add_filter( 'rest_dispatch_request', 'wpcom_vip_rest_routes_for_newrelic', 10, 3 );
+}
 
 /**
  * Add the exact URI to NewRelic tracking but only if we're not in the admin
@@ -44,8 +44,8 @@ if ( extension_loaded( 'newrelic' ) ){
 function wpcom_vip_add_uri_to_newrelic() {
 	if ( ! is_admin() && function_exists( 'newrelic_add_custom_parameter' ) ) {
 		newrelic_capture_params();
-		newrelic_add_custom_parameter( 'HTTP_REFERER', isset( $_SERVER['HTTP_REFERER'] ) ? $_SERVER['HTTP_REFERER'] : '' );
-		newrelic_add_custom_parameter( 'HTTP_USER_AGENT', isset( $_SERVER['HTTP_USER_AGENT'] ) ? $_SERVER['HTTP_USER_AGENT'] : '' );
+		newrelic_add_custom_parameter( 'HTTP_REFERER', $_SERVER['HTTP_REFERER'] ?? '' );        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		newrelic_add_custom_parameter( 'HTTP_USER_AGENT', $_SERVER['HTTP_USER_AGENT'] ?? '' );  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		newrelic_add_custom_parameter( 'HTTPS', is_ssl() );
 	}
 }
@@ -57,10 +57,12 @@ function wpcom_vip_add_uri_to_newrelic() {
  */
 function wpcom_vip_cron_for_newrelic() {
 	if ( wp_doing_cron()
+		&& function_exists( 'newrelic_name_transaction' )
+		&& function_exists( 'newrelic_background_job' )
 		&& function_exists( 'newrelic_ignore_apdex' )
-		&& function_exists( 'newrelic_add_custom_parameter' )
-		&& function_exists( 'newrelic_name_transaction' ) ) {
+	) {
 		newrelic_name_transaction( 'wp-cron' );
+		newrelic_background_job( true );
 		// N.B. VIP Go sites execute cron events through WP CLI, so the event
 		// can be determined in the New Relic 'wp-cli-cmd-args' custom parameter
 		newrelic_ignore_apdex();
@@ -74,11 +76,11 @@ function wpcom_vip_cron_for_newrelic() {
  */
 function wpcom_vip_wpcli_for_newrelic() {
 	if ( defined( 'WP_CLI' )
-	     && WP_CLI
-	     && ! wp_doing_cron()  // Cron is going to be run via WP-CLI in the near term. We want to keep Cron and WP-CLI separated for better monitoring so we're not going to flag WP_CLI requests that are actually cron requests as WP-CLI.
-	     && function_exists( 'newrelic_ignore_apdex' )
-	     && function_exists( 'newrelic_add_custom_parameter' )
-	     && function_exists( 'newrelic_name_transaction' ) ) {
+		&& WP_CLI
+		&& ! wp_doing_cron()  // Cron is going to be run via WP-CLI in the near term. We want to keep Cron and WP-CLI separated for better monitoring so we're not going to flag WP_CLI requests that are actually cron requests as WP-CLI.
+		&& function_exists( 'newrelic_ignore_apdex' )
+		&& function_exists( 'newrelic_add_custom_parameter' )
+		&& function_exists( 'newrelic_name_transaction' ) ) {
 
 		newrelic_name_transaction( 'wp-cli' );
 
@@ -106,12 +108,15 @@ function wpcom_vip_wpcli_for_newrelic() {
  * We'd want to have them tagged with the proper rest route used.
  * While we are using the rest_dispatch_request filter, we're using it as an action without modifying the results.
  */
-function wpcom_vip_rest_routes_for_newrelic( $dispatch_results, $request, $route, $handler ) {
-	if ( function_exists( 'newrelic_add_custom_parameter' )
-	     && function_exists( 'newrelic_name_transaction' ) ) {
+function wpcom_vip_rest_routes_for_newrelic( $dispatch_results, $request, $route ) {
+	$functions_exist = function_exists( 'newrelic_add_custom_parameter' ) && function_exists( 'newrelic_name_transaction' );
+	$is_cli          = defined( 'WP_CLI' ) && WP_CLI;
+
+	if ( $functions_exist && ! wp_doing_cron() && ! $is_cli ) {
 		newrelic_name_transaction( $route );
 		newrelic_add_custom_parameter( 'wp-api', 'true' );
 		newrelic_add_custom_parameter( 'wp-api-route', $route );
 	}
-	return null; // Anything that's not null would be used as a response to the rest request which we don't want.
+
+	return $dispatch_results;
 }

@@ -1,0 +1,44 @@
+$overlay-horizontal-padding: 1em;
+$overlay-horizontal-padding-small-viewport: 0.5em;
+:global {
+	.search-dev-tools__overlay {
+		position: fixed;
+		top: 32px;
+		left: 0;
+		// #wpadminwrap has a z-index of 9990
+		z-index: 9991;
+		width: 100vw;
+		height: 100vh;
+		padding: 2rem;
+		background: rgba(255, 255, 255, 0.975);
+		overflow-y: auto;
+		overflow-x: hidden;
+		transition: opacity 0.15s ease-in-out;
+		box-sizing: border-box;
+
+		&__close {
+			background-image: url('../../assets/close.svg');
+			background: transparent;
+			border: 0;
+			position: absolute;
+			top: 24px;
+			right: 24px;
+			// We use !important here because some themes hijack buttons
+			background-color: #fff !important;
+		}
+
+		&.search-dev-tools__overlay--light {
+			background: #fff;
+		}
+
+		&.search-dev-tools__overlay--dark {
+			background: #777777;
+		}
+
+		*,
+		*:before,
+		*:after {
+			box-sizing: border-box;
+		}
+	}
+}

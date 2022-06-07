@@ -1,23 +1,41 @@
 <?php
-/*
-Plugin Name: Query Monitor
-Description: Monitoring of database queries, hooks, conditionals and more (including VIP Go tweaks).
-Version:     2.14.0
-Plugin URI:  https://querymonitor.com/
-Author:      John Blackbourn
-Author URI:  https://johnblackbourn.com/
-Text Domain: query-monitor
-Domain Path: /languages/
-License:     GPL v2 or later
-
-*/
+/**
+ * Query Monitor plugin for WordPress
+ *
+ * @package   query-monitor
+ * @link      https://github.com/johnbillion/query-monitor
+ * @author    John Blackbourn <john@johnblackbourn.com>
+ * @copyright 2009-2022 John Blackbourn
+ * @license   GPL v2 or later
+ *
+ * Plugin Name:  Query Monitor
+ * Description:  The developer tools panel for WordPress.
+ * Version:      3.9.0
+ * Plugin URI:   https://querymonitor.com/
+ * Author:       John Blackbourn
+ * Author URI:   https://querymonitor.com/
+ * Text Domain:  query-monitor
+ * Domain Path:  /languages/
+ * Requires PHP: 5.3.6
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
 
 /**
  * Determines if Query Monitor should be enabled. We don't
  * want to load it if we don't have to.
  *
- * * If a QM_COOKIE is detected, Query monitor is enabled
- * * If the WPCOM_VIP_QM_ENABLE constant is true, Query Monitor is enabled
+ *  - If logged-in user has the `view_query_monitor`
+ *    capability, Query Monitor is enabled.
+ *  - If a QM_COOKIE is detected, Query Monitor is enabled.
  *
  * Note that we have to set the value for QM_COOKIE here,
  * in order to detect it.
@@ -35,10 +53,16 @@ function wpcom_vip_qm_enable( $enable ) {
 		define( 'QM_COOKIE', 'query_monitor_' . COOKIEHASH );
 	}
 
+	if ( defined( 'WP_INSTALLING' ) ) {
+		return false;
+	}
+
 	if ( current_user_can( 'view_query_monitor' ) ) {
 		return true;
 	}
-	if ( isset( $_COOKIE[QM_COOKIE] ) ) {
+
+	// We're not validating the cookie here as QM will do that later
+	if ( isset( $_COOKIE[ QM_COOKIE ] ) ) {
 		return true;
 	}
 
@@ -71,14 +95,12 @@ function wpcom_vip_qm_require() {
 
 	$wpcom_vip_qm_file = __DIR__ . '/query-monitor/query-monitor.php';
 
-	require_once( $wpcom_vip_qm_file );
+	require_once $wpcom_vip_qm_file;
 
 	// Something stopped QueryMonitor from loading; bail.
 	if ( ! class_exists( 'QueryMonitor' ) ) {
 		return;
 	}
-
-	require_once( __DIR__ . '/vip-helpers/vip-query-monitor.php' );
 
 	// Because we're including Query Monitor as an MU plugin, we need to
 	// manually call the `activate` method on `activation`.
@@ -92,15 +114,6 @@ function wpcom_vip_qm_require() {
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
-
-	if ( function_exists( 'wpcom_vip_save_query_callback' ) ) {
-		add_filter('qm/collectors', function (array $collectors, QueryMonitor $qm) {
-			$collectors['db_queries'] = new WPCOM_VIP_QM_Collector_DB_Queries();
-
-			return $collectors;
-		}, 99, 2);
-	}
-
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
@@ -111,9 +124,42 @@ add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
  */
 function wpcom_vip_qm_disable_on_404() {
 	if ( is_404() && ! is_user_logged_in() && isset( $_COOKIE[ QM_COOKIE ] ) ) {
-		add_filter( "qm/dispatch/ajax", '__return_false' );
-		add_filter( "qm/dispatch/html", '__return_false' );
+		add_filter( 'qm/dispatch/ajax', '__return_false' );
+		add_filter( 'qm/dispatch/html', '__return_false' );
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
 
+// We are putting dispatchers as last so that QM still can catch other operations in shutdown action
+// See https://github.com/johnbillion/query-monitor/pull/549
+function change_dispatchers_shutdown_priority( array $dispatchers ) {
+	if ( is_array( $dispatchers ) ) {
+		if ( isset( $dispatchers['html'] ) ) {
+			$html_dispatcher = $dispatchers['html'];
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+		if ( isset( $dispatchers['ajax'] ) ) {
+			$ajax_dispatcher = $dispatchers['ajax'];
+			remove_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), 0 );
+
+			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
+			add_action( 'shutdown', array( $ajax_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
+		}
+	}
+
+	return $dispatchers;
+}
+add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
+
+/**
+ * Load QM plugins
+ */
+if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+}
+if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
+}

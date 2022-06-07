@@ -5,18 +5,23 @@ namespace Automattic\VIP\Tests;
 use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 use function Automattic\VIP\WP_CLI\init_is_ssl_toggle_for_multisite;
 
-class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
-	public function setUp() {
+use WP_UnitTestCase;
+
+// phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
+class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
+	public function setUp(): void {
 		parent::setUp();
 
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- safe - test environment
 		$this->initial_https_value = $_SERVER['HTTPS'] ?? null;
 	}
 
-	public function tearDown() {
+	public function tearDown(): void {
 		$_SERVER['HTTPS'] = $this->initial_https_value;
 
 		parent::tearDown();
 	}
+
 	public function get_test_data() {
 		return [
 			// 1) siteurl
@@ -29,19 +34,19 @@ class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
 				'on',
 			],
 
-			'https_site_url__is_ssl' => [
+			'https_site_url__is_ssl'     => [
 				'https://example.com',
 				'on',
 				'on',
 			],
 
-			'http_site_url__not_is_ssl' => [
+			'http_site_url__not_is_ssl'  => [
 				'http://example.com',
 				null,
 				null,
 			],
 
-			'http_site_url__is_ssl' => [
+			'http_site_url__is_ssl'      => [
 				'http://example.com',
 				'on',
 				null,
@@ -64,6 +69,7 @@ class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
 		}
 
 		maybe_toggle_is_ssl();
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$actual_https_value = $_SERVER['HTTPS'] ?? null;
 
 		$this->assertEquals( $expected_https_value, $actual_https_value );
@@ -76,16 +82,16 @@ class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
 		}
 
 		$blog_1_id = $this->factory->blog->create_object( [
-			'domain' => 'not-ssl.com',
-			'path' => '/',
-			'title' => 'Not SSL',
+			'domain'  => 'not-ssl.com',
+			'path'    => '/',
+			'title'   => 'Not SSL',
 			'site_id' => 1,
 		] );
 
 		$blog_2_id = $this->factory->blog->create_object( [
-			'domain' => 'is-ssl.com',
-			'path' => '/',
-			'title' => 'Is SSL',
+			'domain'  => 'is-ssl.com',
+			'path'    => '/',
+			'title'   => 'Is SSL',
 			'site_id' => 1,
 		] );
 		update_blog_option( $blog_2_id, 'siteurl', 'https://is-ssl.com' );
@@ -94,10 +100,15 @@ class VIP_WP_CLI__SSL__Test extends \WP_UnitTestCase {
 
 		// Change from ! is_ssl() to SSL site => is_ssL() === true
 		switch_to_blog( $blog_2_id );
+
+		self::assertTrue( isset( $_SERVER['HTTPS'] ) );
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$this->assertEquals( 'on', $_SERVER['HTTPS'] );
 
 		// Change to same site
 		switch_to_blog( $blog_2_id );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		$this->assertEquals( 'on', $_SERVER['HTTPS'] );
 
 		// Change from is_ssl() to non-SSL site => is_ssl() === false

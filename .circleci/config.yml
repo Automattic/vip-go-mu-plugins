@@ -1,0 +1,273 @@
+workflows:
+  version: 2
+  main:
+    jobs:
+      - php-lint
+      - php74-core-tests
+      - php74-core-multisite-tests
+      - php74-build-singlesite
+      - php74-build-singlesite-59
+      - php74-build-singlesite-58
+      - php74-build-singlesite-57
+      - php74-build-singlesite-56
+      - php74-build-singlesite-55
+      - php74-build-multisite
+      - php74-build-singlesite-no-jetpack
+      - php74-build-multisite-no-jetpack
+      - search-dev-tools
+
+  after-master-merge:
+    jobs:
+      - push-code-to-build:
+          filters:
+            branches:
+              only: master
+      - create-changelog-draft:
+          filters:
+            branches:
+              only: master
+
+version: 2.1
+
+parameters:
+  db_host:
+    type: string
+    default: 127.0.0.1
+  db_name:
+    type: string
+    default: wordpress_test
+  db_user:
+    type: string
+    default: root
+  db_pass:
+    type: string
+    default: ""
+
+
+job-references:
+  db_image: &db_image
+    ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
+
+  setup_environment: &setup_environment
+    name: "Setup Environment Variables"
+    command: |
+      source /home/circleci/.bashrc
+      source "${NVM_DIR}/nvm.sh"
+      echo "export PATH=$HOME/.composer/vendor/bin:$PATH" >> $BASH_ENV
+
+  install_dependencies: &install_dependencies
+    name: "Install Dependencies"
+    command: |
+      npm ci
+      composer install -n
+
+  prepare_repo: &prepare_repo
+    name: "Prepare Repo"
+    command: |
+      git submodule update --init --recursive
+
+  run_tests: &run_tests
+    name: "Run Tests"
+    command: |
+      if [ "$DISABLE_JETPACK" = "1" ]; then
+        echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> 000-vip-init.php
+        /usr/local/bin/runner --exclude-group jetpack-required  --order-by=random
+      else
+        /usr/local/bin/runner --order-by=random
+      fi
+    environment:
+      MYSQL_HOST: << pipeline.parameters.db_host >>
+      MYSQL_USER: << pipeline.parameters.db_user >>
+      MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
+      MYSQL_DB: << pipeline.parameters.db_name >>
+      DISABLE_XDEBUG: "1"
+
+  php_job: &php_job
+    steps:
+      - checkout
+      - run: *setup_environment
+      - run: *install_dependencies
+      - run: *prepare_repo
+      - run: *run_tests
+
+  php_core_job: &php_core_job
+    steps:
+      - checkout
+      - run: *prepare_repo
+      - run:
+          name: "Run Tests"
+          command: |
+            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins"
+            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins/000-vip-init.php"
+            /usr/local/bin/runner
+          environment:
+            MYSQL_HOST: << pipeline.parameters.db_host >>
+            MYSQL_USER: << pipeline.parameters.db_user >>
+            MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
+            MYSQL_DB: << pipeline.parameters.db_name >>
+
+  lint_job: &lint_job
+    steps:
+      - checkout
+      - run: *prepare_repo
+      - run: *install_dependencies
+      - run:
+          name: "Lint"
+          command: npm run lint
+
+jobs:
+  php74-core-tests:
+    <<: *php_core_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-core-test-runner
+      - image: *db_image
+
+  php74-core-multisite-tests:
+    <<: *php_core_job
+    environment:
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-core-test-runner
+      - image: *db_image
+
+  php-lint:
+    <<: *lint_job
+    docker:
+      - image: cimg/php:8.0-node
+
+  php74-build-multisite:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-multisite-no-jetpack:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "1"
+      WP_VERSION: "latest"
+      DISABLE_JETPACK: "1"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-55:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.5.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-56:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.6.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-57:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.7.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-58:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.8.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-59:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "5.9.x"
+      PHPUNIT_VERSION: "7"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  php74-build-singlesite-no-jetpack:
+    <<: *php_job
+    environment:
+      WP_MULTISITE: "0"
+      WP_VERSION: "latest"
+      DISABLE_JETPACK: "1"
+    docker:
+      - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
+      - image: *db_image
+
+  create-changelog-draft:
+    environment:
+      CIRCLE_PROJECT_USERNAME: Automattic
+      CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
+    docker:
+      - image: circleci/php:7.4-node
+    steps:
+      - run: composer require automattic/vip-build-tools:1.0.7
+      - run:
+          command: |
+            php $HOME/project/vendor/automattic/vip-build-tools/scripts/github-changelog.php \
+                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
+                --wp-tag-ids=1784989 \
+                --wp-channel-ids=267076 \
+                --wp-status=publish \
+                --debug
+
+  search-dev-tools:
+    docker:
+      - image: cimg/node:16.15.0
+    steps:
+      - checkout
+      - run:
+          command: |
+            if grep -q webpack-dev-server search/search-dev-tools/build/bundle.js; then
+              echo "Attempted to commit a development version of search-dev-tools, please rebuild with npm run build"
+              exit 1
+            fi
+      - run: npm ci --prefix search/search-dev-tools
+      - run: npm run lint --prefix search/search-dev-tools
+      # This build is only used to verify that the src is buildable, not to persist build artifacts
+      - run: npm run build --prefix search/search-dev-tools
+
+  push-code-to-build:
+      docker:
+        - image: cimg/php:7.4
+      environment:
+        GIT_REVISION: << pipeline.git.revision >>
+      steps:
+        - checkout
+        - add_ssh_keys:
+            fingerprints:
+              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
+        - run: ./ci/deploy.sh

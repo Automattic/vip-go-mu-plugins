@@ -1,7 +1,11 @@
 <?php
-/**
- * Allow for async processing of tasks normally hooked to certain `transition_post_status` calls.
- */
+
+/*
+Plugin Name: Async Publish Actions
+Description: Allow for async processing of tasks normally hooked to certain `transition_post_status` calls.
+Author: Automattic
+Author URI: http://automattic.com/
+*/
 
 namespace Automattic\VIP\Async_Publish_Actions;
 
@@ -53,8 +57,15 @@ function _wpcom_do_async_transition_post_status( $post_id, $new_status, $old_sta
 	$post = get_post( $post_id );
 
 	// If post status has changed since this was queued, abort and let the next event handle this post.
-	if ( $new_status !== get_post_status( $post ) ) {
+	if ( get_post_status( $post ) !== $new_status ) {
 		return;
+	}
+
+	// Gauge how often this feature is used.
+	if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
+		\Automattic\VIP\Stats\send_pixel( [
+			'vip-go-async-publish-job' => FILES_CLIENT_SITE_ID,
+		] );
 	}
 
 	/**
@@ -118,6 +129,21 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 		'old_status' => $old_status,
 	];
 
+	/**
+	 * Filter whether or not a cron event should be scheduled when the post transitions status.
+	 *
+	 * @param bool  $true Whether or not to schedule the cron event.
+	 * @param array $args Array of arguments containing the post_id, new_status, and old_status.
+	 */
+	if ( false === apply_filters( 'wpcom_async_transition_post_status_schedule_async', true, $args ) ) {
+		return;
+	}
+
+	// If nothing is hooked on, avoid scheduling a cron job.
+	if ( ! has_action( 'async_transition_post_status' ) && ! has_action( "async_{$old_status}_to_{$new_status}" ) && ! has_action( "async_{$new_status}_{$post->post_type}" ) ) {
+		return;
+	}
+
 	if ( false !== wp_next_scheduled( ASYNC_TRANSITION_EVENT, $args ) ) {
 		return;
 	}
@@ -133,15 +159,28 @@ function _queue_async_hooks( $new_status, $old_status, $post ) {
 if ( should_offload() ) {
 	// Trigger offloading.
 	add_action( 'transition_post_status', __NAMESPACE__ . '\_queue_async_hooks', 10, 3 );
-
-	/**
-	 * Offload ping- and enclosure-related events
-	 */
-	remove_action( 'publish_post', '\_publish_post_hook', 5 );
-	add_action( 'async_publish_post', '\_publish_post_hook', 5, 1 );
 }
 
 /**
  * Hook regardless `should_offload()`, lest unrelated requests be impacted
  */
 add_action( ASYNC_TRANSITION_EVENT, __NAMESPACE__ . '\_wpcom_do_async_transition_post_status', 10, 3 );
+
+/**
+ * Bump concurrency of the transition events.
+ *
+ * With lots of publishing activity on a site, we can end up with a backlog.
+ * Enabling some concurrency allows that to be cleared a bit faster.
+ *
+ * One downside is that the events are no longer atomic and anything relying
+ *   on post state should check the current value in the event callback.
+ *
+ * For example, with a trash and untrash, the `untrash` event may fire first (or
+ *   at the same time and `get_post( $post->ID )->post_status` should be used to
+ *   verify what state the post is in, if needed).
+ */
+add_filter( 'a8c_cron_control_concurrent_event_whitelist', function( $whitelist ) {
+	$whitelist[ ASYNC_TRANSITION_EVENT ] = 5; // safe, low number to start
+
+	return $whitelist;
+} );

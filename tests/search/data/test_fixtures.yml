@@ -1,0 +1,68 @@
+# Ran with: 
+# ~$ for i in {1..200}; do wp fixtures load --file=/path/to/test_fixtures.yml; done &> fake_loop_boogaloo.txt &
+# ~$ disown %<JOB ID>
+
+#
+# ATTACHMENTS
+#
+Hellonico\Fixtures\Entity\Attachment:
+  image{1..3}:
+    file: <image(<uploadDir()>, 100, 100)>
+#
+# USERS
+#
+Hellonico\Fixtures\Entity\User:
+  user{1..5}:
+    user_login (unique): <username()>
+    user_pass: 123456
+    user_email: <safeEmail()>
+    user_url: <url()>
+    user_registered: <dateTimeThisDecade()>
+    first_name: <firstName()>
+    last_name: <lastName()>
+    description: <sentence()>
+    role: <randomElement(['subscriber', 'editor', 'publisher', 'reader', 'writer', 'author', 'other'])>
+    meta:
+      phone_number: <phoneNumber()>
+      address: <streetAddress()>
+      zip: <postcode()>
+      city: <city()>
+#
+# TERMS
+#
+Hellonico\Fixtures\Entity\Term:
+  term_default (template):
+    name (unique): <words(10, true)>
+    description: <sentence()>
+  category{1..20} (extends term_default):
+    parent: '50%? <termId(childless=1)>'
+    taxonomy: 'category'
+  tag{1..50} (extends term_default):
+    taxonomy: post_tag
+  places{1..5} (extends term_default):
+    taxonomy: place
+#
+# POSTS
+#
+Hellonico\Fixtures\Entity\Post:
+  post_default (template):
+    post_title (unique): <words(20, true)>
+    post_date: <dateTimeThisDecade()>
+    post_content: <paragraphs(10, true)>
+    post_excerpt: <paragraphs(1, true)>
+    post_author: '@user*->ID'
+    meta:
+      _thumbnail_id: '@image*->ID'
+      extra_field: <paragraphs(1, true)>
+      string_field: <sentence()>
+      int_field: <randomNumber()>
+      date_field: <dateTimeThisCentury()>
+      float_field: <latitude()>
+  post{1..5000} (extends post_default):
+    post_category: '3x @category*->term_id'
+    tax_input:
+      post_tag: '5x @tag*->term_id'
+  page{1..25} (extends post_default):
+    post_type: page
+  product{1..50} (extends post_default):
+    post_type: product

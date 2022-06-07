@@ -1,0 +1,32 @@
+{
+  "name": "@automattic/vip-go-mu-plugins",
+  "private": true,
+  "version": "1.0.0",
+  "description": "mu-plugins used on the VIP Go platform",
+  "scripts": {
+    "phplint": "bin/php-lint.sh",
+    "phpcs": "vendor/bin/phpcs --cache",
+    "phpcs:fix": "vendor/bin/phpcbf",
+    "lint": "npm run phplint && npm run phpcs",
+    "lint-e2e": "eslint -c __tests__/e2e/.eslintrc.js --fix __tests__",
+    "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
+    "prepare": "husky install",
+    "setup-e2e-env": "./__tests__/e2e/bin/setup-env.sh",
+    "destroy-e2e-env": "vip dev-env destroy --slug=e2e-test-site",
+    "test-e2e": "cd __tests__/e2e/ && playwright test -c 'playwright.config.ts'"
+  },
+  "author": "Automattic",
+  "devDependencies": {
+    "@automattic/eslint-plugin-wpvip": "^0.1.0-0",
+    "@playwright/test": "1.22.2",
+    "asana-phrase": "0.0.8",
+    "eslint": "^8.15.0",
+    "eslint-plugin-playwright": "^0.9.0",
+    "husky": "8.0.1",
+    "lint-staged": "^13.0.0",
+    "phplint": "2.0.5",
+    "playwright": "1.22.2",
+    "prettier": "^2.6.2",
+    "typescript": "^4.6.2"
+  }
+}

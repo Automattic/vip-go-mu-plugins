@@ -7,4 +7,6 @@ Author: Automattic
 Author URI: http://automattic.com/
 */
 
-require_once( __DIR__ . '/advanced-post-cache/advanced-post-cache.php' );
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	require_once __DIR__ . '/advanced-post-cache/advanced-post-cache.php';
+}

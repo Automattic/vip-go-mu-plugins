@@ -87,6 +87,48 @@ class Akismet_REST_API {
 				'callback' => array( 'Akismet_REST_API', 'get_stats' ),
 			)
 		) );
+
+		register_rest_route( 'akismet/v1', '/alert', array(
+			array(
+				'methods' => WP_REST_Server::READABLE,
+				'permission_callback' => array( 'Akismet_REST_API', 'remote_call_permission_callback' ),
+				'callback' => array( 'Akismet_REST_API', 'get_alert' ),
+				'args' => array(
+					'key' => array(
+						'required' => false,
+						'type' => 'string',
+						'sanitize_callback' => array( 'Akismet_REST_API', 'sanitize_key' ),
+						'description' => __( 'A 12-character Akismet API key. Available at akismet.com/get/', 'akismet' ),
+					),
+				),
+			),
+			array(
+				'methods' => WP_REST_Server::EDITABLE,
+				'permission_callback' => array( 'Akismet_REST_API', 'remote_call_permission_callback' ),
+				'callback' => array( 'Akismet_REST_API', 'set_alert' ),
+				'args' => array(
+					'key' => array(
+						'required' => false,
+						'type' => 'string',
+						'sanitize_callback' => array( 'Akismet_REST_API', 'sanitize_key' ),
+						'description' => __( 'A 12-character Akismet API key. Available at akismet.com/get/', 'akismet' ),
+					),
+				),
+			),
+			array(
+				'methods' => WP_REST_Server::DELETABLE,
+				'permission_callback' => array( 'Akismet_REST_API', 'remote_call_permission_callback' ),
+				'callback' => array( 'Akismet_REST_API', 'delete_alert' ),
+				'args' => array(
+					'key' => array(
+						'required' => false,
+						'type' => 'string',
+						'sanitize_callback' => array( 'Akismet_REST_API', 'sanitize_key' ),
+						'description' => __( 'A 12-character Akismet API key. Available at akismet.com/get/', 'akismet' ),
+					),
+				),
+			)
+		) );
 	}
 
 	/**
@@ -231,6 +273,50 @@ class Akismet_REST_API {
 		return rest_ensure_response( $stat_totals );
 	}
 
+	/**
+	 * Get the current alert code and message. Alert codes are used to notify the site owner
+	 * if there's a problem, like a connection issue between their site and the Akismet API,
+	 * invalid requests being sent, etc.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_Error|WP_REST_Response
+	 */
+	public static function get_alert( $request ) {
+		return rest_ensure_response( array(
+			'code' => get_option( 'akismet_alert_code' ),
+			'message' => get_option( 'akismet_alert_msg' ),
+		) );
+	}
+
+	/**
+	 * Update the current alert code and message by triggering a call to the Akismet server.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_Error|WP_REST_Response
+	 */
+	public static function set_alert( $request ) {
+		delete_option( 'akismet_alert_code' );
+		delete_option( 'akismet_alert_msg' );
+
+		// Make a request so the most recent alert code and message are retrieved.
+		Akismet::verify_key( Akismet::get_api_key() );
+
+		return self::get_alert( $request );
+	}
+
+	/**
+	 * Clear the current alert code and message.
+	 *
+	 * @param WP_REST_Request $request
+	 * @return WP_Error|WP_REST_Response
+	 */
+	public static function delete_alert( $request ) {
+		delete_option( 'akismet_alert_code' );
+		delete_option( 'akismet_alert_msg' );
+
+		return self::get_alert( $request );
+	}
+
 	private static function key_is_valid( $key ) {
 		$response = Akismet::http_post(
 			Akismet::build_query(
@@ -251,6 +337,15 @@ class Akismet_REST_API {
 
 	public static function privileged_permission_callback() {
 		return current_user_can( 'manage_options' );
+	}
+
+	/**
+	 * For calls that Akismet.com makes to the site to clear outdated alert codes, use the API key for authorization.
+	 */
+	public static function remote_call_permission_callback( $request ) {
+		$local_key = Akismet::get_api_key();
+
+		return $local_key && ( strtolower( $request->get_param( 'key' ) ) === strtolower( $local_key ) );
 	}
 
 	public static function sanitize_interval( $interval, $request, $param ) {

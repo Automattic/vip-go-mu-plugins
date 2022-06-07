@@ -3,12 +3,13 @@
 namespace Automattic\VIP\Performance;
 
 class Last_Post_Modified {
-	const OPTION_PREFIX = 'wpcom_vip_lastpostmodified';
-	const DEFAULT_TIMEZONE = 'gmt';
+	const OPTION_PREFIX        = 'wpcom_vip_lastpostmodified';
+	const DEFAULT_TIMEZONE     = 'gmt';
 	const LOCK_TIME_IN_SECONDS = 30;
 
 	public static function init() {
-		if ( true === apply_filters( 'wpcom_vip_disable_lastpostmodified', false ) ) {
+		$disable = defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS;
+		if ( true === apply_filters( 'wpcom_vip_disable_lastpostmodified', $disable ) ) {
 			return;
 		}
 
@@ -69,6 +70,7 @@ class Last_Post_Modified {
 	private static function is_locked( $post_type ) {
 		$key = self::get_lock_name( $post_type );
 		// if the add fails, then we already have a lock set
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		return false === wp_cache_add( $key, 1, false, self::LOCK_TIME_IN_SECONDS );
 	}
 
