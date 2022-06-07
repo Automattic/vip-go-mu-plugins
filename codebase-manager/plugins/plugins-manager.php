@@ -2,8 +2,12 @@
 
 namespace Automattic\VIP\CodebaseManager;
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Remote objects use camelCase.
+
 class PluginsManager {
+	private $all_plugins;
 	private $update_data;
+	private $codebase_info;
 	private $column_count;
 
 	public function init() {
@@ -12,7 +16,9 @@ class PluginsManager {
 			return;
 		}
 
-		$this->update_data = $this->fetch_plugins_with_updates();
+		$this->all_plugins   = get_plugins();
+		$this->update_data   = $this->fetch_plugins_with_updates();
+		$this->codebase_info = $this->fetch_codebase_info();
 
 		// Check how many columns exist on the plugin's page.
 		$wp_list_table      = _get_list_table( 'WP_Plugins_List_Table', [ 'screen' => 'plugins' ] );
@@ -32,8 +38,12 @@ class PluginsManager {
 	public function output_plugin_row_information( $plugin_file, $plugin_data ) {
 		$update_data = $this->update_data[ $plugin_file ] ?? new \stdClass();
 
-		$plugin = new Plugin( $plugin_file, $plugin_data, $update_data );
+		$plugin_folder   = explode( '/', $plugin_file )[0];
+		$vulnerabilities = $this->codebase_info['plugins_vulns'][ "plugins/{$plugin_folder}" ] ?? [];
+
+		$plugin = new Plugin( $plugin_file, $plugin_data, $update_data, $vulnerabilities );
 		$plugin->display_version_update_information( $this->column_count );
+		$plugin->display_vulnerability_information( $this->column_count );
 	}
 
 	/**
@@ -73,6 +83,51 @@ class PluginsManager {
 	}
 
 	/**
+	 * Get aggregated information about the codebase (plugin vulnerabilities, open update PRs, etc).
+	 *
+	 * @return array An array of various objects.
+	 */
+	private function fetch_codebase_info(): array {
+		$cached_info = wp_cache_get( 'codebase_info', 'vip_plugins_manager' );
+
+		if ( is_array( $cached_info ) ) {
+			return $cached_info;
+		}
+
+		$info = [ 'plugins_vulns' => [] ];
+		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) ) {
+			$site_id = defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ? FILES_CLIENT_SITE_ID : 0;
+
+			$url      = rtrim( SERVICES_API_URL, '/' ) . "/codebase-manager/v1/sites/{$site_id}/info";
+			$response = vip_safe_wp_remote_request( $url, new \WP_Error( 'remote_request_failed' ), 3, 3, 20, [
+				'method'  => 'GET',
+				'headers' => [ 'Authorization' => 'Bearer ' . SERVICES_AUTH_TOKEN ],
+			] );
+
+			$response_code = (int) wp_remote_retrieve_response_code( $response );
+			if ( 200 !== $response_code ) {
+				trigger_error( sprintf( 'VIP Codebase Manager: Failed to retrieve codebase info, received status code %s.', esc_html( $response_code ) ), E_USER_WARNING );
+				return $info;
+			}
+
+			$response_body = json_decode( wp_remote_retrieve_body( $response ) );
+
+			$vulnerabilities = $response_body->plugins->vulnerabilities ?? [];
+			foreach ( $vulnerabilities as $vuln ) {
+				if ( ! isset( $info['plugins_vulns'][ $vuln->modulePath ] ) ) {
+					$info['plugins_vulns'][ $vuln->modulePath ] = [];
+				}
+
+				// Indexing by the plugin path for easier usage later.
+				array_push( $info['plugins_vulns'][ $vuln->modulePath ], $vuln );
+			}
+		}
+
+		wp_cache_set( 'codebase_info', $info, 'vip_plugins_manager', 5 * MINUTE_IN_SECONDS );
+		return $info;
+	}
+
+	/**
 	 * On VIP environments, users do not have install/update plugins caps.
 	 * Instead we'll use `activate_plugins` by default, but leave it open for customization if desired.
 	 */
@@ -109,30 +164,69 @@ class PluginsManager {
 				z-index: 26;
 			}
 
-			<?php
-			if ( 'plugins.php' === $hook_suffix ) {
-				$this->print_plugins_page_styles();
-			}
-			?>
+			<?php if ( 'plugins.php' === $hook_suffix ) : ?>
+				.plugins .plugin-vuln-tr td.plugin-vuln {
+					box-shadow: inset 0 -1px 0 rgb(0 0 0 / 10%);
+					overflow: hidden;
+					padding: 0;
+				}
 
+				.plugins .plugin-vuln-tr.active td.plugin-vuln {
+					border-left: 4px solid #72aee6;
+				}
+
+				.plugins .plugin-vuln-tr .vuln-message {
+					margin: 5px 20px 15px 40px;
+				}
+
+				.plugins .plugin-vuln-tr .vuln-message p:before {
+					display: inline-block;
+					font: normal 20px/1 dashicons;
+					-webkit-font-smoothing: antialiased;
+					-moz-osx-font-smoothing: grayscale;
+					color: #d63638;
+					content: "\f194";
+					margin-right: 6px;
+					vertical-align: bottom;
+				}
+
+				.plugins .plugin-vuln-tr .vuln-message p {
+					margin: .5em 0;
+				}
+
+				.plugins .plugin-vuln-tr .vuln-message li {
+					margin-left: 27px;
+					list-style-type: circle;
+				}
+
+				.plugins .hide-box-shadow {
+					box-shadow: none !important;
+				}
+
+				<?php $this->print_plugins_page_styles(); ?>
+				<?php endif; ?>
 		</style>
 		<?php
 	}
 
 	/**
-	 * We need to do some trickery to keep the outline from appearing before our custom update notices.
+	 * We need to do some trickery to keep the outline from appearing before our custom update/vuln notices.
 	 * WP Core handles this in a way that we can't really intercept, so have to do our own thing.
 	 */
 	private function print_plugins_page_styles(): void {
 		$plugins_needing_updates = array_keys( $this->update_data );
+		$plugins_with_vulns      = array_keys( $this->codebase_info['plugins_vulns'] );
 
-		if ( empty( $plugins_needing_updates ) ) {
-			return;
-		}
+		foreach ( array_keys( $this->all_plugins ) as $plugin_file ) {
+			$plugin_folder = explode( '/', $plugin_file )[0];
 
-		foreach ( $plugins_needing_updates as $plugin_file ) {
-			echo '#the-list tr[data-plugin="' . esc_attr( $plugin_file ) . '"] th { box-shadow: none; }';
-			echo '#the-list tr[data-plugin="' . esc_attr( $plugin_file ) . '"] td { box-shadow: none; }';
+			$has_update = in_array( $plugin_file, $plugins_needing_updates, true );
+			$has_vuln   = in_array( 'plugins/' . $plugin_folder, $plugins_with_vulns, true );
+
+			if ( $has_update || $has_vuln ) {
+				echo '#the-list tr[data-plugin="' . esc_attr( $plugin_file ) . '"] th { box-shadow: none; }';
+				echo '#the-list tr[data-plugin="' . esc_attr( $plugin_file ) . '"] td { box-shadow: none; }';
+			}
 		}
 	}
 }

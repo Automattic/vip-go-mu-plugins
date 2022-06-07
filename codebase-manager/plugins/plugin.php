@@ -2,21 +2,25 @@
 
 namespace Automattic\VIP\CodebaseManager;
 
+// phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- Remote objects use camelCase.
+
 class Plugin {
 	private string $file;
 	private string $name;
 	private string $plugin_url;
 	private string $update_url;
 	private ?string $new_version;
+	private array $vulnerabilities;
 
-	public function __construct( string $plugin_file, array $plugin_data, object $update_info ) {
+	public function __construct( string $plugin_file, array $plugin_data, object $update_info, array $vulnerabilities ) {
 		$this->file = $plugin_file;
 		$this->name = $plugin_data['Name'] ?? 'Missing Plugin Name';
 
-		$this->plugin_url = $plugin_data['PluginURI'] ?? '';
-		$this->update_url = $update_info->url ?? '';
-
+		$this->plugin_url  = $plugin_data['PluginURI'] ?? '';
+		$this->update_url  = $update_info->url ?? '';
 		$this->new_version = $update_info->new_version ?? null;
+
+		$this->vulnerabilities = $vulnerabilities;
 	}
 
 	public function display_version_update_information( int $number_of_columns ): void {
@@ -25,7 +29,7 @@ class Plugin {
 		}
 
 		printf( '<tr class="plugin-update-tr%s">', $this->is_active() ? ' active' : '' );
-		printf( '<td colspan="%s" class="plugin-update colspanchange">', esc_attr( $number_of_columns ) );
+		printf( '<td colspan="%s" class="plugin-update colspanchange%s">', esc_attr( $number_of_columns ), $this->has_vulnerabilities() ? ' hide-box-shadow' : '' );
 		print( '<div class="update-message notice inline notice-warning notice-alt"><p>' );
 
 		// In the future, could do the fancy iframe that core does here. It also allows 3rd party plugins to hook in with `plugins_api` filter to better expose their changelogs.
@@ -41,6 +45,46 @@ class Plugin {
 		}
 
 		print( '</p></div></td></tr>' );
+	}
+
+	public function display_vulnerability_information( int $number_of_columns ): void {
+		if ( ! $this->has_vulnerabilities() ) {
+			return;
+		}
+
+		printf( '<tr class="plugin-vuln-tr%s">', $this->is_active() ? ' active' : '' );
+		printf( '<td colspan="%s" class="plugin-vuln colspanchange">', esc_attr( $number_of_columns ) );
+		print( '<div class="vuln-message error inline notice-error notice-alt">' );
+
+		/* translators: 1: The number of vulnerabilities associated with the plugin. */
+		$message = sprintf( _n(
+			'There is %s known vulnerability for this plugin on the currently installed version:',
+			'There are %s known vulnerabilities for this plugin on the currently installed version:',
+			count( $this->vulnerabilities )
+		), number_format_i18n( count( $this->vulnerabilities ) ) );
+
+		echo '<p>' . esc_html( $message ) . '</p>';
+
+		echo '<ul>';
+		foreach ( $this->vulnerabilities as $vuln ) {
+			// "None" could be confusing, let's convert it to "Low".
+			$severity = 'NONE' === $vuln->severity ? 'Low' : ucwords( strtolower( $vuln->severity ) );
+
+			$severity_info = sprintf( '%s severity', esc_html( $severity ) );
+			if ( null !== $vuln->severityScore ) {
+				$severity_info = sprintf( '%s severity: %s/10', esc_html( $severity ), esc_html( $vuln->severityScore ) );
+			}
+
+			$vuln_text = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $vuln->link ), esc_html( $severity_info ) );
+			echo '<li>' . wp_kses( $vuln_text, [ 'a' => [ 'href' => [], 'target' => [] ] ] ) . '</li>'; // phpcs:ignore
+		}
+		echo '</ul>';
+
+		print( '</div></td></tr>' );
+	}
+
+	private function has_vulnerabilities(): bool {
+		return ! empty( $this->vulnerabilities );
 	}
 
 	private function has_available_update(): bool {
