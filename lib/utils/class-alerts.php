@@ -350,6 +350,10 @@ class Alerts {
 	 * @return bool True if successful. Else, will return false
 	 */
 	public static function chat( $channel_or_user, $message, $level = 0, $kind = '', $interval = 1 ) {
+		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'local' === VIP_GO_APP_ENVIRONMENT ) {
+			return false;
+		}
+
 		$alerts = self::instance();
 
 		if ( is_wp_error( $alerts ) ) {
