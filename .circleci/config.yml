@@ -16,16 +16,18 @@ workflows:
       - php74-build-multisite-no-jetpack
       - search-dev-tools
 
-  after-master-merge:
+  after-branch-merge:
     jobs:
       - push-code-to-build:
           filters:
             branches:
-              only: master
+              only: develop
       - create-changelog-draft:
           filters:
             branches:
-              only: master
+              only:
+                - staging
+                - update/ci
 
 version: 2.1
 
@@ -232,16 +234,17 @@ jobs:
       CIRCLE_PROJECT_USERNAME: Automattic
       CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
     docker:
-      - image: circleci/php:7.4-node
+      - image: cimg/php:7.4
     steps:
-      - run: composer require automattic/vip-build-tools:1.0.7
+      - checkout
+      - run: composer install -n
       - run:
           command: |
-            php $HOME/project/vendor/automattic/vip-build-tools/scripts/github-changelog.php \
+            php ./ci/changelog-summary.php \
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
                 --wp-tag-ids=1784989 \
                 --wp-channel-ids=267076 \
-                --wp-status=publish \
+                --wp-status=draft \
                 --debug
 
   search-dev-tools:
