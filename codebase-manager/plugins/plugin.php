@@ -29,7 +29,7 @@ class Plugin {
 		}
 
 		printf( '<tr class="plugin-update-tr%s">', $this->is_active() ? ' active' : '' );
-		printf( '<td colspan="%s" class="plugin-update colspanchange%s">', esc_attr( $number_of_columns ), $this->has_vulnerabilities() ? ' hide-box-shadow' : '' );
+		printf( '<td colspan="%d" class="plugin-update colspanchange%s">', esc_attr( $number_of_columns ), $this->has_vulnerabilities() ? ' hide-box-shadow' : '' );
 		print( '<div class="update-message notice inline notice-warning notice-alt"><p>' );
 
 		// In the future, could do the fancy iframe that core does here. It also allows 3rd party plugins to hook in with `plugins_api` filter to better expose their changelogs.
@@ -53,7 +53,7 @@ class Plugin {
 		}
 
 		printf( '<tr class="plugin-vuln-tr%s">', $this->is_active() ? ' active' : '' );
-		printf( '<td colspan="%s" class="plugin-vuln colspanchange">', esc_attr( $number_of_columns ) );
+		printf( '<td colspan="%d" class="plugin-vuln colspanchange">', esc_attr( $number_of_columns ) );
 		print( '<div class="vuln-message error inline notice-error notice-alt">' );
 
 		/* translators: 1: The number of vulnerabilities associated with the plugin. */
@@ -70,9 +70,11 @@ class Plugin {
 			// "None" could be confusing, let's convert it to "Low".
 			$severity = 'NONE' === $vuln->severity ? 'Low' : ucwords( strtolower( $vuln->severity ) );
 
-			$severity_info = sprintf( '%s severity', esc_html( $severity ) );
+			/* translators: 1: The vulnerability severity rating, such as "High". */
+			$severity_info = sprintf( __( '%s severity' ), esc_html( $severity ) );
 			if ( null !== $vuln->severityScore ) {
-				$severity_info = sprintf( '%s severity: %s/10', esc_html( $severity ), esc_html( $vuln->severityScore ) );
+				/* translators: 1: The vulnerability severity rating, such as "High". 2: The severity score, 0-10. */
+				$severity_info = sprintf( __( '%1$s severity: %2$s/10' ), esc_html( $severity ), esc_html( $vuln->severityScore ) );
 			}
 
 			$vuln_text = sprintf( '<a href="%s" target="_blank">%s</a>', esc_url( $vuln->link ), esc_html( $severity_info ) );
