@@ -22,12 +22,6 @@ workflows:
           filters:
             branches:
               only: develop
-      - create-changelog-draft:
-          filters:
-            branches:
-              only:
-                - staging
-                - update/ci
 
 version: 2.1
 
@@ -228,24 +222,6 @@ jobs:
     docker:
       - image: ghcr.io/automattic/vip-container-images/wp-test-runner:latest
       - image: *db_image
-
-  create-changelog-draft:
-    environment:
-      CIRCLE_PROJECT_USERNAME: Automattic
-      CIRCLE_PROJECT_REPONAME: vip-go-mu-plugins
-    docker:
-      - image: cimg/php:7.4
-    steps:
-      - checkout
-      - run: composer install -n
-      - run:
-          command: |
-            php ./ci/changelog-summary.php \
-                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
-                --wp-tag-ids=1784989 \
-                --wp-channel-ids=267076 \
-                --wp-status=draft \
-                --debug
 
   search-dev-tools:
     docker:

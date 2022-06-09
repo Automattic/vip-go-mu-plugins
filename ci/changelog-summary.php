@@ -5,16 +5,16 @@ require "vendor/autoload.php";
 
 function is_env_set() {
     return isset(
-        $_SERVER[ 'CIRCLE_PROJECT_USERNAME' ],
-        $_SERVER[ 'CIRCLE_PROJECT_REPONAME' ],
+        $_SERVER[ 'PROJECT_USERNAME' ],
+        $_SERVER[ 'PROJECT_REPONAME' ],
         $_SERVER[ 'CHANGELOG_POST_TOKEN'],
     );
 }
 
 if ( ! is_env_set() ) {
     echo "The following environment variables need to be set:
-    \tCIRCLE_PROJECT_USERNAME
-    \tCIRCLE_PROJECT_REPONAME
+    \tPROJECT_USERNAME
+    \tPROJECT_REPONAME
     \tCHANGELOG_POST_TOKEN\n";
     exit( 1 );
 }
@@ -36,10 +36,9 @@ if ( ! isset( $options[ "wp-endpoint" ] ) ) {
     exit( 1 );
 }
 
-define( 'SHA1', $_SERVER[ 'CIRCLE_SHA1' ] );
-define( 'PROJECT_USERNAME', $_SERVER[ 'CIRCLE_PROJECT_USERNAME' ] );
-define( 'PROJECT_REPONAME', $_SERVER[ 'CIRCLE_PROJECT_REPONAME' ] );
-define( 'BRANCH', $_SERVER[ 'CIRCLE_BRANCH' ] );
+define( 'PROJECT_USERNAME', $_SERVER[ 'PROJECT_USERNAME' ] );
+define( 'PROJECT_REPONAME', $_SERVER[ 'PROJECT_REPONAME' ] );
+define( 'BRANCH', $_SERVER[ 'BRANCH' ] );
 define( 'CHANGELOG_POST_TOKEN', $_SERVER[ 'CHANGELOG_POST_TOKEN' ] );
 define( 'GITHUB_TOKEN', $_SERVER[ 'GITHUB_TOKEN' ] ?? '' );
 
@@ -115,12 +114,12 @@ function mark_prs_deployed( $prs ) {
         debug("Updating PR labels " . $pr['title'] . "\n");
         $ch = curl_init(GITHUB_ENDPOINT . "/issues/" . $pr['number'] . '/labels');
         $headers = ['User-Agent: script'];
+        $body = '{"labels":["' . TAG_DEPLOYED . '"]}';
 
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_VERBOSE, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, TAG_DEPLOYED);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
 
         if (isset($_SERVER['GITHUB_TOKEN'])) {
             array_push($headers, 'Authorization:token ' . GITHUB_TOKEN);
