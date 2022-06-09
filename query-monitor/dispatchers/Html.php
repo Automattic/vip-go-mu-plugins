@@ -226,17 +226,11 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			$deps = array();
 		}
 
-		$css = 'query-monitor';
-
-		if ( defined( 'QM_DARK_MODE' ) && QM_DARK_MODE ) {
-			$css .= '-dark';
-		}
-
 		wp_enqueue_style(
 			'query-monitor',
-			$this->qm->plugin_url( "assets/{$css}.css" ),
+			$this->qm->plugin_url( 'assets/query-monitor.css' ),
 			array( 'dashicons' ),
-			$this->qm->plugin_ver( "assets/{$css}.css" )
+			$this->qm->plugin_ver( 'assets/query-monitor.css' )
 		);
 		wp_enqueue_script(
 			'query-monitor',
@@ -270,7 +264,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		 *
 		 * @since 3.6.0
 		 *
-		 * @param \QM_Dispatcher_Html $this The HTML dispatcher.
+		 * @param \QM_Dispatcher_Html $dispatcher The HTML dispatcher.
 		 */
 		do_action( 'qm/output/enqueued-assets', $this );
 	}
@@ -412,7 +406,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo 'var qm = ' . json_encode( $json ) . ';' . "\n\n";
 		echo '</script>' . "\n\n";
 
-		echo '<div id="query-monitor-main" class="' . implode( ' ', array_map( 'esc_attr', $class ) ) . '" dir="ltr">';
+		echo '<div id="query-monitor-main" data-theme="auto" class="' . implode( ' ', array_map( 'esc_attr', $class ) ) . '" dir="ltr">';
 		echo '<div id="qm-side-resizer" class="qm-resizer"></div>';
 		echo '<div id="qm-title" class="qm-resizer">';
 		echo '<h1 class="qm-title-heading">' . esc_html__( 'Query Monitor', 'query-monitor' ) . '</h1>';
@@ -516,7 +510,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '<div class="qm qm-non-tabular" id="qm-settings" data-qm-state="' . esc_attr( $state ) . '">';
 		echo '<h2 class="qm-screen-reader-text">' . esc_html__( 'Settings', 'query-monitor' ) . '</h2>';
 
-		echo '<div class="qm-boxed">';
+		echo '<div class="qm-grid">';
 		echo '<section>';
 		echo '<h3>' . esc_html__( 'Authentication', 'query-monitor' ) . '</h3>';
 
@@ -527,10 +521,8 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '<p data-qm-state-visibility="on"><span class="dashicons dashicons-yes qm-dashicons-yes"></span> ' . esc_html__( 'Authentication cookie is set', 'query-monitor' ) . '</p>';
 
 		echo '</section>';
-		echo '</div>';
 
-		echo '<div class="qm-boxed">';
-		echo '<section class="qm-editor">';
+		echo '<section>';
 
 		echo '<h3>' . esc_html__( 'Editor', 'query-monitor' ) . '</h3>';
 
@@ -559,14 +551,23 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '</p>';
 		echo '<p id="qm-editor-save-status"><span class="dashicons dashicons-yes qm-dashicons-yes"></span> ' . esc_html__( 'Saved! Reload to apply changes.', 'query-monitor' ) . '</p>';
 		echo '</section>';
+
+		echo '<section>';
+		echo '<h3>' . esc_html__( 'Appearance', 'query-monitor' ) . '</h3>';
+
+		echo '<p>' . esc_html__( 'Your browser color scheme is respected by default. You can override it here.', 'query-monitor' ) . '</p>';
+
+		echo '<ul>';
+		echo '<li><label><input type="radio" class="qm-theme-toggle qm-radio" name="qm-theme" value="auto" checked/>' . esc_html_x( 'Auto', 'colour scheme', 'query-monitor' ) . '</label></li>';
+		echo '<li><label><input type="radio" class="qm-theme-toggle qm-radio" name="qm-theme" value="light"/>' . esc_html_x( 'Light', 'colour scheme', 'query-monitor' ) . '</label></li>';
+		echo '<li><label><input type="radio" class="qm-theme-toggle qm-radio" name="qm-theme" value="dark"/>' . esc_html_x( 'Dark', 'colour scheme', 'query-monitor' ) . '</label></li>';
+		echo '</ul>';
+
+		echo '</section>';
 		echo '</div>';
 
 		echo '<div class="qm-boxed">';
 		$constants = array(
-			'QM_DARK_MODE' => array(
-				'label' => __( 'Enable dark mode for Query Monitor\'s interface.', 'query-monitor' ),
-				'default' => false,
-			),
 			'QM_DB_EXPENSIVE' => array(
 				'label' => __( 'If an individual database query takes longer than this time to execute, it\'s considered "slow" and triggers a warning.', 'query-monitor' ),
 				'default' => 0.05,
@@ -664,8 +665,8 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		 *
 		 * @since  3.1.0
 		 *
-		 * @param QM_Dispatcher_Html $this             The HTML dispatcher instance.
-		 * @param QM_Output_Html[]   $this->outputters Array of outputters.
+		 * @param QM_Dispatcher_Html $dispatcher The HTML dispatcher instance.
+		 * @param QM_Output_Html[]   $outputters Array of outputters.
 		 */
 		do_action( 'qm/output/after', $this, $this->outputters );
 

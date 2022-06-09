@@ -136,7 +136,12 @@ class QM_Output_Html_DB_Dupes extends QM_Output_Html {
 		if ( $dbq ) {
 			$dbq_data = $dbq->get_data();
 			if ( isset( $dbq_data['dupes'] ) && count( $dbq_data['dupes'] ) ) {
-				$count = count( $dbq_data['dupes'] );
+				$count = 0;
+
+				foreach ( $dbq_data['dupes'] as $dupe ) {
+					$count += count( $dupe );
+				}
+
 				$menu[ $this->collector->id() ] = $this->menu( array(
 					'title' => esc_html( sprintf(
 						/* translators: %s: Number of duplicate database queries */
@@ -157,8 +162,6 @@ class QM_Output_Html_DB_Dupes extends QM_Output_Html {
 	public function panel_menu( array $menu ) {
 		$id = $this->collector->id();
 		if ( isset( $menu[ $id ] ) ) {
-			$menu[ $id ]['title'] = $menu[ $id ]['title'];
-
 			$menu['qm-db_queries-$wpdb']['children'][] = $menu[ $id ];
 			unset( $menu[ $id ] );
 		}

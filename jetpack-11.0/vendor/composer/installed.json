@@ -1649,17 +1649,17 @@
         },
         {
             "name": "automattic/jetpack-waf",
-            "version": "v0.6.0",
-            "version_normalized": "0.6.0.0",
+            "version": "v0.6.2",
+            "version_normalized": "0.6.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Automattic/jetpack-waf.git",
-                "reference": "59d9c6c00ea2fb190dc12bc75477d4337031e717"
+                "reference": "e2913c79506ddfafa4d82afbaf3998dfd721ea10"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Automattic/jetpack-waf/zipball/59d9c6c00ea2fb190dc12bc75477d4337031e717",
-                "reference": "59d9c6c00ea2fb190dc12bc75477d4337031e717",
+                "url": "https://api.github.com/repos/Automattic/jetpack-waf/zipball/e2913c79506ddfafa4d82afbaf3998dfd721ea10",
+                "reference": "e2913c79506ddfafa4d82afbaf3998dfd721ea10",
                 "shasum": ""
             },
             "require": {
@@ -1669,7 +1669,7 @@
                 "automattic/jetpack-changelogger": "^3.1",
                 "yoast/phpunit-polyfills": "1.0.3"
             },
-            "time": "2022-05-18T11:11:39+00:00",
+            "time": "2022-06-06T07:57:49+00:00",
             "type": "jetpack-library",
             "extra": {
                 "autotagger": true,
@@ -1698,7 +1698,7 @@
             ],
             "description": "Tools to assist with the Jetpack Web Application Firewall",
             "support": {
-                "source": "https://github.com/Automattic/jetpack-waf/tree/v0.6.0"
+                "source": "https://github.com/Automattic/jetpack-waf/tree/v0.6.2"
             },
             "install-path": "../../jetpack_vendor/automattic/jetpack-waf"
         },
