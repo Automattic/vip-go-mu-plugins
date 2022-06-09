@@ -9,8 +9,8 @@
  * @license   GPL v2 or later
  *
  * Plugin Name:  Query Monitor
- * Description:  The developer tools panel for WordPress.
- * Version:      3.9.0
+ * Description:  The Developer Tools Panel for WordPress.
+ * Version:      3.8.2
  * Plugin URI:   https://querymonitor.com/
  * Author:       John Blackbourn
  * Author URI:   https://querymonitor.com/
@@ -51,10 +51,6 @@ function wpcom_vip_qm_enable( $enable ) {
 
 	if ( ! defined( 'QM_COOKIE' ) ) {
 		define( 'QM_COOKIE', 'query_monitor_' . COOKIEHASH );
-	}
-
-	if ( defined( 'WP_INSTALLING' ) ) {
-		return false;
 	}
 
 	if ( current_user_can( 'view_query_monitor' ) ) {
@@ -115,7 +111,9 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 }
-add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+if ( ! defined( 'WP_INSTALLING' ) ) {
+	add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
+}
 
 /**
  * Hooks the wp action to avoid showing Query Monitor on 404 pages
@@ -129,6 +127,7 @@ function wpcom_vip_qm_disable_on_404() {
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
+
 
 // We are putting dispatchers as last so that QM still can catch other operations in shutdown action
 // See https://github.com/johnbillion/query-monitor/pull/549

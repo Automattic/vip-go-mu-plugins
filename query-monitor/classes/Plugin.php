@@ -54,13 +54,7 @@ abstract class QM_Plugin {
 	 * @return string Version
 	 */
 	final public function plugin_ver( $file ) {
-		$path = $this->plugin_path( $file );
-
-		if ( file_exists( $path ) ) {
-			return (string) filemtime( $path );
-		}
-
-		return QM_VERSION;
+		return (string) filemtime( $this->plugin_path( $file ) );
 	}
 
 	/**

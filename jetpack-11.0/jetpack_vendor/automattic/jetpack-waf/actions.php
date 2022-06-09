@@ -7,8 +7,6 @@
 
 namespace Automattic\Jetpack\Waf;
 
-use Automattic\Jetpack\Status\Host;
-
 // We don't want to be anything in here outside WP context.
 if ( ! function_exists( 'add_action' ) ) {
 	return;
@@ -23,17 +21,6 @@ if ( defined( 'DISABLE_JETPACK_WAF' ) && DISABLE_JETPACK_WAF ) {
 
 if ( defined( 'IS_WPCOM' ) && IS_WPCOM ) {
 	return;
-}
-
-if ( ( new Host() )->is_atomic_platform() ) {
-	add_filter(
-		'jetpack_get_available_modules',
-		function ( $modules ) {
-			unset( $modules['waf'] );
-
-			return $modules;
-		}
-	);
 }
 
 /**
@@ -61,7 +48,7 @@ if ( Waf_Runner::is_enabled() ) {
  * @return void
  */
 add_action(
-	'plugins_loaded',
+	'plugin_loaded',
 	function () {
 		require_once __DIR__ . '/run.php';
 	}

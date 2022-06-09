@@ -54,9 +54,6 @@ class Alerts {
 	 */
 	protected function send( array $body ) {
 		$fallback_error = new WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
-		if ( empty( $this->service_url ) ) {
-			return $fallback_error;
-		}
 
 		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
 			'method' => 'POST',
@@ -356,12 +353,11 @@ class Alerts {
 		$alerts = self::instance();
 
 		if ( is_wp_error( $alerts ) ) {
-			if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' !== VIP_GO_APP_ENVIRONMENT ) {
-				error_log( $alerts->get_error_message() );
-			}
+			error_log( $alerts->get_error_message() );
 
 			return false;
 		}
+
 
 		return $alerts->send_to_chat( $channel_or_user, $message, $level, $kind, $interval );
 	}
@@ -380,9 +376,7 @@ class Alerts {
 		$alerts = self::instance();
 
 		if ( is_wp_error( $alerts ) ) {
-			if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' !== VIP_GO_APP_ENVIRONMENT ) {
-				error_log( $alerts->get_error_message() );
-			}
+			error_log( $alerts->get_error_message() );
 
 			return false;
 		}

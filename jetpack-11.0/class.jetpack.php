@@ -823,17 +823,13 @@ class Jetpack {
 		foreach (
 			array(
 				'jitm',
+				'publicize',
 				'sync',
 				'waf',
 			)
 			as $feature
 		) {
 			$config->ensure( $feature );
-		}
-
-		$modules = new Automattic\Jetpack\Modules();
-		if ( $modules->is_active( 'publicize' ) ) {
-			$config->ensure( 'publicize' );
 		}
 
 		$config->ensure(
