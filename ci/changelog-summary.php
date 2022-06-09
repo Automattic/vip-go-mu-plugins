@@ -43,7 +43,7 @@ define( 'BRANCH', $_SERVER[ 'CIRCLE_BRANCH' ] );
 define( 'CHANGELOG_POST_TOKEN', $_SERVER[ 'CHANGELOG_POST_TOKEN' ] );
 define( 'GITHUB_TOKEN', $_SERVER[ 'GITHUB_TOKEN' ] ?? '' );
 
-define( 'GITHUB_ENDPOINT', 'https://api.github.com/repos/' . PROJECT_USERNAME . '/' . PROJECT_REPONAME . '/pulls?sort=updated&direction=desc&state=closed');
+define( 'GITHUB_ENDPOINT', 'https://api.github.com/repos/' . PROJECT_USERNAME . '/' . PROJECT_REPONAME );
 define( 'PR_CHANGELOG_START_MARKER', $options[ 'start-marker' ] ?? '<h2>Changelog Description' );
 define( 'PR_CHANGELOG_END_MARKER', $options[ 'end-marker' ] ?? '<h2>' );
 define( 'WP_CHANGELOG_ENDPOINT', $options[ 'wp-endpoint' ] );
@@ -72,7 +72,7 @@ function fetch_PRs() {
 
     for ($page = 1; $page <= MAX_PAGE && !$found_deployed_tag; $page++) {
         debug("Fetching page " . $page . "\n");
-        $ch = curl_init(GITHUB_ENDPOINT . '&page=' . $page);
+        $ch = curl_init(GITHUB_ENDPOINT . '/pulls?sort=updated&direction=desc&state=closed&page=' . $page);
         $headers = ['User-Agent: script'];
 
         curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -108,6 +108,28 @@ function fetch_PRs() {
     }
 
     return $filtered_prs;
+}
+
+function mark_prs_deployed( $prs ) {
+    foreach( $prs as $pr ) {
+        debug("Updating PR labels " . $pr['title'] . "\n");
+        $ch = curl_init(GITHUB_ENDPOINT . "/issues/" . $pr['number'] . '/labels');
+        $headers = ['User-Agent: script'];
+
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, TAG_DEPLOYED);
+
+        if (isset($_SERVER['GITHUB_TOKEN'])) {
+            array_push($headers, 'Authorization:token ' . GITHUB_TOKEN);
+        }
+
+        curl_setopt($ch, CURLOPT_HTTPHEADER,  $headers);
+        $data = curl_exec($ch);
+        debug($data);
+    }
 }
 
 function get_changelog_section_in_description_html( $description ) {
@@ -235,6 +257,7 @@ function create_changelog_summary() {
     $content = join( "\n<hr />\n", $changelog_entries );
 
     create_changelog_post( $title, $content, $changelog_tags, $changelog_channels );
+    mark_prs_deployed($prs);
 }
 
 create_changelog_summary();
