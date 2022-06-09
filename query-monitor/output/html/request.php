@@ -70,7 +70,7 @@ class QM_Output_Html_Request extends QM_Output_Html {
 
 		echo '</div>';
 
-		echo '<div class="qm-boxed">';
+		echo '<div class="qm-boxed qm-boxed-wrap">';
 
 		if ( ! empty( $data['matching_rewrites'] ) ) {
 			echo '<section>';

@@ -38,15 +38,12 @@ class QM_Output_Headers_PHP_Errors extends QM_Output_Headers {
 
 				$count++;
 
-				$stack = array();
-
 				if ( $error['component'] ) {
 					$component = $error['component']->name;
-					if ( ! empty( $error['filtered_trace'] ) ) {
-						$stack = wp_list_pluck( $error['filtered_trace'], 'display' );
-					}
+					$stack = wp_list_pluck( $error['filtered_trace'], 'display' );
 				} else {
 					$component = __( 'Unknown', 'query-monitor' );
+					$stack = array();
 				}
 
 				$output_error = array(

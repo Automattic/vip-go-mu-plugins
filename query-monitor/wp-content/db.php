@@ -1,18 +1,11 @@
 <?php
 /**
- * Plugin Name: Query Monitor Database Class (Drop-in)
- * Description: Database class for Query Monitor, the developer tools panel for WordPress.
- * Version:     3.9.0
- * Plugin URI:  https://querymonitor.com/
- * Author:      John Blackbourn
- * Author URI:  https://querymonitor.com/
+ * Plugin Name: Query Monitor Database Class
  *
  * *********************************************************************
  *
  * Ensure this file is symlinked to your wp-content directory to provide
  * additional database query information in Query Monitor's output.
- *
- * @see https://github.com/johnbillion/query-monitor/wiki/db.php-Symlink
  *
  * *********************************************************************
  *
@@ -21,10 +14,6 @@
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
-}
-
-if ( ! defined( 'DB_USER' ) ) {
-	return;
 }
 
 if ( defined( 'QM_DISABLED' ) && QM_DISABLED ) {
