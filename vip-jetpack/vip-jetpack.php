@@ -9,7 +9,7 @@
  * License: GPL2+
  */
 
-/** 
+/**
  * Lowest incremental sync queue size allowed on VIP - JP default is 1000, but we're bumping to 10000 to give VIPs more
  * headroom as they tend to publish more than average
  */
@@ -17,7 +17,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT', 10000 );
 
 /**
  * The largest incremental sync queue size allowed - items will not get enqueued if there are already this many pending
- * 
+ *
  * The queue is stored in the option table, so if the queue gets _too_ large, site performance suffers
  */
 define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
@@ -25,7 +25,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT', 100000 );
 /**
  * The lower bound for the incremental sync queue lag - if the oldest item has been sitting unsynced for this long,
  * new items will not be added to the queue
- * 
+ *
  * The default is 15 minutes, but VIP sites often have more busy queues and we must prevent dropping items if the sync is
  * running behind
  */
@@ -39,7 +39,7 @@ define( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT', DAY_IN_SECONDS );
 
 /**
  * Enable the the new Jetpack full sync method (queue-less) on non-production sites for testing
- * 
+ *
  * Can be removed (along with later code that uses the constant) after Jetpack 8.2 is deployed
  */
 if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO_ENV ) {
@@ -457,7 +457,7 @@ add_filter( 'pre_option_jetpack_active_plan', function( $pre_option ) {
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
- * 
+ *
  * Still allows changing the value per site, but locks it into the range
  */
 add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
@@ -471,7 +471,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_lag to an allowed range
- * 
+ *
  * Still allows changing the value per site, but locks it into the range
  */
 add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
@@ -487,7 +487,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
  * Allow incremental syncing via cron to take longer than the default 30 seconds.
  *
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
- * 
+ *
  */
 add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
 	return 4 * MINUTE_IN_SECONDS;
@@ -497,7 +497,7 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
  * Reduce the time between sync batches on VIP for performance gains.
  *
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
- * 
+ *
  */
 add_filter( 'option_jetpack_sync_settings_sync_wait_time', function() {
 	return 1;
@@ -611,7 +611,9 @@ function wpcom_vip_disable_jetpack_email_no_recaptcha( $is_enabled ) {
 
 	return defined( 'RECAPTCHA_PUBLIC_KEY' ) && defined( 'RECAPTCHA_PRIVATE_KEY' );
 }
-add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
+if ( defined( 'JETPACK__VERSION' ) && JETPACK__VERSION < '11.0' ) {
+	add_filter( 'sharing_services_email', 'wpcom_vip_disable_jetpack_email_no_recaptcha', PHP_INT_MAX );
+}
 
 /**
  * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
@@ -702,15 +704,15 @@ function add_jetpack_menu_placeholder(): void {
 add_action( 'admin_menu', 'add_jetpack_menu_placeholder', 999 );
 
 /**
- * Remove the page that allows you to toggle Search and Instant Search on and off. 
+ * Remove the page that allows you to toggle Search and Instant Search on and off.
  * Use code or CLI instead to toggle Search module and open a ZD ticket for enabling Instant Search.
- * 
+ *
  * @return void
  */
 function vip_remove_jetpack_search_menu_page() {
-	remove_submenu_page( 
+	remove_submenu_page(
 		'jetpack',
 		'jetpack-search'
 	);
 }
-add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX ); 
+add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX );
