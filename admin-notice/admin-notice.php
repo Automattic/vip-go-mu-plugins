@@ -65,3 +65,25 @@ add_action(
 		);
 	}
 );
+
+// Old WP version w/o pinned Jetpack version
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		global $wp_version;
+		$message = "We've noticed that you are running WordPress {$wp_version}, which is an outdated version. This prevents you from running the latest version of Jetpack, as the current version of Jetpack only supports 5.9 and up. Please upgrade to the most recent WordPress version to use the latest features of Jetpack.";
+
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				$message,
+				[
+					new Capability_Condition( 'administrator' ),
+					new Expression_Condition( version_compare( $wp_version, '5.9', '<' ) ),
+					new Expression_Condition( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) ),
+				],
+				'old-wp-versions',
+				'error'
+			)
+		);
+	}
+);
