@@ -17,7 +17,7 @@ function persistDismissedNotice(containerElement) {
 function vipNoticeClickHandler( ev ) {
 	const button = ev.target.closest( '.notice-dismiss' );
 	if ( button ) {
-		const noticeContainer = button.closest( `[data="${dismissal_data.data_attribute}"]` );
+		const noticeContainer = button.closest( `[${dismissal_data.data_attribute}]` );
 		if (noticeContainer) {
 			persistDismissedNotice(noticeContainer);
 		}
