@@ -113,7 +113,6 @@ cd vip-go-mu-plugins
 bin/create-release.sh
 ```
 
-
 ### Production
 
 **For Automattic Use:** Instructions are in the FG :)
