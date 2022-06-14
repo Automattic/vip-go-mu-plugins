@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Deploy
+
+on:
+  push:
+    branches:
+      - "develop"
+      - "replace/ci"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: "Deploy"
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'branch'
+    env:
+      SOURCE_REPO_PATH: main
+      TARGET_REPO_PATH: built
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the source code
+        uses: actions/checkout@v3.0.2
+        with:
+          submodules: recursive
+          path: ${{ env.SOURCE_REPO_PATH }}
+
+      - name: Check out Automattic/vip-go-mu-plugins-built
+        uses: actions/checkout@v3.0.2
+        with:
+          repository: Automattic/vip-go-mu-plugins-built
+          path: ${{ env.TARGET_REPO_PATH }}
+          ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
+          fetch-depth: 0
+
+      - name: Check out branch
+        run: |
+          git checkout -b "${GITHUB_REF_NAME}" || git checkout "${GITHUB_REF_NAME}"
+        working-directory: ${{ env.TARGET_REPO_PATH }}
+
+      - name: Configure .git
+        run: |
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "no-reply@automattic.com"
+          git config push.default "current"
+        working-directory: ${{ env.TARGET_REPO_PATH }}
+
+      - name: Synchronize files
+        run: rsync --delete -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude='.git/'
+
+      - name: Delete files
+        run: |
+          TARGET="${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}"
+          find "${TARGET}" -name ".svn" -exec rm -rfv {} \; 2> /dev/null
+          find "${TARGET}" -name ".git*" -not -name ".github" -not -name ".git" -exec rm -rfv {} \; 2> /dev/null
+          mv -vf "${TARGET}/README-PUBLIC.md" "${TARGET}/README.md"
+          mv -vf "${TARGET}/ci/templates/composer.json" "${TARGET}/composer.json"
+          rm -rvf "${TARGET}/ci"
+
+      - name: Check status
+        run: git status
+        working-directory: ${{ env.TARGET_REPO_PATH }}
+
+      - name: Commit!
+        run: |
+          git add -A .
+          if [ -n "$(git diff --stat --cached)" ]; then
+              git commit -am "Built from vip-go-mu-plugins@${GITHUB_SHA}"
+              git push
+          fi
+        working-directory: ${{ env.TARGET_REPO_PATH }}
