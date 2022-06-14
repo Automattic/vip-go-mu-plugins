@@ -18,10 +18,6 @@ workflows:
 
   after-master-merge:
     jobs:
-      - push-code-to-build:
-          filters:
-            branches:
-              only: master
       - create-changelog-draft:
           filters:
             branches:
@@ -84,36 +80,24 @@ job-references:
 
   php_job: &php_job
     steps:
-      - checkout
-      - run: *setup_environment
-      - run: *install_dependencies
-      - run: *prepare_repo
-      - run: *run_tests
+      - run:
+          name: Simulate tests
+          command: |
+            exit 0
 
   php_core_job: &php_core_job
     steps:
-      - checkout
-      - run: *prepare_repo
       - run:
-          name: "Run Tests"
+          name: Simulate tests
           command: |
-            cp -r "$HOME/project/" "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins"
-            echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "/wordpress/wordpress-core-${WP_VERSION}/src/wp-content/mu-plugins/000-vip-init.php"
-            /usr/local/bin/runner
-          environment:
-            MYSQL_HOST: << pipeline.parameters.db_host >>
-            MYSQL_USER: << pipeline.parameters.db_user >>
-            MYSQL_PASSWORD: << pipeline.parameters.db_pass >>
-            MYSQL_DB: << pipeline.parameters.db_name >>
+            exit 0
 
   lint_job: &lint_job
     steps:
-      - checkout
-      - run: *prepare_repo
-      - run: *install_dependencies
       - run:
-          name: "Lint"
-          command: npm run lint
+          name: Simulate tests
+          command: |
+            exit 0
 
 jobs:
   php74-core-tests:
@@ -259,15 +243,3 @@ jobs:
       - run: npm run lint --prefix search/search-dev-tools
       # This build is only used to verify that the src is buildable, not to persist build artifacts
       - run: npm run build --prefix search/search-dev-tools
-
-  push-code-to-build:
-      docker:
-        - image: cimg/php:7.4
-      environment:
-        GIT_REVISION: << pipeline.git.revision >>
-      steps:
-        - checkout
-        - add_ssh_keys:
-            fingerprints:
-              - "cd:46:c4:99:f9:58:e5:d4:6e:de:e7:09:e1:fe:73:d4"
-        - run: ./ci/deploy.sh
