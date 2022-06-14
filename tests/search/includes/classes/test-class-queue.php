@@ -508,6 +508,12 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_object_ids, $actual_object_ids );
 	}
 
+	public function test_queue_invalid_indexable_type() {
+		$id = $this->queue->queue_object( 1000, 'invalid_indexable_type' );
+
+		$this->assertWPError( $id, 'Indexable not found for type invalid_indexable_type' );
+	}
+
 	public function test_queue_objects_not_array() {
 		global $wpdb;
 
