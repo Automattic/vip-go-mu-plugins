@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - "develop"
-      - "replace/ci"
 
 permissions:
   contents: read
@@ -33,12 +32,6 @@ jobs:
           repository: Automattic/vip-go-mu-plugins-built
           path: ${{ env.TARGET_REPO_PATH }}
           ssh-key: ${{ secrets.SSH_DEPLOY_KEY }}
-          fetch-depth: 0
-
-      - name: Check out branch
-        run: |
-          git checkout -b "${GITHUB_REF_NAME}" || git checkout "${GITHUB_REF_NAME}"
-        working-directory: ${{ env.TARGET_REPO_PATH }}
 
       - name: Configure .git
         run: |
@@ -57,15 +50,12 @@ jobs:
           find "${TARGET}" -name ".git*" -not -name ".github" -not -name ".git" -exec rm -rfv {} \; 2> /dev/null
           mv -vf "${TARGET}/README-PUBLIC.md" "${TARGET}/README.md"
           mv -vf "${TARGET}/ci/templates/composer.json" "${TARGET}/composer.json"
-          rm -rvf "${TARGET}/ci"
-
-      - name: Check status
-        run: git status
-        working-directory: ${{ env.TARGET_REPO_PATH }}
+          rm -rvf "${TARGET}/ci" "${TARGET}/.github/workflows/deploy.yml" "${TARGET}/.github/dependabot.yml" "${TARGET}/renovate.json"
 
       - name: Commit!
         run: |
           git add -A .
+          git status
           if [ -n "$(git diff --stat --cached)" ]; then
               git commit -am "Built from vip-go-mu-plugins@${GITHUB_SHA}"
               git push
