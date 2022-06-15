@@ -65,6 +65,7 @@ jobs:
           tools: phpunit:${{ matrix.config.phpunit }}
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fail-fast: 'true'
 
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@2.1.0
