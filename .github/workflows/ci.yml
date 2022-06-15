@@ -13,10 +13,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  PHPUNIT_VERSION: "7"
-  PHP_VERSION: "7.4"
-
 jobs:
   unit-tests:
     name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
