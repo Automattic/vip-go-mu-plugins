@@ -1,4 +1,4 @@
-name: Run Tests with Parse.ly
+name: CI (Parse.ly)
 
 on:
   push:
@@ -15,51 +15,61 @@ permissions:
 
 jobs:
   test:
-    name: "WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }}, Parse.ly: ${{ matrix.parsely }} ${{ matrix.mode }}, PHP ${{ matrix.php }}"
+    name: "Parse.ly: ${{ matrix.config.parsely }} ${{ matrix.config.mode }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        php:
-          - "7.4"
-        wp:
-          - "latest"
-        multisite:
-          - "0"
-        parsely:
-          - "2.6"
-          - "3.1"
-          - "3.2"
-          - "3.3"
-        mode:
-          - "filter_enabled"
-          - "option_enabled"
-        include:
-          - php: "7.4"
-            wp: "latest"
-            multisite: "0"
-            parsely: "3.3"
-            mode: "filter_and_option_enabled"
+        config:
+          - { wp: latest, parsely: '2.6', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '2.6', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.2', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.2', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.3', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.3', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.3', mode: 'filter_and_option_enabled', php: '7.4' }
+    services:
+      mysql:
+        image: mariadb:10.3
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MARIADB_INITDB_SKIP_TZINFO: 1
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        uses: actions/checkout@v3.0.2
         with:
           submodules: recursive
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@3eda58347216592f618bb1dff277810b6698e4ca # tag=2.19.1
+        uses: shivammathur/setup-php@2.18.1
         with:
           coverage: none
-          php-version: ${{ matrix.php }}
+          php-version: ${{ matrix.config.php }}
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # renovate: tag=2.1.0
+        uses: ramsey/composer-install@2.1.0
+
+      - name: Set up WordPress and WordPress Test Library
+        uses: sjinks/setup-wordpress-test-library@1.1.2
+        with:
+          version: ${{ matrix.config.wp }}
+
+      - name: Verify MariaDB connection
+        run: |
+          while ! mysqladmin ping -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --silent; do
+            sleep 1
+          done
+        timeout-minutes: 1
 
       - name: Run tests
-        run: |
-          ./bin/test.sh \
-            --wp ${{ matrix.wp }} \
-            --php ${{ matrix.php }} \
-            --multisite ${{ matrix.multisite }} \
-            --docker-options "-e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION=${{ matrix.parsely }} -e WPVIP_PARSELY_INTEGRATION_TEST_MODE=${{ matrix.mode }}" \
-            --order-by=random
+        run: vendor/bin/phpunit --order-by=random
+        env:
+          WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: ${{ matrix.config.parsely }}
+          WPVIP_PARSELY_INTEGRATION_TEST_MODE: ${{ matrix.config.mode }}
