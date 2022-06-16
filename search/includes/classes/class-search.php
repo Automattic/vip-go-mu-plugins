@@ -1163,14 +1163,13 @@ class Search {
 			$is_post_request = true;
 		}
 
-		// Bulk index request so increase timeout
-		if ( wp_endswith( $query_path, '_bulk' ) || wp_endswith( $query_path, '_open' ) ) {
-			$timeout = 5;
-
-			if ( $is_cli && $is_post_request ) {
-				$timeout = 30;
-			} elseif ( \is_admin() && $is_post_request ) {
-				$timeout = 15;
+		// Increase timeouts for certain requests
+		if ( $is_post_request ) {
+			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
+			foreach ( $request_types as $type ) {
+				if ( wp_endswith( $query_path, $type ) ) {
+					return 30;
+				}
 			}
 		}
 
