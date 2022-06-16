@@ -58,13 +58,14 @@ jobs:
           submodules: recursive
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.18.1
+        uses: shivammathur/setup-php@2.19.1
         with:
           coverage: none
           php-version: ${{ matrix.config.php }}
           tools: phpunit:${{ matrix.config.phpunit }}
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          fail-fast: 'true'
 
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@2.1.0
@@ -133,7 +134,7 @@ jobs:
           fi
 
       - name: Setup Node
-        uses: actions/setup-node@v2.5.1
+        uses: actions/setup-node@v3.3.0
         with:
           node-version: 'lts/*'
           cache: npm

@@ -49,7 +49,7 @@ jobs:
           find "${TARGET}" -name ".svn" -exec rm -rfv {} \; 2> /dev/null
           find "${TARGET}" -name ".git*" -not -name ".github" -not -name ".git" -exec rm -rfv {} \; 2> /dev/null
           mv -vf "${TARGET}/README-PUBLIC.md" "${TARGET}/README.md"
-          mv -vf "${TARGET}/ci/templates/composer.json" "${TARGET}/composer.json"
+          mv -vf "${TARGET}/composer.json.tpl" "${TARGET}/composer.json"
           rm -rvf "${TARGET}/ci" "${TARGET}/.github/workflows/deploy.yml" "${TARGET}/.github/dependabot.yml" "${TARGET}/renovate.json"
 
       - name: Commit!
