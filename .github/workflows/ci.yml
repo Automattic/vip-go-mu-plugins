@@ -62,10 +62,14 @@ jobs:
         with:
           coverage: none
           php-version: ${{ matrix.config.php }}
-          tools: phpunit:${{ matrix.config.phpunit }}
         env:
           COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           fail-fast: 'true'
+
+      - name: Install PHPUnit
+        run: |
+          wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${{ matrix.config.phpunit }}.phar"
+          chmod +x /usr/local/bin/phpunit
 
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@2.1.0
