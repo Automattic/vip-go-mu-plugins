@@ -584,7 +584,7 @@ class Search_Test extends WP_UnitTestCase {
 					'url' => 'https://foo.com/index/type/_bulk',
 				),
 				// The expected timeout
-				5,
+				30,
 			),
 			// Url containing _bulk
 			array(
@@ -604,6 +604,33 @@ class Search_Test extends WP_UnitTestCase {
 				// The expected timeout
 				2,
 			),
+			// Opening an index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_open',
+				),
+				// The expected timeout
+				30,
+			),
+			// Closing an index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_close',
+				),
+				// The expected timeout
+				30,
+			),
+			// Updating index settings
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_settings',
+				),
+				// The expected timeout
+				30,
+			),
 		);
 	}
 
@@ -615,7 +642,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
 		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
 
-		$timeout = $this->search_instance->get_http_timeout_for_query( $query, array() );
+		$timeout = $this->search_instance->get_http_timeout_for_query( $query, [ 'method' => 'POST' ] );
 
 		$this->assertEquals( $expected_timeout, $timeout );
 	}
