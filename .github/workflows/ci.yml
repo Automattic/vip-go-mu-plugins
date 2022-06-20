@@ -36,10 +36,13 @@ jobs:
           - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
         # PHP 8.0, JetPack 
-          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
-          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
+        # Coverage
+          - { wp: 6.x,     ms: 'no',  jp: 'no',  php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: 6.x,     ms: 'yes', jp: 'no',  php: '8.0', phpunit: 9, coverage: 'yes' }
     services:
       mysql:
         image: mariadb:10.3
@@ -62,7 +65,7 @@ jobs:
         run: |
           if [ "${{ matrix.config.coverage }}" = "yes" ]; then
             echo "::set-output name=coverage::pcov"
-            echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|vaultpress)/~"'
+            echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|vaultpress|query-monitor)/~"'
           else
             echo "::set-output name=coverage::none"
             echo "::set-output name=ini::opcache.enable_cli=1, opcache.jit=tracing, opcache.jit_buffer_size=128M"
