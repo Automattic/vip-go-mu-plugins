@@ -22,6 +22,8 @@
 		<exclude>
 			<directory>jetpack*</directory>
 			<directory>wp-parsely*</directory>
+			<directory>akismet</directory>
+			<directory>vaultpress</directory>
 			<directory>tests</directory>
 			<directory>vendor</directory>
 			<directory>node_modules</directory>

@@ -36,8 +36,8 @@ jobs:
           - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
         # PHP 8.0, JetPack 
-          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
-          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
     services:
@@ -60,17 +60,19 @@ jobs:
       - name: Decide whether to enable coverage
         id: coverage
         run: |
-          if [ "${{ matrix.config.phpunit }}" = "9" ]; then
+          if [ "${{ matrix.config.coverage }}" = "yes" ]; then
             echo "::set-output name=coverage::pcov"
+            echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|vaultpress)/~"'
           else
             echo "::set-output name=coverage::none"
+            echo "::set-output name=ini::opcache.enable_cli=1, opcache.jit=tracing, opcache.jit_buffer_size=128M"
           fi
 
       - name: Set up PHP
         uses: shivammathur/setup-php@2.19.1
         with:
           coverage: ${{ steps.coverage.outputs.coverage }}
-          ini-values: pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack|wp-parsely)~"
+          ini-values: ${{ steps.coverage.outputs.ini }}
           php-version: ${{ matrix.config.php }}
         env:
           fail-fast: 'true'
@@ -116,7 +118,7 @@ jobs:
         with:
           files: clover.xml
           flags: unittests
-        if: ${{ steps.coverage.output.coverage != 'none' }}
+        if: ${{ steps.coverage.outputs.coverage != 'none' }}
 
   wp-core:
     name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
