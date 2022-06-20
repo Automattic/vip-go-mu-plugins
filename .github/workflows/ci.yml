@@ -42,7 +42,7 @@ jobs:
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
     services:
       mysql:
-        image: mariadb:10.3
+        image: ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
         ports:
           - "3306:3306"
         env:
