@@ -15,4 +15,34 @@
 	<extensions>
 		<extension class="SpeedUp_Isolated_WP_Tests"/>
 	</extensions>
+	<coverage>
+		<include>
+			<directory suffix=".php">.</directory>
+		</include>
+		<exclude>
+			<directory>jetpack*</directory>
+			<directory>wp-parsely*</directory>
+
+			<directory>advanced-post-cache</directory>
+			<directory>akismet</directory>
+			<directory>cron-control</directory>
+			<directory>debug-bar</directory>
+			<directory>debug-bar-cron</directory>
+			<directory>drop-ins</directory>
+			<directory>http-concat</directory>
+			<directory>lightweight-term-count-update</directory>
+			<directory>query-monitor</directory>
+			<directory>search/elasticpress</directory>
+			<directory>search/debug-bar-elasticpress</directory>
+			<directory>search/es-wp-query</directory>
+			<directory>shared-plugins</directory>
+			<directory>rewrite-rules-inspector</directory>
+			<directory>vaultpress</directory>
+			<directory>wordpress-importer</directory>
+
+			<directory>tests</directory>
+			<directory>vendor</directory>
+			<directory>node_modules</directory>
+		</exclude>
+	</coverage>
 </phpunit>
