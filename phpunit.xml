@@ -15,4 +15,16 @@
 	<extensions>
 		<extension class="SpeedUp_Isolated_WP_Tests"/>
 	</extensions>
+	<coverage>
+		<include>
+			<directory suffix=".php">.</directory>
+		</include>
+		<exclude>
+			<directory>jetpack*</directory>
+			<directory>wp-parsely*</directory>
+			<directory>tests</directory>
+			<directory>vendor</directory>
+			<directory>node_modules</directory>
+		</exclude>
+	</coverage>
 </phpunit>

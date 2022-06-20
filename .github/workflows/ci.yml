@@ -57,13 +57,22 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Decide whether to enable coverage
+        id: coverage
+        run: |
+          if [ "${{ matrix.config.phpunit }}" = "9" ]; then
+            echo "::set-output name=coverage::pcov"
+          else
+            echo "::set-output name=coverage::none"
+          fi
+
       - name: Set up PHP
         uses: shivammathur/setup-php@2.19.1
         with:
-          coverage: none
+          coverage: ${{ steps.coverage.outputs.coverage }}
+          ini-values: pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack|wp-parsely)~"
           php-version: ${{ matrix.config.php }}
         env:
-          COMPOSER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           fail-fast: 'true'
 
       - name: Install PHPUnit
@@ -95,7 +104,19 @@ jobs:
         timeout-minutes: 1
 
       - name: Run tests
-        run: phpunit --order-by=random
+        run: |
+          OPTIONS=
+          if [ "${{ steps.coverage.output.coverage }}" != 'none' ]; then
+            OPTIONS="$OPTIONS --coverage-clover=clover.xml"
+          fi
+          phpunit --order-by=random ${OPTIONS}
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v2
+        with:
+          files: clover.xml
+          flags: unittests
+        if: ${{ steps.coverage.output.coverage != 'none' }}
 
   wp-core:
     name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
