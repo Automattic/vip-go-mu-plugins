@@ -28,6 +28,7 @@
 .nvmrc
 .phpcs.xml.dist
 .scrutinizer.yml
+.sonarcloud.properties
 .travis.yml
 .secrets/.svn
 .wordpress-org/
