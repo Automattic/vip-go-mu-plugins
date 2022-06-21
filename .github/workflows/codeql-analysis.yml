@@ -3,13 +3,10 @@ name: CodeQL Analysis
 on:
   push:
     branches:
-      - master
-    paths:
-      - "search/search-dev-tools/src/**.js"
-      - ".github/workflows/codeql-analysis.yml"
+      - develop
   pull_request:
     branches:
-      - master
+      - develop
     paths:
       - "search/search-dev-tools/src/**.js"
       - ".github/workflows/codeql-analysis.yml"

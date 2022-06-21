@@ -2,8 +2,9 @@ name: Lint files
 
 on:
   push:
-    branches:
-      - "**"
+    branches-ignore:
+      - develop
+      - staging
   workflow_dispatch:
 
 concurrency:
