@@ -108,7 +108,7 @@ jobs:
       - name: Run tests
         run: |
           OPTIONS=
-          if [ "${{ steps.coverage.output.coverage }}" != 'none' ]; then
+          if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
             OPTIONS="$OPTIONS --coverage-clover=clover.xml"
           fi
           phpunit --order-by=random ${OPTIONS}
