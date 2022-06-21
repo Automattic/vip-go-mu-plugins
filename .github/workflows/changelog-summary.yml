@@ -25,7 +25,7 @@ jobs:
           php-version: '7.4'
 
       - name: Install
-        run: composer install -n
+        uses: ramsey/composer-install@2.1.0
 
       - name: Execute
         env:
