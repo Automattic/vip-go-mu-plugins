@@ -3,6 +3,7 @@ name: Changelog Summmary
 on:
   push:
     branches:
+      - production
       - staging
       - update/ci
 
