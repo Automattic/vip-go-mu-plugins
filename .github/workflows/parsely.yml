@@ -48,10 +48,12 @@ jobs:
           submodules: recursive
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.18.1
+        uses: shivammathur/setup-php@2.19.1
         with:
           coverage: none
           php-version: ${{ matrix.config.php }}
+        env:
+          fail-fast: 'true'
 
       - name: Install PHP Dependencies
         uses: ramsey/composer-install@2.1.0
