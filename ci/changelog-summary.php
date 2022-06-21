@@ -55,6 +55,7 @@ define( 'DEBUG', array_key_exists( 'debug', $options ) );
 
 define( 'TAG_NO_FILES_TO_DEPLOY', '[Status] No files to Deploy' );
 define( 'TAG_DEPLOYED', '[Status] Deployed to ' . BRANCH );
+define( 'TAG_DEPLOYED_STAGING', '[Status] Deployed to staging' );
 define( 'MAX_PAGE', 10 );
 
 function debug( $arg ) {
@@ -94,14 +95,21 @@ function fetch_PRs() {
             }
             $label_names = array_map(fn ($label) => $label['name'], $pr['labels']);
             if (in_array(TAG_NO_FILES_TO_DEPLOY, $label_names)) {
-                // If there were no files to deploy we need not to put them on chnagelog
+                // If there were no files to deploy we need not to put them on changelog
                 continue;
             }
+
             if (in_array(TAG_DEPLOYED, $label_names)) {
                 // If we found the deployed tag we should stop searching
                 $found_deployed_tag = true;
                 break;
             }
+
+            if ( BRANCH === 'production' && !in_array(TAG_DEPLOYED_STAGING, $label_names)) {
+                echo('Skipping "' . $pr['title'] . '" when building prod deploy changelog, because it wasnt deployed to staging yet.');
+                continue;
+            }
+
             $filtered_prs[] = $pr;
         }
     }
@@ -165,7 +173,6 @@ function get_changelog_html( $pr ) {
     }
     return $changelog_html;
 }
-
 
 function create_changelog_post( $title, $content, $tags, $channels ) {
     $fields = [
@@ -234,7 +241,7 @@ function create_changelog_summary() {
     debug( ['Following PRs found', $titles] );
     if ( ! count($prs) ) {
         echo "No PRs for changelog found.\n";
-        exit( 1 );
+        exit;
     }
 
     $changelog_tags = get_changelog_tags( $prs );
@@ -252,7 +259,7 @@ function create_changelog_summary() {
         exit( 0 );
     }
 
-    $title = 'Staging deploy - ' . date("Y/m/d");
+    $title = ucfirst( BRANCH ) . ' deploy - ' . date("Y/m/d");
     $content = join( "\n<hr />\n", $changelog_entries );
 
     create_changelog_post( $title, $content, $changelog_tags, $changelog_channels );
