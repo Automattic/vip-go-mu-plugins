@@ -14,7 +14,7 @@ Please, visit our [Enterprise Search documentation](https://docs.wpvip.com/how-t
 
 We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
-In order to use mu-plugins code in a "hot-reload" fashion you need to specify the local folder where this repository is cloned to. For example:
+To use mu-plugins code in a "hot-reload" fashion you need to specify the local folder to which this repository is cloned. For example:
 
 ```
 vip dev-env create --mu-plugins $(pwd)
