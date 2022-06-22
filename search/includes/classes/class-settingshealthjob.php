@@ -460,7 +460,7 @@ class SettingsHealthJob {
 			$message = sprintf(
 				'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
 				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
+				$indexable->slug,
 				home_url(),
 				$delete_version->get_error_message()
 			);
