@@ -30,19 +30,12 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		if ( defined( 'SEARCH_MIGRATIONS_EXTENDED_IDS' ) && in_array( FILES_CLIENT_SITE_ID, SEARCH_MIGRATIONS_EXTENDED_IDS, true ) ) {
-			$time = 'in the near future';
-		} else {
-			$time = 'as of May 4, 2022';
-		}
-
-		$message = 'Howdy! We have detected the JETPACK_SEARCH_VIP_INDEX constant is still defined on this application. As a friendly reminder, <a href="https://lobby.vip.wordpress.com/2022/02/02/enterprise-search-as-default-elasticsearch-solution/" target="_blank" title="Enterprise Search as default Elasticsearch solution">Jetpack Search custom indexes will no longer be supported on VIP ' . $time . '</a>. Please use <a href="https://docs.wpvip.com/how-tos/vip-search/enable/#jetpack-migration-support-path" target="_blank" title="Jetpack migration support path">Enterprise Search</a> or Jetpack Instant Search instead.';
+		$message = 'Howdy! We have detected the JETPACK_SEARCH_VIP_INDEX constant is still defined on this application. <a href="https://lobby.vip.wordpress.com/2022/02/02/enterprise-search-as-default-elasticsearch-solution/" target="_blank" title="Enterprise Search as default Elasticsearch solution">Jetpack Search custom indexes are no longer be supported on VIP</a>. Please use <a href="https://docs.wpvip.com/how-tos/vip-search/enable/#jetpack-migration-support-path" target="_blank" title="Jetpack migration support path">Enterprise Search</a> or Jetpack Instant Search instead.';
 
 		$admin_notice_controller->add(
 			new Admin_Notice(
 				$message,
 				[
-					new Date_Condition( '2022-01-01', '2022-05-04' ),
 					new Expression_Condition( defined( 'JETPACK_SEARCH_VIP_INDEX' ) && JETPACK_SEARCH_VIP_INDEX ),
 					new Capability_Condition( 'administrator' ),
 				],
@@ -68,6 +61,28 @@ add_action(
 				],
 				'php8-migrations',
 				'info'
+			)
+		);
+	}
+);
+
+// Old WP version w/o pinned Jetpack version
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		global $wp_version;
+		$message = "We've noticed that you are running WordPress {$wp_version}, which is an outdated version. This prevents you from running the latest version of Jetpack, as the current version of Jetpack only supports 5.9 and up. Please upgrade to the most recent WordPress version to use the latest features of Jetpack.";
+
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				$message,
+				[
+					new Capability_Condition( 'administrator' ),
+					new Expression_Condition( version_compare( $wp_version, '5.9', '<' ) ),
+					new Expression_Condition( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) ),
+				],
+				'old-wp-versions',
+				'error'
 			)
 		);
 	}

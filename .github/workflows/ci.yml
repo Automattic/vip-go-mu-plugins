@@ -1,0 +1,177 @@
+name: CI
+
+on:
+  push:
+    branches-ignore:
+      - develop
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+        # JetPack, Single-Site, PHP 7.4
+          - { wp: 5.5.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.6.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.7.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.8.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 5.9.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+        # JetPack, Multi-Site, PHP 7.4
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
+        # No JetPack, WP latest, PHP 7.4
+          - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
+          - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
+        # PHP 8.0, JetPack 
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+    services:
+      mysql:
+        image: ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MARIADB_INITDB_SKIP_TZINFO: 1
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress_test
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3.0.2
+        with:
+          submodules: recursive
+
+      - name: Decide whether to enable coverage
+        id: coverage
+        run: |
+          if [ "${{ matrix.config.coverage }}" = "yes" ]; then
+            echo "::set-output name=coverage::pcov"
+            echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
+          else
+            echo "::set-output name=coverage::none"
+            echo "::set-output name=ini::opcache.enable_cli=1, opcache.jit=tracing, opcache.jit_buffer_size=128M"
+          fi
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@2.19.1
+        with:
+          coverage: ${{ steps.coverage.outputs.coverage }}
+          ini-values: ${{ steps.coverage.outputs.ini }}
+          php-version: ${{ matrix.config.php }}
+        env:
+          fail-fast: 'true'
+
+      - name: Install PHPUnit
+        run: |
+          wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${{ matrix.config.phpunit }}.phar"
+          chmod +x /usr/local/bin/phpunit
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@2.1.0
+
+      - name: Set up WordPress and WordPress Test Library
+        uses: sjinks/setup-wordpress-test-library@1.1.2
+        with:
+          version: ${{ matrix.config.wp }}
+
+      - name: Set up multisite mode
+        run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
+        if: matrix.config.ms == 'yes'
+
+      - name: Disable JetPack
+        run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
+        if: matrix.config.jp == 'no'
+
+      - name: Verify MariaDB connection
+        run: |
+          while ! mysqladmin ping -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --silent; do
+            sleep 1
+          done
+        timeout-minutes: 1
+
+      - name: Run tests
+        run: |
+          OPTIONS=
+          if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
+            OPTIONS="$OPTIONS --coverage-clover=clover.xml"
+          fi
+          phpunit --order-by=random ${OPTIONS}
+
+      - name: Upload coverage report
+        uses: codecov/codecov-action@v3
+        with:
+          files: clover.xml
+          flags: unittests
+        if: ${{ steps.coverage.outputs.coverage != 'none' }}
+
+  wp-core:
+    name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        wp:
+          - latest
+        multisite:
+          - "no"
+          - "yes"
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3.0.2
+        with:
+          submodules: recursive
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.multisite }}" = "yes" ]; then
+            MULTISITE=1
+          else
+            MULTISITE=0
+          fi
+          ./bin/run-core-tests.sh --wp ${{ matrix.wp }} --multisite ${MULTISITE}
+
+  search-dev-tools:
+    name: Build Search Dev Tools
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3.0.2
+
+      - name: Sanity check
+        run: |
+          if grep -q webpack-dev-server search/search-dev-tools/build/bundle.js; then
+            echo "Attempted to commit a development version of search-dev-tools, please rebuild with npm run build"
+            exit 1
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v3.3.0
+        with:
+          node-version: 'lts/*'
+          cache: npm
+          cache-dependency-path: search/search-dev-tools/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+        working-directory: search/search-dev-tools
+
+      - name: Build files
+        run: npm run build
+        working-directory: search/search-dev-tools

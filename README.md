@@ -14,7 +14,7 @@ Please, visit our [Enterprise Search documentation](https://docs.wpvip.com/how-t
 
 We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
-In order to use mu-plugins code in a "hot-reload" fashion you need to specify the local folder where this repository is cloned to. For example:
+To use mu-plugins code in a "hot-reload" fashion you need to specify the local folder to which this repository is cloned. For example:
 
 ```
 vip dev-env create --mu-plugins $(pwd)
@@ -117,9 +117,8 @@ bin/create-release.sh
 
 **For Automattic Use:** Instructions are in the FG :)
 
-
 ### vip-go-mu-plugins-built
 
 This is a repo primarily meant for local non-development use.
 
-Every commit merged into `master` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy.sh` script](https://github.com/Automattic/vip-go-mu-plugins/blob/master/ci/deploy.sh) script, which builds pushes a copy of this repo and expanded submodules.
+Every commit merged into `develop` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy` action](https://github.com/Automattic/vip-go-mu-plugins/blob/develop/.github/workflows/deploy.yml), which pushes a copy of this repo and expanded submodules.
