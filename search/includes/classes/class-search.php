@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search;
 
 use \WP_CLI;
+use WP_Error;
 use WP_Post;
 
 class Search {
@@ -811,7 +812,7 @@ class Search {
 	/**
 	 * Filter to intercept EP remote requests.
 	 *
-	 * @param  array  $request  New remote request response
+	 * @param  array|WP_Error $request  New remote request response
 	 * @param  array  $query    Remote request arguments
 	 * @param  array  $args     Request arguments
 	 * @param  array  $failures Number of failures
