@@ -343,7 +343,7 @@ class WPCOM_VIP_Debug_Bar_Remote_Requests extends Debug_Bar_Panel {
 			<h3 style="font-family: georgia, times, serif; font-size: 22px;">Remote Requests:</h3>
 
 			<?php if ( ! empty( $this->requests ) ) : ?>
-				<table style="clear:both; font-size: 130%" cellspacing="8px">
+				<table style="clear:both; font-size: 130%" cellspacing="8">
 					<thead>
 						<tr>
 								<th scope="col" style="text-align: center; font-size: 120%; border-bottom: 1px solid black">status</th>
@@ -380,10 +380,8 @@ class WPCOM_VIP_Debug_Bar_Remote_Requests extends Debug_Bar_Panel {
 	}
 
 	public function log_http_requests( $args, $url ) {
-		if ( ! in_array( $url, $this->ignore_urls ) ) {
-			if ( ! isset( $this->requests[ $url ] ) ) {
-				$this->requests[ $url ] = array();
-			}
+		if ( ! in_array( $url, $this->ignore_urls ) && ! isset( $this->requests[ $url ] ) ) {
+			$this->requests[ $url ] = array();
 		}
 
 		// Store the current request so we can track times
