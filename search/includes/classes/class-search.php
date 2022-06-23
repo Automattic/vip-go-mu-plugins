@@ -764,7 +764,7 @@ class Search {
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
-	public function filter__ep_index_name( $index_name, $blog_id, $indexable ) {
+	public function filter__ep_index_name( $_index_name, $blog_id, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
 		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexable->slug );
 
@@ -787,9 +787,7 @@ class Search {
 	 */
 	public function filter__ep_global_alias( $alias_name, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
-		$alias_name = sprintf( 'vip-%s-%s-all', FILES_CLIENT_SITE_ID, $indexable->slug );
-
-		return $alias_name;
+		return sprintf( 'vip-%s-%s-all', FILES_CLIENT_SITE_ID, $indexable->slug );
 	}
 
 	/**
@@ -805,11 +803,9 @@ class Search {
 	 * @return string $option_name Name of generated option.
 	 */
 	private function get_index_exists_option_name( $url ) {
-		$parsed_url  = wp_parse_url( $url );
-		$index_name  = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
-		$option_name = "es_index_exists_{$index_name}";
-
-		return $option_name;
+		$parsed_url = wp_parse_url( $url );
+		$index_name = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+		return "es_index_exists_{$index_name}";
 	}
 
 	/**
@@ -1674,10 +1670,8 @@ class Search {
 		}
 
 		// Creating new docs
-		if ( '_create' === $path[ count( $path ) - 2 ] ) {
-			if ( 'put' === $method || 'post' === $method ) {
-				return 'index';
-			}
+		if ( '_create' === $path[ count( $path ) - 2 ] && ( 'put' === $method || 'post' === $method ) ) {
+			return 'index';
 		}
 
 		if ( '_doc' === end( $path ) && 'post' === $method ) {
@@ -1889,9 +1883,7 @@ class Search {
 		$client_post_meta_allow_list_assoc = array_flip( $client_post_meta_allow_list );
 
 		// Only include meta that matches the allow list
-		$new_meta = array_intersect_key( $current_meta, $client_post_meta_allow_list_assoc );
-
-		return $new_meta;
+		return array_intersect_key( $current_meta, $client_post_meta_allow_list_assoc );
 	}
 
 	/**

@@ -104,7 +104,7 @@ class WPCOM_VIP_Debug_Bar_Memcached extends Debug_Bar_Panel {
 		$out = ob_get_clean();
 		$out = str_replace( '&nbsp;', '', $out );
 
-		// // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo $out;
 	}
 }
@@ -235,7 +235,7 @@ class WPCOM_VIP_Debug_Bar_DB_Connections extends Debug_Bar_Panel {
 				<?php
 				$keys = array_keys( reset( $global->db_connections ) );
 				?>
-				<table style="clear:both; font-size: 130%" cellspacing="8px">
+				<table style="clear:both; font-size: 130%" cellspacing="8">
 				<thead>
 					<tr>
 				<?php	foreach ( $keys as $key ) { ?>
