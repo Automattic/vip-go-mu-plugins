@@ -33,7 +33,8 @@ class WPCOM_VIP_Debug_Bar_Queries extends Debug_Bar_Panel {
 			foreach ( $wpdb->queries as $q ) {
 				$total_time += $q['elapsed'];
 
-				if ( ! $show_many && ++$counter > 500 ) {
+				++$counter;
+				if ( ! $show_many && $counter > 500 ) {
 					continue;
 				}
 
