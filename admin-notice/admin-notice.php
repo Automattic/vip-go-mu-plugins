@@ -50,7 +50,7 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8 compatible. To learn more, please see the <a href="https://lobby.vip.wordpress.com/2022/05/02/php-8-0-available-on-wordpress-vip/" target="_blank">Lobby announcement</a> and the guide on <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">how to prepare your application for a PHP version upgrade</a>.';
+		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8.0 compatible. To learn more, please see the <a href="https://lobby.vip.wordpress.com/2022/05/02/php-8-0-available-on-wordpress-vip/" target="_blank">Lobby announcement</a> and the guide on <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">how to prepare your application for a PHP version upgrade</a>.';
 
 		$admin_notice_controller->add(
 			new Admin_Notice(
