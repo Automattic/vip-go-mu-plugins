@@ -37,10 +37,10 @@ jobs:
           - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
         # PHP 8.0, JetPack 
-          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
-          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
-          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
-          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9, coverage: 'yes' }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: 9 }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.0', phpunit: 9 }
     services:
       mysql:
         image: ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
