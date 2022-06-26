@@ -2,7 +2,13 @@
 
 // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 
+use Automattic\VIP\Proxy\IpUtils;
 use Automattic\VIP\Utils\Alerts;
+use Automattic\VIP\Utils\JetPack_IP_Manager;
+
+require_once __DIR__ . '/class-jetpack-ip-manager.php';
+
+JetPack_IP_Manager::instance();
 
 /**
  * Utility function to trigger a callback on a hook with priority or execute immediately if the hook has already been fired previously.
@@ -1494,24 +1500,10 @@ function vip_is_jetpack_request() {
 	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
 	// If has a valid-looking UA, check the remote IP
-	// From https://jetpack.com/support/hosting-faq/#jetpack-whitelist
-	// Or https://jetpack.com/ips-v4.json
-	$jetpack_ips = array(
-		'122.248.245.244/32',
-		'54.217.201.243/32',
-		'54.232.116.4/32',
-		'192.0.80.0/20',
-		'192.0.96.0/20',
-		'192.0.112.0/20',
-		'195.234.108.0/22',
-		'192.0.96.202/32',
-		'192.0.98.138/32',
-		'192.0.102.71/32',
-		'192.0.102.95/32',
-	);
+	$jetpack_ips = JetPack_IP_Manager::get_jetpack_ips();
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
-	return Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || Automattic\VIP\Proxy\IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
+	return IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
 }
 
 /**
