@@ -94,9 +94,12 @@ runs:
       shell: bash
       run: |
         echo Waiting for MySQL to come online...
-        while ! mysqladmin ping -h "${{ inputs.mysq-host }}" -P ${{ inputs.mysql-port }} --silent; do
+        second=0
+        while ! mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent && [ "${second}" -lt 60 ]; do
           sleep 1
+          second=$((second+1))
         done
+        mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
 
     - name: Run tests
       shell: bash
