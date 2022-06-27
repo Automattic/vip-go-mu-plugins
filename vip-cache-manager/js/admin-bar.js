@@ -43,7 +43,7 @@
 			return;
 		}
 
-		let { nonce = '', ajaxurl = '' } = window.VIPPageFlush || {};
+		let { nonce = '', ajaxurl = '' } = window.VIPPagePurge || {};
 
 		if ( !( nonce && ajaxurl ) ) {
 			alert( 'VIP Cache Manager: page cache purging disabled' );
