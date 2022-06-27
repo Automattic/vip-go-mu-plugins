@@ -1,0 +1,50 @@
+name: Coverage Report
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0' }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0' }
+    services:
+      mysql:
+        image: ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
+        ports:
+          - "3306:3306"
+        env:
+          MYSQL_ROOT_PASSWORD: wordpress
+          MARIADB_INITDB_SKIP_TZINFO: 1
+          MYSQL_USER: wordpress
+          MYSQL_PASSWORD: wordpress
+          MYSQL_DATABASE: wordpress_test
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3.0.2
+        with:
+          submodules: recursive
+
+      - name: Run tests
+        uses: ./.github/actions/run-wp-tests
+        with:
+          wordpress: ${{ matrix.config.wp }}
+          multisite: ${{ matrix.config.ms }}
+          jetpack: ${{ matrix.config.jp }}
+          php: ${{ matrix.config.php }}
+          coverage: 'yes'

@@ -48,31 +48,13 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Set up PHP
-        uses: shivammathur/setup-php@2.19.1
-        with:
-          coverage: none
-          php-version: ${{ matrix.config.php }}
-        env:
-          fail-fast: 'true'
-
-      - name: Install PHP Dependencies
-        uses: ramsey/composer-install@2.1.0
-
-      - name: Set up WordPress and WordPress Test Library
-        uses: sjinks/setup-wordpress-test-library@1.1.2
-        with:
-          version: ${{ matrix.config.wp }}
-
-      - name: Verify MariaDB connection
+      - name: Set up environment
         run: |
-          while ! mysqladmin ping -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --silent; do
-            sleep 1
-          done
-        timeout-minutes: 1
+          echo WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${{ matrix.config.parsely }}" >> "${GITHUB_ENV}"
+          echo WPVIP_PARSELY_INTEGRATION_TEST_MODE="${{ matrix.config.mode }}"         >> "${GITHUB_ENV}"
 
       - name: Run tests
-        run: vendor/bin/phpunit --order-by=random
-        env:
-          WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION: ${{ matrix.config.parsely }}
-          WPVIP_PARSELY_INTEGRATION_TEST_MODE: ${{ matrix.config.mode }}
+        uses: ./.github/actions/run-wp-tests
+        with:
+          wordpress: ${{ matrix.config.wp }}
+          php: ${{ matrix.config.php }}

@@ -58,68 +58,15 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Decide whether to enable coverage
-        id: coverage
-        run: |
-          if [ "${{ matrix.config.coverage }}" = "yes" ]; then
-            echo "::set-output name=coverage::pcov"
-            echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
-          else
-            echo "::set-output name=coverage::none"
-            echo "::set-output name=ini::opcache.enable_cli=1, opcache.jit=tracing, opcache.jit_buffer_size=128M"
-          fi
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@2.19.1
-        with:
-          coverage: ${{ steps.coverage.outputs.coverage }}
-          ini-values: ${{ steps.coverage.outputs.ini }}
-          php-version: ${{ matrix.config.php }}
-        env:
-          fail-fast: 'true'
-
-      - name: Install PHPUnit
-        run: |
-          wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${{ matrix.config.phpunit }}.phar"
-          chmod +x /usr/local/bin/phpunit
-
-      - name: Install PHP Dependencies
-        uses: ramsey/composer-install@2.1.0
-
-      - name: Set up WordPress and WordPress Test Library
-        uses: sjinks/setup-wordpress-test-library@1.1.2
-        with:
-          version: ${{ matrix.config.wp }}
-
-      - name: Set up multisite mode
-        run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
-        if: matrix.config.ms == 'yes'
-
-      - name: Disable JetPack
-        run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
-        if: matrix.config.jp == 'no'
-
-      - name: Verify MariaDB connection
-        run: |
-          while ! mysqladmin ping -h 127.0.0.1 -P ${{ job.services.mysql.ports[3306] }} --silent; do
-            sleep 1
-          done
-        timeout-minutes: 1
-
       - name: Run tests
-        run: |
-          OPTIONS=
-          if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
-            OPTIONS="$OPTIONS --coverage-clover=clover.xml"
-          fi
-          phpunit --order-by=random ${OPTIONS}
-
-      - name: Upload coverage report
-        uses: codecov/codecov-action@v3
+        uses: ./.github/actions/run-wp-tests
         with:
-          files: clover.xml
-          flags: unittests
-        if: ${{ steps.coverage.outputs.coverage != 'none' }}
+          wordpress: ${{ matrix.config.wp }}
+          multisite: ${{ matrix.config.ms }}
+          jetpack: ${{ matrix.config.jp }}
+          php: ${{ matrix.config.php }}
+          phpunit: ${{ matrix.config.phpunit }}
+          coverage: ${{ matrix.config.coverage }}
 
   wp-core:
     name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
