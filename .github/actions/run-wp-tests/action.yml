@@ -1,0 +1,123 @@
+name: Run WP Tests
+description: Runs WordPress plugin tests.
+inputs:
+  wordpress:
+    description: The version of WordPress to use.
+    required: false
+    default: 'latest'
+  multisite:
+    description: Whether to run the tests in multisite mode.
+    required: false
+    default: 'no'
+  jetpack:
+    description: Whether to enable JetPack.
+    required: false
+    default: 'yes'
+  php:
+    description: The version of PHP to use.
+    required: false
+    default: '8.0'
+  phpunit:
+    description: The version of PHPUnit to use.
+    required: false
+    default: ''
+  coverage:
+    description: Whether to generate code coverage reports.
+    required: false
+    default: 'no'
+  coverage-file:
+    description: The file to write the code coverage report to.
+    required: false
+    default: 'clover.xml'
+  coverage-flags:
+    description: Coverage flags for CodeCov.
+    required: false
+    default: ''
+  mysql-host:
+    description: The hostname of the MySQL server.
+    required: false
+    default: '127.0.0.1'
+  mysql-port:
+    description: The port of the MySQL server.
+    required: false
+    default: '3306'
+runs:
+  using: composite
+  steps:
+    - name: Set up coverage reporting parameters
+      id: coverage
+      shell: bash
+      run: |
+        if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
+          echo "::set-output name=coverage::pcov"
+          echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
+        else
+          echo "::set-output name=coverage::none"
+          echo "::set-output name=ini::opcache.enable_cli=1"
+        fi
+
+    - name: Set up PHP
+      uses: shivammathur/setup-php@2.19.1
+      with:
+        coverage: ${{ steps.coverage.outputs.coverage }}
+        ini-values: ${{ steps.coverage.outputs.ini }}
+        php-version: ${{ inputs.php }}
+      env:
+        fail-fast: 'true'
+
+    - name: Install PHPUnit
+      shell: bash
+      run: |
+        wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${{ inputs.phpunit }}.phar"
+        chmod +x /usr/local/bin/phpunit
+      if: inputs.phpunit != ''
+
+    - name: Install PHP Dependencies
+      uses: ramsey/composer-install@2.1.0
+
+    - name: Set up WordPress and WordPress Test Library
+      uses: sjinks/setup-wordpress-test-library@1.1.2
+      with:
+        version: ${{ inputs.wordpress }}
+
+    - name: Set up multisite mode
+      shell: bash
+      run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
+      if: inputs.multisite == 'yes'
+
+    - name: Disable JetPack
+      shell: bash
+      run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
+      if: inputs.jetpack == 'no'
+
+    - name: Verify MariaDB connection
+      shell: bash
+      run: |
+        echo Waiting for MySQL to come online...
+        second=0
+        while ! mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent && [ "${second}" -lt 60 ]; do
+          sleep 1
+          second=$((second+1))
+        done
+        mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
+
+    - name: Run tests
+      shell: bash
+      run: |
+        if [ -n "${{ inputs.phpunit }}" ]; then
+          PHPUNIT=phpunit
+        else
+          PHPUNIT=vendor/bin/phpunit
+        fi
+        OPTIONS=
+        if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
+          OPTIONS="${OPTIONS} --coverage-clover=clover.xml"
+        fi
+        "${PHPUNIT}" --order-by=random ${OPTIONS}
+
+    - name: Upload coverage report
+      uses: codecov/codecov-action@v3
+      with:
+        files: ${{ inputs.coverage-file }}
+        flags: ${{ inputs.coverage-flags }}
+      if: ${{ steps.coverage.outputs.coverage != 'none' }}
