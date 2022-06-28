@@ -55,3 +55,19 @@ function vip_go_amp_force_query_var_value( $query_vars ) {
 	return $query_vars;
 }
 add_filter( 'request', 'vip_go_amp_force_query_var_value', 9, 1 );
+
+/**
+ * Enable support for multi-file uploads since VIP disables open_dir()
+ *
+ * @link https://docs.gravityforms.com/gform_cleanup_target_dir/
+ *
+ * @return void
+ */
+function vip_disable_gform_cleanup_target_dir() {
+	if ( class_exists( 'GFForms' ) ) {
+		if ( version_compare( GFForms::$version, '2.6.3.4', '>=' ) ) {
+			add_filter( 'gform_cleanup_target_dir', '__return_false' );
+		}
+	}
+}
+add_action( 'plugins_loaded', 'vip_disable_gform_cleanup_target_dir' );
