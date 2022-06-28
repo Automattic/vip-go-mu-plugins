@@ -83,7 +83,9 @@ if ( ! function_exists( 'es_get_posts' ) ) {
  * @return void
  */
 function es_wp_query_load_adapter( $adapter ) {
-	if ( in_array( $adapter, array( 'searchpress', 'wpcom-vip', 'travis', 'jetpack-search', 'vip-search' ), true ) ) {
-		require_once ES_WP_QUERY_PATH . "/adapters/{$adapter}.php";
+	if ( 'vip-search' === $adapter ) {
+		require_once ES_WP_QUERY_PATH . "/adapters/vip-search.php";
+	} else {
+		_doing_it_wrong( __FUNCTION__, "Search: Only the vip-search adapter is available to use within Enterprise Search!", null );
 	}
 }
