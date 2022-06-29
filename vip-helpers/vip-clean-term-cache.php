@@ -6,6 +6,8 @@ class VIP_Suspend_Cache_Invalidation {
 
 	private $limit = 2000; //That's what used to work on WPCOM
 
+	private $admin_limit = 10000; //Limit for users who are in the admin UI
+
 	public function __construct() {
 		// Disable {$taxonomy}_relationships cache invalidation
 		// when saving categories, as some have a very large number of posts,
@@ -52,8 +54,17 @@ class VIP_Suspend_Cache_Invalidation {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$objects = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $wpdb->term_relationships WHERE term_taxonomy_id = %d", $tt_id ) );
 
+		$num_objects = intval( $objects );
+
+		// Allows admin users to see saved changes in the edit terms page, when editing a topic
+		// Short circuits scheduling and runs the method synchronously
+		if ( ( $num_objects < $this->admin_limit ) && is_admin() ) {
+			$this->cron_action( $tt_id, $taxonomy );
+			return;
+		}
+
 		//no action needed if there is less that $limimt number of objects to purge
-		if ( intval( $objects ) < $this->limit ) {
+		if ( $num_objects < $this->limit ) {
 			return;
 		}
 
