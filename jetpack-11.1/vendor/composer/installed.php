@@ -182,12 +182,12 @@
             'dev_requirement' => false,
         ),
         'automattic/jetpack-lazy-images' => array(
-            'pretty_version' => 'v2.1.18',
-            'version' => '2.1.18.0',
+            'pretty_version' => 'v2.1.19',
+            'version' => '2.1.19.0',
             'type' => 'jetpack-library',
             'install_path' => __DIR__ . '/../../jetpack_vendor/automattic/jetpack-lazy-images',
             'aliases' => array(),
-            'reference' => '55ac4d1dbbf5214e30171b0cc19ac0d9765a23e3',
+            'reference' => '88e6cf1e686f78cc56e42726c419c7d729ce54a5',
             'dev_requirement' => false,
         ),
         'automattic/jetpack-licensing' => array(

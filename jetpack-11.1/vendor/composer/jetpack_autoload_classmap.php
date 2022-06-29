@@ -255,7 +255,7 @@ return array(
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-publicize/src/class-connections-post-field.php'
 	),
 	'Automattic\\Jetpack\\Jetpack_Lazy_Images' => array(
-		'version' => '2.1.18.0',
+		'version' => '2.1.19.0',
 		'path'    => $baseDir . '/jetpack_vendor/automattic/jetpack-lazy-images/src/lazy-images.php'
 	),
 	'Automattic\\Jetpack\\JITMS\\Rest_Api_Endpoints' => array(
