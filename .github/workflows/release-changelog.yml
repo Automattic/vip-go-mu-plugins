@@ -1,7 +1,11 @@
 name: release-changelog
 
 on:
-  workflow_dispatch
+  - workflow_dispatch
+  - push:
+    branches:
+      - production
+      - update/ci
 
 permissions:
   contents: read
@@ -49,34 +53,3 @@ jobs:
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
-
-  release-changelog:
-    name: Publish Changelog
-    runs-on: ubuntu-latest
-    needs: tag-release
-    steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504 # tag=v1.4.4
-        with:
-          egress-policy: audit
-
-      - name: Check out source code
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
-
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3.3.0
-        with:
-          node-version: 14
-          cache: npm
-          cache-dependency-path: bin
-
-      - name: Install dependencies
-        working-directory: ./bin
-        run: npm ci
-
-      - name: Promote changelog entries
-        env:
-          CHANGELOG_BEARER_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
-          RELEASE_ID: ${{ needs.tag-release.outputs.id }}
-        working-directory: ./bin
-        run: node ./mark-production-changelog.js
