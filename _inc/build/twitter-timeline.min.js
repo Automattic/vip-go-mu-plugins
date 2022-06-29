@@ -1,0 +1,1 @@
+(()=>{var t,e,r,s,a,i;t=document,e="script",r="twitter-wjs",a=t.getElementsByTagName(e)[0],i=/^http:/.test(t.location)?"http":"https",t.getElementById(r)||((s=t.createElement(e)).id=r,s.src=i+"://platform.twitter.com/widgets.js",a.parentNode.insertBefore(s,a))})();
