@@ -45,7 +45,8 @@ class Lockout {
 
 			switch ( constant( 'VIP_LOCKOUT_STATE' ) ) {
 				case 'warning':
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'manage_options' ), constant( 'VIP_LOCKOUT_STATE' ), $user );
+					$has_caps    = isset( $user->allcaps['manage_options'] ) && true === $user->allcaps['manage_options'];
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, constant( 'VIP_LOCKOUT_STATE' ), $user );
 					if ( $show_notice ) {
 						$this->render_warning_notice();
 
@@ -55,7 +56,8 @@ class Lockout {
 					break;
 
 				case 'locked':
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $user->has_cap( 'edit_posts' ), constant( 'VIP_LOCKOUT_STATE' ), $user );
+					$has_caps    = isset( $user->allcaps['edit_posts'] ) && true === $user->allcaps['edit_posts'];
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, constant( 'VIP_LOCKOUT_STATE' ), $user );
 					if ( $show_notice ) {
 						$this->render_locked_notice();
 
