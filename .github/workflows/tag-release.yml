@@ -1,8 +1,7 @@
-name: release-changelog
+name: Tag Release
 
 on:
-  - workflow_dispatch
-  - push:
+  push:
     branches:
       - production
       - update/ci
