@@ -1,12 +1,9 @@
 #query-monitor-main #object-cache-stats h2 {
 	float: left  !important;
-	font-size: 22px  !important;
-	margin-bottom: 0  !important;
 	clear: none !important;
 	min-width: 150px !important;
 	border: 1px solid #eee !important;
 	padding: 5px 10px 15px !important;
-	clear: none !important;
 	text-align: center !important;
 	color: #000 !important;
 	font-family: georgia,times,serif !important;

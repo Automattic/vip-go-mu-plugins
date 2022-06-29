@@ -168,6 +168,8 @@ function vip_es_field_map( $es_map ) {
 			'post_meta.long'                => 'meta.%s.long',
 			'post_meta.double'              => 'meta.%s.double',
 			'post_meta.binary'              => 'meta.%s.boolean',
+			'post_meta.datetime'            => 'meta.%s.datetime',
+			'post_meta.date'                => 'meta.%s.date',
 			'term_id'                       => 'terms.%s.term_id',
 			'term_slug'                     => 'terms.%s.slug',
 			'term_name'                     => 'terms.%s.name.sortable',

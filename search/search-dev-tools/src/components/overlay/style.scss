@@ -17,8 +17,8 @@ $overlay-horizontal-padding-small-viewport: 0.5em;
 		box-sizing: border-box;
 
 		&__close {
-			background-image: url('../../assets/close.svg');
 			background: transparent;
+			background-image: url('../../assets/close.svg');
 			border: 0;
 			position: absolute;
 			top: 24px;
