@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Utils;
 
-class JetPack_IP_Manager {
+class Jetpack_IP_Manager {
 	private static ?self $instance = null;
 
 	public const CRON_EVENT_NAME   = 'vip_go_mu_plugins_update_jetpack_ips';

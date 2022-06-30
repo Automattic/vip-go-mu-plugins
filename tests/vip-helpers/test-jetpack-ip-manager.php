@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP;
 
-use Automattic\VIP\Utils\JetPack_IP_Manager;
+use Automattic\VIP\Utils\Jetpack_IP_Manager;
 use WP_Error;
 use WP_UnitTestCase;
 
-class Test_JetPack_IP_Manager extends WP_UnitTestCase {
+class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
@@ -14,26 +14,26 @@ class Test_JetPack_IP_Manager extends WP_UnitTestCase {
 	}
 
 	public function test_init(): void {
-		JetPack_IP_Manager::instance()->init();
-		self::assertNotFalse( wp_next_scheduled( JetPack_IP_Manager::CRON_EVENT_NAME ) );
-		self::assertTrue( has_action( JetPack_IP_Manager::CRON_EVENT_NAME ) );
+		Jetpack_IP_Manager::instance()->init();
+		self::assertNotFalse( wp_next_scheduled( Jetpack_IP_Manager::CRON_EVENT_NAME ) );
+		self::assertTrue( has_action( Jetpack_IP_Manager::CRON_EVENT_NAME ) );
 	}
 
 	public function test_get_jetpack_ips_transient_available(): void {
 		$did_remote_request = false;
 		$expected           = [ '10.0.0.0/24' ];
 
-		set_transient( JetPack_IP_Manager::TRANSIENT_NAME, $expected );
+		set_transient( Jetpack_IP_Manager::TRANSIENT_NAME, $expected );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request ) {
-			if ( JetPack_IP_Manager::ENDPOINT === $url ) {
+			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 			}
 
 			return $result;
 		}, 10, 3 );
 
-		$actual = JetPack_IP_Manager::get_jetpack_ips();
+		$actual = Jetpack_IP_Manager::get_jetpack_ips();
 
 		self::assertFalse( $did_remote_request );
 		self::assertSame( $expected, $actual );
@@ -43,10 +43,10 @@ class Test_JetPack_IP_Manager extends WP_UnitTestCase {
 		$did_remote_request = false;
 		$expected           = [ '10.0.0.0/8' ];
 
-		delete_transient( JetPack_IP_Manager::TRANSIENT_NAME );
+		delete_transient( Jetpack_IP_Manager::TRANSIENT_NAME );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $expected ) {
-			if ( JetPack_IP_Manager::ENDPOINT === $url ) {
+			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return [
 					'headers'  => [],
@@ -63,7 +63,7 @@ class Test_JetPack_IP_Manager extends WP_UnitTestCase {
 			return $result;
 		}, 10, 3 );
 
-		$actual = JetPack_IP_Manager::get_jetpack_ips();
+		$actual = Jetpack_IP_Manager::get_jetpack_ips();
 
 		self::assertTrue( $did_remote_request );
 		self::assertSame( $expected, $actual );
@@ -75,10 +75,10 @@ class Test_JetPack_IP_Manager extends WP_UnitTestCase {
 	public function test_get_jetpack_ips_transient_error( $response ): void {
 		$did_remote_request = false;
 
-		delete_transient( JetPack_IP_Manager::TRANSIENT_NAME );
+		delete_transient( Jetpack_IP_Manager::TRANSIENT_NAME );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $response ) {
-			if ( JetPack_IP_Manager::ENDPOINT === $url ) {
+			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return $response;
 			}
@@ -86,7 +86,7 @@ class Test_JetPack_IP_Manager extends WP_UnitTestCase {
 			return $result;
 		}, 10, 3 );
 
-		$actual = JetPack_IP_Manager::get_jetpack_ips();
+		$actual = Jetpack_IP_Manager::get_jetpack_ips();
 
 		self::assertTrue( $did_remote_request );
 		self::assertEmpty( $actual );
