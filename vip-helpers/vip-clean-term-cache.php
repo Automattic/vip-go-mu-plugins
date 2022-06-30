@@ -58,7 +58,7 @@ class VIP_Suspend_Cache_Invalidation {
 
 		// Allows admin users to see saved changes in the edit terms page, when editing a topic
 		// Short circuits scheduling and runs the method synchronously
-		if ( ( $num_objects < $this->admin_limit ) && is_admin() ) {
+		if ( ( $num_objects < $this->admin_limit ) && is_admin() && ! wp_doing_ajax() ) {
 			$this->cron_action( $tt_id, $taxonomy );
 			return;
 		}
