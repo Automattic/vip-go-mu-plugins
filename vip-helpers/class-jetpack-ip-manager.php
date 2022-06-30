@@ -7,8 +7,8 @@ class Jetpack_IP_Manager {
 
 	public const OPTION_NAME = 'vip_jetpack_ips';
 	public const ENDPOINT    = 'https://jetpack.com/ips-v4.json';
-	private const LOCK_NAME  = 'update_jetpack_ips';
-	private const LOCK_GROUP = 'vip';
+	public const LOCK_NAME   = 'update_jetpack_ips';
+	public const LOCK_GROUP  = 'vip';
 
 	/**
 	 * @codeCoverageIgnore -- called to early to be covered
@@ -23,9 +23,11 @@ class Jetpack_IP_Manager {
 
 	public function update_jetpack_ips(): array {
 		$is_shutdown = 'shutdown' === current_action();
+		// @codeCoverageIgnoreStart -- we cannot really test this, as we cannot check what the action handler returns
 		if ( $is_shutdown && ! wp_cache_add( self::LOCK_NAME, true, self::LOCK_GROUP, MINUTE_IN_SECONDS ) ) {
 			return [];
 		}
+		// @codeCoverageIgnoreEnd
 
 		try {
 			$response = vip_safe_wp_remote_get( self::ENDPOINT );

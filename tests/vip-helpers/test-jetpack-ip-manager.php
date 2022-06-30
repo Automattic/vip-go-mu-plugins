@@ -118,4 +118,50 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 			],
 		];
 	}
+
+	public function test_shutdown(): void {
+		$instance           = Jetpack_IP_Manager::instance();
+		$expected           = [ '1.1.1.1' ];
+		$expected_new       = [ '1.1.1.2' ];
+		$did_remote_request = false;
+
+		update_option( Jetpack_IP_Manager::OPTION_NAME, [
+			'ips' => $expected,
+			'exp' => time() - DAY_IN_SECONDS,
+		] );
+
+		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $expected_new ) {
+			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
+				$did_remote_request = true;
+				return [
+					'headers'  => [],
+					'body'     => wp_json_encode( $expected_new ),
+					'response' => [
+						'code'    => 200,
+						'message' => get_status_header_desc( 200 ),
+					],
+					'cookies'  => [],
+					'filename' => null,
+				];
+			}
+
+			return $result;
+		}, 10, 3 );
+
+		self::assertFalse( has_action( 'shutdown', [ $instance, 'update_jetpack_ips' ] ) );
+		remove_all_actions( 'shutdown' ); // To avoid 'Test code or tested code did not (only) close its own output buffers'
+		$actual = $instance->get_jetpack_ips();
+
+		self::assertSame( $expected, $actual );
+		self::assertEquals( 10, has_action( 'shutdown', [ $instance, 'update_jetpack_ips' ] ) );
+		self::assertFalse( $did_remote_request );
+
+		do_action( 'shutdown' );
+
+		self::assertTrue( $did_remote_request );
+		self::assertFalse( wp_cache_get( Jetpack_IP_Manager::LOCK_NAME, Jetpack_IP_Manager::LOCK_GROUP ) );
+
+		$actual = $instance->get_jetpack_ips();
+		self::assertSame( $expected_new, $actual );
+	}
 }
