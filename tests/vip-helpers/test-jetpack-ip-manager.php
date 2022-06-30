@@ -13,17 +13,14 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 		require_once __DIR__ . '/../../vip-helpers/class-jetpack-ip-manager.php';
 	}
 
-	public function test_init(): void {
-		Jetpack_IP_Manager::instance()->init();
-		self::assertNotFalse( wp_next_scheduled( Jetpack_IP_Manager::CRON_EVENT_NAME ) );
-		self::assertTrue( has_action( Jetpack_IP_Manager::CRON_EVENT_NAME ) );
-	}
-
-	public function test_get_jetpack_ips_transient_available(): void {
+	public function test_get_jetpack_ips_option_is_fresh(): void {
 		$did_remote_request = false;
 		$expected           = [ '10.0.0.0/24' ];
 
-		set_transient( Jetpack_IP_Manager::TRANSIENT_NAME, $expected );
+		update_option( Jetpack_IP_Manager::OPTION_NAME, [
+			'ips' => $expected,
+			'exp' => time() + DAY_IN_SECONDS,
+		] );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
@@ -39,11 +36,11 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 		self::assertSame( $expected, $actual );
 	}
 
-	public function test_get_jetpack_ips_transient_unavailable(): void {
+	public function test_get_jetpack_ips_no_option(): void {
 		$did_remote_request = false;
 		$expected           = [ '10.0.0.0/8' ];
 
-		delete_transient( Jetpack_IP_Manager::TRANSIENT_NAME );
+		delete_option( Jetpack_IP_Manager::OPTION_NAME );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $expected ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
@@ -72,10 +69,10 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 	/**
 	 * @dataProvider data_get_jetpack_ips_transient_error
 	 */
-	public function test_get_jetpack_ips_transient_error( $response ): void {
+	public function test_get_jetpack_ips_retrieval_error( $response ): void {
 		$did_remote_request = false;
 
-		delete_transient( Jetpack_IP_Manager::TRANSIENT_NAME );
+		delete_option( Jetpack_IP_Manager::OPTION_NAME );
 
 		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $response ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {

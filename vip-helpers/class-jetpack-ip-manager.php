@@ -5,10 +5,10 @@ namespace Automattic\VIP\Utils;
 class Jetpack_IP_Manager {
 	private static ?self $instance = null;
 
-	public const CRON_EVENT_NAME   = 'vip_go_mu_plugins_update_jetpack_ips';
-	public const TRANSIENT_NAME    = 'vip_go_mu_plugins_jetpack_ips';
-	private const TRANSIENT_EXPIRY = 0;
-	public const ENDPOINT          = 'https://jetpack.com/ips-v4.json';
+	public const OPTION_NAME = 'vip_jetpack_ips';
+	public const ENDPOINT    = 'https://jetpack.com/ips-v4.json';
+	private const LOCK_NAME  = 'update_jetpack_ips';
+	private const LOCK_GROUP = 'vip';
 
 	/**
 	 * @codeCoverageIgnore -- called to early to be covered
@@ -21,45 +21,53 @@ class Jetpack_IP_Manager {
 		return self::$instance;
 	}
 
-	/**
-	 * @codeCoverageIgnore -- called to early to be covered
-	 */
-	private function __construct() {
-		add_action( 'init', [ $this, 'init' ] );
-	}
-
-	public function init(): void {
-		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time() + wp_rand( 10, DAY_IN_SECONDS / 2 ), 'daily', self::CRON_EVENT_NAME );
-		}
-	
-		add_action( self::CRON_EVENT_NAME, [ $this, 'update_jetpack_ips' ] );
-	}
-
 	public function update_jetpack_ips(): array {
-		$response = vip_safe_wp_remote_get( self::ENDPOINT );
-		if ( ! is_wp_error( $response ) ) {
-			$code = wp_remote_retrieve_response_code( $response );
-			if ( 200 === (int) $code ) {
-				$body = wp_remote_retrieve_body( $response );
-				$ips  = json_decode( $body, true );
-	
-				if ( is_array( $ips ) && ! empty( $ips ) ) {
-					set_transient( self::TRANSIENT_NAME, $ips, self::TRANSIENT_EXPIRY );
-					return $ips;
+		$is_shutdown = 'shutdown' === current_action();
+		if ( $is_shutdown && ! wp_cache_add( self::LOCK_NAME, true, self::LOCK_GROUP, MINUTE_IN_SECONDS ) ) {
+			return [];
+		}
+
+		try {
+			$response = vip_safe_wp_remote_get( self::ENDPOINT );
+			if ( ! is_wp_error( $response ) ) {
+				$code = wp_remote_retrieve_response_code( $response );
+				if ( 200 === (int) $code ) {
+					$body = wp_remote_retrieve_body( $response );
+					$ips  = json_decode( $body, true );
+		
+					if ( is_array( $ips ) && ! empty( $ips ) ) {
+						$data = [
+							'ips' => $ips,
+							'exp' => time() + DAY_IN_SECONDS,
+						];
+
+						update_option( self::OPTION_NAME, $data );
+						return $data;
+					}
 				}
 			}
-		}
 
-		return [];
+			return [];
+		} finally {
+			if ( $is_shutdown ) {
+				wp_cache_delete( self::LOCK_NAME, self::LOCK_GROUP );
+			}
+		}
 	}
 
 	public static function get_jetpack_ips(): array {
-		$ips = get_transient( self::TRANSIENT_NAME );
-		if ( ! is_array( $ips ) || empty( $ips ) ) {
-			$ips = self::instance()->update_jetpack_ips();
+		$data = get_option( self::OPTION_NAME, false );
+		if ( ! is_array( $data ) ) {
+			$data = self::instance()->update_jetpack_ips();
 		}
-	
+
+		$ips = $data['ips'] ?? [];
+		$exp = $data['exp'] ?? 0;
+
+		if ( $exp < time() ) {
+			add_action( 'shutdown', [ self::instance(), 'update_jetpack_ips' ] );
+		}
+
 		return $ips;
 	}
 }
