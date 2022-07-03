@@ -5,8 +5,10 @@ namespace Automattic\VIP\Utils;
 class Jetpack_IP_Manager {
 	private static ?self $instance = null;
 
-	public const OPTION_NAME = 'vip_jetpack_ips';
-	public const ENDPOINT    = 'https://jetpack.com/ips-v4.json';
+	public const OPTION_NAME  = 'vip_jetpack_ips';
+	public const ENDPOINT     = 'https://jetpack.com/ips-v4.json';
+	private const CACHE_GROUP = 'vip';
+	private const CACHE_KEY   = 'jetpack_ips_lock';
 
 	/**
 	 * @codeCoverageIgnore -- called to early to be covered
@@ -51,10 +53,14 @@ class Jetpack_IP_Manager {
 		$ips = $data['ips'] ?? [];
 		$exp = $data['exp'] ?? 0;
 
-		if ( $exp < time() ) {
-			$fresh_data = self::instance()->update_jetpack_ips();
-			if ( ! empty( $fresh_data ) ) {
-				$ips = $fresh_data['ips'];
+		if ( $exp < time() && wp_cache_add( self::CACHE_KEY, true, self::CACHE_GROUP, 300 ) ) {
+			try {
+				$fresh_data = self::instance()->update_jetpack_ips();
+				if ( ! empty( $fresh_data ) ) {
+					$ips = $fresh_data['ips'];
+				}
+			} finally {
+				wp_cache_delete( self::CACHE_KEY, self::CACHE_GROUP );
 			}
 		}
 
