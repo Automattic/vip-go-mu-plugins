@@ -49,18 +49,15 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
-          echo "::set-output name=coverage::pcov"
-          echo '::set-output name=ini::pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
+          echo "::set-output name=coverage::xdebug"
         else
           echo "::set-output name=coverage::none"
-          echo "::set-output name=ini::opcache.enable_cli=1"
         fi
 
     - name: Set up PHP
       uses: shivammathur/setup-php@2.19.1
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
-        ini-values: ${{ steps.coverage.outputs.ini }}
         php-version: ${{ inputs.php }}
       env:
         fail-fast: 'true'
