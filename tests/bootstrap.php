@@ -1,11 +1,41 @@
 <?php
 
-require_once __DIR__ . '/../vendor/autoload.php';
-
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
 	$_tests_dir = '/tmp/wordpress-tests-lib';
 }
+
+if ( function_exists( 'xdebug_set_filter' ) ) {
+	$base = dirname( __DIR__ );
+	xdebug_set_filter( XDEBUG_FILTER_CODE_COVERAGE, XDEBUG_PATH_EXCLUDE, array_merge(
+		[
+			dirname( $_tests_dir ) . '/',
+			$base . '/advanced-post-cache/',
+			$base . '/akismet/',
+			$base . '/cron-control/',
+			$base . '/debug-bar/',
+			$base . '/debug-bar-cron/',
+			$base . '/drop-ins/',
+			$base . '/http-concat/',
+			$base . '/lightweight-term-count-update/',
+			$base . '/query-monitor/',
+			$base . '/search/debug-bar-elasticpress/',
+			$base . '/search/elasticpress/',
+			$base . '/search/es-wp-query/',
+			$base . '/shared-plugins/',
+			$base . '/rewrite-rules-inspector/',
+			$base . '/vaultpress/',
+			$base . '/wordpress-importer/',
+			$base . '/node_modules/',
+			$base . '/tests/',
+			$base . '/vendor/',
+		],
+		glob( $base . '/jetpack*' ),
+		glob( $base . '/wp-parsely-*' )
+	) );
+}
+
+require_once __DIR__ . '/../vendor/autoload.php';
 
 if ( '1' === getenv( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 	define( 'VIP_JETPACK_SKIP_LOAD', true );
