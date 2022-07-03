@@ -62,6 +62,9 @@ runs:
       env:
         fail-fast: 'true'
 
+    - run: php -i | grep xdebug
+      shell: bash
+
     - name: Install PHPUnit
       shell: bash
       run: |
