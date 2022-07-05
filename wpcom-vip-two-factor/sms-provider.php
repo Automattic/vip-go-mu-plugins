@@ -91,8 +91,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 		$format = '%1$s is your %2$s verification code.' . "\n\n" . '@%3$s #%1$s';
 
-		$message = sprintf( $format, $verification_code, $site_title, $home_url_without_protocol );
-		return $message;
+		return sprintf( $format, $verification_code, $site_title, $home_url_without_protocol );
 	}
 
 	/**
@@ -108,7 +107,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
 
-		return \Automattic\VIP\SMS\send_sms( $sms, $message );
+		\Automattic\VIP\SMS\send_sms( $sms, $message );
 	}
 
 	/**

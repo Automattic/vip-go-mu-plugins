@@ -3,7 +3,6 @@
 namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
-use \WP_CLI\Utils;
 use \ElasticPress\Indexable as Indexable;
 
 /**
@@ -12,9 +11,6 @@ use \ElasticPress\Indexable as Indexable;
  * @package Automattic\VIP\Search
  */
 class VersionCommand extends \WPCOM_VIP_CLI_Command {
-	private const SUCCESS_ICON = "\u{2705}"; // unicode check mark
-	private const FAILURE_ICON = "\u{274C}"; // unicode cross mark
-
 	/**
 	 * Register a new index version
 	 *
@@ -214,6 +210,7 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 					$version['document_count'] = $health->index_count( $indexable, [ 'index_version' => $version['number'] ] );
 				}
 
+				unset( $version );
 				restore_current_blog();
 
 				$versions = array_merge( $versions, $site_versions );
@@ -329,12 +326,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		$active_version_number = $search->versioning->get_active_version_number( $indexable );
 
 		if ( $active_version_number === $new_version_number ) {
-			return WP_CLI::error( sprintf( 'Index version %d is already active for type %s', $new_version_number, $type ) );
+			return WP_CLI::error( sprintf( 'Index version %d is already active', $new_version_number ) );
 		}
 
-		$result = $search->versioning->activate_version( $indexable, $new_version_number );
-
-		return $result;
+		return $search->versioning->activate_version( $indexable, $new_version_number );
 	}
 
 	/**
