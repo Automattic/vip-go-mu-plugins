@@ -23,10 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
-// Important - Cache-healthcheck and App healthcheck
-if ( file_exists( __DIR__ . '/healthcheck/healthcheck.php' ) ) {
-	require_once __DIR__ . '/healthcheck/healthcheck.php';
-}
+// Important - Cache-healthcheck and App-healthcheck
+require_once __DIR__ . '/healthcheck/healthcheck.php';
+
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
