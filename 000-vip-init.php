@@ -23,21 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit();
 }
 
+// Important - Cache-healthcheck and App healthcheck
 if ( file_exists( __DIR__ . '/healthcheck/healthcheck.php' ) ) {
 	require_once __DIR__ . '/healthcheck/healthcheck.php';
-}
-
-// Execute the healthcheck as quickly as possible
-if ( isset( $_SERVER['REQUEST_URI'] ) && '/cache-healthcheck?' === $_SERVER['REQUEST_URI'] ) {
-	if ( function_exists( 'newrelic_end_transaction' ) ) {
-		// Discard the transaction (the `true` param)
-		// See: https://docs.newrelic.com/docs/agents/php-agent/configuration/php-agent-api#api-end-txn
-		newrelic_end_transaction( true );
-	}
-
-	http_response_code( 200 );
-
-	die( 'ok' );
 }
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
