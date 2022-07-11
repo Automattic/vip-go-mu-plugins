@@ -5,7 +5,7 @@ on:
     branches:
       - production
       - staging
-      - update/ci
+      - testing5
 
 permissions:
   contents: read
