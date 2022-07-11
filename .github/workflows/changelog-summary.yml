@@ -5,7 +5,7 @@ on:
     branches:
       - production
       - staging
-      - update/ci
+      - testing2
 
 permissions:
   contents: read
@@ -37,7 +37,5 @@ jobs:
         run: |
           php ./ci/changelog-summary.php \
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
-                --wp-tag-ids=1784989 \
-                --wp-channel-ids=267076 \
                 --wp-status=draft \
                 --debug
