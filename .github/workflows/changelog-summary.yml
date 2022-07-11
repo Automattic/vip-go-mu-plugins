@@ -4,8 +4,7 @@ on:
   push:
     branches:
       - production
-      - staging
-      - update/ci
+      - test
 
 permissions:
   contents: read
