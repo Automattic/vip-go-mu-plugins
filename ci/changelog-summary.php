@@ -276,7 +276,7 @@ function get_pr_ids_from_commits( $commit_url ) {
     foreach( $commits as $commit ) {
         $msg = $commit['commit']['message'];
 
-        if ( 1 === preg_match( '/\(\#[0-9]*\)/', $msg, $matches ) ) {
+        if ( 1 === preg_match( '/\(\#[0-9]+\)/', $msg, $matches ) || 1 === preg_match( '/^Merge pull request #[0-9]+/', $msg, $matches ) ) {
             $id = preg_replace('/[^0-9]/', '', $matches[0] );
             $pr_ids[] = $id;
         }
@@ -325,9 +325,9 @@ function process_pr_ids( $pr_ids ) {
         $pr = curl_get( GITHUB_ENDPOINT . '/pulls/' . $pr_id );
 
         $label_names = array_map( fn($label) => $label['name'], $pr['labels'] );
-
-        if ( in_array( LABEL_NO_FILES_TO_DEPLOY, $label_names ) ) {
-            // If no files to deploy, skip
+        $skip_label = BRANCH === 'production' ? LABEL_DEPLOYED_PROD : LABEL_DEPLOYED_STAGING;
+        if ( in_array( $skip_label, $label_names ) || in_array( LABEL_NO_FILES_TO_DEPLOY, $label_names ) ) {
+            // If file was already marked as deployed or no files to deploy, skip
             continue;
         }
 
