@@ -325,10 +325,15 @@ function process_pr_ids( $pr_ids ) {
         $pr = curl_get( GITHUB_ENDPOINT . '/pulls/' . $pr_id );
 
         $label_names = array_map( fn($label) => $label['name'], $pr['labels'] );
-        $skip_label = BRANCH === 'production' ? LABEL_DEPLOYED_PROD : LABEL_DEPLOYED_STAGING;
-        if ( in_array( $skip_label, $label_names ) || in_array( LABEL_NO_FILES_TO_DEPLOY, $label_names ) ) {
-            // If file was already marked as deployed or no files to deploy, skip
-            continue;
+        $skip_labels = [ LABEL_NO_FILES_TO_DEPLOY, LABEL_DEPLOYED_PROD ];
+        if ( BRANCH === 'staging' ) {
+            $skip_labels[] = LABEL_DEPLOYED_STAGING;
+        }
+        foreach( $skip_labels as $skip_label ) {
+            if ( in_array( $skip_label, $label_names ) ) {
+                // If file was already marked as deployed or no files to deploy, skip
+                continue 2;
+            }
         }
 
         $prs[] = $pr;
