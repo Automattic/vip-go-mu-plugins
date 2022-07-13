@@ -2343,7 +2343,7 @@ class Search {
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
 	public function filter_ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( VIP_GO_APP_ENVIRONMENT ) ) {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 			// Rollout to non-prod only for now, otherwise skip if production.
 			return $should_do_weighting;
 		}
