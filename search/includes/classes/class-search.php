@@ -801,13 +801,12 @@ class Search {
 	}
 
 	/**
-	 * Generate option name for cached index_exists request.
+	 * Generate option name for caching index_exists requests
 	 *
-	 * @return string $option_name Name of generated option.
+	 * @param  string $index_name  Index name
+	 * @return string $option_name Name of generated option
 	 */
-	private function get_index_exists_option_name( $url ) {
-		$parsed_url = wp_parse_url( $url );
-		$index_name = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+	private function get_index_exists_option_name( $index_name ) {
 		return "es_index_exists_{$index_name}";
 	}
 
@@ -834,7 +833,8 @@ class Search {
 		];
 		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
-			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
+			$index_name                  = $this->get_index_name_for_url( $query['url'] );
+			$index_exists_option_name    = $this->get_index_exists_option_name( $index_name );
 			$cached_index_exists_request = get_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
 				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
