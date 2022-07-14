@@ -23,7 +23,6 @@ jobs:
       matrix:
         config:
         # JetPack, Single-Site, PHP 7.4
-          - { wp: 5.5.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.6.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.7.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.8.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
