@@ -835,7 +835,7 @@ class Search {
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
 			$index_name                  = $this->get_index_name_for_url( $query['url'] );
 			$index_exists_option_name    = $this->get_index_exists_option_name( $index_name );
-			$cached_index_exists_request = get_option( $index_exists_option_name );
+			$cached_index_exists_request = get_site_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
 				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
@@ -843,7 +843,7 @@ class Search {
 					return $cached_index_exists_request;
 				} else {
 					// Invalidate index_exists caching on certain actions.
-					delete_option( $index_exists_option_name );
+					delete_site_option( $index_exists_option_name );
 
 					// Ensure the cache for the option was actually deleted.
 					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
@@ -997,7 +997,7 @@ class Search {
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
-			add_option( $index_exists_option_name, $response );
+			add_site_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable ) {
