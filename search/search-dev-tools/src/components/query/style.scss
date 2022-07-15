@@ -15,6 +15,10 @@
 		font-size: 14px;
 		background-color: var(--vip-grey-0);
 		padding: 32px;
+
+		> pre {
+			line-height: 1.2em;
+		}
 	}
 	&_actions {
 		@include text-caption();
@@ -125,11 +129,14 @@
 	.container_editor {
 		counter-reset: line;
 		position: relative;
+		
 
 		> textarea,
 		> pre {
 			padding: 32px 64px !important;
+			line-height: 1.2em;
 		}
+
 	}
 	.container_editor_line_number {
 		&::before {
