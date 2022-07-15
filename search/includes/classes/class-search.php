@@ -641,10 +641,10 @@ class Search {
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
 
-		add_filter( 'ep_enable_do_weighting', [ $this, 'filter_ep_enable_do_weighting' ], PHP_INT_MAX, 4 );
-
 		// Since we disable UI toggling, blog option should be dependent on index existing (since it defaults to 'yes' if not found)
 		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
+
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
 
 	protected function load_commands() {
@@ -804,13 +804,12 @@ class Search {
 	}
 
 	/**
-	 * Generate option name for cached index_exists request.
+	 * Generate option name for caching index_exists requests
 	 *
-	 * @return string $option_name Name of generated option.
+	 * @param  string $index_name  Index name
+	 * @return string $option_name Name of generated option
 	 */
-	private function get_index_exists_option_name( $url ) {
-		$parsed_url = wp_parse_url( $url );
-		$index_name = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+	private function get_index_exists_option_name( $index_name ) {
 		return "es_index_exists_{$index_name}";
 	}
 
@@ -837,8 +836,9 @@ class Search {
 		];
 		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
-			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
-			$cached_index_exists_request = get_option( $index_exists_option_name );
+			$index_name                  = $this->get_index_name_for_url( $query['url'] );
+			$index_exists_option_name    = $this->get_index_exists_option_name( $index_name );
+			$cached_index_exists_request = get_site_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
 				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
@@ -846,7 +846,7 @@ class Search {
 					return $cached_index_exists_request;
 				} else {
 					// Invalidate index_exists caching on certain actions.
-					delete_option( $index_exists_option_name );
+					delete_site_option( $index_exists_option_name );
 
 					// Ensure the cache for the option was actually deleted.
 					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
@@ -1000,7 +1000,7 @@ class Search {
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
-			add_option( $index_exists_option_name, $response );
+			add_site_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable ) {
@@ -2345,7 +2345,7 @@ class Search {
 	 * @param array $formatted_args Formatted ES arguments
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
-	public function filter_ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
+	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
 		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) &&
 		! \Automattic\VIP\Feature::is_enabled_by_percentage( 'reduce-default-es-payload' ) ) {
 			// Rollout to non-prod and 25% of production

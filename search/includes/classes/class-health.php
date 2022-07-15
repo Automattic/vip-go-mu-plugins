@@ -29,11 +29,21 @@ class Health {
 		'index.number_of_replicas',
 		'index.number_of_shards',
 		'index.routing.allocation.include.dc',
+		'index.search.slowlog.threshold.query.warn',
+		'index.search.slowlog.threshold.query.info',
+		'index.search.slowlog.threshold.fetch.warn',
+		'index.indexing.slowlog.threshold.index.warn',
+		'index.indexing.slowlog.source',
 	);
 	const INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS = array(
 		'index.max_result_window',
 		'index.number_of_replicas',
 		'index.routing.allocation.include.dc',
+		'index.search.slowlog.threshold.query.warn',
+		'index.search.slowlog.threshold.query.info',
+		'index.search.slowlog.threshold.fetch.warn',
+		'index.indexing.slowlog.threshold.index.warn',
+		'index.indexing.slowlog.source',
 	);
 
 	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
@@ -1033,6 +1043,11 @@ class Health {
 				if ( ! empty( $recursive_diff ) ) {
 					$diff[ $key ] = $recursive_diff;
 				}
+			} elseif ( ! isset( $actual_settings[ $key ] ) ) {
+				$diff[ $key ] = array(
+					'expected' => $desired_settings[ $key ],
+					'actual'   => 'N/A',
+				);
 			} elseif ( $actual_settings[ $key ] != $desired_settings[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
 				$diff[ $key ] = array(
 					'expected' => $desired_settings[ $key ],
