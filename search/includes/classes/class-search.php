@@ -641,7 +641,7 @@ class Search {
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
 
-		add_filter( 'ep_enable_do_weighting', [ $this, 'filter_ep_enable_do_weighting' ], PHP_INT_MAX, 4 );
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
 
 	protected function load_commands() {
@@ -2342,9 +2342,9 @@ class Search {
 	 * @param array $formatted_args Formatted ES arguments
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
-	public function filter_ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
+	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
 		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			// Rollout to non-prod only for now, otherwise skip if production.
+			// Rollout to non-prod
 			return $should_do_weighting;
 		}
 
