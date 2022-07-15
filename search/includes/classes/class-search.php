@@ -641,6 +641,9 @@ class Search {
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
 
+		// Since we disable UI toggling, blog option should be dependent on index existing (since it defaults to 'yes' if not found)
+		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
+
 		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
 
@@ -2380,5 +2383,19 @@ class Search {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Since we disable the toggling UI for whether subsites in multisite are indexable, we should filter the
+	 * option based on the index for the subsite ID existing, instead of default value of blog option or what
+	 * is being stored. See \ElasticPress\Utils\is_site_indexable().
+	 *
+	 * @param string $value Whether the ep_indexable option is found for the blog. Defaults to 'yes'.
+	 * @param int $blog_id The blog_id we are checking.
+	 * @return string $value Whether the index exists for the $blog_id.
+	 */
+	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
+		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
+		return false === $index_exists ? 'no' : 'yes';
 	}
 }
