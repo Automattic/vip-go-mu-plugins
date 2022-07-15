@@ -2240,6 +2240,10 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+			// Enable new algorithm for non-prods
+			return '4.0';
+		}
 		return '3.5';
 	}
 
