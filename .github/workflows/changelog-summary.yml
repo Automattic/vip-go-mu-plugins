@@ -5,6 +5,7 @@ on:
     branches:
       - production
       - staging
+      - update/ci
 
 permissions:
   contents: read
@@ -30,6 +31,7 @@ jobs:
         env:
           CHANGELOG_POST_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           PROJECT_USERNAME: Automattic
           PROJECT_REPONAME: vip-go-mu-plugins
           BRANCH: ${{ github.ref_name }}

@@ -9,6 +9,7 @@ function is_env_set() {
         $_SERVER['PROJECT_REPONAME'],
         $_SERVER['CHANGELOG_POST_TOKEN'],
         $_SERVER['BRANCH'],
+        $_SERVER['SLACK_WEBHOOK'],
     );
 }
 
@@ -17,6 +18,7 @@ if ( ! is_env_set() ) {
     \tPROJECT_USERNAME
     \tPROJECT_REPONAME
     \tCHANGELOG_POST_TOKEN
+    \tSLACK_WEBHOOK
     \tBRANCH\n";
     exit( 1 );
 }
@@ -42,6 +44,7 @@ define( 'PROJECT_REPONAME', $_SERVER[ 'PROJECT_REPONAME' ] );
 define( 'BRANCH', $_SERVER[ 'BRANCH' ] );
 define( 'CHANGELOG_POST_TOKEN', $_SERVER[ 'CHANGELOG_POST_TOKEN' ] );
 define( 'GITHUB_TOKEN', $_SERVER[ 'GITHUB_TOKEN' ] ?? '' );
+define( 'SLACK_WEBHOOK', $_SERVER[ 'SLACK_WEBHOOK' ] ?? '' );
 define( 'GITHUB_ENDPOINT', 'https://api.github.com/repos/' . PROJECT_USERNAME . '/' . PROJECT_REPONAME );
 define( 'PR_CHANGELOG_START_MARKER', '<h2>Changelog Description' );
 define( 'PR_CHANGELOG_END_MARKER', '<h2>' );
@@ -242,6 +245,46 @@ function create_changelog_post( $title, $content, $tags ) {
         echo "\n\nFailed to create changelog draft post\n";
         exit( 1 );
     }
+
+    $data = json_decode( $response, true );
+    $id = $data[ 'id' ];
+    return "https://wpvipchangelog.wordpress.com/wp-admin/post.php?post=" . $id . "&action=edit";
+}
+
+/**
+ * Ping slack with the link to the changelog entry
+ *
+ * @param string $changelog_url Url of the changelog draft
+ */
+function ping_slack( $changelog_url ) {
+    $fields = [
+        "channel"    => "#bots-vipcantina",
+        "username"   => "mu-release",
+        "text"       => "<!subteam^S01SYE0V8TA> There is a <" . $changelog_url . "|draft> for a release on branch " . BRANCH . ". Please review it and publish it.",
+        "icon_emoji" => ":cantina-intensifies:"
+    ];
+
+    debug( $fields );
+
+    $payload = json_encode( $fields );
+
+    $ch = curl_init( SLACK_WEBHOOK );
+    curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
+    curl_setopt( $ch, CURLOPT_POST, true );
+    curl_setopt( $ch, CURLOPT_POSTFIELDS, $payload );
+    curl_setopt( $ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
+    $response = curl_exec( $ch );
+    $http_code = curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
+    curl_close( $ch );
+
+    echo "Response-slack:\n";
+    echo $response;
+    echo "\nHttpCode: $http_code";
+
+    if ( $http_code >= 400 ) {
+        echo "\n\nFailed to ping slack\n";
+        exit( 1 );
+    }
 }
 
 /**
@@ -342,6 +385,7 @@ function process_pr_ids( $pr_ids ) {
     return $prs;
 }
 
+
 /**
  * This creates the changelog summary and updates the PRs afterwards with the appropriate labels.
  *
@@ -351,12 +395,14 @@ function build_changelog_and_update_prs() {
     $merged_pr = fetch_pr_merged_to_branch();
 
     if ( ! $merged_pr || ! isset( $merged_pr['_links']['commits']['href'] ) ) {
-       exit;
+        echo "No merged PR found, skipping changelog creation";
+        exit;
     }
 
     $pr_ids = get_pr_ids_from_commits( $merged_pr['_links']['commits']['href'] );
 
     if ( empty( $pr_ids ) ) {
+        echo "No PRs found, skipping changelog creation";
         exit;
     }
 
@@ -380,10 +426,12 @@ function build_changelog_and_update_prs() {
 
     $title = ucfirst( BRANCH ) . ' release - ' . date( 'Y/m/d' );
     $content = join( "\n<hr />\n", $changelog_entries );
-    create_changelog_post( $title, $content, $tags, BRANCH );
+    $changelog_url = create_changelog_post( $title, $content, $tags, BRANCH );
 
     $prs[] = $merged_pr;
     update_prs( $prs, BRANCH );
+
+    ping_slack( $changelog_url );
 }
 
 build_changelog_and_update_prs();
