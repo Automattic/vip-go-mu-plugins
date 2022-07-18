@@ -10,7 +10,7 @@ import cx from 'classnames';
 import pluralize from 'pluralize';
 import ClipboardJS from "clipboard";
 import { SearchContext } from '../../context';
-import { postData, copyToClipboard } from '../../utils';
+import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
 
 import style from './style.scss';
