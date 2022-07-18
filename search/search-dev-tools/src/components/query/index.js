@@ -2,7 +2,7 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { h } from 'preact';
 import { useContext, useEffect, useState, useRef } from 'preact/hooks';
-import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
+import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
