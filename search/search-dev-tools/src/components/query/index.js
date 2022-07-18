@@ -87,11 +87,25 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
+	const colorizeRequestTime = ( timeMs ) => {
+		let c;
+
+		if ( timeMs < 200 ) {
+			c = 'green-60';
+		} else if ( timeMs < 500 ) {
+			c = 'red-30';
+		} else {
+			c = 'red-60';
+		}
+
+		return <span style={{ color: `var(--vip-${c})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
+	};
+
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
 				{ pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )}
-				<span style="color: var(--vip-grey-60);"> that took</span> {request.body.took}ms
+				<span style="color: var(--vip-grey-60);"> that took</span> { colorizeRequestTime( request.body.took ) }
 				<small> ({request?.response?.code || 'unknown' })</small>
 			</h3>
 		</div>
