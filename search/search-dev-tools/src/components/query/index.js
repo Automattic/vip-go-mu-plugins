@@ -63,7 +63,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	};
 
 	useEffect( () => {
-		console.log('fire');
 		cbHandler = new ClipboardJS( copyButtonDOMSelector );
 		cbHandler.on( 'success', e => {
 			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
