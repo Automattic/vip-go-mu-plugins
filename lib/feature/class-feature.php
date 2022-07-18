@@ -63,6 +63,10 @@ class Feature {
 	 * @return bool Whether it is enabled or not.
 	 */
 	public static function is_enabled_by_percentage( $feature ) {
+		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			return false;
+		}
+
 		if ( ! isset( static::$feature_percentages[ $feature ] ) ) {
 			return false;
 		}
