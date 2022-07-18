@@ -123,10 +123,15 @@ jobs:
         run: |
           if [ "$(git diff --ignore-space-at-eol search/search-dev-tools/ | wc -l)" -gt "0" ]; then
             echo "::warning::There are changes in the built files."
-            git config user.name "WordPress VIP Bot"
-            git config user.email github-actions@github.com
-            git config push.default "current"
-            git add search/search-dev-tools/
-            git commit -m "Regenerate the bundle"
-            git push
+            if [ "${{ github.event.head_commit.committer.email }}" != "github-actions@github.com" ]; then
+              git config user.name "WordPress VIP Bot"
+              git config user.email github-actions@github.com
+              git config push.default "current"
+              git add search/search-dev-tools/
+              git commit -m "Regenerate the bundle"
+              git push
+            else
+              echo "::error::Aborting to avoid the loop."
+              exit 1
+            fi
           fi
