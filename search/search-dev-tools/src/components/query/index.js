@@ -36,9 +36,9 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		result: txtResult,
 		collapsed: true,
 	};
-
+	
 	const [ state, setState ] = useState( initialState );
-
+	
 	const queryResultRef = useRef( null );
 
 	const copyButtonDOMSelector = '#query-response-copy-handle';
@@ -145,7 +145,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<div className={style.query_res}>
 				<div className={style.query_result}>
 					<div className={style.query_actions}>
-						<button id={ copyButtonDOMSelector } data-clipboard-target="#query-response-text">COPY</button>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>
 					</div>
 					<pre className="line-numbers">
 						<code className="language-json" ref={queryResultRef} id="query-response-text" dangerouslySetInnerHTML={{ __html: state.result }}></code>
