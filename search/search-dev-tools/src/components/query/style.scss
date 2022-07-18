@@ -30,7 +30,13 @@
 		z-index: 1;
 		top: 0;
 		button {
-			text-transform: lowercase;
+			text-transform: uppercase;
+			font-size:0.8rem;
+			font-weight: bold;
+			padding: 0.5em;
+			border: 0;
+			background-color: #ffffff;
+			border: 1px solid var(--vip-grey-60); 
 			&:not(:last-of-type) {
 				margin-right: 32px;
 			}

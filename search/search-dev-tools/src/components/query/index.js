@@ -63,6 +63,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	};
 
 	useEffect( () => {
+		console.log('fire');
 		cbHandler = new ClipboardJS( copyButtonDOMSelector );
 		cbHandler.on( 'success', e => {
 			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
@@ -111,8 +112,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				<div className={style.query_actions}>
 					{ state.editing || state.result !== txtResult
 						? ( <>
-							<button onClick={ () => setState( { ...state, editing: false } ) }>RUN</button>
-							<button onClick={ () => setState( { ...initialState, collapsed: false } ) }>RESET</button>
+							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40)">RUN</button>
+							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10)">RESET</button>
 						</> )
 						: 'Edit me!'
 					}
@@ -145,7 +146,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<div className={style.query_res}>
 				<div className={style.query_result}>
 					<div className={style.query_actions}>
-						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text" dangerouslySetInnerHTML={{__html: 'COPY'}}></button>
 					</div>
 					<pre className="line-numbers">
 						<code className="language-json" ref={queryResultRef} id="query-response-text" dangerouslySetInnerHTML={{ __html: state.result }}></code>
