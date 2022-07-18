@@ -19,6 +19,7 @@ class Feature {
 	 */
 	public static $feature_percentages = [
 		'reduce-default-es-payload' => 0.25,
+		'force-es-timeout'          => 0.25,
 	];
 
 	/**
