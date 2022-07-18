@@ -71,11 +71,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
-	// Re-highlight the query on result change (after the response is received).
-	// useEffect( () => {
-	// 	highlightElement( queryResultRef.current );
-	// }, [ queryResultRef, state.result ] );
-
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
