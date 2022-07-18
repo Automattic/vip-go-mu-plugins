@@ -8,9 +8,9 @@ import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
 import cx from 'classnames';
 import pluralize from 'pluralize';
-
+import ClipboardJS from "clipboard";
 import { SearchContext } from '../../context';
-import { postData } from '../../utils';
+import { postData, copyToClipboard } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
 
 import style from './style.scss';
@@ -36,10 +36,12 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		result: txtResult,
 		collapsed: true,
 	};
+	let cbHandler;
 
 	const [ state, setState ] = useState( initialState );
 
 	const queryResultRef = useRef( null );
+	const copyButtonDOMSelector = '#query-response-copy-handle';
 
 	/**
 	 * @param {Object} query the query to Run
@@ -58,6 +60,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			console.log( err );
 		}
 	};
+
+	useEffect( () => {
+		cbHandler = new ClipboardJS( copyButtonDOMSelector );
+		cbHandler.on( 'success', e => {
+			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
+			setTimeout( () => {
+				document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPY';
+			}, 2000 );
+			e.clearSelection();
+		} );
+		return () => cbHandler.destroy();
+	}, [] );
 
 	useEffect( () => {
 		// Skip remote fetching if the query is the same.
@@ -122,15 +136,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					padding={null}
 					className={style.container_editor}
 					style={{
-						fontSize: 12,
+						fontSize: "var(--vip-sdt-editor-font-size)",
 						lineHeight: "1.2em"
 					}}
 				/>
 			</div>
 			<div className={style.query_res}>
 				<div className={style.query_result}>
+					<div className={style.query_actions}>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>
+					</div>
 					<pre className="line-numbers">
-						<code className="language-json" ref={ queryResultRef } dangerouslySetInnerHTML={{ __html: state.result }}></code>
+						<code className="language-json" ref={queryResultRef} id="query-response-text" dangerouslySetInnerHTML={{ __html: state.result }}></code>
 					</pre>
 				</div>
 			</div>

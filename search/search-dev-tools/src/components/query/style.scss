@@ -1,3 +1,5 @@
+
+
 .query {
 	&_wrap {
 		margin-bottom: 32px;
@@ -12,7 +14,7 @@
 		width: 100%;
 		overflow-y: scroll;
 		margin-bottom: 32px;
-		font-size: 14px;
+		font-size: var(--vip-sdt-editor-font-size);
 		background-color: var(--vip-grey-0);
 		padding: 32px;
 
@@ -26,6 +28,7 @@
 		right: 32px;
 		margin: 32px 0;
 		z-index: 1;
+		top: 0;
 		button {
 			text-transform: lowercase;
 			&:not(:last-of-type) {
@@ -106,12 +109,13 @@
 .query_src,
 .query_res {
 	max-width: calc(50vw - 32px);
+	font-size: var( --vip-sdt-editor-font-size);
+	position: relative;
 }
 
 .query_src {
 	grid-area: query-src;
 	background-color: #ffffff;
-	position: relative;
 
 	&_extra {
 		@include text-caption();

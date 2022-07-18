@@ -7,14 +7,14 @@
 #search-dev-tools-portal {
 	code[class*='language-'],
 	pre[class*='language-'] {
-		color: #393a34;
+		// Match token.string
+		color: #e3116c;
 		font-family: var(--vip-font-family);
 		direction: ltr;
 		text-align: left;
 		white-space: pre;
 		word-spacing: normal;
 		word-break: normal;
-		font-size: 12px;
 		line-height: 1.2em;
 
 		-moz-tab-size: 4;
