@@ -1554,7 +1554,7 @@ class Search {
 		}
 
 		// Force the timeout for post search queries.
-		$is_rolled_out  = \Automattic\VIP\Feature::is_enabled_by_percentage( 'force-es-timeout' );
+		$is_rolled_out  = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'force-es-timeout' );
 		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', $is_rolled_out ) ) {
 			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
