@@ -486,10 +486,11 @@ class Search {
 	}
 
 	/**
-	 * Check if query monitor or debug bar are enabled. If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
+	 * Check if query monitor or debug bar are enabled. Also check for the debug mode being enabled.
+	 * If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
 	 */
 	public function enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled() {
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
 			if ( ! defined( 'WP_EP_DEBUG' ) ) {
 				define( 'WP_EP_DEBUG', true );
 			}
@@ -640,6 +641,9 @@ class Search {
 		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
+
+		// Since we disable UI toggling, blog option should be dependent on index existing (since it defaults to 'yes' if not found)
+		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
 
 		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
@@ -801,13 +805,12 @@ class Search {
 	}
 
 	/**
-	 * Generate option name for cached index_exists request.
+	 * Generate option name for caching index_exists requests
 	 *
-	 * @return string $option_name Name of generated option.
+	 * @param  string $index_name  Index name
+	 * @return string $option_name Name of generated option
 	 */
-	private function get_index_exists_option_name( $url ) {
-		$parsed_url = wp_parse_url( $url );
-		$index_name = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
+	private function get_index_exists_option_name( $index_name ) {
 		return "es_index_exists_{$index_name}";
 	}
 
@@ -834,8 +837,9 @@ class Search {
 		];
 		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
-			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
-			$cached_index_exists_request = get_option( $index_exists_option_name );
+			$index_name                  = $this->get_index_name_for_url( $query['url'] );
+			$index_exists_option_name    = $this->get_index_exists_option_name( $index_name );
+			$cached_index_exists_request = get_site_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
 				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
@@ -843,7 +847,7 @@ class Search {
 					return $cached_index_exists_request;
 				} else {
 					// Invalidate index_exists caching on certain actions.
-					delete_option( $index_exists_option_name );
+					delete_site_option( $index_exists_option_name );
 
 					// Ensure the cache for the option was actually deleted.
 					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
@@ -997,7 +1001,7 @@ class Search {
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
-			add_option( $index_exists_option_name, $response );
+			add_site_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable ) {
@@ -1549,11 +1553,10 @@ class Search {
 			$formatted_args['track_total_hits'] = true;
 		}
 
-		// TODO: remove temporary rollout environment check
 		// Force the timeout for post search queries.
-		$is_prod        = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+		$is_rolled_out  = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'force-es-timeout' );
 		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
-		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', ! $is_prod ) ) {
+		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', $is_rolled_out ) ) {
 			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}
 
@@ -2237,6 +2240,10 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+			// Enable new algorithm for non-prods
+			return '4.0';
+		}
 		return '3.5';
 	}
 
@@ -2343,8 +2350,9 @@ class Search {
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
 	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			// Rollout to non-prod
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) &&
+		! \Automattic\VIP\Feature::is_enabled_by_percentage( 'reduce-default-es-payload' ) ) {
+			// Rollout to non-prod and 25% of production
 			return $should_do_weighting;
 		}
 
@@ -2379,5 +2387,19 @@ class Search {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Since we disable the toggling UI for whether subsites in multisite are indexable, we should filter the
+	 * option based on the index for the subsite ID existing, instead of default value of blog option or what
+	 * is being stored. See \ElasticPress\Utils\is_site_indexable().
+	 *
+	 * @param string $value Whether the ep_indexable option is found for the blog. Defaults to 'yes'.
+	 * @param int $blog_id The blog_id we are checking.
+	 * @return string $value Whether the index exists for the $blog_id.
+	 */
+	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
+		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
+		return false === $index_exists ? 'no' : 'yes';
 	}
 }
