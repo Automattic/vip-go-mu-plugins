@@ -17,7 +17,10 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [];
+	public static $feature_percentages = [
+		'reduce-default-es-payload' => 0.25,
+		'force-es-timeout'          => 0.25,
+	];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.
@@ -60,6 +63,10 @@ class Feature {
 	 * @return bool Whether it is enabled or not.
 	 */
 	public static function is_enabled_by_percentage( $feature ) {
+		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			return false;
+		}
+
 		if ( ! isset( static::$feature_percentages[ $feature ] ) ) {
 			return false;
 		}

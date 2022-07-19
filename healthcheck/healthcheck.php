@@ -22,7 +22,7 @@ if ( isset( $_SERVER['REQUEST_URI'] ) && '/cache-healthcheck?' === $_SERVER['REQ
 /**
  * `parse_request` provides a good balance between making sure the codebase is loaded and not running the main query.
  */
-if ( isset( $_SERVER['REQUEST_URI'] ) && '/vip-healthcheck' === $_SERVER['REQUEST_URI'] ) {
+if ( isset( $_SERVER['REQUEST_URI'] ) && '/app-healthcheck' === $_SERVER['REQUEST_URI'] ) {
 	add_action( 'parse_request', function( $wp ) {
 		$hc = new Automattic\VIP\Healthcheck();
 		$hc->check();
