@@ -167,16 +167,14 @@ class Feature_Test extends TestCase {
 	}
 
 	public function test_is_enabled_by_percentage_using_constant() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', false );
-
-		// Feature will use FILES_CLIENT_SITE_ID, which is 123 in tests, when it isn't set on the class
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
 
 		Feature::$feature_percentages = array(
 			'foo-feature' => 0.75,
 		);
 
 		$enabled = Feature::is_enabled_by_percentage( 'foo-feature' );
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
+
 		$this->assertEquals( true, $enabled );
 	}
 
