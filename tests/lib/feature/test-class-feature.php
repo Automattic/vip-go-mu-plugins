@@ -176,7 +176,7 @@ class Feature_Test extends TestCase {
 		);
 
 		$enabled = Feature::is_enabled_by_percentage( 'foo-feature' );
-
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
 		$this->assertEquals( true, $enabled );
 	}
 

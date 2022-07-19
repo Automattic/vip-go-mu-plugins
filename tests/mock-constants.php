@@ -5,14 +5,12 @@ namespace Automattic\Test {
 
 	abstract class Constant_Mocker {
 		private static $constants = [
-			'ABSPATH'              => '/tmp/wordpress',
-			'FILES_CLIENT_SITE_ID' => 231337,
+			'ABSPATH' => '/tmp/wordpress',
 		];
 
 		public static function clear(): void {
 			self::$constants = [
-				'ABSPATH'              => '/tmp/wordpress',
-				'FILES_CLIENT_SITE_ID' => 231337,
+				'ABSPATH' => '/tmp/wordpress',
 			];
 		}
 
