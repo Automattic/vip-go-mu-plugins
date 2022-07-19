@@ -116,6 +116,8 @@ function enable_debug_tools() {
 		return $user_caps;
 	}, 10, 3 );
 
+	add_action( 'init', fn() => show_admin_bar( true ), 9999 );
+
 	add_action( 'wp_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 	add_action( 'login_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 }

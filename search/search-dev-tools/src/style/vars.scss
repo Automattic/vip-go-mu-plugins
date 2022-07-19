@@ -1,4 +1,5 @@
 :root {
+	// Design system
 	--vip-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
 		Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
 		'Segoe UI Symbol';
@@ -59,4 +60,6 @@
 	--vip-blue-80: #005064;
 	--vip-blue-90: #002c39;
 	--vip-blue-100: #00090d;
+	// Local vars
+	--vip-sdt-editor-font-size: 0.8em;
 }

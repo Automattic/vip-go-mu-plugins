@@ -96,16 +96,13 @@ jobs:
   search-dev-tools:
     name: Build Search Dev Tools
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Check out source code
         uses: actions/checkout@v3.0.2
-
-      - name: Sanity check
-        run: |
-          if grep -q webpack-dev-server search/search-dev-tools/build/bundle.js; then
-            echo "Attempted to commit a development version of search-dev-tools, please rebuild with npm run build"
-            exit 1
-          fi
+        with:
+          token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
       - name: Setup Node
         uses: actions/setup-node@v3.4.1
@@ -121,3 +118,20 @@ jobs:
       - name: Build files
         run: npm run build
         working-directory: search/search-dev-tools
+
+      - name: Check the diff
+        run: |
+          if [ "$(git diff --ignore-space-at-eol search/search-dev-tools/ | wc -l)" -gt "0" ]; then
+            echo "::warning::There are changes in the built files."
+            if [ "${{ github.event.head_commit.committer.email }}" != "github-actions@github.com" ]; then
+              git config user.name "WordPress VIP Bot"
+              git config user.email github-actions@github.com
+              git config push.default "current"
+              git add search/search-dev-tools/
+              git commit -m "Regenerate the bundle"
+              git push
+            else
+              echo "::error::Aborting to avoid the loop."
+              exit 1
+            fi
+          fi
