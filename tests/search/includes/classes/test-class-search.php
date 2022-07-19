@@ -3107,6 +3107,39 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
+	public function test__filter_ep_enable_do_weighting__default_no_weighting() {
+		$this->search_instance->init();
+
+		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__anonymous_function() {
+		$this->search_instance->init();
+
+		add_filter(
+			'ep_weighting_configuration_for_search',
+			function( $weight_config ) {
+				return $weight_config;
+			}
+		);
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__class_function() {
+		$this->search_instance->init();
+
+		add_filter( 'ep_weighting_configuration_for_search', [ $this, 'some_function' ] );
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__weight_config() {
+		$this->search_instance->init();
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [ 'foo' => 'bar' ], [], [] ) );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

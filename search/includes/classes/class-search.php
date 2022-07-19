@@ -640,6 +640,8 @@ class Search {
 		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
+
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
 
 	protected function load_commands() {
@@ -2329,5 +2331,53 @@ class Search {
 	 */
 	public function filter__es_info_cache_expiration( $time ) {
 		return wp_rand( 24 * HOUR_IN_SECONDS, 36 * HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * A filter that only enables weighting if it is needed. E.g. When weightings are set by UI or filtered.
+	 *
+	 * @param bool  Whether to enable weight config, defaults to true for search requests that are public or REST
+	 * @param array $weight_config Current weight config
+	 * @param array $args WP Query arguments
+	 * @param array $formatted_args Formatted ES arguments
+	 * @return bool $should_do_weighting New value on whether to enable weight config
+	 */
+	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			// Rollout to non-prod
+			return $should_do_weighting;
+		}
+
+		if ( ! empty( $weight_config ) ) {
+			return true;
+		}
+
+		global $wp_filter;
+
+		$ep_filters = [
+			'ep_weighting_configuration_for_search',
+			'ep_query_weighting_fields',
+			'ep_weighting_configuration',
+			'ep_weighting_fields_for_post_type',
+		];
+
+		foreach ( $ep_filters as $ep_filter ) {
+			if ( isset( $wp_filter[ $ep_filter ] ) ) {
+				foreach ( $wp_filter[ $ep_filter ]->callbacks as $callback ) {
+					foreach ( $callback as $el ) {
+						if ( $el['function'] instanceof \Closure ) {
+							return true;
+						} else {
+							$class = get_class( $el['function'][0] );
+							if ( false === strpos( $class, 'ElasticPress\Feature' ) ) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 }

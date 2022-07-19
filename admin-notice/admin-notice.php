@@ -27,30 +27,11 @@ add_action(
 	}
 );
 
-add_action(
-	'vip_admin_notice_init',
-	function( $admin_notice_controller ) {
-		$message = 'Howdy! We have detected the JETPACK_SEARCH_VIP_INDEX constant is still defined on this application. <a href="https://lobby.vip.wordpress.com/2022/02/02/enterprise-search-as-default-elasticsearch-solution/" target="_blank" title="Enterprise Search as default Elasticsearch solution">Jetpack Search custom indexes are no longer be supported on VIP</a>. Please use <a href="https://docs.wpvip.com/how-tos/vip-search/enable/#jetpack-migration-support-path" target="_blank" title="Jetpack migration support path">Enterprise Search</a> or Jetpack Instant Search instead.';
-
-		$admin_notice_controller->add(
-			new Admin_Notice(
-				$message,
-				[
-					new Expression_Condition( defined( 'JETPACK_SEARCH_VIP_INDEX' ) && JETPACK_SEARCH_VIP_INDEX ),
-					new Capability_Condition( 'administrator' ),
-				],
-				'search-migrations',
-				'error'
-			)
-		);
-	}
-);
-
 // PHP 8 migration nudge on non-prods
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8.0 compatible. To learn more, please see the <a href="https://lobby.vip.wordpress.com/2022/05/02/php-8-0-available-on-wordpress-vip/" target="_blank">Lobby announcement</a> and the guide on <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">how to prepare your application for a PHP version upgrade</a>.';
+		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8.0 compatible. To learn more, please see <a href="https://lobby.vip.wordpress.com/2022/07/06/working-together-the-path-to-php-8-0/" target="_blank">the Lobby announcement</a> and <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">the guide on how to prepare your application for a PHP version upgrade</a>.';
 
 		$admin_notice_controller->add(
 			new Admin_Notice(
@@ -59,7 +40,7 @@ add_action(
 					new Expression_Condition( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ),
 					new Expression_Condition( version_compare( PHP_VERSION, '8.0', '<' ) ),
 				],
-				'php8-migrations-1',
+				'php8-migrations-2',
 				'info'
 			)
 		);
