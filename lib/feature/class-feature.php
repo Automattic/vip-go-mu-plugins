@@ -19,6 +19,7 @@ class Feature {
 	 */
 	public static $feature_percentages = [
 		'reduce-default-es-payload' => 0.25,
+		'force-es-timeout'          => 0.25,
 	];
 
 	/**
@@ -62,6 +63,10 @@ class Feature {
 	 * @return bool Whether it is enabled or not.
 	 */
 	public static function is_enabled_by_percentage( $feature ) {
+		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			return false;
+		}
+
 		if ( ! isset( static::$feature_percentages[ $feature ] ) ) {
 			return false;
 		}
