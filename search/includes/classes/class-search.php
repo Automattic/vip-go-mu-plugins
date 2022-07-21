@@ -521,8 +521,10 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
+
 		// Rate limit query integration
-		add_filter( 'ep_skip_query_integration', array( $this, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
+		add_action( 'ep_remote_request', [ $this, 'increment_rate_limit_counter_after_request' ], 10, 2 );
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -918,6 +920,9 @@ class Search {
 			$cached_response = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
 
 			if ( $cached_response ) {
+				// Decrement the rate-limiting counter - we shouldn't count cached responses but there's no good way to not increment it after the request,
+				// which is where we increment the counter.
+				wp_cache_decr( self::QUERY_COUNT_CACHE_KEY, 1, self::SEARCH_CACHE_GROUP );
 				return $cached_response;
 			}
 		}
@@ -1258,24 +1263,40 @@ class Search {
 	}
 
 	/**
-	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 * Increment the query count to calculate rate-limiting
+	 * This doesn't care whether a request was successful or not.
+	 *
+	 * @param array $query formatted ElasticPress Query object
+	 * @param string $type Current query type
+	 *
+	 * @return void
+	 */
+	public function increment_rate_limit_counter_after_request( $query, $type ) {
+		if ( $type === 'query' ) {
+			self::query_count_incr();
+		}
+	}
+
+	/**
+	 * Filter for ep_skip_query_integration that enabled rate-limiting. Should be run last.
 	 *
 	 * Honor any previous filters that skip query integration. If query integration is
 	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
-	 * roughly half of the queries received to the database and half through ElasticPress.
+	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
+	 * @param array $query formatted ElasticPress Query object
+	 *
 	 * @return bool new value of ep_skip_query_integration
 	 */
-	public function rate_limit_ep_query_integration( $skip ) {
+	public function rate_limit_ep_query_integration( $skip, $query ) {
 		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
 		}
 
-		// If the query count has exceeded the maximum
-		// only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$max_query_count ) {
+		// If the query count has exceeded the maximum pass through certain percentage to the database
+		if ( self::get_query_count() > self::$max_query_count ) {
 			// Go first so that cache entries aren't set yet for first occurrence.
 			$this->maybe_log_query_ratelimiting_start();
 
@@ -1283,7 +1304,8 @@ class Search {
 
 			$this->maybe_alert_for_prolonged_query_limiting();
 
-			// Should be roughly half over time
+			// $query_db_fallback_value is by default 5, which would result in roughly half offloaded to the db
+			// @see vip_search_query_db_fallback_value filter
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
