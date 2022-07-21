@@ -36,20 +36,20 @@ final class Plugin {
 	}
 
 	public function plugins_loaded(): void {
-		$collectors = apply_filters( 'vip_prometheus_collectors', [] );
-		if ( ! is_array( $collectors ) ) {
-			$collectors = [];
+		$available_collectors = apply_filters( 'vip_prometheus_collectors', [] );
+		if ( ! is_array( $available_collectors ) ) {
+			$available_collectors = [];
 		}
 
-		foreach ( $collectors as $key => $collector ) {
+		foreach ( $available_collectors as $key => $collector ) {
 			if ( is_object( $collector ) && $collector instanceof CollectorInterface ) {
 				$collector->initialize( $this->registry );
 			} else {
-				unset( $collectors[ $key ] );
+				unset( $available_collectors[ $key ] );
 			}
 		}
 
-		$this->collectors = $collectors;
+		$this->collectors = $available_collectors;
 	}
 
 	public function init(): void {
