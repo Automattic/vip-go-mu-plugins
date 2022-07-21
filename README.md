@@ -117,7 +117,6 @@ bin/create-release.sh
 
 **For Automattic Use:** Instructions are in the FG :)
 
-
 ### vip-go-mu-plugins-built
 
 This is a repo primarily meant for local non-development use.
