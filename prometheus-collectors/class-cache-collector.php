@@ -58,13 +58,13 @@ class Cache_Collector implements CollectorInterface {
 		global $wp_object_cache;
 
 		if ( $this->cache_hits_counter ) {
-			$this->cache_hits_counter->incBy( $wp_object_cache->cache_hits, [ get_current_blog_id() ] );
-			$this->cache_misses_counter->incBy( $wp_object_cache->cache_misses, [ get_current_blog_id() ] );
+			$this->cache_hits_counter->incBy( $wp_object_cache->cache_hits, [ (string) get_current_blog_id() ] );
+			$this->cache_misses_counter->incBy( $wp_object_cache->cache_misses, [ (string) get_current_blog_id() ] );
 		}
 
 		if ( $this->operation_counter ) {
 			foreach ( $wp_object_cache->stats as $operation => $count ) {
-				$this->operation_counter->incBy( $count, [ get_current_blog_id(), $operation ] );
+				$this->operation_counter->incBy( $count, [ (string) get_current_blog_id(), (string) $operation ] );
 			}
 		}
 	}
