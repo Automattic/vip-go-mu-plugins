@@ -523,7 +523,7 @@ class Search {
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
 		// Rate-limit query integration
-		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -1267,11 +1267,9 @@ class Search {
 	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
-	 * @param array $query formatted ElasticPress Query object
-	 *
 	 * @return bool new value of ep_skip_query_integration
 	 */
-	public function rate_limit_ep_query_integration( $skip, $query ) {
+	public function rate_limit_ep_query_integration( $skip ) {
 		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
