@@ -522,8 +522,7 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
-		// rate-limit query integration
-		add_action( 'ep_remote_request', [ $this, 'increment_rate_limit_counter_after_request' ], 10, 2 );
+		// Rate-limit query integration
 		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
 
 		// Disable certain EP Features
@@ -920,9 +919,6 @@ class Search {
 			$cached_response = wp_cache_get( $cache_key, self::SEARCH_CACHE_GROUP );
 
 			if ( $cached_response ) {
-				// Decrement the rate-limiting counter - we shouldn't count cached responses but there's no good way to not increment it after the request,
-				// which is where we increment the counter.
-				wp_cache_decr( self::QUERY_COUNT_CACHE_KEY, 1, self::SEARCH_CACHE_GROUP );
 				return $cached_response;
 			}
 		}
@@ -937,6 +933,7 @@ class Search {
 		 */
 		if ( 'query' === $type ) {
 			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
+			self::query_count_incr();
 		} else {
 			$args['timeout'] = $timeout;
 			$response        = wp_remote_request( $query['url'], $args );
@@ -1260,21 +1257,6 @@ class Search {
 
 		// The filter is checking if we should _skip_ query integration...so if it's _not_ enabled
 		return ! $integration_enabled;
-	}
-
-	/**
-	 * Increment the query count to calculate rate-limiting
-	 * This doesn't care whether a request was successful or not.
-	 *
-	 * @param array $query formatted ElasticPress Query object
-	 * @param string $type Current query type
-	 *
-	 * @return void
-	 */
-	public function increment_rate_limit_counter_after_request( $query, $type ) {
-		if ( $type === 'query' ) {
-			self::query_count_incr();
-		}
 	}
 
 	/**
