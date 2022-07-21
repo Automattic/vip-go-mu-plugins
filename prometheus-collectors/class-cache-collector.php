@@ -29,7 +29,7 @@ class Cache_Collector implements CollectorInterface {
 			$this->cache_misses_counter = $registry->getOrRegisterCounter(
 				'object_cache',
 				'cache_misses_total',
-				'Total number of cache missed',
+				'Total number of cache misses',
 				[ 'site_id' ]
 			);
 		}
@@ -44,6 +44,10 @@ class Cache_Collector implements CollectorInterface {
 		}
 
 		add_action( 'shutdown', [ $this, 'shutdown' ] );
+	}
+
+	public function collect_metrics(): void {
+		/* Do nothing */
 	}
 
 	/**

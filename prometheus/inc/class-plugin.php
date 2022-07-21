@@ -14,6 +14,11 @@ use WP_Query;
 final class Plugin {
 	private static ?Plugin $instance = null;
 	private RegistryInterface $registry;
+	/** @var CollectorInterface[] */
+	private array $collectors = [];
+
+	private const FLUSH_RULES_LOCK_NAME  = 'flush_rules_lock';
+	private const FLUSH_RULES_LOCK_GROUP = 'vip_prometheus';
 
 	public static function get_instance(): self {
 		if ( ! self::$instance ) {
@@ -36,8 +41,15 @@ final class Plugin {
 			$collectors = [];
 		}
 
-		$collectors = array_filter( $collectors, fn ( $collector) => is_object( $collector ) && $collector instanceof CollectorInterface );
-		array_map( fn ( CollectorInterface $collector ) => $collector->initialize( $this->registry ), $collectors );
+		foreach ( $collectors as $key => $collector ) {
+			if ( is_object( $collector ) && $collector instanceof CollectorInterface ) {
+				$collector->initialize( $this->registry );
+			} else {
+				unset( $collectors[ $key ] );
+			}
+		}
+
+		$this->collectors = $collectors;
 	}
 
 	public function init(): void {
@@ -46,10 +58,11 @@ final class Plugin {
 		add_action( 'template_redirect', [ $this, 'template_redirect' ] );
 
 		$version = (int) get_option( 'vip_prometheus_version', 0 );
-		if ( $version < 1 ) {
+		if ( $version < 1 && wp_cache_add( self::FLUSH_RULES_LOCK_NAME, 1, self::FLUSH_RULES_LOCK_GROUP, 10 ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.flush_rewrite_rules_flush_rewrite_rules -- there are no activation hooks for mu-plugins
 			flush_rewrite_rules();
 			update_option( 'vip_prometheus_version', 1 );
+			wp_cache_delete( self::FLUSH_RULES_LOCK_NAME, self::FLUSH_RULES_LOCK_GROUP );
 		}
 	}
 
@@ -74,6 +87,8 @@ final class Plugin {
 		global $wp_query;
 
 		if ( isset( $wp_query->query_vars['metrics'] ) ) {
+			array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
+
 			$renderer = new RenderTextFormat();
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
 			echo $renderer->render( $this->registry->getMetricFamilySamples() );
