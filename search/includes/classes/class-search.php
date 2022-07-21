@@ -318,12 +318,12 @@ class Search {
 
 	public function apply_settings() {
 		/**
-		 * The period with which the Elasticsearch query rate limiting threshold is set.
+		 * The period with which the Elasticsearch query rate-limiting threshold is set.
 		 *
-		 * A set amount of queries are allowed per-period before Elasticsearch query rate limiting occurs.
+		 * A set amount of queries are allowed per-period before Elasticsearch query rate-limiting occurs.
 		 *
 		 * @hook vip_search_ratelimit_period
-		 * @param int $period The period, in seconds, for Elasticsearch query rate limiting checks.
+		 * @param int $period The period, in seconds, for Elasticsearch query rate-limiting checks.
 		 */
 		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', self::DEFAULT_QUERY_COUNT_TTL );
 
@@ -360,7 +360,7 @@ class Search {
 		}
 
 		/**
-		 * The number of queries allowed per period before Elasticsearch rate limiting takes effect.
+		 * The number of queries allowed per period before Elasticsearch rate-limiting takes effect.
 		 *
 		 * Ratelimiting works by sending a percentage of traffic to the database rather than Elasticsearch to keep the cluster stable.
 		 *
@@ -406,12 +406,12 @@ class Search {
 		}
 
 		/**
-		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate limited.
+		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate-limited.
 		 *
 		 * This value is compared >= rand( 1, 10 ) so a setting of 5 would cause roughly half of requests to go to the database. A setting of 3 would yield a 70% chance of going to the database.
 		 *
 		 * @hook vip_search_query_db_fallback_value
-		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
+		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate-limited.
 		 */
 		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', self::DEFAULT_QUERY_DB_FALLBACK_VALUE );
 
@@ -522,7 +522,7 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
-		// Rate limit query integration
+		// rate-limit query integration
 		add_action( 'ep_remote_request', [ $this, 'increment_rate_limit_counter_after_request' ], 10, 2 );
 		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
 
@@ -1378,7 +1378,7 @@ class Search {
 		}
 
 		$message = sprintf(
-			'Application %d - %s has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+			'Application %d - %s has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$query_limiting_time
@@ -2213,7 +2213,7 @@ class Search {
 	public function maybe_log_query_ratelimiting_start() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
 			$message = sprintf(
-				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
+				'Application %d - %s has triggered Elasticsearch query rate-limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.',
 				FILES_CLIENT_SITE_ID,
 				\home_url(),
 				self::$query_count_ttl
