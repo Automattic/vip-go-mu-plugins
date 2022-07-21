@@ -2219,7 +2219,7 @@ class Search {
 				self::$query_count_ttl
 			);
 
-			$this->logger->log( 'warning', 'search_query_rate_limiting', $message );
+			$this->logger->log( 'warning', 'search_query_rate_limiting', $message, [ 'count' => self::get_query_count() ] );
 		}
 	}
 
