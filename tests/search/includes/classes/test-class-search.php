@@ -1279,9 +1279,11 @@ class Search_Test extends WP_UnitTestCase {
 
 		// Force this request to be ratelimited
 		$es::$query_db_fallback_value = 11;
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		// ep_skip_query_integration should be true if ratelimited
-		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is rate-limited' );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
@@ -1291,10 +1293,10 @@ class Search_Test extends WP_UnitTestCase {
 			->getMock();
 		$partially_mocked_search->init();
 
-		// Force ratelimiting to apply
+		// Force rate-limiting to apply
 		$partially_mocked_search::$max_query_count = 0;
 
-		// Force this request to be ratelimited
+		// Force this request to be rate-limited
 		$partially_mocked_search::$query_db_fallback_value = 11;
 
 		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
@@ -1310,9 +1312,12 @@ class Search_Test extends WP_UnitTestCase {
 			->getMock();
 		$partially_mocked_search->init();
 
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
+
 		$partially_mocked_search->expects( $this->once() )->method( 'clear_query_limiting_start_timestamp' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__record_ratelimited_query_stat__records_statsd() {
@@ -2493,7 +2498,7 @@ class Search_Test extends WP_UnitTestCase {
 			$this->expectWarning();
 			$this->expectWarningMessage(
 				sprintf(
-					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+					'Application 123 - http://example.org has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 					$difference
 				)
 			);
@@ -2883,7 +2888,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->equalTo( 'warning' ),
 					$this->equalTo( 'search_query_rate_limiting' ),
 					$this->equalTo(
-						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
+						'Application 123 - http://example.org has triggered Elasticsearch query rate-limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.'
 					),
 					$this->anything()
 				);
