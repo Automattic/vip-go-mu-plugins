@@ -1298,11 +1298,13 @@ class Search_Test extends WP_UnitTestCase {
 
 		// Force this request to be rate-limited
 		$partially_mocked_search::$query_db_fallback_value = 11;
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
 		$partially_mocked_search->expects( $this->once() )->method( 'maybe_alert_for_prolonged_query_limiting' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__rate_limit_ep_query_integration__clears_start_correctly() {
