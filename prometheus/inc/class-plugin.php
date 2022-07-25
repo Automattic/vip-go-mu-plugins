@@ -76,7 +76,7 @@ class Plugin {
 	public function request( array $query_vars ): array {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		if ( '/metrics' === $request_uri ) {
+		if ( '/metrics' === $request_uri && is_proxied_request() ) {
 			$query_vars['metrics'] = true;
 			unset( $query_vars['error'] );
 		}
