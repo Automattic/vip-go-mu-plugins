@@ -17,9 +17,6 @@ final class Plugin {
 	/** @var CollectorInterface[] */
 	private array $collectors = [];
 
-	private const FLUSH_RULES_LOCK_NAME  = 'flush_rules_lock';
-	private const FLUSH_RULES_LOCK_GROUP = 'vip_prometheus';
-
 	public static function get_instance(): self {
 		if ( ! self::$instance ) {
 			self::$instance = new self();
@@ -54,18 +51,31 @@ final class Plugin {
 
 	public function init(): void {
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
-			add_rewrite_endpoint( 'metrics', EP_ROOT );
+			add_filter( 'query_vars', [ $this, 'query_vars' ] );
+			add_filter( 'request', [ $this, 'request' ] );
 			add_filter( 'wp_headers', [ $this, 'wp_headers' ], 10, 2 );
-			add_action( 'template_redirect', [ $this, 'template_redirect' ] );
-
-			$version = (int) get_option( 'vip_prometheus_version', 0 );
-			if ( $version < 1 && wp_cache_add( self::FLUSH_RULES_LOCK_NAME, 1, self::FLUSH_RULES_LOCK_GROUP, 10 ) ) {
-				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.flush_rewrite_rules_flush_rewrite_rules -- there are no activation hooks for mu-plugins
-				flush_rewrite_rules();
-				update_option( 'vip_prometheus_version', 1 );
-				wp_cache_delete( self::FLUSH_RULES_LOCK_NAME, self::FLUSH_RULES_LOCK_GROUP );
-			}
+			add_action( 'template_redirect', [ $this, 'template_redirect' ], 0 );
 		}
+	}
+
+	/**
+	 * @param string[] $vars
+	 * @return string[]
+	 */
+	public function query_vars( $vars ): array {
+		$vars[] = 'metrics';
+		return $vars;
+	}
+
+	public function request( array $query_vars ): array {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+		if ( '/metrics' === $request_uri ) {
+			$query_vars['metrics'] = true;
+			unset( $query_vars['error'] );
+		}
+
+		return $query_vars;
 	}
 
 	public function wp_headers( $headers, WP $wp ): array {
@@ -95,6 +105,15 @@ final class Plugin {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
 			echo $renderer->render( $this->registry->getMetricFamilySamples() );
 			die();
+
+			// In case you want or need to debug queries:
+			// 1. Comment out the calls to `$renderer->render()` and `die()` above;
+			// 2. Uncomment the following lines:
+			//
+			// remove_all_actions( current_action() );
+			// do_action( 'wp_head' );
+			// do_action( 'wp_footer' );
+			// die();
 		}
 	}
 
