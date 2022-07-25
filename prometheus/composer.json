@@ -1,0 +1,17 @@
+{
+    "name": "automattic/prometheus",
+    "require": {
+        "promphp/prometheus_client_php": "^2.6"
+    },
+    "autoload": {
+        "classmap": [
+            "inc/"
+        ]
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "7.4"
+        }
+    }
+}
