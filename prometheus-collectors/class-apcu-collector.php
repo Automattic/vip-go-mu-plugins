@@ -5,6 +5,9 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\Gauge;
 use Prometheus\RegistryInterface;
 
+/**
+ * @codeCoverageIgnore
+ */
 class APCu_Collector implements CollectorInterface {
 	private ?Gauge $num_slots_gauge    = null;
 	private ?Gauge $cache_hits_gauge   = null;

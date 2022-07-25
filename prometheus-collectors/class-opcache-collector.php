@@ -5,6 +5,9 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\Gauge;
 use Prometheus\RegistryInterface;
 
+/**
+ * @codeCoverageIgnore
+ */
 class OpCache_Collector implements CollectorInterface {
 	private ?Gauge $cache_used_memory_gauge   = null;
 	private ?Gauge $cache_free_memory_gauge   = null;
