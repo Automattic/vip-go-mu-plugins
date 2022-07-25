@@ -51,7 +51,7 @@ class Cache_Collector implements CollectorInterface {
 	}
 
 	/**
-	 * @global WP_Object_Cache $wpdb
+	 * @global WP_Object_Cache $wp_object_cache
 	 */
 	public function shutdown(): void {
 		/** @var WP_Object_Cache $wp_object_cache */
