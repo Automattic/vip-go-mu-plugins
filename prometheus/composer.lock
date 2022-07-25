@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4035f4d3efbf0511ad9c2c7e490f15b2",
+    "content-hash": "f05e9f60bcd3c232fb8124272f80f973",
     "packages": [
         {
             "name": "promphp/prometheus_client_php",
@@ -82,5 +82,8 @@
     "prefer-lowest": false,
     "platform": [],
     "platform-dev": [],
+    "platform-overrides": {
+        "php": "7.4"
+    },
     "plugin-api-version": "2.3.0"
 }

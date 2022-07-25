@@ -1,15 +1,24 @@
 <?php return array(
     'root' => array(
-        'name' => 'vladimir/prometheus',
+        'name' => 'automattic/prometheus',
         'pretty_version' => 'dev-develop',
         'version' => 'dev-develop',
-        'reference' => '5602c12693749bd3677bbb6005a6a4c9981d5500',
+        'reference' => 'f59fa9b9068de107ead4f2f113ef525b9788dadb',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
         'dev' => true,
     ),
     'versions' => array(
+        'automattic/prometheus' => array(
+            'pretty_version' => 'dev-develop',
+            'version' => 'dev-develop',
+            'reference' => 'f59fa9b9068de107ead4f2f113ef525b9788dadb',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'endclothing/prometheus_client_php' => array(
             'dev_requirement' => false,
             'replaced' => array(
@@ -34,15 +43,6 @@
             'reference' => 'df77bbcc65bd173f2ffaf40ab4e1ca8716da8ce6',
             'type' => 'library',
             'install_path' => __DIR__ . '/../promphp/prometheus_client_php',
-            'aliases' => array(),
-            'dev_requirement' => false,
-        ),
-        'vladimir/prometheus' => array(
-            'pretty_version' => 'dev-develop',
-            'version' => 'dev-develop',
-            'reference' => '5602c12693749bd3677bbb6005a6a4c9981d5500',
-            'type' => 'library',
-            'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
