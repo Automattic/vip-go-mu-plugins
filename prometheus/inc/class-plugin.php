@@ -11,12 +11,15 @@ use Prometheus\Storage\InMemory;
 use WP;
 use WP_Query;
 
-final class Plugin {
-	private static ?Plugin $instance     = null;
-	private ?RegistryInterface $registry = null;
+class Plugin {
+	private static ?Plugin $instance       = null;
+	protected ?RegistryInterface $registry = null;
 	/** @var CollectorInterface[] */
-	private array $collectors = [];
+	protected array $collectors = [];
 
+	/**
+	 * @return static
+	 */
 	public static function get_instance(): self {
 		if ( ! self::$instance ) {
 			self::$instance = new self();
@@ -25,7 +28,10 @@ final class Plugin {
 		return self::$instance;
 	}
 
-	private function __construct() {
+	/**
+	 * @codeCoverageIgnore -- invoked before the tests start
+	 */
+	protected function __construct() {
 		add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
 		add_action( 'init', [ $this, 'init' ] );
 	}
@@ -118,12 +124,14 @@ final class Plugin {
 	}
 
 	private static function create_registry(): RegistryInterface {
+		// @codeCoverageIgnoreStart -- APCu may or may not be available during tests
 		/** @var Adapter $storage */
 		if ( extension_loaded( 'apcu' ) && apcu_enabled() ) {
 			$storage_backend = APCng::class;
 		} else {
 			$storage_backend = InMemory::class;
 		}
+		// @codeCoverageIgnoreEnd
 
 		$storage_backend = apply_filters( 'vip_prometheus_storage_backend', $storage_backend );
 		if ( is_string( $storage_backend ) && class_exists( $storage_backend ) ) {
