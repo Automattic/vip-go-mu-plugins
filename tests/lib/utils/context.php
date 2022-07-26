@@ -47,6 +47,24 @@ class Context_Test extends TestCase {
 		$this->assertTrue( $actual_result );
 	}
 
+	public function test__is_overdue_locked__nope() {
+		// Note: `WPCOM_VIP_OVERDUE_LOCKOUT` not defined
+
+		self::assertFalse( defined( 'WPCOM_VIP_OVERDUE_LOCKOUT' ) );
+
+		$actual_result = Context::is_overdue_locked();
+
+		$this->assertFalse( $actual_result, '`WPCOM_VIP_OVERDUE_LOCKOUT` constant should not be defined for this test' );
+	}
+
+	public function test__is_overdue_locked__yep() {
+		Constant_Mocker::define( 'WPCOM_VIP_OVERDUE_LOCKOUT', true );
+
+		$actual_result = Context::is_overdue_locked();
+
+		$this->assertTrue( $actual_result );
+	}
+
 	public function get_test_data__is_web_request__nope() {
 		return [
 			'is_wp_cli'     => [

@@ -31,6 +31,10 @@ if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
 }
 
+if ( ! defined( 'WPCOM_VIP_OVERDUE_LOCKOUT' ) ) {
+	define( 'WPCOM_VIP_OVERDUE_LOCKOUT', false );
+}
+
 if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
 	define( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE', false );
 }
@@ -58,6 +62,29 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 			header( 'X-VIP-Go-Maintenance: true' );
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo file_get_contents( __DIR__ . '/errors/site-maintenance.html' );
+
+			exit;
+		}
+	}
+}
+
+// Sites can be disabled if there is an overdue payment.
+// This constant is defined by VIP Go in config/wp-config.php.
+if ( Context::is_vip_env() && WPCOM_VIP_OVERDUE_LOCKOUT ) {
+	// WP CLI is allowed, but disable cron
+	if ( Context::is_wp_cli() ) {
+		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
+			return 1;
+		}, 9999 );
+	} else {
+		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+		require_once __DIR__ . '/vip-helpers/vip-utils.php';
+		if ( ! vip_is_jetpack_request() ) {
+			http_response_code( 503 );
+
+			header( 'X-VIP-Go-Maintenance: true' );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
 
 			exit;
 		}
