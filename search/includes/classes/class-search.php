@@ -318,12 +318,12 @@ class Search {
 
 	public function apply_settings() {
 		/**
-		 * The period with which the Elasticsearch query rate limiting threshold is set.
+		 * The period with which the Elasticsearch query rate-limiting threshold is set.
 		 *
-		 * A set amount of queries are allowed per-period before Elasticsearch query rate limiting occurs.
+		 * A set amount of queries are allowed per-period before Elasticsearch query rate-limiting occurs.
 		 *
 		 * @hook vip_search_ratelimit_period
-		 * @param int $period The period, in seconds, for Elasticsearch query rate limiting checks.
+		 * @param int $period The period, in seconds, for Elasticsearch query rate-limiting checks.
 		 */
 		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', self::DEFAULT_QUERY_COUNT_TTL );
 
@@ -360,7 +360,7 @@ class Search {
 		}
 
 		/**
-		 * The number of queries allowed per period before Elasticsearch rate limiting takes effect.
+		 * The number of queries allowed per period before Elasticsearch rate-limiting takes effect.
 		 *
 		 * Ratelimiting works by sending a percentage of traffic to the database rather than Elasticsearch to keep the cluster stable.
 		 *
@@ -406,12 +406,12 @@ class Search {
 		}
 
 		/**
-		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate limited.
+		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate-limited.
 		 *
 		 * This value is compared >= rand( 1, 10 ) so a setting of 5 would cause roughly half of requests to go to the database. A setting of 3 would yield a 70% chance of going to the database.
 		 *
 		 * @hook vip_search_query_db_fallback_value
-		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
+		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate-limited.
 		 */
 		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', self::DEFAULT_QUERY_DB_FALLBACK_VALUE );
 
@@ -521,8 +521,9 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
-		// Rate limit query integration
-		add_filter( 'ep_skip_query_integration', array( $this, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
+
+		// Rate-limit query integration
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -932,6 +933,7 @@ class Search {
 		 */
 		if ( 'query' === $type ) {
 			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
+			self::query_count_incr();
 		} else {
 			$args['timeout'] = $timeout;
 			$response        = wp_remote_request( $query['url'], $args );
@@ -1258,11 +1260,11 @@ class Search {
 	}
 
 	/**
-	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 * Filter for ep_skip_query_integration that enabled rate-limiting. Should be run last.
 	 *
 	 * Honor any previous filters that skip query integration. If query integration is
 	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
-	 * roughly half of the queries received to the database and half through ElasticPress.
+	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
 	 * @return bool new value of ep_skip_query_integration
@@ -1273,9 +1275,8 @@ class Search {
 			return true;
 		}
 
-		// If the query count has exceeded the maximum
-		// only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$max_query_count ) {
+		// If the query count has exceeded the maximum pass through certain percentage to the database
+		if ( self::get_query_count() > self::$max_query_count ) {
 			// Go first so that cache entries aren't set yet for first occurrence.
 			$this->maybe_log_query_ratelimiting_start();
 
@@ -1283,7 +1284,8 @@ class Search {
 
 			$this->maybe_alert_for_prolonged_query_limiting();
 
-			// Should be roughly half over time
+			// $query_db_fallback_value is by default 5, which would result in roughly half offloaded to the db
+			// @see vip_search_query_db_fallback_value filter
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
@@ -1356,7 +1358,7 @@ class Search {
 		}
 
 		$message = sprintf(
-			'Application %d - %s has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+			'Application %d - %s has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$query_limiting_time
@@ -2191,13 +2193,13 @@ class Search {
 	public function maybe_log_query_ratelimiting_start() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
 			$message = sprintf(
-				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
+				'Application %d - %s has triggered Elasticsearch query rate-limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.',
 				FILES_CLIENT_SITE_ID,
 				\home_url(),
 				self::$query_count_ttl
 			);
 
-			$this->logger->log( 'warning', 'search_query_rate_limiting', $message );
+			$this->logger->log( 'warning', 'search_query_rate_limiting', $message, [ 'count' => self::get_query_count() ] );
 		}
 	}
 
