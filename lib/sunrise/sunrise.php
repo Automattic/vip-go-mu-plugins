@@ -67,14 +67,14 @@ function handle_not_found_error( $error_type ) {
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
 		$is_maintenance_mode = Context::is_maintenance_mode();
-		$is_overdue_locked = Context::is_overdue_locked();
+		$is_overdue_locked   = Context::is_overdue_locked();
 		if ( $is_maintenance_mode ) {
 			// 503 prevents page from being cached.
 			// We handle healthchecks earlier and don't have to worry about them.
 			$status_code = 503;
 			header( 'X-VIP-Go-Maintenance: true' );
 			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
-		} else if ( $is_overdue_locked ) {
+		} elseif ( $is_overdue_locked ) {
 			// Similar with maintenance mode, but with a different message.
 			$status_code = 503;
 			header( 'X-VIP-Go-Maintenance: true' ); // TODO: different header?
