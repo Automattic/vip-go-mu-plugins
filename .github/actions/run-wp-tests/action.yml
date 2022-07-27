@@ -125,6 +125,6 @@ runs:
     - name: Upload coverage report
       uses: actions/upload-artifact@v3
       with:
-        name: coverage-${{ env.GITHUB_RUN_ID }}
+        name: coverage-${{ github.run_id }}
         path: clover.xml
       if: ${{ steps.coverage.outputs.coverage != 'none' }}
