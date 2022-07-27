@@ -12,6 +12,8 @@
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
+// @codeCoverageIgnoreStart
+
 /**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
@@ -290,3 +292,4 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 }
 
 do_action( 'vip_loaded' );
+// @codeCoverageIgnoreEnd
