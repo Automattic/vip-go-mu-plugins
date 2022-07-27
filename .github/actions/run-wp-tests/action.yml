@@ -121,3 +121,10 @@ runs:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
       if: ${{ steps.coverage.outputs.coverage != 'none' }}
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-${{ env.GITHUB_RUN_ID }}
+        path: clover.xml
+      if: ${{ steps.coverage.outputs.coverage != 'none' }}
