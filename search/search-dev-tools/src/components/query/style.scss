@@ -35,7 +35,9 @@
 			font-weight: bold;
 			padding: 0.5em;
 			border: 0;
-			background-color: #ffffff;
+			// yes, unfortunately
+			background-color: #ffffff !important;
+			color: var(--vip-grey-90) !important;
 			&:not(:last-of-type) {
 				margin-right: 32px;
 			}
