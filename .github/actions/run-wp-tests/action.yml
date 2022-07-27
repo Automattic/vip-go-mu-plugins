@@ -50,7 +50,7 @@ runs:
       run: |
         if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
           echo "::set-output name=coverage::xdebug"
-          echo '::set-output name=
+          echo '::set-output name='
         else
           echo "::set-output name=coverage::none"
           echo "::set-output name=ini::opcache.enable_cli=1"
