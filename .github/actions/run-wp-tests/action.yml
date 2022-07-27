@@ -101,6 +101,13 @@ runs:
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
 
+    - name: Setup PCOV
+      shell: bash
+      run: |
+        composer require pcov/clobber
+        vendor/bin/pcov clobber
+      if: ${{ steps.coverage.outputs.coverage != 'none' }}
+
     - name: Run tests
       shell: bash
       run: |
