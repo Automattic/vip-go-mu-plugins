@@ -72,7 +72,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 // Sites can be disabled if there is an overdue payment.
 // This constant is defined by VIP Go in config/wp-config.php.
-if ( Context::is_vip_env() && WPCOM_VIP_OVERDUE_LOCKOUT ) {
+if ( Context::is_vip_env() && Context::is_overdue_locked() ) {
 	// WP CLI is allowed, but disable cron
 	if ( Context::is_wp_cli() ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', '__return_true', 9999 );
