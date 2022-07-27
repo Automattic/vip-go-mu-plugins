@@ -49,8 +49,8 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
-          echo "::set-output name=coverage::pcov"
-          echo '::set-output name=ini::pcov.enabled=1, pcov.directory=${{ github.workspace }}, pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
+          echo "::set-output name=coverage::xdebug"
+          echo '::set-output name=
         else
           echo "::set-output name=coverage::none"
           echo "::set-output name=ini::opcache.enable_cli=1"
@@ -100,13 +100,6 @@ runs:
           second=$((second+1))
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
-
-    - name: Setup PCOV
-      shell: bash
-      run: |
-        composer require pcov/clobber
-        vendor/bin/pcov clobber
-      if: ${{ steps.coverage.outputs.coverage != 'none' }}
 
     - name: Run tests
       shell: bash
