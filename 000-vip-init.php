@@ -75,9 +75,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 if ( Context::is_vip_env() && WPCOM_VIP_OVERDUE_LOCKOUT ) {
 	// WP CLI is allowed, but disable cron
 	if ( Context::is_wp_cli() ) {
-		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
-			return 1;
-		}, 9999 );
+		add_filter( 'pre_option_a8c_cron_control_disable_run', '__return_true', 9999 );
 	} else {
 		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
 		require_once __DIR__ . '/vip-helpers/vip-utils.php';
