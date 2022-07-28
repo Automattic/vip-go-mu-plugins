@@ -89,6 +89,26 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		self::assertSame( 1, $backend->get_value() );
 	}
 
+	public function test__get_value_semaphore() {
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => Semaphore_Backend::class );
+		$es      = new Elasticsearch();
+		$client1 = new Concurrency_Limiter();
+		$backend = $client1->get_backend();
+
+		$backend->inc_value();
+		self::assertSame( 1, $backend->get_value() );
+	}
+
+	public function test__get_value_apcu() {
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => APCu_Backend::class );
+		$es      = new Elasticsearch();
+		$client1 = new Concurrency_Limiter();
+		$backend = $client1->get_backend();
+
+		$backend->inc_value();
+		self::assertSame( 1, $backend->get_value() );
+	}
+
 	/**
 	 * @dataProvider data_concurrency_limiting
 	 * @param string $backend
