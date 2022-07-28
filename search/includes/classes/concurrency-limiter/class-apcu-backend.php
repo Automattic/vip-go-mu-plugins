@@ -21,7 +21,8 @@ class APCu_Backend implements BackendInterface {
 
 	public function __destruct() {
 		if ( $this->increments > 0 ) {
-			apcu_dec( self::KEY_NAME, $this->increments, null, $this->ttl );
+			$success = null;
+			apcu_dec( self::KEY_NAME, $this->increments, $success, $this->ttl );
 		}
 
 		--self::$instances;
