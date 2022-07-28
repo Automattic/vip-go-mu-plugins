@@ -77,7 +77,7 @@ function handle_not_found_error( $error_type ) {
 		} elseif ( $is_overdue_locked && Context::is_vip_env() ) {
 			// Similar with maintenance mode, but with a different message.
 			$status_code = 503;
-			header( 'X-VIP-Go-Maintenance: true' ); // TODO: different header?
+			header( 'X-VIP-402: true' );
 			$error_doc = sprintf( '%s/mu-plugins/errors/site-shutdown.html', WP_CONTENT_DIR );
 		} else {
 			$status_code = 404;

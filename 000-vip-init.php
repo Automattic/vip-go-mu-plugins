@@ -82,7 +82,7 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() ) {
 		if ( ! vip_is_jetpack_request() ) {
 			http_response_code( 503 );
 
-			header( 'X-VIP-Go-Maintenance: true' );
+			header( 'X-VIP-402: true' );
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
 
