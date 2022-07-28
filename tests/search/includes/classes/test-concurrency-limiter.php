@@ -79,6 +79,17 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		self::assertSame( 429, $response2->get_error_code() );
 	}
 
+	public function test__get_value_object_cache() {
+		$es      = new Elasticsearch();
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => Object_Cache_Backend::class );
+
+		$client1 = new Concurrency_Limiter();
+		$backend = $client1->get_backend();
+
+		$backend->inc_value();
+		self::assertSame( 1, $backend->get_value() );
+	}
+
 	/**
 	 * @dataProvider data_concurrency_limiting
 	 * @param string $backend
