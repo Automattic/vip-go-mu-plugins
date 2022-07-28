@@ -80,9 +80,8 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	}
 
 	public function test__get_value_object_cache() {
-		$es      = new Elasticsearch();
 		add_filter( 'vip_search_concurrency_limit_backend', fn() => Object_Cache_Backend::class );
-
+		$es      = new Elasticsearch();
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
 
