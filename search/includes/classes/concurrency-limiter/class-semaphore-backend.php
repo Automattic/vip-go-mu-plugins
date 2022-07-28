@@ -62,4 +62,8 @@ class Semaphore_Backend implements BackendInterface {
 			}
 		}
 	}
+
+	public function get_value(): int {
+		return (int) $this->increments;
+	}
 }
