@@ -77,20 +77,15 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		self::assertSame( 429, $response2->get_error_code() );
 	}
 
-	public function test__get_value_object_cache() {
-		add_filter( 'vip_search_concurrency_limit_backend', fn() => Object_Cache_Backend::class );
+	/**
+	 * @dataProvider data_concurrency_limiting
+	 * @param string $backend
+	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
+	 */
+	public function test__get_value( $backend ) {
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
-
-		$backend->inc_value();
-		self::assertSame( 1, $backend->get_value() );
-	}
-
-	public function test__get_value_apcu() {
-		add_filter( 'vip_search_concurrency_limit_backend', fn() => APCu_Backend::class );
-		$client1 = new Concurrency_Limiter();
-		$backend = $client1->get_backend();
-
 		$backend->inc_value();
 		self::assertSame( 1, $backend->get_value() );
 	}
@@ -105,10 +100,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
 		}
 
-		add_filter( 'vip_search_concurrency_limit_backend', function() use ( $backend ) {
-			return $backend;
-		} );
-
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'vip_search_max_concurrent_requests', function() {
 			return 1;
