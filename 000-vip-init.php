@@ -33,8 +33,8 @@ if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
 }
 
-if ( ! defined( 'WPCOM_VIP_OVERDUE_LOCKOUT' ) ) {
-	define( 'WPCOM_VIP_OVERDUE_LOCKOUT', false );
+if ( ! defined( 'VIP_OVERDUE_LOCKOUT' ) ) {
+	define( 'VIP_OVERDUE_LOCKOUT', false );
 }
 
 if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {

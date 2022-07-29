@@ -23,8 +23,8 @@ class Context {
 	}
 
 	public static function is_overdue_locked() {
-		return defined( 'WPCOM_VIP_OVERDUE_LOCKOUT' )
-			&& true === constant( 'WPCOM_VIP_OVERDUE_LOCKOUT' );
+		return defined( 'VIP_OVERDUE_LOCKOUT' )
+			&& true === constant( 'VIP_OVERDUE_LOCKOUT' );
 	}
 
 	public static function is_healthcheck() {
