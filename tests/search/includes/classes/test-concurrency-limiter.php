@@ -4,14 +4,12 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\ConcurrencyLimiter\APCu_Backend;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
-use Automattic\VIP\Search\ConcurrencyLimiter\Semaphore_Backend;
 use ElasticPress\Elasticsearch;
 use WP_Error;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../../../search/includes/classes/class-concurrency-limiter.php';
 require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-apcu-backend.php';
-require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-semaphore-backend.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 
@@ -81,17 +79,6 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 	public function test__get_value_object_cache() {
 		add_filter( 'vip_search_concurrency_limit_backend', fn() => Object_Cache_Backend::class );
-		$es      = new Elasticsearch();
-		$client1 = new Concurrency_Limiter();
-		$backend = $client1->get_backend();
-
-		$backend->inc_value();
-		self::assertSame( 1, $backend->get_value() );
-	}
-
-	public function test__get_value_semaphore() {
-		add_filter( 'vip_search_concurrency_limit_backend', fn() => Semaphore_Backend::class );
-		$es      = new Elasticsearch();
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
 
@@ -101,7 +88,6 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 	public function test__get_value_apcu() {
 		add_filter( 'vip_search_concurrency_limit_backend', fn() => APCu_Backend::class );
-		$es      = new Elasticsearch();
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
 
@@ -165,7 +151,6 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		return [
 			'APCu'        => [ APCu_Backend::class ],
 			'ObjectCache' => [ Object_Cache_Backend::class ],
-			'Semaphore'   => [ Semaphore_Backend::class ],
 		];
 	}
 
