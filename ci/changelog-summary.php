@@ -78,24 +78,27 @@ function debug( $arg ) {
  * @return int $merged_pr The PR object
  */
 function fetch_pr_merged_to_branch() {
-    $merged_pr = false;
     $missing_label = BRANCH === 'production' ? LABEL_DEPLOYED_PROD : LABEL_DEPLOYED_STAGING;
 
     $prs = curl_get( GITHUB_ENDPOINT . '/pulls?sort=created&direction=desc&state=closed&base=' . BRANCH );
+    echo "Fetching merged PRs - found " . sizeof( $prs ) . " candidates\n";
     foreach( $prs as $pr ) {
+        echo "Checking PR #{$pr['number']} for the merged PR...\n";
         if ( ! $pr['merged_at'] ?? '' ) {
-            // PR is closed but not merged, skip to next one.
+            echo "PR #{$pr['number']} is not merged, skipping.\n";
             continue;
         }
 
         $labels = array_map( fn ($label) => $label['name'], $pr['labels'] );
         if ( ! in_array( $missing_label, $labels ) ) {
-            // Look for PR with missing label.
-            $merged_pr = $pr;
+            echo "PR #{$pr['number']} - {$pr['title']} {$pr['html_url']} is it!\n";
+            return $pr;
+        } else {
+            echo "PR #{$pr['number']} is not missing the '{$missing_label}' label, skipping.\n";
         }
     }
 
-    return $merged_pr;
+    return false;
 }
 
 /**
@@ -237,12 +240,12 @@ function create_changelog_post( $title, $content, $tags ) {
     $http_code = curl_getinfo( $ch, CURLINFO_RESPONSE_CODE );
     curl_close( $ch );
 
-    echo "Response:\n";
-    echo $response;
-    echo "\nHttpCode: $http_code";
+    echo "\nCreating post HttpCode: $http_code";
 
     if ( $http_code >= 400 ) {
         echo "\n\nFailed to create changelog draft post\n";
+        echo "Response:\n";
+        echo $response;
         exit( 1 );
     }
 
@@ -319,8 +322,10 @@ function get_pr_ids_from_commits( $commit_url ) {
     foreach( $commits as $commit ) {
         $msg = $commit['commit']['message'];
 
+        echo "Checking commit: {$commit['sha']}\n";
         if ( 1 === preg_match( '/\(\#[0-9]+\)/', $msg, $matches ) || 1 === preg_match( '/^Merge pull request #[0-9]+/', $msg, $matches ) ) {
             $id = preg_replace('/[^0-9]/', '', $matches[0] );
+            echo "Found PR ID: $id\n";
             $pr_ids[] = $id;
         }
     }
@@ -335,12 +340,13 @@ function get_pr_ids_from_commits( $commit_url ) {
  * @return mixed $data Decoded JSON response
  */
 function curl_get( $url ) {
+    echo "Getting $url\n";
     $ch = curl_init( $url );
     $headers = ['User-Agent: script'];
 
     curl_setopt( $ch, CURLOPT_HEADER, 0 );
     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
-    curl_setopt( $ch, CURLOPT_VERBOSE, true );
+    // curl_setopt( $ch, CURLOPT_VERBOSE, true );
     if ( isset( $_SERVER['GITHUB_TOKEN'] ) ) {
         array_push( $headers, 'Authorization:token ' . GITHUB_TOKEN );
     }
@@ -398,6 +404,7 @@ function build_changelog_and_update_prs() {
         echo "No merged PR found, skipping changelog creation";
         exit;
     }
+    echo "Found Merge PR: " . $merged_pr['html_url'] . "\n";
 
     $pr_ids = get_pr_ids_from_commits( $merged_pr['_links']['commits']['href'] );
 
