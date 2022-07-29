@@ -125,8 +125,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				<div className={style.query_actions}>
 					{ state.editing || state.result !== txtResult
 						? ( <>
-							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40)">RUN</button>
-							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10)">RESET</button>
+							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40) !important">RUN</button>
+							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10) !important">RESET</button>
 						</> )
 						: 'Edit me!'
 					}

@@ -32,4 +32,11 @@ interface BackendInterface {
 	 * @return void
 	 */
 	public function dec_value(): void;
+
+	/**
+	 * Gets the value of the counter
+	 *
+	 * @return integer
+	 */
+	public function get_value(): int;
 }
