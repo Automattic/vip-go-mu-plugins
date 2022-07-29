@@ -80,7 +80,7 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() ) {
 		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
 		require_once __DIR__ . '/vip-helpers/vip-utils.php';
 		if ( ! vip_is_jetpack_request() ) {
-			http_response_code( 503 );
+			http_response_code( 402 );
 
 			header( 'X-VIP-402: true' );
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
