@@ -64,12 +64,12 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 	useEffect( () => {
 		cbHandler = new ClipboardJS( copyButtonDOMSelector );
-		cbHandler.on( 'success', e => {
+		cbHandler.on( 'success', evt => {
 			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
 			setTimeout( () => {
 				document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPY';
 			}, 2000 );
-			e.clearSelection();
+			evt.clearSelection();
 		} );
 		return () => cbHandler.destroy();
 	}, [] );
@@ -86,18 +86,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
-	const colorizeRequestTime = ( timeMs ) => {
-		let c;
+	const colorizeRequestTime = timeMs => {
+		let cls;
 
 		if ( timeMs < 200 ) {
-			c = 'green-60';
+			cls = 'green-60';
 		} else if ( timeMs < 500 ) {
-			c = 'red-30';
+			cls = 'red-30';
 		} else {
-			c = 'red-60';
+			cls = 'red-60';
 		}
 
-		return <span style={{ color: `var(--vip-${c})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
+		return <span style={{ color: `var(--vip-${cls})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
 	};
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
