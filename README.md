@@ -122,3 +122,4 @@ bin/create-release.sh
 This is a repo primarily meant for local non-development use.
 
 Every commit merged into `develop` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy` action](https://github.com/Automattic/vip-go-mu-plugins/blob/develop/.github/workflows/deploy.yml), which pushes a copy of this repo and expanded submodules.
+
