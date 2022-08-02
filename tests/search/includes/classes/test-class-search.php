@@ -584,7 +584,7 @@ class Search_Test extends WP_UnitTestCase {
 					'url' => 'https://foo.com/index/type/_bulk',
 				),
 				// The expected timeout
-				5,
+				30,
 			),
 			// Url containing _bulk
 			array(
@@ -604,6 +604,33 @@ class Search_Test extends WP_UnitTestCase {
 				// The expected timeout
 				2,
 			),
+			// Opening an index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_open',
+				),
+				// The expected timeout
+				30,
+			),
+			// Closing an index
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_close',
+				),
+				// The expected timeout
+				30,
+			),
+			// Updating index settings
+			array(
+				// The $query object
+				array(
+					'url' => 'https://foo.com/index/type/_settings',
+				),
+				// The expected timeout
+				30,
+			),
 		);
 	}
 
@@ -615,7 +642,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
 		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
 
-		$timeout = $this->search_instance->get_http_timeout_for_query( $query, array() );
+		$timeout = $this->search_instance->get_http_timeout_for_query( $query, [ 'method' => 'POST' ] );
 
 		$this->assertEquals( $expected_timeout, $timeout );
 	}
@@ -1252,9 +1279,11 @@ class Search_Test extends WP_UnitTestCase {
 
 		// Force this request to be ratelimited
 		$es::$query_db_fallback_value = 11;
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		// ep_skip_query_integration should be true if ratelimited
-		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is ratelimited' );
+		$this->assertTrue( $es->rate_limit_ep_query_integration( false ), 'should return true if the query is rate-limited' );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
@@ -1264,16 +1293,18 @@ class Search_Test extends WP_UnitTestCase {
 			->getMock();
 		$partially_mocked_search->init();
 
-		// Force ratelimiting to apply
+		// Force rate-limiting to apply
 		$partially_mocked_search::$max_query_count = 0;
 
-		// Force this request to be ratelimited
+		// Force this request to be rate-limited
 		$partially_mocked_search::$query_db_fallback_value = 11;
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
 		$partially_mocked_search->expects( $this->once() )->method( 'maybe_alert_for_prolonged_query_limiting' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__rate_limit_ep_query_integration__clears_start_correctly() {
@@ -1283,9 +1314,12 @@ class Search_Test extends WP_UnitTestCase {
 			->getMock();
 		$partially_mocked_search->init();
 
+		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
+
 		$partially_mocked_search->expects( $this->once() )->method( 'clear_query_limiting_start_timestamp' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
+		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
 	}
 
 	public function test__record_ratelimited_query_stat__records_statsd() {
@@ -2466,7 +2500,7 @@ class Search_Test extends WP_UnitTestCase {
 			$this->expectWarning();
 			$this->expectWarningMessage(
 				sprintf(
-					'Application 123 - http://example.org has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+					'Application 123 - http://example.org has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 					$difference
 				)
 			);
@@ -2856,7 +2890,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->equalTo( 'warning' ),
 					$this->equalTo( 'search_query_rate_limiting' ),
 					$this->equalTo(
-						'Application 123 - http://example.org has triggered Elasticsearch query rate limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.'
+						'Application 123 - http://example.org has triggered Elasticsearch query rate-limiting, which will last up to 300 seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.'
 					),
 					$this->anything()
 				);
@@ -3078,6 +3112,39 @@ class Search_Test extends WP_UnitTestCase {
 		$result = \Automattic\VIP\Search\Search::are_es_constants_defined();
 
 		$this->assertFalse( $result );
+	}
+
+	public function test__filter_ep_enable_do_weighting__default_no_weighting() {
+		$this->search_instance->init();
+
+		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__anonymous_function() {
+		$this->search_instance->init();
+
+		add_filter(
+			'ep_weighting_configuration_for_search',
+			function( $weight_config ) {
+				return $weight_config;
+			}
+		);
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__class_function() {
+		$this->search_instance->init();
+
+		add_filter( 'ep_weighting_configuration_for_search', [ $this, 'some_function' ] );
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__weight_config() {
+		$this->search_instance->init();
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [ 'foo' => 'bar' ], [], [] ) );
 	}
 
 	/**

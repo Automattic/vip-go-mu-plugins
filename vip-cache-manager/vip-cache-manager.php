@@ -94,10 +94,10 @@ class WPCOM_VIP_Cache_Manager {
 					'id'     => 'vip-purge-page',
 					'parent' => null,
 					'group'  => null,
-					'title'  => 'Flush Cache for Page',
+					'title'  => 'Purge Cache for Page',
 					'href'   => '#',
 					'meta'   => [
-						'title' => 'Flush Page cache for this page and its assets',
+						'title' => 'Purge Page cache for this page and its assets',
 					],
 				]
 			);
@@ -111,8 +111,8 @@ class WPCOM_VIP_Cache_Manager {
 	 */
 	public function button_enqueue_scripts() {
 		if ( $this->current_user_can_purge_cache() ) {
-			wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.1', true );
-			wp_localize_script( 'purge-page-cache-btn', 'VIPPageFlush', [
+			wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.2', true );
+			wp_localize_script( 'purge-page-cache-btn', 'VIPPagePurge', [
 				'nonce'   => wp_create_nonce( 'purge-page' ),
 				'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
 			] );

@@ -7,14 +7,14 @@
 #search-dev-tools-portal {
 	code[class*='language-'],
 	pre[class*='language-'] {
-		color: #393a34;
+		// Match token.string
+		color: #e3116c;
 		font-family: var(--vip-font-family);
 		direction: ltr;
 		text-align: left;
 		white-space: pre;
 		word-spacing: normal;
 		word-break: normal;
-		font-size: 0.9em;
 		line-height: 1.2em;
 
 		-moz-tab-size: 4;
@@ -25,10 +25,6 @@
 		-moz-hyphens: none;
 		-ms-hyphens: none;
 		hyphens: none;
-	}
-
-	pre > code[class*='language-'] {
-		font-size: 1em;
 	}
 
 	pre[class*='language-']::-moz-selection,

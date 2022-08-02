@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search;
 
 use \WP_CLI;
+use WP_Error;
 use WP_Post;
 
 class Search {
@@ -317,12 +318,12 @@ class Search {
 
 	public function apply_settings() {
 		/**
-		 * The period with which the Elasticsearch query rate limiting threshold is set.
+		 * The period with which the Elasticsearch query rate-limiting threshold is set.
 		 *
-		 * A set amount of queries are allowed per-period before Elasticsearch query rate limiting occurs.
+		 * A set amount of queries are allowed per-period before Elasticsearch query rate-limiting occurs.
 		 *
 		 * @hook vip_search_ratelimit_period
-		 * @param int $period The period, in seconds, for Elasticsearch query rate limiting checks.
+		 * @param int $period The period, in seconds, for Elasticsearch query rate-limiting checks.
 		 */
 		self::$query_count_ttl = apply_filters( 'vip_search_ratelimit_period', self::DEFAULT_QUERY_COUNT_TTL );
 
@@ -359,7 +360,7 @@ class Search {
 		}
 
 		/**
-		 * The number of queries allowed per period before Elasticsearch rate limiting takes effect.
+		 * The number of queries allowed per period before Elasticsearch rate-limiting takes effect.
 		 *
 		 * Ratelimiting works by sending a percentage of traffic to the database rather than Elasticsearch to keep the cluster stable.
 		 *
@@ -405,12 +406,12 @@ class Search {
 		}
 
 		/**
-		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate limited.
+		 * The chance of an individual request being sent to the database when Elasticsearch queries are rate-limited.
 		 *
 		 * This value is compared >= rand( 1, 10 ) so a setting of 5 would cause roughly half of requests to go to the database. A setting of 3 would yield a 70% chance of going to the database.
 		 *
 		 * @hook vip_search_query_db_fallback_value
-		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate limited.
+		 * @param int $fallback_value The value compared >= rand( 1, 10 ) to determine if a request will go to the database if Elasticsearch query rate-limited.
 		 */
 		self::$query_db_fallback_value = apply_filters( 'vip_search_query_db_fallback_value', self::DEFAULT_QUERY_DB_FALLBACK_VALUE );
 
@@ -485,10 +486,11 @@ class Search {
 	}
 
 	/**
-	 * Check if query monitor or debug bar are enabled. If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
+	 * Check if query monitor or debug bar are enabled. Also check for the debug mode being enabled.
+	 * If so, define WP_EP_DEBUG as true so ElasticPress enables query logging and then load the ElasticPress debug bar panel.
 	 */
 	public function enable_ep_query_logging_if_debug_bar_or_query_monitor_enabled() {
-		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) ) {
+		if ( apply_filters( 'debug_bar_enable', false ) || apply_filters( 'wpcom_vip_qm_enable', false ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
 			if ( ! defined( 'WP_EP_DEBUG' ) ) {
 				define( 'WP_EP_DEBUG', true );
 			}
@@ -519,8 +521,9 @@ class Search {
 		// Disable query integration by default
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
-		// Rate limit query integration
-		add_filter( 'ep_skip_query_integration', array( $this, 'rate_limit_ep_query_integration' ), PHP_INT_MAX );
+
+		// Rate-limit query integration
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -639,6 +642,11 @@ class Search {
 		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
+
+		// Since we disable UI toggling, blog option should be dependent on index existing (since it defaults to 'yes' if not found)
+		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
+
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 	}
 
 	protected function load_commands() {
@@ -764,7 +772,7 @@ class Search {
 	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
-	public function filter__ep_index_name( $index_name, $blog_id, $indexable ) {
+	public function filter__ep_index_name( $_index_name, $blog_id, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
 		$index_name = sprintf( 'vip-%s-%s', FILES_CLIENT_SITE_ID, $indexable->slug );
 
@@ -787,9 +795,7 @@ class Search {
 	 */
 	public function filter__ep_global_alias( $alias_name, $indexable ) {
 		// TODO: Use FILES_CLIENT_SITE_ID for now as VIP_GO_ENV_ID is not ready yet. Should replace once it is.
-		$alias_name = sprintf( 'vip-%s-%s-all', FILES_CLIENT_SITE_ID, $indexable->slug );
-
-		return $alias_name;
+		return sprintf( 'vip-%s-%s-all', FILES_CLIENT_SITE_ID, $indexable->slug );
 	}
 
 	/**
@@ -800,22 +806,19 @@ class Search {
 	}
 
 	/**
-	 * Generate option name for cached index_exists request.
+	 * Generate option name for caching index_exists requests
 	 *
-	 * @return string $option_name Name of generated option.
+	 * @param  string $index_name  Index name
+	 * @return string $option_name Name of generated option
 	 */
-	private function get_index_exists_option_name( $url ) {
-		$parsed_url  = wp_parse_url( $url );
-		$index_name  = isset( $parsed_url['path'] ) ? trim( $parsed_url['path'], '/' ) : '';
-		$option_name = "es_index_exists_{$index_name}";
-
-		return $option_name;
+	private function get_index_exists_option_name( $index_name ) {
+		return "es_index_exists_{$index_name}";
 	}
 
 	/**
 	 * Filter to intercept EP remote requests.
 	 *
-	 * @param  array  $request  New remote request response
+	 * @param  array|WP_Error $request  New remote request response
 	 * @param  array  $query    Remote request arguments
 	 * @param  array  $args     Request arguments
 	 * @param  array  $failures Number of failures
@@ -835,8 +838,9 @@ class Search {
 		];
 		$valid_index_exists_response_codes = [ 200, 404 ];
 		if ( 'index_exists' === $type || in_array( $type, $index_exists_invalidation_actions, true ) ) {
-			$index_exists_option_name    = $this->get_index_exists_option_name( $query['url'] );
-			$cached_index_exists_request = get_option( $index_exists_option_name );
+			$index_name                  = $this->get_index_name_for_url( $query['url'] );
+			$index_exists_option_name    = $this->get_index_exists_option_name( $index_name );
+			$cached_index_exists_request = get_site_option( $index_exists_option_name );
 			if ( false !== $cached_index_exists_request ) {
 				$cached_index_exists_response_code = (int) wp_remote_retrieve_response_code( $cached_index_exists_request );
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
@@ -844,7 +848,7 @@ class Search {
 					return $cached_index_exists_request;
 				} else {
 					// Invalidate index_exists caching on certain actions.
-					delete_option( $index_exists_option_name );
+					delete_site_option( $index_exists_option_name );
 
 					// Ensure the cache for the option was actually deleted.
 					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
@@ -929,6 +933,7 @@ class Search {
 		 */
 		if ( 'query' === $type ) {
 			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
+			self::query_count_incr();
 		} else {
 			$args['timeout'] = $timeout;
 			$response        = wp_remote_request( $query['url'], $args );
@@ -998,7 +1003,7 @@ class Search {
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
-			add_option( $index_exists_option_name, $response );
+			add_site_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable ) {
@@ -1163,14 +1168,13 @@ class Search {
 			$is_post_request = true;
 		}
 
-		// Bulk index request so increase timeout
-		if ( wp_endswith( $query_path, '_bulk' ) || wp_endswith( $query_path, '_open' ) ) {
-			$timeout = 5;
-
-			if ( $is_cli && $is_post_request ) {
-				$timeout = 30;
-			} elseif ( \is_admin() && $is_post_request ) {
-				$timeout = 15;
+		// Increase timeouts for certain requests
+		if ( $is_post_request ) {
+			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
+			foreach ( $request_types as $type ) {
+				if ( wp_endswith( $query_path, $type ) ) {
+					return 30;
+				}
 			}
 		}
 
@@ -1256,11 +1260,11 @@ class Search {
 	}
 
 	/**
-	 * Filter for ep_skip_query_integration that enabled rate limiting. Should be run last
+	 * Filter for ep_skip_query_integration that enabled rate-limiting. Should be run last.
 	 *
 	 * Honor any previous filters that skip query integration. If query integration is
 	 * continuing, check if the query is past the ratelimiting threshold. If it is, send
-	 * roughly half of the queries received to the database and half through ElasticPress.
+	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
 	 * @return bool new value of ep_skip_query_integration
@@ -1271,9 +1275,8 @@ class Search {
 			return true;
 		}
 
-		// If the query count has exceeded the maximum
-		// only allow half of the queries to use VIP Search
-		if ( self::query_count_incr() > self::$max_query_count ) {
+		// If the query count has exceeded the maximum pass through certain percentage to the database
+		if ( self::get_query_count() > self::$max_query_count ) {
 			// Go first so that cache entries aren't set yet for first occurrence.
 			$this->maybe_log_query_ratelimiting_start();
 
@@ -1281,7 +1284,8 @@ class Search {
 
 			$this->maybe_alert_for_prolonged_query_limiting();
 
-			// Should be roughly half over time
+			// $query_db_fallback_value is by default 5, which would result in roughly half offloaded to the db
+			// @see vip_search_query_db_fallback_value filter
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
@@ -1354,7 +1358,7 @@ class Search {
 		}
 
 		$message = sprintf(
-			'Application %d - %s has had its Elasticsearch queries rate limited for %d seconds. Half of traffic is diverted to the database when queries are rate limited.',
+			'Application %d - %s has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 			FILES_CLIENT_SITE_ID,
 			home_url(),
 			$query_limiting_time
@@ -1551,11 +1555,10 @@ class Search {
 			$formatted_args['track_total_hits'] = true;
 		}
 
-		// TODO: remove temporary rollout environment check
 		// Force the timeout for post search queries.
-		$is_prod        = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
+		$is_rolled_out  = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'force-es-timeout' );
 		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
-		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', ! $is_prod ) ) {
+		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', $is_rolled_out ) ) {
 			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}
 
@@ -1601,6 +1604,13 @@ class Search {
 		if ( $posts_count > self::POST_SHARD_THRESHOLD ) {
 			$mapping['settings']['index.number_of_shards'] = 4;
 		}
+
+		// Add slowlog settings
+		$mapping['settings']['index.search.slowlog.threshold.query.warn']   = '1900ms';
+		$mapping['settings']['index.search.slowlog.threshold.query.info']   = '1s';
+		$mapping['settings']['index.search.slowlog.threshold.fetch.warn']   = '800ms';
+		$mapping['settings']['index.indexing.slowlog.threshold.index.warn'] = '4900ms';
+		$mapping['settings']['index.indexing.slowlog.source']               = '1000';
 
 		return $mapping;
 	}
@@ -1668,10 +1678,8 @@ class Search {
 		}
 
 		// Creating new docs
-		if ( '_create' === $path[ count( $path ) - 2 ] ) {
-			if ( 'put' === $method || 'post' === $method ) {
-				return 'index';
-			}
+		if ( '_create' === $path[ count( $path ) - 2 ] && ( 'put' === $method || 'post' === $method ) ) {
+			return 'index';
 		}
 
 		if ( '_doc' === end( $path ) && 'post' === $method ) {
@@ -1883,9 +1891,7 @@ class Search {
 		$client_post_meta_allow_list_assoc = array_flip( $client_post_meta_allow_list );
 
 		// Only include meta that matches the allow list
-		$new_meta = array_intersect_key( $current_meta, $client_post_meta_allow_list_assoc );
-
-		return $new_meta;
+		return array_intersect_key( $current_meta, $client_post_meta_allow_list_assoc );
 	}
 
 	/**
@@ -2187,13 +2193,13 @@ class Search {
 	public function maybe_log_query_ratelimiting_start() {
 		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
 			$message = sprintf(
-				'Application %d - %s has triggered Elasticsearch query rate limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate limited.',
+				'Application %d - %s has triggered Elasticsearch query rate-limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.',
 				FILES_CLIENT_SITE_ID,
 				\home_url(),
 				self::$query_count_ttl
 			);
 
-			$this->logger->log( 'warning', 'search_query_rate_limiting', $message );
+			$this->logger->log( 'warning', 'search_query_rate_limiting', $message, [ 'count' => self::get_query_count() ] );
 		}
 	}
 
@@ -2236,6 +2242,10 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+			// Enable new algorithm for non-prods
+			return '4.0';
+		}
 		return '3.5';
 	}
 
@@ -2330,5 +2340,68 @@ class Search {
 	 */
 	public function filter__es_info_cache_expiration( $time ) {
 		return wp_rand( 24 * HOUR_IN_SECONDS, 36 * HOUR_IN_SECONDS );
+	}
+
+	/**
+	 * A filter that only enables weighting if it is needed. E.g. When weightings are set by UI or filtered.
+	 *
+	 * @param bool  Whether to enable weight config, defaults to true for search requests that are public or REST
+	 * @param array $weight_config Current weight config
+	 * @param array $args WP Query arguments
+	 * @param array $formatted_args Formatted ES arguments
+	 * @return bool $should_do_weighting New value on whether to enable weight config
+	 */
+	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) &&
+		! \Automattic\VIP\Feature::is_enabled_by_percentage( 'reduce-default-es-payload' ) ) {
+			// Rollout to non-prod and 25% of production
+			return $should_do_weighting;
+		}
+
+		if ( ! empty( $weight_config ) ) {
+			return true;
+		}
+
+		global $wp_filter;
+
+		$ep_filters = [
+			'ep_weighting_configuration_for_search',
+			'ep_query_weighting_fields',
+			'ep_weighting_configuration',
+			'ep_weighting_fields_for_post_type',
+		];
+
+		foreach ( $ep_filters as $ep_filter ) {
+			if ( isset( $wp_filter[ $ep_filter ] ) ) {
+				foreach ( $wp_filter[ $ep_filter ]->callbacks as $callback ) {
+					foreach ( $callback as $el ) {
+						if ( $el['function'] instanceof \Closure ) {
+							return true;
+						} else {
+							$class = get_class( $el['function'][0] );
+							if ( false === strpos( $class, 'ElasticPress\Feature' ) ) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Since we disable the toggling UI for whether subsites in multisite are indexable, we should filter the
+	 * option based on the index for the subsite ID existing, instead of default value of blog option or what
+	 * is being stored. See \ElasticPress\Utils\is_site_indexable().
+	 *
+	 * @param string $value Whether the ep_indexable option is found for the blog. Defaults to 'yes'.
+	 * @param int $blog_id The blog_id we are checking.
+	 * @return string $value Whether the index exists for the $blog_id.
+	 */
+	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
+		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
+		return false === $index_exists ? 'no' : 'yes';
 	}
 }

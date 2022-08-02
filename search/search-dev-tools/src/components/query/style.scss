@@ -1,3 +1,5 @@
+
+
 .query {
 	&_wrap {
 		margin-bottom: 32px;
@@ -12,9 +14,13 @@
 		width: 100%;
 		overflow-y: scroll;
 		margin-bottom: 32px;
-		font-size: 14px;
+		font-size: var(--vip-sdt-editor-font-size);
 		background-color: var(--vip-grey-0);
 		padding: 32px;
+
+		> pre {
+			line-height: 1.2em;
+		}
 	}
 	&_actions {
 		@include text-caption();
@@ -22,8 +28,16 @@
 		right: 32px;
 		margin: 32px 0;
 		z-index: 1;
+		top: 0;
 		button {
-			text-transform: lowercase;
+			text-transform: uppercase;
+			font-size:0.8rem;
+			font-weight: bold;
+			padding: 0.5em;
+			border: 0;
+			// yes, unfortunately
+			background-color: #ffffff !important;
+			color: var(--vip-grey-90) !important;
 			&:not(:last-of-type) {
 				margin-right: 32px;
 			}
@@ -102,12 +116,13 @@
 .query_src,
 .query_res {
 	max-width: calc(50vw - 32px);
+	font-size: var( --vip-sdt-editor-font-size);
+	position: relative;
 }
 
 .query_src {
 	grid-area: query-src;
 	background-color: #ffffff;
-	position: relative;
 
 	&_extra {
 		@include text-caption();
@@ -125,11 +140,14 @@
 	.container_editor {
 		counter-reset: line;
 		position: relative;
+		
 
 		> textarea,
 		> pre {
 			padding: 32px 64px !important;
+			line-height: 1.2em;
 		}
+
 	}
 	.container_editor_line_number {
 		&::before {

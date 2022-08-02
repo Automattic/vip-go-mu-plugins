@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@248ae51c2e8cc9622ecf50685c8bf7150c6e8813 # tag=v1.4.3
+        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504 # tag=v1.4.4
         with:
           egress-policy: block
           allowed-endpoints: 
@@ -69,7 +69,7 @@ jobs:
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # tag=v3.3.0
+        uses: actions/setup-node@v3.4.1
         with:
           node-version: 'lts/*'
           cache: npm

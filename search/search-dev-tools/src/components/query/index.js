@@ -2,13 +2,13 @@
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { h } from 'preact';
 import { useContext, useEffect, useState, useRef } from 'preact/hooks';
-import { highlight, highlightElement, languages } from 'prismjs/components/prism-core';
+import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
 import cx from 'classnames';
 import pluralize from 'pluralize';
-
+import ClipboardJS from "clipboard";
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
@@ -36,10 +36,13 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		result: txtResult,
 		collapsed: true,
 	};
-
+	
 	const [ state, setState ] = useState( initialState );
-
+	
 	const queryResultRef = useRef( null );
+
+	const copyButtonDOMSelector = '#query-response-copy-handle';
+	let cbHandler;
 
 	/**
 	 * @param {Object} query the query to Run
@@ -60,6 +63,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	};
 
 	useEffect( () => {
+		cbHandler = new ClipboardJS( copyButtonDOMSelector );
+		cbHandler.on( 'success', evt => {
+			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
+			setTimeout( () => {
+				document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPY';
+			}, 2000 );
+			evt.clearSelection();
+		} );
+		return () => cbHandler.destroy();
+	}, [] );
+
+	useEffect( () => {
 		// Skip remote fetching if the query is the same.
 		// (e.g. was just reset to the initial one or wasn't change at all)
 		if ( state.query === initialState.query ) {
@@ -71,16 +86,25 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
-	// Re-highlight the query on result change (after the response is received).
-	useEffect( () => {
-		highlightElement( queryResultRef.current );
-	}, [ queryResultRef, state.result ] );
+	const colorizeRequestTime = timeMs => {
+		let cls;
+
+		if ( timeMs < 200 ) {
+			cls = 'green-60';
+		} else if ( timeMs < 500 ) {
+			cls = 'red-30';
+		} else {
+			cls = 'red-60';
+		}
+
+		return <span style={{ color: `var(--vip-${cls})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
+	};
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
 		<div className={style.query_handle} onClick={ () => setState( { ...state, collapsed: ! state.collapsed } ) }>
 			<h3 className="vip-h3">
 				{ pluralize( 'result', ( request?.body?.hits?.hits?.length || 0 ), true )}
-				<span style="color: var(--vip-grey-60);"> that took</span> {request.body.took}ms
+				<span style="color: var(--vip-grey-60);"> that took</span> { colorizeRequestTime( request.body.took ) }
 				<small> ({request?.response?.code || 'unknown' })</small>
 			</h3>
 		</div>
@@ -101,8 +125,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				<div className={style.query_actions}>
 					{ state.editing || state.result !== txtResult
 						? ( <>
-							<button onClick={ () => setState( { ...state, editing: false } ) }>RUN</button>
-							<button onClick={ () => setState( { ...initialState, collapsed: false } ) }>RESET</button>
+							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40) !important">RUN</button>
+							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10) !important">RESET</button>
 						</> )
 						: 'Edit me!'
 					}
@@ -127,14 +151,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					padding={null}
 					className={style.container_editor}
 					style={{
-						fontSize: 12,
+						fontSize: "var(--vip-sdt-editor-font-size)",
+						lineHeight: "1.2em"
 					}}
 				/>
 			</div>
 			<div className={style.query_res}>
 				<div className={style.query_result}>
+					<div className={style.query_actions}>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text" dangerouslySetInnerHTML={{__html: 'COPY'}}></button>
+					</div>
 					<pre className="line-numbers">
-						<code className="language-json" ref={ queryResultRef } dangerouslySetInnerHTML={{ __html: state.result }}></code>
+						<code className="language-json" ref={queryResultRef} id="query-response-text" dangerouslySetInnerHTML={{ __html: state.result }}></code>
 					</pre>
 				</div>
 			</div>

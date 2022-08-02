@@ -12,7 +12,7 @@ jobs:
     name: Review Dependencies
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@248ae51c2e8cc9622ecf50685c8bf7150c6e8813 # tag=v1.4.3
+        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504 # tag=v1.4.4
         with:
           egress-policy: block
           allowed-endpoints: >
@@ -23,4 +23,4 @@ jobs:
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
 
       - name: Review dependencies
-        uses: actions/dependency-review-action@a9c83d3af6b9031e20feba03b904645bb23d1dab # tag=v1.0.2
+        uses: actions/dependency-review-action@94145f3150bfabdc97540cbd5f7e926306ea7744 # tag=v2.0.4

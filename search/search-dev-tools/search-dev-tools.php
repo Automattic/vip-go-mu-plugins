@@ -100,7 +100,7 @@ function rest_callback( \WP_REST_Request $request ) {
  * @return boolean
  */
 function should_enable_search_dev_tools(): bool {
-	return current_user_can( SEARCH_DEV_TOOLS_CAP ) && function_exists( 'ep_get_query_log' );
+	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
 }
 
 /**
@@ -207,7 +207,8 @@ function print_data() {
 				];
 			}
 
-			$query['args']['body'] = json_decode( $query['args']['body'] );
+			$query['args']['body'] = json_decode( $query['args']['body'], true );
+			$query['args']['body'] = array_merge( [ 'profile' => false ], $query['args']['body'] );
 			// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
 			// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
 			$query['query_args'] = array_filter(
@@ -228,6 +229,11 @@ function print_data() {
 		Search::$max_query_count
 	);
 
+	$concurrent_requests = 0;
+	if ( is_callable( [ Search::instance()->concurrency_limiter, 'get_backend' ] ) ) {
+		$concurrent_requests = Search::instance()->concurrency_limiter->get_backend()->get_value();
+	}
+
 	$data = [
 		'status'                  => 'enabled',
 		'queries'                 => $mapped_queries,
@@ -235,6 +241,13 @@ function print_data() {
 			[
 				'label'   => 'Rate limited?',
 				'value'   => $limit_count,
+				'options' => [
+					'collapsible' => false,
+				],
+			],
+			[
+				'label'   => 'Concurrent requests',
+				'value'   => $concurrent_requests,
 				'options' => [
 					'collapsible' => false,
 				],
