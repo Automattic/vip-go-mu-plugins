@@ -63,5 +63,5 @@ add_action( 'init', function() {
 		$panels[] = new WPCOM_Debug_Bar_Apcu_Hotcache();
 
 		return $panels;
-	}, 99);
+	}, 5 );
 }, 1 ); // Priority must be lower than that of Query Monitor
