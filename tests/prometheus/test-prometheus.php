@@ -24,7 +24,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		Plugin::get_instance();
-		parent::tear_down();
+		parent::tearDown();
 	}
 
 	public function test_collectors_filter(): void {
