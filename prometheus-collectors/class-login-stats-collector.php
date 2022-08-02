@@ -50,19 +50,19 @@ class Login_Stats_Collector implements CollectorInterface {
 	}
 
 	public function login_limit_exceeded(): void {
-		$this->login_limit_exceeded_counter->inc( [ 'site_id' => (string) get_current_blog_id() ] );
+		$this->login_limit_exceeded_counter->inc( [ (string) get_current_blog_id() ] );
 	}
 
 	public function password_reset_limit_exceeded(): void {
-		$this->password_reset_limit_exceeded_counter->inc( [ 'site_id' => (string) get_current_blog_id() ] );
+		$this->password_reset_limit_exceeded_counter->inc( [ (string) get_current_blog_id() ] );
 	}
 
 	public function wp_login(): void {
-		$this->successful_login_counter->inc( [ 'site_id' => (string) get_current_blog_id() ] );
+		$this->successful_login_counter->inc( [ (string) get_current_blog_id() ] );
 	}
 
 	public function wp_login_failed(): void {
-		$this->failed_login_counter->inc( [ 'site_id' => (string) get_current_blog_id() ] );
+		$this->failed_login_counter->inc( [ (string) get_current_blog_id() ] );
 	}
 
 	public function collect_metrics(): void {
