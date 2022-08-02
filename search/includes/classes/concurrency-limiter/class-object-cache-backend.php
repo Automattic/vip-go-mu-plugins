@@ -100,6 +100,10 @@ class Object_Cache_Backend implements BackendInterface {
 		}
 	}
 
+	public function get_value(): int {
+		return wp_cache_get( self::KEY_NAME, self::GROUP_NAME, true ) ?: 0;
+	}
+
 	private function reset(): void {
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		wp_cache_set( self::KEY_NAME, 0, self::GROUP_NAME, $this->ttl );

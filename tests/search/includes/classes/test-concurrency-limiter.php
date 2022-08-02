@@ -4,14 +4,12 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\ConcurrencyLimiter\APCu_Backend;
 use Automattic\VIP\Search\ConcurrencyLimiter\Object_Cache_Backend;
-use Automattic\VIP\Search\ConcurrencyLimiter\Semaphore_Backend;
 use ElasticPress\Elasticsearch;
 use WP_Error;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../../../search/includes/classes/class-concurrency-limiter.php';
 require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-apcu-backend.php';
-require_once __DIR__ . '/../../../../search/includes/classes/concurrency-limiter/class-semaphore-backend.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 require_once __DIR__ . '/../../../../search/elasticpress/includes/utils.php';
 
@@ -84,15 +82,25 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	 * @param string $backend
 	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
 	 */
+	public function test__get_value( $backend ) {
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
+		$client1 = new Concurrency_Limiter();
+		$backend = $client1->get_backend();
+		$backend->inc_value();
+		self::assertSame( 1, $backend->get_value() );
+	}
+
+	/**
+	 * @dataProvider data_concurrency_limiting
+	 * @param string $backend
+	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
+	 */
 	public function test__index_is_not_limited( $backend ): void {
 		if ( ! $backend::is_supported() ) {
 			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
 		}
 
-		add_filter( 'vip_search_concurrency_limit_backend', function() use ( $backend ) {
-			return $backend;
-		} );
-
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'vip_search_max_concurrent_requests', function() {
 			return 1;
@@ -135,7 +143,6 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		return [
 			'APCu'        => [ APCu_Backend::class ],
 			'ObjectCache' => [ Object_Cache_Backend::class ],
-			'Semaphore'   => [ Semaphore_Backend::class ],
 		];
 	}
 
