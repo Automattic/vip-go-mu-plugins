@@ -101,7 +101,7 @@ function wpvip_filter_sandbox_plugins_url( $url ) {
 	global $sandbox_vhosts;
 	$host = $_SERVER['HTTP_HOST'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-	if ( empty( $_SERVER['HTTP_HOST'] ) || ! is_array( $sandbox_vhosts ) ) {
+	if ( empty( $host ) || ! is_array( $sandbox_vhosts ) ) {
 		// Not a k8s sandbox or valid host, bail.
 		return $url;
 	}
