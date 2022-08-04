@@ -101,6 +101,10 @@ function wpvip_filter_sandbox_plugins_url( $url ) {
 	global $sandbox_vhosts;
 	$host = $_SERVER['HTTP_HOST'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
+	if ( empty( $host ) || ! is_array( $sandbox_vhosts ) ) {
+		// Not a k8s sandbox or valid host, bail.
+		return $url;
+	}
 	/*
 	 * $sandbox_vhosts is something like ['subdomain.uuid.sbx-sid.ingress-api.vip-ditto.k8s.dfw.vipv2.net' => 'subdomain.go-vip.net']
 	 * `sandbox-hosts-config.php` replaces the "sandbox" (key) domain with the "original" (value) domain in `$_SERVER['HTTP_HOST']`.
@@ -109,7 +113,7 @@ function wpvip_filter_sandbox_plugins_url( $url ) {
 	 * 1. We need to look up the key matching `$_SERVER['HTTP_HOST']` in `$sandbox_vhosts`
 	 * 2. We need to replace `://{$_SERVER['HTTP_HOST']}` with `://{$key}`  in `$url`
 	 */
-	if ( ! empty( $_SERVER['HTTP_HOST'] ) && in_array( $host, $sandbox_vhosts, true ) ) {
+	if ( in_array( $host, $sandbox_vhosts, true ) ) {
 		$flipped = array_flip( $sandbox_vhosts );
 		$key     = $flipped[ $host ];
 		$url     = str_replace( '://' . $host, '://' . $key, $url );
