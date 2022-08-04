@@ -51,6 +51,7 @@ function maybe_load_plugin() {
 	}
 
 	// Bail if the plugin has already initialized elsewhere
+	// Plugin is managed by customer install and not mu-plugins
 	if ( class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ) ) {
 		return;
 	}

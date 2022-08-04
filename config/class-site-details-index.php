@@ -18,6 +18,18 @@ class Site_Details_Index {
 	 */
 	private $timestamp = null;
 
+	private $parsely_details = [
+		'parsely_plugin_enabled',
+		'parsely_integration_type', // "MUPLUGINS_FILTER", "MUPLUGINS_OPTION, "SELF_MANAGED", "NONE" ( How parse.ly is enabled )
+		'parsely_service_type', // "NONE", "SILENT", "PAID" ( How the service is )
+		'parsely_date_enabled',
+		'parsely_date_disabled',
+		'parsely_disable_type', // Alex will send list (filter, plugin form, etc..)
+		'parsely_enabled_type', // Alex will send list
+		'parsely_plugin_version',
+		'parsely_install_method', // ? via filter, installing with JS w/out plugin, committed to repo
+	];
+
 	/**
 	 * Name of the logstash feature to use for log2logstash call
 	 */
