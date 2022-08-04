@@ -14,7 +14,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		remove_all_actions( 'vipgo_mu_plugins_loaded' );
+		remove_all_actions( 'vip_mu_plugins_loaded' );
 		remove_all_actions( 'mu_plugins_loaded' );
 		remove_all_actions( 'plugins_loaded' );
 		remove_all_actions( 'init' );
@@ -40,7 +40,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_prometheus_collectors', $available_collectors_filter );
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 
 		self::assertTrue( $filter_invoked );
 		self::assertIsArray( $plugin->get_collectors() );
@@ -58,7 +58,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 
 		self::assertTrue( $filter_invoked );
 		self::assertIsArray( $plugin->get_collectors() );
@@ -77,7 +77,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 
 		self::assertTrue( $filter_invoked );
 		self::assertEmpty( $plugin->get_collectors() );
@@ -85,7 +85,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 	public function test_create_registry(): void {
 		$plugin = Plugin_Helper::get_instance();
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 
 		self::assertInstanceOf( RegistryInterface::class, $plugin->get_registry() );
 	}
@@ -98,7 +98,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 		} );
 
 		$this->expectWarning();
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 	}
 
 	public function test_merge_collectors(): void {
@@ -121,7 +121,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ) use ( $collector1, $collector2, $collector3 ): array {
 			switch ( $hook ) {
-				case 'vipgo_mu_plugins_loaded':
+				case 'vip_mu_plugins_loaded':
 					return [ $collector1 ];
 
 				case 'mu_plugins_loaded':
@@ -136,7 +136,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 			}
 		}, 10, 2 );
 
-		do_action( 'vipgo_mu_plugins_loaded' );
+		do_action( 'vip_mu_plugins_loaded' );
 		self::assertEquals( 1, $collector1->initialize_called );
 		self::assertEquals( 0, $collector2->initialize_called );
 		self::assertEquals( 0, $collector3->initialize_called );
