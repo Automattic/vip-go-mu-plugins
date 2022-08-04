@@ -39,6 +39,8 @@ class Plugin {
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
 
 		add_action( 'init', [ $this, 'init' ] );
+
+		do_action( 'vip_prometheus_loaded' );
 	}
 
 	public function init_registry() {
