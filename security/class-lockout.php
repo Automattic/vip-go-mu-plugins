@@ -14,10 +14,10 @@ class Lockout {
 
 	const USER_SEEN_WARNING_TIME_KEY = 'seen_lockout_warning_time';
 
-    const ACCOUNT_STATUS_NORMAL = 'normal';
-    const ACCOUNT_STATUS_WARNING = 'warned';
-    const ACCOUNT_STATUS_LOCK = 'locked';
-    const ACCOUNT_STATUS_SHUTDOWN = 'shutdown';
+	const ACCOUNT_STATUS_NORMAL   = 'normal';
+	const ACCOUNT_STATUS_WARNING  = 'warned';
+	const ACCOUNT_STATUS_LOCK     = 'locked';
+	const ACCOUNT_STATUS_SHUTDOWN = 'shutdown';
 
 	/**
 	 * @var array Default user capabilities for locked state
@@ -31,7 +31,7 @@ class Lockout {
 	 * Lockout constructor.
 	 */
 	public function __construct() {
-		if ( $this->getLockoutState() ) {
+		if ( $this->get_lockout_state() ) {
 			add_action( 'admin_notices', [ $this, 'add_admin_notice' ], 1 );
 			add_action( 'user_admin_notices', [ $this, 'add_admin_notice' ], 1 );
 
@@ -41,36 +41,38 @@ class Lockout {
 		}
 	}
 
-    private function getLockoutState() {
-        // VIP_ACCOUNT_STATUS has precedence over VIP_LOCKOUT_STATE
-        if ( defined( 'VIP_ACCOUNT_STATUS' ) && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
-            return VIP_ACCOUNT_STATUS;
-        }
+	private function get_lockout_state() {
+		// VIP_ACCOUNT_STATUS has precedence over VIP_LOCKOUT_STATE
+		if ( defined( 'VIP_ACCOUNT_STATUS' ) && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
+			return constant( 'VIP_ACCOUNT_STATUS' );
+		}
 
-        return defined( 'VIP_LOCKOUT_STATE' ) ? VIP_LOCKOUT_STATE : false;
-    }
+		return defined( 'VIP_LOCKOUT_STATE' ) ? constant( 'VIP_LOCKOUT_STATE' ) : false;
+	}
 
-    private function getLockoutMessage() {
-        // If the account is locked, use the proper lockout message
-        if ( defined( 'VIP_ACCOUNT_STATUS') && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
-	        switch ( $this->getLockoutState() ) {
-		        case self::ACCOUNT_STATUS_WARNING:
-			        return 'Payment for this WordPress VIP account is overdue and it will be disabled.<br />
+	private function get_lockout_message() {
+		// If the account is locked, use the proper lockout message
+		if ( defined( 'VIP_ACCOUNT_STATUS' ) && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
+			switch ( $this->get_lockout_state() ) {
+				case self::ACCOUNT_STATUS_WARNING:
+					return 'Payment for this WordPress VIP account is overdue and it will be disabled.<br />
 Contact accounts@wpvip.com to pay your bill.';
-                case self::ACCOUNT_STATUS_LOCK:
-                case self::ACCOUNT_STATUS_SHUTDOWN:
-			        return 'Payment for this WordPress VIP account is overdue and it has been disabled.<br />
-Contact accounts@wpvip.com to pay your bill.';	        }
-        }
-        // Otherwise, read it from VIP_LOCKOUT_MESSAGE constant
-        return defined( 'VIP_LOCKOUT_MESSAGE' ) ? VIP_LOCKOUT_MESSAGE : false;
-    }
+				case self::ACCOUNT_STATUS_LOCK:
+				case self::ACCOUNT_STATUS_SHUTDOWN:
+					return 'Payment for this WordPress VIP account is overdue and it has been disabled.<br />
+Contact accounts@wpvip.com to pay your bill.';
+			}
+		}
+		// Otherwise, read it from VIP_LOCKOUT_MESSAGE constant
+		return defined( 'VIP_LOCKOUT_MESSAGE' ) ? constant( 'VIP_LOCKOUT_MESSAGE' ) : false;
+	}
 
 	/**
 	 * Add warnings to admin page
 	 */
 	public function add_admin_notice() {
-		if ( $lockout_state = $this->getLockoutState() ) {
+		$lockout_state = $this->get_lockout_state();
+		if ( $lockout_state ) {
 			$user = wp_get_current_user();
 
 			switch ( $lockout_state ) {
@@ -85,9 +87,9 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 
 					break;
 
-                case self::ACCOUNT_STATUS_LOCK:
+				case self::ACCOUNT_STATUS_LOCK:
 				case self::ACCOUNT_STATUS_SHUTDOWN:
-				    $has_caps    = isset( $user->allcaps['edit_posts'] ) && true === $user->allcaps['edit_posts'];
+					$has_caps    = isset( $user->allcaps['edit_posts'] ) && true === $user->allcaps['edit_posts'];
 					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, $lockout_state, $user );
 					if ( $show_notice ) {
 						$this->render_locked_notice();
@@ -109,7 +111,7 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 		$seen_warning = get_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, true );
 
 		if ( ! $seen_warning ) {
-			add_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, $this->getLockoutState(), true );
+			add_user_meta( $user->ID, self::USER_SEEN_WARNING_KEY, $this->get_lockout_state(), true );
 			// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- not sure if it is safe to replace with gmdate()
 			add_user_meta( $user->ID, self::USER_SEEN_WARNING_TIME_KEY, date( 'Y-m-d H:i:s' ), true );
 		}
@@ -120,7 +122,7 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 		<div id="lockout-warning" class="notice-warning wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
 			<div style="display: flex;align-items: center;" >
-				<h3><?php echo wp_kses_post( $this->getLockoutMessage() ); ?></h3>
+				<h3><?php echo wp_kses_post( $this->get_lockout_message() ); ?></h3>
 			</div>
 		</div>
 		<?php
@@ -131,7 +133,7 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 		<div id="lockout-warning" class="notice-error wrap clearfix" style="align-items: center;background: #ffffff;border-left-width:4px;border-left-style:solid;border-radius: 6px;display: flex;margin-top: 30px;padding: 30px;line-height: 2em;">
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#dc3232;"></div>
 			<div style="display: flex;align-items: center;" >
-				<h3><?php echo wp_kses_post( $this->getLockoutMessage() ); ?></h3>
+				<h3><?php echo wp_kses_post( $this->get_lockout_message() ); ?></h3>
 			</div>
 		</div>
 		<?php
@@ -150,7 +152,7 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 	 * @return array
 	 */
 	public function filter_user_has_cap( $user_caps, $caps, $args, $user ) {
-        $lockout_state = $this->getLockoutState();
+		$lockout_state = $this->get_lockout_state();
 		if ( $lockout_state && in_array( $lockout_state, [ self::ACCOUNT_STATUS_LOCK, self::ACCOUNT_STATUS_SHUTDOWN ] ) ) {
 			if ( is_automattician( $user->ID ) ) {
 				return $user_caps;
@@ -180,7 +182,7 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 	 * @return  array
 	 */
 	public function filter_site_admin_option( $pre_option ) {
-		$lockout_state = $this->getLockoutState();
+		$lockout_state = $this->get_lockout_state();
 		if ( $lockout_state && in_array( $lockout_state, [ self::ACCOUNT_STATUS_LOCK, self::ACCOUNT_STATUS_SHUTDOWN ] ) ) {
 			if ( is_automattician() ) {
 				return $pre_option;
@@ -202,9 +204,9 @@ Contact accounts@wpvip.com to pay your bill.';	        }
 	 * Instead, just block updates to the option if a site is locked.
 	 */
 	public function filter_prevent_site_admin_option_updates( $value, $old_value ) {
-		$lockout_state = $this->getLockoutState();
+		$lockout_state = $this->get_lockout_state();
 		if ( $lockout_state && in_array( $lockout_state, [ self::ACCOUNT_STATUS_LOCK, self::ACCOUNT_STATUS_SHUTDOWN ] ) ) {
-            return $old_value;
+			return $old_value;
 		}
 
 		return $value;
