@@ -90,8 +90,6 @@ class Prometheus_Collector implements CollectorInterface {
 					$type,
 				]
 			);
-		} else {
-			_doing_it_wrong( __METHOD__, 'Cannot observe request time because the collector is not yet initialized', '' );
 		}
 	}
 
@@ -107,8 +105,6 @@ class Prometheus_Collector implements CollectorInterface {
 					$mode,
 				]
 			);
-		} else {
-			_doing_it_wrong( __METHOD__, 'Cannot increment query counter because the collector is not yet initialized', '' );
 		}
 	}
 
@@ -125,8 +121,6 @@ class Prometheus_Collector implements CollectorInterface {
 					$reason,
 				]
 			);
-		} else {
-			_doing_it_wrong( __METHOD__, 'Cannot increment failed query counter because the collector is not yet initialized', '' );
 		}
 	}
 
@@ -140,8 +134,6 @@ class Prometheus_Collector implements CollectorInterface {
 					$host,
 				]
 			);
-		} else {
-			_doing_it_wrong( __METHOD__, 'Cannot increment rate-limited query counter because the collector is not yet initialized', '' );
 		}
 	}
 
