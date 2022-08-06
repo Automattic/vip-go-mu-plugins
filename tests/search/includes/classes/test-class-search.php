@@ -11,6 +11,7 @@ require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
+require_once __DIR__ . '/../../../../prometheus.php';
 
 /**
  * @runTestsInSeparateProcesses
@@ -22,9 +23,16 @@ class Search_Test extends WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
+	/** @var Search */
+	private $search_instance;
+
 	public function setUp(): void {
 		parent::setUp();
+
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		$this->search_instance = new \Automattic\VIP\Search\Search();
+		$this->search_instance->load_collector();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
