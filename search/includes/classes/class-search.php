@@ -1320,7 +1320,7 @@ class Search {
 		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->maybe_increment_stat( $stat );
-		Prometheus_Collector::increment_ratelimited_query_counter( $url );
+		Prometheus_Collector::increment_ratelimited_query_counter( is_wp_error( $url ) ? 'unknown' : $url );
 	}
 
 	public function maybe_alert_for_average_queue_time() {

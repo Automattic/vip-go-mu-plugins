@@ -2786,7 +2786,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null, '' );
+		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null, null, '' );
 	}
 
 	/**
@@ -2807,7 +2807,7 @@ class Search_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $skiplist as $item ) {
-			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item, '' );
+			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item, null, '' );
 		}
 	}
 
