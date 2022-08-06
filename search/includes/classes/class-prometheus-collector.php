@@ -162,6 +162,10 @@ class Prometheus_Collector implements CollectorInterface {
 
 	private function get_mode( string $url, string $method ): string {
 		$parsed = wp_parse_url( $url );
+		if ( empty( $parsed['path'] ) ) {
+			return 'unknown';
+		}
+
 		$path   = explode( '/', $parsed['path'] );
 		$method = strtolower( $method );
 
