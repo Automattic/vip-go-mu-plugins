@@ -2423,7 +2423,7 @@ class Search {
 		}
 	}
 
-	private function load_collector(): void {
+	public function load_collector(): void {
 		require_once __DIR__ . '/class-prometheus-collector.php';
 		Prometheus_Collector::get_instance();
 	}
