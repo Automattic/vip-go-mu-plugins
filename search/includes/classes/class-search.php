@@ -1109,7 +1109,7 @@ class Search {
 			}
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
-			Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], Prometheus_Collector::QUERY_FAILED_ERROR );
+			Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'] ?? '', Prometheus_Collector::QUERY_FAILED_ERROR );
 
 			$error_type = 'search_query_error';
 		}
