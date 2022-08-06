@@ -34,6 +34,8 @@ class Cache_Test extends WP_UnitTestCase {
 
 		$this->es = new \Automattic\VIP\Search\Search();
 		$this->es->init();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
+
 		\ElasticPress\register_indexable_posts();
 
 		add_filter( 'ep_skip_query_integration', '__return_false', 100 );
