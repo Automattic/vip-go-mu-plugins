@@ -84,7 +84,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$instance->request_times_histogram->observe(
 				$time,
 				[
-					(string) get_current_network_id(),
+					(string) get_current_blog_id(),
 					$host,
 					$mode,
 					$type,
@@ -100,7 +100,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$mode = $instance->get_mode( $url, $method );
 			$instance->query_counter->inc(
 				[
-					(string) get_current_network_id(),
+					(string) get_current_blog_id(),
 					$host,
 					$mode,
 				]
@@ -115,7 +115,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$mode = $instance->get_mode( $url, $method );
 			$instance->failed_query_counter->inc(
 				[
-					(string) get_current_network_id(),
+					(string) get_current_blog_id(),
 					$host,
 					$mode,
 					$reason,
@@ -130,7 +130,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$host = $instance->get_host( $url );
 			$instance->ratelimited_query_counter->inc(
 				[
-					(string) get_current_network_id(),
+					(string) get_current_blog_id(),
 					$host,
 				]
 			);
