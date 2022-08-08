@@ -5,14 +5,8 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\RegistryInterface;
 
 class Plugin_Helper extends Plugin {
-	private static ?Plugin_Helper $instance = null;
-
-	public static function get_instance(): self {
-		if ( ! self::$instance ) {
-			self::$instance = new self();
-		}
-
-		return self::$instance;
+	public static function clear_instance(): void {
+		self::$instance = null;
 	}
 
 	public function get_registry(): RegistryInterface {

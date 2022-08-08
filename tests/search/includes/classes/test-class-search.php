@@ -11,6 +11,7 @@ require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
+require_once __DIR__ . '/../../../../prometheus.php';
 
 /**
  * @runTestsInSeparateProcesses
@@ -22,9 +23,16 @@ class Search_Test extends WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
+	/** @var Search */
+	private $search_instance;
+
 	public function setUp(): void {
 		parent::setUp();
+
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		$this->search_instance = new \Automattic\VIP\Search\Search();
+		$this->search_instance->load_collector();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
@@ -2786,7 +2794,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null );
+		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null, null, '' );
 	}
 
 	/**
@@ -2807,7 +2815,7 @@ class Search_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $skiplist as $item ) {
-			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item );
+			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item, null, '' );
 		}
 	}
 
