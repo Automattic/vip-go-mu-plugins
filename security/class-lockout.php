@@ -43,7 +43,7 @@ class Lockout {
 
 	private function get_lockout_state() {
 		// VIP_ACCOUNT_STATUS has precedence over VIP_LOCKOUT_STATE
-		if ( defined( 'VIP_ACCOUNT_STATUS' ) && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
+		if ( defined( 'VIP_ACCOUNT_STATUS' ) && constant( 'VIP_ACCOUNT_STATUS' ) !== self::ACCOUNT_STATUS_NORMAL ) {
 			return constant( 'VIP_ACCOUNT_STATUS' );
 		}
 
@@ -52,7 +52,7 @@ class Lockout {
 
 	private function get_lockout_message() {
 		// If the account is locked, use the proper lockout message
-		if ( defined( 'VIP_ACCOUNT_STATUS' ) && VIP_ACCOUNT_STATUS !== self::ACCOUNT_STATUS_NORMAL ) {
+		if ( defined( 'VIP_ACCOUNT_STATUS' ) && constant( 'VIP_ACCOUNT_STATUS' ) !== self::ACCOUNT_STATUS_NORMAL ) {
 			switch ( $this->get_lockout_state() ) {
 				case self::ACCOUNT_STATUS_WARNING:
 					return 'Payment for this WordPress VIP account is overdue and it will be disabled.<br />
