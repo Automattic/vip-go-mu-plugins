@@ -202,6 +202,7 @@ class Search {
 	 * Initialize the VIP Search plugin
 	 */
 	public function init() {
+		$this->setup_collector();
 		$this->apply_settings(); // Applies filters for tweakable Search settings and should run first.
 		$this->setup_constants();
 		$this->maybe_enable_ep_query_logging();
@@ -943,6 +944,7 @@ class Search {
 		$duration = ( $end_time - $start_time ) * 1000;
 
 		$this->maybe_increment_stat( $statsd_prefix . '.total' );
+		Prometheus_Collector::increment_query_counter( $args['method'] ?? 'post', $query['url'] );
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -950,7 +952,7 @@ class Search {
 		 * If request resulted in an error flag it as such but try to return the fallback value if available.
 		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_response );
+			$this->ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_response, $args['method'] ?? 'post' );
 			if ( isset( $cached_response['response'] ) ) {
 				return $cached_response['response'];
 			}
@@ -961,12 +963,15 @@ class Search {
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				$this->maybe_send_timing_stat( $statsd_prefix . '.engine', $response_body['took'] );
+				Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_ENGINE, (float) $response_body['took'] );
 			}
 			$this->maybe_send_timing_stat( $statsd_prefix . '.total', $duration );
+			Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_REQUEST, (float) $duration );
 
 			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
 				$doc_count = count( $response_body['items'] );
 				$this->maybe_send_timing_stat( $statsd_prefix . '.per_doc', $duration / $doc_count );
+				Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_PER_DOC, (float) $duration / $doc_count );
 			}
 
 			$response_headers = wp_remote_retrieve_headers( $response );
@@ -1052,9 +1057,10 @@ class Search {
 	 * @param string $statsd_prefix
 	 * @param string $type
 	 * @param mixed $cached_request
+	 * @param string $query_method
 	 * @return void
 	 */
-	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_request = null ) {
+	public function ep_handle_failed_request( $request, $response, $query, $statsd_prefix, $type, $cached_request, $query_method ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
 			'index_exists',
@@ -1081,9 +1087,11 @@ class Search {
 			$response_failure_code = $response->get_error_code();
 
 			foreach ( $error_messages as $error_message ) {
-				$stat = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
+				$stat   = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
+				$reason = $this->is_curl_timeout( $error_message ) ? Prometheus_Collector::QUERY_FAILED_TIMEOUT : Prometheus_Collector::QUERY_FAILED_ERROR;
 
 				$this->maybe_increment_stat( $statsd_prefix . $stat );
+				Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], $reason );
 			}
 
 			$error_message = implode( ';', $error_messages );
@@ -1101,6 +1109,7 @@ class Search {
 			}
 
 			$this->maybe_increment_stat( $statsd_prefix . '.error' );
+			Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'] ?? '', Prometheus_Collector::QUERY_FAILED_ERROR );
 
 			$error_type = 'search_query_error';
 		}
@@ -1311,6 +1320,7 @@ class Search {
 		$stat = $this->get_statsd_prefix( $url, $statsd_mode );
 
 		$this->maybe_increment_stat( $stat );
+		Prometheus_Collector::increment_ratelimited_query_counter( is_wp_error( $url ) ? 'unknown' : $url );
 	}
 
 	public function maybe_alert_for_average_queue_time() {
@@ -2403,5 +2413,18 @@ class Search {
 	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
 		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
 		return false === $index_exists ? 'no' : 'yes';
+	}
+
+	public function setup_collector(): void {
+		if ( did_action( 'vip_prometheus_loaded' ) ) {
+			$this->load_collector();
+		} else {
+			add_action( 'vip_prometheus_loaded', [ $this, 'load_collector' ] );
+		}
+	}
+
+	public function load_collector(): void {
+		require_once __DIR__ . '/class-prometheus-collector.php';
+		Prometheus_Collector::get_instance();
 	}
 }
