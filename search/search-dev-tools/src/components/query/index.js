@@ -64,12 +64,12 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 
 	useEffect( () => {
 		cbHandler = new ClipboardJS( copyButtonDOMSelector );
-		cbHandler.on( 'success', e => {
+		cbHandler.on( 'success', evt => {
 			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
 			setTimeout( () => {
 				document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPY';
 			}, 2000 );
-			e.clearSelection();
+			evt.clearSelection();
 		} );
 		return () => cbHandler.destroy();
 	}, [] );
@@ -86,18 +86,18 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		}
 	}, [ state.query, state.editing ] );
 
-	const colorizeRequestTime = ( timeMs ) => {
-		let c;
+	const colorizeRequestTime = timeMs => {
+		let cls;
 
 		if ( timeMs < 200 ) {
-			c = 'green-60';
+			cls = 'green-60';
 		} else if ( timeMs < 500 ) {
-			c = 'red-30';
+			cls = 'red-30';
 		} else {
-			c = 'red-60';
+			cls = 'red-60';
 		}
 
-		return <span style={{ color: `var(--vip-${c})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
+		return <span style={{ color: `var(--vip-${cls})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
 	};
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
@@ -125,8 +125,8 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				<div className={style.query_actions}>
 					{ state.editing || state.result !== txtResult
 						? ( <>
-							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40)">RUN</button>
-							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10)">RESET</button>
+							<button onClick={ () => setState( { ...state, editing: false } ) } style="background-color: var(--vip-green-40) !important">RUN</button>
+							<button onClick={ () => setState( { ...initialState, collapsed: false } ) } style="background-color: var(--vip-blue-10) !important">RESET</button>
 						</> )
 						: 'Edit me!'
 					}
