@@ -30,25 +30,12 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
-	public function get_var_legacy_env() {
-		Constant_Mocker::define( 'MY_VAR', 'MY_VAR' );
-	}
-
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
-	}
-
-	// tests the use-case where $key parameter does not have the prefix
-	public function test_get_var_legacy_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
-		$this->get_var_legacy_env();
-		$val = Environment::get_var( 'MY_VAR', 'default_value' );
-		$this->assertEquals( 'MY_VAR', $val );
 	}
 
 	// tests the use-case where $key parameter is lower case
