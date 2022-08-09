@@ -2362,12 +2362,6 @@ class Search {
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
 	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) &&
-		! \Automattic\VIP\Feature::is_enabled_by_percentage( 'reduce-default-es-payload' ) ) {
-			// Rollout to non-prod and 25% of production
-			return $should_do_weighting;
-		}
-
 		if ( ! empty( $weight_config ) ) {
 			return true;
 		}
