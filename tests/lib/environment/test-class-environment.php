@@ -38,15 +38,6 @@ class Environment_Test extends TestCase {
 		$this->assertEquals( 'default_value', $val );
 	}
 
-	// tests the use-case where $key parameter is lower case
-	public function test_get_var_lower_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
-		$this->get_var_standard_env();
-		$val = Environment::get_var( 'vip_env_var_my_var', 'VIP_ENV_VAR_MY_VAR' );
-		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
-	}
-
 	// tests the use-case where $key parameter is ''
 	public function test_get_var_empty_key() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
