@@ -43,7 +43,7 @@ class Environment_Test extends TestCase {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$this->get_var_standard_env();
-		$val = Environment::get_var( 'vip_env_var_my_var', 'default_value' );
+		$val = Environment::get_var( 'vip_env_var_my_var', 'VIP_ENV_VAR_MY_VAR' );
 		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
 	}
 
