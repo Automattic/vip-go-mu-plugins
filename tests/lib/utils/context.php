@@ -54,7 +54,7 @@ class Context_Test extends TestCase {
 
 		$actual_result = Context::is_overdue_locked();
 
-		$this->assertFalse( $actual_result, '`VIP_OVERDUE_LOCKOUT` constant should not be defined for this test' );
+		$this->assertFalse( $actual_result, 'The `VIP_OVERDUE_LOCKOUT` constant is not defined, but site is reported as locked' );
 	}
 
 	public function test__is_overdue_locked__yep() {
@@ -62,7 +62,7 @@ class Context_Test extends TestCase {
 
 		$actual_result = Context::is_overdue_locked();
 
-		$this->assertTrue( $actual_result );
+		$this->assertTrue( $actual_result, 'The `VIP_OVERDUE_LOCKOUT` constant is set to `true`, but site is not reported as locked' );
 	}
 
 	public function get_test_data__is_web_request__nope() {
