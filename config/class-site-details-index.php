@@ -18,22 +18,35 @@ class Site_Details_Index {
 	 */
 	private $timestamp = null;
 
-	private $parsely_details = [
-		'parsely_plugin_enabled',
-		'parsely_integration_type', // "MUPLUGINS_FILTER", "MUPLUGINS_OPTION, "SELF_MANAGED", "NONE" ( How parse.ly is enabled )
-		'parsely_service_type', // "NONE", "SILENT", "PAID" ( How the service is )
-		'parsely_date_enabled',
-		'parsely_date_disabled',
-		'parsely_disable_type', // Alex will send list (filter, plugin form, etc..)
-		'parsely_enabled_type', // Alex will send list
-		'parsely_plugin_version',
-		'parsely_install_method', // ? via filter, installing with JS w/out plugin, committed to repo
-	];
-
 	/**
 	 * Name of the logstash feature to use for log2logstash call
 	 */
 	private const LOG_FEATURE_NAME = 'site_details';
+
+	/**
+	 * Strings for Parsely Integration types
+	 */
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_FILTER       = 'MUPLUGINS_FILTER';
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_OPTION       = 'MUPLUGINS_OPTION';
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_SELF_MANAGED = 'SELF_MANAGED';
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_NONE         = 'NONE';
+
+	/**
+	 * Strings for Parsely service types
+	 */
+	const PARSELY_SERVICE_TYPE_PAID   = 'PAID';
+	const PARSELY_SERVICE_TYPE_SILENT = 'SILENT';
+	const PARSELY_SERVICE_TYPE_NONE   = 'NONE';
+
+	/**
+	 * Strings for Parsely service enabled/disabled types
+	 */
+	const PARSELY_SERVICE_ENABLED_TYPE_FILTER  = 'FILTER';
+	const PARSELY_SERVICE_ENABLED_TYPE_PLUGIN  = 'PLUGIN';
+	const PARSELY_SERVICE_ENABLED_TYPE_FORM    = 'FORM';
+	const PARSELY_SERVICE_DISABLED_TYPE_FILTER = 'FILTER';
+	const PARSELY_SERVICE_DISABLED_TYPE_PLUGIN = 'PLUGIN';
+	const PARSELY_SERVICE_DISABLED_TYPE_FORM   = 'FORM';
 
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
@@ -91,6 +104,7 @@ class Site_Details_Index {
 		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['search']  = $this->get_search_info();
 		$site_details['jetpack'] = $this->get_jetpack_info();
+		$site_details['parsely'] = $this->get_parsely_info();
 
 		return $site_details;
 	}
@@ -239,6 +253,27 @@ class Site_Details_Index {
 
 		return $jetpack_info;
 	}
+
+
+
+	/**
+	 * Gather all the information about Parsely
+	 */
+	public function get_parsely_info() {
+		$parsely_info = [];
+
+		$parsely_info['active']               = \Parsely::is_active();
+		$parsely_info['integration_type']     = get_parsely_integration_type(); // "MUPLUGINS_FILTER", "MUPLUGINS_OPTION, "SELF_MANAGED", "NONE" ( How parse.ly is enabled )
+		$parsely_info['parsely_service_type'] = get_parsely_service_type(); // "NONE", "SILENT", "PAID" ( How the service is )
+		$parsely_info['parsely_date_enabled'] = get_parsely_date_enabled();
+		$parsely_info['date_disabled']        = get_parsely_date_disabled();
+		$parsely_info['disable_type']         = get_parsely_disabled_type(); // Alex will send list (filter, plugin form, etc..)
+		$parsely_info['enabled_type']         = get_parsely_enabled_type(); // Alex will send list
+		$parsely_info['version']              = PARSELY__VERSION;
+
+		return $parsely_info;
+	}
+
 
 	/**
 	 * Get the site details for the site the code is running on.
