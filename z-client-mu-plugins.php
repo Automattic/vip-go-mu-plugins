@@ -112,6 +112,7 @@ function wpcom_vip_filter_client_mu_plugins_url( $url, $url_path, $plugin_path )
 }
 add_filter( 'plugins_url', 'wpcom_vip_filter_client_mu_plugins_url', 10, 3 );
 
+do_action( 'vip_mu_plugins_loaded' );
 
 if ( wpcom_vip_should_load_plugins() ) {
 	// Let's load the plugins
