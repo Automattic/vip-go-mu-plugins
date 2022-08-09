@@ -18,8 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'reduce-default-es-payload' => 0.75,
-		'force-es-timeout'          => 0.75,
+		'force-es-timeout' => 0.75,
 	];
 
 	/**
