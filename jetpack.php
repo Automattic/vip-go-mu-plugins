@@ -31,6 +31,8 @@ if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
 	}
 }
 
+
+
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
 if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 	define( 'JP_SITEMAP_BATCH_SIZE', 200 );
@@ -141,10 +143,16 @@ function vip_jetpack_load() {
 
 	$jetpack_to_test[] = VIP_JETPACK_DEFAULT_VERSION;
 
+	// Because the versioned jetpack folders will live outside this repository, we want
+	// to have a backup to unversioned "jetpack" folder
+	$jetpack_to_test[] = '';
+
 	// Walk through all versions to test, and load the first one that exists
 	foreach ( $jetpack_to_test as $version ) {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
+		} elseif ( '' === $version ) {
+			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		} else {
 			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
