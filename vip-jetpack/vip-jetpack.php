@@ -722,7 +722,7 @@ add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX );
  *
  * @param bool|string $matches Boolean if current UA matches $kind or not. If
  * $return_matched_agent is true, should return the UA string
- * @param string      $kind Category of mobile device being checked. Can be 'desktop', 'any', 'smart', tablet' or 'dumb'.
+ * @param string      $kind Category of mobile device being checked. Can be 'any', 'smart' or 'dumb'.
  * @param bool        $return_matched_agent Boolean indicating if the UA should be returned
  *
  * @return bool|string $matches Boolean if current UA matches $kind or not. If
@@ -741,7 +741,7 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 		return false;
 	}
 
-	if ( 'smart' === $kind || 'dumb' === $kind || 'tablet' === $kind ) {
+	if ( 'smart' === $kind || 'dumb' === $kind ) {
 		$matches = $kind === $x_mobile_class;
 	} elseif ( 'any' === $kind ) {
 		$matches = true;
