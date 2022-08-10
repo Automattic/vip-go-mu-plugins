@@ -224,6 +224,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 	public function data_vip_jetpack_is_mobile(): iterable {
 		return [
+			[ 'desktop', 'smart', false ],
 			[ 'smart', 'desktop', false ],
 			[ 'tablet', 'any', true ],
 			[ 'smart', 'smart', true ],
