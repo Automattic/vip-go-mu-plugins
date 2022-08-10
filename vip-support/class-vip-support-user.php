@@ -244,7 +244,7 @@ class User {
 	 * @param object $user The WP_User object representing the user being edited
 	 */
 	public function action_personal_options( $user ) {
-		if ( ! $this->is_a8c_email( $user->user_email ) ) {
+		if ( ! self::is_a8c_email( $user->user_email ) ) {
 			return;
 		}
 
@@ -316,7 +316,7 @@ class User {
 				$user_id     = get_current_user_id();
 				$user        = get_user_by( 'id', $user_id );
 				$resend_link = $this->get_trigger_resend_verification_url();
-				if ( $this->is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) ) {
+				if ( self::is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) ) {
 					// translators: 1 - link to resemd the email
 					$error_html = sprintf( __( 'Your Automattic email address is not verified, <a href="%s">re-send verification email</a>.', 'vip-support' ), esc_url( $resend_link ) );
 				}
@@ -333,7 +333,7 @@ class User {
 				$user_id     = absint( $_GET['user_id'] ?? 0 );
 				$user        = get_user_by( 'id', $user_id );
 				$resend_link = $this->get_trigger_resend_verification_url();
-				if ( $this->is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) && self::user_has_vip_support_role( $user->ID ) ) {
+				if ( self::is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) && self::user_has_vip_support_role( $user->ID ) ) {
 					// translators: 1 - link to resend the email
 					$error_html = sprintf( __( 'This user’s Automattic email address is not verified, <a href="%s">re-send verification email</a>.', 'vip-support' ), esc_url( $resend_link ) );
 				}
@@ -370,13 +370,13 @@ class User {
 
 		// Try to make the conditional checks clearer
 		$becoming_support         = ( Role::VIP_SUPPORT_ROLE == $role );
-		$valid_and_verified_email = ( $this->is_a8c_email( $user->user_email ) && $this->user_has_verified_email( $user_id ) );
+		$valid_and_verified_email = ( self::is_a8c_email( $user->user_email ) && $this->user_has_verified_email( $user_id ) );
 
 		if ( $becoming_support && ! $valid_and_verified_email ) {
 			$this->reverting_role = true;
 			// @FIXME This could be expressed more simply, probably :|
 			if ( ! is_array( $old_roles ) || ! isset( $old_roles[0] ) ) {
-				if ( $this->is_a8c_email( $user->user_email ) ) {
+				if ( self::is_a8c_email( $user->user_email ) ) {
 					$revert_role_to = Role::VIP_SUPPORT_INACTIVE_ROLE;
 				} else {
 					$revert_role_to = 'subscriber';
@@ -385,7 +385,7 @@ class User {
 				$revert_role_to = $old_roles[0];
 			}
 			$this->demote_user_from_vip_support_to( $user->ID, $revert_role_to );
-			if ( $this->is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user_id ) ) {
+			if ( self::is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user_id ) ) {
 				$this->message_replace = self::MSG_BLOCK_UPGRADE_VERIFY_EMAIL;
 				$this->send_verification_email( $user_id );
 			} else {
@@ -433,7 +433,7 @@ class User {
 	 * @return string
 	 */
 	public function filter_vip_support_email_aliases( $email, $id ) {
-		if ( is_admin() && $this->is_a8c_email( $email ) && $this->has_vip_support_meta( $id ) ) {
+		if ( is_admin() && self::is_a8c_email( $email ) && $this->has_vip_support_meta( $id ) ) {
 			return self::VIP_SUPPORT_EMAIL_ADDRESS;
 		}
 
@@ -472,7 +472,7 @@ class User {
 			$user_email = $id_or_email->user_email;
 		}
 
-		if ( isset( $user_email ) && $this->is_a8c_email( $user_email ) && ( ! $user || $this->has_vip_support_meta( $user->ID ) ) ) {
+		if ( isset( $user_email ) && self::is_a8c_email( $user_email ) && ( ! $user || $this->has_vip_support_meta( $user->ID ) ) ) {
 			return self::VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR . '?d=mm&r=g&s=' . $args['size'];
 		}
 
@@ -511,7 +511,7 @@ class User {
 	 */
 	public function action_user_register( $user_id ) {
 		$user = new WP_User( $user_id );
-		if ( $this->is_a8c_email( $user->user_email ) && self::user_has_vip_support_role( $user->ID ) ) {
+		if ( self::is_a8c_email( $user->user_email ) && self::user_has_vip_support_role( $user->ID ) ) {
 			$this->demote_user_from_vip_support_to( $user->ID, Role::VIP_SUPPORT_INACTIVE_ROLE );
 			$this->registering_a11n = true;
 			// @TODO Abstract this into an UNVERIFY method
@@ -575,7 +575,7 @@ class User {
 			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
-		if ( ! $this->is_a8c_email( $user->user_email ) ) {
+		if ( ! self::is_a8c_email( $user->user_email ) ) {
 			wp_die( esc_html( $rebuffal_message ), esc_html( $rebuffal_title ), array( 'response' => 403 ) );
 		}
 
@@ -600,7 +600,7 @@ class User {
 
 		// If the user is an A12n, add them to the support role
 		// Only promotes the user if from the inactive user role
-		if ( $this->is_a8c_email( $user->user_email ) ) {
+		if ( self::is_a8c_email( $user->user_email ) ) {
 			$this->promote_user_to_vip_support( $user->ID );
 		}
 
@@ -752,7 +752,7 @@ class User {
 	 *
 	 * @return bool True if the string is an email with an A8c domain
 	 */
-	public function is_a8c_email( $email ) {
+	public static function is_a8c_email( $email ) {
 		if ( ! is_email( $email ) ) {
 			return false;
 		}
@@ -812,7 +812,7 @@ class User {
 
 		$instance = self::init();
 
-		$is_a8c_email     = $instance->is_a8c_email( $user->user_email );
+		$is_a8c_email     = self::is_a8c_email( $user->user_email );
 		$is_allowed_email = $instance->is_allowed_email( $user->user_email );
 		$email_verified   = $instance->user_has_verified_email( $user->ID );
 
