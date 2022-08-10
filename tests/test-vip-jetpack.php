@@ -199,9 +199,13 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	public function test_vip_jetpack_is_mobile_rma(): void {
 		$_SERVER['HTTP_X_MOBILE_CLASS'] = 'tablet';
 
-		$expected = 'xxx';
-		$actual   = vip_jetpack_is_mobile( $expected, 'tablet', true );
-		self::assertEquals( $expected, $actual );
+		try {
+			$expected = 'xxx';
+			$actual   = vip_jetpack_is_mobile( $expected, 'tablet', true );
+			self::assertEquals( $expected, $actual );
+		} finally {
+			unset( $_SERVER['HTTP_X_MOBILE_CLASS'] );
+		}
 	}
 
 	/**
@@ -210,8 +214,12 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	public function test_vip_jetpack_is_mobile( string $x_mobile_class, string $wanted, bool $expected ): void {
 		$_SERVER['HTTP_X_MOBILE_CLASS'] = $x_mobile_class;
 
-		$actual = vip_jetpack_is_mobile( false, $wanted, false );
-		self::assertSame( $expected, $actual );
+		try {
+			$actual = vip_jetpack_is_mobile( false, $wanted, false );
+			self::assertSame( $expected, $actual );
+		} finally {
+			unset( $_SERVER['HTTP_X_MOBILE_CLASS'] );
+		}
 	}
 
 	public function data_vip_jetpack_is_mobile(): iterable {
