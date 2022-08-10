@@ -729,8 +729,8 @@ add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX );
  * $return_matched_agent is true, should return the UA string
  */
 function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
-	if ( ! isset( $_SERVER['HTTP_X_MOBILE_CLASS'] ) ) {
-		// No value set, return early.
+	if ( ! isset( $_SERVER['HTTP_X_MOBILE_CLASS'] ) || $return_matched_agent ) {
+		// No value set or expectation to return matched agent, return early.
 		return $matches;
 	}
 
