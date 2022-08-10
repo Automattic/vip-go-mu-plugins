@@ -31,8 +31,6 @@ if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
 	}
 }
 
-
-
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
 if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 	define( 'JP_SITEMAP_BATCH_SIZE', 200 );
