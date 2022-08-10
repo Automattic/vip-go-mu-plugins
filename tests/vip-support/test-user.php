@@ -115,7 +115,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		] );
 
 		$instance = User::init();
-		
+
 		$instance->mark_user_email_verified( $user_id, 'admin@automattic.com' );
 
 		$this->assertTrue( $instance->is_verified_automattician( $user_id ) );
@@ -127,14 +127,14 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	 */
 	public function test_is_verified_automattician_for_disallowed_user(): void {
 		define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
-	
+
 		$user_id = $this->factory->user->create( [
 			'user_email' => 'foo@automattic.com',
 			'user_login' => 'vip_foo',
 		] );
 
 		$instance = User::init();
-		
+
 		$instance->mark_user_email_verified( $user_id, 'foo@automattic.com' );
 
 		$this->assertFalse( $instance->is_verified_automattician( $user_id ) );
@@ -190,7 +190,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		] );
 
 		$new_user_id = User::add( [
-			'user_email'   => 'existing456@automattic.com',
+			'user_email'   => 'existing456+test@automattic.com',
 			'user_login'   => 'vip-support-user-456',
 			'display_name' => 'New User',
 			'user_pass'    => 'password',
@@ -201,7 +201,21 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		$this->assertEquals( $existing_user_id, $new_user_id, 'Existing and new IDs are not the same. Existing account was not updated.' );
 
 		$new_user_obj = get_userdata( $new_user_id );
-		$this->assertEquals( 'existing456@automattic.com', $new_user_obj->user_email, 'Email for new user was changed but should not have.' );
+		$this->assertEquals( 'existing456+test@automattic.com', $new_user_obj->user_email, 'Email for user was not updated.' );
 		$this->assertEquals( 'New User', $new_user_obj->display_name, 'Display name for new user was not updated.' );
+	}
+
+	public function test__remove__existing_vip_support_user(): void {
+		$new_user_id = User::add( [
+			'user_email' => 'existing1234@automattic.com',
+			'user_login' => 'new-vip-support-user-123',
+			'user_pass'  => 'password',
+		] );
+
+		User::remove( 'existing1234@automattic.com' );
+
+		$removed_user_obj = get_userdata( $new_user_id );
+
+		$this->assertFalse( $removed_user_obj, 'User was not deleted' );
 	}
 }
