@@ -741,7 +741,7 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 		return false;
 	}
 
-	if ( 'smart' === $kind || 'dumb' === $kind ) {
+	if ( 'smart' === $kind || 'dumb' === $kind || 'tablet' === $kind ) {
 		$matches = $kind === $x_mobile_class;
 	} elseif ( 'any' === $kind ) {
 		$matches = true;

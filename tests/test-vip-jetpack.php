@@ -220,6 +220,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 			[ 'tablet', 'any', true ],
 			[ 'smart', 'smart', true ],
 			[ 'dumb', 'dumb', true ],
+			[ 'tablet', 'tablet', true ],
 			[ 'smart', 'dumb', false ],
 		];
 	}
