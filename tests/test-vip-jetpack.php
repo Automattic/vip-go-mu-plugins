@@ -1,5 +1,8 @@
 <?php
 
+use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use PHPUnit\Framework\ExpectationFailedException;
+
 class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	public function get_jp_sync_settings_data() {
 		return [
@@ -187,5 +190,37 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$other_value_direct = get_option( 'jetpack_site_icon_id' );
 
 		$this->assertEquals( $other_value, $other_value_direct, 'Unexpected value for unfiltered Jetpack option' );
+	}
+
+	public function test_vip_jetpack_is_mobile_no_x_mobile_class(): void {
+		self::assertFalse( vip_jetpack_is_mobile( false, 'any', false ) );
+	}
+
+	public function test_vip_jetpack_is_mobile_rma(): void {
+		$_SERVER['HTTP_X_MOBILE_CLASS'] = 'tablet';
+
+		$expected = 'xxx';
+		$actual   = vip_jetpack_is_mobile( $expected, 'tablet', true );
+		self::assertEquals( $expected, $actual );
+	}
+
+	/**
+	 * @dataProvider data_vip_jetpack_is_mobile
+	 */
+	public function test_vip_jetpack_is_mobile( string $x_mobile_class, string $wanted, bool $expected ): void {
+		$_SERVER['HTTP_X_MOBILE_CLASS'] = $x_mobile_class;
+
+		$actual = vip_jetpack_is_mobile( false, $wanted, false );
+		self::assertSame( $expected, $actual );
+	}
+
+	public function data_vip_jetpack_is_mobile(): iterable {
+		return [
+			[ 'smart', 'desktop', false ],
+			[ 'tablet', 'any', true ],
+			[ 'smart', 'smart', true ],
+			[ 'dumb', 'dumb', true ],
+			[ 'smart', 'dumb', false ],
+		];
 	}
 }
