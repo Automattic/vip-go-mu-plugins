@@ -770,7 +770,7 @@ class User {
 
 	/**
 	 * Is a provided email address allowed to be a support user on this site?
-	 * 
+	 *
 	 * On certain sites with tight access restrictions, only certain support users are allowed
 	 *
 	 * @param string $email An email address to check
@@ -782,7 +782,7 @@ class User {
 		if ( ! defined( 'VIP_SUPPORT_USER_ALLOWED_EMAILS' ) ) {
 			return true;
 		}
-		
+
 		// Incorrectly formatted constant, fail fast + closed
 		if ( ! is_array( VIP_SUPPORT_USER_ALLOWED_EMAILS ) ) {
 			return false;
@@ -998,16 +998,19 @@ class User {
 			] );
 			remove_filter( 'send_password_change_email', '__return_false' );
 
-			// Force create a new user below.
+			// Force create new user if no existing user by login
 			$user = false;
-		} elseif ( $user && $user->ID ) {
-			// If the user exists, let's update it.
-			$user_data['ID'] = $user->ID;
+		}
+
+		if ( false === $user ) {
+			// Re-try to see if there is an existing user by login.
+			$user = get_user_by( 'login', $user_data['user_login'] );
 		}
 
 		if ( false === $user ) {
 			$user_id = wp_insert_user( $user_data );
 		} else {
+			$user_data['ID'] = $user->ID;
 			add_filter( 'send_password_change_email', '__return_false' );
 			$user_id = wp_update_user( $user_data );
 			remove_filter( 'send_password_change_email', '__return_false' );
