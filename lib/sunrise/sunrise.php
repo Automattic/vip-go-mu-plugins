@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }
 
-$mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : WP_CONTENT_DIR . '/mu-plugins';
+$mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 require_once $mu_plugin_dir . '/lib/utils/class-context.php';
 unset( $mu_plugin_dir );
 
@@ -68,7 +68,7 @@ function handle_not_found_error( $error_type ) {
 
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
-		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : WP_CONTENT_DIR . '/mu-plugins';
+		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 		$is_maintenance_mode = Context::is_maintenance_mode();
 		if ( $is_maintenance_mode ) {
 			// 503 prevents page from being cached.
