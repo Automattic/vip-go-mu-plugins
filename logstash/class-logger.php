@@ -348,7 +348,7 @@ class Logger {
 			 */
 
 			$index = 1;
-			if ( isset( $backtrace[ $index ]['file'] ) && wp_endswith( $backtrace[ $index ]['file'], '/mu-plugins/logstash/logstash.php' ) ) {
+			if ( isset( $backtrace[ $index ]['file'] ) && wp_endswith( $backtrace[ $index ]['file'], '/logstash/logstash.php' ) ) {
 				$index = 2;
 			}
 
