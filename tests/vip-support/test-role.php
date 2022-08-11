@@ -35,6 +35,10 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		Role::init()->maybe_upgrade_version();
 	}
 
+	public function setUp(): void {
+		parent::setUp();
+	}
+
 	public function test_role_existence() {
 		$roles = wp_roles()->roles;
 
