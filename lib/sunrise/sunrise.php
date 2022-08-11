@@ -67,7 +67,6 @@ function handle_not_found_error( $error_type ) {
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
 		$is_maintenance_mode = Context::is_maintenance_mode();
-		$is_overdue_locked   = Context::is_overdue_locked();
 		if ( $is_maintenance_mode ) {
 			// 503 prevents page from being cached.
 			// We handle healthchecks earlier and don't have to worry about them.
