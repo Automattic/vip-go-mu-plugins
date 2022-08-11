@@ -18,6 +18,7 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		parent::setUp();
 
 		delete_option( 'vipsupportrole_version' );
+		wp_roles()->for_site();
 
 		$this->vip_support_user = User::add( array(
 			'user_email' => 'vip-support@example.test',
@@ -30,6 +31,15 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 			'user_login' => 'vip_admin',
 			'role'       => 'administrator',
 		] );
+	}
+
+	public function test_role_existence() {
+		Role::init()->maybe_upgrade_version();
+
+		$roles = wp_roles()->roles;
+
+		$this->assertArrayHasKey( Role::VIP_SUPPORT_ROLE, $roles );
+		$this->assertArrayHasKey( Role::VIP_SUPPORT_INACTIVE_ROLE, $roles );
 	}
 
 	public function test_editable_role__vipsupport() {
@@ -45,15 +55,6 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 
 		$first_role = array_shift( $role_names );
 		$this->assertTrue( Role::VIP_SUPPORT_INACTIVE_ROLE === $first_role );
-	}
-
-	public function test_role_existence() {
-		Role::init()->maybe_upgrade_version();
-
-		$roles = wp_roles()->roles;
-
-		$this->assertArrayHasKey( Role::VIP_SUPPORT_ROLE, $roles );
-		$this->assertArrayHasKey( Role::VIP_SUPPORT_INACTIVE_ROLE, $roles );
 	}
 
 	public function test_editable_role__admin() {
