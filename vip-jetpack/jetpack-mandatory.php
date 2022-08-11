@@ -58,8 +58,8 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	// =====
 
 	public function action_load_jetpack_modules() {
-		$mu_plugin_dir      = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : WP_CONTENT_DIR . '/mu-plugins';
-		$mu_plugin_url      = defined( 'WPMU_PLUGIN_URL' ) ? constant( 'WPMU_PLUGIN_URL' ) : WP_CONTENT_URL . '/mu-plugins';
+		$mu_plugin_dir      = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+		$mu_plugin_url      = defined( 'WPMU_PLUGIN_URL' ) ? constant( 'WPMU_PLUGIN_URL' ) : constant( 'WP_CONTENT_URL' ) . '/mu-plugins';
 		$mandatory_css_url  = $mu_plugin_url . '/' . basename( __DIR__ ) . '/css/mandatory-settings.css';
 		$mandatory_css_file = $mu_plugin_dir . '/' . basename( __DIR__ ) . '/css/mandatory-settings.css';
 		$mtime              = filemtime( $mandatory_css_file );
