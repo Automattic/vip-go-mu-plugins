@@ -17,7 +17,7 @@ class Command extends WP_CLI_Command {
 
 	/**
 	 * Creates a user in the VIP Support role, already verified,
-	 * and suppresses all emails.
+	 * and suppresses all emails. Must use A8C email and prefix with "vip_".
 	 *
 	 * @subcommand create-user
 	 *
@@ -35,9 +35,13 @@ class Command extends WP_CLI_Command {
 		$user_pass    = $args[2];
 		$display_name = $assoc_args['display-name'];
 
-		// @TODO Check the email address is an A8c domain, will need to convert the method to static
-		if ( ! is_email( $user_email ) ) {
-			\WP_CLI::error( "User cannot be added as '{$user_email}' is not a valid email address" );
+		// Validation checks
+		if ( ! is_email( $user_email ) || ! User::is_a8c_email( $user_email ) ) {
+			\WP_CLI::error( "User cannot be added as '{$user_email}', not a valid email address." );
+		}
+		if ( 0 !== strpos( strtolower( $user_login ), 'vip_' ) ) {
+			// Restrict user_login to only "vip_*"
+			\WP_CLI::error( "User cannot be added as '{$user_login}', not pre-fixed with \"vip_\"." );
 		}
 
 		$user_data                 = array();
@@ -64,24 +68,33 @@ class Command extends WP_CLI_Command {
 	 *
 	 * @subcommand remove-user
 	 *
-	 * @synopsis <user-email>
+	 * @synopsis <user-email|user-login|user-ID>
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp vipsupport remove-user user@domain.tld
+	 *     wp vipsupport remove-user 232
+	 *     wp vipsupport remove-user vip_user
 	 *
 	 */
 	public function remove_support_user( $args, $assoc_args ) {
 
-		$user_email = $args[0];
+		$user = $args[0];
+		if ( is_email( $user ) ) {
+			$by = 'email';
+		} elseif ( is_numeric( $user ) ) {
+			$by = 'id';
+		} else {
+			$by = 'login';
+		}
 
-		$success = User::remove( $user_email );
+		$success = User::remove( $user, $by );
 
 		if ( is_wp_error( $success ) ) {
 			\WP_CLI::error( $success->get_error_message() );
 		}
 
-		\WP_CLI::success( "Deleted user with email {$user_email}" );
+		\WP_CLI::success( "Deleted user {$user}" );
 	}
 
 
