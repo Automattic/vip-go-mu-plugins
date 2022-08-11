@@ -51,6 +51,6 @@
     "preact": "10.10.0",
     "preact-habitat": "3.3.0",
     "prismjs": "1.28.0",
-    "react-simple-code-editor": "0.11.2"
+    "react-simple-code-editor": "0.11.3"
   }
 }
