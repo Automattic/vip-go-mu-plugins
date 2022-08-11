@@ -19,11 +19,8 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 
 		delete_option( 'vipsupportrole_version' );
 
-		// Need to re-initialize roles for each test.
-		wp_roles()->for_site();
-
 		$this->vip_support_user = User::add( array(
-			'user_email' => 'vip-support@example.test',
+			'user_email' => 'vip-support@automattic.com',
 			'user_login' => 'vip-support',
 			'user_pass'  => 'password',
 		) );
