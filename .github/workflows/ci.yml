@@ -128,15 +128,7 @@ jobs:
         run: |
           if [ "$(git diff --ignore-space-at-eol search/search-dev-tools/ | wc -l)" -gt "0" ]; then
             echo "::warning::There are changes in the built files."
-            if [ "${{ github.actor }}" = 'dependabot[bot]' ] && [[ "${{ github.ref }}" != automation/* ]]; then
-              git config user.name "WordPress VIP Bot"
-              git config user.email github-actions@github.com
-              git checkout -b "automation/${{ github.ref }}" || git checkout "automation/${{ github.ref }}"
-              git add search/search-dev-tools/
-              git commit -m "Regenerate the bundle"
-              git push -u origin "automation/${{ github.ref }}" --force
-              gh pr create --title "Regenerate Search DevTools Bundle" --body "Regenerate the bundle" --base "${{ github.ref }}" --head "automation/${{ github.ref }}"
-            elif [ "${{ github.event.head_commit.committer.email }}" != "github-actions@github.com" ]; then
+            if [ "${{ github.event.head_commit.committer.email }}" != "github-actions@github.com" ]; then
               git config user.name "WordPress VIP Bot"
               git config user.email github-actions@github.com
               git config push.default "current"
@@ -149,4 +141,4 @@ jobs:
             fi
           fi
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
