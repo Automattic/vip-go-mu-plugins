@@ -18,7 +18,7 @@
   "author": "Automattic",
   "devDependencies": {
     "@automattic/eslint-plugin-wpvip": "^0.1.0-0",
-    "@playwright/test": "1.24.2",
+    "@playwright/test": "1.25.0",
     "asana-phrase": "0.0.8",
     "eslint": "^8.15.0",
     "eslint-plugin-playwright": "^0.10.0",
