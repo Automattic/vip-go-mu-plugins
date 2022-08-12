@@ -2,9 +2,11 @@
 
 namespace Automattic\VIP\Cache;
 
-use WP_Error;
+use \WP_Error;
 
-class Vary_Cache {
+require_once __DIR__ . '/class-vary-cache-base.php';
+
+class Vary_Cache implements Vary_Cache_Base {
 	const COOKIE_NOCACHE = 'vip-go-cb';
 	const COOKIE_SEGMENT = 'vip-go-seg';
 	const COOKIE_AUTH    = 'vip-go-auth';
@@ -19,7 +21,6 @@ class Vary_Cache {
 	 * Flag to indicate if this an encrypted group request
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     bool  true if encrypted
 	 */
 	private static $encryption_enabled = false;
@@ -28,7 +29,6 @@ class Vary_Cache {
 	 * Flag to indicate if the send_headers action was triggered
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     bool  true if headers were sent
 	 */
 	private static $did_send_headers = false;
@@ -37,7 +37,6 @@ class Vary_Cache {
 	 * Flag to indicate if we're in nocache mode.
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     bool  true if nocache enabled
 	 */
 	private static $is_user_in_nocache = false;
@@ -46,7 +45,6 @@ class Vary_Cache {
 	 * Flag to indicate if we should update the nocache cookie.
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     bool
 	 */
 	private static $should_update_nocache_cookie = false;
@@ -55,7 +53,6 @@ class Vary_Cache {
 	 * Flag to indicate if we should update the group/segment cookie
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     bool
 	 */
 	private static $should_update_group_cookie = false;
@@ -64,7 +61,6 @@ class Vary_Cache {
 	 * Member variable to store the parsed group values.
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     array  Key - Group,  Value - group value
 	 */
 	private static $groups = [];
@@ -73,7 +69,6 @@ class Vary_Cache {
 	 * Local reference for cookie expiry.
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 * @var     int expiration in seconds
 	 */
 	private static $cookie_expiry = MONTH_IN_SECONDS;
@@ -84,7 +79,6 @@ class Vary_Cache {
 	 * Should only be used after the `init` hook.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return boolean
 	 */
@@ -98,13 +92,12 @@ class Vary_Cache {
 	 * This bypasses all requests from the VIP Cache.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return boolean|WP_Error
 	 */
 	public static function set_nocache_for_user() {
 		if ( self::$did_send_headers ) {
-			return new WP_Error( 'did_send_headers', 'Failed to set nocache cookie; cannot be called after the `send_headers` hook has fired.' );
+			return new \WP_Error( 'did_send_headers', 'Failed to set nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
 
 		self::$is_user_in_nocache           = true;
@@ -119,13 +112,12 @@ class Vary_Cache {
 	 * Restores caching behaviour for all future requests.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return boolean|WP_Error
 	 */
 	public static function remove_nocache_for_user() {
 		if ( self::$did_send_headers ) {
-			return new WP_Error( 'did_send_headers', 'Failed to remove nocache cookie; cannot be called after the `send_headers` hook has fired.' );
+			return new \WP_Error( 'did_send_headers', 'Failed to remove nocache cookie; cannot be called after the `send_headers` hook has fired.' );
 		}
 
 		self::$is_user_in_nocache           = false;
@@ -136,8 +128,6 @@ class Vary_Cache {
 
 	/**
 	 * Convenience function to init the class.
-	 *
-	 * @access private
 	 */
 	public static function load() {
 		self::clear_groups();
@@ -148,8 +138,6 @@ class Vary_Cache {
 	 * Convenience function to reset the class.
 	 *
 	 * Primarily used to unit tests.
-	 *
-	 * @access private
 	 */
 	public static function unload() {
 		self::remove_filters();
@@ -166,8 +154,6 @@ class Vary_Cache {
 
 	/**
 	 * Adds custom filters required at the beginning and end of the plugin lifecycle
-	 *
-	 * @access private
 	 */
 	protected static function add_filters() {
 		add_action( 'init', [ self::class, 'parse_cookies' ] );
@@ -176,8 +162,6 @@ class Vary_Cache {
 
 	/**
 	 * Removes the custom filters
-	 *
-	 * @access private
 	 */
 	protected static function remove_filters() {
 		remove_action( 'init', [ self::class, 'parse_cookies' ] );
@@ -188,7 +172,6 @@ class Vary_Cache {
 	 * Set request to indicate the request will vary on one or more groups.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param  array $groups  One or more groups to vary on.
 	 * @return boolean
@@ -218,7 +201,6 @@ class Vary_Cache {
 	 * Convenience version of `register_groups`.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param  string $group A group to vary on.
 	 * @return boolean
@@ -238,7 +220,6 @@ class Vary_Cache {
 	 * Assigns the user to given group and optionally a value for that group. E.g. location=US
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param  string $group  Group name to vary the request on.
 	 * @param  string $value A value for the group.
@@ -246,21 +227,21 @@ class Vary_Cache {
 	 */
 	public static function set_group_for_user( $group, $value ) {
 		if ( self::$did_send_headers ) {
-			return new WP_Error( 'did_send_headers', sprintf( 'Failed to set group (%s => %s) for user; cannot be called after the `send_headers` hook has fired.', $group, $value ) );
+			return new \WP_Error( 'did_send_headers', sprintf( 'Failed to set group (%s => %s) for user; cannot be called after the `send_headers` hook has fired.', $group, $value ) );
 		}
 
 		$validate_group_result = self::validate_cookie_value( $group );
 		if ( is_wp_error( $validate_group_result ) ) {
-			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to set group (%s): %s', $group, $validate_group_result->get_error_message() ) );
+			return new \WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to set group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
 
 		$validate_value_result = self::validate_cookie_value( $value );
 		if ( is_wp_error( $validate_value_result ) ) {
-			return new WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to set group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
+			return new \WP_Error( 'invalid_vary_group_segment', sprintf( 'Failed to set group segment (%s): %s', $group, $validate_value_result->get_error_message() ) );
 		}
 
 		if ( ! array_key_exists( $group, self::$groups ) ) {
-			return new WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
+			return new \WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
 		}
 
 		self::$groups[ $group ] = $value;
@@ -274,7 +255,6 @@ class Vary_Cache {
 	 * Checks if the request has a group cookie matching a given group, regardless of segment value.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param  string $group Group name.
 	 *
@@ -293,7 +273,6 @@ class Vary_Cache {
 	 * Checks if the request has a group cookie matching a given group and segment. e.g. 'dev-group', 'yes'
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param  string $group Group name.
 	 * @param  string $segment Which segment within the group to check.
@@ -314,7 +293,6 @@ class Vary_Cache {
 	 * Returns the associated groups for the request.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return array  user's group-value pairs
 	 */
@@ -326,7 +304,6 @@ class Vary_Cache {
 	 * Sets the context of the the group segmentation to be encrypted or not.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return WP_Error|null
 	 */
@@ -344,7 +321,6 @@ class Vary_Cache {
 	 * Returns the encryption flag
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @return bool true if encryption is set for this request
 	 */
@@ -391,7 +367,6 @@ class Vary_Cache {
 	 * Parses our nocache and group cookies.
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 */
 	public static function parse_cookies() {
 		self::parse_nocache_cookie();
@@ -487,7 +462,6 @@ class Vary_Cache {
 	 * Adjust the default cookie expiry.
 	 *
 	 * @since   1.0.0
-	 * @access  public
 	 *
 	 * @param int $expiry Seconds in the future when the cookie should expire (e.g. MONTH_IN_SECONDS). Must be more than 1 hour.
 	 */
@@ -505,7 +479,6 @@ class Vary_Cache {
 	 * Sends headers (if needed).
 	 *
 	 * @since   1.0.0
-	 * @access  private
 	 */
 	public static function send_headers() {
 		if ( ! self::$did_send_headers ) {
@@ -635,11 +608,11 @@ class Vary_Cache {
 	 */
 	private static function validate_cookie_value( $value ) {
 		if ( preg_match( '/[^_0-9a-zA-Z-]+/', $value ) > 0 ) {
-			return new WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
+			return new \WP_Error( 'vary_cache_group_invalid_chars', 'Invalid character(s). Can only use alphanumerics, dash and underscore' );
 		}
 
 		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
-			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+			return new \WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
 
 		return true;
