@@ -42,13 +42,15 @@ class PluginsManager {
 	public function display_update_count_bubble_in_menu(): void {
 		global $menu;
 
-		foreach ( $menu as $menu_key => $menu_data ) {
-			if ( 'plugins.php' === $menu_data[2] ) {
-				$count         = count( $this->update_data );
-				$update_bubble = sprintf( '<span class="vip-update-plugins count-%s"><span class="vip-plugin-count">%s</span></span>', $count, number_format_i18n( $count ) );
+		if ( isset( $menu ) && is_array( $menu ) ) {
+			foreach ( $menu as $menu_key => $menu_data ) {
+				if ( 'plugins.php' === $menu_data[2] ) {
+					$count         = count( $this->update_data );
+					$update_bubble = sprintf( '<span class="vip-update-plugins count-%s"><span class="vip-plugin-count">%s</span></span>', $count, number_format_i18n( $count ) );
 
-				/* translators: Number of available plugin updates */
-				$menu[ $menu_key ][0] = sprintf( __( 'Plugins %s' ), $update_bubble ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+					/* translators: Number of available plugin updates */
+					$menu[ $menu_key ][0] = sprintf( __( 'Plugins %s' ), $update_bubble ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				}
 			}
 		}
 	}
