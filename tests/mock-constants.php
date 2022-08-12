@@ -139,3 +139,19 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB {
 		return Constant_Mocker::constant( $constant );
 	}
 }
+
+namespace Automattic\VIP\Files {
+	use Automattic\Test\Constant_Mocker;
+
+	function define( $constant, $value ) {
+		return Constant_Mocker::define( $constant, $value );
+	}
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
