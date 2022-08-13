@@ -1,6 +1,8 @@
 <?php
 
 namespace Automattic\Test {
+
+	use Exception;
 	use InvalidArgumentException;
 
 	abstract class Constant_Mocker {
@@ -16,10 +18,12 @@ namespace Automattic\Test {
 
 		public static function define( string $constant, $value ): void {
 			if ( isset( self::$constants[ $constant ] ) ) {
-				throw new InvalidArgumentException( sprintf( 'Constant "%s" is already defined', $constant ) );
+				throw new InvalidArgumentException( sprintf( "Constant \"%s\" is already defined. Stacktrace:\n%s", $constant, self::$constants[ $constant ][1] ) );
 			}
 
-			self::$constants[ $constant ] = $value;
+			$e = new Exception();
+
+			self::$constants[ $constant ] = [ $value, $e->getTraceAsString() ];
 		}
 
 		public static function defined( string $constant ): bool {
@@ -31,7 +35,7 @@ namespace Automattic\Test {
 				throw new InvalidArgumentException( sprintf( 'Constant "%s" is not defined', $constant ) );
 			}
 
-			return self::$constants[ $constant ];
+			return self::$constants[ $constant ][0];
 		}
 	}
 }
