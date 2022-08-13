@@ -1,7 +1,6 @@
 <?php
 
-use PHPUnit\Framework\ExpectationFailedException;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use PHPMailer\PHPMailer\PHPMailer;
 use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
@@ -109,5 +108,24 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 
 		$this->assertThat( $mailer->get_sent()->body, $this->logicalNot( $this->stringContains( 'Content-Disposition: attachment; filename=' ) ) );
+	}
+
+	/**
+	 * @ticket GH-1066
+	 */
+	public function test_smtp_servers_not_overwritten(): void {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+
+		$expected = 'preset-server';
+
+		add_action( 'phpmailer_init', function ( PHPMailer &$phpmailer ) use ( $expected ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host = $expected;
+		} );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		self::assertEquals( $expected, $mailer->Host );
 	}
 }
