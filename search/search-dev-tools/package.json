@@ -49,7 +49,6 @@
     "clipboard": "^2.0.11",
     "pluralize": "8.0.0",
     "preact": "10.10.2",
-    "preact-habitat": "3.3.0",
     "prismjs": "1.28.0",
     "react-simple-code-editor": "0.11.3"
   }
