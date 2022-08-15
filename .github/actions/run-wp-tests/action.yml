@@ -112,8 +112,10 @@ runs:
         OPTIONS=
         if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
           OPTIONS="${OPTIONS} --coverage-clover=clover.xml"
+        else
+          OPTIONS="${OPTIONS} --order-by=random"
         fi
-        "${PHPUNIT}" --order-by=random ${OPTIONS}
+        "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v3
