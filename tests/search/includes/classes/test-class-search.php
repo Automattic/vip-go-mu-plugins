@@ -1434,7 +1434,7 @@ class Search_Test extends WP_UnitTestCase {
 			'role'       => 'administrator',
 		] );
 
-		set_current_user( $admin_user );
+		wp_set_current_user( $admin_user );
 
 		$es = new \Automattic\VIP\Search\Search();
 
