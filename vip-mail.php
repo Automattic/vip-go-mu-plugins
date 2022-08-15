@@ -11,14 +11,16 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
 
+use PHPMailer\PHPMailer\PHPMailer;
+
 if ( version_compare( $wp_version, '5.5', '>=' ) ) {
-	if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
+	if ( ! class_exists( PHPMailer::class ) ) {
 		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
 		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
 		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
 	}
 
-	class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
+	class VIP_PHPMailer extends PHPMailer {
 		/**
 		 * Check whether a file path is of a permitted type.
 		 *
@@ -38,7 +40,7 @@ if ( version_compare( $wp_version, '5.5', '>=' ) ) {
 		}
 	}
 
-	if ( defined( 'USE_VIP_PHPMAILER' ) && true === USE_VIP_PHPMAILER ) {
+	if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) ) {
 		global $phpmailer;
 		$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 	}
@@ -58,17 +60,24 @@ class VIP_Noop_Mailer {
 
 class VIP_SMTP {
 	public function init() {
-		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ) );
-		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ) );
+		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
+		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
 		}
 	}
 
-	public function phpmailer_init( &$phpmailer ) {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === VIP_BLOCK_WP_MAIL ) {
+	/**
+	 * @param PHPMailer $phpmailer 
+	 */
+	public function phpmailer_init( &$phpmailer ): void {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
+		if ( 'smtp' === $phpmailer->Mailer ) {
 			return;
 		}
 
@@ -81,6 +90,8 @@ class VIP_SMTP {
 		if ( count( $all_smtp_servers ) > 1 ) {
 			shuffle( $all_smtp_servers );
 		}
+
+		/** @var PHPMailer $phpmailer */
 
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
