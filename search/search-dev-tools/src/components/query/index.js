@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { h } from 'preact';
-import { useContext, useEffect, useState, useRef } from 'preact/hooks';
+import { useCallback, useContext, useEffect, useState, useRef } from 'preact/hooks';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
@@ -42,12 +42,11 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	const queryResultRef = useRef( null );
 
 	const copyButtonDOMSelector = '#query-response-copy-handle';
-	let cbHandler;
 
 	/**
 	 * @param {Object} query the query to Run
 	 */
-	const fetchForQuery = async query => {
+	const fetchForQuery = useCallback( async query => {
 		try {
 			const res = await postData( window.VIPSearchDevTools.ajaxurl, {
 				action: window.VIPSearchDevTools.action,
@@ -55,15 +54,15 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 				query,
 			}, window.VIPSearchDevTools.nonce );
 
-			setState( { ...state, result: JSON.stringify( res?.result?.body, null, 2 ) } );
+			setState( prevState => ( { ...prevState, result: JSON.stringify( res?.result?.body, null, 2 ) } ) );
 		} catch ( err ) {
 			// eslint-disable-next-line no-console
 			console.log( err );
 		}
-	};
+	}, [ url ] );
 
 	useEffect( () => {
-		cbHandler = new ClipboardJS( copyButtonDOMSelector );
+		const cbHandler = new ClipboardJS( copyButtonDOMSelector );
 		cbHandler.on( 'success', evt => {
 			document.querySelector( copyButtonDOMSelector ).innerHTML = 'COPIED!';
 			setTimeout( () => {
@@ -84,7 +83,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		if ( ! state.editing ) {
 			fetchForQuery( state.query );
 		}
-	}, [ state.query, state.editing ] );
+	}, [ state.query, state.editing, initialState.query, fetchForQuery ] );
 
 	const colorizeRequestTime = timeMs => {
 		let cls;
@@ -144,7 +143,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 							.split( '\n' )
 							.map(
 								line =>
-									`<span class="${ style.container_editor_line_number }">${ line }</span>`
+									`<span class="${ style.container_editor_line_number }">${ line }</span>`,
 							)
 							.join( '\n' )
 					}
@@ -159,10 +158,10 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<div className={ style.query_res }>
 				<div className={ style.query_result }>
 					<div className={ style.query_actions }>
-						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text" dangerouslySetInnerHTML={ { __html: 'COPY' } }></button>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>
 					</div>
 					<pre className="line-numbers">
-						<code className="language-json" ref={ queryResultRef } id="query-response-text" dangerouslySetInnerHTML={ { __html: state.result } }></code>
+						<code className="language-json" ref={ queryResultRef } id="query-response-text">{ state.result }</code>
 					</pre>
 				</div>
 			</div>

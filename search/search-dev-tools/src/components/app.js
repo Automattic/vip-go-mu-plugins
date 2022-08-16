@@ -1,4 +1,3 @@
-
 import { h } from 'preact';
 import { useContext, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
@@ -42,7 +41,7 @@ const App = () => {
 						<Queries />
 					</div>
 				</Overlay> ),
-				document.getElementById( 'search-dev-tools-portal' ) // eslint-disable-line no-undef
+				document.getElementById( 'search-dev-tools-portal' ), // eslint-disable-line no-undef
 			) }
 		</div>
 	</SearchContext.Provider>

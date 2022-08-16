@@ -20,7 +20,7 @@ const Overlay = props => {
 			// Remove event listener to avoid memory leaks
 			window.removeEventListener( 'keydown', closeWithEscape );
 		};
-	}, [] );
+	}, [ closeWithEscape ] );
 
 	return isVisible
 		? (
