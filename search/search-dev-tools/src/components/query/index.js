@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
 import { h } from 'preact';
-import { useCallback, useContext, useEffect, useState, useRef } from 'preact/hooks';
+import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
@@ -38,8 +38,6 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 	};
 
 	const [ state, setState ] = useState( initialState );
-
-	const queryResultRef = useRef( null );
 
 	const copyButtonDOMSelector = '#query-response-copy-handle';
 
@@ -161,7 +159,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>
 					</div>
 					<pre className="line-numbers">
-						<code className="language-json" ref={ queryResultRef } id="query-response-text">{ state.result }</code>
+						<code className="language-json" id="query-response-text">{ state.result }</code>
 					</pre>
 				</div>
 			</div>
