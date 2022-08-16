@@ -254,6 +254,7 @@ class Site_Details_Index {
 
 	/**
 	 * Gather all the information about Parsely
+	 * @return array Parsely plugin info.
 	 */
 	public function get_parsely_info() {
 		$parsely      = get_option( 'parsely' );
@@ -293,6 +294,7 @@ class Site_Details_Index {
 
 	/**
 	 * The way that the plugin is used in WordPress
+	 * @return string integration type.
 	 */
 	public function get_parsely_integration_type() {
 		// is enabled through mu-plugins
