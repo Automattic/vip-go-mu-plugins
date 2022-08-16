@@ -22,20 +22,19 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        # JetPack, Single-Site, PHP 7.4
-          - { wp: 5.6.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+        # Jetpack, Single-Site, PHP 7.4
           - { wp: 5.7.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.8.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.9.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
-        # JetPack, Multi-Site, PHP 7.4
+        # Jetpack, Multi-Site, PHP 7.4
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '7.4', phpunit: 7 }
-        # No JetPack, WP latest, PHP 7.4
+        # No Jetpack, WP latest, PHP 7.4
           - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
-        # PHP 8.0, JetPack 
+        # PHP 8.0, Jetpack
           - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: '', coverage: 'yes' }
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: '', coverage: 'yes' }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: '' }

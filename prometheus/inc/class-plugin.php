@@ -12,7 +12,7 @@ use WP;
 use WP_Query;
 
 class Plugin {
-	private static ?Plugin $instance       = null;
+	protected static ?Plugin $instance     = null;
 	protected ?RegistryInterface $registry = null;
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
@@ -22,7 +22,7 @@ class Plugin {
 	 */
 	public static function get_instance(): self {
 		if ( ! self::$instance ) {
-			self::$instance = new self();
+			self::$instance = new static();
 		}
 
 		return self::$instance;
@@ -32,27 +32,38 @@ class Plugin {
 	 * @codeCoverageIgnore -- invoked before the tests start
 	 */
 	protected function __construct() {
-		add_action( 'plugins_loaded', [ $this, 'plugins_loaded' ] );
+		add_action( 'vip_mu_plugins_loaded', [ $this, 'init_registry' ], 9 );
+
+		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
+		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
+		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
+
 		add_action( 'init', [ $this, 'init' ] );
+
+		do_action( 'vip_prometheus_loaded' );
 	}
 
-	public function plugins_loaded(): void {
+	public function init_registry() {
 		$this->registry = self::create_registry();
+	}
 
-		$available_collectors = apply_filters( 'vip_prometheus_collectors', [] );
+	public function load_collectors(): void {
+		$available_collectors = apply_filters( 'vip_prometheus_collectors', [], current_action() );
 		if ( ! is_array( $available_collectors ) ) {
 			$available_collectors = [];
 		}
 
-		foreach ( $available_collectors as $key => $collector ) {
-			if ( is_object( $collector ) && $collector instanceof CollectorInterface ) {
-				$collector->initialize( $this->registry );
-			} else {
-				unset( $available_collectors[ $key ] );
-			}
-		}
+		$available_collectors = array_filter( $available_collectors, fn ( $collector ) => $collector instanceof CollectorInterface );
 
-		$this->collectors = $available_collectors;
+		$available_collectors = array_udiff(
+			$available_collectors,
+			$this->collectors,
+			fn ( $a, $b ) => spl_object_id( $a ) - spl_object_id( $b )
+		);
+
+		array_walk( $available_collectors, fn ( CollectorInterface $collector ) => $collector->initialize( $this->registry ) );
+
+		$this->collectors = array_merge( $this->collectors, $available_collectors );
 	}
 
 	public function init(): void {
@@ -69,11 +80,19 @@ class Plugin {
 	 * @return string[]
 	 */
 	public function query_vars( $vars ): array {
+		if ( ! is_array( $vars ) ) {
+			$vars = [];
+		}
+
 		$vars[] = 'metrics';
 		return $vars;
 	}
 
-	public function request( array $query_vars ): array {
+	public function request( $query_vars ): array {
+		if ( ! is_array( $query_vars ) ) {
+			$query_vars = [];
+		}
+
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 		if ( '/metrics' === $request_uri && is_proxied_request() ) {
