@@ -16,7 +16,7 @@ import pluralize from 'pluralize';
 
 const AdminBarButton = props => {
 	const { queries } = useContext( SearchContext );
-	return ( <button {...props}>Search: { pluralize( 'query', queries.length, true ) }</button> );
+	return ( <button { ...props }>Search: { pluralize( 'query', queries.length, true ) }</button> );
 };
 
 /**
@@ -31,19 +31,19 @@ const App = () => {
 	const closeOverlay = () => setVisible( false );
 	const toggleOverlay = () => setVisible( ! visible );
 
-	return ( <SearchContext.Provider value={window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] }}>
+	return ( <SearchContext.Provider value={ window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] } }>
 		<div className="search-dev-tools__wrapper">
-			<AdminBarButton class={style.ab_btn} onClick={ toggleOverlay } />
-			{createPortal(
-				( <Overlay isVisible={visible} closeOverlay={closeOverlay} opacity="100">
-					<div className={style.vip_search_dev_tools}>
+			<AdminBarButton class={ style.ab_btn } onClick={ toggleOverlay } />
+			{ createPortal(
+				( <Overlay isVisible={ visible } closeOverlay={ closeOverlay } opacity="100">
+					<div className={ style.vip_search_dev_tools }>
 						<h4 className="vip-h4 main_caption">Enterprise Search Dev Tools</h4>
 						<GeneralInformation />
 						<Queries />
 					</div>
 				</Overlay> ),
 				document.getElementById( 'search-dev-tools-portal' ) // eslint-disable-line no-undef
-			)}
+			) }
 		</div>
 	</SearchContext.Provider>
 	);

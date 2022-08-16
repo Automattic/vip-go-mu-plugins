@@ -6,16 +6,10 @@
 		"plugin:@automattic/wpvip/base",
 		"plugin:@automattic/wpvip/react"
 	],
-	"rules": {
-		// Override our default settings just for this directory
-		"react/jsx-curly-spacing": "off",
-		"react/react-in-jsx-scope": "off",
-		"wpcalypso/import-docblock": "off",
-		"react/prop-types": "off",
-		"jest/require-to-throw-message": "off",
-		"no-unused-vars": [ 2, { "varsIgnorePattern": "^h|React$", "args": "none" } ]
-	},
 	"settings": {
+		"react": {
+			"pragma": "h"
+		},
 		"jsdoc": {
 			"mode": "typescript"
 		}
