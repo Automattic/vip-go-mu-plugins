@@ -1,11 +1,14 @@
 {
-	"parserOptions": {
-		"requireConfigFile": false
-	},
+	"root": true,
+	"plugins": ["@babel"],
 	"extends": [
 		"plugin:@automattic/wpvip/base",
-		"plugin:@automattic/wpvip/react"
+		"plugin:@automattic/wpvip/react",
+		"preact"
 	],
+	"rules": {
+		"jest/no-deprecated-functions": "off"
+	},
 	"settings": {
 		"react": {
 			"pragma": "h"
