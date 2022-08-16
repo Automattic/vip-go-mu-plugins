@@ -25,7 +25,6 @@ async function globalSetup( config: FullConfig ) {
     await context.tracing.start( { name: 'global-setup', screenshots: true, snapshots: true } );
 
     try {
-
         // Log in to wp-admin
         await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
         const loginPage = new LoginPage( page );
@@ -48,7 +47,6 @@ async function globalSetup( config: FullConfig ) {
         await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
         const editorPage = new EditorPage( page );
         await editorPage.dismissWelcomeTour();
-
     } catch ( error ) {
         // eslint-disable-next-line no-console
         console.log( error );
@@ -66,7 +64,7 @@ async function globalSetup( config: FullConfig ) {
         fs.rmSync( artifactsDir, { recursive: true, force: true } );
     } else {
         // Stop test run if login fails
-        throw new Error( 'Setup unsuccessful - Tests will not run' )
+        throw new Error( 'Setup unsuccessful - Tests will not run' );
     }
 }
 
