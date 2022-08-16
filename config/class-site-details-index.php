@@ -24,29 +24,27 @@ class Site_Details_Index {
 	private const LOG_FEATURE_NAME = 'site_details';
 
 	/**
+	 * Strings for call to the Parsely API.
+	 * Necessary to determine the service type.
+	 * The /related endpoint does not require an api secret
+	 * this makes it ideal for validating an apikey
+	 */
+	private const PARSELY_API_URL      = 'https://api.parsely.com/v2';
+	private const PARSELY_API_ENDPOINT = '/related';
+
+	/**
 	 * Strings for Parsely Integration types
 	 */
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_FILTER       = 'MUPLUGINS_FILTER';
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_OPTION       = 'MUPLUGINS_OPTION';
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_SELF_MANAGED = 'SELF_MANAGED';
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_NONE         = 'NONE';
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
+	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
+	const PARSELY_INTEGRATION_TYPE_SELF_MANAGED     = 'SELF_MANAGED';
+	const PARSELY_INTEGRATION_TYPE_NONE             = 'NONE';
 
 	/**
 	 * Strings for Parsely service types
 	 */
-	const PARSELY_SERVICE_TYPE_PAID   = 'PAID';
-	const PARSELY_SERVICE_TYPE_SILENT = 'SILENT';
-	const PARSELY_SERVICE_TYPE_NONE   = 'NONE';
-
-	/**
-	 * Strings for Parsely service enabled/disabled types
-	 */
-	const PARSELY_SERVICE_ENABLED_TYPE_FILTER  = 'FILTER';
-	const PARSELY_SERVICE_ENABLED_TYPE_PLUGIN  = 'PLUGIN';
-	const PARSELY_SERVICE_ENABLED_TYPE_FORM    = 'FORM';
-	const PARSELY_SERVICE_DISABLED_TYPE_FILTER = 'FILTER';
-	const PARSELY_SERVICE_DISABLED_TYPE_PLUGIN = 'PLUGIN';
-	const PARSELY_SERVICE_DISABLED_TYPE_FORM   = 'FORM';
+	const PARSELY_SERVICE_TYPE_PAID = 'PAID';
+	const PARSELY_SERVICE_TYPE_NONE = 'NONE';
 
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
@@ -254,26 +252,99 @@ class Site_Details_Index {
 		return $jetpack_info;
 	}
 
-
-
 	/**
 	 * Gather all the information about Parsely
 	 */
 	public function get_parsely_info() {
+		$parsely      = get_option( 'parsely' );
 		$parsely_info = [];
 
-		$parsely_info['active']               = \Parsely::is_active();
-		$parsely_info['integration_type']     = get_parsely_integration_type(); // "MUPLUGINS_FILTER", "MUPLUGINS_OPTION, "SELF_MANAGED", "NONE" ( How parse.ly is enabled )
-		$parsely_info['parsely_service_type'] = get_parsely_service_type(); // "NONE", "SILENT", "PAID" ( How the service is )
-		$parsely_info['parsely_date_enabled'] = get_parsely_date_enabled();
-		$parsely_info['date_disabled']        = get_parsely_date_disabled();
-		$parsely_info['disable_type']         = get_parsely_disabled_type(); // Alex will send list (filter, plugin form, etc..)
-		$parsely_info['enabled_type']         = get_parsely_enabled_type(); // Alex will send list
-		$parsely_info['version']              = PARSELY__VERSION;
+		$parsely_info['active']           = false;
+		$parsely_info['integration_type'] = $this->get_parsely_integration_type();
+
+		if ( self::PARSELY_INTEGRATION_TYPE_MUPLUGINS === $parsely_info['integration_type'] ||
+			self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT === $parsely_info['integration_type'] ||
+			self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED === $parsely_info['integration_type']
+		) {
+			$parsely_info['active'] = true;
+		}
+
+		$parsely_info['parsely_service_type'] = $this->get_parsely_service_type( $parsely );
+		$parsely_info['version']              = $this->get_parsely_version( $parsely );
 
 		return $parsely_info;
 	}
 
+	/**
+	 * Gets the Parsely version
+	 * @param array $parsely The Parsely options.
+	 * @return string The version.
+	 */
+	public function get_parsely_version( $parsely ) {
+		if ( ! $parsely || ! isset( $parsely['plugin_version'] ) ) {
+			$supported_versions = \Automattic\VIP\WP_Parsely_Integration\SUPPORTED_VERSIONS;
+			$plugin_version     = apply_filters( 'wpvip_parsely_version', $supported_versions[0] );
+
+			return $plugin_version;
+		}
+
+		return $parsely['plugin_version'];
+	}
+
+	/**
+	 * The way that the plugin is used in WordPress
+	 */
+	public function get_parsely_integration_type() {
+		// is enabled through mu-plugins
+		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
+			if ( has_filter( 'wpvip_parsely_hide_ui_for_mu' ) ) {
+				return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT;
+			}
+
+			return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS;
+		}
+
+		// is enabled as a standard plugin
+		$plugin = 'wp-parsely/wp-parsely.php';
+		if ( in_array( $plugin, (array) get_option( 'active_plugins', array() ), true ) || is_plugin_active_for_network( $plugin ) ) {
+			return self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED;
+		};
+
+		return self::PARSELY_INTEGRATION_TYPE_NONE;
+	}
+
+	/**
+	 * The way that the service is being used
+	 * @param array $parsely The Parsely options.
+	 * @return string service type.
+	 */
+	public function get_parsely_service_type( $parsely ) {
+		if ( is_array( $parsely ) && isset( $parsely['apikey'] ) && '' !== $parsely['apikey'] ) {
+			$result = $this->call_parsely_api( $parsely );
+			if ( 200 === $result['response']['code'] ) {
+					return self::PARSELY_SERVICE_TYPE_PAID;
+			}
+		}
+
+		return self::PARSELY_SERVICE_TYPE_NONE;
+	}
+
+	/**
+	 * Makes a call to the parsely API endpoint
+	 * @param array $parsely The Parsely options.
+	 * @return array http response.
+	 */
+	private function call_parsely_api( $parsely ) {
+		$url  = self::PARSELY_API_URL . self::PARSELY_API_ENDPOINT . '?apikey=' . $parsely['apikey'];
+		$args = array(
+			'method'  => 'GET',
+			'headers' => array(
+				'Content-Type' => 'application/json',
+			),
+		);
+
+		return vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
+	}
 
 	/**
 	 * Get the site details for the site the code is running on.
