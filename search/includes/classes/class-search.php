@@ -143,6 +143,7 @@ class Search {
 
 	private static $query_count_ttl;
 
+	private const DEFAULT_SEARCH_LENGTH          = 80;
 	private const MAX_SEARCH_LENGTH              = 255;
 	private const DISABLE_POST_META_ALLOW_LIST   = array();
 	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
@@ -1769,7 +1770,13 @@ class Search {
 		if ( $query->is_search() ) {
 			$search = $query->get( 's' );
 
-			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
+			$search_length = ! current_user_can( 'edit_posts' ) ? apply_filters( 'vip_search_char_length', self::DEFAULT_SEARCH_LENGTH ) : self::MAX_SEARCH_LENGTH;
+
+			if ( $search_length > self::MAX_SEARCH_LENGTH ) {
+				$search_length = self::MAX_SEARCH_LENGTH;
+			}
+
+			$truncated_search = substr( $search, 0, $search_length );
 
 			$query->set( 's', $truncated_search );
 		}
