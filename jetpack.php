@@ -156,6 +156,19 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
+			// In a rare edge case, the plugin could be present in `active_plugins` option,
+			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
+			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
+			add_filter( 'option_active_plugins', function( $option ) {
+				foreach( $option as $i => $plugin ) {
+					if ( 'jetpack/jetpack.php' === $plugin ) {
+						unset( $option[ $i ] );
+						break;
+					}
+				}
+				return $option;
+			} );
+
 			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
