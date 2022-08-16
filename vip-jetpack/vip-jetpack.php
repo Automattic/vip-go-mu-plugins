@@ -716,3 +716,41 @@ function vip_remove_jetpack_search_menu_page() {
 	);
 }
 add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX );
+
+/**
+ * Account for X-Mobile-Class header in jetpack_is_mobile()
+ *
+ * @param bool|string $matches Boolean if current UA matches $kind or not. If
+ * $return_matched_agent is true, should return the UA string
+ * @param string      $kind Category of mobile device being checked. Can be 'any', 'smart' or 'dumb'.
+ * @param bool        $return_matched_agent Boolean indicating if the UA should be returned
+ *
+ * @return bool|string $matches Boolean if current UA matches $kind or not. If
+ * $return_matched_agent is true, should return the UA string
+ */
+function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
+	if ( ! isset( $_SERVER['HTTP_X_MOBILE_CLASS'] ) || $return_matched_agent ) {
+		// No value set or expectation to return matched agent, return early.
+		return $matches;
+	}
+
+	// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
+	$x_mobile_class = sanitize_text_field( $_SERVER['HTTP_X_MOBILE_CLASS'] ); // "desktop", "smart", "dumb", "tablet"
+
+	if ( 'desktop' === $x_mobile_class ) {
+		return false;
+	}
+
+	if ( 'smart' === $kind || 'dumb' === $kind ) {
+		$matches = $kind === $x_mobile_class;
+	} elseif ( 'any' === $kind ) {
+		$matches = true;
+	}
+
+	return $matches;
+}
+$is_rolled_out = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'jetpack-is-mobile' );
+
+if ( $is_rolled_out ) {
+	add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
+}

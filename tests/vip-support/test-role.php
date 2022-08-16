@@ -6,6 +6,7 @@
 namespace Automattic\VIP\Support_User\Tests;
 
 use Automattic\VIP\Support_User\Role;
+use Automattic\VIP\Support_User\User;
 use WP_UnitTestCase;
 
 /**
@@ -17,33 +18,57 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		parent::setUp();
 
 		delete_option( 'vipsupportrole_version' );
+
+		$this->vip_support_user = User::add( array(
+			'user_email' => 'vip-support@automattic.com',
+			'user_login' => 'vip-support',
+			'user_pass'  => 'password',
+		) );
+
+		$this->admin_user = $this->factory->user->create( [
+			'user_email' => 'admin@automattic.com',
+			'user_login' => 'vip_admin',
+			'role'       => 'administrator',
+		] );
 	}
 
 	public function test_role_existence() {
 		Role::init()->maybe_upgrade_version();
 
-		$roles = get_editable_roles();
+		$roles = wp_roles()->roles;
 
 		$this->assertArrayHasKey( Role::VIP_SUPPORT_ROLE, $roles );
 		$this->assertArrayHasKey( Role::VIP_SUPPORT_INACTIVE_ROLE, $roles );
 	}
 
-	public function test_role_order() {
-
-		// Arrange
-		// Trigger the update method call on admin_init,
-		// this sets up the role
+	public function test_editable_role__vipsupport() {
 		Role::init()->maybe_upgrade_version();
 
-		// Act
+		wp_set_current_user( $this->vip_support_user );
+
 		$roles      = get_editable_roles();
 		$role_names = array_keys( $roles );
 
-		// Assert
-		// To show up last, the VIP Support Inactive role will be
-		// the first index in the array
+		$this->assertArrayHasKey( Role::VIP_SUPPORT_ROLE, $roles );
+		$this->assertArrayHasKey( Role::VIP_SUPPORT_INACTIVE_ROLE, $roles );
+
 		$first_role = array_shift( $role_names );
 		$this->assertTrue( Role::VIP_SUPPORT_INACTIVE_ROLE === $first_role );
+	}
+
+	public function test_editable_role__admin() {
+		Role::init()->maybe_upgrade_version();
+
+		wp_set_current_user( $this->admin_user );
+
+		$roles      = get_editable_roles();
+		$role_names = array_keys( $roles );
+
+		$this->assertArrayNotHasKey( Role::VIP_SUPPORT_ROLE, $roles );
+		$this->assertArrayNotHasKey( Role::VIP_SUPPORT_INACTIVE_ROLE, $roles );
+
+		$first_role = array_shift( $role_names );
+		$this->assertFalse( Role::VIP_SUPPORT_INACTIVE_ROLE === $first_role );
 	}
 
 	public function test__only_run_upgrade_once() {

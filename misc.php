@@ -118,12 +118,11 @@ add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
  * that HTTPS is enforced at the web server level in production,
  * meaning non-HTTPS API calls will result in a 406 error.
  */
-if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
-	add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl' );
-}
-
+add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl', 100 );
 function _vip_filter_rest_url_for_ssl( $url ) {
-	$url = set_url_scheme( $url, 'https' );
+	if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+		$url = set_url_scheme( $url, 'https' );
+	}
 
 	return $url;
 }
