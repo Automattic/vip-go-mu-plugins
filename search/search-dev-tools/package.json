@@ -17,7 +17,7 @@
     "build/*"
   ],
   "devDependencies": {
-    "@automattic/eslint-plugin-wpvip": "^0.1.0-0",
+    "@automattic/eslint-plugin-wpvip": "^0.3.0",
     "@babel/core": "^7.16.0",
     "@babel/eslint-parser": "^7.18.2",
     "@babel/plugin-proposal-class-properties": "^7.16.0",

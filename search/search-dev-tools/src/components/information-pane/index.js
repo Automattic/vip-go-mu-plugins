@@ -19,10 +19,10 @@ const EXPAND_THRESHOLD = 2;
 export const GeneralInformation = () => {
 	const { queries, information } = useContext( SearchContext );
 	return ( <div>
-		<h2 className={`vip-h2 ${ style.query_count }`}>{pluralize( 'query', queries.length, true )} { pluralize( 'was', queries.length ) } run on this page</h2>
+		<h2 className={ `vip-h2 ${ style.query_count }` }>{ pluralize( 'query', queries.length, true ) } { pluralize( 'was', queries.length ) } run on this page</h2>
 
-		<div className={style.info_wrapper}>
-			{information.map( ( info, idx ) => ( <InfoBlock key={idx} {...info} /> ) ) }
+		<div className={ style.info_wrapper }>
+			{ information.map( ( info, idx ) => ( <InfoBlock key={ idx } { ...info } /> ) ) }
 		</div>
 	</div> );
 };
@@ -49,12 +49,12 @@ export const InfoBlock = ( { label, value, options = { collapsible: false } } ) 
 	const valueLength = value.length;
 	const hasMore = isArrayValue && valueLength > EXPAND_THRESHOLD ? `+ ${ pluralize( 'other', valueLength - EXPAND_THRESHOLD, true ) }` : '';
 
-	return ( <div className={cx( {
+	return ( <div className={ cx( {
 		[ style.info_block ]: true,
 		[ style.info_block_collapsible ]: options.collapsible || false,
 		[ style.info_block_collapsed ]: collapsed,
-	} )}>
-		<h5 className={style.info_label} onClick={ toggleCollapsed }>{ label }</h5>
+	} ) }>
+		<h5 className={ style.info_label } onClick={ toggleCollapsed }>{ label }</h5>
 		{ options.collapsible
 			? (
 				<>
