@@ -8,7 +8,7 @@ import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
 import cx from 'classnames';
 import pluralize from 'pluralize';
-import ClipboardJS from "clipboard";
+import ClipboardJS from 'clipboard';
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
@@ -36,9 +36,9 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 		result: txtResult,
 		collapsed: true,
 	};
-	
+
 	const [ state, setState ] = useState( initialState );
-	
+
 	const queryResultRef = useRef( null );
 
 	const copyButtonDOMSelector = '#query-response-copy-handle';
@@ -97,7 +97,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			cls = 'red-60';
 		}
 
-		return <span style={{ color: `var(--vip-${cls})`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
+		return <span style={{ color: `var(--vip-${ cls })`, fontWeight: 'bold' }}>{ timeMs }ms</span>;
 	};
 
 	return ( <div className={cx( style.query_wrap, state.collapsed ? style.query_collapsed : null )}>
@@ -151,15 +151,15 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					padding={null}
 					className={style.container_editor}
 					style={{
-						fontSize: "var(--vip-sdt-editor-font-size)",
-						lineHeight: "1.2em"
+						fontSize: 'var(--vip-sdt-editor-font-size)',
+						lineHeight: '1.2em',
 					}}
 				/>
 			</div>
 			<div className={style.query_res}>
 				<div className={style.query_result}>
 					<div className={style.query_actions}>
-						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text" dangerouslySetInnerHTML={{__html: 'COPY'}}></button>
+						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text" dangerouslySetInnerHTML={{ __html: 'COPY' }}></button>
 					</div>
 					<pre className="line-numbers">
 						<code className="language-json" ref={queryResultRef} id="query-response-text" dangerouslySetInnerHTML={{ __html: state.result }}></code>
