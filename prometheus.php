@@ -17,11 +17,11 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-post-stats-collector.php',
 	];
 
-	foreach( $files as $file ) {
+	foreach ( $files as $file ) {
 		if ( ! file_exists( __DIR__ . $file ) ) {
 			return; // Bail early if one of the files doesn't exist.
 		} else {
-			require_once( __DIR__ . $file );
+			require_once __DIR__ . $file;
 		}
 	}
 
