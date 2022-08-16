@@ -160,8 +160,12 @@ function vip_jetpack_load() {
 			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
 			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
 			add_filter( 'option_active_plugins', function( $option ) {
+				if ( ! is_array( $option ) ) {
+					return $option;
+				}
+
 				foreach( $option as $i => $plugin ) {
-					if ( 'jetpack/jetpack.php' === $plugin ) {
+					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
 						unset( $option[ $i ] );
 						break;
 					}
