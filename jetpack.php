@@ -164,7 +164,7 @@ function vip_jetpack_load() {
 					return $option;
 				}
 
-				foreach( $option as $i => $plugin ) {
+				foreach ( $option as $i => $plugin ) {
 					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
 						unset( $option[ $i ] );
 						break;
