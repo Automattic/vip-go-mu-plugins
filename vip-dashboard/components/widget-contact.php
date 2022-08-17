@@ -46,7 +46,7 @@ function render_vip_dashboard_widget_contact() {
 				<div class="contact-form__input">
 					<textarea name="details" rows="8" id="contact-form__details" placeholder="Please include as much information possible about the issue, including relevant domain names and your investigation so far."></textarea>
 					<strong>
-						Note: please read our <a href="https://docs.wpvip.com/documentation/general-ticket-guidelines/" target="_blank" rel="noopener">full ticket guidelines</a>
+						Note: please read our <a href="https://docs.wpvip.com/technical-references/vip-support/" target="_blank" rel="noopener">full ticket guidelines</a>
 						for faster, more timely resolutions.
 					</strong>
 				</div>
