@@ -19,7 +19,8 @@ class Cache_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		require_once __DIR__ . '/../../../../search/search.php';
-		include_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
+		require_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
+		require_once __DIR__ . '/../../../../prometheus.php';
 
 		$this->apc_filters = [
 			'posts_request',
@@ -29,8 +30,12 @@ class Cache_Test extends WP_UnitTestCase {
 			'found_posts',
 		];
 
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
+
 		$this->es = new \Automattic\VIP\Search\Search();
 		$this->es->init();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
+
 		\ElasticPress\register_indexable_posts();
 
 		add_filter( 'ep_skip_query_integration', '__return_false', 100 );

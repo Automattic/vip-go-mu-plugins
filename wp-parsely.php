@@ -16,6 +16,7 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.3',
+	'3.5',
 	'3.2',
 	'3.1',
 ];
@@ -107,18 +108,19 @@ function maybe_disable_some_features() {
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
 			remove_action( 'init', 'Parsely\parsely_wp_admin_early_register' );
 			remove_action( 'init', 'Parsely\init_recommendations_block' );
+			remove_action( 'enqueue_block_editor_assets', 'Parsely\init_content_helper' );
 			remove_action( 'admin_init', 'Parsely\parsely_admin_init_register' );
 			remove_action( 'widgets_init', 'Parsely\parsely_recommended_widget_register' );
 
-			// If we're disabled, we want to make sure we don't show the row action links.
+			// Don't show the row action links.
 			add_filter( 'wp_parsely_enable_row_action_links', '__return_false' );
 			add_filter( 'wp_parsely_enable_rest_api_support', '__return_false' );
 			add_filter( 'wp_parsely_enable_related_api_proxy', '__return_false' );
 
-			// ..& default to "repeated metas"
+			// Default to "repeated metas".
 			add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
 
-			// Remove the Parse.ly Recommended Widget
+			// Remove the Parse.ly Recommended Widget.
 			unregister_widget( 'Parsely_Recommended_Widget' );
 		}
 	}

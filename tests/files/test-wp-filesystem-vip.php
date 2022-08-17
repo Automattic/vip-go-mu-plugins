@@ -3,6 +3,8 @@
 namespace Automattic\VIP\Files;
 
 use WP_UnitTestCase;
+use Automattic\Test\Constant_Mocker;
+use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip.php';
 
@@ -25,6 +27,8 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		$this->filesystem = null;
+
+		Constant_Mocker::clear();
 
 		parent::tearDown();
 	}
@@ -231,5 +235,90 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		$actual_result = $is_tmp_path_method->invokeArgs( $this->filesystem, [ $file_path ] );
 
 		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function test__is_wp_content_subfolder_path() {
+		$is_wp_content_subfolder = self::get_method( 'is_wp_content_subfolder_path' );
+
+		$result = $is_wp_content_subfolder->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/test', 'test' ] );
+
+		$this->assertTrue( $result );
+	}
+
+	public function test__get_transport_for_path__read() {
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ 'test/file/path', 'read' ] );
+
+		$this->assertEquals( $result, $this->fs_direct_mock );
+	}
+
+	public function test__get_transport_for_path__uploads_streamwrapper() {
+		Constant_Mocker::define( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER', true );
+
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/tmp/wordpress/wp-content/uploads/file.file', 'read' ] );
+
+		$this->assertEquals( $result, $this->fs_direct_mock );
+	}
+
+	public function test__get_transport_for_path__uploads() {
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/tmp/wordpress/wp-content/uploads/file.file', 'write' ] );
+
+		$this->assertEquals( $result, $this->fs_uploads_mock );
+	}
+
+	public function test__get_transport_for_path__tmp_path() {
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/tmp/file.file', 'write' ] );
+
+		$this->assertEquals( $result, $this->fs_direct_mock );
+	}
+
+	public function test__get_transport_for_path__disallowed_write() {
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$this->expectError();
+		$this->expectExceptionMessage( 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `/tmp/wordpress/wp-content/uploads` directories and reads can be performed everywhere.' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
+
+		$this->assertFalse( $result );
+	}
+
+	public function test__get_transport_for_path__non_vip_go_env() {
+		Constant_Mocker::define( 'VIP_GO_ENV', false );
+
+		// // Test maintenance file
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+		$maintenance_result     = $get_transport_for_path->invokeArgs( $this->filesystem, [ ABSPATH . '.maintenance', 'write' ] );
+		$this->assertEquals( $maintenance_result, $this->fs_direct_mock );
+
+		// Test WP install
+		$wp_install_option_name = 'core_updater.lock';
+		update_option( $wp_install_option_name, 'foo_bar' );
+		$wp_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/foo/bar', 'write' ] );
+		$this->assertEquals( $wp_install_result, $this->fs_direct_mock );
+		delete_option( $wp_install_option_name );
+
+		// Test upgrade install
+		$upgrade_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/upgrade/test.file', 'write' ] );
+		$this->assertEquals( $upgrade_install_result, $this->fs_direct_mock );
+
+		// Test plugin install
+		$plugin_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/plugins/test.file', 'write' ] );
+		$this->assertEquals( $plugin_install_result, $this->fs_direct_mock );
+
+		// Test themes install
+		$themes_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/themes/test.file', 'write' ] );
+		$this->assertEquals( $themes_install_result, $this->fs_direct_mock );
+
+		// Test languages install
+		$lang_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/languages/test.file', 'write' ] );
+		$this->assertEquals( $lang_install_result, $this->fs_direct_mock );
 	}
 }

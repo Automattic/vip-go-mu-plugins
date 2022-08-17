@@ -6,6 +6,7 @@ use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 
 class SettingsHealthJob_Test extends WP_UnitTestCase {
+	/** @var \Automattic\VIP\Search\Search */
 	public static $search;
 	public static $version_instance;
 
@@ -13,6 +14,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		parent::setUpBeforeClass();
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
+		require_once __DIR__ . '/../../../../prometheus.php';
 
 		self::$search = \Automattic\VIP\Search\Search::instance();
 		self::$search->init();
@@ -29,6 +31,14 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
 		do_action( 'init' );
+	}
+
+	public function setUp(): void {
+		parent::setUp();
+
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
+		self::$search->load_collector();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {

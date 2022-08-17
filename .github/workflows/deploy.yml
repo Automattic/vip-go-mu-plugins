@@ -50,7 +50,7 @@ jobs:
           find "${TARGET}" -name ".git*" -not -name ".github" -not -name ".git" -exec rm -rfv {} \; 2> /dev/null
           mv -vf "${TARGET}/README-PUBLIC.md" "${TARGET}/README.md"
           mv -vf "${TARGET}/composer.json.tpl" "${TARGET}/composer.json"
-          rm -rvf "${TARGET}/ci" "${TARGET}/.github/workflows/deploy.yml" "${TARGET}/.github/dependabot.yml" "${TARGET}/renovate.json"
+          rm -rvf "${TARGET}/ci" "${TARGET}/.github" "${TARGET}/renovate.json" "${TARGET}/tests" "${TARGET}/bin" "${TARGET}/.dockerignore" "${TARGET}/.ackrc" "${TARGET}/.lintstagedrc" "${TARGET}/.sonarcloud.properties" "${TARGET}/phpcs.xml.dist" "${TARGET}/phpunit-multisite.xml" "${TARGET}/phpunit.xml"
 
       - name: Commit!
         run: |

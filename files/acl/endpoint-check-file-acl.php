@@ -35,11 +35,7 @@ if ( ! $vip_files_acl_is_path_allowed ) {
 }
 
 /**
- * Hook in here to adjust the visibility of a given file.
- *
- * Note: this is currently for VIP internal use only.
- *
- * @access private 
+ * Adjust the visibility of a given file.
  *
  * @param string|boolean $file_visibility Return one of Automattic\VIP\Files\Acl\(FILE_IS_PUBLIC | FILE_IS_PRIVATE_AND_ALLOWED | FILE_IS_PRIVATE_AND_DENIED) to set visibility.
  * @param string $sanitized_file_path The requested file path (note: This does not include `/wp-content/uploads/`. And, on multisite subdirectory installs, this does not includes the subdirectory).

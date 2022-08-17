@@ -11,6 +11,7 @@ require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
+require_once __DIR__ . '/../../../../prometheus.php';
 
 /**
  * @runTestsInSeparateProcesses
@@ -22,9 +23,16 @@ class Search_Test extends WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
+	/** @var Search */
+	private $search_instance;
+
 	public function setUp(): void {
 		parent::setUp();
+
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		$this->search_instance = new \Automattic\VIP\Search\Search();
+		$this->search_instance->load_collector();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
 			->setMethods( [ 'mock_vip_safe_wp_remote_request', 'mock_wp_remote_request' ] )
@@ -1403,12 +1411,35 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test__truncate_search_string_length() {
+	public function test__truncate_search_string_length__user_no_cap() {
+		$es = new \Automattic\VIP\Search\Search();
+
+		$expected_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStX';
+		$provided_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpggg5oMk1nWsx5fJ0B3bAFYKt1Y5dOA0Q4lQUqj8mf1LjcmR73wQwujc1GQfgCKj9X9Ktr6LrDtN5zAJFQboAJa7fZ9AiGxbJqUrLFs';
+
+		$wp_query_mock = new \WP_Query();
+
+		$wp_query_mock->set( 's', $provided_search_string );
+		$wp_query_mock->is_search = true;
+
+		$this->search_instance->truncate_search_string_length( $wp_query_mock );
+
+		$this->assertEquals( $expected_search_string, $wp_query_mock->get( 's' ) );
+	}
+
+	public function test__truncate_search_string_length__user_with_cap() {
+		$admin_user = $this->factory->user->create( [
+			'user_email' => 'admin@automattic.com',
+			'user_login' => 'vip_admin',
+			'role'       => 'administrator',
+		] );
+
+		wp_set_current_user( $admin_user );
+
 		$es = new \Automattic\VIP\Search\Search();
 
 		$expected_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpgg';
-		$provided_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpgg' .
-			'g5oMk1nWsx5fJ0B3bAFYKt1Y5dOA0Q4lQUqj8mf1LjcmR73wQwujc1GQfgCKj9X9Ktr6LrDtN5zAJFQboAJa7fZ9AiGxbJqUrLFs';
+		$provided_search_string = '1nAtu5t4QRo9XmU5VeKFOCTfQN62FrbvvoQXkU1782KOThAlt50NipM7V4dZNGG4eO54HsOQlJaBPStXPRoxWPHqdrHGsGkNQJJshYseaePxCJuGmY7kYp941TUoNF3GhSBEzjajNu0iwdCWrPMLxSJ5XXBltNM9of2LKvwa1hNPOXLka1tyAi8PSZlS53RbGhv7egKOYPyyPpR6mZlzJhx6nXXlZ5t3BtRdQOIvGho6HjdYwdd1hMyHHv1qpggg5oMk1nWsx5fJ0B3bAFYKt1Y5dOA0Q4lQUqj8mf1LjcmR73wQwujc1GQfgCKj9X9Ktr6LrDtN5zAJFQboAJa7fZ9AiGxbJqUrLFs';
 
 		$wp_query_mock = new \WP_Query();
 
@@ -2786,7 +2817,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null );
+		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null, null, '' );
 	}
 
 	/**
@@ -2807,7 +2838,7 @@ class Search_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $skiplist as $item ) {
-			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item );
+			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item, null, '' );
 		}
 	}
 
