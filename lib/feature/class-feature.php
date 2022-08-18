@@ -18,8 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'reduce-default-es-payload' => 0.5,
-		'force-es-timeout'          => 0.5,
+		'jetpack-is-mobile' => 0.25,
 	];
 
 	/**

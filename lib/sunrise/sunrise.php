@@ -9,7 +9,9 @@ if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }
 
-require_once WP_CONTENT_DIR . '/mu-plugins/lib/utils/class-context.php';
+$mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+require_once $mu_plugin_dir . '/lib/utils/class-context.php';
+unset( $mu_plugin_dir );
 
 use Automattic\VIP\Utils\Context;
 
@@ -66,16 +68,17 @@ function handle_not_found_error( $error_type ) {
 
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
+		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 		$is_maintenance_mode = Context::is_maintenance_mode();
 		if ( $is_maintenance_mode ) {
 			// 503 prevents page from being cached.
 			// We handle healthchecks earlier and don't have to worry about them.
 			$status_code = 503;
 			header( 'X-VIP-Go-Maintenance: true' );
-			$error_doc = sprintf( '%s/mu-plugins/errors/site-maintenance.html', WP_CONTENT_DIR );
+			$error_doc = sprintf( '%s/errors/site-maintenance.html', $mu_plugin_dir );
 		} else {
 			$status_code = 404;
-			$error_doc   = sprintf( '%s/mu-plugins/errors/%s-not-found.html', WP_CONTENT_DIR, $error_type );
+			$error_doc   = sprintf( '%s/errors/%s-not-found.html', $mu_plugin_dir, $error_type );
 		}
 
 		http_response_code( $status_code );

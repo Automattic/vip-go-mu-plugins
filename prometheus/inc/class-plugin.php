@@ -80,11 +80,19 @@ class Plugin {
 	 * @return string[]
 	 */
 	public function query_vars( $vars ): array {
+		if ( ! is_array( $vars ) ) {
+			$vars = [];
+		}
+
 		$vars[] = 'metrics';
 		return $vars;
 	}
 
-	public function request( array $query_vars ): array {
+	public function request( $query_vars ): array {
+		if ( ! is_array( $query_vars ) ) {
+			$query_vars = [];
+		}
+
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 		if ( '/metrics' === $request_uri && is_proxied_request() ) {

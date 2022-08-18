@@ -122,7 +122,7 @@ module.exports = function( env ) {
 					sideEffects: true,
 				},
 				{
-					test: /\.(svg)(\?.*)?$/i,
+					test: /\.svg(\?.*)?$/iu, // eslint-disable-line security/detect-unsafe-regex
 					type: 'asset/inline',
 				},
 			],
