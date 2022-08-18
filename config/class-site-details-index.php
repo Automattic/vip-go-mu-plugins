@@ -24,13 +24,9 @@ class Site_Details_Index {
 	private const LOG_FEATURE_NAME = 'site_details';
 
 	/**
-	 * Strings for call to the Parsely API.
-	 * Necessary to determine the service type.
-	 * The /related endpoint does not require an api secret
-	 * this makes it ideal for validating an apikey
+	 * String for No Parsely version detected
 	 */
-	private const PARSELY_API_URL      = 'https://api.parsely.com/v2';
-	private const PARSELY_API_ENDPOINT = '/related';
+	const PARSELY_VERSION_NONE = 'NONE';
 
 	/**
 	 * Strings for Parsely Integration types
@@ -270,8 +266,15 @@ class Site_Details_Index {
 			$parsely_info['active'] = true;
 		}
 
-		$parsely_info['parsely_service_type'] = $this->get_parsely_service_type( $parsely );
-		$parsely_info['version']              = $this->get_parsely_version( $parsely );
+		$parsely_info['parsely_service_type'] = self::PARSELY_SERVICE_TYPE_NONE;
+
+		if ( self::PARSELY_INTEGRATION_TYPE_MUPLUGINS === $parsely_info['integration_type'] ||
+			self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED === $parsely_info['integration_type']
+		) {
+			$parsely_info['parsely_service_type'] = self::PARSELY_SERVICE_TYPE_PAID;
+		}
+
+		$parsely_info['version'] = $this->get_parsely_version( $parsely );
 
 		return $parsely_info;
 	}
@@ -283,10 +286,7 @@ class Site_Details_Index {
 	 */
 	public function get_parsely_version( $parsely ) {
 		if ( ! $parsely || ! isset( $parsely['plugin_version'] ) ) {
-			$supported_versions = \Automattic\VIP\WP_Parsely_Integration\SUPPORTED_VERSIONS;
-			$plugin_version     = apply_filters( 'wpvip_parsely_version', $supported_versions[0] );
-
-			return $plugin_version;
+			return self::PARSELY_VERSION_NONE;
 		}
 
 		return $parsely['plugin_version'];
@@ -297,12 +297,13 @@ class Site_Details_Index {
 	 * @return string integration type.
 	 */
 	public function get_parsely_integration_type() {
-		// is enabled through mu-plugins
-		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
-			if ( has_filter( 'wpvip_parsely_hide_ui_for_mu' ) ) {
-				return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT;
-			}
+		// detect a hidden installation
+		if ( false !== get_option( '_wpvip_parsely_mu', false ) && ! has_filter( 'wpvip_parsely_load_mu' ) ) {
+			return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT;
+		}
 
+		// mu-plugins
+		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
 			return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS;
 		}
 
@@ -313,39 +314,6 @@ class Site_Details_Index {
 		};
 
 		return self::PARSELY_INTEGRATION_TYPE_NONE;
-	}
-
-	/**
-	 * The way that the service is being used
-	 * @param array $parsely The Parsely options.
-	 * @return string service type.
-	 */
-	public function get_parsely_service_type( $parsely ) {
-		if ( is_array( $parsely ) && isset( $parsely['apikey'] ) && '' !== $parsely['apikey'] ) {
-			$result = $this->call_parsely_api( $parsely );
-			if ( 200 === $result['response']['code'] ) {
-					return self::PARSELY_SERVICE_TYPE_PAID;
-			}
-		}
-
-		return self::PARSELY_SERVICE_TYPE_NONE;
-	}
-
-	/**
-	 * Makes a call to the parsely API endpoint
-	 * @param array $parsely The Parsely options.
-	 * @return array http response.
-	 */
-	private function call_parsely_api( $parsely ) {
-		$url  = self::PARSELY_API_URL . self::PARSELY_API_ENDPOINT . '?apikey=' . $parsely['apikey'];
-		$args = array(
-			'method'  => 'GET',
-			'headers' => array(
-				'Content-Type' => 'application/json',
-			),
-		);
-
-		return vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
 	}
 
 	/**
