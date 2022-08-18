@@ -266,12 +266,12 @@ class Site_Details_Index {
 			$parsely_info['active'] = true;
 		}
 
-		$parsely_info['parsely_service_type'] = self::PARSELY_SERVICE_TYPE_NONE;
+		$parsely_info['service_type'] = self::PARSELY_SERVICE_TYPE_NONE;
 
 		if ( self::PARSELY_INTEGRATION_TYPE_MUPLUGINS === $parsely_info['integration_type'] ||
 			self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED === $parsely_info['integration_type']
 		) {
-			$parsely_info['parsely_service_type'] = self::PARSELY_SERVICE_TYPE_PAID;
+			$parsely_info['service_type'] = self::PARSELY_SERVICE_TYPE_PAID;
 		}
 
 		$parsely_info['version'] = $this->get_parsely_version( $parsely );
