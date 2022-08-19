@@ -1,0 +1,9 @@
+// Fix wrong element height in FSE.
+.parsely-recommendations-card > div {
+	height: unset;
+}
+
+// Disable clicking on links.
+.parsely-recommendations-link {
+	pointer-events: none;
+}

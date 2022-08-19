@@ -32,6 +32,10 @@ class HealthJob_Test extends WP_UnitTestCase {
 		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
+	public static function tearDownAfterClass(): void {
+		Constant_Mocker::clear();
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 		require_once __DIR__ . '/../../../../search/includes/classes/class-healthjob.php';

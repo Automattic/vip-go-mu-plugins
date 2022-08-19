@@ -143,6 +143,7 @@ class Search {
 
 	private static $query_count_ttl;
 
+	private const DEFAULT_SEARCH_LENGTH          = 80;
 	private const MAX_SEARCH_LENGTH              = 255;
 	private const DISABLE_POST_META_ALLOW_LIST   = array();
 	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
@@ -1566,9 +1567,8 @@ class Search {
 		}
 
 		// Force the timeout for post search queries.
-		$is_rolled_out  = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'force-es-timeout' );
 		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
-		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', $is_rolled_out ) ) {
+		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', true ) ) {
 			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}
 
@@ -1770,7 +1770,13 @@ class Search {
 		if ( $query->is_search() ) {
 			$search = $query->get( 's' );
 
-			$truncated_search = substr( $search, 0, self::MAX_SEARCH_LENGTH );
+			$search_length = ! current_user_can( 'edit_posts' ) ? apply_filters( 'vip_search_char_length', self::DEFAULT_SEARCH_LENGTH ) : self::MAX_SEARCH_LENGTH;
+
+			if ( $search_length > self::MAX_SEARCH_LENGTH ) {
+				$search_length = self::MAX_SEARCH_LENGTH;
+			}
+
+			$truncated_search = substr( $search, 0, $search_length );
 
 			$query->set( 's', $truncated_search );
 		}
@@ -2362,12 +2368,6 @@ class Search {
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
 	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) &&
-		! \Automattic\VIP\Feature::is_enabled_by_percentage( 'reduce-default-es-payload' ) ) {
-			// Rollout to non-prod and 25% of production
-			return $should_do_weighting;
-		}
-
 		if ( ! empty( $weight_config ) ) {
 			return true;
 		}

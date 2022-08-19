@@ -33,24 +33,6 @@ class Environment_Test extends TestCase {
 	}
 
 	/**
-	 * tests the use-case where $key parameter does not have the prefix
-	 */
-	public function test_get_var_legacy_key() {
-		$this->get_var_legacy_env();
-		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
-		$this->assertEquals( 'FOO', $val );
-	}
-
-	/**
-	 * tests the use-case where $key parameter is lower case
-	 */
-	public function test_get_var_lower_key() {
-		$this->get_var_standard_env();
-		$val = vip_get_env_var( 'vip_env_var_my_var', 'BAR' );
-		$this->assertEquals( 'FOO', $val );
-	}
-
-	/**
 	 * tests the use-case where $key parameter is ''
 	 */
 	public function test_get_var_empty_key() {

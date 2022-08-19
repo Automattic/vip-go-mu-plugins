@@ -141,15 +141,38 @@ function vip_jetpack_load() {
 
 	$jetpack_to_test[] = VIP_JETPACK_DEFAULT_VERSION;
 
+	// Because the versioned jetpack folders will live outside this repository, we want
+	// to have a backup to unversioned "jetpack" folder
+	$jetpack_to_test[] = '';
+
 	// Walk through all versions to test, and load the first one that exists
 	foreach ( $jetpack_to_test as $version ) {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
+		} elseif ( '' === $version ) {
+			$path = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
 			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
 
 		if ( file_exists( $path ) ) {
+			// In a rare edge case, the plugin could be present in `active_plugins` option,
+			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
+			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
+			add_filter( 'option_active_plugins', function( $option ) {
+				if ( ! is_array( $option ) ) {
+					return $option;
+				}
+
+				foreach ( $option as $i => $plugin ) {
+					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+						unset( $option[ $i ] );
+						break;
+					}
+				}
+				return $option;
+			} );
+
 			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
@@ -165,7 +188,7 @@ function vip_jetpack_load() {
 	 * We need Jetpack to be loaded as this has been deprecated in version 9.1, and if the filter is
 	 * added in that version or newer, a warning is shown on every WordPress request
 	 */
-	if ( version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
+	if ( defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 

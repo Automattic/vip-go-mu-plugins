@@ -118,7 +118,29 @@ class HealthJob {
 			return;
 		}
 
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation',
+				'message'  => 'Post content validation started',
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			)
+		);
+
 		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation',
+				'message'  => 'Post content validation completed',
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			)
+		);
 
 		if ( is_wp_error( $results ) && 'content_validation_already_ongoing' !== $results->get_error_code() ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );

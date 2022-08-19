@@ -4,16 +4,14 @@
 // This is important to make Webpack correctly load assets from the plugin url (as opposed to the default behavior to load from the document root)
 import './webpack-public-path';
 
-import { h } from 'preact';
-import habitat from 'preact-habitat';
+import { h, render } from 'preact';
 
 import SearchDevToolsApp from './components/app';
 
-window.addEventListener( 'DOMContentLoaded', () => {
-	const _habitat = habitat( SearchDevToolsApp );
+const renderApp = () => render( <SearchDevToolsApp />, document.querySelector( '[data-widget-host="vip-search-dev-tools"]' ) );
 
-	_habitat.render( {
-		selector: '[data-widget-host="vip-search-dev-tools"]',
-		clean: true,
-	} );
-} );
+if ( document.readyState === 'loading' ) {
+	document.addEventListener( 'DOMContentLoaded', renderApp );
+} else {
+	renderApp();
+}

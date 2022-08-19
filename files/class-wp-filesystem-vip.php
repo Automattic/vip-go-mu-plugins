@@ -41,7 +41,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
 		// If we're not in a VIP environment, allow some WP_CLI functionality to work.
-		if ( true !== VIP_GO_ENV ) {
+		if ( ! defined( 'VIP_GO_ENV' ) || true !== constant( 'VIP_GO_ENV' ) ) {
 			// Allow access to the maintenance file used by WP-CLI.
 			if ( $this->is_maintenance_file( $filename ) ) {
 				return $this->direct;
@@ -65,7 +65,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		// Uploads paths can just use PHP functions when stream wrapper is enabled.
 		// This is because wp_upload_dir will return a vip:// path.
 		if ( $this->is_uploads_path( $filename ) ) {
-			if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+			if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === constant( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 				return $this->direct;
 			}
 
