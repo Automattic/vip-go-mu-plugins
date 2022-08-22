@@ -195,11 +195,11 @@ final class Parsely_Loader_Info {
 	private static function set_version() {
 		$parsely = self::get_parsely();
 
-		if ( ! $parsely || ! array_key_exists( 'plugin_version', $parsely ) ) {
-			self::$version = self::VERSION_NONE;
+		if ( array_key_exists( 'plugin_version', $parsely ) ) {
+			self::$version = $parsely['plugin_version'];
 		}
 
-		self::$version = $parsely['plugin_version'];
+		self::$version = self::VERSION_NONE;
 	}
 
 }
