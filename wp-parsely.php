@@ -137,7 +137,7 @@ final class Parsely_Loader_Info {
 	 * fetches parsely
 	 */
 	public static function get_parsely() {
-		if ( null === $parsely ) {
+		if ( null === self::$parsely ) {
 			self::set_parsely();
 		}
 
