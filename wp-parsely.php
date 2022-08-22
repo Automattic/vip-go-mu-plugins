@@ -29,7 +29,7 @@ const SUPPORTED_VERSIONS = [
 final class Parsely_Loader_Info {
 
 	/**
-	 * Strings for Parsely Integration types
+	 * Strings for Parse.ly integration types.
 	 */
 	const INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
 	const INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
@@ -37,12 +37,12 @@ final class Parsely_Loader_Info {
 	const INTEGRATION_TYPE_NONE             = 'NONE';
 
 	/**
-	 * String for No Parsely version detected
+	 * String for when no wp-parsely version can be detected.
 	 */
 	const VERSION_NONE = 'NONE';
 
 	/**
-	 * Strings for Parsely service types
+	 * Strings for Parse.ly service types.
 	 */
 	const SERVICE_TYPE_PAID = 'PAID';
 	const SERVICE_TYPE_NONE = 'NONE';
