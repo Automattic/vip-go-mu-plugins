@@ -58,7 +58,7 @@ final class Parsely_Loader_Info {
 	private static $integration_type;
 
 	/**
-	 * @var array The Parse.ly WordPress options dictionary
+	 * @var array The Parse.ly WordPress options dictionary.
 	 */
 	private static $parsely;
 
@@ -73,7 +73,7 @@ final class Parsely_Loader_Info {
 	private static $version;
 
 	/**
-	 * fetches the active status
+	 * fetches the active status.
 	 */
 	public static function get_active() {
 		if ( null === self::$active ) {
@@ -100,7 +100,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the integration type
+	 * fetches the integration type.
 	 */
 	public static function get_integration_type() {
 		if ( null === self::$integration_type ) {
@@ -134,7 +134,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches parsely
+	 * fetches Parse.ly options dictionary.
 	 */
 	public static function get_parsely() {
 		if ( null === self::$parsely ) {
@@ -152,7 +152,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the service type
+	 * fetches the service type.
 	 */
 	public static function get_service_type() {
 		if ( null === self::$service_type ) {
@@ -179,7 +179,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the version
+	 * fetches the version.
 	 */
 	public static function get_version() {
 		if ( null === self::$version ) {
