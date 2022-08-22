@@ -24,12 +24,12 @@ class Site_Details_Index {
 	private const LOG_FEATURE_NAME = 'site_details';
 
 	/**
-	 * String for No Parsely version detected
+	 * String for when no wp-parsely version can be detected.
 	 */
 	const PARSELY_VERSION_NONE = 'NONE';
 
 	/**
-	 * Strings for Parsely Integration types
+	 * Strings for Parse.ly integration types.
 	 */
 	const PARSELY_INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
 	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
@@ -37,7 +37,7 @@ class Site_Details_Index {
 	const PARSELY_INTEGRATION_TYPE_NONE             = 'NONE';
 
 	/**
-	 * Strings for Parsely service types
+	 * Strings for Parse.ly service types.
 	 */
 	const PARSELY_SERVICE_TYPE_PAID = 'PAID';
 	const PARSELY_SERVICE_TYPE_NONE = 'NONE';

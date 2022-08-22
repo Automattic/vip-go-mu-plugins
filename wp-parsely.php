@@ -51,8 +51,8 @@ function maybe_load_plugin() {
 		return;
 	}
 
-	// Bail if the plugin has already initialized elsewhere
-	// Plugin is managed by customer install and not mu-plugins
+	// Don't load if wp-parsely has already been loaded, for example when the
+	// user has a self-managed wp-parsely installation.
 	if ( class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ) ) {
 		return;
 	}
