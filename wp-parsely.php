@@ -22,6 +22,189 @@ const SUPPORTED_VERSIONS = [
 ];
 
 /**
+ * Class to hold Parse.ly loading info
+ * Will prevent this information from being queried multiple times
+ * by keeping the status in a static variable
+ */
+final class Parsely_Loader_Info {
+
+	/**
+	 * Strings for Parsely Integration types
+	 */
+	const INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
+	const INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
+	const INTEGRATION_TYPE_SELF_MANAGED     = 'SELF_MANAGED';
+	const INTEGRATION_TYPE_NONE             = 'NONE';
+
+	/**
+	 * String for No Parsely version detected
+	 */
+	const VERSION_NONE = 'NONE';
+
+	/**
+	 * Strings for Parsely service types
+	 */
+	const SERVICE_TYPE_PAID = 'PAID';
+	const SERVICE_TYPE_NONE = 'NONE';
+
+	/**
+	 * @var boolean
+	 */
+	private static $active;
+
+	/**
+	 * @var string
+	 */
+	private static $integration_type;
+
+	/**
+	 * @var array The Parse.ly WordPress options dictionary
+	 */
+	private static $parsely;
+
+	/**
+	 * @var string
+	 */
+	private static $service_type;
+
+	/**
+	 * @var string
+	 */
+	private static $version;
+
+	/**
+	 * fetches the active status
+	 */
+	public static function get_active() {
+		if ( null === self::$active ) {
+			self::set_active();
+		}
+
+		return self::$active;
+	}
+
+	/**
+	 * populates the private $active property if it hasn't been set.
+	 */
+	private static function set_active() {
+		$integration_type = self::get_integration_type();
+
+		if ( self::INTEGRATION_TYPE_MUPLUGINS === $integration_type ||
+			self::INTEGRATION_TYPE_MUPLUGINS_SILENT === $integration_type ||
+			self::INTEGRATION_TYPE_SELF_MANAGED === $integration_type
+		) {
+			self::$active = true;
+		}
+
+		self::$active = false;
+	}
+
+	/**
+	 * fetches the integration type
+	 */
+	public static function get_integration_type() {
+		if ( null === self::$integration_type ) {
+			self::set_integration_type();
+		}
+
+		return self::$integration_type;
+	}
+
+	/**
+	 * populates the private $integration_type property if it hasn't been set.
+	 */
+	private static function set_integration_type() {
+		// detect a hidden installation
+		if ( get_option( '_wpvip_parsely_mu', false ) && ! has_filter( 'wpvip_parsely_load_mu' ) ) {
+			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS_SILENT;
+		}
+
+		// mu-plugins
+		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
+			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS;
+		}
+
+		// is enabled as a standard plugin
+		$plugin = 'wp-parsely/wp-parsely.php';
+		if ( is_plugin_active( $plugin ) ) {
+			self::$integration_type = self::INTEGRATION_TYPE_SELF_MANAGED;
+		};
+
+		self::$integration_type = self::INTEGRATION_TYPE_NONE;
+	}
+
+	/**
+	 * fetches parsely
+	 */
+	public static function get_parsely() {
+		if ( null === $parsely ) {
+			self::set_parsely();
+		}
+
+		return self::$parsely;
+	}
+
+	/**
+	 * populates the private $parsely property if it hasn't been set yet.
+	 */
+	private static function set_parsely() {
+		self::$parsely = get_option( 'parsely' );
+	}
+
+	/**
+	 * fetches the service type
+	 */
+	public static function get_service_type() {
+		if ( null === self::$service_type ) {
+			self::set_service_type();
+		}
+
+		return self::$service_type;
+	}
+
+	/**
+	 * populates the private $service_type property if it hasn't been set.
+	 */
+	private static function set_service_type() {
+		$integration_type = self::get_integration_type();
+
+		if ( self::INTEGRATION_TYPE_MUPLUGINS === $integration_type ||
+			self::INTEGRATION_TYPE_SELF_MANAGED === $integration_type
+		) {
+			self::$service_type = self::SERVICE_TYPE_PAID;
+		}
+
+		self::$service_type = self::SERVICE_TYPE_NONE;
+
+	}
+
+	/**
+	 * fetches the version
+	 */
+	public static function get_version() {
+		if ( null === self::$version ) {
+			self::set_version();
+		}
+
+		return self::$version;
+	}
+
+	/**
+	 * populates the private $version property if it hasn't been set.
+	 */
+	private static function set_version() {
+		$parsely = self::get_parsely();
+
+		if ( ! $parsely || ! isset( $parsely['plugin_version'] ) ) {
+			self::$version = self::PARSELY_VERSION_NONE;
+		}
+
+		self::$version = $parsely['plugin_version'];
+	}
+
+}
+
+/**
  * Annotate the `parsely` option with `'meta_type' => 'repeated_metas'`.
  * When this filter is applied thusly, this prints parsely meta as multiple `<meta />` tags
  * vs. a single structured ld+json schema.

@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as Pinfo;
+
 class Site_Details_Index {
 	/**
 	 * Variable to hold the instance for the singleton.
@@ -22,25 +24,6 @@ class Site_Details_Index {
 	 * Name of the logstash feature to use for log2logstash call
 	 */
 	private const LOG_FEATURE_NAME = 'site_details';
-
-	/**
-	 * String for No Parsely version detected
-	 */
-	const PARSELY_VERSION_NONE = 'NONE';
-
-	/**
-	 * Strings for Parsely Integration types
-	 */
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
-	const PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
-	const PARSELY_INTEGRATION_TYPE_SELF_MANAGED     = 'SELF_MANAGED';
-	const PARSELY_INTEGRATION_TYPE_NONE             = 'NONE';
-
-	/**
-	 * Strings for Parsely service types
-	 */
-	const PARSELY_SERVICE_TYPE_PAID = 'PAID';
-	const PARSELY_SERVICE_TYPE_NONE = 'NONE';
 
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
@@ -253,67 +236,13 @@ class Site_Details_Index {
 	 * @return array Parsely plugin info.
 	 */
 	public function get_parsely_info() {
-		$parsely      = get_option( 'parsely' );
-		$parsely_info = [];
-
-		$parsely_info['active']           = false;
-		$parsely_info['integration_type'] = $this->get_parsely_integration_type();
-
-		if ( self::PARSELY_INTEGRATION_TYPE_MUPLUGINS === $parsely_info['integration_type'] ||
-			self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT === $parsely_info['integration_type'] ||
-			self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED === $parsely_info['integration_type']
-		) {
-			$parsely_info['active'] = true;
-		}
-
-		$parsely_info['service_type'] = self::PARSELY_SERVICE_TYPE_NONE;
-
-		if ( self::PARSELY_INTEGRATION_TYPE_MUPLUGINS === $parsely_info['integration_type'] ||
-			self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED === $parsely_info['integration_type']
-		) {
-			$parsely_info['service_type'] = self::PARSELY_SERVICE_TYPE_PAID;
-		}
-
-		$parsely_info['version'] = $this->get_parsely_version( $parsely );
+		$parsely_info                     = [];
+		$parsely_info['active']           = Pinfo::get_active();
+		$parsely_info['integration_type'] = Pinfo::get_integration_type();
+		$parsely_info['service_type']     = Pinfo::get_service_type();
+		$parsely_info['verison']          = Pinfo::get_version();
 
 		return $parsely_info;
-	}
-
-	/**
-	 * Gets the Parsely version
-	 * @param array $parsely The Parsely options.
-	 * @return string The version.
-	 */
-	public function get_parsely_version( $parsely ) {
-		if ( ! $parsely || ! isset( $parsely['plugin_version'] ) ) {
-			return self::PARSELY_VERSION_NONE;
-		}
-
-		return $parsely['plugin_version'];
-	}
-
-	/**
-	 * The way that the plugin is used in WordPress
-	 * @return string integration type.
-	 */
-	public function get_parsely_integration_type() {
-		// detect a hidden installation
-		if ( false !== get_option( '_wpvip_parsely_mu', false ) && ! has_filter( 'wpvip_parsely_load_mu' ) ) {
-			return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS_SILENT;
-		}
-
-		// mu-plugins
-		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
-			return self::PARSELY_INTEGRATION_TYPE_MUPLUGINS;
-		}
-
-		// is enabled as a standard plugin
-		$plugin = 'wp-parsely/wp-parsely.php';
-		if ( in_array( $plugin, (array) get_option( 'active_plugins', array() ), true ) || is_plugin_active_for_network( $plugin ) ) {
-			return self::PARSELY_INTEGRATION_TYPE_SELF_MANAGED;
-		};
-
-		return self::PARSELY_INTEGRATION_TYPE_NONE;
 	}
 
 	/**
