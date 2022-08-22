@@ -196,7 +196,7 @@ final class Parsely_Loader_Info {
 		$parsely = self::get_parsely();
 
 		if ( ! $parsely || ! isset( $parsely['plugin_version'] ) ) {
-			self::$version = self::PARSELY_VERSION_NONE;
+			self::$version = self::VERSION_NONE;
 		}
 
 		self::$version = $parsely['plugin_version'];
