@@ -100,7 +100,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the integration type.
+	 * Fetches the integration type.
 	 */
 	public static function get_integration_type() {
 		if ( null === self::$integration_type ) {
