@@ -125,7 +125,7 @@ final class Parsely_Loader_Info {
 			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS;
 		}
 
-		// is enabled as a standard plugin
+		// Is enabled as a standard plugin.
 		$plugin = 'wp-parsely/wp-parsely.php';
 		if ( is_plugin_active( $plugin ) ) {
 			self::$integration_type = self::INTEGRATION_TYPE_SELF_MANAGED;
