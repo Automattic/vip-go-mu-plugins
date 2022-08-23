@@ -179,7 +179,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the version.
+	 * Fetches the version.
 	 */
 	public static function get_version() {
 		if ( null === self::$version ) {
