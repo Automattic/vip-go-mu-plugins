@@ -190,7 +190,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * populates the private $version property if it hasn't been set.
+	 * Populates the private $version property if it hasn't been set.
 	 */
 	private static function set_version() {
 		$parsely = self::get_parsely();
