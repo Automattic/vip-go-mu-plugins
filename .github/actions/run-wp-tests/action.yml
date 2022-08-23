@@ -101,6 +101,11 @@ runs:
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
 
+    - name: Fix phpunit.xml
+      shell: bash
+      run: sed -i 's!convertDeprecationsToExceptions="true"!convertDeprecationsToExceptions="false"!' phpunit.xml
+      if: inputs.php >= 8.1
+
     - name: Run tests
       shell: bash
       run: |

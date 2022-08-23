@@ -114,11 +114,6 @@ add_filter( 'plugins_url', 'wpcom_vip_filter_client_mu_plugins_url', 10, 3 );
 
 do_action( 'vip_mu_plugins_loaded' );
 
-if ( defined( 'WP_TESTS_TABLE_PREFIX' ) && PHP_VERSION_ID >= 80100 ) {
-	// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-	error_reporting( E_ALL & ~( E_DEPRECATED | E_USER_DEPRECATED ) );
-}
-
 if ( wpcom_vip_should_load_plugins() ) {
 	// Let's load the plugins
 	foreach ( wpcom_vip_get_client_mu_plugins() as $client_mu_plugin ) {
