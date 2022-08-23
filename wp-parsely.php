@@ -27,7 +27,6 @@ const SUPPORTED_VERSIONS = [
  * by keeping the status in a static variable.
  */
 final class Parsely_Loader_Info {
-
 	/**
 	 * Strings for Parse.ly integration types.
 	 */
@@ -60,7 +59,7 @@ final class Parsely_Loader_Info {
 	/**
 	 * @var array The Parse.ly WordPress options dictionary.
 	 */
-	private static $parsely;
+	private static $parsely_options;
 
 	/**
 	 * @var string
@@ -74,6 +73,7 @@ final class Parsely_Loader_Info {
 
 	/**
 	 * Fetches the active status.
+	 * @return boolean
 	 */
 	public static function get_active() {
 		if ( null === self::$active ) {
@@ -101,6 +101,7 @@ final class Parsely_Loader_Info {
 
 	/**
 	 * Fetches the integration type.
+	 * @return string
 	 */
 	public static function get_integration_type() {
 		if ( null === self::$integration_type ) {
@@ -135,24 +136,26 @@ final class Parsely_Loader_Info {
 
 	/**
 	 * fetches Parse.ly options dictionary.
+	 * @return array
 	 */
-	public static function get_parsely() {
-		if ( null === self::$parsely ) {
-			self::set_parsely();
+	public static function get_parsely_options() {
+		if ( null === self::$parsely_options ) {
+			self::set_parsely_options();
 		}
 
-		return self::$parsely;
+		return self::$parsely_options;
 	}
 
 	/**
-	 * Populates the private $parsely property if it hasn't been set yet.
+	 * Populates the private $parsely_options property if it hasn't been set yet.
 	 */
-	private static function set_parsely() {
-		self::$parsely = get_option( 'parsely', [] );
+	private static function set_parsely_options() {
+		self::$parsely_options = get_option( 'parsely', [] );
 	}
 
 	/**
 	 * Fetches the service type.
+	 * @return string
 	 */
 	public static function get_service_type() {
 		if ( null === self::$service_type ) {
@@ -175,11 +178,11 @@ final class Parsely_Loader_Info {
 		}
 
 		self::$service_type = self::SERVICE_TYPE_NONE;
-
 	}
 
 	/**
 	 * Fetches the version.
+	 * @return string
 	 */
 	public static function get_version() {
 		if ( null === self::$version ) {
@@ -193,15 +196,14 @@ final class Parsely_Loader_Info {
 	 * Populates the private $version property if it hasn't been set.
 	 */
 	private static function set_version() {
-		$parsely = self::get_parsely();
+		$parsely_options = self::get_parsely_options();
 
-		if ( array_key_exists( 'plugin_version', $parsely ) ) {
-			self::$version = $parsely['plugin_version'];
+		if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
+			self::$version = $parsely_options['plugin_version'];
 		}
 
 		self::$version = self::VERSION_NONE;
 	}
-
 }
 
 /**
