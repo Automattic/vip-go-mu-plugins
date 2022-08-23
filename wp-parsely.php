@@ -114,7 +114,7 @@ final class Parsely_Loader_Info {
 	 * populates the private $integration_type property if it hasn't been set.
 	 */
 	private static function set_integration_type() {
-		// detect a hidden installation
+		// Detect a hidden installation.
 		if ( get_option( '_wpvip_parsely_mu', false ) && ! has_filter( 'wpvip_parsely_load_mu' ) ) {
 			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS_SILENT;
 		}
