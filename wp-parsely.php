@@ -84,7 +84,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * populates the private $active property if it hasn't been set.
+	 * Populates the private $active property if it hasn't been set.
 	 */
 	private static function set_active() {
 		$integration_type = self::get_integration_type();
