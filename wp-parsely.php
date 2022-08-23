@@ -112,7 +112,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * populates the private $integration_type property if it hasn't been set.
+	 * Populates the private $integration_type property if it hasn't been set.
 	 */
 	private static function set_integration_type() {
 		// Detect a hidden installation.
