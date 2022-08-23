@@ -115,7 +115,7 @@ runs:
         else
           OPTIONS="${OPTIONS} --order-by=random"
         fi
-        "${PHPUNIT}" ${OPTIONS} -d error_reporting=0
+        "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v3.1.0
