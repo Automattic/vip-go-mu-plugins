@@ -62,3 +62,18 @@ if ( ! function_exists( 'str_ends_with' ) ) {
 		return 0 === substr_compare( $haystack, $needle, -$len, $len );
 	}
 }
+
+if ( ! function_exists( 'array_is_list' ) ) {
+	function array_is_list( array $array ): bool {
+		$idx = 0;
+		foreach ( $array as $key => $_ ) {
+			if ( $key !== $idx ) {
+				return false;
+			}
+
+			++$idx;
+		}
+
+		return true;
+	}
+}
