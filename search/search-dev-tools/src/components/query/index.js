@@ -145,7 +145,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 							)
 							.join( '\n' )
 					}
-					padding={ null }
+					padding={ 0 }
 					className={ style.container_editor }
 					style={ {
 						fontSize: 'var(--vip-sdt-editor-font-size)',
