@@ -152,7 +152,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches the service type.
+	 * Fetches the service type.
 	 */
 	public static function get_service_type() {
 		if ( null === self::$service_type ) {
