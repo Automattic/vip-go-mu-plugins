@@ -135,7 +135,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * fetches Parse.ly options dictionary.
+	 * Fetches Parse.ly options dictionary.
 	 * @return array
 	 */
 	public static function get_parsely_options() {
