@@ -119,7 +119,7 @@ final class Parsely_Loader_Info {
 			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS_SILENT;
 		}
 
-		// mu-plugins
+		// Is enabled by mu-plugins.
 		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
 			self::$integration_type = self::INTEGRATION_TYPE_MUPLUGINS;
 		}
