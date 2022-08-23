@@ -73,7 +73,7 @@ final class Parsely_Loader_Info {
 	private static $version;
 
 	/**
-	 * fetches the active status.
+	 * Fetches the active status.
 	 */
 	public static function get_active() {
 		if ( null === self::$active ) {
