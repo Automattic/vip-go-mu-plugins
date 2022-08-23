@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useEffect } from 'preact/hooks';
+import { useCallback, useEffect } from 'preact/hooks';
 
 import './style.scss';
 import { callOnEscapeKey } from '../../utils';
@@ -13,7 +13,7 @@ import close from '../../assets/close.svg';
  */
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme = 'light', isVisible } = props;
-	const closeWithEscape = callOnEscapeKey( closeOverlay );
+	const closeWithEscape = useCallback( callOnEscapeKey( closeOverlay ) );
 	useEffect( () => {
 		window.addEventListener( 'keydown', closeWithEscape );
 		return () => {
