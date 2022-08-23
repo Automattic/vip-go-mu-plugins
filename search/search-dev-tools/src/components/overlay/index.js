@@ -20,12 +20,12 @@ const Overlay = props => {
 			// Remove event listener to avoid memory leaks
 			window.removeEventListener( 'keydown', closeWithEscape );
 		};
-	}, [] );
+	}, [ closeWithEscape ] );
 
 	return isVisible
 		? (
 			<div
-				className={`search-dev-tools__overlay search-dev-tools__overlay--${ colorTheme }`}
+				className={ `search-dev-tools__overlay search-dev-tools__overlay--${ colorTheme }` }
 				role="dialog"
 			>
 				<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } alt="Close" /></button>
