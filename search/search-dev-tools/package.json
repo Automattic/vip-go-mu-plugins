@@ -50,8 +50,8 @@
     "classnames": "2.3.1",
     "clipboard": "^2.0.11",
     "pluralize": "8.0.0",
-    "preact": "10.10.3",
+    "preact": "10.10.6",
     "prismjs": "1.28.0",
-    "react-simple-code-editor": "0.11.3"
+    "react-simple-code-editor": "0.13.0"
   }
 }
