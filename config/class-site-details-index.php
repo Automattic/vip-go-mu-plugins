@@ -232,7 +232,7 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Gather all the information about Parsely
+	 * Gather all the information about Parse.ly.
 	 * @return array Parsely plugin info.
 	 */
 	public function get_parsely_info() {
