@@ -163,7 +163,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * populates the private $service_type property if it hasn't been set.
+	 * Populates the private $service_type property if it hasn't been set.
 	 */
 	private static function set_service_type() {
 		$integration_type = self::get_integration_type();
