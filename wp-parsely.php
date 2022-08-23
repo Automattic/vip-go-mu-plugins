@@ -145,7 +145,7 @@ final class Parsely_Loader_Info {
 	}
 
 	/**
-	 * populates the private $parsely property if it hasn't been set yet.
+	 * Populates the private $parsely property if it hasn't been set yet.
 	 */
 	private static function set_parsely() {
 		self::$parsely = get_option( 'parsely', [] );
