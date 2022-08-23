@@ -24,7 +24,7 @@ const SUPPORTED_VERSIONS = [
 /**
  * Class to hold Parse.ly loading info.
  * Will prevent this information from being queried multiple times
- * by keeping the status in a static variable
+ * by keeping the status in a static variable.
  */
 final class Parsely_Loader_Info {
 
