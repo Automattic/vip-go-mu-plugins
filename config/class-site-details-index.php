@@ -240,7 +240,7 @@ class Site_Details_Index {
 		$parsely_info['active']           = Pinfo::get_active();
 		$parsely_info['integration_type'] = Pinfo::get_integration_type();
 		$parsely_info['service_type']     = Pinfo::get_service_type();
-		$parsely_info['verison']          = Pinfo::get_version();
+		$parsely_info['version']          = Pinfo::get_version();
 
 		return $parsely_info;
 	}
