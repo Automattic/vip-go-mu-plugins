@@ -23,6 +23,7 @@ define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
 define( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING', true );
 
 function _manually_load_plugin() {
+	require_once __DIR__ . '/../lib/helpers/php-compat.php';
 	require_once __DIR__ . '/../000-vip-init.php';
 	require_once __DIR__ . '/../001-core.php';
 	require_once __DIR__ . '/../a8c-files.php';
