@@ -30,6 +30,11 @@ function wpcom_vip_get_role_caps( $role ) {
  * @param array $capabilities Key/value array of capabilities for the role
  */
 function wpcom_vip_add_role( $role, $name, $capabilities ) {
+	if ( array_is_list( $capabilities ) && ! array_filter( $capabilities, 'is_bool' ) ) {
+		$capabilities = array_flip( $capabilities );
+		$capabilities = array_map( '__return_true', $capabilities );
+	}
+
 	$role_obj = get_role( $role );
 
 	if ( ! $role_obj ) {
