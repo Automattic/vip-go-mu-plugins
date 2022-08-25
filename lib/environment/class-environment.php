@@ -22,6 +22,9 @@ class Environment {
 
 		if ( defined( $env_const ) ) {
 			return constant( $env_const );
+		} elseif ( defined( $key ) ) {
+			// Use unprefixed environment variables for legacy systems
+			return constant( $key );
 		}
 
 		// The call was not able to retrieve an env variable
