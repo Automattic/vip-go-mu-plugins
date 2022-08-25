@@ -72,22 +72,18 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 // Sites can be disabled if there is an overdue payment.
 // This constant is defined by VIP Go in config/wp-config.php.
-if ( Context::is_vip_env() && Context::is_overdue_locked() ) {
-	// WP CLI is allowed, but disable cron
-	if ( Context::is_wp_cli() ) {
-		add_filter( 'pre_option_a8c_cron_control_disable_run', '__return_true', 9999 );
-	} else {
-		// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
-		require_once __DIR__ . '/vip-helpers/vip-utils.php';
-		if ( ! vip_is_jetpack_request() ) {
-			http_response_code( 402 );
+// WP CLI (and cron) is allowed
+if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_cli() ) {
+	// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+	require_once __DIR__ . '/vip-helpers/vip-utils.php';
+	if ( ! vip_is_jetpack_request() ) {
+		http_response_code( 402 );
 
-			header( 'X-VIP-402: true' );
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
+		header( 'X-VIP-402: true' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
 
-			exit;
-		}
+		exit;
 	}
 }
 
