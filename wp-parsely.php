@@ -21,6 +21,8 @@ const SUPPORTED_VERSIONS = [
 	'3.1',
 ];
 
+const PARSELY_PLUGIN_SIGNATURE = 'wp-parsely/wp-parsely.php';
+
 /**
  * Class to hold Parse.ly loading info.
  * Will prevent this information from being queried multiple times
@@ -184,6 +186,34 @@ function alter_option_use_repeated_metas( $parsely_options = [] ) {
 	return $parsely_options;
 }
 
+/**
+ * Detects if the user is attempting to activate wp-parsely in wp-admin
+ * The Parse.ly plugin will not be in active_plugins, but is pending activation.
+ * Nonce verification is not necessary. Only detecting activity not validation.
+ */
+// phpcs:disable WordPress.Security.NonceVerification.Missing -- nonce is not available
+// phpcs:disable WordPress.Security.NonceVerification.Recommended -- nonce is not available
+function is_queued_for_activation() {
+	// Clicking activate will activate by passing a url parameter
+	if ( isset( $_GET['plugin'] ) && PARSELY_PLUGIN_SIGNATURE === $_GET['plugin']
+			&& isset( $_GET['action'] ) && 'activate' === $_GET['action'] ) {
+		return true;
+	}
+
+	// Bulk activation will activate via form submission
+	if ( isset( $_POST['action'] ) && 'activate-selected' === $_POST['action']
+			|| isset( $_POST['action2'] ) && 'activate-selected' == $_POST['action2']
+	) {
+		if ( isset( $_POST['checked'] ) && in_array( PARSELY_PLUGIN_SIGNATURE, $_POST['checked'] ) ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+// phpcs:enable WordPress.Security.NonceVerification.Missing
+// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
 function maybe_load_plugin() {
 	/**
 	 * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
@@ -200,14 +230,19 @@ function maybe_load_plugin() {
 
 	// Check if wp-parsely has already been loaded, for example when the user
 	// has a self-managed wp-parsely installation.
-	$class_is_already_loaded = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
+	$class_is_already_loaded = in_array( PARSELY_PLUGIN_SIGNATURE, get_option( 'active_plugins' ) );
+
+	// Check if wp-parsely is in a state of attempting to be activated
+	// has a self-managed wp-parsely installation.
+	$class_loading_queued = is_queued_for_activation();
 
 	// If the plugin must not be loaded, set Loader Info data and exit.
-	if ( $do_not_load_plugin || $class_is_already_loaded ) {
+	if ( $do_not_load_plugin || $class_is_already_loaded || $class_loading_queued ) {
 
 		// Attempt to detect force-disables invoked by the wpvip_parsely_load_mu filter.
 		// Set Loader Info data as an inactive mu-plugins integration.
-		$force_disabled = $do_not_load_plugin && has_filter( 'wpvip_parsely_load_mu' ) && false === $class_is_already_loaded;
+		$force_disabled = $do_not_load_plugin && has_filter( 'wpvip_parsely_load_mu' )
+			&& ( false === $class_is_already_loaded || false === $class_loading_queued );
 		if ( $force_disabled ) {
 			Parsely_Loader_Info::set_active( false );
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
@@ -218,7 +253,7 @@ function maybe_load_plugin() {
 		}
 
 		// Set Loader Info data as an active self-managed integration.
-		if ( $class_is_already_loaded ) {
+		if ( $class_is_already_loaded || $class_loading_queued ) {
 			Parsely_Loader_Info::set_active( true );
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
 		}
