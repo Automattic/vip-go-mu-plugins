@@ -43,8 +43,7 @@ final class Parsely_Loader_Info {
 	/**
 	 * Strings for Parse.ly service types.
 	 */
-	const SERVICE_TYPE_PAID = 'PAID';
-	const SERVICE_TYPE_NONE = 'NONE';
+	const SERVICE_TYPE_UNKNOWN = 'UNKNOWN';
 
 	/**
 	 * @var boolean
@@ -137,15 +136,7 @@ final class Parsely_Loader_Info {
 	 */
 	public static function get_service_type() {
 		if ( null === self::$service_type ) {
-			$integration_type = self::get_integration_type();
-
-			if ( self::INTEGRATION_TYPE_MUPLUGINS === $integration_type ||
-				self::INTEGRATION_TYPE_SELF_MANAGED === $integration_type
-			) {
-				self::set_service_type( self::SERVICE_TYPE_PAID );
-			}
-
-			self::set_service_type( self::SERVICE_TYPE_NONE );
+			self::set_service_type( self::SERVICE_TYPE_UNKNOWN );
 		}
 
 		return self::$service_type;
