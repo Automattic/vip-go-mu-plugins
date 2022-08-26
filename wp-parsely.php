@@ -242,7 +242,7 @@ function maybe_load_plugin() {
 		// Attempt to detect force-disables invoked by the wpvip_parsely_load_mu filter.
 		// Set Loader Info data as an inactive mu-plugins integration.
 		$force_disabled = $do_not_load_plugin && has_filter( 'wpvip_parsely_load_mu' )
-			&& ( false === $class_is_already_loaded || false === $class_loading_queued );
+			&& false === $class_is_already_loaded && false === $class_loading_queued;
 		if ( $force_disabled ) {
 			Parsely_Loader_Info::set_active( false );
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
