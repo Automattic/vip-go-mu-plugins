@@ -38,7 +38,7 @@ final class Parsely_Loader_Info {
 	/**
 	 * String for when no wp-parsely version can be detected.
 	 */
-	const VERSION_NONE = 'NONE';
+	const VERSION_UNKNOWN = 'UNKNOWN';
 
 	/**
 	 * Strings for Parse.ly service types.
@@ -156,7 +156,7 @@ final class Parsely_Loader_Info {
 	 */
 	public static function get_version() {
 		if ( null === self::$version ) {
-			self::set_version( self::VERSION_NONE );
+			self::set_version( self::VERSION_UNKNOWN );
 		}
 
 		return self::$version;
