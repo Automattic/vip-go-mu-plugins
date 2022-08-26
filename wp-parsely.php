@@ -77,16 +77,7 @@ final class Parsely_Loader_Info {
 	 */
 	public static function get_active() {
 		if ( null === self::$active ) {
-			$integration_type = self::get_integration_type();
-
-			if ( self::INTEGRATION_TYPE_MUPLUGINS === $integration_type ||
-				self::INTEGRATION_TYPE_MUPLUGINS_SILENT === $integration_type ||
-				self::INTEGRATION_TYPE_SELF_MANAGED === $integration_type
-			) {
-				self::set_active( true );
-			} else {
-				self::set_active( false );
-			}
+			self::set_active( false );
 		}
 
 		return self::$active;
@@ -174,13 +165,7 @@ final class Parsely_Loader_Info {
 	 */
 	public static function get_version() {
 		if ( null === self::$version ) {
-			$parsely_options = self::get_parsely_options();
-
-			if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
-				self::set_version( $parsely_options['plugin_version'] );
-			} else {
-				self::set_version( self::VERSION_NONE );
-			}
+			self::set_version( self::VERSION_NONE );
 		}
 
 		return self::$version;
@@ -220,17 +205,33 @@ function maybe_load_plugin() {
 	 *
 	 * add_filter( 'wpvip_parsely_load_mu', '__return_false' );
 	 */
-	if ( ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' ) ) {
-		// Register Parse.ly as a mu-plugins integration type in loader info.
-		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
-		return;
-	}
+	$do_not_load_plugin = ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' );
 
-	// Don't load if wp-parsely has already been loaded, for example when the
-	// user has a self-managed wp-parsely installation.
-	if ( class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ) ) {
-		// Register Parse.ly as a self-managed integration type in loader info.
-		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
+	// Check if wp-parsely has already been loaded, for example when the user
+	// has a self-managed wp-parsely installation.
+	$class_is_already_loaded = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
+
+	// If the plugin must not be loaded, set Loader Info data and exit.
+	if ( $do_not_load_plugin || $class_is_already_loaded ) {
+
+		// Attempt to detect force-disables invoked by the wpvip_parsely_load_mu filter.
+		// Set Loader Info data as an inactive mu-plugins integration.
+		$force_disabled = $do_not_load_plugin && has_filter( 'wpvip_parsely_load_mu' ) && false === $class_is_already_loaded;
+		if ( $force_disabled ) {
+			Parsely_Loader_Info::set_active( false );
+			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
+
+			if ( get_option( '_wpvip_parsely_mu' ) === '1' ) {
+				Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT );
+			}
+		}
+
+		// Set Loader Info data as an active self-managed integration.
+		if ( $class_is_already_loaded ) {
+			Parsely_Loader_Info::set_active( true );
+			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
+		}
+
 		return;
 	}
 
@@ -265,16 +266,15 @@ function maybe_load_plugin() {
 			continue;
 		}
 
-		// Requiring actual Parse.ly plugin
+		// Require the actual wp-parsely plugin.
 		require_once $entry_file;
+		Parsely_Loader_Info::set_active( true );
+		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
+		Parsely_Loader_Info::set_version( $version );
 
-		// Requiring VIP's customizations over Parse.ly
+		// Require VIP's customizations over wp-parsely.
 		$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
 		if ( is_readable( $vip_parsely_plugin ) ) {
-			// Register Parse.ly as a mu-plugins integration type in loader info.
-			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
-			Parsely_Loader_Info::set_version( $version );
-
 			require_once $vip_parsely_plugin;
 		}
 
@@ -287,7 +287,7 @@ function maybe_disable_some_features() {
 	if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
 		// If the plugin was loaded solely by the option, hide the UI
 		if ( apply_filters( 'wpvip_parsely_hide_ui_for_mu', ! has_filter( 'wpvip_parsely_load_mu' ) ) ) {
-			// Register Parse.ly as a silent integration type in loader info.
+			// Register Parse.ly as a silent integration type in Loader Info.
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT );
 
 			remove_action( 'init', 'Parsely\parsely_wp_admin_early_register' );
