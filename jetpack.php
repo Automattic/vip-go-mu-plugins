@@ -174,7 +174,7 @@ function vip_jetpack_load() {
 			} );
 
 			if ( is_multisite() ) {
-			    	// The same edge case as above, but for when Jetpack is network activated.
+				// The same edge case as above, but for when Jetpack is network activated.
 				add_filter( 'site_option_active_sitewide_plugins', function( $option ) {
 					if ( ! is_array( $option ) ) {
 						return $option;
@@ -189,7 +189,7 @@ function vip_jetpack_load() {
 					return $option;
 				} );
 			}
-			
+
 			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
