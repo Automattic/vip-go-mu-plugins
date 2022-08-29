@@ -287,5 +287,29 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
 
+// We use HyperDB, so DB_* constants are not automatically defined
+if ( ! defined( 'DB_NAME' ) && ! defined( 'DB_HOST' ) && ! defined( 'DB_PASSWORD' ) && ! defined( 'DB_NAME' ) ) {
+	global $db_servers;
+	if ( ! is_array( $db_servers ) ) {
+		return;
+	}
+
+	$writable_servers = array_filter( $db_servers, function( $db_server ) {
+		return isset( $db_server[5] ) && $db_server[5] > 0;
+	} );
+
+	usort( $writable_servers, function( $a, $b ) {
+		return $a[5] > $b[5];
+	});
+
+	$db = $writable_servers[0];
+	if ( is_array( $db ) ) {
+		define( 'DB_HOST', $db[0] );
+		define( 'DB_USER', $db[1] );
+		define( 'DB_PASSWORD', $db[2] );
+		define( 'DB_NAME', $db[3] );
+	}
+}
+
 do_action( 'vip_loaded' );
 // @codeCoverageIgnoreEnd
