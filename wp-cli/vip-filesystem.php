@@ -115,7 +115,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 			}
 
 			// Pause.
-			$this->stop_the_insanity();
+			$this->vip_inmemory_cleanup();
 			sleep( 1 );
 
 			$start_index = $end_index + 1;
