@@ -21,14 +21,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_parsely_loader_info_defaults() {
-		$this->assertFalse( Parsely_Loader_Info::get_active() );
-		$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
-		$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
-		$this->assertEquals( Parsely_Loader_Info::SERVICE_TYPE_UNKNOWN, Parsely_Loader_Info::get_service_type() );
-		$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
-	}
-
 	public function test_is_queued_for_activation_get() {
 		$this->set_get_globals_for_parsely_activation();
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
@@ -80,7 +72,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			case 'filter_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
-				$this->assertFalse( Parsely_Loader_Info::get_active() );
+				$this->assertTrue( Parsely_Loader_Info::get_active() );
 				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'option_enabled':
