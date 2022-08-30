@@ -253,7 +253,7 @@ function maybe_load_plugin() {
 		}
 
 		// Set Loader Info data as an active self-managed integration.
-		if ( $plugin_is_already_loaded || $plugin_loading_queued ) {
+		if ( $plugin_is_already_loaded ) {
 			Parsely_Loader_Info::set_active( true );
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
 
