@@ -12,6 +12,8 @@
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
+// @codeCoverageIgnoreStart
+
 /**
  * By virtue of the filename, this file is included first of
  * all the files in the VIP Go MU plugins directory. All
@@ -29,6 +31,10 @@ require_once __DIR__ . '/healthcheck/healthcheck.php';
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
+}
+
+if ( ! defined( 'VIP_OVERDUE_LOCKOUT' ) ) {
+	define( 'VIP_OVERDUE_LOCKOUT', false );
 }
 
 if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
@@ -61,6 +67,23 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 			exit;
 		}
+	}
+}
+
+// Sites can be disabled if there is an overdue payment.
+// This constant is defined by VIP Go in config/wp-config.php.
+// WP CLI (and cron) is allowed
+if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_cli() ) {
+	// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+	require_once __DIR__ . '/vip-helpers/vip-utils.php';
+	if ( ! vip_is_jetpack_request() ) {
+		http_response_code( 402 );
+
+		header( 'X-VIP-402: true' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
+
+		exit;
 	}
 }
 
@@ -266,3 +289,4 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 }
 
 do_action( 'vip_loaded' );
+// @codeCoverageIgnoreEnd
