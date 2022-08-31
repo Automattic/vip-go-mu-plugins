@@ -18,7 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'jetpack-is-mobile' => 0.25,
+		'jetpack-is-mobile' => 0.5,
 	];
 
 	/**
