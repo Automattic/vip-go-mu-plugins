@@ -15,7 +15,7 @@ test( 'Search Dev Tools', async ( { page } ) => {
 
     await test.step( 'Do a search', () => searchPage.visit( 'Hello' ) );
     await test.step( 'Open DevTools', () => searchPage.openSearchDevTools() );
-    await test.step( 'Check number of queries', () => expect( searchPage.getNumberOfQueries() ).resolves.toBe( 2 ) );
+    await test.step( 'Check number of queries', () => expect( searchPage.getNumberOfQueries() ).resolves.toBeGreaterThanOrEqual( 1 ) );
     await test.step( 'Check number of results', () => expect( searchPage.getNumberOfFirstResults() ).resolves.toBe( 1 ) );
     await test.step( 'Expand search results', () => expect( searchPage.expandFirstResults() ).resolves.toBeTruthy() );
     await test.step( 'Ensure WP_Query is functional', () => expect( searchPage.getWPQuery() ).resolves.toMatch( 'search_terms: ["Hello"]' ) );
