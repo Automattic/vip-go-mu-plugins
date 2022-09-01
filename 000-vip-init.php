@@ -287,31 +287,46 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
 
-// We use HyperDB, so DB_* constants are not automatically defined.
-// We define them here in case any customer code is referencing them to avoid fatals errors in PHP 8+.
-// As a best practice, these constants should not be used directly (`_doing_it_wrong()`).
-if ( ! defined( 'DB_NAME' ) && ! defined( 'DB_HOST' ) && ! defined( 'DB_PASSWORD' ) && ! defined( 'DB_USER' ) ) {
-	global $db_servers;
+/**
+ * We use HyperDB, so DB_* constants are not automatically defined.
+ * We define them here in case any customer code is referencing them to avoid fatals errors in PHP 8+.
+ * As a best practice, these constants should not be used directly (`_doing_it_wrong()`).
+ *
+ * @return void
+ */
+function vip_define_db_constants() {
+	if ( defined( 'DB_NAME' ) || defined( 'DB_HOST' ) || defined( 'DB_PASSWORD' ) || defined( 'DB_USER' ) ) {
+		return;
+	}
+
+	if ( ! method_exists( 'hyperdb', 'get_hyper_servers' ) ) {
+		return;
+	}
+
+	global $wpdb;
+	$db_servers = $wpdb->get_hyper_servers( 'write' );
+
 	if ( ! is_array( $db_servers ) ) {
 		return;
 	}
 
-	$writable_servers = array_filter( $db_servers, function( $db_server ) {
-		return ! isset( $db_server[5] ) || $db_server[5] > 0;
-	} );
-
-	usort( $writable_servers, function( $a, $b ) {
-		return ( $a[5] ?? 1 ) - ( $b[5] ?? 1 );
-	});
-
-	$db = $writable_servers[0] ?? null;
-	if ( is_array( $db ) ) {
-		define( 'DB_HOST', $db[0] );
-		define( 'DB_USER', $db[1] );
-		define( 'DB_PASSWORD', $db[2] );
-		define( 'DB_NAME', $db[3] );
+	if ( isset( $db_servers[1] ) ) {
+		$db = $db_servers[1];
+	} else {
+		$keys = array_keys( $db_servers );
+		$db   = $db_servers[ $keys[0] ] ?? null;
 	}
+
+	if ( ! isset( $db[0] ) || ! is_array( $db[0] ) ) {
+		return;
+	}
+
+	define( 'DB_HOST', $db[0]['host'] );
+	define( 'DB_USER', $db[0]['user'] );
+	define( 'DB_PASSWORD', $db[0]['password'] );
+	define( 'DB_NAME', $db[0]['name'] );
 }
+add_action( 'vip_loaded', 'vip_define_db_constants' );
 
 do_action( 'vip_loaded' );
 // @codeCoverageIgnoreEnd
