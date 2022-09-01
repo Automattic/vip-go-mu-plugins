@@ -1758,31 +1758,32 @@
         },
         {
             "name": "automattic/jetpack-videopress",
-            "version": "v0.2.0",
-            "version_normalized": "0.2.0.0",
+            "version": "v0.2.1",
+            "version_normalized": "0.2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Automattic/jetpack-videopress.git",
-                "reference": "7f3c22566e0e39af053af8b6913cdef16fd7148f"
+                "reference": "a44a326a1ac79586d6a59daf0dd74e27b3e3b8a6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Automattic/jetpack-videopress/zipball/7f3c22566e0e39af053af8b6913cdef16fd7148f",
-                "reference": "7f3c22566e0e39af053af8b6913cdef16fd7148f",
+                "url": "https://api.github.com/repos/Automattic/jetpack-videopress/zipball/a44a326a1ac79586d6a59daf0dd74e27b3e3b8a6",
+                "reference": "a44a326a1ac79586d6a59daf0dd74e27b3e3b8a6",
                 "shasum": ""
             },
             "require": {
                 "automattic/jetpack-admin-ui": "^0.2",
                 "automattic/jetpack-assets": "^1.17",
-                "automattic/jetpack-connection": "^1.43",
+                "automattic/jetpack-connection": "^1.44",
                 "automattic/jetpack-plans": "^0.2"
             },
             "require-dev": {
                 "automattic/jetpack-changelogger": "^3.2",
+                "automattic/wordbless": "@dev",
                 "brain/monkey": "2.6.1",
                 "yoast/phpunit-polyfills": "1.0.3"
             },
-            "time": "2022-08-23T12:41:07+00:00",
+            "time": "2022-08-30T14:46:10+00:00",
             "type": "jetpack-library",
             "extra": {
                 "autotagger": true,
@@ -1810,7 +1811,7 @@
             ],
             "description": "VideoPress package",
             "support": {
-                "source": "https://github.com/Automattic/jetpack-videopress/tree/v0.2.0"
+                "source": "https://github.com/Automattic/jetpack-videopress/tree/v0.2.1"
             },
             "install-path": "../../jetpack_vendor/automattic/jetpack-videopress"
         },
