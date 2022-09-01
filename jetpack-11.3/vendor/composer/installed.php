@@ -317,12 +317,12 @@
             'dev_requirement' => false,
         ),
         'automattic/jetpack-videopress' => array(
-            'pretty_version' => 'v0.2.0',
-            'version' => '0.2.0.0',
+            'pretty_version' => 'v0.2.1',
+            'version' => '0.2.1.0',
             'type' => 'jetpack-library',
             'install_path' => __DIR__ . '/../../jetpack_vendor/automattic/jetpack-videopress',
             'aliases' => array(),
-            'reference' => '7f3c22566e0e39af053af8b6913cdef16fd7148f',
+            'reference' => 'a44a326a1ac79586d6a59daf0dd74e27b3e3b8a6',
             'dev_requirement' => false,
         ),
         'automattic/jetpack-waf' => array(
