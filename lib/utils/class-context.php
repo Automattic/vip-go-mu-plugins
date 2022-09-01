@@ -22,6 +22,11 @@ class Context {
 			&& true === constant( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' );
 	}
 
+	public static function is_overdue_locked() {
+		return defined( 'VIP_OVERDUE_LOCKOUT' )
+			&& true === constant( 'VIP_OVERDUE_LOCKOUT' );
+	}
+
 	public static function is_healthcheck() {
 		// phpcs:disable WordPress.VIP.SuperGlobalInputUsage.AccessDetected
 		return ! empty( $_SERVER['REQUEST_URI'] )
