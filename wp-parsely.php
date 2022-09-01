@@ -227,7 +227,7 @@ function maybe_load_plugin() {
 	 * add_filter( 'wpvip_parsely_load_mu', '__return_false' );
 	 */
 
-	// Don't do anything if the plugin is queued for activation via this request.
+	// The activation of this plugin has been queued in this request.
 	$self_managed_plugin_is_queued_for_activation = is_queued_for_activation();
 
 	// Check if wp-parsely has already been loaded, for example when the user
