@@ -226,44 +226,43 @@ function maybe_load_plugin() {
 	 *
 	 * add_filter( 'wpvip_parsely_load_mu', '__return_false' );
 	 */
-	$do_not_load_plugin = ! apply_filters( 'wpvip_parsely_load_mu', get_option( '_wpvip_parsely_mu' ) === '1' );
+
+	// Don't do anything if the plugin is queued for activation via this request.
+	$self_managed_plugin_is_queued_for_activation = is_queued_for_activation();
 
 	// Check if wp-parsely has already been loaded, for example when the user
 	// has a self-managed wp-parsely installation.
-	$plugin_is_already_loaded = in_array( PARSELY_PLUGIN_SIGNATURE, get_option( 'active_plugins' ) );
+	$self_managed_plugin_has_loaded = in_array( PARSELY_PLUGIN_SIGNATURE, get_option( 'active_plugins', [] ) );
 
-	// Check if wp-parsely is in a state of attempting to be activated
-	// for a self-managed wp-parsely installation.
-	$plugin_loading_queued = is_queued_for_activation();
+	if ( $self_managed_plugin_has_loaded || $self_managed_plugin_is_queued_for_activation ) {
+		$parsely_options = Parsely_Loader_Info::get_parsely_options();
+		Parsely_Loader_Info::set_active( true );
+		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
+		if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
+			Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
+		}
+		return;
+	}
 
-	// If the plugin must not be loaded, set Loader Info data and exit.
-	if ( $do_not_load_plugin || $plugin_is_already_loaded || $plugin_loading_queued ) {
+	// There can be this option to enable wp-parsely.
+	$load_plugin_requested_via_option = get_option( '_wpvip_parsely_mu' ) === '1';
 
-		// Attempt to detect force-disables invoked by the wpvip_parsely_load_mu filter.
-		// Set Loader Info data as an inactive mu-plugins integration.
-		$force_disabled = $do_not_load_plugin && has_filter( 'wpvip_parsely_load_mu' )
-			&& false === $plugin_is_already_loaded && false === $plugin_loading_queued;
-		if ( $force_disabled ) {
+	// The presence of this filter, and the absence of the '_wpvip_parsely_mu' option
+	// signals that the plugin should not be loaded.
+	$do_not_load_plugin = ! apply_filters( 'wpvip_parsely_load_mu', $load_plugin_requested_via_option );
+
+	if ( $do_not_load_plugin ) {
+		// If this filter is present, it means
+		// the plugin has been forcibly disabled.
+		if ( has_filter( 'wpvip_parsely_load_mu' ) ) {
 			Parsely_Loader_Info::set_active( false );
 			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS );
 
-			if ( get_option( '_wpvip_parsely_mu' ) === '1' ) {
+			// If this option is present, it means it's a silent integration type.
+			if ( $load_plugin_requested_via_option ) {
 				Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT );
 			}
 		}
-
-		// Set Loader Info data as an active self-managed integration.
-		if ( $plugin_is_already_loaded ) {
-			Parsely_Loader_Info::set_active( true );
-			Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
-
-			//Get the version of the self-managed wp-parsely plugin.
-			$parsely_options = Parsely_Loader_Info::get_parsely_options();
-			if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
-				Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
-			}
-		}
-
 		return;
 	}
 

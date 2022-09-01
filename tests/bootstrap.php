@@ -115,12 +115,12 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' ) ) {
 			}
 		);
 		break;
-	case '3.0':
+	case '3.5':
 	default:
 		tests_add_filter(
 			'wpvip_parsely_version',
 			function() {
-				return '3.0';
+				return '3.5';
 			}
 		);
 		break;
