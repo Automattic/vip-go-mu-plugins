@@ -299,7 +299,8 @@ function vip_define_db_constants() {
 		return;
 	}
 
-	if ( ! method_exists( 'hyperdb', 'get_hyper_servers' ) ) {
+    global $wpdb;
+	if ( ! method_exists( $wpdb, 'get_hyper_servers' ) ) {
 		return;
 	}
 
