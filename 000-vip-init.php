@@ -311,6 +311,8 @@ function vip_define_db_constants() {
 	}
 
 	if ( isset( $db_servers[1] ) ) {
+		// The index is based on the "write priority", which defaults to 1.
+		// See https://github.com/Automattic/HyperDB/blob/06dc2449535c35aaaf2f7e1e8a28fb40e59ff23e/db.php#L257-L267
 		$db = $db_servers[1];
 	} else {
 		$keys = array_keys( $db_servers );
