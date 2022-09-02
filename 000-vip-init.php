@@ -287,53 +287,14 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
 
-/**
- * We use HyperDB, so DB_* constants are not automatically defined.
- * We define them here in case any customer code is referencing them to avoid fatals errors in PHP 8+.
- * As a best practice, these constants should not be used directly (`_doing_it_wrong()`).
- *
- * @return void
- */
-function vip_define_db_constants() {
-	// Roll out to non-prods only for now
-	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-		return;
-	}
-
-	if ( defined( 'DB_NAME' ) || defined( 'DB_HOST' ) || defined( 'DB_PASSWORD' ) || defined( 'DB_USER' ) ) {
-		return;
-	}
-
-	global $wpdb;
-	if ( ! method_exists( $wpdb, 'get_hyper_servers' ) ) {
-		return;
-	}
-
-	$db_servers = $wpdb->get_hyper_servers( 'write' );
-
-	if ( ! is_array( $db_servers ) ) {
-		return;
-	}
-
-	if ( isset( $db_servers[1] ) ) {
-		// The index is based on the "write priority", which defaults to 1.
-		// See https://github.com/Automattic/HyperDB/blob/06dc2449535c35aaaf2f7e1e8a28fb40e59ff23e/db.php#L257-L267
-		$db = $db_servers[1];
-	} else {
-		$keys = array_keys( $db_servers );
-		$db   = $db_servers[ $keys[0] ] ?? null;
-	}
-
-	if ( ! isset( $db[0] ) || ! is_array( $db[0] ) ) {
-		return;
-	}
-
-	define( 'DB_HOST', $db[0]['host'] );
-	define( 'DB_USER', $db[0]['user'] );
-	define( 'DB_PASSWORD', $db[0]['password'] );
-	define( 'DB_NAME', $db[0]['name'] );
+require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+// Roll out to non-prods only for now
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+	add_action( 'vip_loaded', function() {
+		global $wpdb;
+		\Automattic\VIP\Core\Constants\vip_define_db_constants( $wpdb );
+	} );
 }
-add_action( 'vip_loaded', 'vip_define_db_constants' );
 
 do_action( 'vip_loaded' );
 // @codeCoverageIgnoreEnd
