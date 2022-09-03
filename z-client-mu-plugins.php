@@ -8,6 +8,9 @@
 
 // Note: This file is prefixed with `z-` for load order
 
+// This file is loaded before the code coverage driver is initialized; no coverage info can be generated
+// @codeCoverageIgnoreStart
+
 /**
  * Gets PHP files in the client-mu-plugins folder.
  *
@@ -126,3 +129,5 @@ if ( wpcom_vip_should_load_plugins() ) {
 	}
 	unset( $client_mu_plugin );
 }
+
+// @codeCoverageIgnoreEnd
