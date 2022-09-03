@@ -101,10 +101,9 @@ runs:
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
 
-    - name: Fix phpunit.xml
+    - name: Fix wp-tests-config.php
       shell: bash
-      run: sed -i 's!convertDeprecationsToExceptions="true"!convertDeprecationsToExceptions="false"!' phpunit.xml
-      if: inputs.php >= 8.1
+      run: sed -i "s@define( 'WP_DEBUG', true );@// define( 'WP_DEBUG', true );@" /tmp/wordpress-tests-lib/wp-tests-config.php
 
     - name: Run tests
       shell: bash
