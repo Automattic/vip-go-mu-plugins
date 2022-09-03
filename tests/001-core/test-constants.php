@@ -19,28 +19,28 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test_vip_define_db_constants__constant_defined(): void {
+	public function test_define_db_constants__constant_defined(): void {
 		global $wpdb;
 
 		Constant_Mocker::define( 'DB_HOST', 'localhost' );
-		vip_define_db_constants( $wpdb );
+		define_db_constants( $wpdb );
 
 		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
 	}
 
-	public function test_vip_define_db_constants__not_hyperdb(): void {
+	public function test_define_db_constants__not_hyperdb(): void {
 		$db = new class() extends wpdb {
 			public function __construct() {
 				// Do nothing, do not call parent constructor
 			}
 		};
 
-		vip_define_db_constants( $db );
+		define_db_constants( $db );
 
 		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
 	}
 
-	public function test_vip_define_db_constants__servers_not_array(): void {
+	public function test_define_db_constants__servers_not_array(): void {
 		$db = new class() extends wpdb {
 			public function __construct() {
 				// Do nothing, do not call parent constructor
@@ -51,12 +51,12 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 			}
 		};
 
-		vip_define_db_constants( $db );
+		define_db_constants( $db );
 
 		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
 	}
 
-	public function test_vip_define_db_constants__db_not_array(): void {
+	public function test_define_db_constants__db_not_array(): void {
 		$db = new class() extends wpdb {
 			public function __construct() {
 				// Do nothing, do not call parent constructor
@@ -67,15 +67,15 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 			}
 		};
 
-		vip_define_db_constants( $db );
+		define_db_constants( $db );
 
 		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
 	}
 
 	/**
-	 * @dataProvider data_vip_define_db_constants
+	 * @dataProvider data_define_db_constants
 	 */
-	public function test_vip_define_db_constants( int $priority ): void {
+	public function test_define_db_constants( int $priority ): void {
 		$expected_user = 'user';
 		$expected_pass = 'pass';
 		$expected_host = 'host';
@@ -112,7 +112,7 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 			}
 		};
 
-		vip_define_db_constants( $db );
+		define_db_constants( $db );
 
 		self::assertTrue( Constant_Mocker::defined( 'DB_NAME' ) );
 		self::assertTrue( Constant_Mocker::defined( 'DB_USER' ) );
@@ -125,7 +125,7 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 		self::assertSame( $expected_host, Constant_Mocker::constant( 'DB_HOST' ) );
 	}
 
-	public function data_vip_define_db_constants(): iterable {
+	public function data_define_db_constants(): iterable {
 		return [
 			[ 1 ],
 			[ 10 ],

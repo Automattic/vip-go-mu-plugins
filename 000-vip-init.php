@@ -13,6 +13,8 @@ use Automattic\VIP\Config\Sync;
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
+use function Automattic\VIP\Core\Constants\define_db_constants;
+
 // @codeCoverageIgnoreStart
 
 /**
@@ -288,12 +290,11 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 }
 
 require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+
 // Roll out to non-prods only for now
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-	add_action( 'vip_loaded', function() {
-		global $wpdb;
-		\Automattic\VIP\Core\Constants\vip_define_db_constants( $wpdb );
-	} );
+	global $wpdb;
+	define_db_constants( $wpdb );
 }
 
 do_action( 'vip_loaded' );
