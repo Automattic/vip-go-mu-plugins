@@ -173,6 +173,23 @@ function vip_jetpack_load() {
 				return $option;
 			} );
 
+			if ( is_multisite() ) {
+				// The same edge case as above, but for when Jetpack is network activated.
+				add_filter( 'site_option_active_sitewide_plugins', function( $option ) {
+					if ( ! is_array( $option ) ) {
+						return $option;
+					}
+
+					foreach ( $option as $plugin => $i ) {
+						if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+							unset( $option[ $plugin ] );
+							break;
+						}
+					}
+					return $option;
+				} );
+			}
+
 			require_once $path;
 			define( 'VIP_JETPACK_LOADED_VERSION', $version );
 			break;
