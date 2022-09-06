@@ -83,6 +83,10 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
 	 */
 	public function test__get_value( $backend ) {
+		if ( ! $backend::is_supported() ) {
+			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
+		}
+
 		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
