@@ -1,0 +1,17 @@
+{
+	"name": "alleyinteractive/es-wp-query",
+	"type": "wordpress-plugin",
+	"description": "Elasticsearch Wrapper for WP_Query",
+	"homepage": "https://github.com/alleyinteractive/es-wp-query",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "Alley",
+			"homepage": "https://alley.co/"
+		}
+	],
+	"support": {
+		"issues": "https://github.com/alleyinteractive/es-wp-query/issues",
+		"source": "https://github.com/alleyinteractive/es-wp-query"
+	}
+}
