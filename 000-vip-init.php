@@ -9,6 +9,7 @@
  * Remember vip-init.php? This is like that, but better!
  */
 
+use Automattic\VIP\Config\Sync;
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
@@ -256,9 +257,7 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 // Load config related helpers
 require_once __DIR__ . '/config/class-sync.php';
 
-add_action( 'init', function() {
-	\Automattic\VIP\Config\Sync::instance();
-} );
+add_action( 'init', [ Sync::class, 'instance' ] );
 
 // Load _encloseme meta cleanup scheduler
 require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';

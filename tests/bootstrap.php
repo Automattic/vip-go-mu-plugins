@@ -2,6 +2,11 @@
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
+if ( ! defined( 'WP_DEBUG' ) ) {
+	// WordPress generates lots of deprecation warnings with PHP 8.1 and 8.2
+	define( 'WP_DEBUG', PHP_VERSION_ID < 80100 );
+}
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 if ( ! $_tests_dir ) {
 	$_tests_dir = '/tmp/wordpress-tests-lib';
@@ -100,7 +105,7 @@ function _configure_wp_parsely_specified_version() {
 	$specified = getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' );
 	if ( $specified ) {
 		echo '[WP_PARSELY_INTEGRATION] Specifying plugin version: ' . esc_html( $specified ) . "\n";
-		add_filter( 'wpvip_parsely_version', function ( $passed ) use ( $specified ) {
+		add_filter( 'wpvip_parsely_version', function () use ( $specified ) {
 			return $specified;
 		} );
 	}

@@ -127,6 +127,7 @@ docker run \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
+    -e PRETEST_SCRIPT=/home/circleci/project/bin/pretest.sh \
     ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
