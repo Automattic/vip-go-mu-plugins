@@ -749,8 +749,5 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 
 	return $matches;
 }
-$is_rolled_out = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) || \Automattic\VIP\Feature::is_enabled_by_percentage( 'jetpack-is-mobile' );
 
-if ( $is_rolled_out ) {
-	add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
-}
+add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
