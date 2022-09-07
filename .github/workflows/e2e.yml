@@ -64,6 +64,11 @@ jobs:
             playwright-akamai.azureedge.net:443
             playwright-verizon.azureedge.net:443
             playwright.azureedge.net:443
+            ppa.launchpad.net:80
+            ppa.launchpad.net:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            packages.microsoft.com:443
 
       - name: Check out repository code
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
