@@ -221,7 +221,7 @@ function has_plugin_signature( $list ) {
 // phpcs:disable WordPress.Security.NonceVerification.Recommended -- nonce is not available
 function is_queued_for_activation() {
 	// Clicking activate will activate by passing a url parameter.
-	if ( isset( $_GET['plugin'] ) && has_plugin_signature( esc_url_raw( $_GET['plugin'] ) )
+	if ( isset( $_GET['plugin'] ) && has_plugin_signature( sanitize_text_field( $_GET['plugin'] ) )
 			&& isset( $_GET['action'] ) && 'activate' === $_GET['action'] ) {
 		return true;
 	}
@@ -230,7 +230,7 @@ function is_queued_for_activation() {
 	if ( isset( $_POST['action'] ) && 'activate-selected' === $_POST['action']
 			|| isset( $_POST['action2'] ) && 'activate-selected' == $_POST['action2']
 	) {
-		if ( isset( $_POST['checked'] ) && has_plugin_signature( $_POST['checked'] ) ) {
+		if ( isset( $_POST['checked'] ) && has_plugin_signature( sanitize_text_field ( $_POST['checked'] ) ) ) {
 			return true;
 		}
 	}
