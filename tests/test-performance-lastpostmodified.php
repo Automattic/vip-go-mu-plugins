@@ -103,6 +103,6 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 	public function test__override_lastpostmodified__is_not_set_post() {
 		$actual = get_lastpostmodified( 'gmt', 'post' );
 
-		$this->assertEquals( $this->post_modified_gmt, $actual );
+		$this->assertFalse( $actual );
 	}
 }
