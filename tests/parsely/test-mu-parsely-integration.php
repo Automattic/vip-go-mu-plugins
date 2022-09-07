@@ -48,6 +48,27 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
 	}
 
+	public function test_has_plugin_signature() {
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [] ) );
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( '' ) );
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'hello.php' ) );
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php3' ] ) );
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
+			'hello.php',
+			'jetpack-11.3/jetpack.php'
+		] ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'wp-parsely/wp-parsely.php' ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php' ] ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
+			'hello.php',
+			'jetpack-11.3/jetpack.php',
+			'wp-parsely/wp-parsely.php'
+		] ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely-1.10/wp-parsely.php' ] ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely2/wp-parsely.php' ] ) );
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'the-quick-brown-fox-jumps-over-the-lazy-dog/wp-parsely.php' ) );
+	}
+
 	public function test_has_maybe_load_plugin_action() {
 		$this->assertSame(
 			10,
@@ -192,12 +213,12 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	private function set_get_globals_for_parsely_activation() {
-		$_GET['plugin'] = \Automattic\VIP\WP_Parsely_Integration\PARSELY_PLUGIN_SIGNATURE;
+		$_GET['plugin'] = 'wp-parsely/wp-parsely.php';
 		$_GET['action'] = 'activate';
 	}
 
 	private function set_post_globals_for_parsely_activation() {
-		$_POST['checked'] = [ \Automattic\VIP\WP_Parsely_Integration\PARSELY_PLUGIN_SIGNATURE ];
+		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
 		$_POST['action']  = 'activate-selected';
 	}
 }
