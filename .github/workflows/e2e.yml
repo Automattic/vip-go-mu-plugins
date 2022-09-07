@@ -82,6 +82,10 @@ jobs:
         run: npm ci
         working-directory: vip-go-mu-plugins
 
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+        working-directory: vip-go-mu-plugins
+
       - name: Install VIP CLI
         run: npm install --prefix=$HOME/.local -g @automattic/vip@2.8.2
 
