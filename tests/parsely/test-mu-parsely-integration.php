@@ -55,14 +55,14 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php3' ] ) );
 		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
 			'hello.php',
-			'jetpack-11.3/jetpack.php'
+			'jetpack-11.3/jetpack.php',
 		] ) );
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'wp-parsely/wp-parsely.php' ) );
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php' ] ) );
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
 			'hello.php',
 			'jetpack-11.3/jetpack.php',
-			'wp-parsely/wp-parsely.php'
+			'wp-parsely/wp-parsely.php',
 		] ) );
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely-1.10/wp-parsely.php' ] ) );
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely2/wp-parsely.php' ] ) );
