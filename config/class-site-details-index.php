@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Config;
 
-use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as Pinfo;
+use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
 
 class Site_Details_Index {
 	/**
@@ -237,10 +237,10 @@ class Site_Details_Index {
 	 */
 	public function get_parsely_info() {
 		$parsely_info                     = [];
-		$parsely_info['active']           = Pinfo::get_active();
-		$parsely_info['integration_type'] = Pinfo::get_integration_type();
-		$parsely_info['service_type']     = Pinfo::get_service_type();
-		$parsely_info['version']          = Pinfo::get_version();
+		$parsely_info['active']           = ParselyInfo::is_active();
+		$parsely_info['integration_type'] = ParselyInfo::get_integration_type();
+		$parsely_info['service_type']     = ParselyInfo::get_service_type();
+		$parsely_info['version']          = ParselyInfo::get_version();
 
 		return $parsely_info;
 	}
