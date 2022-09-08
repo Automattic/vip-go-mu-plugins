@@ -293,8 +293,7 @@ require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
 
 // Roll out to non-prods only for now
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-	global $wpdb;
-	define_db_constants( $wpdb );
+	define_db_constants( $GLOBALS['wpdb'] );
 }
 
 do_action( 'vip_loaded' );
