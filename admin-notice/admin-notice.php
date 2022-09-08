@@ -31,16 +31,14 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8.0 compatible. To learn more, please see <a href="https://lobby.vip.wordpress.com/2022/07/06/working-together-the-path-to-php-8-0/" target="_blank">the Lobby announcement</a> and <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">the guide on how to prepare your application for a PHP version upgrade</a>.';
-
+		$message = 'All WordPress environments on the VIP Platform that are not running PHP 8.0 or above by Monday, the 15th of November 2022, <a href="https://lobby.vip.wordpress.com/2022/07/06/working-together-the-path-to-php-8-0/" target="_blank">will be updated by the WordPress VIP team</a>. Please upgrade your application to PHP 8.0 or 8.1 ahead of this date, to address any potential compatibility issues. Applications updated by the WordPress VIP team will not have a rollback option to a prior PHP version, and WordPress VIP will not be responsible for any issues the update may cause to your site(s). <a href="https://wpvip.com/2022/07/06/how-to-prepare-your-wordpress-site-for-php-8/" target="_blank">Visit our PHP 8 Update Guide to get started.</a>';
 		$admin_notice_controller->add(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ),
 					new Expression_Condition( version_compare( PHP_VERSION, '8.0', '<' ) ),
 				],
-				'php8-migrations-2',
+				'php8-migrations-3',
 				'info'
 			)
 		);
