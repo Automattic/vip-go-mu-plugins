@@ -289,7 +289,9 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
 
-require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+if ( file_exists( __DIR__ . '/001-core/constants.php' ) ) {
+	require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+}
 
 // Roll out to non-prods only for now
 if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
