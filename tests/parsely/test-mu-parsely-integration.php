@@ -24,55 +24,40 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_parsely_loader_info_defaults() {
 		// Can only reliably test the defaults in "disabled" mode.
 		if ( 'disabled' === self::$test_mode ) {
-			$this->assertFalse( Parsely_Loader_Info::get_active() );
+			$this->assertFalse( Parsely_Loader_Info::is_active() );
 			$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
 			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
 			$this->assertEquals( Parsely_Loader_Info::SERVICE_TYPE_UNKNOWN, Parsely_Loader_Info::get_service_type() );
 			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
 		} else {
-			$this->assertTrue( Parsely_Loader_Info::get_active() );
+			$this->assertTrue( Parsely_Loader_Info::is_active() );
 		}
 	}
 
 	public function test_is_queued_for_activation_get() {
+		set_current_screen( 'plugins' );
+
 		$this->set_get_globals_for_parsely_activation();
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
 	}
 
 	public function test_is_queued_for_activation_post() {
+		set_current_screen( 'plugins' );
+
 		$this->set_post_globals_for_parsely_activation();
 		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
 	}
 
 	public function test_is_not_queued_for_activation() {
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
-	}
+		set_current_screen( 'plugins' );
 
-	public function test_has_plugin_signature() {
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [] ) );
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( '' ) );
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'hello.php' ) );
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php3' ] ) );
-		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
-			'hello.php',
-			'jetpack-11.3/jetpack.php',
-		] ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'wp-parsely/wp-parsely.php' ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely/wp-parsely.php' ] ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [
-			'hello.php',
-			'jetpack-11.3/jetpack.php',
-			'wp-parsely/wp-parsely.php',
-		] ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely-1.10/wp-parsely.php' ] ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( [ 'wp-parsely2/wp-parsely.php' ] ) );
-		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\has_plugin_signature( 'the-quick-brown-fox-jumps-over-the-lazy-dog/wp-parsely.php' ) );
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
 	}
 
 	public function test_has_maybe_load_plugin_action() {
 		$this->assertSame(
-			10,
-			has_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' )
+			1,
+			has_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' )
 		);
 	}
 
@@ -100,25 +85,25 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			case 'disabled':
 				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
-				$this->assertFalse( Parsely_Loader_Info::get_active() );
+				$this->assertFalse( Parsely_Loader_Info::is_active() );
 				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
-				$this->assertTrue( Parsely_Loader_Info::get_active() );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
 				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'option_enabled':
 				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
-				$this->assertTrue( Parsely_Loader_Info::get_active() );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
 				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_and_option_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
-				$this->assertTrue( Parsely_Loader_Info::get_active() );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
 				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			default:
