@@ -27,7 +27,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			$this->assertFalse( Parsely_Loader_Info::is_active() );
 			$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
 			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
-			$this->assertEquals( Parsely_Loader_Info::SERVICE_TYPE_UNKNOWN, Parsely_Loader_Info::get_service_type() );
 			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
 		} else {
 			$this->assertTrue( Parsely_Loader_Info::is_active() );

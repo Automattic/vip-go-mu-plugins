@@ -239,7 +239,6 @@ class Site_Details_Index {
 		$parsely_info                     = [];
 		$parsely_info['active']           = ParselyInfo::is_active();
 		$parsely_info['integration_type'] = ParselyInfo::get_integration_type();
-		$parsely_info['service_type']     = ParselyInfo::get_service_type();
 		$parsely_info['version']          = ParselyInfo::get_version();
 
 		return $parsely_info;

@@ -32,8 +32,7 @@ final class Parsely_Loader_Info {
 	const INTEGRATION_TYPE_NONE             = 'NONE';
 
 	// Defaults for when detection was not possible.
-	const VERSION_UNKNOWN      = 'UNKNOWN';
-	const SERVICE_TYPE_UNKNOWN = 'UNKNOWN';
+	const VERSION_UNKNOWN = 'UNKNOWN';
 
 	private static bool $active;
 	private static string $integration_type;
@@ -55,14 +54,6 @@ final class Parsely_Loader_Info {
 
 	public static function set_integration_type( string $integration_type ): void {
 		self::$integration_type = $integration_type;
-	}
-
-	public static function get_service_type(): string {
-		return isset( self::$service_type ) ? self::$service_type : self::SERVICE_TYPE_UNKNOWN;
-	}
-
-	public static function set_service_type( string $service_type ): void {
-		self::$service_type = $service_type;
 	}
 
 	public static function get_version(): string {
