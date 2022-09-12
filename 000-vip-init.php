@@ -13,6 +13,8 @@ use Automattic\VIP\Config\Sync;
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
+use function Automattic\VIP\Core\Constants\define_db_constants;
+
 // @codeCoverageIgnoreStart
 
 /**
@@ -285,6 +287,17 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	//
 	// https://make.wordpress.org/core/2020/07/22/new-xml-sitemaps-functionality-in-wordpress-5-5/
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
+}
+
+if ( file_exists( __DIR__ . '/001-core/constants.php' ) ) {
+	require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+}
+
+// Roll out to non-prods only for now
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+	if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
+		define_db_constants( $GLOBALS['wpdb'] );
+	}
 }
 
 do_action( 'vip_loaded' );
