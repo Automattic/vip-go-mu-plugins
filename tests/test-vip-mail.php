@@ -116,4 +116,23 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 
 		self::assertEquals( $expected, $mailer->Host );
 	}
+
+	/**
+	 * @ticket GH-3638
+	 */
+	public function test_filter_removal(): void {
+		$instance = VIP_SMTP::instance();
+
+		self::assertEquals( 1, has_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ] ) );
+
+		remove_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ], 1 );
+		self::assertFalse( has_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ] ) );
+
+		$expected = 'test-gh-3638@example.com';
+		add_filter( 'wp_mail_from', fn () => $expected, 0 );
+
+		$actual = apply_filters( 'wp_mail_from', 'bad@example.com' );
+
+		self::assertEquals( $expected, $actual );
+	}
 }
