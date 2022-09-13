@@ -7,13 +7,13 @@
 
 namespace Automattic\Jetpack\My_Jetpack\Products;
 
-use Automattic\Jetpack\My_Jetpack\Hybrid_Product;
+use Automattic\Jetpack\My_Jetpack\Module_Product;
 use Automattic\Jetpack\My_Jetpack\Wpcom_Products;
 
 /**
  * Class responsible for handling the VideoPress product
  */
-class Videopress extends Hybrid_Product {
+class Videopress extends Module_Product {
 
 	/**
 	 * The product slug
@@ -28,31 +28,6 @@ class Videopress extends Hybrid_Product {
 	 * @var string
 	 */
 	public static $module_name = 'videopress';
-
-	/**
-	 * The slug of the plugin associated with this product.
-	 *
-	 * @var string
-	 */
-	public static $plugin_slug = 'jetpack-videopress';
-
-	/**
-	 * The filename (id) of the plugin associated with this product.
-	 *
-	 * @var string
-	 */
-	public static $plugin_filename = array(
-		'jetpack-videopress/jetpack-videopress.php',
-		'videopress/jetpack-videopress.php',
-		'jetpack-videopress-dev/jetpack-videopress.php',
-	);
-
-	/**
-	 * Search only requires site connection
-	 *
-	 * @var boolean
-	 */
-	public static $requires_user_connection = true;
 
 	/**
 	 * Get the internationalized product name
@@ -143,11 +118,8 @@ class Videopress extends Hybrid_Product {
 	 * @return ?string
 	 */
 	public static function get_manage_url() {
-		if ( method_exists( 'Automattic\Jetpack\VideoPress\Initializer', 'should_initialize_admin_ui' ) && \Automattic\Jetpack\VideoPress\Initializer::should_initialize_admin_ui() ) {
-			return \Automattic\Jetpack\VideoPress\Admin_UI::get_admin_page_url();
-		} else {
+		if ( static::is_active() ) {
 			return admin_url( 'admin.php?page=jetpack#/settings?term=videopress' );
 		}
 	}
-
 }
