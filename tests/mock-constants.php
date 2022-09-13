@@ -124,7 +124,7 @@ namespace Automattic\VIP\Search {
 	}
 
 	function define( $constant, $value ) {
-		return Constant_Mocker::define( $constant, $value );
+		Constant_Mocker::define( $constant, $value );
 	}
 }
 
@@ -132,7 +132,7 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB {
 	use Automattic\Test\Constant_Mocker;
 
 	function define( $constant, $value ) {
-		return Constant_Mocker::define( $constant, $value );
+		Constant_Mocker::define( $constant, $value );
 	}
 
 	function defined( $constant ) {
@@ -145,6 +145,22 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB {
 }
 
 namespace Automattic\VIP\Files {
+	use Automattic\Test\Constant_Mocker;
+
+	function define( $constant, $value ) {
+		Constant_Mocker::define( $constant, $value );
+	}
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Core\Constants {
 	use Automattic\Test\Constant_Mocker;
 
 	function define( $constant, $value ) {

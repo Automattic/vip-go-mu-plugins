@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info;
 use Parsely\UI\Row_Actions;
 use WP_UnitTestCase;
 
@@ -20,10 +21,42 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_parsely_loader_info_defaults() {
+		// Can only reliably test the defaults in "disabled" mode.
+		if ( 'disabled' === self::$test_mode ) {
+			$this->assertFalse( Parsely_Loader_Info::is_active() );
+			$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
+			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
+			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
+		} else {
+			$this->assertTrue( Parsely_Loader_Info::is_active() );
+		}
+	}
+
+	public function test_is_queued_for_activation_get() {
+		set_current_screen( 'plugins' );
+
+		$this->set_get_globals_for_parsely_activation();
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
+	}
+
+	public function test_is_queued_for_activation_post() {
+		set_current_screen( 'plugins' );
+
+		$this->set_post_globals_for_parsely_activation();
+		$this->assertTrue( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
+	}
+
+	public function test_is_not_queued_for_activation() {
+		set_current_screen( 'plugins' );
+
+		$this->assertFalse( \Automattic\VIP\WP_Parsely_Integration\is_queued_for_activation() );
+	}
+
 	public function test_has_maybe_load_plugin_action() {
 		$this->assertSame(
-			10,
-			has_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' )
+			1,
+			has_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin' )
 		);
 	}
 
@@ -46,22 +79,31 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_bootstrap_modes() {
+		\Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin();
 		switch ( self::$test_mode ) {
 			case 'disabled':
 				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				$this->assertFalse( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'option_enabled':
 				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_and_option_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED, Parsely_Loader_Info::get_integration_type() );
 				break;
 			default:
 				$this->fail( 'Invalid test mode specified: ' . self::$test_mode );
@@ -152,5 +194,15 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		$options = array_merge( [ 'apikey' => 'testing123' ], $parsely->get_options() );
 		return $parsely->construct_parsely_metadata( $options, get_post( $post_id ) );
+	}
+
+	private function set_get_globals_for_parsely_activation() {
+		$_GET['plugin'] = 'wp-parsely/wp-parsely.php';
+		$_GET['action'] = 'activate';
+	}
+
+	private function set_post_globals_for_parsely_activation() {
+		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
+		$_POST['action']  = 'activate-selected';
 	}
 }

@@ -32,11 +32,9 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	protected function dispatch_request( $method ) {
-		$request             = new \WP_REST_Request( $method, '/tests/v1/endpoint' );
-		$response            = $this->server->dispatch( $request );
-		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
-
-		return $dispatched_response;
+		$request  = new \WP_REST_Request( $method, '/tests/v1/endpoint' );
+		$response = $this->server->dispatch( $request );
+		return apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
 	}
 
 	public function get_rest_read_methods() {
@@ -78,22 +76,9 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 
 	/**
 	 * @dataProvider get_rest_read_methods
-	 */
-	public function test__skip_ttl_for_authenticated_read_requests( $method ) {
-		$user_id = $this->factory->user->create();
-		wp_set_current_user( $user_id );
-
-		$response = $this->dispatch_request( $method );
-
-		$response_headers = $response->get_headers();
-
-		$this->assertArrayNotHasKey( 'Cache-Control', $response_headers );
-	}
-
-	/**
 	 * @dataProvider get_rest_write_methods
 	 */
-	public function test__skip_ttl_for_authenticated_write_requests( $method ) {
+	public function test__skip_ttl_for_authenticated_requests( $method ) {
 		$user_id = $this->factory->user->create();
 		wp_set_current_user( $user_id );
 
