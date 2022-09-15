@@ -11,7 +11,7 @@ class Config {
 	private bool $is_sandbox   = false;
 
 	public function __construct() {
-		$this->is_sandbox   = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), getenv() );
+		$this->is_sandbox   = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), [] );
 		$this->enabled      = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
 		$this->allow_writes = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
 	}
