@@ -29,6 +29,9 @@ jobs:
           - { wp: latest, parsely: '3.3', mode: 'filter_enabled', php: '7.4' }
           - { wp: latest, parsely: '3.3', mode: 'option_enabled', php: '7.4' }
           - { wp: latest, parsely: '3.3', mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.5', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.5', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.5', mode: 'filter_and_option_enabled', php: '7.4' }
     services:
       mysql:
         image: mariadb:10.3
