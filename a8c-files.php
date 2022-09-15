@@ -316,8 +316,8 @@ class A8C_Files {
 
 			$imagedata = wp_get_attachment_metadata( $id );
 			if ( $imagedata ) {
-				$w = $imagedata['width'];
-				$h = $imagedata['height'];
+				$w = $imagedata['width'] ?? 0;
+				$h = $imagedata['height'] ?? 0;
 			}
 
 			if ( empty( $w ) ) {
