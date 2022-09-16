@@ -10,13 +10,13 @@
  *
  * Plugin Name:  Query Monitor
  * Description:  The developer tools panel for WordPress.
- * Version:      3.9.0
+ * Version:      3.10.1
  * Plugin URI:   https://querymonitor.com/
  * Author:       John Blackbourn
  * Author URI:   https://querymonitor.com/
  * Text Domain:  query-monitor
  * Domain Path:  /languages/
- * Requires PHP: 5.3.6
+ * Requires PHP: 5.6.20
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -136,7 +136,7 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	if ( is_array( $dispatchers ) ) {
 		if ( isset( $dispatchers['html'] ) ) {
 			$html_dispatcher = $dispatchers['html'];
-			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 9 );
 
 			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
 			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
@@ -157,9 +157,5 @@ add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MA
 /**
  * Load QM plugins
  */
-if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
-}
-if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
-}
+require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
