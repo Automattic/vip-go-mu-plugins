@@ -195,7 +195,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 					value="<?php esc_attr_e( 'Submit', 'two-factor' ); ?>"/>
 			<?php else : ?>
 				<label>Phone Number
-					<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309"
+					<input name="vip-two-factor-phone" type="tel"
 						value="<?php echo esc_attr( $sms ); ?>"/>
 				</label>
 				<input type="submit" class="button" name="vip-two-factor-phone-send-code"
