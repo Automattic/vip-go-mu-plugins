@@ -98,6 +98,8 @@ class Plugin {
 		if ( '/metrics' === $request_uri && is_proxied_request() ) {
 			$query_vars['metrics'] = true;
 			unset( $query_vars['error'] );
+
+			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
 		}
 
 		return $query_vars;
@@ -114,6 +116,11 @@ class Plugin {
 		}
 
 		return $headers;
+	}
+
+	public function pre_handle_404( $_result, WP_Query $query ): bool {
+		unset( $query->query_vars['error'] );
+		return true;
 	}
 
 	/**

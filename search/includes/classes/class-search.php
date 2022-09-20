@@ -2369,7 +2369,7 @@ class Search {
 	 */
 	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
 		if ( ! empty( $weight_config ) ) {
-			return true;
+			return $should_do_weighting;
 		}
 
 		global $wp_filter;
@@ -2386,11 +2386,11 @@ class Search {
 				foreach ( $wp_filter[ $ep_filter ]->callbacks as $callback ) {
 					foreach ( $callback as $el ) {
 						if ( $el['function'] instanceof \Closure ) {
-							return true;
+							return $should_do_weighting;
 						} else {
 							$class = get_class( $el['function'][0] );
 							if ( false === strpos( $class, 'ElasticPress\Feature' ) ) {
-								return true;
+								return $should_do_weighting;
 							}
 						}
 					}

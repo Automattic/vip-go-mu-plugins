@@ -61,6 +61,14 @@ jobs:
             wordpress.org:443
             dns.google:53
             e2e-test-site.vipdev.lndo.site:80
+            playwright-akamai.azureedge.net:443
+            playwright-verizon.azureedge.net:443
+            playwright.azureedge.net:443
+            ppa.launchpad.net:80
+            ppa.launchpad.net:443
+            azure.archive.ubuntu.com:80
+            azure.archive.ubuntu.com:443
+            packages.microsoft.com:443
 
       - name: Check out repository code
         uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
@@ -77,6 +85,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        working-directory: vip-go-mu-plugins
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
         working-directory: vip-go-mu-plugins
 
       - name: Install VIP CLI

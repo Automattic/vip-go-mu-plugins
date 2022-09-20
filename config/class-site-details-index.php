@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
+
 class Site_Details_Index {
 	/**
 	 * Variable to hold the instance for the singleton.
@@ -79,6 +81,7 @@ class Site_Details_Index {
 		$site_details['plugins'] = $this->get_plugin_info();
 		$site_details['search']  = $this->get_search_info();
 		$site_details['jetpack'] = $this->get_jetpack_info();
+		$site_details['parsely'] = $this->get_parsely_info();
 
 		return $site_details;
 	}
@@ -226,6 +229,19 @@ class Site_Details_Index {
 		}
 
 		return $jetpack_info;
+	}
+
+	/**
+	 * Gather all the information about Parse.ly.
+	 * @return array Parse.ly plugin info.
+	 */
+	public function get_parsely_info() {
+		$parsely_info                     = [];
+		$parsely_info['active']           = ParselyInfo::is_active();
+		$parsely_info['integration_type'] = ParselyInfo::get_integration_type();
+		$parsely_info['version']          = ParselyInfo::get_version();
+
+		return $parsely_info;
 	}
 
 	/**
