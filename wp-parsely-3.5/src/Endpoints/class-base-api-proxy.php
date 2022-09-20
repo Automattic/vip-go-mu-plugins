@@ -26,7 +26,7 @@ abstract class Base_API_Proxy {
 	 *
 	 * @var Parsely
 	 */
-	private $parsely;
+	protected $parsely;
 
 	/**
 	 * Proxy object which does the actual calls to the Parse.ly API.
