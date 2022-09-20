@@ -106,18 +106,24 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 
 	// Capture MemcachePool errors, throw a warning, and provide more debugging data.
 	if (
-		E_NOTICE === $type &&
-		( '/var/www/wp-content/object-cache-stable.php' === $file || '/var/www/wp-content/object-cache-next.php' === $file )
+		E_NOTICE === $type && defined( 'WP_CONTENT_DIR' ) &&
+		( WP_CONTENT_DIR . '/object-cache-stable.php' === $file || WP_CONTENT_DIR . '/object-cache-next.php' === $file )
 	) {
 		$type = E_WARNING;
 		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue, WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
 		foreach ( debug_backtrace() as $value ) {
-			if ( 'wpcom_error_handler' === $value['function'] && str_starts_with( $value['args'][1], 'MemcachePool::' ) ) {
+			$args = $value['args'] ?? [];
+			if ( 'wpcom_error_handler' === $value['function'] 
+				&& ! empty( $args[1] )
+				&& isset( $args[4]['id'] )
+				&& isset( $args[4]['data'] )
+				&& substr( $args[1], 0, strlen( 'MemcachePool::' ) ) === 'MemcachePool::'
+			) {
 				$message .= sprintf(
 					' (Key: %s, Group: %s, Data Size: %s)',
-					$value['args'][4]['id'],
-					empty( $value['args'][4]['group'] ) ? 'default' : $value['args'][4]['group'],
-					strlen( $value['args'][4]['data'] )
+					$args[4]['id'],
+					empty( $args[4]['group'] ) ? 'default' : $args[4]['group'],
+					strlen( $args[4]['data'] )
 				);
 			}
 		}
