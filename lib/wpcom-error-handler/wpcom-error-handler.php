@@ -110,7 +110,8 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		( '/var/www/wp-content/object-cache-stable.php' === $file || '/var/www/wp-content/object-cache-next.php' === $file )
 	) {
 		$type = E_WARNING;
-		foreach ( debug_backtrace() as $trace => $value ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue, WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		foreach ( debug_backtrace() as $value ) {
 			if ( 'wpcom_error_handler' === $value['function'] && str_starts_with( $value['args'][1], 'MemcachePool::' ) ) {
 				$message .= sprintf(
 					' (Key: %s, Group: %s, Data Size: %s)',
