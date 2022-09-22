@@ -56,8 +56,18 @@ class VIP_Noop_Mailer {
 	}
 }
 
-class VIP_SMTP {
-	public function init() {
+final class VIP_SMTP {
+	private static ?VIP_SMTP $instance = null;
+
+	public static function instance(): self {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	private function __construct() {
 		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
 		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
 
@@ -81,7 +91,7 @@ class VIP_SMTP {
 
 		global $all_smtp_servers;
 
-		if ( ! is_array( $all_smtp_servers ) || empty( $all_smtp_servers ) ) {
+		if ( empty( $all_smtp_servers ) || ! is_array( $all_smtp_servers ) ) {
 			return;
 		}
 
@@ -178,4 +188,4 @@ class VIP_SMTP {
 	}
 }
 
-( new VIP_SMTP() )->init();
+VIP_SMTP::instance();
