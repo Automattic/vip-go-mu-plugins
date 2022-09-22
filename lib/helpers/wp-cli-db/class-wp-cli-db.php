@@ -4,9 +4,10 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB;
 
 use Exception;
 use WP_CLI;
-use Automattic\VIP\Environment;
 
 class Wp_Cli_Db {
+	private Config $config;
+
 	public function __construct( Config $config ) {
 		$this->config = $config;
 	}
@@ -60,8 +61,10 @@ class Wp_Cli_Db {
 		// This will throw an exception if db commands are not enabled for this env:
 		$server = $this->config->get_database_server();
 
-		// This will throw an exception if the db subcommand is not valid:
-		$this->validate_subcommand( $command );
+		if ( ! $this->config->is_sandbox() ) {
+			// This will throw an exception if the db subcommand is not valid:
+			$this->validate_subcommand( $command );
+		}
 
 		$server->define_variables();
 	}
