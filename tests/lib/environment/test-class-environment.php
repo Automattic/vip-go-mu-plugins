@@ -108,6 +108,11 @@ class Environment_Test extends TestCase {
 				// Expected result
 				true,
 			),
+			array(
+				'somesite-sbx-u666-abcdefabcd-efabc',
+				array(),
+				true,
+			),
 		);
 	}
 
