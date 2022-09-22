@@ -19,7 +19,9 @@ class Admin_Notice_Controller {
 		$dismissed_notices = get_user_meta( get_current_user_id(), self::DISMISS_USER_META );
 
 		$filtered_notices = array_filter( $this->all_notices, function ( $notice ) use ( $dismissed_notices ) {
-			if ( $notice->dismiss_identifier && in_array( $notice->dismiss_identifier, $dismissed_notices ) ) {
+			$is_dismissed = in_array( $notice->dismiss_identifier, $dismissed_notices );
+			$is_hidden_with_filter = apply_filters('vip_admin_notice_hide_'.$notice->dismiss_identifier, false);
+			if ( $notice->dismiss_identifier && ( $is_dismissed || $is_hidden_with_filter ) ) {
 				return false;
 			}
 			return $notice->should_render();
