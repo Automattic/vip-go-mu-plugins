@@ -2,18 +2,15 @@
 
 namespace Automattic\VIP\Helpers\WP_CLI_DB;
 
-use Automattic\VIP\Environment;
 use Exception;
 
 class Config {
 	private bool $enabled      = false;
 	private bool $allow_writes = false;
-	private bool $is_sandbox   = false;
 
 	public function __construct() {
-		$this->is_sandbox   = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), [] );
-		$this->enabled      = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
-		$this->allow_writes = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
+		$this->enabled      = defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
+		$this->allow_writes = defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
 	}
 
 	public function enabled(): bool {
@@ -22,10 +19,6 @@ class Config {
 
 	public function allow_writes(): bool {
 		return $this->allow_writes;
-	}
-
-	public function is_sandbox(): bool {
-		return $this->is_sandbox;
 	}
 
 	/**
