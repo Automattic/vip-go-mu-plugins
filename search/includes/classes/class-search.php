@@ -2359,7 +2359,7 @@ class Search {
 	}
 
 	/**
-	 * A filter that only enables weighting if it is needed. E.g. When weightings are set by UI or filtered, or custom results are used.
+	 * A filter that only enables weighting if it is needed. E.g. When weightings are set by UI or filtered.
 	 *
 	 * @param bool  Whether to enable weight config, defaults to true for search requests that are public or REST
 	 * @param array $weight_config Current weight config
@@ -2369,18 +2369,6 @@ class Search {
 	 */
 	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
 		if ( ! empty( $weight_config ) ) {
-			return $should_do_weighting;
-		}
-
-		$custom_results = new \WP_Query( [
-			'post_type'           => 'ep-pointer',
-			'post_status'         => 'publish',
-			'fields'              => 'ids',
-			'posts_per_page'      => 1,
-			'no_found_rows'       => true,
-			'ignore_sticky_posts' => true,
-		] );
-		if ( ! empty( $custom_results->posts ) ) {
 			return $should_do_weighting;
 		}
 
