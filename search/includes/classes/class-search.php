@@ -649,6 +649,9 @@ class Search {
 		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
 
 		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
+
+		add_action( 'publish_ep-pointer', [ $this, 'set_custom_results_existence_cache' ], PHP_INT_MAX, 3 );
+		add_action( 'trash_ep-pointer', [ $this, 'set_custom_results_existence_cache' ], PHP_INT_MAX, 3 );
 	}
 
 	protected function load_commands() {
@@ -2372,6 +2375,13 @@ class Search {
 			return $should_do_weighting;
 		}
 
+		$search_ordering_feature = \ElasticPress\Features::factory()->get_registered_feature( 'searchordering' );
+		if ( $search_ordering_feature && $search_ordering_feature->is_active() &&
+			'1' === $this->get_cached_custom_results_existence() ) {
+			// If Custom Search Results are enabled and exist, we should bail.
+			return $should_do_weighting;
+		}
+
 		global $wp_filter;
 
 		$ep_filters = [
@@ -2399,6 +2409,67 @@ class Search {
 		}
 
 		return false;
+	}
+
+	/**
+	 * This is used to toggle the option that stores the existence of custom search results.
+	 * Hooks onto {$new_status}_ep-pointer.
+	 *
+	 * @param int $post_id Post ID.
+	 * @param WP_Post $post Post object.
+	 * @param string $old_status Old post status.
+	 */
+	public function set_custom_results_existence_cache( $post_id, $post, $old_status ) {
+		$custom_results_existence = $this->get_cached_custom_results_existence();
+		$option_cache_key         = 'vip_custom_results_existence';
+
+		if ( 'publish' === $post->post_status && '1' !== $custom_results_existence ) {
+			// Only set it to 1 if it's not already 1.
+			update_option( $option_cache_key, '1' );
+		} elseif ( 'trash' === $post->post_status && '1' === $custom_results_existence ) {
+			// If it's trashed, we need to query if there are any more CSRs left and if the option is 1.
+			$custom_results = $this->is_custom_results_exist();
+			if ( ! $custom_results ) {
+				update_option( $option_cache_key, '0' );
+			}
+		}
+	}
+
+	/**
+	 * Return the option that caches the existence of custom search results. If the option does not exist,
+	 * backfill it.
+	 *
+	 * @return string $custom_results_existence String boolean of whether custom search results exist.
+	 */
+	public function get_cached_custom_results_existence() {
+		$option_cache_key         = 'vip_custom_results_existence';
+		$custom_results_existence = get_option( $option_cache_key );
+
+		if ( false === $custom_results_existence ) {
+			$custom_results_existence = $this->is_custom_results_exist() ? '1' : '0';
+			update_option( $option_cache_key, $custom_results_existence );
+		}
+
+		return $custom_results_existence;
+	}
+
+	/**
+	 * Perform a WP_Query lookup to see if Custom Search Results are present.
+	 *
+	 * @return bool $exist If there are any Custom Search Results or not.
+	 */
+	public function is_custom_results_exist() {
+		$args           = [
+			'post_type'           => 'ep-pointer',
+			'post_status'         => 'publish',
+			'fields'              => 'ids',
+			'posts_per_page'      => 1,
+			'no_found_rows'       => true,
+			'ignore_sticky_posts' => true,
+		];
+		$custom_results = new \WP_Query( $args );
+
+		return ! empty( $custom_results->posts );
 	}
 
 	/**
