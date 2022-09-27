@@ -69,7 +69,7 @@ export class EditorPage {
         try {
             await this.page.waitForSelector( selectors.welcomeTourCloseButton, {
                 state: 'visible',
-                timeout: 500,
+                timeout: 5000,
             } );
         } catch ( err ) {
             return;
