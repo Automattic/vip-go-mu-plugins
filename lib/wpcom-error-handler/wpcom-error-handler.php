@@ -104,6 +104,31 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		return true;
 	}
 
+	// Capture MemcachePool errors, throw a warning, and provide more debugging data.
+	if (
+		E_NOTICE === $type && defined( 'WP_CONTENT_DIR' ) &&
+		( WP_CONTENT_DIR . '/object-cache-stable.php' === $file || WP_CONTENT_DIR . '/object-cache-next.php' === $file )
+	) {
+		$type = E_WARNING;
+		// phpcs:ignore PHPCompatibility.FunctionUse.ArgumentFunctionsReportCurrentValue, WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+		foreach ( debug_backtrace() as $value ) {
+			$args = $value['args'] ?? [];
+			if ( 'wpcom_error_handler' === $value['function'] 
+				&& ! empty( $args[1] )
+				&& isset( $args[4]['id'] )
+				&& isset( $args[4]['data'] )
+				&& substr( $args[1], 0, strlen( 'MemcachePool::' ) ) === 'MemcachePool::'
+			) {
+				$message .= sprintf(
+					' (Key: %s, Group: %s, Data Size: %s)',
+					$args[4]['id'],
+					empty( $args[4]['group'] ) ? 'default' : $args[4]['group'],
+					strlen( $args[4]['data'] )
+				);
+			}
+		}
+	}
+
 	$die = false;
 	switch ( $type ) {
 		case E_CORE_ERROR: // we may not be able to capture this one

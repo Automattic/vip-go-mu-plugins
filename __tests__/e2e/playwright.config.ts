@@ -6,12 +6,12 @@ import { PlaywrightTestConfig } from '@playwright/test';
 const config: PlaywrightTestConfig = {
     retries: 1,
     globalSetup: require.resolve( './lib/global-setup' ),
-    timeout: 120000,
-    reporter: process.env.CI ? 'github' : 'list',
+    timeout: 60000,
+    reporter: process.env.CI ? 'github' : 'line',
     reportSlowTests: null,
-    workers: 4,
+    workers: parseInt( process.env.E2E_WORKERS || '2', 10 ) || 2,
     use: {
-        headless: true,
+        headless: process.env.DEBUG_TESTS !== 'true',
         viewport: { width: 1280, height: 1000 },
         ignoreHTTPSErrors: true,
         video: 'retain-on-failure',

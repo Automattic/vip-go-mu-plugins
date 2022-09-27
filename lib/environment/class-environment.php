@@ -39,7 +39,7 @@ class Environment {
 	}
 
 	public static function is_sandbox_container( $hostname, $env = array() ) {
-		if ( false !== strpos( $hostname, '_web_dev_' ) ) {
+		if ( false !== strpos( $hostname, '_web_dev_' ) || false !== strpos( $hostname, '-sbx-u' ) ) {
 			return true;
 		}
 

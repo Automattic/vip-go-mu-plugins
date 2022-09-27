@@ -16,8 +16,26 @@ $files = [
 	'/lib/utils/class-context.php',
 ];
 
+$cli_files = [
+	// '/lib/helpers/wp-cli-db.php', - Reverting as it breaks dev-env import
+];
+
 foreach ( $files as $file ) {
 	if ( file_exists( $mu_plugins_base . $file ) ) {
 		require_once $mu_plugins_base . $file;
 	}
 }
+
+unset( $files );
+
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	foreach ( $cli_files as $file ) {
+		if ( file_exists( $mu_plugins_base . $file ) ) {
+			require_once $mu_plugins_base . $file;
+		}
+	}
+}
+
+unset( $cli_files );
+unset( $file );
+unset( $mu_plugins_base );

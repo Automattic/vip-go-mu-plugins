@@ -293,11 +293,8 @@ if ( file_exists( __DIR__ . '/001-core/constants.php' ) ) {
 	require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
 }
 
-// Roll out to non-prods only for now
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-	if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
-		define_db_constants( $GLOBALS['wpdb'] );
-	}
+if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
+	define_db_constants( $GLOBALS['wpdb'] );
 }
 
 do_action( 'vip_loaded' );

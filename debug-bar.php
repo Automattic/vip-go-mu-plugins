@@ -9,13 +9,18 @@ Author URI: https://wordpress.org/
 Text Domain: debug-bar
 */
 
-// If the user is an Automattician (typically a vip_support user), then force-enable Debug Bar.
+if ( file_exists( __DIR__ . '/debug-bar/debug-bar.php' ) ) {
+	require_once __DIR__ . '/debug-bar/debug-bar.php';
+}
+
+// If the user is an Automattician (typically a vip_support user) or local environment, then force-enable Debug Bar.
 add_filter( 'debug_bar_enable', function( $enable ) {
 	if ( is_automattician() ) {
 		return true;
 	}
 
-	if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' === WP_ENVIRONMENT_TYPE ) {
+	if ( ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' === WP_ENVIRONMENT_TYPE ) ||
+		( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' === VIP_GO_APP_ENVIRONMENT ) ) {
 		return true;
 	}
 
@@ -28,10 +33,6 @@ add_action( 'set_current_user', function() {
 
 	if ( ! $enable ) {
 		return;
-	}
-
-	if ( ! class_exists( 'Debug_Bar' ) ) {
-		require_once __DIR__ . '/debug-bar/debug-bar.php';
 	}
 
 	// Load additional plugins
