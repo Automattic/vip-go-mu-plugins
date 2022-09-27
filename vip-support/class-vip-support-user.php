@@ -460,16 +460,19 @@ class User {
 			return $url;
 		}
 
-		// Get the user's email address.
 		if ( is_numeric( $id_or_email ) ) {
+			// Get the user's email address.
 			$user = get_user_by( 'id', $id_or_email );
 			if ( false !== $user ) {
 				$user_email = $user->user_email;
 			}
 		} elseif ( is_string( $id_or_email ) ) {
+			// Since we already have user email, get WP_User object.
 			$user_email = $id_or_email;
+			$user       = get_user_by( 'email', $id_or_email );
 		} elseif ( $id_or_email instanceof WP_User ) {
 			$user_email = $id_or_email->user_email;
+			$user       = $id_or_email;
 		}
 
 		if ( isset( $user_email ) && self::is_a8c_email( $user_email ) && ( isset( $user->ID ) && $this->has_vip_support_meta( $user->ID ) ) ) {
