@@ -53,7 +53,7 @@ class ContentHelperProvider {
 			message = `${ __( 'The Parse.ly API did not return any results for top-performing posts', 'wp-parsely' ) } ${ fetchQueryResult.message }.`;
 		}
 
-		return { message, posts: this.processData( data ) };
+		return { message, posts: data };
 	}
 
 	private static async fetchData( fetchDataQueryResult: BuildFetchDataQueryResult ): Promise<SuggestedPost[] | string> {
@@ -73,13 +73,6 @@ class ContentHelperProvider {
 		}
 
 		return response?.data || [];
-	}
-
-	private static processData( data: SuggestedPost[] ): SuggestedPost[] {
-		return data.map( ( p ) => {
-			const statsUrl = `${ window.wpParselyContentHelperPrefix }?url=${ window.encodeURIComponent( p.url ) }`;
-			return Object.assign( p, { statsUrl } );
-		} );
 	}
 
 	private static buildFetchDataQuery( author: Schema.User, category: Schema.Taxonomy, tag: Schema.Taxonomy ): BuildFetchDataQueryResult {
