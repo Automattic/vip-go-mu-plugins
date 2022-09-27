@@ -25,8 +25,8 @@ export class LoginPage {
      * Navigate to login page
      *
      */
-    async visit(): Promise<void> {
-        await this.page.goto( '/wp-login.php' );
+    visit(): Promise<unknown> {
+        return this.page.goto( '/wp-login.php' );
     }
 
     /**
@@ -35,9 +35,9 @@ export class LoginPage {
      * @param {string} username Username to login as
      * @param {string} password Password for account
      */
-    async login( username: string, password: string ): Promise<void> {
+    async login( username: string, password: string ): Promise<unknown> {
         await this.page.fill( selectors.userField, username );
         await this.page.fill( selectors.passwordField, password );
-        await Promise.all( [ this.page.waitForNavigation(), this.page.click( selectors.submitButton ) ] );
+        return Promise.all( [ this.page.waitForNavigation(), this.page.click( selectors.submitButton ) ] );
     }
 }

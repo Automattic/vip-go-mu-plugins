@@ -22,8 +22,8 @@ export class PageListPage {
     /**
      * Navigate to Page List page
      */
-    async visit(): Promise<void> {
-        await this.page.goto( '/wp-admin/edit.php?post_type=page' );
+    visit(): Promise<unknown> {
+        return this.page.goto( '/wp-admin/edit.php?post_type=page' );
     }
 
     /**
@@ -31,7 +31,7 @@ export class PageListPage {
      *
      * @param { string } pageID ID of the page to be edited
      */
-    async editPageByID( pageID: string ): Promise<void> {
-        await this.page.click( selectors.pageLink( pageID ) );
+    editPageByID( pageID: string ): Promise<void> {
+        return this.page.click( selectors.pageLink( pageID ) );
     }
 }

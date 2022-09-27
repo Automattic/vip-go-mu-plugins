@@ -48,9 +48,9 @@ export class PublishedPagePage {
     /**
      * Returns boolean of whether or not image was found in page
      *
-     * @return {boolean} True if image is found, otherwise false
+     * @return {Promise<boolean>} True if image is found, otherwise false
      */
-    async isImageDisplayed(): Promise<boolean> {
+    isImageDisplayed(): Promise<boolean> {
         return this.page.isVisible( selectors.pageImage );
     }
 }

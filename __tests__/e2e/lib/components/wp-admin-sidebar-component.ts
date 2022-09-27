@@ -25,8 +25,8 @@ export class WPAdminSidebarComponent {
      *
      * @param {string} itemName Name of the item to be hovered over
      */
-    async hoverMenuItem( itemName: string ): Promise<void> {
-        await this.page.hover( selectors.menuItem( itemName ) );
+    hoverMenuItem( itemName: string ): Promise<void> {
+        return this.page.hover( selectors.menuItem( itemName ) );
     }
 
     /**
@@ -34,8 +34,8 @@ export class WPAdminSidebarComponent {
      *
      * @param {string} itemName Name of the item to be clicked
      */
-    async clickMenuItem( itemName: string ): Promise<void> {
-        await this.page.click( selectors.menuItem( itemName ) );
+    clickMenuItem( itemName: string ): Promise<void> {
+        return this.page.click( selectors.menuItem( itemName ) );
     }
 
     /**
@@ -43,8 +43,8 @@ export class WPAdminSidebarComponent {
      *
      * @param {string} itemName Name of the item to be hovered over
      */
-    async hoverSubMenuItem( itemName: string ): Promise<void> {
-        await this.page.hover( selectors.submenuItem( itemName ) );
+    hoverSubMenuItem( itemName: string ): Promise<void> {
+        return this.page.hover( selectors.submenuItem( itemName ) );
     }
 
     /**
@@ -52,7 +52,7 @@ export class WPAdminSidebarComponent {
      *
      * @param {string} itemName Name of the item to be clicked
      */
-    async clickSubMenuItem( itemName: string ): Promise<void> {
-        await this.page.click( selectors.submenuItem( itemName ) );
+    clickSubMenuItem( itemName: string ): Promise<void> {
+        return this.page.click( selectors.submenuItem( itemName ) );
     }
 }
