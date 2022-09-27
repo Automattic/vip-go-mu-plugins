@@ -42,13 +42,13 @@ test( 'edit a Page', async ( { page } ) => {
     let editorPage: EditorPage;
     let pageListPage: PageListPage;
 
-    await test.step( 'Go to Page List page', async () => {
+    await test.step( 'Go to Page List page', () => {
         pageListPage = new PageListPage( page );
-        await pageListPage.visit();
+        return pageListPage.visit();
     } );
 
-    await test.step( 'Select post to edit', async () => {
-        pageListPage.editPageByID( postID );
+    await test.step( 'Select post to edit', () => {
+        return pageListPage.editPageByID( postID );
     } );
 
     await test.step( 'Edit Page', async () => {
@@ -65,11 +65,11 @@ test( 'edit a Page', async ( { page } ) => {
 
     await test.step( 'Publish changes and visit page', async () => {
         await editorPage.update();
-        await page.goto( postURL );
+        return page.goto( postURL );
     } );
 
     await test.step( 'Validate published page', async () => {
         const publishedPagePage = new PublishedPagePage( page );
-        await publishedPagePage.validateTextInPost( titleText );
+        return publishedPagePage.validateTextInPost( titleText );
     } );
 } );
