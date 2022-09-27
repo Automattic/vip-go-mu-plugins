@@ -33,4 +33,6 @@ docker exec e2etestsite_php_1 sh -c "\
     wp plugin install --activate --allow-root classic-editor; \
     wp core update --allow-root --version=\"${version}\" --force; \
     wp --allow-root vip-search index --setup --skip-confirm; \
+    wp --allow-root option add classic-editor-replace block; \
+    wp --allow-root option add classic-editor-allow-users allow; \
 "
