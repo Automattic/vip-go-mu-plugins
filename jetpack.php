@@ -25,7 +25,7 @@ if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
 	} elseif ( version_compare( $wp_version, '5.8', '<' ) ) {
 		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.4' );
 	} elseif ( version_compare( $wp_version, '5.9', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.9' );
+		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.7' );
 	} else {
 		define( 'VIP_JETPACK_DEFAULT_VERSION', '11.3' );
 	}
