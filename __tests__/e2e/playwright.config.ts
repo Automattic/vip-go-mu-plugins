@@ -6,7 +6,7 @@ import { PlaywrightTestConfig } from '@playwright/test';
 const config: PlaywrightTestConfig = {
     retries: 1,
     globalSetup: require.resolve( './lib/global-setup' ),
-    timeout: 45000,
+    timeout: 60000,
     reporter: process.env.CI ? 'github' : 'line',
     reportSlowTests: null,
     workers: parseInt( process.env.E2E_WORKERS || '4', 10 ) || 4,
