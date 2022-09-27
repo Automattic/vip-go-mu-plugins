@@ -472,7 +472,7 @@ class User {
 			$user_email = $id_or_email->user_email;
 		}
 
-		if ( isset( $user_email ) && self::is_a8c_email( $user_email ) && ( ! $user || $this->has_vip_support_meta( $user->ID ) ) ) {
+		if ( isset( $user_email ) && self::is_a8c_email( $user_email ) && ( isset( $user->ID ) && $this->has_vip_support_meta( $user->ID ) ) ) {
 			return self::VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR . '?d=mm&r=g&s=' . $args['size'];
 		}
 
