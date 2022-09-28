@@ -3178,6 +3178,30 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [ 'foo' => 'bar' ], [], [] ) );
 	}
 
+	public function test__filter_ep_enable_do_weighting__no_custom_search_results() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->search_instance->init();
+
+		\ElasticPress\Features::factory()->activate_feature( 'searchordering' );
+		update_option( 'vip_custom_results_existence', '0' );
+
+		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__custom_search_results() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->search_instance->init();
+
+		\ElasticPress\Features::factory()->activate_feature( 'searchordering' );
+		update_option( 'vip_custom_results_existence', '1' );
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

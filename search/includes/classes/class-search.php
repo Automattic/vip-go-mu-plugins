@@ -2376,10 +2376,16 @@ class Search {
 		}
 
 		$search_ordering_feature = \ElasticPress\Features::factory()->get_registered_feature( 'searchordering' );
-		if ( $search_ordering_feature && $search_ordering_feature->is_active() &&
-			'1' === $this->get_cached_custom_results_existence() ) {
-			// If Custom Search Results are enabled and exist, we should bail.
-			return $should_do_weighting;
+		if ( $search_ordering_feature && $search_ordering_feature->is_active() ) {
+			if ( '1' === $this->get_cached_custom_results_existence() ) {
+				// If Custom Search Results are enabled and exist, we should bail.
+				return $should_do_weighting;
+			}
+
+			if ( isset( $args['exclude_pointers'] ) && true === $args['exclude_pointers'] ) {
+				// For the pointer preview, the search should display with weightings for accuracy.
+				return $should_do_weighting;
+			}
 		}
 
 		global $wp_filter;
