@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Parsely\UI;
 
+use Parsely\Parsely;
 use WP_Widget;
 
 use const Parsely\PARSELY_FILE;
@@ -20,9 +21,18 @@ use const Parsely\PARSELY_FILE;
  */
 final class Recommended_Widget extends WP_Widget {
 	/**
-	 * Constructor.
+	 * Instance of Parsely class.
+	 *
+	 * @var Parsely
 	 */
-	public function __construct() {
+	private $parsely;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Parsely $parsely Instance of Parsely class.
+	 */
+	public function __construct( Parsely $parsely ) {
 		parent::__construct(
 			'Parsely_Recommended_Widget',
 			__( 'Parse.ly Recommended Widget', 'wp-parsely' ),
@@ -31,6 +41,8 @@ final class Recommended_Widget extends WP_Widget {
 				'description' => __( 'Display a list of post recommendations, personalized for a visitor or the current post.', 'wp-parsely' ),
 			)
 		);
+
+		$this->parsely = $parsely;
 	}
 
 	/**
@@ -97,7 +109,7 @@ final class Recommended_Widget extends WP_Widget {
 		echo wp_kses_post( $title_html );
 
 		// Set up the variables.
-		$options = get_option( 'parsely' );
+		$options = $this->parsely->get_options();
 		$api_url = $this->get_api_url(
 			$options['apikey'],
 			$instance['published_within'],
@@ -312,7 +324,7 @@ final class Recommended_Widget extends WP_Widget {
 	 *              False otherwise.
 	 */
 	private function api_key_and_secret_are_populated(): bool {
-		$options = get_option( 'parsely' );
+		$options = $this->parsely->get_options();
 
 		// No options are saved, so API key is not available.
 		if ( ! is_array( $options ) ) {
