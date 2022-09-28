@@ -17,7 +17,7 @@ use Parsely\Parsely;
  *
  * @since 2.6.0 Moved from Parsely class to this file.
  */
-final class Facebook_Instant_Articles implements Integration {
+final class Facebook_Instant_Articles extends Integration {
 	private const REGISTRY_IDENTIFIER   = 'parsely-analytics-for-wordpress';
 	private const REGISTRY_DISPLAY_NAME = 'Parse.ly Analytics';
 

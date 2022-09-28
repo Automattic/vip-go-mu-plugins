@@ -42,13 +42,14 @@ class ContentHelperProvider {
 		}
 
 		// Fetch results from API and set the Content Helper's message.
-		const data = await this.fetchData( fetchQueryResult );
-		let message = `${ __( 'Top-performing posts', 'wp-parsely' ) } ${ fetchQueryResult.message }.`;
-
-		if ( typeof data === 'string' ) {
-			return { message: data, posts: [] };
+		let data;
+		try {
+			data = await this.fetchRelatedTopPostsFromWpEndpoint( fetchQueryResult );
+		} catch ( error ) {
+			return Promise.reject( error );
 		}
 
+		let message = `${ __( 'Top-performing posts', 'wp-parsely' ) } ${ fetchQueryResult.message }.`;
 		if ( data.length === 0 ) {
 			message = `${ __( 'The Parse.ly API did not return any results for top-performing posts', 'wp-parsely' ) } ${ fetchQueryResult.message }.`;
 		}
@@ -56,7 +57,13 @@ class ContentHelperProvider {
 		return { message, posts: data };
 	}
 
-	private static async fetchData( fetchDataQueryResult: BuildFetchDataQueryResult ): Promise<SuggestedPost[] | string> {
+	/**
+	 * Fetches the related top-performing posts data from the WordPress REST API.
+	 *
+	 * @param {BuildFetchDataQueryResult} fetchDataQueryResult
+	 * @return {Promise<Array<SuggestedPost>>} Array of fetched posts.
+	 */
+	private static async fetchRelatedTopPostsFromWpEndpoint( fetchDataQueryResult: BuildFetchDataQueryResult ): Promise<SuggestedPost[]> {
 		let response;
 
 		try {
@@ -64,12 +71,11 @@ class ContentHelperProvider {
 				path: addQueryArgs( '/wp-parsely/v1/analytics/posts', fetchDataQueryResult.query ),
 			} ) as ApiResponse;
 		} catch ( wpError ) {
-			return `${ __( 'WordPress Error:', 'wp-parsely' ) } ${ wpError.message }`;
+			return Promise.reject( wpError );
 		}
 
 		if ( response?.error ) {
-			const errorMessage = JSON.stringify( response.error ).match( /\[\"(.*?)\"\]/ )[ 1 ];
-			return `${ __( 'Error:', 'wp-parsely' ) } ${ errorMessage }`;
+			return Promise.reject( response.error );
 		}
 
 		return response?.data || [];

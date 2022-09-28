@@ -17,7 +17,7 @@ use Parsely\Parsely;
  *
  * @since 2.6.0 Moved from Parsely class to this file.
  */
-class Amp implements Integration {
+class Amp extends Integration {
 	/**
 	 * Applies the hooks that integrate the plugin or theme with the Parse.ly
 	 * plugin.
@@ -53,7 +53,7 @@ class Amp implements Integration {
 	 * @return bool True is an AMP request and not disabled, false otherwise.
 	 */
 	public function can_handle_amp_request(): bool {
-		$options = get_option( Parsely::OPTIONS_KEY );
+		$options = self::$parsely->get_options();
 
 		return $this->is_amp_request() && is_array( $options ) && ! $options['disable_amp'];
 	}
@@ -110,7 +110,7 @@ class Amp implements Integration {
 			$analytics = array();
 		}
 
-		$options = get_option( Parsely::OPTIONS_KEY );
+		$options = self::$parsely->get_options();
 
 		if ( isset( $options['disable_amp'] ) && true === $options['disable_amp'] ) {
 			return $analytics;
@@ -159,7 +159,7 @@ class Amp implements Integration {
 	 * @return array<string, array<string, string>>
 	 */
 	public static function construct_amp_config(): array {
-		$options = get_option( Parsely::OPTIONS_KEY );
+		$options = self::$parsely->get_options();
 
 		if ( isset( $options['apikey'] ) && is_string( $options['apikey'] ) && '' !== $options['apikey'] ) {
 			return array(

@@ -11,7 +11,7 @@
  * Plugin Name:       Parse.ly
  * Plugin URI:        https://www.parse.ly/help/integration/wordpress
  * Description:       This plugin makes it a snap to add Parse.ly tracking code and metadata to your WordPress blog.
- * Version:           3.5.1
+ * Version:           3.5.2
  * Author:            Parse.ly
  * Author URI:        https://www.parse.ly
  * Text Domain:       wp-parsely
@@ -52,7 +52,7 @@ if ( class_exists( Parsely::class ) ) {
 	return;
 }
 
-const PARSELY_VERSION = '3.5.1';
+const PARSELY_VERSION = '3.5.2';
 const PARSELY_FILE    = __FILE__;
 
 require __DIR__ . '/src/class-parsely.php';
@@ -200,7 +200,7 @@ add_action( 'widgets_init', __NAMESPACE__ . '\\parsely_recommended_widget_regist
  * Registers the Parse.ly Recommended widget.
  */
 function parsely_recommended_widget_register(): void {
-	register_widget( Recommended_Widget::class );
+	register_widget( new Recommended_Widget( $GLOBALS['parsely'] ) );
 }
 
 require __DIR__ . '/src/Integrations/class-integration.php';
@@ -215,10 +215,15 @@ add_action( 'init', __NAMESPACE__ . '\\parsely_integrations' );
  *
  * @since 2.6.0
  *
+ * @param Parsely|string|null $parsely The Parsely object to pass to the integrations.
  * @return Integrations
  */
-function parsely_integrations(): Integrations {
-	$parsely_integrations = new Integrations();
+function parsely_integrations( $parsely = null ): Integrations {
+	if ( empty( $parsely ) || get_class( $parsely ) !== Parsely::class ) {
+		$parsely = $GLOBALS['parsely'];
+	}
+
+	$parsely_integrations = new Integrations( $parsely );
 	$parsely_integrations->register( 'amp', Amp::class );
 	$parsely_integrations->register( 'fbia', Facebook_Instant_Articles::class );
 	$parsely_integrations->register( 'webstories', Google_Web_Stories::class );
