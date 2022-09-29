@@ -361,7 +361,7 @@ function wpcom_vip_old_slug_redirect() {
  * if it's called several times per request. This allows bypassing the db queries in favor of
  * the cache
  *
- * @param int          $user_id      User ID.
+ * @param int          $user_id     User ID.
  * @param array|string $post_type   Optional. Single post type or array of post types to count the number of posts for. Default 'post'.
  * @param bool         $public_only Optional. Whether to only return counts for public posts. Default false.
  * @return string Number of posts the user has written in this post type.
