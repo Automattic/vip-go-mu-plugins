@@ -360,6 +360,11 @@ function wpcom_vip_old_slug_redirect() {
  * count_user_posts is generally fast, but it can be easy to end up with many redundant queries
  * if it's called several times per request. This allows bypassing the db queries in favor of
  * the cache
+ *
+ * @param int          $user_id      User ID.
+ * @param array|string $post_type   Optional. Single post type or array of post types to count the number of posts for. Default 'post'.
+ * @param bool         $public_only Optional. Whether to only return counts for public posts. Default false.
+ * @return string Number of posts the user has written in this post type.
  */
 function wpcom_vip_count_user_posts( $user_id, $post_type = 'post', $public_only = false ) {
 	if ( ! is_numeric( $user_id ) ) {
