@@ -2425,7 +2425,7 @@ class Search {
 	 * @param WP_Post $post Post object.
 	 * @param string $old_status Old post status.
 	 */
-	public function set_custom_results_existence_cache( $post_id, $post, $old_status ) {
+	public function set_custom_results_existence_cache( $post_id, $post, $old_status = '' ) {
 		$custom_results_existence = $this->get_cached_custom_results_existence();
 		$option_cache_key         = 'vip_custom_results_existence';
 
