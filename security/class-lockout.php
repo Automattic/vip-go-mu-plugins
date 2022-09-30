@@ -55,12 +55,12 @@ class Lockout {
 		if ( defined( 'VIP_ACCOUNT_STATUS' ) && constant( 'VIP_ACCOUNT_STATUS' ) !== self::ACCOUNT_STATUS_NORMAL ) {
 			switch ( $this->get_lockout_state() ) {
 				case self::ACCOUNT_STATUS_WARNING:
-					return 'Payment for this WordPress VIP account is overdue and access will be disabled.<br />
-Please contact accounts@wpvip.com to settle your bill.';
+					return 'Payment for this WordPress VIP account is overdue and access will be suspended soon.<br />
+Please contact <a href="mailto:accounts@wpvip.com">accounts@wpvip.com</a> to settle your bill.';
 				case self::ACCOUNT_STATUS_LOCK:
 				case self::ACCOUNT_STATUS_SHUTDOWN:
-					return 'Payment for this WordPress VIP account is overdue and access has been disabled.<br />
-Please contact accounts@wpvip.com to settle your bill.';
+					return 'Payment for this WordPress VIP account is overdue and access has been suspended.<br />
+Please contact <a href="mailto:accounts@wpvip.com">accounts@wpvip.com</a> to settle your bill and restore access.';
 			}
 		}
 		// Otherwise, read it from VIP_LOCKOUT_MESSAGE constant
@@ -78,7 +78,8 @@ Please contact accounts@wpvip.com to settle your bill.';
 			switch ( $lockout_state ) {
 				case self::ACCOUNT_STATUS_WARNING:
 					$has_caps    = isset( $user->allcaps['manage_options'] ) && true === $user->allcaps['manage_options'];
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, $lockout_state, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps || is_automattician(), $lockout_state, $user );
+
 					if ( $show_notice ) {
 						$this->render_warning_notice();
 
@@ -90,7 +91,8 @@ Please contact accounts@wpvip.com to settle your bill.';
 				case self::ACCOUNT_STATUS_LOCK:
 				case self::ACCOUNT_STATUS_SHUTDOWN:
 					$has_caps    = isset( $user->allcaps['edit_posts'] ) && true === $user->allcaps['edit_posts'];
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, $lockout_state, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps || is_automattician(), $lockout_state, $user );
+
 					if ( $show_notice ) {
 						$this->render_locked_notice();
 
