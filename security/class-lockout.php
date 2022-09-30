@@ -55,12 +55,12 @@ class Lockout {
 		if ( defined( 'VIP_ACCOUNT_STATUS' ) && constant( 'VIP_ACCOUNT_STATUS' ) !== self::ACCOUNT_STATUS_NORMAL ) {
 			switch ( $this->get_lockout_state() ) {
 				case self::ACCOUNT_STATUS_WARNING:
-					return 'Payment for this WordPress VIP account is overdue and access will be disabled.<br />
+					return 'Payment for this WordPress VIP account is overdue and access will be suspended soon.<br />
 Please contact accounts@wpvip.com to settle your bill.';
 				case self::ACCOUNT_STATUS_LOCK:
 				case self::ACCOUNT_STATUS_SHUTDOWN:
-					return 'Payment for this WordPress VIP account is overdue and access has been disabled.<br />
-Please contact accounts@wpvip.com to settle your bill.';
+					return 'Payment for this WordPress VIP account is overdue and access has been suspended.<br />
+Please contact accounts@wpvip.com to settle your bill and restore access.';
 			}
 		}
 		// Otherwise, read it from VIP_LOCKOUT_MESSAGE constant
