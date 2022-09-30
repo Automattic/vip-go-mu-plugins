@@ -16,7 +16,7 @@ test( 'Add Media', async ( { page } ) => {
     await test.step( 'Go to WP-admin', async () => {
         const wpAdminPage = new WPAdminPage( page );
         await wpAdminPage.visit();
-        await expect( wpAdminPage.adminBar ).toBeVisible();
+        return expect( wpAdminPage.adminBar ).toBeVisible();
     } );
 
     await test.step( 'Select add new media', async () => {
@@ -25,13 +25,13 @@ test( 'Add Media', async ( { page } ) => {
         await wpAdminSidebarComponent.clickSubMenuItem( 'Add New' );
     } );
 
-    await test.step( 'Upload Image', async () => {
+    await test.step( 'Upload Image', () => {
         mediaUploadPage = new MediaUploadPage( page );
-        await mediaUploadPage.uploadFile( 'test_media/image_02.jpg' );
+        return mediaUploadPage.uploadFile( 'test_media/image_02.jpg' );
     } );
 
-    await test.step( 'Verify image url', async () => {
-        const imageURL = await mediaUploadPage.getMediaUrl();
-        expect( imageURL ).toContain( 'image_02' );
+    await test.step( 'Verify image url', () => {
+        const imageURL = mediaUploadPage.getMediaUrl();
+        return expect( imageURL ).resolves.toContain( 'image_02' );
     } );
 } );

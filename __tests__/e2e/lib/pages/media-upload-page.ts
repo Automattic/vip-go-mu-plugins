@@ -32,15 +32,16 @@ export class MediaUploadPage {
             this.page.waitForEvent( 'filechooser' ),
             this.page.click( selectors.selectFilesButton ),
         ] );
-        await fileChooser.setFiles( mediaFile );
+
+        return fileChooser.setFiles( mediaFile );
     }
 
     /**
      * Get Meduia URL
      *
-     * @return { string } Url of uploaded media
+     * @return { Promise<string | null> } Url of uploaded media
      */
-    async getMediaUrl(): Promise<string> {
+    async getMediaUrl(): Promise<string | null> {
         await this.page.waitForSelector( selectors.attachedMediaDetails );
         return this.page.locator( selectors.copyURLButton ).getAttribute( 'data-clipboard-text' );
     }

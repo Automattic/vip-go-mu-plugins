@@ -15,7 +15,7 @@ namespace Parsely\Integrations;
  *
  * @since 3.2.0
  */
-final class Google_Web_Stories implements Integration {
+final class Google_Web_Stories extends Integration {
 	/**
 	 * Applies the hooks that integrate the plugin or theme with the Parse.ly
 	 * plugin.

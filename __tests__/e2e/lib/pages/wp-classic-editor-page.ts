@@ -92,8 +92,8 @@ export class ClassicEditorPage {
      *
      * @param { string } url URL of post to visit
      */
-    private async visitPublishedPost( url: string ): Promise<void> {
-        await Promise.all( [
+    private visitPublishedPost( url: string ): Promise<unknown> {
+        return Promise.all( [
             this.page.waitForNavigation( { waitUntil: 'networkidle', url } ),
             this.page.click( selectors.viewButton ),
         ] );
