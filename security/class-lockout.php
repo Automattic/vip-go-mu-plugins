@@ -78,7 +78,8 @@ Please contact accounts@wpvip.com to settle your bill.';
 			switch ( $lockout_state ) {
 				case self::ACCOUNT_STATUS_WARNING:
 					$has_caps    = isset( $user->allcaps['manage_options'] ) && true === $user->allcaps['manage_options'];
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, $lockout_state, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps || is_automattician(), $lockout_state, $user );
+
 					if ( $show_notice ) {
 						$this->render_warning_notice();
 
@@ -90,7 +91,8 @@ Please contact accounts@wpvip.com to settle your bill.';
 				case self::ACCOUNT_STATUS_LOCK:
 				case self::ACCOUNT_STATUS_SHUTDOWN:
 					$has_caps    = isset( $user->allcaps['edit_posts'] ) && true === $user->allcaps['edit_posts'];
-					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps, $lockout_state, $user );
+					$show_notice = apply_filters( 'vip_lockout_show_notice', $has_caps || is_automattician(), $lockout_state, $user );
+
 					if ( $show_notice ) {
 						$this->render_locked_notice();
 
