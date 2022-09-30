@@ -12,6 +12,12 @@ class Sync {
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
+	/**
+	 * Setting this value to true will make it so that Site Details data will be updated on shutdown hook
+	 * @var bool
+	 */
+	private $send_sds_data_on_shutdown = false;
+
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Sync ) ) {
 			static::$instance = new Sync();
@@ -23,6 +29,27 @@ class Sync {
 
 	public function init() {
 		$this->maybe_setup_cron();
+		// TODO should we run these only when -not- on cron?
+		$this->init_listeners();
+	}
+
+	public function init_listeners() {
+		add_action( 'update_option_siteurl', array( $this, 'unlock_sds_sync' ) );
+		// TODO should we also intercept deleted sites with add_action( 'wp_delete_site'...)?
+		add_action( 'shutdown', array( $this, 'maybe_do_sds_sync' ) );
+	}
+
+	public function unlock_sds_sync() {
+		$this->send_sds_data_on_shutdown = true;
+	}
+
+	public function maybe_do_sds_sync() {
+		if ( $this->send_sds_data_on_shutdown ) {
+			$this->log( 'info', 'SDS Shutdown sync was triggered (probably a url change)' );
+			// TODO should we use wp_schedule_single_event instead? this way we won't block the return
+			// wp_schedule_single_event( time(), self::CRON_EVENT_NAME);
+			$this->put_site_details();
+		}
 	}
 
 	public function maybe_setup_cron() {
