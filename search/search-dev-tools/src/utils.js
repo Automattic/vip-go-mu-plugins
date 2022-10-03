@@ -1,5 +1,3 @@
-export const callOnEscapeKey = callback => event => event.key === 'Escape' && callback();
-
 /**
  * Async helper to post data to a REST andpoint.
  *
