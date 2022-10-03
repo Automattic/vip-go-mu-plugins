@@ -7,6 +7,30 @@ require_once __DIR__ . '/../../admin-notice/conditions/interface-condition.php';
 
 class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 
+	public static $super_admin_id;
+
+	public static $user_id;
+
+	public static function setUpBeforeClass(): void {
+		$super_admin_id = wp_insert_user([
+			'user_login' => 'test_user',
+			'user_pass'  => 'test_password',
+			'user_email' => 'test@test.com',
+			'role'       => 'admin',
+		]);
+		$super_admin    = get_user_by( 'id', $super_admin_id );
+		$super_admin->add_cap( 'delete_users' ); // Fake super admin
+		self::$super_admin_id = $super_admin_id;
+
+		$user_id       = wp_insert_user([
+			'user_login' => 'foo',
+			'user_pass'  => 'bar',
+			'user_email' => 'foo@bar.com',
+			'role'       => 'subscriber',
+		]);
+		self::$user_id = $user_id;
+	}
+
 	public function test__display() {
 		$message = 'Test Message';
 		$notice  = new Admin_Notice( $message );
@@ -29,7 +53,6 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 	}
 
 	public function should_render_conditions_data() {
-
 		return [
 			[ [], true ],
 			[ [ false ], false ],
@@ -45,6 +68,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 	 * @dataProvider should_render_conditions_data
 	 */
 	public function test__should_render_conditions( $condition_results, $expected_result ) {
+		wp_set_current_user( self::$super_admin_id );
 
 		$conditions = array_map( function ( $result_to_return ) {
 			$condition_stub = $this->createMock( Condition::class );
@@ -57,5 +81,11 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$result = $notice->should_render();
 
 		$this->assertEquals( $expected_result, $result );
+
+		wp_set_current_user( self::$user_id );
+
+		$result = $notice->should_render();
+
+		$this->assertFalse( $result );
 	}
 }
