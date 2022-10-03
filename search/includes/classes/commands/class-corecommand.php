@@ -109,12 +109,7 @@ class CoreCommand extends \ElasticPress\Command {
 
 		$indexes = array_column( $body, 'index' );
 		// Remove system operation indexes from list.
-		$indexes = array_filter( $indexes, function( $index ) {
-			if ( function_exists( 'str_starts_with' ) ) { // Only available for PHP 8+
-				return ! str_starts_with( $index, '.' );
-			}
-			return substr( $index, 0, 1 ) !== '.';
-		} );
+		$indexes = array_filter( $indexes, fn( $index ) => ! $index || $index[0] !== '.' );
 		sort( $indexes );
 
 		return $indexes;
