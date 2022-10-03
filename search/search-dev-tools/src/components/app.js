@@ -1,5 +1,5 @@
 import { h } from 'preact';
-import { useContext, useState } from 'preact/hooks';
+import { useCallback, useContext, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
 
 // Global styles
@@ -27,8 +27,8 @@ const AdminBarButton = props => {
  */
 const App = () => {
 	const [ visible, setVisible ] = useState( false );
-	const closeOverlay = () => setVisible( false );
-	const toggleOverlay = () => setVisible( ! visible );
+	const closeOverlay = useCallback( () => setVisible( false ), [] );
+	const toggleOverlay = useCallback( () => setVisible( ! visible ), [ visible ] );
 
 	return ( <SearchContext.Provider value={ window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] } }>
 		<div className="search-dev-tools__wrapper">
