@@ -19,6 +19,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 			'role'       => 'admin',
 		]);
 		$super_admin    = get_user_by( 'id', $super_admin_id );
+		grant_super_admin( $super_admin_id );
 		$super_admin->add_cap( 'delete_users' ); // Fake super admin
 		self::$super_admin_id = $super_admin_id;
 
