@@ -22,8 +22,8 @@ export class PostListPage {
     /**
      * Navigate to Post List page
      */
-    async visit(): Promise<void> {
-        await this.page.goto( '/wp-admin/edit.php' );
+    visit(): Promise<unknown> {
+        return this.page.goto( '/wp-admin/edit.php' );
     }
 
     /**
@@ -31,7 +31,7 @@ export class PostListPage {
      *
      * @param {string} postID ID of the post to be edited
      */
-    async editPostByID( postID: string ): Promise<void> {
-        await this.page.click( selectors.postLink( postID ) );
+    editPostByID( postID: string ): Promise<void> {
+        return this.page.click( selectors.postLink( postID ) );
     }
 }

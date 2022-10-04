@@ -190,8 +190,8 @@ export class EditorPage {
     /**
      * Updates the post or page.
      */
-    async update(): Promise<void> {
-        await this.page.click( selectors.updateButton );
+    update(): Promise<void> {
+        return this.page.click( selectors.updateButton );
     }
 
     /**
@@ -199,8 +199,8 @@ export class EditorPage {
      *
      * @param {string} url Url to visit
      */
-    private async visitPublishedPost( url: string ): Promise<void> {
-        await Promise.all( [
+    private visitPublishedPost( url: string ): Promise<unknown> {
+        return Promise.all( [
             this.page.waitForNavigation( { waitUntil: 'networkidle', url } ),
             this.page.click( selectors.viewButton ),
         ] );

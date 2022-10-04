@@ -127,7 +127,7 @@ export class SearchPage {
      *
      * @return {Promise<string>} Parameters as a string
      */
-    async getWPQuery(): Promise<string> {
+    getWPQuery(): Promise<string> {
         return this.getQueryExtrasHelper( 0 );
     }
 
@@ -136,7 +136,7 @@ export class SearchPage {
      *
      * @return {Promise<string>} Backtrace as a string
      */
-    async getTrace(): Promise<string> {
+    getTrace(): Promise<string> {
         return this.getQueryExtrasHelper( 1 );
     }
 
@@ -145,7 +145,7 @@ export class SearchPage {
      *
      * @return {Promise<string>} Query
      */
-    async getQuery(): Promise<string> {
+    getQuery(): Promise<string> {
         return this.sourceQueryLocator.inputValue();
     }
 
@@ -155,7 +155,7 @@ export class SearchPage {
      * @param {string} newQuery New Query
      * @return {Promise<*>} Resolves on success
      */
-    async editQuery( newQuery: string ): Promise<unknown> {
+    editQuery( newQuery: string ): Promise<unknown> {
         return this.sourceQueryLocator.fill( newQuery );
     }
 

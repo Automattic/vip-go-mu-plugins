@@ -16,15 +16,14 @@ type PostData = {
  * @param {APIRequestContext} request  The Playwright API Request context
  * @param {string}            id       Id of the post to be deleted
  * @param {PostType}          postType Type of the post to be deleted
- * @return {APIResponse} The response of the api call.
+ * @return {Promise<APIResponse>} The response of the api call.
  */
-export async function deletePost( request: APIRequestContext, id: string, postType: PostType ): Promise<APIResponse> {
-    const response = await request.delete( `/wp-json/wp/v2/${ postType }s/${ id }`, {
+export function deletePost( request: APIRequestContext, id: string, postType: PostType ): Promise<APIResponse> {
+    return request.delete( `/wp-json/wp/v2/${ postType }s/${ id }`, {
         headers: {
-            'X-WP-Nonce': process.env.WP_E2E_NONCE,
+            'X-WP-Nonce': `${ process.env.WP_E2E_NONCE }`,
         },
     } );
-    return response;
 }
 
 /**
@@ -32,12 +31,12 @@ export async function deletePost( request: APIRequestContext, id: string, postTy
  *
  * @param {APIRequestContext} request  The Playwright API Request context
  * @param {PostData}          postData Object containing title, body and type of post
- * @return {APIResponse} The response of the api call.
+ * @return {Promise<APIResponse>} The response of the api call.
  */
-export async function createPost( request: APIRequestContext, postData: PostData ): Promise<APIResponse> {
-    const response = await request.post( `/wp-json/wp/v2/${ postData.postType }s/?force=true`, {
+export function createPost( request: APIRequestContext, postData: PostData ): Promise<APIResponse> {
+    return request.post( `/wp-json/wp/v2/${ postData.postType }s/?force=true`, {
         headers: {
-            'X-WP-Nonce': process.env.WP_E2E_NONCE,
+            'X-WP-Nonce': `${ process.env.WP_E2E_NONCE }`,
         },
         data: {
             title: postData.title,
@@ -45,5 +44,4 @@ export async function createPost( request: APIRequestContext, postData: PostData
             content: postData.body,
         },
     } );
-    return response;
 }

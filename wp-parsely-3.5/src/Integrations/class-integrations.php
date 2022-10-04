@@ -10,6 +10,8 @@ declare(strict_types=1);
 
 namespace Parsely\Integrations;
 
+use Parsely\Parsely;
+
 /**
  * Integrations are registered to this collection.
  *
@@ -19,6 +21,22 @@ namespace Parsely\Integrations;
  * @since 2.6.0
  */
 class Integrations {
+	/**
+	 * Instance of Parsely class.
+	 *
+	 * @var Parsely
+	 */
+	private $parsely;
+
+	/**
+	 * Constructor.
+	 *
+	 * @param Parsely $parsely Instance of Parsely class.
+	 */
+	public function __construct( Parsely $parsely ) {
+		$this->parsely = $parsely;
+	}
+
 	/**
 	 * Collection of registered integrations.
 	 *
@@ -38,7 +56,7 @@ class Integrations {
 	public function register( string $key, $class_or_object ): void {
 		// If a Foo::class or other fully qualified class name is passed, instantiate it.
 		if ( ! is_object( $class_or_object ) ) {
-			$class_or_object = new $class_or_object();
+			$class_or_object = new $class_or_object( $this->parsely );
 		}
 		$this->integrations[ $key ] = $class_or_object;
 	}

@@ -23,7 +23,7 @@ test( 'publish a Post', async ( { page } ) => {
     await test.step( 'Go to WP-admin', async () => {
         const wpAdminPage = new WPAdminPage( page );
         await wpAdminPage.visit();
-        await expect( wpAdminPage.adminBar ).toBeVisible();
+        return expect( wpAdminPage.adminBar ).toBeVisible();
     } );
 
     await test.step( 'Select add new post', async () => {
@@ -41,12 +41,12 @@ test( 'publish a Post', async ( { page } ) => {
 
     await test.step( 'Publish and visit post', async () => {
         const publishedURL = await editorPage.publish( { visit: true } );
-        expect( publishedURL ).toBe( page.url() );
+        return expect( publishedURL ).toBe( page.url() );
     } );
 
     await test.step( 'Validate published post', async () => {
         const publishedPostPage = new PublishedPostPage( page );
         await publishedPostPage.validateTextInPost( titleText );
-        expect( await publishedPostPage.isImageDisplayed() ).toBeTruthy();
+        return expect( publishedPostPage.isImageDisplayed() ).resolves.toBeTruthy();
     } );
 } );

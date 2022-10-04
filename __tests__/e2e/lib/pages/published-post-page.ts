@@ -48,9 +48,9 @@ export class PublishedPostPage {
     /**
      * Returns boolean of whether or not image was found in post
      *
-     * @return {boolean} True if image is found, otherwise false
+     * @return {Promise<boolean>} True if image is found, otherwise false
      */
-    async isImageDisplayed(): Promise<boolean> {
+    isImageDisplayed(): Promise<boolean> {
         return this.page.isVisible( selectors.postImage );
     }
 }
