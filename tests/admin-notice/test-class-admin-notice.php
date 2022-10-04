@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
+use PHPUnit\Framework\MockObject\MockObject;
+
 require_once __DIR__ . '/../../admin-notice/class-admin-notice.php';
 require_once __DIR__ . '/../../admin-notice/conditions/interface-condition.php';
 
@@ -72,6 +74,7 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		wp_set_current_user( self::$super_admin_id );
 
 		$conditions = array_map( function ( $result_to_return ) {
+			/** @var Condition&MockObject */
 			$condition_stub = $this->createMock( Condition::class );
 			$condition_stub->method( 'evaluate' )->willReturn( $result_to_return );
 			return $condition_stub;
@@ -88,5 +91,27 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		$result = $notice->should_render();
 
 		$this->assertFalse( $result );
+	}
+
+	/**
+	 * @dataProvider data_cap_condition_exist
+	 */
+	public function test_cap_condition_exist( array $conditions, bool $xpected ): void {
+		$notice = new Admin_Notice( 'notice', $conditions );
+		$actual = $notice->cap_condition_exist();
+		self::assertSame( $xpected, $actual );
+	}
+
+	public function data_cap_condition_exist(): iterable {
+		return [
+			'no conditions'        => [
+				[],
+				false,
+			],
+			'capability condition' => [
+				[ new Capability_Condition( 'delete_users' ) ],
+				true,
+			],
+		];
 	}
 }
