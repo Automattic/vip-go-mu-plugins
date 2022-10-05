@@ -54,6 +54,8 @@ class Coverage_Helper implements BeforeFirstTestHook {
 		tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 		tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 		do_action( 'muplugins_loaded' );
-		TestCaseHelper::do_backup_hooks();
+		if ( 0 ) {
+			TestCaseHelper::do_backup_hooks();
+		}
 	}
 }
