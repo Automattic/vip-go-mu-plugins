@@ -16,6 +16,7 @@
 	</testsuites>
 	<extensions>
 		<extension class="SpeedUp_Isolated_WP_Tests"/>
+		<extension class="Coverage_Helper"/>
 	</extensions>
 	<coverage>
 		<include>
