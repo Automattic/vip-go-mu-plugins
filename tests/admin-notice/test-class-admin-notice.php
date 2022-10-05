@@ -33,6 +33,11 @@ class Admin_Notice_Class_Test extends WP_UnitTestCase {
 		]);
 	}
 
+	public static function wpTearDownAfterClass(): void {
+		wp_delete_user( self::$super_admin_id );
+		wp_delete_user( self::$user_id );
+	}
+
 	public function test__display() {
 		$message = 'Test Message';
 		$notice  = new Admin_Notice( $message );
