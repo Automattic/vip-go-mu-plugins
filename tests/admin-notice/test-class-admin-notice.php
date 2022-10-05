@@ -34,6 +34,7 @@ class Admin_Notice_Class_Test extends WP_UnitTestCase {
 	}
 
 	public static function wpTearDownAfterClass(): void {
+		revoke_super_admin( self::$super_admin_id );
 		wp_delete_user( self::$super_admin_id );
 		wp_delete_user( self::$user_id );
 	}
