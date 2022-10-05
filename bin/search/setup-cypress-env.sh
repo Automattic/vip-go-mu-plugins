@@ -59,7 +59,7 @@ if [ ! -z $EP_INDEX_PREFIX ]; then
 	./bin/search/wp-env-cli tests-wordpress "wp --allow-root config set EP_INDEX_PREFIX ${EP_INDEX_PREFIX}"
 fi
 
-./bin/search/wp-env-cli tests-wordpress "wp --allow-root config set VIP_ELASTICSEARCH_ENDPOINTS --raw \"['http://host.docker.internal:8890/','http://host.docker.internal:8890/']\""
+./bin/search/wp-env-cli tests-wordpress "wp --allow-root config set VIP_ELASTICSEARCH_ENDPOINTS --raw \"['${EP_HOST}','${EP_HOST}']\""
 
 ./bin/search/wp-env-cli tests-wordpress "wp --allow-root core multisite-convert"
 
