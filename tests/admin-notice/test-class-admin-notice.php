@@ -3,35 +3,34 @@
 namespace Automattic\VIP\Admin_Notice;
 
 use PHPUnit\Framework\MockObject\MockObject;
+use WP_UnitTest_Factory;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../admin-notice/class-admin-notice.php';
 require_once __DIR__ . '/../../admin-notice/conditions/interface-condition.php';
 
-class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
-
+class Admin_Notice_Class_Test extends WP_UnitTestCase {
 	public static $super_admin_id;
-
 	public static $user_id;
 
-	public static function setUpBeforeClass(): void {
-		$super_admin_id = wp_insert_user([
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
+		self::$super_admin_id = $factory->user->create([
 			'user_login' => 'test_user',
 			'user_pass'  => 'test_password',
 			'user_email' => 'test@test.com',
 			'role'       => 'admin',
 		]);
-		$super_admin    = get_user_by( 'id', $super_admin_id );
-		grant_super_admin( $super_admin_id );
-		$super_admin->add_cap( 'delete_users' ); // Fake super admin
-		self::$super_admin_id = $super_admin_id;
 
-		$user_id       = wp_insert_user([
+		$super_admin = get_user_by( 'id', self::$super_admin_id );
+		grant_super_admin( self::$super_admin_id );
+		$super_admin->add_cap( 'delete_users' ); // Fake super admin
+
+		self::$user_id = $factory->user->create([
 			'user_login' => 'foo',
 			'user_pass'  => 'bar',
 			'user_email' => 'foo@bar.com',
 			'role'       => 'subscriber',
 		]);
-		self::$user_id = $user_id;
 	}
 
 	public function test__display() {
