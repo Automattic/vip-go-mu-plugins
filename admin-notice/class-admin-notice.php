@@ -61,6 +61,11 @@ class Admin_Notice {
 	 * @return bool
 	 */
 	public function should_render() : bool {
+		if ( ! $this->cap_condition_exist() && ! is_super_admin() ) {
+			// If there's no Capability_Condition defined, default to not showing the notices for non-super admins
+			return false;
+		}
+
 		foreach ( $this->conditions as $condition ) {
 			if ( ! $condition->evaluate() ) {
 				return false;
@@ -68,5 +73,18 @@ class Admin_Notice {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Whether a Capability_Condition is explicitly defined
+	 */
+	public function cap_condition_exist() {
+		foreach ( $this->conditions as $condition ) {
+			if ( $condition instanceof \Automattic\VIP\Admin_Notice\Capability_Condition ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
