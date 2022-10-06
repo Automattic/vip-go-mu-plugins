@@ -13,6 +13,11 @@ on:
       - develop
       - production
       - staging
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   cypress_local:
