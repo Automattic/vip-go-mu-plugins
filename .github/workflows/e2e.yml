@@ -122,7 +122,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@v3 # tag=v3.1.0
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-results
