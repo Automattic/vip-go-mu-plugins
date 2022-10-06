@@ -2,10 +2,12 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
+use PHPUnit\Framework\TestCase;
+
 require_once __DIR__ . '/../../../admin-notice/conditions/interface-condition.php';
 require_once __DIR__ . '/../../../admin-notice/conditions/class-date-condition.php';
 
-class Date_Condition_Test extends \PHPUnit\Framework\TestCase {
+class Date_Condition_Test extends TestCase {
 
 	public function evaluate_data() {
 
