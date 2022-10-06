@@ -34,6 +34,12 @@ class Admin_Notice_Class_Test extends \PHPUnit\Framework\TestCase {
 		self::$user_id = $user_id;
 	}
 
+	public static function tearDownAfterClass(): void {
+		revoke_super_admin( self::$super_admin_id );
+		wp_delete_user( self::$super_admin_id );
+		wp_delete_user( self::$user_id );
+	}
+
 	public function test__display() {
 		$message = 'Test Message';
 		$notice  = new Admin_Notice( $message );
