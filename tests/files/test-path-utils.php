@@ -2,9 +2,11 @@
 
 namespace Automattic\VIP\Files;
 
+use PHPUnit\Framework\TestCase;
+
 require_once __DIR__ . '/../../files/class-path-utils.php';
 
-class Path_Utils_Test extends \PHPUnit_Framework_TestCase {
+class Path_Utils_Test extends TestCase {
 	public function get_test_data__is_subdirectory_multisite_path__nope() {
 		return [
 			'missing_leading_slash' => [

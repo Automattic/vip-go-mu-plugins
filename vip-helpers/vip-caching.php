@@ -371,7 +371,7 @@ function wpcom_vip_count_user_posts( $user_id, $post_type = 'post', $public_only
 		return 0;
 	}
 
-	$cache_key   = 'vip_' .  md5( wp_json_encode( $post_type ) ) . '_' . (int) $user_id;
+	$cache_key   = 'vip_' . md5( wp_json_encode( $post_type ) ) . '_' . (int) $user_id;
 	$cache_group = 'user_posts_count';
 
 	$count = wp_cache_get( $cache_key, $cache_group );
