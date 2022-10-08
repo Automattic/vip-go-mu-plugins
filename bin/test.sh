@@ -128,6 +128,8 @@ docker run \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
     -e PRETEST_SCRIPT=/home/circleci/project/bin/pretest.sh \
+    -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
+    -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
     ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
