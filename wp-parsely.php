@@ -36,7 +36,6 @@ final class Parsely_Loader_Info {
 
 	private static bool $active;
 	private static string $integration_type;
-	private static string $service_type;
 	private static string $version;
 	private static array $parsely_options;
 

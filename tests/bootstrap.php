@@ -90,69 +90,6 @@ tests_add_filter( 'translations_api', function ( $res ) {
 	return $res;
 } );
 
-// Begin wp-parsely integration config
-function _configure_wp_parsely_env_load_via_filter() {
-	echo "[WP_PARSELY_INTEGRATION] Enabling the plugin via filter\n";
-	add_filter( 'wpvip_parsely_load_mu', '__return_true' );
-}
-
-function _configure_wp_parsely_env_load_via_option() {
-	echo "[WP_PARSELY_INTEGRATION] Enabling the plugin via option\n";
-	update_option( '_wpvip_parsely_mu', '1' );
-}
-
-function _configure_wp_parsely_specified_version() {
-	$specified = getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' );
-	if ( $specified ) {
-		echo '[WP_PARSELY_INTEGRATION] Specifying plugin version: ' . esc_html( $specified ) . "\n";
-		add_filter( 'wpvip_parsely_version', function () use ( $specified ) {
-			return $specified;
-		} );
-	}
-}
-
-switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' ) ) {
-	case '2.6':
-		tests_add_filter(
-			'wpvip_parsely_version',
-			function() {
-				return '2.6';
-			}
-		);
-		break;
-	case '3.5':
-	default:
-		tests_add_filter(
-			'wpvip_parsely_version',
-			function() {
-				return '3.5';
-			}
-		);
-		break;
-}
-
-switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
-	case 'filter_enabled':
-		echo "Expecting wp-parsely plugin to be enabled by the filter.\n";
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_filter' );
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_specified_version' );
-		break;
-	case 'option_enabled':
-		echo "Expecting wp-parsely plugin to be enabled by the option.\n";
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_option' );
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_specified_version' );
-		break;
-	case 'filter_and_option_enabled':
-		echo "Expecting wp-parsely plugin to be enabled by the filter and the option.\n";
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_filter' );
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_env_load_via_option' );
-		tests_add_filter( 'muplugins_loaded', '_configure_wp_parsely_specified_version' );
-		break;
-	default:
-		echo "Expecting wp-parsely plugin to be disabled.\n";
-		break;
-}
-
 tests_add_filter( 'muplugins_loaded', function () {
 	echo "[WP_PARSELY_INTEGRATION] Removing autoload (so we can manually test)\n";
 	$removed = remove_action( 'plugins_loaded', 'Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin', 1 );

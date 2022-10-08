@@ -22,13 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         config:
-          - { wp: latest, parsely: '3.1', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.1', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, php: '7.4' }
+          - { wp: latest, php: '8.0' }
     services:
       mysql:
         image: mariadb:10.3
@@ -45,11 +40,6 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
         with:
           submodules: recursive
-
-      - name: Set up environment
-        run: |
-          echo WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${{ matrix.config.parsely }}" >> "${GITHUB_ENV}"
-          echo WPVIP_PARSELY_INTEGRATION_TEST_MODE="${{ matrix.config.mode }}"         >> "${GITHUB_ENV}"
 
       - name: Run tests
         uses: ./.github/actions/run-wp-tests
