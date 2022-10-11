@@ -40,7 +40,7 @@
     "@wordpress/env": "^5.0.0",
     "10up-toolkit": "^3.0.0",
     "classnames": "^2.3.1",
-    "cypress": "^9.5.0",
+    "cypress": "^10.10.0",
     "cypress-file-upload": "^5.0.8",
     "eslint-plugin-cypress": "^2.12.1",
     "jsdoc": "^3.6.10",
