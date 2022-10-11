@@ -56,7 +56,7 @@ echo "Will test with WP_VERSION=${WP_VERSION} and WP_MULTISITE=${WP_MULTISITE}"
 echo "--------------"
 echo
 
-MARIADB_VERSION="10.3"
+MARIADB_VERSION="latest"
 
 UUID=$(date +%s000)
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
@@ -110,6 +110,8 @@ docker run \
     -e MYSQL_PASSWORD \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
+    -e PRETEST_SCRIPT=/mu-plugins/bin/core-tests-pre.sh \
     ${DOCKER_OPTIONS} \
+    -v "$(pwd):/mu-plugins" \
     ghcr.io/automattic/vip-container-images/wp-core-test-runner:latest \
     ${ARGS}
