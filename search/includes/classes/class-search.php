@@ -2474,6 +2474,7 @@ class Search {
 			'posts_per_page'      => 1,
 			'no_found_rows'       => true,
 			'ignore_sticky_posts' => true,
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
 			'suppress_filters'    => true,
 		];
 		$custom_results = new \WP_Query( $args );
