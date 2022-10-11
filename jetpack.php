@@ -191,7 +191,10 @@ function vip_jetpack_load() {
 			}
 
 			require_once $path;
-			define( 'VIP_JETPACK_LOADED_VERSION', $version );
+			if ( class_exists( 'Jetpack' ) ) {
+				define( 'VIP_JETPACK_LOADED_VERSION', $version );
+			}
+			// We should break even if we failed to load Jetpack, because some constants like JETPACK_VERSION were probably already set
 			break;
 		}
 	}

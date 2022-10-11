@@ -24,14 +24,14 @@ export class SettingsWritingPage {
     /**
      * Navigate to Writing Settings page
      */
-    async visit(): Promise<void> {
-        await this.page.goto( '/wp-admin/options-writing.php' );
+    visit(): Promise<unknown> {
+        return this.page.goto( '/wp-admin/options-writing.php' );
     }
 
     /**
      * Checks to see if Classic Editor Settings are available
      *
-     * @return { boolean } Whether classic editor settings are visible
+     * @return { Promise<boolean> } Whether classic editor settings are visible
      */
     async hasClassicEditor(): Promise<boolean> {
         const editorSettings = await this.page.locator( selectors.classicEditorBlock );

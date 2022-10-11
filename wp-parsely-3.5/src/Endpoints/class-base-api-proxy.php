@@ -123,14 +123,20 @@ abstract class Base_API_Proxy {
 		if ( false === $this->parsely->api_key_is_set() ) {
 			return (object) array(
 				'data'  => array(),
-				'error' => new WP_Error( 400, __( 'A Parse.ly API Key must be set in site options to use this endpoint', 'wp-parsely' ) ),
+				'error' => new WP_Error(
+					'parsely_site_id_not_set',
+					__( 'A Parse.ly API Key must be set in site options to use this endpoint', 'wp-parsely' )
+				),
 			);
 		}
 
 		if ( true === $require_api_secret && false === $this->parsely->api_secret_is_set() ) {
 			return (object) array(
 				'data'  => array(),
-				'error' => new WP_Error( 400, __( 'A Parse.ly API Secret must be set in site options to use this endpoint', 'wp-parsely' ) ),
+				'error' => new WP_Error(
+					'parsely_api_secret_not_set',
+					__( 'A Parse.ly API Secret must be set in site options to use this endpoint', 'wp-parsely' )
+				),
 			);
 		}
 

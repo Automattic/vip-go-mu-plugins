@@ -41,12 +41,12 @@ test( 'publish a Page', async ( { page } ) => {
 
     await test.step( 'Publish and visit page', async () => {
         const publishedURL = await editorPage.publish( { visit: true } );
-        expect( publishedURL ).toBe( page.url() );
+        return expect( publishedURL ).toBe( page.url() );
     } );
 
     await test.step( 'Validate published page', async () => {
         const publishedPagePage = new PublishedPagePage( page );
         await publishedPagePage.validateTextInPost( titleText );
-        expect( await publishedPagePage.isImageDisplayed() ).toBeTruthy();
+        return expect( publishedPagePage.isImageDisplayed() ).resolves.toBeTruthy();
     } );
 } );

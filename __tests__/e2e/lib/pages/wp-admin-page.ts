@@ -24,7 +24,7 @@ export class WPAdminPage {
     /**
      * Navigate to WP Admin
      */
-    async visit(): Promise<void> {
-        await this.page.goto( '/wp-admin' );
+    visit(): Promise<unknown> {
+        return this.page.goto( '/wp-admin' );
     }
 }

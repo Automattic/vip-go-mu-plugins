@@ -3178,6 +3178,65 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [ 'foo' => 'bar' ], [], [] ) );
 	}
 
+	public function test__filter_ep_enable_do_weighting__no_custom_search_results() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->search_instance->init();
+
+		\ElasticPress\Features::factory()->activate_feature( 'searchordering' );
+		update_option( 'vip_custom_results_existence', '0' );
+
+		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__filter_ep_enable_do_weighting__custom_search_results() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->search_instance->init();
+
+		\ElasticPress\Features::factory()->activate_feature( 'searchordering' );
+		update_option( 'vip_custom_results_existence', '1' );
+
+		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+	}
+
+	public function test__set_custom_results_existence_cache() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		$this->search_instance->init();
+
+		\ElasticPress\Features::factory()->activate_feature( 'searchordering' );
+
+		$post = wp_insert_post( [
+			'post_type'   => 'ep-pointer',
+			'post_status' => 'publish',
+			'post_title'  => 'Test CSR',
+		] );
+
+		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+
+		wp_trash_post( $post );
+
+		$this->assertEquals( '0', get_option( 'vip_custom_results_existence' ) );
+
+		$post2 = wp_insert_post( [
+			'post_type'   => 'ep-pointer',
+			'post_status' => 'publish',
+			'post_title'  => 'Test CSR 2',
+		] );
+		$post3 = wp_insert_post( [
+			'post_type'   => 'ep-pointer',
+			'post_status' => 'publish',
+			'post_title'  => 'Test CSR 3',
+		] );
+		wp_trash_post( $post3 );
+
+		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
