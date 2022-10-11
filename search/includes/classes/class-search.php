@@ -2465,6 +2465,8 @@ class Search {
 	 * @return bool $exist If there are any Custom Search Results or not.
 	 */
 	public function is_custom_results_exist() {
+		remove_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
+
 		$args           = [
 			'post_type'           => 'ep-pointer',
 			'post_status'         => 'publish',
@@ -2472,8 +2474,12 @@ class Search {
 			'posts_per_page'      => 1,
 			'no_found_rows'       => true,
 			'ignore_sticky_posts' => true,
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
+			'suppress_filters'    => true,
 		];
 		$custom_results = new \WP_Query( $args );
+
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
 
 		return ! empty( $custom_results->posts );
 	}
