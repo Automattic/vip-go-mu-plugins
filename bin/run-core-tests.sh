@@ -73,7 +73,7 @@ export MYSQL_DATABASE=wordpress_test
 db=""
 if [ -z "${MYSQL_HOST_OVERRIDE}" ]; then
     MYSQL_HOST="db-${UUID}"
-    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MARIADB_INITDB_SKIP_TZINFO=1 -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mariadb:${MARIADB_VERSION}")
+    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mysql:${MARIADB_VERSION}")
 else
     MYSQL_HOST="${MYSQL_HOST_OVERRIDE}"
 fi
