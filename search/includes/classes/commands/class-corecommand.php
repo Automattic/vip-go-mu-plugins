@@ -100,11 +100,14 @@ class CoreCommand extends \ElasticPress\Command {
 		$path = '_cat/indices?format=json';
 
 		$response = Elasticsearch::factory()->remote_request( $path );
-		$body     = json_decode( wp_remote_retrieve_body( $response ) );
+		if ( is_wp_error( $response ) ) {
+			return new \WP_Error( 'list-indexes-error', $response->get_error_message() );
+		}
 
+		$body = json_decode( wp_remote_retrieve_body( $response ) );
 		if ( ! is_array( $body ) ) {
 			$message = property_exists( $body, 'error' ) ? $body->error : 'Something went wrong during list_indexes().';
-			return new WP_Error( 'list-indexes-error', $message );
+			return new \WP_Error( 'list-indexes-error', $message );
 		}
 
 		$indexes = array_column( $body, 'index' );

@@ -118,7 +118,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 			<div className={ style.query_res_header }>
 				Response
 			</div>
-			<div className={ style.query_src }>
+			<div className={ `${ style.query_src } query-src-box` }>
 				<div className={ style.query_actions }>
 					{ state.editing || state.result !== txtResult
 						? ( <>
@@ -153,7 +153,7 @@ const Query = ( { args, request, url, query_args, backtrace = [] } ) => {
 					} }
 				/>
 			</div>
-			<div className={ style.query_res }>
+			<div className={ `${ style.query_res } query-result-box` }>
 				<div className={ style.query_result }>
 					<div className={ style.query_actions }>
 						<button id="query-response-copy-handle" data-clipboard-target="#query-response-text">COPY</button>

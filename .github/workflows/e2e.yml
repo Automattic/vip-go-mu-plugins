@@ -20,6 +20,10 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -32,7 +36,7 @@ jobs:
         uses: step-security/harden-runner@2e205a28d0e1da00c5f53b161f4067b052c61f34 # tag=v1.5.0
         with:
           egress-policy: block
-          allowed-endpoints: 
+          allowed-endpoints:
             1.gravatar.com:80
             2.gravatar.com:80
             api.github.com:443
@@ -69,9 +73,11 @@ jobs:
             azure.archive.ubuntu.com:80
             azure.archive.ubuntu.com:443
             packages.microsoft.com:443
+            download.cypress.io:443
+            cdn.cypress.io:443
 
       - name: Check out repository code
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
         with:
           submodules: true
           path: vip-go-mu-plugins
@@ -120,7 +126,7 @@ jobs:
         working-directory: vip-go-mu-plugins
 
       - name: Archive test results
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-results
