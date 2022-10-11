@@ -9,6 +9,10 @@
 
 namespace Automattic\VIP\Schema;
 
+if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+	return;
+}
+
 add_filter( 'dbdelta_create_queries', function( $queries ) {
 	global $wpdb;
 	foreach ( $queries as $k => $q ) {
