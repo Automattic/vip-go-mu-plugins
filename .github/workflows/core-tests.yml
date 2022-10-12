@@ -45,9 +45,10 @@ jobs:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
 
-      - name: Disable Jetpack
+      - name: Tweaks
         run: |
           echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
+          echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Install NodeJS
         uses: actions/setup-node@v3
