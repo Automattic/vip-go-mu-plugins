@@ -105,7 +105,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Flush empty file flag
 	 *
-	 * Flag to determine if an empty file should be flushed to the 
+	 * Flag to determine if an empty file should be flushed to the
 	 * Filesystem.
 	 *
 	 * @since   1.0.0
@@ -694,9 +694,25 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function stream_metadata( $path, $option, $value ) {
-		$this->debug( sprintf( 'stream_metadata =>  %s + %s + %s', $path, $option, $value ) );
+		$this->debug( sprintf( 'stream_metadata =>  %s + %s + %s', $path, $option, json_encode( $value ) ) );   // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 
-		return false;
+		switch ( $option ) {
+			case STREAM_META_TOUCH:
+				if ( false === file_exists( $path ) ) {
+					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+					if ( is_resource( $file ) ) {
+						fclose( $file );
+						return true;
+					}
+
+					return false;
+				}
+
+				return true;
+
+			default:
+				return false;
+		}
 	}
 
 	/**
