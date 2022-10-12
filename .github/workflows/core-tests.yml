@@ -79,9 +79,10 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ matrix.multisite }}" = "yes" ]; then
-            PHPUNIT_ARGS="-c tests/phpunit/multisite.xml"
+            PHPUNIT_ARGS="-c tests/phpunit/multisite.xml --group ms-files"
           else
-            PHPUNIT_ARGS="-c phpuniut.xml.dist"
+            PHPUNIT_ARGS="-c phpunit.xml.dist"
           fi
           node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose ${PHPUNIT_ARGS}
         working-directory: wordpress
+
