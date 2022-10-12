@@ -19,14 +19,8 @@ env:
 
 jobs:
   wp-core:
-    name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
+    name: "Run WP Core Tests"
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        multisite:
-          - "no"
-          - "yes"
     steps:
       - name: Get the latest WP version
         id: version
@@ -51,7 +45,9 @@ jobs:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
 
-      - run: ls -lha wordpress/src/wp-content/mu-plugins
+      - name: Disable Jetpack
+        run: |
+          echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
 
       - name: Install NodeJS
         uses: actions/setup-node@v3
@@ -76,13 +72,18 @@ jobs:
         run: npm run env:install
         working-directory: wordpress
 
-      - name: Run tests
-        run: |
-          if [ "${{ matrix.multisite }}" = "yes" ]; then
-            PHPUNIT_ARGS="-c tests/phpunit/multisite.xml --group ms-files"
-          else
-            PHPUNIT_ARGS="-c phpunit.xml.dist"
-          fi
-          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose ${PHPUNIT_ARGS}
+      - name: Run PHPUnit tests
+        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist
         working-directory: wordpress
 
+      - name: Run AJAX tests
+        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group ajax
+        working-directory: wordpress
+
+      - name: Run ms-files tests as a multisite install
+        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c tests/phpunit/multisite.xml --group ms-files
+        working-directory: wordpress
+
+      - name: Run external HTTP tests
+        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
+        working-directory: wordpress
