@@ -1,0 +1,82 @@
+name: CI (WP Core)
+
+on:
+  push:
+    branches-ignore:
+      - develop
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+
+jobs:
+  wp-core:
+    name: "Run WP Core Tests (WordPress ${{ matrix.wp }}, multisite: ${{ matrix.multisite }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        multisite:
+          - "no"
+          - "yes"
+    steps:
+      - name: Get the latest WP version
+        id: version
+        run: |
+          echo "::set-output name=latest::$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers | map(select( .response == "upgrade")) | .[0].version')"
+
+      - name: Check out WordPress
+        uses: actions/checkout@v3
+        with:
+          repository: wordpress/wordpress-develop
+          path: wordpress
+          ref: ${{ steps.version.outputs.latest }}
+
+      - name: Check out source code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          path: wordpress/src/wp-content/mu-plugins
+
+      - run: ls -lha wordpress/src/wp-content/mu-plugins
+
+      - name: Install NodeJS
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: 'wordpress/.nvmrc'
+          cache: npm
+          cache-dependency-path: 'wordpress/package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci
+        working-directory: wordpress
+
+      - name: Install Composer dependencies
+        run: docker-compose run --rm php composer update
+        working-directory: wordpress
+
+      - name: Start Docker environment
+        run: npm run env:start
+        working-directory: wordpress
+
+      - name: Install WordPress
+        run: npm run env:install
+        working-directory: wordpress
+
+      - name: Run tests
+        run: |
+          if [ "${{ matrix.multisite }}" = "yes" ]; then
+            PHPUNIT_ARGS="-c tests/phpunit/multisite.xml"
+          else
+            PHPUNIT_ARGS="-c phpuniut.xml.dist"
+          fi
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose ${PHPUNIT_ARGS}
+        working-directory: wordpress
