@@ -73,7 +73,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$path_from = 'vip://wp-content/uploads/file.txt';
 		$path_to   = 'vip://wp-content/uploads/file.txt';
 
-		// We bail early so Api_Client should not be touched. 
+		// We bail early so Api_Client should not be touched.
 		$this->api_client_mock
 			->expects( $this->never() )
 			->method( $this->anything() );
@@ -99,13 +99,13 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'upload_file' )
-			->with( $tmp_file, 'wp-content/uploads/new.txt' ) 
+			->with( $tmp_file, 'wp-content/uploads/new.txt' )
 			->willReturn( '/wp-content/uploads/new.txt' );
 
 		$this->api_client_mock
 			->expects( $this->once() )
 			->method( 'delete_file' )
-			->with( 'wp-content/uploads/old.txt' ) 
+			->with( 'wp-content/uploads/old.txt' )
 			->willReturn( true );
 
 		$actual_result = $this->stream_wrapper->rename( $path_from, $path_to );
@@ -114,7 +114,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__validate_valid_mode() {
-		return [ 
+		return [
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
@@ -130,7 +130,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__validate_invalid_mode() {
-		return [ 
+		return [
 			'c mode' => [ 'c' ],
 			'e mode' => [ 'e' ],
 		];
@@ -190,5 +190,71 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$actual = $this->stream_wrapper->stream_open( 'vip://' . $path, 'r', 0, $ignore );
 
 		self::assertFalse( $actual );
+	}
+
+	/**
+	 * @ticket CANTINA-911
+	 */
+	public function test_touch_non_existing_file(): void {
+		$path     = 'wp-content/uploads/non-existing-file.jpg';
+		$vip_path = 'vip://' . $path;
+
+		// file_exists() check
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( $path, $this->anything() )
+			->willReturn( false );
+
+		// fopen() - create empty file
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'get_file' )
+			->with( $path )
+			->willReturn( new WP_Error( 'file-not-found', 'error' ) );
+
+		// flush() when closing the file
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'upload_file' )
+			->with( $this->anything(), $path )
+			->willReturn( true );
+
+		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
+
+		$this->stream_wrapper->register();
+		VIP_Filesystem_Stream_Wrapper::$default_client = $this->api_client_mock;
+
+		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
+		self::assertTrue( $actual );
+	}
+
+	/**
+	 * @ticket CANTINA-911
+	 */
+	public function test_touch_existing_file(): void {
+		$path     = 'wp-content/uploads/existing-file.jpg';
+		$vip_path = 'vip://' . $path;
+
+		// file_exists() check
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( $path, $this->anything() )
+			->willReturn( true );
+
+		// No fopen()
+		$this->api_client_mock->expects( self::never() )->method( 'get_file' );
+
+		// No flush()
+		$this->api_client_mock->expects( self::never() )->method( 'upload_file' );
+
+		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
+
+		$this->stream_wrapper->register();
+		VIP_Filesystem_Stream_Wrapper::$default_client = $this->api_client_mock;
+
+		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
+		self::assertTrue( $actual );
 	}
 }

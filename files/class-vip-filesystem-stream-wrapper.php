@@ -114,6 +114,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	private $should_flush_empty;
 
+	public static ?API_Client $default_client = null;
+
 	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
@@ -122,7 +124,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function __construct( API_Client $client = null, $protocol = null ) {
 		if ( is_null( $client ) ) {
-			$this->client = new_api_client();
+			$this->client = self::$default_client ?: new_api_client();
 		} else {
 			$this->client = $client;
 		}
@@ -154,8 +156,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			stream_wrapper_unregister( $this->protocol );
 		}
 
-		return stream_wrapper_register(
-		$this->protocol, get_called_class(), STREAM_IS_URL );
+		return stream_wrapper_register( $this->protocol, get_called_class(), STREAM_IS_URL );
 	}
 
 	/**
