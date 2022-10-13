@@ -26,7 +26,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @since   1.0.0
 	 * @access  public
-	 * @var     resource|nul    Stream context
+	 * @var     resource|null   Stream context
 	 */
 	public $context;
 
@@ -124,7 +124,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function __construct( API_Client $client = null, $protocol = null ) {
 		if ( is_null( $client ) ) {
-			$this->client = self::$default_client ?: new_api_client();
+			$this->client = static::$default_client ?: new_api_client();
 		} else {
 			$this->client = $client;
 		}

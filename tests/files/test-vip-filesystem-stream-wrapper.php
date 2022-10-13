@@ -17,6 +17,8 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 	private $errors = [];
 
+	private $should_unregister = false;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -25,11 +27,24 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 
+		if ( ! in_array( VIP_Filesystem_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true ) ) {
+			$this->should_unregister = true;
+			$this->stream_wrapper->register();
+		}
+
+		VIP_Filesystem_Stream_Wrapper::$default_client = $this->api_client_mock;
+
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
 	public function tearDown(): void {
+		if ( $this->should_unregister ) {
+			stream_wrapper_unregister( VIP_Filesystem_Stream_Wrapper::DEFAULT_PROTOCOL );
+		}
+
+		VIP_Filesystem_Stream_Wrapper::$default_client = null;
+
 		$this->stream_wrapper  = null;
 		$this->api_client_mock = null;
 
@@ -222,9 +237,6 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
 
-		$this->stream_wrapper->register();
-		VIP_Filesystem_Stream_Wrapper::$default_client = $this->api_client_mock;
-
 		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
 		self::assertTrue( $actual );
 	}
@@ -250,9 +262,6 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->api_client_mock->expects( self::never() )->method( 'upload_file' );
 
 		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
-
-		$this->stream_wrapper->register();
-		VIP_Filesystem_Stream_Wrapper::$default_client = $this->api_client_mock;
 
 		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
 		self::assertTrue( $actual );
