@@ -25,7 +25,7 @@ jobs:
       - name: Get the latest WP version
         id: version
         run: |
-          echo "::set-output name=latest::$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers | map(select( .response == "upgrade")) | .[0].version')"
+          echo "latest=$(curl -s https://api.wordpress.org/core/version-check/1.7/ | jq -r '.offers | map(select( .response == "upgrade")) | .[0].version')" >> $GITHUB_OUTPUT
 
       - name: Configure environment variables
         run: |
