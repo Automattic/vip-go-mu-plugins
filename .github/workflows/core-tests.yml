@@ -51,7 +51,7 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Install NodeJS
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v3.5.1
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
