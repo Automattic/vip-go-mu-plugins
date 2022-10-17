@@ -16,6 +16,8 @@ updates:
     package-ecosystem: npm
     schedule:
       interval: daily
+    ignore:
+      - dependency-name: "cypress"
     versioning-strategy: increase-if-necessary
 
   - directory: /
