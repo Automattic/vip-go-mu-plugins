@@ -38,7 +38,7 @@ jobs:
               minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
           fi
 
-          echo "::set-output name=id::${current_date}${minor_version}"
+          echo "id=${current_date}${minor_version}" >> $GITHUB_OUTPUT
 
       - name: Tag release
         run: git tag ${{ steps.id-generator.outputs.id }}
