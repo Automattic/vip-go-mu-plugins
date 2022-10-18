@@ -1,0 +1,36 @@
+{
+  "env": {
+    "tests": {
+      "themes": [
+        "https://downloads.wordpress.org/theme/twentytwentyone.zip"
+      ],
+      "plugins": [
+        "https://downloads.wordpress.org/plugin/classic-widgets.zip",
+        "https://downloads.wordpress.org/plugin/woocommerce.zip"
+      ],
+      "config": {
+        "VIP_ENABLE_VIP_SEARCH": true,
+        "VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION": true,
+        "VIP_ELASTICSEARCH_USERNAME": "elastic",
+        "VIP_ELASTICSEARCH_PASSWORD": "vip-password",
+        "FILES_CLIENT_SITE_ID": 1234,
+        "VIP_GO_APP_ENVIRONMENT": "local"
+      },
+      "phpVersion": "8.0",
+      "mappings": {
+        ".htaccess": "./bin/search/.htaccess",
+        "wp-content/mu-plugins": ".",
+        "wp-cli.yml": "./bin/search/wp-cli.yml",
+        "wp-content/mu-plugins/unique-index-name.php": "./tests/search/e2e/wordpress-files/test-mu-plugins/unique-index-name.php",
+        "wp-content/plugins/cpt-and-custom-tax.php": "./tests/search/e2e/wordpress-files/test-plugins/cpt-and-custom-tax.php",
+        "wp-content/plugins/vip-enable-facet-taxonomies.php": "./tests/search/e2e/wordpress-files/test-plugins/vip-enable-facet-taxonomies.php",
+        "wp-content/plugins/fake-new-activation.php": "./tests/search/e2e/wordpress-files/test-plugins/fake-new-activation.php",
+        "wp-content/plugins/unsupported-server-software.php": "./tests/search/e2e/wordpress-files/test-plugins/unsupported-server-software.php",
+        "wp-content/plugins/unsupported-elasticsearch-version.php": "./tests/search/e2e/wordpress-files/test-plugins/unsupported-elasticsearch-version.php",
+        "wp-content/plugins/shorten-autosave.php": "./tests/search/e2e/wordpress-files/test-plugins/shorten-autosave.php",
+        "wp-content/plugins/fake-log-messages.php": "./tests/search/e2e/wordpress-files/test-plugins/fake-log-messages.php",
+        "wp-content/uploads/content-example.xml": "./tests/search/e2e/wordpress-files/test-docs/content-example.xml"
+      }
+    }
+  }
+}

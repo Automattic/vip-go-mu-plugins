@@ -36,7 +36,6 @@ add_action(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( is_super_admin() ),
 					new Expression_Condition( version_compare( PHP_VERSION, '8.0', '<' ) ),
 				],
 				'php8-migrations-3',
@@ -57,7 +56,6 @@ add_action(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( is_super_admin() ),
 					new Expression_Condition( version_compare( $wp_version, '5.9', '<' ) ),
 					new Expression_Condition( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) ),
 				],
