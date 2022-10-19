@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "294ce49dbca4324c5da6154b322e4540",
+    "content-hash": "94c025c9590582ca42d47ccc66ded2d0",
     "packages": [],
     "packages-dev": [
         {
@@ -301,16 +301,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.0.2",
+            "version": "6.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "aa7b334880fd8158abe64469e71570bd8815f273"
+                "reference": "f07b5dfd83fb728b0877ee48a4d792624338aa8e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/aa7b334880fd8158abe64469e71570bd8815f273",
-                "reference": "aa7b334880fd8158abe64469e71570bd8815f273",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/f07b5dfd83fb728b0877ee48a4d792624338aa8e",
+                "reference": "f07b5dfd83fb728b0877ee48a4d792624338aa8e",
                 "shasum": ""
             },
             "require": {
@@ -318,7 +318,7 @@
                 "php": ">=5.6.20"
             },
             "provide": {
-                "wordpress/core-implementation": "6.0.2"
+                "wordpress/core-implementation": "6.0.3"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -345,7 +345,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2022-08-30T17:46:17+00:00"
+            "time": "2022-10-17T21:17:21+00:00"
         },
         {
             "name": "mustache/mustache",
@@ -2723,16 +2723,16 @@
         },
         {
             "name": "wp-cli/wp-cli",
-            "version": "v2.7.0",
+            "version": "v2.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/wp-cli.git",
-                "reference": "832b7635a39b4e468c634572baaab2710a55d88b"
+                "reference": "1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/wp-cli/zipball/832b7635a39b4e468c634572baaab2710a55d88b",
-                "reference": "832b7635a39b4e468c634572baaab2710a55d88b",
+                "url": "https://api.github.com/repos/wp-cli/wp-cli/zipball/1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76",
+                "reference": "1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76",
                 "shasum": ""
             },
             "require": {
@@ -2763,7 +2763,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.7.x-dev"
+                    "dev-master": "2.8.x-dev"
                 }
             },
             "autoload": {
@@ -2790,7 +2790,7 @@
                 "issues": "https://github.com/wp-cli/wp-cli/issues",
                 "source": "https://github.com/wp-cli/wp-cli"
             },
-            "time": "2022-10-12T05:13:17+00:00"
+            "time": "2022-10-17T23:10:42+00:00"
         },
         {
             "name": "wp-coding-standards/wpcs",
@@ -2845,7 +2845,7 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "6.0.2",
+            "version": "6.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
