@@ -229,6 +229,15 @@ class Search {
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
+	/**
+	 * Check if the constant needed for the next ElasticPress version to be loaded is defined
+	 *
+	 * @return bool true if constants are defined, false otherwise
+	 */
+	public static function is_next_ep_constant_defined() {
+		return defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true === constant( 'VIP_SEARCH_USE_NEXT_EP' );
+	}
+
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Search ) ) {
 			static::$instance = new Search();
@@ -240,7 +249,11 @@ class Search {
 
 	protected function load_dependencies() {
 		// Load ElasticPress
-		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		if ( self::is_next_ep_constant_defined() ) {
+			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
+		} else {
+			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		}
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
