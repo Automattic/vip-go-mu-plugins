@@ -26,8 +26,8 @@ describe('WP-CLI Commands', () => {
 			cy.wpCli('wp vip-search index --per-page=20')
 				.its('stdout')
 				.should('contain', 'Indexing posts')
-				.should('contain', '20/')
-				.should('contain', '40/')
+				.should('contain', '20 of')
+				.should('contain', '40 of ')
 				.should('contain', 'Number of posts indexed');
 		});
 
@@ -144,7 +144,7 @@ describe('WP-CLI Commands', () => {
 			cy.wpCli('wp vip-search index --network-wide')
 				.its('stdout')
 				.then((output) => {
-					expect((output.match(/Indexing posts.../g) || []).length).to.equal(2);
+					expect((output.match(/Indexing posts/g) || []).length).to.equal(2);
 					expect(
 						(output.match(/Number of posts indexed:/g) || []).length,
 					).to.equal(2);
@@ -156,7 +156,7 @@ describe('WP-CLI Commands', () => {
 			cy.wpCli(`wp vip-search index`)
 				.its('stdout')
 				.then((output) => {
-					expect((output.match(/Indexing posts.../g) || []).length).to.equal(1);
+					expect((output.match(/Indexing posts/g) || []).length).to.equal(1);
 					expect(
 						(output.match(/Number of posts indexed:/g) || []).length,
 					).to.equal(1);
@@ -168,7 +168,7 @@ describe('WP-CLI Commands', () => {
 			cy.wpCli(`wp vip-search index --url=${Cypress.config('baseUrl')}/second-site`)
 				.its('stdout')
 				.then((output) => {
-					expect((output.match(/Indexing posts.../g) || []).length).to.equal(1);
+					expect((output.match(/Indexing posts/g) || []).length).to.equal(1);
 					expect(
 						(output.match(/Number of posts indexed:/g) || []).length,
 					).to.equal(1);
@@ -218,7 +218,7 @@ describe('WP-CLI Commands', () => {
 
 		// mock the indexing process
 		cy.wpCliEval(
-			`set_transient('ep_wpcli_sync', true); set_transient('ep_sync_interrupted', true);`,
+			`update_option('ep_index_meta', [ 'method' => 'test' ]); set_transient('ep_sync_interrupted', true);`,
 		);
 
 		cy.wpCli('wp vip-search stop-indexing').its('stdout').should('contain', 'Done');
