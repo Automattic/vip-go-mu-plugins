@@ -83,6 +83,9 @@ class Site_Details_Index {
 		$site_details['jetpack'] = $this->get_jetpack_info();
 		$site_details['parsely'] = $this->get_parsely_info();
 
+		// `constants` is an inaccurrate name here. It's really just a key-value store.
+		$site_details['constants'] = $this->get_extra_blog_meta();
+
 		return $site_details;
 	}
 
@@ -242,6 +245,40 @@ class Site_Details_Index {
 		$parsely_info['version']          = ParselyInfo::get_version();
 
 		return $parsely_info;
+	}
+
+	public function get_extra_blog_meta() {
+		$blog_meta = [];
+
+		// Block Editor
+		$is_using_block_editor = $this->is_using_block_editor();
+		$blog_meta[] = [
+			'name' => 'using_block_editor',
+			'value' => $is_using_block_editor ? 1 : 0,
+		];
+		
+		return $blog_meta;
+	}
+
+	// Somewhat naive detection of block editor use
+	private function is_using_block_editor() {
+		// TODO: probably move this elsewhere
+		$default_post = get_default_post_to_edit();
+
+		$most_recent_post_array = get_posts( [
+			'post_type' => $default_post->post_type,
+			'post_status' => 'publish',
+			'posts_per_page' => 1,
+			'orderby' => 'post_date',
+			'order' => 'DESC',
+		] );
+
+		$is_using_block_editor = false;
+		if ( ! empty( $most_recent_post_lookup ) ) {
+			$is_using_block_editor = has_blocks( $most_recent_post_array[ 0 ] );
+		}
+
+		return $is_using_block_editor;
 	}
 
 	/**
