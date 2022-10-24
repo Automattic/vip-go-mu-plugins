@@ -1,1 +1,0 @@
-!function(){var e={};!function(e){if(!e.currentScript){const n=e.createElement("script");n.src=window.JetpackInstantSearchIe11PolyfillPath,e.head.appendChild(n)}}(document);var n=window;for(var t in e)n[t]=e[t];e.__esModule&&Object.defineProperty(n,"__esModule",{value:!0})}();
