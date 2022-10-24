@@ -26,7 +26,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @since   1.0.0
 	 * @access  public
-	 * @var     resource|nul    Stream context
+	 * @var     resource|null   Stream context
 	 */
 	public $context;
 
@@ -105,7 +105,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Flush empty file flag
 	 *
-	 * Flag to determine if an empty file should be flushed to the 
+	 * Flag to determine if an empty file should be flushed to the
 	 * Filesystem.
 	 *
 	 * @since   1.0.0
@@ -113,6 +113,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @var     bool    Should flush empty file
 	 */
 	private $should_flush_empty;
+
+	public static ?API_Client $default_client = null;
 
 	/**
 	 * Vip_Filesystem_Stream constructor.
@@ -122,7 +124,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function __construct( API_Client $client = null, $protocol = null ) {
 		if ( is_null( $client ) ) {
-			$this->client = new_api_client();
+			$this->client = static::$default_client ?: new_api_client();
 		} else {
 			$this->client = $client;
 		}
@@ -154,8 +156,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			stream_wrapper_unregister( $this->protocol );
 		}
 
-		return stream_wrapper_register(
-		$this->protocol, get_called_class(), STREAM_IS_URL );
+		return stream_wrapper_register( $this->protocol, get_called_class(), STREAM_IS_URL );
 	}
 
 	/**
@@ -694,9 +695,25 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function stream_metadata( $path, $option, $value ) {
-		$this->debug( sprintf( 'stream_metadata =>  %s + %s + %s', $path, $option, $value ) );
+		$this->debug( sprintf( 'stream_metadata =>  %s + %s + %s', $path, $option, json_encode( $value ) ) );   // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 
-		return false;
+		switch ( $option ) {
+			case STREAM_META_TOUCH:
+				if ( false === file_exists( $path ) ) {
+					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+					if ( is_resource( $file ) ) {
+						fclose( $file );
+						return true;
+					}
+
+					return false;
+				}
+
+				return true;
+
+			default:
+				return false;
+		}
 	}
 
 	/**

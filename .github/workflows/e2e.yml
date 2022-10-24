@@ -77,42 +77,35 @@ jobs:
             cdn.cypress.io:443
 
       - name: Check out repository code
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3
         with:
           submodules: true
-          path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@v3.5.0
+        uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
           cache: npm
-          cache-dependency-path: vip-go-mu-plugins/package-lock.json
+          cache-dependency-path: __tests__/e2e/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: vip-go-mu-plugins
+        working-directory: __tests__/e2e
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
-        working-directory: vip-go-mu-plugins
+        working-directory: __tests__/e2e
 
       - name: Install VIP CLI
-        run: npm install --prefix=$HOME/.local -g @automattic/vip@2.8.2
+        run: npm install -g @automattic/vip@2.20.0
 
       - name: Determine WP version
-        id: wpver
         run: |
           if [ -z "${{ github.event.inputs.wpversion }}" ]; then
-            echo ::set-output name=wpversion::latest
+            echo "WORDPRESS_VERSION=latest" >> $GITHUB_ENV
           else
-            echo ::set-output name=wpversion::${{ github.event.inputs.wpversion }}
+            echo "WORDPRESS_VERSION=${{ github.event.inputs.wpversion }}" >> $GITHUB_ENV
           fi
-
-      - name: Setup test environment
-        if: ${{ github.event.inputs.url == '' }}
-        run: npm run setup-e2e-env -- -v ${{ steps.wpver.outputs.wpversion }}
-        working-directory: vip-go-mu-plugins
 
       - name: Setup test env variables
         if: ${{ github.event.inputs.url != '' }}
@@ -122,8 +115,8 @@ jobs:
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
 
       - name: Run e2e tests
-        run: npm run test-e2e
-        working-directory: vip-go-mu-plugins
+        run: npm test
+        working-directory: __tests__/e2e
 
       - name: Archive test results
         uses: actions/upload-artifact@v3
@@ -131,5 +124,5 @@ jobs:
         with:
           name: test-results
           path: |
-            vip-go-mu-plugins/test-results
-            vip-go-mu-plugins/screenshots
+            __tests__/e2e/test-results
+            __tests__/e2e/screenshots
