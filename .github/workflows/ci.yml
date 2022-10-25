@@ -64,12 +64,12 @@ jobs:
 
       - name: Check out mu-plugins-ext
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
-        repository: 'Automattic/vip-go-mu-plugins-ext'
-        path: 'vip-go-mu-plugins-ext'
+        with:
+          repository: 'Automattic/vip-go-mu-plugins-ext'
+          path: 'vip-go-mu-plugins-ext'
 
       - name: Rsync ext
-        steps:
-          - run: 'ls -al'
+        run: 'rsync -r --delete --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
 
       - name: Run tests
         uses: ./.github/actions/run-wp-tests
