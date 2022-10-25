@@ -2465,7 +2465,7 @@ class Search {
 	 * @return bool $exist If there are any Custom Search Results or not.
 	 */
 	public function is_custom_results_exist() {
-		remove_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
+		remove_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999 );
 
 		$args           = [
 			'post_type'           => 'ep-pointer',
