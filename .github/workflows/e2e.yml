@@ -83,7 +83,7 @@ jobs:
           path: vip-go-mu-plugins
 
       - name: Setup Node
-        uses: actions/setup-node@v3.5.0
+        uses: actions/setup-node@v3.5.1
         with:
           node-version: 'lts/*'
           cache: npm
@@ -104,9 +104,9 @@ jobs:
         id: wpver
         run: |
           if [ -z "${{ github.event.inputs.wpversion }}" ]; then
-            echo ::set-output name=wpversion::latest
+            echo "wpversion=latest" >> $GITHUB_OUTPUT
           else
-            echo ::set-output name=wpversion::${{ github.event.inputs.wpversion }}
+            echo "wpversion=${{ github.event.inputs.wpversion }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Setup test environment
