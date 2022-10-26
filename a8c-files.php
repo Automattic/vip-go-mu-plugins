@@ -260,8 +260,8 @@ class A8C_Files {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );
 		} elseif ( is_array( $size ) ) {
-			$_max_w = $size[0];
-			$_max_h = $size[1];
+			$_max_w = $size[0] ?? 0;
+			$_max_h = $size[1] ?? 0;
 			$w      = $_max_w;
 			$h      = $_max_h;
 		} elseif ( ! empty( $_wp_additional_image_sizes[ $size ] ) ) {
