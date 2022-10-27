@@ -11,5 +11,9 @@ add_action( 'admin_init', function() {
 		return;
 	}
 
-	( new PluginsManager() )->init();
+	if ( ! isset( $_REQUEST['s'] ) ) {
+		// Avoid loading stuff due to bug in plugin manager list for search requests.
+		$plugins_manager = new PluginsManager();
+		$plugins_manager->init();
+	}
 } );
