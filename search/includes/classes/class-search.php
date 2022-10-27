@@ -2274,8 +2274,8 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
-			// Enable new algorithm for non-prods
+		if ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || self::is_next_ep_constant_defined() ) {
+			// Enable new algorithm for non-prods & using the new constant
 			return '4.0';
 		}
 		return '3.5';
