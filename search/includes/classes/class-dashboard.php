@@ -31,7 +31,7 @@ class Dashboard {
 		$screen = get_current_screen();
 		if ( 'toplevel_page_elasticpress' === $screen->base ) {
 			echo '<style>
-			div.ep-feature.ep-feature-autosuggest, div.ep-feature.ep-feature-documents {
+			div.ep-feature.ep-feature-autosuggest, div.ep-feature.ep-feature-documents, div.ep-feature.ep-feature-instant-results {
 				display: none !important;
 			}
 			</style>';
