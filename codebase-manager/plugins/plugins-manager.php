@@ -4,7 +4,7 @@ namespace Automattic\VIP\CodebaseManager;
 
 class PluginsManager {
 	private $update_data;
-	private $column_count;
+	private $column_count = null;
 
 	public function init() {
 		if ( ! $this->user_can_manage_plugins() ) {
@@ -13,10 +13,6 @@ class PluginsManager {
 		}
 
 		$this->update_data = $this->fetch_plugins_with_updates();
-
-		// Check how many columns exist on the plugin's page.
-		$wp_list_table      = _get_list_table( 'WP_Plugins_List_Table', [ 'screen' => 'plugins' ] );
-		$this->column_count = method_exists( $wp_list_table, 'get_column_count' ) ? $wp_list_table->get_column_count() : 3;
 
 		add_action( 'after_plugin_row', [ $this, 'output_plugin_row_information' ], 10, 2 );
 		add_action( 'admin_init', [ $this, 'display_update_count_bubble_in_menu' ], 15 ); // Hook in early, but after PluginsManager is initialized.
@@ -30,6 +26,12 @@ class PluginsManager {
 	 * @param array  $plugin_data An array of plugin data. See `get_plugin_data()` & `plugin_row_meta` filter in WP core for the full list.
 	 */
 	public function output_plugin_row_information( $plugin_file, $plugin_data ) {
+		if ( null === $this->column_count ) {
+			// Check how many columns exist on the plugin's page.
+			$wp_list_table      = _get_list_table( 'WP_Plugins_List_Table', [ 'screen' => 'plugins' ] );
+			$this->column_count = method_exists( $wp_list_table, 'get_column_count' ) ? $wp_list_table->get_column_count() : 3;
+		}
+
 		$update_data = $this->update_data[ $plugin_file ] ?? new \stdClass();
 
 		$plugin = new Plugin( $plugin_file, $plugin_data, $update_data );

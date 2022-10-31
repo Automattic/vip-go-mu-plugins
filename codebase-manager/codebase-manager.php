@@ -11,10 +11,6 @@ add_action( 'admin_init', function() {
 		return;
 	}
 
-	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( ! isset( $_REQUEST['s'] ) ) {
-		// Avoid loading stuff due to bug in plugin manager list for search requests.
-		$plugins_manager = new PluginsManager();
-		$plugins_manager->init();
-	}
+	$plugins_manager = new PluginsManager();
+	$plugins_manager->init();
 } );
