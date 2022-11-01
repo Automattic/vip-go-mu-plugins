@@ -139,26 +139,4 @@ class QM_Cron_Collector extends QM_Collector {
 			];
 		}
 	}
-
-	/**
-	 * Transform a time in seconds to minutes rounded to 2 decimals.
-	 *
-	 * @param int $time Unix timestamp.
-	 *
-	 * @return float
-	 */
-	private function get_minutes( $time ) {
-		return round( ( (int) $time / 60 ), 2 );
-	}
-
-	/**
-	 * Transform a time in seconds to hours rounded to 2 decimals.
-	 *
-	 * @param int $time Unix timestamp.
-	 *
-	 * @return float
-	 */
-	private function get_hours( $time ) {
-		return round( ( (int) $time / 3600 ), 2 );
-	}
 }
