@@ -119,11 +119,7 @@ class QM_Cron_Collector extends QM_Collector {
 	 *             0 if both intervals equivalent and -1 otherwise.
 	 */
 	private function schedules_sorting( $schedule_a, $schedule_b ) {
-		if ( (int) $schedule_a['interval'] === (int) $schedule_b['interval'] ) {
-			return 0;
-		} else {
-			return ( ( (int) $schedule_a['interval'] > (int) $schedule_b['interval'] ) ? 1 : -1 );
-		}
+		return (int) $schedule_a['interval'] <=> (int) $schedule_b['interval'];
 	}
 
 	/**
