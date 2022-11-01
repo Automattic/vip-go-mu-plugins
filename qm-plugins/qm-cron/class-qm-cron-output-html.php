@@ -272,7 +272,7 @@ class QM_Cron_Output extends QM_Output_Html {
 	*/
 	private function display_event_cron_arguments( $args ) {
 		// Arguments defaults to an empty array if no arguments are given.
-		if ( is_array( $args ) && array() === $args ) {
+		if ( is_array( $args ) && empty( $args ) ) {
 			esc_html_e( 'No Args', 'query-monitor' );
 			return;
 		}
