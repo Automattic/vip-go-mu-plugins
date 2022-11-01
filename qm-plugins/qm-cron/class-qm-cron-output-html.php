@@ -45,9 +45,9 @@ class QM_Cron_Output extends QM_Output_Html {
 					<td>
 						<?php
 						echo esc_html( $data['next_event_time']['human_time'] );
-						echo '<br>';
+						echo '<br />';
 						echo absint( $data['next_event_time']['unix'] );
-						echo '<br>';
+						echo '<br />';
 						echo '<i>' . esc_html( $this->display_past_time( human_time_diff( $data['next_event_time']['unix'] ), $data['next_event_time']['unix'] ) ) . '</i>';
 						?>
 					</td>
@@ -55,7 +55,7 @@ class QM_Cron_Output extends QM_Output_Html {
 				</tr>
 			</tbody>
 		</table>
-		<br>
+		<br />
 		<h3><b>Schedules</b></h3>
 		<table id="qm-cron-schedules" style="width: 100%">
 			<thead>
@@ -81,10 +81,10 @@ class QM_Cron_Output extends QM_Output_Html {
 				?>
 			</tbody>
 		</table>
-		<br>
+		<br />
 		<h3><b>Custom Events</b></h3>
 		<?php $this->display_events( $data['user_crons'], 'qm-cron-user-crons' ); ?>
-		<br>
+		<br />
 		<h3><b>Core Events</b></h3>
 		<?php $this->display_events( $data['core_crons'], 'qm-cron-core-crons' ); ?>
 		</div>
