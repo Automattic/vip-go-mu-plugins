@@ -26,6 +26,7 @@ class QM_Cron_Output extends QM_Output_Html {
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
 		<table id="qm-cron-stats" style="width: 100%">
+			<caption>Cron event statistics</caption>
 			<thead>
 				<tr>
 					<th><h3><?php esc_html_e( 'Total Events', 'query-monitor' ); ?></h3></th>
@@ -56,8 +57,9 @@ class QM_Cron_Output extends QM_Output_Html {
 			</tbody>
 		</table>
 		<br />
-		<h3><b>Schedules</b></h3>
+		<h3><strong>Schedules</strong></h3>
 		<table id="qm-cron-schedules" style="width: 100%">
+			<caption>List of set schedules for cron events</caption>
 			<thead>
 				<tr>
 					<th><?php esc_html_e( 'Interval Hook', 'query-monitor' ); ?></span></th>
@@ -82,10 +84,10 @@ class QM_Cron_Output extends QM_Output_Html {
 			</tbody>
 		</table>
 		<br />
-		<h3><b>Custom Events</b></h3>
+		<h3><strong>Custom Events</strong></h3>
 		<?php $this->display_events( $data['user_crons'], 'qm-cron-user-crons' ); ?>
 		<br />
-		<h3><b>Core Events</b></h3>
+		<h3><strong>Core Events</strong></h3>
 		<?php $this->display_events( $data['core_crons'], 'qm-cron-core-crons' ); ?>
 		</div>
 		<?php
@@ -107,6 +109,7 @@ class QM_Cron_Output extends QM_Output_Html {
 
 		echo '
 			<table class="qm-cron-table qm-cron-event-table">
+			<caption>Cron Events Listing</caption>
 				<thead><tr>
 					<th class="col1">', esc_html__( 'Next Execution', 'query-monitor' ), '</th>
 					<th class="col2">', esc_html__( 'Hook', 'query-monitor' ), '</th>
