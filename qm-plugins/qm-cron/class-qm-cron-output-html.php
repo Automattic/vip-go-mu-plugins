@@ -284,17 +284,6 @@ class QM_Cron_Output extends QM_Output_Html {
 	}
 
 	/**
-	 * Verify if a given timestamp is in the past or the future.
-	 *
-	 * @param int $time Unix timestamp.
-	 *
-	 * @return bool True if the time has passed, false otherwise.
-	 */
-	private function is_time_in_past( $time ) {
-		return ( time() > $time && false === $this->doing_cron );
-	}
-
-	/**
 	 * Compares time with current time and adds ' ago' if current time is greater than event time.
 	 *
 	 * @param string $human_time Human readable time difference.
