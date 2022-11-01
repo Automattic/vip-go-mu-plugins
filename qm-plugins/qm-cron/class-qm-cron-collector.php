@@ -1,6 +1,6 @@
 <?php
 
-class QM_Cron_Collector extends \QM_Collector {
+class QM_Cron_Collector extends QM_Collector {
 
 	/**
 	 * @var string
