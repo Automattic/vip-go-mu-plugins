@@ -1,6 +1,6 @@
 <?php
 
-class QM_Cron_Output extends \QM_Output_Html {
+class QM_Cron_Output extends QM_Output_Html {
 
 	private $doing_cron = false;
 
