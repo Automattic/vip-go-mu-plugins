@@ -129,7 +129,7 @@ class QM_Cron_Output extends QM_Output_Html {
 				foreach ( $data as $hash => $info ) {
 					echo '<tr', $row_attributes, '>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-					if ( true === $show_time ) {
+					if ( $show_time ) {
 						$this->display_event_time( $time, $event_count );
 						$show_time = false;
 					}
