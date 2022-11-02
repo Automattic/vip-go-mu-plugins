@@ -1,24 +1,8 @@
-name: Run e2e tests
+name: Instrument E2E Temp
 on:
-  pull_request:
-  workflow_dispatch:
-    inputs:
-      wpversion:
-        description: 'WordPress version to run tests against'
-        required: false
-        default: 'latest'
-      url:
-        description: 'Alternative Test URL'
-        required: false
-        default: ''
-      user:
-        description: 'Alternative User Name'
-        required: false
-        default: ''
-      password:
-        description: 'Alternative Password'
-        required: false
-        default: ''
+  push:
+    branches:
+      - add/add-foresight-ci-instrumentation
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,7 +12,7 @@ permissions:
   contents: read
 
 jobs:
-  Run_e2e_tests:
+  Run_e2e_tests_instrument:
     name: Run E2E Tests
     runs-on: ubuntu-latest
     steps:
