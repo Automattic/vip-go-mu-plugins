@@ -98,8 +98,8 @@ class OpCache_Collector implements CollectorInterface {
 
 	public function collect_metrics(): void {
 		if ( $this->cache_used_memory_gauge ) {
-			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions
-			$info = opcache_get_status( false );
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions, WordPress.PHP.NoSilencedErrors.Discouraged
+			$info = @opcache_get_status( false );
 			if ( is_array( $info ) ) {
 				$this->cache_used_memory_gauge->set( $info['memory_usage']['used_memory'] );
 				$this->cache_free_memory_gauge->set( $info['memory_usage']['free_memory'] );
@@ -124,14 +124,26 @@ class OpCache_Collector implements CollectorInterface {
 
 	/**
 	 * Check if opcache is installed, enabled and configured to allow this file to call opcache api.
-	 *
-	 * @return bool
 	 */
 	private function is_opcache_available(): bool {
 		if ( function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ) ) {
 			$restricted_to_path = ini_get( 'opcache.restrict_api' );
+			if ( ! $restricted_to_path ) {
+				return true;
+			}
 
-			return ! $restricted_to_path || str_contains( __FILE__, $restricted_to_path );
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
+			$path_translated = $_SERVER['PATH_TRANSLATED'] ?? '';
+
+			// See https://heap.space/xref/PHP-8.0/ext/opcache/zend_accelerator_module.c?r=0571f094#49
+			if ( ! isset( $path_translated )
+				|| strlen( $path_translated ) < strlen( $restricted_to_path )
+				|| strncmp( $path_translated, $restricted_to_path, strlen( $restricted_to_path ) ) !== 0
+			) {
+				return false;
+			}
+
+			return true;
 		}
 
 		return false;
