@@ -10,17 +10,24 @@ function test_mode() {
 	return $mode ?: 'disabled';
 }
 
+function test_version() {
+	$major_version = getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' );
+	return $major_version ?: SUPPORTED_VERSIONS[0];
+}
+
 /**
  * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	protected static $test_mode;
+	protected static $major_version;
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
 		self::$test_mode = test_mode();
+		self::$major_version = test_version();
 	}
 
 	public function test_parsely_loader_info_defaults() {
@@ -85,6 +92,9 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$classname = get_class( $GLOBALS['parsely'] );
 
 		$this->assertEquals( 'Parsely\Parsely', $classname );
+
+		$this->assertEquals( 1, preg_match( '/^(\d+\.\d+)(\.|$)/', $GLOBALS['parsely']::VERSION, $matches ) );
+		$this->assertEquals( self::$major_version, $matches[1] );
 	}
 
 	public function test_bootstrap_modes() {
@@ -186,6 +196,9 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		];
 
 		$post_id  = wp_insert_post( $post, true );
+		$option = get_option( 'parsely' ) ?: [];
+		update_option( 'parsely', array_merge( $option, [ 'apikey' => 'testing123' ] ) );
+
 		$metadata = $this->get_post_metadata( $post_id );
 
 		$this->assertIsArray( $metadata, 'post metadata should be an array' );
@@ -212,28 +225,49 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		];
 
 		$post_id  = wp_insert_post( $post, true );
+		$option = get_option( 'parsely' ) ?: [];
+		update_option( 'parsely', array_merge( $option, [ 'apikey' => 'testing123' ] ) );
+
 		$metadata = $this->get_post_metadata( $post_id );
 
 		if ( version_compare( $parsely::VERSION, '3.3.0', '<' ) ) {
-			$expected_metadata = array(
-				'@context' => 'http://schema.org',
-				'@type'    => 'WebPage',
+			$this->assertSame(
+				[
+					'@context' => 'http://schema.org',
+					'@type'    => 'WebPage',
+				],
+				$metadata,
+				'Metadata should only show basic fields'
 			);
-		} else {
-			$expected_metadata = array(
-				'@context' => 'https://schema.org',
-				'@type'    => 'WebPage',
-			);
+			return;
 		}
 
-		$this->assertSame( $expected_metadata, $metadata, 'Metadata should only show basic fields' );
+		if ( version_compare( $parsely::VERSION, '3.5.0', '<' ) ) {
+			$this->assertSame(
+				[
+					'@context' => 'https://schema.org',
+					'@type'    => 'WebPage',
+				],
+				$metadata,
+				'Metadata should only show basic fields'
+			);
+			return;
+		}
+
+		$this->assertSame( [], $metadata, 'Metadata should be empty' );
 	}
 
 	private function get_post_metadata( int $post_id ) {
 		global $parsely;
 
-		$options = array_merge( [ 'apikey' => 'testing123' ], $parsely->get_options() );
-		return $parsely->construct_parsely_metadata( $options, get_post( $post_id ) );
+		$_post = get_post( $post_id );
+
+		if ( version_compare( $parsely::VERSION, '3.3', '<' ) ) {
+			return $parsely->construct_parsely_metadata( $parsely->get_options(), $_post );
+		}
+
+		$metadata = new \Parsely\Metadata( $parsely );
+		return $metadata->construct_metadata( $_post );
 	}
 
 	private function set_get_globals_for_parsely_activation() {
