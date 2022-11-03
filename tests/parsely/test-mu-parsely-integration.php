@@ -26,7 +26,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
-		self::$test_mode = test_mode();
+		self::$test_mode     = test_mode();
 		self::$major_version = test_version();
 	}
 
@@ -195,8 +195,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'post_status'  => 'publish',
 		];
 
-		$post_id  = wp_insert_post( $post, true );
-		$option = get_option( 'parsely' ) ?: [];
+		$post_id = wp_insert_post( $post, true );
+		$option  = get_option( 'parsely' ) ?: [];
 		update_option( 'parsely', array_merge( $option, [ 'apikey' => 'testing123' ] ) );
 
 		$metadata = $this->get_post_metadata( $post_id );
@@ -224,8 +224,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'post_password' => 'hunter2',
 		];
 
-		$post_id  = wp_insert_post( $post, true );
-		$option = get_option( 'parsely' ) ?: [];
+		$post_id = wp_insert_post( $post, true );
+		$option  = get_option( 'parsely' ) ?: [];
 		update_option( 'parsely', array_merge( $option, [ 'apikey' => 'testing123' ] ) );
 
 		$metadata = $this->get_post_metadata( $post_id );
