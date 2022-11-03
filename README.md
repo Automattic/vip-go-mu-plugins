@@ -14,6 +14,14 @@ Please, visit our [Enterprise Search documentation](https://docs.wpvip.com/how-t
 
 We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
+We also have to ensure that we have our dependencies installed - so first, run the following:
+
+```bash
+git submodule update --init --recursive
+composer install
+npm install
+```
+
 To use mu-plugins code in a "hot-reload" fashion you need to specify the local folder to which this repository is cloned. For example:
 
 ```
