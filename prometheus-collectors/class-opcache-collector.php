@@ -25,8 +25,7 @@ class OpCache_Collector implements CollectorInterface {
 	private ?Gauge $opcache_restarts_gauge        = null;
 
 	public function initialize( RegistryInterface $registry ): void {
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Functions.RestrictedFunctions
-		if ( function_exists( 'opcache_get_status' ) && false !== @opcache_get_status( false ) ) {
+		if ( $this->is_opcache_available() ) {
 			$this->cache_used_memory_gauge = $registry->getOrRegisterGauge(
 				'opcache',
 				'cache_used_memory',
@@ -99,8 +98,8 @@ class OpCache_Collector implements CollectorInterface {
 
 	public function collect_metrics(): void {
 		if ( $this->cache_used_memory_gauge ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Functions.RestrictedFunctions
-			$info = @opcache_get_status( false );
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions
+			$info = opcache_get_status( false );
 			if ( is_array( $info ) ) {
 				$this->cache_used_memory_gauge->set( $info['memory_usage']['used_memory'] );
 				$this->cache_free_memory_gauge->set( $info['memory_usage']['free_memory'] );
@@ -121,5 +120,20 @@ class OpCache_Collector implements CollectorInterface {
 				$this->opcache_restarts_gauge->set( $info['opcache_statistics']['hash_restarts'], [ 'hash' ] );
 			}
 		}
+	}
+
+	/**
+	 * Check if opcache is installed, enabled and configured to allow this file to call opcache api.
+	 *
+	 * @return bool
+	 */
+	private function is_opcache_available(): bool {
+		if ( function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ) ) {
+			$restricted_to_path = ini_get( 'opcache.restrict_api' );
+
+			return ! $restricted_to_path || str_contains( __FILE__, $restricted_to_path );
+		}
+
+		return false;
 	}
 }
