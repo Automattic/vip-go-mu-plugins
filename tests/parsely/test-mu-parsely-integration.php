@@ -141,6 +141,40 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_bootstrap_modes_for_fedramp() {
+		define( 'VIP_IS_FEDRAMP', '1' );
+		maybe_load_plugin();
+
+		switch ( self::$test_mode ) {
+			case 'disabled':
+				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				$this->assertFalse( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
+				break;
+			case 'filter_enabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS, Parsely_Loader_Info::get_integration_type() );
+				break;
+			case 'option_enabled':
+				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				$this->assertFalse( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
+				break;
+			case 'filter_and_option_enabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				$this->assertTrue( Parsely_Loader_Info::is_active() );
+				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS, Parsely_Loader_Info::get_integration_type() );
+				break;
+			default:
+				$this->fail( 'Invalid test mode specified: ' . self::$test_mode );
+		}
+	}
+
 	public function test_parsely_ui_hooks() {
 		maybe_load_plugin();
 

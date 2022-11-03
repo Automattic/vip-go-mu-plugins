@@ -156,6 +156,12 @@ function maybe_load_plugin() {
 
 	$should_load            = true === $filtered_load_status || '1' === $option_load_status;
 	$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
+	$vip_is_fedramp         = defined( 'VIP_IS_FEDRAMP' ) && constant( 'VIP_IS_FEDRAMP' );
+
+	if ( $vip_is_fedramp && ! $filtered_load_status ) {
+		// FedRAMP sites should only load the mu-plugins version of wp-parsely via the filter.
+		$should_prevent_loading = true;
+	}
 
 	// No integration: The site has not enabled parsely.
 	if ( ! $should_load || $should_prevent_loading ) {
