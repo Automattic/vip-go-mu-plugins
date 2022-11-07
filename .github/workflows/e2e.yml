@@ -75,6 +75,8 @@ jobs:
             packages.microsoft.com:443
             download.cypress.io:443
             cdn.cypress.io:443
+            foresight.service.thundra.io
+            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com
 
       - name: Check out repository code
         uses: actions/checkout@v3
@@ -88,12 +90,18 @@ jobs:
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
 
+      - name: Instrument workflow processes for E2E tests
+        uses: runforesight/foresight-workflow-kit-action@v1
+        if: success() || failure()
+        with:
+          api_key: ${{secrets.FORESIGHT_API_KEY}}
+
       - name: Install dependencies
         run: npm ci
         working-directory: __tests__/e2e
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
+      - name: Install Playwright with Chromium
+        run: npx playwright install chromium
         working-directory: __tests__/e2e
 
       - name: Install VIP CLI
@@ -117,6 +125,15 @@ jobs:
       - name: Run e2e tests
         run: npm test
         working-directory: __tests__/e2e
+
+      - name: Instrument Tests in ForeSight
+        if: success() || failure()
+        uses: thundra-io/foresight-test-kit-action@v1
+        with:
+          api_key: ${{secrets.FORESIGHT_API_KEY}}
+          test_format: JUNIT
+          test_framework: JEST
+          test_path: __tests__/e2e/results.xml
 
       - name: Archive test results
         uses: actions/upload-artifact@v3

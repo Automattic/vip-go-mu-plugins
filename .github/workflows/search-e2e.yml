@@ -39,6 +39,12 @@ jobs:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
 
+    - name: Instrument workflow processes for Search E2E tests
+      uses: runforesight/foresight-workflow-kit-action@v1
+      if: success() || failure()
+      with:
+        api_key: ${{secrets.FORESIGHT_API_KEY}}
+
     - name: Install dependencies
       run: npm ci
 
@@ -52,7 +58,16 @@ jobs:
       run: npm run cypress:setup
 
     - name: Test
-      run: npm run cypress:run
+      run: npm run cypress:run --  --reporter junit --reporter-options mochaFile=results.xml
+
+    - name: Instrument Tests in ForeSight
+      if: success() || failure()
+      uses: thundra-io/foresight-test-kit-action@v1
+      with:
+        api_key: ${{secrets.FORESIGHT_API_KEY}}
+        test_format: JUNIT
+        test_framework: JEST
+        test_path: ./results.xml
 
     - name: Make artifacts available
       uses: actions/upload-artifact@v3
