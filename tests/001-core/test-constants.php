@@ -29,11 +29,7 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 	}
 
 	public function test_define_db_constants__not_hyperdb(): void {
-		$db = new class() extends wpdb {
-			public function __construct() {
-				// Do nothing, do not call parent constructor
-			}
-		};
+		$db = false;
 
 		define_db_constants( $db );
 
@@ -42,12 +38,10 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 
 	public function test_define_db_constants__servers_not_array(): void {
 		$db = new class() extends wpdb {
-			public function __construct() {
-				// Do nothing, do not call parent constructor
-			}
+			public $hyper_servers;
 
-			public function get_hyper_servers() {
-				return null;
+			public function __construct() {
+				$this->hyper_servers = false;
 			}
 		};
 
@@ -58,12 +52,11 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 
 	public function test_define_db_constants__db_not_array(): void {
 		$db = new class() extends wpdb {
+			public $hyper_servers;
+
 			public function __construct() {
 				// Do nothing, do not call parent constructor
-			}
-
-			public function get_hyper_servers() {
-				return [ null ];
+				$this->hyper_servers = [ null ];
 			}
 		};
 
@@ -73,39 +66,33 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_define_db_constants
+	 * @dataProvider data_define_db_constants__inputs
 	 */
-	public function test_define_db_constants( int $priority ): void {
+	public function test_define_db_constants__inputs( int $priority ): void {
 		$expected_user = 'user';
 		$expected_pass = 'pass';
 		$expected_host = 'host';
 		$expected_db   = 'db';
 
 		$db = new class( $priority, $expected_user, $expected_pass, $expected_host, $expected_db ) extends wpdb {
+			public $hyper_servers;
 			private int $priority;
-			private string $user;
-			private string $pass;
-			private string $host;
-			private string $db;
 
 			public function __construct( int $priority, string $user, string $pass, string $host, string $db ) {
+				$db_details = [
+					'host'     => $host,
+					'user'     => $user,
+					'password' => $pass,
+					'name'     => $db,
+					'write'    => $priority,
+				];
 				// Do not call parent constructor
-
-				$this->priority = $priority;
-				$this->user     = $user;
-				$this->pass     = $pass;
-				$this->host     = $host;
-				$this->db       = $db;
-			}
-
-			public function get_hyper_servers() {
-				return [
-					$this->priority => [
-						[
-							'user'     => $this->user,
-							'password' => $this->pass,
-							'host'     => $this->host,
-							'name'     => $this->db,
+				$this->hyper_servers = [
+					'global' => [
+						'write' => [
+							$priority => [
+								$db_details,
+							],
 						],
 					],
 				];
@@ -125,7 +112,7 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 		self::assertSame( $expected_host, Constant_Mocker::constant( 'DB_HOST' ) );
 	}
 
-	public function data_define_db_constants(): iterable {
+	public function data_define_db_constants__inputs(): iterable {
 		return [
 			[ 1 ],
 			[ 10 ],
