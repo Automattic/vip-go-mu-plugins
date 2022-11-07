@@ -191,3 +191,10 @@ add_filter( 'site_search_columns', function( $cols ) {
 	$cols[] = 'domain';
 	return $cols;
 });
+
+/**
+ * Disable JS Concatenation for wp-admin.
+ */
+if ( is_admin() ) {
+	add_filter( 'js_do_concat', '__return_false' );
+}

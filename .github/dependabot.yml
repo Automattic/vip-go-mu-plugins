@@ -11,6 +11,14 @@ updates:
     schedule:
       interval: daily
     versioning-strategy: increase-if-necessary
+    ignore:
+      - dependency-name: "cypress"
+
+  - directory: /__tests__/e2e/
+    package-ecosystem: npm
+    schedule:
+      interval: daily
+    versioning-strategy: increase-if-necessary
 
   - directory: /search/search-dev-tools/
     package-ecosystem: npm
