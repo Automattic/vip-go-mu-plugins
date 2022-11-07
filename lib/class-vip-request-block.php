@@ -40,7 +40,7 @@ class VIP_Request_Block {
 
 		// In case this is an IPv6 address and PHP is compiled without the IPV6 support, make sure `false`'s won't match.
 		if ( false === $ip ) {
-			$ip = ''; 
+			$ip = '';
 		}
 
 		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -74,7 +74,7 @@ class VIP_Request_Block {
 	 */
 	public static function ua( string $user_agent ) {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-		if ( $user_agent === $_SERVER['HTTP_USER_AGENT'] ) {
+		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && $user_agent === $_SERVER['HTTP_USER_AGENT'] ) {
 			return self::block_and_log( $user_agent, 'user-agent' );
 		}
 

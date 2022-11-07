@@ -381,6 +381,7 @@ class WPCOM_VIP_Debug_Bar_Remote_Requests extends Debug_Bar_Panel {
 	}
 
 	public function log_http_requests( $args, $url ) {
+		$url = (string) $url;
 		if ( ! in_array( $url, $this->ignore_urls ) && ! isset( $this->requests[ $url ] ) ) {
 			$this->requests[ $url ] = array();
 		}
@@ -422,6 +423,8 @@ class WPCOM_VIP_Debug_Bar_Remote_Requests extends Debug_Bar_Panel {
 
 			$status = $response['response']['code'];
 		}
+
+		$url = (string) $url;
 
 		$this->requests[ $url ][] = array(
 			'message'   => $message,

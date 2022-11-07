@@ -11,5 +11,6 @@ add_action( 'admin_init', function() {
 		return;
 	}
 
-	( new PluginsManager() )->init();
+	$plugins_manager = new PluginsManager();
+	$plugins_manager->init();
 } );

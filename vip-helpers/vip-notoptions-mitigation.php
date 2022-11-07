@@ -10,6 +10,10 @@ namespace Automattic\VIP;
 
 use Automattic\VIP\Utils\Alerts;
 
+if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
+	return;
+}
+
 define( 'USER_ROLE_BACKUP_LENGTH', 3 );
 
 if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
