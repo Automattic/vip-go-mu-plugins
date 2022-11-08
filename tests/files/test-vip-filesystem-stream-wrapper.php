@@ -266,4 +266,35 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
 		self::assertTrue( $actual );
 	}
+
+	public function test_touch_fclose_failure(): void {
+		$path     = 'wp-content/uploads/non-existing-file.php';
+		$vip_path = 'vip://' . $path;
+
+		// file_exists() check
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( $path, $this->anything() )
+			->willReturn( false );
+
+		// fopen() - create empty file
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'get_file' )
+			->with( $path )
+			->willReturn( new WP_Error( 'file-not-found', 'error' ) );
+
+		// flush() when closing the file
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'upload_file' )
+			->with( $this->anything(), $path )
+			->willReturn( new WP_Error( 'upload_file-failed' ) );
+
+		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
+
+		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
+		self::assertFalse( $actual );
+	}
 }
