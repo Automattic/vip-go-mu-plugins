@@ -325,6 +325,14 @@ class VIP_Filesystem_Stream_Wrapper {
 
 				if ( $this->should_flush_empty ) {
 					$this->should_flush_empty = false;
+					/*
+					 * The API client does not have a method to clear file stats cache;
+					 * However, if we pass an empty array, this effectively clears the cache.
+					 * See API_Client::is_file(): if $stats is empty, it calls the API.
+					 *
+					 * We have to clear the cache because we have failed to upload the file;
+					 * as a result, it was not create on the remote end.
+					 */
 					$this->client->cache_file_stats( $this->path, [] );
 				}
 
