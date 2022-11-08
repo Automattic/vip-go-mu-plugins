@@ -106,11 +106,13 @@ class SettingsHealthJob {
 	public function check_settings_health() {
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
+		if ( ! empty( $unhealthy_indexables ) ) {
+			$this->process_indexables_settings_health_results( $unhealthy_indexables );
+		} else {
+			// Eventually, $unhealthy_indexables will be empty -- that is when we should check the index mapping to prevent
+			// too many checks going on at the same time.
+			$this->health->validate_incorrect_post_index_mapping();
 		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
