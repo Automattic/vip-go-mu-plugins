@@ -239,12 +239,14 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_close() {
 		$this->debug( sprintf( 'stream_close => %s + %s', $this->path, $this->uri ) );
 
+		$result = true;
+
 		// Don't attempt to flush new file when in read mode
 		if ( $this->should_flush_empty && 'r' !== $this->mode ) {
-			$this->stream_flush();
+			$result = $this->stream_flush();
 		}
 
-		return $this->close_handler( $this->file );
+		return $this->close_handler( $this->file ) && $result;
 	}
 
 	/**
@@ -314,15 +316,13 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		try {
 			// Upload to file service
-			$result = $this->client
-				->upload_file( $this->uri, $this->path );
+			$result                   = $this->client->upload_file( $this->uri, $this->path );
+			$this->should_flush_empty = false;
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
 					sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', esc_html( $this->path ), esc_html( $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
-
-				$this->should_flush_empty = false;
 
 				return false;
 			}
@@ -702,7 +702,8 @@ class VIP_Filesystem_Stream_Wrapper {
 				if ( false === file_exists( $path ) ) {
 					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
 					if ( is_resource( $file ) ) {
-						return fclose( $file );
+						$result = fflush( $file );
+						return fclose( $file ) && $result;
 					}
 
 					return false;
