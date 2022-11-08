@@ -316,17 +316,30 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		try {
 			// Upload to file service
-			$result                   = $this->client->upload_file( $this->uri, $this->path );
-			$this->should_flush_empty = false;
+			$result = $this->client->upload_file( $this->uri, $this->path );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
 					sprintf( 'stream_flush failed for %s with error: %s #vip-go-streams', esc_html( $this->path ), esc_html( $result->get_error_message() ) ),
 					E_USER_WARNING
 				);
 
+				if ( $this->should_flush_empty ) {
+					$this->should_flush_empty = false;
+					/*
+					 * The API client does not have a method to clear file stats cache;
+					 * However, if we pass an empty array, this effectively clears the cache.
+					 * See API_Client::is_file(): if $stats is empty, it calls the API.
+					 *
+					 * We have to clear the cache because we have failed to upload the file;
+					 * as a result, it was not create on the remote end.
+					 */
+					$this->client->cache_file_stats( $this->path, [] );
+				}
+
 				return false;
 			}
 
+			$this->should_flush_empty = false;
 			return fflush( $this->file );
 		} catch ( \Exception $e ) {
 			trigger_error(
