@@ -702,8 +702,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				if ( false === file_exists( $path ) ) {
 					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
 					if ( is_resource( $file ) ) {
-						fclose( $file );
-						return true;
+						return fclose( $file );
 					}
 
 					return false;
