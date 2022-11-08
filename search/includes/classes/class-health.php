@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables as Indexables;
-
 use \WP_Query as WP_Query;
 use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
@@ -1128,5 +1126,26 @@ class Health {
 		}
 
 		return $result;
+	}
+	/**
+	 * Verify if the post mapping is incorrect from running `wp vip-search index` without the --setup flag on initial indexing.
+	 *
+	 * @return bool Whether mapping is incorrect
+	 */
+	public function validate_incorrect_post_index_mapping() {
+		$indexable = $this->indexables->get( 'post' );
+		if ( ! $indexable ) {
+			// No post Indexable exists, bail early.
+			return false;
+		}
+
+		$index_name = $indexable->get_index_name();
+		$mapping    = $indexable->get_mapping( $index_name );
+
+		if ( ! isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
