@@ -20,10 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3.1.0
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.22.0
+        uses: shivammathur/setup-php@v2.22.0
         with:
           coverage: none
           php-version: "8.0"
@@ -37,7 +37,7 @@ jobs:
           cache: npm
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@83af392bf5f031813d25e6fe4cd626cdba9a2df6 # tag=2.2.0
+        uses: ramsey/composer-install@v2.2.0
 
       - name: Lint files
         run: npm run lint
@@ -47,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3.1.0
 
       - name: Setup Node
         uses: actions/setup-node@v3.5.1
