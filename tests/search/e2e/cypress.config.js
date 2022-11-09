@@ -17,6 +17,6 @@ module.exports = defineConfig({
     "numTestsKeptInMemory": 0,
     reporter: 'cypress-multi-reporters',
     reporterOptions: {
-    configFile: 'tests/search/e2e/cypress-reporter-config.json'
+      configFile: 'tests/search/e2e/cypress-reporter-config.json'
   }
 })
