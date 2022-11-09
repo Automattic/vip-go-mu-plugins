@@ -58,7 +58,10 @@ jobs:
       run: npm run cypress:setup
 
     - name: Test
-      run: npm run cypress:run --  --reporter junit --reporter-options mochaFile=results.xml
+      run: npm run cypress:run
+
+    - name: Merge E2E test reports
+      run: npm run cypress:combine:reports
 
     - name: Instrument Tests in ForeSight
       if: success() || failure()
@@ -67,7 +70,7 @@ jobs:
         api_key: ${{secrets.FORESIGHT_API_KEY}}
         test_format: JUNIT
         test_framework: JEST
-        test_path: ./results.xml
+        test_path: cypress/results/combined-cy-report.xml
 
     - name: Make artifacts available
       uses: actions/upload-artifact@v3
@@ -79,6 +82,7 @@ jobs:
           ${{ github.workspace }}/tests/cypress/screenshots/
           ${{ github.workspace }}/tests/cypress/videos/
           ${{ github.workspace }}/tests/cypress/logs/
+          ${{ github.workspace }}/cypress/results/
     - name: Stop Elasticsearch
       if: always()
       run: cd bin/search/es-docker/ && docker-compose down
