@@ -153,6 +153,16 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		break;
 }
 
+tests_add_filter( 'muplugins_loaded', function () {
+	echo "[WP_PARSELY_INTEGRATION] Removing autoload (so we can manually test)\n";
+	$removed = remove_action( 'plugins_loaded', 'Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin', 1 );
+	if ( ! $removed ) {
+		throw new Exception( '[WP_PARSELY_INTEGRATION] Failed to remove autoload' );
+	}
+	echo "[WP_PARSELY_INTEGRATION] Disabling the telemetry backend\n";
+	add_filter( 'wp_parsely_enable_telemetry_backend', '__return_false' );
+} );
+
 require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
