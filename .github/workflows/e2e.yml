@@ -75,8 +75,11 @@ jobs:
             packages.microsoft.com:443
             download.cypress.io:443
             cdn.cypress.io:443
-            foresight.service.thundra.io
-            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com
+            foresight.service.thundra.io:443
+            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
+            upload.service.runforesight.com:443
+            api.service.runforesight.com:443
+            api.wpvip.com:443
 
       - name: Check out repository code
         uses: actions/checkout@v3
