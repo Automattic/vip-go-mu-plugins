@@ -71,6 +71,9 @@ jobs:
       - name: Rsync ext
         run: 'rsync -r --delete --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
 
+      - name: Delete mu-plugins-ext
+        run: rm -rf vip-go-mu-plugins-ext
+
       - name: Run tests
         uses: ./.github/actions/run-wp-tests
         with:
