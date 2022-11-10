@@ -1120,6 +1120,67 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $actual_result, $expected_result );
 	}
 
+	/**
+	 * @dataProvider get_index_settings_diff_for_indexable_data
+	 * @processIsolation true
+	 */
+	public function test_get_index_settings_diff_for_indexable__next_ep_constant( $actual, $desired, $options, $expected_diff ) {
+		Constant_Mocker::define( 'VIP_SEARCH_USE_NEXT_EP', true );
+
+		self::$indexable_methods[] = 'generate_mapping';
+
+		$index_name = 'vip-123-post-1';
+		// Mock search and the versioning instance
+		/** @var Search&MockObject */
+		$mock_search = $this->createMock( Search::class );
+
+		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
+			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$health = new Health( $mock_search );
+
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( self::$indexable_methods )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+
+		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+			->setMethods( [ 'get_index_settings' ] )
+			->getMock();
+
+		$health->elasticsearch->method( 'get_index_settings' )
+			->willReturn( [
+				'vip-123-post-1' => [
+					'settings' => [
+						$actual,
+					],
+				],
+			] );
+
+		$mocked_indexable->method( 'generate_mapping' )
+			->willReturn( [
+				'settings' => [ $desired ],
+			] );
+
+		$actual_result = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
+
+		$expected_result = [];
+		if ( ! empty( $actual_result ) ) {
+			$expected_result = [
+				'diff'          => $expected_diff,
+				'index_version' => 1,
+				'index_name'    => $index_name,
+			];
+		}
+
+		$this->assertEquals( $actual_result, $expected_result );
+	}
+
 	public function test_get_index_settings_diff_for_indexable_without_index() {
 		$options = [ 'version_number' => 2 ];
 		$actual  = [ 'index.number_of_shards' => 1 ];
