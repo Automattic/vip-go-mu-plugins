@@ -7,7 +7,7 @@
     "lint": "eslint --fix .",
     "pretest": "./bin/setup-env.sh",
     "test": "playwright test -c playwright.config.ts",
-    "posttest": "vip dev-env destroy --slug=e2e-test-site"
+    "posttest": "docker stats --no-stream; vip dev-env destroy --slug=e2e-test-site"
   },
   "author": "Automattic",
   "devDependencies": {
