@@ -9,7 +9,7 @@ class WPCOM_VIP_CLI_Command extends WP_CLI_Command {
 	 */
 	protected function stop_the_insanity() {
 		_deprecated_function( __METHOD__, '2.0.0', 'vip_inmemory_cleanup' );
-		self::vip_inmemory_cleanup();
+		$this->vip_inmemory_cleanup();
 	}
 
 	/**
