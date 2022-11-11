@@ -19,7 +19,7 @@ describe('Post Search Feature - Synonyms Functionality', () => {
 			}
 		});
 
-		cy.login();
+		// cy.login();
 
 		const postsData = [
 			{

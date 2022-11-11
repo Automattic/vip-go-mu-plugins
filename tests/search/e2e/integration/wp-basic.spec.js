@@ -3,24 +3,28 @@ describe('WordPress basic actions', () => {
 		cy.wpCli('vip-search index --setup --skip-confirm');
 	});
 
+	beforeEach(() => {
+		cy.login();
+	})
+
 	it('Has <title> tag', () => {
 		cy.visit('/');
 		cy.get('title').should('exist');
 	});
 
 	it('Can login', () => {
-		cy.login();
+		// cy.login();
 		cy.get('#wpadminbar').should('exist');
 	});
 
 	it('Can see admin bar on front end', () => {
-		cy.login();
+		// cy.login();
 		cy.visit('/');
 		cy.get('#wpadminbar').should('exist');
 	});
 
 	it('Can save own profile', () => {
-		cy.login();
+		// cy.login();
 		cy.visitAdminPage('profile.php');
 		cy.get('#first_name').clearThenType('Test Name');
 		cy.get('#submit').click();
@@ -28,7 +32,7 @@ describe('WordPress basic actions', () => {
 	});
 
 	it('Can change site title', () => {
-		cy.login();
+		// cy.login();
 		cy.visitAdminPage('options-general.php');
 		cy.get('#wpadminbar').should('be.visible');
 		cy.get('#blogname').clearThenType('Updated Title');

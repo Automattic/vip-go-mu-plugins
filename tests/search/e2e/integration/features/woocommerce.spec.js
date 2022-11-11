@@ -1,14 +1,19 @@
 describe('WooCommerce Feature', () => {
 	before(() => {
 		cy.deactivatePlugin('woocommerce', 'wpCli');
+		
 	});
+
+	beforeEach(() => {
+		cy.login();
+	})
 
 	after(() => {
 		cy.deactivatePlugin('woocommerce', 'wpCli');
 	});
 
 	it('Can auto-activate the feature', () => {
-		cy.login();
+		// cy.login();
 
 		cy.activatePlugin('woocommerce');
 
@@ -17,7 +22,7 @@ describe('WooCommerce Feature', () => {
 	});
 
 	it('Can fetch orders from Elasticsearch', () => {
-		cy.login();
+		// cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 		cy.maybeEnableFeature('woocommerce');
@@ -28,7 +33,7 @@ describe('WooCommerce Feature', () => {
 	});
 
 	it('Can fetch products from Elasticsearch in WP Dashboard', () => {
-		cy.login();
+		// cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 		cy.maybeEnableFeature('woocommerce');
@@ -39,7 +44,7 @@ describe('WooCommerce Feature', () => {
 	});
 
 	it('Can fetch products from Elasticsearch in product category archives', () => {
-		cy.login();
+		// cy.login();
 
 		cy.maybeEnableFeature('woocommerce');
 
@@ -49,7 +54,7 @@ describe('WooCommerce Feature', () => {
 	});
 
 	it('Can fetch products from Elasticsearch in product rivers', () => {
-		cy.login();
+		// cy.login();
 
 		cy.maybeEnableFeature('woocommerce');
 
