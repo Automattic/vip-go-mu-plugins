@@ -7,9 +7,9 @@ const config: PlaywrightTestConfig = {
     retries: 1,
     globalSetup: require.resolve( './lib/global-setup' ),
     timeout: 60000,
-    reporter: process.env.CI ? [['github'], [ 'junit', { outputFile: 'results.xml' } ]] : 'line',
+    reporter: process.env.CI ? [ [ 'github' ], [ 'junit', { outputFile: 'results.xml' } ] ] : 'line',
     reportSlowTests: null,
-    workers: process.env.CI ? 2 : undefined,
+    workers: process.env.CI ? 1 : undefined,
     use: {
         headless: process.env.DEBUG_TESTS !== 'true',
         viewport: { width: 1280, height: 1000 },
