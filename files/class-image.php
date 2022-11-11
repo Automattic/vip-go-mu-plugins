@@ -174,14 +174,19 @@ class Image {
 		// so the filesize on each entry is instead an estimate based on pixel count difference.
 		if ( $this->is_resized ) {
 			$original_pixels = $this->original_height * $this->original_width;
-			$new_pixels      = $this->height * $this->width;
+			$resized_pixels  = $this->height * $this->width;
+
+			// Unsure if this is possible, but just in case :)
+			if ( $original_pixels <= 0 ) {
+				return 0;
+			}
 
 			// Example: Original 100mb image w/ 1000 pixels, cropped to 250 pixels in the thumbnail.
 			// The pixel diff is 25%. So estimated size is 100mb * .25 = 25mb.
-			$pixel_diff     = $new_pixels / $original_pixels;
+			$pixel_diff     = $resized_pixels / $original_pixels;
 			$estimated_size = $filesize * $pixel_diff;
 
-			return $estimated_size;
+			return (int) round( $estimated_size );
 		}
 
 		return $filesize;

@@ -17,13 +17,6 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	public $test_image = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg'; //@todo: consider using `DIR_TESTDATA . '/images/canola.jpg';`
 
 	/**
-	 * The test image's filesize in bytes.
-	 *
-	 * @var int
-	 */
-	public $test_image_filesize = 6941712;
-
-	/**
 	 * @var Automattic\VIP\Files\VIP_Filesystem
 	 */
 	private $vip_filesystem;
@@ -159,9 +152,10 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 					'crop'   => '1',
 				],
 				[
-					'width'  => 150,
-					'height' => 150,
-					'params' => [
+					'width'    => 150,
+					'height'   => 150,
+					'filesize' => 9267,
+					'params'   => [
 						'resize' => '150,150',
 					],
 				],
@@ -173,9 +167,10 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 					'crop'   => false,
 				],
 				[
-					'width'  => 300,
-					'height' => 169,
-					'params' => [
+					'width'    => 300,
+					'height'   => 169,
+					'filesize' => 20882,
+					'params'   => [
 						'resize' => '300,169',
 					],
 				],
@@ -187,9 +182,10 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 					'crop'   => false,
 				],
 				[
-					'width'  => 768,
-					'height' => 432,
-					'params' => [
+					'width'    => 768,
+					'height'   => 432,
+					'filesize' => 136652,
+					'params'   => [
 						'resize' => '768,432',
 					],
 				],
@@ -201,9 +197,10 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 					'crop'   => false,
 				],
 				[
-					'width'  => 1024,
-					'height' => 576,
-					'params' => [
+					'width'    => 1024,
+					'height'   => 576,
+					'filesize' => 242936,
+					'params'   => [
 						'resize' => '1024,576',
 					],
 				],
@@ -234,6 +231,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 		$this->assertTrue( $image->is_resized(), 'Resized image is not marked as resized.' );
 		$this->assertEquals( $expected_resize['width'], $image->get_width(), 'Resized image does not have expected width.' );
 		$this->assertEquals( $expected_resize['height'], $image->get_height(), 'Resized image does not have expected height.' );
+		$this->assertEquals( $expected_resize['filesize'], $image->get_filesize(), 'Resized image does not have expected estimated filesize.' );
 		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Resized image does not have appropriate mime type.' );
 		$this->assertEquals( add_query_arg( $expected_resize['params'], 'image.jpg' ), $image->get_filename(), 'Resized image does not point to appropriate file.' );
 	}
@@ -263,7 +261,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 			'width'     => $expected_resize['width'],
 			'height'    => $expected_resize['height'],
 			'mime-type' => 'image/jpeg',
-			'filesize'  => $this->test_image_filesize,
+			'filesize'  => $expected_resize['filesize'],
 		];
 		$this->assertEquals( $expected_size_array, $new_size_array, 'The size array does not match the expected one.' );
 	}
@@ -292,6 +290,7 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 		$this->assertFalse( $image->is_resized(), 'Image is not marked as NOT resized.' );
 		$this->assertEquals( $postmeta['width'], $image->get_width(), 'Width has not been properly reset.' );
 		$this->assertEquals( $postmeta['height'], $image->get_height(), 'Height has not been properly reset.' );
+		$this->assertEquals( $postmeta['filesize'], $image->get_filesize(), 'Filesize has not been properly reset.' );
 		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Mime-type has not been properly reset' );
 		$this->assertEquals( 'image.jpg', $image->get_filename(), 'Image after reset does not point to appropriate file.' );
 	}
