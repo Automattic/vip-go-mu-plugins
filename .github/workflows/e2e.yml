@@ -86,6 +86,9 @@ jobs:
         with:
           submodules: true
 
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
+
       - name: Setup Node
         uses: actions/setup-node@v3
         with:

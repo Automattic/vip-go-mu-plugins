@@ -33,6 +33,9 @@ jobs:
       with:
         submodules: recursive
 
+    - name: Prepare source code
+      uses: ./.github/actions/prepare-source
+
     - name: "Install node v${{ env.NODE_VERSION }}"
       uses: actions/setup-node@v3.5.1
       with:
