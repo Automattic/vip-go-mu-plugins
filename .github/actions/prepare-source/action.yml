@@ -1,0 +1,19 @@
+name: Prpeare source code for testing
+description: Checks out and installs all dependencies
+runs:
+  using: composite
+  steps:
+    - name: Check out mu-plugins-ext
+      uses: actions/checkout@v3
+      with:
+        repository: 'Automattic/vip-go-mu-plugins-ext'
+        path: 'vip-go-mu-plugins-ext'
+
+    - name: Copy plugins into the source tree
+      shell: bash
+      run: 'rsync -r --delete --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
+
+    - name: Clean up
+      shell: bash
+      run: rm -rf vip-go-mu-plugins-ext
+
