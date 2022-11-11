@@ -1,4 +1,4 @@
-name: Prpeare source code for testing
+name: Prepare source code for testing
 description: Checks out and installs all dependencies
 runs:
   using: composite
