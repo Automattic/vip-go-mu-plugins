@@ -4,8 +4,7 @@ describe('WordPress can perform standard ElasticPress actions', () => {
 	});
 
 	it('Can see the settings page link in WordPress Dashboard', () => {
-		// cy.login();
-
+		cy.visitAdminPage();
 		cy.get('.toplevel_page_elasticpress .wp-menu-name').should('contain.text', 'Enterprise Search');
 	});
 
