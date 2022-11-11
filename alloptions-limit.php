@@ -15,6 +15,7 @@ require_once __DIR__ . '/lib/utils/class-alerts.php';
 add_action( 'plugins_loaded', __NAMESPACE__ . '\run_alloptions_safeguard' );
 
 define( 'VIP_ALLOPTIONS_ERROR_THRESHOLD', 1000000 );
+define( 'VIP_ALLOPTIONS_ERROR_ALERT_THRESHOLD', 850000 );
 
 /**
  * The purpose of this limit is to safe-guard against a barrage of requests with cache sets for values that are too large.
@@ -25,12 +26,8 @@ function run_alloptions_safeguard() {
 		return;
 	}
 
-	// Uncompressed size thresholds.
-	// Warn should *always* be =< die
-	$alloptions_size_warn = MB_IN_BYTES * 2.5;
-
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
-	$alloptions_size_die = MB_IN_BYTES * 4;
+	$alloptions_size_worry_level = MB_IN_BYTES * 4;
 
 	$alloptions_size = wp_cache_get( 'alloptions_size' );
 
@@ -42,34 +39,33 @@ function run_alloptions_safeguard() {
 		wp_cache_add( 'alloptions_size', $alloptions_size, '', 60 );
 	}
 
-	$warning        = $alloptions_size > $alloptions_size_warn;
-	$maybe_blocked  = $alloptions_size > $alloptions_size_die;
+	$maybe_blocked  = $alloptions_size > $alloptions_size_worry_level;
 	$really_blocked = false;
 
 	$alloptions_size_compressed = 0;
 
-	if ( ! $warning ) {
+	if ( ! $maybe_blocked ) {
 		return;
 	}
 
-	if ( $maybe_blocked ) {
-		// It's likely at this point the site is already experiencing performance degradation.
-		// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
-		// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
-		$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
-		if ( ! $alloptions_size_compressed ) {
-			$alloptions_size_deflated   = gzdeflate( maybe_serialize( wp_load_alloptions() ) );
-			$alloptions_size_compressed = false !== $alloptions_size_deflated ? strlen( $alloptions_size_deflated ) : VIP_ALLOPTIONS_ERROR_THRESHOLD - 1;
-			wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
-		}
+	// It's likely at this point the site is already experiencing performance degradation.
+	// We're using gzdeflate here because pecl-memcache uses Zlib compression for large values.
+	// See https://github.com/websupport-sk/pecl-memcache/blob/e014963c1360d764e3678e91fb73d03fc64458f7/src/memcache_pool.c#L303-L354
+	$alloptions_size_compressed = wp_cache_get( 'alloptions_size_compressed' );
+	if ( ! $alloptions_size_compressed ) {
+		$alloptions_size_deflated   = gzdeflate( maybe_serialize( wp_load_alloptions() ) );
+		$alloptions_size_compressed = false !== $alloptions_size_deflated ? strlen( $alloptions_size_deflated ) : VIP_ALLOPTIONS_ERROR_THRESHOLD - 1;
+		wp_cache_add( 'alloptions_size_compressed', $alloptions_size_compressed, '', 60 );
 	}
 
 	if ( $alloptions_size_compressed >= VIP_ALLOPTIONS_ERROR_THRESHOLD ) {
 		$really_blocked = true;
 	}
 
-	// NOTE - This function has built-in rate limiting so it's ok to call on every request
-	alloptions_safeguard_notify( $alloptions_size, $alloptions_size_compressed, $really_blocked );
+	if ( $alloptions_size_compressed >= VIP_ALLOPTIONS_ERROR_ALERT_THRESHOLD ) {
+		// NOTE - This function has built-in rate limiting so it's ok to call on every request
+		alloptions_safeguard_notify( $alloptions_size, $alloptions_size_compressed, $really_blocked );
+	}
 
 	// Will exit with a 503
 	if ( $really_blocked ) {
@@ -96,11 +92,9 @@ function alloptions_safeguard_die() {
  *
  * @param int $size            Uncompressed sized of alloptions, in bytes
  * @param int $size_compressed Compressed size of alloption, in bytes.
- *                             HOWEVER, this is only set if $size meets a threshold.
- *                             @see run_alloptions_safeguard()
  * @param bool $really_blocked True if the options size is large enough to cause site to be blocked from loading.
  */
-function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_blocked = true ) {
+function alloptions_safeguard_notify( $size, $size_compressed, $really_blocked = true ) {
 	global $wpdb;
 
 	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
@@ -121,6 +115,7 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
 	$site_id     = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
+	$home_url    = get_home_url();
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
 	if (
@@ -133,32 +128,38 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 		return;
 	}
 
+	$cli_command = "vip @{$site_id} -- wp vip alloptions find";
+
 	$subject = 'ALLOPTIONS: %1$s (%2$s VIP Go site ID: %3$s';
 
 	if ( 0 !== $wpdb->blogid ) {
-		$subject .= ", blog ID {$wpdb->blogid}";
+		$subject     .= ", blog ID {$wpdb->blogid}";
+		$cli_command .= "  --url={$home_url}";
 	}
 
-	$subject .= ') options is up to %4$s';
+	$subject .= ') options is up to %4$s (compressed)';
 
 	$subject = sprintf(
 		$subject,
 		esc_url( home_url() ),
 		esc_html( $environment ),
 		(int) $site_id,
-		size_format( $size )
+		size_format( $size_compressed )
 	);
 
 	if ( $really_blocked ) {
-		$priority    = 'P2';
+		// SITE IS DOWN
+		$priority    = 'P1';
 		$description = sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD );
-	} elseif ( $size_compressed > 0 ) {
-		$priority    = 'P3';
-		$description = sprintf( 'The size of AllOptions is at %1$s bytes (compressed), %2$s bytes (uncompressed)', $size_compressed, $size );
 	} else {
-		$priority    = 'P5';
-		$description = sprintf( 'The size of AllOptions is at %1$s bytes (uncompressed)', $size );
+		// SITE IS DANGER ZONE
+		$priority    = 'P2';
+		$description = sprintf( 'The size of AllOptions is at %1$s bytes (compressed), %2$s bytes (uncompressed)', $size_compressed, $size );
 	}
+
+	$description .= "\n\n`$cli_command`";
+
+	trigger_error( $subject, E_USER_WARNING );
 
 	// Send to OpsGenie
 	$alerts = Alerts::instance();
