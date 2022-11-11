@@ -26,6 +26,14 @@ function run_alloptions_safeguard() {
 		return;
 	}
 
+	$home_url_parsed = wp_parse_url( home_url() );
+	if (
+		wp_endswith( $home_url_parsed['host'], '.go-vip.co' ) ||
+		wp_endswith( $home_url_parsed['host'], '.go-vip.net' )
+	) {
+		return;
+	}
+
 	// To avoid performing a potentially expensive calculation of the compressed size we use 4MB uncompressed (which is likely less than 1MB compressed)
 	$alloptions_size_worry_level = MB_IN_BYTES * 4;
 
@@ -115,7 +123,7 @@ function alloptions_safeguard_notify( $size, $size_compressed, $really_blocked =
 	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
 	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
 	$site_id     = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
-	$home_url    = get_home_url();
+	$home_url    = home_url();
 
 	// Send notices to VIP staff if this is happening on VIP-hosted sites
 	if (
