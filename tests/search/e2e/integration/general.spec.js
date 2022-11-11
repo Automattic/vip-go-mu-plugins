@@ -9,7 +9,6 @@ describe('WordPress can perform standard ElasticPress actions', () => {
 	});
 
 	it('Can sync post data and meta details in Elasticsearch if user creates/updates a published post', () => {
-		// cy.login();
 
 		cy.publishPost({
 			title: 'Test ElasticPress 1',

@@ -27,7 +27,6 @@ describe('Custom Results', () => {
 		const searchResult = [];
 		const searchTerm = 'Feature';
 
-		// cy.login();
 		cy.visitAdminPage('post-new.php?post_type=ep-pointer');
 		cy.intercept('GET', 'wp-json/elasticpress/v1/pointer_preview*').as('ajaxRequest');
 

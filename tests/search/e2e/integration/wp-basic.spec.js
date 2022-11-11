@@ -18,13 +18,11 @@ describe('WordPress basic actions', () => {
 	});
 
 	it('Can see admin bar on front end', () => {
-		// cy.login();
 		cy.visitAdminPage();
 		cy.get('#wpadminbar').should('exist');
 	});
 
 	it('Can save own profile', () => {
-		// cy.login();
 		cy.visitAdminPage('profile.php');
 		cy.get('#first_name').clearThenType('Test Name');
 		cy.get('#submit').click();
@@ -32,7 +30,6 @@ describe('WordPress basic actions', () => {
 	});
 
 	it('Can change site title', () => {
-		// cy.login();
 		cy.visitAdminPage('options-general.php');
 		cy.get('#wpadminbar').should('be.visible');
 		cy.get('#blogname').clearThenType('Updated Title');

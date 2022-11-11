@@ -21,7 +21,6 @@ describe('Terms Feature', () => {
 	})
 
 	it('Can search a term in the admin dashboard using Elasticsearch', () => {
-		// cy.login();
 		cy.maybeEnableFeature('terms');
 		cy.wpCli('vip-search index --skip-confirm --setup');
 
@@ -51,7 +50,6 @@ describe('Terms Feature', () => {
 	});
 
 	it('Can a term be removed from the admin dashboard after deleting it', () => {
-		// cy.login();
 		cy.maybeEnableFeature('terms');
 		cy.wpCli('vip-search index --skip-confirm --setup');
 
@@ -85,7 +83,6 @@ describe('Terms Feature', () => {
 	});
 
 	it('Can return a correct tag on searching a tag in admin dashboard', () => {
-		// cy.login();
 		cy.maybeEnableFeature('terms');
 		cy.wpCli('vip-search index --skip-confirm --setup');
 
@@ -112,7 +109,6 @@ describe('Terms Feature', () => {
 	});
 
 	it('Can update a child term when a parent term is deleted', () => {
-		// cy.login();
 		cy.maybeEnableFeature('terms');
 		cy.wpCli('vip-search index --skip-confirm --setup');
 

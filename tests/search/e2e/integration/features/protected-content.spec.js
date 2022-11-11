@@ -10,7 +10,6 @@ describe('Protected Content Feature', () => {
 	})
 
 	it('Can use Elasticsearch in the Posts List Admin Screen', () => {
-		// cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 
@@ -20,7 +19,6 @@ describe('Protected Content Feature', () => {
 	});
 
 	it('Can use Elasticsearch in the Draft Posts List Admin Screen', () => {
-		// cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 
@@ -43,7 +41,6 @@ describe('Protected Content Feature', () => {
 	});
 
 	it('Can sync autosaved drafts', () => {
-		// cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 
