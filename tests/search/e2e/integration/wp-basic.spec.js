@@ -8,18 +8,18 @@ describe('WordPress basic actions', () => {
 	})
 
 	it('Has <title> tag', () => {
-		cy.visit('/');
+		cy.visitAdminPage();
 		cy.get('title').should('exist');
 	});
 
 	it('Can login', () => {
-		// cy.login();
+		cy.visitAdminPage();
 		cy.get('#wpadminbar').should('exist');
 	});
 
 	it('Can see admin bar on front end', () => {
 		// cy.login();
-		cy.visit('/');
+		cy.visitAdminPage();
 		cy.get('#wpadminbar').should('exist');
 	});
 
