@@ -44,7 +44,7 @@ jobs:
         run: git tag ${{ steps.id-generator.outputs.id }}
 
       - name: Push tags
-        run: git push --tag
+        run: git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: softprops/action-gh-release@v0.1.14
