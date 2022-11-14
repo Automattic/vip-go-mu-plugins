@@ -995,7 +995,13 @@ class Health {
 		$diff = [];
 
 		if ( $indexable->index_exists() ) {
-			$actual_settings = $indexable->get_index_settings();
+			if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+				$index_name      = $indexable->get_index_name();
+				$settings        = $this->elasticsearch->get_index_settings( $index_name );
+				$actual_settings = $settings[ $index_name ]['settings'] ?? [];
+			} else {
+				$actual_settings = $indexable->get_index_settings();
+			}
 
 			if ( is_wp_error( $actual_settings ) ) {
 				$this->search->versioning->reset_current_version_number( $indexable );
@@ -1082,10 +1088,13 @@ class Health {
 
 		// Limit to only the settings that we auto-heal
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+		$index_name               = $indexable->get_index_name();
+		if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, true );
+		} else {
+			$result = $indexable->update_index_settings( $desired_settings_to_heal );
+		}
 
-		$result = $indexable->update_index_settings( $desired_settings_to_heal );
-
-		$index_name    = $indexable->get_index_name();
 		$index_version = $this->search->versioning->get_current_version_number( $indexable );
 
 		$this->search->versioning->reset_current_version_number( $indexable );
