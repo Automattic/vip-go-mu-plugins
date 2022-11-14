@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables as Indexables;
-
 use \WP_Query as WP_Query;
 use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
