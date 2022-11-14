@@ -6,14 +6,19 @@ on:
       - staging
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Docker image
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - name: Request to build Docker image
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
           script: |
             github.rest.repos.createDispatchEvent({
               owner: 'automattic',
