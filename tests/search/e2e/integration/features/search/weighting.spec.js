@@ -1,6 +1,15 @@
 describe('Post Search Feature - Weighting Functionality', () => {
-	it("Can't find a post by title if title is not marked as searchable", () => {
+
+	before(() => {
+		cy.wpCli('vip-search index --setup --skip-confirm');
+		
+	});
+
+	beforeEach(() => {
 		cy.login();
+	})
+
+	it("Can't find a post by title if title is not marked as searchable", () => {
 
 		cy.publishPost({
 			title: 'Test ElasticPress 1',
@@ -23,7 +32,6 @@ describe('Post Search Feature - Weighting Functionality', () => {
 	});
 
 	it('Can increase post_title weighting and influence search results', () => {
-		cy.login();
 
 		const postsData = [
 			{

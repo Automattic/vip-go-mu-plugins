@@ -28,14 +28,16 @@ import 'cypress-file-upload';
 import './commands/block-editor';
 
 Cypress.Commands.add('login', (username = 'test@test.com', password = 'password') => {
-	cy.visit(`/wp-admin`);
-	cy.get('body').then(($body) => {
-		if ($body.find('#wpwrap').length === 0) {
-			cy.get('input#user_login').clear();
-			cy.get('input#user_login').click().type(username);
-			cy.get('input#user_pass').type(`${password}{enter}`);
-		}
-	});
+	cy.session([username,password], () => {
+		cy.visit(`/wp-admin`);
+		cy.get('body').then(($body) => {
+			if ($body.find('#wpwrap').length === 0) {
+				cy.get('input#user_login').clear();
+				cy.get('input#user_login').click().type(username);
+				cy.get('input#user_pass').type(`${password}{enter}`);
+			}
+		});
+	})
 });
 
 Cypress.Commands.add('visitAdminPage', (page = 'index.php') => {

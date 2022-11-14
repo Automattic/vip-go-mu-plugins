@@ -18,5 +18,6 @@ module.exports = defineConfig({
     reporter: 'cypress-multi-reporters',
     reporterOptions: {
     configFile: 'tests/search/e2e/cypress-reporter-config.json'
-  }
+  },
+  experimentalSessionAndOrigin: true,
 })
