@@ -109,9 +109,13 @@ class SettingsHealthJob {
 		if ( ! empty( $unhealthy_indexables ) ) {
 			$this->process_indexables_settings_health_results( $unhealthy_indexables );
 		} else {
-			// Eventually, $unhealthy_indexables will be empty -- that is when we should check the index mapping to prevent
-			// too many checks going on at the same time.
-			$this->health->validate_incorrect_post_index_mapping();
+			$post_indexable = $this->indexables->get( 'post' );
+			if ( $post_indexable && ! \ElasticPress\Utils\is_indexing() ) {
+				$correct_mapping = $this->health->validate_post_index_mapping( $post_indexable );
+				if ( ! $correct_mapping ) {
+					$this->maybe_process_build( $post_indexable );
+				}
+			}
 		}
 	}
 

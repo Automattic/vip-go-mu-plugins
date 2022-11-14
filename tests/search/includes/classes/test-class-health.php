@@ -21,6 +21,7 @@ class Health_Test extends WP_UnitTestCase {
 		'query_es',
 		'query_db',
 		'format_args',
+		'get_mapping',
 		'prepare_document',
 		'put_mapping',
 		'build_mapping',
@@ -1581,5 +1582,55 @@ class Health_Test extends WP_UnitTestCase {
 		$actual_diff = $health->get_index_settings_diff( $actual, $desired );
 
 		$this->assertEquals( $actual_diff, $expected_diff );
+	}
+
+	public function test_validate_post_index_mapping__bad_mapping() {
+		$index_name  = 'bar-index-post-1';
+		$bad_mapping = [
+			$index_name => [
+				'mappings' => [],
+			],
+		];
+
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
+									->setMethods( self::$indexable_methods )
+									->getMock();
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+		$mocked_indexable->method( 'get_mapping' )
+			->willReturn( $bad_mapping )
+			->with( $index_name );
+
+		$health          = new Health( self::$search_instance );
+		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
+		$this->assertFalse( $correct_mapping );
+	}
+
+	public function test_validate_post_index_mapping__good_mapping() {
+		$index_name   = 'foo-index-post-1';
+		$good_mapping = [
+			$index_name => [
+				'mappings' => [
+					'_meta' => [
+						'mapping_version' => 'foobar',
+					],
+				],
+			],
+		];
+
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
+									->setMethods( self::$indexable_methods )
+									->getMock();
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+		$mocked_indexable->method( 'get_mapping' )
+			->willReturn( $good_mapping )
+			->with( $index_name );
+
+		$health          = new Health( self::$search_instance );
+		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
+		$this->assertTrue( $correct_mapping );
 	}
 }
