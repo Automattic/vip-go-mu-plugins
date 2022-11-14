@@ -109,6 +109,10 @@ class SettingsHealthJob {
 		if ( ! empty( $unhealthy_indexables ) ) {
 			$this->process_indexables_settings_health_results( $unhealthy_indexables );
 		} else {
+			if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+				// Only do for non-prods for now
+				return;
+			}
 			$post_indexable = $this->indexables->get( 'post' );
 			if ( $post_indexable && ! \ElasticPress\Utils\is_indexing() ) {
 				$correct_mapping = $this->health->validate_post_index_mapping( $post_indexable );
