@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
+use \ElasticPress\Indexables as Indexables;
+
 use \WP_Query as WP_Query;
 use \WP_User_Query as WP_User_Query;
 use \WP_Error as WP_Error;
@@ -1144,7 +1146,7 @@ class Health {
 	 */
 	public function validate_post_index_mapping( $indexable ) {
 		$index_name = $indexable->get_index_name();
-		$mapping    = $indexable->get_mapping( $index_name );
+		$mapping    = $this->elasticsearch->get_mapping( $index_name );
 
 		if ( ! isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
 			return false;

@@ -1584,53 +1584,60 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $actual_diff, $expected_diff );
 	}
 
-	public function test_validate_post_index_mapping__bad_mapping() {
-		$index_name  = 'bar-index-post-1';
-		$bad_mapping = [
-			$index_name => [
-				'mappings' => [],
-			],
-		];
-
-		/** @var \ElasticPress\Indexable&MockObject */
-		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
-									->setMethods( self::$indexable_methods )
-									->getMock();
-		$mocked_indexable->slug = 'post';
-		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
-		$mocked_indexable->method( 'get_mapping' )
-			->willReturn( $bad_mapping )
-			->with( $index_name );
-
-		$health          = new Health( self::$search_instance );
-		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
-		$this->assertFalse( $correct_mapping );
-	}
-
-	public function test_validate_post_index_mapping__good_mapping() {
-		$index_name   = 'foo-index-post-1';
-		$good_mapping = [
-			$index_name => [
-				'mappings' => [
-					'_meta' => [
-						'mapping_version' => 'foobar',
+	public function validate_post_index_mapping_data() {
+		return [
+			// Bad mapping
+			[
+				// Index name
+				'bar-post-1',
+				// Mapping
+				[
+					'bar-post-1' => [
+						'mappings' => [],
 					],
 				],
+				// Expected result
+				false,
+			],
+			// Good mapping
+			[
+				// Index name
+				'foo-post-1',
+				// Mapping
+				[
+					'foo-post-1' => [
+						'mappings' => [
+							'_meta' => [
+								'mapping_version' => 'foobar',
+							],
+						],
+					],
+				],
+				// Expected result
+				true,
 			],
 		];
+	}
 
+	/**
+	 * @dataProvider validate_post_index_mapping_data
+	 */
+	public function test_validate_post_index_mapping( $idx_name, $mapping, $expected_result ) {
 		/** @var \ElasticPress\Indexable&MockObject */
 		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
 									->setMethods( self::$indexable_methods )
 									->getMock();
 		$mocked_indexable->slug = 'post';
-		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
-		$mocked_indexable->method( 'get_mapping' )
-			->willReturn( $good_mapping )
-			->with( $index_name );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $idx_name );
 
-		$health          = new Health( self::$search_instance );
+		$health                = new Health( self::$search_instance );
+		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+									->setMethods( [ 'get_mapping' ] )
+									->getMock();
+
+		$health->elasticsearch->method( 'get_mapping' )->willReturn( $mapping )->with( $idx_name );
+
 		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
-		$this->assertTrue( $correct_mapping );
+		$this->assertEquals( $correct_mapping, $expected_result );
 	}
 }
