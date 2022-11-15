@@ -498,7 +498,7 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 
 /**
  * Internal helper function to log request failure.
- * 
+ *
  * @param string $url
  * @param WP_Error|array|false $response
  * @return void
@@ -651,7 +651,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		} elseif ( $response ) {
 			// We were unable to fetch any content, so don't try again for another 60 seconds
 			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
-	
+
 			// If a remote request failed, log why it did
 			_wpcom_log_failed_request( $url, $response );
 
@@ -1597,4 +1597,25 @@ function wpcom_vip_irc( $channel_or_user, $message, $level = 0, $kind = '', $int
 	}
 
 	return true;
+}
+
+/**
+ * Get array of $hyper_servers
+ *
+ * @param $hyperdb Hyperdb object.
+ * @param $operation Returns servers with both 'read' and 'write' operations if none passed in.
+ * @param $dataset Defaults to 'global' if none passed in.
+ * @return array $hyper_servers
+ */
+function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global' ) {
+	if ( ! is_object( $hyperdb ) || ! isset( $hyperdb->hyper_servers ) || ! isset( $hyperdb->hyper_servers[ $dataset ] ) ) {
+		return array();
+	}
+
+	$operations = array( 'read', 'write' );
+	if ( in_array( $operation, $operations, true ) ) {
+		return $hyperdb->hyper_servers[ $dataset ][ $operation ];
+	}
+
+	return $hyperdb->hyper_servers[ $dataset ];
 }

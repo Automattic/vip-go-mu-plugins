@@ -177,9 +177,11 @@ if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
 	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', WPCOM_IS_VIP_ENV );
 }
 
-// Interaction with the filesystem will always be direct.
-// Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
-define( 'FS_METHOD', 'direct' );
+if ( ! defined( 'FS_METHOD' ) ) {
+	// Interaction with the filesystem will always be direct.
+	// Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
+	define( 'FS_METHOD', 'direct' );
+}
 
 if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
@@ -256,16 +258,19 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
-// Load config related helpers
-require_once __DIR__ . '/config/class-sync.php';
+if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
+	// Load config related helpers
+	require_once __DIR__ . '/config/class-sync.php';
 
-add_action( 'init', [ Sync::class, 'instance' ] );
+	add_action( 'init', [ Sync::class, 'instance' ] );
 
-// Load _encloseme meta cleanup scheduler
-require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';
 
-$encloseme_cleaner = new VIP_Encloseme_Cleanup();
-$encloseme_cleaner->init();
+	// Load _encloseme meta cleanup scheduler
+	require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';
+
+	$encloseme_cleaner = new VIP_Encloseme_Cleanup();
+	$encloseme_cleaner->init();
+}
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {

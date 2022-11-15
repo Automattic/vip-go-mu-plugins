@@ -15,13 +15,13 @@ function define_db_constants( $hyperdb ): void {
 	if ( defined( 'DB_NAME' ) || defined( 'DB_HOST' ) || defined( 'DB_PASSWORD' ) || defined( 'DB_USER' ) ) {
 		return;
 	}
-
-	if ( ! method_exists( $hyperdb, 'get_hyper_servers' ) ) {
+	require_once __DIR__ . '/../vip-helpers/vip-utils.php';
+	if ( ! function_exists( 'vip_get_hyper_servers' ) ) {
 		return;
 	}
 
-	$db_servers = $hyperdb->get_hyper_servers( 'write' );
-	if ( ! is_array( $db_servers ) ) {
+	$db_servers = vip_get_hyper_servers( $hyperdb, 'write' );
+	if ( ! is_array( $db_servers ) || empty( $db_servers ) ) {
 		return;
 	}
 

@@ -1003,7 +1003,12 @@ class Health {
 				return $actual_settings;
 			}
 
-			$desired_settings = $indexable->build_settings();
+			if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+				$mapping          = $indexable->generate_mapping();
+				$desired_settings = $mapping['settings'];
+			} else {
+				$desired_settings = $indexable->build_settings();
+			}
 
 			// We only monitor certain settings
 			$actual_settings_to_check  = self::limit_index_settings_to_keys( $actual_settings, self::INDEX_SETTINGS_HEALTH_MONITORED_KEYS );
@@ -1068,7 +1073,12 @@ class Health {
 			}
 		}
 
-		$desired_settings = $indexable->build_settings();
+		if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+			$mapping          = $indexable->generate_mapping();
+			$desired_settings = $mapping['settings'];
+		} else {
+			$desired_settings = $indexable->build_settings();
+		}
 
 		// Limit to only the settings that we auto-heal
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
