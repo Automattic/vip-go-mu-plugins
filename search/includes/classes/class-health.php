@@ -1138,4 +1138,20 @@ class Health {
 
 		return $result;
 	}
+	/**
+	 * Verify if the post mapping is incorrect from running `wp vip-search index` without the --setup flag on initial indexing.
+	 *
+	 * @param mixed $indexable Instance of an ElasticPress post Indexable
+	 * @return bool Whether mapping is correct
+	 */
+	public function validate_post_index_mapping( $indexable ) {
+		$index_name = $indexable->get_index_name();
+		$mapping    = $this->elasticsearch->get_mapping( $index_name );
+
+		if ( ! isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
+			return false;
+		}
+
+		return true;
+	}
 }
