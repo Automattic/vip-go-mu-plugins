@@ -28,4 +28,5 @@ jetpack-*/bin
 
 # e2e outputs
 /test-results/
+cypress/results/
 e2eStorageState.json

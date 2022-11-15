@@ -21,6 +21,7 @@ class Health_Test extends WP_UnitTestCase {
 		'query_es',
 		'query_db',
 		'format_args',
+		'get_mapping',
 		'prepare_document',
 		'put_mapping',
 		'build_mapping',
@@ -1120,6 +1121,67 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $actual_result, $expected_result );
 	}
 
+	/**
+	 * @dataProvider get_index_settings_diff_for_indexable_data
+	 * @processIsolation true
+	 */
+	public function test_get_index_settings_diff_for_indexable__next_ep_constant( $actual, $desired, $options, $expected_diff ) {
+		Constant_Mocker::define( 'VIP_SEARCH_USE_NEXT_EP', true );
+
+		self::$indexable_methods[] = 'generate_mapping';
+
+		$index_name = 'vip-123-post-1';
+		// Mock search and the versioning instance
+		/** @var Search&MockObject */
+		$mock_search = $this->createMock( Search::class );
+
+		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
+			->setMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$health = new Health( $mock_search );
+
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( self::$indexable_methods )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+
+		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+			->setMethods( [ 'get_index_settings' ] )
+			->getMock();
+
+		$health->elasticsearch->method( 'get_index_settings' )
+			->willReturn( [
+				'vip-123-post-1' => [
+					'settings' => [
+						$actual,
+					],
+				],
+			] );
+
+		$mocked_indexable->method( 'generate_mapping' )
+			->willReturn( [
+				'settings' => [ $desired ],
+			] );
+
+		$actual_result = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
+
+		$expected_result = [];
+		if ( ! empty( $actual_result ) ) {
+			$expected_result = [
+				'diff'          => $expected_diff,
+				'index_version' => 1,
+				'index_name'    => $index_name,
+			];
+		}
+
+		$this->assertEquals( $actual_result, $expected_result );
+	}
+
 	public function test_get_index_settings_diff_for_indexable_without_index() {
 		$options = [ 'version_number' => 2 ];
 		$actual  = [ 'index.number_of_shards' => 1 ];
@@ -1262,6 +1324,80 @@ class Health_Test extends WP_UnitTestCase {
 
 		$expected_result = array(
 			'index_name'    => 'foo-index-name',
+			'index_version' => $options['index_version'] ?? 1,
+			'result'        => true,
+		);
+
+		$this->assertEquals( $expected_result, $result );
+	}
+
+	/**
+	 * @dataProvider heal_index_settings_for_indexable_data
+	 * @processIsolation true
+	 */
+	public function test_heal_index_settings_for_indexable__next_ep_constant( $desired_settings, $options ) {
+		Constant_Mocker::define( 'VIP_SEARCH_USE_NEXT_EP', true );
+
+		self::$indexable_methods[] = 'generate_mapping';
+
+		$index_name = 'foo-index-name';
+		// Mock search and the versioning instance
+		/** @var Search&MockObject */
+		$mock_search = $this->createMock( Search::class );
+
+		/** @var Versioning&MockObject */
+		$versioning = $this->getMockBuilder( Versioning::class )
+			->enableProxyingToOriginalMethods()
+			->setMethods( [ 'get_current_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$mock_search->versioning = $versioning;
+
+		// If we're healing a specific version, make sure we actually switch
+		if ( isset( $options['index_version'] ) ) {
+			$mock_search->versioning->expects( $this->once() )
+				->method( 'set_current_version_number' )
+				->with( $options['index_version'] );
+
+			$mock_search->versioning->expects( $this->once() )
+				->method( 'reset_current_version_number' );
+		}
+
+		$versioning->method( 'get_current_version_number' )->willReturn( $options['index_version'] ?? 1 );
+
+		$health = new Health( $mock_search );
+
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
+			->setMethods( self::$indexable_methods )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+
+		$mocked_indexable->method( 'get_index_name' )
+			->willReturn( $index_name );
+
+		$mocked_indexable->method( 'generate_mapping' )
+			->willReturn( [ 'settings' => $desired_settings ] );
+
+		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+			->setMethods( [ 'update_index_settings' ] )
+			->getMock();
+
+		$health->elasticsearch->method( 'update_index_settings' )
+			->willReturn( true );
+
+		// Expected updated settings
+		$expected_updated_settings = Health::limit_index_settings_to_keys( $desired_settings, Health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+
+		$health->elasticsearch->expects( $this->once() )
+			->method( 'update_index_settings' )
+			->with( $index_name, $expected_updated_settings, true );
+
+		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
+
+		$expected_result = array(
+			'index_name'    => $index_name,
 			'index_version' => $options['index_version'] ?? 1,
 			'result'        => true,
 		);
@@ -1446,5 +1582,62 @@ class Health_Test extends WP_UnitTestCase {
 		$actual_diff = $health->get_index_settings_diff( $actual, $desired );
 
 		$this->assertEquals( $actual_diff, $expected_diff );
+	}
+
+	public function validate_post_index_mapping_data() {
+		return [
+			// Bad mapping
+			[
+				// Index name
+				'bar-post-1',
+				// Mapping
+				[
+					'bar-post-1' => [
+						'mappings' => [],
+					],
+				],
+				// Expected result
+				false,
+			],
+			// Good mapping
+			[
+				// Index name
+				'foo-post-1',
+				// Mapping
+				[
+					'foo-post-1' => [
+						'mappings' => [
+							'_meta' => [
+								'mapping_version' => 'foobar',
+							],
+						],
+					],
+				],
+				// Expected result
+				true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider validate_post_index_mapping_data
+	 */
+	public function test_validate_post_index_mapping( $idx_name, $mapping, $expected_result ) {
+		/** @var \ElasticPress\Indexable&MockObject */
+		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
+									->setMethods( self::$indexable_methods )
+									->getMock();
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $idx_name );
+
+		$health                = new Health( self::$search_instance );
+		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
+									->setMethods( [ 'get_mapping' ] )
+									->getMock();
+
+		$health->elasticsearch->method( 'get_mapping' )->willReturn( $mapping )->with( $idx_name );
+
+		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
+		$this->assertEquals( $correct_mapping, $expected_result );
 	}
 }

@@ -46,6 +46,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
+
       - name: Set up environment
         run: |
           echo WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${{ matrix.config.parsely }}" >> "${GITHUB_ENV}"
