@@ -167,6 +167,7 @@ function alloptions_safeguard_notify( $size, $size_compressed, $really_blocked =
 
 	$description .= "\n\n`$cli_command`";
 
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	trigger_error( $subject, E_USER_WARNING );
 
 	// Send to OpsGenie
