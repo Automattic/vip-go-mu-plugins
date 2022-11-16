@@ -106,11 +106,21 @@ class SettingsHealthJob {
 	public function check_settings_health() {
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
+		if ( ! empty( $unhealthy_indexables ) ) {
+			$this->process_indexables_settings_health_results( $unhealthy_indexables );
+		} else {
+			if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+				// Only do for non-prods for now
+				return;
+			}
+			$post_indexable = $this->indexables->get( 'post' );
+			if ( $post_indexable && ! \ElasticPress\Utils\is_indexing() ) {
+				$correct_mapping = $this->health->validate_post_index_mapping( $post_indexable );
+				if ( ! $correct_mapping ) {
+					$this->maybe_process_build( $post_indexable );
+				}
+			}
 		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {

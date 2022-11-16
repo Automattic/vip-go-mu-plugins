@@ -1,0 +1,27 @@
+name: Build Docker image
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request to build Docker image
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
+          script: |
+            github.rest.repos.createDispatchEvent({
+              owner: 'automattic',
+              repo: 'vip-container-images',
+              event_type: 'build-mu-plugins',
+              client_payload: {}
+            })
