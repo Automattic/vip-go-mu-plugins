@@ -26,7 +26,6 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case that an environment has a defined env var
 	public function test_has_var() {
-
 		$this->get_var_standard_env();
 		$val = vip_has_env_var( 'MY_VAR' );
 		$this->assertEquals( true, $val );
@@ -34,7 +33,6 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case that an environment is missing a defined env var
 	public function test_has_var_missing() {
-
 		$val = vip_has_env_var( 'MISSING_ENV_VAR' );
 		$this->assertEquals( false, $val );
 	}
