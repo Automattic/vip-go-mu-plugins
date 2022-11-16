@@ -84,7 +84,7 @@ class Plugin {
 			$vars = [];
 		}
 
-		$vars[] = 'metrics';
+		$vars[] = 'vip-prom-metrics';
 		return $vars;
 	}
 
@@ -95,8 +95,8 @@ class Plugin {
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		if ( '/metrics' === $request_uri && is_proxied_request() ) {
-			$query_vars['metrics'] = true;
+		if ( '/vip-prom-metrics' === $request_uri ) {
+			$query_vars['vip-prom-metrics'] = true;
 			unset( $query_vars['error'] );
 
 			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
@@ -110,7 +110,7 @@ class Plugin {
 			$headers = [];
 		}
 
-		if ( isset( $wp->query_vars['metrics'] ) ) {
+		if ( isset( $wp->query_vars['vip-prom-metrics'] ) ) {
 			$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
 			$headers                 = array_merge( $headers, wp_get_nocache_headers() );
 		}
@@ -130,7 +130,7 @@ class Plugin {
 		/** @var WP_Query $wp_query */
 		global $wp_query;
 
-		if ( isset( $wp_query->query_vars['metrics'] ) ) {
+		if ( isset( $wp_query->query_vars['vip-prom-metrics'] ) ) {
 			array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
 
 			$renderer = new RenderTextFormat();
