@@ -95,7 +95,7 @@ class Plugin {
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		if ( '/vip-prom-metrics' === $request_uri && is_proxied_request() ) {
+		if ( '/vip-prom-metrics' === $request_uri ) {
 			$query_vars['vip-prom-metrics'] = true;
 			unset( $query_vars['error'] );
 
