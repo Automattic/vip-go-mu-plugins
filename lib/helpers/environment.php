@@ -16,3 +16,13 @@ use Automattic\VIP\Environment;
 function vip_get_env_var( $key, $default_value = '' ) {
 	return Environment::get_var( $key, $default_value );
 }
+
+/**
+ * A wrapper for Automattic\VIP\Environment::has_var with boolean return value.
+ *
+ * @param string $key The name of the environment variable.
+ * @return bool
+ */
+function vip_has_env_var( $key ) {
+    return Environment::has_var( $key ) !== null;
+}
