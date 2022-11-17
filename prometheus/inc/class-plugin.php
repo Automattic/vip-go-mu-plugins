@@ -109,7 +109,7 @@ class Plugin {
 	 * @global WP_Query $wp_query
 	 */
 	public function template_redirect(): void {
-		if ( $this->is_prom_endpoint_request() ) {
+		if ( ! $this->is_prom_endpoint_request() ) {
 			return;
 		}
 
