@@ -77,6 +77,10 @@ class Plugin {
 	}
 
 	public function request( $query_vars ): array {
+		if ( ! is_array( $query_vars ) ) {
+			$query_vars = [];
+		}
+
 		if ( $this->is_prom_endpoint_request() ) {
 			unset( $query_vars['error'] );
 			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
