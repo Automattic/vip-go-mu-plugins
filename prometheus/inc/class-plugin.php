@@ -17,6 +17,8 @@ class Plugin {
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
 
+	private static string $endpoint_path = './vip-prom-metrics';
+	private static string $query_var = 'vip-prom-metrics';
 	/**
 	 * @return static
 	 */
@@ -84,7 +86,7 @@ class Plugin {
 			$vars = [];
 		}
 
-		$vars[] = 'vip-prom-metrics';
+		$vars[] = self::$query_var;
 		return $vars;
 	}
 
@@ -93,10 +95,8 @@ class Plugin {
 			$query_vars = [];
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		if ( '/vip-prom-metrics' === $request_uri ) {
-			$query_vars['vip-prom-metrics'] = true;
+		if ( $this->is_prom_endpoint_request() ) {
+			$query_vars[ self::$query_var ] = true;
 			unset( $query_vars['error'] );
 
 			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
@@ -110,7 +110,7 @@ class Plugin {
 			$headers = [];
 		}
 
-		if ( isset( $wp->query_vars['vip-prom-metrics'] ) ) {
+		if ( isset( $wp->query_vars[ self::$query_var ] ) ) {
 			$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
 			$headers                 = array_merge( $headers, wp_get_nocache_headers() );
 		}
@@ -130,7 +130,7 @@ class Plugin {
 		/** @var WP_Query $wp_query */
 		global $wp_query;
 
-		if ( isset( $wp_query->query_vars['vip-prom-metrics'] ) ) {
+		if ( $this->is_prom_endpoint_request() && isset( $wp_query->query_vars[ self::$query_var ] ) ) {
 			array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
 
 			$renderer = new RenderTextFormat();
@@ -170,5 +170,16 @@ class Plugin {
 		}
 
 		return new CollectorRegistry( $storage );
+	}
+
+	/**
+	 * Validate if current request is for the Prometheus endpoint.
+	 * 
+	 * @return bool
+	 */
+	private function is_prom_endpoint_request(): bool {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+		return self::$endpoint_path === $request_uri;
 	}
 }
