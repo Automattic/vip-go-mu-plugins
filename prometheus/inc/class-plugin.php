@@ -18,7 +18,7 @@ class Plugin {
 	protected array $collectors = [];
 
 	private static string $endpoint_path = './vip-prom-metrics';
-	private static string $query_var = 'vip-prom-metrics';
+	private static string $query_var     = 'vip-prom-metrics';
 	/**
 	 * @return static
 	 */
