@@ -17,8 +17,8 @@ class Plugin {
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
 
-	private static string $endpoint_path = './vip-prom-metrics';
-	private static string $query_var     = 'vip-prom-metrics';
+	private static string $endpoint_path = '/.vip-prom-metrics';
+
 	/**
 	 * @return static
 	 */
@@ -70,35 +70,15 @@ class Plugin {
 
 	public function init(): void {
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
-			add_filter( 'query_vars', [ $this, 'query_vars' ] );
 			add_filter( 'request', [ $this, 'request' ] );
 			add_filter( 'wp_headers', [ $this, 'wp_headers' ], 10, 2 );
 			add_action( 'template_redirect', [ $this, 'template_redirect' ], 0 );
 		}
 	}
 
-	/**
-	 * @param string[] $vars
-	 * @return string[]
-	 */
-	public function query_vars( $vars ): array {
-		if ( ! is_array( $vars ) ) {
-			$vars = [];
-		}
-
-		$vars[] = self::$query_var;
-		return $vars;
-	}
-
 	public function request( $query_vars ): array {
-		if ( ! is_array( $query_vars ) ) {
-			$query_vars = [];
-		}
-
 		if ( $this->is_prom_endpoint_request() ) {
-			$query_vars[ self::$query_var ] = true;
 			unset( $query_vars['error'] );
-
 			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
 		}
 
@@ -114,10 +94,8 @@ class Plugin {
 			return $headers;
 		}
 
-		if ( isset( $wp->query_vars[ self::$query_var ] ) ) {
-			$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
-			$headers                 = array_merge( $headers, wp_get_nocache_headers() );
-		}
+		$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
+		$headers                 = array_merge( $headers, wp_get_nocache_headers() );
 
 		return $headers;
 	}
@@ -131,26 +109,25 @@ class Plugin {
 	 * @global WP_Query $wp_query
 	 */
 	public function template_redirect(): void {
-		/** @var WP_Query $wp_query */
-		global $wp_query;
-
-		if ( $this->is_prom_endpoint_request() && isset( $wp_query->query_vars[ self::$query_var ] ) ) {
-			array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
-
-			$renderer = new RenderTextFormat();
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
-			echo $renderer->render( $this->registry->getMetricFamilySamples() );
-			die();
-
-			// In case you want or need to debug queries:
-			// 1. Comment out the calls to `$renderer->render()` and `die()` above;
-			// 2. Uncomment the following lines:
-			//
-			// remove_all_actions( current_action() );
-			// do_action( 'wp_head' );
-			// do_action( 'wp_footer' );
-			// die();
+		if ( $this->is_prom_endpoint_request() ) {
+			return;
 		}
+
+		array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
+
+		$renderer = new RenderTextFormat();
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
+		echo $renderer->render( $this->registry->getMetricFamilySamples() );
+		die();
+
+		// In case you want or need to debug queries:
+		// 1. Comment out the calls to `$renderer->render()` and `die()` above;
+		// 2. Uncomment the following lines:
+		//
+		// remove_all_actions( current_action() );
+		// do_action( 'wp_head' );
+		// do_action( 'wp_footer' );
+		// die();
 	}
 
 	private static function create_registry(): RegistryInterface {
@@ -178,7 +155,7 @@ class Plugin {
 
 	/**
 	 * Validate if current request is for the Prometheus endpoint.
-	 * 
+	 *
 	 * @return bool
 	 */
 	private function is_prom_endpoint_request(): bool {
