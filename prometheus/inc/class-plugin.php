@@ -110,6 +110,10 @@ class Plugin {
 			$headers = [];
 		}
 
+		if ( ! $this->is_prom_endpoint_request() ) {
+			return $headers;
+		}
+
 		if ( isset( $wp->query_vars[ self::$query_var ] ) ) {
 			$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
 			$headers                 = array_merge( $headers, wp_get_nocache_headers() );
