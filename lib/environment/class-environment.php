@@ -9,47 +9,38 @@ class Environment {
 	 */
 	const VAR_PREFIX = 'VIP_ENV_VAR';
 
-	/**
-	 * Checks existence of custom environment variable values based on the supplied key and return
-	 * its name if it is set, null otherwise.
-	 *
-	 * @param string $key The name of the environment variable.
-	 * @return string|null
-	 */
-	public static function has_var( string $key ): ?string {
-		$key       = strtoupper( $key );
-		$env_const = sprintf( '%s_%s', self::VAR_PREFIX, $key );
-
-		return defined( $env_const ) ? $env_const : null;
-	}
+    /**
+     * Checks existence of custom environment variable values based on the supplied key.
+     *
+     * @param string $key The name of the environment variable.
+     * @return bool
+     */
+    public static function has_var( string $key ): bool {
+        return defined( self::calculate_env_const_name( $key ) );
+    }
 
 	/**
-	 * Attempts to return custom environment variable values based on the supplied key
+	 * Attempts to return custom environment variable values based on the supplied key.
 	 *
 	 * @param string $key The name of the environment variable.
-	 * @param string $default_value The value to return if no environment variable matches the key
-	 * @return string
+	 * @param mixed $default_value The value to return if no environment variable matches the key
+	 * @return mixed
 	 */
 	public static function get_var( string $key, $default_value = '' ) {
-		$env_const = static::has_var( $key );
+		$env_const = self::calculate_env_const_name( $key );
 
-		if ( null !== $env_const ) {
-			return constant( $env_const );
-		}
-
-		// The call was not able to retrieve an env variable
-		// log this as an E_USER_NOTICE for debugging
-		trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			sprintf(
-				'The ENV variable: "%s" did not exist. %s::get_var returned the default value',
-				$key, // phpcs:ignore WordPress.Security.EscapeOutput
-				__CLASS__
-			),
-			\E_USER_NOTICE
-		);
-
-		return $default_value;
+		return defined( $env_const ) ? constant( $env_const ) : $default_value;
 	}
+
+	/**
+	 * Calculates environment variable constant name based on the supplied key.
+	 *
+	 * @param string $key
+	 * @return string
+	 */
+    private static function calculate_env_const_name( string $key ): string {
+        return sprintf( '%s_%s', self::VAR_PREFIX, strtoupper( $key ) );
+    }
 
 	public static function is_sandbox_container( $hostname, $env = array() ) {
 		if ( false !== strpos( $hostname, '_web_dev_' ) || false !== strpos( $hostname, '-sbx-u' ) ) {
