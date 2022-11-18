@@ -39,8 +39,6 @@ class Environment_Test extends TestCase {
 
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
-		$this->expectNotice();
-
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
 		$this->assertEquals( 'BAR', $val );
 	}
@@ -49,8 +47,6 @@ class Environment_Test extends TestCase {
 	 * tests the use-case where $key parameter is ''
 	 */
 	public function test_get_var_empty_key() {
-		$this->expectNotice();
-
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( '', 'BAR' );
 		$this->assertEquals( 'BAR', $val );
