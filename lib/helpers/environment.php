@@ -25,5 +25,5 @@ function vip_get_env_var( string $key, $default_value = '' ) {
  * @return bool
  */
 function vip_has_env_var( string $key ): bool {
-    return Environment::has_var( $key );
+	return Environment::has_var( $key );
 }
