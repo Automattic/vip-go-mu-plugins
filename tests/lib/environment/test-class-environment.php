@@ -35,14 +35,14 @@ class Environment_Test extends TestCase {
 
 		$this->get_var_standard_env();
 		$val = Environment::has_var( 'MY_VAR' );
-		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
+		$this->assertEquals( true, $val );
 	}
 
 	public function test_has_var_missing() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
 
 		$val = Environment::has_var( 'MY_VAR' );
-		$this->assertEquals( null, $val );
+		$this->assertEquals( false, $val );
 	}
 
 	// tests the use-case where $key parameter is not found
