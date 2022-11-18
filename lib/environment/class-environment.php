@@ -9,19 +9,19 @@ class Environment {
 	 */
 	const VAR_PREFIX = 'VIP_ENV_VAR';
 
-    /**
-     * Checks existence of custom environment variable values based on the supplied key and return
-     * its name if it is set, null otherwise.
-     *
-     * @param string $key The name of the environment variable.
-     * @return string|null
-     */
-    public static function has_var( string $key ): ?string {
-        $key       = strtoupper( $key );
-        $env_const = sprintf( '%s_%s', self::VAR_PREFIX, $key );
+	/**
+	 * Checks existence of custom environment variable values based on the supplied key and return
+	 * its name if it is set, null otherwise.
+	 *
+	 * @param string $key The name of the environment variable.
+	 * @return string|null
+	 */
+	public static function has_var( string $key ): ?string {
+		$key       = strtoupper( $key );
+		$env_const = sprintf( '%s_%s', self::VAR_PREFIX, $key );
 
-        return defined( $env_const ) ? $env_const : null;
-    }
+		return defined( $env_const ) ? $env_const : null;
+	}
 
 	/**
 	 * Attempts to return custom environment variable values based on the supplied key
@@ -31,9 +31,9 @@ class Environment {
 	 * @return string
 	 */
 	public static function get_var( string $key, $default_value = '' ) {
-		$env_const = self::has_var( $key );
+		$env_const = static::has_var( $key );
 
-		if ( $env_const !== null ) {
+		if ( null !== $env_const ) {
 			return constant( $env_const );
 		}
 
