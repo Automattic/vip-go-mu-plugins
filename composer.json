@@ -6,9 +6,9 @@
         "dealerdirect/phpcodesniffer-composer-installer": "0.7.2",
         "erusev/parsedown": "1.7.4",
         "dms/phpunit-arraysubset-asserts": "0.4.0",
-        "yoast/phpunit-polyfills": "1.0.3",
-        "johnpbloch/wordpress-core": "6.1.0",
-        "wp-phpunit/wp-phpunit": "6.1.0",
+        "yoast/phpunit-polyfills": "1.0.4",
+        "johnpbloch/wordpress-core": "6.1.1",
+        "wp-phpunit/wp-phpunit": "6.1.1",
         "wp-cli/wp-cli": "2.7.1"
     },
     "config": {

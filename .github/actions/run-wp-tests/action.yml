@@ -103,7 +103,7 @@ runs:
 
     - name: Fix wp-tests-config.php
       shell: bash
-      run: sed -i "s@define( 'WP_DEBUG', true );@// define( 'WP_DEBUG', true );@" /tmp/wordpress-tests-lib/wp-tests-config.php
+      run: ./bin/pretest.sh
 
     - name: Run tests
       shell: bash
