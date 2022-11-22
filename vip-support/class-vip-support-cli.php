@@ -33,7 +33,7 @@ class Command extends WP_CLI_Command {
 		$user_login   = $args[0];
 		$user_email   = $args[1];
 		$user_pass    = $args[2];
-		$display_name = $assoc_args['display-name'];
+		$display_name = $assoc_args['display-name'] ?? '';
 
 		// Validation checks
 		if ( ! is_email( $user_email ) || ! User::is_a8c_email( $user_email ) ) {
