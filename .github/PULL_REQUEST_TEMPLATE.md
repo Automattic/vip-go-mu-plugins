@@ -43,6 +43,7 @@ Please make sure the items below have been covered before requesting a review:
 - [ ] This change works and has been tested locally (or has an appropriate fallback).
 - [ ] This change works and has been tested on a Go sandbox.
 - [ ] This change has relevant unit tests (if applicable).
+- [ ] This change uses a rollout method to ease with deployment (if applicable - especially for large scale actions that require writes).
 - [ ] This change has relevant documentation additions / updates (if applicable).
 - [ ] I've created a changelog description that aligns with the provided examples.
 
