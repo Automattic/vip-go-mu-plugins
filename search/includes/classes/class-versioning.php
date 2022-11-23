@@ -187,7 +187,7 @@ class Versioning {
 	/**
 	 * Grab just the version number for the inactive version
 	 *
-	 * @param \ElasticPress\Indexable $indexable The Indexable to get the active version number for
+	 * @param \ElasticPress\Indexable $indexable The Indexable to get the inactive version number for
 	 * @return int|WP_Error The current inactive version number
 	 */
 	public function get_inactive_version_number( Indexable $indexable ) {
