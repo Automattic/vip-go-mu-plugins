@@ -106,11 +106,9 @@ class SettingsHealthJob {
 	public function check_settings_health() {
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
+		if ( ! empty( $unhealthy_indexables ) ) {
+			$this->process_indexables_settings_health_results( $unhealthy_indexables );
 		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {

@@ -700,4 +700,18 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$get_parse_group_cookie_method->invokeArgs( null, [] );
 		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
 	}
+
+	/**
+	 * @ticket 157433-z
+	 */
+	public function test_parse_group_cookie_malformed(): void {
+		$this->expectNotToPerformAssertions();
+
+		try {
+			$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = sprintf( '%s%s', Vary_Cache::VERSION_PREFIX, 'name' );
+			Vary_Cache::parse_cookies();
+		} finally {
+			$_COOKIE = [];
+		}
+	}
 }

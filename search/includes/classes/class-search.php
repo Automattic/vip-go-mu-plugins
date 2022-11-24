@@ -229,6 +229,15 @@ class Search {
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
+	/**
+	 * Check if the constant needed for the next ElasticPress version to be loaded is defined
+	 *
+	 * @return bool true if constants are defined, false otherwise
+	 */
+	public static function is_next_ep_constant_defined() {
+		return defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true === constant( 'VIP_SEARCH_USE_NEXT_EP' );
+	}
+
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Search ) ) {
 			static::$instance = new Search();
@@ -240,7 +249,11 @@ class Search {
 
 	protected function load_dependencies() {
 		// Load ElasticPress
-		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		if ( self::is_next_ep_constant_defined() ) {
+			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
+		} else {
+			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
+		}
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
@@ -2261,8 +2274,8 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
-			// Enable new algorithm for non-prods
+		if ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || self::is_next_ep_constant_defined() ) {
+			// Enable new algorithm for non-prods & using the new constant
 			return '4.0';
 		}
 		return '3.5';

@@ -26,6 +26,7 @@ jobs:
           - { wp: 5.7.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.8.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: 5.9.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
+          - { wp: 6.0.x,   ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '7.4', phpunit: 7 }
         # Jetpack, Multi-Site, PHP 7.4
@@ -61,6 +62,9 @@ jobs:
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
         with:
           submodules: recursive
+
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
 
       - name: Run tests
         uses: ./.github/actions/run-wp-tests

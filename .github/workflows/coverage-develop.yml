@@ -40,6 +40,9 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
+
       - name: Run tests
         uses: ./.github/actions/run-wp-tests
         with:

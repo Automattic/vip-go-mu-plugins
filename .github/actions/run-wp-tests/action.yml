@@ -57,7 +57,7 @@ runs:
         fi
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.21.2
+      uses: shivammathur/setup-php@2.22.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -73,10 +73,10 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@2.1.0
+      uses: ramsey/composer-install@2.2.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@1.1.7
+      uses: sjinks/setup-wordpress-test-library@1.1.11
       with:
         version: ${{ inputs.wordpress }}
 
@@ -103,7 +103,7 @@ runs:
 
     - name: Fix wp-tests-config.php
       shell: bash
-      run: sed -i "s@define( 'WP_DEBUG', true );@// define( 'WP_DEBUG', true );@" /tmp/wordpress-tests-lib/wp-tests-config.php
+      run: ./bin/pretest.sh
 
     - name: Run tests
       shell: bash
@@ -122,7 +122,7 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v3.1.0
+      uses: codecov/codecov-action@v3.1.1
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}

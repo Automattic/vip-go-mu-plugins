@@ -153,7 +153,7 @@ export class EditorPage {
         if ( await this.page.isVisible( selectors.blockAppender ) ) {
             await this.page.click( selectors.blockAppender );
         } else {
-            await this.page.keyboard.press( 'Tab' );
+            await this.page.click( selectors.editorTitleContainer );
             await this.page.click( selectors.blockInserter );
         }
         await this.page.click( selectors.imageBlocks );

@@ -1,10 +1,15 @@
 describe('Post Search Feature', () => {
 	before(() => {
 		cy.wpCli('vip-search index --setup --skip-confirm');
+		
 	});
 
-	it('Can use Elasticsearch for the default WP search', () => {
+	beforeEach(() => {
 		cy.login();
+	})
+
+	it('Can use Elasticsearch for the default WP search', () => {
+
 
 		cy.visit('/?s=test');
 
@@ -20,7 +25,7 @@ describe('Post Search Feature', () => {
 	});
 
 	it('Can see exact matches showing higher', () => {
-		cy.login();
+
 
 		const postsData = [
 			{
@@ -43,7 +48,7 @@ describe('Post Search Feature', () => {
 	});
 
 	it('Can see newer matches showing higher', () => {
-		cy.login();
+
 
 		const attempt = Cypress._.get(cy.state('runnable'), '_currentRetry', 0);
 		const postTitle = `Duplicated post Attempt #${attempt}`;
@@ -106,7 +111,7 @@ describe('Post Search Feature', () => {
 	});
 
 	it('Can see highlighted text', () => {
-		cy.login();
+
 		cy.visitAdminPage('admin.php?page=elasticpress');
 		cy.get('.ep-feature-search .settings-button').click();
 		cy.get('.ep-feature-search [name="highlight_excerpt"][value="1"]').click();
