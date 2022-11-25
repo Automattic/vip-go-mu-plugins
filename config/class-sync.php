@@ -44,6 +44,14 @@ class Sync {
 		$this->should_run_sds_sync = true;
 	}
 
+	/**
+	 * Simple method to expose the value of $should_run_sds_sync
+	 * @return bool true if it should run SDS sync, false otherwise
+	 */
+	public function should_run_sds_sync() {
+		return $this->should_run_sds_sync;
+	}
+
 	public function maybe_do_sds_sync() {
 		if ( ! $this->should_run_sds_sync ) {
 			return;
