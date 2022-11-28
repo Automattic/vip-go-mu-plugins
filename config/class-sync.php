@@ -5,18 +5,19 @@ namespace Automattic\VIP\Config;
 class Sync {
 	private static $instance;
 
-	const CRON_EVENT_NAME    = 'vip_config_sync_cron';
-	const CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval';
-	const CRON_INTERVAL      = 5 * \MINUTE_IN_SECONDS;
-	const LOG_FEATURE_NAME   = 'vip_config_sync';
+	const CRON_EVENT_NAME        = 'vip_config_sync_cron';
+	const CRON_INTERVAL_NAME     = 'vip_config_sync_cron_interval';
+	const CRON_INTERVAL          = 5 * \MINUTE_IN_SECONDS;
+	const MAX_SYNCS_PER_INTERVAL = 15;
+	const LOG_FEATURE_NAME       = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
 	/**
-	 * Setting this value to true will make it so that Site Details data will be updated on shutdown hook
-	 * @var bool
+	 * List of blog IDs that will require syncs as soon as possible due to recent changes.
+	 * @var int[]
 	 */
-	private $should_run_sds_sync = false;
+	private $blogs_to_sync = [];
 
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Sync ) ) {
@@ -33,36 +34,88 @@ class Sync {
 	}
 
 	public function init_listeners() {
-		add_action( 'update_option_siteurl', array( $this, 'trigger_sds_sync' ) );
-		add_action( 'update_option_home', [ $this, 'trigger_sds_sync' ] );
+		add_action( 'update_option_siteurl', array( $this, 'queue_sync_for_blog' ) );
+		add_action( 'update_option_home', [ $this, 'queue_sync_for_blog' ] );
 
-		add_action( 'shutdown', [ $this, 'maybe_do_sds_sync' ], PHP_INT_MAX );
+		add_action( 'shutdown', [ $this, 'run_sync_checks' ], PHP_INT_MAX );
 		// TODO should we also intercept deleted sites with add_action( 'wp_delete_site'...)?
 	}
 
-	public function trigger_sds_sync() {
-		$this->should_run_sds_sync = true;
+	public function queue_sync_for_blog() {
+		$blog_id = get_current_blog_id();
+
+		// Save the current blog id for wider support, such as option updates from within the network admin.
+		if ( ! in_array( $blog_id, $this->blogs_to_sync ) ) {
+			array_push( $this->blogs_to_sync, $blog_id );
+		}
 	}
 
-	/**
-	 * Simple method to expose the value of $should_run_sds_sync
-	 * @return bool true if it should run SDS sync, false otherwise
-	 */
-	public function should_run_sds_sync() {
-		return $this->should_run_sds_sync;
+	public function run_sync_checks() {
+		// Sync the current blog if we need to.
+		$this->maybe_sync_current_blog();
+
+		// For any remaining blogs that need syncing due to changes in this request, we'll update their option to let them know.
+		// We avoid syncing right away as switch_to_blog() is not reliable for gaining the full state (plugins, etc).
+		$original_blog_id = get_current_blog_id();
+		foreach ( $this->blogs_to_sync as $blog_id ) {
+			if ( $blog_id === $original_blog_id ) {
+				// We've already handled the current blog.
+				continue;
+			}
+
+			switch_to_blog( $blog_id );
+			update_option( 'vip_config_needs_sync', true, false );
+			restore_current_blog();
+		}
 	}
 
-	public function maybe_do_sds_sync() {
-		if ( ! $this->should_run_sds_sync ) {
-			return;
+	private function maybe_sync_current_blog() {
+		$needs_sync = false;
+
+		// Check if the current request changed important data on this blog.
+		$blog_had_changes = false !== array_search( get_current_blog_id(), $this->blogs_to_sync );
+		if ( $blog_had_changes ) {
+			$needs_sync = true;
 		}
 
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			// Flush content to client first to prevent slow page load.
-			fastcgi_finish_request();
+		// Check if another request changed important data on this blog.
+		if ( get_option( 'vip_config_needs_sync', false ) ) {
+			$deleted = delete_option( 'vip_config_needs_sync' );
+			// Protection from race conditions, only 1 request will be able to delete from the database.
+			if ( $deleted ) {
+				$needs_sync = true;
+			}
 		}
 
-		$this->put_site_details();
+		// Check if we should perform a catch-up sync, helping if cron is backed up or broken.
+		$sync_data = get_option( 'vip_config_sync_data', [] );
+		if ( isset( $sync_data['last_sync'] ) ) {
+			$seconds_elapsed = time() - $sync_data['last_sync'];
+
+			if ( $seconds_elapsed > ( self::CRON_INTERVAL * 10 ) ) {
+				// Protection from race conditions. Ensures only 1 request will run the catch-up sync.
+				// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+				if ( wp_cache_add( 'sync_catchup_concurrency_lock', 'locked', 'vip_config', self::CRON_INTERVAL ) ) {
+					$needs_sync = true;
+				}
+			}
+		}
+
+		if ( $needs_sync && ! $this->is_sync_ratelimited() ) {
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+
+			$this->put_site_details();
+		}
+	}
+
+	private function is_sync_ratelimited(): bool {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		wp_cache_add( 'sync_ratelimit', 0, 'vip_config', self::CRON_INTERVAL );
+		$count = wp_cache_incr( 'sync_ratelimit', 1, 'vip_config' );
+
+		return (int) $count > self::MAX_SYNCS_PER_INTERVAL;
 	}
 
 	public function maybe_setup_cron() {
@@ -163,6 +216,10 @@ class Sync {
 		require_once __DIR__ . '/class-site-details-index.php';
 
 		Site_Details_Index::instance()->put_site_details();
+
+		$option              = get_option( 'vip_config_sync_data', [] );
+		$option['last_sync'] = time();
+		update_option( 'vip_config_sync_data', $option, false );
 	}
 
 	public function log( $severity, $message, $extra = array() ) {
