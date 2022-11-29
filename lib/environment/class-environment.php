@@ -10,32 +10,36 @@ class Environment {
 	const VAR_PREFIX = 'VIP_ENV_VAR';
 
 	/**
-	 * Attempts to return custom environment variable values based on the supplied key
+	 * Checks existence of custom environment variable values based on the supplied key.
 	 *
 	 * @param string $key The name of the environment variable.
-	 * @param string $default_value The value to return if no environment variable matches the key
-	 * @return string
+	 * @return bool
+	 */
+	public static function has_var( string $key ): bool {
+		return defined( self::calculate_env_const_name( $key ) );
+	}
+
+	/**
+	 * Attempts to return custom environment variable values based on the supplied key.
+	 *
+	 * @param string $key The name of the environment variable.
+	 * @param mixed $default_value The value to return if no environment variable matches the key
+	 * @return mixed
 	 */
 	public static function get_var( string $key, $default_value = '' ) {
-		$key       = strtoupper( $key );
-		$env_const = sprintf( '%s_%s', self::VAR_PREFIX, $key );
+		$env_const = self::calculate_env_const_name( $key );
 
-		if ( defined( $env_const ) ) {
-			return constant( $env_const );
-		}
+		return defined( $env_const ) ? constant( $env_const ) : $default_value;
+	}
 
-		// The call was not able to retrieve an env variable
-		// log this as an E_USER_NOTICE for debugging
-		trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			sprintf(
-				'The ENV variable: "%s" did not exist. %s::get_var returned the default value',
-				$key, // phpcs:ignore WordPress.Security.EscapeOutput
-				__CLASS__
-			),
-			\E_USER_NOTICE
-		);
-
-		return $default_value;
+	/**
+	 * Calculates environment variable constant name based on the supplied key.
+	 *
+	 * @param string $key
+	 * @return string
+	 */
+	private static function calculate_env_const_name( string $key ): string {
+		return sprintf( '%s_%s', self::VAR_PREFIX, strtoupper( $key ) );
 	}
 
 	public static function is_sandbox_container( $hostname, $env = array() ) {
