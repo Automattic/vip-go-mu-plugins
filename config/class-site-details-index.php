@@ -284,8 +284,9 @@ class Site_Details_Index {
 	 * Builds the site details structure and then puts it into logstash
 	 * and sends it to the site details service
 	 */
-	public function put_site_details( $preloaded_site_details = null ) {
-		$site_details = $preloaded_site_details ?: $this->get_site_details();
+	public function put_site_details() {
+		$site_details = $this->get_site_details();
+
 		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
 			$url = rtrim( SERVICES_API_URL, '/' ) . '/site-details/sites';
 

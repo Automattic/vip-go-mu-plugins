@@ -16,8 +16,7 @@ class Sync {
 	 * Setting this value to true will make it so that Site Details data will be updated on shutdown hook
 	 * @var bool
 	 */
-	private $should_run_sds_sync  = false;
-	private $site_details_to_sync = null;
+	private $should_run_sds_sync = false;
 
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Sync ) ) {
@@ -34,8 +33,8 @@ class Sync {
 	}
 
 	public function init_listeners() {
-		add_action( 'update_option_siteurl', [ $this, 'trigger_sds_sync' ], PHP_INT_MAX );
-		add_action( 'update_option_home', [ $this, 'trigger_sds_sync' ], PHP_INT_MAX );
+		add_action( 'update_option_siteurl', array( $this, 'trigger_sds_sync' ) );
+		add_action( 'update_option_home', [ $this, 'trigger_sds_sync' ] );
 
 		add_action( 'shutdown', [ $this, 'maybe_do_sds_sync' ], PHP_INT_MAX );
 		// TODO should we also intercept deleted sites with add_action( 'wp_delete_site'...)?
@@ -43,10 +42,6 @@ class Sync {
 
 	public function trigger_sds_sync() {
 		$this->should_run_sds_sync = true;
-		if ( is_multisite() && is_network_admin() ) {
-			require_once __DIR__ . '/class-site-details-index.php';
-			$this->site_details_to_sync = Site_Details_Index::instance()->get_site_details();
-		}
 	}
 
 	/**
@@ -167,7 +162,7 @@ class Sync {
 	public function put_site_details() {
 		require_once __DIR__ . '/class-site-details-index.php';
 
-		Site_Details_Index::instance()->put_site_details( $this->site_details_to_sync );
+		Site_Details_Index::instance()->put_site_details();
 	}
 
 	public function log( $severity, $message, $extra = array() ) {
