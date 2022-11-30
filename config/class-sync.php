@@ -5,10 +5,14 @@ namespace Automattic\VIP\Config;
 class Sync {
 	private static $instance;
 
-	const CRON_EVENT_NAME    = 'vip_config_sync_cron';
-	const CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval';
-	const CRON_INTERVAL      = 5 * \MINUTE_IN_SECONDS;
-	const LOG_FEATURE_NAME   = 'vip_config_sync';
+	const CRON_EVENT_NAME         = 'vip_config_sync_cron';
+	const CRON_INTERVAL_NAME      = 'vip_config_sync_cron_interval';
+	const CRON_INTERVAL           = 5 * \MINUTE_IN_SECONDS;
+	const FAST_CRON_EVENT_NAME    = 'vip_config_sync_cron_fast';
+	const FAST_CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval_fast';
+	const FAST_CRON_INTERVAL      = MINUTE_IN_SECONDS;
+
+	const LOG_FEATURE_NAME = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
@@ -44,6 +48,8 @@ class Sync {
 		// We don't want to instantly sync on network admin changes because data might not be consistent
 		if ( ! is_multisite() || ( is_multisite() && ! is_network_admin() ) ) {
 			$this->should_run_sds_sync = true;
+		} else {
+			update_option( 'vip_config_needs_sync', true, false );
 		}
 	}
 
@@ -71,6 +77,7 @@ class Sync {
 	public function maybe_setup_cron() {
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] ); // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
+		add_action( self::FAST_CRON_EVENT_NAME, [ $this, 'maybe_do_cron' ] );
 
 		// Only register cron event from admin or CLI, to keep it out of frontend request path
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
@@ -81,6 +88,10 @@ class Sync {
 
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
+		}
+
+		if ( ! wp_next_scheduled( self::FAST_CRON_EVENT_NAME ) ) {
+			wp_schedule_event( time(), self::FAST_CRON_INTERVAL_NAME, self::FAST_CRON_EVENT_NAME );
 		}
 	}
 
@@ -94,7 +105,7 @@ class Sync {
 	 * @return mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) && isset( $schedule[ self::FAST_CRON_INTERVAL_NAME ] ) ) {
 			return $schedule;
 		}
 
@@ -103,12 +114,29 @@ class Sync {
 			'display'  => __( 'Custom interval for VIP Config Sync. Currently set to 5 minutes' ),
 		];
 
+		$schedule[ self::FAST_CRON_INTERVAL_NAME ] = [
+			'interval' => self::FAST_CRON_INTERVAL,
+			'display'  => __( 'Custom interval for VIP Config Sync. Currently set to 1 minute' ),
+		];
+
 		return $schedule;
+	}
+
+	public function maybe_do_cron() {
+		//run the cron only if some options did update
+		$needs_sync = get_option( 'vip_config_needs_sync', false );
+		if ( $needs_sync ?? true ) {
+			$this->do_cron();
+		}
 	}
 
 	public function do_cron() {
 		$this->maybe_sync_jetpack_privacy_settings();
 		$this->put_site_details();
+		$option              = get_option( 'vip_config_sync_data', [] );
+		$option['last_sync'] = time();
+		update_option( 'vip_config_sync_data', $option, false );
+		update_option( 'vip_config_needs_sync', false, false );
 	}
 
 	public function maybe_sync_jetpack_privacy_settings() {
