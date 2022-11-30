@@ -512,7 +512,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'inactive',
 				// Expected inactive version
-				new \WP_Error( 'many-inactive-versions-found' ),
+				4,
 			),
 			// No versions
 			array(

@@ -185,7 +185,8 @@ class Versioning {
 	}
 
 	/**
-	 * Grab just the version number for the inactive version
+	 * Grab just the version number for the inactive version. If there is more than one inactive version, grab
+	 * the first one.
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable to get the inactive version number for
 	 * @return int|WP_Error The current inactive version number
@@ -195,10 +196,6 @@ class Versioning {
 
 		if ( empty( $inactive_versions ) ) {
 			return new WP_Error( 'no-inactive-versions-found', 'No inactive versions.' );
-		}
-
-		if ( count( $inactive_versions ) > 1 ) {
-			return new WP_Error( 'many-inactive-versions-found', 'More than one inactive version found.' );
 		}
 
 		return array_key_first( $inactive_versions ); // We only need the first key since there's only one.
