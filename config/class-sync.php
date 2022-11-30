@@ -41,7 +41,10 @@ class Sync {
 	}
 
 	public function trigger_sds_sync() {
-		$this->should_run_sds_sync = true;
+		// We don't want to instantly sync on network admin changes because data might not be consistent
+		if ( ! is_multisite() || ( is_multisite() && ! is_network_admin() ) ) {
+			$this->should_run_sds_sync = true;
+		}
 	}
 
 	/**
