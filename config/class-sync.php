@@ -5,22 +5,17 @@ namespace Automattic\VIP\Config;
 class Sync {
 	private static $instance;
 
-	const CRON_EVENT_NAME         = 'vip_config_sync_cron';
-	const CRON_INTERVAL_NAME      = 'vip_config_sync_cron_interval';
-	const CRON_INTERVAL           = 5 * \MINUTE_IN_SECONDS;
-	const FAST_CRON_EVENT_NAME    = 'vip_config_sync_cron_fast';
-	const FAST_CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval_fast';
-	const FAST_CRON_INTERVAL      = MINUTE_IN_SECONDS;
-
-	const LOG_FEATURE_NAME = 'vip_config_sync';
+	const CRON_EVENT_NAME    = 'vip_config_sync_cron';
+	const CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval';
+	const CRON_INTERVAL      = 5 * \MINUTE_IN_SECONDS;
+	const LOG_FEATURE_NAME   = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
 	/**
-	 * Setting this value to true will make it so that Site Details data will be updated on shutdown hook
-	 * @var bool
+	 * @var array List of blogIDs that need a sync
 	 */
-	private $should_run_sds_sync = false;
+	private $blogs_to_sync = [];
 
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Sync ) ) {
@@ -37,47 +32,16 @@ class Sync {
 	}
 
 	public function init_listeners() {
-		add_action( 'update_option_siteurl', array( $this, 'trigger_sds_sync' ) );
-		add_action( 'update_option_home', [ $this, 'trigger_sds_sync' ] );
+		add_action( 'update_option_siteurl', array( $this, 'queue_sync_for_blog' ) );
+		add_action( 'update_option_home', [ $this, 'queue_sync_for_blog' ] );
 
-		add_action( 'shutdown', [ $this, 'maybe_do_sds_sync' ], PHP_INT_MAX );
+		add_action( 'shutdown', [ $this, 'run_sync_checks' ], PHP_INT_MAX );
 		// TODO should we also intercept deleted sites with add_action( 'wp_delete_site'...)?
-	}
-
-	public function trigger_sds_sync() {
-		// We don't want to instantly sync on network admin changes because data might not be consistent
-		if ( ! is_multisite() || ( is_multisite() && ! is_network_admin() ) ) {
-			$this->should_run_sds_sync = true;
-		} else {
-			update_option( 'vip_config_needs_sync', true, false );
-		}
-	}
-
-	/**
-	 * Simple method to expose the value of $should_run_sds_sync
-	 * @return bool true if it should run SDS sync, false otherwise
-	 */
-	public function should_run_sds_sync() {
-		return $this->should_run_sds_sync;
-	}
-
-	public function maybe_do_sds_sync() {
-		if ( ! $this->should_run_sds_sync ) {
-			return;
-		}
-
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			// Flush content to client first to prevent slow page load.
-			fastcgi_finish_request();
-		}
-
-		$this->put_site_details();
 	}
 
 	public function maybe_setup_cron() {
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] ); // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
-		add_action( self::FAST_CRON_EVENT_NAME, [ $this, 'maybe_do_cron' ] );
 
 		// Only register cron event from admin or CLI, to keep it out of frontend request path
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
@@ -88,10 +52,6 @@ class Sync {
 
 		if ( ! wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_schedule_event( time(), self::CRON_INTERVAL_NAME, self::CRON_EVENT_NAME );
-		}
-
-		if ( ! wp_next_scheduled( self::FAST_CRON_EVENT_NAME ) ) {
-			wp_schedule_event( time(), self::FAST_CRON_INTERVAL_NAME, self::FAST_CRON_EVENT_NAME );
 		}
 	}
 
@@ -105,7 +65,7 @@ class Sync {
 	 * @return mixed
 	 */
 	public function filter_cron_schedules( $schedule ) {
-		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) && isset( $schedule[ self::FAST_CRON_INTERVAL_NAME ] ) ) {
+		if ( isset( $schedule[ self::CRON_INTERVAL_NAME ] ) ) {
 			return $schedule;
 		}
 
@@ -114,29 +74,44 @@ class Sync {
 			'display'  => __( 'Custom interval for VIP Config Sync. Currently set to 5 minutes' ),
 		];
 
-		$schedule[ self::FAST_CRON_INTERVAL_NAME ] = [
-			'interval' => self::FAST_CRON_INTERVAL,
-			'display'  => __( 'Custom interval for VIP Config Sync. Currently set to 1 minute' ),
-		];
-
 		return $schedule;
 	}
 
-	public function maybe_do_cron() {
-		//run the cron only if some options did update
-		$needs_sync = get_option( 'vip_config_needs_sync', false );
-		if ( $needs_sync ?? true ) {
-			$this->do_cron();
+	public function queue_sync_for_blog() {
+		$blog_id = get_current_blog_id();
+
+		if ( ! in_array( $blog_id, $this->blogs_to_sync ) ) {
+			array_push( $this->blogs_to_sync, $blog_id );
 		}
 	}
 
-	public function do_cron() {
+	public function run_sync_checks() {
+		// TODO: We'll save this in the class state during an earlier hook to be extra sure nobody changed it later on via a switch_to_blog().
+		$original_blog_id = get_current_blog_id();
+		foreach ( $this->blogs_to_sync as $blog_id ) {
+			if ( $blog_id !== $original_blog_id ) {
+				switch_to_blog( $blog_id );
+				// we schedule a separate cron even to sync the blog data asap.
+				// Using the cron protects us from data consistency issues
+				if ( ! wp_next_scheduled( self::CRON_EVENT_NAME, [ 'is_faster_cron' => true ] ) ) {
+					wp_schedule_single_event( time() + 1, self::CRON_EVENT_NAME, [ 'is_faster_cron' => true ] );
+				}
+				restore_current_blog();
+			}
+		}
+
+		if ( false !== array_search( $original_blog_id, $this->blogs_to_sync ) ) {
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+
+			$this->put_site_details();
+		}
+	}
+
+	public function do_cron( $is_faster_cron = false ) {
 		$this->maybe_sync_jetpack_privacy_settings();
 		$this->put_site_details();
-		$option              = get_option( 'vip_config_sync_data', [] );
-		$option['last_sync'] = time();
-		update_option( 'vip_config_sync_data', $option, false );
-		update_option( 'vip_config_needs_sync', false, false );
 	}
 
 	public function maybe_sync_jetpack_privacy_settings() {
