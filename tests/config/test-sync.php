@@ -42,14 +42,17 @@ class Sync_Test extends WP_UnitTestCase {
 		$sync_instance = Sync::instance();
 		Site_Details_Index::instance( 100 );
 
-		$this->assertIsInt( has_action( "update_option_{$option_name}", array( $sync_instance, 'trigger_sds_sync' ) ) );
-		$this->assertIsInt( has_action( 'shutdown', array( $sync_instance, 'maybe_do_sds_sync' ) ) );
+		$this->assertIsInt( has_action( "update_option_{$option_name}", array(
+			$sync_instance,
+			'queue_sync_for_blog',
+		) ) );
+		$this->assertIsInt( has_action( 'shutdown', array( $sync_instance, 'run_sync_checks' ) ) );
 
-		$this->assertFalse( $sync_instance->should_run_sds_sync() );
+		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
 
 		update_option( $option_name, $option_value );
 
-		$this->assertTrue( $sync_instance->should_run_sds_sync() );
+		$this->assertNotEmpty( $sync_instance->get_blogs_to_sync() );
 
 		$site_details = apply_filters( 'vip_site_details_index_data', array() );
 		$this->assertSame( $option_value, $site_details['core'][ $sds_core_field ], "$sds_core_field should be equal to the updated value" );

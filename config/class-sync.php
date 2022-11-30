@@ -77,6 +77,10 @@ class Sync {
 		return $schedule;
 	}
 
+	public function get_blogs_to_sync() {
+		return $this->blogs_to_sync;
+	}
+
 	public function queue_sync_for_blog() {
 		$blog_id = get_current_blog_id();
 
