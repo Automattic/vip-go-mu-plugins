@@ -77,7 +77,7 @@ class Feature {
 		// Is the bucket enabled?
 		$threshold = $percentage * 100; // $percentage is decimal
 
-		if ( is_multisite() && ( $bucket < $threshold ) ) {
+		if ( is_multisite() && $bucket < $threshold ) {
 			// For multisites, we don't want to roll out for all subsites
 			$bucket = crc32( $feature . '-' . get_current_blog_id() ) % 100;
 		}
