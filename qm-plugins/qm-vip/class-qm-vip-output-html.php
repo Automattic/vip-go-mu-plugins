@@ -19,12 +19,18 @@ class QM_VIP_Output extends QM_Output_Html {
 	}
 
 	public function output() {
-		$data       = $this->collector->get_data();
-		$commit_url = 'https://github.com/automattic/vip-go-mu-plugins/commit/' . $data['version']['commit'];
+		$data = $this->collector->get_data();
+		if ( isset( $data['mu-plugins']['commit'] ) && isset( $data['mu-plugins']['date'] ) ) {
+			$commit_date_html = '<p><a href="https://github.com/automattic/vip-go-mu-plugins/commit/' . rawurlencode( $data['mu-plugins']['commit'] ) . '" alt="GitHub URL of the commit that the stack was deployed from."><i><strong>Last modified: </strong>' . esc_html( $data['mu-plugins']['date'] ) . '</i></a></p>';
+		}
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
-			<h3><strong>MU-Plugins Stack: </strong><?php echo esc_html( $data['mu-plugins-stack'] ); ?></h3>
-			<p><a href="<?php echo esc_url( $commit_url ); ?>" alt="GitHub URL of the commit that the stack was deployed from."><i><strong>Last modified: </strong><?php echo esc_html( $data['version']['date'] ); ?></i></a></p>
+			<h3><strong>MU-Plugins Branch: </strong><?php echo esc_html( $data['mu-plugins']['branch'] ); ?></h3>
+			<?php
+			if ( $commit_date_html ) {
+				echo wp_kses_post( $commit_date_html );
+			}
+			?>
 		</div>
 		<?php
 	}

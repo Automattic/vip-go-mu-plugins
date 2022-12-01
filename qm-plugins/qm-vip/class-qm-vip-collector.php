@@ -22,24 +22,38 @@ class QM_VIP_Collector extends QM_Collector {
 	}
 
 	private function process_version_file() {
-		$version_file = WP_CONTENT_DIR . '/mu-plugins/.version';
+		$version_file = WPMU_PLUGIN_DIR . '/.version';
 		if ( ! file_exists( $version_file ) ) {
-			return null;
+			$this->set_default_version_info();
+			return;
 		}
 		$version = file_get_contents( $version_file ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 		if ( ! $version ) {
-			return null;
+			$this->set_default_version_info();
+			return;
 		}
 
 		$info          = json_decode( $version );
-		$tag           = $info->tag ?? null;
-		$stack_version = $info->stack_version ?? null;
+		$branch        = $info->tag ?? '';
+		$stack_version = $info->stack_version ?? [];
 		$version_info  = explode( '-', $stack_version );
 		$date          = isset( $version_info[0] ) ? gmdate( 'F j, Y', strtotime( $version_info[0] ) ) : null;
 		$commit        = $version_info[1] ?? null;
 
-		$this->data['mu-plugins-stack']  = $tag;
-		$this->data['version']['date']   = $date;
-		$this->data['version']['commit'] = $commit;
+		$this->data['mu-plugins'] = [
+			'branch' => $branch,
+			'commit' => $commit,
+			'date'   => $date,
+		];
+	}
+
+	/**
+	 * Return some default information if no .version file is found or if the file is empty.
+	 *
+	 */
+	private function set_default_version_info() {
+		$this->data['mu-plugins'] = [
+			'branch' => 'unbuilt',
+		];
 	}
 }
