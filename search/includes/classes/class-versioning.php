@@ -184,6 +184,23 @@ class Versioning {
 		return $active_version['number'];
 	}
 
+	/**
+	 * Grab just the version number for the inactive version. If there is more than one inactive version, grab
+	 * the first one.
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable to get the inactive version number for
+	 * @return int|WP_Error The current inactive version number
+	 */
+	public function get_inactive_version_number( Indexable $indexable ) {
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		if ( empty( $inactive_versions ) ) {
+			return new WP_Error( 'no-inactive-versions-found', 'No inactive versions.' );
+		}
+
+		return array_key_first( $inactive_versions ); // We only need the first key since there's only one.
+	}
+
 	public function get_inactive_versions( Indexable $indexable ) {
 		$versions              = $this->get_versions( $indexable );
 		$active_version_number = $this->get_active_version_number( $indexable );
@@ -223,7 +240,7 @@ class Versioning {
 				);
 			} else {
 				return [];
-			}       
+			}
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
@@ -286,6 +303,9 @@ class Versioning {
 
 			case 'previous':
 				return $this->get_previous_existing_version_number( $indexable );
+
+			case 'inactive':
+				return $this->get_inactive_version_number( $indexable );
 
 			default:
 				// Was it a number, but passed through as a string? return it as an int
@@ -807,7 +827,7 @@ class Versioning {
 			if ( $indexable->get( $object_id ) ) {
 				$indexable->delete( $object_id );
 			}
-			
+
 			$this->reset_current_version_number( $indexable );
 		}
 

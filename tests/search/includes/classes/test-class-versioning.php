@@ -474,6 +474,57 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Expected active version
 				new \WP_Error( 'active-index-not-found-in-versions-list' ), // NOTE - like above, this is because the default active version is 1, even if it doesn't exist in the list. Likely to change
 			),
+			// Regular, 'inactive'
+			array(
+				// Input array of versions
+				array(
+					4 => array(
+						'number' => 4,
+						'active' => true,
+					),
+					5 => array(
+						'number' => 5,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'inactive',
+				// Expected inactive version
+				5,
+			),
+			// More than one inactive version
+			array(
+				// Input array of versions
+				array(
+					4 => array(
+						'number' => 4,
+						'active' => false,
+					),
+					5 => array(
+						'number' => 5,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'inactive',
+				// Expected inactive version
+				4,
+			),
+			// No versions
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version string to be normalized
+				'inactive',
+				// Expected inactive version
+				new \WP_Error( 'no-inactive-versions-found' ),
+			),
 		);
 	}
 
