@@ -9,20 +9,18 @@ require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
 class Feature_Test extends TestCase {
 
-	public function setUp(): void {
-		parent::setUp();
-		
+	public function tearDown(): void {
 		Constant_Mocker::clear();
 	}
 
 	/**
 	 * NOTE - since the Feature class uses crc32 on the feature + id (to distribute testing across sites), we have to
 	 * use something like this when generating test data:
-	 * 
+	 *
 	 * for( $i = 1; $i < 1000; $i++ ) {
 	 *     echo $i . ' - ' . crc32( 'foo-feature-' . $i ) % 100 . PHP_EOL;
 	 * }
-	 * 
+	 *
 	 * The above will give you a list of site IDs that fall above or below your target threshold
 	 */
 	public function is_enabled_by_percentage_data() {
@@ -204,9 +202,9 @@ class Feature_Test extends TestCase {
 
 	public function test_is_enabled_by_ids() {
 		Feature::$feature_ids = [
-			'foo'  => [ 
-				123 => true, 
-				345 => true, 
+			'foo'  => [
+				123 => true,
+				345 => true,
 				789 => false,
 			],
 			'bar'  => [ 456 => true ],
