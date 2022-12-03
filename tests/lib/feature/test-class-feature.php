@@ -11,6 +11,7 @@ class Feature_Test extends TestCase {
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
+		parent::tearDown();
 	}
 
 	/**
