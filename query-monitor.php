@@ -163,3 +163,6 @@ require_once __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php';
 if ( file_exists( __DIR__ . '/qm-plugins/qm-cron/qm-cron.php' ) ) {
 	require_once __DIR__ . '/qm-plugins/qm-cron/qm-cron.php';
 }
+if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
+}

@@ -1028,7 +1028,7 @@ class Search {
 			add_site_option( $index_exists_option_name, $response );
 		}
 
-		if ( $is_cacheable ) {
+		if ( $is_cacheable && isset( $response_body_json ) && strlen( $response_body_json ) < 6 * MB_IN_BYTES ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 		}
