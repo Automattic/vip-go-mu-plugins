@@ -35,8 +35,8 @@ class QM_VIP_Collector extends QM_Collector {
 
 		$info          = json_decode( $version );
 		$branch        = $info->tag ?? '';
-		$stack_version = $info->stack_version ?? [];
-		$version_info  = explode( '-', $stack_version );
+		$stack_version = $info->stack_version ?? null;
+		$version_info  = $stack_version ? explode( '-', $stack_version ) : [];
 		$date          = isset( $version_info[0] ) ? gmdate( 'F j, Y', strtotime( $version_info[0] ) ) : null;
 		$commit        = $version_info[1] ?? null;
 

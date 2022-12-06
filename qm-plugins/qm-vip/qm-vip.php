@@ -7,7 +7,7 @@
  * Author: Automattic, Rebecca Hum
  */
 
-if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'local' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 	return;
 }
 
