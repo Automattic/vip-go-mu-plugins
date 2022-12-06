@@ -22,6 +22,10 @@ class VersioningCleanupJob {
 	 * @access  public
 	 */
 	public function init() {
+		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return;
+		}
+
 		add_action( self::CRON_EVENT_NAME, [ $this, 'versioning_cleanup' ] );
 
 		$this->schedule_job();
@@ -78,7 +82,8 @@ class VersioningCleanupJob {
 			return [];
 		}
 
-		$time_ago_breakpoint    = time() - \MONTH_IN_SECONDS;
+		$breakpoint_time        = defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'production' ? 2 * \WEEK_IN_SECONDS : 1 * \WEEK_IN_SECONDS;
+		$time_ago_breakpoint    = time() - $breakpoint_time;
 		$was_activated_recently = $active_version['activated_time'] > $time_ago_breakpoint;
 		if ( $was_activated_recently ) {
 			// We want to keep the old version for a period of time, even if it's older than the cutoff time period, while the new version proves stable
