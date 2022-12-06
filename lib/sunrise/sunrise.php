@@ -66,6 +66,13 @@ function handle_not_found_error( $error_type ) {
 		exit;
 	}
 
+	// Empty get_sites() return would signify potential cache pollution
+	// We side-step by bumping the last changed which would result in the cache key change
+	// So the next request can recover
+	if ( 'site' == $error_type && ! get_sites() ) {
+		wp_cache_set_sites_last_changed();
+	}
+
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
 		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
