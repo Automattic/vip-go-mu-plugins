@@ -26,7 +26,7 @@ class QM_VIP_Output extends QM_Output_Html {
 			<?php
 			if ( isset( $data['mu-plugins']['commit'] ) && isset( $data['mu-plugins']['date'] ) ) {
 				echo '<p><a href="https://github.com/automattic/vip-go-mu-plugins/commit/' . rawurlencode( $data['mu-plugins']['commit'] ) .
-				'" alt="GitHub URL of the commit that the stack was deployed from."><i><strong>Last modified: </strong>' . esc_html( $data['mu-plugins']['date'] ) .
+				'" alt="GitHub URL of the commit that the stack was deployed from." target="_blank"><i><strong>Last modified: </strong>' . esc_html( $data['mu-plugins']['date'] ) .
 				'</i></a></p>';
 			}
 			?>
