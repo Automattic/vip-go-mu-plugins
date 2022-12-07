@@ -830,6 +830,8 @@ class Search {
 
 		if ( is_int( $current_version ) && $current_version > 1 ) {
 			$index_name .= sprintf( '-v%d', $current_version );
+		} elseif ( is_wp_error( $current_version ) ) {
+			$index_name .= sprintf( '-%s', 'no-active-indexes' );
 		}
 
 		return $index_name;

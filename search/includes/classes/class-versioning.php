@@ -174,13 +174,13 @@ class Versioning {
 	 * Grab just the version number for the active version
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable to get the active version number for
-	 * @return int The currently active version number
+	 * @return int|WP_Error The currently active version number
 	 */
 	public function get_active_version_number( Indexable $indexable ) {
 		$active_version = $this->get_active_version( $indexable );
 
 		if ( ! $active_version ) {
-			return 1;
+			return new WP_Error( 'no-active-version', 'No active version found' );
 		}
 
 		return $active_version['number'];
@@ -204,10 +204,15 @@ class Versioning {
 	}
 
 	public function get_inactive_versions( Indexable $indexable ) {
-		$versions              = $this->get_versions( $indexable );
-		$active_version_number = $this->get_active_version_number( $indexable );
+		$versions = $this->get_versions( $indexable );
 
-		unset( $versions[ $active_version_number ] );
+		if ( ! empty( $versions ) ) {
+			$active_version_number = $this->get_active_version_number( $indexable );
+
+			if ( ! is_wp_error( $active_version_number ) ) {
+				unset( $versions[ $active_version_number ] );
+			}
+		}
 
 		return $versions;
 	}
@@ -223,15 +228,14 @@ class Versioning {
 		$versions = [];
 
 		if ( $indexable->global ) {
-			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL );
 		} else {
-			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+			$versions = get_option( self::INDEX_VERSIONS_OPTION );
 		}
 
-		$slug = $indexable->slug;
-
-		if ( ! $this->versions_array_has_slug( $versions, $slug ) ) {
-			if ( $provide_default ) {
+		if ( ! is_array( $versions ) || ! isset( $versions[ $indexable->slug ] ) ||
+			( isset( $versions[ $indexable->slug ] ) && ! is_array( $versions[ $indexable->slug ] ) ) ) {
+			if ( $provide_default ) { // If we haven't touched the versioning, the option should return false
 				return array(
 					1 => array(
 						'number'         => 1,
@@ -246,11 +250,7 @@ class Versioning {
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
-		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
-	}
-
-	private function versions_array_has_slug( $versions, $slug ) {
-		return is_array( $versions ) && isset( $versions[ $slug ] ) && is_array( $versions[ $slug ] ) && ! empty( $versions[ $slug ] );
+		return array_map( array( $this, 'normalize_version' ), $versions[ $indexable->slug ] );
 	}
 
 	/**
@@ -323,7 +323,7 @@ class Versioning {
 		$active_version_number = $this->get_active_version_number( $indexable );
 
 		// If there is no active version, we can't determine what next is
-		if ( ! $active_version_number ) {
+		if ( is_wp_error( $active_version_number ) ) {
 			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
 		}
 
@@ -358,7 +358,7 @@ class Versioning {
 		$active_version_number = $this->get_active_version_number( $indexable );
 
 		// If there is no active version, we can't determine what previous is
-		if ( ! $active_version_number ) {
+		if ( is_wp_error( $active_version_number ) ) {
 			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
 		}
 
@@ -420,10 +420,13 @@ class Versioning {
 	public function add_version( Indexable $indexable ) {
 		$versions = $this->get_versions( $indexable );
 
-		$new_version_number = $this->get_next_version_number( $versions );
-
-		if ( ! $new_version_number ) {
-			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
+		if ( empty( $versions ) ) {
+			$new_version_number = 1;
+		} else {
+			$new_version_number = $this->get_next_version_number( $versions );
+			if ( ! $new_version_number ) {
+				return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
+			}
 		}
 
 		$current_version_count = count( $versions );
@@ -575,6 +578,42 @@ class Versioning {
 	}
 
 	/**
+	 * Deactivate a version of an index
+	 *
+	 * Verifies that the target index does in-fact exist, then marks it as inactive
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable type for which index to deactivate
+	 * @param int|string $version_number The index version to deactivate
+	 * @return bool|WP_Error Boolean indicating success, or WP_Error on error
+	 */
+	public function deactivate_version( Indexable $indexable, $version_number ) {
+		$version_number = $this->normalize_version_number( $indexable, $version_number );
+
+		if ( is_wp_error( $version_number ) ) {
+			return $version_number;
+		}
+
+		$versions = $this->get_versions( $indexable );
+
+		// If this wasn't a valid version, abort with error
+		if ( ! isset( $versions[ $version_number ] ) ) {
+			return new WP_Error( 'invalid-index-version', sprintf( 'The index version %d was not found', $version_number ) );
+		}
+		// Version is already inactive
+		if ( false === $versions[ $version_number ]['active'] ) {
+			return new WP_Error( 'inactive-index-version-already', sprintf( 'The index version %d already inactive', $version_number ) );
+		}
+
+		$versions[ $version_number ]['active'] = false;
+
+		if ( ! $this->update_versions( $indexable, $versions ) ) {
+			return new WP_Error( 'failed-deactivating-version', sprintf( 'The index version %d failed to deactivate', $version_number ) );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Delete the version of an index and remove the index from Elasticsearch
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to delete index
@@ -712,8 +751,8 @@ class Versioning {
 
 			$active_version_number = $this->get_active_version_number( $indexable );
 
-			// Were there any changes to the active version? If not, we skip - we don't keep replicate non-active indexes to others
-			if ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) {
+			// Is there an active version and no changes to the active version? If so, we skip - we don't keep replicate non-active indexes to others
+			if ( ! is_wp_error( $active_version_number ) && ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) ) {
 				continue;
 			}
 

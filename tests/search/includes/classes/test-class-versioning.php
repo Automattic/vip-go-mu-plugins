@@ -150,7 +150,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Indexable slug
 				'post',
 				// Expected active version
-				1,
+				new \WP_Error( 'no-active-version', 'No active version found' ),
 			),
 
 			// No versions tracked
@@ -160,7 +160,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Indexable slug
 				'post',
 				// Expected active version
-				1,
+				new \WP_Error( 'no-active-version', 'No active version found' ),
 			),
 
 			array(
@@ -451,7 +451,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'active',
 				// Expected active version
-				1, // NOTE - expect 1 because get_active_version_number() returns 1 by default. This behavior is likely to change
+				new \WP_Error( 'no-active-version' ),
 			),
 
 			// No active, trying to get next
@@ -472,7 +472,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected active version
-				new \WP_Error( 'active-index-not-found-in-versions-list' ), // NOTE - like above, this is because the default active version is 1, even if it doesn't exist in the list. Likely to change
+				new \WP_Error( 'no-active-index-found' ),
 			),
 			// Regular, 'inactive'
 			array(
@@ -511,7 +511,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				'post',
 				// Version string to be normalized
 				'inactive',
-				// Expected inactive version
+				// Expected first inactive version found
 				4,
 			),
 			// No versions
@@ -600,11 +600,7 @@ class Versioning_Test extends WP_UnitTestCase {
 					// Should have added the default version 1 data
 					1 => array(
 						'number' => 1,
-						'active' => true, // Defaults to active when no other index version is known
-					),
-					2 => array(
-						'number' => 2,
-						'active' => false,
+						'active' => false, // Defaults to active when no other index version is known
 					),
 				),
 			),
@@ -728,47 +724,13 @@ class Versioning_Test extends WP_UnitTestCase {
 					),
 				),
 			),
-
-			// Target index is already marked active, and is index 1
-			array(
-				// Input array of versions
-				array(),
-				// Indexable slug
-				'post',
-				// Version to activate
-				1,
-				// Expected new versions
-				array(
-					1 => array(
-						'number' => 1,
-						'active' => true,
-					),
-				),
-			),
-
-			// Switching back to 1, which may not exist in the option
-			array(
-				// Input array of versions
-				array(),
-				// Indexable slug
-				'post',
-				// Version to activate
-				1,
-				// Expected new versions
-				array(
-					1 => array(
-						'number' => 1,
-						'active' => true,
-					),
-				),
-			),
 		);
 	}
 
 	/**
 	 * @dataProvider activate_version_data
 	 */
-	public function test_activate_version( $versions, $indexable_slug, $version_to_activate, $expected_new_versions ) {
+	public function test_activate_version__successful( $versions, $indexable_slug, $version_to_activate, $expected_new_versions ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
@@ -791,6 +753,18 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $version_to_activate, $active_version['number'], 'Currently active version does not match expected active version' );
 		$this->assertEquals( $now, $active_version['activated_time'], '"activated_time" property of currently active version does not match expected value' );
+	}
+
+	public function test_activate_version__no_versions() {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, [] );
+
+		$now = time();
+
+		// Add the new version
+		$error = self::$version_instance->activate_version( $indexable, 1 );
+
+		$this->assertTrue( is_wp_error( $error ), 'Activating version should return WP_Error, but it succeeded' );
 	}
 
 	public function activate_version_invalid_data() {
@@ -856,6 +830,97 @@ class Versioning_Test extends WP_UnitTestCase {
 		// Can only compare the deterministic parts of the version info (not activated_time, for example), but should be unchanged
 		$this->assertEquals( wp_list_pluck( $versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
 		$this->assertEquals( wp_list_pluck( $versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+	}
+
+	public function deactivate_version_data() {
+		return array(
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => true,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				3,
+				// Expected new versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+			),
+			// With an index already marked inactive
+			array(
+				// Input array of versions
+				array(
+					2 => array(
+						'number' => 2,
+						'active' => false,
+					),
+					3 => array(
+						'number' => 3,
+						'active' => false,
+					),
+				),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				2,
+				// Expected
+				new \WP_Error( 'inactive-index-version-already', 'The index version 2 already inactive' ),
+			),
+			// With no indexes
+			array(
+				// Input array of versions
+				array(),
+				// Indexable slug
+				'post',
+				// Version to deactivate
+				2,
+				// Expected
+				new \WP_Error( 'invalid-index-version', 'The index version 2 was not found' ),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider deactivate_version_data
+	 */
+	public function test_deactivate_version( $versions, $indexable_slug, $version_to_deactivate, $expected_new_versions ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+
+		self::$version_instance->update_versions( $indexable, $versions );
+
+		$succeeded = self::$version_instance->deactivate_version( $indexable, $version_to_deactivate );
+
+		if ( ! is_wp_error( $succeeded ) ) {
+			$this->assertTrue( $succeeded, 'Deactivating version failed, but it should have succeeded' );
+
+			$new_versions = self::$version_instance->get_versions( $indexable );
+
+			// Can only compare the deterministic parts of the version info (not activated_time, for example)
+			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
+			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+
+			// And make sure the now active version recorded when it was activated
+			$inactive_versions = self::$version_instance->get_inactive_versions( $indexable );
+			$this->assertEquals( $version_to_deactivate, $inactive_versions[ $version_to_deactivate ]['number'], 'Currently active version does not match expected active version' );
+		} else {
+			$this->assertEquals( $succeeded, $expected_new_versions );
+		}
 	}
 
 	public function delete_version_data() {
@@ -1034,9 +1099,12 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		// For these tests, we're just using the post type and index versions 1 and 2 for simplicity
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, array() ); // Reset them
+		self::$version_instance->add_version( $indexable );
+		self::$version_instance->activate_version( $indexable, 1 );
+		self::$version_instance->add_version( $indexable );
 
 		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 1 );
 		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
@@ -1169,9 +1237,12 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		// For these tests, we're just using the post type and index versions 1 and 2, for simplicity
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, array() ); // Reset them
+		self::$version_instance->add_version( $indexable );
+		self::$version_instance->activate_version( $indexable, 1 );
+		self::$version_instance->add_version( $indexable );
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
@@ -1197,9 +1268,12 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		// For these tests, we're just using the post type and index versions 1 and 2 for simplicity
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, array() ); // Reset them
+		self::$version_instance->add_version( $indexable );
+		self::$version_instance->activate_version( $indexable, 1 );
+		self::$version_instance->add_version( $indexable );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
@@ -1219,7 +1293,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 
 		// And check what's in the queue table - should be jobs for all the edited posts, on the non-active versions
-
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
@@ -1351,15 +1424,11 @@ class Versioning_Test extends WP_UnitTestCase {
 	public function get_versions_default_data() {
 		return [
 			[
-				null,
+				false,
 				$this->default_versions,
 			],
 			[
 				'some string',
-				$this->default_versions,
-			],
-			[
-				[],
 				$this->default_versions,
 			],
 			[
@@ -1380,13 +1449,13 @@ class Versioning_Test extends WP_UnitTestCase {
 					],
 				],
 			],
-			[
-				// No valid versions
-				[
-					'post' => 'invalid versions value',
-				],
-				$this->default_versions,
-			],
+			// [
+			// 	// No valid versions
+			// 	[
+			// 		'post' => 'invalid versions value',
+			// 	],
+			// 	$this->default_versions,
+			// ],
 		];
 	}
 
