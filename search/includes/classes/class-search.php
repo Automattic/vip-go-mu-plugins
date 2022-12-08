@@ -1094,7 +1094,6 @@ class Search {
 			$response_failure_code = $response->get_error_code();
 
 			foreach ( $error_messages as $error_message ) {
-				$stat   = $this->is_curl_timeout( $error_message ) ? '.timeout' : '.error';
 				$reason = $this->is_curl_timeout( $error_message ) ? Prometheus_Collector::QUERY_FAILED_TIMEOUT : Prometheus_Collector::QUERY_FAILED_ERROR;
 
 				Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], $reason );
