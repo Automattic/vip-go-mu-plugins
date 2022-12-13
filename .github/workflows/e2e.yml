@@ -111,7 +111,7 @@ jobs:
         working-directory: __tests__/e2e
 
       - name: Install VIP CLI
-        run: npm install -g @automattic/vip@2.22.0
+        run: npm install -g @automattic/vip@2.24.1
 
       - name: Determine WP version
         run: |
