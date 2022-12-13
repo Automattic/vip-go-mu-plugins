@@ -22,19 +22,19 @@ jobs:
       contents: write
     steps:
       - name: Check out the source code
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3.2.0 # tag=v3.1.0
         with:
           submodules: recursive
           path: ${{ env.SOURCE_REPO_PATH }}
 
       - name: Check out Automattic/vip-go-mu-plugins-ext
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3.2.0 # tag=v3.1.0
         with:
           repository: Automattic/vip-go-mu-plugins-ext
           path: ${{ env.EXT_REPO_PATH }}
 
       - name: Check out Automattic/vip-go-mu-plugins-built
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=v3.1.0
+        uses: actions/checkout@v3.2.0 # tag=v3.1.0
         with:
           repository: Automattic/vip-go-mu-plugins-built
           path: ${{ env.TARGET_REPO_PATH }}
