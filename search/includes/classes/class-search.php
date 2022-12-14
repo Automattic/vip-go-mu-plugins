@@ -848,6 +848,10 @@ class Search {
 			return $request;
 		}
 
+		if ( 'put_mapping' === $type || 'delete_index' === $type ) {
+			$this->log_es_index_requests( $request, $query, $args, $failures, $type );
+		}
+
 		$index_exists_invalidation_actions = [
 			'delete_index',
 			'refresh_indices',
@@ -1034,6 +1038,40 @@ class Search {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Log when indexes are created or deleted.
+	 *
+	 * @param  array|WP_Error $request  New remote request response
+	 * @param  array  $query    Remote request arguments
+	 * @param  array  $args     Request arguments
+	 * @param  array  $failures Number of failures
+	 * @param  string $type     Type of request
+	 */
+	private function log_es_index_requests( $request, $query, $args, $failures, $type ) {
+		if ( isset( $query['url'] ) ) {
+			$url   = wp_parse_url( $query['url'] );
+			$index = $url['path'] ? ltrim( $url['path'], '/vip-' ) : '';
+		}
+		$feature = 'search_index_';
+		if ( 'put_mapping' === $type ) {
+			$feature .= 'creation';
+			$message  = 'New index created';
+		}
+		if ( 'delete_index' === $type ) {
+			$feature .= 'deletion';
+			$message  = 'Index deleted';
+		}
+
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'info',
+			'feature'  => $feature,
+			'message'  => $message,
+			'extra'    => [
+				'index' => $index ?? '',
+			],
+		) );
 	}
 
 	/**
