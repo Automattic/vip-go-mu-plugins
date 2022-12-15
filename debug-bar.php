@@ -9,19 +9,6 @@ Author URI: https://wordpress.org/
 Text Domain: debug-bar
 */
 
-// If the user is an Automattician (typically a vip_support user), then force-enable Debug Bar.
-add_filter( 'debug_bar_enable', function( $enable ) {
-	if ( is_automattician() ) {
-		return true;
-	}
-
-	if ( defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' === WP_ENVIRONMENT_TYPE ) {
-		return true;
-	}
-
-	return $enable;
-}, PHP_INT_MAX );
-
 // We only need to load the files if it's enabled
 add_action( 'set_current_user', function() {
 	$enable = apply_filters( 'debug_bar_enable', false );
@@ -29,6 +16,8 @@ add_action( 'set_current_user', function() {
 	if ( ! $enable ) {
 		return;
 	}
+
+	trigger_error( 'Debug Bar will no longer be included in VIP MU Plugins as of January 31, 2023. Use Query Monitor instead, see https://lobby.vip.wordpress.com/2022/12/14/deprecation-notice-debug-bar-january-31-2023/.', E_USER_WARNING );
 
 	if ( ! class_exists( 'Debug_Bar' ) ) {
 		require_once __DIR__ . '/debug-bar/debug-bar.php';
