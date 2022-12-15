@@ -85,7 +85,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function observe_request_time( string $method, string $url, string $type, float $time ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->request_times_histogram ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -102,7 +102,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_query_counter( string $method, string $url ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->query_counter ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -117,7 +117,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_failed_query_counter( string $method, string $url, string $reason ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->failed_query_counter ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -133,7 +133,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_ratelimited_query_counter( string $url ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->ratelimited_query_counter ) {
 			$host = $instance->get_host( $url );
 			$instance->ratelimited_query_counter->inc(
@@ -146,7 +146,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_ratelimited_index_counter( string $url, int $increment ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->ratelimited_index_counter ) {
 			$host = $instance->get_host( $url );
 			$instance->ratelimited_index_counter->incBy(
