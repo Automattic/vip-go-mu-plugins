@@ -964,7 +964,7 @@ class Search {
 		 * If request resulted in an error flag it as such but try to return the fallback value if available.
 		 */
 		if ( is_wp_error( $response ) || $response_code >= 400 ) {
-			$this->ep_handle_failed_request( $request, $response, $query, '', $type, $cached_response, $args['method'] ?? 'post' );
+			$this->ep_handle_failed_request( $request, $response, $query, $type, $cached_response, $args['method'] ?? 'post' );
 			if ( isset( $cached_response['response'] ) ) {
 				return $cached_response['response'];
 			}
@@ -1099,13 +1099,12 @@ class Search {
 	 * @param mixed $request
 	 * @param mixed $response
 	 * @param array $query
-	 * @param string $unused unused
 	 * @param string $type
 	 * @param mixed $cached_request
 	 * @param string $query_method
 	 * @return void
 	 */
-	public function ep_handle_failed_request( $request, $response, $query, $unused, $type, $cached_request, $query_method ) {
+	public function ep_handle_failed_request( $request, $response, $query, $type, $cached_request, $query_method ) {
 		// Not real failed requests, we should not be logging.
 		$skiplist = [
 			'index_exists',
