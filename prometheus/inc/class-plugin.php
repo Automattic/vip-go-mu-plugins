@@ -39,6 +39,7 @@ class Plugin {
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
+		add_action( 'plugins_loaded', [ $this, 'intercept_request' ] );
 
 		add_action( 'init', [ $this, 'init' ] );
 
@@ -71,8 +72,6 @@ class Plugin {
 	public function init(): void {
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'request', [ $this, 'request' ] );
-			add_filter( 'wp_headers', [ $this, 'wp_headers' ], 10, 2 );
-			add_action( 'template_redirect', [ $this, 'template_redirect' ], 0 );
 		}
 	}
 
@@ -89,21 +88,6 @@ class Plugin {
 		return $query_vars;
 	}
 
-	public function wp_headers( $headers, WP $wp ): array {
-		if ( ! is_array( $headers ) ) {
-			$headers = [];
-		}
-
-		if ( ! $this->is_prom_endpoint_request() ) {
-			return $headers;
-		}
-
-		$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
-		$headers                 = array_merge( $headers, wp_get_nocache_headers() );
-
-		return $headers;
-	}
-
 	public function pre_handle_404( $_result, WP_Query $query ): bool {
 		unset( $query->query_vars['error'] );
 		return true;
@@ -112,10 +96,13 @@ class Plugin {
 	/**
 	 * @global WP_Query $wp_query
 	 */
-	public function template_redirect(): void {
+	public function intercept_request(): void {
 		if ( ! $this->is_prom_endpoint_request() ) {
 			return;
 		}
+
+		nocache_headers();
+		header( 'Content-Type: ' . RenderTextFormat::MIME_TYPE );
 
 		array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
 

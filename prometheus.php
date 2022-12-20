@@ -14,7 +14,6 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-apcu-collector.php',
 		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
-		'/prometheus-collectors/class-post-stats-collector.php',
 	];
 
 	foreach ( $files as $file ) {
@@ -31,7 +30,6 @@ if ( defined( 'ABSPATH' ) ) {
 			$collectors[] = new APCu_Collector();
 			$collectors[] = new OpCache_Collector();
 			$collectors[] = new Login_Stats_Collector();
-			$collectors[] = new Post_Stats_Collector();
 		}
 
 		return $collectors;
