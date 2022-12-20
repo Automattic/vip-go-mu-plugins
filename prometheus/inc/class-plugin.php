@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\VIP\Utils\Context;
 use Prometheus\CollectorRegistry;
 use Prometheus\RegistryInterface;
 use Prometheus\RenderTextFormat;
@@ -16,8 +17,6 @@ class Plugin {
 	protected ?RegistryInterface $registry = null;
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
-
-	private static string $endpoint_path = '/.vip-prom-metrics';
 
 	/**
 	 * @return static
@@ -80,7 +79,7 @@ class Plugin {
 			$query_vars = [];
 		}
 
-		if ( $this->is_prom_endpoint_request() ) {
+		if ( Context::is_prom_endpoint_request() ) {
 			unset( $query_vars['error'] );
 			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
 		}
@@ -93,11 +92,8 @@ class Plugin {
 		return true;
 	}
 
-	/**
-	 * @global WP_Query $wp_query
-	 */
 	public function intercept_request(): void {
-		if ( ! $this->is_prom_endpoint_request() ) {
+		if ( ! Context::is_prom_endpoint_request() ) {
 			return;
 		}
 
@@ -142,16 +138,5 @@ class Plugin {
 		}
 
 		return new CollectorRegistry( $storage );
-	}
-
-	/**
-	 * Validate if current request is for the Prometheus endpoint.
-	 *
-	 * @return bool
-	 */
-	private function is_prom_endpoint_request(): bool {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		return self::$endpoint_path === $request_uri;
 	}
 }
