@@ -21,6 +21,7 @@ class Prometheus_Collector implements CollectorInterface {
 	private ?Counter $query_counter             = null;
 	private ?Counter $failed_query_counter      = null;
 	private ?Counter $ratelimited_query_counter = null;
+	private ?Counter $ratelimited_index_counter = null;
 
 	/**
 	 * @return static
@@ -70,6 +71,13 @@ class Prometheus_Collector implements CollectorInterface {
 			'Ratelimited query count',
 			[ 'site_id', 'host' ]
 		);
+
+		$this->ratelimited_index_counter = $registry->getOrRegisterCounter(
+			'es',
+			'ratelimited_indexes_total',
+			'Ratelimited index count',
+			[ 'site_id', 'host' ]
+		);
 	}
 
 	public function collect_metrics(): void {
@@ -77,7 +85,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function observe_request_time( string $method, string $url, string $type, float $time ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->request_times_histogram ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -94,7 +102,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_query_counter( string $method, string $url ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->query_counter ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -109,7 +117,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_failed_query_counter( string $method, string $url, string $reason ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->failed_query_counter ) {
 			$host = $instance->get_host( $url );
 			$mode = $instance->get_mode( $url, $method );
@@ -125,10 +133,24 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	public static function increment_ratelimited_query_counter( string $url ): void {
-		$instance = self::get_instance();
+		$instance = static::get_instance();
 		if ( $instance->ratelimited_query_counter ) {
 			$host = $instance->get_host( $url );
 			$instance->ratelimited_query_counter->inc(
+				[
+					(string) get_current_blog_id(),
+					$host,
+				]
+			);
+		}
+	}
+
+	public static function increment_ratelimited_index_counter( string $url, int $increment ): void {
+		$instance = static::get_instance();
+		if ( $instance->ratelimited_index_counter ) {
+			$host = $instance->get_host( $url );
+			$instance->ratelimited_index_counter->incBy(
+				$increment,
 				[
 					(string) get_current_blog_id(),
 					$host,
