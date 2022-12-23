@@ -92,6 +92,15 @@ class Sync {
 	public function run_sync_checks() {
 		// TODO: We'll save this in the class state during an earlier hook to be extra sure nobody changed it later on via a switch_to_blog().
 		$original_blog_id = get_current_blog_id();
+
+		if ( false !== array_search( $original_blog_id, $this->blogs_to_sync ) ) {
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+
+			$this->put_site_details();
+		}
+		
 		foreach ( $this->blogs_to_sync as $blog_id ) {
 			if ( $blog_id !== $original_blog_id ) {
 				switch_to_blog( $blog_id );
@@ -104,13 +113,6 @@ class Sync {
 			}
 		}
 
-		if ( false !== array_search( $original_blog_id, $this->blogs_to_sync ) ) {
-			if ( function_exists( 'fastcgi_finish_request' ) ) {
-				fastcgi_finish_request();
-			}
-
-			$this->put_site_details();
-		}
 	}
 
 	public function do_cron( $is_faster_cron = false ) {
