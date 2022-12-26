@@ -67,7 +67,7 @@ class PluginsManager {
 
 		// Maybe refresh.
 		$last_refreshed = isset( $update_cache->last_checked ) ? ( time() - $update_cache->last_checked ) : null;
-		if ( ! $last_refreshed || 6 * HOUR_IN_SECONDS < $last_refreshed ) {
+		if ( ! $last_refreshed || $last_refreshed > ( 6 * HOUR_IN_SECONDS ) ) {
 			wp_update_plugins();
 			$update_cache = get_site_transient( 'update_plugins' );
 		}
