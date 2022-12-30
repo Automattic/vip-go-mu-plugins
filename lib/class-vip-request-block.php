@@ -82,6 +82,21 @@ class VIP_Request_Block {
 	}
 
 	/**
+	 * Block by partial match of the user agent header
+	 *
+	 * @param string $user_agent_substring target user agent to be blocked.
+	 * @return void|bool
+	 */
+	public static function ua_partial_match( string $user_agent_substring ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && str_contains( $_SERVER['HTTP_USER_AGENT'], $user_agent_substring ) ) {
+			return self::block_and_log( $user_agent_substring, 'user-agent' );
+		}
+
+		return false;
+	}
+
+	/**
 	 * Block by exact match for an arbitrary header.
 	 *
 	 * @param string $header HTTP header.
