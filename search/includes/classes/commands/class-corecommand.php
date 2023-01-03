@@ -121,43 +121,55 @@ class CoreCommand extends \ElasticPress\Command {
 	}
 
 	protected function maybe_setup_index_version( $assoc_args ) {
-		if ( array_key_exists( 'version', $assoc_args ) || array_key_exists( 'using-versions', $assoc_args ) ) {
-			$version_number = '';
-			$using_versions = $assoc_args['using-versions'] ?? false;
-			if ( $assoc_args['version'] ?? false ) {
+		$setup_flag          = isset( $assoc_args['setup'] ) && $assoc_args['setup'];
+		$using_versions_flag = isset( $assoc_args['using-versions'] ) && $assoc_args['using-versions'];
+		$version_flag        = isset( $assoc_args['version'] ) && $assoc_args['version'];
+
+		if ( $version_flag || $using_versions_flag || $setup_flag ) {
+			if ( $version_flag ) {
 				$version_number = $assoc_args['version'];
-			} elseif ( $using_versions ) {
+			} elseif ( $using_versions_flag ) {
 				$version_number = 'next';
+			} elseif ( $setup_flag && ! $version_flag ) {
+				$version_number = 'active';
+			}
+			$search = \Automattic\VIP\Search\Search::instance();
+
+			// For each indexable specified, override the version
+			if ( ! isset( $assoc_args['indexables'] ) ) {
+				$indexables = \ElasticPress\Indexables::factory()->get_all();
+			} else {
+				$indexables = $this->parse_indexables( $assoc_args );
 			}
 
-			if ( $version_number ) {
-				$search = \Automattic\VIP\Search\Search::instance();
-
-				// For each indexable specified, override the version
-				$indexables = $this->parse_indexables( $assoc_args );
-
-				if ( $using_versions ) {
-					foreach ( $indexables as $indexable ) {
-						$current_versions = $search->versioning->get_versions( $indexable );
-						if ( count( $current_versions ) > 1 ) {
-							WP_CLI::error( sprintf(
-								'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
-								$indexable->slug
-							) );
-						}
+			if ( $using_versions_flag || ( $setup_flag && ! $version_flag ) ) {
+				foreach ( $indexables as $indexable ) {
+					$current_versions = $search->versioning->get_versions( $indexable );
+					if ( count( $current_versions ) > 1 ) {
+						WP_CLI::error( sprintf(
+							'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
+							$indexable->slug
+						) );
 					}
 
-					foreach ( $indexables as $indexable ) {
+					if ( $using_versions_flag || ( $setup_flag && empty( $current_versions ) ) ) {
 						$result = $search->versioning->add_version( $indexable );
 						if ( is_wp_error( $result ) ) {
 							WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
 						}
+
+						if ( $setup_flag && empty( $current_versions ) ) {
+							$activate = $search->versioning->activate_version( $indexable, 1 );
+							if ( is_wp_error( $activate ) ) {
+								WP_CLI::error( sprintf( 'Error activating version 1: %s', $result->get_error_message() ) );
+							}
+						}
 					}
 				}
+			}
 
-				foreach ( $indexables as $indexable ) {
-					$this->set_version( $indexable, $version_number );
-				}
+			foreach ( $indexables as $indexable ) {
+				$this->set_version( $indexable, $version_number );
 			}
 		}
 	}

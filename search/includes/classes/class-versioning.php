@@ -235,18 +235,7 @@ class Versioning {
 
 		if ( ! is_array( $versions ) || ! isset( $versions[ $indexable->slug ] ) ||
 			( isset( $versions[ $indexable->slug ] ) && ! is_array( $versions[ $indexable->slug ] ) ) ) {
-			if ( $provide_default ) { // If we haven't touched the versioning, the option should return false
-				return array(
-					1 => array(
-						'number'         => 1,
-						'active'         => true,
-						'created_time'   => null, // We don't know when it was actually created
-						'activated_time' => null,
-					),
-				);
-			} else {
-				return [];
-			}
+			return [];
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)

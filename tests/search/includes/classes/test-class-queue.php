@@ -29,14 +29,6 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
-
-		\Automattic\VIP\Search\Search::instance()->init();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-
-		// Users indexable doesn't get registered by default, but we have tests that queue user objects
-		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
 	public function setUp(): void {
@@ -46,16 +38,34 @@ class Queue_Test extends WP_UnitTestCase {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}
 
-		require_once __DIR__ . '/../../../../search/search.php';
-
 		$this->es = \Automattic\VIP\Search\Search::instance();
 		$this->es->init();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->es->versioning->add_version( $post_indexable );
+		$this->es->versioning->activate_version( $post_indexable, 1 );
+
+		$user_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
+		$this->es->versioning->add_version( $user_indexable );
+		$this->es->versioning->activate_version( $user_indexable, 1 );
 
 		$this->queue = $this->es->queue;
 
 		$this->queue->schema->prepare_table();
 
 		$this->queue->empty_queue();
+	}
+
+	public function tearDown(): void {
+		parent::tearDown();
+
+		delete_option( $this->es->versioning::INDEX_VERSIONS_OPTION );
 	}
 
 	public function get_index_version_number_from_options_data() {

@@ -41,6 +41,20 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$version_instance = self::$search->versioning;
 	}
 
+	public function setUp(): void {
+		parent::setUp();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$version_instance->add_version( $indexable );
+		self::$version_instance->activate_version( $indexable, 1 );
+	}
+
+	public function tearDown(): void {
+		parent::tearDown();
+
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
+	}
+
 	public function get_next_version_number_data() {
 		return array(
 			array(
@@ -1036,8 +1050,6 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_current_version_number_overrides() {
-		delete_option( Versioning::INDEX_VERSIONS_OPTION );
-
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
 		$result = self::$version_instance->add_version( $indexable );
@@ -1412,14 +1424,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
 
-	private $default_versions = [
-		1 => [
-			'number'         => 1,
-			'active'         => true,
-			'created_time'   => null,
-			'activated_time' => null,
-		],
-	];
+	private $default_versions = [];
 
 	public function get_versions_default_data() {
 		return [
@@ -1449,13 +1454,13 @@ class Versioning_Test extends WP_UnitTestCase {
 					],
 				],
 			],
-			// [
-			// 	// No valid versions
-			// 	[
-			// 		'post' => 'invalid versions value',
-			// 	],
-			// 	$this->default_versions,
-			// ],
+			[
+				// No valid versions
+				[
+					'post' => 'invalid versions value',
+				],
+				$this->default_versions,
+			],
 		];
 	}
 

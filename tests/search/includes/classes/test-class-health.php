@@ -38,11 +38,30 @@ class Health_Test extends WP_UnitTestCase {
 		self::$search_instance = new \Automattic\VIP\Search\Search();
 		self::$search_instance->init();
 
+		do_action( 'plugins_loaded' );
+
 		if ( method_exists( \ElasticPress\Indexable::class, 'build_settings' ) ) {
 			self::$indexable_methods[] = 'build_settings';
 		} else {
 			self::$indexable_methods[] = 'generate_mapping';
 		}
+	}
+
+	public function setUp(): void {
+		parent::setUp();
+
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$search_instance->versioning->add_version( $indexable );
+		self::$search_instance->versioning->activate_version( $indexable, 1 );
+	}
+
+	public function tearDown(): void {
+		parent::tearDown();
+
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
+		Constant_Mocker::clear();
 	}
 
 	public function use_constant() {

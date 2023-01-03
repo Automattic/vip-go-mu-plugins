@@ -41,6 +41,15 @@ class Search_Test extends WP_UnitTestCase {
 		header_remove();
 	}
 
+	public function test_initial_state_no_versions() {
+		$this->init_es();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$versions  = $this->search_instance->versioning->get_versions( $indexable );
+
+		$this->assertEquals( [], $versions, 'There should be no versions in the initial state' );
+	}
+
 	public function test_query_es_with_invalid_type() {
 		$this->init_es();
 
@@ -54,13 +63,19 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 */
 	public function test__vip_search_filter_ep_index_name() {
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'bar' );
 		$this->init_es();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
 
 		$this->assertEquals( 'vip-123-post-1', $index_name );
+
+		delete_option( $this->search_instance->versioning::INDEX_VERSIONS_OPTION );
+		Constant_Mocker::clear();
 	}
 
 	/**
@@ -69,13 +84,19 @@ class Search_Test extends WP_UnitTestCase {
 	 * On "global" indexes, such as users, no blog id will be present
 	 */
 	public function test__vip_search_filter_ep_index_name_global_index() {
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'bar' );
 		$this->init_es();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
 		$this->assertEquals( 'vip-123-post', $index_name );
+
+		delete_option( $this->search_instance->versioning::INDEX_VERSIONS_OPTION );
+		Constant_Mocker::clear();
 	}
 
 	/**
@@ -282,6 +303,8 @@ class Search_Test extends WP_UnitTestCase {
 		$this->init_es();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		$new_version = $this->search_instance->versioning->add_version( $indexable );
 
@@ -304,7 +327,8 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( 'vip-123-post', $index_name );
 
-		delete_option( Versioning::INDEX_VERSIONS_OPTION );
+		delete_option( $this->search_instance->versioning::INDEX_VERSIONS_OPTION );
+		Constant_Mocker::clear();
 	}
 
 	public function test__vip_search_filter__ep_global_alias() {
@@ -1522,6 +1546,7 @@ class Search_Test extends WP_UnitTestCase {
 
 			$this->assertEquals( 'dfw', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
 		}
+		Constant_Mocker::clear();
 	}
 
 	/**
