@@ -2,9 +2,13 @@ name: CI (WP Core)
 
 on:
   push:
-    branches-ignore:
+    branches:
       - develop
       - staging
+      - production
+  pull_request:
+    branches:
+      - develop
   workflow_dispatch:
 
 concurrency:
@@ -33,14 +37,14 @@ jobs:
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
       - name: Check out WordPress
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.2.0
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.2.0
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
