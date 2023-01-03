@@ -192,6 +192,7 @@ require_once __DIR__ . '/lib/feature/class-feature.php';
 
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
+require_once __DIR__ . '/lib/statsd/class-statsd.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
@@ -248,9 +249,6 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 		case 'develop':
 		case 'development':
 			$environment_type = 'development';
-			break;
-		case 'local':
-			$environment_type = 'local';
 			break;
 		default:
 			$environment_type = 'staging';
