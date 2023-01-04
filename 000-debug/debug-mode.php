@@ -40,7 +40,7 @@ function is_debug_mode_enabled() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_debug   = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_proxied = \is_proxied_request();
-	$is_local   = \is_local_env();
+	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
 	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
 		return true;
@@ -66,7 +66,8 @@ function redirect_back() {
 function enable_debug_mode() {
 	nocache_headers();
 
-	if ( ! \is_proxied_request() && ! \is_local_env() ) {
+	$is_local = function_exists( 'is_local_env' ) && \is_local_env();
+	if ( ! \is_proxied_request() && ! $is_local ) {
 		send_pixel( [ 'vip-go-a8c-debug' => 'fail-noproxy' ] );
 
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
