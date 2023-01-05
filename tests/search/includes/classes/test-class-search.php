@@ -48,6 +48,9 @@ class Search_Test extends WP_UnitTestCase {
 		$versions  = $this->search_instance->versioning->get_versions( $indexable );
 
 		$this->assertEquals( [], $versions, 'There should be no versions in the initial state' );
+
+		$skip = apply_filters( 'ep_skip_query_integration', false );
+		$this->assertTrue( $skip );
 	}
 
 	public function test_query_es_with_invalid_type() {
