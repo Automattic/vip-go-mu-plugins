@@ -11,7 +11,8 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 	 */
 
 	public function tearDown(): void {
-		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT']  );
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT'] );
 		parent::tearDown();
 	}
 
@@ -81,13 +82,13 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 	public function test_ua_partial_match() {
 		// Test that a partial match of the user agent string blocks bad site.
-		$_SERVER['HTTP_USER_AGENT'] = 'WordPress/6.1.1; https://www.BadSite.com';
-		$actual = VIP_Request_Block::ua_partial_match( 'https://www.BadSite.com' );
+		$_SERVER['HTTP_USER_AGENT'] = 'WordPress/6.1.1; https://www.BadSite.com'; // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		$actual                     = VIP_Request_Block::ua_partial_match( 'https://www.BadSite.com' );
 		self::assertTrue( $actual, 'Expected request to be blocked based on partial User Agent string match.' );
 
 		// Test that allowed user agent string is not blocked.
-		$_SERVER['HTTP_USER_AGENT'] = 'WordPress/6.1.1; https://www.example.com';
-		$actual = VIP_Request_Block::ua_partial_match( 'https://www.BadSite.com' );
+		$_SERVER['HTTP_USER_AGENT'] = 'WordPress/6.1.1; https://www.example.com'; // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		$actual                     = VIP_Request_Block::ua_partial_match( 'https://www.BadSite.com' );
 		self::assertFalse( $actual, 'Expected request to be allowed.' );
 	}
 }
