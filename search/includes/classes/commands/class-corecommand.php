@@ -150,6 +150,11 @@ class CoreCommand extends \ElasticPress\Command {
 							'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
 							$indexable->slug
 						) );
+					} elseif ( empty( $current_versions ) && $using_versions_flag ) {
+						WP_CLI::error( sprintf(
+							'There needs to be at least one version in order to use the --using-versions parameter. Please add a version for indexable "%s".',
+							$indexable->slug
+						) );
 					}
 
 					if ( $using_versions_flag || ( $setup_flag && empty( $current_versions ) ) ) {
@@ -158,7 +163,7 @@ class CoreCommand extends \ElasticPress\Command {
 							WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
 						}
 
-						if ( $setup_flag && empty( $current_versions ) ) {
+						if ( empty( $current_versions ) ) {
 							$activate = $search->versioning->activate_version( $indexable, 1 );
 							if ( is_wp_error( $activate ) ) {
 								WP_CLI::error( sprintf( 'Error activating version 1: %s', $result->get_error_message() ) );
