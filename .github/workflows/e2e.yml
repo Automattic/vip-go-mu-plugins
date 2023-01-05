@@ -85,7 +85,7 @@ jobs:
             api.wpvip.com:443
 
       - name: Check out repository code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
         with:
           submodules: true
 
