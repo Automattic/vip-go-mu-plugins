@@ -27,6 +27,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  DO_NOT_TRACK: "1"
+
 jobs:
   Run_e2e_tests:
     name: Run E2E Tests
