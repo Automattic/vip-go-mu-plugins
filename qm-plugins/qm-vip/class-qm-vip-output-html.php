@@ -20,6 +20,9 @@ class QM_VIP_Output extends QM_Output_Html {
 
 	public function output() {
 		$data = $this->collector->get_data();
+		if ( ! $GLOBALS['wp_admin_bar']->get_node( 'vip-search-dev-tools' ) ) {
+			$should_show_dev_tools_mount = true;
+		}
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
 			<h3><strong>MU-Plugins Branch: </strong><?php echo esc_html( $data['mu-plugins']['branch'] ); ?></h3>
@@ -30,6 +33,10 @@ class QM_VIP_Output extends QM_Output_Html {
 				esc_html( $data['mu-plugins']['date'] ) . '</i></a></p>';
 			}
 			?>
+			<h3><strong>Enterprise Search </strong></h3>
+			<?php if ( $should_show_dev_tools_mount ) : ?>
+				<div data-widget-host="vip-search-dev-tools"></div>
+			<?php endif; ?>
 		</div>
 		<?php
 	}
