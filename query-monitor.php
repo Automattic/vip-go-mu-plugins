@@ -166,3 +166,6 @@ if ( file_exists( __DIR__ . '/qm-plugins/qm-cron/qm-cron.php' ) ) {
 if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
 	require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
 }
+if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
+	require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
+}
