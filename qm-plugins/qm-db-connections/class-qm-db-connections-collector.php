@@ -18,28 +18,23 @@ class QM_DB_Connections_Collector extends QM_Collector {
 	 * @return void
 	 */
 	public function process() {
-		foreach ( $GLOBALS as $global ) {
-			if ( ! is_object( $global ) || ! get_class( $global ) || ! is_a( $global, 'wpdb' ) ) {
-				continue;
-			}
+		if ( ! isset( $GLOBALS['wpdb'] ) || ! property_exists( $GLOBALS['wpdb'], 'db_connections' ) ) {
+			return;
+		}
 
-			if ( ! property_exists( $global, 'db_connections' ) ) {
-				break;
-			}
+		$db_connections = $GLOBALS['wpdb']->db_connections;
+		if ( ! is_array( $db_connections ) || empty( $db_connections ) ) {
+			return;
+		}
 
-			if ( is_array( $global->db_connections ) && ! empty( $global->db_connections ) ) {
-				$elapsed = 0;
+		$elapsed = 0;
+		foreach ( $db_connections as $conn ) {
+			$this->data['db_connections']['connections'][] = $conn;
 
-				foreach ( $global->db_connections as $conn ) {
-					$this->data['db_connections']['connections'][] = $conn;
-
-					if ( isset( $conn['elapsed'] ) ) {
-						$elapsed += $conn['elapsed'];
-					}
-				}
-
-				$this->data['db_connections']['total_connection_time'] = $elapsed;
+			if ( isset( $conn['elapsed'] ) ) {
+				$elapsed += $conn['elapsed'];
 			}
 		}
+		$this->data['db_connections']['total_connection_time'] = $elapsed;
 	}
 }

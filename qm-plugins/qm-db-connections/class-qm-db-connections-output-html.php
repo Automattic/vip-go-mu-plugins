@@ -20,8 +20,8 @@ class QM_DB_Connections_Output extends QM_Output_Html {
 
 	public function output() {
 		$data        = $this->collector->get_data();
-		$total_time  = $this->format_elapsed_time( $data['db_connections']['total_connection_time'] );
-		$connections = $data['db_connections']['connections'];
+		$total_time  = $this->format_elapsed_time( $data['db_connections']['total_connection_time'] ?? 0 );
+		$connections = $data['db_connections']['connections'] ?? [];
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
 			<h3><strong>Total connection time:</strong> <?php echo esc_html( $total_time ); ?></h3>
