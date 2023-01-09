@@ -5,6 +5,7 @@ on:
     branches:
       - staging
       - production
+    workflow_dispatch:
 
 permissions:
   contents: read
@@ -22,6 +23,8 @@ jobs:
             github.rest.repos.createDispatchEvent({
               owner: 'automattic',
               repo: 'vip-container-images',
-              event_type: 'build-mu-plugins-${{ github.ref }}',
-              client_payload: {}
+              event_type: 'build-mu-plugins',
+              client_payload: {
+                branch: '${{ github.ref_name }}'
+              }
             })
