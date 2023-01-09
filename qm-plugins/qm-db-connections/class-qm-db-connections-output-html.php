@@ -19,8 +19,8 @@ class QM_DB_Connections_Output extends QM_Output_Html {
 	}
 
 	public function output() {
-		$data = $this->collector->get_data();
-		$total_time = $this->format_elapsed_time( $data['db_connections']['total_connection_time'] );
+		$data        = $this->collector->get_data();
+		$total_time  = $this->format_elapsed_time( $data['db_connections']['total_connection_time'] );
 		$connections = $data['db_connections']['connections'];
 		?>
 		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
@@ -58,7 +58,7 @@ class QM_DB_Connections_Output extends QM_Output_Html {
 				</thead>
 			<tbody>';
 
-		foreach( $connections as $connection ) {
+		foreach ( $connections as $connection ) {
 			echo '<tr><td>' . esc_html( $connection['dbhname'] ) . '</td>';
 			echo '<td>' . esc_html( $connection['host'] ) . '</td>';
 			echo '<td>' . esc_html( $connection['port'] ) . '</td>';
