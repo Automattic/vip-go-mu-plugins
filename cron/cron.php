@@ -34,8 +34,6 @@ add_action( 'cli_init', function() {
 
 	// When/if the cron event hook runs, unschedule the event so it runs no more.
 	foreach ( $events_to_unregister as $event_hook ) {
-		add_action( $event_hook, function() use ( $event_hook ) {
-			wp_unschedule_hook( $event_hook );
-		} );
+		add_action( $event_hook, fn() => wp_unschedule_hook( $event_hook ) );
 	}
 } );
