@@ -114,6 +114,28 @@ function wpcom_vip_qm_require() {
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
+
+	/**
+	 * Load QM plugins
+	 */
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-cron/qm-cron.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-cron/qm-cron.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
+	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
@@ -153,19 +175,3 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
-
-/**
- * Load QM plugins
- */
-require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
-require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
-require_once __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php';
-if ( file_exists( __DIR__ . '/qm-plugins/qm-cron/qm-cron.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-cron/qm-cron.php';
-}
-if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
-}
-if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
-}
