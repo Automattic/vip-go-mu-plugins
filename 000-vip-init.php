@@ -250,6 +250,9 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 		case 'development':
 			$environment_type = 'development';
 			break;
+		case 'local':
+			$environment_type = 'local';
+			break;
 		default:
 			$environment_type = 'staging';
 			break;

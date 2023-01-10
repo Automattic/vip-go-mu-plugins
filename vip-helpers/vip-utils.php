@@ -1477,6 +1477,15 @@ function is_proxied_request() {
 }
 
 /**
+ * Is the current environment a local one.
+ *
+ * @return bool True if the current environment is a local one
+ */
+function is_local_env() {
+	return defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' === constant( 'WP_ENVIRONMENT_TYPE' );
+}
+
+/**
  * Is the current request being made from Jetpack servers?
  *
  * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
