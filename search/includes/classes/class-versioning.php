@@ -79,7 +79,9 @@ class Versioning {
 			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
 		}
 
-		$this->maybe_self_heal();
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			$this->maybe_self_heal();
+		}
 	}
 
 	/**
