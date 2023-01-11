@@ -19,6 +19,27 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
 }
 
 /**
+ * Recent versions of CF7 attempt to clean-up uploaded attachments 
+ * somewhere within `wp-content`, ignoring the value of WPCF7_UPLOADS_TMP_DIR if 
+ * it is not within `wp-content`. This does not work because we disable `open_dir()`, 
+ * flooding the PHP logs with `opendir() Failed to open directory` warnings.
+ *
+ * @return void
+ */
+function vip_disable_wpcf7_cleanup_upload_files() {
+    $priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
+    if ( false !== $priority ){
+        if ( function_exists( 'wpcf7_upload_tmp_dir' ) ) {
+            // Check if the directories match (e.g. plugin is an old version, or has been patched)
+            if ( WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ){
+                remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
+            }
+        }
+    }
+}
+add_action( 'plugins_loaded', 'vip_disable_wpcf7_cleanup_upload_files' );
+
+/**
  * AMP for WordPress (https://github.com/ampproject/amp-wp)
  * Make sure the `amp` query var has an explicit value.
  * Avoids issues when filtering the deprecated `query_string` hook.
