@@ -108,7 +108,7 @@ class SettingsHealthJob {
 		\Automattic\VIP\Logstash\log2logstash(
 			[
 				'severity' => 'info',
-				'feature'  => 'search_cli',
+				'feature'  => 'search_health_job',
 				'message'  => 'Checking index settings health',
 				'blog_id'  => get_current_blog_id(),
 				'extra'    => [

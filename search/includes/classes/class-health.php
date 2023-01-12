@@ -1093,8 +1093,8 @@ class Health {
 				'message'  => 'Healing index settings',
 				'blog_id'  => get_current_blog_id(),
 				'extra'    => [
-					'homeurl' => home_url(),
-					'index'   => $indexable->get_index_name(),
+					'homeurl'    => home_url(),
+					'index_name' => $indexable->get_index_name(),
 				],
 			]
 		);
