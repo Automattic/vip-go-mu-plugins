@@ -19,9 +19,9 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
 }
 
 /**
- * Recent versions of CF7 attempt to clean-up uploaded attachments 
- * somewhere within `wp-content`, ignoring the value of WPCF7_UPLOADS_TMP_DIR if 
- * it is not within `wp-content`. This does not work because we disable `open_dir()`, 
+ * Recent versions of CF7 attempt to clean-up uploaded attachments
+ * somewhere within `wp-content`, ignoring the value of WPCF7_UPLOADS_TMP_DIR if
+ * it is not within `wp-content`. This does not work because we disable `open_dir()`,
  * flooding the PHP logs with `opendir() Failed to open directory` warnings.
  *
  * @return void
