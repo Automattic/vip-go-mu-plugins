@@ -27,19 +27,16 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  * @return void
  */
 function vip_disable_wpcf7_cleanup_upload_files() {
-	// Don't bother if the function doesn't exist
-	if ( ! function_exists( 'wpcf7_cleanup_upload_files' ) ) {
+	// Return early if the relevant functions do not exist
+	if ( ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
 		return;
 	}
 
+	// Check if the action is queued and if the tmp directories match 
+	// (e.g. plugin is an old version, or has been patched)
 	$priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
-	if ( false !== $priority ) {
-		if ( function_exists( 'wpcf7_upload_tmp_dir' ) ) {
-			// Check if the directories match (e.g. plugin is an old version, or has been patched)
-			if ( WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
-				remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
-			}
-		}
+	if ( false !== $priority && WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
+		remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
 	}
 }
 add_action( 'plugins_loaded', 'vip_disable_wpcf7_cleanup_upload_files' );
