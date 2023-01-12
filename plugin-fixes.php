@@ -32,8 +32,8 @@ function vip_disable_wpcf7_cleanup_upload_files() {
 		return;
 	}
 
-	// Check if the action is queued and if the tmp directories match 
-	// (e.g. plugin is an old version, or has been patched)
+	// Check if the action is queued and if the tmp directories match
+	// (they might match if the plugin is an old version, or has been patched)
 	$priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
 	if ( false !== $priority && WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
 		remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
