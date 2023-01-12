@@ -6,6 +6,8 @@ use \WP_CLI;
 use \WP_CLI\Utils;
 use \ElasticPress\Elasticsearch;
 
+use function Automattic\VIP\Logstash\log2logstash;
+
 /**
  * Core commands for interacting with VIP Search
  *
@@ -296,6 +298,18 @@ class CoreCommand extends \ElasticPress\Command {
 			if ( $skip_confirm ) {
 				$assoc_args['yes'] = true;
 			}
+
+			\Automattic\VIP\Logstash\log2logstash(
+				[
+					'severity' => 'info',
+					'feature'  => 'search_cli',
+					'message'  => 'Indexing content',
+					'blog_id'  => get_current_blog_id(),
+					'extra'    => [
+						'homeurl' => home_url(),
+					],
+				]
+			);
 
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );

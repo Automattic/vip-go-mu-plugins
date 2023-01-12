@@ -1086,6 +1086,19 @@ class Health {
 			$desired_settings = $indexable->build_settings();
 		}
 
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'search_health',
+				'message'  => 'Healing index settings',
+				'blog_id'  => get_current_blog_id(),
+				'extra'    => [
+					'homeurl' => home_url(),
+					'index'   => $indexable->get_index_name(),
+				],
+			]
+		);
+
 		// Limit to only the settings that we auto-heal
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
 		$index_name               = $indexable->get_index_name();

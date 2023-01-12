@@ -104,6 +104,19 @@ class SettingsHealthJob {
 	 * Check settings health
 	 */
 	public function check_settings_health() {
+
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'search_cli',
+				'message'  => 'Checking index settings health',
+				'blog_id'  => get_current_blog_id(),
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			]
+		);
+
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
 		if ( ! empty( $unhealthy_indexables ) ) {
