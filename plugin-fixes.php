@@ -28,7 +28,7 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  */
 function vip_disable_wpcf7_cleanup_upload_files() {
 	// Don't bother if the function doesn't exist
-	if ( ! function_exists ( 'wpcf7_cleanup_upload_files' ) ) {
+	if ( ! function_exists( 'wpcf7_cleanup_upload_files' ) ) {
 		return;
 	}
 
