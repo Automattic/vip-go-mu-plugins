@@ -137,7 +137,8 @@ class HealthJob {
 				'feature'  => 'search_content_validation',
 				'message'  => 'Post content validation completed',
 				'extra'    => [
-					'homeurl' => home_url(),
+					'homeurl'    => home_url(),
+					'index_name' => $post_indexable->get_index_name(),
 				],
 			)
 		);
