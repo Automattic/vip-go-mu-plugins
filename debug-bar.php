@@ -17,7 +17,14 @@ add_action( 'set_current_user', function() {
 		return;
 	}
 
-	trigger_error( 'Debug Bar will no longer be included in VIP MU Plugins as of January 31, 2023. Use Query Monitor instead, see https://lobby.vip.wordpress.com/2022/12/14/deprecation-notice-debug-bar-january-31-2023/.', E_USER_WARNING );
+	if ( is_admin() ) {
+		$key = 'debug_bar_deprecation_warning';
+		$msg = 'Debug Bar will no longer be included in VIP MU Plugins as of January 31, 2023. Use Query Monitor instead, see https://lobby.vip.wordpress.com/2022/12/14/deprecation-notice-debug-bar-january-31-2023/.';
+		if ( false === wp_cache_get( $key, 'vip' ) ) {
+			trigger_error( esc_html( $msg ), E_USER_WARNING );
+			wp_cache_set( $key, true, 'vip', 10 * MINUTE_IN_SECONDS );
+		}
+	}
 
 	if ( ! class_exists( 'Debug_Bar' ) ) {
 		require_once __DIR__ . '/debug-bar/debug-bar.php';
