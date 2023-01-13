@@ -619,7 +619,7 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 		 *
 		 * @see https://core.trac.wordpress.org/ticket/51058
 		 */
-		if ( empty( $id ) && str_contains( $url, '-scaled.' ) ) {
+		if ( empty( $id ) ) {
 			$path_parts = pathinfo( $url );
 
 			if ( isset( $path_parts['dirname'], $path_parts['filename'], $path_parts['extension'] ) ) {
