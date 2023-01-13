@@ -15,11 +15,6 @@ class HealthJob {
 	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
 
 	/**
-	 * Custom cron interval value
-	 */
-	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
-
-	/**
 	 * @var int the number after which the alert should be sent for inconsistencies found.
 	 */
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
