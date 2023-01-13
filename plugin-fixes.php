@@ -28,7 +28,7 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  */
 function vip_disable_wpcf7_cleanup_upload_files() {
 	// Return early if the relevant functions do not exist
-	if ( ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
+	if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) || ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
 		return;
 	}
 
