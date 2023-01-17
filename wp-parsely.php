@@ -152,8 +152,8 @@ function maybe_load_plugin() {
 		return;
 	}
 
-	$option_load_status   = get_option( '_wpvip_parsely_mu', null );
-	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
+	$option_load_status   = get_option( '_wpvip_parsely_mu' );
+	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', false );
 
 	$should_load            = true === $filtered_load_status || '1' === $option_load_status;
 	$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
