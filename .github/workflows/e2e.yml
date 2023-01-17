@@ -27,6 +27,9 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  DO_NOT_TRACK: "1"
+
 jobs:
   Run_e2e_tests:
     name: Run E2E Tests
@@ -82,7 +85,7 @@ jobs:
             api.wpvip.com:443
 
       - name: Check out repository code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
         with:
           submodules: true
 
@@ -90,7 +93,7 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: 'lts/*'
           cache: npm
@@ -111,7 +114,7 @@ jobs:
         working-directory: __tests__/e2e
 
       - name: Install VIP CLI
-        run: npm install -g @automattic/vip@2.24.1
+        run: npm install -g @automattic/vip@2.24.2
 
       - name: Determine WP version
         run: |
