@@ -624,12 +624,7 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 
 			if ( isset( $path_parts['dirname'], $path_parts['filename'], $path_parts['extension'] ) ) {
 				$scaled_url = trailingslashit( $path_parts['dirname'] ) . $path_parts['filename'] . '-scaled.' . $path_parts['extension'];
-				$scaled_id  = attachment_url_to_postid( $scaled_url );
-
-				// Confirm that the url we had was in fact of a scaled image before returning its ID.
-				if ( wp_get_original_image_url( $scaled_id ) === $url ) {
-					$id = $scaled_id;
-				}
+				$id         = attachment_url_to_postid( $scaled_url );
 			}
 		}
 
