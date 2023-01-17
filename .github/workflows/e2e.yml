@@ -43,14 +43,15 @@ jobs:
             1.gravatar.com:80
             2.gravatar.com:80
             api.github.com:443
+            api.service.runforesight.com:443
             api.wordpress.org:443
             artifactcache.actions.githubusercontent.com:443
             auth.docker.io:443
-            codeload.github.com:443
             dl-cdn.alpinelinux.org:443
-            dl-cdn.alpinelinux.org:80
             downloads.wordpress.org:443
-            frsnacprodeus2file1.blob.core.windows.net:443
+            e2e-test-site.vipdev.lndo.site:443
+            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
+            geoip.elastic.co:443
             ghcr.io:443
             github.com:443
             nodejs.org:443
@@ -62,25 +63,10 @@ jobs:
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
-            update.containous.cloud:443
-            update.traefik.io:443
+            storage.googleapis.com:443
+            upload.service.runforesight.com:443
             vaultpress.com:443
             wordpress.org:443
-            dns.google:53
-            e2e-test-site.vipdev.lndo.site:80
-            playwright-akamai.azureedge.net:443
-            playwright-verizon.azureedge.net:443
-            playwright.azureedge.net:443
-            ppa.launchpad.net:80
-            ppa.launchpad.net:443
-            azure.archive.ubuntu.com:80
-            azure.archive.ubuntu.com:443
-            packages.microsoft.com:443
-            foresight.service.thundra.io:443
-            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
-            upload.service.runforesight.com:443
-            api.service.runforesight.com:443
-            api.wpvip.com:443
 
       - name: Check out repository code
         uses: actions/checkout@v3.3.0
