@@ -610,6 +610,24 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
 		$id = attachment_url_to_postid( $url );
+
+		/**
+		 * If no ID was found, maybe we're dealing with a scaled big image. So, let's try that.
+		 *
+		 * This shouldn't normally happen on VIP due to our `big_image_size_threshold` filter,
+		 * but it could be possible that content was imported with the scaled media already in place.
+		 *
+		 * @see https://core.trac.wordpress.org/ticket/51058
+		 */
+		if ( empty( $id ) ) {
+			$path_parts = pathinfo( $url );
+
+			if ( isset( $path_parts['dirname'], $path_parts['filename'], $path_parts['extension'] ) ) {
+				$scaled_url = trailingslashit( $path_parts['dirname'] ) . $path_parts['filename'] . '-scaled.' . $path_parts['extension'];
+				$id         = attachment_url_to_postid( $scaled_url );
+			}
+		}
+
 		if ( empty( $id ) ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 4 * HOUR_IN_SECONDS ) );
