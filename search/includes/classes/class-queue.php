@@ -910,6 +910,19 @@ class Queue {
 				// Increment first to prevent overrunning ratelimiting
 				self::index_count_incr( count( $ids ) );
 
+				\Automattic\VIP\Logstash\log2logstash(
+					[
+						'severity' => 'info',
+						'feature'  => 'search_queue',
+						'message'  => 'Indexing content',
+						'blog_id'  => get_current_blog_id(),
+						'extra'    => [
+							'homeurl'    => home_url(),
+							'index_name' => $indexable->get_index_name(),
+						],
+					]
+				);
+
 				$indexable->bulk_index( $ids );
 
 				// TODO handle errors
