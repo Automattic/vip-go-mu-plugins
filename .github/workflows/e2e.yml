@@ -48,6 +48,7 @@ jobs:
             artifactcache.actions.githubusercontent.com:443
             auth.docker.io:443
             dl-cdn.alpinelinux.org:443
+            docker.io:443
             downloads.wordpress.org:443
             e2e-test-site.vipdev.lndo.site:443
             foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
