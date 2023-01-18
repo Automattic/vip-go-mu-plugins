@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
+require_once __DIR__ . '/class-settingshealthjob.php';
+
 use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
 
@@ -65,6 +67,8 @@ class Versioning {
 
 		add_action( 'init', [ $this, 'action__elasticpress_loaded' ], PHP_INT_MAX );
 
+		add_action( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_NAME, [ $this, 'maybe_self_heal' ] );
+
 		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
 		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
@@ -78,8 +82,6 @@ class Versioning {
 		foreach ( $all_indexables as $indexable ) {
 			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
 		}
-
-		$this->maybe_self_heal();
 	}
 
 	/**

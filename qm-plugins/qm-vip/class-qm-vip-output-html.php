@@ -29,7 +29,7 @@ class QM_VIP_Output extends QM_Output_Html {
 			<?php
 			if ( isset( $data['mu-plugins']['commit'] ) && isset( $data['mu-plugins']['date'] ) ) {
 				echo '<p><a href="https://github.com/automattic/vip-go-mu-plugins/commit/' . rawurlencode( $data['mu-plugins']['commit'] ) .
-				' target="_blank"><i><strong><span class="screen-reader-text">Open in new tab </span>Last modified: </strong>' .
+				'" target="_blank"><i><strong><span class="screen-reader-text">Open in new tab </span>Last modified: </strong>' .
 				esc_html( $data['mu-plugins']['date'] ) . '</i></a></p>';
 			}
 			?>
