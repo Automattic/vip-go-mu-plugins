@@ -2,14 +2,12 @@
 
 namespace Automattic\VIP\Search;
 
+require_once __DIR__ . '/class-settingshealthjob.php';
+
 class QueueWaitTimeJob {
-	const CRON_EVENT_NAME = 'vip_config_sync_cron';
-
-	const FIELD_COUNT_GAUGE_DISABLED_SITES = array();
-
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
-		add_action( self::CRON_EVENT_NAME, [ $this, 'maybe_alert_for_average_queue_time' ] );
+		add_action( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_NAME, [ $this, 'maybe_alert_for_average_queue_time' ] );
 	}
 
 	/**
