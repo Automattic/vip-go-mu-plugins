@@ -47,22 +47,3 @@ add_action(
 		);
 	}
 );
-
-// Debug Bar deprecation notice
-add_action(
-	'vip_admin_notice_init',
-	function( $admin_notice_controller ) {
-		$message = 'Debug Bar will no longer be included in VIP MU Plugins as of January 31, 2023. Please use <a href="https://docs.wpvip.com/technical-references/query-monitor/" target="_blank">Query Monitor</a> instead for diagnostics. For more information, see <a href="https://lobby.vip.wordpress.com/2022/12/14/deprecation-notice-debug-bar-january-31-2023/" target="_blank">our Lobby post</a>.';
-
-		$admin_notice_controller->add(
-			new Admin_Notice(
-				$message,
-				[
-					new Expression_Condition( true === apply_filters( 'debug_bar_enable', false ) ),
-				],
-				'debug-bar-deprecation',
-				'error'
-			)
-		);
-	}
-);
