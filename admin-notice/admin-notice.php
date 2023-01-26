@@ -52,7 +52,6 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		global $wp_version;
 		$message = 'Heads up! Enterprise Search is being upgraded soon on WordPress VIP and we highly recommend testing it out on non-production before Wednesday, March 1. <a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Please see our Lobby post for instructions on testing.</a>';
 
 		$admin_notice_controller->add(
