@@ -37,7 +37,9 @@ class Health_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		self::$search_instance = new \Automattic\VIP\Search\Search();
 		self::$search_instance->init();
+	}
 
+	public function setUp(): void {
 		do_action( 'plugins_loaded' );
 
 		if ( method_exists( \ElasticPress\Indexable::class, 'build_settings' ) ) {
@@ -45,9 +47,7 @@ class Health_Test extends WP_UnitTestCase {
 		} else {
 			self::$indexable_methods[] = 'generate_mapping';
 		}
-	}
 
-	public function setUp(): void {
 		parent::setUp();
 
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'foo' );
