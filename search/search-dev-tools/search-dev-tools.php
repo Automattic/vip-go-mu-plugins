@@ -273,6 +273,13 @@ function print_data() {
 					'collapsible' => true,
 				],
 			],
+			[
+				'label'   => 'Algorithm Version',
+				'value'   => apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) ),
+				'options' => [
+					'collapsible' => false,
+				],
+			],
 
 		],
 		'nonce'                   => wp_create_nonce( 'wp_rest' ),

@@ -2,6 +2,9 @@ name: CI
 
 on:
   push:
+    paths:
+    - 'search/search-dev-tools/**'
+    - '.github/workflows/search-dev-tools.yml'
   workflow_dispatch:
 
 concurrency:
@@ -19,12 +22,12 @@ jobs:
       contents: write
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
         with:
           token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
       - name: Setup Node
-        uses: actions/setup-node@v3.5.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: 'lts/*'
           cache: npm
