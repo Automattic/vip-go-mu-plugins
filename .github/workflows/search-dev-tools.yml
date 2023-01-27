@@ -2,6 +2,9 @@ name: CI
 
 on:
   push:
+    paths:
+    - 'search/search-dev-tools/**'
+    - '.github/workflows/search-dev-tools.yml'
   workflow_dispatch:
 
 concurrency:

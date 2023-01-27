@@ -488,93 +488,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_showing() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar enabled
-		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar plugin already loaded, therefore this test is not asserting that the plugin is loaded' );
-
-		// Be sure the constant isn't already defined (or our test does not assert that it was defined at runtime)
-		$this->assertEquals( false, Constant_Mocker::defined( 'WP_EP_DEBUG' ), 'WP_EP_DEBUG constant already defined, therefore this test is not asserting that the constant is set at runtime' );
-
-		$this->init_es();
-
-		do_action( 'plugins_loaded' );
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
-
-		// And the debug constant should have been set (required for saving queries)
-		$this->assertEquals( true, Constant_Mocker::constant( 'WP_EP_DEBUG' ), 'Incorrect value for WP_EP_DEBUG constant' );
-	}
-
-	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is disabled, but Query Monitor is showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_disabled_but_qm_enabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar disabled
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
-		// But QM enabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-
-		$this->init_es();
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when both Debug Bar Query Monitor are showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_and_qm_enabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar enabled
-		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
-		// And QM enabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-
-		$this->init_es();
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
-	 * Test that we don't load the ElasticPress Debug Bar plugin when neither Debug Bar or Query Monitor are showing
-	 */
-	public function test__vip_search_does_not_load_ep_debug_bar_when_debug_bar_and_qm_disabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar disabled
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
-		// And QM disabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
-
-		$this->init_es();
-
-		// Class should not exist
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
 	 * Test that we are sending HTTP requests through the VIP helper functions
 	 */
 	public function test__vip_search_has_http_layer_filters() {
@@ -2560,7 +2473,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_enable_ep_query_logging_no_debug_tools_enabled() {
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
 		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
 
 		$this->init_es();
@@ -2573,7 +2485,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_enable_ep_query_logging_qm_enabled() {
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
 		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
 
 		$this->init_es();
@@ -2586,22 +2497,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_enable_ep_query_logging_debug_bar_enabled() {
-		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
-		add_filter( 'debug_bar_enable', '__return_true' );
-
-		$this->init_es();
-
-		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
-		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_enable_ep_query_logging_debug_bar_and_qm_enabled() {
-		add_filter( 'debug_bar_enable', '__return_true' );
+	public function test__maybe_enable_ep_query_logging_and_qm_enabled() {
 		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
 
 		$this->init_es();
