@@ -16,11 +16,15 @@ use Automattic\VIP\Prometheus\Post_Stats_Collector;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+// Someone is trying to be sneaky, we can't have that.
+if ( defined( 'ABSPATH' ) ) {
+	return;
+}
+
 $collectors = [];
 $registry   = create_registry();
 
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
-// if ( defined( 'ABSPATH' ) ) {
 $files = [
 	'/index.php',
 	'/../prometheus-collectors/class-cache-collector.php',
@@ -42,7 +46,6 @@ $collectors[] = new APCu_Collector();
 $collectors[] = new OpCache_Collector();
 $collectors[] = new Login_Stats_Collector();
 
-
 array_walk( $collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
 
 $renderer = new RenderTextFormat();
@@ -51,6 +54,9 @@ echo $renderer->render( $registry->getMetricFamilySamples() );
 
 // @codeCoverageIgnoreEnd
 
+/**
+ * Create a registry for Prometheus metrics.
+ */
 function create_registry(): RegistryInterface {
 	// @codeCoverageIgnoreStart -- APCu may or may not be available during tests
 	/** @var Adapter $storage */
