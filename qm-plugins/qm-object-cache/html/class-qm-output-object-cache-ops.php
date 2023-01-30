@@ -139,7 +139,7 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	 */
 	public function output_sortable_table_col( $title ) {
 		echo '<th scope="col" class="qm-sortable-column" role="columnheader">';
-		echo $this->build_sorter( esc_html__( $title, 'query-monitor' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.WP.I18n.NonSingularStringLiteralText
+		echo $this->build_sorter( esc_html( $title ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
 	}
 
@@ -150,7 +150,7 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	 */
 	public function output_filterable_table_col( $title, $values, $args = [] ) {
 		echo '<th scope="col" class="qm-filterable-column">';
-		echo $this->build_filter( sanitize_title( strtolower( $title ) ), $values, esc_html__( $title, 'query-monitor' ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.WP.I18n.NonSingularStringLiteralText
+		echo $this->build_filter( sanitize_title( strtolower( $title ) ), $values, esc_html( $title ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
 	}
 }
