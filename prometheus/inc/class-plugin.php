@@ -92,7 +92,8 @@ class Plugin {
 	 * We're going to send the response to the client, then collect metrics from each registered collector
 	 */
 	public function shutdown(): void {
-		// This is expensive, potentially, so we're going tack onto a single request in admin 
+		// This is expensive, potentially, so be mindful about when this method is called
+		// Currently it only runs on web requests with a 60 interval, see the constructor
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
 		}
