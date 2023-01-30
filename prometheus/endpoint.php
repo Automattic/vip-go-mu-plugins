@@ -48,6 +48,7 @@ $collectors[] = new Login_Stats_Collector();
 
 array_walk( $collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
 
+header( 'Content-Type: text/plain' );
 $renderer = new RenderTextFormat();
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
 echo $renderer->render( $registry->getMetricFamilySamples() );
