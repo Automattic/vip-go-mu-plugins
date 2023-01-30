@@ -1,5 +1,4 @@
 <?php
-
 namespace Automattic\VIP\Prometheus;
 
 use Prometheus\CollectorRegistry;
