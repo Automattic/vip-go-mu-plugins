@@ -14,7 +14,7 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-apcu-collector.php',
 		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
-		'/prometheus-collectors/class-login-stats-collector.php',
+		'/prometheus-collectors/class-post-stats-collector.php',
 	];
 
 	foreach ( $files as $file ) {
