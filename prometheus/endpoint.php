@@ -1,6 +1,7 @@
 <?php
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\VIP\Utils\Context;
 use Prometheus\CollectorRegistry;
 use Prometheus\RegistryInterface;
 use Prometheus\RenderTextFormat;
@@ -9,10 +10,11 @@ use Prometheus\Storage\APCng;
 use Prometheus\Storage\InMemory;
 
 require_once __DIR__ . '/vendor/autoload.php';
+require_once dirname( __DIR__ ) . '/lib/utils/class-context.php';
 
 // Someone is trying to be sneaky, we can't have that.
 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
-if ( defined( 'ABSPATH' ) || '/.vip-prom-metrics' !== $_SERVER['DOCUMENT_URI'] ) {
+if ( defined( 'ABSPATH' ) || ! Context::is_prom_endpoint_request() ) {
 	return;
 }
 
