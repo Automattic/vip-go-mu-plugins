@@ -1,6 +1,7 @@
 <?php
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\VIP\Utils\Context;
 use Prometheus\CollectorRegistry;
 use Prometheus\RegistryInterface;
 use Prometheus\Storage\Adapter;
@@ -32,6 +33,11 @@ class Plugin {
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
+
+		// Currently there's no way to persist the storage on non-web requests because APCu is not available.
+		if ( Context::is_web_request() ) {
+			add_action( 'shutdown', [ $this, 'shutdown' ], PHP_INT_MAX );
+		}
 
 		do_action( 'vip_prometheus_loaded' );
 	}
@@ -80,5 +86,20 @@ class Plugin {
 		}
 
 		return new CollectorRegistry( $storage );
+	}
+
+	/**
+	 * We're going to send the response to the client, then collect metrics from each registered collector
+	 */
+	public function shutdown(): void {
+		// This is expensive, potentially, so we're going tack onto a single request in admin 
+		fastcgi_finish_request();
+		$last_prom_run = wp_cache_get( 'last_prom_run', 'vip-prom' );
+		if ( ! $last_prom_run || time() - $last_prom_run > 60 ) {
+			foreach ( $this->collectors as $collector ) {
+				$collector->collect_metrics();
+			}
+			wp_cache_set( 'last_prom_run', time(), 'vip-prom', 60 );
+		}
 	}
 }
