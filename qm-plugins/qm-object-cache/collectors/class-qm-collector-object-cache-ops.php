@@ -7,7 +7,7 @@ class QM_Collector_ObjectCache_Ops extends QM_Collector {
 	public $id = 'object_cache_ops';
 
 	public function name() {
-		return __( 'Operations', 'query-monitor' );
+		return __( 'Operations', 'qm-object-cache' );
 	}
 
 	public function process() {

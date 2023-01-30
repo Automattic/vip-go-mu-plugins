@@ -34,12 +34,12 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 
 		echo '<thead>';
 		echo '<tr>';
-		$this->output_filterable_table_col( 'Operation', array_keys( $ops ) );
-		$this->output_sortable_table_col( 'Key' );
-		$this->output_sortable_table_col( 'Size' );
-		$this->output_sortable_table_col( 'Time' );
-		$this->output_filterable_table_col( 'Group', array_keys( $groups ) );
-		$this->output_sortable_table_col( 'Result' );
+		$this->output_filterable_table_col( __( 'Operation', 'qm-object-cache' ), array_keys( $ops ) );
+		$this->output_sortable_table_col( __( 'Key', 'qm-object-cache' ) );
+		$this->output_sortable_table_col( __( 'Size', 'qm-object-cache' ) );
+		$this->output_sortable_table_col( __( 'Time', 'qm-object-cache' ) );
+		$this->output_filterable_table_col( __( 'Group', 'qm-object-cache' ), array_keys( $groups ) );
+		$this->output_sortable_table_col( __( 'Result', 'qm-object-cache' ) );
 		echo '</tr>';
 		echo '</thead>';
 
@@ -116,16 +116,16 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	public function process_result( $result ) {
 		switch ( trim( $result ) ) {
 			case 'not_in_memcache':
-				$result = 'Not in Memcache';
+				$result = __( 'Not in Memcache', 'qm-object-cache' );
 				break;
 			case 'memcache':
-				$result = 'Found in Memcache';
+				$result = __( 'Found in Memcache', 'qm-object-cache' );
 				break;
 			case '[mc already]':
-				$result = 'Already in Memcache';
+				$result = __( 'Already in Memcache', 'qm-object-cache' );
 				break;
 			case '[lc already]':
-				$result = 'Local cache already';
+				$result = __( 'Local cache already', 'qm-object-cache' );
 				break;
 		}
 

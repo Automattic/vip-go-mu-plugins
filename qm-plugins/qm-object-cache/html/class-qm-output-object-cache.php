@@ -22,7 +22,7 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 	 * @return string
 	 */
 	public function name() {
-		return __( 'Object Cache', 'query-monitor' );
+		return __( 'Object Cache', 'qm-object-cache' );
 	}
 
 
@@ -80,7 +80,7 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		$menu[ $this->collector->id ] = $this->menu( array(
 			'id'    => $this->collector->id,
 			'href'  => '#qm-object_cache',
-			'title' => __( 'Object Cache', 'query-monitor' ),
+			'title' => __( 'Object Cache', 'qm-object-cache' ),
 		));
 
 		return $menu;
@@ -101,8 +101,8 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		echo '<table>';
 		echo '<thead class="qm-screen-reader-text">';
 		echo '<tr>';
-		echo '<th scope="col">' . esc_html__( 'Property', 'query-monitor' ) . '</th>';
-		echo '<th scope="col">' . esc_html__( 'Value', 'query-monitor' ) . '</th>';
+		echo '<th scope="col">' . esc_html__( 'Property', 'qm-object-cache' ) . '</th>';
+		echo '<th scope="col">' . esc_html__( 'Value', 'qm-object-cache' ) . '</th>';
 		echo '</tr>';
 		echo '</thead>';
 		echo '<tbody>';
