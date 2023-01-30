@@ -93,7 +93,10 @@ class Plugin {
 	 */
 	public function shutdown(): void {
 		// This is expensive, potentially, so we're going tack onto a single request in admin 
-		fastcgi_finish_request();
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+		}
+
 		$last_prom_run = wp_cache_get( 'last_prom_run', 'vip-prom' );
 		if ( ! $last_prom_run || time() - $last_prom_run > 60 ) {
 			foreach ( $this->collectors as $collector ) {
