@@ -58,7 +58,7 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		if ( $stats ) {
 			$this->output_before_section( false );
 			foreach ( $stats as $stat => $value ) {
-				$this->output_table_row( $stat, $value );
+				$this->output_table_row( $stat, number_format_i18n( $value ) );
 			}
 			$this->output_after_section();
 		}
