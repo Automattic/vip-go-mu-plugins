@@ -86,14 +86,25 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		return $menu;
 	}
 
-	public function output_table_row( $title, $value ) {
+	/**
+	 * Outputs a table row with a key-value pairing.
+	 *
+	 * @param string $title Title of table row
+	 * @param string $value Value of table row
+	 */
+	public function output_table_row( string $title, string $value ) {
 		echo '<tr>';
 		echo '<th scope="row">' . esc_html( $title ) . '</th>';
 		echo '<td>' . esc_html( $value ) . '</td>';
 		echo '</tr>';
 	}
 
-	public function output_before_section( $heading ) {
+	/**
+	 * Outputs the beginning of a table section.
+	 *
+	 * @param string $heading Heading of table
+	 */
+	public function output_before_section( string $heading ) {
 		echo '<section>';
 		if ( $heading ) {
 			echo '<h3>' . esc_html( $heading ) . '</h3>';
@@ -108,6 +119,9 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		echo '<tbody>';
 	}
 
+	/**
+	 * Outputs the end of a table section.
+	 */
 	public function output_after_section() {
 		echo '</tbody>';
 		echo '</table>';

@@ -90,39 +90,39 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	/**
 	 * Returns in human readable size format
 	 *
-	 * @param $size int
-	 * @return $size string
+	 * @param $size int     Raw size
+	 * @return $size string Human readable size format
 	 */
-	public function process_size( $size ) {
+	public function process_size( int $size ) {
 		return size_format( $size, 2 );
 	}
 
 	/**
-	 * Returns in human readable time format
+	 * Returns in human readable time format.
 	 *
-	 * @param $time float
-	 * @return $time string
+	 * @param float $time   Raw time
+	 * @return string $time Human readable time format
 	 */
-	public function process_time( $time ) {
+	public function process_time( float $time ) {
 		return number_format_i18n( sprintf( '%0.1f', $time * 1000 ), 1 ) . 'ms';
 	}
 
 	/**
-	 * Returns in human readable result
+	 * Returns in human readable result.
 	 *
-	 * @param $result string
-	 * @return $result string
+	 * @param $result  string Memcached operation result
+	 * @return $result string Human readable memcached operation result
 	 */
-	public function process_result( $result ) {
+	public function process_result( string $result ) {
 		switch ( trim( $result ) ) {
 			case 'not_in_memcache':
-				$result = __( 'Not in Memcache', 'qm-object-cache' );
+				$result = __( 'Not in Memcached', 'qm-object-cache' );
 				break;
 			case 'memcache':
-				$result = __( 'Found in Memcache', 'qm-object-cache' );
+				$result = __( 'Found in Memcached', 'qm-object-cache' );
 				break;
 			case '[mc already]':
-				$result = __( 'Already in Memcache', 'qm-object-cache' );
+				$result = __( 'Already in Memcached', 'qm-object-cache' );
 				break;
 			case '[lc already]':
 				$result = __( 'Local cache already', 'qm-object-cache' );
@@ -133,22 +133,24 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	}
 
 	/**
-	 * Outputs the table column header
+	 * Outputs a sortable table column header.
 	 *
-	 * @param $title string
+	 * @param string $title Title to use on column header
 	 */
-	public function output_sortable_table_col( $title ) {
+	public function output_sortable_table_col( string $title ) {
 		echo '<th scope="col" class="qm-sortable-column" role="columnheader">';
 		echo $this->build_sorter( esc_html( $title ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
 	}
 
 	/**
-	 * Outputs the table column header
+	 * Outputs a filterable table column header.
 	 *
-	 * @param $title string
+	 * @param string $title Title to use on column header
+	 * @param array $values Groups to filter by
+	 * @param array $args   Additional arguments to be passed in
 	 */
-	public function output_filterable_table_col( $title, $values, $args = [] ) {
+	public function output_filterable_table_col( string $title, array $values, $args = [] ) {
 		echo '<th scope="col" class="qm-filterable-column">';
 		echo $this->build_filter( sanitize_title( strtolower( $title ) ), $values, esc_html( $title ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
