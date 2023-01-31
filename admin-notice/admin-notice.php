@@ -48,19 +48,19 @@ add_action(
 	}
 );
 
-// Debug Bar deprecation notice
+// Enterprise Search upgrade
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		$message = 'Debug Bar will no longer be included in VIP MU Plugins as of January 31, 2023. Please use <a href="https://docs.wpvip.com/technical-references/query-monitor/" target="_blank">Query Monitor</a> instead for diagnostics. For more information, see <a href="https://lobby.vip.wordpress.com/2022/12/14/deprecation-notice-debug-bar-january-31-2023/" target="_blank">our Lobby post</a>.';
+		$message = 'Heads up! Enterprise Search is being upgraded soon on WordPress VIP and we highly recommend testing it out on non-production before Wednesday, March 1. <a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Please see our Lobby post for instructions on testing.</a>';
 
 		$admin_notice_controller->add(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( true === apply_filters( 'debug_bar_enable', false ) ),
+					new Expression_Condition( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && ! defined( 'VIP_SEARCH_USE_NEXT_EP' ) ),
 				],
-				'debug-bar-deprecation',
+				'new-ep-version',
 				'error'
 			)
 		);
