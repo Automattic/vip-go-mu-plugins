@@ -211,7 +211,9 @@ function maybe_load_plugin() {
 	}
 
 	// Require the actual wp-parsely plugin.
-	require_once $entry_file;
+	if ( is_readable( $entry_file ) ) {
+		require_once $entry_file;
+	}
 	Parsely_Loader_Info::set_active( true );
 	Parsely_Loader_Info::set_integration_type( $integration_type );
 	Parsely_Loader_Info::set_version( $version );
