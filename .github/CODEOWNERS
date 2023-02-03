@@ -1,2 +1,6 @@
 # See https://help.github.com/en/github/creating-cloning-and-archiving-repositories/about-code-owners
 * @Automattic/vip-platform-cantina
+
+# Leave owners empty for these two
+package.json
+package-lock.json

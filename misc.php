@@ -69,7 +69,12 @@ add_action( 'parse_request', 'action_wpcom_vip_verify_string', 0 );
 /**
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
  */
-add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
+function wpcom_vip_disable_newrelic_on_amp() {
+	if ( function_exists( 'is_amp_endpoint' ) && function_exists( 'newrelic_disable_autorum' ) && is_amp_endpoint() ) {
+		newrelic_disable_autorum();
+	}
+}
+add_action( 'template_redirect', 'wpcom_vip_disable_newrelic_on_amp' );
 
 /**
  * Fix a race condition in alloptions caching

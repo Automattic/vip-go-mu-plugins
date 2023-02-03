@@ -20,7 +20,7 @@ jobs:
             github.com:443
 
       - name: Check out the source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.3.0
 
       - name: Review dependencies
         uses: actions/dependency-review-action@v3

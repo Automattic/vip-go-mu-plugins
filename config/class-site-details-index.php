@@ -154,7 +154,7 @@ class Site_Details_Index {
 		foreach ( $no_update as $plugin_path => $plugin_data ) {
 			$update_data[ $plugin_path ] = [
 				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ?? '' ),
 				'new_version' => null,
 				'package'     => null,
 			];
@@ -163,9 +163,9 @@ class Site_Details_Index {
 		foreach ( $has_update as $plugin_path => $plugin_data ) {
 			$update_data[ $plugin_path ] = [
 				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ?? '' ),
 				'new_version' => $plugin_data->new_version ?? null,
-				'package'     => wp_http_validate_url( $plugin_data->package ) !== false ? $plugin_data->package : null,
+				'package'     => wp_http_validate_url( $plugin_data->package ?? '' ) !== false ? $plugin_data->package : null,
 			];
 		}
 
