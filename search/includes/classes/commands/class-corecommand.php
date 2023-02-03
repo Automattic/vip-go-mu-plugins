@@ -138,60 +138,70 @@ class CoreCommand extends \ElasticPress\Command {
 		$search = \Automattic\VIP\Search\Search::instance();
 		foreach ( $indexables as $indexable ) {
 			if ( ! $version_flag && ! $using_versions_flag && ! $setup_flag ) {
+				// No flags set, so we need to get the active version to index.
 				$version_number = $search->versioning->get_active_version_number( $indexable );
 				if ( is_wp_error( $version_number ) ) {
 					WP_CLI::Error( sprintf( 'No active version found for %s', $indexable->slug ) );
 				}
-			} else {
-				$current_versions = $search->versioning->get_versions( $indexable );
-				if ( $version_flag ) {
-					$version_number = $assoc_args['version'];
-				} elseif ( $using_versions_flag ) {
-					if ( count( $current_versions ) > 1 ) {
-						WP_CLI::error( sprintf(
-							'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
-							$indexable->slug
-						) );
-					}
-					if ( empty( $current_versions ) ) {
-						WP_CLI::error( sprintf(
-							'There needs to be at least one version in order to use the --using-versions parameter. Please add a version for indexable "%s".',
-							$indexable->slug
-						) );
-					}
-					$version_number = $search->versioning->get_active_version_number( $indexable );
-					if ( is_wp_error( $version_number ) ) {
-						WP_CLI::Error( sprintf( 'No active version found for %s. Must have an active version to use the --using-versions parameter.', $indexable->slug ) );
-					}
+				$this->set_version( $indexable, $version_number );
+				continue;
+			}
 
+			if ( $version_flag ) {
+				// If version flag passed in, explicitly use that. This will also cover a --version && --setup case.
+				$version_number = $assoc_args['version'];
+				$version        = $search->versioning->get_version( $indexable, $version_number );
+				if ( ! $version ) {
+					WP_CLI::Error( sprintf( 'No version found for %d for %s', $version_number, $indexable->slug ) );
+				}
+
+				$this->set_version( $indexable, $version_number );
+				continue;
+			}
+
+			$current_versions = $search->versioning->get_versions( $indexable );
+			if ( $using_versions_flag ) {
+				if ( count( $current_versions ) > 1 ) {
+					WP_CLI::error( sprintf(
+						'There needs to be only one version per indexable in order to automatically use versions to reindex. Please remove inactive versions for indexable "%s".',
+						$indexable->slug
+					) );
+				}
+				if ( empty( $current_versions ) ) {
+					WP_CLI::error( sprintf(
+						'There needs to be at least one version in order to use the --using-versions parameter. Please add a version for indexable "%s".',
+						$indexable->slug
+					) );
+				}
+
+				$version_number = $search->versioning->get_active_version_number( $indexable );
+				if ( is_wp_error( $version_number ) ) {
+					WP_CLI::Error( sprintf( 'No active version found for %s. Must have an active version to use the --using-versions parameter.', $indexable->slug ) );
+				}
+				$result = $search->versioning->add_version( $indexable );
+				if ( is_wp_error( $result ) ) {
+					WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
+				}
+				$version_number = 'next';
+			} else {
+				if ( empty( $current_versions ) ) {
+					// If no versions exist, create new version and activate it.
 					$result = $search->versioning->add_version( $indexable );
 					if ( is_wp_error( $result ) ) {
 						WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
 					}
-
-					$version_number = 'next';
-				} elseif ( $setup_flag && ! $version_flag ) {
-					if ( empty( $current_versions ) ) {
-						// If no versions exist, create new version and activate it
-						$result = $search->versioning->add_version( $indexable );
-						if ( is_wp_error( $result ) ) {
-							WP_CLI::error( sprintf( 'Error adding new version: %s', $result->get_error_message() ) );
-						}
-						$result = $search->versioning->activate_version( $indexable, 1 ); // Activate first version
-						if ( is_wp_error( $result ) ) {
-							WP_CLI::error( sprintf( 'Error activating version 1: %s', $result->get_error_message() ) );
-						}
-					} else {
-						$active_version = $search->versioning->get_active_version_number( $indexable );
-						if ( is_wp_error( $active_version ) ) {
-							$result = $search->versioning->activate_version( $indexable, array_key_first( $current_versions ) ); // Activate first version
-						}
+					$result = $search->versioning->activate_version( $indexable, 1 ); // Activate first version
+					if ( is_wp_error( $result ) ) {
+						WP_CLI::error( sprintf( 'Error activating version 1: %s', $result->get_error_message() ) );
 					}
-
-					$version_number = 'active';
 				}
+				// Check that there is an active version to use before assigning $version_number.
+				$active_version = $search->versioning->get_active_version_number( $indexable );
+				if ( is_wp_error( $active_version ) ) {
+					$result = $search->versioning->activate_version( $indexable, array_key_first( $current_versions ) ); // Activate first version
+				}
+				$version_number = 'active';
 			}
-
 			$this->set_version( $indexable, $version_number );
 		}
 	}

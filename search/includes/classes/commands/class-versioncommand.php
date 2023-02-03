@@ -362,12 +362,13 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			$assoc_args['yes'] = true;
 		}
 
-
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 
 		if ( ! $indexable ) {
 			return WP_CLI::error( sprintf( 'Indexable %s not found. Is the feature active?', $type ) );
 		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
 
 		if ( isset( $assoc_args['network-wide'] ) && is_multisite() ) {
 			WP_CLI::confirm( sprintf( 'Are you sure you want to deactivate index version %s for type %s on all sites in this network?', $desired_version_number, $type ), $assoc_args );
@@ -381,7 +382,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 			foreach ( $sites as $site ) {
 				switch_to_blog( $site['blog_id'] );
 
-				$result = $this->deactivate_helper( $indexable, $desired_version_number );
+				$result = $search->versioning->deactivate_version( $indexable, $desired_version_number );
+				if ( is_wp_error( $result ) ) {
+					return WP_CLI::error( sprintf( 'Received error for deactivating index version %s - %s', $desired_version_number, $result->get_error_message() ) );
+				}
 
 				restore_current_blog();
 
@@ -400,10 +404,10 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 		} else {
 			WP_CLI::confirm( sprintf( 'Are you sure you want to deactivate index version %s for type %s?', $desired_version_number, $type ), $assoc_args );
 
-			$result = $this->deactivate_helper( $indexable, $desired_version_number );
+			$result = $search->versioning->deactivate_version( $indexable, $desired_version_number );
 
 			if ( is_wp_error( $result ) ) {
-				return WP_CLI::error( sprintf( 'Received error for index version %s - %s', $desired_version_number, $result->get_error_message() ) );
+				return WP_CLI::error( sprintf( 'Received error for deactivating index version %s - %s', $desired_version_number, $result->get_error_message() ) );
 			}
 
 			if ( ! $result ) {
@@ -412,24 +416,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 			WP_CLI::success( sprintf( 'Successfully deactivated index version %s for type %s', $desired_version_number, $type ) );
 		}
-	}
-
-	protected function deactivate_helper( Indexable $indexable, $version_number_to_deactivate ) {
-		$search = \Automattic\VIP\Search\Search::instance();
-
-		$new_version_number = $search->versioning->normalize_version_number( $indexable, $version_number_to_deactivate );
-
-		if ( is_wp_error( $new_version_number ) ) {
-			return WP_CLI::error( sprintf( 'Index version %s is not valid: %s', $version_number_to_deactivate, $new_version_number->get_error_message() ) );
-		}
-
-		$inactive_versions = $search->versioning->get_inactive_versions( $indexable );
-
-		if ( isset( $inactive_versions[ $new_version_number ] ) ) {
-			return WP_CLI::error( sprintf( 'Index version %d is already inactive', $new_version_number ) );
-		}
-
-		return $search->versioning->deactivate_version( $indexable, $new_version_number );
 	}
 
 	/**
