@@ -90,20 +90,20 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	/**
 	 * Returns in human readable size format
 	 *
-	 * @param $size int     Raw size
+	 * @param $size int|null     Raw size
 	 * @return $size string Human readable size format
 	 */
-	public function process_size( int $size ) {
+	public function process_size( ?int $size ) {
 		return size_format( $size, 2 );
 	}
 
 	/**
 	 * Returns in human readable time format.
 	 *
-	 * @param float $time   Raw time
+	 * @param float|null $time   Raw time
 	 * @return string $time Human readable time format
 	 */
-	public function process_time( float $time ) {
+	public function process_time( ?float $time ) {
 		return number_format_i18n( sprintf( '%0.1f', $time * 1000 ), 1 ) . 'ms';
 	}
 
