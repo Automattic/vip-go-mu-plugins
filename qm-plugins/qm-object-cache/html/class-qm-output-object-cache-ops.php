@@ -38,7 +38,7 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 		$this->output_sortable_table_col( __( 'Key', 'qm-object-cache' ) );
 		$this->output_sortable_table_col( __( 'Size', 'qm-object-cache' ) );
 		$this->output_sortable_table_col( __( 'Time', 'qm-object-cache' ) );
-		$this->output_filterable_table_col( __( 'Group', 'qm-object-cache' ), array_keys( $groups ) );
+		$this->output_filterable_table_col( __( 'Group', 'qm-object-cache' ), $groups );
 		$this->output_sortable_table_col( __( 'Result', 'qm-object-cache' ) );
 		echo '</tr>';
 		echo '</thead>';
