@@ -56,9 +56,11 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 
 		$stats = $data['stats'] ?? false;
 		if ( $stats ) {
-			$this->output_before_section( false );
+			$this->output_before_section( 'Operation Counts' );
 			foreach ( $stats as $stat => $value ) {
-				$this->output_table_row( $stat, number_format_i18n( $value ) );
+				if ( $value > 0 ) {
+					$this->output_table_row( $stat, number_format_i18n( $value ) );
+				}
 			}
 			$this->output_after_section();
 		}
