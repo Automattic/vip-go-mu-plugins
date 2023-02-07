@@ -27,8 +27,12 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 			return;
 		}
 
-		$ops    = $data['operations'] ?? [];
-		$groups = $data['groups'] ?? [];
+		$ops      = $data['operations'] ?? [];
+		$groups   = $data['groups'] ?? [];
+		$slow_ops = array_search( 'slow-ops', $groups );
+		if ( false !== $slow_ops ) {
+			unset( $groups[ $slow_ops ] );
+		}
 
 		$this->before_tabular_output();
 
@@ -44,19 +48,40 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 		echo '</thead>';
 
 		echo '<tbody>';
+		$total = 0;
 		foreach ( $ops as $op_name => $data ) {
 			foreach ( $data as $op ) {
+				if ( 'slow-ops' === $op['group'] ) {
+					continue;
+				}
 				echo '<tr data-qm-operation="' . esc_attr( $op_name ) . '" data-qm-group="' . esc_attr( $op['group'] ) . '">';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op_name ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op['key'] ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_size( $op['size'] ) ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_time( $op['time'] ) ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op['group'] ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_result( $op['result'] ) ) . '</td>';
+				$this->output_table_cell( $op_name );
+				if ( is_array( $op['key'] ) ) {
+					$this->maybe_output_toggle_table_cell_for_array( $op['key'] );
+				} else {
+					$this->output_table_cell( $op['key'] );
+				}
+				$this->output_table_cell( $this->process_size( $op['size'] ) );
+				$this->output_table_cell( $this->process_time( $op['time'] ) );
+				$this->output_table_cell( $op['group'] );
+				$this->output_table_cell( $this->process_result( $op['result'] ) );
 				echo '</tr>';
+				$total++;
 			}
 		}
 		echo '</tbody>';
+		echo '<tfoot>';
+		echo '<tr>';
+		printf(
+			'<td colspan="7">%1$s</td>',
+			sprintf(
+				/* translators: %s: Number of Object cache operations */
+				esc_html( _nx( 'Total: %s', 'Total: %s', $total, 'Object cache operations', 'qm-object-cache' ) ),
+				'<span class="qm-items-number">' . esc_html( number_format_i18n( $total ) ) . '</span>'
+			)
+		);
+		echo '</tr>';
+		echo '</tfoot>';
 
 		$this->after_tabular_output();
 	}
@@ -80,7 +105,7 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 			$menu['object_cache']['children'][] = $this->menu( array(
 				'id'    => 'qm-object_cache_ops',
 				'href'  => '#qm-object_cache_ops',
-				'title' => __( 'Operations', 'query-monitor' ),
+				'title' => __( 'Operations', 'qm-object-cache' ),
 			));
 		}
 
@@ -154,5 +179,38 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 		echo '<th scope="col" class="qm-filterable-column">';
 		echo $this->build_filter( sanitize_title( strtolower( $title ) ), $values, esc_html( $title ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
+	}
+
+	/**
+	 * Outputs a toggleable table cell for arrays with more than 5 elements.
+	 *
+	 * @param array $array Array to be outputted in table cell
+	 */
+	public function maybe_output_toggle_table_cell_for_array( array $array ) {
+		$max_elements = 5;
+		if ( count( $array ) < $max_elements ) {
+			$array = implode( ', ', $array );
+			echo '<td class="qm-nowrap qm-ltr">' . esc_html( $array ) . '</td>';
+			return;
+		}
+
+		$partial_key = array_slice( $array, 0, $max_elements );
+		$partial_key = implode( ', ', $partial_key ) . '...';
+		$rest_of_key = array_slice( $array, $max_elements );
+		$rest_of_key = implode( ', ', $rest_of_key );
+		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
+		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<ol><li>' . esc_html( $partial_key ) . '</li>';
+		echo '<span class="qm-info qm-supplemental">' . esc_html( $rest_of_key ) . '</span>';
+		echo '</ol></td>';
+	}
+
+	/**
+	 * Outputs a table cell.
+	 *
+	 * @param string $value Value to be outputted in table cell
+	 */
+	public function output_table_cell( string $value ) {
+		echo '<td class="qm-nowrap qm-ltr">' . esc_html( $value ) . '</td>';
 	}
 }
