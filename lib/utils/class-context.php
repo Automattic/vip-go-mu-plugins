@@ -71,10 +71,4 @@ class Context {
 	public static function is_installing() {
 		return defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' );
 	}
-
-	public static function is_prom_endpoint_request(): bool {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		return '/.vip-prom-metrics' === $request_uri;
-	}
 }
