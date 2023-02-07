@@ -22,7 +22,7 @@ class Post_Stats_Collector implements CollectorInterface {
 
 	public function collect_metrics(): void {
 		$site_id = (string) get_current_blog_id();
-		$types   = get_post_types( [ 'public' => true ] );
+		$types   = get_post_types();
 		foreach ( $types as $type ) {
 			$posts = wp_count_posts( $type );
 			foreach ( $posts as $status => $count ) {
