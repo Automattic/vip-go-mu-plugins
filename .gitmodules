@@ -34,6 +34,9 @@
 [submodule "drop-ins/wp-cache-memcached"]
 	path = drop-ins/wp-cache-memcached
 	url = https://github.com/Automattic/wp-cache-memcached.git
+[submodule "wp-parsely"]
+	path = wp-parsely
+	url = https://github.com/Parsely/wp-parsely.git
 [submodule "drop-ins/hyperdb"]
 	path = drop-ins/hyperdb
 	url = https://github.com/automattic/hyperdb
