@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Query Monitor: Object Cache
  * Description:
- * Version: 0.1
+ * Version: 0.2
  * Author: trepmal, rebasaurus
  */
 
@@ -23,6 +23,11 @@ add_action( 'plugins_loaded', function() {
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-ops.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-ops.php';
 			QM_Collectors::add( new QM_Collector_ObjectCache_Ops() );
+		}
+
+		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php' ) ) {
+			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php';
+			QM_Collectors::add( new QM_Collector_ObjectCache_SlowOps() );
 		}
 	}
 
@@ -46,6 +51,15 @@ add_action( 'plugins_loaded', function() {
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
 				$output['object_cache_ops'] = new QM_Output_ObjectCache_Ops( $collector );
+			}
+		}
+
+		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php';
+
+			$collector = QM_Collectors::get( 'object_cache_slowops' );
+			if ( $collector ) {
+				$output['object_cache_slowops'] = new QM_Output_ObjectCache_SlowOps( $collector );
 			}
 		}
 

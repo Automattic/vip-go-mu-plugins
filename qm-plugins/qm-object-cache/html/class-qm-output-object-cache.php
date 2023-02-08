@@ -55,7 +55,6 @@ class QM_Output_ObjectCache extends QM_Output_Html {
 		}
 
 		$stats = $data['stats'] ?? false;
-		unset( $stats['slow-ops'] );
 		if ( $stats ) {
 			$this->output_before_section( 'Operation Counts' );
 			foreach ( $stats as $stat => $value ) {
