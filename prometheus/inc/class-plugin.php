@@ -98,12 +98,15 @@ class Plugin {
 			fastcgi_finish_request();
 		}
 
-		$last_prom_run = wp_cache_get( 'last_prom_run', 'vip-prom' );
-		if ( ! $last_prom_run || time() - $last_prom_run > 60 ) {
+		// Don't run on unauthorized requests.
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return;
+		}
+
+		if ( wp_cache_add( 'last_prom_run', time(), 'vip-prom', 90 ) ) {
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
 			}
-			wp_cache_set( 'last_prom_run', time(), 'vip-prom', 60 );
 		}
 	}
 }
