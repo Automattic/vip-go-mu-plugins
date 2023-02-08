@@ -171,11 +171,11 @@ class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
 
 		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
 		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<ol><li>' . esc_html( $backtrace_array[0] ) . '...</li>';
+		echo '<ol><li><code>' . esc_html( $backtrace_array[0] ) . '...</code></li>';
 		echo '<span class="qm-info qm-supplemental">';
 		unset( $backtrace_array[0] );
 		foreach ( $backtrace_array as $element ) {
-			echo '<li>' . esc_html( $element ) . '</li>';
+			echo '<li><code>' . esc_html( $element ) . '</code></li>';
 		}
 		echo '</span>';
 		echo '</ol></td>';
