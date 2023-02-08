@@ -103,7 +103,7 @@ class Plugin {
 			return;
 		}
 
-		if ( wp_cache_add( 'last_prom_run', time(), 'vip-prom', 90 ) ) {
+		if ( wp_cache_add( 'last-prom-run', time(), 'vip-prom', 90 ) ) {
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
 			}
