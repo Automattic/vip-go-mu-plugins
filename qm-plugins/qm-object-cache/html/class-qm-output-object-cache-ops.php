@@ -182,25 +182,25 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 	}
 
 	/**
-	 * Outputs a toggleable table cell for arrays with more than 5 elements.
+	 * Outputs a toggleable table cell for arrays.
 	 *
 	 * @param array $array Array to be outputted in table cell
 	 */
 	public function maybe_output_toggle_table_cell_for_array( array $array ) {
-		$max_elements = 5;
-		if ( count( $array ) < $max_elements ) {
-			$array = implode( ', ', $array );
-			echo '<td class="qm-nowrap qm-ltr">' . esc_html( $array ) . '</td>';
+		if ( empty( $array ) ) {
 			return;
 		}
 
-		$partial_key = array_slice( $array, 0, $max_elements );
-		$partial_key = implode( ', ', $partial_key ) . '...';
-		$rest_of_key = array_slice( $array, $max_elements );
-		$rest_of_key = implode( ', ', $rest_of_key );
+		if ( count( $array ) === 1 ) {
+			echo '<td class="qm-nowrap qm-ltr">' . esc_html( $array[0] ) . '</td>';
+			return;
+		}
+
 		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
 		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<ol><li>' . esc_html( $partial_key ) . '</li>';
+		echo '<ol><li>' . esc_html( $array[0] ) . '...</li>';
+		$rest_of_key = array_slice( $array, 1 );
+		$rest_of_key = implode( ', ', $rest_of_key );
 		echo '<span class="qm-info qm-supplemental">' . esc_html( $rest_of_key ) . '</span>';
 		echo '</ol></td>';
 	}
