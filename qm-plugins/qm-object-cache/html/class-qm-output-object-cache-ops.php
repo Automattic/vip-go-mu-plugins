@@ -192,9 +192,12 @@ class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
 		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '<ol><li>' . esc_html( $array[0] ) . '...</li>';
-		$rest_of_key = array_slice( $array, 1 );
-		$rest_of_key = implode( ', ', $rest_of_key );
-		echo '<span class="qm-info qm-supplemental">' . esc_html( $rest_of_key ) . '</span>';
+		unset( $array[0] );
+		echo '<span class="qm-info qm-supplemental">';
+		foreach ( $array as $element ) {
+			echo '<li>' . esc_html( $element ) . '</li>';
+		}
+		echo '</span>';
 		echo '</ol></td>';
 	}
 
