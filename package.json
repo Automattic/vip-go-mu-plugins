@@ -24,7 +24,7 @@
   "author": "Automattic",
   "devDependencies": {
     "@wordpress/env": "^5.0.0",
-    "10up-toolkit": "^4.3.1",
+    "10up-toolkit": "^5.0.0",
     "classnames": "^2.3.1",
     "cypress": "^9.5.0",
     "cypress-file-upload": "^5.0.8",
