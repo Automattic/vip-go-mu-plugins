@@ -26,6 +26,8 @@ class VIP_Request_Block {
 	 * @return bool|void
 	 */
 	public static function ip( string $value ) {
+		self::ignore_new_relic();
+
 		$value = strtolower( $value );
 		$ip    = inet_pton( $value );
 		// Don't try to block if the passed value is not a valid IP.
@@ -73,6 +75,8 @@ class VIP_Request_Block {
 	 * @return void|bool
 	 */
 	public static function ua( string $user_agent ) {
+		self::ignore_new_relic();
+
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && $user_agent === $_SERVER['HTTP_USER_AGENT'] ) {
 			return static::block_and_log( $user_agent, 'user-agent' );
@@ -88,6 +92,8 @@ class VIP_Request_Block {
 	 * @return void|bool
 	 */
 	public static function ua_partial_match( string $user_agent_substring ) {
+		self::ignore_new_relic();
+
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== strpos( $_SERVER['HTTP_USER_AGENT'], $user_agent_substring ) ) {
 			return static::block_and_log( $user_agent_substring, 'user-agent' );
@@ -104,6 +110,8 @@ class VIP_Request_Block {
 	 * @return void|bool
 	 */
 	public static function header( string $header, string $value ) {
+		self::ignore_new_relic();
+
 		// Normalize the header to what PHP exposes in $_SERVER:
 		// will catch both x-my-header or HTTP_X_MY_HEADER passed as a $header arg.
 		$key = str_replace( '-', '_', strtoupper( $header ) );
@@ -136,5 +144,15 @@ class VIP_Request_Block {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Ignore New Relic transactions for blocked requests.
+	 * This is to prevent the blocked requests from being reported to New Relic.
+	 */
+	private static function ignore_new_relic() {
+		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
+			newrelic_ignore_transaction();
+		}
 	}
 }
