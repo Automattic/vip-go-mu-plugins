@@ -6,6 +6,7 @@ on:
       - develop
       - staging
       - production
+      - gh-readonly-queue/**
   pull_request:
     branches:
       - develop
