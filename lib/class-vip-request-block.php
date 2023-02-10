@@ -124,6 +124,10 @@ class VIP_Request_Block {
 	 * @return true|void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
+		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
+			newrelic_ignore_transaction();
+		}
+
 		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
 			http_response_code( 403 );
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
