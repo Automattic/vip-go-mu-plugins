@@ -2,9 +2,9 @@
 /**
  * Output class
  *
- * Class QM_Output_Operations_ObjectCache_Ops
+ * Class QM_Output_Operations_Object_Cache_Ops
  */
-class QM_Output_ObjectCache_Ops extends QM_Output_Html {
+class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );

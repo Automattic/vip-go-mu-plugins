@@ -2,7 +2,7 @@
 /**
  * Data collector class
  */
-class QM_Collector_ObjectCache extends QM_Collector {
+class QM_Collector_Object_Cache extends QM_Collector {
 
 	public $id = 'object_cache';
 

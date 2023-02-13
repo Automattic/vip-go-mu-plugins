@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Class QM_Output_ObjectCache
  */
-class QM_Output_ObjectCache extends QM_Output_Html {
+class QM_Output_Object_Cache extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );

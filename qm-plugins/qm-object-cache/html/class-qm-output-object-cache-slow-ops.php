@@ -2,9 +2,9 @@
 /**
  * Output class
  *
- * Class QM_Output_Operations_ObjectCache_SlowOps
+ * Class QM_Output_Operations_Object_Cache_Slow_Ops
  */
-class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
+class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -69,7 +69,7 @@ class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
 	 * @return array
 	 */
 	public function admin_class( array $class ) {
-		$class[] = 'qm-object_cache_slowops';
+		$class[] = 'qm-object_cache_slow_ops';
 		return $class;
 	}
 
@@ -78,14 +78,14 @@ class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
 	 * @return array<string, mixed[]>
 	 */
 	public function panel_menu( array $menu ) {
-		$collector = QM_Collectors::get( 'object_cache_slowops' );
+		$collector = QM_Collectors::get( 'object_cache_slow_ops' );
 		if ( $collector ) {
 			$data = $collector->get_data();
 
 			if ( isset( $data['slow-ops'] ) && ! empty( $data['slow-ops'] ) && isset( $menu['object_cache'] ) ) {
 				$menu['object_cache']['children'][] = $this->menu( array(
-					'id'    => 'qm-object_cache_slowops',
-					'href'  => '#qm-object_cache_slowops',
+					'id'    => 'qm-object_cache_slow_ops',
+					'href'  => '#qm-object_cache_slow_ops',
 					'title' => __( 'Slow Operations', 'query-monitor' ),
 				));
 			}

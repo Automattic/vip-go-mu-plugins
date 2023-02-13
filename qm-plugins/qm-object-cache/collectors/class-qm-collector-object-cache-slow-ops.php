@@ -2,9 +2,9 @@
 /**
  * Data collector class
  */
-class QM_Collector_ObjectCache_SlowOps extends QM_Collector {
+class QM_Collector_Object_Cache_Slow_Ops extends QM_Collector {
 
-	public $id = 'object_cache_slowops';
+	public $id = 'object_cache_slow_ops';
 
 	public function name() {
 		return __( 'Slow Operations', 'qm-object-cache' );

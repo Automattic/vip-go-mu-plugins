@@ -17,17 +17,17 @@ add_action( 'plugins_loaded', function() {
 
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache.php';
-			QM_Collectors::add( new QM_Collector_ObjectCache() );
+			QM_Collectors::add( new QM_Collector_Object_Cache() );
 		}
 
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-ops.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-ops.php';
-			QM_Collectors::add( new QM_Collector_ObjectCache_Ops() );
+			QM_Collectors::add( new QM_Collector_Object_Cache_Ops() );
 		}
 
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php';
-			QM_Collectors::add( new QM_Collector_ObjectCache_SlowOps() );
+			QM_Collectors::add( new QM_Collector_Object_Cache_Slow_Ops() );
 		}
 	}
 
@@ -41,7 +41,7 @@ add_action( 'plugins_loaded', function() {
 
 			$collector = QM_Collectors::get( 'object_cache' );
 			if ( $collector ) {
-				$output['object_cache'] = new QM_Output_ObjectCache( $collector );
+				$output['object_cache'] = new QM_Output_Object_Cache( $collector );
 			}
 		}
 
@@ -50,16 +50,16 @@ add_action( 'plugins_loaded', function() {
 
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
-				$output['object_cache_ops'] = new QM_Output_ObjectCache_Ops( $collector );
+				$output['object_cache_ops'] = new QM_Output_Object_Cache_Ops( $collector );
 			}
 		}
 
 		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php' ) ) {
 			require_once __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php';
 
-			$collector = QM_Collectors::get( 'object_cache_slowops' );
+			$collector = QM_Collectors::get( 'object_cache_slow_ops' );
 			if ( $collector ) {
-				$output['object_cache_slowops'] = new QM_Output_ObjectCache_SlowOps( $collector );
+				$output['object_cache_slow_ops'] = new QM_Output_Object_Cache_Slow_Ops( $collector );
 			}
 		}
 
