@@ -12,8 +12,11 @@ class Sync {
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
+	// the maximum amount of blogs we want to sync.
+	const BLOGS_TO_SYNC_LIMIT = 10;
+
 	/**
-	 * @var array List of blogIDs that need a sync
+	 * @var array List of blogIDs that need a sync, capped by $self::BLOGS_TO_SYNC_LIMIT
 	 */
 	private $blogs_to_sync = [];
 
@@ -32,7 +35,7 @@ class Sync {
 	}
 
 	public function init_listeners() {
-		add_action( 'update_option_siteurl', array( $this, 'queue_sync_for_blog' ) );
+		add_action( 'update_option_siteurl', [ $this, 'queue_sync_for_blog' ] );
 		add_action( 'update_option_home', [ $this, 'queue_sync_for_blog' ] );
 
 		add_action( 'shutdown', [ $this, 'run_sync_checks' ], PHP_INT_MAX );
@@ -84,6 +87,11 @@ class Sync {
 	public function queue_sync_for_blog() {
 		$blog_id = get_current_blog_id();
 
+		// don't array_push if $this->blogs_to_sync has more then $this->BLOGS_TO_SYNC_LIMIT records already.
+		// we'll rely on the cron schedule to sync the rest.
+		if ( count( $this->blogs_to_sync ) >= self::BLOGS_TO_SYNC_LIMIT ) {
+			return;
+		}
 		if ( ! in_array( $blog_id, $this->blogs_to_sync ) ) {
 			array_push( $this->blogs_to_sync, $blog_id );
 		}
@@ -100,7 +108,6 @@ class Sync {
 
 			$this->put_site_details();
 		}
-		
 		foreach ( $this->blogs_to_sync as $blog_id ) {
 			if ( $blog_id !== $original_blog_id ) {
 				switch_to_blog( $blog_id );
