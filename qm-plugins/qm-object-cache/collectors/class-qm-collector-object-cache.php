@@ -17,7 +17,7 @@ class QM_Collector_ObjectCache extends QM_Collector {
 		}
 		$stats = $wp_object_cache->get_stats();
 
-		$this->data['totals'] = $stats['totals'] ?? null;
-		$this->data['stats']  = $stats['stats'] ?? null;
+		$this->data['totals']           = $stats['totals'] ?? null;
+		$this->data['operation_counts'] = $stats['operation_counts'] ?? null;
 	}
 }

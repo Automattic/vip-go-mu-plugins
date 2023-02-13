@@ -7,12 +7,12 @@
 class QM_Output_ObjectCache_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
+		parent::__construct( $collector );
+
 		global $wp_object_cache;
 		if ( ! method_exists( $wp_object_cache, 'get_stats' ) ) {
 			return;
 		}
-
-		parent::__construct( $collector );
 
 		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
 		add_filter( 'qm/output/panel_menus', array( $this, 'panel_menu' ), 99 );

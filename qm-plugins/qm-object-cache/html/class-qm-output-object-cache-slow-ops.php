@@ -7,12 +7,12 @@
 class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
+		parent::__construct( $collector );
+
 		global $wp_object_cache;
 		if ( ! method_exists( $wp_object_cache, 'get_stats' ) ) {
 			return;
 		}
-
-		parent::__construct( $collector );
 
 		add_filter( 'qm/output/menu_class', array( $this, 'admin_class' ) );
 		add_filter( 'qm/output/panel_menus', array( $this, 'panel_menu' ), 99 );
@@ -78,12 +78,17 @@ class QM_Output_ObjectCache_SlowOps extends QM_Output_Html {
 	 * @return array<string, mixed[]>
 	 */
 	public function panel_menu( array $menu ) {
-		if ( isset( $menu['object_cache'] ) ) {
-			$menu['object_cache']['children'][] = $this->menu( array(
-				'id'    => 'qm-object_cache_slowops',
-				'href'  => '#qm-object_cache_slowops',
-				'title' => __( 'Slow Operations', 'query-monitor' ),
-			));
+		$collector = QM_Collectors::get( 'object_cache_slowops' );
+		if ( $collector ) {
+			$data = $collector->get_data();
+
+			if ( isset( $data['slow-ops'] ) && ! empty( $data['slow-ops'] ) && isset( $menu['object_cache'] ) ) {
+				$menu['object_cache']['children'][] = $this->menu( array(
+					'id'    => 'qm-object_cache_slowops',
+					'href'  => '#qm-object_cache_slowops',
+					'title' => __( 'Slow Operations', 'query-monitor' ),
+				));
+			}
 		}
 
 		return $menu;
