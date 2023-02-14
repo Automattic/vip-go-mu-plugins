@@ -88,6 +88,10 @@ class Plugin {
 		return new CollectorRegistry( $storage );
 	}
 
+	public function get_collectors(): array {
+		return $this->collectors;
+	}
+
 	/**
 	 * We're going to send the response to the client, then collect metrics from each registered collector
 	 */
