@@ -84,6 +84,10 @@ class Prometheus_Collector implements CollectorInterface {
 		// Do nothing
 	}
 
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
+
 	public static function observe_request_time( string $method, string $url, string $type, float $time ): void {
 		$instance = static::get_instance();
 		if ( $instance->request_times_histogram ) {

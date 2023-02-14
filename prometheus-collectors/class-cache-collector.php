@@ -50,6 +50,10 @@ class Cache_Collector implements CollectorInterface {
 		/* Do nothing */
 	}
 
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
+
 	/**
 	 * @global WP_Object_Cache $wp_object_cache
 	 * @codeCoverageIgnore

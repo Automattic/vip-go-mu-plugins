@@ -114,6 +114,10 @@ class Test_Prometheus extends WP_UnitTestCase {
 			public function collect_metrics(): void {
 				// Do nothing
 			}
+
+			public function process_metrics(): void {
+				// Do nothing
+			}
 		};
 
 		$collector2 = clone $collector1;

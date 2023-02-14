@@ -122,6 +122,10 @@ class OpCache_Collector implements CollectorInterface {
 		}
 	}
 
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
+
 	/**
 	 * Check if opcache is installed, enabled and configured to allow this file to call opcache api.
 	 */

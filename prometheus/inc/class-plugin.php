@@ -39,6 +39,8 @@ class Plugin {
 			add_action( 'shutdown', [ $this, 'shutdown' ], PHP_INT_MAX );
 		}
 
+		add_action( 'vip_prom_process_metrics', [ $this, 'process_metrics' ] );
+
 		do_action( 'vip_prometheus_loaded' );
 	}
 
@@ -92,6 +94,14 @@ class Plugin {
 		return $this->collectors;
 	}
 
+	public function process_metrics(): void {
+		foreach ( $this->collectors as $collector ) {
+			if ( is_callable( [ $collector, 'process_metrics' ] ) ) {
+				$collector->process_metrics();
+			}
+		}
+	}
+
 	/**
 	 * We're going to send the response to the client, then collect metrics from each registered collector
 	 */
@@ -110,6 +120,11 @@ class Plugin {
 		if ( wp_cache_add( 'last-prom-run', time(), 'vip-prom', 90 ) ) {
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
+			}
+
+			// Roughly every 10 minutes
+			if ( ! wp_next_scheduled( 'vip_prom_process_metrics' ) ) {
+				wp_schedule_single_event( time() + 600, 'vip_prom_process_metrics' );
 			}
 		}
 	}

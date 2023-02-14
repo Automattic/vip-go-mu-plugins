@@ -66,6 +66,10 @@ class Login_Stats_Collector implements CollectorInterface {
 	}
 
 	public function collect_metrics(): void {
-		// Do nothing
+		/* Do nothing */
+	}
+
+	public function process_metrics(): void {
+		/* Do nothing */
 	}
 }
