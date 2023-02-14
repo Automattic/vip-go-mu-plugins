@@ -58,6 +58,10 @@ class Wp_Cli_Db {
 			return;
 		}
 
+		if ( $this->config->is_local() ) {
+			return;
+		}
+
 		// This will throw an exception if db commands are not enabled for this env:
 		$server = $this->config->get_database_server();
 
