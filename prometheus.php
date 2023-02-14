@@ -1,5 +1,5 @@
 <?php
-
+use Automattic\VIP\Feature;
 use Automattic\VIP\Prometheus\APCu_Collector;
 use Automattic\VIP\Prometheus\Cache_Collector;
 use Automattic\VIP\Prometheus\Login_Stats_Collector;
@@ -14,8 +14,11 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-apcu-collector.php',
 		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
-		'/prometheus-collectors/class-post-stats-collector.php',
 	];
+
+	if ( Feature::is_enabled( 'prom-post-collection' ) ) {
+		$files[] = '/prometheus-collectors/class-post-collection-collector.php';
+	}
 
 	foreach ( $files as $file ) {
 		if ( ! file_exists( __DIR__ . $file ) ) {
@@ -31,7 +34,9 @@ if ( defined( 'ABSPATH' ) ) {
 			$collectors[] = new APCu_Collector();
 			$collectors[] = new OpCache_Collector();
 			$collectors[] = new Login_Stats_Collector();
-			$collectors[] = new Post_Stats_Collector();
+			if ( Feature::is_enabled( 'prom-post-collection' ) ) {
+				$collectors[] = new Post_Stats_Collector();
+			}
 		}
 
 		return $collectors;
