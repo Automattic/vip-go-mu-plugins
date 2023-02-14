@@ -49,11 +49,15 @@ class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 			foreach ( $data as $op ) {
 				echo '<tr data-qm-operation="' . esc_attr( $op_name ) . '" data-qm-group="' . esc_attr( $op['group'] ) . '">';
 				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op_name ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op['key'] ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_size( $op['size'] ) ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_time( $op['time'] ) ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op['group'] ) . '</td>';
-				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $this->process_result( $op['result'] ) ) . '</td>';
+				if ( is_array( $op['key'] ) ) {
+					$this->maybe_output_toggle_table_cell_for_array( $op['key'] );
+				} else {
+					$this->output_table_cell( $op['key'] );
+				}
+				$this->output_table_cell( $this->process_size( $op['size'] ) );
+				$this->output_table_cell( $this->process_time( $op['time'] ) );
+				$this->output_table_cell( $op['group'] );
+				$this->output_table_cell( $this->process_result( $op['result'] ) );
 				$this->output_toggle_table_cell( $op['backtrace'] );
 				echo '</tr>';
 			}
@@ -184,6 +188,42 @@ class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 		}
 		echo '</span>';
 		echo '</ol></td>';
+	}
+
+	/**
+	 * Outputs a toggleable table cell for arrays.
+	 *
+	 * @param array $array Array to be outputted in table cell
+	 */
+	public function maybe_output_toggle_table_cell_for_array( array $array ) {
+		if ( empty( $array ) ) {
+			return;
+		}
+
+		if ( count( $array ) === 1 ) {
+			$this->output_table_cell( $array[0] );
+			return;
+		}
+
+		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
+		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<ol><li>' . esc_html( $array[0] ) . ' [+' . ( count( $array ) - 1 ) . ' more]</li>';
+		unset( $array[0] );
+		echo '<span class="qm-info qm-supplemental">';
+		foreach ( $array as $element ) {
+			echo '<li>' . esc_html( $element ) . '</li>';
+		}
+		echo '</span>';
+		echo '</ol></td>';
+	}
+
+	/**
+	 * Outputs a table cell.
+	 *
+	 * @param string $value Value to be outputted in table cell
+	 */
+	public function output_table_cell( string $value ) {
+		echo '<td class="qm-nowrap qm-ltr">' . esc_html( $value ) . '</td>';
 	}
 
 }

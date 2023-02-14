@@ -185,13 +185,13 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 		}
 
 		if ( count( $array ) === 1 ) {
-			echo '<td class="qm-nowrap qm-ltr">' . esc_html( $array[0] ) . '</td>';
+			$this->output_table_cell( $array[0] );
 			return;
 		}
 
 		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
 		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<ol><li>' . esc_html( $array[0] ) . ' [+' . ( count( $array ) - 1 ) . ']</li>';
+		echo '<ol><li>' . esc_html( $array[0] ) . ' [+' . ( count( $array ) - 1 ) . ' more]</li>';
 		unset( $array[0] );
 		echo '<span class="qm-info qm-supplemental">';
 		foreach ( $array as $element ) {
