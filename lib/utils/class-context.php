@@ -34,6 +34,10 @@ class Context {
 		// phpcs:enable WordPress.VIP.SuperGlobalInputUsage.AccessDetected
 	}
 
+	public static function is_fedramp(): bool {
+		return defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' );
+	}
+
 	/**
 	 * Begin: Core-specific contexts
 	 */
