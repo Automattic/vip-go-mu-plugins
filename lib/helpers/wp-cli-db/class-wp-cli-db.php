@@ -4,6 +4,7 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB;
 
 use Exception;
 use WP_CLI;
+use WP_Error;
 
 class Wp_Cli_Db {
 	private Config $config;
@@ -30,27 +31,51 @@ class Wp_Cli_Db {
 	}
 
 	/**
-	 * Ensure the command is allowed for the current Config.
+	 * Ensure the command or query is allowed for the current Config.
 	 *
-	 * @throws Exception if the command is not allowed.
+	 * @param array $command
+	 * @return WP_Error|null
 	 */
-	public function validate_subcommand( array $command ): void {
+	public function validate_subcommand( array $command ): ?WP_Error {
 		$subcommand = $command[1] ?? '';
 
 		if ( 'query' !== $subcommand ) {
-			throw new Exception( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
+			return new \WP_Error( 'db-cli-disallowed-subcmd', 'Only the `wp db query` subcommand is permitted for this site.' );
 		}
 
 		if ( 2 === count( $command ) ) {
-			throw new Exception( 'ERROR: Please provide the database query as a part of the command.' );
+			// Doing `wp db query` without a DB query is the equivalent of doing `wp db cli`
+			return new \WP_Error( 'db-cli-missing-query', 'Please provide the database query as a part of the command.' );
 		}
+
+		$query      = $command[2];
+		$validation = $this->validate_query( $query );
+		if ( is_wp_error( $validation ) ) {
+			WP_CLI::error( $validation->get_error_message() );
+		}
+		return null;
+	}
+
+	/**
+	 * Ensure the query is allowed.
+	 *
+	 * @param string $query
+	 * @return WP_Error|null
+	 */
+	public function validate_query( string $query ): ?WP_Error {
+		$query = strtolower( $query );
+
+		if ( false !== strpos( $query, 'drop' ) ) {
+			return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
+		}
+		return null;
 	}
 
 	/**
 	 * Customize handling of the `wp db` command.
 	 * Added to the WP_CLI `before_run_command` hook.
 	 *
-	 * @throws Exception if an uncaught error occurs in any of the called functions.
+	 * @param array $command
 	 */
 	public function before_run_command( array $command ): void {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
@@ -58,16 +83,22 @@ class Wp_Cli_Db {
 			return;
 		}
 
-		if ( $this->config->is_local() ) {
+		if ( $this->config->is_local() && $this->config->is_batch() ) {
 			return;
 		}
 
-		// This will throw an exception if db commands are not enabled for this env:
-		$server = $this->config->get_database_server();
+		try {
+			$server = $this->config->get_database_server();
+		} catch ( Exception $e ) {
+			// This will throw an error if db commands are not enabled for this env
+			WP_CLI::error( $e->getMessage() );
+		}
 
 		if ( ! $this->config->is_sandbox() ) {
-			// This will throw an exception if the db subcommand is not valid:
-			$this->validate_subcommand( $command );
+			$validation = $this->validate_subcommand( $command );
+			if ( is_wp_error( $validation ) ) {
+				WP_CLI::Error( $validation->get_error_message() );
+			}
 		}
 
 		$server->define_variables();

@@ -56,59 +56,59 @@ class WP_Cli_Db_Test extends TestCase {
 		$wp_cli_db_mock->before_run_command( [ 'notdb', 'something', '--something="else"' ] );
 	}
 
-	public function test_before_run_command_db_not_enabled() {
+	public function test_get_database_server_db_not_enabled() {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
-		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'something', '--something="else"' ] );
+
+		( new Config() )->get_database_server();
 	}
 
-	public function test_before_run_command_db_not_enabled_non_1_const() {
+	public function test_get_database_server_db_not_enabled_non_1_const() {
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 'gibberish' );
+
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
-		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'something', '--something="else"' ] );
+
+		( new Config() )->get_database_server();
 	}
 
-	public function test_before_run_command_db_blocked_command_no_write() {
+	public function test_validate_subcommand_db_blocked_command_no_write() {
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'drop', 'really_important_table' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
+	}
+
+	public function test_validate_subcommand_db_read_query() {
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query', 'SELECT * FROM crypto_wallet_keys' ] );
+		$this->assertEquals( $result, null );
+	}
+
+	public function test_config_no_write() {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-		try {
-			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'drop', 'really_important_table' ] );
-		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: Only the `wp db query` subcommand is permitted for this site.', $e->getMessage() );
-			$this->addToAssertionCount( 1 );
-		}
-		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+
+		$config = new Config();
+		$result = $config->allow_writes();
+		$this->assertFalse( $result );
 	}
 
-	public function test_before_run_command_db_read_query() {
-		$GLOBALS['db_servers'] = [
-			SERVERS['rw'],
-			SERVERS['r'],
-		];
-		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query', 'SELECT * FROM crypto_wallet_keys' ] );
-		$this->assertEquals( SERVERS['r'][0], Constant_Mocker::constant( 'DB_HOST' ) );
-		$this->assertEquals( SERVERS['r'][1], Constant_Mocker::constant( 'DB_USER' ) );
-		$this->assertEquals( SERVERS['r'][2], Constant_Mocker::constant( 'DB_PASSWORD' ) );
-		$this->assertEquals( SERVERS['r'][3], Constant_Mocker::constant( 'DB_NAME' ) );
-	}
-
-	public function test_before_run_command_db_can_write() {
+	public function test_config_can_write() {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 			SERVERS['rw'],
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB_WRITES', 1 );
-		( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query', 'DROP TABLE really_important_table' ] );
+
+		$config = new Config();
+		$result = $config->allow_writes();
+		$this->assertTrue( $result );
+
+		$server = $config->get_database_server();
+		$server->define_variables();
 
 		$this->assertEquals( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
 		$this->assertEquals( SERVERS['rw'][1], Constant_Mocker::constant( 'DB_USER' ) );
@@ -116,40 +116,26 @@ class WP_Cli_Db_Test extends TestCase {
 		$this->assertEquals( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
 	}
 
-	public function test_before_run_command_no_console_cli() {
+	public function test_validate_subcommand_no_console_cli() {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-		try {
-			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'cli' ] );
-		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: Only the `wp db query` subcommand is permitted for this site.', $e->getMessage() );
-			$this->addToAssertionCount( 1 );
-		}
-		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( 'Only the `wp db query` subcommand is permitted for this site.', $result->get_error_message() );
 	}
 
-	public function test_before_run_command_no_console_query_and_no_querystring() {
+	public function test_validate_subcommand_no_console_query_and_no_querystring() {
 		$GLOBALS['db_servers'] = [
 			SERVERS['r'],
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-		try {
-			( new Wp_Cli_Db( new Config() ) )->before_run_command( [ 'db', 'query' ] );
-		} catch ( Exception $e ) {
-			$this->assertEquals( 'ERROR: Please provide the database query as a part of the command.', $e->getMessage() );
-			$this->addToAssertionCount( 1 );
-		}
-		$this->assertEquals( 1, $this->getNumAssertions(), 'before_run_command should have thrown.' );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_HOST' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_USER' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_PASSWORD' ) );
-		$this->assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
+
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( 'Please provide the database query as a part of the command.', $result->get_error_message() );
 	}
 
 	public function test_config_not_enabled_writes_disallowed_by_default() {
@@ -318,21 +304,21 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_console_is_blocked_for_cli_alone() {
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
-		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
 	}
 
 	public function test_console_is_blocked_for_cli_with_extra_commands() {
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Only the `wp db query` subcommand is permitted for this site.' );
-		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
 	}
 
 	public function test_console_is_blocked_for_query_alone() {
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'ERROR: Please provide the database query as a part of the command.' );
-		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'Please provide the database query as a part of the command.' );
 	}
 
 	public function test_console_is_allowed_for_query_with_extra_commands() {
@@ -342,5 +328,16 @@ class WP_Cli_Db_Test extends TestCase {
 		} catch ( Exception $e ) {
 			$this->fail( '`wp db query whatever` should not have thrown' );
 		}
+	}
+
+	public function test_validate_query_drop() {
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_query( 'DROP TABLE table' );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'This query is disallowed.' );
+	}
+
+	public function test_validate_query_select() {
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_query( 'SELECT * FROM wp_options WHERE option_name="home"' );
+		$this->assertFalse( is_wp_error( $result ) );
 	}
 }
