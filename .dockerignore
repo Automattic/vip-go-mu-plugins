@@ -54,6 +54,7 @@
 **/phpunit.xml.dist
 **/psalm.xml.dist
 **/wordpress.stubs
+**/.wp-env.json
 README.md
 readme.md
 readme.txt
