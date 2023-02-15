@@ -30,6 +30,7 @@
 **/.scrutinizer.yml
 **/.sonarcloud.properties
 **/.travis.yml
+**/test.sh
 .secrets/.svn
 **/.wordpress-org/
 **/composer.json
