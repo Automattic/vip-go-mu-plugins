@@ -9,9 +9,11 @@ class Config {
 	private bool $enabled      = false;
 	private bool $allow_writes = false;
 	private bool $is_sandbox   = false;
+	private bool $is_local     = false;
 
 	public function __construct() {
 		$this->is_sandbox   = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), [] );
+		$this->is_local     = defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'local' || defined( 'WP_ENVIRONMENT_TYPE' ) && constant( 'WP_ENVIRONMENT_TYPE' ) === 'local';
 		$this->enabled      = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
 		$this->allow_writes = $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
 	}
@@ -26,6 +28,10 @@ class Config {
 
 	public function is_sandbox(): bool {
 		return $this->is_sandbox;
+	}
+
+	public function is_local(): bool {
+		return $this->is_local;
 	}
 
 	/**
