@@ -75,7 +75,7 @@ class WP_Cli_Db_Test extends TestCase {
 	public function test_validate_subcommand_db_blocked_command_no_write() {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'drop', 'really_important_table' ] );
 		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
+		$this->assertEquals( $result->get_error_message(), 'The `wp db drop` subcommand is not permitted for this site.' );
 	}
 
 	public function test_validate_subcommand_db_read_query() {
@@ -124,7 +124,7 @@ class WP_Cli_Db_Test extends TestCase {
 
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
 		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( 'Only the `wp db query` subcommand is permitted for this site.', $result->get_error_message() );
+		$this->assertEquals( 'The `wp db cli` subcommand is not permitted for this site.', $result->get_error_message() );
 	}
 
 	public function test_validate_subcommand_no_console_query_and_no_querystring() {
@@ -306,13 +306,13 @@ class WP_Cli_Db_Test extends TestCase {
 	public function test_console_is_blocked_for_cli_alone() {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
 		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
+		$this->assertEquals( $result->get_error_message(), 'The `wp db cli` subcommand is not permitted for this site.' );
 	}
 
 	public function test_console_is_blocked_for_cli_with_extra_commands() {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
 		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'Only the `wp db query` subcommand is permitted for this site.' );
+		$this->assertEquals( $result->get_error_message(), 'The `wp db cli` subcommand is not permitted for this site.' );
 	}
 
 	public function test_console_is_blocked_for_query_alone() {

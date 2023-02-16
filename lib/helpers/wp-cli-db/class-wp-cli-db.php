@@ -39,11 +39,18 @@ class Wp_Cli_Db {
 	public function validate_subcommand( array $command ): ?WP_Error {
 		$subcommand = $command[1] ?? '';
 
-		if ( 'query' !== $subcommand ) {
-			return new \WP_Error( 'db-cli-disallowed-subcmd', 'Only the `wp db query` subcommand is permitted for this site.' );
+		$allowed_subcommands = [
+			'query',
+			'prefix',
+			'columns',
+			'size',
+		];
+
+		if ( ! in_array( $subcommand, $allowed_subcommands, true ) ) {
+			return new \WP_Error( 'db-cli-disallowed-subcmd', "The `wp db $subcommand` subcommand is not permitted for this site." );
 		}
 
-		if ( 2 === count( $command ) ) {
+		if ( 'query' === $subcommand && 2 === count( $command ) ) {
 			// Doing `wp db query` without a DB query is the equivalent of doing `wp db cli`
 			return new \WP_Error( 'db-cli-missing-query', 'Please provide the database query as a part of the command.' );
 		}
