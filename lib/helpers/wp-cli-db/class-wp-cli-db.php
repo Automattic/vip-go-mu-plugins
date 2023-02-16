@@ -34,9 +34,9 @@ class Wp_Cli_Db {
 	 * Ensure the command or query is allowed for the current Config.
 	 *
 	 * @param array $command
-	 * @return WP_Error|null
+	 * @return WP_Error|void
 	 */
-	public function validate_subcommand( array $command ): ?WP_Error {
+	public function validate_subcommand( array $command ) {
 		$subcommand = $command[1] ?? '';
 
 		$allowed_subcommands = [
@@ -60,16 +60,15 @@ class Wp_Cli_Db {
 		if ( is_wp_error( $validation ) ) {
 			WP_CLI::error( $validation->get_error_message() );
 		}
-		return null;
 	}
 
 	/**
 	 * Ensure the query is allowed.
 	 *
 	 * @param string $query
-	 * @return WP_Error|null
+	 * @return WP_Error|void
 	 */
-	public function validate_query( string $query ): ?WP_Error {
+	public function validate_query( string $query ) {
 		$query = strtolower( $query );
 
 		$disallowed_syntax = [ 'drop', 'create' ];
@@ -79,8 +78,6 @@ class Wp_Cli_Db {
 				return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
 			}
 		}
-
-		return null;
 	}
 
 	/**
