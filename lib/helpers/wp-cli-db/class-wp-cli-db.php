@@ -72,9 +72,14 @@ class Wp_Cli_Db {
 	public function validate_query( string $query ): ?WP_Error {
 		$query = strtolower( $query );
 
-		if ( false !== strpos( $query, 'drop' ) ) {
-			return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
+		$disallowed_syntax = [ 'drop', 'create' ];
+
+		foreach ( $disallowed_syntax as $syntax ) {
+			if ( false !== strpos( $query, $syntax ) ) {
+				return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
+			}
 		}
+
 		return null;
 	}
 

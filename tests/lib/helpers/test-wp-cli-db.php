@@ -336,6 +336,12 @@ class WP_Cli_Db_Test extends TestCase {
 		$this->assertEquals( $result->get_error_message(), 'This query is disallowed.' );
 	}
 
+	public function test_validate_query_create() {
+		$result = ( new Wp_Cli_Db( new Config() ) )->validate_query( 'CREATE TABLE wp_table' );
+		$this->assertTrue( is_wp_error( $result ) );
+		$this->assertEquals( $result->get_error_message(), 'This query is disallowed.' );
+	}
+
 	public function test_validate_query_select() {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_query( 'SELECT * FROM wp_options WHERE option_name="home"' );
 		$this->assertFalse( is_wp_error( $result ) );
