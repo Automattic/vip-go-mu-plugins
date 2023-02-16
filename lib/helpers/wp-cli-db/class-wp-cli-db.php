@@ -50,15 +50,17 @@ class Wp_Cli_Db {
 			return new \WP_Error( 'db-cli-disallowed-subcmd', "The `wp db $subcommand` subcommand is not permitted for this site." );
 		}
 
-		if ( 'query' === $subcommand && 2 === count( $command ) ) {
-			// Doing `wp db query` without a DB query is the equivalent of doing `wp db cli`
-			return new \WP_Error( 'db-cli-missing-query', 'Please provide the database query as a part of the command.' );
-		}
+		if ( 'query' === $subcommand ) {
+			if ( 2 === count( $command ) ) {
+				// Doing `wp db query` without a DB query is the equivalent of doing `wp db cli`
+				return new \WP_Error( 'db-cli-missing-query', 'Please provide the database query as a part of the command.' );
+			}
 
-		$query      = $command[2];
-		$validation = $this->validate_query( $query );
-		if ( is_wp_error( $validation ) ) {
-			WP_CLI::error( $validation->get_error_message() );
+			$query      = $command[2];
+			$validation = $this->validate_query( $query );
+			if ( is_wp_error( $validation ) ) {
+				WP_CLI::error( $validation->get_error_message() );
+			}
 		}
 	}
 
@@ -66,7 +68,7 @@ class Wp_Cli_Db {
 	 * Ensure the query is allowed.
 	 *
 	 * @param string $query
-	 * @return WP_Error|void
+	 * @return void|WP_Error
 	 */
 	public function validate_query( string $query ) {
 		$query = strtolower( $query );
