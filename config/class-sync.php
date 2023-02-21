@@ -5,10 +5,11 @@ namespace Automattic\VIP\Config;
 class Sync {
 	private static $instance;
 
-	const CRON_EVENT_NAME    = 'vip_config_sync_cron';
-	const CRON_INTERVAL_NAME = 'vip_config_sync_cron_interval';
-	const CRON_INTERVAL      = 5 * \MINUTE_IN_SECONDS;
-	const LOG_FEATURE_NAME   = 'vip_config_sync';
+	const CRON_EVENT_NAME        = 'vip_config_sync_cron';
+	const CRON_INTERVAL_NAME     = 'vip_config_sync_cron_interval';
+	const CRON_INTERVAL          = 5 * \MINUTE_IN_SECONDS;
+	const MAX_SYNCS_PER_INTERVAL = 15;
+	const LOG_FEATURE_NAME       = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
 
@@ -99,8 +100,15 @@ class Sync {
 	public function run_sync_checks() {
 		// TODO: We'll save this in the class state during an earlier hook to be extra sure nobody changed it later on via a switch_to_blog().
 		$original_blog_id = get_current_blog_id();
+		$needs_sync       = false;
 
-		if ( false !== array_search( $original_blog_id, $this->blogs_to_sync ) ) {
+		// Check if the current request changed important data on this blog.
+		$blog_had_changes = false !== array_search( $original_blog_id, $this->blogs_to_sync );
+		if ( $blog_had_changes ) {
+			$needs_sync = true;
+		}
+
+		if ( $needs_sync && ! $this->is_sync_ratelimited() ) {
 			if ( function_exists( 'fastcgi_finish_request' ) ) {
 				fastcgi_finish_request();
 			}
@@ -178,6 +186,15 @@ class Sync {
 
 		return $success;
 	}
+
+	private function is_sync_ratelimited(): bool {
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		wp_cache_add( 'sync_ratelimit', 0, 'vip_config', self::CRON_INTERVAL );
+		$count = wp_cache_incr( 'sync_ratelimit', 1, 'vip_config' );
+
+		return (int) $count > self::MAX_SYNCS_PER_INTERVAL;
+	}
+
 
 	public function put_site_details() {
 		require_once __DIR__ . '/class-site-details-index.php';
