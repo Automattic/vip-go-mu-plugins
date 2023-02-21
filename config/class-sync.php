@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\Utils\Context;
+
 class Sync {
 	private static $instance;
 
@@ -88,6 +90,10 @@ class Sync {
 	}
 
 	public function queue_sync_for_blog() {
+		// Queue the sync only from admin or CLI, to keep it out of frontend request path
+		if ( ! is_admin() && ! Context::is_wp_cli() ) {
+			return;
+		}
 		$blog_id = get_current_blog_id();
 
 		// To avoid performance issues, don't add if the count would surpass BLOGS_TO_SYNC_LIMIT.
