@@ -52,9 +52,7 @@ class Sync {
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
 
 		// Only register cron event from admin or CLI, to keep it out of frontend request path
-		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
-
-		if ( ! is_admin() && ! $is_cli ) {
+		if ( ! is_admin() && ! Context::is_wp_cli() ) {
 			return;
 		}
 
