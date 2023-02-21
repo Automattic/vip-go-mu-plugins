@@ -259,7 +259,7 @@ class Search {
 	 * @return bool Whether to load the latest version or not.
 	 */
 	public static function should_load_new_ep() {
-		if ( self::is_next_ep_constant_defined() ) {
+		if ( static::is_next_ep_constant_defined() ) {
 			return true;
 		}
 
@@ -280,7 +280,7 @@ class Search {
 
 	protected function load_dependencies() {
 		// Load ElasticPress
-		if ( self::should_load_new_ep() ) {
+		if ( static::should_load_new_ep() ) {
 			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
 		} else {
 			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
