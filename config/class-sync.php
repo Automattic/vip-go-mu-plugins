@@ -18,6 +18,7 @@ class Sync {
 
 	// List of blog IDs that need a sync, capped by BLOGS_TO_SYNC_LIMIT.
 	private $blogs_to_sync = [];
+	private $original_blog_id;
 
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Sync ) ) {
@@ -29,6 +30,9 @@ class Sync {
 	}
 
 	public function init() {
+		// Saving the initial blog_id in the init to be extra sure nobody changed it later on via a switch_to_blog().
+		$this->original_blog_id = get_current_blog_id();
+
 		$this->maybe_setup_cron();
 		$this->init_listeners();
 	}
@@ -98,12 +102,10 @@ class Sync {
 	}
 
 	public function run_sync_checks() {
-		// TODO: We'll save this in the class state during an earlier hook to be extra sure nobody changed it later on via a switch_to_blog().
-		$original_blog_id = get_current_blog_id();
-		$needs_sync       = false;
+		$needs_sync = false;
 
 		// Check if the current request changed important data on this blog.
-		$blog_had_changes = false !== array_search( $original_blog_id, $this->blogs_to_sync );
+		$blog_had_changes = false !== array_search( $this->original_blog_id, $this->blogs_to_sync );
 		if ( $blog_had_changes ) {
 			$needs_sync = true;
 		}
@@ -117,7 +119,7 @@ class Sync {
 		}
 
 		foreach ( $this->blogs_to_sync as $blog_id ) {
-			if ( $blog_id !== $original_blog_id ) {
+			if ( $blog_id !== $this->original_blog_id ) {
 				switch_to_blog( $blog_id );
 
 				// Schedule a cron event to sync the blog data asap.
