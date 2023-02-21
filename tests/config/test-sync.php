@@ -23,15 +23,24 @@ class Sync_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 */
 	public function test__vip_site_details_siteurl_update_hook() {
 		$this->check_sync_site_details_update_hook( 'siteurl', 'site_url', 'http://change-site-url.com' );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 */
 	public function test__vip_site_details_home_update_hook() {
 		$this->check_sync_site_details_update_hook( 'home', 'home_url', 'http://change-home-url.com' );
 	}
 
-	// Won't queue the change if we are not in the CLI/Admin
+	/**
+	 * Won't queue the change if we are not in the CLI/Admin
+	 * @runInSeparateProcess
+	 */
 	public function test__vip_site_details_not_queuing_on_frontend() {
 		$sync_instance = Sync::instance();
 		Site_Details_Index::instance( 100 );
@@ -45,6 +54,7 @@ class Sync_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that we don't queue more than BLOGS_TO_SYNC_LIMIT sites to sync.
+	 * We don't run it in a separate process to avoid https://core.trac.wordpress.org/ticket/51773
 	 */
 	public function test__vip_site_details_not_queuing_after_limit() {
 		if ( ! is_multisite() ) {
