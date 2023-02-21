@@ -246,9 +246,41 @@ class Search {
 		return static::$instance;
 	}
 
+	/**
+	 * Whether to load the latest ElasticPress version.
+	 * Will return true for:
+	 * - If the constant VIP_SEARCH_USE_NEXT_EP is defined and set to true
+	 * - All non-prods
+	 * - If production and in the percentage
+	 *
+	 * Will return false for:
+	 * - If in the SKIP_LOAD_NEXT_EP_IDS array
+	 *
+	 * @return bool Whether to load the latest version or not.
+	 */
+	public static function should_load_new_ep() {
+		if ( self::is_next_ep_constant_defined() ) {
+			return true;
+		}
+
+		if ( defined( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ) && defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), constant( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ), true ) ) {
+			return false;
+		}
+
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return true;
+		}
+
+		if ( \Automattic\VIP\Feature::is_enabled_by_percentage( 'vip-search-use-next-ep' ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
 	protected function load_dependencies() {
 		// Load ElasticPress
-		if ( self::is_next_ep_constant_defined() ) {
+		if ( self::should_load_new_ep() ) {
 			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
 		} else {
 			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
