@@ -35,7 +35,7 @@ class Sync_Test extends WP_UnitTestCase {
 
 		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
 
-		update_option( 'homeurl', 'https://wontsync-data.com' );
+		update_option( 'home', 'https://wontsync-data.com' );
 
 		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
 	}
