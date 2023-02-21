@@ -106,6 +106,10 @@ class Sync {
 	}
 
 	public function run_sync_checks() {
+		//don't even try to run this if we don't have blogs to sync.
+		if ( count( $this->blogs_to_sync ) == 0 ) {
+			return;
+		}
 		$needs_sync = false;
 
 		// Check if the current request changed important data on this blog.
