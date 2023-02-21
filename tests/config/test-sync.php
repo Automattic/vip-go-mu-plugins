@@ -15,10 +15,13 @@ require_once __DIR__ . '/../../config/class-site-details-index.php';
 require_once __DIR__ . '/../../config/class-sync.php';
 
 /**
- * @runTestsInSeparateProcesses
  * @preserveGlobalState disabled
  */
 class Sync_Test extends WP_UnitTestCase {
+	public function setUp(): void {
+		parent::setUp();
+		Constant_Mocker::clear();
+	}
 
 	public function test__vip_site_details_siteurl_update_hook() {
 		$this->check_sync_site_details_update_hook( 'siteurl', 'site_url', 'http://change-site-url.com' );
@@ -38,6 +41,36 @@ class Sync_Test extends WP_UnitTestCase {
 		update_option( 'home', 'https://wontsync-data.com' );
 
 		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
+	}
+
+	/**
+	 * Test that we don't queue more than BLOGS_TO_SYNC_LIMIT sites to sync.
+	 */
+	public function test__vip_site_details_not_queuing_after_limit() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Not relevant on single-site' );
+		}
+		//we need this for the queue to work.
+		Constant_Mocker::define( 'WP_CLI', true );
+
+		$sync_instance = Sync::instance();
+		Site_Details_Index::instance( 100 );
+
+		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
+
+		//
+		for ( $i = 1; $i < 15; $i ++ ) {
+			$network_site_id = self::factory()->blog->create( [
+				'domain' => 'source-domain.com',
+				'path'   => '/' . $i . '/',
+			] );
+			switch_to_blog( $network_site_id );
+			update_option( 'home', 'https://wontsync-data' . $i . '.com' );
+			restore_current_blog();
+		}
+
+		$this->assertNotEmpty( $sync_instance->get_blogs_to_sync() );
+		$this->assertCount( 10, $sync_instance->get_blogs_to_sync() );
 	}
 
 	/**
