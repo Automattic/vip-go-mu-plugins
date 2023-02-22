@@ -458,3 +458,25 @@ Cypress.Commands.add('createUser', (userData) => {
 		cy.get('#user_pass').clear().type(`${newUserDate.password}{enter}`);
 	}
 });
+
+// VIP: Check that Search Dev Tools returns a 200 status and a certain text in the response body
+Cypress.Commands.add('searchDevToolsResponseOK', (bodyText) => {
+	cy.get('#vip-search-dev-tools-mount').click();
+	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	if ( bodyText ) {
+		cy.get('.line-numbers').first().should('contain.text', bodyText);
+	}
+	cy.get('#vip-search-dev-tools-mount').click();
+});
+
+// VIP: Check that Search Dev Tools returns a 200 status and an array of certain text in the response body
+Cypress.Commands.add('searchDevToolsResponseOKArray', (array) => {
+	cy.get('#vip-search-dev-tools-mount').click();
+	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	cy.get('.line-numbers').first().invoke('text').then((text) => {
+		array.forEach((el) => {
+			expect(text).to.contain(el);
+		});
+	});
+	cy.get('#vip-search-dev-tools-mount').click();
+});

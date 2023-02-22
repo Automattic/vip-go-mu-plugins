@@ -1,7 +1,7 @@
 describe('Post Search Feature', () => {
 	before(() => {
 		cy.wpCli('vip-search index --setup --skip-confirm');
-		
+
 	});
 
 	beforeEach(() => {
@@ -20,8 +20,7 @@ describe('Post Search Feature', () => {
 				expect(debugText).not.to.contain('0 queries');
 			});
 
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
+		cy.searchDevToolsResponseOK();
 	});
 
 	it('Can see exact matches showing higher', () => {

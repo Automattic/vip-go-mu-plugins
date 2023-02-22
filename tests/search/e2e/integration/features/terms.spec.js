@@ -41,13 +41,7 @@ describe('Terms Feature', { tags: '@slow' }, () => {
 			.should('contain.text', searchTerm);
 
 		// make sure elasticsearch result does contain the term.
-		// VIP: Use Search Dev Tools instead of Debug Bar
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().click();
-		cy.get('.line-numbers')
-			.first()
-			.should('contain.text', searchTerm);
-		cy.get('#vip-search-dev-tools-mount').click();
+		cy.searchDevToolsResponseOK( searchTerm ); // VIP: Use Search Dev Tools instead of Debug Bar
 
 		// Delete the term
 		cy.get('.wp-list-table tbody tr')
@@ -66,18 +60,13 @@ describe('Terms Feature', { tags: '@slow' }, () => {
 		cy.createTerm({ name: term });
 
 		// Search for the term
+		cy.reload();
 		cy.get('#tag-search-input').type(term);
 		cy.get('#search-submit').click();
 		cy.get('.wp-list-table tbody tr').should('have.length', 1).should('contain.text', term);
 
 		// make sure elasticsearch result does contain the term.
-		// VIP: Use Search Dev Tools instead of Debug Bar
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().click();
-		cy.get('.line-numbers')
-			.first()
-			.should('contain.text', term);
-		cy.get('#vip-search-dev-tools-mount').click();
+		cy.searchDevToolsResponseOK( term ); // VIP: Use Search Dev Tools instead of Debug Bar
 
 		// Delete the term
 		cy.get('.wp-list-table tbody tr')
@@ -97,9 +86,7 @@ describe('Terms Feature', { tags: '@slow' }, () => {
 		cy.get('#search-submit').click();
 		cy.get('.wp-list-table tbody').should('contain.text', 'No categories found');
 
-		// VIP: Use Search Dev Tools instead of Debug Bar
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
+		cy.searchDevToolsResponseOK(); // VIP: Use Search Dev Tools instead of Debug Bar
 	});
 
 	it('Can return a correct tag on searching a tag in admin dashboard', () => {
@@ -119,13 +106,7 @@ describe('Terms Feature', { tags: '@slow' }, () => {
 
 		cy.get('.wp-list-table tbody tr .row-title').should('contain.text', 'The Most Fun Thing');
 
-		// VIP: Use Search Dev Tools instead of Debug Bar
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().click();
-		cy.get('.line-numbers')
-			.first()
-			.should('contain.text', 'The Most Fun Thing');
-		cy.get('#vip-search-dev-tools-mount').click();
+		cy.searchDevToolsResponseOK( 'The Most Fun Thing' ); // VIP: Use Search Dev Tools instead of Debug Bar
 	});
 
 	it('Can update a child term when a parent term is deleted', () => {
