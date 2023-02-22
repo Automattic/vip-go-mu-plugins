@@ -135,6 +135,8 @@ class Sync {
 				restore_current_blog();
 			}
 		}
+		//clearing the sync queue after the run so that we don't sync the same blog twice
+		$this->blogs_to_sync = array();
 	}
 
 	public function do_cron( $is_faster_cron = false ) {
