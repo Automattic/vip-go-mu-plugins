@@ -33,7 +33,9 @@ class Sync {
 
 	public function init() {
 		// Saving the initial blog_id in the init to be extra sure nobody changed it later on via a switch_to_blog().
-		$this->original_blog_id = get_current_blog_id();
+		if ( is_null( $this->original_blog_id ) ) {
+			$this->original_blog_id = get_current_blog_id();
+		}
 
 		$this->maybe_setup_cron();
 		$this->init_listeners();
