@@ -106,17 +106,11 @@ class Sync {
 	}
 
 	public function run_sync_checks() {
-		//don't even try to run this if we don't have blogs to sync.
-		if ( count( $this->blogs_to_sync ) == 0 ) {
+		if ( 0 === count( $this->blogs_to_sync ) ) {
 			return;
 		}
-		$needs_sync = false;
 
-		// Check if the current request changed important data on this blog.
-		$blog_had_changes = false !== array_search( $this->original_blog_id, $this->blogs_to_sync );
-		if ( $blog_had_changes ) {
-			$needs_sync = true;
-		}
+		$needs_sync = false !== array_search( $this->original_blog_id, $this->blogs_to_sync );
 
 		if ( $needs_sync && ! $this->is_sync_ratelimited() ) {
 			if ( function_exists( 'fastcgi_finish_request' ) ) {
