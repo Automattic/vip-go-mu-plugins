@@ -35,6 +35,7 @@ describe('User Indexable', () => {
 		cy.login();
 
 		cy.maybeEnableFeature('users');
+		cy.wpCli('vip-search index --setup --skip-confirm')
 
 		createUser();
 
@@ -42,21 +43,18 @@ describe('User Indexable', () => {
 
 		cy.get('.wp-list-table').should('contain.text', 'testuser@example.com');
 		cy.getTotal(1);
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
-		cy.get('.line-numbers').first().should('contain.text','"user_email": "testuser@example.com"');
-		cy.get('#vip-search-dev-tools-mount').click();
+
+		cy.searchDevToolsResponseOK('"user_email": "testuser@example.com"'); // VIP: Use Search Dev Tools over Debug Bar
 
 		// Test if the user is still found a reindex.
-		cy.wpCli('vip-search index --setup --skip-confirm').its('stdout').should('contain', 'Number of users indexed: 2');
+		cy.wpCli('vip-search index --setup --skip-confirm').its('stdout').should('contain', 'Number of users indexed: 3'); // VIP: There's 3 users from the WooCommerce test
 
 		searchUser();
 
 		cy.get('.wp-list-table').should('contain.text', 'testuser@example.com');
 		cy.getTotal(1);
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
-		cy.get('.line-numbers').first().should('contain.text','"user_email": "testuser@example.com"');
+
+		cy.searchDevToolsResponseOK('"user_email": "testuser@example.com"'); // VIP: Use Search Dev Tools over Debug Bar
 	});
 
 	it('Can sync user meta data', () => {
@@ -77,14 +75,7 @@ describe('User Indexable', () => {
 
 		cy.get('.wp-list-table').should('contain.text', 'testuser@example.com');
 		cy.getTotal(1);
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
-		// eslint-disable-next-line jest/valid-expect-in-promise
-		cy.get('.line-numbers').first().invoke('text').then((text) => {
-			expect(text).to.contain('"user_email": "testuser@example.com"');
-			expect(text).to.contain('"value": "John"');
-			expect(text).to.contain('"value": "Doe"');
-		});
+		cy.searchDevToolsResponseOKArray( [ '"user_email": "testuser@example.com"', '"value": "John"', '"value": "Doe"' ] );
 	});
 
 	it('Only returns users from the current blog', () => {
@@ -115,8 +106,7 @@ describe('User Indexable', () => {
 		searchUser('nobloguser');
 		cy.get('.wp-list-table').should('contain.text', 'No users found.');
 		cy.getTotal(0);
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
+		cy.searchDevToolsResponseOK(); // VIP: Use Search Dev Tools over Debug Bar
 
 		// Add user to the blog.
 		cy.visitAdminPage('user-new.php');
@@ -129,8 +119,6 @@ describe('User Indexable', () => {
 		searchUser('nobloguser');
 		cy.get('.wp-list-table').should('contain.text', 'nobloguser');
 		cy.getTotal(1);
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
-		cy.get('.line-numbers').first().should('contain.text','"user_email": "no-blog-user@example.com"');
+		cy.searchDevToolsResponseOK('"user_email": "no-blog-user@example.com"'); // VIP: Use Search Dev Tools over Debug Bar
 	});
 });
