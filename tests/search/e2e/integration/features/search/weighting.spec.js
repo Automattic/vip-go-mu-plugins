@@ -1,37 +1,31 @@
 describe('Post Search Feature - Weighting Functionality', () => {
-
-	before(() => {
-		cy.wpCli('vip-search index --setup --skip-confirm');
-		
-	});
-
-	beforeEach(() => {
-		cy.login();
-	})
-
 	it("Can't find a post by title if title is not marked as searchable", () => {
+		cy.login();
+
+		cy.updateWeighting();
 
 		cy.publishPost({
-			title: 'Test ElasticPress 1',
+			title: 'supercustomtitle',
 		});
 
-		cy.visit('/?s=Test+ElasticPress+1');
-		cy.get('.hentry').should('contain.text', 'Test ElasticPress 1');
+		cy.visit('/?s=supercustomtitle');
+		cy.get('.hentry').should('contain.text', 'supercustomtitle');
 
 		cy.visitAdminPage('admin.php?page=elasticpress-weighting');
-		cy.get('#post-post_title-enabled').click();
+		cy.get('#post-post_title-enabled').uncheck();
 		cy.get('#submit').click();
 
-		cy.visit('/?s=Test+ElasticPress+1');
+		cy.visit('/?s=supercustomtitle');
 		cy.get('.hentry').should('not.exist');
 
 		// Reset setting.
 		cy.visitAdminPage('admin.php?page=elasticpress-weighting');
-		cy.get('#post-post_title-enabled').click();
+		cy.get('#post-post_title-enabled').check();
 		cy.get('#submit').click();
 	});
 
 	it('Can increase post_title weighting and influence search results', () => {
+		cy.login();
 
 		const postsData = [
 			{

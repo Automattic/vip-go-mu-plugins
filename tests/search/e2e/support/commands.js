@@ -480,3 +480,20 @@ Cypress.Commands.add('searchDevToolsResponseOKArray', (array) => {
 	});
 	cy.get('#vip-search-dev-tools-mount').click();
 });
+
+// VIP: Since the login times out, we should re-login if redirected.
+Cypress.Commands.add('maybeRelogin', (username = 'test@test.com', password = 'password') => {
+	cy.url().then(url => {
+		const urlObject = new URL(url);
+		const pathname = urlObject.pathname;
+		if ( pathname.includes('wp-login.php') ) {
+			cy.get('body').then(($body) => {
+				if ($body.find('#wpwrap').length === 0) {
+					cy.get('input#user_login').clear();
+					cy.get('input#user_login').click().type(username);
+					cy.get('input#user_pass').type(`${password}{enter}`);
+				}
+			});
+		}
+	});
+});
