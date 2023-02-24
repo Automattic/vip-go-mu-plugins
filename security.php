@@ -300,7 +300,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 function vip_send_wplogin_header( $user ) {
 	if ( $user && isset( $_SERVER['HTTP_X_WPLOGIN'] ) && 'yes' === $_SERVER['HTTP_X_WPLOGIN'] && class_exists( 'WP_User' ) ) {
 		$_user = new WP_User( $user );
-		if ( $_user ) {
+		if ( isset( $_user->user_login ) ) {
 			header( 'X-wplogin: ' . $_user->user_login );
 		}
 		unset( $_SERVER['HTTP_X_WPLOGIN'] );
