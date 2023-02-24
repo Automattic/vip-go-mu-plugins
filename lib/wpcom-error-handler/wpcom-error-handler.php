@@ -208,6 +208,20 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		error_log( sprintf( '%s: %s in %s on line %d [%s] [%s]', $string, $message, $file, $line, $source, $backtrace ) );
 	}
 
+	if ( function_exists( 'do_action' ) ) {
+		/**
+		 * Fires when a PHP error occurs.
+		 *
+		 * @since 2.1.0
+		 *
+		 * @param string $string  Error type.
+		 * @param string $message Error message.
+		 * @param string $file    Error file.
+		 * @param int    $line    Error line.
+		 */
+		do_action( 'php_error_handler', $string, $message, $file, $line );
+	}
+
 	// When we run at shutdown we must not die as then the pretty printing of the Error doesn't happen which is lame sauce.
 	if ( $die && $whether_i_may_die ) {
 		die( 1 );

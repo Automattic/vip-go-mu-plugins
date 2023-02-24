@@ -5,14 +5,17 @@ use Automattic\VIP\Prometheus\Cache_Collector;
 use Automattic\VIP\Prometheus\Login_Stats_Collector;
 use Automattic\VIP\Prometheus\OpCache_Collector;
 use Automattic\VIP\Prometheus\Post_Stats_Collector;
+use Automattic\VIP\Prometheus\Error_Stats_Collector;
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
+	require_once __DIR__ . '/prometheus/index.php';
+
 	$files = [
-		'/prometheus/index.php',
 		'/prometheus-collectors/class-cache-collector.php',
 		'/prometheus-collectors/class-apcu-collector.php',
 		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
+		'/prometheus-collectors/class-error-stats-collector.php',
 	];
 
 	$should_enable_post_collector = Feature::is_enabled( 'prom-post-collection' ) || ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV );
@@ -23,7 +26,7 @@ if ( defined( 'ABSPATH' ) ) {
 
 	foreach ( $files as $file ) {
 		if ( ! file_exists( __DIR__ . $file ) ) {
-			return; // Bail early if one of the files doesn't exist.
+			continue; // Skip to the next one
 		} else {
 			require_once __DIR__ . $file;
 		}
@@ -31,13 +34,14 @@ if ( defined( 'ABSPATH' ) ) {
 
 	add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ): array {
 		if ( 'vip_mu_plugins_loaded' === $hook ) {
-			$collectors[] = new Cache_Collector();
-			$collectors[] = new APCu_Collector();
-			$collectors[] = new OpCache_Collector();
-			$collectors[] = new Login_Stats_Collector();
+			$collectors['cache']   = new Cache_Collector();
+			$collectors['apcu']    = new APCu_Collector();
+			$collectors['opcache'] = new OpCache_Collector();
+			$collectors['login']   = new Login_Stats_Collector();
 			if ( class_exists( Post_Stats_Collector::class ) ) {
-				$collectors[] = new Post_Stats_Collector();
+				$collectors['post'] = new Post_Stats_Collector();
 			}
+			$collectors['error'] = new Error_Stats_Collector();
 		}
 
 		return $collectors;
