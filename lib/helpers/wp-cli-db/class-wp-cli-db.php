@@ -58,8 +58,8 @@ class Wp_Cli_Db {
 
 			$query      = $command[2];
 			$validation = $this->validate_query( $query );
-			if ( is_wp_error( $validation ) ) {
-				WP_CLI::error( $validation->get_error_message() );
+			if ( ! $validation ) {
+				return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
 			}
 		}
 	}
@@ -67,19 +67,20 @@ class Wp_Cli_Db {
 	/**
 	 * Ensure the query is allowed.
 	 *
-	 * @param string $query
-	 * @return void|WP_Error
+	 * @param string $query Query to execute.
+	 * @return bool Whether query is allowed or not.
 	 */
 	public function validate_query( string $query ) {
 		$query = strtolower( $query );
 
-		$disallowed_syntax = [ 'drop', 'create' ];
+		$disallowed_syntax = [ 'drop', 'create', 'truncate' ];
 
 		foreach ( $disallowed_syntax as $syntax ) {
 			if ( false !== strpos( $query, $syntax ) ) {
-				return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
+				return false;
 			}
 		}
+		return true;
 	}
 
 	/**
