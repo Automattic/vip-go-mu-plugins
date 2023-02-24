@@ -237,7 +237,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 	/**
 	 * Login Limiting Username Threshold
-	 * 
+	 *
 	 * @param string $username Username of the login request
 	 */
 	$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
@@ -264,7 +264,7 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 
 		/**
 		 * Password Reset Username Threshold
-		 * 
+		 *
 		 * @param string $username Username of the password reset request
 		 */
 		$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
@@ -291,3 +291,20 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	return false;
 }
 
+/**
+ * Sends a header with the username of the current user for our logs.
+ *
+ * @param int|false $user User ID
+ * @return int|false $user User ID
+ */
+function vip_send_wplogin_header( $user ) {
+	if ( $user && isset( $_SERVER['HTTP_X_WPLOGIN'] ) && 'yes' === $_SERVER['HTTP_X_WPLOGIN'] && class_exists( 'WP_User' ) ) {
+		$_user = new WP_User( $user );
+		if ( isset( $_user->user_login ) ) {
+			header( 'X-wplogin: ' . $_user->user_login );
+		}
+		unset( $_SERVER['HTTP_X_WPLOGIN'] );
+	}
+	return $user;
+}
+add_filter( 'determine_current_user', 'vip_send_wplogin_header', 10000 );
