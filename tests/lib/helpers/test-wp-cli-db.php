@@ -73,14 +73,14 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_validate_subcommand_db_blocked_command_no_write() {
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'drop', 'really_important_table' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'The `wp db drop` subcommand is not permitted for this site.' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The `wp db drop` subcommand is not permitted for this site.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'drop', 'really_important_table' ] );
 	}
 
 	public function test_validate_subcommand_db_read_query() {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query', 'SELECT * FROM crypto_wallet_keys' ] );
-		$this->assertEquals( $result, null );
+		$this->assertEquals( null, $result );
 	}
 
 	public function test_config_no_write() {
@@ -122,9 +122,9 @@ class WP_Cli_Db_Test extends TestCase {
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( 'The `wp db cli` subcommand is not permitted for this site.', $result->get_error_message() );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The `wp db cli` subcommand is not permitted for this site.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
 	}
 
 	public function test_validate_subcommand_no_console_query_and_no_querystring() {
@@ -133,9 +133,9 @@ class WP_Cli_Db_Test extends TestCase {
 		];
 		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
 
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( 'Please provide the database query as a part of the command.', $result->get_error_message() );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Please provide the database query as a part of the command' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
 	}
 
 	public function test_config_not_enabled_writes_disallowed_by_default() {
@@ -304,21 +304,21 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function test_console_is_blocked_for_cli_alone() {
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'The `wp db cli` subcommand is not permitted for this site.' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The `wp db cli` subcommand is not permitted for this site.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
 	}
 
 	public function test_console_is_blocked_for_cli_with_extra_commands() {
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'The `wp db cli` subcommand is not permitted for this site.' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'The `wp db cli` subcommand is not permitted for this site.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli', 'whatever' ] );
 	}
 
 	public function test_console_is_blocked_for_query_alone() {
-		$result = ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
-		$this->assertTrue( is_wp_error( $result ) );
-		$this->assertEquals( $result->get_error_message(), 'Please provide the database query as a part of the command.' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionMessage( 'Please provide the database query as a part of the command.' );
+		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
 	}
 
 	public function test_console_is_allowed_for_query_with_extra_commands() {

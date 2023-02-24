@@ -4,7 +4,6 @@ namespace Automattic\VIP\Helpers\WP_CLI_DB;
 
 use Exception;
 use WP_CLI;
-use WP_Error;
 
 class Wp_Cli_Db {
 	private Config $config;
@@ -34,7 +33,7 @@ class Wp_Cli_Db {
 	 * Ensure the command or query is allowed for the current Config.
 	 *
 	 * @param array $command
-	 * @return WP_Error|void
+	 * @return Exception|void
 	 */
 	public function validate_subcommand( array $command ) {
 		$subcommand = $command[1] ?? '';
@@ -47,19 +46,19 @@ class Wp_Cli_Db {
 		];
 
 		if ( ! in_array( $subcommand, $allowed_subcommands, true ) ) {
-			return new \WP_Error( 'db-cli-disallowed-subcmd', "The `wp db $subcommand` subcommand is not permitted for this site." );
+			throw new Exception( "The `wp db $subcommand` subcommand is not permitted for this site." );
 		}
 
 		if ( 'query' === $subcommand ) {
 			if ( 2 === count( $command ) ) {
 				// Doing `wp db query` without a DB query is the equivalent of doing `wp db cli`
-				return new \WP_Error( 'db-cli-missing-query', 'Please provide the database query as a part of the command.' );
+				throw new Exception( 'Please provide the database query as a part of the command.' );
 			}
 
 			$query      = $command[2];
 			$validation = $this->validate_query( $query );
 			if ( ! $validation ) {
-				return new \WP_Error( 'db-cli-disallowed-query', 'This query is disallowed.' );
+				throw new Exception( 'This query is disallowed.' );
 			}
 		}
 	}
@@ -106,11 +105,10 @@ class Wp_Cli_Db {
 			WP_CLI::error( $e->getMessage() );
 		}
 
-		if ( ! $this->config->is_sandbox() ) {
-			$validation = $this->validate_subcommand( $command );
-			if ( is_wp_error( $validation ) ) {
-				WP_CLI::Error( $validation->get_error_message() );
-			}
+		try {
+			$this->validate_subcommand( $command );
+		} catch ( Exception $e ) {
+			WP_CLI::Error( $e->getMessage() );
 		}
 
 		$server->define_variables();
