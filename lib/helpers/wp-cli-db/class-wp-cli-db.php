@@ -108,7 +108,7 @@ class Wp_Cli_Db {
 		try {
 			$this->validate_subcommand( $command );
 		} catch ( Exception $e ) {
-			WP_CLI::Error( $e->getMessage() );
+			WP_CLI::error( $e->getMessage() );
 		}
 
 		$server->define_variables();
