@@ -1,3 +1,8 @@
+#query-monitor-main .qm-hide-operation, #query-monitor-main .qm-hide-group {
+	display: none !important;
+}
+
+/* TODO: Remove the below after deployment of get_stats() */
 #query-monitor-main #object-cache-stats h2 {
 	float: left  !important;
 	clear: none !important;

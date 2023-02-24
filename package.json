@@ -33,7 +33,7 @@
     "eslint-plugin-cypress": "^2.12.1",
     "husky": "8.0.3",
     "jsdoc": "^4.0.0",
-    "junit-report-merger": "^4.0.0",
+    "junit-report-merger": "^5.0.0",
     "lint-staged": "^13.0.0",
     "mocha-junit-reporter": "^2.1.1",
     "phplint": "2.0.5",

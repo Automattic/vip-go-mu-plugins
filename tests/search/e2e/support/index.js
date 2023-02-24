@@ -39,9 +39,6 @@ cy.elasticPress = {
 		searchordering: {
 			active: 1,
 		},
-		autosuggest: {
-			active: 1,
-		},
 		woocommerce: {
 			active: 0,
 		},

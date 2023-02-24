@@ -19,14 +19,11 @@ describe('Custom Results', () => {
 		);
 	});
 
-	beforeEach(() => {
-		cy.login();
-	})
-
 	it('Can change post position and verify the result on search', () => {
 		const searchResult = [];
 		const searchTerm = 'Feature';
 
+		cy.login();
 		cy.visitAdminPage('post-new.php?post_type=ep-pointer');
 		cy.intercept('GET', 'wp-json/elasticpress/v1/pointer_preview*').as('ajaxRequest');
 
@@ -34,24 +31,29 @@ describe('Custom Results', () => {
 		cy.wait('@ajaxRequest').its('response.statusCode').should('eq', 200);
 
 		// change the position of the post
+		// eslint-disable-next-line jest/valid-expect-in-promise
 		cy.dragAndDrop(
 			'.pointers .pointer:first-of-type .dashicons-menu',
 			'.pointers .pointer:last-of-type .dashicons-menu',
 		).then(() => {
 			// save the posts positions in a list
-			cy.get('.pointers .pointer .title').each((post) => {
-				cy.wrap(post)
-					.invoke('text')
-					.then((text) => searchResult.push(text));
-			});
-			cy.get('#publish').click();
-		});
+			cy.get('.pointers .pointer .title')
+				.each((post) => {
+					searchResult.push(post[0].innerText);
+				})
+				.then(() => {
+					expect(searchResult.length).to.be.gt(0);
+					cy.get('#publish').click();
 
-		cy.visit(`?s=${searchTerm}`);
+					cy.visit(`?s=${searchTerm}`);
 
-		// verify the result of the search is in the same position.
-		cy.get('article .entry-title').each((post, index) => {
-			cy.wrap(post).invoke('text').should('eq', searchResult[index]);
+					// verify the result of the search is in the same position.
+					cy.get('h2.entry-title').each(
+						(post, index) => {
+							expect(post[0].innerText).to.equal(searchResult[index]);
+						},
+					);
+				});
 		});
 	});
 
@@ -79,25 +81,35 @@ describe('Custom Results', () => {
 		cy.get('.pointer-result:first-of-type .dashicons-plus.add-pointer').click();
 
 		// save the posts positions in a list
-		cy.get('.pointers .pointer .title').each((post) => {
-			cy.wrap(post)
-				.invoke('text')
-				.then((text) => searchResult.push(text));
-		});
+		// eslint-disable-next-line jest/valid-expect-in-promise
+		cy.get('.pointers .pointer:nth-child(-n+5) .title') // 5 being the number of posts per page, as we will check only the first page.
+			.each((post) => {
+				searchResult.push(post[0].innerText);
+			})
+			.then(() => {
+				expect(searchResult.length).to.be.gt(0);
+				cy.get('#publish')
+					.click()
+					.then(() => {
+						/**
+						 * Give Elasticsearch some time to update the posts in custom results.
+						 */
+						// eslint-disable-next-line cypress/no-unnecessary-waiting
+						cy.wait(4000);
 
-		cy.intercept('POST', '/wp-admin/admin-ajax.php*').as('ajaxRequest');
-		cy.get('#publish').click();
-		cy.wait('@ajaxRequest').its('response.statusCode').should('eq', 200);
+						// VIP: Since cron doesn't run, we need to manually force a sync and clear cache since the query will be cached.
+						cy.get('#publish').click();
+						cy.wpCli(`wp cache flush`, true);
 
-		// Since the updates typically get sent to the VIP search queue processor, we'll just force a bulk re-index.
-		cy.wpCli("vip-search index --setup --skip-confirm", true);
-		cy.wait( 2000 );
+						cy.visit(`?s=${searchTerm}`);
 
-		cy.visit(`?s=${searchTerm}`);
-
-		// verify the result of the search is in the same position.
-		cy.get('article .entry-title').each((post, index) => {
-			cy.wrap(post).invoke('text').should('eq', searchResult[index]);
-		});
+						// verify the result of the search is in the same position.
+						cy.get('h2.entry-title').each(
+							(post, index) => {
+								expect(post[0].innerText).to.equal(searchResult[index]);
+							},
+						);
+					});
+			});
 	});
 });

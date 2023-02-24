@@ -15,8 +15,6 @@ before(() => {
 			$host            = str_replace( '172.17.0.1', 'localhost', $host );
 			$index_name      = \\ElasticPress\\Indexables::factory()->get( 'post' )->get_index_name();
 			$as_endpoint_url = $host . $index_name . '/_search';
-
-			$features['autosuggest']['endpoint_url'] = $as_endpoint_url;
 		}
 
 		update_option( 'ep_feature_settings', $features );
