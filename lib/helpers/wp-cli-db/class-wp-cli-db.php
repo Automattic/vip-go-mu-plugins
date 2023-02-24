@@ -94,7 +94,7 @@ class Wp_Cli_Db {
 			return;
 		}
 
-		if ( $this->config->is_local() && $this->config->is_batch() ) {
+		if ( $this->config->is_local() ) {
 			return;
 		}
 
