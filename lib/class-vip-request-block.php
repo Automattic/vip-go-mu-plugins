@@ -50,7 +50,7 @@ class VIP_Request_Block {
 			$hdr = strtolower( $_SERVER['HTTP_TRUE_CLIENT_IP'] );
 			$bin = inet_pton( $hdr );
 			if ( $bin === $ip || $hdr === $value ) {
-				return self::block_and_log( $value, 'true-client-ip' );
+				return static::block_and_log( $value, 'true-client-ip' );
 			}
 		}
 
@@ -58,7 +58,7 @@ class VIP_Request_Block {
 			$ips = array_map( fn ( string $s ): string => strtolower( trim( $s ) ), explode( ',', $_SERVER['HTTP_X_FORWARDED_FOR'] ) );
 			$bin = array_map( 'inet_pton', $ips );
 			if ( in_array( $value, $ips, true ) || in_array( $ip, $bin, true ) ) {
-				return self::block_and_log( $value, 'x-forwarded-for' );
+				return static::block_and_log( $value, 'x-forwarded-for' );
 			}
 		}
 
@@ -75,7 +75,22 @@ class VIP_Request_Block {
 	public static function ua( string $user_agent ) {
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && $user_agent === $_SERVER['HTTP_USER_AGENT'] ) {
-			return self::block_and_log( $user_agent, 'user-agent' );
+			return static::block_and_log( $user_agent, 'user-agent' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Block by partial match of the user agent header
+	 *
+	 * @param string $user_agent_substring target user agent to be blocked.
+	 * @return void|bool
+	 */
+	public static function ua_partial_match( string $user_agent_substring ) {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( isset( $_SERVER['HTTP_USER_AGENT'] ) && false !== strpos( $_SERVER['HTTP_USER_AGENT'], $user_agent_substring ) ) {
+			return static::block_and_log( $user_agent_substring, 'user-agent' );
 		}
 
 		return false;
@@ -95,7 +110,7 @@ class VIP_Request_Block {
 		$key = sprintf( 'HTTP_%s', str_ireplace( 'HTTP_', '', $key ) );
 
 		if ( isset( $_SERVER[ $key ] ) && $value === $_SERVER[ $key ] ) {
-			return self::block_and_log( $value, $header );
+			return static::block_and_log( $value, $header );
 		}
 
 		return false;
@@ -109,6 +124,10 @@ class VIP_Request_Block {
 	 * @return true|void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
+		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
+			newrelic_ignore_transaction();
+		}
+
 		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
 			http_response_code( 403 );
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );

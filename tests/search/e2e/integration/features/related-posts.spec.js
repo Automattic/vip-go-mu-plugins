@@ -13,14 +13,76 @@ describe('Related Posts Feature', () => {
 	 */
 	beforeEach(() => {
 		cy.emptyWidgets();
-		cy.deactivatePlugin('classic-widgets', 'wpCli');
-		cy.wpCli('post list --s="Test related posts" --ep_integrate=false --format=ids').then(
-			(wpCliResponse) => {
-				if (wpCliResponse.stdout) {
-					cy.wpCli(`post delete ${wpCliResponse.stdout} --force`);
-				}
-			},
+		cy.wpCliEval(
+			`
+			WP_CLI::runcommand( 'plugin deactivate classic-widgets', [ 'return' => true ] );
+
+			$posts_ids = WP_CLI::runcommand( 'post list --s="Test related posts" --ep_integrate=false --format=ids', [ 'return' => true ] );
+			if ( $posts_ids ) {
+				WP_CLI::runcommand( "post delete {$posts_ids} --force" );
+			}
+			`,
 		);
+	});
+
+	/**
+	 * Test that the Related Posts block is functional.
+	 */
+	it('Can insert, configure, and use the Related Posts block', () => {
+		/**
+		 * Create some posts that will be related.
+		 */
+		cy.wpCliEval(
+			`
+			for ( $i = 1; $i <= 4; $i++ ) {
+				wp_insert_post(
+					[
+						'post_title'   => "Test related posts block #{$i}",
+						'post_content' => 'Inceptos tristique class ac eleifend leo',
+						'post_status'  => 'publish',
+					]
+				);
+			}
+			`,
+		);
+
+		cy.publishPost({
+			title: `Test related posts block #5`,
+			content: 'Inceptos tristique class ac eleifend leo.',
+		});
+
+		/**
+		 * On the last post insert a Related Posts block.
+		 */
+		cy.openBlockInserter();
+		cy.getBlocksList().should('contain.text', 'Related Posts (ElasticPress)');
+		cy.insertBlock('Related Posts (ElasticPress)');
+
+		/**
+		 * Verify that the block is inserted into the editor, and contains the
+		 * expected content.
+		 */
+		cy.get('.wp-block-elasticpress-related-posts').first().as('block');
+		cy.get('@block')
+			.find('li')
+			.should('contain', 'Test related posts block #')
+			.should('have.length', 5);
+
+		/**
+		 * Set the block to display 2 related posts.
+		 */
+		cy.get('@block').click();
+		cy.openBlockSettingsSidebar();
+		cy.get('input[type="number"][aria-label="Number of items"]').clearThenType('2');
+
+		/**
+		 * Verify the block has the expected output in the editor based on the
+		 * block's settings.
+		 */
+		cy.get('@block')
+			.find('li')
+			.should('contain', 'Test related posts block #')
+			.should('have.length', 2);
 	});
 
 	/**
@@ -46,17 +108,27 @@ describe('Related Posts Feature', () => {
 		/**
 		 * Create some posts that will be related and view the last post.
 		 */
-		for (let i = 0; i < 4; i++) {
-			const viewPost = i === 3;
+		cy.wpCliEval(
+			`
+			for ( $i = 1; $i <= 2; $i++ ) {
+				wp_insert_post(
+					[
+						'post_title'   => "Test related posts widget #{$i}",
+						'post_content' => 'Inceptos tristique class ac eleifend leo',
+						'post_status'  => 'publish',
+					]
+				);
+			}
+			`,
+		);
 
-			cy.publishPost(
-				{
-					title: `Test related posts widget #${i + 1}`,
-					content: 'Inceptos tristique class ac eleifend leo.',
-				},
-				viewPost,
-			);
-		}
+		cy.publishPost(
+			{
+				title: `Test related posts widget #3`,
+				content: 'Inceptos tristique class ac eleifend leo.',
+			},
+			true,
+		);
 
 		/**
 		 * Verify the widget has the expected output on the front-end based on
@@ -80,6 +152,12 @@ describe('Related Posts Feature', () => {
 		 * Widget block.
 		 */
 		cy.get(`.wp-block-legacy-widget`).first().as('widget');
-		cy.get('@widget').should('contain.text', 'ElasticPress - Related Posts');
+		cy.get('@widget').should('contain.text', 'Enterprise Search - Related Posts');
+
+		/**
+		 * Transform the legacywidget into the block.
+		 */
+		cy.get('@widget').click();
+		cy.get('.block-editor-block-switcher button').click();
 	});
 });

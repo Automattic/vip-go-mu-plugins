@@ -15,6 +15,7 @@ namespace Automattic\VIP\WP_Parsely_Integration;
 
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
+	'3.6',
 	'3.5',
 	'3.3',
 	'3.2',
@@ -190,30 +191,38 @@ function maybe_load_plugin() {
 		}
 	}
 
+	$versions_exist = false;
 	foreach ( $versions_to_try as $version ) {
 		$entry_file = __DIR__ . '/wp-parsely-' . $version . '/wp-parsely.php';
-		if ( ! is_readable( $entry_file ) ) {
-			continue;
+		if ( is_readable( $entry_file ) ) {
+			$versions_exist = true;
+			break;
 		}
+	}
 
-		$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS;
-		if ( '1' === $option_load_status && true !== $filtered_load_status ) {
-			$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT;
-		}
+	if ( ! $versions_exist ) {
+		// Attempt to load the submodule
+		$entry_file = __DIR__ . '/wp-parsely/wp-parsely.php';
+	}
 
-		// Require the actual wp-parsely plugin.
-		require_once $entry_file;
-		Parsely_Loader_Info::set_active( true );
-		Parsely_Loader_Info::set_integration_type( $integration_type );
-		Parsely_Loader_Info::set_version( $version );
+	$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS;
+	if ( '1' === $option_load_status && true !== $filtered_load_status ) {
+		$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT;
+	}
 
-		// Require VIP's customizations over wp-parsely.
-		$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
-		if ( is_readable( $vip_parsely_plugin ) ) {
-			require_once $vip_parsely_plugin;
-		}
-
+	// Require the actual wp-parsely plugin.
+	if ( ! is_readable( $entry_file ) ) {
 		return;
+	}
+	require_once $entry_file;
+	Parsely_Loader_Info::set_active( true );
+	Parsely_Loader_Info::set_integration_type( $integration_type );
+	Parsely_Loader_Info::set_version( $version );
+
+	// Require VIP's customizations over wp-parsely.
+	$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
+	if ( is_readable( $vip_parsely_plugin ) ) {
+		require_once $vip_parsely_plugin;
 	}
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin', 1 );

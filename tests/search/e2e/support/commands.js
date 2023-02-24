@@ -28,14 +28,16 @@ import 'cypress-file-upload';
 import './commands/block-editor';
 
 Cypress.Commands.add('login', (username = 'test@test.com', password = 'password') => {
-	cy.visit(`/wp-admin`);
-	cy.get('body').then(($body) => {
-		if ($body.find('#wpwrap').length === 0) {
-			cy.get('input#user_login').clear();
-			cy.get('input#user_login').click().type(username);
-			cy.get('input#user_pass').type(`${password}{enter}`);
-		}
-	});
+	cy.session([username,password], () => {
+		cy.visit(`/wp-admin`);
+		cy.get('body').then(($body) => {
+			if ($body.find('#wpwrap').length === 0) {
+				cy.get('input#user_login').clear();
+				cy.get('input#user_login').click().type(username);
+				cy.get('input#user_pass').type(`${password}{enter}`);
+			}
+		});
+	})
 });
 
 Cypress.Commands.add('visitAdminPage', (page = 'index.php') => {
@@ -420,4 +422,78 @@ Cypress.Commands.add('createAutosavePost', (postData) => {
 	// eslint-disable-next-line cypress/no-unnecessary-waiting
 	cy.wait(5000);
 	cy.deactivatePlugin('shorten-autosave', 'wpCli');
+});
+
+Cypress.Commands.add('logout', () => {
+	cy.visit('/wp-admin');
+	cy.get('body').then(($body) => {
+		if ($body.find('#wpadminbar').length !== 0) {
+			cy.get('#wp-admin-bar-my-account').invoke('addClass', 'hover');
+			cy.get('#wp-admin-bar-logout > a').click();
+		}
+	});
+});
+
+Cypress.Commands.add('createUser', (userData) => {
+	const newUserDate = {
+		username: 'testuser',
+		password: 'password',
+		email: 'testuser@example.com',
+		role: 'subscriber',
+		login: false,
+		...userData,
+	};
+
+	// delete the user.
+	cy.wpCli(`wp user delete ${newUserDate.username} --yes --network`, true);
+
+	// create the user
+	cy.wpCli(
+		`wp user create ${newUserDate.username} ${newUserDate.email} --user_pass=${newUserDate.password} --role=${newUserDate.role}`,
+	);
+
+	if (newUserDate.login) {
+		cy.visit('wp-login.php');
+		cy.get('#user_login').clear().type(newUserDate.username);
+		cy.get('#user_pass').clear().type(`${newUserDate.password}{enter}`);
+	}
+});
+
+// VIP: Check that Search Dev Tools returns a 200 status and a certain text in the response body
+Cypress.Commands.add('searchDevToolsResponseOK', (bodyText) => {
+	cy.get('#vip-search-dev-tools-mount').click();
+	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	if ( bodyText ) {
+		cy.get('.line-numbers').first().should('contain.text', bodyText);
+	}
+	cy.get('#vip-search-dev-tools-mount').click();
+});
+
+// VIP: Check that Search Dev Tools returns a 200 status and an array of certain text in the response body
+Cypress.Commands.add('searchDevToolsResponseOKArray', (array) => {
+	cy.get('#vip-search-dev-tools-mount').click();
+	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	cy.get('.line-numbers').first().invoke('text').then((text) => {
+		array.forEach((el) => {
+			expect(text).to.contain(el);
+		});
+	});
+	cy.get('#vip-search-dev-tools-mount').click();
+});
+
+// VIP: Since the login times out, we should re-login if redirected.
+Cypress.Commands.add('maybeRelogin', (username = 'test@test.com', password = 'password') => {
+	cy.url().then(url => {
+		const urlObject = new URL(url);
+		const pathname = urlObject.pathname;
+		if ( pathname.includes('wp-login.php') ) {
+			cy.get('body').then(($body) => {
+				if ($body.find('#wpwrap').length === 0) {
+					cy.get('input#user_login').clear();
+					cy.get('input#user_login').click().type(username);
+					cy.get('input#user_pass').type(`${password}{enter}`);
+				}
+			});
+		}
+	});
 });

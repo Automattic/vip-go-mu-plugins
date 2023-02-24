@@ -1,6 +1,7 @@
-describe('Facets Feature', () => {
+// eslint-disable-next-line jest/valid-describe-callback
+describe('Facets Feature', { tags: '@slow' }, () => {
 	/**
-	 * Ensure the feature is active, perform an index, and remove test posts
+	 * Ensure the feature is active, perform a sync, and remove test posts
 	 * before running tests.
 	 */
 	before(() => {
@@ -29,7 +30,7 @@ describe('Facets Feature', () => {
 	 * Test that the Facet widget is functional and can be transformed into the
 	 * Facet block.
 	 */
-	it('Can insert, configure, use the legacy Facet widget', () => {
+	it('Can insert, configure, use, and transform the legacy Facet widget', () => {
 		/**
 		 * Add the legacy widget.
 		 */
@@ -64,6 +65,26 @@ describe('Facets Feature', () => {
 		cy.get('.widget_ep-facet').first().as('widget');
 		cy.get('@widget').find('input').should('have.attr', 'placeholder', 'Search Tags');
 		cy.get('@widget').find('.terms').should('be.elementsSortedAlphabetically');
+
+		/**
+		 * Visit the block-based widgets screen.
+		 */
+		cy.deactivatePlugin('classic-widgets', 'wpCli');
+		cy.openWidgetsPage();
+
+		/**
+		 * Check that the widget is inserted in to the editor as a Legacy
+		 * Widget block.
+		 */
+		cy.get('.wp-block-legacy-widget')
+			.should('contain.text', 'Enterprise Search - Facet')
+			.first()
+			.click();
+
+		/**
+		 * Transform the legacy widget into the block.
+		 */
+		cy.get('.block-editor-block-switcher button').click();
 	});
 
 	/**
@@ -75,9 +96,11 @@ describe('Facets Feature', () => {
 		cy.wpCli( 'term create genre action');
 		cy.wpCliEval(
 			`
+			WP_CLI::runcommand( 'plugin activate cpt-and-custom-tax' );
 			WP_CLI::runcommand( 'post create --post_title="A new page" --post_type="page" --post_status="publish"' );
 			WP_CLI::runcommand( 'post create --post_title="A new post" --post_type="post" --post_status="publish"' );
 			WP_CLI::runcommand( 'post create --post_title="A new post" --post_type="post" --post_status="publish"' );
+
 			// tax_input does not seem to work properly in WP-CLI.
 			$movie_id = wp_insert_post(
 				[
@@ -88,11 +111,18 @@ describe('Facets Feature', () => {
 			);
 			if ( $movie_id ) {
 				wp_set_object_terms( $movie_id, 'action', 'genre' );
-				WP_CLI::runcommand( 'elasticpress index --include=' . $movie_id );
+				WP_CLI::runcommand( 'vip-search index --include=' . $movie_id );
 				WP_CLI::runcommand( 'rewrite flush' );
 			}
 			`,
 		);
+
+		/**
+		 * Give Elasticsearch some time to process the post.
+		 *
+		 */
+		// eslint-disable-next-line cypress/no-unnecessary-waiting
+		cy.wait(2000);
 
 		// Blog page
 		cy.visit('/');

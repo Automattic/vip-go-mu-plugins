@@ -1,13 +1,17 @@
 describe('Protected Content Feature', () => {
-	before(() => {
+	it('Can turn the feature on', () => {
+		cy.login();
+
 		cy.maybeEnableFeature('protected_content');
-		cy.wpCli('vip-search index --setup --skip-confirm');
+
+		cy.wpCli('vip-search list-features').its('stdout').should('contain', 'protected_content');
 	});
 
 	it('Can use Elasticsearch in the Posts List Admin Screen', () => {
 		cy.login();
 
 		cy.maybeEnableFeature('protected_content');
+		cy.wpCli('vip-search index --setup --skip-confirm');
 
 		cy.visitAdminPage('edit.php');
 		cy.get('#vip-search-dev-tools-mount').click();

@@ -1,4 +1,5 @@
-describe('Post Search Feature', () => {
+// eslint-disable-next-line jest/valid-describe-callback
+describe('Post Search Feature', { tags: '@slow' }, () => {
 	before(() => {
 		cy.wpCli('vip-search index --setup --skip-confirm');
 	});
@@ -8,15 +9,7 @@ describe('Post Search Feature', () => {
 
 		cy.visit('/?s=test');
 
-		// eslint-disable-next-line jest/valid-expect-in-promise
-		cy.get('#vip-search-dev-tools-mount')
-			.invoke('text')
-			.then((debugText) => {
-				expect(debugText).not.to.contain('0 queries');
-			});
-
-		cy.get('#vip-search-dev-tools-mount').click();
-		cy.get('h3.vip-h3').first().should('contain.text','(200)');
+		cy.searchDevToolsResponseOK();
 	});
 
 	it('Can see exact matches showing higher', () => {
@@ -109,7 +102,7 @@ describe('Post Search Feature', () => {
 		cy.login();
 		cy.visitAdminPage('admin.php?page=elasticpress');
 		cy.get('.ep-feature-search .settings-button').click();
-		cy.get('.ep-feature-search [name="highlight_excerpt"][value="1"]').click();
+		cy.get('.ep-feature-search [name="settings[highlight_excerpt]"][value="1"]').click();
 		cy.get('.ep-feature-search .button-primary').click();
 
 		cy.publishPost({

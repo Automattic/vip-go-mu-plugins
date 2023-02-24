@@ -19,7 +19,6 @@ describe('Post Search Feature - Synonyms Functionality', () => {
 			}
 		});
 
-		cy.login();
 
 		const postsData = [
 			{
@@ -42,7 +41,7 @@ describe('Post Search Feature - Synonyms Functionality', () => {
 		cy.get('.synonym-sets-editor').within(() => {
 			cy.get('.synonym__remove').click();
 			cy.contains('.button', 'Add Set').click();
-			cy.get('.ep-synonyms__linked-multi-input').type(`${word1}{enter}${word2}{enter}`);
+			cy.get('.components-form-token-field__input').type(`${word1}{enter}${word2}{enter}`);
 		});
 		cy.get('#synonym-root .button-primary').click();
 
@@ -66,7 +65,7 @@ describe('Post Search Feature - Synonyms Functionality', () => {
 			cy.get('.synonym__remove').click();
 			cy.contains('.button', 'Add Alternative').click();
 			cy.get('.ep-synonyms__input').type(word1);
-			cy.get('.ep-synonyms__linked-multi-input').type(`${word2}{enter}`);
+			cy.get('.components-form-token-field__input').type(`${word2}{enter}`);
 		});
 		cy.get('#synonym-root .button-primary').click();
 
@@ -123,7 +122,7 @@ describe('Post Search Feature - Synonyms Functionality', () => {
 			'exist',
 		);
 		cy.get('.synonym-alternative-editor input[value="foo"]').should('exist');
-		cy.contains('.ep-synonyms__linked-multi-input div', 'bar').should(
+		cy.contains('.synonym-alternative-editor .components-form-token-field span', 'bar').should(
 			'exist',
 		);
 	});

@@ -73,7 +73,7 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@2.1.0
+      uses: ramsey/composer-install@2.2.0
 
     - name: Set up WordPress and WordPress Test Library
       uses: sjinks/setup-wordpress-test-library@1.1.11
@@ -103,7 +103,7 @@ runs:
 
     - name: Fix wp-tests-config.php
       shell: bash
-      run: sed -i "s@define( 'WP_DEBUG', true );@// define( 'WP_DEBUG', true );@" /tmp/wordpress-tests-lib/wp-tests-config.php
+      run: ./bin/pretest.sh
 
     - name: Run tests
       shell: bash

@@ -104,13 +104,24 @@ class SettingsHealthJob {
 	 * Check settings health
 	 */
 	public function check_settings_health() {
+
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'search_health_job',
+				'message'  => 'Checking index settings health',
+				'blog_id'  => get_current_blog_id(),
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			]
+		);
+
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
+		if ( ! empty( $unhealthy_indexables ) ) {
+			$this->process_indexables_settings_health_results( $unhealthy_indexables );
 		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {

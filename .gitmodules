@@ -25,12 +25,18 @@
 [submodule "search/elasticpress"]
 	path = search/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
-[submodule "search/debug-bar-elasticpress"]
-	path = search/debug-bar-elasticpress
-	url = https://github.com/10up/debug-bar-elasticpress.git
 [submodule "jetpack"]
 	path = jetpack
 	url = https://github.com/Automattic/jetpack-production.git
 [submodule "search/elasticpress-next"]
 	path = search/elasticpress-next
 	url = https://github.com/Automattic/ElasticPress.git
+[submodule "drop-ins/wp-cache-memcached"]
+	path = drop-ins/wp-cache-memcached
+	url = https://github.com/Automattic/wp-cache-memcached.git
+[submodule "wp-parsely"]
+	path = wp-parsely
+	url = https://github.com/Parsely/wp-parsely.git
+[submodule "drop-ins/hyperdb"]
+	path = drop-ins/hyperdb
+	url = https://github.com/automattic/hyperdb

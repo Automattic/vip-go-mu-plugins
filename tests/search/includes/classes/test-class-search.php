@@ -488,93 +488,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_showing() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar enabled
-		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar plugin already loaded, therefore this test is not asserting that the plugin is loaded' );
-
-		// Be sure the constant isn't already defined (or our test does not assert that it was defined at runtime)
-		$this->assertEquals( false, Constant_Mocker::defined( 'WP_EP_DEBUG' ), 'WP_EP_DEBUG constant already defined, therefore this test is not asserting that the constant is set at runtime' );
-
-		$this->init_es();
-
-		do_action( 'plugins_loaded' );
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ), 'EP Debug Bar was not found' );
-
-		// And the debug constant should have been set (required for saving queries)
-		$this->assertEquals( true, Constant_Mocker::constant( 'WP_EP_DEBUG' ), 'Incorrect value for WP_EP_DEBUG constant' );
-	}
-
-	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when Debug Bar is disabled, but Query Monitor is showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_disabled_but_qm_enabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar disabled
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
-		// But QM enabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-
-		$this->init_es();
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
-	 * Test that we load the ElasticPress Debug Bar plugin when both Debug Bar Query Monitor are showing
-	 */
-	public function test__vip_search_loads_ep_debug_bar_when_debug_bar_and_qm_enabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar enabled
-		add_filter( 'debug_bar_enable', '__return_true', PHP_INT_MAX );
-		// And QM enabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_true', PHP_INT_MAX );
-
-		// Be sure we don't already have the class loaded (or our test does nothing)
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-
-		$this->init_es();
-
-		// Class should now exist
-		$this->assertEquals( true, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
-	 * Test that we don't load the ElasticPress Debug Bar plugin when neither Debug Bar or Query Monitor are showing
-	 */
-	public function test__vip_search_does_not_load_ep_debug_bar_when_debug_bar_and_qm_disabled() {
-		// Remove previous filters that would affect test (b/c it also uses PHP_INT_MAX priority)
-		remove_all_filters( 'debug_bar_enable' );
-
-		// Debug bar disabled
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
-		// And QM disabled
-		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
-
-		$this->init_es();
-
-		// Class should not exist
-		$this->assertEquals( false, function_exists( 'ep_add_debug_bar_panel' ) );
-	}
-
-	/**
 	 * Test that we are sending HTTP requests through the VIP helper functions
 	 */
 	public function test__vip_search_has_http_layer_filters() {
@@ -965,134 +878,6 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function get_statsd_request_mode_for_request_data() {
-		return array(
-			// Search
-			array(
-				'https://host/_search',
-				'post',
-				'search',
-			),
-			array(
-				'https://host/index-name/_search',
-				'post',
-				'search',
-			),
-			array(
-				'https://host/index-name/_search?foo=bar',
-				'post',
-				'search',
-			),
-			array(
-				'https://host/index-name/_search',
-				'get',
-				'search',
-			),
-			array(
-				'https://host/index-name/_search?foo=bar',
-				'get',
-				'search',
-			),
-
-			// Get
-			array(
-				'https://host/index-name/_doc/12345',
-				'get',
-				'get',
-			),
-			array(
-				'https://host/index-name/_doc/12345',
-				'head',
-				'other',
-			),
-			array(
-				'https://host/index-name/_mget',
-				'get',
-				'get',
-			),
-			array(
-				'https://host/index-name/_mget?foo=bar',
-				'post',
-				'get',
-			),
-
-			// Delete
-			array(
-				'https://host/index-name/_doc/12345',
-				'delete',
-				'delete',
-			),
-			array(
-				'https://host/index-name/_doc/12345?foo=bar',
-				'delete',
-				'delete',
-			),
-
-			// Indexing
-			array(
-				'https://host/index-name/_doc/12345',
-				'put',
-				'index',
-			),
-			array(
-				'https://host/index-name/_doc',
-				'post',
-				'index',
-			),
-			array(
-				'https://host/index-name/_create/12345',
-				'post',
-				'index',
-			),
-			array(
-				'https://host/index-name/_create/12345',
-				'put',
-				'index',
-			),
-			array(
-				'https://host/index-name/_update/12345',
-				'post',
-				'index',
-			),
-
-			// Bulk indexing
-			array(
-				'https://host/_bulk',
-				'post',
-				'index',
-			),
-			array(
-				'https://host/index-name/_bulk',
-				'post',
-				'index',
-			),
-			array(
-				'https://host/index-name/_bulk?foo=bar',
-				'post',
-				'index',
-			),
-		);
-	}
-
-	/**
-	 * Test that we correctly determine the right stat (referred to as "mode" on wpcom)
-	 * for a given ES url
-	 *
-	 * manage|analyze|status|langdetect|index|delete_query|get|scroll|search
-	 *
-	 * @dataProvider get_statsd_request_mode_for_request_data()
-	 */
-	public function test_get_statsd_request_mode_for_request( $url, $method, $expected_mode ) {
-		$this->search_instance->init();
-		$args = array(
-			'method' => $method,
-		);
-
-		$mode = $this->search_instance->get_statsd_request_mode_for_request( $url, $args );
-
-		$this->assertEquals( $expected_mode, $mode );
-	}
-
 	public function get_index_name_for_url_data() {
 		return array(
 			// Search
@@ -1133,30 +918,6 @@ class Search_Test extends WP_UnitTestCase {
 		$index_name = $this->search_instance->get_index_name_for_url( $url );
 
 		$this->assertEquals( $expected_index_name, $index_name );
-	}
-
-	public function get_statsd_prefix_data() {
-		return array(
-			array(
-				'https://es-ha-bur.vipv2.net:1234',
-				'search',
-				'com.wordpress.elasticsearch.bur.ha1234_vipgo.search',
-			),
-			array(
-				'https://es-ha-dca.vipv2.net:4321',
-				'index',
-				'com.wordpress.elasticsearch.dca.ha4321_vipgo.index',
-			),
-		);
-	}
-
-	/**
-	 * @dataProvider get_statsd_prefix_data
-	 */
-	public function test_get_statsd_prefix( $url, $mode, $expected ) {
-		$prefix = $this->search_instance->get_statsd_prefix( $url, $mode );
-
-		$this->assertEquals( $expected, $prefix );
 	}
 
 	/**
@@ -1323,47 +1084,6 @@ class Search_Test extends WP_UnitTestCase {
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
 		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
-	}
-
-	public function test__rate_limit_ep_query_integration__clears_start_correctly() {
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'clear_query_limiting_start_timestamp' ] )
-			->getMock();
-		$partially_mocked_search->init();
-
-		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
-
-		$partially_mocked_search->expects( $this->once() )->method( 'clear_query_limiting_start_timestamp' );
-
-		$partially_mocked_search->rate_limit_ep_query_integration( false );
-		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
-	}
-
-	public function test__record_ratelimited_query_stat__records_statsd() {
-		$stats_key = 'foo';
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_prefix', 'maybe_increment_stat' ] )
-			->getMock();
-		$partially_mocked_search->init();
-
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-
-		$partially_mocked_search->indexables = $indexables_mock;
-
-		$indexables_mock->method( 'get' )
-			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
-
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_key );
-
-		$partially_mocked_search->expects( $this->once() )
-			->method( 'maybe_increment_stat' )
-			->with( "$stats_key" );
-
-		$partially_mocked_search->record_ratelimited_query_stat();
 	}
 
 	/**
@@ -2271,167 +1991,6 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function test__filter__ep_do_intercept_request__records_statsd() {
-		$query                = [ 'url' => 'https://foo.bar' ];
-		$args                 = [];
-		$stats_prefix         = 'foo';
-		$mocked_response_body = [
-			'took' => 100,
-		];
-		$mocked_response      = [
-			'body' => wp_json_encode( $mocked_response_body ),
-		];
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat', 'maybe_send_timing_stat' ] )
-			->getMock();
-
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
-
-		$partially_mocked_search->init();
-
-		self::$mock_global_functions->method( 'mock_wp_remote_request' )
-			->willReturn( $mocked_response );
-
-		$partially_mocked_search->expects( $this->once() )
-			->method( 'maybe_increment_stat' )
-			->with( "$stats_prefix.total" );
-
-		$partially_mocked_search->expects( $this->exactly( 2 ) )
-			->method( 'maybe_send_timing_stat' )
-			->withConsecutive(
-				[ "$stats_prefix.engine", $mocked_response_body['took'] ],
-				[ "$stats_prefix.total", $this->greaterThan( 0 ) ]
-			);
-
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
-	}
-
-	public function test__filter__ep_do_intercept_request__records_statsd_per_doc() {
-		$query                = [ 'url' => 'https://foo.bar/' ];
-		$args                 = [];
-		$stats_prefix         = 'foo';
-		$mocked_response_body = [
-			'items' => [ [], [] ],
-		];
-		$mocked_response      = [
-			'body' => wp_json_encode( $mocked_response_body ),
-		];
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_send_timing_stat' ] )
-			->getMock();
-		$partially_mocked_search->method( 'is_bulk_url' )
-			->willReturn( true );
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
-		$partially_mocked_search->init();
-
-		self::$mock_global_functions->method( 'mock_wp_remote_request' )
-			->willReturn( $mocked_response );
-
-		$partially_mocked_search->expects( $this->exactly( 2 ) )
-			->method( 'maybe_send_timing_stat' )
-			->withConsecutive(
-				[ "$stats_prefix.total", $this->greaterThan( 0 ) ],
-				[ "$stats_prefix.per_doc", $this->greaterThan( 0 ) ]
-			);
-
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
-	}
-
-	public function test__filter__ep_do_intercept_request__records_statsd_on_non_200_response() {
-		$query           = [ 'url' => 'https://foo.bar' ];
-		$args            = [];
-		$stats_prefix    = 'foo';
-		$mocked_response = [
-			'response' => [
-				'code'    => 400,
-				'message' => 'Bad Request',
-			],
-		];
-
-		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
-			->getMock();
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
-		$partially_mocked_search->statsd = $statsd_mock;
-		$partially_mocked_search->init();
-
-		self::$mock_global_functions->method( 'mock_wp_remote_request' )
-			->willReturn( $mocked_response );
-
-		$partially_mocked_search->expects( $this->exactly( 2 ) )
-			->method( 'maybe_increment_stat' )
-			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ] );
-
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
-	}
-
-	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_per_msg() {
-		$query           = [ 'url' => 'https://foo.bar' ];
-		$args            = [];
-		$stats_prefix    = 'foo';
-		$mocked_response = new \WP_Error( 'code1', 'msg1' );
-		$mocked_response->add( 'code2', 'msg2' );
-
-		$statsd_mock = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
-			->getMock();
-
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
-
-		$partially_mocked_search->statsd = $statsd_mock;
-
-		$partially_mocked_search->init();
-
-		self::$mock_global_functions->method( 'mock_wp_remote_request' )
-			->willReturn( $mocked_response );
-
-		$partially_mocked_search->expects( $this->exactly( 3 ) )
-			->method( 'maybe_increment_stat' )
-			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.error" ], [ "$stats_prefix.error" ] );
-
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
-	}
-
-	public function test__filter__ep_do_intercept_request__records_statsd_on_wp_error_timeout() {
-		$query           = [ 'url' => 'https://foo.bar' ];
-		$args            = [];
-		$stats_prefix    = 'foo';
-		$mocked_response = new \WP_Error( 'code1', 'curl error 28' );
-
-		/** @var MockObject&\Automattic\VIP\Search\Search */
-		$partially_mocked_search = $this->getMockBuilder( \Automattic\VIP\Search\Search::class )
-			->setMethods( [ 'get_statsd_request_mode_for_request', 'get_statsd_prefix', 'is_bulk_url', 'maybe_increment_stat' ] )
-			->getMock();
-
-		$partially_mocked_search->method( 'get_statsd_prefix' )
-			->willReturn( $stats_prefix );
-
-		$partially_mocked_search->init();
-
-		self::$mock_global_functions->method( 'mock_wp_remote_request' )
-			->willReturn( $mocked_response );
-
-		$partially_mocked_search->expects( $this->exactly( 2 ) )
-			->method( 'maybe_increment_stat' )
-			->withConsecutive( [ "$stats_prefix.total" ], [ "$stats_prefix.timeout" ] );
-
-		$partially_mocked_search->filter__ep_do_intercept_request( null, $query, $args, 0, null );
-	}
-
 	public function test__maybe_alert_for_average_queue_time__sends_notification() {
 		$application_id      = 123;
 		$application_url     = 'http://example.org';
@@ -2654,139 +2213,6 @@ class Search_Test extends WP_UnitTestCase {
 		];
 	}
 
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_increment_stat_sampling_keep() {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->once() )
-			->method( 'increment' )
-			->with( 'test' );
-
-		$this->search_instance->maybe_increment_stat( 'test' );
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_increment_stat_sampling_drop() {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 0; // Guarantee a sampling drop
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'increment' );
-
-		$this->search_instance->maybe_increment_stat( 'test' );
-	}
-
-	/**
-	 * @dataProvider stat_sampling_invalid_stat_param_data
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_increment_stat_sampling_invalid_stat_param( $stat ) {
-		$es = new \Automattic\VIP\Search\Search();
-		$this->search_instance->init();
-
-		$es::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'increment' );
-
-		$this->search_instance->maybe_increment_stat( $stat );
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_send_timing_stat_sampling_keep() {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->once() )
-			->method( 'timing' )
-			->with( 'test', 50 );
-
-		$this->search_instance->maybe_send_timing_stat( 'test', 50 );
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_send_timing_stat_sampling_drop() {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 0; // Guarantee a sampling drop
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'timing' );
-
-		$this->search_instance->maybe_send_timing_stat( 'test', 50 );
-	}
-
-	/**
-	 * @dataProvider stat_sampling_invalid_stat_param_data
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_send_timing_stat_sampling_invalid_stat_param( $stat ) {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'timing' );
-
-		$this->search_instance->maybe_send_timing_stat( $stat, 50 );
-	}
-
-	/**
-	 * @dataProvider stat_sampling_invalid_value_param_data
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_send_timing_stat_sampling_invalid_duration_param( $value ) {
-		$this->init_es();
-
-		$this->search_instance::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->search_instance->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'timing' );
-
-		$this->search_instance->maybe_send_timing_stat( 'test', $value );
-	}
-
-
 	public function ep_handle_failed_request_data() {
 		return [
 			[
@@ -2837,7 +2263,7 @@ class Search_Test extends WP_UnitTestCase {
 					$this->anything()
 				);
 
-		$this->search_instance->ep_handle_failed_request( null, $response, [], '', null, null, '' );
+		$this->search_instance->ep_handle_failed_request( null, $response, [], null, null, '' );
 	}
 
 	/**
@@ -2858,7 +2284,7 @@ class Search_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $skiplist as $item ) {
-			$this->search_instance->ep_handle_failed_request( null, 404, [], 0, $item, null, '' );
+			$this->search_instance->ep_handle_failed_request( null, 404, [], $item, null, '' );
 		}
 	}
 
@@ -3047,7 +2473,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_enable_ep_query_logging_no_debug_tools_enabled() {
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
 		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
 
 		$this->init_es();
@@ -3060,7 +2485,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_enable_ep_query_logging_qm_enabled() {
-		add_filter( 'debug_bar_enable', '__return_false', PHP_INT_MAX );
 		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
 
 		$this->init_es();
@@ -3073,22 +2497,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_enable_ep_query_logging_debug_bar_enabled() {
-		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
-		add_filter( 'debug_bar_enable', '__return_true' );
-
-		$this->init_es();
-
-		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
-		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_enable_ep_query_logging_debug_bar_and_qm_enabled() {
-		add_filter( 'debug_bar_enable', '__return_true' );
+	public function test__maybe_enable_ep_query_logging_and_qm_enabled() {
 		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
 
 		$this->init_es();

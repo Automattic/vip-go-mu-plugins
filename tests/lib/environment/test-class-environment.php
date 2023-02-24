@@ -30,6 +30,21 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
+	public function test_has_var() {
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+
+		$this->get_var_standard_env();
+		$val = Environment::has_var( 'MY_VAR' );
+		$this->assertEquals( true, $val );
+	}
+
+	public function test_has_var_missing() {
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+
+		$val = Environment::has_var( 'MY_VAR' );
+		$this->assertEquals( false, $val );
+	}
+
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
 		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
@@ -184,6 +199,15 @@ class Environment_Test extends TestCase {
 				array(
 					'IS_VIP_BATCH_CONTAINER' => 'true',
 				),
+				// Expected result
+				true,
+			),
+			// Batch hostname, no env var
+			array(
+				// Hostname
+				'foo-batch-123123',
+				// Env vars
+				array(),
 				// Expected result
 				true,
 			),
