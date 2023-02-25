@@ -221,54 +221,64 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 
 	/**
-	 * Login Limiting IP Username Threshold
+	 * Filters the threshold for limiting logins by IP + username combination.
 	 *
-	 * @param string $ip IP address of the login request
-	 * @param string $username Username of the login request
+	 * Note that changing this value will also change the default value for the username login threshold as well,
+	 * which is set as 5 times this value.
+	 *
+	 * @param int    $threshold IP + Username combination login threshold. Default 5.
+	 * @param string $ip        IP address of the login request.
+	 * @param string $username  Username of the login request.
 	 */
 	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 5, $ip, $username );
 
 	/**
-	 * Login Limiting IP Threshold
+	 * Filters the threshold for limiting logins by IP.
 	 *
-	 * @param string $ip IP address of the login request
+	 * @param int    $threshold IP login threshold. Default 50.
+	 * @param string $ip        IP address of the login request.
 	 */
 	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50, $ip );
 
 	/**
-	 * Login Limiting Username Threshold
+	 * Filters the threshold for limiting logins by username.
 	 *
-	 * @param string $username Username of the login request
+	 * @param int    $threshold Username login threshold. Default is 5 times the IP + username combination threshold.
+	 * @param string $username  Username of the login request.
 	 */
-	$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
-	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', $username_threshold, $username );
+	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 5 * $ip_username_threshold, $username );
 
 	/**
 	 * Change the thresholds for Password Resets
 	 */
 	if ( 'lost_password_limit' === $cache_group ) {
 		/**
-		 * Password Reset Limiting IP Username Threshold
+		 * Filters the threshold for limiting password resets by IP + username combination.
 		 *
-		 * @param string $ip IP address of the password reset request
-		 * @param string $username Username of the password reset request
+		 * Note that changing this value will also change the default value for the username password reset threshold as well,
+		 * which is set as 5 times this value.
+		 *
+		 * @param int    $threshold IP + Username combination password reset threshold. Default 3.
+		 * @param string $ip        IP address of the password reset request.
+		 * @param string $username  Username of the password reset request.
 		 */
 		$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_password_reset_threshold', 3, $ip, $username );
 
 		/**
-		 * Password Reset IP Threshold
+		 * Filters the threshold for limiting password resets by IP.
 		 *
-		 * @param string $ip IP address of the password reset request
+		 * @param int    $threshold IP password reset threshold. Default 3.
+		 * @param string $ip        IP address of the password reset request.
 		 */
 		$ip_threshold = apply_filters( 'wpcom_vip_ip_password_reset_threshold', 3, $ip );
 
 		/**
-		 * Password Reset Username Threshold
+		 * Filters the threshold for limiting password resets by username.
 		 *
-		 * @param string $username Username of the password reset request
+		 * @param int    $threshold Username password reset threshold. Default is 5 times the IP + username combination threshold.
+		 * @param string $username  Username of the password reset request
 		 */
-		$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
-		$username_threshold = apply_filters( 'wpcom_vip_username_password_reset_threshold', $username_threshold, $username );
+		$username_threshold = apply_filters( 'wpcom_vip_username_password_reset_threshold', 5 * $ip_username_threshold, $username );
 	} elseif ( $is_restricted_username ) {
 		$ip_username_threshold = 2;
 	}
