@@ -108,6 +108,7 @@ class Wp_Cli_Db {
 
 		if ( isset( $assoc_args['read-write'] ) ) {
 			if ( true === $assoc_args['read-write'] || 'true' === $assoc_args['read-write'] || '1' === $assoc_args['read-write'] ) {
+				WP_CLI::confirm( "You're running in read-write mode. Would you like to proceed?" );
 				$this->config->set_allow_writes( true );
 			}
 		}
