@@ -33,7 +33,7 @@ class Wp_Cli_Db {
 			require_once $db_command_file;
 		}
 
-		WP_CLI::add_command( 'db', 'VIP_DB_Command' );
+		WP_CLI::add_command( 'db', __NAMESPACE__ . '\VIP_DB_Command' );
 	}
 
 	/**

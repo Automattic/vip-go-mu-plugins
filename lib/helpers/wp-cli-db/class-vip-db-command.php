@@ -1,5 +1,8 @@
 <?php
-class VIP_DB_Command extends DB_Command {
+
+namespace Automattic\VIP\Helpers\WP_CLI_DB;
+
+class VIP_DB_Command extends \DB_Command {
 	/**
 	 * Wrapper for WP-CLI's db query command to allow for --read-write flag to not get passed into the subcommand.
 	 *
