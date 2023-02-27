@@ -19,7 +19,7 @@ class Config {
 		$this->is_batch   = class_exists( Environment::class ) && Environment::is_batch_container( gethostname(), getenv() );
 
 		$this->enabled      = $this->is_batch || $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
-		$this->allow_writes = $this->is_batch || $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
+		$this->allow_writes = defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
 	}
 
 	public function enabled(): bool {
@@ -40,6 +40,10 @@ class Config {
 
 	public function is_batch(): bool {
 		return $this->is_batch;
+	}
+
+	public function set_allow_writes( bool $allow ): void {
+		$this->allow_writes = $allow;
 	}
 
 	/**

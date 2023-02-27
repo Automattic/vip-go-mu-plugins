@@ -22,11 +22,18 @@ class Wp_Cli_Db {
 			return;
 		}
 
-		if ( ! class_exists( 'WP_CLI' ) ) {
+		if ( ! class_exists( 'WP_CLI' ) || ! class_exists( 'DB_Command' ) ) {
 			return;
 		}
 
 		WP_CLI::add_hook( 'before_run_command', [ $this, 'before_run_command' ] );
+
+		$db_command_file = __DIR__ . '/class-vip-db-command.php';
+		if ( file_exists( $db_command_file ) ) {
+			require_once $db_command_file;
+		}
+
+		WP_CLI::add_command( 'db', 'VIP_DB_Command' );
 	}
 
 	/**
@@ -87,8 +94,9 @@ class Wp_Cli_Db {
 	 * Added to the WP_CLI `before_run_command` hook.
 	 *
 	 * @param array $command
+	 * @param array $assoc_args
 	 */
-	public function before_run_command( array $command ): void {
+	public function before_run_command( array $command, array $assoc_args = [] ): void {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
 			// Don't do anything for any command other than `db`
 			return;
@@ -96,6 +104,12 @@ class Wp_Cli_Db {
 
 		if ( $this->config->is_local() ) {
 			return;
+		}
+
+		if ( isset( $assoc_args['read-write'] ) ) {
+			if ( true === $assoc_args['read-write'] || 'true' === $assoc_args['read-write'] || '1' === $assoc_args['read-write'] ) {
+				$this->config->set_allow_writes( true );
+			}
 		}
 
 		try {

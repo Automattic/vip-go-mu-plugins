@@ -344,4 +344,14 @@ class WP_Cli_Db_Test extends TestCase {
 		$result = ( new Wp_Cli_Db( new Config() ) )->validate_query( 'SELECT * FROM wp_options WHERE option_name="home"' );
 		$this->assertTrue( $result );
 	}
+
+	public function test_allow_writes() {
+		$config = new Config();
+
+		$config->set_allow_writes( false );
+		$this->assertFalse( $config->allow_writes() );
+
+		$config->set_allow_writes( true );
+		$this->assertTrue( $config->allow_writes() );
+	}
 }
