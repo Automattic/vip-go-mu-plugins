@@ -10,7 +10,7 @@ class Sync {
 	const CRON_EVENT_NAME        = 'vip_config_sync_cron';
 	const CRON_INTERVAL_NAME     = 'vip_config_sync_cron_interval';
 	const CRON_INTERVAL          = 5 * \MINUTE_IN_SECONDS;
-	const MAX_SYNCS_PER_INTERVAL = 15;
+	const MAX_SYNCS_PER_INTERVAL = 10;
 	const LOG_FEATURE_NAME       = 'vip_config_sync';
 
 	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
@@ -53,7 +53,7 @@ class Sync {
 		add_filter( 'cron_schedules', [ $this, 'filter_cron_schedules' ] ); // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected
 		add_action( self::CRON_EVENT_NAME, [ $this, 'do_cron' ] );
 
-		// Only register cron event from admin or CLI, to keep it out of frontend request path
+		// Only register cron event from admin or CLI, to keep it out of frontend request path.
 		if ( ! is_admin() && ! Context::is_wp_cli() ) {
 			return;
 		}
@@ -90,11 +90,10 @@ class Sync {
 	}
 
 	public function queue_sync_for_blog() {
-		// Queue the sync only from admin or CLI, to keep it out of frontend request path
+		// Queue the sync only from admin or CLI, to keep it out of frontend request path.
 		if ( ! is_admin() && ! Context::is_wp_cli() ) {
 			return;
 		}
-		$blog_id = get_current_blog_id();
 
 		// To avoid performance issues, don't add if the count would surpass BLOGS_TO_SYNC_LIMIT.
 		// Can rely on the default cron schedules to sync the rest.
@@ -102,6 +101,7 @@ class Sync {
 			return;
 		}
 
+		$blog_id = get_current_blog_id();
 		if ( ! in_array( $blog_id, $this->blogs_to_sync ) ) {
 			array_push( $this->blogs_to_sync, $blog_id );
 		}
@@ -135,8 +135,9 @@ class Sync {
 				restore_current_blog();
 			}
 		}
-		//clearing the sync queue after the run so that we don't sync the same blog twice
-		$this->blogs_to_sync = array();
+
+		// Clear the sync queue after the run (in case the shutdown hook is called twice).
+		$this->blogs_to_sync = [];
 	}
 
 	public function do_cron( $is_faster_cron = false ) {
