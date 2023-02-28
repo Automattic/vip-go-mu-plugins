@@ -58,7 +58,7 @@ add_action(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( class_exists( '\Automattic\VIP\Search\Search' ) && ! \Automattic\VIP\Search\Search::should_load_new_ep() ),
+					new Expression_Condition( class_exists( '\Automattic\VIP\Search\Search' ) && method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && ! \Automattic\VIP\Search\Search::should_load_new_ep() ),
 				],
 				'new-ep-version-1',
 				'error'
