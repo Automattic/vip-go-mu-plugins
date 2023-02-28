@@ -1,5 +1,5 @@
 <?php
-if ( \Automattic\VIP\Search\Search::should_load_new_ep() ) {
+if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
 	require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
 } else {
 	require_once __DIR__ . '/../../elasticpress/elasticpress.php';
