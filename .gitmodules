@@ -31,9 +31,6 @@
 [submodule "search/elasticpress-next"]
 	path = search/elasticpress-next
 	url = https://github.com/Automattic/ElasticPress.git
-[submodule "drop-ins/wp-cache-memcached"]
-	path = drop-ins/wp-cache-memcached
-	url = https://github.com/Automattic/wp-cache-memcached.git
 [submodule "wp-parsely"]
 	path = wp-parsely
 	url = https://github.com/Parsely/wp-parsely.git

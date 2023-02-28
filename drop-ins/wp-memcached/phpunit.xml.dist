@@ -1,0 +1,25 @@
+<phpunit
+        bootstrap="tests/bootstrap.php"
+        backupGlobals="false"
+        colors="true"
+        cacheResult="false"
+        convertErrorsToExceptions="true"
+        convertNoticesToExceptions="true"
+        convertWarningsToExceptions="true"
+>
+    <testsuites>
+        <testsuite name="Unit Tests">
+            <directory prefix="test-" suffix=".php">./tests/</directory>
+        </testsuite>
+    </testsuites>
+
+    <coverage>
+        <include>
+            <file>./object-cache.php</file>
+        </include>
+        <report>
+            <clover outputFile="coverage/clover.xml"/>
+            <text outputFile="php://stdout"/>
+        </report>
+    </coverage>
+</phpunit>

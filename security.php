@@ -221,54 +221,64 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 
 	/**
-	 * Login Limiting IP Username Threshold
+	 * Filters the threshold for limiting logins by IP + username combination.
 	 *
-	 * @param string $ip IP address of the login request
-	 * @param string $username Username of the login request
+	 * Note that changing this value will also change the default value for the username login threshold as well,
+	 * which is set as 5 times this value.
+	 *
+	 * @param int    $threshold IP + Username combination login threshold. Default 5.
+	 * @param string $ip        IP address of the login request.
+	 * @param string $username  Username of the login request.
 	 */
 	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 5, $ip, $username );
 
 	/**
-	 * Login Limiting IP Threshold
+	 * Filters the threshold for limiting logins by IP.
 	 *
-	 * @param string $ip IP address of the login request
+	 * @param int    $threshold IP login threshold. Default 50.
+	 * @param string $ip        IP address of the login request.
 	 */
 	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50, $ip );
 
 	/**
-	 * Login Limiting Username Threshold
-	 * 
-	 * @param string $username Username of the login request
+	 * Filters the threshold for limiting logins by username.
+	 *
+	 * @param int    $threshold Username login threshold. Default is 5 times the IP + username combination threshold.
+	 * @param string $username  Username of the login request.
 	 */
-	$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
-	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', $username_threshold, $username );
+	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 5 * $ip_username_threshold, $username );
 
 	/**
 	 * Change the thresholds for Password Resets
 	 */
 	if ( 'lost_password_limit' === $cache_group ) {
 		/**
-		 * Password Reset Limiting IP Username Threshold
+		 * Filters the threshold for limiting password resets by IP + username combination.
 		 *
-		 * @param string $ip IP address of the password reset request
-		 * @param string $username Username of the password reset request
+		 * Note that changing this value will also change the default value for the username password reset threshold as well,
+		 * which is set as 5 times this value.
+		 *
+		 * @param int    $threshold IP + Username combination password reset threshold. Default 3.
+		 * @param string $ip        IP address of the password reset request.
+		 * @param string $username  Username of the password reset request.
 		 */
 		$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_password_reset_threshold', 3, $ip, $username );
 
 		/**
-		 * Password Reset IP Threshold
+		 * Filters the threshold for limiting password resets by IP.
 		 *
-		 * @param string $ip IP address of the password reset request
+		 * @param int    $threshold IP password reset threshold. Default 3.
+		 * @param string $ip        IP address of the password reset request.
 		 */
 		$ip_threshold = apply_filters( 'wpcom_vip_ip_password_reset_threshold', 3, $ip );
 
 		/**
-		 * Password Reset Username Threshold
-		 * 
-		 * @param string $username Username of the password reset request
+		 * Filters the threshold for limiting password resets by username.
+		 *
+		 * @param int    $threshold Username password reset threshold. Default is 5 times the IP + username combination threshold.
+		 * @param string $username  Username of the password reset request
 		 */
-		$username_threshold = 5 * $ip_username_threshold; // Default to 5 times the IP + username threshold
-		$username_threshold = apply_filters( 'wpcom_vip_username_password_reset_threshold', $username_threshold, $username );
+		$username_threshold = apply_filters( 'wpcom_vip_username_password_reset_threshold', 5 * $ip_username_threshold, $username );
 	} elseif ( $is_restricted_username ) {
 		$ip_username_threshold = 2;
 	}
@@ -291,3 +301,20 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	return false;
 }
 
+/**
+ * Sends a header with the username of the current user for our logs.
+ *
+ * @param int|false $user User ID
+ * @return int|false $user User ID
+ */
+function vip_send_wplogin_header( $user ) {
+	if ( $user && isset( $_SERVER['HTTP_X_WPLOGIN'] ) && 'yes' === $_SERVER['HTTP_X_WPLOGIN'] && class_exists( 'WP_User' ) ) {
+		$_user = new WP_User( $user );
+		if ( isset( $_user->user_login ) ) {
+			header( 'X-wplogin: ' . $_user->user_login );
+		}
+		unset( $_SERVER['HTTP_X_WPLOGIN'] );
+	}
+	return $user;
+}
+add_filter( 'determine_current_user', 'vip_send_wplogin_header', 10000 );

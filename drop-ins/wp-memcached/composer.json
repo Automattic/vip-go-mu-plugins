@@ -1,0 +1,38 @@
+{
+    "name": "automattic/wp-cache-memcached",
+    "description": "Memcached Object Cache for WordPress",
+    "type": "wordpress-dropin",
+    "require": {
+        "php": ">= 7.4"
+    },
+    "require-dev": {
+        "automattic/vipwpcs": "^2.3",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^9.5",
+        "vimeo/psalm": "^5.0",
+        "wp-phpunit/wp-phpunit": "^6.1",
+        "yoast/phpunit-polyfills": "^1.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Volodymyr Kolesnykov",
+            "email": "volodymyr@wildwolf.name"
+        }
+    ],
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "7.4"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
+    "scripts": {
+        "phpcs": "phpcs",
+        "phpcs:fix": "phpcbf",
+        "psalm": "psalm"
+    }
+}

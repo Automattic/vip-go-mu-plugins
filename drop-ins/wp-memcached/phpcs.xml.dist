@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<ruleset name="VIP-Go-mu-plugins">
+	<description>Custom ruleset for VIP Go mu-plugins</description>
+
+	<file>.</file>
+
+	<exclude-pattern>/\.git/*</exclude-pattern>
+	<exclude-pattern>/vendor/*</exclude-pattern>
+	<exclude-pattern>/stubs/*</exclude-pattern>
+
+	<arg name="basepath" value="."/>
+	<arg name="parallel" value="8"/>
+	<arg name="extensions" value="php"/>
+	<arg value="s"/>
+
+	<rule ref="PHPCompatibilityWP"/>
+	<config name="testVersion" value="7.4-"/>
+	<rule ref="WordPress-Extra"/>
+	<config name="minimum_supported_wp_version" value="5.7"/>
+
+	<rule ref="WordPress-VIP-Go">
+		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
+		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
+		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
+		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+	</rule>
+</ruleset>
