@@ -133,3 +133,8 @@ wpcom-helper.php
 
 # JS tests
 **/__tests__/
+
+# WP Memcached
+/drop-ins/wp-memcached/bin/
+/drop-ins/wp-memcached/stubs/
+/drop-ins/wp-memcached/tests/

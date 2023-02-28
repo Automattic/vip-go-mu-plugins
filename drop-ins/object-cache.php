@@ -19,7 +19,7 @@ if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
 }
 
 if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN ) {
-	require_once __DIR__ . '/wp-cache-memcached/object-cache.php';
+	require_once __DIR__ . '/wp-memcached/object-cache.php';
 } elseif ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN ) {
 	require_once __DIR__ . '/object-cache/object-cache-next.php';
 } else {
