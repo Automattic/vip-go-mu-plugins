@@ -106,9 +106,13 @@ class Wp_Cli_Db {
 			return;
 		}
 
+		$skip_confirm = isset( $assoc_args['skip-confirm'] ) && ( true === $assoc_args['skip-confirm'] || 'true' === $assoc_args['skip-confirm'] || '1' === $assoc_args['skip-confirm'] );
+
 		if ( isset( $assoc_args['read-write'] ) ) {
 			if ( true === $assoc_args['read-write'] || 'true' === $assoc_args['read-write'] || '1' === $assoc_args['read-write'] ) {
-				WP_CLI::confirm( "You're running in read-write mode. Would you like to proceed?" );
+				if ( ! $skip_confirm ) {
+					WP_CLI::confirm( "You're running in read-write mode. Would you like to proceed?" );
+				}
 				$this->config->set_allow_writes( true );
 			}
 		}
