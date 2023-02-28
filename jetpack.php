@@ -17,20 +17,24 @@
 
 // Choose an appropriate default Jetpack version, ensuring that older WordPress versions
 // are not using a too modern Jetpack version that is not compatible with it
-if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	if ( version_compare( $wp_version, '5.6', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.4' );
-	} elseif ( version_compare( $wp_version, '5.7', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.8' );
-	} elseif ( version_compare( $wp_version, '5.8', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.4' );
-	} elseif ( version_compare( $wp_version, '5.9', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.9' );
+function vip_default_jetpack_version() {
+	global $wp_version;
+
+	if ( version_compare( $wp_version, '5.9', '<' ) ) {
+		// WordPress 5.8.x and older. Not including 5.9.
+		return '10.9';
 	} elseif ( version_compare( $wp_version, '6.0', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '11.4' );
+		// WordPress 5.9.x and newer. Not including 6.0.
+		return '11.4';
 	} else {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '11.8' );
+		// WordPress 6.0 and newer
+		return '11.8';
 	}
+}
+
+// Set the default Jetpack version if it's not already defined
+if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
+	define( 'VIP_JETPACK_DEFAULT_VERSION', vip_default_jetpack_version() );
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
