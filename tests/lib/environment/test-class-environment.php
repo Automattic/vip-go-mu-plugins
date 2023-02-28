@@ -202,6 +202,15 @@ class Environment_Test extends TestCase {
 				// Expected result
 				true,
 			),
+			// Batch hostname, no env var
+			array(
+				// Hostname
+				'foo-batch-123123',
+				// Env vars
+				array(),
+				// Expected result
+				true,
+			),
 		);
 	}
 

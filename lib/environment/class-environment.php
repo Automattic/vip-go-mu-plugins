@@ -55,7 +55,7 @@ class Environment {
 	}
 
 	public static function is_batch_container( $hostname, $env = array() ) {
-		if ( false !== strpos( $hostname, '_wpcli_' ) || false !== strpos( $hostname, '_wp_cli_' ) ) {
+		if ( false !== strpos( $hostname, '_wpcli_' ) || false !== strpos( $hostname, '_wp_cli_' ) || false !== strpos( $hostname, '-batch-' ) ) {
 			return true;
 		}
 
