@@ -13,6 +13,10 @@ runs:
       shell: bash
       run: 'rsync -r --delete --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
 
+    - name: Create .version file
+      shell: bash
+      run: touch .version
+
     - name: Clean up
       shell: bash
       run: rm -rf vip-go-mu-plugins-ext
