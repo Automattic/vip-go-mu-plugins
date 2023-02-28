@@ -94,7 +94,17 @@ class Plugin {
 		return $this->collectors;
 	}
 
+	/**
+	 * Cron callback to process the metrics for collection
+	 *
+	 * @return void
+	 */
 	public function process_metrics(): void {
+		if ( Context::is_web_request() ) {
+			trigger_error( __METHOD__ . ' should not be called on web requests', E_USER_WARNING );
+			return;
+		}
+
 		foreach ( $this->collectors as $collector ) {
 			if ( is_callable( [ $collector, 'process_metrics' ] ) ) {
 				$collector->process_metrics();
