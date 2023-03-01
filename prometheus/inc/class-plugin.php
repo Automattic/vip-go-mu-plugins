@@ -39,6 +39,7 @@ class Plugin {
 			add_action( 'shutdown', [ $this, 'shutdown' ], PHP_INT_MAX );
 		}
 
+		// Cron callback to do the heavy lifting.
 		add_action( 'vip_prom_process_metrics', [ $this, 'process_metrics' ] );
 
 		do_action( 'vip_prometheus_loaded' );
@@ -117,7 +118,7 @@ class Plugin {
 	 */
 	public function shutdown(): void {
 		// This is expensive, potentially, so be mindful about when this method is called
-		// Currently it only runs on web requests with a 60 interval, see the constructor
+		// Currently it only runs on web requests with a 90 interval, see the constructor
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
 		}
