@@ -16,6 +16,8 @@ interface CollectorInterface {
 
 	/**
 	 * Process metrics off the web request path, this is useful for metrics that are expensive to calculate on every request.
+	 * @todo Disabled until after the initial production deploy. See https://github.com/Automattic/vip-go-mu-plugins/pull/4109#discussion_r1122342349
 	 */
-	public function process_metrics(): void;
+	// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
+	// public function process_metrics(): void;
 }

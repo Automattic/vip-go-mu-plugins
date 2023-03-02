@@ -9,9 +9,10 @@ use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APCng;
 use Prometheus\Storage\InMemory;
 
+// @codeCoverageIgnoreStart -- this is a standalone endpoint which doens't run in the context of the WP tests
 require_once __DIR__ . '/vendor/autoload.php';
 require_once dirname( __DIR__ ) . '/lib/utils/class-context.php';
-// @codeCoverageIgnoreStart -- APCu may or may not be available during tests
+
 // Someone is trying to be sneaky, we can't have that.
 // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 if ( defined( 'ABSPATH' ) || ! Context::is_prom_endpoint_request() ) {
