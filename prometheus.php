@@ -25,23 +25,27 @@ if ( defined( 'ABSPATH' ) ) {
 	}
 
 	foreach ( $files as $file ) {
-		if ( ! file_exists( __DIR__ . $file ) ) {
-			continue; // Skip to the next one
-		} else {
+		if ( file_exists( __DIR__ . $file ) ) {
 			require_once __DIR__ . $file;
 		}
 	}
 
 	add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ): array {
 		if ( 'vip_mu_plugins_loaded' === $hook ) {
-			$collectors['cache']   = new Cache_Collector();
-			$collectors['apcu']    = new APCu_Collector();
-			$collectors['opcache'] = new OpCache_Collector();
-			$collectors['login']   = new Login_Stats_Collector();
-			if ( class_exists( Post_Stats_Collector::class ) ) {
-				$collectors['post'] = new Post_Stats_Collector();
+			$to_init = [
+				'cache'   => Cache_Collector::class,
+				'apcu'    => APCu_Collector::class,
+				'opcache' => OpCache_Collector::class,
+				'login'   => Login_Stats_Collector::class,
+				'error'   => Error_Stats_Collector::class,
+				'post'    => Post_Stats_Collector::class,
+			];
+
+			foreach ( $to_init as $slug => $class ) {
+				if ( class_exists( $class ) ) {
+					$collectors[ $slug ] = new $class();
+				}
 			}
-			$collectors['error'] = new Error_Stats_Collector();
 		}
 
 		return $collectors;

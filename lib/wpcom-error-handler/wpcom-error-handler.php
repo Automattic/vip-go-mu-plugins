@@ -212,8 +212,6 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		/**
 		 * Fires when a PHP error occurs.
 		 *
-		 * @since 2.1.0
-		 *
 		 * @param string $string  Error type.
 		 * @param string $message Error message.
 		 * @param string $file    Error file.
