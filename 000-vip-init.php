@@ -266,7 +266,18 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+$non_prod_envs = [
+	'local',
+	'develop',
+	'preprod',
+	'staging',
+	'testing',
+	'uat',
+	'development',
+	'dev',
+	'stage',
+];
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) ) {
 	require __DIR__ . '/vip-helpers/vip-non-production.php';
 }
 
