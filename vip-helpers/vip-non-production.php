@@ -8,7 +8,7 @@ add_action( 'wp_footer', 'vip_do_non_prod_bar', 10000 );
 add_action( 'admin_footer', 'vip_do_non_prod_bar', 10000 );
 
 function vip_do_non_prod_bar() {
-	if ( is_user_logged_in() && ! is_admin_bar_showing() ) {
+	if ( ! current_user_can( 'edit_posts' ) ) {
 		return;
 	}
 
