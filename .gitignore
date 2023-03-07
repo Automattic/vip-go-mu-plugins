@@ -1,0 +1,10 @@
+vendor
+.DS_Store
+Thumbs.db
+wp-cli.local.yml
+node_modules/
+*.sql
+*.tar.gz
+*.zip
+/bin/cron-control-runner
+.phpunit.result.cache
