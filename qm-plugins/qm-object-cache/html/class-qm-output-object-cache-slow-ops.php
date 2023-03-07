@@ -54,7 +54,7 @@ class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 				} else {
 					$this->output_table_cell( $op['key'] );
 				}
-				$this->output_sortable_weight_table_cell( $this->process_size( $op['size'] ), $op['size'] );
+				$this->output_table_cell( $this->process_size( $op['size'] ), $op['size'] );
 				$this->output_table_cell( $this->process_time( $op['time'] ) );
 				$this->output_table_cell( $op['group'] );
 				$this->output_table_cell( $this->process_result( $op['result'] ) );
