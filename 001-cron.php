@@ -1,12 +1,10 @@
 <?php
-/*
-Plugin Name: Cron Control
-Plugin URI:
-Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
-Author: Erick Hitter, Automattic
-Version: 3.1
-Text Domain: automattic-cron-control
-*/
+/**
+ * Plugin Name: VIP Cron Enhancements
+ * Description: Sets up custom event storage that is concurrency-safe. WordPress cron events are then processed in parallel using dedicated cron runners.
+ * Author: Automattic
+ * Version: 1.0
+ */
 
 if ( file_exists( __DIR__ . '/cron/cron.php' ) ) {
 	require_once __DIR__ . '/cron/cron.php';
@@ -125,5 +123,9 @@ if ( ! wpcom_vip_use_core_cron() ) {
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 
-	require_once __DIR__ . '/cron-control/cron-control.php';
+	if ( ! defined( 'IS_VIP_ON_KUBERNETES' ) || true !== IS_VIP_ON_KUBERNETES ) {
+		require_once __DIR__ . '/cron/cron-control-legacy/cron-control.php';
+	} else {
+		require_once __DIR__ . '/cron/cron-control/cron-control.php';
+	}
 }
