@@ -17,7 +17,7 @@ $files = [
 ];
 
 $cli_files = [
-	// '/lib/helpers/wp-cli-db.php', - Reverting as it breaks dev-env import
+	'/lib/helpers/wp-cli-db.php',
 ];
 
 foreach ( $files as $file ) {
