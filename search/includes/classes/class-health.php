@@ -995,7 +995,7 @@ class Health {
 		$diff = [];
 
 		if ( $indexable->index_exists() ) {
-			if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+			if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
 				$index_name      = $indexable->get_index_name();
 				$settings        = $this->elasticsearch->get_index_settings( $index_name );
 				$actual_settings = $settings[ $index_name ]['settings'] ?? [];
@@ -1009,7 +1009,7 @@ class Health {
 				return $actual_settings;
 			}
 
-			if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+			if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
 				$mapping          = $indexable->generate_mapping();
 				$desired_settings = $mapping['settings'];
 			} else {
@@ -1079,7 +1079,7 @@ class Health {
 			}
 		}
 
-		if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+		if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
 			$mapping          = $indexable->generate_mapping();
 			$desired_settings = $mapping['settings'];
 		} else {
@@ -1102,7 +1102,7 @@ class Health {
 		// Limit to only the settings that we auto-heal
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
 		$index_name               = $indexable->get_index_name();
-		if ( \Automattic\VIP\Search\Search::is_next_ep_constant_defined() ) {
+		if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
 			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, true );
 		} else {
 			$result = $indexable->update_index_settings( $desired_settings_to_heal );

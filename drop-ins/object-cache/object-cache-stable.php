@@ -696,6 +696,58 @@ class WP_Object_Cache {
 		";
 	}
 
+	/**
+	 * Returns the collected raw stats.
+	 *
+	 * @return array $stats
+	 */
+	function get_stats() {
+		$stats = [];
+		$stats['totals'] = [
+			'query_time' => $this->time_total,
+			'size' => $this->size_total,
+		];
+		$stats['operation_counts'] = $this->stats;
+		$stats['operations'] = [];
+		$stats['groups'] = [];
+		$stats['slow-ops'] = [];
+		$stats['slow-ops-groups'] = [];
+		foreach ( $this->group_ops as $cache_group => $dataset ) {
+			if ( empty( $cache_group ) ) {
+				$cache_group = 'default';
+			}
+
+			foreach ( $dataset as $data ) {
+				$operation = $data[0];
+				$op = [
+					'key' => $data[1],
+					'size' => $data[2],
+					'time' => $data[3],
+					'group' => $cache_group,
+					'result' => $data[4],
+				];
+
+				if ( $cache_group === 'slow-ops' ) {
+					$key             = 'slow-ops';
+					$groups_key      = 'slow-ops-groups';
+					$op['group']     = $data[5];
+					$op['backtrace'] = $data[6];
+				} else {
+					$key        = 'operations';
+					$groups_key = 'groups';
+				}
+
+				$stats[ $key ][ $operation ][] = $op;
+
+				if ( ! in_array( $op['group'], $stats[ $groups_key ] ) ) {
+					$stats[ $groups_key ][] = $op['group'];
+				}
+			}
+		}
+
+		return $stats;
+	}
+
 	function stats() {
 		$this->js_toggle();
 

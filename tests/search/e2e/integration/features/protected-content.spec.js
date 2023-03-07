@@ -1,17 +1,17 @@
 describe('Protected Content Feature', () => {
-	before(() => {
+	it('Can turn the feature on', () => {
+		cy.login();
+
 		cy.maybeEnableFeature('protected_content');
-		cy.wpCli('vip-search index --setup --skip-confirm');
-		
+
+		cy.wpCli('vip-search list-features').its('stdout').should('contain', 'protected_content');
 	});
 
-	beforeEach(() => {
-		cy.login();
-	})
-
 	it('Can use Elasticsearch in the Posts List Admin Screen', () => {
+		cy.login();
 
 		cy.maybeEnableFeature('protected_content');
+		cy.wpCli('vip-search index --setup --skip-confirm');
 
 		cy.visitAdminPage('edit.php');
 		cy.get('#vip-search-dev-tools-mount').click();
@@ -19,6 +19,7 @@ describe('Protected Content Feature', () => {
 	});
 
 	it('Can use Elasticsearch in the Draft Posts List Admin Screen', () => {
+		cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 
@@ -41,6 +42,7 @@ describe('Protected Content Feature', () => {
 	});
 
 	it('Can sync autosaved drafts', () => {
+		cy.login();
 
 		cy.maybeEnableFeature('protected_content');
 
