@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
+use \WP_CLI\Utils;
 
 use \Automattic\VIP\Search\Queue\Schema;
 
