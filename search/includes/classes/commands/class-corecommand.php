@@ -6,6 +6,8 @@ use \WP_CLI;
 use \WP_CLI\Utils;
 use \ElasticPress\Elasticsearch;
 
+use function Automattic\VIP\Logstash\log2logstash;
+
 /**
  * Core commands for interacting with VIP Search
  *

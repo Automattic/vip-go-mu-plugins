@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
+use \WP_CLI\Utils;
 use WP_Error;
 
 require_once __DIR__ . '/../class-health.php';

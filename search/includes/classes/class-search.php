@@ -209,7 +209,7 @@ class Search {
 		$this->load_dependencies();
 		$this->setup_hooks();
 
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && \WP_CLI ) {
 			$this->load_commands();
 			$this->setup_cron_jobs();
 			$this->setup_regular_stat_collection();
@@ -349,7 +349,7 @@ class Search {
 		/**
 		 * Load CLI commands
 		 */
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			require_once __DIR__ . '/commands/class-corecommand.php';
 			require_once __DIR__ . '/commands/class-healthcommand.php';
 			require_once __DIR__ . '/commands/class-queuecommand.php';
@@ -511,7 +511,7 @@ class Search {
 		}
 
 		// Disable DB and ES query logs for CLI commands to keep memory under control
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			if ( ! defined( 'SAVEQUERIES' ) ) {
 				define( 'SAVEQUERIES', false );
 			}
@@ -695,7 +695,7 @@ class Search {
 	}
 
 	protected function load_commands() {
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			WP_CLI::add_command( 'vip-search health', __NAMESPACE__ . '\Commands\HealthCommand' );
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
@@ -917,7 +917,7 @@ class Search {
 		if ( null !== $type ) {
 			$x_opaque_id .= "_{$type}";
 		}
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			$x_opaque_id .= '_cli';
 		}
 
@@ -1150,7 +1150,7 @@ class Search {
 		// The error code for  the failed response.
 		$response_failure_code = '';
 
-		$is_cli = defined( 'WP_CLI' ) && constant( 'WP_CLI' );
+		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		if ( is_wp_error( $request ) ) {
 			$encoded_request = $request->get_error_messages();
@@ -1241,7 +1241,7 @@ class Search {
 	}
 
 	public function get_http_timeout_for_query( $query, $args ) {
-		$is_cli  = defined( 'WP_CLI' ) && constant( 'WP_CLI' );
+		$is_cli  = defined( 'WP_CLI' ) && WP_CLI;
 		$timeout = $is_cli ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 
 		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );
@@ -1636,7 +1636,7 @@ class Search {
 		}
 
 		// Force the timeout for post search queries.
-		$global_timeout = defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
+		$global_timeout = defined( 'WP_CLI' ) && WP_CLI ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 		if ( ! isset( $formatted_args['timeout'] ) && apply_filters( 'vip_search_force_global_timeout', true ) ) {
 			$formatted_args['timeout'] = sprintf( '%ds', $global_timeout );
 		}

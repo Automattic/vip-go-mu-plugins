@@ -231,7 +231,7 @@ if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPC
 }
 
 // Load WP_CLI helpers
-if ( Context::is_wp_cli() || ( defined( 'WP_TESTS_DOMAIN' ) && ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) ) ) {
+if ( Context::is_wp_cli() ) {
 	require_once __DIR__ . '/vip-helpers/vip-wp-cli.php';
 	require_once __DIR__ . '/vip-helpers/class-vip-backup-user-role-cli.php';
 }
