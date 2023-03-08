@@ -31,13 +31,54 @@ class Feature {
 	public static $feature_ids = [];
 
 	/**
+	 * Holds feature slug and then, key of environments with bool value to enable E.g.
+	 * // Enable feature for non-production sites
+	 * // 'feature-flag' => [ 'non-production' => true ],
+	 *
+	 * @var array
+	 */
+	public static $feature_envs = [];
+
+	/**
 	 * Checks if a feature is enabled.
 	 *
 	 * @param string $feature The feature we are targeting.
+	 *
 	 * @return bool Whether it is enabled or not.
 	 */
-	public static function is_enabled( $feature ) {
-		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature );
+	public static function is_enabled( string $feature ) {
+		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature ) || static::is_enabled_by_env( $feature );
+	}
+
+	/**
+	 * Selectively enable by certain environments.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 * @param mixed $default Default return value if environment is not on list.
+	 *
+	 * @return mixed Returns bool if on list and if not, $default value.
+	 */
+	public static function is_enabled_by_env( string $feature, $default = false ) {
+		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return false;
+		}
+
+		if ( ! isset( static::$feature_envs[ $feature ] ) ) {
+			return false;
+		}
+
+		$envs = static::$feature_envs[ $feature ];
+		if ( array_key_exists( 'non-production', $envs ) && true === $envs['non-production'] ) {
+			if ( constant( 'VIP_GO_APP_ENVIRONMENT' ) !== 'production' ) {
+				return true;
+			}
+		}
+
+		if ( array_key_exists( constant( 'VIP_GO_APP_ENVIRONMENT' ), $envs ) ) {
+			return $envs[ constant( 'VIP_GO_APP_ENVIRONMENT' ) ];
+		}
+
+		return $default;
 	}
 
 	/**
@@ -48,7 +89,7 @@ class Feature {
 	 *
 	 * @return mixed Returns bool if on list and if not, $default value.
 	 */
-	public static function is_enabled_by_ids( $feature, $default = false ) {
+	public static function is_enabled_by_ids( string $feature, $default = false ) {
 		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
 			return false;
 		}
@@ -67,7 +108,7 @@ class Feature {
 	 *
 	 * @return bool Whether it is enabled or not.
 	 */
-	public static function is_enabled_by_percentage( $feature ) {
+	public static function is_enabled_by_percentage( string $feature ) {
 		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
