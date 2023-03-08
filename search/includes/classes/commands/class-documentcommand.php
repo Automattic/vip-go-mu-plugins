@@ -4,8 +4,6 @@ namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
 
-require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
-
 /**
  * Commands to view and manage individual documents
  *

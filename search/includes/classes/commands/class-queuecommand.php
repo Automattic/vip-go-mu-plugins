@@ -6,7 +6,6 @@ use \WP_CLI;
 
 use \Automattic\VIP\Search\Queue\Schema;
 
-require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 require_once __DIR__ . '/../class-health.php';
 
 /**
