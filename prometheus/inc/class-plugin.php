@@ -139,4 +139,23 @@ class Plugin {
 			}
 		}
 	}
+
+	/**
+	 * To avoid accidentally blowing up cardinality on large multisite we'll roll up anything over 50 sites into a single label
+	 * @todo 50 is tentative, we may want to adjust this later.
+	 * @return string
+	 */
+	public function get_site_label(): string {
+		$current_blog_id = (string) get_current_blog_id();
+		if ( ! is_multisite() ) {
+			return $current_blog_id;
+		}
+
+		$sites_count = wp_count_sites();
+		if ( $sites_count['all'] > 50 ) {
+			return 'network';
+		}
+
+		return $current_blog_id;
+	}
 }
