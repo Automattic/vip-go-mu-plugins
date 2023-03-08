@@ -35,7 +35,7 @@ class Feature {
 	 * // Enable feature for non-production sites
 	 * // 'feature-flag' => [ 'non-production' => true ],
 	 *
-	 * @var array
+	 * @var array Accepts values of specific environment names (i.e. staging, production) or 'non-production' for all non-production environments.
 	 */
 	public static $feature_envs = [];
 
@@ -57,9 +57,9 @@ class Feature {
 	 */
 	public static function get_features() {
 		$features = array_merge(
-			array_keys( static::$feature_percentages ),
-			array_keys( static::$feature_ids ),
-			array_keys( static::$feature_envs )
+			is_array( static::$feature_percentages ) ? array_keys( static::$feature_percentages ) : [],
+			is_array( static::$feature_ids ) ? array_keys( static::$feature_ids ) : [],
+			is_array( static::$feature_envs ) ? array_keys( static::$feature_envs ) : [],
 		);
 
 		return array_unique( $features );
