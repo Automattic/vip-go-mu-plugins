@@ -30,8 +30,14 @@ class Feature {
 	 */
 	public static $feature_ids = [];
 
+	/**
+	 * Checks if a feature is enabled.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 * @return bool Whether it is enabled or not.
+	 */
 	public static function is_enabled( $feature ) {
-		return static::is_enabled_by_percentage( $feature );
+		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature );
 	}
 
 	/**

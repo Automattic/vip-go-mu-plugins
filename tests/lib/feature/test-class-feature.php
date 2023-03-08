@@ -230,4 +230,36 @@ class Feature_Test extends TestCase {
 
 		$this->assertEquals( false, $result );
 	}
+
+	public function test_is_enabled__percentage_only() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
+
+		Feature::$feature_percentages = array(
+			'foobar' => 1,
+		);
+
+		$result = Feature::is_enabled( 'foobar' );
+
+		$this->assertTrue( $result );
+	}
+
+	public function test_is_enabled__id_only() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		Feature::$feature_ids = array(
+			'foo-bar' => [ 123 => true ],
+		);
+
+		$result = Feature::is_enabled( 'foo-bar' );
+
+		$this->assertTrue( $result );
+	}
+
+	public function test_is_enabled__none() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		$result = Feature::is_enabled( 'foo-bar-test' );
+
+		$this->assertFalse( $result );
+	}
 }
