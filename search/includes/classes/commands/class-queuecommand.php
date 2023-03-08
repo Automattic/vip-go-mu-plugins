@@ -3,10 +3,10 @@
 namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
-use \WP_CLI\Utils;
 
 use \Automattic\VIP\Search\Queue\Schema;
 
+require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 require_once __DIR__ . '/../class-health.php';
 
 /**
