@@ -333,4 +333,23 @@ class Feature_Test extends TestCase {
 
 		$this->assertFalse( $result );
 	}
+
+	public function test_get_features() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
+
+		Feature::$feature_percentages = array(
+			'foo-bar-aaa' => 1,
+		);
+
+		Feature::$feature_ids  = array(
+			'foo-bar-zzz' => [ 123 => true ],
+		);
+		Feature::$feature_envs = array(
+			'foo-bar-zzz' => [ 'local' => true ],
+		);
+
+		$result = Feature::get_features();
+		$this->assertEquals( $result, [ 'foo-bar-aaa', 'foo-bar-zzz' ] );
+	}
 }

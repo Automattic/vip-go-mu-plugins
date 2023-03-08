@@ -51,6 +51,21 @@ class Feature {
 	}
 
 	/**
+	 * Returns all features that exist.
+	 *
+	 * @return array $features Array of features.
+	 */
+	public static function get_features() {
+		$features = array_merge(
+			array_keys( static::$feature_percentages ),
+			array_keys( static::$feature_ids ),
+			array_keys( static::$feature_envs )
+		);
+
+		return array_unique( $features );
+	}
+
+	/**
 	 * Selectively enable by certain environments.
 	 *
 	 * @param string $feature The feature we are targeting.
