@@ -2,6 +2,13 @@
 
 namespace Automattic\VIP;
 
+if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+	$cli_file = __DIR__ . '/class-feature-cli.php';
+	if ( file_exists( $cli_file ) ) {
+		require_once $cli_file;
+	}
+}
+
 /**
  * Feature provides a simple interface to gate the functionality by the Go Site Id
  *
@@ -35,7 +42,8 @@ class Feature {
 	 * // Enable feature for non-production sites
 	 * // 'feature-flag' => [ 'non-production' => true ],
 	 *
-	 * @var array Accepts values of specific environment names (i.e. staging, production) or 'non-production' for all non-production environments.
+	 *
+	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
 	 */
 	public static $feature_envs = [];
 
@@ -64,6 +72,7 @@ class Feature {
 
 		return array_unique( $features );
 	}
+
 
 	/**
 	 * Selectively enable by certain environments.
