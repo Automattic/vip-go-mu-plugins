@@ -164,7 +164,11 @@ class Health {
 				add_filter( 'ep_exclude_password_protected_from_search', '__return_false' );
 			}
 
-			$query          = self::query_objects( $query_args, $indexable->slug );
+			$query = self::query_objects( $query_args, $indexable->slug );
+			if ( 'user' === $indexable->slug && isset( $query->query_vars['blog_id'] ) ) {
+				// Since the user indexable is global, we want to include ALL in count.
+				unset( $query->query_vars['blog_id'] );
+			}
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 
 			// Get exact total count since Elasticsearch default stops at 10,000.
