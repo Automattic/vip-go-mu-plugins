@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP;
 
-if ( defined( 'WP_CLI' ) && \WP_CLI ) {
+if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
 	$cli_file = __DIR__ . '/class-feature-cli.php';
 	if ( file_exists( $cli_file ) ) {
 		require_once $cli_file;

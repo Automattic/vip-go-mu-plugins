@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP;
 
-use WP_CLI_Command;
 use WP_CLI;
 use \Automattic\VIP\Feature as Feature;
 
-class FeatureCLI extends WP_CLI_Command {
+// phpcs:ignore WordPressVIPMinimum.Classes.RestrictedExtendClasses.wp_cli
+class FeatureCLI extends \WP_CLI_Command {
 	/**
 	 * List all available VIP features.
 	 *
@@ -14,7 +14,7 @@ class FeatureCLI extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp vip-feature list [--format=<table|json|csv|yaml>]
+	 *     wp vip feature list [--format=<table|json|csv|yaml>]
 	 */
 	public function list_features( $args, $assoc_args ) {
 		$format = $assoc_args['format'] ?? 'table';
@@ -30,12 +30,12 @@ class FeatureCLI extends WP_CLI_Command {
 		$listed_features = [];
 		foreach ( $features as $feature ) {
 			$listed_features[] = [
-				'Feature' => $feature,
-				'Status'  => Feature::is_enabled( $feature ) ? 'enabled' : 'disabled',
+				'feature' => $feature,
+				'status'  => Feature::is_enabled( $feature ) ? 'enabled' : 'disabled',
 			];
 		}
 
-		WP_CLI\Utils\format_items( $format, $listed_features, [ 'Feature', 'Status' ] );
+		WP_CLI\Utils\format_items( $format, $listed_features, [ 'feature', 'status' ] );
 	}
 
 	/**
@@ -45,13 +45,14 @@ class FeatureCLI extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *     wp vip-feature get <feature-slug>
+	 *     wp vip feature get <feature-slug>
 	 */
 	public function get_feature( $args ) {
-		$feature = $args[0];
-		if ( ! isset( $feature ) ) {
-			WP_CLI::error( 'Missing feature slug.' );
+		if ( ! isset( $args[0] ) ) {
+			WP_CLI::error( 'Missing feature slug. Usage as follows: `wp vip feature get <slug>`' );
 		}
+
+		$feature = $args[0];
 
 		$features = Feature::get_features();
 		if ( ! in_array( $feature, $features, true ) ) {
@@ -62,4 +63,4 @@ class FeatureCLI extends WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip-feature', __NAMESPACE__ . '\FeatureCLI' );
+WP_CLI::add_command( 'vip feature', __NAMESPACE__ . '\FeatureCLI' );
