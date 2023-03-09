@@ -23,6 +23,11 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
 

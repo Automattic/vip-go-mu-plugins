@@ -26,6 +26,11 @@ class Lockout_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */

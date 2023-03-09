@@ -41,6 +41,11 @@ class Search_Test extends WP_UnitTestCase {
 		header_remove();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test_query_es_with_invalid_type() {
 		$this->init_es();
 
