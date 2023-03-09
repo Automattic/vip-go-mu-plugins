@@ -63,4 +63,4 @@ class FeatureCLI extends \WP_CLI_Command {
 	}
 }
 
-WP_CLI::add_command( 'vip feature', __NAMESPACE__ . '\FeatureCLI' );
+WP_CLI::add_command( 'vip feature', __NAMESPACE__ . '\Feature_CLI_Command' );
