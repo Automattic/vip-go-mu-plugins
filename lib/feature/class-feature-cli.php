@@ -6,7 +6,7 @@ use WP_CLI;
 use \Automattic\VIP\Feature as Feature;
 
 // phpcs:ignore WordPressVIPMinimum.Classes.RestrictedExtendClasses.wp_cli
-class FeatureCLI extends \WP_CLI_Command {
+class Feature_CLI_Command extends \WP_CLI_Command {
 	/**
 	 * List all available VIP features.
 	 *
