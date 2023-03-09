@@ -4,7 +4,6 @@ namespace Automattic\VIP\Files;
 
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip.php';
 
@@ -15,6 +14,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
+		Constant_Mocker::clear();
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
 		$this->fs_direct_mock  = $this->createMock( \WP_Filesystem_Direct::class );

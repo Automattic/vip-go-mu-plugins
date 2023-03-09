@@ -22,6 +22,7 @@ class Environment_Test extends TestCase {
 	}
 
 	protected function tearDown(): void {
+		Constant_Mocker::clear();
 		error_reporting( $this->error_reporting );
 		parent::tearDown();
 	}
