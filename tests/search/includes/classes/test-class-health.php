@@ -34,6 +34,11 @@ class Health_Test extends WP_UnitTestCase {
 	/** @var Search */
 	private static $search_instance;
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public static function setUpBeforeClass(): void {
 		self::$search_instance = new \Automattic\VIP\Search\Search();
 		self::$search_instance->init();
