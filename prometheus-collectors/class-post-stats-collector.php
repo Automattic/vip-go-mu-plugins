@@ -13,8 +13,11 @@ class Post_Stats_Collector implements CollectorInterface {
 	private Gauge $post_gauge;
 
 	public const METRIC_OPTION = 'vip-prom-posts';
+	private string $blog_id;
 
 	public function initialize( RegistryInterface $registry ): void {
+		$this->blog_id = Plugin::get_instance()->get_site_label();
+
 		$this->post_gauge = $registry->getOrRegisterGauge(
 			'post',
 			'count',
@@ -24,7 +27,6 @@ class Post_Stats_Collector implements CollectorInterface {
 	}
 
 	public function collect_metrics(): void {
-		$site_id = (string) get_current_blog_id();
 		$metrics = get_option( self::METRIC_OPTION, [] );
 		if ( ! $metrics ) {
 			return;
@@ -32,7 +34,7 @@ class Post_Stats_Collector implements CollectorInterface {
 
 		foreach ( $metrics as $type => $metric ) {
 			foreach ( $metric as $status => $count ) {
-				$this->post_gauge->set( $count, [ $site_id, $type, $status ] );
+				$this->post_gauge->set( $count, [ $this->blog_id, $type, $status ] );
 			}
 		}
 	}

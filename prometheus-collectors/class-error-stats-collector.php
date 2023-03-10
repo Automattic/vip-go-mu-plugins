@@ -22,7 +22,7 @@ class Error_Stats_Collector implements CollectorInterface {
 	}
 
 	public function php_error_handler( $error_type, $message, $file, $line ): void {
-		$this->error_counter->inc( [ (string) get_current_blog_id(), (string) $error_type ] );
+		$this->error_counter->inc( [ Plugin::get_instance()->get_site_label(), (string) $error_type ] );
 	}
 
 	public function collect_metrics(): void {
