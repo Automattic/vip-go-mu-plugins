@@ -66,7 +66,7 @@ class Login_Stats_Collector implements CollectorInterface {
 	}
 
 	public function wp_login_failed(): void {
-		$this->failed_login_counter->inc( [ (string) get_current_blog_id() ] );
+		$this->failed_login_counter->inc( [ $this->blog_id ] );
 	}
 
 	public function collect_metrics(): void {
