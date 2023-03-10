@@ -40,7 +40,7 @@ class Plugin {
 		}
 
 		// Cron callback to do the heavy lifting.
-		add_action( 'vip_prom_process_metrics', [ $this, 'process_metrics' ] );
+		add_action( 'vip_prometheus_process_metrics', [ $this, 'process_metrics' ] );
 
 		do_action( 'vip_prometheus_loaded' );
 	}
@@ -124,7 +124,7 @@ class Plugin {
 		}
 
 		// Don't run on unauthorized requests.
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		if ( ! function_exists( 'wp_get_current_user' ) || ! current_user_can( 'edit_posts' ) ) {
 			return;
 		}
 
@@ -133,9 +133,9 @@ class Plugin {
 				$collector->collect_metrics();
 			}
 
-			// Roughly every 10 minutes
-			if ( ! wp_next_scheduled( 'vip_prom_process_metrics' ) ) {
-				wp_schedule_single_event( time() + 600, 'vip_prom_process_metrics' );
+			// Roughly every hour
+			if ( ! wp_next_scheduled( 'vip_prometheus_process_metrics' ) ) {
+				wp_schedule_single_event( time() + HOUR_IN_SECONDS, 'vip_prometheus_process_metrics' );
 			}
 		}
 	}
