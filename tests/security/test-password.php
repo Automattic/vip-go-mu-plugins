@@ -11,7 +11,7 @@ class Current_Password_Change_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->factory->user->create( [
+		$this->factory()->user->create( [
 			'user_login' => 'john',
 			'user_email' => 'john@example.com',
 			'user_pass'  => 'secret1',

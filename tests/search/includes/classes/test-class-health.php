@@ -327,7 +327,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => 'publish' ] );
 
 		$last_db_post_id = $post->ID;
 		$last_es_post_id = 0;
@@ -338,7 +338,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_db_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => 'draft' ] );
 
 		$last_post_id = \Automattic\VIP\Search\Health::get_last_db_post_id();
 

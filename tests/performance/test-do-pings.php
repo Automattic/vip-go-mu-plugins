@@ -47,7 +47,7 @@ class Do_Pings_Test extends WP_UnitTestCase {
 	}
 
 	public function test__add_post_meta_integration() {
-		$post = $this->factory->post->create_and_get();
+		$post = $this->factory()->post->create_and_get();
 		
 		$object_id  = $post->ID;
 		$meta_key   = 'test';

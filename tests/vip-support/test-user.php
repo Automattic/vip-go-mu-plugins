@@ -109,7 +109,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test_is_verified_automattician(): void {
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_email' => 'admin@automattic.com',
 			'user_login' => 'vip_admin',
 		] );
@@ -128,7 +128,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	public function test_is_verified_automattician_for_disallowed_user(): void {
 		define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
 
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_email' => 'foo@automattic.com',
 			'user_login' => 'vip_foo',
 		] );
@@ -153,14 +153,14 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test__has_vip_support_meta__nope(): void {
-		$user = $this->factory->user->create( array( 'user_login' => 'not-vip-support' ) );
+		$user = $this->factory()->user->create( array( 'user_login' => 'not-vip-support' ) );
 
 		$is_vip_support_user = User::has_vip_support_meta( $user );
 		$this->assertFalse( $is_vip_support_user );
 	}
 
 	public function test__add__update_email_for_existing_user_with_different_login(): void {
-		$existing_user_id = $this->factory->user->create( [
+		$existing_user_id = $this->factory()->user->create( [
 			'user_email' => 'existing123@automattic.com',
 			'user_login' => 'existing-user-123',
 		] );
@@ -183,7 +183,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test__add__update_account_for_existing_user_with_same_login(): void {
-		$existing_user_id = $this->factory->user->create( [
+		$existing_user_id = $this->factory()->user->create( [
 			'user_email'   => 'existing456@automattic.com',
 			'user_login'   => 'vip-support-user-456',
 			'display_name' => 'Existing User',
