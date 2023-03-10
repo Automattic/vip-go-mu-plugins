@@ -128,7 +128,7 @@ class Plugin {
 			return;
 		}
 
-		if ( wp_cache_add( 'last-prom-run', time(), 'vip-prom', 90 ) ) {
+		if ( wp_cache_add( 'vip_prometheus_last_collection_run', time(), 'vip_prometheus', 5 * MINUTE_IN_SECONDS ) ) {
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
 			}
