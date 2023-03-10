@@ -31,20 +31,18 @@ if ( defined( 'ABSPATH' ) ) {
 	}
 
 	add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ): array {
-		if ( 'vip_mu_plugins_loaded' === $hook ) {
-			$to_init = [
-				'cache'   => Cache_Collector::class,
-				'apcu'    => APCu_Collector::class,
-				'opcache' => OpCache_Collector::class,
-				'login'   => Login_Stats_Collector::class,
-				'error'   => Error_Stats_Collector::class,
-				'post'    => Post_Stats_Collector::class,
-			];
+		$to_init = [
+			'cache'   => Cache_Collector::class,
+			'apcu'    => APCu_Collector::class,
+			'opcache' => OpCache_Collector::class,
+			'login'   => Login_Stats_Collector::class,
+			'error'   => Error_Stats_Collector::class,
+			'post'    => Post_Stats_Collector::class,
+		];
 
-			foreach ( $to_init as $slug => $class ) {
-				if ( class_exists( $class ) ) {
-					$collectors[ $slug ] = new $class();
-				}
+		foreach ( $to_init as $slug => $class ) {
+			if ( class_exists( $class ) && ! isset( $collectors[ $slug ] ) ) {
+				$collectors[ $slug ] = new $class();
 			}
 		}
 
