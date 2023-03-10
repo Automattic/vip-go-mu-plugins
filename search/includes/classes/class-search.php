@@ -2442,6 +2442,9 @@ class Search {
 
 	public function load_collector(): void {
 		require_once __DIR__ . '/class-prometheus-collector.php';
-		Prometheus_Collector::get_instance();
+		add_filter( 'vip_prometheus_collectors', function( $collectors ) {
+			$collectors['search'] = Prometheus_Collector::get_instance();
+			return $collectors;
+		} );
 	}
 }

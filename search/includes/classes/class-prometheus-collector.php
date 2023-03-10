@@ -38,13 +38,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	private function __construct() {
-		add_filter( 'vip_prometheus_collectors', [ $this, 'vip_prometheus_collectors' ] );
 		$this->blog_id = Plugin::get_instance()->get_site_label();
-	}
-
-	public function vip_prometheus_collectors( array $collectors ): array {
-		$collectors[] = $this;
-		return $collectors;
 	}
 
 	public function initialize( RegistryInterface $registry ): void {
