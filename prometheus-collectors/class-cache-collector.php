@@ -72,7 +72,7 @@ class Cache_Collector implements CollectorInterface {
 
 		if ( $this->operation_counter ) {
 			foreach ( $wp_object_cache->stats as $operation => $count ) {
-				$this->operation_counter->incBy( $count, [ $blog_id, (string) $operation ] );
+				$this->operation_counter->incBy( $count, [ $this->blog_id, (string) $operation ] );
 			}
 		}
 	}
