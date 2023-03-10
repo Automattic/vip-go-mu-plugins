@@ -12,7 +12,7 @@ class WPCOM_VIP_Get_Resized_Attachment_Url_Test extends WP_UnitTestCase {
 	public function test__valid_attachment() {
 		$expected_end_of_url = '/image.jpg?w=100&h=101';
 
-		$attachment_id = $this->factory->attachment->create_object( [
+		$attachment_id = $this->factory()->attachment->create_object( [
 			'file' => 'image.jpg',
 		] );
 

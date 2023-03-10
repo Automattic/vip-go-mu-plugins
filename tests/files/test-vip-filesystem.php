@@ -225,7 +225,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
 
-		$attachment_id = $this->factory->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
 		$actual_metadata = $this->vip_filesystem->filter_wp_generate_attachment_metadata( $initial_metadata, $attachment_id );
 

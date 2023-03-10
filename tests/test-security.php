@@ -4,7 +4,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
 
 	public function test__admin_username_restricted() {
-		$this->factory->user->create( [
+		$this->factory()->user->create( [
 			'user_login' => 'admin',
 			'user_email' => 'admin@example.com',
 			'user_pass'  => 'secret1',
@@ -17,7 +17,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_machine_user_username_restricted() {
-		$this->factory->user->create( [
+		$this->factory()->user->create( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
 			'user_pass'  => 'secret2',
@@ -30,7 +30,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_machine_user_email_restricted() {
-		$this->factory->user->create( [
+		$this->factory()->user->create( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
 			'user_pass'  => 'secret3',
@@ -43,7 +43,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__other_username_not_restricted() {
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_login' => 'taylorswift',
 			'user_email' => 'taylor@example.com',
 			'user_pass'  => 'secret4',
@@ -56,7 +56,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__other_email_not_restricted() {
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_login' => 'taylorswift',
 			'user_email' => 'taylor@example.com',
 			'user_pass'  => 'secret5',
