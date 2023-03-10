@@ -195,6 +195,9 @@ if ( WPCOM_SANDBOXED ) {
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
 
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
+
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
 require_once __DIR__ . '/lib/statsd/class-statsd.php';
