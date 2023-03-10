@@ -79,7 +79,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	}
 
 	public function test__page_for_posts_post_purge_url() {
-		$page_for_posts = $this->factory->post->create_and_get(
+		$page_for_posts = $this->factory()->post->create_and_get(
 			[
 				'post_type'  => 'page',
 				'post_title' => 'blog-archive',
@@ -88,7 +88,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		update_option( 'page_for_posts', $page_for_posts->ID );
 		$permalink = get_permalink( $page_for_posts );
 
-		$post = (array) $this->factory->post->create_and_get( [ 'post_title' => 'test post' ] );
+		$post = (array) $this->factory()->post->create_and_get( [ 'post_title' => 'test post' ] );
 
 		$post['post_title'] = 'updated';
 

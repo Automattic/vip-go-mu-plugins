@@ -41,6 +41,11 @@ class Search_Test extends WP_UnitTestCase {
 		header_remove();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test_query_es_with_invalid_type() {
 		$this->init_es();
 
@@ -1158,7 +1163,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__truncate_search_string_length__user_with_cap() {
-		$admin_user = $this->factory->user->create( [
+		$admin_user = $this->factory()->user->create( [
 			'user_email' => 'admin@automattic.com',
 			'user_login' => 'vip_admin',
 			'role'       => 'administrator',
@@ -1829,7 +1834,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1843,7 +1848,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1866,7 +1871,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1889,7 +1894,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1903,7 +1908,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1926,7 +1931,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 

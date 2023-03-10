@@ -11,6 +11,11 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test__is_jetpack_private_regular_site() {
 		Constant_Mocker::define( 'WPCOM_VIP_BASIC_AUTH', false );
 		Constant_Mocker::define( 'WPCOM_VIP_IP_ALLOW_LIST', false );

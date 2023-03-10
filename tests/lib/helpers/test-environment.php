@@ -16,6 +16,11 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function get_var_standard_env() {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'FOO' );
 	}

@@ -108,6 +108,13 @@ class Sync {
 	}
 
 	public function run_sync_checks() {
+		if ( defined( 'WP_TESTS_DOMAIN' ) ) {
+			// WordPress test library runs the `shutdown` hooks too late, which causes database errors
+			// (the required temporary tables no longer exist)
+			$this->blogs_to_sync = [];
+			return;
+		}
+
 		if ( 0 === count( $this->blogs_to_sync ) ) {
 			return;
 		}

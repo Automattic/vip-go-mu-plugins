@@ -30,6 +30,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		Constant_Mocker::clear();
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_cookie;

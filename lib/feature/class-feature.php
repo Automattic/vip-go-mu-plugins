@@ -2,6 +2,13 @@
 
 namespace Automattic\VIP;
 
+if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+	$cli_file = __DIR__ . '/class-feature-cli.php';
+	if ( file_exists( $cli_file ) ) {
+		require_once $cli_file;
+	}
+}
+
 /**
  * Feature provides a simple interface to gate the functionality by the Go Site Id
  *
@@ -31,8 +38,72 @@ class Feature {
 	 */
 	public static $feature_ids = [];
 
-	public static function is_enabled( $feature ) {
-		return static::is_enabled_by_percentage( $feature );
+	/**
+	 * Holds feature slug and then, key of environments with bool value to enable E.g.
+	 * // Enable feature for non-production sites
+	 * // 'feature-flag' => [ 'non-production' => true ],
+	 *
+	 *
+	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
+	 */
+	public static $feature_envs = [];
+
+	/**
+	 * Checks if a feature is enabled.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 *
+	 * @return bool Whether it is enabled or not.
+	 */
+	public static function is_enabled( string $feature ) {
+		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature ) || static::is_enabled_by_env( $feature );
+	}
+
+	/**
+	 * Returns all features that exist.
+	 *
+	 * @return array $features Array of features.
+	 */
+	public static function get_features() {
+		$features = array_merge(
+			is_array( static::$feature_percentages ) ? array_keys( static::$feature_percentages ) : [],
+			is_array( static::$feature_ids ) ? array_keys( static::$feature_ids ) : [],
+			is_array( static::$feature_envs ) ? array_keys( static::$feature_envs ) : [],
+		);
+
+		return array_unique( $features );
+	}
+
+
+	/**
+	 * Selectively enable by certain environments.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 * @param mixed $default Default return value if environment is not on list.
+	 *
+	 * @return mixed Returns bool if on list and if not, $default value.
+	 */
+	public static function is_enabled_by_env( string $feature, $default = false ) {
+		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return false;
+		}
+
+		if ( ! isset( static::$feature_envs[ $feature ] ) ) {
+			return false;
+		}
+
+		$envs = static::$feature_envs[ $feature ];
+		if ( array_key_exists( 'non-production', $envs ) && true === $envs['non-production'] ) {
+			if ( constant( 'VIP_GO_APP_ENVIRONMENT' ) !== 'production' ) {
+				return true;
+			}
+		}
+
+		if ( array_key_exists( constant( 'VIP_GO_APP_ENVIRONMENT' ), $envs ) ) {
+			return $envs[ constant( 'VIP_GO_APP_ENVIRONMENT' ) ];
+		}
+
+		return $default;
 	}
 
 	/**
@@ -43,7 +114,7 @@ class Feature {
 	 *
 	 * @return mixed Returns bool if on list and if not, $default value.
 	 */
-	public static function is_enabled_by_ids( $feature, $default = false ) {
+	public static function is_enabled_by_ids( string $feature, $default = false ) {
 		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
 			return false;
 		}
@@ -62,7 +133,7 @@ class Feature {
 	 *
 	 * @return bool Whether it is enabled or not.
 	 */
-	public static function is_enabled_by_percentage( $feature ) {
+	public static function is_enabled_by_percentage( string $feature ) {
 		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}

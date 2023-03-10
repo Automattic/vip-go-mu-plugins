@@ -37,7 +37,7 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends WP_UnitTestCase {
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 		$file_path       = '2021/01/kittens.jpg';
 
-		$test_user_id = $this->factory->user->create();
+		$test_user_id = $this->factory()->user->create();
 		$user         = new \WP_User( $test_user_id );
 		$user->remove_role( 'subscriber' );
 		wp_set_current_user( $test_user_id );
@@ -53,7 +53,7 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends WP_UnitTestCase {
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 		$file_path       = '2021/01/kittens.jpg';
 
-		$test_user_id = $this->factory->user->create( array( 'role' => 'editor' ) );
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
 		wp_set_current_user( $test_user_id );
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
