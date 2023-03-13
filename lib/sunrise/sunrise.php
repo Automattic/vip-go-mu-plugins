@@ -10,6 +10,11 @@ if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 }
 
 $mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+
+if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_ENABLED ) {
+	require_once $mu_plugin_dir . '/lib/db-multiple-datasets-config.php';
+}
+
 require_once $mu_plugin_dir . '/lib/utils/class-context.php';
 unset( $mu_plugin_dir );
 
