@@ -192,14 +192,11 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	if ( is_array( $post_type ) ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-		$cache_key = sanitize_key( $page_path ) . '_' . md5( serialize( $post_type ) );
-	} else {
-		$cache_key = $post_type . '_' . sanitize_key( $page_path );
-	}
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+	$hash      = md5( $page_path . serialize( $post_type ) );
+	$cache_key = "wpcom_vip_get_page_by_path:$hash";
 
-	$page_id = wp_cache_get( $cache_key, 'get_page_by_path' );
+	$page_id = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
 
 	if ( false === $page_id ) {
 		$page    = get_page_by_path( $page_path, $output, $post_type );
