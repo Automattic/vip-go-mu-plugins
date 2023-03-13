@@ -18,7 +18,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'vip-search-use-next-ep' => 0.1,
+		'vip-search-use-next-ep' => 0.2,
 	];
 
 	/**
