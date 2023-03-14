@@ -1,12 +1,10 @@
 <?php
-/*
-Plugin Name: Cron Control
-Plugin URI:
-Description: Execute WordPress cron events in parallel, using a custom post type for event storage.
-Author: Erick Hitter, Automattic
-Version: 3.1
-Text Domain: automattic-cron-control
-*/
+/**
+ * Plugin Name: VIP Cron Enhancements
+ * Description: Sets up custom event storage that is concurrency-safe. WordPress cron events are then processed in parallel using dedicated cron runners.
+ * Author: Automattic
+ * Version: 1.0
+ */
 
 if ( file_exists( __DIR__ . '/cron/cron.php' ) ) {
 	require_once __DIR__ . '/cron/cron.php';
