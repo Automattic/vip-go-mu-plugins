@@ -52,7 +52,7 @@ add_action(
 add_action(
 	'vip_admin_notice_init',
 	function( $admin_notice_controller ) {
-		$message = 'Heads up! Enterprise Search is being upgraded soon on WordPress VIP and we highly recommend testing it out on non-production before Wednesday, March 1. <a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Please see our Lobby post for instructions on testing.</a>';
+		$message = '<a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Enterprise Search is being gradually rolled out on WordPress VIP.</a> If you would like to upgrade now, please define the constant <code>VIP_SEARCH_USE_NEXT_EP</code> in your <code>vip-config.php</code> file.';
 
 		$admin_notice_controller->add(
 			new Admin_Notice(
@@ -61,7 +61,7 @@ add_action(
 					new Expression_Condition( class_exists( '\Automattic\VIP\Search\Search' ) && method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && ! \Automattic\VIP\Search\Search::should_load_new_ep() ),
 				],
 				'new-ep-version-1',
-				'error'
+				'info'
 			)
 		);
 	}
