@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Cron;
 
+// Set up the auto-scaling mechanics for action scheduler.
 if ( file_exists( __DIR__ . '/action-scheduler-dynamic-queue.php' ) ) {
 	require_once __DIR__ . '/action-scheduler-dynamic-queue.php';
 
