@@ -13,6 +13,14 @@
  * @package automattic/vaultpress
  */
 
+// On non-production environments, do not load VaultPress unless explicitly enabled via the VIP_VAULTPRESS_SKIP_LOAD constant
+// Please see this post for more information: https://lobby.vip.wordpress.com/2023/02/28/upcoming-vaultpress-deprecation/
+if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) ) {
+	if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+		define( 'VIP_VAULTPRESS_SKIP_LOAD', true );
+	}
+}
+
 // Avoid loading VaultPress altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for VP to work in VIP)
 if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
 	return;

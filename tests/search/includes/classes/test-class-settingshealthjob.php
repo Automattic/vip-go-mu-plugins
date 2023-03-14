@@ -33,6 +33,11 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		do_action( 'init' );
 	}
 
+	public static function tearDownAfterClass(): void {
+		Constant_Mocker::clear();
+		parent::tearDownAfterClass();
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 

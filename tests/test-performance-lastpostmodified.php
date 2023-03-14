@@ -16,7 +16,7 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name LIKE %s", Last_Post_Modified::OPTION_PREFIX . '%' ) );
 
-		$this->post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+		$this->post = $this->factory()->post->create_and_get( [ 'post_status' => 'draft' ] );
 	}
 
 	public function test__transition_post_status__save_on_publish() {
