@@ -240,7 +240,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$job = $jobs[0];
 		self::assertIsObject( $job );
-		self::assertObjectHasAttribute( 'priority', $job );
+		self::assertTrue( property_exists( $job, 'priority' ) );
 		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
 	}
 
