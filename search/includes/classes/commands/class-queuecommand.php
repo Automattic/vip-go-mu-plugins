@@ -37,11 +37,12 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 
 		$search = \Automattic\VIP\Search\Search::instance();
 		$stats  = $search->queue->get_queue_stats();
-		$info   = [];
-		$info[] = [
-			'queue_count'       => $stats->queue_count,
-			'average_wait_time' => $stats->average_wait_time,
-			'longest_wait_time' => $stats->longest_wait_time,
+		$info   = [
+			[
+				'queue_count'       => number_format_i18n( $stats->queue_count ),
+				'average_wait_time' => $stats->average_wait_time > 0 ? human_readable_duration( gmdate( 'H:i:s', $stats->average_wait_time ) ) : $stats->average_wait_time,
+				'longest_wait_time' => $stats->longest_wait_time > 0 ? human_readable_duration( gmdate( 'H:i:s', $stats->longest_wait_time ) ) : $stats->longest_wait_time,
+			],
 		];
 
 		WP_CLI\Utils\format_items( $format, $info, [ 'queue_count', 'average_wait_time', 'longest_wait_time' ] );
