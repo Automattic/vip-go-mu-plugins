@@ -451,7 +451,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 			} else {
 				header( "Location: {$new_url}", true, 301 );
 			}
-			exit();
+			exit;
 		}
 	}
 }
