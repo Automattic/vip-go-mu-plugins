@@ -500,7 +500,7 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 				} else {
 					header( "Location: {$redirect_uri}", true, 301 );
 				}
-				exit();
+				exit;
 			}
 		}
 	}
