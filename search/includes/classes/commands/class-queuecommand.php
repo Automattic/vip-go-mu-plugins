@@ -16,6 +16,38 @@ require_once __DIR__ . '/../class-health.php';
  */
 class QueueCommand extends \WPCOM_VIP_CLI_Command {
 	/**
+	 * Get info on the queue
+	 *
+	 * ## OPTIONS
+	 *
+	 *[--format=<format>]
+	 * : Accepts 'table', 'json', 'csv', or 'yaml'. Default: table
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search queue info
+	 *     wp vip-search queue info --format=json
+	 *
+	 * @subcommand info
+	 */
+	public function info( $args, $assoc_args ) {
+		$format = $assoc_args['format'] ?? 'table';
+		if ( ! in_array( $format, [ 'table', 'json', 'csv', 'yaml' ], true ) ) {
+			WP_CLI::error( __( '--format only accepts the following values: table, json, csv, yaml' ) );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+		$stats  = $search->queue->get_queue_stats();
+		$info   = [];
+		$info[] = [
+			'queue_count'       => $stats->queue_count,
+			'average_wait_time' => $stats->average_wait_time,
+			'longest_wait_time' => $stats->longest_wait_time,
+		];
+
+		WP_CLI\Utils\format_items( $format, $info, [ 'queue_count', 'average_wait_time', 'longest_wait_time' ] );
+	}
+
+	/**
 	 * Purge the queue
 	 *
 	 * ## OPTIONS
@@ -29,7 +61,6 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand purge
 	 */
-
 	public function purge( $args, $assoc_args ) {
 		if ( ! isset( $assoc_args['skip-confirm'] ) ) {
 			WP_CLI::confirm( 'Are you sure you want to truncate the existing indexing queue? Any items currently queued will be dropped' );
