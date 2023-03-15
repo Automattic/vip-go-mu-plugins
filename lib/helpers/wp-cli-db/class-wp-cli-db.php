@@ -96,7 +96,7 @@ class Wp_Cli_Db {
 	 * @param array $command
 	 * @param array $assoc_args
 	 */
-	public function before_run_command( array $command, array $assoc_args = [] ): void {
+	public function before_run_command( array $command = [], array $assoc_args = [] ): void {
 		if ( ! ( isset( $command[0] ) && 'db' === $command[0] ) ) {
 			// Don't do anything for any command other than `db`
 			return;
