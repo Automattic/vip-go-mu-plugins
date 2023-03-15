@@ -223,9 +223,9 @@ function print_data() {
 	);
 
 	$search_instance = Search::instance();
-	$is_rate_limited = Search::is_rate_limited() || $search_instance->queue->is_indexing_ratelimited();
+	$is_rate_limited = Search::is_search_rate_limited() || $search_instance->queue->is_indexing_ratelimited();
 	if ( $is_rate_limited ) {
-		$rate_limit   = [ 'search: ' . ( Search::is_rate_limited() ? sprintf( 'yes (%d of %d)', Search::get_query_count(), Search::$max_query_count ) : 'no' ) ];
+		$rate_limit   = [ 'search: ' . ( Search::is_search_rate_limited() ? sprintf( 'yes (%d of %d)', Search::get_query_count(), Search::$max_query_count ) : 'no' ) ];
 		$rate_limit[] = 'indexing: ' . ( $search_instance->queue->is_indexing_ratelimited() ? 'yes' : 'no' );
 	} else {
 		$rate_limit = 'no';
