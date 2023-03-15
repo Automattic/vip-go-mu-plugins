@@ -691,7 +691,7 @@ function vip_main_feed_redirect( $target ) {
 		} else {
 			header( "Location: {$target}", true, 302 );
 		}
-		exit();
+		exit;
 	}
 }
 
