@@ -159,9 +159,12 @@ class Feature {
 	}
 
 	/**
-	 * Given a site ID and a feature, return the bucket the site is in
+	 * Given a site ID and a feature, return the bucket the site is in.
 	 *
-	 * @param integer $site_id
+	 * Note: this is a lower-level API, it doesn't care if the feature is defined or whether it's a multisite or not.
+	 * Please use is_enabled()/is_enabled_by_ids()/is_enabled_by_percentage() instead.
+	 *
+	 * @param mixed $site_id
 	 * @param string $feature
 	 * @return integer
 	 */
