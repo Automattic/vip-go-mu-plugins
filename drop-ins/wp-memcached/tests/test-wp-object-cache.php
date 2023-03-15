@@ -770,6 +770,35 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 	/*
 	|--------------------------------------------------------------------------
+	| Various edge cases.
+	|--------------------------------------------------------------------------
+	*/
+
+	public function test_large_key_lengths() {
+		$large_keys = [
+			str_repeat( 'a', 100 )  => 'a value',
+			str_repeat( 'b', 250 )  => 'b value',
+			str_repeat( 'c', 1000 ) => 'c value',
+		];
+
+		foreach ( $large_keys as $key => $_value ) {
+			self::assertTrue( $this->object_cache->add( $key, 1 ) );
+			self::assertTrue( $this->object_cache->replace( $key, 2 ) );
+			self::assertTrue( $this->object_cache->set( $key, 3 ) );
+			self::assertEquals( $this->object_cache->incr( $key ), 4 );
+			self::assertEquals( $this->object_cache->decr( $key, 3 ), 1 );
+			self::assertEquals( $this->object_cache->get( $key ), 1 );
+			self::assertTrue( $this->object_cache->delete( $key ) );
+		}
+
+		self::assertSame( $this->object_cache->add_multiple( $large_keys ), array_map( fn() => true, $large_keys ) );
+		self::assertSame( $this->object_cache->delete_multiple( array_keys( $large_keys ) ), array_map( fn() => true, $large_keys ) );
+		self::assertSame( $this->object_cache->set_multiple( $large_keys ), array_map( fn() => true, $large_keys ) );
+		self::assertSame( $this->object_cache->get_multiple( array_keys( $large_keys ) ), $large_keys );
+	}
+
+	/*
+	|--------------------------------------------------------------------------
 	| Internal methods, mostly deals with flush numbers, the pseudo-cache-flushing mechanic.
 	|--------------------------------------------------------------------------
 	*/

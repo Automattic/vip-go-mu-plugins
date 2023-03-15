@@ -164,7 +164,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function test__call_api__user_agent() {
-		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test context; this is safe 
+		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test context; this is safe
 		$_SERVER['REQUEST_URI'] = ' /path?query';
 
 		// Re-initialize so re-generate UA string
@@ -364,7 +364,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->mock_http_response( $mocked_response );
 
 		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
-		
+
 		if ( is_wp_error( $file ) ) {
 			$actual_result = $file;
 		} else {

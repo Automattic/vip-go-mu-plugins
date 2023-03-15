@@ -3,10 +3,10 @@
 namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
-use \WP_CLI\Utils;
 
 use \Automattic\VIP\Search\Queue\Schema;
 
+require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 require_once __DIR__ . '/../class-health.php';
 
 /**
@@ -15,6 +15,39 @@ require_once __DIR__ . '/../class-health.php';
  * @package Automattic\VIP\Search
  */
 class QueueCommand extends \WPCOM_VIP_CLI_Command {
+	/**
+	 * Get info on the queue
+	 *
+	 * ## OPTIONS
+	 *
+	 *[--format=<format>]
+	 * : Accepts 'table', 'json', 'csv', or 'yaml'. Default: table
+	 *
+	 * ## EXAMPLES
+	 *     wp vip-search queue info
+	 *     wp vip-search queue info --format=json
+	 *
+	 * @subcommand info
+	 */
+	public function info( $args, $assoc_args ) {
+		$format = $assoc_args['format'] ?? 'table';
+		if ( ! in_array( $format, [ 'table', 'json', 'csv', 'yaml' ], true ) ) {
+			WP_CLI::error( __( '--format only accepts the following values: table, json, csv, yaml' ) );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+		$stats  = $search->queue->get_queue_stats();
+		$info   = [
+			[
+				'queue_count'       => number_format_i18n( $stats->queue_count ),
+				'average_wait_time' => $stats->average_wait_time > 0 ? human_readable_duration( gmdate( 'H:i:s', $stats->average_wait_time ) ) : $stats->average_wait_time,
+				'longest_wait_time' => $stats->longest_wait_time > 0 ? human_readable_duration( gmdate( 'H:i:s', $stats->longest_wait_time ) ) : $stats->longest_wait_time,
+			],
+		];
+
+		WP_CLI\Utils\format_items( $format, $info, [ 'queue_count', 'average_wait_time', 'longest_wait_time' ] );
+	}
+
 	/**
 	 * Purge the queue
 	 *
@@ -29,7 +62,6 @@ class QueueCommand extends \WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand purge
 	 */
-
 	public function purge( $args, $assoc_args ) {
 		if ( ! isset( $assoc_args['skip-confirm'] ) ) {
 			WP_CLI::confirm( 'Are you sure you want to truncate the existing indexing queue? Any items currently queued will be dropped' );

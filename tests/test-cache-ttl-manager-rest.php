@@ -79,7 +79,7 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	 * @dataProvider get_rest_write_methods
 	 */
 	public function test__skip_ttl_for_authenticated_requests( $method ) {
-		$user_id = $this->factory->user->create();
+		$user_id = $this->factory()->user->create();
 		wp_set_current_user( $user_id );
 
 		$response = $this->dispatch_request( $method );
