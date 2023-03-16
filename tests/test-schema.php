@@ -16,11 +16,6 @@ class VIP_Go_Schema_Test extends WP_UnitTestCase {
 			$deltas = array_filter( $deltas, fn ( $delta ) => ! preg_match( '!Changed type of [^ ]+ from ([^ ]+)( unsigned)? to \1\(\d+\)\2?!', $delta ) );
 		}
 	
-		if ( count( $deltas ) !== 1 ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_print_r
-			print_r( $deltas );
-		}
-
 		$this->assertCount( 1, $deltas, 'More deltas than expected' );
 		$this->assertEquals( $deltas[0], 'Added index wptests_postmeta KEY `vip_meta_key_value` (`meta_key`(191),`meta_value`(100))', 'Delta did not find vip_meta_key_value index or assertion needs updating.' );
 	}
