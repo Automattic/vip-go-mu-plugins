@@ -27,7 +27,7 @@ function vip_do_non_prod_bar() {
 
 			const sandboxedBar = document.getElementById('wpcom-sandboxed-bar');
 			const debugBar = document.getElementById('a8c-debug-flag');
-			if ( ( sandboxedBar && debugBar ) || ( ! sandboxedBar && debugBar ) ) {
+			if ( debugBar ) {
 				// Account for proper stacking of the debug bar
 				nonProdBar.style.bottom = '85px';
 			}
