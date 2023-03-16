@@ -192,23 +192,18 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	if ( is_array( $post_type ) ) {
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-		$cache_key = sanitize_key( $page_path ) . '_' . md5( serialize( $post_type ) );
-	} else {
-		$cache_key = $post_type . '_' . sanitize_key( $page_path );
-	}
-
-	$page_id = wp_cache_get( $cache_key, 'get_page_by_path' );
+	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+	$cache_key = md5( $page_path . serialize( $post_type ) );
+	$page_id   = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
 
 	if ( false === $page_id ) {
 		$page    = get_page_by_path( $page_path, $output, $post_type );
 		$page_id = $page ? $page->ID : 0;
 		if ( 0 === $page_id ) {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
+			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
 		} else {
-			wp_cache_set( $cache_key, $page_id, 'get_page_by_path', 0 ); // We only store the ID to keep our footprint small
+			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', 0 ); // We only store the ID to keep our footprint small
 		}
 	}
 
