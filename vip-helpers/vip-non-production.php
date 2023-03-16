@@ -20,7 +20,7 @@ function vip_do_non_prod_bar() {
 			</span>
 		</div>
 		<script>
-			const nonProdBar = document.querySelector('#vip-non-prod-bar');
+			const nonProdBar = document.getElementById('vip-non-prod-bar');
 			nonProdBar.addEventListener( 'click', function() {
 				this.classList.toggle('which-env');
 			} );
