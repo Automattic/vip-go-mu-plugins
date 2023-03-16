@@ -25,6 +25,52 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Get information on rate limiting.
+	 *
+	 * ## OPTIONS
+	 *
+	 *[--format=<format>]
+	 * : Accepts 'table', 'json', 'csv', or 'yaml'. Default: table
+	 *
+	 * @subcommand rate-limits [--format=<format>]
+	 */
+	public function rate_limits( $args, $assoc_args ) {
+		$format = $assoc_args['format'] ?? 'table';
+		if ( ! in_array( $format, [ 'table', 'json', 'csv', 'yaml' ], true ) ) {
+			WP_CLI::error( __( '--format only accepts the following values: table, json, csv, yaml' ) );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$search_rate_limited   = $search::is_rate_limited();
+		$indexing_rate_limited = $search->queue->is_indexing_ratelimited();
+
+		$is_rate_limited = $search_rate_limited || $indexing_rate_limited;
+		if ( ! $is_rate_limited ) {
+			WP_CLI::success( 'No rate limiting found!' );
+		} else {
+			$rate_limit = [];
+			if ( $search_rate_limited ) {
+				$rate_limit[] = [
+					'type'       => 'search',
+					'start_time' => $search::get_query_rate_limit_start(),
+					'info'       => sprintf( '(%d of %d)', $search::get_query_count(), $search::$max_query_count ),
+				];
+			}
+
+			if ( $indexing_rate_limited ) {
+				$rate_limit[] = [
+					'type'       => 'indexing',
+					'start_time' => $search->queue::get_indexing_rate_limit_start(),
+					'info'       => 'n/a',
+				];
+			}
+
+			WP_CLI\Utils\format_items( $format, $rate_limit, [ 'type', 'start_time', 'info' ] );
+		}
+	}
+
+	/**
 	 * Validate DB and ES index counts for all objects for active indexables
 	 *
 	 * ## OPTIONS
