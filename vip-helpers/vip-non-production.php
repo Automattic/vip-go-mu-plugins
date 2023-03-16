@@ -25,7 +25,6 @@ function vip_do_non_prod_bar() {
 				this.classList.toggle('which-env');
 			} );
 
-			const sandboxedBar = document.getElementById('wpcom-sandboxed-bar');
 			const debugBar = document.getElementById('a8c-debug-flag');
 			if ( debugBar ) {
 				// Account for proper stacking of the debug bar
