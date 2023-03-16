@@ -1434,7 +1434,7 @@ class Search {
 	}
 
 	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start = self::get_query_rate_limit_start();
+		$query_limiting_start = static::get_query_rate_limit_start();
 
 		if ( false === $query_limiting_start ) {
 			return;
@@ -2139,7 +2139,7 @@ class Search {
 	 * Checks if the query limiting start timestamp is set, set it otherwise\
 	 */
 	public function handle_query_limiting_start_timestamp() {
-		if ( false === self::get_query_rate_limit_start() ) {
+		if ( false === static::get_query_rate_limit_start() ) {
 			$start_timestamp = $this->get_time();
 			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::SEARCH_CACHE_GROUP );
 		}
@@ -2153,7 +2153,7 @@ class Search {
 	 * When query rate limting first begins, log this information and surface as a PHP warning
 	 */
 	public function maybe_log_query_ratelimiting_start() {
-		if ( false === self::get_query_rate_limit_start() ) {
+		if ( false === static::get_query_rate_limit_start() ) {
 			$message = sprintf(
 				'Application %d - %s has triggered Elasticsearch query rate-limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.',
 				FILES_CLIENT_SITE_ID,

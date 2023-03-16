@@ -1106,7 +1106,7 @@ class Queue {
 	}
 
 	public function maybe_alert_for_prolonged_index_limiting() {
-		$index_limiting_start = self::get_indexing_rate_limit_start();
+		$index_limiting_start = static::get_indexing_rate_limit_start();
 
 		if ( false === $index_limiting_start ) {
 			return;
@@ -1261,7 +1261,7 @@ class Queue {
 	 * Checks if the index limiting start timestamp is set, set it otherwise
 	 */
 	public function handle_index_limiting_start_timestamp() {
-		if ( false === self::get_indexing_rate_limit_start() ) {
+		if ( false === static::get_indexing_rate_limit_start() ) {
 			$start_timestamp = time();
 			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP );
 		}
