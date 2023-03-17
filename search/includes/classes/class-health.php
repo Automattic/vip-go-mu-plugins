@@ -48,6 +48,8 @@ class Health {
 
 	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
 
+	const STOP_VALIDATE_CONTENTS_TRANSIENT = 'search_interrupt_validate_contents';
+
 	/**
 	 * Instance of Search class
 	 *
@@ -438,6 +440,11 @@ class Health {
 		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
+
+		if ( $this->is_validate_content_ongoing() && false !== get_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT ) ) {
+			return new WP_Error( 'request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
+		}
+
 		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
 		if ( $track_process && $interrupted_start_post_id ) {
 			$start_post_id = $interrupted_start_post_id;
@@ -484,6 +491,7 @@ class Health {
 			$dynamic_last_post_id = true;
 		}
 
+		$should_stop = false;
 		do {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
@@ -550,10 +558,15 @@ class Health {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
 				sleep( mt_rand( 2, 5 ) );
 			}
-		} while ( $start_post_id <= $last_post_id );
 
-		if ( $process_parallel_execution_lock ) {
+			$should_stop = get_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT );
+		} while ( $start_post_id <= $last_post_id && ! $should_stop );
+
+		if ( $process_parallel_execution_lock || $should_stop ) {
 			$this->remove_validate_content_lock();
+			if ( $should_stop ) {
+				delete_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT );
+			}
 		}
 		if ( $track_process ) {
 			$this->remove_validate_content_process();

@@ -25,6 +25,30 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Stop an ongoing validate-contents from continuing to be run.
+	 *
+	 * @subcommand stop-validate-contents
+	 */
+	public function stop_validate_contents( $args, $assoc_args ) {
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
+
+		if ( ! $health->is_validate_content_ongoing() ) {
+			WP_CLI::error( 'There is no validate-contents run ongoing' );
+		}
+
+		if ( false !== get_transient( $health::STOP_VALIDATE_CONTENTS_TRANSIENT ) ) {
+			WP_CLI::error( 'There is already a request to stop validate-contents!' );
+		}
+
+		$stop = set_transient( $health::STOP_VALIDATE_CONTENTS_TRANSIENT, true, 3 * MINUTE_IN_SECONDS );
+		if ( $stop ) {
+			WP_CLI::success( 'Stopping validate-contents run...' );
+		} else {
+			WP_CLI::error( 'Failed to stop validate-contents run!' );
+		}
+	}
+
+	/**
 	 * Validate DB and ES index counts for all objects for active indexables
 	 *
 	 * ## OPTIONS
