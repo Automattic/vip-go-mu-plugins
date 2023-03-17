@@ -445,8 +445,13 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 			if ( $append_old_uri ) {
 				$new_url .= str_replace( $old_path, '', $request_uri );
 			}
-			wp_redirect( $new_url, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-			exit();
+
+			if ( function_exists( 'wp_redirect' ) ) {
+				wp_redirect( $new_url, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+			} else {
+				header( "Location: {$new_url}", true, 301 );
+			}
+			exit;
 		}
 	}
 }
@@ -489,7 +494,12 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 		foreach ( $vip_redirects_array as $old_url => $new_url ) {
 			if ( preg_match( $old_url, $uri, $matches ) ) {
 				$redirect_uri = preg_replace( $old_url, $new_url, $uri );
-				wp_redirect( $redirect_uri, 301 );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+
+				if ( function_exists( 'wp_redirect' ) ) {
+					wp_redirect( $redirect_uri, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+				} else {
+					header( "Location: {$redirect_uri}", true, 301 );
+				}
 				exit;
 			}
 		}
@@ -676,8 +686,12 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
  */
 function vip_main_feed_redirect( $target ) {
 	if ( wpcom_vip_is_main_feed_requested() && ! wpcom_vip_is_feedservice_ua() ) {
-		wp_redirect( $target, '302' );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-		die;
+		if ( function_exists( 'wp_redirect' ) ) {
+			wp_redirect( $target, 302 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+		} else {
+			header( "Location: {$target}", true, 302 );
+		}
+		exit;
 	}
 }
 
