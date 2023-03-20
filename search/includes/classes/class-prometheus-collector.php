@@ -46,7 +46,9 @@ class Prometheus_Collector implements CollectorInterface {
 			'es',
 			'request_times',
 			'Request times',
-			[ 'site_id', 'host', 'mode', 'type' ]
+			[ 'site_id', 'host', 'mode', 'type' ],
+			// Anything over ~2s is a timeout on the client, we pad with 100ms
+			[ 50, 100, 300, 500, 1000, 1900 ]
 		);
 
 		$this->query_counter = $registry->getOrRegisterCounter(
