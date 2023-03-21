@@ -120,7 +120,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function add( $key, $connection_group, $data, $expiration ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->add( $key, $data, $expiration );
+		return $mc->add( $this->normalize_key( $key ), $data, $expiration );
 	}
 
 	/**
@@ -135,7 +135,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function replace( $key, $connection_group, $data, $expiration ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->replace( $key, $data, $expiration );
+		return $mc->replace( $this->normalize_key( $key ), $data, $expiration );
 	}
 
 	/**
@@ -150,7 +150,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function set( $key, $connection_group, $data, $expiration ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->set( $key, $data, $expiration );
+		return $mc->set( $this->normalize_key( $key ), $data, $expiration );
 	}
 
 	/**
@@ -164,7 +164,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	public function get( $key, $connection_group ) {
 		$mc = $this->get_connection( $connection_group );
 		/** @psalm-suppress MixedAssignment */
-		$value = $mc->get( $key );
+		$value = $mc->get( $this->normalize_key( $key ) );
 
 		return [
 			'value' => $value,
@@ -179,13 +179,26 @@ class Memcached_Adapter implements Adapter_Interface {
 	 * @param string $connection_group The group, used to find the right connection pool.
 	 *
 	 * @return array<mixed>|false Will not return anything in the array for unfound keys.
+	 * @psalm-suppress MixedAssignment
 	 */
 	public function get_multiple( $keys, $connection_group ) {
-		$mc = $this->get_connection( $connection_group );
-		/** @psalm-suppress MixedAssignment */
-		$result = $mc->getMulti( $keys );
+		$mc          = $this->get_connection( $connection_group );
+		$mapped_keys = $this->normalize_keys_with_mapping( $keys );
 
-		return is_array( $result ) ? $result : false;
+		/** @psalm-var array<string, mixed>|false $results */
+		$results = $mc->getMulti( array_keys( $mapped_keys ) );
+
+		if ( ! is_array( $results ) ) {
+			return false;
+		}
+
+		$return = [];
+		foreach ( $results as $result_key => $result_value ) {
+			$original_key            = isset( $mapped_keys[ $result_key ] ) ? $mapped_keys[ $result_key ] : $result_key;
+			$return[ $original_key ] = $result_value;
+		}
+
+		return $return;
 	}
 
 	/**
@@ -198,7 +211,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function delete( $key, $connection_group ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->delete( $key );
+		return $mc->delete( $this->normalize_key( $key ) );
 	}
 
 	/**
@@ -210,14 +223,18 @@ class Memcached_Adapter implements Adapter_Interface {
 	 * @return array<string, boolean>
 	 */
 	public function delete_multiple( $keys, $connection_group ) {
-		$mc      = $this->get_connection( $connection_group );
-		$results = $mc->deleteMulti( $keys );
+		$mc          = $this->get_connection( $connection_group );
+		$mapped_keys = $this->normalize_keys_with_mapping( $keys );
+
+		/** @psalm-var array<string, true|int> $results */
+		$results = $mc->deleteMulti( array_keys( $mapped_keys ) );
 
 		$return = [];
-		/** @psalm-suppress MixedAssignment */
-		foreach ( $results as $key => $result ) {
+		foreach ( $results as $result_key => $result_value ) {
+			$original_key = isset( $mapped_keys[ $result_key ] ) ? $mapped_keys[ $result_key ] : $result_key;
+
 			// deleteMulti() returns true on success, but one of the Memcached::RES_* constants if failed.
-			$return[ (string) $key ] = true === $result;
+			$return[ $original_key ] = true === $result_value;
 		}
 
 		return $return;
@@ -234,7 +251,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function increment( $key, $connection_group, $offset ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->increment( $key, $offset );
+		return $mc->increment( $this->normalize_key( $key ), $offset );
 	}
 
 	/**
@@ -248,7 +265,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	 */
 	public function decrement( $key, $connection_group, $offset ) {
 		$mc = $this->get_connection( $connection_group );
-		return $mc->decrement( $key, $offset );
+		return $mc->decrement( $this->normalize_key( $key ), $offset );
 	}
 
 	/**
@@ -417,5 +434,39 @@ class Memcached_Adapter implements Adapter_Interface {
 		}
 
 		return $server_keys;
+	}
+
+	/**
+	 * Memcached can only handle keys with a length of 250 or less.
+	 * The Memcache extension automatically truncates. Memcached does not.
+	 * Instead of truncation, which can lead to some hidden consequences,
+	 * we can hash the string and use a shortened version when interacting
+	 * with the Memcached servers.
+	 *
+	 * @param string $key
+	 * @psalm-return string
+	 */
+	private function normalize_key( $key ) {
+		if ( strlen( $key ) <= 250 ) {
+			return $key;
+		} else {
+			return substr( $key, 0, 200 ) . ':truncated:' . md5( $key );
+		}
+	}
+
+	/**
+	 * Reduce key lenths while providing a map of new_key => original_key.
+	 *
+	 * @param string[] $keys
+	 * @psalm-return array<string, string>
+	 */
+	private function normalize_keys_with_mapping( $keys ) {
+		$mapped_keys = [];
+
+		foreach ( $keys as $key ) {
+			$mapped_keys[ $this->normalize_key( $key ) ] = $key;
+		}
+
+		return $mapped_keys;
 	}
 }

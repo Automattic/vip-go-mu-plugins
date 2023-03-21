@@ -2174,7 +2174,9 @@ class Search {
 	}
 
 	/**
-	 * Determine whether the rate-limiting is in effect
+	 * Determine whether the search rate-limiting is in effect. For indexing rate-limiting, see is_indexing_ratelimited()
+	 *
+	 * @return bool If search rate limiting is in effect
 	 */
 	public static function is_rate_limited(): bool {
 		return intval( wp_cache_get( self::QUERY_COUNT_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) > self::$max_query_count;
