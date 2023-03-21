@@ -194,6 +194,7 @@ class Site_Details_Index {
 
 	private function get_theme_info() {
 		$installed_themes  = wp_get_themes();
+		$theme_count       = count( $installed_themes );
 		$active_stylesheet = get_stylesheet();
 		$active_template   = get_template();
 		$update_data       = $this->get_theme_update_data();
@@ -201,6 +202,10 @@ class Site_Details_Index {
 		$theme_info = [];
 		foreach ( $installed_themes as $theme_path => $theme ) {
 			$is_active = in_array( $theme->get_stylesheet(), [ $active_stylesheet, $active_template ], true ) || in_array( $theme->get_template(), [ $active_stylesheet, $active_template ], true );
+
+			if ( $theme_count > 10 && ! $is_active ) {
+				continue;
+			}
 
 			$theme_info[] = [
 				'path'          => $theme_path,
