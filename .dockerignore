@@ -52,6 +52,8 @@
 **/phpdoc.dist.xml
 **/phpunit.xml
 **/phpunit.xml.dist
+**/phpunit-multisite.xml
+**/phpunit-multisite.xml.dist
 **/psalm.xml.dist
 **/wordpress.stubs
 **/.wp-env.json
@@ -69,12 +71,6 @@ wpcom-helper.php
 /bin/
 /ci/
 /cache/examples/
-/cron-control/bin/
-/cron-control/runner/
-/cron-control/tests/
-/cron-control-next/bin/
-/cron-control-next/runner/
-/cron-control-next/tests/
 /search/docs/
 /search/elasticpress/bin/
 /search/elasticpress/config/
@@ -138,3 +134,8 @@ wpcom-helper.php
 /drop-ins/wp-memcached/bin/
 /drop-ins/wp-memcached/stubs/
 /drop-ins/wp-memcached/tests/
+
+# Cron Control
+/cron-control/runner/
+/cron/cron-control/runner/
+/cron/cron-control-legacy/runner/

@@ -34,7 +34,9 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	public function tearDown(): void {
+		Constant_Mocker::clear();
 		$GLOBALS['db_servers'] = $this->db_server_backup;
+		parent::tearDown();
 	}
 
 	public function test_before_run_command_returns_early_for_non_db_subcommand() {

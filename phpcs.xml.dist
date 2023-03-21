@@ -14,8 +14,8 @@
 	<!-- Submodules - these should have their own PHPCS configurations -->
 	<exclude-pattern>/advanced-post-cache/*</exclude-pattern>
 	<exclude-pattern>/cron-control/*</exclude-pattern>
-	<exclude-pattern>/cron-control-next/*</exclude-pattern>
-	<exclude-pattern>/cron-control-next-v2/*</exclude-pattern>
+	<exclude-pattern>/cron/cron-control/*</exclude-pattern>
+	<exclude-pattern>/cron/cron-control-legacy/*</exclude-pattern>
 	<exclude-pattern>/debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>/http-concat/*</exclude-pattern>
 	<exclude-pattern>/jetpack/*</exclude-pattern>
@@ -39,8 +39,7 @@
 	<exclude-pattern>/vaultpress/*</exclude-pattern>
 	<exclude-pattern>/vendor/*</exclude-pattern>
 	<exclude-pattern>/wordpress-importer/*</exclude-pattern>
-	<exclude-pattern>/wp-cron-control/*</exclude-pattern>
-	<exclude-pattern>/wp-parsely-*/*</exclude-pattern>
+	<exclude-pattern>/wp-parsely/*</exclude-pattern>
 	<exclude-pattern>*/build/*\.asset\.php</exclude-pattern>
 
 	<!-- How to scan -->
