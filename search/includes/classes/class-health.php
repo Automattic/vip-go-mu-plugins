@@ -566,6 +566,7 @@ class Health {
 			$this->remove_validate_content_lock();
 			if ( $should_stop ) {
 				delete_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT );
+				$results = new WP_Error( 'es_validate_content_aborted', 'Validation aborted by CLI command stop-validate-contents!' );
 			}
 		}
 		if ( $track_process ) {

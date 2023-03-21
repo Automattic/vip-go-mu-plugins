@@ -372,6 +372,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$results = $health->validate_index_posts_content( $assoc_args );
 
 		if ( is_wp_error( $results ) ) {
+			if ( $results->get_error_code() === 'es_validate_content_aborted' ) {
+				WP_CLI::error( $results->get_error_message() );
+			}
+
 			$diff = $results->get_error_data( 'diff' );
 
 			if ( ! empty( $diff ) ) {
