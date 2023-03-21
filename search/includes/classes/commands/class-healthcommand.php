@@ -51,22 +51,28 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		} else {
 			$rate_limit = [];
 			if ( $search_rate_limited ) {
+				$search_start_time = $search::get_query_rate_limit_start();
+
 				$rate_limit[] = [
-					'type'       => 'search',
-					'start_time' => $search::get_query_rate_limit_start(),
-					'info'       => sprintf( '(%d of %d)', $search::get_query_count(), $search::$max_query_count ),
+					'type'                => 'search',
+					'start_time'          => $search_start_time,
+					'readable_start_time' => human_time_diff( $search_start_time ) . ' ago',
+					'info'                => sprintf( '(%d of %d)', $search::get_query_count(), $search::$max_query_count ),
 				];
 			}
 
 			if ( $indexing_rate_limited ) {
+				$indexing_start_time = $search->queue::get_indexing_rate_limit_start();
+
 				$rate_limit[] = [
-					'type'       => 'indexing',
-					'start_time' => $search->queue::get_indexing_rate_limit_start(),
-					'info'       => 'n/a',
+					'type'                => 'indexing',
+					'start_time'          => $indexing_start_time,
+					'readable_start_time' => human_time_diff( $indexing_start_time ) . ' ago',
+					'info'                => 'n/a',
 				];
 			}
 
-			WP_CLI\Utils\format_items( $format, $rate_limit, [ 'type', 'start_time', 'info' ] );
+			WP_CLI\Utils\format_items( $format, $rate_limit, [ 'type', 'start_time', 'readable_start_time', 'info' ] );
 		}
 	}
 
