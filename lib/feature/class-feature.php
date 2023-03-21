@@ -145,16 +145,34 @@ class Feature {
 
 		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
 		// the feature name so that the same sites aren't always the canaries
-		$bucket = crc32( $feature . '-' . constant( 'FILES_CLIENT_SITE_ID' ) ) % 100;
+		$bucket = static::get_bucket( constant( 'FILES_CLIENT_SITE_ID' ), $feature );
 
 		// Is the bucket enabled?
 		$threshold = $percentage * 100; // $percentage is decimal
 
 		if ( is_multisite() && $bucket < $threshold ) {
 			// For multisites, we don't want to roll out for all subsites
-			$bucket = crc32( $feature . '-' . get_current_blog_id() ) % 100;
+			$bucket = static::get_bucket( get_current_blog_id(), $feature );
 		}
 
 		return $bucket < $threshold; // If our 0-based bucket is inside our threshold, it's enabled
+	}
+
+	/**
+	 * Given a site ID and a feature, return the bucket the site is in.
+	 *
+	 * Note: this is a lower-level API, it doesn't care if the feature is defined or whether it's a multisite or not.
+	 * Please use is_enabled()/is_enabled_by_ids()/is_enabled_by_percentage() instead.
+	 *
+	 * @param mixed $site_id
+	 * @param string $feature
+	 * @return integer
+	 */
+	public static function get_bucket( $site_id = 0, string $feature = '' ) {
+		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
+		// the feature name so that the same sites aren't always the canaries
+		$bucket = crc32( $feature . '-' . $site_id ) % 100;
+
+		return $bucket;
 	}
 }
