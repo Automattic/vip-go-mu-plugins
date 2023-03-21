@@ -2,25 +2,16 @@
 
 namespace Automattic\VIP\DatabaseMultipleDatasetsConfig;
 
-global $wpdb;
-
-// Register a callback to select the dataset for a given query
-$wpdb->add_callback( __NAMESPACE__ . '\dataset_callback', 'dataset' );
-
-function dataset_callback() {
-	global $wpdb;
-
+function dataset_callback( $query, $wpdb ) {
 	$table   = $wpdb->table;
-	$dataset = get_dataset_for_table( $table );
+	$dataset = get_dataset_for_table( $wpdb );
 	$wpdb->add_table( $dataset, $table );
 
 	return [ 'dataset' => $dataset ];
 }
 
-function get_dataset_for_table( $table ) {
-	global $wpdb;
-
-	if ( preg_match( '/^' . $wpdb->base_prefix . '(\d+)_/i', $table, $matches ) ) {
+function get_dataset_for_table( $wpdb ) {
+	if ( preg_match( '/^' . $wpdb->base_prefix . '(\d+)_/i', $wpdb->table, $matches ) ) {
 		$blog_id = $matches[1];
 
 		return get_dataset_name_for_blog_id( $blog_id );
@@ -31,7 +22,6 @@ function get_dataset_for_table( $table ) {
 
 function get_dataset_name_for_blog_id( $blog_id ) {
 	global $db_datasets;
-
 	foreach ( $db_datasets as $dataset ) {
 		if ( in_array( $blog_id, $dataset['blog_ids'] ) ) {
 			return $dataset['name'];
@@ -56,7 +46,6 @@ function get_latest_dataset_name() {
 
 function get_primary_dataset() {
 	global $db_datasets;
-
 	foreach ( $db_datasets as $dataset ) {
 		if ( $dataset['primary'] ) {
 			return $dataset['name'];

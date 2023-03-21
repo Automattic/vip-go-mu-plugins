@@ -13,6 +13,10 @@ $mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : 
 
 if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_ENABLED ) {
 	require_once $mu_plugin_dir . '/lib/db-multiple-datasets-config.php';
+
+	global $wpdb;
+	// Register a callback to select the dataset for a given query
+	$wpdb->add_callback( 'Automattic\VIP\DatabaseMultipleDatasetsConfig\dataset_callback', 'dataset' );
 }
 
 require_once $mu_plugin_dir . '/lib/utils/class-context.php';
