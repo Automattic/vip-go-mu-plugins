@@ -36,15 +36,11 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::error( 'There is no validate-contents run ongoing' );
 		}
 
-		if ( false !== get_transient( $health::STOP_VALIDATE_CONTENTS_TRANSIENT ) ) {
-			WP_CLI::error( 'There is already a request to stop validate-contents!' );
-		}
-
-		$stop = set_transient( $health::STOP_VALIDATE_CONTENTS_TRANSIENT, true, 3 * MINUTE_IN_SECONDS );
+		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP );
 		if ( $stop ) {
-			WP_CLI::success( 'Stopping validate-contents run...' );
+			WP_CLI::success( 'Attempting to abort validate-contents run...' );
 		} else {
-			WP_CLI::error( 'Failed to stop validate-contents run!' );
+			WP_CLI::error( 'Failed to abort validate-contents run! There is already a request to stop it.' );
 		}
 	}
 

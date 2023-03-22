@@ -48,7 +48,9 @@ class Health {
 
 	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
 
-	const STOP_VALIDATE_CONTENTS_TRANSIENT = 'search_interrupt_validate_contents';
+	const STOP_VALIDATE_CONTENTS_KEY = 'search_interrupt_validate_contents';
+
+	const CACHE_GROUP = 'vip_search';
 
 	/**
 	 * Instance of Search class
@@ -441,7 +443,7 @@ class Health {
 			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
 
-		if ( $this->is_validate_content_ongoing() && false !== get_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT ) ) {
+		if ( $this->is_validate_content_ongoing() && false !== wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true ) ) {
 			return new WP_Error( 'request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
 		}
 
@@ -559,13 +561,13 @@ class Health {
 				sleep( mt_rand( 2, 5 ) );
 			}
 
-			$should_stop = get_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT );
+			$should_stop = wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true );
 		} while ( $start_post_id <= $last_post_id && ! $should_stop );
 
 		if ( $process_parallel_execution_lock || $should_stop ) {
 			$this->remove_validate_content_lock();
 			if ( $should_stop ) {
-				delete_transient( self::STOP_VALIDATE_CONTENTS_TRANSIENT );
+				wp_cache_delete( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP );
 				$results = new WP_Error( 'es_validate_content_aborted', 'Validation aborted by CLI command stop-validate-contents!' );
 			}
 		}
