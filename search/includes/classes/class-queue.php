@@ -1076,7 +1076,9 @@ class Queue {
 
 		// If indexing operation ratelimiting is hit, queue index operations
 		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
-			Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			}
 
 			$this->handle_index_limiting_start_timestamp();
 			$this->maybe_alert_for_prolonged_index_limiting();
