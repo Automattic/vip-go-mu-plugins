@@ -18,7 +18,7 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-error-stats-collector.php',
 	];
 
-	$should_enable_post_collector = Feature::is_enabled( 'prom-post-collection' ) || ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV );
+	$should_enable_post_collector = Feature::is_enabled( 'prom-post-collection' );
 
 	if ( $should_enable_post_collector ) {
 		$files[] = '/prometheus-collectors/class-post-stats-collector.php';

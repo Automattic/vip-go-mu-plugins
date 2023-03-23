@@ -25,7 +25,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'prom-post-collection'   => 0.1,
+		'prom-post-collection'   => 0.05,
 		'vip-search-use-next-ep' => 0.2,
 	];
 
@@ -46,7 +46,12 @@ class Feature {
 	 *
 	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
 	 */
-	public static $feature_envs = [];
+	public static $feature_envs = [
+		'prom-post-collection' => [
+			'develop' => true,
+			'staging' => true,
+		],
+	];
 
 	/**
 	 * Checks if a feature is enabled.
