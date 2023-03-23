@@ -1161,8 +1161,8 @@ class Search {
 			$error_messages        = $response->get_error_messages();
 			$response_failure_code = $response->get_error_code();
 
-			foreach ( $error_messages as $error_message ) {
-				if ( class_exists( Prometheus_Collector::class ) ) {
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				foreach ( $error_messages as $error_message ) {
 					$reason = $this->is_curl_timeout( $error_message ) ? Prometheus_Collector::QUERY_FAILED_TIMEOUT : Prometheus_Collector::QUERY_FAILED_ERROR;
 					Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], $reason );
 				}
