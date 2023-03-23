@@ -128,7 +128,7 @@ class Health {
 
 			$db_total = (int) $db_result['total_objects'];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
+			return new WP_Error( 'es_db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
 		}
 
 		$diff = 0;
@@ -440,11 +440,11 @@ class Health {
 		$track_process = ( ! $start_post_id || 1 === $start_post_id ) && ! $force_parallel_execution;
 
 		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
-			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
+			return new WP_Error( 'es_content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
 
 		if ( $this->is_validate_content_ongoing() && false !== wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true ) ) {
-			return new WP_Error( 'request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
+			return new WP_Error( 'es_request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
 		}
 
 		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
@@ -527,7 +527,7 @@ class Health {
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
 				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
+				$error = new WP_Error( 'es_diff_size_limit_reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
 
