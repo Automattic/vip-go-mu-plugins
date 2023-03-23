@@ -207,7 +207,7 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 	 * @param string $value Value to be outputted in table cell
 	 * @param int|null $weight Weight by sorting priority
 	 */
-	public function output_table_cell( string $value, int $weight = null ) {
+	public function output_table_cell( ?string $value, int $weight = null ) {
 		if ( $weight ) {
 			$weight = ' data-qm-sort-weight="' . esc_attr( $weight ) . '"';
 		}
