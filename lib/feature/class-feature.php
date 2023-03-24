@@ -36,7 +36,14 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		'prom-post-collection' => [
+			6747 => false,
+			6746 => false,
+			6506 => false,
+			6517 => false,
+		],
+	];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.
