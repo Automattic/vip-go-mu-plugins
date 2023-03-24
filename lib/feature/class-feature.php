@@ -129,7 +129,7 @@ class Feature {
 	}
 
 	/**
-	 * Selectively enable or disable feature by certain IDs.
+	 * Selectively enable feature by certain IDs.
 	 *
 	 * @param string $feature The feature we are targeting.
 	 *
