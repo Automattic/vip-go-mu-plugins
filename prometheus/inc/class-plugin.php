@@ -14,6 +14,7 @@ class Plugin {
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
 
+	const MAX_NETWORK_SITES = 50;
 	/**
 	 * @return static
 	 */
@@ -152,7 +153,7 @@ class Plugin {
 		}
 
 		$sites_count = wp_count_sites();
-		if ( $sites_count['all'] > 50 ) {
+		if ( $sites_count['all'] > self::MAX_NETWORK_SITES ) {
 			return 'network';
 		}
 

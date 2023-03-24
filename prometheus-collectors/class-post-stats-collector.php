@@ -47,6 +47,11 @@ class Post_Stats_Collector implements CollectorInterface {
 			return;
 		}
 
+		// Since we bunch everything together under a single label this logic wouldn't make any sense
+		if ( is_multisite() && wp_count_sites()['all'] > Plugin::MAX_NETWORK_SITES ) {
+			return;
+		}
+
 		$ret   = [];
 		$types = get_post_types( [ 'public' => true ] );
 		foreach ( $types as $type ) {
