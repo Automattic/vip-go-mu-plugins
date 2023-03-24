@@ -231,6 +231,28 @@ class Feature_Test extends TestCase {
 		$this->assertEquals( false, $result );
 	}
 
+	public function test_is_disabled_by_ids() {
+		Feature::$feature_ids = [
+			'foo'  => [
+				123 => true,
+				789 => false,
+			],
+			'bar'  => [ 456 => true ],
+			'test' => [ 456 => false ],
+		];
+
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
+
+		$result = Feature::is_disabled_by_ids( 'foo' );
+		$this->assertFalse( $result );
+
+		$result = Feature::is_disabled_by_ids( 'bar' );
+		$this->assertFalse( $result );
+
+		$result = Feature::is_disabled_by_ids( 'test' );
+		$this->assertTrue( $result );
+	}
+
 	public function test_is_enabled_by_env__non_prod() {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
 
@@ -330,6 +352,21 @@ class Feature_Test extends TestCase {
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
 
 		$result = Feature::is_enabled( 'foo-bar-test' );
+
+		$this->assertFalse( $result );
+	}
+
+
+	public function test_is_enabled__disabled_ids() {
+		Feature::$feature_ids = [
+			'foo' => [
+				123 => false,
+			],
+		];
+
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		$result = Feature::is_enabled( 'foo' );
 
 		$this->assertFalse( $result );
 	}
