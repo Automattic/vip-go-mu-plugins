@@ -13,6 +13,8 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use stdClass;
+
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.8',
@@ -39,7 +41,6 @@ final class Parsely_Loader_Info {
 
 	private static bool $active;
 	private static string $integration_type;
-	private static string $service_type;
 	private static string $version;
 	private static array $parsely_options;
 
@@ -65,6 +66,38 @@ final class Parsely_Loader_Info {
 
 	public static function set_version( string $version ): void {
 		self::$version = $version;
+	}
+
+	public static function get_configs(): stdClass {
+		$configs = new stdClass();
+		$options = self::get_parsely_options();
+
+		$configs->is_pinned_version            = has_filter( 'wpvip_parsely_version' );
+		$configs->site_id                      = $options['apikey'];
+		$configs->have_api_secret              = '' !== $options['api_secret'];
+		$configs->is_javascript_disabled       = (bool) $options['disable_javascript'];
+		$configs->is_autotracking_disabled     = (bool) $options['disable_autotrack'];
+		$configs->should_track_logged_in_users = (bool) $options['track_authenticated_users'];
+
+		$configs->tracked_post_types = array();
+		$post_names                  = get_post_types( array( 'public' => true ) );
+		foreach ( $post_names as $post_name ) {
+			$tracked_post_type            = new stdClass();
+			$tracked_post_type->name      = $post_name;
+			$tracked_post_type->is_public = true;
+
+			if ( in_array( $post_name, $options['track_post_types'] ) ) {
+				$tracked_post_type->track_type = 'post';
+			} elseif ( in_array( $post_name, $options['track_page_types'] ) ) {
+				$tracked_post_type->track_type = 'non-post';
+			} else {
+				$tracked_post_type->track_type = 'do-not-track';
+			}
+
+			array_push( $configs->tracked_post_types, $tracked_post_type );
+		}
+
+		return $configs;
 	}
 
 	public static function get_parsely_options(): array {
