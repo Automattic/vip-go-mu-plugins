@@ -36,7 +36,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		// Can only reliably test the defaults in "disabled" mode.
 		if ( 'disabled' === self::$test_mode ) {
 			$this->assertFalse( Parsely_Loader_Info::is_active() );
-			$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
+			$this->assertEquals( Parsely_Integration_Type::NONE, Parsely_Loader_Info::get_integration_type() );
 			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
 			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
 		} else {
@@ -107,7 +107,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 					Parsely_Loader_Info::is_active(),
 					'Expecting the plugin to be inactive'
 				);
-				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_NONE, Parsely_Loader_Info::get_integration_type() );
+				$this->assertEquals( Parsely_Integration_Type::NONE, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
@@ -116,7 +116,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 					Parsely_Loader_Info::is_active(),
 					'Expecting wp-parsely plugin to be enabled by the filter.'
 				);
-				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS, Parsely_Loader_Info::get_integration_type() );
+				$this->assertEquals( Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'option_enabled':
 				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
@@ -125,7 +125,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 					Parsely_Loader_Info::is_active(),
 					'Expecting wp-parsely plugin to be enabled by the option.'
 				);
-				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT, Parsely_Loader_Info::get_integration_type() );
+				$this->assertEquals( Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION, Parsely_Loader_Info::get_integration_type() );
 				break;
 			case 'filter_and_option_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
@@ -134,7 +134,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 					Parsely_Loader_Info::is_active(),
 					'Expecting wp-parsely plugin to be enabled by the filter overriding the option.'
 				);
-				$this->assertEquals( Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS, Parsely_Loader_Info::get_integration_type() );
+				$this->assertEquals( Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER, Parsely_Loader_Info::get_integration_type() );
 				break;
 			default:
 				$this->fail( 'Invalid test mode specified: ' . self::$test_mode );
