@@ -193,6 +193,90 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $row_actions_expected, has_filter( 'post_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
 	}
 
+	public function test_default_parsely_configs() {
+		maybe_load_plugin();
+
+		if ( $this->is_plugin_disabled() ) {
+			$this->assertNull( Parsely_Loader_Info::get_configs() );
+			return;
+		}
+
+		$this->assertEquals( Parsely_Loader_Info::get_configs(), (object) array(
+			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
+			'site_id'                      => '',
+			'have_api_secret'              => false,
+			'is_javascript_disabled'       => false,
+			'is_autotracking_disabled'     => false,
+			'should_track_logged_in_users' => false,
+			'tracked_post_types'           => array(
+				(object) array(
+					'name'       => 'post',
+					'is_public'  => true,
+					'track_type' => 'do-not-track',
+				),
+				(object) array(
+					'name'       => 'page',
+					'is_public'  => true,
+					'track_type' => 'do-not-track',
+				),
+				(object) array(
+					'name'       => 'attachment',
+					'is_public'  => true,
+					'track_type' => 'do-not-track',
+				),
+			),
+		) );
+	}
+
+	public function test_custom_parsely_configs() {
+		maybe_load_plugin();
+
+		if ( $this->is_plugin_disabled() ) {
+			$this->assertNull( Parsely_Loader_Info::get_configs() );
+			return;
+		}
+
+		$current_settings = get_option( 'parsely' ) ?: [];
+		update_option( 'parsely', array_merge( $current_settings, array(
+			'apikey'                    => 'example.com',
+			'api_secret'                => 'secret',
+			'track_authenticated_users' => true,
+			'disable_javascript'        => true,
+			'disable_autotrack'         => true,
+			'track_post_types'          => array( 'post' ),
+			'track_page_types'          => array( 'page' ),
+		) ) );
+
+		$this->assertEquals( Parsely_Loader_Info::get_configs(), (object) array(
+			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
+			'site_id'                      => 'example.com',
+			'have_api_secret'              => true,
+			'is_javascript_disabled'       => true,
+			'is_autotracking_disabled'     => true,
+			'should_track_logged_in_users' => true,
+			'tracked_post_types'           => array(
+				(object) array(
+					'name'       => 'post',
+					'is_public'  => true,
+					'track_type' => 'post',
+				),
+				(object) array(
+					'name'       => 'page',
+					'is_public'  => true,
+					'track_type' => 'non-post',
+				),
+				(object) array(
+					'name'       => 'attachment',
+					'is_public'  => true,
+					'track_type' => 'do-not-track',
+				),
+			),
+		) );
+
+		// Reset settings.
+		update_option( 'parsely', $current_settings );
+	}
+
 	public function test_alter_option_use_repeated_metas() {
 		maybe_load_plugin();
 		$options = alter_option_use_repeated_metas();
