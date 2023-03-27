@@ -26,23 +26,9 @@ const SUPPORTED_VERSIONS = [
 	'3.1',
 ];
 
-// Describes how the wp-parsely is integrated.
-abstract class Parsely_Integration_Type {
-	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
-	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
-
-	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
-	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-
-	const SELF_MANAGED = 'SELF_MANAGED';
-	const NONE         = 'NONE';
-}
-
-
 /**
  * Keep track of Parse.ly loading info in one place.
  */
-// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
 final class Parsely_Loader_Info {
 	// Defaults for when detection was not possible.
 	const VERSION_UNKNOWN = 'UNKNOWN';
@@ -302,4 +288,22 @@ function maybe_disable_some_features() {
 		// Remove the Parse.ly Recommended Widget.
 		unregister_widget( 'Parsely_Recommended_Widget' );
 	}
+}
+
+/**
+ * Enum which represent all options to integrate `wp-parsely`.
+ */
+// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
+abstract class Parsely_Integration_Type {
+	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
+	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
+
+	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
+	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
+
+	const SELF_MANAGED = 'SELF_MANAGED';
+
+	// When parsely is not active
+	const NONE = 'NONE';
+	const NULL = 'NULL';
 }
