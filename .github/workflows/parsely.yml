@@ -24,11 +24,11 @@ jobs:
         config:
           - { wp: latest, parsely: '3.1', mode: 'filter_enabled', php: '7.4' }
           - { wp: latest, parsely: '3.1', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.6', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.6', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.8', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.8', mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.8', mode: 'filter_and_option_enabled', php: '7.4' }
     services:
       mysql:
         image: mysql:8
