@@ -93,7 +93,7 @@ function _configure_enable_wp_parsely_via_filter() {
 
 function _configure_disable_wp_parsely_via_filter() {
 	echo "[WP_PARSELY_INTEGRATION] Disabling the plugin via filter\n";
-	add_filter( 'wpvip_parsely_load_mu', '__return_true' );
+	add_filter( 'wpvip_parsely_load_mu', '__return_false' );
 }
 
 function _configure_enable_wp_parsely_via_option() {
@@ -142,15 +142,31 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		tests_add_filter( 'muplugins_loaded', '_configure_enable_wp_parsely_via_filter' );
 		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
 		break;
+	case 'filter_disabled':
+		echo "Expecting wp-parsely plugin to be disabled by the filter.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_disable_wp_parsely_via_filter' );
+		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
+		break;
 	case 'option_enabled':
 		echo "Expecting wp-parsely plugin to be enabled by the option.\n";
 		tests_add_filter( 'muplugins_loaded', '_configure_enable_wp_parsely_via_option' );
+		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
+		break;
+	case 'option_disabled':
+		echo "Expecting wp-parsely plugin to be disabled by the option.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_disable_wp_parsely_via_option' );
 		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
 		break;
 	case 'filter_and_option_enabled':
 		echo "Expecting wp-parsely plugin to be enabled by the filter and the option.\n";
 		tests_add_filter( 'muplugins_loaded', '_configure_enable_wp_parsely_via_filter' );
 		tests_add_filter( 'muplugins_loaded', '_configure_enable_wp_parsely_via_option' );
+		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
+		break;
+	case 'filter_and_option_disabled':
+		echo "Expecting wp-parsely plugin to be disabled by the filter and the option.\n";
+		tests_add_filter( 'muplugins_loaded', '_configure_disable_wp_parsely_via_filter' );
+		tests_add_filter( 'muplugins_loaded', '_configure_disable_wp_parsely_via_option' );
 		tests_add_filter( 'muplugins_loaded', '_configure_specify_wp_parsely_version' );
 		break;
 	default:

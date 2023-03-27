@@ -204,7 +204,12 @@ function maybe_load_plugin() {
 	// No integration: The site has not enabled parsely.
 	if ( ! $should_load || $should_prevent_loading ) {
 		Parsely_Loader_Info::set_active( false );
-		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::NONE );
+
+		if ( false === $filtered_load_status ) {
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+		} elseif ( '0' === $option_load_status ) {
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION );
+		}
 
 		return;
 	}
@@ -248,14 +253,9 @@ function maybe_load_plugin() {
 		$entry_file = __DIR__ . '/wp-parsely/wp-parsely.php';
 	}
 
-	if ( true === $filtered_load_status ) {
-		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
-	} elseif ( '1' === $option_load_status ) {
+	$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
+	if ( '1' === $option_load_status && true !== $filtered_load_status ) {
 		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION;
-	} elseif ( false === $filtered_load_status ) {
-		$integration_type = Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER;
-	} elseif ( '0' === $option_load_status ) {
-		$integration_type = Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION;
 	}
 
 	// Require the actual wp-parsely plugin.
