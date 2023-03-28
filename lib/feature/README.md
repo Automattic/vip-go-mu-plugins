@@ -49,11 +49,17 @@ public static $feature_ids = [
 ];
 ```
 
-To check:
+To check if enabled:
 
 ```php
 \Automattic\VIP\Feature::is_enabled_by_ids( 'my-awesome-complex-feature' );
 ```
+
+To check if disabled:
+```php
+\Automattic\VIP\Feature::is_disabled_by_ids( 'my-awesome-complex-feature' );
+```
+
 
 ### Defining and checking features by environment type
 

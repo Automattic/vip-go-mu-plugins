@@ -25,6 +25,78 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Stop an ongoing validate-contents from continuing to be run.
+	 *
+	 * @subcommand stop-validate-contents
+	 */
+	public function stop_validate_contents( $args, $assoc_args ) {
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
+
+		if ( ! $health->is_validate_content_ongoing() ) {
+			WP_CLI::error( 'There is no validate-contents run ongoing' );
+		}
+
+		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP );
+		if ( $stop ) {
+			WP_CLI::success( 'Attempting to abort validate-contents run...' );
+		} else {
+			WP_CLI::error( 'Failed to abort validate-contents run! There is already a request to stop it.' );
+		}
+	}
+
+	/**
+	 * Get information on rate limiting.
+	 *
+	 * ## OPTIONS
+	 *
+	 *[--format=<format>]
+	 * : Accepts 'table', 'json', 'csv', or 'yaml'. Default: table
+	 *
+	 * @subcommand rate-limits [--format=<format>]
+	 */
+	public function rate_limits( $args, $assoc_args ) {
+		$format = $assoc_args['format'] ?? 'table';
+		if ( ! in_array( $format, [ 'table', 'json', 'csv', 'yaml' ], true ) ) {
+			WP_CLI::error( __( '--format only accepts the following values: table, json, csv, yaml' ) );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		$search_rate_limited   = $search::is_rate_limited();
+		$indexing_rate_limited = $search->queue->is_indexing_ratelimited();
+
+		$is_rate_limited = $search_rate_limited || $indexing_rate_limited;
+		if ( ! $is_rate_limited ) {
+			WP_CLI::success( 'No rate limiting found!' );
+		} else {
+			$rate_limit = [];
+			if ( $search_rate_limited ) {
+				$search_start_time = $search::get_query_rate_limit_start();
+
+				$rate_limit[] = [
+					'type'                => 'search',
+					'start_time'          => $search_start_time,
+					'readable_start_time' => human_time_diff( $search_start_time ) . ' ago',
+					'info'                => sprintf( '(%d of %d)', $search::get_query_count(), $search::$max_query_count ),
+				];
+			}
+
+			if ( $indexing_rate_limited ) {
+				$indexing_start_time = $search->queue::get_indexing_rate_limit_start();
+
+				$rate_limit[] = [
+					'type'                => 'indexing',
+					'start_time'          => $indexing_start_time,
+					'readable_start_time' => human_time_diff( $indexing_start_time ) . ' ago',
+					'info'                => 'n/a',
+				];
+			}
+
+			WP_CLI\Utils\format_items( $format, $rate_limit, [ 'type', 'start_time', 'readable_start_time', 'info' ] );
+		}
+	}
+
+	/**
 	 * Validate DB and ES index counts for all objects for active indexables
 	 *
 	 * ## OPTIONS
@@ -348,6 +420,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$results = $health->validate_index_posts_content( $assoc_args );
 
 		if ( is_wp_error( $results ) ) {
+			if ( $results->get_error_code() === 'es_validate_content_aborted' ) {
+				WP_CLI::error( $results->get_error_message() );
+			}
+
 			$diff = $results->get_error_data( 'diff' );
 
 			if ( ! empty( $diff ) ) {
@@ -355,7 +431,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			}
 
 			$message = $results->get_error_message();
-			if ( 'content_validation_already_ongoing' === $results->get_error_code() ) {
+			if ( 'es_content_validation_already_ongoing' === $results->get_error_code() ) {
 				$message .= "\n\nYou can use --force_parallel_execution to run the command even with the lock in place";
 			}
 			WP_CLI::error( $message );
