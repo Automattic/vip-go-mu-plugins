@@ -2268,7 +2268,11 @@ class Search {
 	 * @return void
 	 */
 	public function update_last_processed_post_id_option( $objects, $response ) {
-		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
+		$info = [
+			'post_id' => array_key_last( $objects ),
+			'time'    => gmdate( 'Y-m-d H:i:s', time() ),
+		];
+		update_option( self::LAST_INDEXED_POST_ID_OPTION, $info );
 	}
 
 	/**

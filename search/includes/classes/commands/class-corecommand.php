@@ -516,7 +516,7 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( false === $last_id ) {
 			WP_CLI::line( 'No last indexed object ID found!' );
 		} else {
-			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+			WP_CLI::line( wp_json_encode( $last_id ) );
 		}
 	}
 
