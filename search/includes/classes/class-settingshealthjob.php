@@ -432,6 +432,8 @@ class SettingsHealthJob {
 				'extra'    => [
 					'homeurl'   => home_url(),
 					'indexable' => $indexable->slug,
+					'new_index' => $this->search->versioning->get_inactive_version_number( $indexable ),
+					'container' => gethostname(),
 				],
 			)
 		);
@@ -464,10 +466,27 @@ class SettingsHealthJob {
 	 * @param object $Indexable Indexable object we want to swap out
 	 */
 	public function alert_to_swap_index_versions( $indexable ) {
+		$old_version = $this->search->versioning->get_active_version_number( $indexable );
+		$new_version = $this->search->versioning->get_inactive_version_number( $indexable );
+		if ( is_wp_error( $new_version ) ) {
+			$message = sprintf(
+				'Application %s: An error occurred locating the newly built index on %s for shard requirements (%s)',
+				FILES_CLIENT_SITE_ID,
+				$indexable->slug,
+				home_url(),
+				$new_version->get_error_message()
+			);
+			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+
+			return;
+		}
+
 		$message = sprintf(
-			'Application %s: New index built to meet shard requirements. Please activate %s index to new version for %s after validating index health with `wp vip-search health validate-counts`.',
+			'Application %s: New index built to meet shard requirements. Please activate %s index to new version "%d" from "%d" for %s. Index health must be validated with `wp vip-search health validate-counts`.',
 			FILES_CLIENT_SITE_ID,
 			$indexable->slug,
+			$new_version,
+			$old_version,
 			home_url(),
 		);
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
