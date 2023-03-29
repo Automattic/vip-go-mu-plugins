@@ -130,7 +130,7 @@ class Feature {
 	 * @return mixed Returns true if on list.
 	 */
 	public static function is_disabled_by_ids( string $feature ) {
-		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
 
@@ -149,7 +149,7 @@ class Feature {
 	 * @return bool Returns true if on list.
 	 */
 	public static function is_enabled_by_ids( string $feature ) {
-		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
 
