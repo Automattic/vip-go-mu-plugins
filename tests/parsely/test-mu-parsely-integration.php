@@ -211,17 +211,14 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'tracked_post_types'           => array(
 				(object) array(
 					'name'       => 'post',
-					'is_public'  => true,
 					'track_type' => 'do-not-track',
 				),
 				(object) array(
 					'name'       => 'page',
-					'is_public'  => true,
 					'track_type' => 'do-not-track',
 				),
 				(object) array(
 					'name'       => 'attachment',
-					'is_public'  => true,
 					'track_type' => 'do-not-track',
 				),
 			),
@@ -257,17 +254,14 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'tracked_post_types'           => array(
 				(object) array(
 					'name'       => 'post',
-					'is_public'  => true,
 					'track_type' => 'post',
 				),
 				(object) array(
 					'name'       => 'page',
-					'is_public'  => true,
 					'track_type' => 'non-post',
 				),
 				(object) array(
 					'name'       => 'attachment',
-					'is_public'  => true,
 					'track_type' => 'do-not-track',
 				),
 			),

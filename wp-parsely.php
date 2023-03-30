@@ -62,11 +62,21 @@ final class Parsely_Loader_Info {
 		self::$version = $version;
 	}
 
+	/**
+	 * Returns configuration which represents how the plugin is configured in site.
+	 *
+	 * @return ParselyConfigs
+	 */
 	public static function get_configs() {
 		if ( ! self::is_active() ) {
 			return null;
 		}
 
+		/**
+		 * Variable.
+		 *
+		 * @var ParselyConfigs
+		 */
 		$configs = new stdClass();
 		$options = self::get_parsely_options() ?: [];
 
@@ -79,14 +89,15 @@ final class Parsely_Loader_Info {
 
 		$configs->tracked_post_types = array();
 		$post_names                  = get_post_types( array( 'public' => true ) );
+		$tracked_post_types          = $options['track_post_types'] ?? array();
+		$tracked_page_types          = $options['track_page_types'] ?? array();
 		foreach ( $post_names as $post_name ) {
-			$tracked_post_type            = new stdClass();
-			$tracked_post_type->name      = $post_name;
-			$tracked_post_type->is_public = true;
+			$tracked_post_type       = new stdClass();
+			$tracked_post_type->name = $post_name;
 
-			if ( in_array( $post_name, ( $options['track_post_types'] ?? array() ) ) ) {
+			if ( in_array( $post_name, $tracked_post_types ) ) {
 				$tracked_post_type->track_type = 'post';
-			} elseif ( in_array( $post_name, ( $options['track_page_types'] ?? array() ) ) ) {
+			} elseif ( in_array( $post_name, $tracked_page_types ) ) {
 				$tracked_post_type->track_type = 'non-post';
 			} else {
 				$tracked_post_type->track_type = 'do-not-track';

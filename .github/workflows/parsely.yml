@@ -38,12 +38,12 @@ jobs:
           - { wp: latest, parsely: '3.6', mode: 'filter_and_option_disabled', php: '7.4' }
 
           # Latest version of the parsely plugin
-          - { wp: latest, parsely: '3.8', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.8', mode: 'filter_disabled', php: '7.4' }
-          - { wp: latest, parsely: '3.8', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.8', mode: 'option_disabled', php: '7.4' }
-          - { wp: latest, parsely: '3.8', mode: 'filter_and_option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.8', mode: 'filter_and_option_disabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_disabled', php: '7.4' }
+          - { wp: latest, mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, mode: 'option_disabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_and_option_disabled', php: '7.4' }
     services:
       mysql:
         image: mysql:8

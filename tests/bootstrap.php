@@ -116,26 +116,6 @@ function _configure_specify_wp_parsely_version() {
 	}
 }
 
-switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' ) ) {
-	case '2.6':
-		tests_add_filter(
-			'wpvip_parsely_version',
-			function() {
-				return '2.6';
-			}
-		);
-		break;
-	case '3.5':
-	default:
-		tests_add_filter(
-			'wpvip_parsely_version',
-			function() {
-				return '3.5';
-			}
-		);
-		break;
-}
-
 switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 	case 'filter_enabled':
 		echo "Expecting wp-parsely plugin to be enabled by the filter.\n";
