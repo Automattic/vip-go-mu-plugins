@@ -2257,6 +2257,12 @@ class Search {
 
 	public function action__init() {
 		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+		// Force disable sync hooks for indexables that don't have an index, this prevents the sync manager from creating the index with broken mappings
+		foreach ( \ElasticPress\Indexables::factory()->get_all() as $indexable ) {
+			if ( ! $indexable->index_exists() && is_callable( [ $indexable->sync_manager, 'disable_sync_hooks' ] ) ) {
+				$indexable->sync_manager->disable_sync_hooks();
+			}
+		}
 	}
 
 	/**
