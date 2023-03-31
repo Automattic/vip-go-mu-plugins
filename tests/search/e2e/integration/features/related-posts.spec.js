@@ -157,7 +157,7 @@ describe('Related Posts Feature', () => {
 		/**
 		 * Transform the legacywidget into the block.
 		 */
-		cy.get('@widget').click({ force:true });
+		cy.get('@widget').click();
 		cy.get('.block-editor-block-switcher button').click();
 	});
 });
