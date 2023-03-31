@@ -201,7 +201,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			return;
 		}
 
-		$this->assertEquals( Parsely_Loader_Info::get_configs(), (object) array(
+		$this->assertEquals( Parsely_Loader_Info::get_configs(), array(
 			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
 			'site_id'                      => '',
 			'have_api_secret'              => false,
@@ -244,7 +244,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'track_page_types'          => array( 'page' ),
 		) ) );
 
-		$this->assertEquals( Parsely_Loader_Info::get_configs(), (object) array(
+		$this->assertEquals( Parsely_Loader_Info::get_configs(), array(
 			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
 			'site_id'                      => 'example.com',
 			'have_api_secret'              => true,
@@ -252,15 +252,15 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'is_autotracking_disabled'     => true,
 			'should_track_logged_in_users' => true,
 			'tracked_post_types'           => array(
-				(object) array(
+				array(
 					'name'       => 'post',
 					'track_type' => 'post',
 				),
-				(object) array(
+				array(
 					'name'       => 'page',
 					'track_type' => 'non-post',
 				),
-				(object) array(
+				array(
 					'name'       => 'attachment',
 					'track_type' => 'do-not-track',
 				),
