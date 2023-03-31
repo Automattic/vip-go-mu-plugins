@@ -209,15 +209,15 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'is_autotracking_disabled'     => false,
 			'should_track_logged_in_users' => false,
 			'tracked_post_types'           => array(
-				(object) array(
+				array(
 					'name'       => 'post',
 					'track_type' => 'do-not-track',
 				),
-				(object) array(
+				array(
 					'name'       => 'page',
 					'track_type' => 'do-not-track',
 				),
-				(object) array(
+				array(
 					'name'       => 'attachment',
 					'track_type' => 'do-not-track',
 				),

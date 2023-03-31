@@ -65,45 +65,51 @@ final class Parsely_Loader_Info {
 	/**
 	 * Returns configuration which represents how the plugin is configured in site.
 	 *
-	 * @return ParselyConfigs
+	 * @return array{
+	 *   is_pinned_version: bool,
+	 *   site_id: string,
+	 *   have_api_secret: bool,
+	 *   is_javascript_disabled: bool,
+	 *   is_autotracking_disabled: bool,
+	 *   should_track_logged_in_users: bool,
+	 *   tracked_post_types: array{
+	 *     name: string,
+	 *     track_type: string,
+	 *   }[]
+	 * }
 	 */
 	public static function get_configs() {
 		if ( ! self::is_active() ) {
 			return null;
 		}
 
-		/**
-		 * Variable.
-		 *
-		 * @var ParselyConfigs
-		 */
-		$configs = new stdClass();
+		$configs = array();
 		$options = self::get_parsely_options() ?: [];
 
-		$configs->is_pinned_version            = has_filter( 'wpvip_parsely_version' );
-		$configs->site_id                      = $options['apikey'] ?? '';
-		$configs->have_api_secret              = '' !== ( $options['api_secret'] ?? '' );
-		$configs->is_javascript_disabled       = (bool) ( $options['disable_javascript'] ?? false );
-		$configs->is_autotracking_disabled     = (bool) ( $options['disable_autotrack'] ?? false );
-		$configs->should_track_logged_in_users = (bool) ( $options['track_authenticated_users'] ?? false );
+		$configs['is_pinned_version']            = has_filter( 'wpvip_parsely_version' );
+		$configs['site_id']                      = $options['apikey'] ?? '';
+		$configs['have_api_secret']              = '' !== ( $options['api_secret'] ?? '' );
+		$configs['is_javascript_disabled']       = (bool) ( $options['disable_javascript'] ?? false );
+		$configs['is_autotracking_disabled']     = (bool) ( $options['disable_autotrack'] ?? false );
+		$configs['should_track_logged_in_users'] = (bool) ( $options['track_authenticated_users'] ?? false );
 
-		$configs->tracked_post_types = array();
-		$post_names                  = get_post_types( array( 'public' => true ) );
-		$tracked_post_types          = $options['track_post_types'] ?? array();
-		$tracked_page_types          = $options['track_page_types'] ?? array();
+		$configs['tracked_post_types'] = array();
+		$post_names                    = get_post_types( array( 'public' => true ) );
+		$tracked_post_types            = $options['track_post_types'] ?? array();
+		$tracked_page_types            = $options['track_page_types'] ?? array();
 		foreach ( $post_names as $post_name ) {
-			$tracked_post_type       = new stdClass();
-			$tracked_post_type->name = $post_name;
+			$tracked_post_type         = array();
+			$tracked_post_type['name'] = $post_name;
 
 			if ( in_array( $post_name, $tracked_post_types ) ) {
-				$tracked_post_type->track_type = 'post';
+				$tracked_post_type['track_type'] = 'post';
 			} elseif ( in_array( $post_name, $tracked_page_types ) ) {
-				$tracked_post_type->track_type = 'non-post';
+				$tracked_post_type['track_type'] = 'non-post';
 			} else {
-				$tracked_post_type->track_type = 'do-not-track';
+				$tracked_post_type['track_type'] = 'do-not-track';
 			}
 
-			array_push( $configs->tracked_post_types, $tracked_post_type );
+			array_push( $configs['tracked_post_types'], $tracked_post_type );
 		}
 
 		return $configs;
