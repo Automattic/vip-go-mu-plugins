@@ -79,7 +79,7 @@ describe('Facets Feature', { tags: '@slow' }, () => {
 		cy.get('.wp-block-legacy-widget')
 			.should('contain.text', 'Enterprise Search - Facet')
 			.first()
-			.click({ force: true });
+			.click();
 
 		/**
 		 * Transform the legacy widget into the block.
