@@ -25,6 +25,26 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 	}
 
 	/**
+	 * Stop an ongoing validate-contents from continuing to be run.
+	 *
+	 * @subcommand stop-validate-contents
+	 */
+	public function stop_validate_contents( $args, $assoc_args ) {
+		$health = new \Automattic\VIP\Search\Health( \Automattic\VIP\Search\Search::instance() );
+
+		if ( ! $health->is_validate_content_ongoing() ) {
+			WP_CLI::error( 'There is no validate-contents run ongoing' );
+		}
+
+		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP );
+		if ( $stop ) {
+			WP_CLI::success( 'Attempting to abort validate-contents run...' );
+		} else {
+			WP_CLI::error( 'Failed to abort validate-contents run! There is already a request to stop it.' );
+		}
+	}
+
+	/**
 	 * Get information on rate limiting.
 	 *
 	 * ## OPTIONS
@@ -400,6 +420,10 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		$results = $health->validate_index_posts_content( $assoc_args );
 
 		if ( is_wp_error( $results ) ) {
+			if ( $results->get_error_code() === 'es_validate_content_aborted' ) {
+				WP_CLI::error( $results->get_error_message() );
+			}
+
 			$diff = $results->get_error_data( 'diff' );
 
 			if ( ! empty( $diff ) ) {
@@ -407,7 +431,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			}
 
 			$message = $results->get_error_message();
-			if ( 'content_validation_already_ongoing' === $results->get_error_code() ) {
+			if ( 'es_content_validation_already_ongoing' === $results->get_error_code() ) {
 				$message .= "\n\nYou can use --force_parallel_execution to run the command even with the lock in place";
 			}
 			WP_CLI::error( $message );

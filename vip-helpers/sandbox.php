@@ -43,16 +43,14 @@ function wpcom_do_sandbox_bar() {
 		#wpcom-sandboxed-bar {
 			z-index: 9991;
 			color:<?php echo esc_html( apply_filters( 'wpcom_sandbox_bar_debug_info_color', '#ddd' ) ); ?>;
-			font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
-			font-size:14px;
-			bottom: 15px;
+			font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
+			bottom: 110px;
 			left: 0;
 			position:fixed;
 			margin:0;
 			padding: 0 20px;
 			width: 100%;
 			height: 28px;
-			line-height: 28px;
 		}
 		#wpcom-sandboxed-bar span {
 			display: none;

@@ -14,14 +14,18 @@ use WP_Widget;
 /**
  * Records an event using the given Telemetry System whenever a `parsely_recommended_widget` instance is updated.
  *
- * @param array $instance The current widget instance's settings.
+ * @param array|false $instance The current widget instance's settings.
  * @param array|null $new_instance Array of new widget settings.
  * @param array|null $old_instance Array of old widget settings.
  * @param WP_Widget $widget_obj The current widget instance.
  * @param Telemetry_System $telemetry_system
  * @return array Updated widget settings
  */
-function track_widget_updated( array $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ): array {
+function track_widget_updated( $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ): array {
+	if ( ! is_array( $instance ) ) {
+		return $instance;
+	}
+
 	$id_base = $widget_obj->id_base;
 	if ( WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID !== $id_base ) {
 		return $instance;

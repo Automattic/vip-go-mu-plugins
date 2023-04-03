@@ -25,7 +25,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'vip-search-use-next-ep' => 0.2,
+		'vip-search-use-next-ep' => 0.3,
 	];
 
 	/**
@@ -55,6 +55,10 @@ class Feature {
 	 * @return bool Whether it is enabled or not.
 	 */
 	public static function is_enabled( string $feature ) {
+		if ( true === static::is_disabled_by_ids( $feature ) ) {
+			return false;
+		}
+
 		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature ) || static::is_enabled_by_env( $feature );
 	}
 
@@ -106,23 +110,41 @@ class Feature {
 	}
 
 	/**
-	 * Selectively enable or disable feature by certain IDs.
+	 * Selectively disable feature by certain IDs.
 	 *
 	 * @param string $feature The feature we are targeting.
-	 * @param mixed $default Default return value if ID is not on list.
 	 *
-	 * @return mixed Returns bool if on list and if not, $default value.
+	 * @return mixed Returns true if on list.
 	 */
-	public static function is_enabled_by_ids( string $feature, $default = false ) {
+	public static function is_disabled_by_ids( string $feature ) {
 		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
 			return false;
 		}
 
 		if ( array_key_exists( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ] ) ) {
-			return static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
+			return false === static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
 		}
 
-		return $default;
+		return false;
+	}
+
+	/**
+	 * Selectively enable feature by certain IDs.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 *
+	 * @return bool Returns true if on list.
+	 */
+	public static function is_enabled_by_ids( string $feature ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+			return false;
+		}
+
+		if ( array_key_exists( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ] ) ) {
+			return true === static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
+		}
+
+		return false;
 	}
 
 	/**
