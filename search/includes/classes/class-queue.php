@@ -385,6 +385,12 @@ class Queue {
 			return;
 		}
 
+		$indexable = Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable || ! \ElasticPress\Elasticsearch::factory()->index_exists( $indexable->get_index_name() ) ) {
+			return;
+		}
+
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug, $options );
 		}
