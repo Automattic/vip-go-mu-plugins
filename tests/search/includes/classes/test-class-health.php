@@ -1588,4 +1588,58 @@ class Health_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $actual_diff, $expected_diff );
 	}
+
+	public function validate_post_index_mapping_data() {
+		return [
+			// Bad mapping
+			[
+				// Index name
+				'bar-post-1',
+				// Mapping
+				[
+					'bar-post-1' => [
+						'mappings' => [],
+					],
+				],
+				// Expected result
+				false,
+			],
+			// Bad mapping
+			[
+				// Index name
+				'bar-post-1',
+				// Mapping
+				[
+					'bar-post-1' => [],
+				],
+				// Expected result
+				false,
+			],
+			// Good mapping
+			[
+				// Index name
+				'foo-post-1',
+				// Mapping
+				[
+					'foo-post-1' => [
+						'mappings' => [
+							'_meta' => [
+								'mapping_version' => 'foobar',
+							],
+						],
+					],
+				],
+				// Expected result
+				true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider validate_post_index_mapping_data
+	 */
+	public function test__validate_post_index_mapping( $index_name, $mapping, $expected_result ) {
+		$correct_mapping = \Automattic\VIP\Search\Health::validate_post_index_mapping( $index_name, $mapping );
+		$this->assertEquals( $expected_result, $correct_mapping );
+	}
 }

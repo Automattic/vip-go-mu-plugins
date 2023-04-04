@@ -1171,4 +1171,23 @@ class Health {
 
 		return $result;
 	}
+
+	/**
+	 * Validate post index has correct mapping.
+	 *
+	 * @param string $index_name Name of index
+	 * @param array $mapping Mapping array
+	 * @return bool Whether index has correct mapping
+	 */
+	public static function validate_post_index_mapping( $index_name, $mapping = [] ) {
+		if ( empty( $mapping ) ) {
+			$mapping = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
+		}
+
+		if ( isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
+			return true;
+		}
+
+		return false;
+	}
 }

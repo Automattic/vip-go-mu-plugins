@@ -1906,60 +1906,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		return $property;
 	}
 
-	public function validate_post_index_mapping_data() {
-		return [
-			// Bad mapping
-			[
-				// Index name
-				'bar-post-1',
-				// Mapping
-				[
-					'bar-post-1' => [
-						'mappings' => [],
-					],
-				],
-				// Expected result
-				false,
-			],
-			// Bad mapping
-			[
-				// Index name
-				'bar-post-1',
-				// Mapping
-				[
-					'bar-post-1' => [],
-				],
-				// Expected result
-				false,
-			],
-			// Good mapping
-			[
-				// Index name
-				'foo-post-1',
-				// Mapping
-				[
-					'foo-post-1' => [
-						'mappings' => [
-							'_meta' => [
-								'mapping_version' => 'foobar',
-							],
-						],
-					],
-				],
-				// Expected result
-				true,
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider validate_post_index_mapping_data
-	 */
-	public function test__validate_post_index_mapping( $index_name, $mapping, $expected_result ) {
-		$correct_mapping = self::$version_instance->validate_post_index_mapping( $index_name, $mapping );
-		$this->assertEquals( $expected_result, $correct_mapping );
-	}
-
 	public function get_index_name_data__post() {
 		return [
 			[

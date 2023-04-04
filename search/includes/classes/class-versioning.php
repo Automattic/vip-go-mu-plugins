@@ -469,7 +469,7 @@ class Versioning {
 			return new WP_Error( 'es-new-index-non-existence', sprintf( 'New index "%s" does not exist', $new_index_name ) );
 		}
 		if ( 'post' === $indexable->slug ) {
-			$is_mapping_ok = $this->validate_post_index_mapping( $new_index_name );
+			$is_mapping_ok = Health::validate_post_index_mapping( $new_index_name );
 
 			if ( ! $is_mapping_ok ) {
 				return new WP_Error( 'es-bad-mapping-new-index', sprintf( 'Validation for new index "%s" with correct mapping failed', $new_index_name ) );
@@ -477,25 +477,6 @@ class Versioning {
 		}
 
 		return $new_version;
-	}
-
-	/**
-	 * Validate post index has correct mapping.
-	 *
-	 * @param string $index_name Name of index
-	 * @param array $mapping Mapping array
-	 * @return bool Whether index has correct mapping
-	 */
-	public function validate_post_index_mapping( $index_name, $mapping = [] ) {
-		if ( empty( $mapping ) ) {
-			$mapping = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
-		}
-
-		if ( isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
-			return true;
-		}
-
-		return false;
 	}
 
 	/**
