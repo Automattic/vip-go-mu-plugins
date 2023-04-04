@@ -21,11 +21,6 @@ class Site_Details_Index {
 	private $timestamp = null;
 
 	/**
-	 * Name of the logstash feature to use for log2logstash call
-	 */
-	private const LOG_FEATURE_NAME = 'site_details';
-
-	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
 	 *
 	 * @param mixed $timestamp A fixed point in time to use for mocking.
@@ -304,6 +299,10 @@ class Site_Details_Index {
 		$parsely_info['active']           = ParselyInfo::is_active();
 		$parsely_info['integration_type'] = ParselyInfo::get_integration_type();
 		$parsely_info['version']          = ParselyInfo::get_version();
+
+		if ( ParselyInfo::is_active() ) {
+			$parsely_info['configs'] = ParselyInfo::get_configs();
+		}
 
 		return $parsely_info;
 	}

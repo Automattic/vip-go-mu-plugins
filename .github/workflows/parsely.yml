@@ -22,13 +22,21 @@ jobs:
       fail-fast: false
       matrix:
         config:
+          # Oldest version of the parsely plugin
           - { wp: latest, parsely: '3.1', mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'filter_disabled', php: '7.4' }
           - { wp: latest, parsely: '3.1', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.2', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'option_enabled', php: '7.4' }
-          - { wp: latest, parsely: '3.3', mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'option_disabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, parsely: '3.1', mode: 'filter_and_option_disabled', php: '7.4' }
+
+          # Latest version of the parsely plugin
+          - { wp: latest, mode: 'filter_enabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_disabled', php: '7.4' }
+          - { wp: latest, mode: 'option_enabled', php: '7.4' }
+          - { wp: latest, mode: 'option_disabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_and_option_enabled', php: '7.4' }
+          - { wp: latest, mode: 'filter_and_option_disabled', php: '7.4' }
     services:
       mysql:
         image: mysql:8
