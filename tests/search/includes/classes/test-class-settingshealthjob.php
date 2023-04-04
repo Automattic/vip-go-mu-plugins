@@ -289,7 +289,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'check_process_build', 'swap_index_versions' ] )
+			->setMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
 			->getMock();
 
 		$stub->search = self::$search;
@@ -298,7 +298,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		->willReturn( 'swap' );
 
 		$stub->expects( $this->once() )
-			->method( 'swap_index_versions' );
+			->method( 'alert_to_swap_index_versions' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		$status    = $stub->maybe_process_build( $indexable );

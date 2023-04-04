@@ -28,22 +28,20 @@ function vip_do_non_prod_bar() {
 			const debugBar = document.getElementById('a8c-debug-flag');
 			if ( debugBar ) {
 				// Account for proper stacking of the debug bar
-				nonProdBar.style.bottom = '85px';
+				nonProdBar.style.bottom = '180px';
 			}
 		</script>
 		<style>
 		#vip-non-prod-bar {
 			z-index: 9991;
-			font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
-			font-size:14px;
+			font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
 			left: 0;
-			bottom: 55px;
+			bottom: 145px;
 			position:fixed;
 			margin:0;
 			padding: 0 20px;
 			width: 100%;
 			height: 28px;
-			line-height: 28px;
 		}
 		#vip-non-prod-bar span {
 			display: none;

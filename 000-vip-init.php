@@ -277,7 +277,7 @@ $non_prod_envs = [
 	'dev',
 	'stage',
 ];
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) ) {
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) && file_exists( __DIR__ . '/vip-helpers/vip-non-production.php' ) ) {
 	require __DIR__ . '/vip-helpers/vip-non-production.php';
 }
 
