@@ -94,16 +94,16 @@ final class Parsely_Loader_Info {
 		$configs['should_track_logged_in_users'] = (bool) ( $options['track_authenticated_users'] ?? false );
 
 		$configs['tracked_post_types'] = array();
-		$post_names                    = get_post_types( array( 'public' => true ) );
+		$post_types                    = get_post_types( array( 'public' => true ) );
 		$tracked_post_types            = $options['track_post_types'] ?? array();
 		$tracked_page_types            = $options['track_page_types'] ?? array();
-		foreach ( $post_names as $post_name ) {
+		foreach ( $post_types as $post_type ) {
 			$tracked_post_type         = array();
-			$tracked_post_type['name'] = $post_name;
+			$tracked_post_type['name'] = $post_type;
 
-			if ( in_array( $post_name, $tracked_post_types ) ) {
+			if ( in_array( $post_type, $tracked_post_types ) ) {
 				$tracked_post_type['track_type'] = 'post';
-			} elseif ( in_array( $post_name, $tracked_page_types ) ) {
+			} elseif ( in_array( $post_type, $tracked_page_types ) ) {
 				$tracked_post_type['track_type'] = 'non-post';
 			} else {
 				$tracked_post_type['track_type'] = 'do-not-track';
