@@ -1424,8 +1424,17 @@ class Search {
 		}
 	}
 
+	/**
+	 * Get when the search rate limiting has started. False if not rate-limited.
+	 *
+	 * @return int|false Timestamp when rate limiting started, or false if not rate-limited.
+	 */
+	public static function get_query_rate_limit_start() {
+		return wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+	}
+
 	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start = wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+		$query_limiting_start = static::get_query_rate_limit_start();
 
 		if ( false === $query_limiting_start ) {
 			return;
@@ -2130,7 +2139,7 @@ class Search {
 	 * Checks if the query limiting start timestamp is set, set it otherwise\
 	 */
 	public function handle_query_limiting_start_timestamp() {
-		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
+		if ( false === static::get_query_rate_limit_start() ) {
 			$start_timestamp = $this->get_time();
 			wp_cache_set( self::QUERY_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::SEARCH_CACHE_GROUP );
 		}
@@ -2144,7 +2153,7 @@ class Search {
 	 * When query rate limting first begins, log this information and surface as a PHP warning
 	 */
 	public function maybe_log_query_ratelimiting_start() {
-		if ( false === wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP ) ) {
+		if ( false === static::get_query_rate_limit_start() ) {
 			$message = sprintf(
 				'Application %d - %s has triggered Elasticsearch query rate-limiting, which will last up to %d seconds. Subsequent or repeat occurrences are possible. Half of traffic is diverted to the database when queries are rate-limited.',
 				FILES_CLIENT_SITE_ID,
@@ -2259,7 +2268,11 @@ class Search {
 	 * @return void
 	 */
 	public function update_last_processed_post_id_option( $objects, $response ) {
-		update_option( self::LAST_INDEXED_POST_ID_OPTION, array_key_last( $objects ) );
+		$info = [
+			'post_id' => array_key_last( $objects ),
+			'time'    => gmdate( 'Y-m-d H:i:s', time() ),
+		];
+		update_option( self::LAST_INDEXED_POST_ID_OPTION, $info );
 	}
 
 	/**

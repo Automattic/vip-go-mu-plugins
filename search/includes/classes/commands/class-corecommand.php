@@ -372,7 +372,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$settings = Elasticsearch::factory()->get_mapping( $index_name );
 
 		$keys = array_keys( $settings );
-		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $settings ), $keys );
+		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $settings ), $keys );
 	}
 
 	/**
@@ -516,7 +516,7 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( false === $last_id ) {
 			WP_CLI::line( 'No last indexed object ID found!' );
 		} else {
-			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+			WP_CLI::line( wp_json_encode( $last_id ) );
 		}
 	}
 

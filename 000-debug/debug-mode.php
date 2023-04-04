@@ -139,14 +139,13 @@ function show_debug_flag() {
 	<style>
 	#a8c-debug-flag {
 		z-index: 9991;
-		font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
+		font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
 		background: rgb(194,156,105);
-		bottom: 50px;
+		bottom: 145px;
 		left: 20px;
 		position: fixed;
 		width: 93px;
 		height: 28px;
-		line-height: 28px;
 	}
 
 	#a8c-debug-flag a {
@@ -158,9 +157,6 @@ function show_debug_flag() {
 		text-align: center;
 		width: 100%;
 		display: block;
-	}
-
-	#a8c-debug-flag a:hover {
 		text-decoration: none;
 	}
 	</style>
