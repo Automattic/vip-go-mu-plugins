@@ -13,6 +13,8 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use stdClass;
+
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.8',
@@ -28,18 +30,11 @@ const SUPPORTED_VERSIONS = [
  * Keep track of Parse.ly loading info in one place.
  */
 final class Parsely_Loader_Info {
-	// Describes how the parse.ly plugin is integrated/loaded.
-	const INTEGRATION_TYPE_MUPLUGINS        = 'MUPLUGINS';
-	const INTEGRATION_TYPE_MUPLUGINS_SILENT = 'MUPLUGINS_SILENT';
-	const INTEGRATION_TYPE_SELF_MANAGED     = 'SELF_MANAGED';
-	const INTEGRATION_TYPE_NONE             = 'NONE';
-
 	// Defaults for when detection was not possible.
 	const VERSION_UNKNOWN = 'UNKNOWN';
 
 	private static bool $active;
 	private static string $integration_type;
-	private static string $service_type;
 	private static string $version;
 	private static array $parsely_options;
 
@@ -52,7 +47,7 @@ final class Parsely_Loader_Info {
 	}
 
 	public static function get_integration_type(): string {
-		return isset( self::$integration_type ) ? self::$integration_type : self::INTEGRATION_TYPE_NONE;
+		return isset( self::$integration_type ) ? self::$integration_type : Parsely_Integration_Type::NONE;
 	}
 
 	public static function set_integration_type( string $integration_type ): void {
@@ -65,6 +60,59 @@ final class Parsely_Loader_Info {
 
 	public static function set_version( string $version ): void {
 		self::$version = $version;
+	}
+
+	/**
+	 * Returns configuration which represents how the plugin is configured in site.
+	 *
+	 * @return array{
+	 *   is_pinned_version: bool,
+	 *   site_id: string,
+	 *   have_api_secret: bool,
+	 *   is_javascript_disabled: bool,
+	 *   is_autotracking_disabled: bool,
+	 *   should_track_logged_in_users: bool,
+	 *   tracked_post_types: array{
+	 *     name: string,
+	 *     track_type: string,
+	 *   }[]
+	 * }
+	 */
+	public static function get_configs() {
+		if ( ! self::is_active() ) {
+			return null;
+		}
+
+		$configs = array();
+		$options = self::get_parsely_options() ?: [];
+
+		$configs['is_pinned_version']            = has_filter( 'wpvip_parsely_version' );
+		$configs['site_id']                      = $options['apikey'] ?? '';
+		$configs['have_api_secret']              = '' !== ( $options['api_secret'] ?? '' );
+		$configs['is_javascript_disabled']       = (bool) ( $options['disable_javascript'] ?? false );
+		$configs['is_autotracking_disabled']     = (bool) ( $options['disable_autotrack'] ?? false );
+		$configs['should_track_logged_in_users'] = (bool) ( $options['track_authenticated_users'] ?? false );
+
+		$configs['tracked_post_types'] = array();
+		$post_types                    = get_post_types( array( 'public' => true ) );
+		$tracked_post_types            = $options['track_post_types'] ?? array();
+		$tracked_page_types            = $options['track_page_types'] ?? array();
+		foreach ( $post_types as $post_type ) {
+			$tracked_post_type         = array();
+			$tracked_post_type['name'] = $post_type;
+
+			if ( in_array( $post_type, $tracked_post_types ) ) {
+				$tracked_post_type['track_type'] = 'post';
+			} elseif ( in_array( $post_type, $tracked_page_types ) ) {
+				$tracked_post_type['track_type'] = 'non-post';
+			} else {
+				$tracked_post_type['track_type'] = 'do-not-track';
+			}
+
+			array_push( $configs['tracked_post_types'], $tracked_post_type );
+		}
+
+		return $configs;
 	}
 
 	public static function get_parsely_options(): array {
@@ -144,7 +192,7 @@ function maybe_load_plugin() {
 	$plugin_class_exists = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
 	if ( $plugin_class_exists ) {
 		Parsely_Loader_Info::set_active( true );
-		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_SELF_MANAGED );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::SELF_MANAGED );
 
 		$parsely_options = Parsely_Loader_Info::get_parsely_options();
 		if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
@@ -163,7 +211,12 @@ function maybe_load_plugin() {
 	// No integration: The site has not enabled parsely.
 	if ( ! $should_load || $should_prevent_loading ) {
 		Parsely_Loader_Info::set_active( false );
-		Parsely_Loader_Info::set_integration_type( Parsely_Loader_Info::INTEGRATION_TYPE_NONE );
+
+		if ( false === $filtered_load_status ) {
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+		} elseif ( '0' === $option_load_status ) {
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION );
+		}
 
 		return;
 	}
@@ -207,9 +260,9 @@ function maybe_load_plugin() {
 		$entry_file = __DIR__ . '/wp-parsely/wp-parsely.php';
 	}
 
-	$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS;
+	$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
 	if ( '1' === $option_load_status && true !== $filtered_load_status ) {
-		$integration_type = Parsely_Loader_Info::INTEGRATION_TYPE_MUPLUGINS_SILENT;
+		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION;
 	}
 
 	// Require the actual wp-parsely plugin.
@@ -256,4 +309,22 @@ function maybe_disable_some_features() {
 		// Remove the Parse.ly Recommended Widget.
 		unregister_widget( 'Parsely_Recommended_Widget' );
 	}
+}
+
+/**
+ * Enum which represent all options to integrate `wp-parsely`.
+ */
+// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
+abstract class Parsely_Integration_Type {
+	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
+	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
+
+	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
+	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
+
+	const SELF_MANAGED = 'SELF_MANAGED';
+
+	// When parsely is not active
+	const NONE = 'NONE';
+	const NULL = 'NULL';
 }
