@@ -18,6 +18,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+// If VIP_ELASTICSEARCH_DISABLED is explicitly set to `true`, then don't load the plugin
+if ( defined( 'VIP_ELASTICSEARCH_DISABLED' ) && true === constant( 'VIP_ELASTICSEARCH_DISABLED' ) ) {
+	return;
+}
+
 require_once __DIR__ . '/includes/functions/utils.php';
 require_once __DIR__ . '/includes/classes/class-search.php';
 
