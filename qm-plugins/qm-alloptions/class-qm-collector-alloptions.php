@@ -14,8 +14,7 @@ class QM_Collector_AllOptions extends QM_Collector {
 
 		$alloptions = wp_load_alloptions( true );
 		$total_size = 0;
-		$options = [];
-
+		$options    = [];
 
 		foreach ( $alloptions as $name => $val ) {
 			$size        = mb_strlen( $val );
@@ -28,7 +27,6 @@ class QM_Collector_AllOptions extends QM_Collector {
 
 			$options[] = $option;
 		}
-
 
 		// sort by size
 		usort( $options, function( $arr1, $arr2 ) {
