@@ -52,6 +52,7 @@ Cypress.Commands.add('visitAdminPage', (page = 'index.php') => {
 Cypress.Commands.add('openWidgetsPage', () => {
 	cy.login();
 	cy.visitAdminPage('widgets.php');
+	cy.wait(3000); // Wait for all DOM elements to be loaded
 	cy.get('body').then(($body) => {
 		const $button = $body.find('.edit-widgets-welcome-guide .components-modal__header button');
 		if ($button.is(':visible')) {
