@@ -286,9 +286,15 @@ class Search_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
 		$this->init_es();
 
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
+
 		$new_version = $this->search_instance->versioning->add_version( $indexable );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
 
 		$this->assertNotFalse( $new_version, 'Failed to add new version of index' );
 		$this->assertNotInstanceOf( \WP_Error::class, $new_version, 'Got WP_Error when adding new index version' );
@@ -2711,6 +2717,47 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->init();
 
 		do_action( 'plugins_loaded' );
+	}
+
+	/**
+	 * We need to fake the OK response from the ES server to avoid the actual failing request.
+	 */
+	public function filter_ok_es_requests( $request, $query, $args, $failures, $type ) {
+		if ( 'put_mapping' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}
+
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+
+		if ( 'get_mapping' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '{"vip-123-post-1-v2":{"aliases":{},"mappings":{"_meta":{"mapping_version":"7-0.php"}}}}', // phpcs:ignore WordPressVIPMinimum.Security.Mustache.OutputNotation
+			];
+		}
+
+		return $request;
+	}
+
+	/**
+	 * We need to fake the OK response from the ES server to avoid the actual get_mapping request.
+	 */
+	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+		return $request;
 	}
 }
 
