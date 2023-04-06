@@ -250,7 +250,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$job = $jobs[0];
 		self::assertIsObject( $job );
-		self::assertObjectHasAttribute( 'priority', $job );
+		self::assertTrue( property_exists( $job, 'priority' ) );
 		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
 	}
 
@@ -625,6 +625,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_free_deadlocked_jobs() {
+		$this->markTestSkipped( 'MySQL does not handle references to the same TEMPORARY table more than once in the same query, see https://dev.mysql.com/doc/refman/8.0/en/temporary-table-problems.html' );
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );
 		$this->queue->queue_object( 3000, 'post' );

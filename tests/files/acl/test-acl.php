@@ -23,6 +23,11 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
 		// no setup
 
@@ -263,7 +268,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = false;
 
 		// Get file path for a subsite
-		$subsite_id = $this->factory->blog->create();
+		$subsite_id = $this->factory()->blog->create();
 		$file_path  = sprintf( 'sites/%d/2021/01/dogs.gif', $subsite_id );
 
 		// Stay in main site context
@@ -281,7 +286,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = true;
 
 		// Get file path for a subsite
-		$subsite_id = $this->factory->blog->create();
+		$subsite_id = $this->factory()->blog->create();
 		$file_path  = sprintf( 'sites/%d/2021/01/hamster.gif', $subsite_id );
 
 		// Run test in subsite context
@@ -303,7 +308,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$file_path = '2021/01/parakeets.gif';
 
 		// Run test in a subsite context
-		$subsite_id = $this->factory->blog->create();
+		$subsite_id = $this->factory()->blog->create();
 		switch_to_blog( $subsite_id );
 
 		$actual_is_allowed = is_valid_path_for_site( $file_path );
@@ -319,8 +324,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = false;
 
 		// Create two subsites
-		$first_subsite_id  = $this->factory->blog->create();
-		$second_subsite_id = $this->factory->blog->create();
+		$first_subsite_id  = $this->factory()->blog->create();
+		$second_subsite_id = $this->factory()->blog->create();
 
 		// Get file path from second
 		$file_path = sprintf( 'sites/%d/2021/01/parakeets.gif', $second_subsite_id );

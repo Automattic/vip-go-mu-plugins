@@ -34,6 +34,11 @@ class Health_Test extends WP_UnitTestCase {
 	/** @var Search */
 	private static $search_instance;
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public static function setUpBeforeClass(): void {
 		self::$search_instance = new \Automattic\VIP\Search\Search();
 		self::$search_instance->init();
@@ -341,7 +346,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'publish' ] );
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => 'publish' ] );
 
 		$last_db_post_id = $post->ID;
 		$last_es_post_id = 0;
@@ -352,7 +357,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_last_db_post_id() {
-		$post = $this->factory->post->create_and_get( [ 'post_status' => 'draft' ] );
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => 'draft' ] );
 
 		$last_post_id = \Automattic\VIP\Search\Health::get_last_db_post_id();
 
@@ -1618,6 +1623,17 @@ class Health_Test extends WP_UnitTestCase {
 				// Expected result
 				false,
 			],
+			// Bad mapping
+			[
+				// Index name
+				'bar-post-1',
+				// Mapping
+				[
+					'bar-post-1' => [],
+				],
+				// Expected result
+				false,
+			],
 			// Good mapping
 			[
 				// Index name
@@ -1641,22 +1657,8 @@ class Health_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider validate_post_index_mapping_data
 	 */
-	public function test_validate_post_index_mapping( $idx_name, $mapping, $expected_result ) {
-		/** @var \ElasticPress\Indexable&MockObject */
-		$mocked_indexable       = $this->getMockBuilder( \ElasticPress\Indexable::class )
-									->setMethods( self::$indexable_methods )
-									->getMock();
-		$mocked_indexable->slug = 'post';
-		$mocked_indexable->method( 'get_index_name' )->willReturn( $idx_name );
-
-		$health                = new Health( self::$search_instance );
-		$health->elasticsearch = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
-									->setMethods( [ 'get_mapping' ] )
-									->getMock();
-
-		$health->elasticsearch->method( 'get_mapping' )->willReturn( $mapping )->with( $idx_name );
-
-		$correct_mapping = $health->validate_post_index_mapping( $mocked_indexable );
-		$this->assertEquals( $correct_mapping, $expected_result );
+	public function test__validate_post_index_mapping( $index_name, $mapping, $expected_result ) {
+		$correct_mapping = \Automattic\VIP\Search\Health::validate_post_index_mapping( $index_name, $mapping );
+		$this->assertEquals( $expected_result, $correct_mapping );
 	}
 }

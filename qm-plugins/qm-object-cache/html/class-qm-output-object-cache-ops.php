@@ -54,7 +54,7 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 				} else {
 					$this->output_table_cell( $op['key'] );
 				}
-				$this->output_table_cell( $this->process_size( $op['size'] ) );
+				$this->output_table_cell( $this->process_size( $op['size'] ), $op['size'] );
 				$this->output_table_cell( $this->process_time( $op['time'] ) );
 				$this->output_table_cell( $op['group'] );
 				$this->output_table_cell( $this->process_result( $op['result'] ) );
@@ -205,8 +205,12 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 	 * Outputs a table cell.
 	 *
 	 * @param string $value Value to be outputted in table cell
+	 * @param int|null $weight Weight by sorting priority
 	 */
-	public function output_table_cell( string $value ) {
-		echo '<td class="qm-nowrap qm-ltr">' . esc_html( $value ) . '</td>';
+	public function output_table_cell( ?string $value, int $weight = null ) {
+		if ( $weight ) {
+			$weight = ' data-qm-sort-weight="' . esc_attr( $weight ) . '"';
+		}
+		echo '<td class="qm-nowrap qm-ltr"' . $weight . '>' . esc_html( $value ) . '</td>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 	}
 }

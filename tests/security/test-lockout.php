@@ -26,6 +26,11 @@ class Lockout_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
@@ -39,7 +44,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	public function test__user_seen_notice__warning() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
 
-		$user = $this->factory->user->create_and_get();
+		$user = $this->factory()->user->create_and_get();
 
 		$user_seen_notice = self::get_method( 'user_seen_notice' );
 		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
@@ -56,7 +61,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	public function test__user_seen_notice__locked() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
-		$user = $this->factory->user->create_and_get();
+		$user = $this->factory()->user->create_and_get();
 
 		$user_seen_notice = self::get_method( 'user_seen_notice' );
 		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
@@ -73,7 +78,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	public function test__user_seen_notice__already_seen() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
-		$user = $this->factory->user->create_and_get();
+		$user = $this->factory()->user->create_and_get();
 
 		$date_str = gmdate( 'Y-m-d H:i:s' );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, 'warning', true );
@@ -95,7 +100,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	public function test__filter_user_has_cap__locked() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
 
-		$user = $this->factory->user->create_and_get( [
+		$user = $this->factory()->user->create_and_get( [
 			'role' => 'editor',
 		]);
 
@@ -110,7 +115,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	public function test__filter_user_has_cap__warning() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
 
-		$user = $this->factory->user->create_and_get( [
+		$user = $this->factory()->user->create_and_get( [
 			'role' => 'editor',
 		]);
 
@@ -122,7 +127,7 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_user_has_cap__no_state() {
-		$user = $this->factory->user->create_and_get( [
+		$user = $this->factory()->user->create_and_get( [
 			'role' => 'editor',
 		]);
 
@@ -182,7 +187,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		global $wpdb;
 
 		// Arrange: Have an existing user that's a super admin
-		$user = $this->factory->user->create_and_get();
+		$user = $this->factory()->user->create_and_get();
 		grant_super_admin( $user->ID );
 
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
@@ -196,7 +201,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		);
 
 		// Act: Try granting another user super admin
-		$user2 = $this->factory->user->create_and_get();
+		$user2 = $this->factory()->user->create_and_get();
 		grant_super_admin( $user2->ID );
 
 		// Assert: Check the raw value to avoid conflicts with the filter
@@ -218,7 +223,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		global $wpdb;
 
 		// Arrange: Have an existing user that's a super admin
-		$user = $this->factory->user->create_and_get();
+		$user = $this->factory()->user->create_and_get();
 		grant_super_admin( $user->ID );
 
 		// No lockout enabled
@@ -231,7 +236,7 @@ class Lockout_Test extends WP_UnitTestCase {
 		);
 
 		// Act: Try granting another user super admin
-		$user2 = $this->factory->user->create_and_get();
+		$user2 = $this->factory()->user->create_and_get();
 		grant_super_admin( $user2->ID );
 
 		// Assert: Check the raw value to avoid conflicts with the filter

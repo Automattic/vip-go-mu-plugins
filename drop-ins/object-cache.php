@@ -19,6 +19,11 @@ if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
 }
 
 if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN ) {
+	if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
+		// We want to use the Memcached adapter in the new drop-in.
+		define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );
+	}
+
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
 } elseif ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN ) {
 	require_once __DIR__ . '/object-cache/object-cache-next.php';

@@ -53,6 +53,11 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertTrue( $skip );
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test_query_es_with_invalid_type() {
 		$this->init_es();
 
@@ -305,11 +310,17 @@ class Search_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
 		$this->init_es();
 
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		$this->search_instance->versioning->add_version( $indexable );
 		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
+
 		$new_version = $this->search_instance->versioning->add_version( $indexable );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
 
 		$this->assertNotFalse( $new_version, 'Failed to add new version of index' );
 		$this->assertNotInstanceOf( \WP_Error::class, $new_version, 'Got WP_Error when adding new index version' );
@@ -1185,7 +1196,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__truncate_search_string_length__user_with_cap() {
-		$admin_user = $this->factory->user->create( [
+		$admin_user = $this->factory()->user->create( [
 			'user_email' => 'admin@automattic.com',
 			'user_login' => 'vip_admin',
 			'role'       => 'administrator',
@@ -1857,7 +1868,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1871,7 +1882,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1894,7 +1905,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1917,7 +1928,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1931,7 +1942,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -1954,7 +1965,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory->post->create( array( 'post_title' => 'Test Post' ) );
+		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
 		$post = \get_post( $post_id );
 
@@ -2734,6 +2745,47 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->init();
 
 		do_action( 'plugins_loaded' );
+	}
+
+	/**
+	 * We need to fake the OK response from the ES server to avoid the actual failing request.
+	 */
+	public function filter_ok_es_requests( $request, $query, $args, $failures, $type ) {
+		if ( 'put_mapping' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}
+
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+
+		if ( 'get_mapping' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '{"vip-123-post-1-v2":{"aliases":{},"mappings":{"_meta":{"mapping_version":"7-0.php"}}}}', // phpcs:ignore WordPressVIPMinimum.Security.Mustache.OutputNotation
+			];
+		}
+
+		return $request;
+	}
+
+	/**
+	 * We need to fake the OK response from the ES server to avoid the actual get_mapping request.
+	 */
+	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+		return $request;
 	}
 }
 

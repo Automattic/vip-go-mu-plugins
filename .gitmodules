@@ -13,9 +13,6 @@
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = https://github.com/Automattic/jetpack-force-2fa.git
-[submodule "shared-plugins/two-factor"]
-	path = shared-plugins/two-factor
-	url = https://github.com/georgestephanis/two-factor.git
 [submodule "lightweight-term-count-update"]
 	path = lightweight-term-count-update
 	url = https://github.com/Automattic/lightweight-term-count-update
@@ -37,3 +34,6 @@
 [submodule "drop-ins/hyperdb"]
 	path = drop-ins/hyperdb
 	url = https://github.com/automattic/hyperdb
+[submodule "cron/cron-control-legacy"]
+	path = cron/cron-control-legacy
+	url = https://github.com/Automattic/Cron-Control.git

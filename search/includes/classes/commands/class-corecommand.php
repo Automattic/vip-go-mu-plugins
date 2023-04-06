@@ -45,13 +45,17 @@ class CoreCommand extends \ElasticPress\Command {
 
 		foreach ( $indexables as $indexable ) {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
+			if ( ! $skip_confirm ) {
+				WP_CLI::confirm( sprintf( 'Update the active index version for "%s"?' ), $indexable->slug );
+			}
+
 			$result = $search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $result ) ) {
 				WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
 			}
 
 			if ( ! $skip_confirm ) {
-				WP_CLI::confirm( '⚠️  You are about to remove a previously used index version. It is advised to verify that the new version is being used before continuing. Continue?' );
+				WP_CLI::confirm( '⚠️ The previous version of the index is now inactive and should be deleted. Delete previous index version?' );
 			}
 
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
@@ -416,7 +420,7 @@ class CoreCommand extends \ElasticPress\Command {
 		$settings = Elasticsearch::factory()->get_mapping( $index_name );
 
 		$keys = array_keys( $settings );
-		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $settings ), $keys );
+		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $settings ), $keys );
 	}
 
 	/**
@@ -560,7 +564,7 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( false === $last_id ) {
 			WP_CLI::line( 'No last indexed object ID found!' );
 		} else {
-			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+			WP_CLI::line( wp_json_encode( $last_id ) );
 		}
 	}
 

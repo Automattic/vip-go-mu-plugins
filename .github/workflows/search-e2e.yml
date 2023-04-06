@@ -10,6 +10,7 @@ on:
       - staging
     paths:
     - 'search/**'
+    - 'tests/search/e2e/**'
   workflow_dispatch:
 
 concurrency:
@@ -26,7 +27,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3.3.0
+      uses: actions/checkout@v3.5.0
       with:
         submodules: recursive
 

@@ -266,6 +266,21 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
+$non_prod_envs = [
+	'local',
+	'develop',
+	'preprod',
+	'staging',
+	'testing',
+	'uat',
+	'development',
+	'dev',
+	'stage',
+];
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) && file_exists( __DIR__ . '/vip-helpers/vip-non-production.php' ) ) {
+	require __DIR__ . '/vip-helpers/vip-non-production.php';
+}
+
 if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 	// Load config related helpers
 	require_once __DIR__ . '/config/class-sync.php';

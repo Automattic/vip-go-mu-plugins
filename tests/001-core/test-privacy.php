@@ -15,7 +15,7 @@ class Privacy_Policy_Link_Test extends WP_UnitTestCase {
 	}
 
 	public function test__skip_vip_link_if_customer_link_set() {
-		$post = $this->factory->post->create_and_get();
+		$post = $this->factory()->post->create_and_get();
 		update_option( 'wp_page_for_privacy_policy', $post->ID );
 
 		global $wp_version;

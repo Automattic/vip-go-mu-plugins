@@ -48,6 +48,10 @@ class Health {
 
 	const REINDEX_JOB_DEFAULT_PRIORITY = 15;
 
+	const STOP_VALIDATE_CONTENTS_KEY = 'search_interrupt_validate_contents';
+
+	const CACHE_GROUP = 'vip_search';
+
 	/**
 	 * Instance of Search class
 	 *
@@ -124,7 +128,7 @@ class Health {
 
 			$db_total = (int) $db_result['total_objects'];
 		} catch ( \Exception $e ) {
-			return new WP_Error( 'db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
+			return new WP_Error( 'es_db_query_error', sprintf( 'failure querying the DB: %s #vip-search', $e->getMessage() ) );
 		}
 
 		$diff = 0;
@@ -164,7 +168,11 @@ class Health {
 				add_filter( 'ep_exclude_password_protected_from_search', '__return_false' );
 			}
 
-			$query          = self::query_objects( $query_args, $indexable->slug );
+			$query = self::query_objects( $query_args, $indexable->slug );
+			if ( 'user' === $indexable->slug && isset( $query->query_vars['blog_id'] ) ) {
+				// Since the user indexable is global, we want to include ALL in count.
+				unset( $query->query_vars['blog_id'] );
+			}
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 
 			// Get exact total count since Elasticsearch default stops at 10,000.
@@ -432,8 +440,13 @@ class Health {
 		$track_process = ( ! $start_post_id || 1 === $start_post_id ) && ! $force_parallel_execution;
 
 		if ( $process_parallel_execution_lock && $this->is_validate_content_ongoing() ) {
-			return new WP_Error( 'content_validation_already_ongoing', 'Content validation is already ongoing' );
+			return new WP_Error( 'es_content_validation_already_ongoing', 'Content validation is already ongoing' );
 		}
+
+		if ( $this->is_validate_content_ongoing() && false !== wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true ) ) {
+			return new WP_Error( 'es_request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
+		}
+
 		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
 		if ( $track_process && $interrupted_start_post_id ) {
 			$start_post_id = $interrupted_start_post_id;
@@ -480,6 +493,7 @@ class Health {
 			$dynamic_last_post_id = true;
 		}
 
+		$should_stop = false;
 		do {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
@@ -513,7 +527,7 @@ class Health {
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
 				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
-				$error = new WP_Error( 'diff-size-limit-reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
+				$error = new WP_Error( 'es_diff_size_limit_reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
 				$error->add_data( $results, 'diff' );
 
@@ -546,10 +560,16 @@ class Health {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
 				sleep( mt_rand( 2, 5 ) );
 			}
-		} while ( $start_post_id <= $last_post_id );
 
-		if ( $process_parallel_execution_lock ) {
+			$should_stop = wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true );
+		} while ( $start_post_id <= $last_post_id && ! $should_stop );
+
+		if ( $process_parallel_execution_lock || $should_stop ) {
 			$this->remove_validate_content_lock();
+			if ( $should_stop ) {
+				wp_cache_delete( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP );
+				$results = new WP_Error( 'es_validate_content_aborted', 'Validation aborted by CLI command stop-validate-contents!' );
+			}
 		}
 		if ( $track_process ) {
 			$this->remove_validate_content_process();
@@ -1151,20 +1171,23 @@ class Health {
 
 		return $result;
 	}
-	/**
-	 * Verify if the post mapping is incorrect from running `wp vip-search index` without the --setup flag on initial indexing.
-	 *
-	 * @param mixed $indexable Instance of an ElasticPress post Indexable
-	 * @return bool Whether mapping is correct
-	 */
-	public function validate_post_index_mapping( $indexable ) {
-		$index_name = $indexable->get_index_name();
-		$mapping    = $this->elasticsearch->get_mapping( $index_name );
 
-		if ( ! isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
-			return false;
+	/**
+	 * Validate post index has correct mapping.
+	 *
+	 * @param string $index_name Name of index
+	 * @param array $mapping Mapping array
+	 * @return bool Whether index has correct mapping
+	 */
+	public static function validate_post_index_mapping( $index_name, $mapping = [] ) {
+		if ( empty( $mapping ) ) {
+			$mapping = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
 		}
 
-		return true;
+		if ( isset( $mapping[ $index_name ]['mappings']['_meta']['mapping_version'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
