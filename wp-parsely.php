@@ -186,11 +186,8 @@ function maybe_load_plugin() {
 		return;
 	}
 
-	$is_disabled_via_constant = defined( 'VIP_PARSELY_SKIP_LOAD' ) && true === constant( 'VIP_PARSELY_SKIP_LOAD' );
-	$is_fedramp               = defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' );
-
-	// Allow opting out via the VIP_PARSELY_SKIP_LOAD or VIP_IS_FEDRAMP constants.
-	if ( $is_disabled_via_constant || $is_fedramp ) {
+	// Allow opting out via the VIP_PARSELY_SKIP_LOAD constant
+	if ( defined( 'VIP_PARSELY_SKIP_LOAD' ) && true === constant( 'VIP_PARSELY_SKIP_LOAD' ) ) {
 		Parsely_Loader_Info::set_active( false );
 		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_CONSTANT );
 
