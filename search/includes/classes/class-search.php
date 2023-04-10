@@ -772,6 +772,8 @@ class Search {
 		$this->maybe_load_es_wp_query();
 
 		$this->maybe_change_index_version();
+
+		$this->maybe_skip_query_integration_if_no_active_indexes();
 	}
 
 	public function maybe_load_es_wp_query() {
@@ -812,6 +814,22 @@ class Search {
 		}
 
 		return self::is_query_integration_enabled();
+	}
+
+	/**
+	 * Skip query integration if we don't have any active post indexes.
+	 *
+	 * @param Indexable $indexable Defaults to post.
+	 * @return bool Whether to skip query integration or not.
+	 */
+	public function maybe_skip_query_integration_if_no_active_indexes() {
+		$indexable = $this->indexables->get( 'post' );
+		if ( $indexable ) {
+			$version = $this->versioning->get_active_version_number( $indexable );
+			if ( is_wp_error( $version ) && 'no-active-version' === $version->get_error_code() ) {
+				add_filter( 'ep_skip_query_integration', '__return_true', PHP_INT_MAX );
+			}
+		}
 	}
 
 	/**

@@ -1292,10 +1292,8 @@ function wpcom_vip_should_load_plugins() {
 
 	$should_load_plugins = true;
 
-	if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
-		$should_load_plugins = false;
-	} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
-		// WP-CLI loaded with --skip-plugins flag
+	// WP-CLI loaded with --skip-plugins flag
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
 		if ( $skipped_plugins ) {
 			$should_load_plugins = false;
