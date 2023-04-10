@@ -208,7 +208,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertFalse( Parsely_Loader_Info::is_active() );
-		$this->assertEquals( Parsely_Integration_Type::DISABLED_CONSTANT, Parsely_Loader_Info::get_integration_type() );
+		$this->assertEquals( Parsely_Integration_Type::BLOCKED_CONSTANT, Parsely_Loader_Info::get_integration_type() );
 	}
 
 	public function test_parsely_ui_hooks() {

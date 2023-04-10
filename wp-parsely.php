@@ -189,7 +189,7 @@ function maybe_load_plugin() {
 	// Allow opting out via the VIP_PARSELY_SKIP_LOAD constant
 	if ( defined( 'VIP_PARSELY_SKIP_LOAD' ) && true === constant( 'VIP_PARSELY_SKIP_LOAD' ) ) {
 		Parsely_Loader_Info::set_active( false );
-		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_CONSTANT );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::BLOCKED_CONSTANT );
 
 		return;
 	}
@@ -327,11 +327,11 @@ abstract class Parsely_Integration_Type {
 
 	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
 	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT';
-
+	
 	const SELF_MANAGED = 'SELF_MANAGED';
 
 	// When parsely is not active
-	const NONE = 'NONE';
-	const NULL = 'NULL';
+	const BLOCKED_CONSTANT = 'BLOCKED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute.
+	const NONE             = 'NONE';
+	const NULL             = 'NULL';
 }
