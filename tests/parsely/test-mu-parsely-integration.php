@@ -170,6 +170,47 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_bootstrap_modes_for_parsely_skip_load_constant() {
+		define( 'VIP_PARSELY_SKIP_LOAD', true );
+		maybe_load_plugin();
+
+		switch ( self::$test_mode ) {
+			case 'disabled':
+				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'filter_enabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'filter_disabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'option_enabled':
+				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'option_disabled':
+				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '0', get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'filter_and_option_enabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
+				break;
+			case 'filter_and_option_disabled':
+				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
+				$this->assertSame( '0', get_option( '_wpvip_parsely_mu' ) );
+				break;
+			default:
+				$this->fail( 'Invalid test mode specified: ' . self::$test_mode );
+		}
+
+		$this->assertFalse( Parsely_Loader_Info::is_active() );
+		$this->assertEquals( Parsely_Integration_Type::BLOCKED_CONSTANT, Parsely_Loader_Info::get_integration_type() );
+	}
+
 	public function test_parsely_ui_hooks() {
 		maybe_load_plugin();
 
