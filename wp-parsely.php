@@ -186,12 +186,21 @@ function maybe_load_plugin() {
 		return;
 	}
 
-	// Allow opting out via the VIP_PARSELY_SKIP_LOAD constant
-	if ( defined( 'VIP_PARSELY_SKIP_LOAD' ) && true === constant( 'VIP_PARSELY_SKIP_LOAD' ) ) {
-		Parsely_Loader_Info::set_active( false );
-		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::BLOCKED_CONSTANT );
+	$parsely_enabled_constant = null; // Represents that the site doesn't have parsely enabled / blocked.
 
-		return;
+	if ( defined( 'VIP_PARSELY_ENABLED' ) ) {
+		$parsely_enabled_constant = constant( 'VIP_PARSELY_ENABLED' );
+
+		// Opt out if constant value isn't true
+		if ( true !== $parsely_enabled_constant ) {
+			Parsely_Loader_Info::set_active( false );
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_CONSTANT );
+
+			return;
+		}
+
+		Parsely_Loader_Info::set_active( true );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_CONSTANT );
 	}
 
 	// Self-managed integration: The plugin exists on the site and is being loaded already.
@@ -211,20 +220,23 @@ function maybe_load_plugin() {
 	$option_load_status   = get_option( '_wpvip_parsely_mu', null );
 	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
 
-	$should_load            = true === $filtered_load_status || '1' === $option_load_status;
-	$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
+	// If plugin isn't enabled via constant then check for filter and option status
+	if ( true !== $parsely_enabled_constant ) {
+		$should_load            = true === $filtered_load_status || '1' === $option_load_status;
+		$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
 
-	// No integration: The site has not enabled parsely.
-	if ( ! $should_load || $should_prevent_loading ) {
-		Parsely_Loader_Info::set_active( false );
+		// No integration: The site has not enabled parsely.
+		if ( ! $should_load || $should_prevent_loading ) {
+			Parsely_Loader_Info::set_active( false );
 
-		if ( false === $filtered_load_status ) {
-			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
-		} elseif ( '0' === $option_load_status ) {
-			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION );
+			if ( false === $filtered_load_status ) {
+				Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+			} elseif ( '0' === $option_load_status ) {
+				Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION );
+			}
+
+			return;
 		}
-
-		return;
 	}
 
 	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
@@ -266,18 +278,23 @@ function maybe_load_plugin() {
 		$entry_file = __DIR__ . '/wp-parsely/wp-parsely.php';
 	}
 
-	$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
-	if ( '1' === $option_load_status && true !== $filtered_load_status ) {
-		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION;
-	}
-
 	// Require the actual wp-parsely plugin.
 	if ( ! is_readable( $entry_file ) ) {
 		return;
 	}
 	require_once $entry_file;
+
+	// If plugin isn't enabled via constant then set filter or option integration_type
+	if ( true !== $parsely_enabled_constant ) {
+		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
+		if ( '1' === $option_load_status && true !== $filtered_load_status ) {
+			$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION;
+		}
+
+		Parsely_Loader_Info::set_integration_type( $integration_type );
+	}
+
 	Parsely_Loader_Info::set_active( true );
-	Parsely_Loader_Info::set_integration_type( $integration_type );
 	Parsely_Loader_Info::set_version( $version );
 
 	// Require VIP's customizations over wp-parsely.
@@ -322,16 +339,18 @@ function maybe_disable_some_features() {
  */
 // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
 abstract class Parsely_Integration_Type {
+	// When parsely is active
 	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
 	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
+	const ENABLED_CONSTANT                = 'ENABLED_CONSTANT';
 
-	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
-	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-	
 	const SELF_MANAGED = 'SELF_MANAGED';
 
 	// When parsely is not active
-	const BLOCKED_CONSTANT = 'BLOCKED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute.
-	const NONE             = 'NONE';
-	const NULL             = 'NULL';
+	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
+	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
+	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute.
+
+	const NONE = 'NONE';
+	const NULL = 'NULL';
 }

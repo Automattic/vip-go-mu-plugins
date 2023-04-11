@@ -135,8 +135,8 @@ if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
 	}
 
 	// FedRAMP sites do not load Parse.ly by default
-	if ( ! defined( 'VIP_PARSELY_SKIP_LOAD' ) ) {
-		define( 'VIP_PARSELY_SKIP_LOAD', true );
+	if ( ! defined( 'VIP_PARSELY_ENABLED' ) ) {
+		define( 'VIP_PARSELY_ENABLED', false );
 	}
 }
 
