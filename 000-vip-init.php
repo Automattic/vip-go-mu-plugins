@@ -128,16 +128,9 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
 
-if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
-	// FedRAMP sites do not load Jetpack by default
-	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
-		define( 'VIP_JETPACK_SKIP_LOAD', true );
-	}
-
-	// FedRAMP sites do not load Parse.ly by default
-	if ( ! defined( 'VIP_PARSELY_SKIP_LOAD' ) ) {
-		define( 'VIP_PARSELY_SKIP_LOAD', true );
-	}
+// FedRAMP sites do not load Jetpack by default
+if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() && ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
+	define( 'VIP_JETPACK_SKIP_LOAD', true );
 }
 
 $private_dir_path = WP_CONTENT_DIR . '/private'; // Local fallback
