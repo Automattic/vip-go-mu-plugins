@@ -237,11 +237,11 @@ function maybe_load_plugin() {
 
 			return;
 		}
-	}
 
-	// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-	// We need priority 0, so it's executed before `widgets_init`
-	add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
+		// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
+		// We need priority 0, so it's executed before `widgets_init`
+		add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
+	}
 
 	$versions_to_try = SUPPORTED_VERSIONS;
 
@@ -349,7 +349,7 @@ abstract class Parsely_Integration_Type {
 	// When parsely is not active
 	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
 	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute.
+	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute or customers can also define it.
 
 	const NONE = 'NONE';
 	const NULL = 'NULL';
