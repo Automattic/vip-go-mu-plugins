@@ -10,6 +10,7 @@ on:
       - staging
     paths:
     - 'search/**'
+    - 'tests/search/e2e/**'
   workflow_dispatch:
 
 concurrency:
