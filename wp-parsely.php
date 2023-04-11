@@ -13,8 +13,6 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
-use stdClass;
-
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.8',
@@ -188,6 +186,14 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	// Allow opting out via the VIP_PARSELY_SKIP_LOAD constant
+	if ( defined( 'VIP_PARSELY_SKIP_LOAD' ) && true === constant( 'VIP_PARSELY_SKIP_LOAD' ) ) {
+		Parsely_Loader_Info::set_active( false );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::BLOCKED_CONSTANT );
+
+		return;
+	}
+
 	// Self-managed integration: The plugin exists on the site and is being loaded already.
 	$plugin_class_exists = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
 	if ( $plugin_class_exists ) {
@@ -321,10 +327,11 @@ abstract class Parsely_Integration_Type {
 
 	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
 	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-
+	
 	const SELF_MANAGED = 'SELF_MANAGED';
 
 	// When parsely is not active
-	const NONE = 'NONE';
-	const NULL = 'NULL';
+	const BLOCKED_CONSTANT = 'BLOCKED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute.
+	const NONE             = 'NONE';
+	const NULL             = 'NULL';
 }

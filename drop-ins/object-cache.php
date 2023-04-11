@@ -18,7 +18,7 @@ if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
 	}
 }
 
-if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN ) {
+if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN && defined( 'IS_VIP_ON_KUBERNETES' ) && IS_VIP_ON_KUBERNETES ) {
 	if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
 		// We want to use the Memcached adapter in the new drop-in.
 		define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );
