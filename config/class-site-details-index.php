@@ -349,8 +349,23 @@ class Site_Details_Index {
 	 */
 	public function put_site_details() {
 		$site_details = $this->get_site_details();
+		$url          = null;
+		$args         = null;
 
-		if ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
+		if ( defined( 'SDS_API_URL' ) && defined( 'SDS_AUTH_TOKEN' ) && ! empty( SDS_AUTH_TOKEN ) ) {
+			$url = rtrim( SDS_API_URL, '/' ) . '/sites';
+
+			$args = array(
+				'method'  => 'PUT',
+				'body'    => wp_json_encode( $site_details ),
+				'headers' => array(
+					'Authorization' => 'Bearer ' . SDS_AUTH_TOKEN,
+					'Content-Type'  => 'application/json',
+				),
+			);
+
+			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
+		} elseif ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
 			$url = rtrim( SERVICES_API_URL, '/' ) . '/site-details/sites';
 
 			$args = array(
@@ -361,7 +376,9 @@ class Site_Details_Index {
 					'Content-Type'  => 'application/json',
 				),
 			);
+		}
 
+		if ( $url && $args ) {
 			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
 		}
 	}
