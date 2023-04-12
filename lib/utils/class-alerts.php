@@ -49,7 +49,7 @@ class Alerts {
 	 * Send the alert
 	 *
 	 * @param array $body The alert message body
-	 * @param string|null $api_url The API URL to send the alert to. Defaults to $service_url
+	 * @param string $api_url The API URL to send the alert to. Defaults to $service_url
 	 *
 	 * @return array|WP_Error Response details from wp_remote_post
 	 */
