@@ -55,7 +55,7 @@ class Wp_Cli_Db {
 
 		$this->assoc_args['all-tables'] = true;
 
-		WP_CLI::success( 'Forcing `--all-tables` flag as it\'s required for HyperDB. Re-running with flag..' );
+		WP_CLI::success( 'Forcing `--all-tables` flag as it\'s required for HyperDB. Re-running with flag...' );
 
 		// Run the command with the forced all-tables argument
 		$this->runner->run_command( $this->runner->arguments, $this->assoc_args );
