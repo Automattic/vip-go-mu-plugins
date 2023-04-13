@@ -7,14 +7,16 @@ class VIP_Go__Core__Default_VIP_Jetpack_Version extends WP_UnitTestCase {
 		global $wp_version;
 		$saved_wp_version = $wp_version;
 
+		$latest = '12.0';
+
 		$versions_map = [
 			// WordPress version => Jetpack version
 			'5.8.6' => '10.9',
 			'5.9'   => '11.4',
 			'5.9.5' => '11.4',
-			'6.0'   => '11.9',
-			'6.1'   => '11.9',
-			'6.1.1' => '11.9',
+			'6.0'   => $latest,
+			'6.1'   => $latest,
+			'6.1.1' => $latest,
 		];
 
 		foreach ( $versions_map as $wordpress_version => $jetpack_version ) {
