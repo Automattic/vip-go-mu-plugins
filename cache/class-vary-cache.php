@@ -592,11 +592,10 @@ class Vary_Cache {
 		if ( ! empty( self::$groups ) ) {
 			$sent_vary = true;
 
-			if ( self::is_encryption_enabled() ) {
-				header( 'Vary: X-VIP-Go-Auth', false );
-			} else {
-				header( 'Vary: X-VIP-Go-Segmentation', false );
-			}
+			$vip_vary_header = self::is_encryption_enabled() ? 'X-VIP-Go-Auth' : 'X-VIP-Go-Segmentation';
+			$vary_headers    = apply_filters( 'vip_vary_header', $vip_vary_header );
+
+			header( 'Vary: ' . $vary_headers, false );
 
 			if ( defined( 'WP_DEBUG' ) && true === constant( 'WP_DEBUG' ) ) {
 				header( 'X-VIP-Go-Segmentation-Debug: ' . self::stringify_groups() );
