@@ -24,11 +24,11 @@ function register_qm_vip() {
 }
 
 function register_qm_vip_output( array $output, \QM_Collectors $collectors ) {
-	$collector = \QM_Collectors::get( 'qm-vip' );
+	$collector = \QM_Collectors::get( 'vip' );
 	if ( $collector ) {
 		require_once __DIR__ . '/class-qm-vip-output-html.php';
 
-		$output['qm-vip'] = new QM_VIP_Output( $collector );
+		$output['vip'] = new QM_VIP_Output( $collector );
 	}
 	return $output;
 }
