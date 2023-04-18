@@ -40,10 +40,10 @@ add_action( 'cli_init', function() {
 } );
 
 
-add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_generic_cron' );
+add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_aggregated_cron' );
 
-function vip_schedule_generic_cron() {
-	if ( wp_next_scheduled( 'vip_generic_cron_hourly' ) ) {
+function vip_schedule_aggregated_cron() {
+	if ( wp_next_scheduled( 'vip_aggregated_cron_hourly' ) ) {
 		return;
 	}
 
@@ -57,5 +57,5 @@ function vip_schedule_generic_cron() {
 		$offset = $slot * get_current_blog_id();
 	}
 
-	wp_schedule_event( $timestamp + $offset, 'hourly', 'vip_generic_cron_hourly' );
+	wp_schedule_event( $timestamp + $offset, 'hourly', 'vip_aggregated_cron_hourly' );
 }

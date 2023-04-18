@@ -44,7 +44,7 @@ class Plugin {
 		}
 
 		// Cron callback to do the heavy lifting.
-		add_action( 'vip_generic_cron_hourly', [ $this, 'process_metrics' ] );
+		add_action( 'vip_aggregated_cron_hourly', [ $this, 'process_metrics' ] );
 
 		do_action( 'vip_prometheus_loaded' );
 	}
