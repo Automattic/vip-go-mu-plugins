@@ -18,7 +18,6 @@ class WPCOM_VIP_Jetpack_Mandatory {
 	 */
 	protected $mandatory_modules = array(
 		'stats',
-		'vaultpress',
 	);
 
 	/**
