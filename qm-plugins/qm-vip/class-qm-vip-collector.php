@@ -52,12 +52,12 @@ class QM_VIP_Collector extends QM_Collector {
 	private function process_app() {
 		global $wp_version;
 
-		$env = constant( 'VIP_GO_APP_ENVIRONMENT' );
+		$env               = constant( 'VIP_GO_APP_ENVIRONMENT' );
 		$this->data['app'] = [
-			'env'    => $env,
+			'env' => $env,
 		];
 
-		if ( $env !== 'local' ) {
+		if ( 'local' !== $env ) {
 			$this->data['app']['commit'] = getenv( 'VIP_GO_APP_CURRENT_COMMIT_HASH' );
 			$this->data['app']['branch'] = constant( 'VIP_GO_APP_BRANCH' );
 
@@ -68,7 +68,11 @@ class QM_VIP_Collector extends QM_Collector {
 			}
 		}
 		$this->data['app']['php'] = phpversion();
-		$this->data['app']['wp'] = $wp_version;
+		$this->data['app']['wp']  = $wp_version;
+
+		if ( defined( 'JETPACK__VERSION' ) ) {
+			$this->data['app']['jetpack'] = constant( 'JETPACK__VERSION' );
+		}
 
 		if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && class_exists( '\ElasticPress\Elasticsearch' ) ) {
 			$this->data['app']['es_version'] = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version();

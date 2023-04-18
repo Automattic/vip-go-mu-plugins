@@ -25,7 +25,7 @@ class QM_VIP_Output extends QM_Output_Html {
 
 		// MU-Plugins section
 		$this->output_before_section( 'MU-Plugins' );
-		$this->output_table_row( 'Branch', $data['mu-plugins']['branch'] === 'prod' ? 'production' : $data['mu-plugins']['branch'] );
+		$this->output_table_row( 'Branch', 'prod' === $data['mu-plugins']['branch'] ? 'production' : $data['mu-plugins']['branch'] );
 		if ( isset( $data['mu-plugins']['commit'] ) && isset( $data['mu-plugins']['date'] ) ) {
 			$this->output_table_row( 'Last modified', $data['mu-plugins']['date'] );
 			$this->output_table_row( 'Commit', $data['mu-plugins']['commit'], 'https://github.com/automattic/vip-go-mu-plugins/commit/' . $data['mu-plugins']['commit'] );
@@ -52,6 +52,9 @@ class QM_VIP_Output extends QM_Output_Html {
 		$this->output_table_row( 'Environment', $data['app']['env'] );
 		$this->output_table_row( 'PHP', $data['app']['php'] );
 		$this->output_table_row( 'WordPress', $data['app']['wp'] );
+		if ( isset( $data['app']['jetpack'] ) ) {
+			$this->output_table_row( 'Jetpack', $data['app']['jetpack'] );
+		}
 		if ( isset( $data['app']['es_version'] ) ) {
 			$this->output_table_row( 'Elasticsearch', $data['app']['es_version'] );
 		}
