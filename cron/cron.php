@@ -39,9 +39,8 @@ add_action( 'cli_init', function() {
 	}
 } );
 
-if ( \Automattic\VIP\Utils\Context::is_cron() ) {
-	add_action( 'init', 'vip_schedule_generic_cron' );
-}
+
+add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_generic_cron' );
 
 function vip_schedule_generic_cron() {
 	if ( wp_next_scheduled( 'vip_generic_cron_hourly' ) ) {
@@ -53,7 +52,7 @@ function vip_schedule_generic_cron() {
 
 	// To avoid piling up events on the same time, we offset the cron event using the following formula:
 	// INTERVAL / TOTAL_SITES * SITE_ID
-	if ( is_multisite() && wp_count_sites()['all'] > 0 ) {
+	if ( is_multisite() && wp_count_sites()['all'] > 1 ) {
 		$slot   = HOUR_IN_SECONDS / wp_count_sites()['all'];
 		$offset = $slot * get_current_blog_id();
 	}
