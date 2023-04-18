@@ -38,12 +38,13 @@ class Plugin {
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
 
 		// Currently there's no way to persist the storage on non-web requests because APCu is not available.
+		// So instead we collect metrics on shutdown after flushing the response to the client
 		if ( Context::is_web_request() ) {
-			add_action( 'shutdown', [ $this, 'shutdown' ], PHP_INT_MAX );
+			add_action( 'shutdown', [ $this, 'collect_metrics_on_shutdown' ], PHP_INT_MAX );
 		}
 
 		// Cron callback to do the heavy lifting.
-		add_action( 'vip_prometheus_process_metrics', [ $this, 'process_metrics' ] );
+		add_action( 'vip_generic_cron_hourly', [ $this, 'process_metrics' ] );
 
 		do_action( 'vip_prometheus_loaded' );
 	}
@@ -119,26 +120,21 @@ class Plugin {
 	/**
 	 * We're going to send the response to the client, then collect metrics from each registered collector
 	 */
-	public function shutdown(): void {
+	public function collect_metrics_on_shutdown(): void {
 		// This is expensive, potentially, so be mindful about when this method is called
 		// Currently it only runs on web requests with a 90 interval, see the constructor
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			fastcgi_finish_request();
 		}
 
-		// Don't run on unauthorized requests.
-		if ( ! function_exists( 'wp_get_current_user' ) || ! current_user_can( 'edit_posts' ) ) {
-			return;
-		}
-
-		if ( wp_cache_add( 'vip_prometheus_last_collection_run', time(), 'vip_prometheus', 5 * MINUTE_IN_SECONDS ) ) {
+		$ts = time();
+		if ( wp_cache_add( 'vip_prometheus_last_collection_run', $ts, 'vip_prometheus', 5 * MINUTE_IN_SECONDS ) ) {
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
 			}
 
-			// Roughly every hour
-			if ( ! wp_next_scheduled( 'vip_prometheus_process_metrics' ) ) {
-				wp_schedule_single_event( time() + HOUR_IN_SECONDS, 'vip_prometheus_process_metrics' );
+			if ( time() - $ts > 4 * MINUTE_IN_SECONDS ) {
+				trigger_error( 'Prometheus: collecting metrics took longer than expected', E_USER_WARNING );
 			}
 		}
 	}
