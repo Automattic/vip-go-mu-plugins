@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
+
 class Site_Details_Index {
 	/**
 	 * Variable to hold the instance for the singleton.
@@ -17,11 +19,6 @@ class Site_Details_Index {
 	 * @var int|null
 	 */
 	private $timestamp = null;
-
-	/**
-	 * Name of the logstash feature to use for log2logstash call
-	 */
-	private const LOG_FEATURE_NAME = 'site_details';
 
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
@@ -77,8 +74,10 @@ class Site_Details_Index {
 		$site_details['core']['is_multisite'] = is_multisite();
 
 		$site_details['plugins'] = $this->get_plugin_info();
+		$site_details['themes']  = $this->get_theme_info();
 		$site_details['search']  = $this->get_search_info();
 		$site_details['jetpack'] = $this->get_jetpack_info();
+		$site_details['parsely'] = $this->get_parsely_info();
 
 		return $site_details;
 	}
@@ -151,7 +150,7 @@ class Site_Details_Index {
 		foreach ( $no_update as $plugin_path => $plugin_data ) {
 			$update_data[ $plugin_path ] = [
 				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
 				'new_version' => null,
 				'package'     => null,
 			];
@@ -160,9 +159,9 @@ class Site_Details_Index {
 		foreach ( $has_update as $plugin_path => $plugin_data ) {
 			$update_data[ $plugin_path ] = [
 				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_plugin_marketplace( $plugin_data->url ),
+				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
 				'new_version' => $plugin_data->new_version ?? null,
-				'package'     => wp_http_validate_url( $plugin_data->package ) !== false ? $plugin_data->package : null,
+				'package'     => wp_http_validate_url( $plugin_data->package ?? '' ) !== false ? $plugin_data->package : null,
 			];
 		}
 
@@ -172,7 +171,7 @@ class Site_Details_Index {
 	/**
 	 * There is no "official" marketplace slug system. To help with our searches, we'll try to standardize them here.
 	 */
-	private function get_plugin_marketplace( $plugin_url ) {
+	private function get_marketplace( $plugin_url ) {
 		if ( false !== strpos( $plugin_url, '//wordpress.org' ) ) {
 			return 'wp-org';
 		}
@@ -186,6 +185,69 @@ class Site_Details_Index {
 		}
 
 		return null;
+	}
+
+	private function get_theme_info() {
+		$installed_themes  = wp_get_themes();
+		$theme_count       = count( $installed_themes );
+		$active_stylesheet = get_stylesheet();
+		$active_template   = get_template();
+		$update_data       = $this->get_theme_update_data();
+
+		$theme_info = [];
+		foreach ( $installed_themes as $theme_path => $theme ) {
+			$is_active = in_array( $theme->get_stylesheet(), [ $active_stylesheet, $active_template ], true ) || in_array( $theme->get_template(), [ $active_stylesheet, $active_template ], true );
+
+			if ( $theme_count > 10 && ! $is_active ) {
+				continue;
+			}
+
+			$theme_info[] = [
+				'path'          => $theme_path,
+				'name'          => $theme->get( 'Name' ),
+				'version'       => $theme->get( 'Version' ),
+				'block'         => method_exists( $theme, 'is_block_theme' ) ? $theme->is_block_theme() : false,
+				'active'        => $is_active,
+				'slug'          => isset( $update_data[ $theme_path ] ) ? $update_data[ $theme_path ]['slug'] : null,
+				'marketplace'   => isset( $update_data[ $theme_path ] ) ? $update_data[ $theme_path ]['marketplace'] : null,
+				'has_update'    => isset( $update_data[ $theme_path ] ) ? $update_data[ $theme_path ]['new_version'] : null,
+				'download_link' => isset( $update_data[ $theme_path ] ) ? $update_data[ $theme_path ]['package'] : null,
+			];
+		}
+
+		return $theme_info;
+	}
+
+	private function get_theme_update_data() {
+		$update_data = [];
+
+		// Ensure the update cache is fresh.
+		wp_update_themes();
+		$update_cache = get_site_transient( 'update_themes' );
+
+		// Note that these lists only contain themes that have been matched with a "marketplace", usually WPorg.
+		$no_update  = isset( $update_cache->no_update ) && is_array( $update_cache->no_update ) ? $update_cache->no_update : [];
+		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
+
+		foreach ( $no_update as $theme_path => $theme_data ) {
+			$update_data[ $theme_path ] = [
+				'slug'        => $theme_data['theme'] ?? null,
+				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
+				'new_version' => null,
+				'package'     => null,
+			];
+		}
+
+		foreach ( $has_update as $theme_path => $theme_data ) {
+			$update_data[ $theme_path ] = [
+				'slug'        => $theme_data['theme'] ?? null,
+				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
+				'new_version' => $theme_data['new_version'] ?? null,
+				'package'     => wp_http_validate_url( $theme_data['package'] ?? '' ) !== false ? $theme_data['package'] : null,
+			];
+		}
+
+		return $update_data;
 	}
 
 	/**
@@ -226,6 +288,23 @@ class Site_Details_Index {
 		}
 
 		return $jetpack_info;
+	}
+
+	/**
+	 * Gather all the information about Parse.ly.
+	 * @return array Parse.ly plugin info.
+	 */
+	public function get_parsely_info() {
+		$parsely_info                     = [];
+		$parsely_info['active']           = ParselyInfo::is_active();
+		$parsely_info['integration_type'] = ParselyInfo::get_integration_type();
+		$parsely_info['version']          = ParselyInfo::get_version();
+
+		if ( ParselyInfo::is_active() ) {
+			$parsely_info['configs'] = ParselyInfo::get_configs();
+		}
+
+		return $parsely_info;
 	}
 
 	/**

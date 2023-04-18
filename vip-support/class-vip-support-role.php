@@ -111,8 +111,8 @@ class Role {
 	}
 
 	/**
-	 * Hooks the editable_roles filter to place the VIP Support at the bottom of
-	 * any roles listing.
+	 * Hooks the editable_roles filter to remove the VIP Support roles for all users except VIP Support.
+	 * For VIP Support users, it will place the role at the bottom of any roles listings.
 	 *
 	 * @param array $roles An array of WP role data
 	 *
@@ -122,12 +122,16 @@ class Role {
 		$vip_support_roles = array();
 
 		if ( isset( $roles[ self::VIP_SUPPORT_INACTIVE_ROLE ] ) ) {
-			$vip_support_roles[ self::VIP_SUPPORT_INACTIVE_ROLE ] = $roles[ self::VIP_SUPPORT_INACTIVE_ROLE ];
+			if ( current_user_can( 'vip_support' ) ) {
+				$vip_support_roles[ self::VIP_SUPPORT_INACTIVE_ROLE ] = $roles[ self::VIP_SUPPORT_INACTIVE_ROLE ];
+			}
 			unset( $roles[ self::VIP_SUPPORT_INACTIVE_ROLE ] );
 		}
 
 		if ( isset( $roles[ self::VIP_SUPPORT_ROLE ] ) ) {
-			$vip_support_roles[ self::VIP_SUPPORT_ROLE ] = $roles[ self::VIP_SUPPORT_ROLE ];
+			if ( current_user_can( 'vip_support' ) ) {
+				$vip_support_roles[ self::VIP_SUPPORT_ROLE ] = $roles[ self::VIP_SUPPORT_ROLE ];
+			}
 			unset( $roles[ self::VIP_SUPPORT_ROLE ] );
 		}
 

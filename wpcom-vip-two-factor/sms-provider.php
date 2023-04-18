@@ -87,7 +87,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	public function format_sms_message( $verification_code ) {
 		$site_title                = get_bloginfo();
 		$parse                     = wp_parse_url( home_url() );
-		$home_url_without_protocol = $parse['host'] . $parse['path'];
+		$home_url_without_protocol = $parse['host'] . ( $parse['path'] ?? '' );
 
 		$format = '%1$s is your %2$s verification code.' . "\n\n" . '@%3$s #%1$s';
 
@@ -195,7 +195,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 					value="<?php esc_attr_e( 'Submit', 'two-factor' ); ?>"/>
 			<?php else : ?>
 				<label>Phone Number
-					<input name="vip-two-factor-phone" type="tel" placeholder="+14158675309"
+					<input name="vip-two-factor-phone" type="tel"
 						value="<?php echo esc_attr( $sms ); ?>"/>
 				</label>
 				<input type="submit" class="button" name="vip-two-factor-phone-send-code"

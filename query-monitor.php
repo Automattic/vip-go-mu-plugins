@@ -10,13 +10,13 @@
  *
  * Plugin Name:  Query Monitor
  * Description:  The developer tools panel for WordPress.
- * Version:      3.9.0
+ * Version:      3.10.1
  * Plugin URI:   https://querymonitor.com/
  * Author:       John Blackbourn
  * Author URI:   https://querymonitor.com/
  * Text Domain:  query-monitor
  * Domain Path:  /languages/
- * Requires PHP: 5.3.6
+ * Requires PHP: 5.6.20
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,6 +63,10 @@ function wpcom_vip_qm_enable( $enable ) {
 
 	// We're not validating the cookie here as QM will do that later
 	if ( isset( $_COOKIE[ QM_COOKIE ] ) ) {
+		return true;
+	}
+
+	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 		return true;
 	}
 
@@ -114,6 +118,28 @@ function wpcom_vip_qm_require() {
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
+
+	/**
+	 * Load QM plugins
+	 */
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-apcu-cache/qm-apcu-cache.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-cron/qm-cron.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-cron/qm-cron.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
+	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
+	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
@@ -136,7 +162,7 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	if ( is_array( $dispatchers ) ) {
 		if ( isset( $dispatchers['html'] ) ) {
 			$html_dispatcher = $dispatchers['html'];
-			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 0 );
+			remove_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), 9 );
 
 			// To prevent collision with log2logstashs fastcgi_finish_request, set this priority just a bit before it.
 			add_action( 'shutdown', array( $html_dispatcher, 'dispatch' ), PHP_INT_MAX - 1 );
@@ -153,13 +179,3 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
-
-/**
- * Load QM plugins
- */
-if ( file_exists( __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-alloptions/qm-alloptions.php';
-}
-if ( file_exists( __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php' ) ) {
-	require_once __DIR__ . '/qm-plugins/qm-object-cache/qm-object-cache.php';
-}

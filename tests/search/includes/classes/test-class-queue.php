@@ -240,7 +240,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$job = $jobs[0];
 		self::assertIsObject( $job );
-		self::assertObjectHasAttribute( 'priority', $job );
+		self::assertTrue( property_exists( $job, 'priority' ) );
 		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
 	}
 
@@ -615,6 +615,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_free_deadlocked_jobs() {
+		$this->markTestSkipped( 'MySQL does not handle references to the same TEMPORARY table more than once in the same query, see https://dev.mysql.com/doc/refman/8.0/en/temporary-table-problems.html' );
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );
 		$this->queue->queue_object( 3000, 'post' );
@@ -894,30 +895,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
-	}
-
-	public function test__record_ratelimited_stat__records_statsd() {
-		$increment      = 14;
-		$indexable_slug = 'post';
-
-		/** @var MockObject&\Automattic\VIP\Search\Queue */
-		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
-			->setMethods( [ 'maybe_update_stat' ] )
-			->getMock();
-
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-
-		$indexables_mock->method( 'get' )
-			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
-
-		$partially_mocked_queue->expects( $this->once() )
-			->method( 'maybe_update_stat' )
-			->with( 'com.wordpress.elasticsearch.unknown.unknown.index_ratelimited', $increment );
-
-		$partially_mocked_queue->init();
-		$partially_mocked_queue->indexables = $indexables_mock;
-
-		$partially_mocked_queue->record_ratelimited_stat( $increment, $indexable_slug );
 	}
 
 	/**
@@ -1278,92 +1255,6 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$this->queue->apply_settings();
-	}
-
-	public function stat_sampling_invalid_stat_param_data() {
-		return [
-			[ array() ],
-			[ null ],
-			[ new \stdClass() ],
-			[ 5 ],
-			[ 8.6 ],
-		];
-	}
-
-	public function stat_sampling_invalid_value_param_data() {
-		return [
-			[ array() ],
-			[ null ],
-			[ new \stdClass() ],
-			[ 'random' ],
-		];
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_update_stat_sampling_keep() {
-		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->queue->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->once() )
-			->method( 'update_stats' )
-			->with( 'test', 5, 1, 'c' );
-
-		$this->queue->maybe_update_stat( 'test', 5 );
-	}
-
-	/**
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_update_stat_sampling_drop() {
-		$this->queue::$stat_sampling_drop_value = 0; // Guarantee a sampling drop
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->queue->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'update_stats' );
-
-		$this->queue->maybe_update_stat( 'test', 5 );
-	}
-
-	/**
-	 * @dataProvider stat_sampling_invalid_stat_param_data
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_update_stat_sampling_invalid_stat_param( $stat ) {
-		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->queue->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'update_stats' );
-
-		$this->queue->maybe_update_stat( $stat, 5 );
-	}
-
-	/**
-	 * @dataProvider stat_sampling_invalid_value_param_data
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_update_stat_sampling_invalid_value_param( $value ) {
-		$this->queue::$stat_sampling_drop_value = 11; // Guarantee a sampling keep
-
-		$statsd_mocked = $this->createMock( \Automattic\VIP\StatsD::class );
-
-		$this->queue->statsd = $statsd_mocked;
-
-		$statsd_mocked->expects( $this->never() )
-			->method( 'update_stats' );
-
-		$this->queue->maybe_update_stat( 'test', $value );
 	}
 
 	public function test__log_index_ratelimiting_start() {

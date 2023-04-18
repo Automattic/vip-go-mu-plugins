@@ -2,6 +2,13 @@
 
 namespace Automattic\VIP;
 
+if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+	$cli_file = __DIR__ . '/class-feature-cli.php';
+	if ( file_exists( $cli_file ) ) {
+		require_once $cli_file;
+	}
+}
+
 /**
  * Feature provides a simple interface to gate the functionality by the Go Site Id
  *
@@ -18,8 +25,8 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'reduce-default-es-payload' => 0.25,
-		'force-es-timeout'          => 0.25,
+		'prom-post-collection'   => 0.05,
+		'vip-search-use-next-ep' => 0.55,
 	];
 
 	/**
@@ -29,30 +36,128 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		'prom-post-collection' => [
+			6747 => false,
+			6746 => false,
+			6506 => false,
+			6517 => false,
+		],
+	];
 
-	public static function is_enabled( $feature ) {
-		return static::is_enabled_by_percentage( $feature );
+	/**
+	 * Holds feature slug and then, key of environments with bool value to enable E.g.
+	 * // Enable feature for non-production sites
+	 * // 'feature-flag' => [ 'non-production' => true ],
+	 *
+	 *
+	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
+	 */
+	public static $feature_envs = [
+		'prom-post-collection' => [
+			'develop' => true,
+			'staging' => true,
+		],
+	];
+
+	/**
+	 * Checks if a feature is enabled.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 *
+	 * @return bool Whether it is enabled or not.
+	 */
+	public static function is_enabled( string $feature ) {
+		if ( true === static::is_disabled_by_ids( $feature ) ) {
+			return false;
+		}
+
+		return static::is_enabled_by_percentage( $feature ) || static::is_enabled_by_ids( $feature ) || static::is_enabled_by_env( $feature );
 	}
 
 	/**
-	 * Selectively enable or disable feature by certain IDs.
+	 * Returns all features that exist.
+	 *
+	 * @return array $features Array of features.
+	 */
+	public static function get_features() {
+		$features = array_merge(
+			is_array( static::$feature_percentages ) ? array_keys( static::$feature_percentages ) : [],
+			is_array( static::$feature_ids ) ? array_keys( static::$feature_ids ) : [],
+			is_array( static::$feature_envs ) ? array_keys( static::$feature_envs ) : [],
+		);
+
+		return array_unique( $features );
+	}
+
+
+	/**
+	 * Selectively enable by certain environments.
 	 *
 	 * @param string $feature The feature we are targeting.
-	 * @param mixed $default Default return value if ID is not on list.
+	 * @param mixed $default Default return value if environment is not on list.
 	 *
 	 * @return mixed Returns bool if on list and if not, $default value.
 	 */
-	public static function is_enabled_by_ids( $feature, $default = false ) {
-		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+	public static function is_enabled_by_env( string $feature, $default = false ) {
+		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return false;
+		}
+
+		if ( ! isset( static::$feature_envs[ $feature ] ) ) {
+			return false;
+		}
+
+		$envs = static::$feature_envs[ $feature ];
+		if ( array_key_exists( 'non-production', $envs ) && true === $envs['non-production'] ) {
+			if ( constant( 'VIP_GO_APP_ENVIRONMENT' ) !== 'production' ) {
+				return true;
+			}
+		}
+
+		if ( array_key_exists( constant( 'VIP_GO_APP_ENVIRONMENT' ), $envs ) ) {
+			return $envs[ constant( 'VIP_GO_APP_ENVIRONMENT' ) ];
+		}
+
+		return $default;
+	}
+
+	/**
+	 * Selectively disable feature by certain IDs.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 *
+	 * @return mixed Returns true if on list.
+	 */
+	public static function is_disabled_by_ids( string $feature ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
 
 		if ( array_key_exists( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ] ) ) {
-			return static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
+			return false === static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
 		}
 
-		return $default;
+		return false;
+	}
+
+	/**
+	 * Selectively enable feature by certain IDs.
+	 *
+	 * @param string $feature The feature we are targeting.
+	 *
+	 * @return bool Returns true if on list.
+	 */
+	public static function is_enabled_by_ids( string $feature ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
+			return false;
+		}
+
+		if ( array_key_exists( constant( 'FILES_CLIENT_SITE_ID' ), static::$feature_ids[ $feature ] ) ) {
+			return true === static::$feature_ids[ $feature ][ constant( 'FILES_CLIENT_SITE_ID' ) ];
+		}
+
+		return false;
 	}
 
 	/**
@@ -62,7 +167,7 @@ class Feature {
 	 *
 	 * @return bool Whether it is enabled or not.
 	 */
-	public static function is_enabled_by_percentage( $feature ) {
+	public static function is_enabled_by_percentage( string $feature ) {
 		if ( ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
@@ -75,11 +180,34 @@ class Feature {
 
 		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
 		// the feature name so that the same sites aren't always the canaries
-		$bucket = crc32( $feature . '-' . constant( 'FILES_CLIENT_SITE_ID' ) ) % 100;
+		$bucket = static::get_bucket( constant( 'FILES_CLIENT_SITE_ID' ), $feature );
 
 		// Is the bucket enabled?
 		$threshold = $percentage * 100; // $percentage is decimal
 
+		if ( is_multisite() && $bucket < $threshold ) {
+			// For multisites, we don't want to roll out for all subsites
+			$bucket = static::get_bucket( get_current_blog_id(), $feature );
+		}
+
 		return $bucket < $threshold; // If our 0-based bucket is inside our threshold, it's enabled
+	}
+
+	/**
+	 * Given a site ID and a feature, return the bucket the site is in.
+	 *
+	 * Note: this is a lower-level API, it doesn't care if the feature is defined or whether it's a multisite or not.
+	 * Please use is_enabled()/is_enabled_by_ids()/is_enabled_by_percentage() instead.
+	 *
+	 * @param mixed $site_id
+	 * @param string $feature
+	 * @return integer
+	 */
+	public static function get_bucket( $site_id = 0, string $feature = '' ) {
+		// Which bucket is the site in - 100 possibilites, one for each percentage. We run this through crc32 with
+		// the feature name so that the same sites aren't always the canaries
+		$bucket = crc32( $feature . '-' . $site_id ) % 100;
+
+		return $bucket;
 	}
 }

@@ -22,11 +22,20 @@ class Context {
 			&& true === constant( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' );
 	}
 
+	public static function is_overdue_locked() {
+		return defined( 'VIP_OVERDUE_LOCKOUT' )
+			&& true === constant( 'VIP_OVERDUE_LOCKOUT' );
+	}
+
 	public static function is_healthcheck() {
 		// phpcs:disable WordPress.VIP.SuperGlobalInputUsage.AccessDetected
 		return ! empty( $_SERVER['REQUEST_URI'] )
 			&& '/cache-healthcheck?' === $_SERVER['REQUEST_URI'];
 		// phpcs:enable WordPress.VIP.SuperGlobalInputUsage.AccessDetected
+	}
+
+	public static function is_fedramp(): bool {
+		return defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' );
 	}
 
 	/**
@@ -65,5 +74,11 @@ class Context {
 
 	public static function is_installing() {
 		return defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' );
+	}
+
+	public static function is_prom_endpoint_request(): bool {
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
+		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
+		return '/.vip-prom-metrics' === $request_uri;
 	}
 }

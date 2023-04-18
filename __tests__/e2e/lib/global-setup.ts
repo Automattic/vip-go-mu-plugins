@@ -10,12 +10,13 @@ import fs from 'fs';
 import { EditorPage } from './pages/wp-editor-page';
 import { LoginPage } from './pages/wp-login-page';
 import { SettingsWritingPage } from './pages/settings-writing-page';
+import { goToPage } from './playwright-helpers';
 
 async function globalSetup( config: FullConfig ) {
     const timeout = 30000;
     const artifactsDir = 'test-results/setup/';
     const { baseURL, storageState } = config.projects[ 0 ].use;
-    const browser = await chromium.launch();
+    const browser = await chromium.launch( { headless: config.projects[ 0 ].use.headless } );
     const context = await browser.newContext( { recordVideo: { dir: artifactsDir } } );
     const page = await context.newPage();
     const user = process.env.E2E_USER ? process.env.E2E_USER : 'vipgo';
@@ -25,9 +26,8 @@ async function globalSetup( config: FullConfig ) {
     await context.tracing.start( { name: 'global-setup', screenshots: true, snapshots: true } );
 
     try {
-
         // Log in to wp-admin
-        await page.goto( baseURL + '/wp-login.php', { waitUntil: 'networkidle' } );
+        await goToPage( page, baseURL + '/wp-login.php' );
         const loginPage = new LoginPage( page );
         await loginPage.login( user, pass );
 
@@ -35,8 +35,7 @@ async function globalSetup( config: FullConfig ) {
         process.env.WP_E2E_NONCE = await page.evaluate( 'wpApiSettings.nonce' );
 
         // Adjust Classic Editor plugin settings if is available
-        await page.goto( baseURL + '/wp-admin/options-writing.php', { waitUntil: 'networkidle' } );
-
+        await goToPage( page, baseURL + '/wp-admin/options-writing.php' );
         const settingsWritingPage = new SettingsWritingPage( page );
         if ( await settingsWritingPage.hasClassicEditor() ) {
             await settingsWritingPage.allowBothEditors();
@@ -45,10 +44,9 @@ async function globalSetup( config: FullConfig ) {
         }
 
         // Dismiss editor welcome
-        await page.goto( baseURL + '/wp-admin/post-new.php', { waitUntil: 'networkidle' } );
+        await goToPage( page, baseURL + '/wp-admin/post-new.php' );
         const editorPage = new EditorPage( page );
         await editorPage.dismissWelcomeTour();
-
     } catch ( error ) {
         // eslint-disable-next-line no-console
         console.log( error );
@@ -66,7 +64,7 @@ async function globalSetup( config: FullConfig ) {
         fs.rmSync( artifactsDir, { recursive: true, force: true } );
     } else {
         // Stop test run if login fails
-        throw new Error( 'Setup unsuccessful - Tests will not run' )
+        throw new Error( 'Setup unsuccessful - Tests will not run' );
     }
 }
 

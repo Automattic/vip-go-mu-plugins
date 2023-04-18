@@ -17,17 +17,24 @@ jobs:
     env:
       SOURCE_REPO_PATH: main
       TARGET_REPO_PATH: built
+      EXT_REPO_PATH: ext
     permissions:
       contents: write
     steps:
       - name: Check out the source code
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.5.2
         with:
           submodules: recursive
           path: ${{ env.SOURCE_REPO_PATH }}
 
+      - name: Check out Automattic/vip-go-mu-plugins-ext
+        uses: actions/checkout@v3.5.2
+        with:
+          repository: Automattic/vip-go-mu-plugins-ext
+          path: ${{ env.EXT_REPO_PATH }}
+
       - name: Check out Automattic/vip-go-mu-plugins-built
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.5.2
         with:
           repository: Automattic/vip-go-mu-plugins-built
           path: ${{ env.TARGET_REPO_PATH }}
@@ -41,16 +48,16 @@ jobs:
         working-directory: ${{ env.TARGET_REPO_PATH }}
 
       - name: Synchronize files
-        run: rsync --delete -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude='.git/'
+        run: |
+          rsync --delete -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore"
 
-      - name: Delete files
+      - name: Clean up
         run: |
           TARGET="${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}"
           find "${TARGET}" -name ".svn" -exec rm -rfv {} \; 2> /dev/null
           find "${TARGET}" -name ".git*" -not -name ".github" -not -name ".git" -exec rm -rfv {} \; 2> /dev/null
-          mv -vf "${TARGET}/README-PUBLIC.md" "${TARGET}/README.md"
-          mv -vf "${TARGET}/composer.json.tpl" "${TARGET}/composer.json"
-          rm -rvf "${TARGET}/ci" "${TARGET}/.github/workflows/deploy.yml" "${TARGET}/.github/dependabot.yml" "${TARGET}/renovate.json"
+          cp -vf "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/README-PUBLIC.md" "${TARGET}/README.md"
+          cp -vf "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/composer.json.tpl" "${TARGET}/composer.json"
 
       - name: Commit!
         run: |

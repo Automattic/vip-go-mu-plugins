@@ -266,7 +266,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	/**
 	 * Unit test covering the resize method.
 	 *
-	 * @covers Automattic\VIP\Files/ImageSizes::resize
+	 * @covers Automattic\VIP\Files\ImageSizes::resize
 	 * @dataProvider get_data_for_resize
 	 *
 	 * @param array $data Expected resize array.
@@ -355,7 +355,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	/**
 	 * Unit test covering the generate_sizes_meta method.
 	 *
-	 * @covers Automattic\VIP\Files/ImageSizes::generate_sizes_meta
+	 * @covers Automattic\VIP\Files\ImageSizes::generate_sizes_meta
 	 * @dataProvider get_expected_sizes_meta
 	 */
 	public function test__generate_sizes_meta( $expected_sizes_meta ) {

@@ -1,23 +1,18 @@
-
 {
-	"parser": "@babel/eslint-parser",
-	"parserOptions": {
-		"requireConfigFile": false
-	},
+	"root": true,
+	"plugins": ["@babel"],
 	"extends": [
-		"plugin:@wordpress/eslint-plugin/recommended",
 		"plugin:@automattic/wpvip/base",
-		"plugin:@automattic/wpvip/react"
+		"plugin:@automattic/wpvip/react",
+		"preact"
 	],
 	"rules": {
-		// Override our default settings just for this directory
-		"react/react-in-jsx-scope": "off",
-		"wpcalypso/import-docblock": "off",
-		"react/prop-types": "off",
-		"jest/require-to-throw-message": "off",
-		"no-unused-vars": [ 2, { "varsIgnorePattern": "^h|React$", "args": "none" } ]
+		"jest/no-deprecated-functions": "off"
 	},
 	"settings": {
+		"react": {
+			"pragma": "h"
+		},
 		"jsdoc": {
 			"mode": "typescript"
 		}

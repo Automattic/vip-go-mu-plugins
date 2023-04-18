@@ -11,37 +11,37 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
 
-if ( version_compare( $wp_version, '5.5', '>=' ) ) {
-	if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
-		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
-		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
-		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
-	}
+use PHPMailer\PHPMailer\PHPMailer;
 
-	class VIP_PHPMailer extends PHPMailer\PHPMailer\PHPMailer {
-		/**
-		 * Check whether a file path is of a permitted type.
-		 *
-		 * Used to reject URLs and phar files from functions that access local file paths,
-		 * such as addAttachment. Allows VIP File System's `vip` protocol.
-		 *
-		 * @param string $path A relative or absolute path to a file
-		 *
-		 * @return bool
-		 */
-		protected static function isPermittedPath( $path ) {
-			if ( 0 === strpos( $path, 'vip://wp-content/uploads' ) ) {
-				return true;
-			} else {
-				return ! preg_match( '#^[a-z]+://#i', $path );
-			}
+if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
+	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+	require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+	require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+}
+
+class VIP_PHPMailer extends PHPMailer {
+	/**
+	 * Check whether a file path is of a permitted type.
+	 *
+	 * Used to reject URLs and phar files from functions that access local file paths,
+	 * such as addAttachment. Allows VIP File System's `vip` protocol.
+	 *
+	 * @param string $path A relative or absolute path to a file
+	 *
+	 * @return bool
+	 */
+	protected static function isPermittedPath( $path ) {
+		if ( 0 === strpos( $path, 'vip://wp-content/uploads' ) ) {
+			return true;
+		} else {
+			return ! preg_match( '#^[a-z]+://#i', $path );
 		}
 	}
+}
 
-	if ( defined( 'USE_VIP_PHPMAILER' ) && true === USE_VIP_PHPMAILER ) {
-		global $phpmailer;
-		$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-	}
+if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) ) {
+	global $phpmailer;
+	$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 }
 
 class VIP_Noop_Mailer {
@@ -56,31 +56,50 @@ class VIP_Noop_Mailer {
 	}
 }
 
-class VIP_SMTP {
-	public function init() {
-		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ) );
-		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ) );
+final class VIP_SMTP {
+	private static ?VIP_SMTP $instance = null;
+
+	public static function instance(): self {
+		if ( null === self::$instance ) {
+			self::$instance = new self();
+		}
+
+		return self::$instance;
+	}
+
+	private function __construct() {
+		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
+		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
 		}
 	}
 
-	public function phpmailer_init( &$phpmailer ) {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === VIP_BLOCK_WP_MAIL ) {
+	/**
+	 * @param PHPMailer $phpmailer 
+	 */
+	public function phpmailer_init( &$phpmailer ): void {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
+		if ( 'smtp' === $phpmailer->Mailer ) {
 			return;
 		}
 
 		global $all_smtp_servers;
 
-		if ( ! is_array( $all_smtp_servers ) || empty( $all_smtp_servers ) ) {
+		if ( empty( $all_smtp_servers ) || ! is_array( $all_smtp_servers ) ) {
 			return;
 		}
 
 		if ( count( $all_smtp_servers ) > 1 ) {
 			shuffle( $all_smtp_servers );
 		}
+
+		/** @var PHPMailer $phpmailer */
 
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
@@ -169,4 +188,4 @@ class VIP_SMTP {
 	}
 }
 
-( new VIP_SMTP() )->init();
+VIP_SMTP::instance();

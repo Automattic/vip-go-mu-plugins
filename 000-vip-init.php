@@ -9,8 +9,13 @@
  * Remember vip-init.php? This is like that, but better!
  */
 
+use Automattic\VIP\Config\Sync;
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
+
+use function Automattic\VIP\Core\Constants\define_db_constants;
+
+// @codeCoverageIgnoreStart
 
 /**
  * By virtue of the filename, this file is included first of
@@ -29,6 +34,10 @@ require_once __DIR__ . '/healthcheck/healthcheck.php';
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
+}
+
+if ( ! defined( 'VIP_OVERDUE_LOCKOUT' ) ) {
+	define( 'VIP_OVERDUE_LOCKOUT', false );
 }
 
 if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
@@ -61,6 +70,23 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 			exit;
 		}
+	}
+}
+
+// Sites can be disabled if there is an overdue payment.
+// This constant is defined by VIP Go in config/wp-config.php.
+// WP CLI (and cron) is allowed
+if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_cli() ) {
+	// Don't try to short-circuit Jetpack requests, otherwise it will break the connection.
+	require_once __DIR__ . '/vip-helpers/vip-utils.php';
+	if ( ! vip_is_jetpack_request() ) {
+		http_response_code( 402 );
+
+		header( 'X-VIP-402: true' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo file_get_contents( __DIR__ . '/errors/site-shutdown.html' );
+
+		exit;
 	}
 }
 
@@ -101,6 +127,18 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 
 // Define constants for custom VIP Go paths
 define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+
+if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
+	// FedRAMP sites do not load Jetpack by default
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
+		define( 'VIP_JETPACK_SKIP_LOAD', true );
+	}
+
+	// FedRAMP sites do not load Parse.ly by default
+	if ( ! defined( 'VIP_PARSELY_ENABLED' ) ) {
+		define( 'VIP_PARSELY_ENABLED', false );
+	}
+}
 
 $private_dir_path = WP_CONTENT_DIR . '/private'; // Local fallback
 if ( false !== VIP_GO_ENV ) {
@@ -151,9 +189,11 @@ if ( ! defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
 	define( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION', WPCOM_IS_VIP_ENV );
 }
 
-// Interaction with the filesystem will always be direct.
-// Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
-define( 'FS_METHOD', 'direct' );
+if ( ! defined( 'FS_METHOD' ) ) {
+	// Interaction with the filesystem will always be direct.
+	// Avoids issues with `get_filesystem_method` which attempts to write to `WP_CONTENT_DIR` and fails.
+	define( 'FS_METHOD', 'direct' );
+}
 
 if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
@@ -162,6 +202,9 @@ if ( WPCOM_SANDBOXED ) {
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
 
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
+
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
 require_once __DIR__ . '/lib/statsd/class-statsd.php';
@@ -169,6 +212,9 @@ require_once __DIR__ . '/lib/statsd/class-statsd.php';
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
 require_once __DIR__ . '/lib/utils/class-alerts.php';
+
+// Polyfills
+require_once __DIR__ . '/lib/helpers/php-compat.php';
 
 // Load our development and environment helpers
 require_once __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php';
@@ -219,6 +265,9 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 		case 'development':
 			$environment_type = 'development';
 			break;
+		case 'local':
+			$environment_type = 'local';
+			break;
 		default:
 			$environment_type = 'staging';
 			break;
@@ -227,18 +276,34 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
-// Load config related helpers
-require_once __DIR__ . '/config/class-sync.php';
+$non_prod_envs = [
+	'local',
+	'develop',
+	'preprod',
+	'staging',
+	'testing',
+	'uat',
+	'development',
+	'dev',
+	'stage',
+];
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) && file_exists( __DIR__ . '/vip-helpers/vip-non-production.php' ) ) {
+	require __DIR__ . '/vip-helpers/vip-non-production.php';
+}
 
-add_action( 'init', function() {
-	\Automattic\VIP\Config\Sync::instance();
-} );
+if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
+	// Load config related helpers
+	require_once __DIR__ . '/config/class-sync.php';
 
-// Load _encloseme meta cleanup scheduler
-require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';
+	add_action( 'init', [ Sync::class, 'instance' ] );
 
-$encloseme_cleaner = new VIP_Encloseme_Cleanup();
-$encloseme_cleaner->init();
+
+	// Load _encloseme meta cleanup scheduler
+	require_once __DIR__ . '/lib/class-vip-encloseme-cleanup.php';
+
+	$encloseme_cleaner = new VIP_Encloseme_Cleanup();
+	$encloseme_cleaner->init();
+}
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function( $headers ) {
@@ -262,4 +327,13 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'wp_sitemaps_enabled', '__return_false' );
 }
 
+if ( file_exists( __DIR__ . '/001-core/constants.php' ) ) {
+	require_once __DIR__ . '/001-core/constants.php'; // Define the DB constants
+}
+
+if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
+	define_db_constants( $GLOBALS['wpdb'] );
+}
+
 do_action( 'vip_loaded' );
+// @codeCoverageIgnoreEnd

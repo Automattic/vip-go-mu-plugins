@@ -14,7 +14,6 @@ class Queue {
 
 	/** @var Queue\Schema */
 	public $schema;
-	public $statsd;
 	public $indexables;
 	public $logger;
 
@@ -65,8 +64,6 @@ class Queue {
 		$this->cron = new Queue\Cron();
 		$this->cron->init();
 		$this->cron->queue = $this;
-
-		$this->statsd = new \Automattic\VIP\StatsD();
 
 		$this->indexables = Indexables::factory();
 
@@ -913,6 +910,19 @@ class Queue {
 				// Increment first to prevent overrunning ratelimiting
 				self::index_count_incr( count( $ids ) );
 
+				\Automattic\VIP\Logstash\log2logstash(
+					[
+						'severity' => 'info',
+						'feature'  => 'search_queue',
+						'message'  => 'Indexing content',
+						'blog_id'  => get_current_blog_id(),
+						'extra'    => [
+							'homeurl'    => home_url(),
+							'index_name' => $indexable->get_index_name(),
+						],
+					]
+				);
+
 				$indexable->bulk_index( $ids );
 
 				// TODO handle errors
@@ -1066,7 +1076,9 @@ class Queue {
 
 		// If indexing operation ratelimiting is hit, queue index operations
 		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
-			$this->record_ratelimited_stat( $increment, $indexable_slug );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			}
 
 			$this->handle_index_limiting_start_timestamp();
 			$this->maybe_alert_for_prolonged_index_limiting();
@@ -1087,32 +1099,16 @@ class Queue {
 	}
 
 	/**
-	 * Record ratelimiting to statsd
+	 * Get the start time for indexing rate limiting
 	 *
-	 * @param int $count Number of objects being queued during ratelimiting
-	 * @param string $indexable_slug The Indexable slug
+	 * @return int|false Timestamp of when indexing rate limiting started, or false if not set
 	 */
-	public function record_ratelimited_stat( $count, $indexable_slug ) {
-		$indexable = $this->indexables->get( $indexable_slug );
-
-		if ( ! $indexable ) {
-			return;
-		}
-
-		// Since we're ratelimting indexing, it seems safe to define this
-		$statsd_mode = 'index_ratelimited';
-
-		// For url parsing operations
-		$es = \Automattic\VIP\Search\Search::instance();
-
-		$url  = $es->get_current_host();
-		$stat = $es->get_statsd_prefix( $url, $statsd_mode );
-
-		$this->maybe_update_stat( $stat, $count );
+	public static function get_indexing_rate_limit_start() {
+		return wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	public function maybe_alert_for_prolonged_index_limiting() {
-		$index_limiting_start = wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+		$index_limiting_start = static::get_indexing_rate_limit_start();
 
 		if ( false === $index_limiting_start ) {
 			return;
@@ -1267,7 +1263,7 @@ class Queue {
 	 * Checks if the index limiting start timestamp is set, set it otherwise
 	 */
 	public function handle_index_limiting_start_timestamp() {
-		if ( false === wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+		if ( false === static::get_indexing_rate_limit_start() ) {
 			$start_timestamp = time();
 			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP );
 		}
@@ -1275,31 +1271,6 @@ class Queue {
 
 	public function clear_index_limiting_start_timestamp() {
 		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
-	}
-
-	/**
-	 * Apply sampling to stats that are directly updated to keep stat sending in check.
-	 *
-	 * @param $stat string The stat to be possibly updated.
-	 * @param $value int The value to possibly update the stat with.
-	 */
-	public function maybe_update_stat( $stat, $value ) {
-		if ( ! is_string( $stat ) ) {
-			return;
-		}
-
-		if ( ! is_numeric( $value ) ) {
-			return;
-		}
-
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand
-		if ( self::$stat_sampling_drop_value <= rand( 1, 10 ) ) {
-			return;
-		}
-
-		$value = intval( $value );
-
-		$this->statsd->update_stats( $stat, $value, 1, 'c' );
 	}
 
 	/**

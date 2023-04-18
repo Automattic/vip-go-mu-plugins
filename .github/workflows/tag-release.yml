@@ -18,12 +18,12 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504 # tag=v1.4.4
+        uses: step-security/harden-runner@v2
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        uses: actions/checkout@v3.5.2
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -38,16 +38,16 @@ jobs:
               minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
           fi
 
-          echo "::set-output name=id::${current_date}${minor_version}"
+          echo "id=${current_date}${minor_version}" >> $GITHUB_OUTPUT
 
       - name: Tag release
         run: git tag ${{ steps.id-generator.outputs.id }}
 
       - name: Push tags
-        run: git push --tag
+        run: git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5 # renovate: tag=v0.1.14
+      - uses: softprops/action-gh-release@v0.1.15
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}

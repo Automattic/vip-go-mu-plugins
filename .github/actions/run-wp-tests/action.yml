@@ -49,15 +49,15 @@ runs:
       shell: bash
       run: |
         if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
-          echo "::set-output name=coverage::pcov"
-          echo '::set-output name=ini::apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"'
+          echo "coverage=pcov" >> $GITHUB_OUTPUT
+          echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
-          echo "::set-output name=coverage::none"
-          echo "::set-output name=ini::apc.enable_cli=1, opcache.enable_cli=1"
+          echo "coverage=none" >> $GITHUB_OUTPUT
+          echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
         fi
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.19.1
+      uses: shivammathur/setup-php@2.22.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -73,10 +73,10 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@2.1.0
+      uses: ramsey/composer-install@2.2.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@1.1.4
+      uses: sjinks/setup-wordpress-test-library@1.1.11
       with:
         version: ${{ inputs.wordpress }}
 
@@ -101,6 +101,10 @@ runs:
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
 
+    - name: Fix wp-tests-config.php
+      shell: bash
+      run: ./bin/pretest.sh
+
     - name: Run tests
       shell: bash
       run: |
@@ -112,11 +116,13 @@ runs:
         OPTIONS=
         if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
           OPTIONS="${OPTIONS} --coverage-clover=clover.xml"
+        else
+          OPTIONS="${OPTIONS} --order-by=random"
         fi
-        "${PHPUNIT}" --order-by=random ${OPTIONS}
+        "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v3.1.1
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}

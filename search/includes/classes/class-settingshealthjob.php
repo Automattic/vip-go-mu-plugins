@@ -104,13 +104,24 @@ class SettingsHealthJob {
 	 * Check settings health
 	 */
 	public function check_settings_health() {
+
+		\Automattic\VIP\Logstash\log2logstash(
+			[
+				'severity' => 'info',
+				'feature'  => 'search_health_job',
+				'message'  => 'Checking index settings health',
+				'blog_id'  => get_current_blog_id(),
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			]
+		);
+
 		$unhealthy_indexables = $this->health->get_index_settings_health_for_all_indexables();
 
-		if ( empty( $unhealthy_indexables ) ) {
-			return;
+		if ( ! empty( $unhealthy_indexables ) ) {
+			$this->process_indexables_settings_health_results( $unhealthy_indexables );
 		}
-
-		$this->process_indexables_settings_health_results( $unhealthy_indexables );
 	}
 
 	public function process_indexables_settings_health_results( $results ) {
@@ -315,7 +326,7 @@ class SettingsHealthJob {
 					}
 					break;
 				case 'swap':
-					$this->swap_index_versions( $indexable );
+					$this->alert_to_swap_index_versions( $indexable );
 					break;
 				case 'in-progress':
 				default:
@@ -412,6 +423,20 @@ class SettingsHealthJob {
 		$cmd->index( $args, $assoc_args );
 
 		update_option( self::LAST_PROCESSED_ID_OPTION, 'Indexing completed' );
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_versioning',
+				'message'  => 'Built new index to meet shard requirements',
+				'extra'    => [
+					'homeurl'   => home_url(),
+					'indexable' => $indexable->slug,
+					'new_index' => $this->search->versioning->get_inactive_version_number( $indexable ),
+					'container' => gethostname(),
+				],
+			)
+		);
 	}
 
 	/**
@@ -436,50 +461,35 @@ class SettingsHealthJob {
 	}
 
 	/**
-	 * Activate new index version and delete old one.
+	 * Alert to activate new index version and delete old one.
 	 *
 	 * @param object $Indexable Indexable object we want to swap out
 	 */
-	public function swap_index_versions( $indexable ) {
-		$activate_version = $this->search->versioning->activate_version( $indexable, 'next' );
-		if ( is_wp_error( $activate_version ) ) {
+	public function alert_to_swap_index_versions( $indexable ) {
+		$old_version = $this->search->versioning->get_active_version_number( $indexable );
+		$new_version = $this->search->versioning->get_inactive_version_number( $indexable );
+		if ( is_wp_error( $new_version ) ) {
 			$message = sprintf(
-				'Application %s: An error occurred during activation of new %s index on %s for shard requirements: %s',
+				'Application %s: An error occurred locating the newly built index on %s for shard requirements (%s)',
 				FILES_CLIENT_SITE_ID,
 				$indexable->slug,
 				home_url(),
-				$activate_version->get_error_message()
+				$new_version->get_error_message()
 			);
 			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 			return;
 		}
 
-		$delete_version = $this->search->versioning->delete_version( $indexable, 'previous' );
-		if ( is_wp_error( $delete_version ) ) {
-			$message = sprintf(
-				'Application %s: An error occurred during deletion of old %s index on %s for shard requirements: %s',
-				FILES_CLIENT_SITE_ID,
-				$indexable->slug,
-				home_url(),
-				$delete_version->get_error_message()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-			return;
-		}
-
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'info',
-				'feature'  => 'search_versioning',
-				'message'  => 'Built new index to meet shard requirements',
-				'extra'    => [
-					'homeurl'   => home_url(),
-					'indexable' => $indexable->slug,
-				],
-			)
+		$message = sprintf(
+			'Application %s: New index built to meet shard requirements. Please activate %s index to new version "%d" from "%d" for %s. Index health must be validated with `wp vip-search health validate-counts`.',
+			FILES_CLIENT_SITE_ID,
+			$indexable->slug,
+			$new_version,
+			$old_version,
+			home_url(),
 		);
+		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
 		// Clean up
 		$this->delete_last_processed_id();

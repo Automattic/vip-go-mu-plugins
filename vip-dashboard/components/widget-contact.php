@@ -44,8 +44,10 @@ function render_vip_dashboard_widget_contact() {
 					<label for="contact-form__details">Details</label>
 				</div>
 				<div class="contact-form__input">
-					<textarea name="details" rows="4" id="contact-form__details"
-							placeholder="Please be descriptive"></textarea>
+					<textarea name="details" rows="8" id="contact-form__details" placeholder="Please include as much information possible about the issue, including relevant domain names and your investigation so far."></textarea>
+					<strong>
+						Note: please read our <a href="https://docs.wpvip.com/technical-references/vip-support/" target="_blank" rel="noopener">ticket guidelines</a> for faster resolutions.
+					</strong>
 				</div>
 			</div>
 			<div class="contact-form__row">

@@ -1,8 +1,7 @@
 import { h } from 'preact';
-import { useEffect } from 'preact/hooks';
+import { useEffect, useMemo } from 'preact/hooks';
 
 import './style.scss';
-import { callOnEscapeKey } from '../../utils';
 import close from '../../assets/close.svg';
 
 /**
@@ -13,19 +12,19 @@ import close from '../../assets/close.svg';
  */
 const Overlay = props => {
 	const { children, closeOverlay, colorTheme = 'light', isVisible } = props;
-	const closeWithEscape = callOnEscapeKey( closeOverlay );
+	const closeWithEscape = useMemo( () => (event => event.key === 'Escape' && closeOverlay()), [ closeOverlay ] );
 	useEffect( () => {
 		window.addEventListener( 'keydown', closeWithEscape );
 		return () => {
 			// Remove event listener to avoid memory leaks
 			window.removeEventListener( 'keydown', closeWithEscape );
 		};
-	}, [] );
+	}, [ closeWithEscape ] );
 
 	return isVisible
 		? (
 			<div
-				className={`search-dev-tools__overlay search-dev-tools__overlay--${ colorTheme }`}
+				className={ `search-dev-tools__overlay search-dev-tools__overlay--${ colorTheme }` }
 				role="dialog"
 			>
 				<button aria-label="Close VIP Search Dev Tools" className="search-dev-tools__overlay__close" onClick={ closeOverlay }><img src={ close } alt="Close" /></button>

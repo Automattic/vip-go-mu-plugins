@@ -15,11 +15,6 @@ class HealthJob {
 	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
 
 	/**
-	 * Custom cron interval value
-	 */
-	const CRON_INTERVAL = 1 * \HOUR_IN_SECONDS;
-
-	/**
 	 * @var int the number after which the alert should be sent for inconsistencies found.
 	 */
 	const INCONSISTENCIES_ALERT_THRESHOLD = 50;
@@ -118,9 +113,32 @@ class HealthJob {
 			return;
 		}
 
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation',
+				'message'  => 'Post content validation started',
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			)
+		);
+
 		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
 
-		if ( is_wp_error( $results ) && 'content_validation_already_ongoing' !== $results->get_error_code() ) {
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation',
+				'message'  => 'Post content validation completed',
+				'extra'    => [
+					'homeurl'    => home_url(),
+					'index_name' => $post_indexable->get_index_name(),
+				],
+			)
+		);
+
+		if ( is_wp_error( $results ) && 'es_content_validation_already_ongoing' !== $results->get_error_code() ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			Alerts::chat( '#vip-go-es-alerts', $message, 2 );
 		}

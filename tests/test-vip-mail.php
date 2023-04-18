@@ -1,7 +1,6 @@
 <?php
 
-use PHPUnit\Framework\ExpectationFailedException;
-use SebastianBergmann\RecursionContext\InvalidArgumentException;
+use PHPMailer\PHPMailer\PHPMailer;
 use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
@@ -70,28 +69,16 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
-	/**
-	 * @global string $wp_version
-	 */
 	public function test_load_VIP_PHPMailer() {
-		global $wp_version;
-		$should_be_loaded = version_compare( $wp_version, '5.5', '>=' );
-		$this->assertEquals( $should_be_loaded, class_exists( 'VIP_PHPMailer', false ), 'VIP_PHPMailer should be loaded only for WP >= 5.5. Version: ' . $wp_version );
+		$this->assertTrue( class_exists( 'VIP_PHPMailer', false ) );
 	}
 
 	/**
 	 * Test base cases here: local attachment and a remote (disallowed)
 	 *
 	 * @return void
-	 * @global string $wp_version
 	 */
 	public function test__attachments_path_validation() {
-		global $wp_version;
-
-		if ( version_compare( $wp_version, '5.5', '<' ) ) {
-			$this->markTestSkipped( 'Skipping VIP_PHPMailer logic validation on WP < 5.5' );
-		}
-
 		$temp = tmpfile();
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		fwrite( $temp, "I'm a test file" );
@@ -109,5 +96,43 @@ class VIP_Mail_Test extends WP_UnitTestCase {
 		$mailer = tests_retrieve_phpmailer_instance();
 
 		$this->assertThat( $mailer->get_sent()->body, $this->logicalNot( $this->stringContains( 'Content-Disposition: attachment; filename=' ) ) );
+	}
+
+	/**
+	 * @ticket GH-1066
+	 */
+	public function test_smtp_servers_not_overwritten(): void {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+
+		$expected = 'preset-server';
+
+		add_action( 'phpmailer_init', function ( PHPMailer &$phpmailer ) use ( $expected ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host = $expected;
+		} );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		self::assertEquals( $expected, $mailer->Host );
+	}
+
+	/**
+	 * @ticket GH-3638
+	 */
+	public function test_filter_removal(): void {
+		$instance = VIP_SMTP::instance();
+
+		self::assertEquals( 1, has_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ] ) );
+
+		remove_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ], 1 );
+		self::assertFalse( has_filter( 'wp_mail_from', [ $instance, 'filter_wp_mail_from' ] ) );
+
+		$expected = 'test-gh-3638@example.com';
+		add_filter( 'wp_mail_from', fn () => $expected, 0 );
+
+		$actual = apply_filters( 'wp_mail_from', 'bad@example.com' );
+
+		self::assertEquals( $expected, $actual );
 	}
 }

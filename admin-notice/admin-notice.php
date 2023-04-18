@@ -27,26 +27,6 @@ add_action(
 	}
 );
 
-// PHP 8 migration nudge on non-prods
-add_action(
-	'vip_admin_notice_init',
-	function( $admin_notice_controller ) {
-		$message = 'PHP 7.4 will <a href="https://href.li/?https://www.php.net/supported-versions.php" target="_blank"> stop receiving security updates</a> on November 28, 2022. Please upgrade your application to be PHP 8.0 compatible. To learn more, please see <a href="https://lobby.vip.wordpress.com/2022/07/06/working-together-the-path-to-php-8-0/" target="_blank">the Lobby announcement</a> and <a href="https://docs.wpvip.com/how-tos/code-scanning-for-php-upgrade/">the guide on how to prepare your application for a PHP version upgrade</a>.';
-
-		$admin_notice_controller->add(
-			new Admin_Notice(
-				$message,
-				[
-					new Expression_Condition( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ),
-					new Expression_Condition( version_compare( PHP_VERSION, '8.0', '<' ) ),
-				],
-				'php8-migrations-2',
-				'info'
-			)
-		);
-	}
-);
-
 // Old WP version w/o pinned Jetpack version
 add_action(
 	'vip_admin_notice_init',
@@ -58,12 +38,30 @@ add_action(
 			new Admin_Notice(
 				$message,
 				[
-					new Capability_Condition( 'administrator' ),
 					new Expression_Condition( version_compare( $wp_version, '5.9', '<' ) ),
 					new Expression_Condition( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) ),
 				],
 				'old-wp-versions',
 				'error'
+			)
+		);
+	}
+);
+
+// Enterprise Search upgrade
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		$message = '<a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Enterprise Search is being gradually rolled out on WordPress VIP.</a> If you would like to upgrade now, please define the constant <code>VIP_SEARCH_USE_NEXT_EP</code> in your <code>vip-config.php</code> file.';
+
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				$message,
+				[
+					new Expression_Condition( class_exists( '\Automattic\VIP\Search\Search' ) && method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && ! \Automattic\VIP\Search\Search::should_load_new_ep() ),
+				],
+				'new-ep-version-1',
+				'info'
 			)
 		);
 	}

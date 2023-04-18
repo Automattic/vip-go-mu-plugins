@@ -4,6 +4,9 @@ namespace Automattic\VIP\Search\Commands;
 
 use \WP_CLI;
 use \WP_CLI\Utils;
+use \ElasticPress\Elasticsearch;
+
+use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Core commands for interacting with VIP Search
@@ -42,13 +45,17 @@ class CoreCommand extends \ElasticPress\Command {
 
 		foreach ( $indexables as $indexable ) {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
+			if ( ! $skip_confirm ) {
+				WP_CLI::confirm( sprintf( 'Update the active index version for "%s"?', $indexable->slug ) );
+			}
+
 			$result = $search->versioning->activate_version( $indexable, 'next' );
 			if ( is_wp_error( $result ) ) {
 				WP_CLI::error( sprintf( 'Error activating next version: %s', $result->get_error_message() ) );
 			}
 
 			if ( ! $skip_confirm ) {
-				WP_CLI::confirm( '⚠️  You are about to remove a previously used index version. It is advised to verify that the new version is being used before continuing. Continue?' );
+				WP_CLI::confirm( '⚠️ The previous version of the index is now inactive and should be deleted. Delete previous index version?' );
 			}
 
 			WP_CLI::line( sprintf( 'Removing inactive version for "%s"', $indexable->slug ) );
@@ -88,6 +95,33 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::error( sprintf( 'Error setting version number: %s', $result->get_error_message() ) );
 		}
+	}
+
+	/**
+	 * List all of the available indexes.
+	 *
+	 * @return array|WP_Error $indexes Array of available indexes.
+	 */
+	private function list_indexes() {
+		$path = '_cat/indices?format=json';
+
+		$response = Elasticsearch::factory()->remote_request( $path );
+		if ( is_wp_error( $response ) ) {
+			return new \WP_Error( 'list-indexes-error', $response->get_error_message() );
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ) );
+		if ( ! is_array( $body ) ) {
+			$message = property_exists( $body, 'error' ) ? $body->error : 'Something went wrong during list_indexes().';
+			return new \WP_Error( 'list-indexes-error', $message );
+		}
+
+		$indexes = array_column( $body, 'index' );
+		// Remove system operation indexes from list.
+		$indexes = array_filter( $indexes, fn( $index ) => ! $index || '.' !== $index[0] );
+		sort( $indexes );
+
+		return $indexes;
 	}
 
 	protected function maybe_setup_index_version( $assoc_args ) {
@@ -269,6 +303,18 @@ class CoreCommand extends \ElasticPress\Command {
 				$assoc_args['yes'] = true;
 			}
 
+			\Automattic\VIP\Logstash\log2logstash(
+				[
+					'severity' => 'info',
+					'feature'  => 'search_cli',
+					'message'  => 'Indexing content',
+					'blog_id'  => get_current_blog_id(),
+					'extra'    => [
+						'homeurl' => home_url(),
+					],
+				]
+			);
+
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
 		}
@@ -327,10 +373,10 @@ class CoreCommand extends \ElasticPress\Command {
 
 		$index_name = $indexable->get_index_name();
 
-		$settings = \ElasticPress\Elasticsearch::factory()->get_mapping( $index_name );
+		$settings = Elasticsearch::factory()->get_mapping( $index_name );
 
 		$keys = array_keys( $settings );
-		\WP_CLI\Utils\format_items( $assoc_args['format'], array( $settings ), $keys );
+		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $settings ), $keys );
 	}
 
 	/**
@@ -370,24 +416,34 @@ class CoreCommand extends \ElasticPress\Command {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function get_indexes( $args, $assoc_args ) {
-		$path = '_cat/indices?format=json';
 
-		$response = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
+		$indexes = $this->list_indexes();
 
-		$body = json_decode( wp_remote_retrieve_body( $response ) );
-
-		if ( ! is_array( $body ) ) {
-			if ( property_exists( $body, 'error' ) ) {
-				WP_CLI::error( $body->error );
-			} else {
-				WP_CLI::error( 'Ohnoes! Something went wrong.' );
-			}
+		if ( is_wp_error( $indexes ) ) {
+			WP_CLI::error( wp_json_encode( $indexes ) );
 		}
 
-		$indexes = array_column( $body, 'index' );
-		sort( $indexes );
-
 		WP_CLI::line( wp_json_encode( $indexes ) );
+	}
+
+	/**
+	 * Return all index names as a JSON object.
+	 *
+	 * @subcommand get-mapping
+	 *
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_mapping( $args, $assoc_args ) {
+		$index_names = (array) ( isset( $assoc_args['index-name'] ) ? $assoc_args['index-name'] : $this->list_indexes() );
+
+		$path = join( ',', $index_names ) . '/_mapping';
+
+		$response = Elasticsearch::factory()->remote_request( $path );
+
+		$body = wp_remote_retrieve_body( $response );
+
+		WP_CLI::line( $body );
 	}
 
 	/**
@@ -464,7 +520,7 @@ class CoreCommand extends \ElasticPress\Command {
 		if ( false === $last_id ) {
 			WP_CLI::line( 'No last indexed object ID found!' );
 		} else {
-			WP_CLI::line( sprintf( 'Last indexed object ID: %d', $last_id ) );
+			WP_CLI::line( wp_json_encode( $last_id ) );
 		}
 	}
 

@@ -25,8 +25,7 @@ class OpCache_Collector implements CollectorInterface {
 	private ?Gauge $opcache_restarts_gauge        = null;
 
 	public function initialize( RegistryInterface $registry ): void {
-		// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Functions.RestrictedFunctions
-		if ( function_exists( 'opcache_get_status' ) && false !== @opcache_get_status( false ) ) {
+		if ( $this->is_opcache_available() ) {
 			$this->cache_used_memory_gauge = $registry->getOrRegisterGauge(
 				'opcache',
 				'cache_used_memory',
@@ -99,7 +98,7 @@ class OpCache_Collector implements CollectorInterface {
 
 	public function collect_metrics(): void {
 		if ( $this->cache_used_memory_gauge ) {
-			// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Functions.RestrictedFunctions
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions, WordPress.PHP.NoSilencedErrors.Discouraged
 			$info = @opcache_get_status( false );
 			if ( is_array( $info ) ) {
 				$this->cache_used_memory_gauge->set( $info['memory_usage']['used_memory'] );
@@ -121,5 +120,36 @@ class OpCache_Collector implements CollectorInterface {
 				$this->opcache_restarts_gauge->set( $info['opcache_statistics']['hash_restarts'], [ 'hash' ] );
 			}
 		}
+	}
+
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
+
+	/**
+	 * Check if opcache is installed, enabled and configured to allow this file to call opcache api.
+	 */
+	private function is_opcache_available(): bool {
+		if ( function_exists( 'opcache_get_status' ) && ini_get( 'opcache.enable' ) ) {
+			$restricted_to_path = ini_get( 'opcache.restrict_api' );
+			if ( ! $restricted_to_path ) {
+				return true;
+			}
+
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
+			$path_translated = $_SERVER['PATH_TRANSLATED'] ?? '';
+
+			// See https://heap.space/xref/PHP-8.0/ext/opcache/zend_accelerator_module.c?r=0571f094#49
+			if ( ! isset( $path_translated )
+				|| strlen( $path_translated ) < strlen( $restricted_to_path )
+				|| strncmp( $path_translated, $restricted_to_path, strlen( $restricted_to_path ) ) !== 0
+			) {
+				return false;
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 }

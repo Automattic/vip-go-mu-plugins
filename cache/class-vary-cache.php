@@ -419,7 +419,7 @@ class Vary_Cache {
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
-			$auth_cookie = null;
+			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			foreach ( explode( '; ', $_SERVER['HTTP_COOKIE'] ) as $rawcookie ) {
@@ -449,7 +449,7 @@ class Vary_Cache {
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups       = explode( self::GROUP_SEPARATOR, $cookie_value );
 		foreach ( $groups as $group ) {
-			if ( empty( $group ) ) {
+			if ( empty( $group ) || false === strpos( $group, self::VALUE_SEPARATOR ) ) {
 				continue;
 			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );

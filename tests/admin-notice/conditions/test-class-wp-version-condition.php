@@ -2,10 +2,12 @@
 
 namespace Automattic\VIP\Admin_Notice;
 
+use PHPUnit\Framework\TestCase;
+
 require_once __DIR__ . '/../../../admin-notice/conditions/interface-condition.php';
 require_once __DIR__ . '/../../../admin-notice/conditions/class-wp-version-condition.php';
 
-class WP_Version_Condition_Test extends \PHPUnit\Framework\TestCase {
+class WP_Version_Condition_Test extends TestCase {
 
 	public function evaluate_data() {
 
@@ -29,12 +31,14 @@ class WP_Version_Condition_Test extends \PHPUnit\Framework\TestCase {
 	public function test__evaluate( $min, $max, $current, $expected_result ) {
 		$orig_wp_version = $GLOBALS['wp_version'];
 		try {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 			$GLOBALS['wp_version'] = $current;
 
 			$condition = new WP_Version_Condition( $min, $max );
 
 			$this->assertEquals( $expected_result, $condition->evaluate() );
 		} finally {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 			$GLOBALS['wp_version'] = $orig_wp_version;
 		}
 	}

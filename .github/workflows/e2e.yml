@@ -20,8 +20,15 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
+
+env:
+  DO_NOT_TRACK: "1"
 
 jobs:
   Run_e2e_tests:
@@ -29,21 +36,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@74b568e8591fbb3115c70f3436a0c6b0909a8504 # tag=v1.4.4
+        uses: step-security/harden-runner@v2
         with:
           egress-policy: block
-          allowed-endpoints: 
+          allowed-endpoints:
             1.gravatar.com:80
             2.gravatar.com:80
             api.github.com:443
             api.wordpress.org:443
             artifactcache.actions.githubusercontent.com:443
             auth.docker.io:443
-            codeload.github.com:443
             dl-cdn.alpinelinux.org:443
-            dl-cdn.alpinelinux.org:80
+            docker.io:443
             downloads.wordpress.org:443
-            frsnacprodeus2file1.blob.core.windows.net:443
+            e2e-test-site.vipdev.lndo.site:443
+            geoip.elastic.co:443
             ghcr.io:443
             github.com:443
             nodejs.org:443
@@ -55,46 +62,43 @@ jobs:
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
-            update.containous.cloud:443
-            update.traefik.io:443
+            storage.googleapis.com:443
             vaultpress.com:443
             wordpress.org:443
-            dns.google:53
-            e2e-test-site.vipdev.lndo.site:80
 
       - name: Check out repository code
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=v3.0.2
+        uses: actions/checkout@v3.5.2
         with:
           submodules: true
-          path: vip-go-mu-plugins
+
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: 'lts/*'
           cache: npm
-          cache-dependency-path: vip-go-mu-plugins/package-lock.json
+          cache-dependency-path: __tests__/e2e/package-lock.json
 
       - name: Install dependencies
         run: npm ci
-        working-directory: vip-go-mu-plugins
+        working-directory: __tests__/e2e
+
+      - name: Install Playwright with Chromium
+        run: npx playwright install chromium
+        working-directory: __tests__/e2e
 
       - name: Install VIP CLI
-        run: npm install --prefix=$HOME/.local -g @automattic/vip@2.8.2
+        run: npm install -g @automattic/vip
 
       - name: Determine WP version
-        id: wpver
         run: |
           if [ -z "${{ github.event.inputs.wpversion }}" ]; then
-            echo ::set-output name=wpversion::latest
+            echo "WORDPRESS_VERSION=latest" >> $GITHUB_ENV
           else
-            echo ::set-output name=wpversion::${{ github.event.inputs.wpversion }}
+            echo "WORDPRESS_VERSION=${{ github.event.inputs.wpversion }}" >> $GITHUB_ENV
           fi
-
-      - name: Setup test environment
-        if: ${{ github.event.inputs.url == '' }}
-        run: npm run setup-e2e-env -- -v ${{ steps.wpver.outputs.wpversion }}
-        working-directory: vip-go-mu-plugins
 
       - name: Setup test env variables
         if: ${{ github.event.inputs.url != '' }}
@@ -104,14 +108,14 @@ jobs:
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
 
       - name: Run e2e tests
-        run: npm run test-e2e
-        working-directory: vip-go-mu-plugins
+        run: npm test
+        working-directory: __tests__/e2e
 
       - name: Archive test results
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+        uses: actions/upload-artifact@v3
         if: failure()
         with:
           name: test-results
           path: |
-            vip-go-mu-plugins/test-results
-            vip-go-mu-plugins/screenshots
+            __tests__/e2e/test-results
+            __tests__/e2e/screenshots

@@ -182,6 +182,10 @@ class Logger_Test extends WP_UnitTestCase {
 	}
 
 	public function test__process_entries_on_shutdown() {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			$this->markTestSkipped( 'Test requires WP_DEBUG to be enabled.' );
+		}
+
 		$entries = [
 			[
 				'feature'   => 'a8c_vip_test',

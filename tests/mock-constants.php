@@ -1,6 +1,8 @@
 <?php
 
 namespace Automattic\Test {
+
+	use Exception;
 	use InvalidArgumentException;
 
 	abstract class Constant_Mocker {
@@ -16,10 +18,12 @@ namespace Automattic\Test {
 
 		public static function define( string $constant, $value ): void {
 			if ( isset( self::$constants[ $constant ] ) ) {
-				throw new InvalidArgumentException( sprintf( 'Constant "%s" is already defined', $constant ) );
+				throw new InvalidArgumentException( sprintf( "Constant \"%s\" is already defined. Stacktrace:\n%s", $constant, self::$constants[ $constant ][1] ) );
 			}
 
-			self::$constants[ $constant ] = $value;
+			$e = new Exception();
+
+			self::$constants[ $constant ] = [ $value, $e->getTraceAsString() ];
 		}
 
 		public static function defined( string $constant ): bool {
@@ -31,7 +35,7 @@ namespace Automattic\Test {
 				throw new InvalidArgumentException( sprintf( 'Constant "%s" is not defined', $constant ) );
 			}
 
-			return self::$constants[ $constant ];
+			return self::$constants[ $constant ][0];
 		}
 	}
 }
@@ -120,11 +124,43 @@ namespace Automattic\VIP\Search {
 	}
 
 	function define( $constant, $value ) {
-		return Constant_Mocker::define( $constant, $value );
+		Constant_Mocker::define( $constant, $value );
 	}
 }
 
 namespace Automattic\VIP\Helpers\WP_CLI_DB {
+	use Automattic\Test\Constant_Mocker;
+
+	function define( $constant, $value ) {
+		Constant_Mocker::define( $constant, $value );
+	}
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Files {
+	use Automattic\Test\Constant_Mocker;
+
+	function define( $constant, $value ) {
+		Constant_Mocker::define( $constant, $value );
+	}
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Core\Constants {
 	use Automattic\Test\Constant_Mocker;
 
 	function define( $constant, $value ) {

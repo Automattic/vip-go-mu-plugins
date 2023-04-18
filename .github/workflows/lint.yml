@@ -2,9 +2,14 @@ name: Lint files
 
 on:
   push:
-    branches-ignore:
+    branches:
       - develop
       - staging
+      - production
+      - gh-readonly-queue/**
+  pull_request:
+    branches:
+      - develop
   workflow_dispatch:
 
 concurrency:
@@ -20,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        uses: actions/checkout@v3.5.2
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.19.1
+        uses: shivammathur/setup-php@2.25.0
         with:
           coverage: none
           php-version: "8.0"
@@ -31,13 +36,13 @@ jobs:
           fail-fast: 'true'
 
       - name: Setup Node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: 'lts/*'
           cache: npm
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@f680dac46551dffb2234a240d65ae806c2999dd6 # tag=2.1.0
+        uses: ramsey/composer-install@2.2.0
 
       - name: Lint files
         run: npm run lint
@@ -47,10 +52,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # tag=v2.4.0
+        uses: actions/checkout@v3.5.2
 
       - name: Setup Node
-        uses: actions/setup-node@v3.4.1
+        uses: actions/setup-node@v3.6.0
         with:
           node-version: 'lts/*'
           cache: npm

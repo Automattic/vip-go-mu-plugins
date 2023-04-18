@@ -6,6 +6,7 @@ use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 
 class SettingsHealthJob_Test extends WP_UnitTestCase {
+	/** @var \Automattic\VIP\Search\Search */
 	public static $search;
 	public static $version_instance;
 
@@ -13,6 +14,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		parent::setUpBeforeClass();
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
+		require_once __DIR__ . '/../../../../prometheus.php';
 
 		self::$search = \Automattic\VIP\Search\Search::instance();
 		self::$search->init();
@@ -29,6 +31,19 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		// Required so that EP registers the Indexables
 		do_action( 'plugins_loaded' );
 		do_action( 'init' );
+	}
+
+	public static function tearDownAfterClass(): void {
+		Constant_Mocker::clear();
+		parent::tearDownAfterClass();
+	}
+
+	public function setUp(): void {
+		parent::setUp();
+
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
+		self::$search->load_collector();
+		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {
@@ -274,7 +289,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'check_process_build', 'swap_index_versions' ] )
+			->setMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
 			->getMock();
 
 		$stub->search = self::$search;
@@ -283,7 +298,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		->willReturn( 'swap' );
 
 		$stub->expects( $this->once() )
-			->method( 'swap_index_versions' );
+			->method( 'alert_to_swap_index_versions' );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		$status    = $stub->maybe_process_build( $indexable );

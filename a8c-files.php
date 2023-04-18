@@ -22,7 +22,9 @@ define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 
 if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	// User capabilities tests do not want this constant to be defined
-	define( 'ALLOW_UNFILTERED_UPLOADS', false );
+	if ( ! defined( 'ALLOW_UNFILTERED_UPLOADS' ) ) {
+		define( 'ALLOW_UNFILTERED_UPLOADS', false );
+	}
 }
 
 require_once __DIR__ . '/files/class-path-utils.php';
@@ -258,8 +260,8 @@ class A8C_Files {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );
 		} elseif ( is_array( $size ) ) {
-			$_max_w = $size[0];
-			$_max_h = $size[1];
+			$_max_w = $size[0] ?? 0;
+			$_max_h = $size[1] ?? 0;
 			$w      = $_max_w;
 			$h      = $_max_h;
 		} elseif ( ! empty( $_wp_additional_image_sizes[ $size ] ) ) {
@@ -314,8 +316,8 @@ class A8C_Files {
 
 			$imagedata = wp_get_attachment_metadata( $id );
 			if ( $imagedata ) {
-				$w = $imagedata['width'];
-				$h = $imagedata['height'];
+				$w = $imagedata['width'] ?? 0;
+				$h = $imagedata['height'] ?? 0;
 			}
 
 			if ( empty( $w ) ) {

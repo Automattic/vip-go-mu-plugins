@@ -14,6 +14,14 @@ Please, visit our [Enterprise Search documentation](https://docs.wpvip.com/how-t
 
 We recommend using the VIP local development environment for local development: https://docs.wpvip.com/technical-references/vip-local-development-environment/
 
+We also have to ensure that we have our dependencies installed - so first, run the following:
+
+```bash
+git submodule update --init --recursive
+composer install
+npm install
+```
+
 To use mu-plugins code in a "hot-reload" fashion you need to specify the local folder to which this repository is cloned. For example:
 
 ```
@@ -122,4 +130,3 @@ bin/create-release.sh
 This is a repo primarily meant for local non-development use.
 
 Every commit merged into `develop` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy` action](https://github.com/Automattic/vip-go-mu-plugins/blob/develop/.github/workflows/deploy.yml), which pushes a copy of this repo and expanded submodules.
-

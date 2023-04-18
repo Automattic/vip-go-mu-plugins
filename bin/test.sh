@@ -70,8 +70,6 @@ echo "Will test with WP_VERSION=${WP_VERSION} and WP_MULTISITE=${WP_MULTISITE}"
 echo "--------------"
 echo
 
-MARIADB_VERSION="10.3"
-
 UUID=$(date +%s000)
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
@@ -87,7 +85,7 @@ export MYSQL_DATABASE=wordpress_test
 db=""
 if [ -z "${MYSQL_HOST_OVERRIDE}" ]; then
     MYSQL_HOST="db-${UUID}"
-    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MARIADB_INITDB_SKIP_TZINFO=1 -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mariadb:${MARIADB_VERSION}")
+    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MYSQL_INITDB_SKIP_TZINFO=1 -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mysql:8")
 else
     MYSQL_HOST="${MYSQL_HOST_OVERRIDE}"
 fi
@@ -127,6 +125,9 @@ docker run \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
+    -e PRETEST_SCRIPT=/home/circleci/project/bin/pretest.sh \
+    -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
+    -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
     ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \

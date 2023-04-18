@@ -5,6 +5,8 @@ namespace Automattic\VIP\Search\Commands;
 use \WP_CLI;
 use \ElasticPress\Indexable as Indexable;
 
+require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
+
 /**
  * Commands to view and manage index versions
  *
@@ -69,10 +71,6 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 		if ( is_wp_error( $new_version ) ) {
 			return WP_CLI::error( $new_version->get_error_message() );
-		}
-
-		if ( false === $new_version ) {
-			return WP_CLI::error( 'Failed to register the new index version' );
 		}
 
 		return $new_version;

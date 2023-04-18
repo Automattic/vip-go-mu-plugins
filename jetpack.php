@@ -5,7 +5,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 11.1
+ * Version: 12.0
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -17,18 +17,24 @@
 
 // Choose an appropriate default Jetpack version, ensuring that older WordPress versions
 // are not using a too modern Jetpack version that is not compatible with it
-if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
-	if ( version_compare( $wp_version, '5.6', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.4' );
-	} elseif ( version_compare( $wp_version, '5.7', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '9.8' );
-	} elseif ( version_compare( $wp_version, '5.8', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.4' );
-	} elseif ( version_compare( $wp_version, '5.9', '<' ) ) {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '10.9' );
+function vip_default_jetpack_version() {
+	global $wp_version;
+
+	if ( version_compare( $wp_version, '5.9', '<' ) ) {
+		// WordPress 5.8.x and older. Not including 5.9.
+		return '10.9';
+	} elseif ( version_compare( $wp_version, '6.0', '<' ) ) {
+		// WordPress 5.9.x and newer. Not including 6.0.
+		return '11.4';
 	} else {
-		define( 'VIP_JETPACK_DEFAULT_VERSION', '11.1' );
+		// WordPress 6.0 and newer
+		return '12.0';
 	}
+}
+
+// Set the default Jetpack version if it's not already defined
+if ( ! defined( 'VIP_JETPACK_DEFAULT_VERSION' ) ) {
+	define( 'VIP_JETPACK_DEFAULT_VERSION', vip_default_jetpack_version() );
 }
 
 // Bump up the batch size to reduce the number of queries run to build a Jetpack sitemap.
@@ -141,17 +147,63 @@ function vip_jetpack_load() {
 
 	$jetpack_to_test[] = VIP_JETPACK_DEFAULT_VERSION;
 
+	// Because the versioned jetpack folders will live outside this repository, we want
+	// to have a backup to unversioned "jetpack" folder
+	$jetpack_to_test[] = '';
+
 	// Walk through all versions to test, and load the first one that exists
 	foreach ( $jetpack_to_test as $version ) {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
+		} elseif ( '' === $version ) {
+			$path = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
 			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
 
 		if ( file_exists( $path ) ) {
+			// In a rare edge case, the plugin could be present in `active_plugins` option,
+			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
+			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
+			add_filter( 'option_active_plugins', function( $option ) {
+				if ( ! is_array( $option ) ) {
+					return $option;
+				}
+
+				foreach ( $option as $i => $plugin ) {
+					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+						unset( $option[ $i ] );
+						break;
+					}
+				}
+				return $option;
+			} );
+
+			if ( is_multisite() ) {
+				// The same edge case as above, but for when Jetpack is network activated.
+				add_filter( 'site_option_active_sitewide_plugins', function( $option ) {
+					if ( ! is_array( $option ) ) {
+						return $option;
+					}
+
+					foreach ( $option as $plugin => $i ) {
+						if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+							unset( $option[ $plugin ] );
+							break;
+						}
+					}
+					return $option;
+				} );
+			}
+
 			require_once $path;
-			define( 'VIP_JETPACK_LOADED_VERSION', $version );
+			if ( class_exists( 'Jetpack' ) ) {
+				define( 'VIP_JETPACK_LOADED_VERSION', $version );
+			} else {
+				trigger_error( 'Jetpack could not be loaded and initialized due to a bootstrapping issue.', E_USER_WARNING );
+			}
+
+			// We should break even if we failed to load Jetpack, because some constants like JETPACK_VERSION were probably already set
 			break;
 		}
 	}
@@ -165,7 +217,7 @@ function vip_jetpack_load() {
 	 * We need Jetpack to be loaded as this has been deprecated in version 9.1, and if the filter is
 	 * added in that version or newer, a warning is shown on every WordPress request
 	 */
-	if ( version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
+	if ( defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '9.1', '<' ) ) {
 		add_filter( 'instagram_cache_oembed_api_response_body', '__return_true' );
 	}
 

@@ -69,7 +69,12 @@ add_action( 'parse_request', 'action_wpcom_vip_verify_string', 0 );
 /**
  * Disable New Relic browser monitoring on AMP pages, as the JS isn't AMP-compatible
  */
-add_action( 'pre_amp_render_post', 'wpcom_vip_disable_new_relic_js' );
+function wpcom_vip_disable_newrelic_on_amp() {
+	if ( function_exists( 'is_amp_endpoint' ) && function_exists( 'newrelic_disable_autorum' ) && is_amp_endpoint() ) {
+		newrelic_disable_autorum();
+	}
+}
+add_action( 'template_redirect', 'wpcom_vip_disable_newrelic_on_amp' );
 
 /**
  * Fix a race condition in alloptions caching
@@ -118,12 +123,11 @@ add_action( 'add_option', '_vip_maybe_clear_notoptions_cache' );
  * that HTTPS is enforced at the web server level in production,
  * meaning non-HTTPS API calls will result in a 406 error.
  */
-if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
-	add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl' );
-}
-
+add_filter( 'rest_url', '_vip_filter_rest_url_for_ssl', 100 );
 function _vip_filter_rest_url_for_ssl( $url ) {
-	$url = set_url_scheme( $url, 'https' );
+	if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+		$url = set_url_scheme( $url, 'https' );
+	}
 
 	return $url;
 }
@@ -192,3 +196,10 @@ add_filter( 'site_search_columns', function( $cols ) {
 	$cols[] = 'domain';
 	return $cols;
 });
+
+/**
+ * Disable JS Concatenation for wp-admin.
+ */
+if ( is_admin() ) {
+	add_filter( 'js_do_concat', '__return_false' );
+}

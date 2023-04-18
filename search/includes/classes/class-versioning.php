@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
+require_once __DIR__ . '/class-settingshealthjob.php';
+
 use \ElasticPress\Indexable as Indexable;
 use \ElasticPress\Indexables as Indexables;
 
@@ -65,6 +67,8 @@ class Versioning {
 
 		add_action( 'init', [ $this, 'action__elasticpress_loaded' ], PHP_INT_MAX );
 
+		add_action( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_NAME, [ $this, 'maybe_self_heal' ] );
+
 		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
 		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
@@ -78,8 +82,6 @@ class Versioning {
 		foreach ( $all_indexables as $indexable ) {
 			add_action( 'ep_delete_' . $indexable->slug, [ $this, 'action__ep_delete_indexable' ], 10, 2 );
 		}
-
-		$this->maybe_self_heal();
 	}
 
 	/**
@@ -87,6 +89,7 @@ class Versioning {
 	 * that index active
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to temporarily set the current index version
+	 * @param int $version_number Index version number to set
 	 * @return bool|WP_Error True on success, or WP_Error on failure
 	 */
 	public function set_current_version_number( Indexable $indexable, $version_number ) {
@@ -134,7 +137,6 @@ class Versioning {
 	 * (Function ReflectionType::__toString() is deprecated), because we mock this function, which causes __toString() to be called for params
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to get the current version number
-	 *
 	 * @return int The current version number
 	 */
 	public function get_current_version_number( $indexable ) {
@@ -184,6 +186,23 @@ class Versioning {
 		return $active_version['number'];
 	}
 
+	/**
+	 * Grab just the version number for the inactive version. If there is more than one inactive version, grab
+	 * the first one.
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable to get the inactive version number for
+	 * @return int|WP_Error The current inactive version number
+	 */
+	public function get_inactive_version_number( Indexable $indexable ) {
+		$inactive_versions = $this->get_inactive_versions( $indexable );
+
+		if ( empty( $inactive_versions ) ) {
+			return new WP_Error( 'no-inactive-versions-found', 'No inactive versions.' );
+		}
+
+		return array_key_first( $inactive_versions ); // We only need the first key since there's only one.
+	}
+
 	public function get_inactive_versions( Indexable $indexable ) {
 		$versions              = $this->get_versions( $indexable );
 		$active_version_number = $this->get_active_version_number( $indexable );
@@ -223,7 +242,7 @@ class Versioning {
 				);
 			} else {
 				return [];
-			}       
+			}
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
@@ -268,7 +287,9 @@ class Versioning {
 	/**
 	 * Given a version number, normalize it by translating any aliases into actual version numbers
 	 *
+	 * @param Indexable $indexable Indexable
 	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
+	 * @return int|WP_Error $version_number Normalized version number
 	 */
 	public function normalize_version_number( Indexable $indexable, $version_number ) {
 		if ( is_int( $version_number ) ) {
@@ -286,6 +307,9 @@ class Versioning {
 
 			case 'previous':
 				return $this->get_previous_existing_version_number( $indexable );
+
+			case 'inactive':
+				return $this->get_inactive_version_number( $indexable );
 
 			default:
 				// Was it a number, but passed through as a string? return it as an int
@@ -390,10 +414,10 @@ class Versioning {
 	}
 
 	/**
-	 * Retrieve details about available index versions
+	 * Add new index version
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to create a new version
-	 * @return bool Boolean indicating if the new version was successfully added or not
+	 * @return array|WP_Error Array of new version if successfully added, WP_Error if not.
 	 */
 	public function add_version( Indexable $indexable ) {
 		$versions = $this->get_versions( $indexable );
@@ -429,13 +453,53 @@ class Versioning {
 		$result = $this->update_versions( $indexable, $versions );
 
 		if ( true !== $result ) {
-			return $result;
+			return new WP_Error( 'es-update-versions-failed', 'Failed updating versions with new version' );
 		}
 
 		// Setup the index + mapping so that it's available for immediate use (as changes will start getting replicated here)
-		$this->create_versioned_index_with_mapping( $indexable, $new_version_number );
+		$new_index = $this->create_versioned_index_with_mapping( $indexable, $new_version_number );
+		if ( ! $new_index ) {
+			return new WP_Error( 'es-create-new-index-failed', 'Unable to properly create new index with mapping' );
+		} elseif ( is_wp_error( $new_index ) ) {
+			return $new_index;
+		}
+
+		$new_index_name = $this->get_index_name( $indexable, $new_version_number );
+		if ( ! \ElasticPress\Elasticsearch::factory()->index_exists( $new_index_name ) ) {
+			return new WP_Error( 'es-new-index-non-existence', sprintf( 'New index "%s" does not exist', $new_index_name ) );
+		}
+		if ( 'post' === $indexable->slug ) {
+			$is_mapping_ok = Health::validate_post_index_mapping( $new_index_name );
+
+			if ( ! $is_mapping_ok ) {
+				return new WP_Error( 'es-bad-mapping-new-index', sprintf( 'Validation for new index "%s" with correct mapping failed', $new_index_name ) );
+			}
+		}
 
 		return $new_version;
+	}
+
+	/**
+	 * Generates index name based off of Indexable and version number.
+	 *
+	 * @param Indexable $indexable Indexable type
+	 * @param int $version Index version
+	 * @return string $index_name Index name
+	 */
+	public function get_index_name( $indexable, $version ) {
+		$index_name = sprintf( 'vip-%s-%s', constant( 'FILES_CLIENT_SITE_ID' ), $indexable->slug );
+
+		// $blog_id won't be appended onto global indexes (such as users)
+		if ( ! $indexable->global ) {
+			$blog_id     = get_current_blog_id();
+			$index_name .= sprintf( '-%s', $blog_id );
+		}
+
+		if ( $version > 1 ) {
+			$index_name .= sprintf( '-v%d', $version );
+		}
+
+		return $index_name;
 	}
 
 	/**
@@ -443,6 +507,7 @@ class Versioning {
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable type for which to create the new versioned index
 	 * @param int|string $version_number The index version number to create
+	 * @return bool Whether index was created successfully or not
 	 */
 	public function create_versioned_index_with_mapping( $indexable, $version_number ) {
 		$version_number = $this->normalize_version_number( $indexable, $version_number );
@@ -807,7 +872,7 @@ class Versioning {
 			if ( $indexable->get( $object_id ) ) {
 				$indexable->delete( $object_id );
 			}
-			
+
 			$this->reset_current_version_number( $indexable );
 		}
 

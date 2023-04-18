@@ -16,6 +16,11 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function get_var_standard_env() {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'FOO' );
 	}
@@ -24,38 +29,29 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'MY_VAR', 'FOO' );
 	}
 
+	// tests the use-case that an environment has a defined env var
+	public function test_has_var() {
+		$this->get_var_standard_env();
+		$val = vip_has_env_var( 'MY_VAR' );
+		$this->assertEquals( true, $val );
+	}
+
+	// tests the use-case that an environment is missing a defined env var
+	public function test_has_var_missing() {
+		$val = vip_has_env_var( 'MISSING_ENV_VAR' );
+		$this->assertEquals( false, $val );
+	}
+
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
-		$this->expectNotice();
-
 		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
 		$this->assertEquals( 'BAR', $val );
-	}
-
-	/**
-	 * tests the use-case where $key parameter does not have the prefix
-	 */
-	public function test_get_var_legacy_key() {
-		$this->get_var_legacy_env();
-		$val = vip_get_env_var( 'MY_VAR', 'BAR' );
-		$this->assertEquals( 'FOO', $val );
-	}
-
-	/**
-	 * tests the use-case where $key parameter is lower case
-	 */
-	public function test_get_var_lower_key() {
-		$this->get_var_standard_env();
-		$val = vip_get_env_var( 'vip_env_var_my_var', 'BAR' );
-		$this->assertEquals( 'FOO', $val );
 	}
 
 	/**
 	 * tests the use-case where $key parameter is ''
 	 */
 	public function test_get_var_empty_key() {
-		$this->expectNotice();
-
 		$this->get_var_standard_env();
 		$val = vip_get_env_var( '', 'BAR' );
 		$this->assertEquals( 'BAR', $val );

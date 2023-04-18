@@ -81,14 +81,14 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 			return;
 		}
 
-		$blog_1_id = $this->factory->blog->create_object( [
+		$blog_1_id = $this->factory()->blog->create_object( [
 			'domain'  => 'not-ssl.com',
 			'path'    => '/',
 			'title'   => 'Not SSL',
 			'site_id' => 1,
 		] );
 
-		$blog_2_id = $this->factory->blog->create_object( [
+		$blog_2_id = $this->factory()->blog->create_object( [
 			'domain'  => 'is-ssl.com',
 			'path'    => '/',
 			'title'   => 'Is SSL',

@@ -25,20 +25,23 @@ jobs:
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0' }
     services:
       mysql:
-        image: ghcr.io/automattic/vip-container-images/mariadb-lite:10.3
+        image: mysql:8
         ports:
           - "3306:3306"
         env:
           MYSQL_ROOT_PASSWORD: wordpress
-          MARIADB_INITDB_SKIP_TZINFO: 1
+          MYSQL_INITDB_SKIP_TZINFO: 1
           MYSQL_USER: wordpress
           MYSQL_PASSWORD: wordpress
           MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3.0.2
+        uses: actions/checkout@v3.5.2
         with:
           submodules: recursive
+
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
 
       - name: Run tests
         uses: ./.github/actions/run-wp-tests

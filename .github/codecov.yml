@@ -8,3 +8,7 @@ coverage:
     project:
       default:
         informational: true
+
+# Too noisy
+github_checks:
+  annotations: false

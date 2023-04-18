@@ -1,5 +1,9 @@
 <?php
 
+if ( ! class_exists( 'WP_Feed_Cache_Transient' ) ) {
+	require_once ABSPATH . WPINC . '/class-wp-feed-cache-transient.php';
+}
+
 class VIP_Go_Feed_Cache_Transient extends WP_Feed_Cache_Transient implements SimplePie_Cache_Base {
 	/**
 	 * Gets the transient.

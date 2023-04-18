@@ -22,6 +22,7 @@ class Environment_Test extends TestCase {
 	}
 
 	protected function tearDown(): void {
+		Constant_Mocker::clear();
 		error_reporting( $this->error_reporting );
 		parent::tearDown();
 	}
@@ -30,8 +31,19 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
-	public function get_var_legacy_env() {
-		Constant_Mocker::define( 'MY_VAR', 'MY_VAR' );
+	public function test_has_var() {
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+
+		$this->get_var_standard_env();
+		$val = Environment::has_var( 'MY_VAR' );
+		$this->assertEquals( true, $val );
+	}
+
+	public function test_has_var_missing() {
+		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
+
+		$val = Environment::has_var( 'MY_VAR' );
+		$this->assertEquals( false, $val );
 	}
 
 	// tests the use-case where $key parameter is not found
@@ -40,24 +52,6 @@ class Environment_Test extends TestCase {
 
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
-	}
-
-	// tests the use-case where $key parameter does not have the prefix
-	public function test_get_var_legacy_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
-		$this->get_var_legacy_env();
-		$val = Environment::get_var( 'MY_VAR', 'default_value' );
-		$this->assertEquals( 'MY_VAR', $val );
-	}
-
-	// tests the use-case where $key parameter is lower case
-	public function test_get_var_lower_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
-		$this->get_var_standard_env();
-		$val = Environment::get_var( 'vip_env_var_my_var', 'default_value' );
-		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
 	}
 
 	// tests the use-case where $key parameter is ''
@@ -128,6 +122,11 @@ class Environment_Test extends TestCase {
 					'IS_VIP_SANDBOX_CONTAINER' => 'true',
 				),
 				// Expected result
+				true,
+			),
+			array(
+				'somesite-sbx-u666-abcdefabcd-efabc',
+				array(),
 				true,
 			),
 		);
@@ -201,6 +200,15 @@ class Environment_Test extends TestCase {
 				array(
 					'IS_VIP_BATCH_CONTAINER' => 'true',
 				),
+				// Expected result
+				true,
+			),
+			// Batch hostname, no env var
+			array(
+				// Hostname
+				'foo-batch-123123',
+				// Env vars
+				array(),
 				// Expected result
 				true,
 			),

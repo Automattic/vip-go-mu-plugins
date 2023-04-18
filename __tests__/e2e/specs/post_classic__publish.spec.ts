@@ -25,11 +25,11 @@ test( 'publish a Post', async ( { page } ) => {
     await test.step( 'Go to WP-admin', async () => {
         const wpAdminPage = new WPAdminPage( page );
         await wpAdminPage.visit();
-        await expect( wpAdminPage.adminBar ).toBeVisible();
+        return expect( wpAdminPage.adminBar ).toBeVisible();
     } );
 
-    await test.step( 'Add new post in classic editor', async () => {
-        await page.goto( '/wp-admin/post-new.php?classic-editor&classic-editor__forget' );
+    await test.step( 'Add new post in classic editor', () => {
+        return page.goto( '/wp-admin/post-new.php?classic-editor&classic-editor__forget' );
     } );
 
     await test.step( 'Write Post', async () => {
@@ -41,11 +41,11 @@ test( 'publish a Post', async ( { page } ) => {
 
     await test.step( 'Publish and visit post', async () => {
         const publishedURL = await classicEditorPage.publish( { visit: true } );
-        expect( publishedURL ).toBe( page.url() );
+        return expect( publishedURL ).toBe( page.url() );
     } );
 
-    await test.step( 'Validate published post', async () => {
+    await test.step( 'Validate published post', () => {
         const publishedPostPage = new PublishedPostPage( page );
-        await publishedPostPage.validateTextInPost( titleText );
+        return publishedPostPage.validateTextInPost( titleText );
     } );
 } );

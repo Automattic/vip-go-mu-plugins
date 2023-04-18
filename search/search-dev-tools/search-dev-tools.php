@@ -222,16 +222,18 @@ function print_data() {
 		$queries
 	);
 
-	$limit_count = sprintf(
-		'%s (%d of %d limit)',
-		Search::is_rate_limited() ? 'yes' : 'no',
-		Search::get_query_count(),
-		Search::$max_query_count
-	);
+	$search_instance = Search::instance();
+	$is_rate_limited = Search::is_rate_limited() || $search_instance->queue->is_indexing_ratelimited();
+	if ( $is_rate_limited ) {
+		$rate_limit   = [ 'search: ' . ( Search::is_rate_limited() ? sprintf( 'yes (%d of %d)', Search::get_query_count(), Search::$max_query_count ) : 'no' ) ];
+		$rate_limit[] = 'indexing: ' . ( $search_instance->queue->is_indexing_ratelimited() ? 'yes' : 'no' );
+	} else {
+		$rate_limit = 'no';
+	}
 
 	$concurrent_requests = 0;
-	if ( is_callable( [ Search::instance()->concurrency_limiter, 'get_backend' ] ) ) {
-		$concurrent_requests = Search::instance()->concurrency_limiter->get_backend()->get_value();
+	if ( is_callable( [ $search_instance->concurrency_limiter, 'get_backend' ] ) ) {
+		$concurrent_requests = $search_instance->concurrency_limiter->get_backend()->get_value();
 	}
 
 	$data = [
@@ -240,7 +242,7 @@ function print_data() {
 		'information'             => [
 			[
 				'label'   => 'Rate limited?',
-				'value'   => $limit_count,
+				'value'   => $rate_limit,
 				'options' => [
 					'collapsible' => false,
 				],
@@ -271,6 +273,13 @@ function print_data() {
 				'value'   => get_meta_for_all_indexable_post_types(),
 				'options' => [
 					'collapsible' => true,
+				],
+			],
+			[
+				'label'   => 'Algorithm Version',
+				'value'   => apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) ),
+				'options' => [
+					'collapsible' => false,
 				],
 			],
 

@@ -19,7 +19,7 @@ class Dashboard {
 	public static function admin_footer_text( $text ) {
 		$screen = get_current_screen();
 		if ( false !== strpos( $screen->base, 'elasticpress' ) || 'ep-pointer' === $screen->post_type ) {
-			$text = '<p>Enterprise Search is powered by <a href="https://10up.com/plugins/elasticpress/">10up\'s ElasticPress plugin</a>.</p>';
+			$text = '<p>Enterprise Search is powered by <a href="https://10up.com/plugins/elasticpress/">10up\'s ElasticPress plugin</a> (v' . esc_html( constant( 'EP_VERSION' ) ) . ').</p>';
 		}
 		return $text;
 	}
@@ -31,7 +31,7 @@ class Dashboard {
 		$screen = get_current_screen();
 		if ( 'toplevel_page_elasticpress' === $screen->base ) {
 			echo '<style>
-			div.ep-feature.ep-feature-autosuggest, div.ep-feature.ep-feature-documents {
+			div.ep-feature.ep-feature-autosuggest, div.ep-feature.ep-feature-documents, div.ep-feature.ep-feature-instant-results {
 				display: none !important;
 			}
 			</style>';

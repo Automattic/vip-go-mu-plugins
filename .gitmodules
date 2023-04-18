@@ -1,9 +1,6 @@
 [submodule "advanced-post-cache"]
 	path = advanced-post-cache
 	url = https://github.com/Automattic/advanced-post-cache.git
-[submodule "jetpack"]
-	path = jetpack
-	url = https://github.com/Automattic/jetpack.git
 [submodule "rewrite-rules-inspector"]
 	path = rewrite-rules-inspector
 	url = https://github.com/Automattic/rewrite-rules-inspector
@@ -16,12 +13,6 @@
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = https://github.com/Automattic/jetpack-force-2fa.git
-[submodule "shared-plugins/two-factor"]
-	path = shared-plugins/two-factor
-	url = https://github.com/georgestephanis/two-factor.git
-[submodule "drop-ins/object-cache"]
-	path = drop-ins/object-cache
-	url = https://github.com/Automattic/wp-memcached.git
 [submodule "lightweight-term-count-update"]
 	path = lightweight-term-count-update
 	url = https://github.com/Automattic/lightweight-term-count-update
@@ -31,6 +22,18 @@
 [submodule "search/elasticpress"]
 	path = search/elasticpress
 	url = https://github.com/Automattic/ElasticPress.git
-[submodule "search/debug-bar-elasticpress"]
-	path = search/debug-bar-elasticpress
-	url = https://github.com/10up/debug-bar-elasticpress.git
+[submodule "jetpack"]
+	path = jetpack
+	url = https://github.com/Automattic/jetpack-production.git
+[submodule "search/elasticpress-next"]
+	path = search/elasticpress-next
+	url = https://github.com/Automattic/ElasticPress.git
+[submodule "wp-parsely"]
+	path = wp-parsely
+	url = https://github.com/Parsely/wp-parsely.git
+[submodule "drop-ins/hyperdb"]
+	path = drop-ins/hyperdb
+	url = https://github.com/automattic/hyperdb
+[submodule "cron/cron-control-legacy"]
+	path = cron/cron-control-legacy
+	url = https://github.com/Automattic/Cron-Control.git

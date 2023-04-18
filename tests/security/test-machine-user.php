@@ -11,7 +11,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->machine_user = $this->factory->user->create_and_get( [
+		$this->machine_user = $this->factory()->user->create_and_get( [
 			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
 			'role'       => WPCOM_VIP_MACHINE_USER_ROLE,
@@ -49,7 +49,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__user_modification_caps
 	 */
 	public function test__non_admin_users_cannot_modify_machine_user( $test_cap ) {
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
 
@@ -60,7 +60,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__user_modification_caps
 	 */
 	public function test__admin_users_cannot_modify_machine_user( $test_cap ) {
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
 
@@ -75,7 +75,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'No superadmins on single site installs.' );
 		}
 
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 		grant_super_admin( $test_user->ID );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
@@ -84,7 +84,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 	}
 
 	public function test__non_admin_users_can_still_modify_self() {
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
 
@@ -92,7 +92,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 	}
 
 	public function test__admin_users_can_still_modify_self() {
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 
 		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
 
@@ -104,7 +104,7 @@ class Machine_User_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'No superadmins on single site installs.' );
 		}
 
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 		grant_super_admin( $test_user->ID );
 
 		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
@@ -116,8 +116,8 @@ class Machine_User_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__user_modification_caps
 	 */
 	public function test__non_admin_users_cannot_modify_others( $test_cap ) {
-		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
-		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
+		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
 
@@ -132,8 +132,8 @@ class Machine_User_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Single site test for administrator user; multisite tested separately.' );
 		}
 
-		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
-		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
+		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
 
@@ -150,8 +150,8 @@ class Machine_User_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Multisite test for administrator user; single site tested separately.' );
 		}
 
-		$test_user    = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
-		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
+		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
 
@@ -166,9 +166,9 @@ class Machine_User_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'No superadmins on single site installs.' );
 		}
 
-		$test_user = $this->factory->user->create_and_get( [ 'role' => 'administrator' ] );
+		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
 		grant_super_admin( $test_user->ID );
-		$user_to_edit = $this->factory->user->create_and_get( [ 'role' => 'editor' ] );
+		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
 
