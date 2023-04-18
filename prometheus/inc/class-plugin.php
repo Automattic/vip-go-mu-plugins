@@ -14,6 +14,8 @@ class Plugin {
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
 
+	protected string $site_label = '';
+
 	const MAX_NETWORK_SITES = 50;
 	/**
 	 * @return static
@@ -147,16 +149,21 @@ class Plugin {
 	 * @return string
 	 */
 	public function get_site_label(): string {
-		$current_blog_id = (string) get_current_blog_id();
+		if ( $this->site_label ) {
+			return $this->site_label;
+		}
+
+		$this->site_label = (string) get_current_blog_id();
+
 		if ( ! is_multisite() ) {
-			return $current_blog_id;
+			return $this->site_label;
 		}
 
 		$sites_count = wp_count_sites();
 		if ( $sites_count['all'] > self::MAX_NETWORK_SITES ) {
-			return 'network';
+			$this->site_label = 'network';
 		}
 
-		return $current_blog_id;
+		return $this->site_label;
 	}
 }
