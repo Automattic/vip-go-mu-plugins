@@ -49,16 +49,20 @@ class Alerts {
 	 * Send the alert
 	 *
 	 * @param array $body The alert message body
+	 * @param string $api_url The API URL to send the alert to. Defaults to $service_url
 	 *
 	 * @return array|WP_Error Response details from wp_remote_post
 	 */
-	protected function send( array $body ) {
+	protected function send( array $body, string $api_url = '' ) {
 		$fallback_error = new WP_Error( 'alerts-send-failed', 'There was an error connecting to the alerts service' );
-		if ( empty( $this->service_url ) ) {
-			return $fallback_error;
+		if ( empty( $api_url ) ) {
+			if ( empty( $this->service_url ) ) {
+				return $fallback_error;
+			}
+			$api_url = $this->service_url;
 		}
 
-		$response = vip_safe_wp_remote_request( $this->service_url, $fallback_error, 3, 1, 10, [
+		$response = vip_safe_wp_remote_request( $api_url, $fallback_error, 3, 1, 10, [
 			'method' => 'POST',
 			'body'   => wp_json_encode( $body ),
 		] );
@@ -88,10 +92,10 @@ class Alerts {
 	 */
 	private function add_cache( $key, $expire ) {
 		if ( function_exists( 'wp_cache_add' ) && function_exists( 'wp_cache_add_global_groups' ) ) {
-			wp_cache_add_global_groups( [ 'irc-ratelimit' ] );
+			wp_cache_add_global_groups( 'vip-alerts-ratelimit' );
 
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- it doesn't :-(
-			return wp_cache_add( $key, 1, 'irc-ratelimit', $expire );
+			return wp_cache_add( $key, 1, 'vip-alerts-ratelimit', $expire );
 		}
 
 		return true;
@@ -130,6 +134,43 @@ class Alerts {
 
 		return trim( $message );
 	}
+
+	/**
+	 * Validate PagerDuty details array to ensure required values. See https://developer.pagerduty.com/api-reference/368ae3d938c9e-send-an-event-to-pager-duty
+	 *
+	 * @param $details array Expected values: 'source', 'severity'. Optional values: 'group', 'class', 'custom_details'.
+	 *
+	 * @return array|WP_Error
+	 */
+	protected function validate_pagerduty_details( $details ) {
+		$required_keys = [ 'severity', 'source' ];
+		$optional_keys = [ 'group', 'class', 'custom_details' ];
+
+		if ( ! is_array( $details ) ) {
+			return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
+		}
+
+		foreach ( $details as $key => $value ) {
+			if ( ! in_array( $key, array_merge( $required_keys, $optional_keys ) ) ) {
+				return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
+			}
+
+			if ( ! $value ) {
+				return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
+			}
+
+			if ( 'severity' === $key && ! in_array( $value, [ 'info', 'warning', 'error', 'critical' ] ) ) {
+				return new WP_Error( 'invalid-pagerduty-details', 'Invalid "severity" for $details: Alerts\:\:pagerduty( ' . print_r( $details['severity'], true ) . ' );' );
+			}
+
+			if ( 'custom_details' === $key && ! is_array( $value ) ) {
+				return new WP_Error( 'invalid-pagerduty-details', 'Invalid "custom_details" for $details: Alerts\:\:pagerduty( ' . print_r( $details['custom_details'], true ) . ' );' );
+			}
+		}
+
+		return $details;
+	}
+
 
 	/**
 	 * Validate Opsgenie details array
@@ -223,9 +264,77 @@ class Alerts {
 	}
 
 	/**
+	 * Send an alert to PagerDuty
+	 *
+	 * See Alerts::pagerduty()
+	 *
+	 * @param $message string Alert message
+	 * @param $details array Array of PagerDuty payload. See validate_pagerduty_details() for expected and optional keys.
+	 * @param $kind string Cache slug
+	 * @param int $interval
+	 *
+	 * @return bool True if the alert was sent, false if it was rate limited or failed
+	 */
+	public function send_to_pagerduty( $message, $details, $kind = '', $interval = 1 ) {
+		if ( ! defined( 'VIP_PAGERDUTY_INTEGRATION_KEY' ) ) {
+			error_log( 'PagerDuty integration key missing' );
+
+			return false;
+		}
+
+		if ( '' === $kind ) {
+			// Generate default kind value
+			$kind = $this->generate_kind( $message . wp_json_encode( $details ) );
+		}
+
+		if ( ! $this->add_cache( $kind, $interval ) ) {
+			error_log( sprintf( 'Alert rate limited: PagerDuty( %s, %s, %s, %s );', $message, print_r( $details, true ), $kind, $interval ) );
+
+			return false;
+		}
+
+		$message = $this->validate_message( $message );
+
+		if ( is_wp_error( $message ) ) {
+			error_log( $message->get_error_message() );
+
+			return false;
+		}
+
+		$details = $this->validate_pagerduty_details( $details );
+
+		if ( is_wp_error( $details ) ) {
+			error_log( $details->get_error_message() );
+
+			return false;
+		}
+
+		// Generate payload to send over
+		$details['summary']   = $message;
+		$details['component'] = 'mu-plugins';
+
+		$body = [
+			'payload'      => $details,
+			'event_action' => 'trigger',
+			'routing_key'  => constant( 'VIP_PAGERDUTY_INTEGRATION_KEY' ),
+		];
+
+		$response = $this->send( $body, 'https://events.pagerduty.com/v2/enqueue' );
+
+		if ( is_wp_error( $response ) ) {
+			error_log( $response->get_error_message() );
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Send an alert to Opsgenie
 	 *
 	 * See Alerts::opsgenie()
+	 *
 	 */
 	public function send_to_opsgenie( $message, $details, $kind = '', $interval = 1 ) {
 		if ( '' === $kind ) {
@@ -364,6 +473,30 @@ class Alerts {
 		}
 
 		return $alerts->send_to_chat( $channel_or_user, $message, $level, $kind, $interval );
+	}
+
+	/**
+	 * Send an alert to PagerDuty
+	 *
+	 * @param $message string Alert message
+	 * @param $details array Array of PagerDuty payload values. See validate_pagerduty_details() for expected and optional keys
+	 * @param $kind string Cache slug
+	 * @param $interval integer Interval in seconds between two messages sent from one DC
+	 *
+	 * @return bool True if successful. Else, will return false
+	 */
+	public static function pagerduty( $message, $details, $kind = '', $interval = 1 ) {
+		$alerts = static::instance();
+
+		if ( is_wp_error( $alerts ) ) {
+			if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+				error_log( $alerts->get_error_message() );
+			}
+
+			return false;
+		}
+
+		return $alerts->send_to_pagerduty( $message, $details, $kind, $interval );
 	}
 
 	/**
