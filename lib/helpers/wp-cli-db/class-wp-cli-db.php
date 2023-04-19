@@ -8,15 +8,8 @@ use WP_CLI;
 class Wp_Cli_Db {
 	private Config $config;
 
-	private \WP_CLI\Runner $runner;
-
-	private ?array $assoc_args = [];
-
 	public function __construct( Config $config ) {
 		$this->config = $config;
-
-		$this->runner     = WP_CLI::get_runner();
-		$this->assoc_args = $this->runner->assoc_args;
 	}
 
 	/**
@@ -35,8 +28,6 @@ class Wp_Cli_Db {
 
 		WP_CLI::add_hook( 'before_run_command', [ $this, 'before_run_command' ] );
 
-		WP_CLI::add_hook( 'before_invoke:db tables', [ $this, 'before_invoke_db_tables' ] );
-
 		$db_command_file = __DIR__ . '/class-vip-db-command.php';
 		if ( file_exists( $db_command_file ) ) {
 			require_once $db_command_file;
@@ -44,26 +35,6 @@ class Wp_Cli_Db {
 
 		WP_CLI::add_command( 'db', __NAMESPACE__ . '\VIP_DB_Command' );
 	}
-
-	/**
-	 * Since there is an incompat with HyperDB, we need to force the --all-tables flag for `wp db tables`
-	 */
-	public function before_invoke_db_tables() {
-		if ( isset( $this->assoc_args['all-tables'] ) && ( 'true' === $this->assoc_args['all-tables'] || true === $this->assoc_args['all-tables'] ) ) {
-			return;
-		}
-
-		$this->assoc_args['all-tables'] = true;
-
-		WP_CLI::success( 'Forcing `--all-tables` flag as it\'s required for HyperDB. Re-running with flag...' );
-
-		// Run the command with the forced all-tables argument
-		$this->runner->run_command( $this->runner->arguments, $this->assoc_args );
-
-		// Exit the run loop to prevent continuing to the invoked command
-		exit;
-	}
-
 
 	/**
 	 * Ensure the command or query is allowed for the current Config.
