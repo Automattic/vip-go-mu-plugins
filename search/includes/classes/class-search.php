@@ -833,6 +833,22 @@ class Search {
 	}
 
 	/**
+	 * Skip query integration if we don't have any active post indexes.
+	 *
+	 * @param Indexable $indexable Defaults to post.
+	 * @return bool Whether to skip query integration or not.
+	 */
+	public function maybe_skip_query_integration_if_no_active_indexes() {
+		$indexable = $this->indexables->get( 'post' );
+		if ( $indexable ) {
+			$version = $this->versioning->get_active_version_number( $indexable );
+			if ( is_wp_error( $version ) && 'no-active-version' === $version->get_error_code() ) {
+				add_filter( 'ep_skip_query_integration', '__return_true', PHP_INT_MAX );
+			}
+		}
+	}
+
+	/**
 	 * Filter ElasticPress index name if using VIP ES infrastructure
 	 */
 	public function filter__ep_index_name( $_index_name, $blog_id, $indexable ) {
@@ -968,8 +984,6 @@ class Search {
 			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
 		}
 
-		$collect_per_doc_metric = $this->is_bulk_url( $query['url'] );
-
 		// Cache handling
 		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
 		$cached_response = false;
@@ -1007,7 +1021,9 @@ class Search {
 		$end_time = microtime( true );
 		$duration = ( $end_time - $start_time ) * 1000;
 
-		Prometheus_Collector::increment_query_counter( $args['method'] ?? 'post', $query['url'] );
+		if ( class_exists( Prometheus_Collector::class ) ) {
+			Prometheus_Collector::increment_query_counter( $args['method'] ?? 'post', $query['url'] );
+		}
 
 		$response_code = (int) wp_remote_retrieve_response_code( $response );
 
@@ -1025,15 +1041,13 @@ class Search {
 			$response_body      = json_decode( $response_body_json, true );
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
-				Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_ENGINE, (float) $response_body['took'] );
+				if ( class_exists( Prometheus_Collector::class ) ) {
+					Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_ENGINE, (float) $response_body['took'] );
+				}
 			}
 
-			Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_REQUEST, (float) $duration );
-
-			if ( $collect_per_doc_metric && $response_body && isset( $response_body['items'] ) && is_array( $response_body['items'] ) ) {
-				$doc_count = count( $response_body['items'] );
-
-				Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_PER_DOC, (float) $duration / $doc_count );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_REQUEST, (float) $duration );
 			}
 
 			$response_headers = wp_remote_retrieve_headers( $response );
@@ -1181,10 +1195,11 @@ class Search {
 			$error_messages        = $response->get_error_messages();
 			$response_failure_code = $response->get_error_code();
 
-			foreach ( $error_messages as $error_message ) {
-				$reason = $this->is_curl_timeout( $error_message ) ? Prometheus_Collector::QUERY_FAILED_TIMEOUT : Prometheus_Collector::QUERY_FAILED_ERROR;
-
-				Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], $reason );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				foreach ( $error_messages as $error_message ) {
+					$reason = $this->is_curl_timeout( $error_message ) ? Prometheus_Collector::QUERY_FAILED_TIMEOUT : Prometheus_Collector::QUERY_FAILED_ERROR;
+					Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'], $reason );
+				}
 			}
 
 			$error_message = implode( ';', $error_messages );
@@ -1201,7 +1216,9 @@ class Search {
 				(string) $response_code . ' ' . $response_message : 'Unknown Elasticsearch query error';
 			}
 
-			Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'] ?? '', Prometheus_Collector::QUERY_FAILED_ERROR );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::increment_failed_query_counter( $query_method, $query['url'] ?? '', Prometheus_Collector::QUERY_FAILED_ERROR );
+			}
 
 			$error_type = 'search_query_error';
 		}
@@ -1402,7 +1419,7 @@ class Search {
 	public function record_ratelimited_query_stat() {
 		$indexable = $this->indexables->get( 'post' );
 
-		if ( ! $indexable ) {
+		if ( ! $indexable || ! class_exists( Prometheus_Collector::class ) ) {
 			return;
 		}
 
@@ -2473,8 +2490,12 @@ class Search {
 		}
 	}
 
+	// In case of emergency, nerf this method
 	public function load_collector(): void {
 		require_once __DIR__ . '/class-prometheus-collector.php';
-		Prometheus_Collector::get_instance();
+		add_filter( 'vip_prometheus_collectors', function( $collectors ) {
+			$collectors['search'] = Prometheus_Collector::get_instance();
+			return $collectors;
+		} );
 	}
 }

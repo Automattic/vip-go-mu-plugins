@@ -46,7 +46,7 @@ class CoreCommand extends \ElasticPress\Command {
 		foreach ( $indexables as $indexable ) {
 			WP_CLI::line( sprintf( 'Updating active version for "%s"', $indexable->slug ) );
 			if ( ! $skip_confirm ) {
-				WP_CLI::confirm( sprintf( 'Update the active index version for "%s"?' ), $indexable->slug );
+				WP_CLI::confirm( sprintf( 'Update the active index version for "%s"?', $indexable->slug ) );
 			}
 
 			$result = $search->versioning->activate_version( $indexable, 'next' );

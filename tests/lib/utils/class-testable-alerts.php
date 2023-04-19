@@ -21,7 +21,7 @@ class Testable_Alerts extends Alerts {
 		parent::clear_instance();
 	}
 
-	public function send( array $body ) {
+	public function send( array $body, string $api_url = '' ) {
 		return parent::send( $body );
 	}
 
@@ -35,5 +35,9 @@ class Testable_Alerts extends Alerts {
 
 	public function validate_opsgenie_details( $details ) {
 		return parent::validate_opsgenie_details( $details );
+	}
+
+	public function validate_pagerduty_details( $details ) {
+		return parent::validate_pagerduty_details( $details );
 	}
 }

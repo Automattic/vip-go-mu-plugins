@@ -14,7 +14,11 @@ class Login_Stats_Collector implements CollectorInterface {
 	private Counter $successful_login_counter;
 	private Counter $failed_login_counter;
 
+	private string $blog_id;
+
 	public function initialize( RegistryInterface $registry ): void {
+		$this->blog_id = Plugin::get_instance()->get_site_label();
+
 		$this->login_limit_exceeded_counter = $registry->getOrRegisterCounter(
 			'security',
 			'login_limit_exceeded_total',
@@ -50,22 +54,26 @@ class Login_Stats_Collector implements CollectorInterface {
 	}
 
 	public function login_limit_exceeded(): void {
-		$this->login_limit_exceeded_counter->inc( [ (string) get_current_blog_id() ] );
+		$this->login_limit_exceeded_counter->inc( [ $this->blog_id ] );
 	}
 
 	public function password_reset_limit_exceeded(): void {
-		$this->password_reset_limit_exceeded_counter->inc( [ (string) get_current_blog_id() ] );
+		$this->password_reset_limit_exceeded_counter->inc( [ $this->blog_id ] );
 	}
 
 	public function wp_login(): void {
-		$this->successful_login_counter->inc( [ (string) get_current_blog_id() ] );
+		$this->successful_login_counter->inc( [ $this->blog_id ] );
 	}
 
 	public function wp_login_failed(): void {
-		$this->failed_login_counter->inc( [ (string) get_current_blog_id() ] );
+		$this->failed_login_counter->inc( [ $this->blog_id ] );
 	}
 
 	public function collect_metrics(): void {
-		// Do nothing
+		/* Do nothing */
+	}
+
+	public function process_metrics(): void {
+		/* Do nothing */
 	}
 }
