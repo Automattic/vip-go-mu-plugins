@@ -38,3 +38,24 @@ add_action( 'cli_init', function() {
 		add_action( $event_hook, fn() => wp_unschedule_hook( $event_hook ) );
 	}
 } );
+
+
+add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_aggregated_cron' );
+
+function vip_schedule_aggregated_cron() {
+	if ( wp_next_scheduled( 'vip_aggregated_cron_hourly' ) ) {
+		return;
+	}
+
+	$timestamp = time();
+	$offset    = 0;
+
+	// To avoid piling up events on the same time, we offset the cron event using the following formula:
+	// INTERVAL / TOTAL_SITES * SITE_ID
+	if ( is_multisite() && wp_count_sites()['all'] > 1 ) {
+		$slot   = HOUR_IN_SECONDS / wp_count_sites()['all'];
+		$offset = $slot * get_current_blog_id();
+	}
+
+	wp_schedule_event( $timestamp + $offset, 'hourly', 'vip_aggregated_cron_hourly' );
+}
