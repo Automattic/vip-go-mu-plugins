@@ -46,17 +46,14 @@ class QM_VIP_Output extends QM_Output_Html {
 		if ( isset( $data['app']['commit'] ) ) {
 			$this->output_table_row( 'Commit', $data['app']['commit'] );
 		}
-		if ( isset( $data['app']['pod'] ) ) {
-			$this->output_table_row( 'Pod', $data['app']['pod'] );
-		}
-		$this->output_table_row( 'Environment', $data['app']['env'] );
-		$this->output_table_row( 'PHP', $data['app']['php'] );
-		$this->output_table_row( 'WordPress', $data['app']['wp'] );
 		if ( isset( $data['app']['jetpack'] ) ) {
 			$this->output_table_row( 'Jetpack', $data['app']['jetpack'] );
 		}
 		if ( isset( $data['app']['es_version'] ) ) {
 			$this->output_table_row( 'Elasticsearch', $data['app']['es_version'] );
+		}
+		if ( isset( $data['app']['fedramp'] ) ) {
+			$this->output_table_row( 'FedRAMP', $data['app']['fedramp'] ? 'Yes' : 'No' );
 		}
 		$this->output_after_section();
 

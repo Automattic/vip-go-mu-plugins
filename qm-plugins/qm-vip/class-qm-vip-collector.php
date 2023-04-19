@@ -50,25 +50,18 @@ class QM_VIP_Collector extends QM_Collector {
 	}
 
 	private function process_app() {
-		global $wp_version;
-
-		$env               = constant( 'VIP_GO_APP_ENVIRONMENT' );
-		$this->data['app'] = [
-			'env' => $env,
-		];
+		$env = constant( 'VIP_GO_APP_ENVIRONMENT' );
 
 		if ( 'local' !== $env ) {
 			$this->data['app']['commit'] = getenv( 'VIP_GO_APP_CURRENT_COMMIT_HASH' );
 			$this->data['app']['branch'] = constant( 'VIP_GO_APP_BRANCH' );
 
 			if ( is_automattician() ) {
-				$this->data['app']['id']   = constant( 'VIP_GO_APP_ID' );
-				$this->data['app']['name'] = constant( 'VIP_GO_APP_NAME' );
-				$this->data['app']['pod']  = gethostname();
+				$this->data['app']['id']      = constant( 'VIP_GO_APP_ID' );
+				$this->data['app']['name']    = constant( 'VIP_GO_APP_NAME' );
+				$this->data['app']['fedramp'] = constant( 'VIP_IS_FEDRAMP' );
 			}
 		}
-		$this->data['app']['php'] = phpversion();
-		$this->data['app']['wp']  = $wp_version;
 
 		if ( defined( 'JETPACK__VERSION' ) ) {
 			$this->data['app']['jetpack'] = constant( 'JETPACK__VERSION' );
