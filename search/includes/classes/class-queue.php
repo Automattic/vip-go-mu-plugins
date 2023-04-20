@@ -387,7 +387,7 @@ class Queue {
 
 		$indexable = Indexables::factory()->get( $indexable_slug );
 
-		if ( ! $indexable || ! \ElasticPress\Elasticsearch::factory()->index_exists( $indexable->get_index_name() ) ) {
+		if ( ! $indexable || ! $indexable->index_exists() ) {
 			return;
 		}
 
