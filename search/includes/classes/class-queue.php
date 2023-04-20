@@ -313,7 +313,7 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
-		if ( ! \ElasticPress\Elasticsearch::factory()->index_exists( $indexable->get_index_name() ) ) {
+		if ( ! $indexable->index_exists() ) {
 			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
 		}
 
