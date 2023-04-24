@@ -5,19 +5,19 @@
  * @package query-monitor
  */
 #query-monitor-main {
-  --qm-container-fg: #444;
+  --qm-container-fg: #333;
   --qm-container-bg: #f3f3f3;
   --qm-container-overflow: #ececec;
   --qm-panel-border: #aaa;
-  --qm-panel-fg: #444;
+  --qm-panel-fg: #333;
   --qm-panel-bg: #fff;
   --qm-panel-separator: #ddd;
   --qm-panel-menu-border: #ddd;
-  --qm-panel-menu-fg: #444;
+  --qm-panel-menu-fg: #333;
   --qm-panel-menu-bg: #f3f3f3;
-  --qm-panel-menu-fg-hover: #444;
+  --qm-panel-menu-fg-hover: #333;
   --qm-panel-menu-bg-hover: #cde;
-  --qm-panel-menu-fg-current: #444;
+  --qm-panel-menu-fg-current: #333;
   --qm-panel-menu-bg-current: #def;
   --qm-panel-menu-bg-current-focus: #f7fbff;
   --qm-panel-menu-fg-selected: #fff;
@@ -26,7 +26,7 @@
   --qm-panel-menu-shadow: #006291;
   --qm-cell-border: #e0e0e0;
   --qm-cell-bg-hover: #eef3fa;
-  --qm-cell-fg-highlight: #444;
+  --qm-cell-fg-highlight: #333;
   --qm-cell-bg-highlight: #ffd;
   --qm-cell-bg-highlight-dark: #ffffaa;
   --qm-cell-bg-stripe: #f9f9f9;
@@ -51,7 +51,7 @@
   --qm-warn-bg-dark: #ffe8e8;
   --qm-warn-border: #ffd6d6;
   --qm-nonselect-fg: #a0a;
-  --qm-selection-fg: #444;
+  --qm-selection-fg: #333;
   --qm-selection-bg: #B9D6FB;
 }
 
@@ -263,6 +263,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #wp-admin-bar-query-monitor-placeholder,
 #wp-admin-bar-query-monitor-default {
   display: none;
+}
+
+#qm-icon-container {
+  display: none !important;
 }
 
 #query-monitor-main dl,
@@ -505,8 +509,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main #qm-title .qm-icon {
   display: inline-block !important;
-}
-#query-monitor-main #qm-title .qm-icon svg {
   height: 20px !important;
   width: 20px !important;
   fill: var(--qm-title-button-fg) !important;
@@ -516,8 +518,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main #qm-title .qm-button-container-close .qm-icon {
   margin: 4px 0 0 !important;
-}
-#query-monitor-main #qm-title .qm-button-container-close .qm-icon svg {
   width: 18px !important;
   height: 18px !important;
 }
@@ -525,14 +525,12 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   transform: scaleX(-1) rotate(90deg) !important;
   padding-top: 5px !important;
 }
-#query-monitor-main #qm-title .qm-button-container-position .qm-icon svg {
+#query-monitor-main #qm-title .qm-button-container-position .qm-icon {
   width: 14px !important;
   height: 14px !important;
 }
 #query-monitor-main #qm-title .qm-button-container-settings .qm-icon {
   margin: 4px 0 0 !important;
-}
-#query-monitor-main #qm-title .qm-button-container-settings .qm-icon svg {
   width: 16px !important;
   height: 16px !important;
 }
@@ -678,7 +676,8 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: block !important;
 }
 #query-monitor-main .qm:focus {
-  outline: 0 !important; /* @TODO might not need this any more */
+  outline: 0 !important;
+  /* @TODO might not need this any more */
 }
 #query-monitor-main .qm-boxed {
   display: flex !important;
@@ -926,7 +925,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm span.qm-false,
 #query-monitor-main .qm td.qm-false {
   /* @TODO */
-  color: #999 !important;
+  color: #767676 !important;
 }
 #query-monitor-main .qm .qm-num,
 #query-monitor-main .qm code,
@@ -1052,9 +1051,9 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: var(--qm-warn-bg) !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm-non-tabular .qm-warn .qm-icon svg,
-#query-monitor-main .qm thead tr .qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr .qm-warn .qm-icon svg {
+#query-monitor-main .qm-non-tabular .qm-warn .qm-icon,
+#query-monitor-main .qm thead tr .qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr .qm-warn .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm tbody tr th.qm-warn,
@@ -1064,10 +1063,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: var(--qm-warn-bg) !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm tbody tr th.qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr td.qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr.qm-warn td .qm-icon svg,
-#query-monitor-main .qm tbody tr.qm-warn th .qm-icon svg {
+#query-monitor-main .qm tbody tr th.qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr td.qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr.qm-warn td .qm-icon,
+#query-monitor-main .qm tbody tr.qm-warn th .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm tbody tr.qm-odd th.qm-warn,
@@ -1083,10 +1082,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: transparent !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm-non-tabular .qm-warn code .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn li .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn .qm-info .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn code .qm-icon svg {
+#query-monitor-main .qm-non-tabular .qm-warn code .qm-icon,
+#query-monitor-main .qm tbody .qm-warn li .qm-icon,
+#query-monitor-main .qm tbody .qm-warn .qm-info .qm-icon,
+#query-monitor-main .qm tbody .qm-warn code .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm .qm-notice {
@@ -1101,14 +1100,12 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: inline-block !important;
   height: 16px !important;
   width: 16px !important;
-}
-#query-monitor-main .qm .qm-icon svg {
   height: 16px !important;
   width: 16px !important;
   fill: var(--qm-container-fg) !important;
   vertical-align: top !important;
 }
-#query-monitor-main .qm .qm-icon-yes-alt svg {
+#query-monitor-main .qm .qm-icon-yes-alt {
   fill: #0a0 !important;
 }
 #query-monitor-main .qm tbody tr td.qm-highlight,
@@ -1280,8 +1277,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main .qm .qm-sort-controls .qm-icon {
   margin-right: 0 !important;
-}
-#query-monitor-main .qm .qm-sort-controls svg {
   fill: #ccc !important;
 }
 #query-monitor-main .qm .qm-sorted-desc .qm-sort-controls svg,
