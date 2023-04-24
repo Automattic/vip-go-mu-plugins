@@ -15,8 +15,7 @@ if ( ! ( defined( 'VIP_BLOCK_DATA_API_ENABLE' ) && true === constant( 'VIP_BLOCK
 }
 
 const VIP_BLOCK_API_SUPPORTED_VERSIONS = [
-	'0.2.0',
-	'0.1.2',
+	'0.2.1',
 ];
 
 const VIP_BLOCK_API_LATEST_VERSION = VIP_BLOCK_API_SUPPORTED_VERSIONS[0];
