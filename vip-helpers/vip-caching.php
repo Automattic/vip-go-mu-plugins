@@ -178,7 +178,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
 			$query   = new WP_Query(
 				array(
-					's'              => $title,
+					'title'          => $title,
 					'post_type'      => $post_type,
 					'posts_per_page' => 1,
 					'orderby'        => 'ID',
