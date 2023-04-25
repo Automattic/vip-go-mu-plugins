@@ -21,8 +21,8 @@ class Test_Prometheus extends WP_UnitTestCase {
 		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ): never {
-        	throw new \Exception( $errstr, $errno );
-        }, E_USER_WARNING );
+			throw new \Exception( $errstr, $errno );
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
