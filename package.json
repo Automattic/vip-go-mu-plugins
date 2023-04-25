@@ -16,7 +16,6 @@
     "search-env:start": "wp-env start && npm run search-env:install-tests-cli && cd bin/search/es-docker/ && docker-compose up -d",
     "search-env:stop": "wp-env stop && cd bin/search/es-docker/ && docker-compose down",
     "cypress:delete:reports": "rm cypress/results/* || true",
-    "cypress:combine:reports": "jrm cypress/results/combined-cy-report.xml \"cypress/results/*.xml\"",
     "cypress:setup": "./bin/search/setup-cypress-env.sh",
     "cypress:open": "cypress open --config-file tests/search/e2e/cypress.config.js",
     "cypress:run": "cypress run --config-file tests/search/e2e/cypress.config.js"
@@ -33,7 +32,6 @@
     "eslint-plugin-cypress": "^2.12.1",
     "husky": "8.0.3",
     "jsdoc": "^4.0.0",
-    "junit-report-merger": "^6.0.0",
     "lint-staged": "^13.0.0",
     "mocha-junit-reporter": "^2.1.1",
     "phplint": "2.0.5",

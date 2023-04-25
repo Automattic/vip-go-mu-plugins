@@ -43,7 +43,6 @@ jobs:
             1.gravatar.com:80
             2.gravatar.com:80
             api.github.com:443
-            api.service.runforesight.com:443
             api.wordpress.org:443
             artifactcache.actions.githubusercontent.com:443
             auth.docker.io:443
@@ -51,7 +50,6 @@ jobs:
             docker.io:443
             downloads.wordpress.org:443
             e2e-test-site.vipdev.lndo.site:443
-            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
             geoip.elastic.co:443
             ghcr.io:443
             github.com:443
@@ -65,12 +63,11 @@ jobs:
             registry.npmjs.org:443
             s.w.org:443
             storage.googleapis.com:443
-            upload.service.runforesight.com:443
             vaultpress.com:443
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@v3.5.2
         with:
           submodules: true
 
@@ -83,12 +80,6 @@ jobs:
           node-version: 'lts/*'
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
-
-      - name: Instrument workflow processes for E2E tests
-        uses: runforesight/foresight-workflow-kit-action@v1
-        if: success() || failure()
-        with:
-          api_key: ${{secrets.FORESIGHT_API_KEY}}
 
       - name: Install dependencies
         run: npm ci
@@ -119,15 +110,6 @@ jobs:
       - name: Run e2e tests
         run: npm test
         working-directory: __tests__/e2e
-
-      - name: Instrument Tests in ForeSight
-        if: success() || failure()
-        uses: thundra-io/foresight-test-kit-action@v1
-        with:
-          api_key: ${{secrets.FORESIGHT_API_KEY}}
-          test_format: JUNIT
-          test_framework: JEST
-          test_path: __tests__/e2e/results.xml
 
       - name: Archive test results
         uses: actions/upload-artifact@v3
