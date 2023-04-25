@@ -4,7 +4,6 @@ namespace Automattic\VIP\Cache;
 
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../cache/class-vary-cache.php';
@@ -12,8 +11,6 @@ require_once __DIR__ . '/../../cache/class-vary-cache.php';
 // phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 
 class Vary_Cache_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
-
 	private $original_cookie;
 	private $original_server;
 
@@ -27,9 +24,16 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 		Vary_Cache::load();
 		Constant_Mocker::clear();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+            throw new \Exception( $errstr, $errno );
+        }, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+
 		Constant_Mocker::clear();
 		Vary_Cache::unload();
 
@@ -259,7 +263,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
-		$this->expectWarning();
+		$this->expectException( \Exception::class );
 
 		$actual_result = Vary_Cache::register_groups( [
 			'dev-group',
@@ -287,7 +291,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
 	public function test__register_groups__invalid( $invalid_groups ) {
-		$this->expectWarning();
+		$this->expectException( \Exception::class );
 		$actual_result = Vary_Cache::register_groups( $invalid_groups );
 
 		$this->assertFalse( $actual_result, 'Invalid register_groups call did not return false' );

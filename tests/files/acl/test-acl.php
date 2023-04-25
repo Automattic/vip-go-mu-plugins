@@ -5,7 +5,6 @@ namespace Automattic\VIP\Files\Acl;
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../files/acl/acl.php';
@@ -14,16 +13,21 @@ require_once __DIR__ . '/../../../files/acl/acl.php';
  * @property WP_UnitTest_Factory $factory
  */
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
-
 	public function setUp(): void {
 		parent::setUp();
 		header_remove();
 
 		Constant_Mocker::clear();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+            throw new \Exception( $errstr, $errno );
+        }, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -39,8 +43,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
-		$this->expectWarning();
-		$this->expectWarningMessage( 'File ACL restrictions are enabled without server configs' );
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
 
 		maybe_load_restrictions();
 
@@ -185,8 +189,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	}
 
 	public function test__send_visibility_headers__invalid_visibility() {
-		$this->expectWarning();
-		$this->expectWarningMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
+		$this->expectException( \Exception::class );
+		$this->expectExceptionMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
 		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
 
@@ -250,7 +254,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 			$this->markTestSkipped();
 		}
 
-		// Can access other paths from basedir, as long as they don't contain `/sites/ 
+		// Can access other paths from basedir, as long as they don't contain `/sites/
 		$expected_is_allowed = true;
 
 		$file_path = 'cache/css/cats.css';
