@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Hooks and actions output for HTML pages.
  *
@@ -34,26 +34,26 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 	 * @return void
 	 */
 	public function output() {
-
+		/** @var QM_Data_Hooks */
 		$data = $this->collector->get_data();
 
-		if ( empty( $data['hooks'] ) ) {
+		if ( empty( $data->hooks ) ) {
 			return;
 		}
 
 		$this->before_tabular_output();
 
-		$callback_label = $data['all_hooks'] ? __( 'Callback', 'query-monitor' ) : __( 'Action', 'query-monitor' );
+		$callback_label = $data->all_hooks ? __( 'Callback', 'query-monitor' ) : __( 'Action', 'query-monitor' );
 
 		echo '<thead>';
 		echo '<tr>';
 		echo '<th scope="col" class="qm-filterable-column">';
-		echo $this->build_filter( 'name', $data['parts'], __( 'Hook', 'query-monitor' ) ); // WPCS: XSS ok.
+		echo $this->build_filter( 'name', $data->parts, __( 'Hook', 'query-monitor' ) ); // WPCS: XSS ok.
 		echo '</th>';
 		echo '<th scope="col">' . esc_html__( 'Priority', 'query-monitor' ) . '</th>';
 		echo '<th scope="col">' . esc_html( $callback_label ) . '</th>';
 		echo '<th scope="col" class="qm-filterable-column">';
-		echo $this->build_filter( 'component', $data['components'], __( 'Component', 'query-monitor' ), array(
+		echo $this->build_filter( 'component', $data->components, __( 'Component', 'query-monitor' ), array(
 			'highlight' => 'subject',
 		) ); // WPCS: XSS ok.
 		echo '</th>';
@@ -61,7 +61,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 		echo '</thead>';
 
 		echo '<tbody>';
-		self::output_hook_table( $data['hooks'] );
+		self::output_hook_table( $data->hooks );
 		echo '</tbody>';
 
 		$this->after_tabular_output();
@@ -124,7 +124,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 						echo '<code>' . esc_html( $hook['name'] ) . '</code>';
 						if ( 'all' === $hook['name'] ) {
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-							echo '<br><span class="qm-warn">' . QueryMonitor::init()->icon( 'warning' );
+							echo '<br><span class="qm-warn">' . QueryMonitor::icon( 'warning' );
 							printf(
 								/* translators: %s: Action name */
 								esc_html__( 'Warning: The %s action is extremely resource intensive. Try to avoid using it.', 'query-monitor' ),
@@ -148,8 +148,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 
 					if ( PHP_INT_MAX === $action['priority'] ) {
 						echo ' <span class="qm-info">(PHP_INT_MAX)</span>';
-					// phpcs:ignore PHPCompatibility.Constants.NewConstants.php_int_minFound
-					} elseif ( defined( 'PHP_INT_MIN' ) && PHP_INT_MIN === $action['priority'] ) {
+					} elseif ( PHP_INT_MIN === $action['priority'] ) {
 						echo ' <span class="qm-info">(PHP_INT_MIN)</span>';
 					} elseif ( -PHP_INT_MAX === $action['priority'] ) {
 						echo ' <span class="qm-info">(-PHP_INT_MAX)</span>';
@@ -177,7 +176,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 
 						if ( isset( $action['callback']['error'] ) ) {
 							// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-							echo '<br>' . QueryMonitor::init()->icon( 'warning' );
+							echo '<br>' . QueryMonitor::icon( 'warning' );
 							echo esc_html( sprintf(
 								/* translators: %s: Error message text */
 								__( 'Error: %s', 'query-monitor' ),
