@@ -176,15 +176,15 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
 			$page_id = $page ? $page->ID : 0;
 		} else {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
-			$query = new WP_Query(
+			$query   = new WP_Query(
 				array(
-					's' => $title,
-					'post_type' => $post_type,
+					's'              => $title,
+					'post_type'      => $post_type,
 					'posts_per_page' => 1,
-					'orderby' => 'ID',
-					'order' => 'ASC',
-					'no_found_rows' => true,
-					'fields' => 'ids',
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
+					'no_found_rows'  => true,
+					'fields'         => 'ids',
 				),
 			);
 			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
