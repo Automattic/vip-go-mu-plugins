@@ -6,39 +6,49 @@ use Automattic\VIP\Environment;
 use Exception;
 
 class Config {
-	private bool $enabled      = false;
-	private bool $allow_writes = false;
-	private bool $is_sandbox   = false;
-	private bool $is_local     = false;
-	private bool $is_batch     = false;
-
-	public function __construct() {
-		$this->is_local = defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'local' || defined( 'WP_ENVIRONMENT_TYPE' ) && constant( 'WP_ENVIRONMENT_TYPE' ) === 'local';
-		// We can't check via constants since they are not set yet
-		$this->is_sandbox = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), getenv() );
-		$this->is_batch   = class_exists( Environment::class ) && Environment::is_batch_container( gethostname(), getenv() );
-
-		$this->enabled      = $this->is_batch || $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
-		$this->allow_writes = defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
-	}
+	private ?bool $enabled      = null;
+	private ?bool $allow_writes = null;
+	private ?bool $is_sandbox   = null;
+	private ?bool $is_local     = null;
+	private ?bool $is_batch     = null;
 
 	public function enabled(): bool {
+		if ( null === $this->enabled ) {
+			$this->enabled = defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' ) || $this->is_batch() || $this->is_sandbox();
+		}
+
 		return $this->enabled;
 	}
 
 	public function allow_writes(): bool {
+		if ( null === $this->allow_writes ) {
+			$this->allow_writes = defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
+		}
+
 		return $this->allow_writes;
 	}
 
 	public function is_sandbox(): bool {
+		if ( null === $this->is_sandbox ) {
+			$this->is_sandbox = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), getenv() );
+		}
+
 		return $this->is_sandbox;
 	}
 
 	public function is_local(): bool {
+		if ( null === $this->is_local ) {
+			$this->is_local = defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'local' || defined( 'WP_ENVIRONMENT_TYPE' ) && constant( 'WP_ENVIRONMENT_TYPE' ) === 'local';
+		}
+
 		return $this->is_local;
 	}
 
 	public function is_batch(): bool {
+		if ( null === $this->is_batch ) {
+			$this->is_batch = class_exists( Environment::class ) && Environment::is_batch_container( gethostname(), getenv() );
+		}
+
 		return $this->is_batch;
 	}
 
@@ -52,7 +62,7 @@ class Config {
 	public function get_database_server(): DB_Server {
 		global $db_servers;
 
-		if ( ! $this->enabled ) {
+		if ( ! $this->enabled() ) {
 			throw new Exception( 'The db command is not currently supported in this environment.' );
 		}
 
