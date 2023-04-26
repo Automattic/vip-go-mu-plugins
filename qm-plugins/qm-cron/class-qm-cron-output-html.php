@@ -45,11 +45,15 @@ class QM_Cron_Output extends QM_Output_Html {
 					<td><?php true === $this->doing_cron ? esc_html_e( 'Yes', 'query-monitor' ) : esc_html_e( 'No', 'query-monitor' ); ?></td>
 					<td>
 						<?php
-						echo esc_html( $data['next_event_time']['human_time'] );
-						echo '<br />';
-						echo absint( $data['next_event_time']['unix'] );
-						echo '<br />';
-						echo '<i>' . esc_html( $this->display_past_time( human_time_diff( $data['next_event_time']['unix'] ), $data['next_event_time']['unix'] ) ) . '</i>';
+						if ( isset( $data['next_event_time']['human_time'] ) ) {
+							echo esc_html( $data['next_event_time']['human_time'] );
+							echo '<br />';
+						}
+						if ( isset( $data['next_event_time']['unix'] ) ) {
+							echo absint( $data['next_event_time']['unix'] );
+							echo '<br />';
+							echo '<i>' . esc_html( $this->display_past_time( human_time_diff( $data['next_event_time']['unix'] ), $data['next_event_time']['unix'] ) ) . '</i>';
+						}
 						?>
 					</td>
 					<td><?php echo esc_html( gmdate( 'H:i:s' ) ); ?></td>
@@ -71,14 +75,16 @@ class QM_Cron_Output extends QM_Output_Html {
 			</thead>
 			<tbody>
 				<?php
-				foreach ( $data['schedules'] as $schedule => $value ) {
-					echo '<tr>';
-					echo '<th>' . esc_html( $schedule ) . '</th>';
-					echo '<th>' . esc_html( $value['interval'] ) . '</th>';
-					echo '<th>' . esc_html( $this->get_minutes( $value['interval'] ) ) . '</th>';
-					echo '<th>' . esc_html( $this->get_hours( $value['interval'] ) ) . '</th>';
-					echo '<th>' . esc_html( $value['display'] ) . '</th>';
-					echo '</tr>';
+				if ( is_array( $data['schedules'] ) ) {
+					foreach ( $data['schedules'] as $schedule => $value ) {
+						echo '<tr>';
+						echo '<th>' . esc_html( $schedule ) . '</th>';
+						echo '<th>' . esc_html( $value['interval'] ) . '</th>';
+						echo '<th>' . esc_html( $this->get_minutes( $value['interval'] ) ) . '</th>';
+						echo '<th>' . esc_html( $this->get_hours( $value['interval'] ) ) . '</th>';
+						echo '<th>' . esc_html( $value['display'] ) . '</th>';
+						echo '</tr>';
+					}
 				}
 				?>
 			</tbody>
