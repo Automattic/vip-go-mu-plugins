@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * The main Query Monitor plugin class.
  *
@@ -25,13 +25,16 @@ class QueryMonitor extends QM_Plugin {
 		add_filter( 'ure_capabilities_groups_tree', array( $this, 'filter_ure_groups' ) );
 		add_filter( 'network_admin_plugin_action_links_query-monitor/query-monitor.php', array( $this, 'filter_plugin_action_links' ) );
 		add_filter( 'plugin_action_links_query-monitor/query-monitor.php', array( $this, 'filter_plugin_action_links' ) );
-		add_filter( 'plugin_row_meta', array( $this, 'filter_plugin_row_meta' ), 10, 4 );
+		add_filter( 'plugin_row_meta', array( $this, 'filter_plugin_row_meta' ), 10, 2 );
 
 		# Load and register built-in collectors:
 		$collectors = array();
-		foreach ( glob( $this->plugin_path( 'collectors/*.php' ) ) as $file ) {
-			$key = basename( $file, '.php' );
-			$collectors[ $key ] = $file;
+		$files = glob( $this->plugin_path( 'collectors/*.php' ) );
+		if ( $files ) {
+			foreach ( $files as $file ) {
+				$key = basename( $file, '.php' );
+				$collectors[ $key ] = $file;
+			}
 		}
 
 		/**
@@ -138,7 +141,7 @@ class QueryMonitor extends QM_Plugin {
 		}
 
 		# Load dispatchers:
-		foreach ( glob( $this->plugin_path( 'dispatchers/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->plugin_path( 'dispatchers/*.php' ) ) as $file ) {
 			include_once $file;
 		}
 
@@ -212,8 +215,8 @@ class QueryMonitor extends QM_Plugin {
 	 *
 	 * @link https://wordpress.org/plugins/user-role-editor/
 	 *
-	 * @param array<string, array<string, array<string, mixed>>> $groups Array of existing groups.
-	 * @return array<string, array<string, array<string, mixed>>> Updated array of groups.
+	 * @param array<string, array<string, mixed>> $groups Array of existing groups.
+	 * @return array<string, array<string, mixed>> Updated array of groups.
 	 */
 	public function filter_ure_groups( array $groups ) {
 		$groups['query_monitor'] = array(

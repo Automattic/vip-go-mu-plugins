@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Query Monitor Database Class (Drop-in)
  * Description: Database drop-in for Query Monitor, the developer tools panel for WordPress.
- * Version:     3.10.1
+ * Version:     3.12.1
  * Plugin URI:  https://querymonitor.com/
  * Author:      John Blackbourn
  * Author URI:  https://querymonitor.com/
@@ -28,6 +28,10 @@ if ( ! defined( 'DB_USER' ) ) {
 }
 
 if ( defined( 'QM_DISABLED' ) && QM_DISABLED ) {
+	return;
+}
+
+if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
 	return;
 }
 

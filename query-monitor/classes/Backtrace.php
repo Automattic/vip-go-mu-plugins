@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Function call backtrace container.
  *
@@ -24,6 +24,8 @@ class QM_Backtrace {
 		'Debug_Bar_PHP' => true,
 		'WP_Hook' => true,
 		'Altis\Cloud\DB' => true,
+		'Yoast\WP\Lib\ORM' => true,
+		'Perflab_SQLite_DB' => true,
 	);
 
 	/**
@@ -51,13 +53,14 @@ class QM_Backtrace {
 
 	/**
 	 * @var array<string, int|string>
-	 * @phpstan-var array<string, positive-int|'dir'>
 	 */
 	protected static $show_args = array(
 		'do_action' => 1,
 		'apply_filters' => 1,
 		'do_action_ref_array' => 1,
 		'apply_filters_ref_array' => 1,
+		'do_action_deprecated' => 1,
+		'apply_filters_deprecated' => 1,
 		'get_query_template' => 1,
 		'resolve_block_template' => 1,
 		'get_template_part' => 2,
@@ -68,7 +71,6 @@ class QM_Backtrace {
 		'get_header' => 1,
 		'get_sidebar' => 1,
 		'get_footer' => 1,
-		'update_option' => 1,
 		'get_transient' => 1,
 		'set_transient' => 1,
 		'class_exists' => 2,
@@ -114,7 +116,7 @@ class QM_Backtrace {
 	protected $calling_file = '';
 
 	/**
-	 * @var stdClass|null
+	 * @var QM_Component|null
 	 */
 	protected $component = null;
 
@@ -128,7 +130,7 @@ class QM_Backtrace {
 	 * @param mixed[] $trace
 	 */
 	public function __construct( array $args = array(), array $trace = null ) {
-		$this->trace = ( null === $trace ) ? debug_backtrace( 0 ) : $trace;
+		$this->trace = $trace ?? debug_backtrace( 0 );
 
 		$this->args = array_merge( array(
 			'ignore_class' => array(),
@@ -143,10 +145,10 @@ class QM_Backtrace {
 				continue;
 			}
 
-			if ( isset( $frame['function'] ) && isset( self::$show_args[ $frame['function'] ] ) ) {
+			if ( isset( $frame['function'], self::$show_args[ $frame['function'] ] ) ) {
 				$show = self::$show_args[ $frame['function'] ];
 
-				if ( 'dir' === $show ) {
+				if ( ! is_int( $show ) ) {
 					$show = 1;
 				}
 
@@ -172,7 +174,7 @@ class QM_Backtrace {
 	public function get_stack() {
 
 		$trace = $this->get_filtered_trace();
-		$stack = wp_list_pluck( $trace, 'display' );
+		$stack = array_column( $trace, 'display' );
 
 		return $stack;
 
@@ -190,7 +192,7 @@ class QM_Backtrace {
 	}
 
 	/**
-	 * @return stdClass
+	 * @return QM_Component
 	 */
 	public function get_component() {
 		if ( isset( $this->component ) ) {
@@ -226,24 +228,30 @@ class QM_Backtrace {
 			}
 		}
 
-		return (object) array(
-			'type' => 'unknown',
-			'name' => __( 'Unknown', 'query-monitor' ),
-			'context' => 'unknown',
-		);
+		$component = new QM_Component();
+		$component->type = 'unknown';
+		$component->name = __( 'Unknown', 'query-monitor' );
+		$component->context = 'unknown';
+
+		return $component;
 	}
 
 	/**
 	 * Attempts to determine the component responsible for a given frame.
 	 *
 	 * @param mixed[] $frame A single frame from a trace.
-	 * @return stdClass|null A stdClass object (ouch) representing the component, or null if
-	 *                       the component cannot be determined.
+	 * @phpstan-param array{
+	 *   class?: class-string,
+	 *   function?: string,
+	 *   file?: string,
+	 * } $frame
+	 * @return QM_Component|null An object representing the component, or null if
+	 *                           the component cannot be determined.
 	 */
 	public static function get_frame_component( array $frame ) {
 		try {
 
-			if ( isset( $frame['class'] ) ) {
+			if ( isset( $frame['class'], $frame['function'] ) ) {
 				if ( ! class_exists( $frame['class'], false ) ) {
 					return null;
 				}
@@ -258,6 +266,10 @@ class QM_Backtrace {
 			} elseif ( isset( $frame['file'] ) ) {
 				$file = $frame['file'];
 			} else {
+				return null;
+			}
+
+			if ( ! $file ) {
 				return null;
 			}
 
@@ -285,7 +297,12 @@ class QM_Backtrace {
 	}
 
 	/**
-	 * @return mixed[]
+	 * @return array<int, array<string, mixed>>
+	 * @phpstan-return list<array{
+	 *   file: string,
+	 *   line: int,
+	 *   display: string,
+	 * }>
 	 */
 	public function get_filtered_trace() {
 
@@ -482,12 +499,12 @@ class QM_Backtrace {
 						$return['display'] = QM_Util::shorten_fqn( $frame['function'] ) . "('{$arg}')";
 					}
 				} else {
-					if ( isset( $hook_functions[ $frame['function'] ] ) && isset( $frame['args'][0] ) && is_string( $frame['args'][0] ) && isset( $ignore_hook[ $frame['args'][0] ] ) ) {
+					if ( isset( $hook_functions[ $frame['function'] ], $frame['args'][0] ) && is_string( $frame['args'][0] ) && isset( $ignore_hook[ $frame['args'][0] ] ) ) {
 						$return = null;
 					} else {
 						$args = array();
 						for ( $i = 0; $i < $show; $i++ ) {
-							if ( isset( $frame['args'][ $i ] ) ) {
+							if ( isset( $frame['args'] ) && array_key_exists( $i, $frame['args'] ) ) {
 								if ( is_string( $frame['args'][ $i ] ) ) {
 									$args[] = '\'' . $frame['args'][ $i ] . '\'';
 								} else {
@@ -510,6 +527,13 @@ class QM_Backtrace {
 			$return['calling_file'] = $this->calling_file;
 			$return['calling_line'] = $this->calling_line;
 
+			if ( ! isset( $return['file'] ) ) {
+				$return['file'] = $this->calling_file;
+			}
+
+			if ( ! isset( $return['line'] ) ) {
+				$return['line'] = $this->calling_line;
+			}
 		}
 
 		if ( isset( $frame['line'] ) ) {
