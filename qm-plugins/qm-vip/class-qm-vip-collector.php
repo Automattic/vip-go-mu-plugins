@@ -53,7 +53,7 @@ class QM_VIP_Collector extends QM_Collector {
 		$env = constant( 'VIP_GO_APP_ENVIRONMENT' );
 
 		if ( 'local' !== $env ) {
-			if ( defined( 'VIP_GO_APP_ID') ) {
+			if ( defined( 'VIP_GO_APP_ID' ) ) {
 				$this->data['app']['id'] = constant( 'VIP_GO_APP_ID' );
 			}
 			if ( defined( 'VIP_GO_APP_NAME' ) ) {
