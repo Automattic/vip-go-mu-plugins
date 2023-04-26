@@ -23,9 +23,17 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 			$this->fs_uploads_mock,
 			$this->fs_direct_mock,
 		] );
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+			throw new \Exception( $errstr, $errno );
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+
 		$this->filesystem = null;
 
 		Constant_Mocker::clear();
@@ -282,7 +290,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	public function test__get_transport_for_path__disallowed_write() {
 		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
 
-		$this->expectError();
+		$this->expectException( \Exception::class );
 		$this->expectExceptionMessage( 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `/tmp/wordpress/wp-content/uploads` directories and reads can be performed everywhere.' );
 
 		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );

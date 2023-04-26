@@ -4,15 +4,12 @@ namespace Automattic\VIP;
 
 use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
 class Environment_Test extends TestCase {
-	use ExpectPHPException;
-
 	private $error_reporting;
 
 	protected function setUp(): void {

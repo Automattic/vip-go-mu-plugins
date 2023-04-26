@@ -4,10 +4,9 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInitd4d7d7d11152077b8234a5ecb185a7c0
+class ComposerStaticInitfaf42c5f235c65e8397793ae676be6da
 {
     public static $classMap = array (
-        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'Debug_Bar' => __DIR__ . '/../..' . '/classes/debug_bar.php',
         'Debug_Bar_Panel' => __DIR__ . '/../..' . '/classes/debug_bar_panel.php',
         'QM' => __DIR__ . '/../..' . '/classes/QM.php',
@@ -16,7 +15,35 @@ class ComposerStaticInitd4d7d7d11152077b8234a5ecb185a7c0
         'QM_CLI' => __DIR__ . '/../..' . '/classes/CLI.php',
         'QM_Collector' => __DIR__ . '/../..' . '/classes/Collector.php',
         'QM_Collectors' => __DIR__ . '/../..' . '/classes/Collectors.php',
-        'QM_DB' => __DIR__ . '/../..' . '/classes/QM_DB.php',
+        'QM_Component' => __DIR__ . '/../..' . '/classes/Component.php',
+        'QM_DB' => __DIR__ . '/../..' . '/classes/DB.php',
+        'QM_Data' => __DIR__ . '/../..' . '/classes/Data.php',
+        'QM_DataCollector' => __DIR__ . '/../..' . '/classes/DataCollector.php',
+        'QM_Data_Admin' => __DIR__ . '/../..' . '/data/admin.php',
+        'QM_Data_Assets' => __DIR__ . '/../..' . '/data/assets.php',
+        'QM_Data_Block_Editor' => __DIR__ . '/../..' . '/data/block_editor.php',
+        'QM_Data_Cache' => __DIR__ . '/../..' . '/data/cache.php',
+        'QM_Data_Caps' => __DIR__ . '/../..' . '/data/caps.php',
+        'QM_Data_Conditionals' => __DIR__ . '/../..' . '/data/conditionals.php',
+        'QM_Data_DB_Callers' => __DIR__ . '/../..' . '/data/db_callers.php',
+        'QM_Data_DB_Components' => __DIR__ . '/../..' . '/data/db_components.php',
+        'QM_Data_DB_Dupes' => __DIR__ . '/../..' . '/data/db_dupes.php',
+        'QM_Data_DB_Queries' => __DIR__ . '/../..' . '/data/db_queries.php',
+        'QM_Data_Environment' => __DIR__ . '/../..' . '/data/environment.php',
+        'QM_Data_Fallback' => __DIR__ . '/../..' . '/data/fallback.php',
+        'QM_Data_HTTP' => __DIR__ . '/../..' . '/data/http.php',
+        'QM_Data_Hooks' => __DIR__ . '/../..' . '/data/hooks.php',
+        'QM_Data_Languages' => __DIR__ . '/../..' . '/data/languages.php',
+        'QM_Data_Logger' => __DIR__ . '/../..' . '/data/logger.php',
+        'QM_Data_Multisite' => __DIR__ . '/../..' . '/data/multisite.php',
+        'QM_Data_Overview' => __DIR__ . '/../..' . '/data/overview.php',
+        'QM_Data_PHP_Errors' => __DIR__ . '/../..' . '/data/php_errors.php',
+        'QM_Data_Raw_Request' => __DIR__ . '/../..' . '/data/raw_request.php',
+        'QM_Data_Redirect' => __DIR__ . '/../..' . '/data/redirect.php',
+        'QM_Data_Request' => __DIR__ . '/../..' . '/data/request.php',
+        'QM_Data_Theme' => __DIR__ . '/../..' . '/data/theme.php',
+        'QM_Data_Timing' => __DIR__ . '/../..' . '/data/timing.php',
+        'QM_Data_Transients' => __DIR__ . '/../..' . '/data/transients.php',
         'QM_Dispatcher' => __DIR__ . '/../..' . '/classes/Dispatcher.php',
         'QM_Dispatchers' => __DIR__ . '/../..' . '/classes/Dispatchers.php',
         'QM_Hook' => __DIR__ . '/../..' . '/classes/Hook.php',
@@ -44,6 +71,7 @@ class ComposerStaticInitd4d7d7d11152077b8234a5ecb185a7c0
         'QM_Output_Html_Hooks' => __DIR__ . '/../..' . '/output/html/hooks.php',
         'QM_Output_Html_Languages' => __DIR__ . '/../..' . '/output/html/languages.php',
         'QM_Output_Html_Logger' => __DIR__ . '/../..' . '/output/html/logger.php',
+        'QM_Output_Html_Multisite' => __DIR__ . '/../..' . '/output/html/multisite.php',
         'QM_Output_Html_Overview' => __DIR__ . '/../..' . '/output/html/overview.php',
         'QM_Output_Html_PHP_Errors' => __DIR__ . '/../..' . '/output/html/php_errors.php',
         'QM_Output_Html_Request' => __DIR__ . '/../..' . '/output/html/request.php',
@@ -67,7 +95,7 @@ class ComposerStaticInitd4d7d7d11152077b8234a5ecb185a7c0
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->classMap = ComposerStaticInitd4d7d7d11152077b8234a5ecb185a7c0::$classMap;
+            $loader->classMap = ComposerStaticInitfaf42c5f235c65e8397793ae676be6da::$classMap;
 
         }, null, ClassLoader::class);
     }

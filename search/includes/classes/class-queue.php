@@ -313,6 +313,10 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
+		if ( ! $indexable->index_exists() ) {
+			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
+		}
+
 		global $wpdb;
 
 		$next_index_time = $this->get_next_index_time( $object_id, $indexable_slug );
@@ -378,6 +382,12 @@ class Queue {
 	 */
 	public function queue_objects( $object_ids, $indexable_slug = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
+			return;
+		}
+
+		$indexable = Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable || ! $indexable->index_exists() ) {
 			return;
 		}
 

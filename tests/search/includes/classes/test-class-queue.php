@@ -5,7 +5,6 @@ namespace Automattic\VIP\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use wpdb;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
@@ -14,7 +13,6 @@ use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
  * @preserveGlobalState disabled
  */
 class Queue_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
 
 	/** @var \Automattic\VIP\Search\Search */
 	private $es;
@@ -60,6 +58,14 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->schema->prepare_table();
 
 		$this->queue->empty_queue();
+
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+	}
+
+	public function tearDown(): void {
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+
+		parent::tearDown();
 	}
 
 	public function tearDown(): void {
@@ -1284,6 +1290,51 @@ class Queue_Test extends WP_UnitTestCase {
 				);
 
 		$this->queue->log_index_ratelimiting_start();
+	}
+
+	public function test__no_index_queueing() {
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX, 5 );
+
+		$result = $this->queue->queue_object( 1000, 'post' );
+		$this->assertWPError( $result );
+
+		$object_ids = array(
+			'12',
+			'45',
+			'89',
+			'246',
+		);
+		$result     = $this->queue->queue_objects( $object_ids );
+		$this->assertNull( $result );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX );
+	}
+
+	/**
+	 * We need to fake the OK response from the ES server to avoid the actual request.
+	 */
+	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+		return $request;
+	}
+
+	/**
+	 * We need to fake the bad response from the ES server to avoid the actual request.
+	 */
+	public function filter_index_exists_request_bad( $request, $query, $args, $failures, $type ) {
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 404 ],
+				'body'     => [],
+			];
+		}
+		return $request;
 	}
 
 	/**

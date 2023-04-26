@@ -4,13 +4,10 @@ namespace Automattic\VIP\Prometheus;
 
 use Prometheus\RegistryInterface;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/class-plugin-helper.php';
 
 class Test_Prometheus extends WP_UnitTestCase {
-	use ExpectPHPException;
-
 	public function setUp(): void {
 		parent::setUp();
 
@@ -20,9 +17,17 @@ class Test_Prometheus extends WP_UnitTestCase {
 		remove_all_actions( 'init' );
 
 		Plugin_Helper::clear_instance();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+			throw new \Exception( $errstr, $errno );
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+
 		Plugin::get_instance();
 		parent::tearDown();
 	}
@@ -97,7 +102,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 			return new \stdClass();
 		} );
 
-		$this->expectWarning();
+		$this->expectException( \Exception::class );
 		do_action( 'vip_mu_plugins_loaded' );
 	}
 

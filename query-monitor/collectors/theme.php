@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Template and theme collector.
  *
@@ -9,7 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class QM_Collector_Theme extends QM_Collector {
+/**
+ * @extends QM_DataCollector<QM_Data_Theme>
+ */
+class QM_Collector_Theme extends QM_DataCollector {
 
 	/**
 	 * @var string
@@ -20,6 +23,35 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @var bool
 	 */
 	protected $got_theme_compat = false;
+
+	/**
+	 * @var array<int, mixed>
+	 */
+	protected $requested_template_parts = array();
+
+	/**
+	 * @var array<int, mixed>
+	 */
+	protected $requested_template_part_posts = array();
+
+	/**
+	 * @var array<int, mixed>
+	 */
+	protected $requested_template_part_files = array();
+
+	/**
+	 * @var array<int, mixed>
+	 */
+	protected $requested_template_part_nopes = array();
+
+	/**
+	 * @var ?WP_Block_Template
+	 */
+	protected $block_template = null;
+
+	public function get_storage(): QM_Data {
+		return new QM_Data_Theme();
+	}
 
 	/**
 	 * @return void
@@ -86,7 +118,7 @@ class QM_Collector_Theme extends QM_Collector {
 			'caller' => $trace->get_caller(),
 		);
 
-		$this->data['requested_template_parts'][] = $data;
+		$this->requested_template_parts[] = $data;
 	}
 
 	/**
@@ -129,7 +161,7 @@ class QM_Collector_Theme extends QM_Collector {
 	}
 
 	/**
-	 * @return string[]
+	 * @return array<int|string, string>
 	 */
 	public static function get_query_template_names() {
 		$names = array();
@@ -206,10 +238,12 @@ class QM_Collector_Theme extends QM_Collector {
 			$get_template = "get_{$template}_template";
 
 			if ( function_exists( $conditional ) && function_exists( $get_template ) && call_user_func( $conditional ) ) {
-				$filter = str_replace( '_', '', $template );
+				$filter = str_replace( '_', '', "{$template}" );
 				add_filter( "{$filter}_template_hierarchy", array( $this, 'filter_template_hierarchy' ), PHP_INT_MAX );
+				add_filter( "{$filter}_template", array( $this, 'filter_template' ), PHP_INT_MAX, 3 );
 				call_user_func( $get_template );
 				remove_filter( "{$filter}_template_hierarchy", array( $this, 'filter_template_hierarchy' ), PHP_INT_MAX );
+				remove_filter( "{$filter}_template", array( $this, 'filter_template' ), PHP_INT_MAX );
 			}
 		}
 	}
@@ -223,7 +257,7 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return void
 	 */
 	public function action_get_template_part( $slug, $name, $templates ) {
-		$data = compact( 'slug', 'name', 'templates' );
+		$part = compact( 'slug', 'name', 'templates' );
 
 		$trace = new QM_Backtrace( array(
 			'ignore_hook' => array(
@@ -231,9 +265,9 @@ class QM_Collector_Theme extends QM_Collector {
 			),
 		) );
 
-		$data['caller'] = $trace->get_caller();
+		$part['caller'] = $trace->get_caller();
 
-		$this->data['requested_template_parts'][] = $data;
+		$this->requested_template_parts[] = $part;
 	}
 
 	/**
@@ -245,12 +279,12 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return void
 	 */
 	public function action_render_block_core_template_part_post( $template_part_id, $attributes, WP_Post $post ) {
-		$data = array(
+		$part = array(
 			'id' => $template_part_id,
 			'attributes' => $attributes,
 			'post' => $post->ID,
 		);
-		$this->data['requested_template_part_posts'][] = $data;
+		$this->requested_template_part_posts[] = $part;
 	}
 
 	/**
@@ -262,12 +296,12 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return void
 	 */
 	public function action_render_block_core_template_part_file( $template_part_id, $attributes, $template_part_file_path ) {
-		$data = array(
+		$part = array(
 			'id' => $template_part_id,
 			'attributes' => $attributes,
 			'path' => $template_part_file_path,
 		);
-		$this->data['requested_template_part_files'][] = $data;
+		$this->requested_template_part_files[] = $part;
 	}
 
 	/**
@@ -279,12 +313,12 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return void
 	 */
 	public function action_render_block_core_template_part_none( $template_part_id, $attributes, $template_part_file_path ) {
-		$data = array(
+		$part = array(
 			'id' => $template_part_id,
 			'attributes' => $attributes,
 			'path' => $template_part_file_path,
 		);
-		$this->data['requested_template_part_nopes'][] = $data;
+		$this->requested_template_part_nopes[] = $part;
 	}
 
 	/**
@@ -292,8 +326,8 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return array<int, string>
 	 */
 	public function filter_template_hierarchy( array $templates ) {
-		if ( ! isset( $this->data['template_hierarchy'] ) ) {
-			$this->data['template_hierarchy'] = array();
+		if ( ! isset( $this->data->template_hierarchy ) ) {
+			$this->data->template_hierarchy = array();
 		}
 
 		foreach ( $templates as $template_name ) {
@@ -303,9 +337,43 @@ class QM_Collector_Theme extends QM_Collector {
 			}
 		}
 
-		$this->data['template_hierarchy'] = array_merge( $this->data['template_hierarchy'], $templates );
+		if ( self::wp_is_block_theme() ) {
+			$block_theme_folders = self::wp_get_block_theme_folders();
+			foreach ( $templates as $template ) {
+				if ( str_ends_with( $template, '.php' ) ) {
+					// Standard PHP template, inject the HTML version:
+					$this->data->template_hierarchy[] = $block_theme_folders['wp_template'] . '/' . str_replace( '.php', '.html', $template );
+					$this->data->template_hierarchy[] = $template;
+				} else {
+					// Block theme custom template (eg. from `customTemplates` in theme.json), doesn't have a suffix:
+					$this->data->template_hierarchy[] = $block_theme_folders['wp_template'] . '/' . $template . '.html';
+				}
+			}
+		} else {
+			$this->data->template_hierarchy = array_merge( $this->data->template_hierarchy, $templates );
+		}
 
 		return $templates;
+	}
+
+	/**
+	 * @param string   $template  Path to the template. See locate_template().
+	 * @param string   $type      Sanitized filename without extension.
+	 * @param string[] $templates A list of template candidates, in descending order of priority.
+	 * @return string Full path to template file.
+	 */
+	public function filter_template( $template, $type, $templates ) {
+		if ( $this->data->block_template instanceof \WP_Block_Template ) {
+			return $template;
+		}
+
+		$block_template = self::wp_resolve_block_template( $type, $templates, $template );
+
+		if ( $block_template ) {
+			$this->data->block_template = $block_template;
+		}
+
+		return $template;
 	}
 
 	/**
@@ -313,16 +381,16 @@ class QM_Collector_Theme extends QM_Collector {
 	 * @return array<int, string>
 	 */
 	public function filter_body_class( array $class ) {
-		$this->data['body_class'] = $class;
+		$this->data->body_class = $class;
 		return $class;
 	}
 
 	/**
-	 * @param array<int, string> $template_path
-	 * @return array<int, string>
+	 * @param string $template_path
+	 * @return string
 	 */
 	public function filter_template_include( $template_path ) {
-		$this->data['template_path'] = $template_path;
+		$this->data->template_path = $template_path;
 		return $template_path;
 	}
 
@@ -334,7 +402,7 @@ class QM_Collector_Theme extends QM_Collector {
 	 */
 	public function filter_timber_output( $output, $data = null, $file = null ) {
 		if ( $file ) {
-			$this->data['timber_files'][] = $file;
+			$this->data->timber_files[] = $file;
 		}
 
 		return $output;
@@ -349,112 +417,72 @@ class QM_Collector_Theme extends QM_Collector {
 		$template_directory = QM_Util::standard_dir( get_template_directory() );
 		$theme_directory = QM_Util::standard_dir( get_theme_root() );
 
-		if ( isset( $this->data['template_hierarchy'] ) ) {
-			$this->data['template_hierarchy'] = array_unique( $this->data['template_hierarchy'] );
+		if ( isset( $this->data->template_hierarchy ) ) {
+			$this->data->template_hierarchy = array_unique( $this->data->template_hierarchy );
 		}
 
-		$this->data['has_template_part_action'] = function_exists( 'wp_body_open' );
+		if ( ! empty( $this->requested_template_parts ) ) {
+			$this->data->template_parts = array();
+			$this->data->theme_template_parts = array();
+			$this->data->count_template_parts = array();
 
-		if ( $this->data['has_template_part_action'] ) {
-			// Since WP 5.2, the `get_template_part` action populates this data nicely:
-			if ( ! empty( $this->data['requested_template_parts'] ) ) {
-				$this->data['template_parts'] = array();
-				$this->data['theme_template_parts'] = array();
-				$this->data['count_template_parts'] = array();
+			foreach ( $this->requested_template_parts as $part ) {
+				$file = locate_template( $part['templates'] );
 
-				foreach ( $this->data['requested_template_parts'] as $part ) {
-					$file = locate_template( $part['templates'] );
-
-					if ( ! $file ) {
-						$this->data['unsuccessful_template_parts'][] = $part;
-						continue;
-					}
-
-					$file = QM_Util::standard_dir( $file );
-
-					if ( isset( $this->data['count_template_parts'][ $file ] ) ) {
-						$this->data['count_template_parts'][ $file ]++;
-						continue;
-					}
-
-					$this->data['count_template_parts'][ $file ] = 1;
-
-					$filename = str_replace( array(
-						$stylesheet_directory,
-						$template_directory,
-					), '', $file );
-
-					$display = trim( $filename, '/' );
-					$theme_display = trim( str_replace( $theme_directory, '', $file ), '/' );
-
-					$this->data['template_parts'][ $file ] = $display;
-					$this->data['theme_template_parts'][ $file ] = $theme_display;
+				if ( ! $file ) {
+					$this->data->unsuccessful_template_parts[] = $part;
+					continue;
 				}
-			}
-		} else {
-			// Prior to WP 5.2, we need to look into `get_included_files()` and do our best to figure out
-			// if each one is a template part:
-			foreach ( get_included_files() as $file ) {
+
 				$file = QM_Util::standard_dir( $file );
+
+				if ( isset( $this->data->count_template_parts[ $file ] ) ) {
+					$this->data->count_template_parts[ $file ]++;
+					continue;
+				}
+
+				$this->data->count_template_parts[ $file ] = 1;
+
 				$filename = str_replace( array(
 					$stylesheet_directory,
 					$template_directory,
 				), '', $file );
-				if ( $filename !== $file ) {
-					$slug = trim( str_replace( '.php', '', $filename ), '/' );
-					$display = trim( $filename, '/' );
-					$theme_display = trim( str_replace( $theme_directory, '', $file ), '/' );
-					$count = did_action( "get_template_part_{$slug}" );
-					if ( $count ) {
-						$this->data['template_parts'][ $file ] = $display;
-						$this->data['theme_template_parts'][ $file ] = $theme_display;
-						$this->data['count_template_parts'][ $file ] = $count;
-					} else {
-						$slug = trim( preg_replace( '|\-[^\-]+$|', '', $slug ), '/' );
-						$count = did_action( "get_template_part_{$slug}" );
-						if ( $count ) {
-							$this->data['template_parts'][ $file ] = $display;
-							$this->data['theme_template_parts'][ $file ] = $theme_display;
-							$this->data['count_template_parts'][ $file ] = $count;
-						}
-					}
-				}
+
+				$display = trim( $filename, '/' );
+				$theme_display = trim( str_replace( $theme_directory, '', $file ), '/' );
+
+				$this->data->template_parts[ $file ] = $display;
+				$this->data->theme_template_parts[ $file ] = $theme_display;
 			}
 		}
 
 		if (
-			! empty( $this->data['requested_template_part_posts'] ) ||
-			! empty( $this->data['requested_template_part_files'] ) ||
-			! empty( $this->data['requested_template_part_nopes'] )
+			! empty( $this->requested_template_part_posts ) ||
+			! empty( $this->requested_template_part_files ) ||
+			! empty( $this->requested_template_part_nopes )
 		) {
-			$this->data['template_parts'] = array();
-			$this->data['theme_template_parts'] = array();
-			$this->data['count_template_parts'] = array();
+			$this->data->template_parts = array();
+			$this->data->theme_template_parts = array();
+			$this->data->count_template_parts = array();
 
-			$posts = ! empty( $this->data['requested_template_part_posts'] ) ? $this->data['requested_template_part_posts'] : array();
-			$files = ! empty( $this->data['requested_template_part_files'] ) ? $this->data['requested_template_part_files'] : array();
-			$nopes = ! empty( $this->data['requested_template_part_nopes'] ) ? $this->data['requested_template_part_nopes'] : array();
-
-			$this->data['has_template_part_action'] = true;
+			$posts = ! empty( $this->requested_template_part_posts ) ? $this->requested_template_part_posts : array();
+			$files = ! empty( $this->requested_template_part_files ) ? $this->requested_template_part_files : array();
+			$nopes = ! empty( $this->requested_template_part_nopes ) ? $this->requested_template_part_nopes : array();
 
 			$all = array_merge( $posts, $files, $nopes );
 
 			foreach ( $all as $part ) {
-				$file = isset( $part['path'] ) ? $part['path'] : $part['post'];
+				$file = $part['path'] ?? $part['post'];
 
-				if ( isset( $this->data['count_template_parts'][ $file ] ) ) {
-					$this->data['count_template_parts'][ $file ]++;
+				if ( isset( $this->data->count_template_parts[ $file ] ) ) {
+					$this->data->count_template_parts[ $file ]++;
 					continue;
 				}
 
-				$this->data['count_template_parts'][ $file ] = 1;
+				$this->data->count_template_parts[ $file ] = 1;
 
 				if ( isset( $part['post'] ) ) {
-					$display = sprintf(
-						'%1$s (post ID %2$d)',
-						$part['id'],
-						$part['post']
-					);
+					$display = $part['id'];
 					$theme_display = $display;
 				} else {
 					$file = QM_Util::standard_dir( $file );
@@ -468,33 +496,84 @@ class QM_Collector_Theme extends QM_Collector {
 					$theme_display = trim( str_replace( $theme_directory, '', $file ), '/' );
 				}
 
-				$this->data['template_parts'][ $file ] = $display;
-				$this->data['theme_template_parts'][ $file ] = $theme_display;
+				$this->data->template_parts[ $file ] = $display;
+				$this->data->theme_template_parts[ $file ] = $theme_display;
 			}
 		}
 
-		if ( ! empty( $this->data['template_path'] ) ) {
-			$template_path = QM_Util::standard_dir( $this->data['template_path'] );
+		if ( ! empty( $this->data->template_path ) ) {
+			$template_path = QM_Util::standard_dir( $this->data->template_path );
 			$template_file = str_replace( array( $stylesheet_directory, $template_directory, ABSPATH ), '', $template_path );
 			$template_file = ltrim( $template_file, '/' );
 			$theme_template_file = str_replace( array( $theme_directory, ABSPATH ), '', $template_path );
 			$theme_template_file = ltrim( $theme_template_file, '/' );
 
-			$this->data['template_path'] = $template_path;
-			$this->data['template_file'] = $template_file;
-			$this->data['theme_template_file'] = $theme_template_file;
+			$this->data->template_path = $template_path;
+			$this->data->template_file = $template_file;
+			$this->data->theme_template_file = $theme_template_file;
 		}
 
-		$this->data['stylesheet'] = get_stylesheet();
-		$this->data['template'] = get_template();
-		$this->data['is_child_theme'] = ( $this->data['stylesheet'] !== $this->data['template'] );
+		$this->data->stylesheet = get_stylesheet();
+		$this->data->template = get_template();
+		$this->data->is_child_theme = ( $this->data->stylesheet !== $this->data->template );
+		$this->data->theme_dirs = array(
+			$this->data->stylesheet => $stylesheet_directory,
+			$this->data->template => $template_directory,
+		);
 
-		if ( isset( $this->data['body_class'] ) ) {
-			asort( $this->data['body_class'] );
+		$this->data->theme_folders = self::wp_get_block_theme_folders();
+
+		$stylesheet_theme_json = $stylesheet_directory . '/theme.json';
+		$template_theme_json = $template_directory . '/theme.json';
+
+		if ( is_readable( $stylesheet_theme_json ) ) {
+			$this->data->stylesheet_theme_json = $stylesheet_theme_json;
+		}
+
+		if ( is_readable( $template_theme_json ) ) {
+			$this->data->template_theme_json = $template_theme_json;
+		}
+
+		if ( isset( $this->data->body_class ) ) {
+			asort( $this->data->body_class );
 		}
 
 	}
 
+	/**
+	 * @return bool
+	 */
+	protected static function wp_is_block_theme() {
+		return function_exists( 'wp_is_block_theme' ) && wp_is_block_theme();
+	}
+
+	/**
+	 * @return array<string, string>
+	 */
+	protected static function wp_get_block_theme_folders() {
+		if ( ! function_exists( 'get_block_theme_folders' ) ) {
+			return array(
+				'wp_template'      => 'templates',
+				'wp_template_part' => 'parts',
+			);
+		}
+
+		return get_block_theme_folders();
+	}
+
+	/**
+	 * @param string   $template_type      The current template type.
+	 * @param string[] $template_hierarchy The current template hierarchy, ordered by priority.
+	 * @param string   $fallback_template  A PHP fallback template to use if no matching block template is found.
+	 * @return WP_Block_Template|null template A template object, or null if none could be found.
+	 */
+	protected static function wp_resolve_block_template( $template_type, $template_hierarchy, $fallback_template ) {
+		if ( ! function_exists( 'resolve_block_template' ) ) {
+			return null;
+		}
+
+		return resolve_block_template( $template_type, $template_hierarchy, $fallback_template );
+	}
 }
 
 /**
