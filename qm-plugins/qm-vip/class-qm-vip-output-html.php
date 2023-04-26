@@ -37,10 +37,10 @@ class QM_VIP_Output extends QM_Output_Html {
 		if ( isset( $data['app']['id'] ) ) {
 			$this->output_table_row( 'ID', $data['app']['id'] );
 		}
-		if ( isset( $data['app']['id'] ) ) {
+		if ( isset( $data['app']['name'] ) ) {
 			$this->output_table_row( 'Name', $data['app']['name'] );
 		}
-		if ( isset( $data['app']['commit'] ) ) {
+		if ( isset( $data['app']['branch'] ) ) {
 			$this->output_table_row( 'Branch', $data['app']['branch'] );
 		}
 		if ( isset( $data['app']['commit'] ) ) {
