@@ -5,7 +5,7 @@ class QM_VIP_Collector extends QM_Collector {
 	/**
 	 * @var string
 	 */
-	public $id = 'qm-vip';
+	public $id = 'vip';
 
 	/**
 	 * @return string
@@ -19,6 +19,8 @@ class QM_VIP_Collector extends QM_Collector {
 	 */
 	public function process() {
 		$this->process_version_file();
+
+		$this->process_app();
 	}
 
 	private function process_version_file() {
@@ -45,6 +47,38 @@ class QM_VIP_Collector extends QM_Collector {
 			'commit' => $commit,
 			'date'   => $date,
 		];
+	}
+
+	private function process_app() {
+		$env = constant( 'VIP_GO_APP_ENVIRONMENT' );
+
+		if ( 'local' !== $env ) {
+			if ( defined( 'VIP_GO_APP_ID' ) ) {
+				$this->data['app']['id'] = constant( 'VIP_GO_APP_ID' );
+			}
+			if ( defined( 'VIP_GO_APP_NAME' ) ) {
+				$this->data['app']['name'] = constant( 'VIP_GO_APP_NAME' );
+			}
+			$commit = getenv( 'VIP_GO_APP_CURRENT_COMMIT_HASH' );
+			if ( $commit ) {
+				$this->data['app']['commit'] = $commit;
+			}
+			if ( defined( 'VIP_GO_APP_BRANCH' ) ) {
+				$this->data['app']['branch'] = constant( 'VIP_GO_APP_BRANCH' );
+			}
+
+			if ( is_automattician() && defined( 'VIP_IS_FEDRAMP' ) ) {
+				$this->data['app']['fedramp'] = constant( 'VIP_IS_FEDRAMP' );
+			}
+		}
+
+		if ( defined( 'JETPACK__VERSION' ) ) {
+			$this->data['app']['jetpack'] = constant( 'JETPACK__VERSION' );
+		}
+
+		if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
+			$this->data['app']['es_version'] = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version();
+		}
 	}
 
 	/**
