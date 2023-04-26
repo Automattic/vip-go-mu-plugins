@@ -50,6 +50,7 @@ class Wp_Cli_Db {
 			'prefix',
 			'columns',
 			'size',
+			'tables',
 		];
 
 		if ( ! in_array( $subcommand, $allowed_subcommands, true ) ) {
