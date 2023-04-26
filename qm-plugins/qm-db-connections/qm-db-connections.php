@@ -17,18 +17,21 @@ function register_qm_db_connections() {
 		return;
 	}
 
+	if ( file_exists( __DIR__ . '/class-qm-db-connections-data.php' ) ) {
+		require_once __DIR__ . '/class-qm-db-connections-data.php';
+	}
 	require_once __DIR__ . '/class-qm-db-connections-collector.php';
 
-	QM_Collectors::add( new QM_DB_Connections_Collector() );
+	QM_Collectors::add( new QM_Collector_DB_Connections() );
 	add_filter( 'qm/outputter/html', 'register_qm_db_connections_output', 120, 2 );
 }
 
 function register_qm_db_connections_output( array $output, \QM_Collectors $collectors ) {
-	$collector = \QM_Collectors::get( 'qm-db-connections' );
+	$collector = \QM_Collectors::get( 'db-connections' );
 	if ( $collector ) {
 		require_once __DIR__ . '/class-qm-db-connections-output-html.php';
 
-		$output['qm-db-connections'] = new QM_DB_Connections_Output( $collector );
+		$output['qm-db-connections'] = new QM_Output_Html_DB_Connections( $collector );
 	}
 	return $output;
 }

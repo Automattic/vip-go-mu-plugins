@@ -4,7 +4,7 @@
  *
  * Class QM_Output_Operations_Object_Cache_Slow_Ops
  */
-class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
+class QM_Output_Html_Object_Cache_Slow_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -27,8 +27,8 @@ class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 			return;
 		}
 
-		$ops    = $data['slow-ops'] ?? [];
-		$groups = $data['slow-ops-groups'] ?? [];
+		$ops    = $data->slow_ops ?? [];
+		$groups = $data->slow_ops_groups ?? [];
 
 		$this->before_tabular_output();
 
@@ -86,7 +86,7 @@ class QM_Output_Object_Cache_Slow_Ops extends QM_Output_Html {
 		if ( $collector ) {
 			$data = $collector->get_data();
 
-			if ( isset( $data['slow-ops'] ) && ! empty( $data['slow-ops'] ) && isset( $menu['object_cache'] ) ) {
+			if ( isset( $data->slow_ops ) && ! empty( $data->slow_ops ) && isset( $menu['object_cache'] ) ) {
 				$menu['object_cache']['children'][] = $this->menu( array(
 					'id'    => 'qm-object_cache_slow_ops',
 					'href'  => '#qm-object_cache_slow_ops',

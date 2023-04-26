@@ -1,6 +1,6 @@
 <?php
 
-class QM_Cron_Output extends QM_Output_Html {
+class QM_Output_Html_Cron extends QM_Output_Html {
 
 	private $doing_cron = false;
 
@@ -22,11 +22,11 @@ class QM_Cron_Output extends QM_Output_Html {
 
 	public function output() {
 		$data             = $this->collector->get_data();
-		$this->doing_cron = $data['doing_cron'];
+		$this->doing_cron = $data->doing_cron;
 		?>
-		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
+		<div class="qm qm-non-tabular" id="qm-<?php echo esc_attr( $this->collector->id ); ?>" role="tabpanel" aria-labelledby="qm-<?php echo esc_attr( $this->collector->id ); ?>-caption" tabindex="-1">
 		<table id="qm-cron-stats" style="width: 100%">
-			<caption>Cron event statistics</caption>
+			<caption>Cron Event Statistics</caption>
 			<thead>
 				<tr>
 					<th><h3><?php esc_html_e( 'Total Events', 'query-monitor' ); ?></h3></th>
@@ -39,20 +39,20 @@ class QM_Cron_Output extends QM_Output_Html {
 			</thead>
 			<tbody>
 				<tr>
-					<td><?php echo absint( $data['total_crons'] ); ?></td>
-					<td><?php echo absint( $data['total_core_crons'] ); ?></td>
-					<td><?php echo absint( $data['total_user_crons'] ); ?></td>
+					<td><?php echo absint( $data->total_crons ); ?></td>
+					<td><?php echo absint( $data->total_core_crons ); ?></td>
+					<td><?php echo absint( $data->total_user_crons ); ?></td>
 					<td><?php true === $this->doing_cron ? esc_html_e( 'Yes', 'query-monitor' ) : esc_html_e( 'No', 'query-monitor' ); ?></td>
 					<td>
 						<?php
-						if ( isset( $data['next_event_time']['human_time'] ) ) {
-							echo esc_html( $data['next_event_time']['human_time'] );
+						if ( isset( $data->next_event_time['human_time'] ) ) {
+							echo esc_html( $data->next_event_time['human_time'] );
 							echo '<br />';
 						}
-						if ( isset( $data['next_event_time']['unix'] ) ) {
-							echo absint( $data['next_event_time']['unix'] );
+						if ( isset( $data->next_event_time['unix'] ) ) {
+							echo absint( $data->next_event_time['unix'] );
 							echo '<br />';
-							echo '<i>' . esc_html( $this->display_past_time( human_time_diff( $data['next_event_time']['unix'] ), $data['next_event_time']['unix'] ) ) . '</i>';
+							echo '<i>' . esc_html( $this->display_past_time( human_time_diff( $data->next_event_time['unix'] ), $data->next_event_time['unix'] ) ) . '</i>';
 						}
 						?>
 					</td>
@@ -75,8 +75,8 @@ class QM_Cron_Output extends QM_Output_Html {
 			</thead>
 			<tbody>
 				<?php
-				if ( is_array( $data['schedules'] ) ) {
-					foreach ( $data['schedules'] as $schedule => $value ) {
+				if ( is_array( $data->schedules ) ) {
+					foreach ( $data->schedules as $schedule => $value ) {
 						echo '<tr>';
 						echo '<th>' . esc_html( $schedule ) . '</th>';
 						echo '<th>' . esc_html( $value['interval'] ) . '</th>';
@@ -91,10 +91,10 @@ class QM_Cron_Output extends QM_Output_Html {
 		</table>
 		<br />
 		<h3><strong>Custom Events</strong></h3>
-		<?php $this->display_events( $data['user_crons'], 'qm-cron-user-crons' ); ?>
+		<?php $this->display_events( $data->user_crons, 'qm-cron-user-crons' ); ?>
 		<br />
 		<h3><strong>Core Events</strong></h3>
-		<?php $this->display_events( $data['core_crons'], 'qm-cron-core-crons' ); ?>
+		<?php $this->display_events( $data->core_crons, 'qm-cron-core-crons' ); ?>
 		</div>
 		<?php
 	}

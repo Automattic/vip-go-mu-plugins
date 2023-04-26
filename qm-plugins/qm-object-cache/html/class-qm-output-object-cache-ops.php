@@ -4,7 +4,7 @@
  *
  * Class QM_Output_Operations_Object_Cache_Ops
  */
-class QM_Output_Object_Cache_Ops extends QM_Output_Html {
+class QM_Output_Html_Object_Cache_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -27,8 +27,8 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 			return;
 		}
 
-		$ops    = $data['operations'] ?? [];
-		$groups = $data['groups'] ?? [];
+		$ops    = $data->operations ?? [];
+		$groups = $data->groups ?? [];
 
 		$this->before_tabular_output();
 

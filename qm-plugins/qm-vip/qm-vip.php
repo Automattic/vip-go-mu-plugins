@@ -17,9 +17,12 @@ function register_qm_vip() {
 		return;
 	}
 
+	if ( file_exists( __DIR__ . '/class-qm-vip-data.php' ) ) {
+		require_once __DIR__ . '/class-qm-vip-data.php';
+	}
 	require_once __DIR__ . '/class-qm-vip-collector.php';
 
-	QM_Collectors::add( new QM_VIP_Collector() );
+	QM_Collectors::add( new QM_Collector_VIP() );
 	add_filter( 'qm/outputter/html', 'register_qm_vip_output', 120, 2 );
 }
 
@@ -28,7 +31,7 @@ function register_qm_vip_output( array $output, \QM_Collectors $collectors ) {
 	if ( $collector ) {
 		require_once __DIR__ . '/class-qm-vip-output-html.php';
 
-		$output['vip'] = new QM_VIP_Output( $collector );
+		$output['vip'] = new QM_Output_Html_VIP( $collector );
 	}
 	return $output;
 }

@@ -15,6 +15,10 @@ add_action( 'plugins_loaded', function() {
 		add_action( 'wp_enqueue_scripts', 'qm_object_cache_assets' );
 		add_action( 'admin_enqueue_scripts', 'qm_object_cache_assets' );
 
+		if ( file_exists( __DIR__ . '/class-qm-data-object-cache.php' ) ) {
+			require_once __DIR__ . '/class-qm-data-object-cache.php';
+		}
+
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache.php';
 			QM_Collectors::add( new QM_Collector_Object_Cache() );
@@ -41,7 +45,7 @@ add_action( 'plugins_loaded', function() {
 
 			$collector = QM_Collectors::get( 'object_cache' );
 			if ( $collector ) {
-				$output['object_cache'] = new QM_Output_Object_Cache( $collector );
+				$output['object_cache'] = new QM_Output_Html_Object_Cache( $collector );
 			}
 		}
 
@@ -50,7 +54,7 @@ add_action( 'plugins_loaded', function() {
 
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
-				$output['object_cache_ops'] = new QM_Output_Object_Cache_Ops( $collector );
+				$output['object_cache_ops'] = new QM_Output_Html_Object_Cache_Ops( $collector );
 			}
 		}
 
@@ -59,7 +63,7 @@ add_action( 'plugins_loaded', function() {
 
 			$collector = QM_Collectors::get( 'object_cache_slow_ops' );
 			if ( $collector ) {
-				$output['object_cache_slow_ops'] = new QM_Output_Object_Cache_Slow_Ops( $collector );
+				$output['object_cache_slow_ops'] = new QM_Output_Html_Object_Cache_Slow_Ops( $collector );
 			}
 		}
 
@@ -68,7 +72,7 @@ add_action( 'plugins_loaded', function() {
 } );
 
 function qm_object_cache_assets() {
-	wp_enqueue_style( 'qm-objectcache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', array(), '0.2' );
+	wp_enqueue_style( 'qm-object-cache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', array(), '0.2' );
 }
 
 /**

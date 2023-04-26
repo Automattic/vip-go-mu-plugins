@@ -13,18 +13,21 @@ function register_qm_cron() {
 		return;
 	}
 
+	if ( file_exists( __DIR__ . '/class-qm-cron-data.php' ) ) {
+		require_once __DIR__ . '/class-qm-cron-data.php';
+	}
 	require_once __DIR__ . '/class-qm-cron-collector.php';
 
-	QM_Collectors::add( new QM_Cron_Collector() );
+	QM_Collectors::add( new QM_Collector_Cron() );
 	add_filter( 'qm/outputter/html', 'register_qm_cron_output', 120, 2 );
 }
 
 function register_qm_cron_output( array $output, \QM_Collectors $collectors ) {
-	$collector = \QM_Collectors::get( 'qm-cron' );
+	$collector = \QM_Collectors::get( 'cron' );
 	if ( $collector ) {
 		require_once __DIR__ . '/class-qm-cron-output-html.php';
 
-		$output['qm-cron'] = new QM_Cron_Output( $collector );
+		$output['cron'] = new QM_Output_Html_Cron( $collector );
 	}
 	return $output;
 }
