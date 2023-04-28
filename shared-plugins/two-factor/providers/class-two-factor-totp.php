@@ -83,7 +83,7 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 					'args'                => array(
 						'user_id' => array(
 							'required' => true,
-							'type'     => 'number',
+							'type'     => 'integer',
 						),
 					),
 				),
@@ -96,7 +96,7 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 					'args'                => array(
 						'user_id' => array(
 							'required' => true,
-							'type'     => 'number',
+							'type'     => 'integer',
 						),
 						'key'     => array(
 							'type'              => 'string',
