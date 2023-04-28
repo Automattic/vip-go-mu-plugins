@@ -40,8 +40,8 @@ add_action( 'plugins_loaded', function() {
 	 * installed so we don't have to explicity check for it.
 	 */
 	add_filter( 'qm/outputter/html', function( array $output, QM_Collectors $collectors ) {
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache.php';
 
 			$collector = QM_Collectors::get( 'object_cache' );
 			if ( $collector ) {
@@ -49,8 +49,8 @@ add_action( 'plugins_loaded', function() {
 			}
 		}
 
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-ops.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache-ops.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache-ops.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache-ops.php';
 
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
@@ -58,8 +58,8 @@ add_action( 'plugins_loaded', function() {
 			}
 		}
 
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache-slow-ops.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache-slow-ops.php';
 
 			$collector = QM_Collectors::get( 'object_cache_slow_ops' );
 			if ( $collector ) {

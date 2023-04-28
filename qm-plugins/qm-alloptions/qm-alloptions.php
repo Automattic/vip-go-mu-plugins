@@ -24,7 +24,9 @@ add_action('plugins_loaded', function() {
 	 * installed so we don't have to explicity check for it.
 	 */
 	add_filter( 'qm/outputter/html', function( array $output, QM_Collectors $collectors ) {
-		require_once 'class-qm-output-alloptions.php';
+		if ( file_exists( __DIR__ . '/class-qm-output-html-alloptions.php' ) ) {
+			require_once __DIR__ . '/class-qm-output-html-alloptions.php';
+		}
 		$collector = QM_Collectors::get( 'alloptions' );
 		if ( $collector ) {
 			$output['alloptions'] = new QM_Output_Html_AllOptions( $collector );
