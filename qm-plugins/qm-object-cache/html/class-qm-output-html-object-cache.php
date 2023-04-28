@@ -9,7 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * Class QM_Output_ObjectCache
  */
-class QM_Output_Object_Cache extends QM_Output_Html {
+class QM_Output_Html_Object_Cache extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -42,7 +42,7 @@ class QM_Output_Object_Cache extends QM_Output_Html {
 		$data = $this->collector->get_data();
 		$this->before_non_tabular_output();
 
-		$totals = $data['totals'] ?? false;
+		$totals = $data->totals ?? false;
 		if ( $totals ) {
 			$this->output_before_section( 'Totals' );
 			if ( isset( $totals['query_time'] ) ) {
@@ -54,7 +54,7 @@ class QM_Output_Object_Cache extends QM_Output_Html {
 			$this->output_after_section();
 		}
 
-		$stats = $data['operation_counts'] ?? false;
+		$stats = $data->operation_counts ?? false;
 		if ( $stats ) {
 			$this->output_before_section( 'Operation Counts' );
 			foreach ( $stats as $stat => $value ) {

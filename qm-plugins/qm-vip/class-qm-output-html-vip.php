@@ -1,6 +1,6 @@
 <?php
 
-class QM_VIP_Output extends QM_Output_Html {
+class QM_Output_Html_VIP extends QM_Output_Html {
 
 	public function __construct( \QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -25,35 +25,35 @@ class QM_VIP_Output extends QM_Output_Html {
 
 		// MU-Plugins section
 		$this->output_before_section( 'MU-Plugins' );
-		$this->output_table_row( 'Branch', 'prod' === $data['mu-plugins']['branch'] ? 'production' : $data['mu-plugins']['branch'] );
-		if ( isset( $data['mu-plugins']['commit'] ) && isset( $data['mu-plugins']['date'] ) ) {
-			$this->output_table_row( 'Last modified', $data['mu-plugins']['date'] );
-			$this->output_table_row( 'Commit', $data['mu-plugins']['commit'], 'https://github.com/automattic/vip-go-mu-plugins/commit/' . $data['mu-plugins']['commit'] );
+		$this->output_table_row( 'Branch', 'prod' === $data->mu_plugins['branch'] ? 'production' : $data->mu_plugins['branch'] );
+		if ( isset( $data->mu_plugins['commit'] ) && isset( $data->mu_plugins['date'] ) ) {
+			$this->output_table_row( 'Last modified', $data->mu_plugins['date'] );
+			$this->output_table_row( 'Commit', $data->mu_plugins['commit'], 'https://github.com/automattic/vip-go-mu-plugins/commit/' . $data->mu_plugins['commit'] );
 		}
 		$this->output_after_section();
 
 		// App section
 		$this->output_before_section( 'Application' );
-		if ( isset( $data['app']['id'] ) ) {
-			$this->output_table_row( 'ID', $data['app']['id'] );
+		if ( isset( $data->app['id'] ) ) {
+			$this->output_table_row( 'ID', $data->app['id'] );
 		}
-		if ( isset( $data['app']['name'] ) ) {
-			$this->output_table_row( 'Name', $data['app']['name'] );
+		if ( isset( $data->app['name'] ) ) {
+			$this->output_table_row( 'Name', $data->app['name'] );
 		}
-		if ( isset( $data['app']['branch'] ) ) {
-			$this->output_table_row( 'Branch', $data['app']['branch'] );
+		if ( isset( $data->app['branch'] ) ) {
+			$this->output_table_row( 'Branch', $data->app['branch'] );
 		}
-		if ( isset( $data['app']['commit'] ) ) {
-			$this->output_table_row( 'Commit', $data['app']['commit'] );
+		if ( isset( $data->app['commit'] ) ) {
+			$this->output_table_row( 'Commit', $data->app['commit'] );
 		}
-		if ( isset( $data['app']['jetpack'] ) ) {
-			$this->output_table_row( 'Jetpack', $data['app']['jetpack'] );
+		if ( isset( $data->app['jetpack'] ) ) {
+			$this->output_table_row( 'Jetpack', $data->app['jetpack'] );
 		}
-		if ( isset( $data['app']['es_version'] ) ) {
-			$this->output_table_row( 'Elasticsearch', $data['app']['es_version'] );
+		if ( isset( $data->app['es_version'] ) ) {
+			$this->output_table_row( 'Elasticsearch', $data->app['es_version'] );
 		}
-		if ( isset( $data['app']['fedramp'] ) ) {
-			$this->output_table_row( 'FedRAMP', $data['app']['fedramp'] ? 'Yes' : 'No' );
+		if ( isset( $data->app['fedramp'] ) ) {
+			$this->output_table_row( 'FedRAMP', $data->app['fedramp'] ? 'Yes' : 'No' );
 		}
 		$this->output_after_section();
 

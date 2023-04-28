@@ -2,9 +2,9 @@
 /**
  * Output class
  *
- * Class QM_Output_Operations_Object_Cache_Ops
+ * Class QM_Output_Operations_Object_Cache_Slow_Ops
  */
-class QM_Output_Object_Cache_Ops extends QM_Output_Html {
+class QM_Output_Html_Object_Cache_Slow_Ops extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -27,8 +27,8 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 			return;
 		}
 
-		$ops    = $data['operations'] ?? [];
-		$groups = $data['groups'] ?? [];
+		$ops    = $data->slow_ops ?? [];
+		$groups = $data->slow_ops_groups ?? [];
 
 		$this->before_tabular_output();
 
@@ -40,15 +40,15 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 		$this->output_sortable_table_col( __( 'Time', 'qm-object-cache' ) );
 		$this->output_filterable_table_col( __( 'Group', 'qm-object-cache' ), $groups );
 		$this->output_sortable_table_col( __( 'Result', 'qm-object-cache' ) );
+		$this->output_sortable_table_col( __( 'Backtrace', 'qm-object-cache' ) );
 		echo '</tr>';
 		echo '</thead>';
 
 		echo '<tbody>';
-		$total = 0;
 		foreach ( $ops as $op_name => $data ) {
 			foreach ( $data as $op ) {
 				echo '<tr data-qm-operation="' . esc_attr( $op_name ) . '" data-qm-group="' . esc_attr( $op['group'] ) . '">';
-				$this->output_table_cell( $op_name );
+				echo '<td class="qm-nowrap qm-ltr">' . esc_html( $op_name ) . '</td>';
 				if ( is_array( $op['key'] ) ) {
 					$this->maybe_output_toggle_table_cell_for_array( $op['key'] );
 				} else {
@@ -58,23 +58,11 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 				$this->output_table_cell( $this->process_time( $op['time'] ) );
 				$this->output_table_cell( $op['group'] );
 				$this->output_table_cell( $this->process_result( $op['result'] ) );
+				$this->output_toggle_table_cell( $op['backtrace'] );
 				echo '</tr>';
-				$total++;
 			}
 		}
 		echo '</tbody>';
-		echo '<tfoot>';
-		echo '<tr>';
-		printf(
-			'<td colspan="7">%1$s</td>',
-			sprintf(
-				/* translators: %s: Number of Object cache operations */
-				esc_html( _nx( 'Total: %s', 'Total: %s', $total, 'Object cache operations', 'qm-object-cache' ) ),
-				'<span class="qm-items-number">' . esc_html( number_format_i18n( $total ) ) . '</span>'
-			)
-		);
-		echo '</tr>';
-		echo '</tfoot>';
 
 		$this->after_tabular_output();
 	}
@@ -85,7 +73,7 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 	 * @return array
 	 */
 	public function admin_class( array $class ) {
-		$class[] = 'qm-object_cache_ops';
+		$class[] = 'qm-object_cache_slow_ops';
 		return $class;
 	}
 
@@ -94,12 +82,17 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 	 * @return array<string, mixed[]>
 	 */
 	public function panel_menu( array $menu ) {
-		if ( isset( $menu['object_cache'] ) ) {
-			$menu['object_cache']['children'][] = $this->menu( array(
-				'id'    => 'qm-object_cache_ops',
-				'href'  => '#qm-object_cache_ops',
-				'title' => __( 'Operations', 'qm-object-cache' ),
-			));
+		$collector = QM_Collectors::get( 'object_cache_slow_ops' );
+		if ( $collector ) {
+			$data = $collector->get_data();
+
+			if ( isset( $data->slow_ops ) && ! empty( $data->slow_ops ) && isset( $menu['object_cache'] ) ) {
+				$menu['object_cache']['children'][] = $this->menu( array(
+					'id'    => 'qm-object_cache_slow_ops',
+					'href'  => '#qm-object_cache_slow_ops',
+					'title' => __( 'Slow Operations', 'query-monitor' ),
+				));
+			}
 		}
 
 		return $menu;
@@ -172,6 +165,29 @@ class QM_Output_Object_Cache_Ops extends QM_Output_Html {
 		echo '<th scope="col" class="qm-filterable-column">';
 		echo $this->build_filter( sanitize_title( strtolower( $title ) ), $values, esc_html( $title ), $args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '</th>';
+	}
+
+	/**
+	 * Outputs a toggleable table cell for backtrace.
+	 *
+	 * @param string|null $backtarce Backtrace to be outputted in table cell
+	 */
+	public function output_toggle_table_cell( ?string $backtrace ) {
+		$backtrace_array = explode( ', ', $backtrace );
+		if ( empty( $backtrace_array ) ) {
+			return;
+		}
+
+		echo '<td class="qm-nowrap qm-ltr qm-has-toggle">';
+		echo static::build_toggler(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<ol><li><code>' . esc_html( $backtrace_array[0] ) . '...</code></li>';
+		echo '<span class="qm-info qm-supplemental">';
+		unset( $backtrace_array[0] );
+		foreach ( $backtrace_array as $element ) {
+			echo '<li><code>' . esc_html( $element ) . '</code></li>';
+		}
+		echo '</span>';
+		echo '</ol></td>';
 	}
 
 	/**

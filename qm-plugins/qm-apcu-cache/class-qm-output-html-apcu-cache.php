@@ -1,6 +1,6 @@
 <?php
 
-class QM_Apcu_Cache_Output extends \QM_Output_Html {
+class QM_Output_Html_Apcu_Cache extends \QM_Output_Html {
 
 	public function __construct( \QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -21,7 +21,7 @@ class QM_Apcu_Cache_Output extends \QM_Output_Html {
 
 	public function output() {
 		?>
-		<div class="qm" id="<?php echo esc_attr( $this->collector->id ); ?>">
+		<div class="qm qm-non-tabular" id="qm-<?php echo esc_attr( $this->collector->id ); ?>" role="tabpanel" aria-labelledby="qm-<?php echo esc_attr( $this->collector->id ); ?>-caption" tabindex="-1">
 			<div id="apcu-cache-stats">
 				<?php
 				global $apc_cache_interceptor;
