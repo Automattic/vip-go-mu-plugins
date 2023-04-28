@@ -16,6 +16,7 @@ if ( ! ( defined( 'VIP_BLOCK_DATA_API_ENABLE' ) && true === constant( 'VIP_BLOCK
 
 const VIP_BLOCK_API_LATEST_VERSION = '1.0.0';
 
+// Use the plugins_loaded filter to a ensure customer code version of the plugin overrides the mu-plugins version.
 add_action( 'plugins_loaded', function() {
 	if ( ! defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
 		require __DIR__ . '/vip-integrations/vip-block-data-api-' . VIP_BLOCK_API_LATEST_VERSION . '/vip-block-data-api.php';
