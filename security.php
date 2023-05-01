@@ -33,7 +33,7 @@ if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
  * @return string
  */
 function vip_strict_sanitize_username( $username ) {
-	if ( ! is_string( $username ) ) {
+	if ( is_object( $username ) || is_array( $username ) ) {
 		return '';
 	}
 
