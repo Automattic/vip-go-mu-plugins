@@ -33,6 +33,10 @@ if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
  * @return string
  */
 function vip_strict_sanitize_username( $username ) {
+	if ( ! is_string( $username ) ) {
+		return '';
+	}
+
 	if ( is_email( $username ) ) {
 		// We don't want to do this strict filter on email addresses. Sanitize the email and return.
 		$username = sanitize_email( $username );
