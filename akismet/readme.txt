@@ -1,14 +1,16 @@
-=== Akismet Spam Protection ===
-Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau
+=== Akismet Anti-Spam: Spam Protection ===
+Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau, kbrownkd, akismetantispam
 Tags: comments, spam, antispam, anti-spam, contact form, anti spam, comment moderation, comment spam, contact form spam, spam comments
 Requires at least: 5.0
-Tested up to: 6.0
-Stable tag: 4.2.4
+Tested up to: 6.2
+Stable tag: 5.1
 License: GPLv2 or later
 
 The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.
 
 == Description ==
+
+The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.
 
 Akismet checks your comments and contact form submissions against our global database of spam to prevent your site from publishing malicious content. You can review the comment spam it catches on your blog's "Comments" admin screen.
 
@@ -29,6 +31,38 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 5.1 =
+*Release Date - 20 March 2023*
+
+* Removed unnecessary limit notices from admin page.
+* Improved spam detection by including post taxonomies in the comment-check call.
+* Removed API keys from stats iframes to avoid possible inadvertant exposure.
+
+= 5.0.2 =
+*Release Date - 1 December 2022*
+
+* Improved compatibility with themes that hide or show UI elements based on mouse movements.
+* Increased security of API keys by sending them in request bodies instead of subdomains.
+
+= 5.0.1 =
+*Release Date - 28 September 2022*
+
+* Added an empty state for the Statistics section on the admin page.
+* Fixed a bug that broke some admin page links when Jetpack plugins are active.
+* Marked some event listeners as passive to improve performance in newer browsers.
+* Disabled interaction observation on forms that post to other domains.
+
+= 5.0 =
+*Release Date - 26 July 2022*
+
+* Added a new feature to catch spammers by observing how they interact with the page.
+
+= 4.2.5 =
+*Release Date - 11 July 2022*
+
+* Fixed a bug that added unnecessary comment history entries after comment rechecks.
+* Added a notice that displays when WP-Cron is disabled and might be affecting comment rechecks.
 
 = 4.2.4 =
 *Release Date - 20 May 2022*
@@ -64,49 +98,5 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 * Reduced the number of network requests required for a comment page when running Akismet.
 * Improved compatibility with the most popular contact form plugins.
 * Improved API usage buttons for clarity on what upgrade is needed.
-
-= 4.1.12 =
-*Release Date - 3 September 2021*
-
-* Fixed "Use of undefined constant" notice.
-* Improved styling of alert notices.
-
-= 4.1.11 =
-*Release Date - 23 August 2021*
-
-* Added support for Akismet API usage notifications on Akismet settings and edit-comments admin pages.
-* Added support for the deleted_comment action when bulk-deleting comments from Spam.
- 
-= 4.1.10 =
-*Release Date - 6 July 2021*
-
-* Simplified the code around checking comments in REST API and XML-RPC requests.
-* Updated Plus plan terminology in notices to match current subscription names.
-* Added `rel="noopener"` to the widget link to avoid warnings in Google Lighthouse.
-* Set the Akismet JavaScript as deferred instead of async to improve responsiveness.
-* Improved the preloading of screenshot popups on the edit comments admin page.
-
-= 4.1.9 =
-*Release Date - 2 March 2021*
-
-* Improved handling of pingbacks in XML-RPC multicalls
-
-= 4.1.8 =
-*Release Date - 6 January 2021*
-
-* Fixed missing fields in submit-spam and submit-ham calls that could lead to reduced accuracy.
-* Fixed usage of deprecated jQuery function.
-
-= 4.1.7 =
-*Release Date - 22 October 2020*
-
-* Show the "Set up your Akismet account" banner on the comments admin screen, where it's relevant to mention if Akismet hasn't been configured.
-* Don't use wp_blacklist_check when the new wp_check_comment_disallowed_list function is available.
-
-= 4.1.6 =
-*Release Date - 4 June 2020*
-
-* Disable "Check for Spam" button until the page is loaded to avoid errors with clicking through to queue recheck endpoint directly.
-* Added filter "akismet_enable_mshots" to allow disabling screenshot popups on the edit comments admin page.
 
 For older changelog entries, please see the [additional changelog.txt file](https://plugins.svn.wordpress.org/akismet/trunk/changelog.txt) delivered with the plugin.
