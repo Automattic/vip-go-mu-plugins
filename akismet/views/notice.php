@@ -26,6 +26,11 @@
 		<p><?php echo $link_text; ?></p>
 	<?php } ?>
 </div>
+<?php elseif ( $type == 'spam-check-cron-disabled' ) : ?>
+<div class="notice notice-warning">
+	<p><strong><?php esc_html_e( 'Akismet has detected a problem.', 'akismet' ); ?></strong></p>
+	<p><?php esc_html_e( 'WP-Cron has been disabled using the DISABLE_WP_CRON constant. Comment rechecks may not work properly.', 'akismet' ); ?></p>
+</div>
 <?php elseif ( $type == 'alert' ) : ?>
 <div class='error'>
 	<p><strong><?php printf( esc_html__( 'Akismet Error Code: %s', 'akismet' ), $code ); ?></strong></p>
@@ -156,40 +161,6 @@
 
 		?>
 	</p>
-</div>
-<?php elseif ( $type == 'limit-reached' && in_array( $level, array( 'yellow', 'red' ) ) ) : ?>
-<div class="akismet-alert akismet-critical">
-	<?php if ( $level == 'yellow' ): ?>
-	<h3 class="akismet-key-status failed"><?php esc_html_e( 'You&#8217;re using your Akismet key on more sites than your Plus subscription allows.', 'akismet' ); ?></h3>
-	<p class="akismet-description">
-		<?php
-
-		echo wp_kses(
-			sprintf(
-				/* translators: The placeholder is a URL. */
-				__( 'Your Plus subscription allows the use of Akismet on only one site. Please <a href="%s" target="_blank">purchase additional Plus subscriptions</a> or upgrade to an Enterprise subscription that allows the use of Akismet on unlimited sites.', 'akismet' ),
-				'https://docs.akismet.com/billing/add-more-sites/'
-			),
-			array(
-				'a' => array(
-					'href' => true,
-					'target' => true,
-				),
-			)
-		);
-
-		?>
-		<br /><br />
-		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/'); ?>
-	</p>
-	<?php elseif ( $level == 'red' ): ?>
-	<h3 class="akismet-key-status failed"><?php esc_html_e( 'You&#8217;re using Akismet on far too many sites for your Plus subscription.', 'akismet' ); ?></h3>
-	<p class="akismet-description">
-		<?php printf( __( 'To continue your service, <a href="%s" target="_blank">upgrade to an Enterprise subscription</a>, which covers an unlimited number of sites.', 'akismet'), 'https://akismet.com/account/upgrade/' ); ?>
-		<br /><br />
-		<?php printf( __( 'Please <a href="%s" target="_blank">contact our support team</a> with any questions.', 'akismet' ), 'https://akismet.com/contact/'); ?>
-	</p>
-	<?php endif; ?>
 </div>
 <?php elseif ( $type == 'usage-limit' && isset( Akismet::$limit_notices[ $code ] ) ) : ?>
 <div class="error akismet-usage-limit-alert">

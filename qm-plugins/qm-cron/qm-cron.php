@@ -13,18 +13,23 @@ function register_qm_cron() {
 		return;
 	}
 
-	require_once __DIR__ . '/class-qm-cron-collector.php';
+	if ( file_exists( __DIR__ . '/class-qm-data-cron.php' ) ) {
+		require_once __DIR__ . '/class-qm-data-cron.php';
+	}
+	if ( file_exists( __DIR__ . '/class-qm-collector-cron.php' ) ) {
+		require_once __DIR__ . '/class-qm-collector-cron.php';
+	}
 
-	QM_Collectors::add( new QM_Cron_Collector() );
+	QM_Collectors::add( new QM_Collector_Cron() );
 	add_filter( 'qm/outputter/html', 'register_qm_cron_output', 120, 2 );
 }
 
 function register_qm_cron_output( array $output, \QM_Collectors $collectors ) {
-	$collector = \QM_Collectors::get( 'qm-cron' );
-	if ( $collector ) {
-		require_once __DIR__ . '/class-qm-cron-output-html.php';
+	$collector = \QM_Collectors::get( 'cron' );
+	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-cron.php' ) ) {
+		require_once __DIR__ . '/class-qm-output-html-cron.php';
 
-		$output['qm-cron'] = new QM_Cron_Output( $collector );
+		$output['cron'] = new QM_Output_Html_Cron( $collector );
 	}
 	return $output;
 }

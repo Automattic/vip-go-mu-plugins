@@ -13,9 +13,9 @@
 
 // Will use the "next" version on these specified environment types by default.
 if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
-	if ( in_array( VIP_GO_APP_ENVIRONMENT, [ 'develop', 'preprod', 'staging' ], true ) ) {
-		// Starting with just develop for the rollout.
-		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', 'develop' === VIP_GO_APP_ENVIRONMENT );
+	if ( 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+		// Rollout to all but production sites.
+		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', true );
 	}
 }
 

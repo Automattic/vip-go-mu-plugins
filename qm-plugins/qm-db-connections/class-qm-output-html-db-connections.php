@@ -1,6 +1,6 @@
 <?php
 
-class QM_DB_Connections_Output extends QM_Output_Html {
+class QM_Output_Html_DB_Connections extends QM_Output_Html {
 
 	public function __construct( \QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -20,10 +20,10 @@ class QM_DB_Connections_Output extends QM_Output_Html {
 
 	public function output() {
 		$data        = $this->collector->get_data();
-		$total_time  = $this->format_elapsed_time( $data['db_connections']['total_connection_time'] ?? 0 );
-		$connections = $data['db_connections']['connections'] ?? [];
+		$total_time  = $this->format_elapsed_time( $data->db_connections['total_connection_time'] ?? 0 );
+		$connections = $data->db_connections['connections'] ?? [];
 		?>
-		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id ); ?>">
+		<div class="qm qm-non-tabular" id="qm-<?php echo esc_attr( $this->collector->id ); ?>" role="tabpanel" aria-labelledby="qm-<?php echo esc_attr( $this->collector->id ); ?>-caption" tabindex="-1">
 			<h3><strong>Total connection time:</strong> <?php echo esc_html( $total_time ); ?></h3>
 			<h3><strong>Total connections:</strong> <?php echo count( $connections ); ?></h3>
 			<?php $this->display_connections( $connections ); ?>

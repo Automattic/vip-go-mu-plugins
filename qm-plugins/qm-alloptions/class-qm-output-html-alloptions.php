@@ -4,7 +4,7 @@
  *
  * Class QM_Output_AllOptions
  */
-class QM_Output_AllOptions extends QM_Output_Html {
+class QM_Output_Html_AllOptions extends QM_Output_Html {
 
 	public function __construct( QM_Collector $collector ) {
 		parent::__construct( $collector );
@@ -19,11 +19,11 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	public function output() {
 		$data = $this->collector->get_data();
 		?>
-		<div class="qm qm-non-tabular" id="<?php echo esc_attr( $this->collector->id() ); ?>">
+		<div class="qm qm-non-tabular" id="qm-<?php echo esc_attr( $this->collector->id ); ?>" role="tabpanel" aria-labelledby="qm-<?php echo esc_attr( $this->collector->id ); ?>-caption" tabindex="-1">
 			<?php
 			if ( $this->size_is_concerning() ) {
 				// 1000000 set in alloptions-limit.php#L71
-				$percentage = round( ( $data['total_size_comp'] / 1000000 ) * 100 );
+				$percentage = round( ( $data->total_size_comp / 1000000 ) * 100 );
 				echo '<section class="qm-notice"><p>';
 				printf(
 					wp_kses(
@@ -50,14 +50,14 @@ class QM_Output_AllOptions extends QM_Output_Html {
 					</thead>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Uncompressed', 'qm-monitor' ); ?></td>
-						<td class="qm-num"><?php echo esc_html( $data['total_size'] ); ?></td>
-						<td class="qm-num"><?php echo esc_html( size_format( $data['total_size'], 2 ) ); ?></td>
+						<td class="qm-num"><?php echo esc_html( $data->total_size ); ?></td>
+						<td class="qm-num"><?php echo esc_html( size_format( $data->total_size, 2 ) ); ?></td>
 						<td><?php esc_html_e( 'Consumes PHP memory', 'qm-monitor' ); ?></td>
 					</tr>
 					<tr>
 						<th scope="row"><?php esc_html_e( 'Compressed', 'qm-monitor' ); ?></td>
-						<td class="qm-num"><?php echo esc_html( $data['total_size_comp'] ); ?></td>
-						<td class="qm-num"><?php echo esc_html( size_format( $data['total_size_comp'], 2 ) ); ?></td>
+						<td class="qm-num"><?php echo esc_html( $data->total_size_comp ); ?></td>
+						<td class="qm-num"><?php echo esc_html( size_format( $data->total_size_comp, 2 ) ); ?></td>
 						<td><?php echo wp_kses( __( 'At 1000000 bytes, an error page will be shown to prevent overrunning the database. <a href="https://docs.wpvip.com/technical-references/code-quality-and-best-practices/working-with-wp_options/#h-identify-and-resolve-problems-with-alloptions">Read more</a>', 'qm-monitor' ), [ 'a' => [ 'href' => true ] ] ); ?></td>
 					</tr>
 				</table>
@@ -82,7 +82,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 				</thead>
 				<tbody>
 					<?php
-					foreach ( $data['options'] as $option ) {
+					foreach ( $data->options as $option ) {
 						echo '<tr>';
 						printf(
 							'<th scope="row" class="qm-ltr">%1$s%2$s</td><td class="qm-ltr qm-num">%3$d</td><td class="qm-ltr qm-num">%4$s</td>',
@@ -110,7 +110,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 
 		if ( $this->size_is_concerning() ) {
 			$data               = $this->collector->get_data();
-			list( $num, $unit ) = explode( ' ', size_format( $data['total_size_comp'], 1 ) );
+			list( $num, $unit ) = explode( ' ', size_format( $data->total_size_comp, 1 ) );
 
 			$title[] = sprintf(
 				/* translators: 1. size 2. size unit */
@@ -163,7 +163,7 @@ class QM_Output_AllOptions extends QM_Output_Html {
 	 */
 	private function size_is_concerning() {
 		$data = $this->collector->get_data();
-		return ( $data['total_size_comp'] > 800000 );
+		return ( $data->total_size_comp > 800000 );
 	}
 
 	/**

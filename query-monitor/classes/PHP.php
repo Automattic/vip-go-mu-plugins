@@ -11,7 +11,7 @@ class QM_PHP {
 	/**
 	 * @var string
 	 */
-	public static $minimum_version = '5.6.20';
+	public static $minimum_version = '7.2.0';
 
 	/**
 	 * @return bool

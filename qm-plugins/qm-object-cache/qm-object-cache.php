@@ -15,6 +15,10 @@ add_action( 'plugins_loaded', function() {
 		add_action( 'wp_enqueue_scripts', 'qm_object_cache_assets' );
 		add_action( 'admin_enqueue_scripts', 'qm_object_cache_assets' );
 
+		if ( file_exists( __DIR__ . '/class-qm-data-object-cache.php' ) ) {
+			require_once __DIR__ . '/class-qm-data-object-cache.php';
+		}
+
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache.php';
 			QM_Collectors::add( new QM_Collector_Object_Cache() );
@@ -36,30 +40,30 @@ add_action( 'plugins_loaded', function() {
 	 * installed so we don't have to explicity check for it.
 	 */
 	add_filter( 'qm/outputter/html', function( array $output, QM_Collectors $collectors ) {
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache.php';
 
 			$collector = QM_Collectors::get( 'object_cache' );
 			if ( $collector ) {
-				$output['object_cache'] = new QM_Output_Object_Cache( $collector );
+				$output['object_cache'] = new QM_Output_Html_Object_Cache( $collector );
 			}
 		}
 
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-ops.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache-ops.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache-ops.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache-ops.php';
 
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
-				$output['object_cache_ops'] = new QM_Output_Object_Cache_Ops( $collector );
+				$output['object_cache_ops'] = new QM_Output_Html_Object_Cache_Ops( $collector );
 			}
 		}
 
-		if ( file_exists( __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php' ) ) {
-			require_once __DIR__ . '/html/class-qm-output-object-cache-slow-ops.php';
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache-slow-ops.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache-slow-ops.php';
 
 			$collector = QM_Collectors::get( 'object_cache_slow_ops' );
 			if ( $collector ) {
-				$output['object_cache_slow_ops'] = new QM_Output_Object_Cache_Slow_Ops( $collector );
+				$output['object_cache_slow_ops'] = new QM_Output_Html_Object_Cache_Slow_Ops( $collector );
 			}
 		}
 
@@ -68,7 +72,7 @@ add_action( 'plugins_loaded', function() {
 } );
 
 function qm_object_cache_assets() {
-	wp_enqueue_style( 'qm-objectcache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', array(), '0.2' );
+	wp_enqueue_style( 'qm-object-cache-style', plugin_dir_url( __FILE__ ) . 'css/style.css', array(), '0.2' );
 }
 
 /**
