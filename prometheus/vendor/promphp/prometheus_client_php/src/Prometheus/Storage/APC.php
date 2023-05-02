@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Prometheus\Storage;
 
-use APCUIterator;
+use APCuIterator;
 use Prometheus\Exception\StorageException;
 use Prometheus\Math;
 use Prometheus\MetricFamilySamples;
@@ -40,11 +40,11 @@ class APC implements Adapter
     /**
      * @return MetricFamilySamples[]
      */
-    public function collect(): array
+    public function collect(bool $sortMetrics = true): array
     {
         $metrics = $this->collectHistograms();
-        $metrics = array_merge($metrics, $this->collectGauges());
-        $metrics = array_merge($metrics, $this->collectCounters());
+        $metrics = array_merge($metrics, $this->collectGauges($sortMetrics));
+        $metrics = array_merge($metrics, $this->collectCounters($sortMetrics));
         $metrics = array_merge($metrics, $this->collectSummaries());
         return $metrics;
     }
@@ -56,11 +56,13 @@ class APC implements Adapter
     {
         // Initialize the sum
         $sumKey = $this->histogramBucketValueKey($data, 'sum');
-        $new = apcu_add($sumKey, $this->toBinaryRepresentationAsInteger(0));
+        if (!apcu_exists($sumKey)) {
+            $new = apcu_add($sumKey, $this->toBinaryRepresentationAsInteger(0));
 
-        // If sum does not exist, assume a new histogram and store the metadata
-        if ($new) {
-            apcu_store($this->metaKey($data), json_encode($this->metaData($data)));
+            // If sum does not exist, assume a new histogram and store the metadata
+            if ($new) {
+                apcu_store($this->metaKey($data), json_encode($this->metaData($data)));
+            }
         }
 
         // Atomically increment the sum
@@ -83,8 +85,11 @@ class APC implements Adapter
         }
 
         // Initialize and increment the bucket
-        apcu_add($this->histogramBucketValueKey($data, $bucketToIncrease), 0);
-        apcu_inc($this->histogramBucketValueKey($data, $bucketToIncrease));
+        $bucketKey = $this->histogramBucketValueKey($data, $bucketToIncrease);
+        if (!apcu_exists($bucketKey)) {
+            apcu_add($bucketKey, 0);
+        }
+        apcu_inc($bucketKey);
     }
 
     /**
@@ -94,11 +99,15 @@ class APC implements Adapter
     {
         // store meta
         $metaKey = $this->metaKey($data);
-        apcu_add($metaKey, $this->metaData($data));
+        if (!apcu_exists($metaKey)) {
+            apcu_add($metaKey, $this->metaData($data));
+        }
 
         // store value key
         $valueKey = $this->valueKey($data);
-        apcu_add($valueKey, $this->encodeLabelValues($data['labelValues']));
+        if (!apcu_exists($valueKey)) {
+            apcu_add($valueKey, $this->encodeLabelValues($data['labelValues']));
+        }
 
         // trick to handle uniqid collision
         $done = false;
@@ -118,9 +127,11 @@ class APC implements Adapter
             apcu_store($valueKey, $this->toBinaryRepresentationAsInteger($data['value']));
             apcu_store($this->metaKey($data), json_encode($this->metaData($data)));
         } else {
-            $new = apcu_add($valueKey, $this->toBinaryRepresentationAsInteger(0));
-            if ($new) {
-                apcu_store($this->metaKey($data), json_encode($this->metaData($data)));
+            if (!apcu_exists($valueKey)) {
+                $new = apcu_add($valueKey, $this->toBinaryRepresentationAsInteger(0));
+                if ($new) {
+                    apcu_store($this->metaKey($data), json_encode($this->metaData($data)));
+                }
             }
             // Taken from https://github.com/prometheus/client_golang/blob/66058aac3a83021948e5fb12f1f408ff556b9037/prometheus/value.go#L91
             $done = false;
@@ -178,7 +189,7 @@ class APC implements Adapter
         //                        .+  | at least one additional character
         $matchAll = sprintf('/^%s:.+/', $this->prometheusPrefix);
 
-        foreach (new APCUIterator($matchAll) as $key => $value) {
+        foreach (new APCuIterator($matchAll) as $key => $value) {
             apcu_delete($key);
         }
     }
@@ -238,10 +249,10 @@ class APC implements Adapter
     /**
      * @return MetricFamilySamples[]
      */
-    private function collectCounters(): array
+    private function collectCounters(bool $sortMetrics = true): array
     {
         $counters = [];
-        foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':counter:.*:meta/') as $counter) {
+        foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':counter:.*:meta/') as $counter) {
             $metaData = json_decode($counter['value'], true);
             $data = [
                 'name' => $metaData['name'],
@@ -250,7 +261,7 @@ class APC implements Adapter
                 'labelNames' => $metaData['labelNames'],
                 'samples' => [],
             ];
-            foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':counter:' . $metaData['name'] . ':.*:value/') as $value) {
+            foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':counter:' . $metaData['name'] . ':.*:value/') as $value) {
                 $parts = explode(':', $value['key']);
                 $labelValues = $parts[3];
                 $data['samples'][] = [
@@ -260,7 +271,11 @@ class APC implements Adapter
                     'value' => $this->fromBinaryRepresentationAsInteger($value['value']),
                 ];
             }
-            $this->sortSamples($data['samples']);
+
+            if ($sortMetrics) {
+                $this->sortSamples($data['samples']);
+            }
+
             $counters[] = new MetricFamilySamples($data);
         }
         return $counters;
@@ -269,10 +284,10 @@ class APC implements Adapter
     /**
      * @return MetricFamilySamples[]
      */
-    private function collectGauges(): array
+    private function collectGauges(bool $sortMetrics = true): array
     {
         $gauges = [];
-        foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':gauge:.*:meta/') as $gauge) {
+        foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':gauge:.*:meta/') as $gauge) {
             $metaData = json_decode($gauge['value'], true);
             $data = [
                 'name' => $metaData['name'],
@@ -281,7 +296,7 @@ class APC implements Adapter
                 'labelNames' => $metaData['labelNames'],
                 'samples' => [],
             ];
-            foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':gauge:' . $metaData['name'] . ':.*:value/') as $value) {
+            foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':gauge:' . $metaData['name'] . ':.*:value/') as $value) {
                 $parts = explode(':', $value['key']);
                 $labelValues = $parts[3];
                 $data['samples'][] = [
@@ -292,7 +307,10 @@ class APC implements Adapter
                 ];
             }
 
-            $this->sortSamples($data['samples']);
+            if ($sortMetrics) {
+                $this->sortSamples($data['samples']);
+            }
+
             $gauges[] = new MetricFamilySamples($data);
         }
         return $gauges;
@@ -304,7 +322,7 @@ class APC implements Adapter
     private function collectHistograms(): array
     {
         $histograms = [];
-        foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':histogram:.*:meta/') as $histogram) {
+        foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':histogram:.*:meta/') as $histogram) {
             $metaData = json_decode($histogram['value'], true);
             $data = [
                 'name' => $metaData['name'],
@@ -318,7 +336,7 @@ class APC implements Adapter
             $data['buckets'][] = '+Inf';
 
             $histogramBuckets = [];
-            foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':histogram:' . $metaData['name'] . ':.*:value/') as $value) {
+            foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':histogram:' . $metaData['name'] . ':.*:value/') as $value) {
                 $parts = explode(':', $value['key']);
                 $labelValues = $parts[3];
                 $bucket = $parts[4];
@@ -365,7 +383,7 @@ class APC implements Adapter
                     'name' => $metaData['name'] . '_sum',
                     'labelNames' => [],
                     'labelValues' => $decodedLabelValues,
-                    'value' => $this->fromBinaryRepresentationAsInteger($histogramBuckets[$labelValues]['sum']),
+                    'value' => $this->fromBinaryRepresentationAsInteger($histogramBuckets[$labelValues]['sum'] ?? 0),
                 ];
             }
             $histograms[] = new MetricFamilySamples($data);
@@ -380,7 +398,7 @@ class APC implements Adapter
     {
         $math = new Math();
         $summaries = [];
-        foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':summary:.*:meta/') as $summary) {
+        foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':summary:.*:meta/') as $summary) {
             $metaData = $summary['value'];
             $data = [
                 'name' => $metaData['name'],
@@ -392,11 +410,11 @@ class APC implements Adapter
                 'samples' => [],
             ];
 
-            foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':summary:' . $metaData['name'] . ':.*:value$/') as $value) {
+            foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':summary:' . $metaData['name'] . ':.*:value$/') as $value) {
                 $encodedLabelValues = $value['value'];
                 $decodedLabelValues = $this->decodeLabelValues($encodedLabelValues);
                 $samples = [];
-                foreach (new APCUIterator('/^' . $this->prometheusPrefix . ':summary:' . $metaData['name'] . ':' . str_replace('/', '\\/', preg_quote($encodedLabelValues)) . ':value:.*/') as $sample) {
+                foreach (new APCuIterator('/^' . $this->prometheusPrefix . ':summary:' . $metaData['name'] . ':' . str_replace('/', '\\/', preg_quote($encodedLabelValues)) . ':value:.*/') as $sample) {
                     $samples[] = $sample['value'];
                 }
 

@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "promphp/prometheus_client_php",
-            "version": "v2.6.2",
-            "version_normalized": "2.6.2.0",
+            "version": "v2.7.1",
+            "version_normalized": "2.7.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PromPHP/prometheus_client_php.git",
-                "reference": "df77bbcc65bd173f2ffaf40ab4e1ca8716da8ce6"
+                "reference": "82e42b5a491ee94127110548ee835052b9765a78"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PromPHP/prometheus_client_php/zipball/df77bbcc65bd173f2ffaf40ab4e1ca8716da8ce6",
-                "reference": "df77bbcc65bd173f2ffaf40ab4e1ca8716da8ce6",
+                "url": "https://api.github.com/repos/PromPHP/prometheus_client_php/zipball/82e42b5a491ee94127110548ee835052b9765a78",
+                "reference": "82e42b5a491ee94127110548ee835052b9765a78",
                 "shasum": ""
             },
             "require": {
@@ -40,7 +40,7 @@
                 "promphp/prometheus_push_gateway_php": "An easy client for using Prometheus PushGateway.",
                 "symfony/polyfill-apcu": "Required if you use APCu on PHP8.0+"
             },
-            "time": "2022-06-30T03:46:23+00:00",
+            "time": "2023-04-24T18:11:52+00:00",
             "type": "library",
             "extra": {
                 "branch-alias": {
@@ -66,7 +66,7 @@
             "description": "Prometheus instrumentation library for PHP applications.",
             "support": {
                 "issues": "https://github.com/PromPHP/prometheus_client_php/issues",
-                "source": "https://github.com/PromPHP/prometheus_client_php/tree/v2.6.2"
+                "source": "https://github.com/PromPHP/prometheus_client_php/tree/v2.7.1"
             },
             "install-path": "../promphp/prometheus_client_php"
         }
