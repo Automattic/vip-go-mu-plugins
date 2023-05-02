@@ -73,8 +73,22 @@ class Versioning_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
 	}
 
+	public function setUp(): void {
+		parent::setUp();
+
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+	}
+
+	public function tearDown(): void {
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+
+		parent::tearDown();
+	}
+
 	public static function tearDownAfterClass(): void {
 		Constant_Mocker::clear();
+
+		parent::tearDownAfterClass();
 	}
 
 	public function get_next_version_number_data() {

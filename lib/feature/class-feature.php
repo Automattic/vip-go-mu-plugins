@@ -25,6 +25,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
+		'prom-post-collection'   => 0.05,
 		'vip-search-use-next-ep' => 0.7,
 	];
 
@@ -35,7 +36,14 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		'prom-post-collection' => [
+			6747 => false,
+			6746 => false,
+			6506 => false,
+			6517 => false,
+		],
+	];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.
@@ -45,7 +53,12 @@ class Feature {
 	 *
 	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
 	 */
-	public static $feature_envs = [];
+	public static $feature_envs = [
+		'prom-post-collection' => [
+			'develop' => true,
+			'staging' => true,
+		],
+	];
 
 	/**
 	 * Checks if a feature is enabled.
@@ -117,7 +130,7 @@ class Feature {
 	 * @return mixed Returns true if on list.
 	 */
 	public static function is_disabled_by_ids( string $feature ) {
-		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
 
@@ -136,7 +149,7 @@ class Feature {
 	 * @return bool Returns true if on list.
 	 */
 	public static function is_enabled_by_ids( string $feature ) {
-		if ( ! isset( static::$feature_ids[ $feature ] ) ) {
+		if ( ! isset( static::$feature_ids[ $feature ] ) || ! defined( 'FILES_CLIENT_SITE_ID' ) ) {
 			return false;
 		}
 
