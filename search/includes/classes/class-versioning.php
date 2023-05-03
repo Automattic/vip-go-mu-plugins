@@ -350,7 +350,7 @@ class Versioning {
 
 		// If there is no active version, we can't determine what previous is
 		if ( is_wp_error( $active_version_number ) ) {
-			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "next" version cannot be determined' );
+			return new WP_Error( 'no-active-index-found', 'There is no active index version so the "previous" version cannot be determined' );
 		}
 
 		$versions = $this->get_versions( $indexable );

@@ -10,6 +10,13 @@ class QM_Collector_AllOptions extends QM_Collector {
 		return __( 'AllOptions', 'query-monitor' );
 	}
 
+	/**
+	 * @return QM_Data
+	 */
+	public function get_storage(): QM_Data {
+		return new QM_Data_AllOptions();
+	}
+
 	public function process() {
 
 		$alloptions = wp_load_alloptions( true );
@@ -39,10 +46,10 @@ class QM_Collector_AllOptions extends QM_Collector {
 
 		$options = array_reverse( $options );
 
-		$this->data['options']    = $options;
-		$this->data['total_size'] = $total_size;
+		$this->data->options    = $options;
+		$this->data->total_size = $total_size;
 
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-		$this->data['total_size_comp'] = strlen( gzdeflate( serialize( $alloptions ) ) );
+		$this->data->total_size_comp = strlen( gzdeflate( serialize( $alloptions ) ) );
 	}
 }
