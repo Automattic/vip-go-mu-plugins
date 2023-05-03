@@ -25,8 +25,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_percentages = [
-		'prom-post-collection'   => 0.05,
-		'vip-search-use-next-ep' => 0.85,
+		'prom-post-collection' => 0.05,
 	];
 
 	/**
