@@ -41,9 +41,22 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'foo' );
+
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		self::$search->load_collector();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		self::$search->versioning->add_version( $indexable );
+		self::$search->versioning->activate_version( $indexable, 1 );
+	}
+
+	public function tearDown(): void {
+		parent::tearDown();
+
+		Constant_Mocker::clear();
+		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {

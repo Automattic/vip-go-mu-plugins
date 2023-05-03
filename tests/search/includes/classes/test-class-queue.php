@@ -27,14 +27,6 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 
 		require_once __DIR__ . '/../../../../search/search.php';
-
-		\Automattic\VIP\Search\Search::instance()->init();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-
-		// Users indexable doesn't get registered by default, but we have tests that queue user objects
-		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
 	}
 
 	public function setUp(): void {
@@ -49,6 +41,22 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->es = \Automattic\VIP\Search\Search::instance();
 		$this->es->init();
 
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
+
+		// Create user indexable and activate it
+		$user_indexable = \ElasticPress\Indexables::factory()->get( 'user' );
+		$this->es->versioning->add_version( $user_indexable );
+		$this->es->versioning->activate_version( $user_indexable, 1 );
+
+		// Create post indexable and activate it
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->es->versioning->add_version( $post_indexable );
+		$this->es->versioning->activate_version( $post_indexable, 1 );
+
 		$this->queue = $this->es->queue;
 
 		$this->queue->schema->prepare_table();
@@ -60,6 +68,8 @@ class Queue_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+
+		delete_option( $this->es->versioning::INDEX_VERSIONS_OPTION );
 
 		parent::tearDown();
 	}

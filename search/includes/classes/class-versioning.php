@@ -227,34 +227,20 @@ class Versioning {
 		$versions = [];
 
 		if ( $indexable->global ) {
-			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL, array() );
+			$versions = get_site_option( self::INDEX_VERSIONS_OPTION_GLOBAL );
 		} else {
-			$versions = get_option( self::INDEX_VERSIONS_OPTION, array() );
+			$versions = get_option( self::INDEX_VERSIONS_OPTION );
 		}
 
 		$slug = $indexable->slug;
 
-		if ( ! $this->versions_array_has_slug( $versions, $slug ) ) {
-			if ( $provide_default ) {
-				return array(
-					1 => array(
-						'number'         => 1,
-						'active'         => true,
-						'created_time'   => null, // We don't know when it was actually created
-						'activated_time' => null,
-					),
-				);
-			} else {
-				return [];
-			}
+		if ( ! is_array( $versions ) || ! isset( $versions[ $indexable->slug ] ) ||
+			( isset( $versions[ $indexable->slug ] ) && ! is_array( $versions[ $indexable->slug ] ) ) ) {
+			return [];
 		}
 
 		// Normalize the versions to ensure consistency (have all fields, etc)
 		return array_map( array( $this, 'normalize_version' ), $versions[ $slug ] );
-	}
-
-	private function versions_array_has_slug( $versions, $slug ) {
-		return is_array( $versions ) && isset( $versions[ $slug ] ) && is_array( $versions[ $slug ] ) && ! empty( $versions[ $slug ] );
 	}
 
 	/**
@@ -426,7 +412,11 @@ class Versioning {
 	public function add_version( Indexable $indexable ) {
 		$versions = $this->get_versions( $indexable );
 
-		$new_version_number = $this->get_next_version_number( $versions );
+		if ( empty( $versions ) ) {
+			$new_version_number = 1;
+		} else {
+			$new_version_number = $this->get_next_version_number( $versions );
+		}
 
 		if ( ! $new_version_number ) {
 			return new WP_Error( 'unable-to-get-next-version', 'Unable to determine next index version' );
