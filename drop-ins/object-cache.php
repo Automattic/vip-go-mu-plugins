@@ -13,20 +13,21 @@
 
 // Will use the "next" version on these specified environment types by default.
 if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
-	if ( in_array( VIP_GO_APP_ENVIRONMENT, [ 'develop', 'preprod', 'staging' ], true ) ) {
+	if ( 'production' !== VIP_GO_APP_ENVIRONMENT ) {
+		// Rollout to all but production sites.
 		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', true );
 	}
 }
 
-if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN && defined( 'IS_VIP_ON_KUBERNETES' ) && IS_VIP_ON_KUBERNETES ) {
-	if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
-		// We want to use the Memcached adapter in the new drop-in.
-		define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );
-	}
+// We'll want to use the Memcached adapter in the new drop-in.
+if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
+	define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );
+}
 
+if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
-} elseif ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN ) {
-	require_once __DIR__ . '/object-cache/object-cache-next.php';
+} elseif ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
+	require_once __DIR__ . '/wp-memcached/object-cache.php';
 } else {
 	require_once __DIR__ . '/object-cache/object-cache-stable.php';
 }

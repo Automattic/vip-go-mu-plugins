@@ -3,11 +3,13 @@
  * @package Akismet
  */
 /*
-Plugin Name: Akismet Anti-Spam
+Plugin Name: Akismet Anti-Spam: Spam Protection
 Plugin URI: https://akismet.com/
-Description: Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam</strong>. It keeps your site protected even while you sleep. To get started: activate the Akismet plugin and then go to your Akismet Settings page to set up your API key.
-Version: 4.2.4
-Author: Automattic
+Description: Used by millions, Akismet is quite possibly the best way in the world to <strong>protect your blog from spam</strong>. Akismet anti spam keeps your site protected even while you sleep. To get started: activate the Akismet plugin and then go to your Akismet Settings page to set up your API key.
+Version: 5.1
+Requires at least: 5.0
+Requires PHP: 5.2
+Author: Automattic - Anti Spam Team
 Author URI: https://automattic.com/wordpress-plugins/
 License: GPLv2 or later
 Text Domain: akismet
@@ -28,7 +30,7 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-Copyright 2005-2015 Automattic, Inc.
+Copyright 2005-2022 Automattic, Inc.
 */
 
 // Make sure we don't expose any info if called directly
@@ -37,7 +39,7 @@ if ( !function_exists( 'add_action' ) ) {
 	exit;
 }
 
-define( 'AKISMET_VERSION', '4.2.4' );
+define( 'AKISMET_VERSION', '5.1' );
 define( 'AKISMET__MINIMUM_WP_VERSION', '5.0' );
 define( 'AKISMET__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AKISMET_DELETE_LIMIT', 10000 );

@@ -1,11 +1,11 @@
 <?php
 
-class QM_Cron_Collector extends QM_Collector {
+class QM_Collector_Cron extends QM_DataCollector {
 
 	/**
 	 * @var string
 	 */
-	public $id = 'qm-cron';
+	public $id = 'cron';
 
 	/**
 	 * Lists all crons that are defined in WP Core.
@@ -37,6 +37,13 @@ class QM_Cron_Collector extends QM_Collector {
 	}
 
 	/**
+	 * @return QM_Data
+	 */
+	public function get_storage(): QM_Data {
+		return new QM_Data_Cron();
+	}
+
+	/**
 	 * @return void
 	 */
 	public function process() {
@@ -50,11 +57,11 @@ class QM_Cron_Collector extends QM_Collector {
 	 * @return void
 	 */
 	private function process_crons() {
-		$this->data['doing_cron'] = get_transient( 'doing_cron' ) ? true : false;
+		$this->data->doing_cron = get_transient( 'doing_cron' ) ? true : false;
 
 		$crons = _get_cron_array();
 		if ( is_array( $crons ) && ! empty( $crons ) ) {
-			$this->data['crons'] = $crons;
+			$this->data->crons = $crons;
 			$this->sort_count_crons( $crons );
 			$this->process_next_event_time( $crons );
 		}
@@ -105,8 +112,8 @@ class QM_Cron_Collector extends QM_Collector {
 		$unix_time_next_cron = (int) $cron_times[0];
 		$time_next_cron      = gmdate( 'Y-m-d H:i:s', $unix_time_next_cron );
 
-		$this->data['next_event_time']['human_time'] = $time_next_cron;
-		$this->data['next_event_time']['unix']       = $unix_time_next_cron;
+		$this->data->next_event_time['human_time'] = $time_next_cron;
+		$this->data->next_event_time['unix']       = $unix_time_next_cron;
 	}
 
 	/**
@@ -130,12 +137,12 @@ class QM_Cron_Collector extends QM_Collector {
 		ksort( $schedules );
 		uasort( $schedules, array( $this, 'schedules_sorting' ) );
 
-		foreach ( $schedules as $interval_hook => $data ) {
-			$interval = (int) $data['interval'];
+		foreach ( $schedules as $interval_hook => $schedule ) {
+			$interval = (int) $schedule['interval'];
 
-			$this->data['schedules'][ $interval_hook ] = [
+			$this->data->schedules[ $interval_hook ] = [
 				'interval' => $interval,
-				'display'  => $data['display'],
+				'display'  => $schedule['display'],
 			];
 		}
 	}
