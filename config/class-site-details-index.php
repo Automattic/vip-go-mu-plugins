@@ -363,8 +363,6 @@ class Site_Details_Index {
 					'Content-Type'  => 'application/json',
 				),
 			);
-
-			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
 		} elseif ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
 			$url = rtrim( SERVICES_API_URL, '/' ) . '/site-details/sites';
 
