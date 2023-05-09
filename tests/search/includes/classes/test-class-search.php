@@ -9,7 +9,7 @@ use Automattic\Test\Constant_Mocker;
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
-require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
+require_once __DIR__ . '/../../../../search/elasticpress-next/elasticpress.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
 require_once __DIR__ . '/../../../../prometheus.php';
 
 /**
@@ -429,7 +429,7 @@ class Search_Test extends WP_UnitTestCase {
 		// And attempt to force-enable it via filter
 		add_filter( 'ep_feature_active', '__return_true' );
 
-		$active = \ElasticPress\Features::factory()->get_registered_feature( $slug )->is_active();
+		$active = \ElasticPress\Features::factory()->get_registered_feature( $slug );
 
 		$this->assertFalse( $active );
 	}
@@ -1058,7 +1058,7 @@ class Search_Test extends WP_UnitTestCase {
 	/*
 	 * Ensure ratelimiting works properly with ep_skip_query_integration filter
 	 */
-	public function test__rate_limit_ep_query_integration__trigers() {
+	public function test__rate_limit_ep_query_integration__triggers() {
 		$es = new \Automattic\VIP\Search\Search();
 		$es->init();
 

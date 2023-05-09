@@ -228,15 +228,6 @@ class Search {
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
-	/**
-	 * Check if the constant needed for the next ElasticPress version to be loaded is defined
-	 *
-	 * @return bool true if constants are defined, false otherwise
-	 */
-	public static function is_next_ep_constant_defined() {
-		return defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true === constant( 'VIP_SEARCH_USE_NEXT_EP' );
-	}
-
 	public static function instance() {
 		if ( ! ( static::$instance instanceof Search ) ) {
 			static::$instance = new Search();
@@ -248,21 +239,11 @@ class Search {
 
 	/**
 	 * Whether to load the latest ElasticPress version.
-	 * Will return true for:
-	 * - If the constant VIP_SEARCH_USE_NEXT_EP is defined and set to true
-	 * - All non-prods
-	 * - If production and in the percentage
+	 * Can be overridden by defining `VIP_SEARCH_USE_NEXT_EP` to false.
 	 *
-	 * Will return false for:
-	 * - If in the SKIP_LOAD_NEXT_EP_IDS array
-	 *
-	 * @return bool Whether to load the latest version or not.
+	 * @return bool Whether to load the latest version or not. Defaults to true.
 	 */
 	public static function should_load_new_ep() {
-		if ( static::is_next_ep_constant_defined() ) {
-			return true;
-		}
-
 		if ( defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true !== constant( 'VIP_SEARCH_USE_NEXT_EP' ) ) {
 			return false;
 		}
@@ -271,15 +252,7 @@ class Search {
 			return false;
 		}
 
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			return true;
-		}
-
-		if ( \Automattic\VIP\Feature::is_enabled_by_percentage( 'vip-search-use-next-ep' ) ) {
-			return true;
-		}
-
-		return false;
+		return true;
 	}
 
 	protected function load_dependencies() {
@@ -2225,11 +2198,7 @@ class Search {
 	 * @return string
 	 */
 	public function filter__ep_search_algorithm_version() {
-		if ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) || self::is_next_ep_constant_defined() ) {
-			// Enable new algorithm for non-prods & using the new constant
-			return '4.0';
-		}
-		return '3.5';
+		return '4.0';
 	}
 
 	public function maybe_change_index_version() {

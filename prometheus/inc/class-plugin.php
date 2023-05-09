@@ -121,14 +121,18 @@ class Plugin {
 	 * We're going to send the response to the client, then collect metrics from each registered collector
 	 */
 	public function collect_metrics_on_shutdown(): void {
-		// This is expensive, potentially, so be mindful about when this method is called
-		// Currently it only runs on web requests with a 90 interval, see the constructor
-		if ( function_exists( 'fastcgi_finish_request' ) ) {
-			fastcgi_finish_request();
-		}
-
 		$ts = time();
 		if ( wp_cache_add( 'vip_prometheus_last_collection_run', $ts, 'vip_prometheus', 5 * MINUTE_IN_SECONDS ) ) {
+			/**
+			 * Flush the request to the client before proceeding.
+			 *
+			 * Can be unhooked via
+			 * // remove_action( 'shutdown', [ \Automattic\VIP\Prometheus\Plugin::get_instance(), 'collect_metrics_on_shutdown' ], PHP_INT_MAX );
+			 */
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+
 			foreach ( $this->collectors as $collector ) {
 				$collector->collect_metrics();
 			}
