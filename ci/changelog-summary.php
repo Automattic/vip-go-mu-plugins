@@ -59,6 +59,7 @@ define( 'LABEL_READY', '[Status] Ready to deploy' );
 define( 'LABEL_DEPLOYED_PROD', '[Status] Deployed to production' );
 define( 'LABEL_DEPLOYED_STAGING', '[Status] Deployed to staging' );
 define( 'LABEL_REVERTED', '[Status] Reverted' );
+define( 'TAG_RELEASE', $_SERVER[ 'TAG_RELEASE' ] );
 
 /**
  * Utility function for debugging.
@@ -435,7 +436,7 @@ function build_changelog_and_update_prs() {
     $title = ucfirst( BRANCH ) . ' release - ' . date( 'Y/m/d' );
     $content = join( "\n<hr />\n", $changelog_entries );
     if ( BRANCH === 'production' ) {
-        $content .= '<hr /><p>Please see the <a href="https://github.com/Automattic/vip-go-mu-plugins/releases/tag/v' . date( 'Ymd' ) . '.0">full release on GitHub</a>.</p>';
+        $content .= '<hr /><p>Please see the <a href="https://github.com/Automattic/vip-go-mu-plugins/releases/tag/' . TAG_RELEASE . '">full release on GitHub</a>.</p>';
     }
     $changelog_url = create_changelog_post( $title, $content, $tags, BRANCH );
 
