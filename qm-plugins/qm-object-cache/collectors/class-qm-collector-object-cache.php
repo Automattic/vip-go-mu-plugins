@@ -10,6 +10,13 @@ class QM_Collector_Object_Cache extends QM_Collector {
 		return __( 'Object Cache', 'qm-object-cache' );
 	}
 
+		/**
+	 * @return QM_Data
+	 */
+	public function get_storage(): QM_Data {
+		return new QM_Data_Object_Cache();
+	}
+
 	public function process() {
 		global $wp_object_cache;
 		if ( ! method_exists( $wp_object_cache, 'get_stats' ) ) {
@@ -17,7 +24,7 @@ class QM_Collector_Object_Cache extends QM_Collector {
 		}
 		$stats = $wp_object_cache->get_stats();
 
-		$this->data['totals']           = $stats['totals'] ?? null;
-		$this->data['operation_counts'] = $stats['operation_counts'] ?? null;
+		$this->data->totals           = $stats['totals'] ?? null;
+		$this->data->operation_counts = $stats['operation_counts'] ?? null;
 	}
 }

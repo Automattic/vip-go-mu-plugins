@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Database class used by the database dropin.
  *
@@ -11,31 +11,6 @@ class QM_DB extends wpdb {
 	 * @var float
 	 */
 	public $time_start;
-
-	/**
-	 * @var array<string, string|null>
-	 */
-	public $qm_php_vars = array(
-		'max_execution_time' => null,
-		'memory_limit' => null,
-		'upload_max_filesize' => null,
-		'post_max_size' => null,
-		'display_errors' => null,
-		'log_errors' => null,
-	);
-
-	/**
-	 * Class constructor
-	 */
-	public function __construct( $dbuser, $dbpassword, $dbname, $dbhost ) {
-
-		foreach ( $this->qm_php_vars as $setting => &$val ) {
-			$val = ini_get( $setting );
-		}
-
-		parent::__construct( $dbuser, $dbpassword, $dbname, $dbhost );
-
-	}
 
 	/**
 	 * Performs a MySQL database query, using current database connection.
@@ -73,14 +48,9 @@ class QM_DB extends wpdb {
 		if ( $this->last_error ) {
 			$code = 'qmdb';
 
+			// This needs to remain in place to account for a user still on PHP 5. Don't want to kill their site.
 			if ( $this->dbh instanceof mysqli ) {
 				$code = mysqli_errno( $this->dbh );
-			}
-
-			if ( is_resource( $this->dbh ) ) {
-				// Please do not report this code as a PHP 7 incompatibility. Observe the surrounding logic.
-				// phpcs:ignore
-				$code = mysql_errno( $this->dbh );
 			}
 
 			$this->queries[ $i ]['result'] = new WP_Error( $code, $this->last_error );

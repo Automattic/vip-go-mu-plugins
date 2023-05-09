@@ -1,15 +1,12 @@
 <?php
-
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\VIP\Utils\Context;
 use Prometheus\CollectorRegistry;
 use Prometheus\RegistryInterface;
-use Prometheus\RenderTextFormat;
 use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APCng;
 use Prometheus\Storage\InMemory;
-use WP;
-use WP_Query;
 
 class Plugin {
 	protected static ?Plugin $instance     = null;
@@ -17,8 +14,9 @@ class Plugin {
 	/** @var CollectorInterface[] */
 	protected array $collectors = [];
 
-	private static string $endpoint_path = '/.vip-prom-metrics';
+	protected string $site_label = '';
 
+	const MAX_NETWORK_SITES = 50;
 	/**
 	 * @return static
 	 */
@@ -35,12 +33,18 @@ class Plugin {
 	 */
 	protected function __construct() {
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'init_registry' ], 9 );
-
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
 
-		add_action( 'init', [ $this, 'init' ] );
+		// Currently there's no way to persist the storage on non-web requests because APCu is not available.
+		// So instead we collect metrics on shutdown after flushing the response to the client
+		if ( Context::is_web_request() ) {
+			add_action( 'shutdown', [ $this, 'collect_metrics_on_shutdown' ], PHP_INT_MAX );
+		}
+
+		// Cron callback to do the heavy lifting.
+		add_action( 'vip_aggregated_cron_hourly', [ $this, 'process_metrics' ] );
 
 		do_action( 'vip_prometheus_loaded' );
 	}
@@ -68,72 +72,6 @@ class Plugin {
 		$this->collectors = array_merge( $this->collectors, $available_collectors );
 	}
 
-	public function init(): void {
-		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
-			add_filter( 'request', [ $this, 'request' ] );
-			add_filter( 'wp_headers', [ $this, 'wp_headers' ], 10, 2 );
-			add_action( 'template_redirect', [ $this, 'template_redirect' ], 0 );
-		}
-	}
-
-	public function request( $query_vars ): array {
-		if ( ! is_array( $query_vars ) ) {
-			$query_vars = [];
-		}
-
-		if ( $this->is_prom_endpoint_request() ) {
-			unset( $query_vars['error'] );
-			add_filter( 'pre_handle_404', [ $this, 'pre_handle_404' ], 10, 2 );
-		}
-
-		return $query_vars;
-	}
-
-	public function wp_headers( $headers, WP $wp ): array {
-		if ( ! is_array( $headers ) ) {
-			$headers = [];
-		}
-
-		if ( ! $this->is_prom_endpoint_request() ) {
-			return $headers;
-		}
-
-		$headers['Content-Type'] = RenderTextFormat::MIME_TYPE;
-		$headers                 = array_merge( $headers, wp_get_nocache_headers() );
-
-		return $headers;
-	}
-
-	public function pre_handle_404( $_result, WP_Query $query ): bool {
-		unset( $query->query_vars['error'] );
-		return true;
-	}
-
-	/**
-	 * @global WP_Query $wp_query
-	 */
-	public function template_redirect(): void {
-		if ( ! $this->is_prom_endpoint_request() ) {
-			return;
-		}
-
-		array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->collect_metrics() );
-
-		$renderer = new RenderTextFormat();
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
-		echo $renderer->render( $this->registry->getMetricFamilySamples() );
-		die();
-
-		// In case you want or need to debug queries:
-		// 1. Comment out the calls to `$renderer->render()` and `die()` above;
-		// 2. Uncomment the following lines:
-		//
-		// remove_all_actions( current_action() );
-		// do_action( 'wp_head' );
-		// do_action( 'wp_footer' );
-		// die();
-	}
-
 	private static function create_registry(): RegistryInterface {
 		// @codeCoverageIgnoreStart -- APCu may or may not be available during tests
 		/** @var Adapter $storage */
@@ -157,14 +95,75 @@ class Plugin {
 		return new CollectorRegistry( $storage );
 	}
 
+	public function get_collectors(): array {
+		return $this->collectors;
+	}
+
 	/**
-	 * Validate if current request is for the Prometheus endpoint.
+	 * Cron callback to process the metrics for collection
 	 *
-	 * @return bool
+	 * @return void
 	 */
-	private function is_prom_endpoint_request(): bool {
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- the value is used only for strict comparison
-		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-		return self::$endpoint_path === $request_uri;
+	public function process_metrics(): void {
+		if ( Context::is_web_request() ) {
+			trigger_error( __METHOD__ . ' should not be called on web requests', E_USER_WARNING );
+			return;
+		}
+
+		foreach ( $this->collectors as $collector ) {
+			if ( is_callable( [ $collector, 'process_metrics' ] ) ) {
+				$collector->process_metrics();
+			}
+		}
+	}
+
+	/**
+	 * We're going to send the response to the client, then collect metrics from each registered collector
+	 */
+	public function collect_metrics_on_shutdown(): void {
+		$ts = time();
+		if ( wp_cache_add( 'vip_prometheus_last_collection_run', $ts, 'vip_prometheus', 5 * MINUTE_IN_SECONDS ) ) {
+			/**
+			 * Flush the request to the client before proceeding.
+			 *
+			 * Can be unhooked via
+			 * // remove_action( 'shutdown', [ \Automattic\VIP\Prometheus\Plugin::get_instance(), 'collect_metrics_on_shutdown' ], PHP_INT_MAX );
+			 */
+			if ( function_exists( 'fastcgi_finish_request' ) ) {
+				fastcgi_finish_request();
+			}
+
+			foreach ( $this->collectors as $collector ) {
+				$collector->collect_metrics();
+			}
+
+			if ( time() - $ts > 4 * MINUTE_IN_SECONDS ) {
+				trigger_error( 'Prometheus: collecting metrics took longer than expected', E_USER_WARNING );
+			}
+		}
+	}
+
+	/**
+	 * To avoid accidentally blowing up cardinality on large multisite we'll roll up anything over 50 sites into a single label
+	 * @todo 50 is tentative, we may want to adjust this later.
+	 * @return string
+	 */
+	public function get_site_label(): string {
+		if ( $this->site_label ) {
+			return $this->site_label;
+		}
+
+		$this->site_label = (string) get_current_blog_id();
+
+		if ( ! is_multisite() ) {
+			return $this->site_label;
+		}
+
+		$sites_count = wp_count_sites();
+		if ( $sites_count['all'] > self::MAX_NETWORK_SITES ) {
+			$this->site_label = 'network';
+		}
+
+		return $this->site_label;
 	}
 }

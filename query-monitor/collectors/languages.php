@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Language and locale collector.
  *
@@ -9,9 +9,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class QM_Collector_Languages extends QM_Collector {
+/**
+ * @extends QM_DataCollector<QM_Data_Languages>
+ */
+class QM_Collector_Languages extends QM_DataCollector {
 
 	public $id = 'languages';
+
+	public function get_storage(): QM_Data {
+		return new QM_Data_Languages();
+	}
 
 	/**
 	 * @return void
@@ -22,7 +29,7 @@ class QM_Collector_Languages extends QM_Collector {
 
 		add_filter( 'load_textdomain_mofile', array( $this, 'log_file_load' ), 9999, 2 );
 		add_filter( 'load_script_translation_file', array( $this, 'log_script_file_load' ), 9999, 3 );
-		add_filter( 'init', array( $this, 'collect_locale_data' ), 9999 );
+		add_action( 'init', array( $this, 'collect_locale_data' ), 9999 );
 
 	}
 
@@ -32,7 +39,7 @@ class QM_Collector_Languages extends QM_Collector {
 	public function tear_down() {
 		remove_filter( 'load_textdomain_mofile', array( $this, 'log_file_load' ), 9999 );
 		remove_filter( 'load_script_translation_file', array( $this, 'log_script_file_load' ), 9999 );
-		remove_filter( 'init', array( $this, 'collect_locale_data' ), 9999 );
+		remove_action( 'init', array( $this, 'collect_locale_data' ), 9999 );
 
 		parent::tear_down();
 	}
@@ -41,17 +48,17 @@ class QM_Collector_Languages extends QM_Collector {
 	 * @return void
 	 */
 	public function collect_locale_data() {
-		$this->data['locale'] = get_locale();
-		$this->data['user_locale'] = function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale();
-		$this->data['determined_locale'] = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
-		$this->data['language_attributes'] = get_language_attributes();
+		$this->data->locale = get_locale();
+		$this->data->user_locale = function_exists( 'get_user_locale' ) ? get_user_locale() : get_locale();
+		$this->data->determined_locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+		$this->data->language_attributes = get_language_attributes();
 
 		if ( function_exists( '\Inpsyde\MultilingualPress\siteLanguageTag' ) ) {
-			$this->data['mlp_language'] = \Inpsyde\MultilingualPress\siteLanguageTag();
+			$this->data->mlp_language = \Inpsyde\MultilingualPress\siteLanguageTag();
 		}
 
 		if ( function_exists( 'pll_current_language' ) ) {
-			$this->data['pll_language'] = pll_current_language();
+			$this->data->pll_language = pll_current_language();
 		}
 	}
 
@@ -112,18 +119,18 @@ class QM_Collector_Languages extends QM_Collector {
 	 * @return void
 	 */
 	public function process() {
-		if ( empty( $this->data['languages'] ) ) {
+		if ( empty( $this->data->languages ) ) {
 			return;
 		}
 
-		$this->data['total_size'] = 0;
+		$this->data->total_size = 0;
 
-		ksort( $this->data['languages'] );
+		ksort( $this->data->languages );
 
-		foreach ( $this->data['languages'] as & $mofiles ) {
+		foreach ( $this->data->languages as & $mofiles ) {
 			foreach ( $mofiles as & $mofile ) {
 				if ( $mofile['found'] ) {
-					$this->data['total_size'] += $mofile['found'];
+					$this->data->total_size += $mofile['found'];
 				}
 			}
 		}
@@ -132,7 +139,7 @@ class QM_Collector_Languages extends QM_Collector {
 	/**
 	 * Store log data.
 	 *
-	 * @param string $mofile Path to the MO file.
+	 * @param mixed $mofile Should be a string path to the MO file, could be anything.
 	 * @param string $domain Text domain.
 	 * @return string
 	 */
@@ -141,7 +148,7 @@ class QM_Collector_Languages extends QM_Collector {
 			return $mofile;
 		}
 
-		if ( isset( $this->data['languages'][ $domain ][ $mofile ] ) ) {
+		if ( is_string( $mofile ) && isset( $this->data->languages[ $domain ][ $mofile ] ) ) {
 			return $mofile;
 		}
 
@@ -159,9 +166,13 @@ class QM_Collector_Languages extends QM_Collector {
 			),
 		) );
 
-		$found = file_exists( $mofile ) ? filesize( $mofile ) : false;
+		$found = ( is_string( $mofile ) ) && file_exists( $mofile ) ? filesize( $mofile ) : false;
 
-		$this->data['languages'][ $domain ][ $mofile ] = array(
+		if ( ! is_string( $mofile ) ) {
+			$mofile = gettype( $mofile );
+		}
+
+		$this->data->languages[ $domain ][ $mofile ] = array(
 			'caller' => $trace->get_caller(),
 			'domain' => $domain,
 			'file' => $mofile,
@@ -191,8 +202,9 @@ class QM_Collector_Languages extends QM_Collector {
 		) );
 
 		$found = ( $file && file_exists( $file ) ) ? filesize( $file ) : false;
+		$key = $file ?: uniqid();
 
-		$this->data['languages'][ $domain ][] = array(
+		$this->data->languages[ $domain ][ $key ] = array(
 			'caller' => $trace->get_caller(),
 			'domain' => $domain,
 			'file' => $file,

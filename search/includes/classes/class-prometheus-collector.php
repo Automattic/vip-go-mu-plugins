@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Prometheus\CollectorInterface;
+use Automattic\VIP\Prometheus\Plugin;
 use Prometheus\Counter;
 use Prometheus\Histogram;
 use Prometheus\RegistryInterface;
@@ -14,6 +15,7 @@ class Prometheus_Collector implements CollectorInterface {
 	public const OBSERVATION_TYPE_ENGINE  = 'engine';
 	public const OBSERVATION_TYPE_REQUEST = 'request';
 	public const OBSERVATION_TYPE_PER_DOC = 'per_doc';
+	public string $blog_id;
 
 	protected static ?self $instance = null;
 
@@ -22,6 +24,7 @@ class Prometheus_Collector implements CollectorInterface {
 	private ?Counter $failed_query_counter      = null;
 	private ?Counter $ratelimited_query_counter = null;
 	private ?Counter $ratelimited_index_counter = null;
+
 
 	/**
 	 * @return static
@@ -35,12 +38,7 @@ class Prometheus_Collector implements CollectorInterface {
 	}
 
 	private function __construct() {
-		add_filter( 'vip_prometheus_collectors', [ $this, 'vip_prometheus_collectors' ] );
-	}
-
-	public function vip_prometheus_collectors( array $collectors ): array {
-		$collectors[] = $this;
-		return $collectors;
+		$this->blog_id = Plugin::get_instance()->get_site_label();
 	}
 
 	public function initialize( RegistryInterface $registry ): void {
@@ -48,7 +46,9 @@ class Prometheus_Collector implements CollectorInterface {
 			'es',
 			'request_times',
 			'Request times',
-			[ 'site_id', 'host', 'mode', 'type' ]
+			[ 'site_id', 'host', 'mode', 'type' ],
+			// Anything over ~2s is a timeout on the client, we pad with 100ms
+			[ 50, 100, 300, 500, 1000, 1900 ]
 		);
 
 		$this->query_counter = $registry->getOrRegisterCounter(
@@ -84,6 +84,10 @@ class Prometheus_Collector implements CollectorInterface {
 		// Do nothing
 	}
 
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
+
 	public static function observe_request_time( string $method, string $url, string $type, float $time ): void {
 		$instance = static::get_instance();
 		if ( $instance->request_times_histogram ) {
@@ -92,7 +96,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$instance->request_times_histogram->observe(
 				$time,
 				[
-					(string) get_current_blog_id(),
+					$instance->blog_id,
 					$host,
 					$mode,
 					$type,
@@ -108,7 +112,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$mode = $instance->get_mode( $url, $method );
 			$instance->query_counter->inc(
 				[
-					(string) get_current_blog_id(),
+					$instance->blog_id,
 					$host,
 					$mode,
 				]
@@ -123,7 +127,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$mode = $instance->get_mode( $url, $method );
 			$instance->failed_query_counter->inc(
 				[
-					(string) get_current_blog_id(),
+					$instance->blog_id,
 					$host,
 					$mode,
 					$reason,
@@ -138,7 +142,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$host = $instance->get_host( $url );
 			$instance->ratelimited_query_counter->inc(
 				[
-					(string) get_current_blog_id(),
+					$instance->blog_id,
 					$host,
 				]
 			);
@@ -152,7 +156,7 @@ class Prometheus_Collector implements CollectorInterface {
 			$instance->ratelimited_index_counter->incBy(
 				$increment,
 				[
-					(string) get_current_blog_id(),
+					$instance->blog_id,
 					$host,
 				]
 			);

@@ -13,6 +13,8 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use stdClass;
+
 // The default version is the first entry in the SUPPORTED_VERSIONS list.
 const SUPPORTED_VERSIONS = [
 	'3.8',
@@ -186,6 +188,20 @@ function maybe_load_plugin() {
 		return;
 	}
 
+	// Self-managed integration: The plugin exists on the site and is being loaded already.
+	$plugin_class_exists = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
+	if ( $plugin_class_exists ) {
+		Parsely_Loader_Info::set_active( true );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::SELF_MANAGED );
+
+		$parsely_options = Parsely_Loader_Info::get_parsely_options();
+		if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
+			Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
+		}
+
+		return;
+	}
+
 	$parsely_enabled_constant = null; // Represents that the site doesn't have parsely enabled / blocked.
 
 	if ( defined( 'VIP_PARSELY_ENABLED' ) ) {
@@ -201,20 +217,6 @@ function maybe_load_plugin() {
 
 		Parsely_Loader_Info::set_active( true );
 		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_CONSTANT );
-	}
-
-	// Self-managed integration: The plugin exists on the site and is being loaded already.
-	$plugin_class_exists = class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
-	if ( $plugin_class_exists ) {
-		Parsely_Loader_Info::set_active( true );
-		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::SELF_MANAGED );
-
-		$parsely_options = Parsely_Loader_Info::get_parsely_options();
-		if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
-			Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
-		}
-
-		return;
 	}
 
 	$option_load_status   = get_option( '_wpvip_parsely_mu', null );

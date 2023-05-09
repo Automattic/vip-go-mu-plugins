@@ -58,6 +58,7 @@ define( 'LABEL_NO_FILES_TO_DEPLOY', '[Status] No files to Deploy' );
 define( 'LABEL_READY', '[Status] Ready to deploy' );
 define( 'LABEL_DEPLOYED_PROD', '[Status] Deployed to production' );
 define( 'LABEL_DEPLOYED_STAGING', '[Status] Deployed to staging' );
+define( 'LABEL_REVERTED', '[Status] Reverted' );
 
 /**
  * Utility function for debugging.
@@ -374,7 +375,7 @@ function process_pr_ids( $pr_ids ) {
         $pr = curl_get( GITHUB_ENDPOINT . '/pulls/' . $pr_id );
 
         $label_names = array_map( fn($label) => $label['name'], $pr['labels'] );
-        $skip_labels = [ LABEL_NO_FILES_TO_DEPLOY, LABEL_DEPLOYED_PROD ];
+        $skip_labels = [ LABEL_NO_FILES_TO_DEPLOY, LABEL_DEPLOYED_PROD, LABEL_REVERTED ];
         if ( BRANCH === 'staging' ) {
             $skip_labels[] = LABEL_DEPLOYED_STAGING;
         }

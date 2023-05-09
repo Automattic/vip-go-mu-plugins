@@ -1,17 +1,24 @@
 <?php
 
-class QM_DB_Connections_Collector extends QM_Collector {
+class QM_Collector_DB_Connections extends QM_Collector {
 
 	/**
 	 * @var string
 	 */
-	public $id = 'qm-db-connections';
+	public $id = 'db-connections';
 
 	/**
 	 * @return string
 	 */
 	public function name() {
 		return esc_html__( 'DB Connections', 'query-monitor' );
+	}
+
+	/**
+	 * @return QM_Data
+	 */
+	public function get_storage(): QM_Data {
+		return new QM_Data_DB_Connections();
 	}
 
 	/**
@@ -29,12 +36,12 @@ class QM_DB_Connections_Collector extends QM_Collector {
 
 		$elapsed = 0;
 		foreach ( $db_connections as $conn ) {
-			$this->data['db_connections']['connections'][] = $conn;
+			$this->data->db_connections['connections'][] = $conn;
 
 			if ( isset( $conn['elapsed'] ) ) {
 				$elapsed += $conn['elapsed'];
 			}
 		}
-		$this->data['db_connections']['total_connection_time'] = $elapsed;
+		$this->data->db_connections['total_connection_time'] = $elapsed;
 	}
 }
