@@ -1,7 +1,7 @@
 <?php
 
-class QM_Apcu_Cache_Collector extends \QM_Collector {
-	public $id = 'qm-apcu-cache';
+class QM_Collector_Apcu_Cache extends \QM_Collector {
+	public $id = 'apcu-cache';
 
 	public function name() {
 		return esc_html__( 'APCU Hot-Cache', 'query-monitor' );

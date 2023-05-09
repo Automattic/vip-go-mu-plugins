@@ -5,7 +5,6 @@ namespace Automattic\VIP\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
@@ -18,8 +17,6 @@ require_once __DIR__ . '/../../../../prometheus.php';
  * @preserveGlobalState disabled
  */
 class Search_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
-
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
 
@@ -39,9 +36,17 @@ class Search_Test extends WP_UnitTestCase {
 			->getMock();
 
 		header_remove();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+			throw new \Exception( $errstr, $errno );
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -2118,8 +2123,8 @@ class Search_Test extends WP_UnitTestCase {
 
 		// trigger_error is only called if an alert should happen
 		if ( $should_alert ) {
-			$this->expectWarning();
-			$this->expectWarningMessage(
+			$this->expectException( \Exception::class );
+			$this->expectExceptionMessage(
 				sprintf(
 					'Application 123 - http://example.org has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
 					$difference

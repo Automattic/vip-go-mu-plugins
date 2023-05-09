@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * General HTML request dispatcher.
  *
@@ -88,8 +88,9 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		$expiration = time() + ( 2 * DAY_IN_SECONDS );
 		$secure = self::secure_cookie();
 		$cookie = wp_generate_auth_cookie( get_current_user_id(), $expiration, 'logged_in' );
+		$domain = COOKIE_DOMAIN ?: '';
 
-		setcookie( QM_COOKIE, $cookie, $expiration, COOKIEPATH, COOKIE_DOMAIN, $secure, false );
+		setcookie( QM_COOKIE, $cookie, $expiration, COOKIEPATH, $domain, $secure, false );
 
 		wp_send_json_success();
 
@@ -105,8 +106,9 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		}
 
 		$expiration = time() - 31536000;
+		$domain = COOKIE_DOMAIN ?: '';
 
-		setcookie( QM_COOKIE, ' ', $expiration, COOKIEPATH, COOKIE_DOMAIN );
+		setcookie( QM_COOKIE, ' ', $expiration, COOKIEPATH, $domain );
 
 		wp_send_json_success();
 
@@ -124,8 +126,9 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		$expiration = time() + ( 2 * YEAR_IN_SECONDS );
 		$secure = self::secure_cookie();
 		$editor = wp_unslash( $_POST['editor'] );
+		$domain = COOKIE_DOMAIN ?: '';
 
-		setcookie( QM_EDITOR_COOKIE, $editor, $expiration, COOKIEPATH, COOKIE_DOMAIN, $secure, false );
+		setcookie( QM_EDITOR_COOKIE, $editor, $expiration, COOKIEPATH, $domain, $secure, false );
 
 		wp_send_json_success( $editor );
 
@@ -341,7 +344,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 	 * @return void
 	 */
 	protected function before_output() {
-		foreach ( glob( $this->qm->plugin_path( 'output/html/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->qm->plugin_path( 'output/html/*.php' ) ) as $file ) {
 			require_once $file;
 		}
 
@@ -355,7 +358,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param array $menus Array of menus.
+		 * @param array<string, mixed[]> $menus Array of menus.
 		 */
 		$this->admin_bar_menu = apply_filters( 'qm/output/menus', array() );
 
@@ -364,7 +367,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		 *
 		 * @since 3.0.0
 		 *
-		 * @param array $admin_bar_menu Array of menus.
+		 * @param array<string, mixed[]> $admin_bar_menu Array of menus.
 		 */
 		$this->panel_menu = apply_filters( 'qm/output/panel_menus', $this->admin_bar_menu );
 
@@ -407,6 +410,27 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo 'var qm = ' . json_encode( $json ) . ';' . "\n\n";
 		echo '</script>' . "\n\n";
 
+		echo '<svg id="qm-icon-container">';
+		foreach ( (array) glob( $this->qm->plugin_path( 'assets/icons/*.svg' ) ) as $icon ) {
+			if ( ! $icon ) {
+				continue;
+			}
+
+			$icon_name = basename( $icon, '.svg' );
+			$contents = (string) file_get_contents( $icon );
+
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo str_replace(
+				'<path ',
+				sprintf(
+					'<path id="qm-icon-%s" ',
+					$icon_name
+				),
+				$contents
+			);
+		}
+		echo '</svg>';
+
 		echo '<div id="query-monitor-main" data-theme="auto" class="' . implode( ' ', array_map( 'esc_attr', $class ) ) . '" dir="ltr">';
 		echo '<div id="qm-side-resizer" class="qm-resizer"></div>';
 		echo '<div id="qm-title" class="qm-resizer">';
@@ -445,9 +469,9 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		echo '</select>';
 
-		$settings = QueryMonitor::init()->icon( 'admin-generic' );
-		$toggle = QueryMonitor::init()->icon( 'image-rotate-left' );
-		$close = QueryMonitor::init()->icon( 'no-alt' );
+		$settings = QueryMonitor::icon( 'admin-generic' );
+		$toggle = QueryMonitor::icon( 'image-rotate-left' );
+		$close = QueryMonitor::icon( 'no-alt' );
 
 		echo '</div>';
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
@@ -526,7 +550,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		echo '<p><button class="qm-auth qm-button" data-qm-text-on="' . esc_attr( $text['on'] ) . '" data-qm-text-off="' . esc_attr( $text['off'] ) . '">' . esc_html( $text[ $state ] ) . '</button></p>';
 
-		$yes = QueryMonitor::init()->icon( 'yes-alt' );
+		$yes = QueryMonitor::icon( 'yes-alt' );
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 		echo '<p data-qm-state-visibility="on">' . $yes . ' ' . esc_html__( 'Authentication cookie is set', 'query-monitor' ) . '</p>';
@@ -560,6 +584,11 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '</p><p>';
 		echo '<button class="qm-editor-button qm-button">' . esc_html__( 'Set editor cookie', 'query-monitor' ) . '</button>';
 		echo '</p>';
+
+		$yes = QueryMonitor::icon( 'yes-alt' );
+
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo '<p id="qm-editor-save-status">' . $yes . ' ' . esc_html__( 'Saved! Reload to apply changes.', 'query-monitor' ) . '</p>';
 		echo '</section>';
 
 		echo '<section>';
@@ -572,11 +601,6 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '<li><label><input type="radio" class="qm-theme-toggle qm-radio" name="qm-theme" value="light"/>' . esc_html_x( 'Light', 'colour scheme', 'query-monitor' ) . '</label></li>';
 		echo '<li><label><input type="radio" class="qm-theme-toggle qm-radio" name="qm-theme" value="dark"/>' . esc_html_x( 'Dark', 'colour scheme', 'query-monitor' ) . '</label></li>';
 		echo '</ul>';
-
-		$yes = QueryMonitor::init()->icon( 'yes-alt' );
-
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<p id="qm-editor-save-status">' . $yes . ' ' . esc_html__( 'Saved! Reload to apply changes.', 'query-monitor' ) . '</p>';
 		echo '</section>';
 		echo '</div>';
 
@@ -619,6 +643,19 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 				'default' => true,
 			),
 		);
+
+		/**
+		 * Filters which PHP constants for configuring Query Monitor are displayed on its settings panel.
+		 *
+		 * @since 3.12.0
+		 *
+		 * @param array $constants The displayed settings constants.
+		 * @phpstan-param array<string, array{
+		 *   label: string,
+		 *   default: mixed,
+		 * }> $constants
+		 */
+		$constants = apply_filters( 'qm/constants', $constants );
 
 		echo '<section>';
 		echo '<h3>' . esc_html__( 'Configuration', 'query-monitor' ) . '</h3>';
@@ -802,13 +839,23 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 	 * @return bool
 	 */
 	public static function request_supported() {
-		// Don't dispatch if this is an async request and not a customizer preview:
-		if ( QM_Util::is_async() && ( ! function_exists( 'is_customize_preview' ) || ! is_customize_preview() ) ) {
+		// Don't dispatch if this is an async request:
+		if ( QM_Util::is_async() ) {
+			return false;
+		}
+
+		// Don't dispatch during a Customizer preview request:
+		if ( function_exists( 'is_customize_preview' ) && is_customize_preview() ) {
 			return false;
 		}
 
 		// Don't dispatch during an iframed request, eg the plugin info modal, an upgrader action, or the Customizer:
 		if ( defined( 'IFRAME_REQUEST' ) && IFRAME_REQUEST ) {
+			return false;
+		}
+
+		// Don't dispatch inside the Site Editor:
+		if ( isset( $_SERVER['SCRIPT_NAME'] ) && '/wp-admin/site-editor.php' === $_SERVER['SCRIPT_NAME'] ) {
 			return false;
 		}
 

@@ -5,7 +5,6 @@ namespace Automattic\VIP\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use wpdb;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
@@ -14,7 +13,6 @@ use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
  * @preserveGlobalState disabled
  */
 class Queue_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
 
 	/** @var \Automattic\VIP\Search\Search */
 	private $es;
