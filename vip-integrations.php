@@ -23,16 +23,16 @@ function load_integration( $slug, $config = array() ) {
 		return;
 	}
 
-	// New integration paths go here
-	$block_data_api_path = '/vip-integrations/vip-block-data-api-1.0.0/vip-block-data-api.php';
-
 	// Use the plugins_loaded filter to ensure customer code version of the plugin overrides the mu-plugins version.
 	add_action( 'plugins_loaded', function() {
 		// New integration requires go here
 
 		// Block Data API defines this when it is loaded, so it's a guard against loading twice.
 		if ( ! defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
-			require_once __DIR__ . $block_data_api_path;
+			$load_path = __DIR__ . '/vip-integrations/vip-block-data-api-1.0.0/vip-block-data-api.php';
+			if ( file_exists( $load_path ) ) {
+				require_once $load_path;
+			}
 		}
 	}, 1 );
 }
