@@ -9,17 +9,23 @@
 
 namespace Automattic\VIP\Integrations;
 
-// New integrations names go here
-const BLOCK_DATA_API_SLUG = 'block-data-api';
+/**
+ * Enum which represents all the integration plugins available
+ */
+abstract class Integration {
+	const BLOCK_DATA_API = 'block-data-api';
+	// In the future, we can add wp-parsely and other integrations here.
+}
 
 /**
- * Load the integration based on the slug provided.
+ * Load the integration based on the name provided.
  *
- * @param string $slug The slug of the integration to load.
+ * @param string $slug The name of the integration to load.
  * @param array $config The configuration for the integration, if supported.
  */
 function load_integration( $slug, $config = array() ) {
-	if ( BLOCK_DATA_API_SLUG !== $slug ) {
+	// This is temporary until more integrations are added.
+	if ( Integration::BLOCK_DATA_API !== $slug ) {
 		return;
 	}
 
