@@ -20,12 +20,12 @@ abstract class Integration {
 /**
  * Load the integration based on the name provided.
  *
- * @param string $slug The name of the integration to load.
- * @param array $config The configuration for the integration, if supported.
+ * @param string $integration_name The name of the integration to load.
+ * @param array $integration_config The configuration for the integration, if supported.
  */
-function load_integration( $slug, $config = array() ) {
+function load_integration( $integration_name, $integration_config = array() ) {
 	// This is temporary until more integrations are added.
-	if ( Integration::BLOCK_DATA_API !== $slug ) {
+	if ( Integration::BLOCK_DATA_API !== $integration_name ) {
 		return;
 	}
 
