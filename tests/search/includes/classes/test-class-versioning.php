@@ -897,8 +897,6 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
-		$now = time();
-
 		// Add the new version
 		$result = self::$version_instance->activate_version( $indexable, $version_to_activate );
 
