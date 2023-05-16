@@ -33,9 +33,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	];
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response ) {
-			return $mocked_response;
-		}, 10, 3 );
+		add_filter( 'pre_http_request', fn() => $mocked_response, 10, 3 );
 	}
 
 	public static function setUpBeforeClass(): void {
@@ -1411,7 +1409,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$delete_count = 0;
 		$get_count    = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) {
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) /* NOSONAR */ {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
@@ -2004,7 +2002,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Versioning' );
 
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true );
+		$property->setAccessible( true ); // NOSONAR
 
 		return $property;
 	}
