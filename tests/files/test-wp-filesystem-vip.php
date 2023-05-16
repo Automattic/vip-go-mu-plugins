@@ -293,9 +293,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		$this->expectException( \Exception::class );
 		$this->expectExceptionMessage( 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `/tmp/wordpress/wp-content/uploads` directories and reads can be performed everywhere.' );
 
-		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
-
-		$this->assertFalse( $result );
+		$get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
 	}
 
 	public function test__get_transport_for_path__non_vip_go_env() {

@@ -3,6 +3,8 @@
 namespace Automattic\VIP\Files\Acl;
 
 use Automattic\Test\Constant_Mocker;
+use Exception;
+use Throwable;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 
@@ -44,12 +46,14 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
-		$this->expectException( \Exception::class );
-		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
-
-		maybe_load_restrictions();
-
-		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+		try {
+			maybe_load_restrictions();
+			self::assertTrue( false );
+		} catch ( Throwable $e ) {
+			self::assertInstanceOf( Exception::class, $e );
+			self::assertStringContainsString( 'File ACL restrictions are enabled without server configs', $e->getMessage() );
+			self::assertFalse( has_filter( 'vip_files_acl_file_visibility' ) );
+		}
 	}
 
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option() {
@@ -194,12 +198,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->expectExceptionMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
 		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
-
-		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
-
-		$headers = headers_list();
-		$this->assertNotContains( 'X-Private: true', $headers, 'Sent headers include X-Private: true header but should not.', true );
-		$this->assertNotContains( 'X-Private: false', $headers, 'Sent headers include X-Private:false header but should not.', true );
 	}
 
 	public function test__is_valid_path_for_site__always_true_for_not_multisite() {

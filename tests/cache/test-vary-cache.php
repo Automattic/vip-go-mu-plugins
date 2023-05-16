@@ -3,6 +3,8 @@
 namespace Automattic\VIP\Cache;
 
 use Automattic\Test\Constant_Mocker;
+use Exception;
+use Throwable;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/mock-header.php';
@@ -264,15 +266,17 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
-		$this->expectException( \Exception::class );
-
-		$actual_result = Vary_Cache::register_groups( [
-			'dev-group',
-			'design-group',
-		] );
-
-		$this->assertFalse( $actual_result, 'register_groups after send_headers did not return false' );
-		$this->assertEquals( [], Vary_Cache::get_groups(), 'Registered groups are not empty.' );
+		try {
+			Vary_Cache::register_groups( [
+				'dev-group',
+				'design-group',
+			] );
+			self::assertTrue( false );
+		} catch ( Throwable $e ) {
+			self::assertInstanceOf( Exception::class, $e );
+			self::assertEquals( E_USER_WARNING, $e->getCode() );
+			self::assertEmpty( Vary_Cache::get_groups(), 'Registered groups are not empty.' );
+		}
 	}
 
 	public function get_test_data__register_groups_invalid() {
@@ -292,11 +296,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
 	public function test__register_groups__invalid( $invalid_groups ) {
-		$this->expectException( \Exception::class );
-		$actual_result = Vary_Cache::register_groups( $invalid_groups );
-
-		$this->assertFalse( $actual_result, 'Invalid register_groups call did not return false' );
-		$this->assertEquals( [], Vary_Cache::get_groups(), 'Registered groups was not empty.' );
+		$this->expectException( Exception::class );
+		$this->expectExceptionCode( E_USER_WARNING );
+		Vary_Cache::register_groups( $invalid_groups );
 	}
 
 	public function get_test_data__set_group_for_user_invalid() {

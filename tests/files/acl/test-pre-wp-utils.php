@@ -20,15 +20,13 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 		parent::tearDown();
 	}
+
 	public function test__prepare_request__empty_request_uri() {
 		$this->expectException( \Exception::class );
 		$this->expectExceptionMessage( 'VIP Files ACL failed due to empty URI' );
 
 		$request_uri = '';
-
-		$actual_result = prepare_request( $request_uri );
-
-		$this->assertFalse( $actual_result );
+		prepare_request( $request_uri );
 	}
 
 	public function test__prepare_request__invalid_request_uri() {
@@ -36,10 +34,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 		$this->expectExceptionMessage( 'VIP Files ACL failed due to relative path (for invalid/path.jpg)' );
 
 		$request_uri = 'invalid/path.jpg';
-
-		$actual_result = prepare_request( $request_uri );
-
-		$this->assertFalse( $actual_result );
+		prepare_request( $request_uri );
 	}
 
 	public function test__prepare_request__valid() {
@@ -115,9 +110,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 		$this->expectException( \Exception::class );
 		$this->expectExceptionMessage( $expected_warning );
 
-		$actual_is_valid = validate_path( $file_path );
-
-		$this->assertFalse( $actual_is_valid );
+		validate_path( $file_path );
 	}
 
 	/**
