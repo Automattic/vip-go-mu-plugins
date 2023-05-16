@@ -2062,9 +2062,11 @@ class Versioning_Test extends WP_UnitTestCase {
 			->setMethods( self::$indexable_methods )
 			->getMock();
 		if ( 'post' === $indexable ) {
+			/** @var \ElasticPress\Indexable\Post&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'post';
 			$mocked_indexable->global = false;
 		} elseif ( 'user' === $indexable ) {
+			/** @var \ElasticPress\Indexable\User&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'user';
 			$mocked_indexable->global = true;
 		}
