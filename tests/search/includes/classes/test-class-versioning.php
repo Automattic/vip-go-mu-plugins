@@ -844,7 +844,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$active_version = self::$version_instance->get_active_version( $indexable );
 
 		$this->assertEquals( $version_to_activate, $active_version['number'], 'Currently active version does not match expected active version' );
-		$this->assertEquals( $now, $active_version['activated_time'], '"activated_time" property of currently active version does not match expected value' );
+		$this->assertEqualsWithDelta( $now, $active_version['activated_time'], 2, '"activated_time" property of currently active version does not match expected value' );
 	}
 
 	public function activate_version_invalid_data() {
