@@ -9,36 +9,37 @@
 
 namespace Automattic\VIP\Integrations;
 
+require_once __DIR__ . '/vip-integrations/integrations/integrations.php';
+require_once __DIR__ . '/vip-integrations/integrations/block-data-api.php';
+
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\\register_integrations', /* priority */ 4 );
 /**
- * Enum which represents all the integration plugins available
+ * Register valid integrations.
  */
-abstract class Integration {
-	const BLOCK_DATA_API = 'block-data-api';
-	// In the future, we can add wp-parsely and other integrations here.
+function register_integrations(): void {
+	Integrations::instance()->register( 'block-data-api', BlockDataApi::class );
 }
 
 /**
- * Load the integration based on the name provided.
+ * Activates an integration with an optional configuration value.
  *
- * @param string $integration_name The name of the integration to load.
- * @param array $integration_config The configuration for the integration, if supported.
+ * @param string $slug   A unique identifier for the integration.
+ * @param array  $config An associative array of configuration values for the integration.
  */
-function load_integration( $integration_name, $integration_config = array() ) {
-	// This is temporary until more integrations are added.
-	if ( Integration::BLOCK_DATA_API !== $integration_name ) {
-		return;
-	}
+function activate_integration( $integration_slug, $config = [] ) {
+	add_action( 'muplugins_loaded', function() use ( $integration_slug, $config ) {
+		$integration = Integrations::instance()->get_registered( $integration_slug );
 
-	// Use the plugins_loaded filter to ensure customer code version of the plugin overrides the mu-plugins version.
-	add_action( 'plugins_loaded', function() {
-		// New integration requires go here
-
-		// Block Data API defines this when it is loaded, so it's a guard against loading twice.
-		if ( ! defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
-			$load_path = __DIR__ . '/vip-integrations/vip-block-data-api-1.0.0/vip-block-data-api.php';
-			if ( file_exists( $load_path ) ) {
-				require_once $load_path;
-			}
+		if ( null !== $integration ) {
+			$integration->activate( $config );
 		}
-	}, 1 );
+	}, /* priority */ 6 );
+}
+
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\\integrate_integrations', /* priority */ 8 );
+/**
+ * After code has the opportunity to activate integrations, integrate them.
+ */
+function integrate_integrations(): void {
+	Integrations::instance()->integrate();
 }
