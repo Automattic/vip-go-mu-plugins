@@ -2,6 +2,10 @@
 
 namespace Automattic\VIP\Integrations;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit();
+}
+
 /**
  * Integrates VIP Block Data REST API.
  */

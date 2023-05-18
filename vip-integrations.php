@@ -9,6 +9,10 @@
 
 namespace Automattic\VIP\Integrations;
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit();
+}
+
 require_once __DIR__ . '/vip-integrations/integrations/integrations.php';
 require_once __DIR__ . '/vip-integrations/integrations/block-data-api.php';
 
