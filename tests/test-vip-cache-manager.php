@@ -1,6 +1,7 @@
 <?php
 
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	/** @var WPCOM_VIP_Cache_Manager */
 	public $cache_manager;
 
 	public function setUp(): void {
@@ -9,6 +10,16 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ): never {
+			throw new ErrorException( $errstr, $errno );
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		parent::tearDown();
 	}
 
 	public function get_data_for_valid_queue_purge_url_test() {
@@ -66,12 +77,14 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		$this->expectWarning();
-
-		$actual_output = $this->cache_manager->queue_purge_url( $queue_url );
-
-		$this->assertFalse( $actual_output, 'Return value from `queue_purge_url` should be false.' );
-		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
+		try {
+			$this->cache_manager->queue_purge_url( $queue_url );
+			self::assertTrue( false );
+		} catch ( Throwable $e ) {
+			self::assertInstanceOf( ErrorException::class, $e );
+			self::assertEquals( E_USER_WARNING, $e->getCode() );
+			self::assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
+		}
 	}
 
 	public function test__page_for_posts_post_purge_url() {
