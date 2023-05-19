@@ -11,8 +11,8 @@ namespace Automattic\VIP\Integrations;
 
 defined( 'ABSPATH' ) || die();
 
-require_once __DIR__ . '/vip-integrations/integrations/integrations.php';
-require_once __DIR__ . '/vip-integrations/integrations/block-data-api.php';
+require_once __DIR__ . '/vip-integration-helper/integrations/integrations.php';
+require_once __DIR__ . '/vip-integration-helper/integrations/block-data-api.php';
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\\register_integrations', /* priority */ 4 );
 

@@ -18,7 +18,7 @@ class BlockDataApi extends Integration {
 				return;
 			}
 
-			$load_path = __DIR__ . '/../vip-block-data-api-1.0.0/vip-block-data-api.php';
+			$load_path = __DIR__ . '/../../vip-integrations/vip-block-data-api-1.0.0/vip-block-data-api.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			}
