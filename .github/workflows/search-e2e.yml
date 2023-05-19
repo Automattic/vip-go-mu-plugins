@@ -11,6 +11,8 @@ on:
     paths:
     - 'search/**'
     - 'tests/search/e2e/**'
+    - 'package-lock.json'
+    - '.github/workflows/search-e2e.yml'
   workflow_dispatch:
 
 concurrency:
