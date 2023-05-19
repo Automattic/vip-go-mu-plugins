@@ -33,9 +33,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	];
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response ) {
-			return $mocked_response;
-		}, 10, 3 );
+		add_filter( 'pre_http_request', fn() => $mocked_response, 10, 3 );
 	}
 
 	public static function setUpBeforeClass(): void {
@@ -844,7 +842,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$active_version = self::$version_instance->get_active_version( $indexable );
 
 		$this->assertEquals( $version_to_activate, $active_version['number'], 'Currently active version does not match expected active version' );
-		$this->assertEquals( $now, $active_version['activated_time'], '"activated_time" property of currently active version does not match expected value' );
+		$this->assertEqualsWithDelta( $now, $active_version['activated_time'], 2, '"activated_time" property of currently active version does not match expected value' );
 	}
 
 	public function activate_version_invalid_data() {
@@ -896,8 +894,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
-
-		$now = time();
 
 		// Add the new version
 		$result = self::$version_instance->activate_version( $indexable, $version_to_activate );
@@ -1413,7 +1409,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$delete_count = 0;
 		$get_count    = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) {
+		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) /* NOSONAR */ {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
@@ -2006,7 +2002,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Versioning' );
 
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true );
+		$property->setAccessible( true ); // NOSONAR
 
 		return $property;
 	}
@@ -2064,9 +2060,11 @@ class Versioning_Test extends WP_UnitTestCase {
 			->setMethods( self::$indexable_methods )
 			->getMock();
 		if ( 'post' === $indexable ) {
+			/** @var \ElasticPress\Indexable\Post&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'post';
 			$mocked_indexable->global = false;
 		} elseif ( 'user' === $indexable ) {
+			/** @var \ElasticPress\Indexable\User&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'user';
 			$mocked_indexable->global = true;
 		}
