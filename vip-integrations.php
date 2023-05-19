@@ -9,14 +9,13 @@
 
 namespace Automattic\VIP\Integrations;
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit();
-}
+defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/vip-integrations/integrations/integrations.php';
 require_once __DIR__ . '/vip-integrations/integrations/block-data-api.php';
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\\register_integrations', /* priority */ 4 );
+
 /**
  * Register valid integrations.
  */
