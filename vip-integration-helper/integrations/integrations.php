@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+use InvalidArgumentException;
+
 /**
  * Class used to track and activate registered integrations.
  */
@@ -34,7 +36,7 @@ class Integrations {
 	 */
 	public function register( string $slug, $class_or_object ): void {
 		if ( isset( $this->integrations[ $slug ] ) ) {
-			throw new \InvalidArgumentException( sprintf( 'Integration with slug "%s" already registered.', $slug ) );
+			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
 		}
 
 		if ( ! is_object( $class_or_object ) ) {
