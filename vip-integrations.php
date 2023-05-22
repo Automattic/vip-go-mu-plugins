@@ -29,7 +29,7 @@ function register_integrations(): void {
  * @param string $slug   A unique identifier for the integration.
  * @param array  $config An associative array of configuration values for the integration.
  */
-function activate_integration( $integration_slug, $config = [] ) {
+function activate_integration( string $integration_slug, array $config = [] ) {
 	add_action( 'muplugins_loaded', function() use ( $integration_slug, $config ) {
 		$integration = Integrations::instance()->get_registered( $integration_slug );
 

@@ -13,7 +13,7 @@ class Integrations {
 	 *
 	 * @var array<Integration>
 	 */
-	private $integrations = array();
+	private array $integrations = [];
 
 	/**
 	 * Return singleton instance of class.

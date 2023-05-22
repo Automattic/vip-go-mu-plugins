@@ -11,21 +11,21 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	protected $config = [];
+	protected array $config = [];
 
 	/**
 	 * A boolean indicating if this integration should be loaded. Defaults to false.
 	 *
 	 * @var bool
 	 */
-	protected $active = false;
+	protected bool $active = false;
 
 	/**
 	 * Activates this integration with an optional configuration value.
 	 *
 	 * @param array  $config An associative array of configuration values for the integration.
 	 */
-	public function activate( $config = [] ): void {
+	public function activate( array $config = [] ): void {
 		$this->active = true;
 		$this->config = $config;
 	}
@@ -48,5 +48,5 @@ abstract class Integration {
 	 * Abstract base for integration functionality.
 	 * Implement custom action and filter calls to load integration here.
 	 */
-	abstract public function integrate( $config ): void;
+	abstract public function integrate( array $config ): void;
 }

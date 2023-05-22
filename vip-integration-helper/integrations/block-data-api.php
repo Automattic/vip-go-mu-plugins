@@ -9,7 +9,7 @@ class BlockDataApi extends Integration {
 	/**
 	 * Applies hooks to integrate Block Data API plugin.
 	 */
-	public function integrate( $config ): void {
+	public function integrate( array $config ): void {
 		add_action( 'plugins_loaded', function() {
 			// Do not load plugin if already loaded by customer code
 			if ( defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
