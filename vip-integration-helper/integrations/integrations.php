@@ -29,15 +29,20 @@ class Integrations {
 	/**
 	 * Registers an integration.
 	 *
-	 * @param string       $slug        A unique identifier for the integration.
-	 * @param class-string $class_name Fully-qualified class name that will be instantiated.
+	 * @param string                   $slug            A unique identifier for the integration.
+	 * @param class-string|Integration $class_or_object Fully-qualified class name that will be instantiated.
 	 */
-	public function register( string $slug, string $class_name ): void {
-		$integration = new $class_name();
+	public function register( string $slug, $class_or_object ): void {
+		if ( isset( $this->integrations[ $slug ] ) ) {
+			throw new \InvalidArgumentException( sprintf( 'Integration with slug "%s" already registered.', $slug ) );
+		}
 
-		$this->integrations[ $slug ] = $integration;
+		if ( ! is_object( $class_or_object ) ) {
+			$class_or_object = new $class_or_object();
+		}
+
+		$this->integrations[ $slug ] = $class_or_object;
 	}
-
 	/**
 	 * Returns a registered integration for a key, or null if not found.
 	 *
