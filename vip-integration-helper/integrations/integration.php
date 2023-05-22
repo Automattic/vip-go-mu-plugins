@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-defined( 'ABSPATH' ) || die();
-
 /**
  * Abstract base class for all integration implementations.
  */

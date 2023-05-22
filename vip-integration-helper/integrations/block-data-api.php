@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-defined( 'ABSPATH' ) || die();
-
 /**
  * Integrates VIP Block Data REST API.
  */

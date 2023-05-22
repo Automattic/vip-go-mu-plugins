@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-defined( 'ABSPATH' ) || die();
-
 require_once __DIR__ . '/integration.php';
 
 /**
