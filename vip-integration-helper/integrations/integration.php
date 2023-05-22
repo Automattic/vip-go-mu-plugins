@@ -11,7 +11,7 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	public $config = [];
+	protected $config = [];
 
 	/**
 	 * A boolean indicating if this integration should be loaded. Defaults to false.
@@ -35,6 +35,13 @@ abstract class Integration {
 	 */
 	public function is_active(): bool {
 		return $this->active;
+	}
+
+	/**
+	 * Return the activation configuration for this integration.
+	 */
+	public function get_config(): array {
+		return $this->config;
 	}
 
 	/**

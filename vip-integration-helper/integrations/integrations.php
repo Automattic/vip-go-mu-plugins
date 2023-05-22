@@ -55,7 +55,7 @@ class Integrations {
 	public function integrate(): void {
 		foreach ( $this->integrations as $integration ) {
 			if ( $integration->is_active() ) {
-				$integration->integrate( $integration->config );
+				$integration->integrate( $integration->get_config() );
 			}
 		}
 	}
