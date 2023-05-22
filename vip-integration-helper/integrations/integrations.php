@@ -31,8 +31,8 @@ class Integrations {
 	/**
 	 * Registers an integration.
 	 *
-	 * @param string                   $slug            A unique identifier for the integration.
-	 * @param class-string|Integration $class_or_object Fully-qualified class name that will be instantiated.
+	 * @param string             $slug            A unique identifier for the integration.
+	 * @param string|Integration $class_or_object Fully-qualified class or instantiated Integration object.
 	 */
 	public function register( string $slug, $class_or_object ): void {
 		if ( isset( $this->integrations[ $slug ] ) ) {
