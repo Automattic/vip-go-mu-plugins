@@ -13,7 +13,7 @@ class BlockDataApi extends Integration {
 	 */
 	public function integrate( $config ): void {
 		add_action( 'plugins_loaded', function() {
-			// Guard against loading the plugin twice
+			// Do not load plugin if already loaded by customer code
 			if ( defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
 				return;
 			}
@@ -22,6 +22,6 @@ class BlockDataApi extends Integration {
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			}
-		}, /* priority */ 1 );
+		} );
 	}
 }
