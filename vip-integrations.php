@@ -9,18 +9,19 @@
 
 namespace Automattic\VIP\Integrations;
 
+use InvalidArgumentException;
+
 defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/vip-integration-helper/integrations/integration.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/integrations.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/block-data-api.php';
 
-add_action( 'muplugins_loaded', __NAMESPACE__ . '\\register_integrations', /* priority */ 4 );
-
+add_action( 'muplugins_loaded', __NAMESPACE__ . '\\register_vip_integrations', /* priority */ 4 );
 /**
  * Register valid integrations.
  */
-function register_integrations(): void {
+function register_vip_integrations(): void {
 	Integrations::instance()->register( 'block-data-api', BlockDataApi::class );
 }
 
@@ -30,11 +31,13 @@ function register_integrations(): void {
  * @param string $slug   A unique identifier for the integration.
  * @param array  $config An associative array of configuration values for the integration.
  */
-function activate_integration( string $integration_slug, array $config = [] ) {
+function activate( string $integration_slug, array $config = [] ) {
 	add_action( 'muplugins_loaded', function() use ( $integration_slug, $config ) {
 		$integration = Integrations::instance()->get_registered( $integration_slug );
 
-		if ( null !== $integration ) {
+		if ( null === $integration ) {
+			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
+		} else {
 			$integration->activate( $config );
 		}
 	}, /* priority */ 6 );
