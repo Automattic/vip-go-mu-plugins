@@ -12,7 +12,7 @@
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
 
-const { readConfig } = require('@wordpress/env/lib/config');
+const { loadConfig } = require('@wordpress/env/lib/config');
 
 /**
  * Dynamically set some configs.
@@ -21,7 +21,7 @@ const { readConfig } = require('@wordpress/env/lib/config');
  */
 // eslint-disable-next-line no-unused-vars
 module.exports = async (on, config) => {
-	const wpEnvConfig = await readConfig('wp-env');
+	const wpEnvConfig = await loadConfig(process.cwd());
 
 	if (wpEnvConfig) {
 		const port = wpEnvConfig.env.tests.port || null;
