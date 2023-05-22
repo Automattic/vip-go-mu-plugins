@@ -11,6 +11,7 @@ namespace Automattic\VIP\Integrations;
 
 defined( 'ABSPATH' ) || die();
 
+require_once __DIR__ . '/vip-integration-helper/integrations/integration.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/integrations.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/block-data-api.php';
 

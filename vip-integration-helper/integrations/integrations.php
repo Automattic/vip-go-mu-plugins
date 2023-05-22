@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-require_once __DIR__ . '/integration.php';
-
 /**
  * Class used to track and activate registered integrations.
  */
