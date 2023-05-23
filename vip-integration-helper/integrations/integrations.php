@@ -58,10 +58,21 @@ class Integrations {
 	 * Call integrate() for each registered and activated integration.
 	 */
 	public function integrate(): void {
-		foreach ( $this->integrations as $integration ) {
+		foreach ( $this->integrations as $slug => $integration ) {
+			$is_active = $integration->is_active() ? 'yes' : 'no';
+
 			if ( $integration->is_active() ) {
 				$integration->integrate( $integration->get_config() );
+
+				unset( $this->integrations[ $slug ] );
 			}
 		}
+	}
+
+	/**
+	 * Remove all registered integrations
+	 */
+	public function remove_registered(): void {
+		$this->integrations = [];
 	}
 }
