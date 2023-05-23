@@ -11,7 +11,7 @@ require_once __DIR__ . '/fake-integration.php';
  * @preserveGlobalState disabled
  */
 class VIP_Integrations_Test extends WP_UnitTestCase {
-	protected function setUp(): void {
+	public function setUp(): void {
 		// Remove existing default integrations to avoid conflicts when re-registering
 		Integrations::instance()->remove_registered();
 	}
