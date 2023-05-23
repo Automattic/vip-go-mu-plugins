@@ -47,22 +47,3 @@ add_action(
 		);
 	}
 );
-
-// Enterprise Search upgrade
-add_action(
-	'vip_admin_notice_init',
-	function( $admin_notice_controller ) {
-		$message = '<a href="https://lobby.vip.wordpress.com/2022/12/07/call-for-testing-enterprise-search/" target="_blank">Enterprise Search is being gradually rolled out on WordPress VIP.</a> If you would like to upgrade now, please define the constant <code>VIP_SEARCH_USE_NEXT_EP</code> in your <code>vip-config.php</code> file.';
-
-		$admin_notice_controller->add(
-			new Admin_Notice(
-				$message,
-				[
-					new Expression_Condition( class_exists( '\Automattic\VIP\Search\Search' ) && method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && ! \Automattic\VIP\Search\Search::should_load_new_ep() ),
-				],
-				'new-ep-version-1',
-				'info'
-			)
-		);
-	}
-);
