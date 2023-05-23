@@ -17,6 +17,25 @@ require_once __DIR__ . '/../../config/class-site-details-index.php';
  * @preserveGlobalState disabled
  */
 class Site_Details_Index_Test extends WP_UnitTestCase {
+	public function setUp(): void {
+		parent::setUp();
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) {
+			if ( false === $result ) {
+				$result = [
+					'headers'  => [],
+					'body'     => '',
+					'response' => [
+						'code'    => 418,
+						'message' => "I'm a teapot",
+					],
+					'cookies'  => [],
+				];
+			}
+
+			return $result;
+		}, 10, 3 );
+	}
+
 	public function test__data_filter_should_not_be_hooked_if_no_init() {
 		$sdi = new Site_Details_Index();
 
