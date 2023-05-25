@@ -50,6 +50,11 @@ jobs:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
 
+      - name: Patch package.json for WP 6.2.2
+        run: |
+          sed -i 's/"version": "6.2.3"/"version": "6.2.2"/' wordpress/package.json
+        if: steps.version.outputs.latest == '6.2.2'
+
       - name: Tweaks
         run: |
           echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
