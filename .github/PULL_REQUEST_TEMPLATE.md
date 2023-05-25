@@ -36,7 +36,7 @@ We upgraded Jetpack 9.2 to Jetpack 9.2.1.
 
 Not a lot of significant changes in this patch release, just bugfixes and compatibility improvements.
 -->
-## Checklist
+## Pre-review checklist
 
 Please make sure the items below have been covered before requesting a review:
 
@@ -46,6 +46,10 @@ Please make sure the items below have been covered before requesting a review:
 - [ ] This change uses a rollout method to ease with deployment (if applicable - especially for large scale actions that require writes).
 - [ ] This change has relevant documentation additions / updates (if applicable).
 - [ ] I've created a changelog description that aligns with the provided examples.
+
+## Pre-deploy checklist
+
+- [ ] VIP staff: Ensure any alerts added/updated conform to internal standards (see internal documentation). 
 
 ## Steps to Test
 <!--
