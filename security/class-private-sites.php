@@ -54,7 +54,6 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		add_filter( 'jetpack_sync_before_send_jetpack_full_sync_options', array( $this, 'filter_blog_public_option_for_full_sync' ), 11 );
 		add_filter( 'pre_option_blog_public', fn() => '-1' );
 
 		$this->disable_core_feeds();
@@ -117,26 +116,5 @@ class Private_Sites {
 		unset( $modules['enhanced-distribution'] );
 
 		return $modules;
-	}
-
-	/**
-	 * Filter the blog_public option when syncing to JP
-	 *
-	 * @param array $args {
-	 *  Sync option values.
-	 * @type string Option name.
-	 * @type mixed Value.
-	 * }
-	 *
-	 * @return array
-	 */
-	public function filter_blog_public_option_for_full_sync( $args ) {
-		if ( ! is_array( $args ) ) {
-			return $args;
-		}
-
-		$args['blog_public'] = '-1';
-
-		return $args;
 	}
 }
