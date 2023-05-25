@@ -13,7 +13,7 @@ class Sync {
 	const MAX_SYNCS_PER_INTERVAL = 10;
 	const LOG_FEATURE_NAME       = 'vip_config_sync';
 
-	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value';
+	const JETPACK_PRIVACY_SETTINGS_SYNC_STATUS_OPTION_NAME = 'vip_config_jetpack_privacy_settings_synced_value_v2';
 
 	// The maximum amount of blogs we want to register immediant syncs for.
 	const BLOGS_TO_SYNC_LIMIT = 10;
