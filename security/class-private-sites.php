@@ -119,7 +119,7 @@ class Private_Sites {
 	}
 
 	public function filter_restrict_blog_public( $current_value ) {
-		if ( $current_value === '1' ) {
+		if ( '1' === $current_value ) {
 			return '-1';
 		}
 		return $current_value;
