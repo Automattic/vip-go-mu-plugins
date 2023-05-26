@@ -54,7 +54,7 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		add_filter( 'pre_option_blog_public', fn() => '-1' );
+		add_filter( 'pre_option_blog_public', fn() => '0' );
 
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
