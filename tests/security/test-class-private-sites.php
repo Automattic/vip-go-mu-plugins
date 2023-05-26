@@ -100,4 +100,23 @@ class Private_Sites_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected, $filtered );
 	}
+
+	public function test__filter_restrict_blog_public_keeps_2() {
+		$private = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '2' );
+
+		$this->assertEquals( '2', $filtered );
+	}
+	public function test__filter_restrict_blog_public_keeps_0() {
+		$private = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '0' );
+
+		$this->assertEquals( '0', $filtered );
+	}
+	public function test__filter_restrict_blog_public_changes_1() {
+		$private = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '1' );
+
+		$this->assertEquals( '-1', $filtered );
+	}
 }

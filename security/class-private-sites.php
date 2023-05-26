@@ -54,7 +54,7 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		add_filter( 'pre_option_blog_public', fn() => '-1' );
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
@@ -116,5 +116,12 @@ class Private_Sites {
 		unset( $modules['enhanced-distribution'] );
 
 		return $modules;
+	}
+
+	public function filter_restrict_blog_public( $current_value ) {
+		if ( $current_value === '1' ) {
+			return '-1';
+		}
+		return $current_value;
 	}
 }
