@@ -15,6 +15,7 @@ function notice() {
 		! current_user_can( 'manage_options' ) ||
 		get_option( 'blogpublic_notice_dismissed', false ) ||
 		! get_option( 'blog_public' ) ||
+		'-1' === get_option( 'blog_public' ) ||
 		wp_endswith( $home_url_parsed['host'], '.go-vip.co' ) ||
 		wp_endswith( $home_url_parsed['host'], '.go-vip.net' )
 	) {
@@ -22,8 +23,8 @@ function notice() {
 	}
 
 	printf(
-		'<div id="blogpublic-notice" class="notice notice-warning is-dismissible"><p>Your site may be discoverable by search engines. You can change this in <a href="%s">Reading Settings</a>, under <strong>Search Engine Visibility</strong>.</p></div>',
-		esc_url( admin_url( 'options-reading.php' ) )
+		'<div id="blogpublic-notice" class="notice notice-warning is-dismissible"><p>Your site may be discoverable. You can change this by <a href="%s">disabling content distribution</a>.</p></div>',
+		'https://docs.wpvip.com/technical-references/restricting-site-access/controlling-content-distribution-via-jetpack/#h-disabling-content-distribution',
 	);
 	add_action( 'admin_footer', __NAMESPACE__ . '\dismiss_handler' );
 }
@@ -69,7 +70,7 @@ add_action( 'wp_ajax_blogpublic_notice_dismiss', __NAMESPACE__ . '\dismiss_callb
  * remove 'dismiss' flag to reshow the notice
  */
 function reset_notice_dismissal( $old_value, $value ) {
-	if ( ( '0' === $old_value || 0 === $old_value ) && 1 === $value ) {
+	if ( 1 === $value || '1' === $value ) {
 		delete_option( 'blogpublic_notice_dismissed' );
 	}
 }
