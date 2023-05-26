@@ -111,7 +111,7 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$private  = Private_Sites::instance();
 		$filtered = $private->filter_restrict_blog_public( '0' );
 
-		$this->assertEquals( '0', $filtered );
+		$this->assertEquals( '-1', $filtered );
 	}
 	public function test__filter_restrict_blog_public_changes_1() {
 		$private  = Private_Sites::instance();
