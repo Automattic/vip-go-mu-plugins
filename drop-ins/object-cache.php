@@ -13,8 +13,7 @@
 
 // Will use the "next" version on these specified environment types by default.
 if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
-	if ( 'production' !== VIP_GO_APP_ENVIRONMENT ) {
-		// Rollout to all but production sites.
+	if ( in_array( VIP_GO_APP_ENVIRONMENT, [ 'develop', 'preprod', 'staging' ], true ) ) {
 		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', true );
 	}
 }
@@ -24,9 +23,9 @@ if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
 	define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );
 }
 
-if ( defined( 'VIP_USE_ALPHA_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_ALPHA_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
+if ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
-} elseif ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
+} elseif ( extension_loaded( 'memcached' ) ) {
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
 } else {
 	require_once __DIR__ . '/object-cache/object-cache-stable.php';
