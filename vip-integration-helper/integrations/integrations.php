@@ -50,7 +50,7 @@ class Integrations {
 	 *
 	 * @param string $slug A unique identifier for the integration.
 	 */
-	public function get_registered( string $slug ): ?Integration {
+	public function get( string $slug ): ?Integration {
 		return $this->integrations[ $slug ] ?? null;
 	}
 

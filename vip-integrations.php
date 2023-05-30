@@ -59,7 +59,7 @@ $vip_integrations->setup();
  */
 function activate( string $integration_slug, array $config = [] ) {
 	add_action( 'activate_vip_integrations', function() use ( $integration_slug, $config ) {
-		$integration = Integrations::instance()->get_registered( $integration_slug );
+		$integration = Integrations::instance()->get( $integration_slug );
 
 		if ( null === $integration ) {
 			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
