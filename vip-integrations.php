@@ -21,30 +21,30 @@ class VipIntegrations {
 	public function setup() {
 		add_action( 'muplugins_loaded', [ $this, 'register' ], /* priority */ 4 );
 		add_action( 'muplugins_loaded', [ $this, 'activate' ], /* priority */ 6 );
-		add_action( 'muplugins_loaded', [ $this, 'integrate' ], /* priority */ 8 );
+		add_action( 'muplugins_loaded', [ $this, 'load' ], /* priority */ 8 );
 	}
 
 	// Actions
 
 	public function register(): void {
-		add_action( 'register_vip_integrations', function() {
+		add_action( 'vip_integrations_register', function() {
 			// Register VIP integrations here
 			Integrations::instance()->register( 'block-data-api', BlockDataApi::class );
 		} );
 
-		do_action( 'register_vip_integrations' );
+		do_action( 'vip_integrations_register' );
 	}
 
 	public function activate(): void {
-		do_action( 'activate_vip_integrations' );
+		do_action( 'vip_integrations_activate' );
 	}
 
-	public function integrate(): void {
-		add_action( 'integrate_vip_integrations', function() {
-			Integrations::instance()->integrate();
+	public function load(): void {
+		add_action( 'vip_integrations_load', function() {
+			Integrations::instance()->load();
 		} );
 
-		do_action( 'integrate_vip_integrations' );
+		do_action( 'vip_integrations_load' );
 	}
 }
 
@@ -58,7 +58,7 @@ $vip_integrations->setup();
  * @param array  $config An associative array of configuration values for the integration.
  */
 function activate( string $integration_slug, array $config = [] ) {
-	add_action( 'activate_vip_integrations', function() use ( $integration_slug, $config ) {
+	add_action( 'vip_integrations_activate', function() use ( $integration_slug, $config ) {
 		$integration = Integrations::instance()->get( $integration_slug );
 
 		if ( null === $integration ) {

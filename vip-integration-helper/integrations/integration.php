@@ -48,5 +48,5 @@ abstract class Integration {
 	 * Abstract base for integration functionality.
 	 * Implement custom action and filter calls to load integration here.
 	 */
-	abstract public function integrate( array $config ): void;
+	abstract public function load( array $config ): void;
 }

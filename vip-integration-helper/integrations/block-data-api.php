@@ -3,13 +3,13 @@
 namespace Automattic\VIP\Integrations;
 
 /**
- * Integrates VIP Block Data REST API.
+ * Loads VIP Block Data REST API.
  */
 class BlockDataApi extends Integration {
 	/**
-	 * Applies hooks to integrate Block Data API plugin.
+	 * Applies hooks to load Block Data API plugin.
 	 */
-	public function integrate( array $config ): void {
+	public function load( array $config ): void {
 		add_action( 'plugins_loaded', function() {
 			// Do not load plugin if already loaded by customer code
 			if ( defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {

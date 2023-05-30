@@ -55,12 +55,12 @@ class Integrations {
 	}
 
 	/**
-	 * Call integrate() for each registered and activated integration.
+	 * Call load() for each registered and activated integration.
 	 */
-	public function integrate(): void {
+	public function load(): void {
 		foreach ( $this->integrations as $slug => $integration ) {
 			if ( $integration->is_active() ) {
-				$integration->integrate( $integration->get_config() );
+				$integration->load( $integration->get_config() );
 			}
 		}
 	}

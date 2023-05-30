@@ -17,38 +17,38 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test_register_integration_as_class_name() {
-		add_action( 'register_vip_integrations', function() {
+		add_action( 'vip_integrations_register', function() {
 			Integrations::instance()->register( 'fake-integration', FakeIntegration::class );
 		});
 
 		activate( 'fake-integration' );
 
 		$this->run_integration_actions();
-		$this->assertTrue( FakeIntegration::$is_integrated );
+		$this->assertTrue( FakeIntegration::$is_loaded );
 	}
 
 	public function test_register_integration_as_instantiated_class() {
 		$fake_integration = new class() extends Integration {
-			public $is_integrated = false;
+			public $is_loaded = false;
 
-			public function integrate( array $config ): void {
-				$this->is_integrated = true;
+			public function load( array $config ): void {
+				$this->is_loaded = true;
 			}
 		};
 
-		add_action( 'register_vip_integrations', function() use ( $fake_integration ) {
+		add_action( 'vip_integrations_register', function() use ( $fake_integration ) {
 			Integrations::instance()->register( 'fake-integration', $fake_integration );
 		});
 
 		activate( 'fake-integration' );
 
 		$this->run_integration_actions();
-		$this->assertTrue( $fake_integration->is_integrated );
+		$this->assertTrue( $fake_integration->is_loaded );
 	}
 
 	private function run_integration_actions() {
-		do_action( 'register_vip_integrations' );
-		do_action( 'activate_vip_integrations' );
-		do_action( 'integrate_vip_integrations' );
+		do_action( 'vip_integrations_register' );
+		do_action( 'vip_integrations_activate' );
+		do_action( 'vip_integrations_load' );
 	}
 }

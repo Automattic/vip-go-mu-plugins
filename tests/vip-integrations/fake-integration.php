@@ -3,9 +3,9 @@
 namespace Automattic\VIP\Integrations;
 
 class FakeIntegration extends Integration {
-	public static $is_integrated = false;
+	public static $is_loaded = false;
 
-	public function integrate( array $config ): void {
-		self::$is_integrated = true;
+	public function load( array $config ): void {
+		self::$is_loaded = true;
 	}
 }
