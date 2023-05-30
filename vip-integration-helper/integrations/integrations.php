@@ -57,7 +57,7 @@ class Integrations {
 	/**
 	 * Call load() for each registered and activated integration.
 	 */
-	public function load(): void {
+	public function load_active(): void {
 		foreach ( $this->integrations as $slug => $integration ) {
 			if ( $integration->is_active() ) {
 				$integration->load( $integration->get_config() );

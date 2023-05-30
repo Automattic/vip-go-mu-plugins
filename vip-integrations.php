@@ -41,7 +41,7 @@ class VipIntegrations {
 
 	public function load(): void {
 		add_action( 'vip_integrations_load', function() {
-			Integrations::instance()->load();
+			Integrations::instance()->load_active();
 		} );
 
 		do_action( 'vip_integrations_load' );
