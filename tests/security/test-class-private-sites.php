@@ -101,42 +101,22 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $filtered );
 	}
 
-	public function test__filter_blog_public_option_for_sync() {
-		$private = Private_Sites::instance();
+	public function test__filter_restrict_blog_public_keeps_2() {
+		$private  = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '2' );
 
-		$input = array( 'blog_public', 'foo', '1' );
-
-		$filtered = $private->filter_blog_public_option_for_sync( $input );
-
-		$this->assertEquals( '-1', $filtered[2] );
+		$this->assertEquals( '2', $filtered );
 	}
+	public function test__filter_restrict_blog_public_keeps_0() {
+		$private  = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '0' );
 
-	public function test__filter_blog_public_option_for_sync_other_option() {
-		$private = Private_Sites::instance();
-
-		$input = array( 'foo', 'bar', '1' );
-
-		$filtered = $private->filter_blog_public_option_for_sync( $input );
-
-		// Unchanged
-		$this->assertEquals( '1', $filtered[2] );
+		$this->assertEquals( '-1', $filtered );
 	}
+	public function test__filter_restrict_blog_public_changes_1() {
+		$private  = Private_Sites::instance();
+		$filtered = $private->filter_restrict_blog_public( '1' );
 
-	public function test__filter_blog_public_option_for_full_sync() {
-		$private = Private_Sites::instance();
-
-		$input = array(
-			'blog_public' => 1,
-			'foo'         => 'bar',
-		);
-
-		$filtered = $private->filter_blog_public_option_for_full_sync( $input );
-
-		$expected = array(
-			'blog_public' => '-1',
-			'foo'         => 'bar',
-		);
-
-		$this->assertEquals( $expected, $filtered );
+		$this->assertEquals( '-1', $filtered );
 	}
 }

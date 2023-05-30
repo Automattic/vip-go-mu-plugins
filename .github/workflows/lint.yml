@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@v3.5.2
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.24.0
+        uses: shivammathur/setup-php@2.25.2
         with:
           coverage: none
           php-version: "8.0"
@@ -52,7 +52,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@v3.5.2
 
       - name: Setup Node
         uses: actions/setup-node@v3.6.0

@@ -1,11 +1,13 @@
 <?php
 
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
 namespace Automattic\VIP\Files\Acl;
 
 use Automattic\Test\Constant_Mocker;
+use ErrorException;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../files/acl/acl.php';
@@ -14,16 +16,30 @@ require_once __DIR__ . '/../../../files/acl/acl.php';
  * @property WP_UnitTest_Factory $factory
  */
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
+	private $original_error_reporting;
 
 	public function setUp(): void {
 		parent::setUp();
 		header_remove();
 
 		Constant_Mocker::clear();
+
+		$this->original_error_reporting = error_reporting();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				throw new ErrorException( $errstr, $errno );
+			}
+
+			return false;
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -36,15 +52,22 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
+	public function test__maybe_load_restrictions__no_constant_and_with_one_option__warning() {
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
-		$this->expectWarning();
-		$this->expectWarningMessage( 'File ACL restrictions are enabled without server configs' );
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
+		$this->expectExceptionCode( E_USER_WARNING );
 
 		maybe_load_restrictions();
+	}
 
-		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
+
+		maybe_load_restrictions();
+		self::assertFalse( has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
 	public function test__maybe_load_restrictions__constant_and_restrict_all_option() {
@@ -184,17 +207,22 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), $headers, 'Sent headers do not include X-Private header or its value is unexpected', true );
 	}
 
-	public function test__send_visibility_headers__invalid_visibility() {
-		$this->expectWarning();
-		$this->expectWarningMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
+	public function test__send_visibility_headers__invalid_visibility__warning() {
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
 
 		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
+	}
 
-		$this->assertEquals( 500, http_response_code(), 'Status code does not match expected' );
+	public function test__send_visibility_headers__invalid_visibility() {
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
+
+		self::assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
 		$headers = headers_list();
-		$this->assertNotContains( 'X-Private: true', $headers, 'Sent headers include X-Private: true header but should not.', true );
-		$this->assertNotContains( 'X-Private: false', $headers, 'Sent headers include X-Private:false header but should not.', true );
+		self::assertNotContains( 'X-Private: true', $headers, 'Sent headers include X-Private: true header but should not.', true );
+		self::assertNotContains( 'X-Private: false', $headers, 'Sent headers include X-Private: false header but should not.', true );
 	}
 
 	public function test__is_valid_path_for_site__always_true_for_not_multisite() {
@@ -250,7 +278,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 			$this->markTestSkipped();
 		}
 
-		// Can access other paths from basedir, as long as they don't contain `/sites/ 
+		// Can access other paths from basedir, as long as they don't contain `/sites/
 		$expected_is_allowed = true;
 
 		$file_path = 'cache/css/cats.css';

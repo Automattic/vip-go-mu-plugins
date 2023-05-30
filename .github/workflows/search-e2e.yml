@@ -9,8 +9,11 @@ on:
       - production
       - staging
     paths:
-    - 'search/**'
-    - 'tests/search/e2e/**'
+      - 'bin/search/**'
+      - 'search/**'
+      - 'tests/search/e2e/**'
+      - 'package-lock.json'
+      - '.github/workflows/search-e2e.yml'
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v3.5.0
+      uses: actions/checkout@v3.5.2
       with:
         submodules: recursive
 
@@ -39,12 +42,6 @@ jobs:
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
-
-    - name: Instrument workflow processes for Search E2E tests
-      uses: runforesight/foresight-workflow-kit-action@v1
-      if: success() || failure()
-      with:
-        api_key: ${{secrets.FORESIGHT_API_KEY}}
 
     - name: Install dependencies
       run: npm ci
@@ -61,18 +58,6 @@ jobs:
     - name: Test
       run: npm run cypress:run
 
-    - name: Merge E2E test reports
-      run: npm run cypress:combine:reports
-
-    - name: Instrument Tests in ForeSight
-      if: success() || failure()
-      uses: thundra-io/foresight-test-kit-action@v1
-      with:
-        api_key: ${{secrets.FORESIGHT_API_KEY}}
-        test_format: JUNIT
-        test_framework: JEST
-        test_path: cypress/results/combined-cy-report.xml
-
     - name: Make artifacts available
       uses: actions/upload-artifact@v3
       if: failure()
@@ -84,6 +69,7 @@ jobs:
           ${{ github.workspace }}/tests/cypress/videos/
           ${{ github.workspace }}/tests/cypress/logs/
           ${{ github.workspace }}/cypress/results/
+
     - name: Stop Elasticsearch
       if: always()
       run: cd bin/search/es-docker/ && docker-compose down

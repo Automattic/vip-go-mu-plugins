@@ -1,32 +1,6 @@
 <?php
 /**
- * Query Monitor plugin for WordPress
- *
- * @package   query-monitor
- * @link      https://github.com/johnbillion/query-monitor
- * @author    John Blackbourn <john@johnblackbourn.com>
- * @copyright 2009-2022 John Blackbourn
- * @license   GPL v2 or later
- *
- * Plugin Name:  Query Monitor
- * Description:  The developer tools panel for WordPress.
- * Version:      3.10.1
- * Plugin URI:   https://querymonitor.com/
- * Author:       John Blackbourn
- * Author URI:   https://querymonitor.com/
- * Text Domain:  query-monitor
- * Domain Path:  /languages/
- * Requires PHP: 5.6.20
- *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Integration of the Query Monitor plugin for WordPress
  */
 
 /**
@@ -112,9 +86,6 @@ function wpcom_vip_qm_require() {
 		QM_Activation::init( $wpcom_vip_qm_file )->activate( true );
 		update_option( 'wpcom_vip_qm_activated', 1, true );
 	}
-
-	// We don't want to share our environment information via Query Monitor
-	remove_filter( 'qm/collectors', 'register_qm_collector_environment', 20, 2 );
 
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );

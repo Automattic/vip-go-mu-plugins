@@ -233,9 +233,9 @@ if ( window.jQuery ) {
 
 			key = $(this).attr('id');
 			if ( val ) {
-				localStorage.setItem( key, $(this).val() );
+				sessionStorage.setItem( key, $(this).val() );
 			} else {
-				localStorage.removeItem( key );
+				sessionStorage.removeItem( key );
 			}
 
 			if ( hilite ) {
@@ -277,7 +277,7 @@ if ( window.jQuery ) {
 
 		container.find('.qm-filter').each(function () {
 			var key = $(this).attr('id');
-			var value = localStorage.getItem( key );
+			var value = sessionStorage.getItem( key );
 			if ( value !== null ) {
 				// Escape the following chars with a backslash before passing into jQ selectors: [ ] ( ) ' " \
 				var val = value.replace(/[[\]()'"\\]/g, "\\$&");
@@ -629,7 +629,7 @@ if ( window.jQuery ) {
 	(function ($) {
 		$.qm = $.qm || {};
 		$.qm.tableSort = function (settings) {
-			// @param	object	columns	NodeList table colums.
+			// @param	object	columns	NodeList table columns.
 			// @param	integer	row_width	defines the number of columns per row.
 			var table_to_array = function (columns, row_width) {
 				columns = Array.prototype.slice.call(columns, 0);
@@ -672,7 +672,7 @@ if ( window.jQuery ) {
 					var desc = ! $(this).hasClass('qm-sorted-desc');
 					var index = $(this).index();
 
-					table.find('thead th').removeClass('qm-sorted-asc qm-sorted-desc').attr('aria-sort','none');
+					table.find('thead th').removeClass('qm-sorted-asc qm-sorted-desc').removeAttr('aria-sort');
 
 					if ( desc ) {
 						$(this).addClass('qm-sorted-desc').attr('aria-sort','descending');

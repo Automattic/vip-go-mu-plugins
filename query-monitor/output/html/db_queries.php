@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Database query output for HTML pages.
  *
@@ -42,37 +42,30 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 	 * @return void
 	 */
 	public function output() {
-
+		/** @var QM_Data_DB_Queries $data */
 		$data = $this->collector->get_data();
 
-		if ( empty( $data['dbs'] ) ) {
+		if ( empty( $data->wpdb ) ) {
 			$this->output_empty_queries();
 			return;
 		}
 
-		if ( ! empty( $data['errors'] ) ) {
-			$this->output_error_queries( $data['errors'] );
+		if ( ! empty( $data->errors ) ) {
+			$this->output_error_queries( $data->errors );
 		}
 
-		if ( ! empty( $data['expensive'] ) ) {
-			$this->output_expensive_queries( $data['expensive'] );
+		if ( ! empty( $data->expensive ) ) {
+			$this->output_expensive_queries( $data->expensive );
 		}
 
-		foreach ( $data['dbs'] as $name => $db ) {
-			$this->output_queries( $name, $db, $data );
-		}
-
+		$this->output_queries( $data->wpdb, $data );
 	}
 
 	/**
 	 * @return void
 	 */
 	protected function output_empty_queries() {
-		$id = sprintf(
-			'%s-wpdb',
-			$this->collector->id()
-		);
-		$this->before_non_tabular_output( $id );
+		$this->before_non_tabular_output();
 
 		if ( ! SAVEQUERIES ) {
 			$notice = sprintf(
@@ -121,7 +114,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 	 * @return void
 	 */
 	protected function output_expensive_queries( array $expensive ) {
-		$dp = strlen( substr( strrchr( (string) QM_DB_EXPENSIVE, '.' ), 1 ) );
+		$dp = strlen( substr( strrchr( (string) QM_DB_EXPENSIVE, '.' ) ?: '.0', 1 ) );
 
 		$panel_name = sprintf(
 			/* translators: %s: Database query time in seconds */
@@ -158,12 +151,11 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 	}
 
 	/**
-	 * @param string $name
 	 * @param stdClass $db
-	 * @param array<string, mixed> $data
+	 * @param QM_Data_DB_Queries $data
 	 * @return void
 	 */
-	protected function output_queries( $name, stdClass $db, array $data ) {
+	protected function output_queries( stdClass $db, QM_Data_DB_Queries $data ) {
 		$this->query_row = 0;
 		$span = 4;
 
@@ -174,19 +166,8 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 			$span++;
 		}
 
-		$panel_id = sprintf(
-			'%s-%s',
-			$this->collector->id(),
-			sanitize_title_with_dashes( $name )
-		);
-		$panel_name = sprintf(
-			/* translators: %s: Name of database controller */
-			__( '%s Queries', 'query-monitor' ),
-			$name
-		);
-
 		if ( ! empty( $db->rows ) ) {
-			$this->before_tabular_output( $panel_id, $panel_name );
+			$this->before_tabular_output();
 
 			echo '<thead>';
 
@@ -200,10 +181,10 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 			 *
 			 * @param bool $show_prompt Whether to show the prompt.
 			 */
-			if ( apply_filters( 'qm/show_extended_query_prompt', true ) && ! $db->has_trace && ( '$wpdb' === $name ) ) {
+			if ( apply_filters( 'qm/show_extended_query_prompt', true ) && ! $db->has_trace ) {
 				echo '<tr>';
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo '<th colspan="' . intval( $span ) . '" class="qm-warn">' . QueryMonitor::init()->icon( 'warning' );
+				echo '<th colspan="' . intval( $span ) . '" class="qm-warn">' . QueryMonitor::icon( 'warning' );
 				if ( file_exists( WP_CONTENT_DIR . '/db.php' ) ) {
 					/* translators: %s: File name */
 					$message = __( 'Extended query information such as the component and affected rows is not available. A conflicting %s file is present.', 'query-monitor' );
@@ -230,7 +211,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 
 			$types = array_keys( $db->types );
 			$prepend = array();
-			$callers = wp_list_pluck( $data['times'], 'caller' );
+			$callers = array_column( $data->times, 'caller' );
 
 			sort( $types );
 			usort( $callers, 'strcasecmp' );
@@ -265,7 +246,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 			echo '</th>';
 
 			if ( $db->has_trace ) {
-				$components = wp_list_pluck( $data['component_times'], 'component' );
+				$components = array_column( $data->component_times, 'component' );
 
 				usort( $components, 'strcasecmp' );
 
@@ -275,17 +256,17 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 			}
 
 			if ( $db->has_result ) {
-				if ( empty( $data['errors'] ) ) {
+				if ( empty( $data->errors ) ) {
 					$class = 'qm-num';
 				} else {
 					$class = '';
 				}
-				echo '<th scope="col" class="' . esc_attr( $class ) . ' qm-sortable-column" role="columnheader" aria-sort="none">';
+				echo '<th scope="col" class="' . esc_attr( $class ) . ' qm-sortable-column" role="columnheader">';
 				echo $this->build_sorter( __( 'Rows', 'query-monitor' ) ); // WPCS: XSS ok.
 				echo '</th>';
 			}
 
-			echo '<th scope="col" class="qm-num qm-sortable-column" role="columnheader" aria-sort="none">';
+			echo '<th scope="col" class="qm-num qm-sortable-column" role="columnheader">';
 			echo $this->build_sorter( __( 'Time', 'query-monitor' ) ); // WPCS: XSS ok.
 			echo '</th>';
 			echo '</tr>';
@@ -316,7 +297,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 
 			$this->after_tabular_output();
 		} else {
-			$this->before_non_tabular_output( $panel_id, $panel_name );
+			$this->before_non_tabular_output();
 
 			$notice = __( 'No queries! Nice work.', 'query-monitor' );
 			echo $this->build_notice( $notice ); // WPCS: XSS ok.
@@ -383,7 +364,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 
 		$row_attr = array();
 
-		if ( is_wp_error( $row['result'] ) ) {
+		if ( $row['result'] instanceof WP_Error ) {
 			$row_attr['class'] = 'qm-warn';
 		}
 		if ( isset( $cols['sql'] ) ) {
@@ -471,15 +452,15 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 		}
 
 		if ( isset( $cols['result'] ) ) {
-			if ( is_wp_error( $row['result'] ) ) {
+			if ( $row['result'] instanceof WP_Error ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo "<td class='qm-row-result qm-row-error'>" . QueryMonitor::init()->icon( 'warning' ) . esc_html( $row['result']->get_error_message() ) . "</td>\n";
+				echo "<td class='qm-row-result qm-row-error'>" . QueryMonitor::icon( 'warning' ) . esc_html( $row['result']->get_error_message() ) . "</td>\n";
 			} else {
 				echo "<td class='qm-row-result qm-num'>" . esc_html( $row['result'] ) . "</td>\n";
 			}
 		}
 
-		if ( isset( $cols['errno'] ) && is_wp_error( $row['result'] ) ) {
+		if ( isset( $cols['errno'] ) && ( $row['result'] instanceof WP_Error ) ) {
 			echo "<td class='qm-row-result qm-row-error'>" . esc_html( $row['result']->get_error_code() ) . "</td>\n";
 		}
 
@@ -491,7 +472,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 
 			if ( $expensive ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				echo QueryMonitor::init()->icon( 'warning' );
+				echo QueryMonitor::icon( 'warning' );
 			}
 
 			echo esc_html( $stime );
@@ -503,47 +484,22 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 	}
 
 	/**
-	 * @param array<int, string> $existing
+	 * @param array<int, string> $title
 	 * @return array<int, string>
 	 */
-	public function admin_title( array $existing ) {
-		$title = array();
+	public function admin_title( array $title ) {
+		/** @var QM_Data_DB_Queries $data */
 		$data = $this->collector->get_data();
 
-		if ( isset( $data['dbs'] ) ) {
-			foreach ( $data['dbs'] as $key => $db ) {
-				/* translators: %s: Time in seconds. Note the space between value and unit. */
-				$text = _n( '%s S', '%s S', $db->total_time, 'query-monitor' );
+		if ( isset( $data->wpdb ) ) {
+			$title[] = sprintf(
+				/* translators: %s: A time in seconds with a decimal fraction. No space between value and unit symbol. */
+				esc_html_x( '%ss', 'Time in seconds', 'query-monitor' ),
+				number_format_i18n( $data->wpdb->total_time, 2 )
+			);
 
-				// Avoid a potentially blank translation for the plural form.
-				// @see https://meta.trac.wordpress.org/ticket/5377
-				if ( '' === $text ) {
-					$text = '%s S';
-				}
-
-				$title[] = sprintf(
-					esc_html( '%s' . $text ),
-					( count( $data['dbs'] ) > 1 ? '&bull;&nbsp;&nbsp' : '' ),
-					number_format_i18n( $db->total_time, 2 )
-				);
-
-				/* translators: %s: Number of database queries. Note the space between value and unit. */
-				$text = _n( '%s Q', '%s Q', $db->total_qs, 'query-monitor' );
-
-				// Avoid a potentially blank translation for the plural form.
-				// @see https://meta.trac.wordpress.org/ticket/5377
-				if ( '' === $text ) {
-					$text = '%s Q';
-				}
-
-				$title[] = sprintf(
-					esc_html( $text ),
-					number_format_i18n( $db->total_qs )
-				);
-			}
-		} elseif ( isset( $data['total_qs'] ) ) {
-			/* translators: %s: Number of database queries. Note the space between value and unit. */
-			$text = _n( '%s Q', '%s Q', $data['total_qs'], 'query-monitor' );
+			/* translators: %s: Number of database queries. Note the space between value and unit symbol. */
+			$text = _n( '%s Q', '%s Q', $data->wpdb->total_qs, 'query-monitor' );
 
 			// Avoid a potentially blank translation for the plural form.
 			// @see https://meta.trac.wordpress.org/ticket/5377
@@ -551,17 +507,25 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 				$text = '%s Q';
 			}
 
-			$title[] = sprintf(
+			$title[] = preg_replace( '#\s?([^0-9,\.]+)#', '<small>$1</small>', sprintf(
 				esc_html( $text ),
-				number_format_i18n( $data['total_qs'] )
-			);
-		}
+				number_format_i18n( $data->wpdb->total_qs )
+			) );
+		} elseif ( isset( $data->total_qs ) ) {
+			/* translators: %s: Number of database queries. Note the space between value and unit symbol. */
+			$text = _n( '%s Q', '%s Q', $data->total_qs, 'query-monitor' );
 
-		foreach ( $title as &$t ) {
-			$t = preg_replace( '#\s?([^0-9,\.]+)#', '<small>$1</small>', $t );
-		}
+			// Avoid a potentially blank translation for the plural form.
+			// @see https://meta.trac.wordpress.org/ticket/5377
+			if ( '' === $text ) {
+				$text = '%s Q';
+			}
 
-		$title = array_merge( $existing, $title );
+			$title[] = preg_replace( '#\s?([^0-9,\.]+)#', '<small>$1</small>', sprintf(
+				esc_html( $text ),
+				number_format_i18n( $data->total_qs )
+			) );
+		}
 
 		return $title;
 	}
@@ -587,32 +551,16 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 	 * @return array<string, mixed[]>
 	 */
 	public function admin_menu( array $menu ) {
-
+		/** @var QM_Data_DB_Queries $data */
 		$data = $this->collector->get_data();
 		$errors = $this->collector->get_errors();
 		$expensive = $this->collector->get_expensive();
 
-		if ( isset( $data['dbs'] ) && count( $data['dbs'] ) > 1 ) {
-			foreach ( $data['dbs'] as $name => $db ) {
-				$name_attr = sanitize_title_with_dashes( $name );
-				$id = $this->collector->id() . '-' . $name_attr;
-				$menu[ $id ] = $this->menu( array(
-					'id' => esc_attr( sprintf( 'query-monitor-%s-db-%s', $this->collector->id(), $name_attr ) ),
-					'title' => esc_html( sprintf(
-						/* translators: %s: Name of database controller */
-						__( 'Queries: %s', 'query-monitor' ),
-						$name
-					) ),
-					'href' => esc_attr( sprintf( '#%s-%s', $this->collector->id(), $name_attr ) ),
-				) );
-			}
-		} else {
-			$id = $this->collector->id() . '-$wpdb';
-			$menu[ $id ] = $this->menu( array(
-				'title' => esc_html__( 'Queries', 'query-monitor' ),
-				'href' => esc_attr( sprintf( '#%s-wpdb', $this->collector->id() ) ),
-			) );
-		}
+		$id = $this->collector->id();
+		$menu[ $id ] = $this->menu( array(
+			'title' => esc_html__( 'Database Queries', 'query-monitor' ),
+			// 'href' => esc_attr( sprintf( '#%s', $this->collector->id() ) ),
+		) );
 
 		if ( $errors ) {
 			$id = $this->collector->id() . '-errors';
@@ -654,7 +602,7 @@ class QM_Output_Html_DB_Queries extends QM_Output_Html {
 		foreach ( array( 'errors', 'expensive' ) as $sub ) {
 			$id = $this->collector->id() . '-' . $sub;
 			if ( isset( $menu[ $id ] ) ) {
-				$menu['qm-db_queries-$wpdb']['children'][] = $menu[ $id ];
+				$menu['qm-db_queries']['children'][] = $menu[ $id ];
 				unset( $menu[ $id ] );
 			}
 		}

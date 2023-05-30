@@ -313,6 +313,10 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
+		if ( ! $indexable->index_exists() ) {
+			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
+		}
+
 		global $wpdb;
 
 		$next_index_time = $this->get_next_index_time( $object_id, $indexable_slug );
@@ -378,6 +382,12 @@ class Queue {
 	 */
 	public function queue_objects( $object_ids, $indexable_slug = 'post', $options = array() ) {
 		if ( ! is_array( $object_ids ) ) {
+			return;
+		}
+
+		$indexable = Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable || ! $indexable->index_exists() ) {
 			return;
 		}
 
@@ -1076,7 +1086,9 @@ class Queue {
 
 		// If indexing operation ratelimiting is hit, queue index operations
 		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
-			Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			}
 
 			$this->handle_index_limiting_start_timestamp();
 			$this->maybe_alert_for_prolonged_index_limiting();
@@ -1125,7 +1137,7 @@ class Queue {
 			$index_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
+		\Automattic\VIP\Utils\Alerts::instance()->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
