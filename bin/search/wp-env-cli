@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-const path = require('path');
 const { spawn } = require('child_process');
-const { readConfig } = require('@wordpress/env/lib/config');
+const { loadConfig } = require('@wordpress/env/lib/config');
 
+/**
+ * @returns {Promise<void>}
+ */
 function spawnCommandDirectly({ container, command, dockerComposeConfigPath }) {
 	const composeCommand = [
 		'-f',
@@ -32,8 +34,7 @@ function spawnCommandDirectly({ container, command, dockerComposeConfigPath }) {
 }
 
 const run = async () => {
-	const configPath = path.resolve('.wp-env.json');
-	const { dockerComposeConfigPath } = await readConfig(configPath);
+	const { dockerComposeConfigPath } = await loadConfig(process.cwd());
 
 	const container = process.argv[2];
 	const command = process.argv.splice(3).join(' ');
