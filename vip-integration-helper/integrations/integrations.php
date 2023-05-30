@@ -61,8 +61,6 @@ class Integrations {
 		foreach ( $this->integrations as $slug => $integration ) {
 			if ( $integration->is_active() ) {
 				$integration->integrate( $integration->get_config() );
-
-				unset( $this->integrations[ $slug ] );
 			}
 		}
 	}
