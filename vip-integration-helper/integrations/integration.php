@@ -18,7 +18,7 @@ abstract class Integration {
 	 *
 	 * @var bool
 	 */
-	protected bool $active = false;
+	protected bool $is_active = false;
 
 	/**
 	 * Activates this integration with an optional configuration value.
@@ -26,15 +26,15 @@ abstract class Integration {
 	 * @param array  $config An associative array of configuration values for the integration.
 	 */
 	public function activate( array $config = [] ): void {
-		$this->active = true;
-		$this->config = $config;
+		$this->is_active = true;
+		$this->config    = $config;
 	}
 
 	/**
 	 * Returns true if this integration has been activated.
 	 */
 	public function is_active(): bool {
-		return $this->active;
+		return $this->is_active;
 	}
 
 	/**

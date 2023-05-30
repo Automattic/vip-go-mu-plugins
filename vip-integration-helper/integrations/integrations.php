@@ -59,8 +59,6 @@ class Integrations {
 	 */
 	public function integrate(): void {
 		foreach ( $this->integrations as $slug => $integration ) {
-			$is_active = $integration->is_active() ? 'yes' : 'no';
-
 			if ( $integration->is_active() ) {
 				$integration->integrate( $integration->get_config() );
 
