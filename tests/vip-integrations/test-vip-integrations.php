@@ -11,20 +11,22 @@ require_once __DIR__ . '/fake-integration.php';
  * @preserveGlobalState disabled
  */
 class VIP_Integrations_Test extends WP_UnitTestCase {
-	public function setUp(): void {
-		// Remove existing default integrations to avoid conflicts when re-registering
-		Integrations::instance()->remove_registered();
+	public function test_register_integration_as_class_name() {
+		$integrations = new Integrations();
+		$integrations->register( 'fake-integration-class', FakeIntegration::class );
+
+		$integrations->activate( 'fake-integration-class' );
+
+		$integrations->load_active();
+		$this->assertTrue( FakeIntegration::$is_loaded );
 	}
 
-	public function test_register_integration_as_class_name() {
-		add_action( 'vip_integrations_register', function() {
-			Integrations::instance()->register( 'fake-integration', FakeIntegration::class );
-		});
+	public function test_register_integration_as_class_name_without_activation() {
+		$integrations = new Integrations();
+		$integrations->register( 'fake-integration', FakeIntegration::class );
 
-		activate( 'fake-integration' );
-
-		$this->run_integration_actions();
-		$this->assertTrue( FakeIntegration::$is_loaded );
+		$integrations->load_active();
+		$this->assertFalse( FakeIntegration::$is_loaded );
 	}
 
 	public function test_register_integration_as_instantiated_class() {
@@ -36,19 +38,12 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 			}
 		};
 
-		add_action( 'vip_integrations_register', function() use ( $fake_integration ) {
-			Integrations::instance()->register( 'fake-integration', $fake_integration );
-		});
+		$integrations = new Integrations();
+		$integrations->register( 'fake-integration-instance', $fake_integration );
 
-		activate( 'fake-integration' );
+		$integrations->activate( 'fake-integration-instance' );
 
-		$this->run_integration_actions();
+		$integrations->load_active();
 		$this->assertTrue( $fake_integration->is_loaded );
-	}
-
-	private function run_integration_actions() {
-		do_action( 'vip_integrations_register' );
-		do_action( 'vip_integrations_activate' );
-		do_action( 'vip_integrations_load' );
 	}
 }

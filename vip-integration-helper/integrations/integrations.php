@@ -16,19 +16,6 @@ class Integrations {
 	private array $integrations = [];
 
 	/**
-	 * Return singleton instance of class.
-	 */
-	public static function instance(): Integrations {
-		static $instance = null;
-
-		if ( null === $instance ) {
-			$instance = new self();
-		}
-
-		return $instance;
-	}
-
-	/**
 	 * Registers an integration.
 	 *
 	 * @param string             $slug            A unique identifier for the integration.
@@ -66,9 +53,18 @@ class Integrations {
 	}
 
 	/**
-	 * Remove all registered integrations
+	 * Activates an integration with an optional configuration value.
+	 *
+	 * @param string $slug   A unique identifier for the integration.
+	 * @param array  $config An associative array of configuration values for the integration.
 	 */
-	public function remove_registered(): void {
-		$this->integrations = [];
+	public function activate( string $integration_slug, array $config = [] ): void {
+		$integration = $this->get( $integration_slug );
+
+		if ( null === $integration ) {
+			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
+		} else {
+			$integration->activate( $config );
+		}
 	}
 }

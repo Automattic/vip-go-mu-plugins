@@ -9,47 +9,16 @@
 
 namespace Automattic\VIP\Integrations;
 
-use InvalidArgumentException;
-
 defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/vip-integration-helper/integrations/integration.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/integrations.php';
 require_once __DIR__ . '/vip-integration-helper/integrations/block-data-api.php';
 
-class VipIntegrations {
-	public function setup() {
-		add_action( 'muplugins_loaded', [ $this, 'register' ], /* priority */ 4 );
-		add_action( 'muplugins_loaded', [ $this, 'activate' ], /* priority */ 6 );
-		add_action( 'muplugins_loaded', [ $this, 'load' ], /* priority */ 8 );
-	}
+$vip_integrations = new Integrations();
 
-	// Actions
-
-	public function register(): void {
-		add_action( 'vip_integrations_register', function() {
-			// Register VIP integrations here
-			Integrations::instance()->register( 'block-data-api', BlockDataApi::class );
-		} );
-
-		do_action( 'vip_integrations_register' );
-	}
-
-	public function activate(): void {
-		do_action( 'vip_integrations_activate' );
-	}
-
-	public function load(): void {
-		add_action( 'vip_integrations_load', function() {
-			Integrations::instance()->load_active();
-		} );
-
-		do_action( 'vip_integrations_load' );
-	}
-}
-
-$vip_integrations = new VipIntegrations();
-$vip_integrations->setup();
+// Register VIP integrations here
+$vip_integrations->register( 'block-data-api', BlockDataApi::class );
 
 /**
  * Activates an integration with an optional configuration value.
@@ -57,14 +26,13 @@ $vip_integrations->setup();
  * @param string $slug   A unique identifier for the integration.
  * @param array  $config An associative array of configuration values for the integration.
  */
-function activate( string $integration_slug, array $config = [] ) {
-	add_action( 'vip_integrations_activate', function() use ( $integration_slug, $config ) {
-		$integration = Integrations::instance()->get( $integration_slug );
-
-		if ( null === $integration ) {
-			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
-		} else {
-			$integration->activate( $config );
-		}
-	} );
+function activate( string $integration_slug, array $config = [] ): void {
+	global $vip_integrations;
+	$vip_integrations->activate( $integration_slug, $config );
 }
+
+// Load integrations in muplugins_loaded:5 to allow integrations to hook
+// muplugins_loaded:10 or any later action
+add_action( 'muplugins_loaded', function() use ( $vip_integrations ) {
+	$vip_integrations->load_active();
+}, /* priority */ 5 );
