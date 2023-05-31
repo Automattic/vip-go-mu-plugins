@@ -252,7 +252,7 @@ class Cron {
 			$this->disable_sweeper_job();
 		}
 
-		if ( true !== wp_cache_add( self::SWEEPER_CRON_LOCK, time(), 'vip', 3 * MINUTE_IN_SECONDS ) ) {
+		if ( true !== wp_cache_add( self::SWEEPER_CRON_LOCK, time(), 'vip', 5 * MINUTE_IN_SECONDS ) ) {
 			// Bail if it's already running.
 			return;
 		}
