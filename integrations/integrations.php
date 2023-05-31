@@ -30,12 +30,23 @@ class Integrations {
 			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
 		}
 
-		if ( ! is_object( $class_or_object ) ) {
-			$class_or_object = new $class_or_object();
+		if ( is_object( $class_or_object ) ) {
+			$integration_object = $class_or_object;
+		} else {
+			if ( ! class_exists( $class_or_object ) ) {
+				throw new InvalidArgumentException( sprintf( 'Integration class "%s" does not exist.', $class_or_object ) );
+			}
+
+			$integration_object = new $class_or_object();
 		}
 
-		$this->integrations[ $slug ] = $class_or_object;
+		if ( ! is_subclass_of( $integration_object, Integration::class ) ) {
+			throw new InvalidArgumentException( sprintf( 'Integration class "%s" must extend %s.', get_class( $integration_object ), Integration::class ) );
+		}
+
+		$this->integrations[ $slug ] = $integration_object;
 	}
+
 	/**
 	 * Returns a registered integration for a key, or null if not found.
 	 *
