@@ -4,6 +4,8 @@ namespace Automattic\VIP\Integrations;
 
 /**
  * Abstract base class for all integration implementations.
+ *
+ * @private
  */
 abstract class Integration {
 	/**
@@ -24,6 +26,8 @@ abstract class Integration {
 	 * Activates this integration with an optional configuration value.
 	 *
 	 * @param array  $config An associative array of configuration values for the integration.
+	 *
+	 * @private
 	 */
 	public function activate( array $config = [] ): void {
 		$this->is_active = true;
@@ -32,6 +36,8 @@ abstract class Integration {
 
 	/**
 	 * Returns true if this integration has been activated.
+	 *
+	 * @private
 	 */
 	public function is_active(): bool {
 		return $this->is_active;
@@ -39,6 +45,8 @@ abstract class Integration {
 
 	/**
 	 * Return the activation configuration for this integration.
+	 *
+	 * @private
 	 */
 	public function get_config(): array {
 		return $this->config;
@@ -47,6 +55,8 @@ abstract class Integration {
 	/**
 	 * Abstract base for integration functionality.
 	 * Implement custom action and filter calls to load integration here.
+	 *
+	 * @private
 	 */
 	abstract public function load( array $config ): void;
 }
