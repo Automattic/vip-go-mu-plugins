@@ -47,3 +47,39 @@ function define_db_constants( $hyperdb ): void {
 		}
 	}
 }
+
+/**
+ * Define VIP_MU_PLUGINS_BRANCH and VIP_MU_PLUGINS_BRANCH_ID.
+ * Uses the mu-plugins meta info from version file.
+ */
+function define_mu_plugins_constants(): void {
+	if ( defined( 'VIP_MU_PLUGINS_BRANCH' ) || defined( 'VIP_MU_PLUGINS_BRANCH_ID' ) ) {
+		return;
+	}
+
+	if ( defined( 'VIP_GO_ENV' ) && 'local' === constant( 'VIP_GO_ENV' ) ) {
+		return;
+	}
+
+	$version_file = WPMU_PLUGIN_DIR . '/.version';
+	if ( ! file_exists( $version_file ) ) {
+		return;
+	}
+
+	// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
+	$info = file_get_contents( $version_file );
+	if ( ! $info ) {
+		return;
+	}
+
+	$info      = json_decode( $info );
+	$tag       = $info->tag ?? null;
+	$branch_id = $info->stack_version ?? null;
+	if ( $tag ) {
+		define( 'VIP_MU_PLUGINS_BRANCH', 'prod' === $tag ? 'production' : $tag );
+	}
+	if ( $branch_id ) {
+		define( 'VIP_MU_PLUGINS_BRANCH_ID', $branch_id );
+	}
+
+}
