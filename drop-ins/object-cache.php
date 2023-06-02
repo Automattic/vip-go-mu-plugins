@@ -25,7 +25,7 @@ if ( ! defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) ) {
 
 if ( defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) && true === VIP_USE_NEXT_OBJECT_CACHE_DROPIN && extension_loaded( 'memcached' ) ) {
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
-} elseif ( extension_loaded( 'memcached' ) ) {
+} elseif ( extension_loaded( 'memcached' ) && ( ! defined( 'VIP_TMP_USE_LEGACY_CACHE_DROPIN' ) || true !== VIP_TMP_USE_LEGACY_CACHE_DROPIN ) ) {
 	require_once __DIR__ . '/wp-memcached/object-cache.php';
 } else {
 	require_once __DIR__ . '/object-cache/object-cache-stable.php';
