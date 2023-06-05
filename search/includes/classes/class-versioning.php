@@ -220,10 +220,9 @@ class Versioning {
 	 * Retrieve details about available index versions
 	 *
 	 * @param \ElasticPress\Indexable $indexable The Indexable for which to retrieve index versions
-	 * @param bool $provide_default If on corrupted or incomplete versioning default version 1 should be provided
 	 * @return array Array of index versions
 	 */
-	public function get_versions( Indexable $indexable, bool $provide_default = true ) {
+	public function get_versions( Indexable $indexable ) {
 		$versions = [];
 
 		if ( $indexable->global ) {
@@ -938,7 +937,7 @@ class Versioning {
 
 		$indexables_to_heal = [];
 		foreach ( $indexables as $indexable ) {
-			$versions = $this->get_versions( $indexable, false );
+			$versions = $this->get_versions( $indexable );
 			if ( ! is_array( $versions ) || count( $versions ) === 0 ) {
 				$indexables_to_heal[] = $indexable;
 			}
