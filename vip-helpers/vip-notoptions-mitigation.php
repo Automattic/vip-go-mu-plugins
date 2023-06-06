@@ -41,8 +41,12 @@ function notoptions_mitigation() {
 		}
 	}
 
-	// if they exist, something's borked
+	// if they exist, something is borked
 	if ( $invalid ) {
+		// Save the current "broken" state for future debugging
+		if ( wp_cache_add( 'notoptions_mitigation_debugging', 'lock', 'vip', MINUTE_IN_SECONDS ) ) {
+			update_option( 'vip_notoptions_mitigation_debugging', $notoptions, false );
+		}
 
 		// attempt repair
 		$flushed = wp_cache_delete( 'notoptions', 'options' );
