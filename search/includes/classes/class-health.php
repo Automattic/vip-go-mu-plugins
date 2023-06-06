@@ -713,13 +713,11 @@ class Health {
 		if ( 0 < count( $missing_from_index ) ) {
 			foreach ( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array(
-					'existence' => array(
-						'id'       => $post_id,
-						'type'     => 'post',
-						'issue'    => 'missing_from_index',
-						'expected' => sprintf( 'Post %d to be indexed', $post_id ),
-						'actual'   => null,
-					),
+					'id'       => $post_id,
+					'type'     => 'post',
+					'issue'    => 'missing_from_index',
+					'expected' => sprintf( 'Post %d to be indexed', $post_id ),
+					'actual'   => null,
 				);
 			}
 		}
@@ -732,13 +730,11 @@ class Health {
 			foreach ( $extra_in_index as $document_id ) {
 				// Grab the actual doc from
 				$diffs[ 'post_' . $document_id ] = array(
-					'existence' => array(
-						'id'       => $document_id,
-						'type'     => 'post',
-						'issue'    => 'extra_in_index',
-						'expected' => null,
-						'actual'   => sprintf( 'Post %d is currently indexed', $document_id ),
-					),
+					'id'       => $document_id,
+					'type'     => 'post',
+					'issue'    => 'extra_in_index',
+					'expected' => null,
+					'actual'   => sprintf( 'Post %d is currently indexed', $document_id ),
 				);
 			}
 		}
@@ -847,9 +843,8 @@ class Health {
 	 */
 	public static function reconcile_diff( array $diff ) {
 		foreach ( $diff as $obj_to_reconcile ) {
-			$obj_to_reconcile = $obj_to_reconcile['existence'] ?? $obj_to_reconcile;
-			$id               = $obj_to_reconcile['id'];
-			$type             = $obj_to_reconcile['type'];
+			$id   = $obj_to_reconcile['id'];
+			$type = $obj_to_reconcile['type'];
 
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
