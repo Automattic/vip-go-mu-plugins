@@ -847,17 +847,11 @@ class Health {
 	 */
 	public static function reconcile_diff( array $diff ) {
 		foreach ( $diff as $obj_to_reconcile ) {
-			if ( isset( $obj_to_reconcile['existence'] ) ) {
-				$issue = $obj_to_reconcile['existence']['issue'];
-				$id    = $obj_to_reconcile['existence']['id'];
-				$type  = $obj_to_reconcile['existence']['type'];
-			} else {
-				$issue = $obj_to_reconcile['issue'];
-				$id    = $obj_to_reconcile['id'];
-				$type  = $obj_to_reconcile['type'];
-			}
+			$obj_to_reconcile = $obj_to_reconcile['existence'] ?? $obj_to_reconcile;
+			$id               = $obj_to_reconcile['id'];
+			$type             = $obj_to_reconcile['type'];
 
-			switch ( $issue ) {
+			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'mismatch':
 					/**
