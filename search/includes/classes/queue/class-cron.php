@@ -34,6 +34,11 @@ class Cron {
 	const SWEEPER_CRON_INTERVAL = 1 * \MINUTE_IN_SECONDS;
 
 	/**
+	 * The lock to prevent multiple instances of the sweeper from running
+	 */
+	const SWEEPER_CRON_LOCK = 'vip_search_queue_sweeper_lock';
+
+	/**
 	 * The name of the cron event for processing term updates
 	 */
 	const TERM_UPDATE_CRON_EVENT_NAME = 'vip_search_term_update';
@@ -247,6 +252,11 @@ class Cron {
 			$this->disable_sweeper_job();
 		}
 
+		if ( true !== wp_cache_add( self::SWEEPER_CRON_LOCK, time(), 'vip', 5 * MINUTE_IN_SECONDS ) ) {
+			// Bail if it's already running.
+			return;
+		}
+
 		$this->queue->free_deadlocked_jobs();
 
 		$job_count     = $this->get_processor_job_count();
@@ -263,6 +273,8 @@ class Cron {
 
 			$job_count = $this->get_processor_job_count();
 		}
+
+		wp_cache_delete( self::SWEEPER_CRON_LOCK, 'vip' );
 	}
 
 	/**
