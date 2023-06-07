@@ -84,8 +84,6 @@ class Integrations {
 
 		if ( null === $integration ) {
 			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
-		} else {
-			$integration->activate( $config );
-		}
+		$integration->activate( $config );
 	}
 }
