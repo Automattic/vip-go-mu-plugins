@@ -56,6 +56,10 @@ abstract class Integration {
 	 * Abstract base for integration functionality.
 	 * Implement custom action and filter calls to load integration here.
 	 *
+	 * For plugins / integrations that can be added to customer repos, 
+	 * the implementation should hook into plugins_loaded and check if 
+	 * the plugin is already loaded first.
+	 * 
 	 * @private
 	 */
 	abstract public function load( array $config ): void;
