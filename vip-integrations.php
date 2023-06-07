@@ -35,4 +35,4 @@ function activate( string $integration_slug, array $config = [] ): void {
 // muplugins_loaded:10 or any later action
 add_action( 'muplugins_loaded', function() use ( $vip_integrations ) {
 	$vip_integrations->load_active();
-}, /* priority */ 5 );
+}, 5 );
