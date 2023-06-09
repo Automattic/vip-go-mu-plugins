@@ -21,6 +21,22 @@ class Sync_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		Constant_Mocker::clear();
+
+		add_filter( 'pre_http_request', function ( $result ) {
+			if ( false === $result ) {
+				$result = [
+					'headers'  => [],
+					'body'     => '',
+					'response' => [
+						'code'    => 418,
+						'message' => "I'm a teapot",
+					],
+					'cookies'  => [],
+				];
+			}
+
+			return $result;
+		}, 10 );
 	}
 
 	public function tearDown(): void {
