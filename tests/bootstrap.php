@@ -20,6 +20,13 @@ if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\NumericType::class ) ) {
 	require_once __DIR__ . '/trait-assertnumerictype.php';
 }
 
+if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectException::class ) ) {
+	require_once __DIR__ . '/trait-expectexception.php';
+}
+
+if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException::class ) ) {
+	require_once __DIR__ . '/trait-expectphpexception.php';
+}
 // ---
 
 require_once $_tests_dir . '/includes/functions.php';
