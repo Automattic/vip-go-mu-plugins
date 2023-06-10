@@ -11,6 +11,11 @@ if ( '1' === getenv( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 	define( 'VIP_JETPACK_SKIP_LOAD', true );
 }
 
+// TODO: Remove this once we drop WP 5.8 support
+if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\AssertFileDirectory::class ) ) {
+	require_once __DIR__ . '/trait-assertfiledirectory.php';
+}
+
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
