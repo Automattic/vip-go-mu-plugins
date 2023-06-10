@@ -16,6 +16,12 @@ if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\AssertFileDirectory::class
 	require_once __DIR__ . '/trait-assertfiledirectory.php';
 }
 
+if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\NumericType::class ) ) {
+	require_once __DIR__ . '/trait-assertnumerictype.php';
+}
+
+// ---
+
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
