@@ -54,6 +54,19 @@ function wpcom_vip_is_restricted_username( $username ) {
 		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
 }
 
+function _wpcom_vip_login_cache_keys( $raw_username ) {
+	$username = vip_strict_sanitize_username( $raw_username );
+
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+	$ip = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP, [ 'options' => [ 'default' => '' ] ] );
+
+	return [
+		'ip_username_cache_key' => $ip . '|' . $username,
+		'ip_cache_key'          => $ip,
+		'username_cache_key'    => $username,
+	];
+}
+
 /**
  * Tracks and caches IP, IP|Username events, and Username events.
  * We're tracking IP, and IP|Username events for both login attempts and
@@ -64,11 +77,7 @@ function wpcom_vip_is_restricted_username( $username ) {
  * @param int $cache_expiry The number in seconds of the cache expiry.
  */
 function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) {
-	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-	$ip                    = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP, [ 'options' => [ 'default' => '' ] ] );
-	$ip_username_cache_key = $ip . '|' . $username; // IP + username
-	$ip_cache_key          = $ip; // IP only
-	$username_cache_key    = $username; // Username only
+	$cache_keys = _wpcom_vip_login_cache_keys( $username );
 
 	// Longer TTL when logging in as admin, which we don't allow on WP.com
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
@@ -77,33 +86,24 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) 
 		$cache_expiry = HOUR_IN_SECONDS + $cache_expiry;
 	}
 
-	wp_cache_add( $ip_username_cache_key, 0, $cache_group, $cache_expiry ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-	wp_cache_add( $ip_cache_key, 0, $cache_group, HOUR_IN_SECONDS );
-	wp_cache_add( $username_cache_key, 0, $cache_group, MINUTE_IN_SECONDS * 15 );
-	wp_cache_incr( $ip_username_cache_key, 1, $cache_group );
-	wp_cache_incr( $ip_cache_key, 1, $cache_group );
-	wp_cache_incr( $username_cache_key, 1, $cache_group );
+	wp_cache_add( $cache_keys['ip_username_cache_key'], 0, $cache_group, $cache_expiry ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+	wp_cache_add( $cache_keys['ip_cache_key'], 0, $cache_group, HOUR_IN_SECONDS );
+	wp_cache_add( $cache_keys['username_cache_key'], 0, $cache_group, MINUTE_IN_SECONDS * 15 );
+	wp_cache_incr( $cache_keys['ip_username_cache_key'], 1, $cache_group );
+	wp_cache_incr( $cache_keys['ip_cache_key'], 1, $cache_group );
+	wp_cache_incr( $cache_keys['username_cache_key'], 1, $cache_group );
 }
 
 function wpcom_vip_login_limiter( $username ) {
-	// Do some extra sanitization on the username.
-	$username = vip_strict_sanitize_username( $username );
-
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT, MINUTE_IN_SECONDS * 5 );
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
 function wpcom_vip_login_limiter_on_success( $username ) {
-	// Do some extra sanitization on the username.
-	$username = vip_strict_sanitize_username( $username );
+	$cache_keys = _wpcom_vip_login_cache_keys( $username );
 
-	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-	$ip                    = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP, [ 'options' => [ 'default' => '' ] ] );
-	$ip_username_cache_key = $ip . '|' . $username; // IP + username
-	$ip_cache_key          = $ip; // IP only
-
-	wp_cache_decr( $ip_username_cache_key, 1, CACHE_GROUP_LOGIN_LIMIT );
-	wp_cache_decr( $ip_cache_key, 1, CACHE_GROUP_LOGIN_LIMIT );
+	wp_cache_decr( $cache_keys['ip_username_cache_key'], 1, CACHE_GROUP_LOGIN_LIMIT );
+	wp_cache_decr( $cache_keys['ip_cache_key'], 1, CACHE_GROUP_LOGIN_LIMIT );
 }
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success' );
 

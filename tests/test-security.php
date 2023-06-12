@@ -2,6 +2,9 @@
 
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
+	private $test_username = "IamGroot";
+	private $test_cache_group = 'test-group';
+	private $test_ip = '127.0.0.1';
 
 	public function test__admin_username_restricted() {
 		$this->factory()->user->create( [
@@ -116,6 +119,38 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		// Now we should have an error.
 		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );
 
+	}
+
+	public function test__wpcom_vip_track_auth_attempt__defaults() {
+		wpcom_vip_track_auth_attempt( $this->test_username, $this->test_cache_group, 20 );
+
+		$username_count = wp_cache_get( $this->test_username, $this->test_cache_group );
+		$this->assertEquals( 1, $username_count );
+
+		$ip_count = wp_cache_get( $this->test_ip , $this->test_cache_group );
+		$this->assertEquals( 1, $ip_count );
+
+		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, $this->test_cache_group );
+		$this->assertEquals( 1, $ip_username_count );
+	}
+
+	public function test__wpcom_vip_login_limiter_on_success__decrease_count() {
+		$original_count = 5;
+		$decreased_count = $original_count - 1;
+		wp_cache_set( $this->test_username, $original_count, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_set( $this->test_ip, $original_count, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_set( $this->test_ip . '|' . $this->test_username, $original_count, CACHE_GROUP_LOGIN_LIMIT );
+
+		wpcom_vip_login_limiter_on_success( $this->test_username );
+
+		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertEquals( $original_count, $username_count ); // username is NOT decreased
+
+		$ip_count = wp_cache_get( $this->test_ip , CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertEquals( $decreased_count, $ip_count );
+
+		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertEquals( $decreased_count, $ip_username_count );
 	}
 
 	public function setUp(): void {
