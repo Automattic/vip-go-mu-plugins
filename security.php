@@ -74,28 +74,29 @@ function _wpcom_vip_login_cache_keys( $raw_username ) {
  *
  * @param string $username The username to track.
  * @param string $cache_group The cache group to track the $username to.
- * @param int $cache_expiry The number in seconds of the cache expiry.
  */
-function wpcom_vip_track_auth_attempt( $username, $cache_group, $cache_expiry ) {
+function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 	$cache_keys = _wpcom_vip_login_cache_keys( $username );
+
+	$base_event_window = apply_filters( 'wpcom_vip_invalid_login_window', MINUTE_IN_SECONDS * 15  );
+	if ( $cache_group === CACHE_GROUP_LOST_PASSWORD_LIMIT ) {
+		$base_event_window = apply_filters( 'wpcom_vip_lost_password_window', MINUTE_IN_SECONDS * 30  );
+	}
 
 	// Longer TTL when logging in as admin, which we don't allow on WP.com
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	$ip_username_event_window = $is_restricted_username ? HOUR_IN_SECONDS + $base_event_window : $base_event_window;
 
-	if ( $is_restricted_username ) {
-		$cache_expiry = HOUR_IN_SECONDS + $cache_expiry;
-	}
-
-	wp_cache_add( $cache_keys['ip_username_cache_key'], 0, $cache_group, $cache_expiry ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-	wp_cache_add( $cache_keys['ip_cache_key'], 0, $cache_group, HOUR_IN_SECONDS );
-	wp_cache_add( $cache_keys['username_cache_key'], 0, $cache_group, MINUTE_IN_SECONDS * 15 );
+	wp_cache_add( $cache_keys['ip_username_cache_key'], 0, $cache_group, $ip_username_event_window ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+	wp_cache_add( $cache_keys['ip_cache_key'], 0, $cache_group, $base_event_window );
+	wp_cache_add( $cache_keys['username_cache_key'], 0, $cache_group, $base_event_window );
 	wp_cache_incr( $cache_keys['ip_username_cache_key'], 1, $cache_group );
 	wp_cache_incr( $cache_keys['ip_cache_key'], 1, $cache_group );
 	wp_cache_incr( $cache_keys['username_cache_key'], 1, $cache_group );
 }
 
 function wpcom_vip_login_limiter( $username ) {
-	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT, MINUTE_IN_SECONDS * 5 );
+	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT );
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
@@ -203,7 +204,7 @@ function wpcom_vip_lost_password_limit( $errors, $user_data ) {
 		return $errors;
 	}
 
-	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT, MINUTE_IN_SECONDS * 30 );
+	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 	return $errors;
 }

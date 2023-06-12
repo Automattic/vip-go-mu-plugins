@@ -121,7 +121,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__wpcom_vip_track_auth_attempt__defaults() {
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( 1, $username_count );
@@ -158,9 +158,9 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, $result );
 	}
 	public function test__wpcom_vip_username_is_limited__should_be_limit_after_few_tries() {
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 
 		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
