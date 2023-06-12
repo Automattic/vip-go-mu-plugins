@@ -148,7 +148,7 @@ function _wpcom_vip_maybe_temporary_lock_account( $username, $cache_group ) {
 
 		if ( $ip_username_count >= $ip_username_threshold ) {
 			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'], true, $cache_group, $lock_interval );
-		} else if ( $ip_count >= $ip_threshold ) {
+		} elseif ( $ip_count >= $ip_threshold ) {
 			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_cache_key'], true, $cache_group, $lock_interval );
 		} else {
 			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['username_cache_key'], true, $cache_group, $lock_interval );
