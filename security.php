@@ -222,30 +222,27 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	/**
 	 * Filters the threshold for limiting logins by IP + username combination.
 	 *
-	 * Note that changing this value will also change the default value for the username login threshold as well,
-	 * which is set as 5 times this value.
-	 *
-	 * @param int    $threshold IP + Username combination login threshold. Default 5.
+	 * @param int    $threshold IP + Username combination login threshold.
 	 * @param string $ip        IP address of the login request.
 	 * @param string $username  Username of the login request.
 	 */
-	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 5, $ip, $username );
+	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 3, $ip, $username );
 
 	/**
 	 * Filters the threshold for limiting logins by IP.
 	 *
-	 * @param int    $threshold IP login threshold. Default 50.
+	 * @param int    $threshold IP login threshold.
 	 * @param string $ip        IP address of the login request.
 	 */
-	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 50, $ip );
+	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 5, $ip );
 
 	/**
 	 * Filters the threshold for limiting logins by username.
 	 *
-	 * @param int    $threshold Username login threshold. Default is 5 times the IP + username combination threshold.
+	 * @param int    $threshold Username login threshold.
 	 * @param string $username  Username of the login request.
 	 */
-	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 5 * $ip_username_threshold, $username );
+	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 10, $username );
 
 	/**
 	 * Change the thresholds for Password Resets
