@@ -2,9 +2,8 @@
 
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
-	private $test_username = "IamGroot";
-	private $test_cache_group = 'test-group';
-	private $test_ip = '127.0.0.1';
+	private $test_username = 'IamGroot';
+	private $test_ip       = '127.0.0.1';
 
 	public function test__admin_username_restricted() {
 		$this->factory()->user->create( [
@@ -122,20 +121,20 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__wpcom_vip_track_auth_attempt__defaults() {
-		wpcom_vip_track_auth_attempt( $this->test_username, $this->test_cache_group, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
 
-		$username_count = wp_cache_get( $this->test_username, $this->test_cache_group );
+		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( 1, $username_count );
 
-		$ip_count = wp_cache_get( $this->test_ip , $this->test_cache_group );
+		$ip_count = wp_cache_get( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( 1, $ip_count );
 
-		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, $this->test_cache_group );
+		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( 1, $ip_username_count );
 	}
 
 	public function test__wpcom_vip_login_limiter_on_success__decrease_count() {
-		$original_count = 5;
+		$original_count  = 5;
 		$decreased_count = $original_count - 1;
 		wp_cache_set( $this->test_username, $original_count, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_set( $this->test_ip, $original_count, CACHE_GROUP_LOGIN_LIMIT );
@@ -146,11 +145,29 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( $original_count, $username_count ); // username is NOT decreased
 
-		$ip_count = wp_cache_get( $this->test_ip , CACHE_GROUP_LOGIN_LIMIT );
+		$ip_count = wp_cache_get( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( $decreased_count, $ip_count );
 
 		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertEquals( $decreased_count, $ip_username_count );
+	}
+
+	public function test__wpcom_vip_username_is_limited__should_not_limit_by_default() {
+		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+
+		$this->assertEquals( false, $result );
+	}
+	public function test__wpcom_vip_username_is_limited__should_be_limit_after_few_tries() {
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT, 20 );
+
+
+		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+
+		$this->assertEquals( true, is_wp_error( $result ) );
 	}
 
 	public function setUp(): void {
@@ -162,6 +179,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		$_POST = $this->original_post;
+
+		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 		parent::tearDown();
 	}

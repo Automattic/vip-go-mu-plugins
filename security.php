@@ -210,17 +210,12 @@ function wpcom_vip_lost_password_limit( $errors, $user_data ) {
 add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit', 10, 2 );
 
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
-	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
-	$ip = filter_var( $_SERVER['REMOTE_ADDR'] ?? '', FILTER_VALIDATE_IP, [ 'options' => [ 'default' => '' ] ] );
+	$cache_keys = _wpcom_vip_login_cache_keys( $username );
 
-	$ip_username_cache_key = $ip . '|' . $username;
-	$ip_username_count     = wp_cache_get( $ip_username_cache_key, $cache_group );
-
-	$ip_cache_key = $ip;
-	$ip_count     = wp_cache_get( $ip_cache_key, $cache_group );
-
-	$username_cache_key = $username;
-	$username_count     = wp_cache_get( $username_cache_key, $cache_group );
+	$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], $cache_group );
+	$ip_count          = wp_cache_get( $cache_keys['ip_cache_key'], $cache_group );
+	$username_count    = wp_cache_get( $cache_keys['username_cache_key'], $cache_group );
+	$ip                = $cache_keys['ip_cache_key'];
 
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 
