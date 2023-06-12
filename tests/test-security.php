@@ -167,6 +167,23 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( true, is_wp_error( $result ) );
 	}
+	public function test__wpcom_vip_username_is_limited__should_be_limit_even_after_the_event_window() {
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+
+		$this->_clean_event_window_cache();
+
+		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+
+		$this->assertEquals( true, is_wp_error( $result ) );
+	}
+
+	private function _clean_event_window_cache() {
+		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+	}
 
 	public function setUp(): void {
 		parent::setUp();
@@ -178,9 +195,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		$_POST = $this->original_post;
 
-		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$this->_clean_event_window_cache();
 
 		parent::tearDown();
 	}
