@@ -51,6 +51,9 @@ jobs:
         # PHP 8.2, Jetpack
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+        # PHP 8.3, Jetpack
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
     services:
       mysql:
         image: mysql:8
