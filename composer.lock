@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fcd12de88a112368e20c76ccd4d6def5",
+    "content-hash": "7c04ac6d37ccee984685babac3f5d705",
     "packages": [],
     "packages-dev": [
         {
@@ -1219,66 +1219,6 @@
             "time": "2023-05-11T05:14:45+00:00"
         },
         {
-            "name": "rmccue/requests",
-            "version": "v1.8.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/WordPress/Requests.git",
-                "reference": "82e6936366eac3af4d836c18b9d8c31028fe4cd5"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/WordPress/Requests/zipball/82e6936366eac3af4d836c18b9d8c31028fe4cd5",
-                "reference": "82e6936366eac3af4d836c18b9d8c31028fe4cd5",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.2"
-            },
-            "require-dev": {
-                "dealerdirect/phpcodesniffer-composer-installer": "^0.7",
-                "php-parallel-lint/php-console-highlighter": "^0.5.0",
-                "php-parallel-lint/php-parallel-lint": "^1.3",
-                "phpcompatibility/php-compatibility": "^9.0",
-                "phpunit/phpunit": "^4.8 || ^5.7 || ^6.5 || ^7.5",
-                "requests/test-server": "dev-master",
-                "squizlabs/php_codesniffer": "^3.5",
-                "wp-coding-standards/wpcs": "^2.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Requests": "library/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "ISC"
-            ],
-            "authors": [
-                {
-                    "name": "Ryan McCue",
-                    "homepage": "http://ryanmccue.info"
-                }
-            ],
-            "description": "A HTTP library written in PHP, for human beings.",
-            "homepage": "http://github.com/WordPress/Requests",
-            "keywords": [
-                "curl",
-                "fsockopen",
-                "http",
-                "idna",
-                "ipv6",
-                "iri",
-                "sockets"
-            ],
-            "support": {
-                "issues": "https://github.com/WordPress/Requests/issues",
-                "source": "https://github.com/WordPress/Requests/tree/v1.8.1"
-            },
-            "time": "2021-06-04T09:56:25+00:00"
-        },
-        {
             "name": "sebastian/cli-parser",
             "version": "1.0.1",
             "source": {
@@ -2425,16 +2365,16 @@
         },
         {
             "name": "symfony/finder",
-            "version": "v5.4.17",
+            "version": "v5.4.21",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/finder.git",
-                "reference": "40c08632019838dfb3350f18cf5563b8080055fc"
+                "reference": "078e9a5e1871fcfe6a5ce421b539344c21afef19"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/finder/zipball/40c08632019838dfb3350f18cf5563b8080055fc",
-                "reference": "40c08632019838dfb3350f18cf5563b8080055fc",
+                "url": "https://api.github.com/repos/symfony/finder/zipball/078e9a5e1871fcfe6a5ce421b539344c21afef19",
+                "reference": "078e9a5e1871fcfe6a5ce421b539344c21afef19",
                 "shasum": ""
             },
             "require": {
@@ -2468,7 +2408,7 @@
             "description": "Finds files and directories via an intuitive fluent interface",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/finder/tree/v5.4.17"
+                "source": "https://github.com/symfony/finder/tree/v5.4.21"
             },
             "funding": [
                 {
@@ -2484,7 +2424,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2022-12-22T10:31:03+00:00"
+            "time": "2023-02-16T09:33:00+00:00"
         },
         {
             "name": "symfony/polyfill-php80",
@@ -2672,22 +2612,31 @@
         },
         {
             "name": "wp-cli/php-cli-tools",
-            "version": "v0.11.16",
+            "version": "v0.11.18",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/php-cli-tools.git",
-                "reference": "c32e51a5c9993ad40591bc426b21f5422a5ed293"
+                "reference": "0f503a790698cb36cf835e5c8d09cd4b64bf2325"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/php-cli-tools/zipball/c32e51a5c9993ad40591bc426b21f5422a5ed293",
-                "reference": "c32e51a5c9993ad40591bc426b21f5422a5ed293",
+                "url": "https://api.github.com/repos/wp-cli/php-cli-tools/zipball/0f503a790698cb36cf835e5c8d09cd4b64bf2325",
+                "reference": "0f503a790698cb36cf835e5c8d09cd4b64bf2325",
                 "shasum": ""
             },
             "require": {
                 "php": ">= 5.3.0"
             },
+            "require-dev": {
+                "roave/security-advisories": "dev-latest",
+                "wp-cli/wp-cli-tests": "^3.1.6"
+            },
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.11.x-dev"
+                }
+            },
             "autoload": {
                 "files": [
                     "lib/cli/cli.php"
@@ -2720,29 +2669,28 @@
             ],
             "support": {
                 "issues": "https://github.com/wp-cli/php-cli-tools/issues",
-                "source": "https://github.com/wp-cli/php-cli-tools/tree/v0.11.16"
+                "source": "https://github.com/wp-cli/php-cli-tools/tree/v0.11.18"
             },
-            "time": "2022-11-03T15:19:26+00:00"
+            "time": "2023-04-04T16:03:53+00:00"
         },
         {
             "name": "wp-cli/wp-cli",
-            "version": "v2.7.1",
+            "version": "v2.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-cli/wp-cli.git",
-                "reference": "1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76"
+                "reference": "5dd2340b9a01c3cfdbaf5e93a140759fdd190eee"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-cli/wp-cli/zipball/1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76",
-                "reference": "1ddc754f1c15e56fb2cdd1a4e82bd0ec6ca32a76",
+                "url": "https://api.github.com/repos/wp-cli/wp-cli/zipball/5dd2340b9a01c3cfdbaf5e93a140759fdd190eee",
+                "reference": "5dd2340b9a01c3cfdbaf5e93a140759fdd190eee",
                 "shasum": ""
             },
             "require": {
                 "ext-curl": "*",
                 "mustache/mustache": "^2.14.1",
                 "php": "^5.6 || ^7.0 || ^8.0",
-                "rmccue/requests": "^1.8",
                 "symfony/finder": ">2.7",
                 "wp-cli/mustangostang-spyc": "^0.6.3",
                 "wp-cli/php-cli-tools": "~0.11.2"
@@ -2766,7 +2714,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "2.8.x-dev"
+                    "dev-main": "2.9.x-dev"
                 }
             },
             "autoload": {
@@ -2793,7 +2741,7 @@
                 "issues": "https://github.com/wp-cli/wp-cli/issues",
                 "source": "https://github.com/wp-cli/wp-cli"
             },
-            "time": "2022-10-17T23:10:42+00:00"
+            "time": "2023-06-05T06:55:55+00:00"
         },
         {
             "name": "wp-coding-standards/wpcs",
