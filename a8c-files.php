@@ -78,7 +78,7 @@ class A8C_Files {
 			return 1073741824; // 2^30
 		});
 
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+		if ( ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) || constant( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) !== false ) {
 			$this->init_vip_filesystem();
 		}
 
