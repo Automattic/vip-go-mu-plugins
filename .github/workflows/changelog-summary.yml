@@ -19,11 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download tag release
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.workflow.name == 'Tag Release' && github.event.workflow_run.conclusion == 'completed' }}
         uses: actions/download-artifact@v3
         with:
           name: tag-release
 
       - name: Set tag release as env var
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.workflow.name == 'Tag Release' && github.event.workflow_run.conclusion == 'completed' }}
         id: set_tag
         run: |
           RESULT=$(cat tag-release/result.txt)
