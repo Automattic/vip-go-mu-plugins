@@ -1,4 +1,4 @@
-name: CI
+name: Search Dev Tools
 
 on:
   push:
@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   search-dev-tools:
-    name: Build Search Dev Tools
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: write
