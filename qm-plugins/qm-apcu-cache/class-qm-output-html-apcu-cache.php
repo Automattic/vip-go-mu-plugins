@@ -27,9 +27,9 @@ class QM_Output_Html_Apcu_Cache extends \QM_Output_Html {
 				global $apc_cache_interceptor;
 				if ( ! isset( $apc_cache_interceptor ) || ! is_object( $apc_cache_interceptor ) ) {
 					echo '<h2>APCU Hot-Caching is currently disabled</h2>';
-					return;
+				} else {
+					$apc_cache_interceptor->stats();
 				}
-				$apc_cache_interceptor->stats();
 				?>
 			</div>
 		</div>

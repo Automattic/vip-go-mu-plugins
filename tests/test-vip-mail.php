@@ -1,14 +1,11 @@
 <?php
 
 use PHPMailer\PHPMailer\PHPMailer;
-use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- we are testing it
 
 class VIP_Mail_Test extends WP_UnitTestCase {
-	use AssertionRenames;
-
 	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();

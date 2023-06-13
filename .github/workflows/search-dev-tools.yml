@@ -1,4 +1,4 @@
-name: CI
+name: Search Dev Tools
 
 on:
   push:
@@ -16,13 +16,13 @@ permissions:
 
 jobs:
   search-dev-tools:
-    name: Build Search Dev Tools
+    name: Build
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
       - name: Check out source code
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
         with:
           token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
