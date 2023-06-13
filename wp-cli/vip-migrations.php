@@ -67,7 +67,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$options = [
 			'jetpack_options',
 			'jetpack_private_options',
-			'vaultpress',
 			'wordpress_api_key',
 		];
 

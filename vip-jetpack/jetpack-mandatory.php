@@ -167,7 +167,7 @@ class WPCOM_VIP_Jetpack_Mandatory {
 							<# } #>
 							<# if ( wpcom_vip_jetpack_forced.indexOf(item.module) !== -1 ) { #>
 								<span class='wpcom-vip-no-delete' id="wpcom-vip-no-delete-{{ item.module }}"><?php _e( 'This module is required for WordPress VIP', 'wpcom-vip-jetpack' ); ?></span>
-							<# } else if ( item.activated && 'vaultpress' !== item.module ) { #>
+							<# } else if ( item.activated ) { #>
 								<# if ( 'omnisearch' !== item.module ) { #>
 									<span class='delete'><a href="<?php echo esc_url( admin_url( 'admin.php' ) ); ?>?page=jetpack&#038;action=deactivate&#038;module={{{ item.module }}}&#038;_wpnonce={{{ item.deactivate_nonce }}}"><?php _e( 'Deactivate', 'jetpack' ); ?></a></span>
 								<# } #>

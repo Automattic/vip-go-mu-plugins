@@ -63,7 +63,6 @@ jobs:
             registry.npmjs.org:443
             s.w.org:443
             storage.googleapis.com:443
-            vaultpress.com:443
             wordpress.org:443
 
       - name: Check out repository code

@@ -83,7 +83,6 @@ class Connection_Pilot {
 		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 
 		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
-		add_filter( 'vip_jetpack_connection_pilot_silenced_alerts', array( $this, 'filter_vip_jetpack_connection_pilot_silenced_alerts' ) );
 	}
 
 	public function schedule_cron() {
@@ -126,16 +125,6 @@ class Connection_Pilot {
 				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
 				if ( ! $akismet_connection_attempt ) {
 					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
-				}
-			}
-
-			// Attempting VaultPress connection given that Jetpack is connected
-			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
-			if ( ! $skip_vaultpress ) {
-				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
-				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
-					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
-					$this->send_alert( $message );
 				}
 			}
 
@@ -283,14 +272,6 @@ class Connection_Pilot {
 		}
 
 		return $should;
-	}
-
-	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts = [] ) {
-		$alerts = array(
-			'/VaultPress connection error.*A registration key can only be used on one site/',
-		);
-
-		return array_merge( (array) $existing_alerts, $alerts );
 	}
 
 	/**
