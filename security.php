@@ -127,13 +127,13 @@ function _vip_login_cache_keys( $raw_username ) {
  */
 function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	$cache_keys = _vip_login_cache_keys( $username );
+	$defaults   = _vip_get_auth_count_limit_defaults();
 
 	$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], $cache_group );
 	$ip_count          = wp_cache_get( $cache_keys['ip_cache_key'], $cache_group );
 	$username_count    = wp_cache_get( $cache_keys['username_cache_key'], $cache_group );
 	$ip                = $cache_keys['ip_cache_key'];
-
-	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	$event_type        = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
 
 	/**
 	 * Filters the threshold for limiting logins by IP + username combination.
@@ -142,7 +142,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param string $ip        IP address of the login request.
 	 * @param string $username  Username of the login request.
 	 */
-	$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_login_threshold', 3, $ip, $username );
+	$ip_username_threshold = apply_filters( "wpcom_vip_ip_username_{$event_type}_threshold", $defaults['ip_username'], $ip, $username );
 
 	/**
 	 * Filters the threshold for limiting logins by IP.
@@ -150,7 +150,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param int    $threshold IP login threshold.
 	 * @param string $ip        IP address of the login request.
 	 */
-	$ip_threshold = apply_filters( 'wpcom_vip_ip_login_threshold', 5, $ip );
+	$ip_threshold = apply_filters( "wpcom_vip_ip_{$event_type}_threshold", $defaults['ip'], $ip );
 
 	/**
 	 * Filters the threshold for limiting logins by username.
@@ -158,56 +158,41 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param int    $threshold Username login threshold.
 	 * @param string $username  Username of the login request.
 	 */
-	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 10, $username );
+	$username_threshold = apply_filters( "wpcom_vip_username_{$event_type}_threshold", $defaults['username'], $username );
 
-	// Change the thresholds for Password Resets.
-	if ( 'lost_password_limit' === $cache_group ) {
-		/**
-		 * Filters the threshold for limiting password resets by IP + username combination.
-		 *
-		 * Note that changing this value will also change the default value for the username password reset threshold as well,
-		 * which is set as 5 times this value.
-		 *
-		 * @param int    $threshold IP + Username combination password reset threshold. Default 3.
-		 * @param string $ip        IP address of the password reset request.
-		 * @param string $username  Username of the password reset request.
-		 */
-		$ip_username_threshold = apply_filters( 'wpcom_vip_ip_username_password_reset_threshold', 3, $ip, $username );
-
-		/**
-		 * Filters the threshold for limiting password resets by IP.
-		 *
-		 * @param int    $threshold IP password reset threshold. Default 3.
-		 * @param string $ip        IP address of the password reset request.
-		 */
-		$ip_threshold = apply_filters( 'wpcom_vip_ip_password_reset_threshold', 3, $ip );
-
-		/**
-		 * Filters the threshold for limiting password resets by username.
-		 *
-		 * @param int    $threshold Username password reset threshold. Default is 5 times the IP + username combination threshold.
-		 * @param string $username  Username of the password reset request
-		 */
-		$username_threshold = apply_filters( 'wpcom_vip_username_password_reset_threshold', 5 * $ip_username_threshold, $username );
-	} elseif ( $is_restricted_username ) {
+	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+    if ( $is_restricted_username ) {
 		$ip_username_threshold = 2;
 	}
 
 	if ( $ip_username_count >= $ip_username_threshold || $ip_count >= $ip_threshold || $username_count >= $username_threshold ) {
-		$lock_interval = apply_filters( 'wpcom_vip_invalid_login_lock_period', MINUTE_IN_SECONDS * 30 );
 		if ( CACHE_GROUP_LOGIN_LIMIT === $cache_group ) {
 			do_action( 'login_limit_exceeded', $username );
 		} else {
 			do_action( 'password_reset_limit_exceeded', $username );
 		}
 
+		$lock_reason = 'username';
 		if ( $ip_username_count >= $ip_username_threshold ) {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			$lock_reason = 'ip_username';
 		} elseif ( $ip_count >= $ip_threshold ) {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		} else {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['username_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			$lock_reason = 'ip';
 		}
+
+		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
+		$default    = $defaults[ "{$lock_reason}_lockout" ];
+
+		/**
+		 * Filters the lenght of locked out time.
+		 * vip_<login|password_reset>_<ip|ip_username|username>_lockout
+		 *
+		 * @param int    $lock_interval Seconds count of the lockout.
+		 * @param string $username      Username of the request.
+		 */
+		$lock_interval = apply_filters( "vip_{$event_type}_{$lock_reason}_lockout", $default, $username );
+
+
+		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys["{$lock_reason}_cache_key"], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 	}
 }
 
@@ -225,12 +210,12 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 	$defaults   = _vip_get_auth_count_limit_defaults();
 
 	foreach ( [ 'ip', 'ip_username', 'username' ] as $type ) {
-		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'lost_password' : 'login';
+		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
 		$default    = $defaults[ "{$type}_window" ];
 
 		/**
 		 * Filters the window for tracking login attempts.
-		 * vip_<login|lost_password>_<ip|ip_username|username>_window
+		 * vip_<login|password_reset>_<ip|ip_username|username>_window
 		 *
 		 * @param int    $window   Seconds count in the window.
 		 * @param string $username Username of the request.
