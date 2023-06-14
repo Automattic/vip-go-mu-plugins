@@ -371,11 +371,37 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 			'found' => false,
 		] );
 
-		// Lastly, ensure we still get an array if no keys are found.
+		// Ensure we still get an array if no keys are found.
 		self::assertEquals( $this->object_cache->get_multiple( [ 'non-existant-key2', 'non-existant-key3' ] ), [
 			'non-existant-key2' => false,
 			'non-existant-key3' => false,
 		] );
+
+		// Test super large multiGets that should be broken up into multiple batches.
+		$large_mget_values = [
+			'mget_1' => '1',
+			'mget_500' => '500',
+			'mget_999' => '999',
+			'mget_1001' => '1001',
+			'mget_1500' => '1500',
+			'mget_1999' => '1999',
+			'mget_2001' => '2001',
+			'mget_2500' => '2500',
+			'mget_2999' => '2999',
+			'mget_3001' => '3001',
+			'mget_3500' => '3500',
+			'mget_3999' => '3999',
+		];
+		$this->object_cache->set_multiple( $large_mget_values );
+		$this->object_cache->flush_runtime();
+
+		$expected_large_mget_values = [];
+		for ( $i = 0; $i < 4000; $i++ ) {
+			$key = 'mget_' . $i;
+			$expected_large_mget_values[ $key ] = isset( $large_mget_values[ $key ] ) ? $large_mget_values[ $key ] : false;
+		}
+
+		self::assertEquals( $this->object_cache->get_multiple( array_keys( $expected_large_mget_values ) ), $expected_large_mget_values );
 	}
 
 	public function test_get_multiple_for_non_persistent_groups() {
