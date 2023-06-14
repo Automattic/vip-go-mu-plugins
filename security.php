@@ -65,33 +65,39 @@ function wpcom_vip_is_restricted_username( $username ) {
 function _vip_get_auth_count_limit_defaults() {
 	if ( Context::is_fedramp() ) {
 		return [
-			'ip_username'         => 3,
-			'ip'                  => 5,
-			'username'            => 10,
+			'ip_username_login'          => 3,
+			'ip_login'                   => 5,
+			'username_login'             => 10,
+			'ip_username_password_reset' => 3,
+			'ip_password_reset'          => 3,
+			'username_password_reset'    => 15,
 
-			'ip_username_window'  => MINUTE_IN_SECONDS * 15,
-			'ip_window'           => MINUTE_IN_SECONDS * 15,
-			'username_window'     => MINUTE_IN_SECONDS * 15,
+			'ip_username_window'         => MINUTE_IN_SECONDS * 15,
+			'ip_window'                  => MINUTE_IN_SECONDS * 15,
+			'username_window'            => MINUTE_IN_SECONDS * 15,
 
-			'ip_username_lockout' => MINUTE_IN_SECONDS * 30,
-			'ip_lockout'          => MINUTE_IN_SECONDS * 30,
-			'username_lockout'    => MINUTE_IN_SECONDS * 30,
+			'ip_username_lockout'        => MINUTE_IN_SECONDS * 30,
+			'ip_lockout'                 => MINUTE_IN_SECONDS * 30,
+			'username_lockout'           => MINUTE_IN_SECONDS * 30,
 		];
 	}
 
 
 	return [
-		'ip_username'         => 5,
-		'ip'                  => 50,
-		'username'            => 25,
+		'ip_username_login'          => 5,
+		'ip_login'                   => 50,
+		'username_login'             => 25,
+		'ip_username_password_reset' => 3,
+		'ip_password_reset'          => 3,
+		'username_password_reset'    => 15,
 
-		'ip_username_window'  => MINUTE_IN_SECONDS * 5,
-		'ip_window'           => MINUTE_IN_SECONDS * 60,
-		'username_window'     => MINUTE_IN_SECONDS * 25,
+		'ip_username_window'         => MINUTE_IN_SECONDS * 5,
+		'ip_window'                  => MINUTE_IN_SECONDS * 60,
+		'username_window'            => MINUTE_IN_SECONDS * 25,
 
-		'ip_username_lockout' => MINUTE_IN_SECONDS * 5,
-		'ip_lockout'          => MINUTE_IN_SECONDS * 60,
-		'username_lockout'    => MINUTE_IN_SECONDS * 25,
+		'ip_username_lockout'        => MINUTE_IN_SECONDS * 5,
+		'ip_lockout'                 => MINUTE_IN_SECONDS * 60,
+		'username_lockout'           => MINUTE_IN_SECONDS * 25,
 	];
 }
 
@@ -142,7 +148,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param string $ip        IP address of the login request.
 	 * @param string $username  Username of the login request.
 	 */
-	$ip_username_threshold = apply_filters( "wpcom_vip_ip_username_{$event_type}_threshold", $defaults['ip_username'], $ip, $username );
+	$ip_username_threshold = apply_filters( "wpcom_vip_ip_username_{$event_type}_threshold", $defaults[ "ip_username_{$event_type}" ], $ip, $username );
 
 	/**
 	 * Filters the threshold for limiting logins by IP.
@@ -150,7 +156,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param int    $threshold IP login threshold.
 	 * @param string $ip        IP address of the login request.
 	 */
-	$ip_threshold = apply_filters( "wpcom_vip_ip_{$event_type}_threshold", $defaults['ip'], $ip );
+	$ip_threshold = apply_filters( "wpcom_vip_ip_{$event_type}_threshold", $defaults[ "ip_{$event_type}" ], $ip );
 
 	/**
 	 * Filters the threshold for limiting logins by username.
@@ -158,7 +164,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 * @param int    $threshold Username login threshold.
 	 * @param string $username  Username of the login request.
 	 */
-	$username_threshold = apply_filters( "wpcom_vip_username_{$event_type}_threshold", $defaults['username'], $username );
+	$username_threshold = apply_filters( "wpcom_vip_username_{$event_type}_threshold", $defaults[ "username_{$event_type}" ], $username );
 
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
 	if ( $is_restricted_username ) {
