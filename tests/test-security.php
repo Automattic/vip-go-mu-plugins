@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\Test\Constant_Mocker;
+
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
 	private $test_username = 'IamGroot';
@@ -15,7 +17,8 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		$_POST = $this->original_post;
 
-		$this->_clean_event_window_cache();
+		Constant_Mocker::clear();
+		$this->clean_event_window_cache();
 
 		parent::tearDown();
 	}
@@ -187,14 +190,50 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
-		$this->_clean_event_window_cache();
+		$this->clean_event_window_cache();
 
 		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 		$this->assertSame( true, is_wp_error( $result ) );
 	}
 
-	private function _clean_event_window_cache() {
+	public function test__wpcom_vip_track_auth_attempt__correct_defaults() {
+		add_filter( 'vip_login_ip_username_window', function( $window ) {
+			$this->assertSame( 60 * 5, $window );
+			return $window;
+		}, 10, 1 );
+		add_filter( 'vip_login_ip_window', function( $window ) {
+			$this->assertSame( 60 * 60, $window );
+			return $window;
+		}, 10, 1 );
+		add_filter( 'vip_login_username_window', function( $window ) {
+			$this->assertSame( 60 * 25, $window );
+			return $window;
+		}, 10, 1 );
+
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+	}
+
+	public function test__wpcom_vip_track_auth_attempt__correct_defaults_fedramp() {
+		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
+
+		add_filter( 'vip_login_ip_username_window', function( $window ) {
+			$this->assertSame( 60 * 15, $window );
+			return $window;
+		}, 10, 1 );
+		add_filter( 'vip_login_ip_window', function( $window ) {
+			$this->assertSame( 60 * 15, $window );
+			return $window;
+		}, 10, 1 );
+		add_filter( 'vip_login_username_window', function( $window ) {
+			$this->assertSame( 60 * 15, $window );
+			return $window;
+		}, 10, 1 );
+
+		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+	}
+
+	private function clean_event_window_cache() {
 		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );

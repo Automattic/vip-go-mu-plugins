@@ -16,6 +16,8 @@ require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
 
+use Automattic\VIP\Utils\Context;
+
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'vip_login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'vip_lost_password_limit' );
 define( 'CACHE_KEY_LOCK_PREFIX', 'locked_' );
@@ -53,6 +55,44 @@ function wpcom_vip_is_restricted_username( $username ) {
 	return 'admin' === $username
 		|| WPCOM_VIP_MACHINE_USER_LOGIN === $username
 		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
+}
+
+/**
+ * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
+ *
+ * Returns the defualts for limits.
+ */
+function _vip_get_auth_count_limit_defaults() {
+	if ( Context::is_fedramp() ) {
+		return [
+			'ip_username'         => 3,
+			'ip'                  => 5,
+			'username'            => 10,
+
+			'ip_username_window'  => MINUTE_IN_SECONDS * 15,
+			'ip_window'           => MINUTE_IN_SECONDS * 15,
+			'username_window'     => MINUTE_IN_SECONDS * 15,
+
+			'ip_username_lockout' => MINUTE_IN_SECONDS * 30,
+			'ip_lockout'          => MINUTE_IN_SECONDS * 30,
+			'username_lockout'    => MINUTE_IN_SECONDS * 30,
+		];
+	}
+
+
+	return [
+		'ip_username'         => 5,
+		'ip'                  => 50,
+		'username'            => 25,
+
+		'ip_username_window'  => MINUTE_IN_SECONDS * 5,
+		'ip_window'           => MINUTE_IN_SECONDS * 60,
+		'username_window'     => MINUTE_IN_SECONDS * 25,
+
+		'ip_username_lockout' => MINUTE_IN_SECONDS * 5,
+		'ip_lockout'          => MINUTE_IN_SECONDS * 60,
+		'username_lockout'    => MINUTE_IN_SECONDS * 25,
+	];
 }
 
 /**
@@ -154,19 +194,19 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	}
 
 	if ( $ip_username_count >= $ip_username_threshold || $ip_count >= $ip_threshold || $username_count >= $username_threshold ) {
-		$lock_interval = apply_filters( 'wpcom_vip_invalid_login_lock_period', MINUTE_IN_SECONDS * 30  );
-		if ( $cache_group === CACHE_GROUP_LOGIN_LIMIT ) {
+		$lock_interval = apply_filters( 'wpcom_vip_invalid_login_lock_period', MINUTE_IN_SECONDS * 30 );
+		if ( CACHE_GROUP_LOGIN_LIMIT === $cache_group ) {
 			do_action( 'login_limit_exceeded', $username );
 		} else {
 			do_action( 'password_reset_limit_exceeded', $username );
 		}
 
 		if ( $ip_username_count >= $ip_username_threshold ) {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'], true, $cache_group, $lock_interval );
+			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		} elseif ( $ip_count >= $ip_threshold ) {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_cache_key'], true, $cache_group, $lock_interval );
+			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		} else {
-			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['username_cache_key'], true, $cache_group, $lock_interval );
+			wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys['username_cache_key'], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		}
 	}
 }
@@ -182,25 +222,36 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
  */
 function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 	$cache_keys = _vip_login_cache_keys( $username );
+	$defaults   = _vip_get_auth_count_limit_defaults();
 
-	$base_event_window = apply_filters( 'wpcom_vip_invalid_login_window', MINUTE_IN_SECONDS * 15  );
-	if ( $cache_group === CACHE_GROUP_LOST_PASSWORD_LIMIT ) {
-		$base_event_window = apply_filters( 'wpcom_vip_lost_password_window', MINUTE_IN_SECONDS * 30  );
+	foreach ( [ 'ip', 'ip_username', 'username' ] as $type ) {
+		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'lost_password' : 'login';
+		$default    = $defaults[ "{$type}_window" ];
+
+		/**
+		 * Filters the window for tracking login attempts.
+		 * vip_<login|lost_password>_<ip|ip_username|username>_window
+		 *
+		 * @param int    $window   Seconds count in the window.
+		 * @param string $username Username of the request.
+		 */
+		$event_window = apply_filters( "vip_{$event_type}_{$type}_window", $default, $username );
+
+		wp_cache_add( $cache_keys[ "{$type}_cache_key" ], 0, $cache_group, $event_window ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		wp_cache_incr( $cache_keys[ "{$type}_cache_key" ], 1, $cache_group );
 	}
-
-	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
-	// Longer, more-strict interval when logging in as admin
-	$ip_username_event_window = $is_restricted_username ? HOUR_IN_SECONDS + $base_event_window : $base_event_window;
-
-	wp_cache_add( $cache_keys['ip_username_cache_key'], 0, $cache_group, $ip_username_event_window ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-	wp_cache_add( $cache_keys['ip_cache_key'], 0, $cache_group, $base_event_window );
-	wp_cache_add( $cache_keys['username_cache_key'], 0, $cache_group, $base_event_window );
-	wp_cache_incr( $cache_keys['ip_username_cache_key'], 1, $cache_group );
-	wp_cache_incr( $cache_keys['ip_cache_key'], 1, $cache_group );
-	wp_cache_incr( $cache_keys['username_cache_key'], 1, $cache_group );
 
 	_vip_maybe_temporary_lock_account( $username, $cache_group );
 }
+
+add_filter( 'vip_login_ip_username_window', function( $window, $username ) {
+	if ( wpcom_vip_is_restricted_username( $username ) ) {
+		// Longer, more-strict interval when logging in as admin
+		return HOUR_IN_SECONDS + $window;
+	}
+
+	return $window;
+}, 10, 2 );
 
 function wpcom_vip_login_limiter( $username ) {
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT );
