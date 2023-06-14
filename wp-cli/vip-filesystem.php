@@ -57,7 +57,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 */
 	public function update_filesizes( $args, $assoc_args ) {
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && false === constant( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
-			WP_CLI::error( 'This script only works when the VIP Stream Wrapper is enabled. Please add `define( \'VIP_FILESYSTEM_USE_STREAM_WRAPPER\', true );` to vip-config.php and try again.' );
+			WP_CLI::error( 'This script only works when the VIP Stream Wrapper is enabled. If the constant \'VIP_FILESYSTEM_USE_STREAM_WRAPPER\' is defined as false, please remove it.' );
 			return;
 		}
 
