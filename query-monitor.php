@@ -40,18 +40,9 @@ function wpcom_vip_qm_enable( $enable ) {
 		return true;
 	}
 
-	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-		return true;
-	}
-
 	return $enable;
 }
 add_filter( 'wpcom_vip_qm_enable', 'wpcom_vip_qm_enable' );
-
-// Enable by default for non-prod environments and only when admin bar is showing.
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) && true === apply_filters( 'show_admin_bar', false ) ) {
-	add_filter( 'wpcom_vip_qm_enable', '__return_true' );
-}
 
 /**
  * Require the plugin files for Query Monitor, faking a
