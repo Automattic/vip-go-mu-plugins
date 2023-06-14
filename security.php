@@ -166,11 +166,12 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	}
 
 	if ( $ip_username_count >= $ip_username_threshold || $ip_count >= $ip_threshold || $username_count >= $username_threshold ) {
-		if ( CACHE_GROUP_LOGIN_LIMIT === $cache_group ) {
-			do_action( 'login_limit_exceeded', $username );
-		} else {
-			do_action( 'password_reset_limit_exceeded', $username );
-		}
+		/**
+		 * Fires when a login limit or password reset is exceeded.
+		 *
+		 * @param string $username Username of the request.
+		 */
+		do_action( "{$event_type}_exceeded", $username );
 
 		$lock_reason = 'username';
 		if ( $ip_username_count >= $ip_username_threshold ) {
@@ -179,9 +180,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 			$lock_reason = 'ip';
 		}
 
-		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
-		$default    = $defaults[ "{$lock_reason}_lockout" ];
-
+		$default_lockout = $defaults[ "{$lock_reason}_lockout" ];
 		/**
 		 * Filters the lenght of locked out time.
 		 * vip_<login|password_reset>_<ip|ip_username|username>_lockout
@@ -189,7 +188,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 		 * @param int    $lock_interval Seconds count of the lockout.
 		 * @param string $username      Username of the request.
 		 */
-		$lock_interval = apply_filters( "vip_{$event_type}_{$lock_reason}_lockout", $default, $username );
+		$lock_interval = apply_filters( "vip_{$event_type}_{$lock_reason}_lockout", $default_lockout, $username );
 
 
 		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys[ "{$lock_reason}_cache_key" ], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
