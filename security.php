@@ -120,9 +120,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	 */
 	$username_threshold = apply_filters( 'wpcom_vip_username_login_threshold', 10, $username );
 
-	/**
-	 * Change the thresholds for Password Resets
-	 */
+	// Change the thresholds for Password Resets.
 	if ( 'lost_password_limit' === $cache_group ) {
 		/**
 		 * Filters the threshold for limiting password resets by IP + username combination.
