@@ -16,8 +16,8 @@ require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
 
-define( 'CACHE_GROUP_LOGIN_LIMIT', 'login_limit' );
-define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'lost_password_limit' );
+define( 'CACHE_GROUP_LOGIN_LIMIT', 'vip_login_limit' );
+define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'vip_lost_password_limit' );
 define( 'CACHE_KEY_LOCK_PREFIX', 'locked_' );
 define( 'ERROR_CODE_LOGIN_LIMIT_EXCEEDED', 'login_limit_exceeded' );
 define( 'ERROR_CODE_LOST_PASSWORD_LIMIT_EXCEEDED', 'lost_password_limit_exceeded' );
@@ -55,7 +55,15 @@ function wpcom_vip_is_restricted_username( $username ) {
 		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
 }
 
-function _wpcom_vip_login_cache_keys( $raw_username ) {
+/**
+ * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
+ *
+ * Returns the cache keys used for login and forgotten passoword rate limiting.
+ *
+ * @param string $raw_username The username to use for the cache keys.
+ * @return array Associative array of cache keys.
+ */
+function _vip_login_cache_keys( $raw_username ) {
 	$username = vip_strict_sanitize_username( $raw_username );
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
@@ -68,8 +76,17 @@ function _wpcom_vip_login_cache_keys( $raw_username ) {
 	];
 }
 
-function _wpcom_vip_maybe_temporary_lock_account( $username, $cache_group ) {
-	$cache_keys = _wpcom_vip_login_cache_keys( $username );
+/**
+ * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
+ *
+ * Checks if counts for the given username and IP address are above the given thresholds.
+ * If so, the account is locked for a period of time.
+ *
+ * @param string $username The username to check.
+ * @param string $cache_group The cache group to use for the rate limiting.
+ */
+function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
+	$cache_keys = _vip_login_cache_keys( $username );
 
 	$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], $cache_group );
 	$ip_count          = wp_cache_get( $cache_keys['ip_cache_key'], $cache_group );
@@ -166,7 +183,7 @@ function _wpcom_vip_maybe_temporary_lock_account( $username, $cache_group ) {
  * @param string $cache_group The cache group to track the $username to.
  */
 function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
-	$cache_keys = _wpcom_vip_login_cache_keys( $username );
+	$cache_keys = _vip_login_cache_keys( $username );
 
 	$base_event_window = apply_filters( 'wpcom_vip_invalid_login_window', MINUTE_IN_SECONDS * 15  );
 	if ( $cache_group === CACHE_GROUP_LOST_PASSWORD_LIMIT ) {
@@ -184,7 +201,7 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 	wp_cache_incr( $cache_keys['ip_cache_key'], 1, $cache_group );
 	wp_cache_incr( $cache_keys['username_cache_key'], 1, $cache_group );
 
-	_wpcom_vip_maybe_temporary_lock_account( $username, $cache_group );
+	_vip_maybe_temporary_lock_account( $username, $cache_group );
 }
 
 function wpcom_vip_login_limiter( $username ) {
@@ -193,7 +210,7 @@ function wpcom_vip_login_limiter( $username ) {
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
 
 function wpcom_vip_login_limiter_on_success( $username ) {
-	$cache_keys = _wpcom_vip_login_cache_keys( $username );
+	$cache_keys = _vip_login_cache_keys( $username );
 
 	wp_cache_decr( $cache_keys['ip_username_cache_key'], 1, CACHE_GROUP_LOGIN_LIMIT );
 	wp_cache_decr( $cache_keys['ip_cache_key'], 1, CACHE_GROUP_LOGIN_LIMIT );
@@ -303,7 +320,7 @@ function wpcom_vip_lost_password_limit( $errors, $user_data ) {
 add_action( 'lostpassword_post', 'wpcom_vip_lost_password_limit', 10, 2 );
 
 function wpcom_vip_username_is_limited( $username, $cache_group ) {
-	$cache_keys = _wpcom_vip_login_cache_keys( $username );
+	$cache_keys = _vip_login_cache_keys( $username );
 
 	$is_ip_username_locked = wp_cache_get( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'], $cache_group );
 	$is_ip_locked          = wp_cache_get( CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_cache_key'], $cache_group );
