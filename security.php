@@ -188,8 +188,8 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 		$base_event_window = apply_filters( 'wpcom_vip_lost_password_window', MINUTE_IN_SECONDS * 30  );
 	}
 
-	// Longer TTL when logging in as admin, which we don't allow on WP.com
 	$is_restricted_username = wpcom_vip_is_restricted_username( $username );
+	// Longer, more-strict interval when logging in as admin
 	$ip_username_event_window = $is_restricted_username ? HOUR_IN_SECONDS + $base_event_window : $base_event_window;
 
 	wp_cache_add( $cache_keys['ip_username_cache_key'], 0, $cache_group, $ip_username_event_window ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
