@@ -4,7 +4,7 @@ use Automattic\Test\Constant_Mocker;
 
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
-	private $test_username = 'IamGroot';
+	private $test_username = 'iamgroot';
 	private $test_ip       = '127.0.0.1';
 
 	public function setUp(): void {
