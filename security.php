@@ -58,9 +58,9 @@ function wpcom_vip_is_restricted_username( $username ) {
 }
 
 /**
- * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
+ * Return the defaults for login and password reset authorization limits, windows, and lockout periods.
  *
- * Returns the defualts for limits.
+ * @internal The values are subject to change without notice.
  */
 function _vip_get_auth_count_limit_defaults() {
 	if ( Context::is_fedramp() ) {
@@ -102,9 +102,9 @@ function _vip_get_auth_count_limit_defaults() {
 }
 
 /**
- * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
+ * Return the cache keys used for login and forgotten password rate limiting.
  *
- * Returns the cache keys used for login and forgotten passoword rate limiting.
+ * @internal
  *
  * @param string $raw_username The username to use for the cache keys.
  * @return array Associative array of cache keys.
@@ -123,10 +123,10 @@ function _vip_login_cache_keys( $raw_username ) {
 }
 
 /**
- * PRIVATE: This function is not intended to be used outside of this file and is subject to change without notice.
- *
- * Checks if counts for the given username and IP address are above the given thresholds.
+ * Check if counts for the given username and IP address are above the given thresholds.
  * If so, the account is locked for a period of time.
+ *
+ * @internal
  *
  * @param string $username The username to check.
  * @param string $cache_group The cache group to use for the rate limiting.
