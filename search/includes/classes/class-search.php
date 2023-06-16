@@ -248,10 +248,6 @@ class Search {
 			return false;
 		}
 
-		if ( defined( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ) && defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), constant( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ), true ) ) {
-			return false;
-		}
-
 		return true;
 	}
 
