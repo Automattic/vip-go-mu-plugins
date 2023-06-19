@@ -93,7 +93,7 @@ class A8C_Files {
 		add_filter( 'option_upload_url_path', array( $this, 'upload_url_path' ) );
 
 		// Conditionally schedule the attachment filesize metadata update job
-		if ( defined( 'VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE' ) && true === VIP_FILESYSTEM_SCHEDULE_FILESIZE_UPDATE ) {
+		if ( defined( 'VIP_GO_ENV' ) && 'production' === constant( 'VIP_GO_ENV' ) ) {
 			// add new cron schedule for filesize update
 			add_filter( 'cron_schedules', array( $this, 'filter_cron_schedules' ), 10, 1 ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval
 
