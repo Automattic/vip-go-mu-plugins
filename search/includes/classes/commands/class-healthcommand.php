@@ -475,15 +475,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 		// Array pop without modifying the diff array
 		$d = $this->get_last( $diff );
 
-		if ( array_key_exists( 'type', $d ) && array_key_exists( 'id', $d ) && array_key_exists( 'issue', $d ) ) {
-			\WP_CLI\Utils\format_items( $format, $diff, array( 'type', 'id', 'issue' ) );
-		} else {
-			WP_CLI::warning( 'Formatting is being ignored!' );
-			foreach ( $diff as $d ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_dump
-				var_dump( $d );
-			}
-		}
+		\WP_CLI\Utils\format_items( $format, $diff, array_keys( $d ) );
 
 		if ( ! empty( $truncate_msg ) && ! $silent ) {
 			WP_CLI::warning( $truncate_msg );

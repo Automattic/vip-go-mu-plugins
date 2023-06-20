@@ -59,3 +59,8 @@ function vip_schedule_aggregated_cron() {
 
 	wp_schedule_event( $timestamp + $offset, 'hourly', 'vip_aggregated_cron_hourly' );
 }
+
+// Watch for deprecation usage.
+if ( ! defined( 'CRON_CONTROL_WARN_FOR_DEPRECATIONS' ) ) {
+	define( 'CRON_CONTROL_WARN_FOR_DEPRECATIONS', true );
+}

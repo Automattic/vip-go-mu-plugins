@@ -59,7 +59,7 @@ define( 'LABEL_READY', '[Status] Ready to deploy' );
 define( 'LABEL_DEPLOYED_PROD', '[Status] Deployed to production' );
 define( 'LABEL_DEPLOYED_STAGING', '[Status] Deployed to staging' );
 define( 'LABEL_REVERTED', '[Status] Reverted' );
-define( 'TAG_RELEASE', $_SERVER[ 'TAG_RELEASE' ] );
+define( 'TAG_RELEASE', $_SERVER[ 'TAG_RELEASE' ] ?? '' );
 
 /**
  * Utility function for debugging.

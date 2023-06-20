@@ -19,7 +19,7 @@ require_once __DIR__ . '/../../config/class-site-details-index.php';
 class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
-		add_filter( 'pre_http_request', function ( $result, $args, $url ) {
+		add_filter( 'pre_http_request', function ( $result ) {
 			if ( false === $result ) {
 				$result = [
 					'headers'  => [],
@@ -33,7 +33,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			}
 
 			return $result;
-		}, 10, 3 );
+		}, 10 );
 	}
 
 	public function test__data_filter_should_not_be_hooked_if_no_init() {

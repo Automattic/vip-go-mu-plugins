@@ -9,7 +9,7 @@ use Automattic\Memcached\Stats;
 class WP_Object_Cache {
 	public string $flush_group        = 'WP_Object_Cache';
 	public string $global_flush_group = 'WP_Object_Cache_global';
-	public string $flush_key          = 'flush_number_v4';
+	public string $flush_key          = 'flush_number_v5';
 
 	/**
 	 * Keep track of flush numbers.
