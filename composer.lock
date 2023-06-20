@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7c04ac6d37ccee984685babac3f5d705",
+    "content-hash": "8d5a0e90e188009ccf0e95dd2580d00c",
     "packages": [],
     "packages-dev": [
         {
@@ -136,25 +136,24 @@
         },
         {
             "name": "dms/phpunit-arraysubset-asserts",
-            "version": "v0.4.0",
+            "version": "v0.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/rdohms/phpunit-arraysubset-asserts.git",
-                "reference": "428293c2a00eceefbad71a2dbdfb913febb35de2"
+                "reference": "aa6b9e858414e91cca361cac3b2035ee57d212e0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/rdohms/phpunit-arraysubset-asserts/zipball/428293c2a00eceefbad71a2dbdfb913febb35de2",
-                "reference": "428293c2a00eceefbad71a2dbdfb913febb35de2",
+                "url": "https://api.github.com/repos/rdohms/phpunit-arraysubset-asserts/zipball/aa6b9e858414e91cca361cac3b2035ee57d212e0",
+                "reference": "aa6b9e858414e91cca361cac3b2035ee57d212e0",
                 "shasum": ""
             },
             "require": {
                 "php": "^5.4 || ^7.0 || ^8.0",
-                "phpunit/phpunit": "^4.8.36 || ^5.7.21 || ^6.0 || ^7.0 || ^8.0 || ^9.0"
+                "phpunit/phpunit": "^4.8.36 || ^5.7.21 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0"
             },
             "require-dev": {
-                "dms/coding-standard": "^9",
-                "squizlabs/php_codesniffer": "^3.4"
+                "dms/coding-standard": "^9"
             },
             "type": "library",
             "autoload": {
@@ -175,9 +174,9 @@
             "description": "This package provides ArraySubset and related asserts once deprecated in PHPUnit 8",
             "support": {
                 "issues": "https://github.com/rdohms/phpunit-arraysubset-asserts/issues",
-                "source": "https://github.com/rdohms/phpunit-arraysubset-asserts/tree/v0.4.0"
+                "source": "https://github.com/rdohms/phpunit-arraysubset-asserts/tree/v0.5.0"
             },
-            "time": "2022-02-13T15:00:28+00:00"
+            "time": "2023-06-02T17:33:53+00:00"
         },
         {
             "name": "doctrine/instantiator",
@@ -458,16 +457,16 @@
         },
         {
             "name": "nikic/php-parser",
-            "version": "v4.15.4",
+            "version": "v4.15.5",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nikic/PHP-Parser.git",
-                "reference": "6bb5176bc4af8bcb7d926f88718db9b96a2d4290"
+                "reference": "11e2663a5bc9db5d714eedb4277ee300403b4a9e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/6bb5176bc4af8bcb7d926f88718db9b96a2d4290",
-                "reference": "6bb5176bc4af8bcb7d926f88718db9b96a2d4290",
+                "url": "https://api.github.com/repos/nikic/PHP-Parser/zipball/11e2663a5bc9db5d714eedb4277ee300403b4a9e",
+                "reference": "11e2663a5bc9db5d714eedb4277ee300403b4a9e",
                 "shasum": ""
             },
             "require": {
@@ -508,9 +507,9 @@
             ],
             "support": {
                 "issues": "https://github.com/nikic/PHP-Parser/issues",
-                "source": "https://github.com/nikic/PHP-Parser/tree/v4.15.4"
+                "source": "https://github.com/nikic/PHP-Parser/tree/v4.15.5"
             },
-            "time": "2023-03-05T19:49:14+00:00"
+            "time": "2023-05-19T20:20:00+00:00"
         },
         {
             "name": "phar-io/manifest",
@@ -1117,16 +1116,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "9.6.8",
+            "version": "9.6.9",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "17d621b3aff84d0c8b62539e269e87d8d5baa76e"
+                "reference": "a9aceaf20a682aeacf28d582654a1670d8826778"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/17d621b3aff84d0c8b62539e269e87d8d5baa76e",
-                "reference": "17d621b3aff84d0c8b62539e269e87d8d5baa76e",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/a9aceaf20a682aeacf28d582654a1670d8826778",
+                "reference": "a9aceaf20a682aeacf28d582654a1670d8826778",
                 "shasum": ""
             },
             "require": {
@@ -1200,7 +1199,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.6.8"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/9.6.9"
             },
             "funding": [
                 {
@@ -1216,7 +1215,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-05-11T05:14:45+00:00"
+            "time": "2023-06-11T06:13:56+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -2844,21 +2843,21 @@
         },
         {
             "name": "yoast/phpunit-polyfills",
-            "version": "1.0.5",
+            "version": "2.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/Yoast/PHPUnit-Polyfills.git",
-                "reference": "3b59adeef77fb1c03ff5381dbb9d68b0aaff3171"
+                "reference": "c758753e8f9dac251fed396a73c8305af3f17922"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/Yoast/PHPUnit-Polyfills/zipball/3b59adeef77fb1c03ff5381dbb9d68b0aaff3171",
-                "reference": "3b59adeef77fb1c03ff5381dbb9d68b0aaff3171",
+                "url": "https://api.github.com/repos/Yoast/PHPUnit-Polyfills/zipball/c758753e8f9dac251fed396a73c8305af3f17922",
+                "reference": "c758753e8f9dac251fed396a73c8305af3f17922",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.4",
-                "phpunit/phpunit": "^4.8.36 || ^5.7.21 || ^6.0 || ^7.0 || ^8.0 || ^9.0"
+                "php": ">=5.6",
+                "phpunit/phpunit": "^5.7.21 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0"
             },
             "require-dev": {
                 "yoast/yoastcs": "^2.3.0"
@@ -2900,7 +2899,7 @@
                 "issues": "https://github.com/Yoast/PHPUnit-Polyfills/issues",
                 "source": "https://github.com/Yoast/PHPUnit-Polyfills"
             },
-            "time": "2023-03-30T23:39:05+00:00"
+            "time": "2023-06-06T20:28:24+00:00"
         }
     ],
     "aliases": [],

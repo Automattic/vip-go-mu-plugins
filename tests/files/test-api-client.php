@@ -5,13 +5,11 @@ namespace Automattic\VIP\Files;
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 require_once __DIR__ . '/../../files/class-api-client.php';
 
 class API_Client_Test extends WP_UnitTestCase {
 	use ArraySubsetAsserts;
-	use AssertionRenames;
 
 	/** @var API_Client|null */
 	private $api_client;

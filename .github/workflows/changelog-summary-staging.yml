@@ -1,13 +1,9 @@
-name: Changelog Summary
+name: Changelog Summary - Staging
 
 on:
   push:
     branches:
       - staging
-  workflow_run:
-    workflows: ["Tag Release"]
-    types:
-      - completed
 
 permissions:
   contents: read
@@ -18,24 +14,11 @@ jobs:
     name: Run Summary Generator
     runs-on: ubuntu-latest
     steps:
-      - name: Download tag release
-        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.workflow.name == 'Tag Release' && github.event.workflow_run.conclusion == 'completed' }}
-        uses: actions/download-artifact@v3
-        with:
-          name: tag-release
-
-      - name: Set tag release as env var
-        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.workflow.name == 'Tag Release' && github.event.workflow_run.conclusion == 'completed' }}
-        id: set_tag
-        run: |
-          RESULT=$(cat tag-release/result.txt)
-          echo "::set-output name=result::$RESULT"
-
       - name: Checkout repository
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.25.2
+        uses: shivammathur/setup-php@2.25.4
         with:
           php-version: '7.4'
 
@@ -50,7 +33,6 @@ jobs:
           PROJECT_USERNAME: Automattic
           PROJECT_REPONAME: vip-go-mu-plugins
           BRANCH: ${{ github.ref_name }}
-          TAG_RELEASE: ${{ steps.set_tag.outputs.result }}
         run: |
           php ./ci/changelog-summary.php \
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
