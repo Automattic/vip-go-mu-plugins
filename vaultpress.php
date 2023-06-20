@@ -13,15 +13,15 @@
  * @package automattic/vaultpress
  */
 
-// VaultPress is deprecated. Do not load VaultPress if VIP_GO_APP_ID is not in VIP_VAULTPRESS_ALLOWED_APP_IDS
-if ( defined( 'VIP_VAULTPRESS_ALLOWED_APP_IDS' ) && defined( 'VIP_GO_APP_ID' ) && ! in_array( VIP_GO_APP_ID, VIP_VAULTPRESS_ALLOWED_APP_IDS, true ) ) {
-	return;
-}
-
 // Do not load VaultPress unless explicitly enabled via the VIP_VAULTPRESS_SKIP_LOAD constant
 // Please see this post for more information: https://lobby.vip.wordpress.com/2023/02/28/upcoming-vaultpress-deprecation/
 if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) ) {
 	define( 'VIP_VAULTPRESS_SKIP_LOAD', true );
+}
+
+// Avoid loading VaultPress altogether if VIP_VAULTPRESS_ALLOWED is set to false
+if ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) {
+	return;
 }
 
 // Avoid loading VaultPress altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for VP to work in VIP)
