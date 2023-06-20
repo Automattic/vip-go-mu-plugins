@@ -348,13 +348,21 @@ class Site_Details_Index {
 	 * and sends it to the site details service
 	 */
 	public function put_site_details() {
-		$site_details = $this->get_site_details();
-		$url          = null;
-		$token        = null;
+		$site_details      = $this->get_site_details();
+		$url               = null;
+		$token             = null;
+		$new_service_url   = null;
+		$new_service_token = null;
 
-		if ( defined( 'SDS_API_URL' ) && defined( 'SDS_AUTH_TOKEN' ) && ! empty( SDS_AUTH_TOKEN ) ) {
-			$url   = rtrim( SDS_API_URL, '/' ) . '/sites';
-			$token = SDS_AUTH_TOKEN;
+		if ( defined( 'VIP_SERVICES_AUTH_TOKENS' ) && ! empty( VIP_SERVICES_AUTH_TOKENS ) ) {
+			$auth_token_details = json_decode( base64_decode( VIP_SERVICES_AUTH_TOKENS ), true );
+			$new_service_url    = $auth_token_details['site']['vip-site-details']['url'] ?? null;
+			$new_service_token  = $auth_token_details['site']['vip-site-details']['token'] ?? null;
+		}
+
+		if ( $new_service_url && $new_service_token ) {
+			$url   = rtrim( $new_service_url, '/' ) . '/sites';
+			$token = $new_service_token;
 		} elseif ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
 			$url   = rtrim( SERVICES_API_URL, '/' ) . '/site-details/sites';
 			$token = SERVICES_AUTH_TOKEN;
