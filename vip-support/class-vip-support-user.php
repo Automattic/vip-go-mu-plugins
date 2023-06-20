@@ -102,7 +102,7 @@ class User {
 	/**
 	 * The Gravatar URL for `VIP_SUPPORT_EMAIL_ADDRESS`.
 	 */
-	const VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR = 'https://secure.gravatar.com/avatar/c83fd21f1122c4d1d8677d6a7a1291d3';
+	const VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR = 'https://secure.gravatar.com/avatar/c84e75679a6342a8a28793784098c0ee57669854bc0d006b6a7a49a275177696';
 
 	/**
 	 * A flag to indicate reversion and then to prevent recursion.
