@@ -335,5 +335,9 @@ if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
 	define_db_constants( $GLOBALS['wpdb'] );
 }
 
+if ( ! isset( $_SERVER['HTTP_HOST'] ) ) {
+	$_SERVER['HTTP_HOST'] = null;
+}
+
 do_action( 'vip_loaded' );
 // @codeCoverageIgnoreEnd

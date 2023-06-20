@@ -53,16 +53,18 @@ class Health_Test extends WP_UnitTestCase {
 
 		$expected_diff = array(
 			'post_5' => array(
-				'existence' => array(
-					'expected' => sprintf( 'Post %d to be indexed', 5 ),
-					'actual'   => null,
-				),
+				'id'       => 5,
+				'type'     => 'post',
+				'issue'    => 'missing_from_index',
+				'expected' => sprintf( 'Post %d to be indexed', 5 ),
+				'actual'   => null,
 			),
 			'post_7' => array(
-				'existence' => array(
-					'expected' => null,
-					'actual'   => sprintf( 'Post %d is currently indexed', 7 ),
-				),
+				'id'       => 7,
+				'type'     => 'post',
+				'issue'    => 'extra_in_index',
+				'expected' => null,
+				'actual'   => sprintf( 'Post %d is currently indexed', 7 ),
 			),
 		);
 

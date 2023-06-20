@@ -713,10 +713,11 @@ class Health {
 		if ( 0 < count( $missing_from_index ) ) {
 			foreach ( $missing_from_index as $post_id ) {
 				$diffs[ 'post_' . $post_id ] = array(
-					'existence' => array(
-						'expected' => sprintf( 'Post %d to be indexed', $post_id ),
-						'actual'   => null,
-					),
+					'id'       => $post_id,
+					'type'     => 'post',
+					'issue'    => 'missing_from_index',
+					'expected' => sprintf( 'Post %d to be indexed', $post_id ),
+					'actual'   => null,
 				);
 			}
 		}
@@ -729,10 +730,11 @@ class Health {
 			foreach ( $extra_in_index as $document_id ) {
 				// Grab the actual doc from
 				$diffs[ 'post_' . $document_id ] = array(
-					'existence' => array(
-						'expected' => null,
-						'actual'   => sprintf( 'Post %d is currently indexed', $document_id ),
-					),
+					'id'       => $document_id,
+					'type'     => 'post',
+					'issue'    => 'extra_in_index',
+					'expected' => null,
+					'actual'   => sprintf( 'Post %d is currently indexed', $document_id ),
 				);
 			}
 		}
@@ -841,6 +843,9 @@ class Health {
 	 */
 	public static function reconcile_diff( array $diff ) {
 		foreach ( $diff as $obj_to_reconcile ) {
+			$id   = $obj_to_reconcile['id'];
+			$type = $obj_to_reconcile['type'];
+
 			switch ( $obj_to_reconcile['issue'] ) {
 				case 'missing_from_index':
 				case 'mismatch':
@@ -852,11 +857,11 @@ class Health {
 					 * @param string $object_type   Object type
 					 * @return int                  Job priority
 					 */
-					$priority = apply_filters( 'vip_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $obj_to_reconcile['id'], $obj_to_reconcile['type'] );
-					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $obj_to_reconcile['id'], $obj_to_reconcile['type'], [ 'priority' => $priority ] );
+					$priority = apply_filters( 'vip_healthcheck_reindex_priority', self::REINDEX_JOB_DEFAULT_PRIORITY, $id, $type );
+					\Automattic\VIP\Search\Search::instance()->queue->queue_object( $id, $type, [ 'priority' => $priority ] );
 					break;
 				case 'extra_in_index':
-					\ElasticPress\Indexables::factory()->get( 'post' )->delete( $obj_to_reconcile['id'], false );
+					\ElasticPress\Indexables::factory()->get( $type )->delete( $id, false );
 					break;
 			}
 		}
