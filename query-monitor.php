@@ -40,6 +40,10 @@ function wpcom_vip_qm_enable( $enable ) {
 		return true;
 	}
 
+	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+		return true;
+	}
+
 	return $enable;
 }
 add_filter( 'wpcom_vip_qm_enable', 'wpcom_vip_qm_enable' );
