@@ -24,6 +24,7 @@ add_action( __NAMESPACE__ . '-backup_roles', __NAMESPACE__ . '\do_user_role_back
 
 function notoptions_mitigation() {
 	global $wpdb;
+	$time       = microtime( true );
 	$notoptions = wp_cache_get( 'notoptions', 'options' );
 
 	if ( ! is_array( $notoptions ) ) {
@@ -62,7 +63,7 @@ function notoptions_mitigation() {
 			$irc_alert_level      = 3; // CRITICAL
 			$opsgenie_alert_level = 'P3';
 
-			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions. Cache flush was %ssuccessful.';
+			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions @ %s (%s). Cache flush was %ssuccessful.';
 
 			$subject = sprintf(
 				$subject,
@@ -70,6 +71,8 @@ function notoptions_mitigation() {
 				esc_html( $environment ),
 				(int) $site_id,
 				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : '' ),
+				$time,
+				gethostname(),
 				( $flushed ? '' : 'un' )
 			);
 
@@ -79,10 +82,9 @@ function notoptions_mitigation() {
 			if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
 
 				$alerts = Alerts::instance();
-				$alerts->send_to_chat( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-notoptions' );
+				$alerts->send_to_chat( '#vip-options-alerts', $to_irc, $irc_alert_level, 'a8c-notoptions' );
 
 				if ( 'production' === $environment ) {
-
 					// Send to OpsGenie
 					$alerts->opsgenie(
 						$subject,
