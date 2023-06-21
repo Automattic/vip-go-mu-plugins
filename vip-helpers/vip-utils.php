@@ -957,7 +957,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 		$email = $user->user_email;
 	}
 
-	$hashed_email = md5( strtolower( trim( $email ) ) );
+	$hashed_email = hash( 'sha256', strtolower( trim( $email ) ) );
 	$profile_url  = esc_url_raw( sprintf( 'https://en.gravatar.com/%s.php', $hashed_email ), array( 'http', 'https' ) );
 
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
@@ -984,7 +984,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
  */
 function wpcom_vip_email_has_gravatar( $email ) {
 
-	$hash = md5( strtolower( trim( $email ) ) );
+	$hash = hash( 'sha256', strtolower( trim( $email ) ) );
 
 	// If not in the cache, check again
 	$has_gravatar = wp_cache_get( $hash, 'email_has_gravatar' );

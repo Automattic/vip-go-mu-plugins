@@ -248,10 +248,6 @@ class Search {
 			return false;
 		}
 
-		if ( defined( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ) && defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), constant( 'SKIP_VIP_SEARCH_USE_NEXT_EP_IDS' ), true ) ) {
-			return false;
-		}
-
 		return true;
 	}
 
@@ -2338,7 +2334,7 @@ class Search {
 			if ( isset( $wp_filter[ $ep_filter ] ) ) {
 				foreach ( $wp_filter[ $ep_filter ]->callbacks as $callback ) {
 					foreach ( $callback as $el ) {
-						if ( $el['function'] instanceof \Closure ) {
+						if ( ! is_array( $el['function'] ) || ! is_object( $el['function'][0] ) ) {
 							return $should_do_weighting;
 						} else {
 							$class = get_class( $el['function'][0] );

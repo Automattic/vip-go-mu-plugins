@@ -1,4 +1,4 @@
-name: Tag Release
+name: Changelog Summary - Production
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   tag-release:
@@ -23,7 +24,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@v3.5.2
+        uses: actions/checkout@v3.5.3
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -38,7 +39,7 @@ jobs:
               minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
           fi
 
-          echo "id=${current_date}${minor_version}" >> $GITHUB_OUTPUT
+          echo "::set-output name=id::${current_date}${minor_version}"
 
       - name: Tag release
         run: git tag ${{ steps.id-generator.outputs.id }}
@@ -47,7 +48,39 @@ jobs:
         run: git push --tags
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: softprops/action-gh-release@v0.1.15
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
+
+  execute:
+    needs: tag-release
+    name: Run Summary Generator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3.5.3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@2.25.4
+        with:
+          php-version: '7.4'
+
+      - name: Install
+        uses: ramsey/composer-install@2.2.0
+
+      - name: Execute
+        env:
+          CHANGELOG_POST_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          PROJECT_USERNAME: Automattic
+          PROJECT_REPONAME: vip-go-mu-plugins
+          BRANCH: ${{ github.ref_name }}
+          TAG_RELEASE: ${{ needs.tag-release.outputs.id }}
+        run: |
+          php ./ci/changelog-summary.php \
+                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
+                --wp-status=draft \
+                --debug

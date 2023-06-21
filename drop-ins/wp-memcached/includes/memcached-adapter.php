@@ -185,11 +185,31 @@ class Memcached_Adapter implements Adapter_Interface {
 		$mc          = $this->get_connection( $connection_group );
 		$mapped_keys = $this->normalize_keys_with_mapping( $keys );
 
-		/** @psalm-var array<string, mixed>|false $results */
-		$results = $mc->getMulti( array_keys( $mapped_keys ) );
+		$results = [];
+		if ( count( $mapped_keys ) > 1000 ) {
+			// Sending super large multiGets to a memcached server results in
+			// extremely inflated read/response buffers which can consume a lot memory perpetually.
+			// So instead we'll chunk up and send multiple reasonably-sized requests.
+			$chunked_keys = array_chunk( $mapped_keys, 1000, true );
 
-		if ( ! is_array( $results ) ) {
-			return false;
+			foreach( $chunked_keys as $chunk_of_keys ) {
+				/** @psalm-var array<string, mixed>|false $partial_results */
+				$partial_results = $mc->getMulti( array_keys( $chunk_of_keys ) );
+
+				if ( ! is_array( $partial_results ) ) {
+					// If any of the lookups fail, we'll bail on the whole thing to be consistent.
+					return false;
+				}
+
+				$results = array_merge( $results, $partial_results );
+			}
+		} else {
+			/** @psalm-var array<string, mixed>|false $results */
+			$results = $mc->getMulti( array_keys( $mapped_keys ) );
+
+			if ( ! is_array( $results ) ) {
+				return false;
+			}
 		}
 
 		$return = [];

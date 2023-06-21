@@ -19,7 +19,7 @@ class Privacy_Policy_Link_Test extends WP_UnitTestCase {
 		update_option( 'wp_page_for_privacy_policy', $post->ID );
 
 		global $wp_version;
-		$rel = version_compare( $wp_version, '6.1.1', '>' ) ? ' rel="privacy-policy"' : '';
+		$rel = version_compare( $wp_version, '6.2.0', '>=' ) ? ' rel="privacy-policy"' : '';
 		// Should show the custom one
 		$expected_link = sprintf( '<div><a class="privacy-policy-link" href="%s"%s>%s</a></div>', get_permalink( $post->ID ), $rel, get_the_title( $post->ID ) );
 

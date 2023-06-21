@@ -134,7 +134,7 @@ class WP_Object_Cache {
 
 	var $flush_group         = 'WP_Object_Cache';
 	var $global_flush_group  = 'WP_Object_Cache_global';
-	var $flush_key           = "flush_number_v4";
+	var $flush_key           = "flush_number_v5";
 	var $old_flush_key       = "flush_number";
 	var $flush_number        = array();
 	var $global_flush_number = null;
