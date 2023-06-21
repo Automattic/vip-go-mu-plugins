@@ -43,6 +43,10 @@ add_action( 'cli_init', function() {
 add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_aggregated_cron' );
 
 function vip_schedule_aggregated_cron() {
+	if ( defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' ) ) {
+		return;
+	}
+
 	if ( wp_next_scheduled( 'vip_aggregated_cron_hourly' ) ) {
 		return;
 	}

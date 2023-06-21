@@ -32,6 +32,10 @@ class Plugin {
 	 * @codeCoverageIgnore -- invoked before the tests start
 	 */
 	protected function __construct() {
+		if ( Context::is_installing() ) {
+			return;
+		}
+
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'init_registry' ], 9 );
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
