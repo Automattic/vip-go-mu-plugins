@@ -8,6 +8,15 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class BlockDataApi extends Integration {
+
+	/**
+	 * The version of the Block Data API plugin to load, that's set to the latest version.
+	 * This should be higher than the lowestVersion set in https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json#L63
+	 * 
+	 * @var string
+	 */
+	protected string $version = '1.0';
+
 	/**
 	 * Applies hooks to load Block Data API plugin.
 	 *
@@ -21,9 +30,12 @@ class BlockDataApi extends Integration {
 				return;
 			}
 
-			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-1.0.1/vip-block-data-api.php';
+			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration
+			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
+			} else {
+				$this->is_active = false;
 			}
 		} );
 	}
