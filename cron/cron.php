@@ -43,6 +43,10 @@ add_action( 'cli_init', function() {
 add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_aggregated_cron' );
 
 function vip_schedule_aggregated_cron() {
+	if ( defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' ) ) {
+		return;
+	}
+
 	if ( wp_next_scheduled( 'vip_aggregated_cron_hourly' ) ) {
 		return;
 	}
@@ -58,4 +62,9 @@ function vip_schedule_aggregated_cron() {
 	}
 
 	wp_schedule_event( $timestamp + $offset, 'hourly', 'vip_aggregated_cron_hourly' );
+}
+
+// Watch for deprecation usage.
+if ( ! defined( 'CRON_CONTROL_WARN_FOR_DEPRECATIONS' ) ) {
+	define( 'CRON_CONTROL_WARN_FOR_DEPRECATIONS', true );
 }
