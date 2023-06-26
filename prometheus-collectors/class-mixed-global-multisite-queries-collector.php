@@ -5,8 +5,6 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\Counter;
 use Prometheus\RegistryInterface;
 
-const MIXED_GLOBAL_MULTISITE_QUERY_REGEX = '/wp_\d+_(\w+).+? (wp_\D\w*)|(wp_\D\w*).+? wp_\d+_(\w+)/';
-
 /**
  * @codeCoverageIgnore
  */
