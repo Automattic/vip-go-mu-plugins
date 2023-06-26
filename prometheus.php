@@ -6,6 +6,7 @@ use Automattic\VIP\Prometheus\Login_Stats_Collector;
 use Automattic\VIP\Prometheus\OpCache_Collector;
 use Automattic\VIP\Prometheus\Post_Stats_Collector;
 use Automattic\VIP\Prometheus\Error_Stats_Collector;
+use Automattic\VIP\Prometheus\Mixed_Global_Multisite_Queries_Collector;
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
 	require_once __DIR__ . '/prometheus/index.php';
@@ -24,6 +25,10 @@ if ( defined( 'ABSPATH' ) ) {
 		$files[] = '/prometheus-collectors/class-post-stats-collector.php';
 	}
 
+	if ( defined( 'VIP_MIXED_GLOBAL_MULTISITE_QUERIES_COLLECTOR_ENABLED' ) ) {
+		$files[] = '/prometheus-collectors/class-mixed-global-multisite-queries-collector.php';
+	}
+
 	foreach ( $files as $file ) {
 		if ( file_exists( __DIR__ . $file ) ) {
 			require_once __DIR__ . $file;
@@ -32,12 +37,13 @@ if ( defined( 'ABSPATH' ) ) {
 
 	add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ): array {
 		$to_init = [
-			'cache'   => Cache_Collector::class,
-			'apcu'    => APCu_Collector::class,
-			'opcache' => OpCache_Collector::class,
-			'login'   => Login_Stats_Collector::class,
-			'error'   => Error_Stats_Collector::class,
-			'post'    => Post_Stats_Collector::class,
+			'cache'                          => Cache_Collector::class,
+			'apcu'                           => APCu_Collector::class,
+			'opcache'                        => OpCache_Collector::class,
+			'login'                          => Login_Stats_Collector::class,
+			'error'                          => Error_Stats_Collector::class,
+			'post'                           => Post_Stats_Collector::class,
+			'mixed_global_multisite_queries' => Mixed_Global_Multisite_Queries_Collector::class,
 		];
 
 		foreach ( $to_init as $slug => $class ) {
