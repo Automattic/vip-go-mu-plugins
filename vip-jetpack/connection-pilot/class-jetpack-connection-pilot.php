@@ -130,7 +130,7 @@ class Connection_Pilot {
 			}
 
 			// Attempting VaultPress connection given that Jetpack is connected
-			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+			$skip_vaultpress = ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD );
 			if ( ! $skip_vaultpress ) {
 				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
 				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
