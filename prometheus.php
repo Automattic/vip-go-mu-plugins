@@ -25,7 +25,7 @@ if ( defined( 'ABSPATH' ) ) {
 		$files[] = '/prometheus-collectors/class-post-stats-collector.php';
 	}
 
-	if ( defined( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) ) {
+	if ( true === defined( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) && true === constant( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) ) {
 		$files[] = '/prometheus-collectors/class-potential-multi-dataset-queries-collector.php';
 	}
 
