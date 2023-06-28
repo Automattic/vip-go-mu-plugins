@@ -6,23 +6,24 @@ use Prometheus\Counter;
 use Prometheus\RegistryInterface;
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/../../prometheus-collectors/class-mixed-global-blog-table-queries-collector.php';
+require_once __DIR__ . '/../../prometheus-collectors/class-potential-multi-dataset-queries-collector.php';
 
-class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
-	public Mixed_Global_Blog_Table_Queries_Collector $collector;
+class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
+	public Potential_Multi_Dataset_Queries_Collector $collector;
 
 	public Counter $counter;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->collector = new Mixed_Global_Blog_Table_Queries_Collector();
+		$this->collector = new Potential_Multi_Dataset_Queries_Collector();
 
 		$this->counter = $this->getMockBuilder( Counter::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$registry_mock = $this->createStub( RegistryInterface::class );
+		$registry_mock = $this->getMockBuilder( RegistryInterface::class )
+			->getMock();
 		$registry_mock->method( 'getOrRegisterCounter' )
 			->willReturn( $this->counter );
 
@@ -30,9 +31,9 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_provider__queries_mixed_global_and_blog_tables
+	 * @dataProvider data_provider__multi_dataset_queries
 	 */
-	public function test_collectors_filter_with_mixed_queries( $query, $expected_global_table, $expected_multisite_table ): void {
+	public function test_collectors_filter_with_multi_dataset_query( $query, $expected_global_table, $expected_multisite_table ): void {
 		$this->counter->expects( $this->once() )
 			->method( 'inc' )
 			->with( [ '1', $expected_global_table, $expected_multisite_table ] );
@@ -43,9 +44,9 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_provider__queries_without_mixed_global_and_blog_tables
+	 * @dataProvider data_provider__single_dataset_queries
 	 */
-	public function test_collectors_filter_without_mixed_queries( $query ): void {
+	public function test_collectors_filter_without_multi_dataset_query( $query ): void {
 		$this->counter->expects( $this->never() )
 			->method( 'inc' );
 
@@ -54,7 +55,7 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 		self::assertEquals( 1, 1 );
 	}
 
-	public function data_provider__queries_mixed_global_and_blog_tables() {
+	public function data_provider__multi_dataset_queries() {
 		return [
 			'SELECT with multiple tables'    => [
 				'SELECT * FROM wptests_users, wptests_posts, wptests_123_termmeta',
@@ -89,7 +90,7 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 		];
 	}
 
-	public function data_provider__queries_without_mixed_global_and_blog_tables() {
+	public function data_provider__single_dataset_queries() {
 		return [
 			'SELECT with multiple tables'    => [
 				'SELECT * FROM wptests_users, `wptests_posts`, wptests_termmeta',

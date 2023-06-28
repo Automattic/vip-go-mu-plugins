@@ -5,15 +5,15 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\Counter;
 use Prometheus\RegistryInterface;
 
-class Mixed_Global_Blog_Table_Queries_Collector implements CollectorInterface {
-	private Counter $mixed_global_multisite_queries_counter;
+class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
+	private Counter $potential_multi_dataset_queries_collector;
 
 	public function initialize( RegistryInterface $registry ): void {
-		$this->mixed_global_multisite_queries_counter = $registry->getOrRegisterCounter(
-			'mixed_global_multisite_queries',
+		$this->potential_multi_dataset_queries_collector = $registry->getOrRegisterCounter(
+			'potential_multi_dataset_queries_collector',
 			'count',
-			'Number of SQL queries with mixed global and multisite tables',
-			[ 'site_id', 'global_table', 'multisite_table_suffix' ]
+			'Potential multi dataset queries',
+			[ 'site_id', 'global_table_suffix', 'multisite_table_suffix' ]
 		);
 		add_action( 'query', [ $this, 'query' ], 10, 1 );
 	}
@@ -27,21 +27,21 @@ class Mixed_Global_Blog_Table_Queries_Collector implements CollectorInterface {
 		preg_match_all( $regex, $query, $matches, PREG_SET_ORDER );
 
 		$last_global_table    = null;
-		$last_multisite_table = null;
+		$last_blog_table = null;
 		foreach ( $matches as $match ) {
 			if ( '' === $match[1] ) {
 				$last_global_table = $match[2];
 			} else {
-				$last_multisite_table = $match[2];
+				$last_blog_table = $match[2];
 			}
 		}
 
-		if ( $last_global_table && $last_multisite_table ) {
-			$this->mixed_global_multisite_queries_counter->inc(
+		if ( $last_global_table && $last_blog_table ) {
+			$this->potential_multi_dataset_queries_collector->inc(
 				[
 					Plugin::get_instance()->get_site_label(),
 					$last_global_table,
-					$last_multisite_table,
+					$last_blog_table,
 				]
 			);
 		}

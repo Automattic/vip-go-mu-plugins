@@ -6,7 +6,7 @@ use Automattic\VIP\Prometheus\Login_Stats_Collector;
 use Automattic\VIP\Prometheus\OpCache_Collector;
 use Automattic\VIP\Prometheus\Post_Stats_Collector;
 use Automattic\VIP\Prometheus\Error_Stats_Collector;
-use Automattic\VIP\Prometheus\Mixed_Global_Blog_Table_Queries_Collector;
+use Automattic\VIP\Prometheus\Potential_Multi_Dataset_Queries_Collector;
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
 	require_once __DIR__ . '/prometheus/index.php';
@@ -25,8 +25,8 @@ if ( defined( 'ABSPATH' ) ) {
 		$files[] = '/prometheus-collectors/class-post-stats-collector.php';
 	}
 
-	if ( defined( 'VIP_MIXED_GLOBAL_BLOG_TABLE_QUERIES_COLLECTOR_ENABLED' ) ) {
-		$files[] = '/prometheus-collectors/class-mixed-global-blog-table-queries-collector.php';
+	if ( defined( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) ) {
+		$files[] = '/prometheus-collectors/class-potential-multi-dataset-queries-collector.php';
 	}
 
 	foreach ( $files as $file ) {
@@ -43,7 +43,7 @@ if ( defined( 'ABSPATH' ) ) {
 			'login'                           => Login_Stats_Collector::class,
 			'error'                           => Error_Stats_Collector::class,
 			'post'                            => Post_Stats_Collector::class,
-			'mixed_global_blog_table_queries' => Mixed_Global_Blog_Table_Queries_Collector::class,
+			'potential_multi_dataset_queries' => Potential_Multi_Dataset_Queries_Collector::class,
 		];
 
 		foreach ( $to_init as $slug => $class ) {
