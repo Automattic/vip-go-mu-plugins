@@ -26,8 +26,8 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 		$matches = [];
 		preg_match_all( $regex, $query, $matches, PREG_SET_ORDER );
 
-		$last_global_table    = null;
-		$last_blog_table = null;
+		$last_global_table = null;
+		$last_blog_table   = null;
 		foreach ( $matches as $match ) {
 			if ( '' === $match[1] ) {
 				$last_global_table = $match[2];
