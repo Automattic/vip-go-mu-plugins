@@ -14,6 +14,8 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 	public Counter $counter;
 
 	public function setUp(): void {
+		parent::setUp();
+
 		$this->collector = new Mixed_Global_Blog_Table_Queries_Collector();
 
 		$this->counter = $this->getMockBuilder( Counter::class )
@@ -25,11 +27,6 @@ class Test_Mixed_Global_Blog_Table_Queries_Collector extends WP_UnitTestCase {
 			->willReturn( $this->counter );
 
 		$this->collector->initialize( $registry_mock );
-
-		remove_all_actions( 'query' );
-	}
-
-	public function tearDown(): void {
 	}
 
 	/**
