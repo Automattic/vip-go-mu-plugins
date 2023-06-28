@@ -38,7 +38,7 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 			->method( 'inc' )
 			->with( [ '1', $expected_global_table, $expected_multisite_table ] );
 
-		$this->collector->query( $query );
+		$this->collector->sql_query_log( $query );
 
 		self::assertEquals( 1, 1 );
 	}
@@ -50,7 +50,7 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 		$this->counter->expects( $this->never() )
 			->method( 'inc' );
 
-		$this->collector->query( $query );
+		$this->collector->sql_query_log( $query );
 
 		self::assertEquals( 1, 1 );
 	}

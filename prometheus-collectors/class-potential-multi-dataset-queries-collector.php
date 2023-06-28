@@ -15,10 +15,10 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 			'Potential multi dataset queries',
 			[ 'site_id', 'global_table_suffix', 'multisite_table_suffix' ]
 		);
-		add_action( 'query', [ $this, 'query' ], 10, 1 );
+		add_action( 'sql_query_log', [ $this, 'sql_query_log' ], 10, 1 );
 	}
 
-	public function query( $query ): void {
+	public function sql_query_log( $query ): void {
 		global $wpdb;
 
 		$regex = "/(?:FROM|JOIN|UPDATE|INTO|,)\s+`?$wpdb->base_prefix(\d+)?_?(\w+)+?`?/i";
