@@ -57,37 +57,37 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 
 	public function data_provider__multi_dataset_queries() {
 		return [
-			'SELECT with multiple tables'                           => [
+			'SELECT with multiple tables'         => [
 				'SELECT * FROM wptests_users, wptests_posts, wptests_123_termmeta',
 				'posts',
 				'termmeta',
 				'1',
 			],
-			'SELECT with join'                                      => [
+			'SELECT with join'                    => [
 				'SeLeCt * FROM `wptests_users` JOIN wptests_123_termmeta',
 				'users',
 				'termmeta',
 				'1',
 			],
-			'SELECT with subquery'                                  => [
+			'SELECT with subquery'                => [
 				'SELECT * FROM wptests_users, (SELECT * FROM wptests_123_termmeta)',
 				'users',
 				'termmeta',
 				'1',
 			],
-			'UpDaTe with join'                                      => [
+			'UpDaTe with join'                    => [
 				'UPDATE wptests_users INNER JOIN `wptests_2_posts` ON (wptests_users.ID = wptests_2_posts.post_author) SET wptests_2_posts.post_author = wptests_users.ID',
 				'users',
 				'posts',
 				'1',
 			],
-			'UPDATE on blog table with join'                        => [
+			'UPDATE on blog table with join'      => [
 				'UPDATE `wptests_2_posts` JOIN `wptests_users` ON `wptests_users`.ID = `wptests_2_posts`.post_author SET `wptests_2_posts`.post_author = `wptests_users`.ID',
 				'users',
 				'posts',
-				'1'
+				'1',
 			],
-			'InSeRt with subquery'                                  => [
+			'InSeRt with subquery'                => [
 				'INSERT INTO wptests_2_posts (post_author, post_title) SELECT ID, "title" FROM `wptests_users`',
 				'users',
 				'posts',
@@ -99,13 +99,13 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 				'termmeta',
 				'2',
 			],
-			'SELECT with multiple blog tables'                      => [
+			'SELECT with multiple blog tables'    => [
 				'SELECT * FROM wptests_users, wptests_posts, wptests_2_termmeta, wptests_3_termmeta',
 				'posts',
 				'termmeta',
 				'2',
 			],
-			'SELECT with multiple blog tables +3'                   => [
+			'SELECT with multiple blog tables +3' => [
 				'SELECT * FROM wptests_users, wptests_posts, wptests_2_termmeta, wptests_3_termmeta, wptests_4_termmeta, wptests_5_termmeta',
 				'posts',
 				'termmeta',
