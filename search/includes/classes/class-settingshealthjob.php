@@ -56,6 +56,13 @@ class SettingsHealthJob {
 	 */
 	public $indexables;
 
+	/**
+	 * Force disable for the specific env ids
+	 *
+	 * @var int[]
+	 */
+	public $health_check_disabled_sites = array();
+
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search     = $search;
 		$this->health     = new Health( $search );
@@ -79,7 +86,11 @@ class SettingsHealthJob {
 		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
 		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] );
 
-		$this->schedule_job();
+		if ( $this->is_enabled() ) {
+			$this->schedule_job();
+		} else {
+			$this->disable_job();
+		}
 	}
 
 	/**
@@ -97,6 +108,7 @@ class SettingsHealthJob {
 	public function disable_job() {
 		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			wp_clear_scheduled_hook( self::CRON_EVENT_BUILD_NAME );
 		}
 	}
 
@@ -494,5 +506,31 @@ class SettingsHealthJob {
 		// Clean up
 		$this->delete_last_processed_id();
 		delete_option( self::BUILD_LOCK_NAME );
+	}
+
+	/**
+	 * Is settings health check job enabled
+	 *
+	 * @return bool True if job is enabled. Else, false
+	 */
+	public function is_enabled() {
+		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === constant( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) ) {
+			return false;
+		}
+
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), $this->health_check_disabled_sites, true ) ) {
+			return false;
+		}
+
+		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
+
+		$enabled = in_array( constant( 'VIP_GO_ENV' ), $enabled_environments, true );
+
+		/**
+		 * Filter whether to enable VIP search healthcheck
+		 *
+		 * @param bool $enable True to enable the healthcheck cron job
+		 */
+		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
 	}
 }
