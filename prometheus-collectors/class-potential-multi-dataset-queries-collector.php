@@ -13,8 +13,9 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 			'potential_multi_dataset_queries_collector',
 			'count',
 			'Potential multi dataset queries',
-			[ 'site_id', 'global_table_suffix', 'multisite_table_suffix' ]
+			[ 'site_id', 'global_table_suffix', 'blog_table_suffix', 'cross_blog_count' ]
 		);
+
 		add_action( 'sql_query_log', [ $this, 'sql_query_log' ], 10, 1 );
 	}
 
@@ -26,22 +27,27 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 		$matches = [];
 		preg_match_all( $regex, $query, $matches, PREG_SET_ORDER );
 
-		$last_global_table = null;
-		$last_blog_table   = null;
+		$last_global_table     = null;
+		$last_blog_table       = null;
+		$blog_ids              = [];
 		foreach ( $matches as $match ) {
 			if ( '' === $match[1] ) {
 				$last_global_table = $match[2];
 			} else {
+				$blog_ids[$match[1]] = true;
 				$last_blog_table = $match[2];
 			}
 		}
 
-		if ( $last_global_table && $last_blog_table ) {
+		$blog_ids_count = count( $blog_ids );
+
+		if ( $last_blog_table && ( $last_global_table || $blog_ids_count > 1 ) ) {
 			$this->potential_multi_dataset_queries_collector->inc(
 				[
 					Plugin::get_instance()->get_site_label(),
-					$last_global_table,
+					$last_global_table ?? 'null',
 					$last_blog_table,
+					$blog_ids_count >= 3 ? '3+' : (string) $blog_ids_count,
 				]
 			);
 		}
