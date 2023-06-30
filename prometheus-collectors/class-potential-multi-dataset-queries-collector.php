@@ -13,7 +13,7 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 			'potential_multi_dataset_queries_collector',
 			'count',
 			'Potential multi dataset queries',
-			[ 'site_id', 'global_table_suffix', 'blog_table_suffix', 'cross_blog_count' ]
+			[ 'global_table_suffix', 'blog_table_suffix', 'cross_blog_count' ]
 		);
 
 		add_action( 'sql_query_log', [ $this, 'sql_query_log' ], 10, 1 );
@@ -44,7 +44,6 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 		if ( $last_blog_table && ( $last_global_table || $blog_ids_count > 1 ) ) {
 			$this->potential_multi_dataset_queries_collector->inc(
 				[
-					Plugin::get_instance()->get_site_label(),
 					$last_global_table ?? 'null',
 					$last_blog_table,
 					$blog_ids_count >= 3 ? '3+' : (string) $blog_ids_count,

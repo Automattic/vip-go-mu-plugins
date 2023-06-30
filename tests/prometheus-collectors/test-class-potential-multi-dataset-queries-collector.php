@@ -36,7 +36,7 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 	public function test_collectors_filter_with_multi_dataset_query( $query, $expected_global_table, $expected_multisite_table, $blog_ids_count ): void {
 		$this->counter->expects( $this->once() )
 			->method( 'inc' )
-			->with( [ '1', $expected_global_table, $expected_multisite_table, $blog_ids_count ] );
+			->with( [ $expected_global_table, $expected_multisite_table, $blog_ids_count ] );
 
 		$this->collector->sql_query_log( $query );
 
