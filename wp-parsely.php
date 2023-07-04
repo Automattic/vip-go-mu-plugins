@@ -1,5 +1,5 @@
 <?php
-/*
+/**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
  * Description: Content analytics made easy. Parse.ly gives creators, marketers and developers the tools to understand content performance, prove content value, and deliver tailored content experiences that drive meaningful results.
@@ -9,13 +9,19 @@
  * License: GPL2+
  * Text Domain: wp-parsely
  * Domain Path: /languages/
+ *
+ * @package Automattic\VIP\WP_Parsely_Integration
  */
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
 use stdClass;
 
-// The default version is the first entry in the SUPPORTED_VERSIONS list.
+/**
+ * The default version is the first entry in the SUPPORTED_VERSIONS list.
+ *
+ * For new version also update integrations/parsely.php file.
+ */
 const SUPPORTED_VERSIONS = [
 	'3.8',
 	'3.7',
