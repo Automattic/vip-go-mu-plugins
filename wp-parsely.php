@@ -19,8 +19,6 @@ use stdClass;
 
 /**
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
- *
- * For new version also update integrations/parsely.php file.
  */
 const SUPPORTED_VERSIONS = [
 	'3.8',
@@ -39,31 +37,84 @@ final class Parsely_Loader_Info {
 	// Defaults for when detection was not possible.
 	const VERSION_UNKNOWN = 'UNKNOWN';
 
+	/**
+	 * Status of the plugin.
+	 *
+	 * @var bool
+	 */
 	private static bool $active;
+
+	/**
+	 * Integration type of the plugin.
+	 *
+	 * @var string
+	 */
 	private static string $integration_type;
+
+	/**
+	 * Version of the plugin.
+	 *
+	 * @var string
+	 */
 	private static string $version;
+
+	/**
+	 * Options of the plugin.
+	 *
+	 * @var array
+	 */
 	private static array $parsely_options;
 
+	/**
+	 * Check if the plugin is active.
+	 *
+	 * @return bool
+	 */
 	public static function is_active(): bool {
 		return isset( self::$active ) ? self::$active : false;
 	}
 
+	/**
+	 * Set active.
+	 *
+	 * @param bool $active Status of the plugin.
+	 */
 	public static function set_active( bool $active ): void {
 		self::$active = $active;
 	}
 
+	/**
+	 * Get integration type.
+	 *
+	 * @return string
+	 */
 	public static function get_integration_type(): string {
 		return isset( self::$integration_type ) ? self::$integration_type : Parsely_Integration_Type::NONE;
 	}
 
+	/**
+	 * Set integration type.
+	 *
+	 * @param string $integration_type Type of the integration.
+	 */
 	public static function set_integration_type( string $integration_type ): void {
 		self::$integration_type = $integration_type;
 	}
 
+	/**
+	 * Get version.
+	 *
+	 * @return string
+	 */
 	public static function get_version(): string {
 		return isset( self::$version ) ? self::$version : self::VERSION_UNKNOWN;
 	}
 
+	/**
+	 * Set version.
+	 *
+	 * @param string $version Version of the plugin.
+	 */
 	public static function set_version( string $version ): void {
 		self::$version = $version;
 	}
@@ -121,6 +172,9 @@ final class Parsely_Loader_Info {
 		return $configs;
 	}
 
+	/**
+	 * Get Parse.ly options.
+	 */
 	public static function get_parsely_options(): array {
 		if ( ! isset( self::$parsely_options ) ) {
 			self::$parsely_options = get_option( 'parsely', [] );
@@ -180,12 +234,10 @@ function is_queued_for_activation() {
 /**
  * Sourcing the wp-parsely plugin via mu-plugins is generally opt-in.
  * To enable it on your site, add this line:
- *
  * add_filter( 'wpvip_parsely_load_mu', '__return_true' );
  *
  * We enable it for some sites via the `_wpvip_parsely_mu` blog option.
  * To prevent it from loading even when this condition is met, add this line:
- *
  * add_filter( 'wpvip_parsely_load_mu', '__return_false' );
  */
 function maybe_load_plugin() {
@@ -213,7 +265,7 @@ function maybe_load_plugin() {
 	if ( defined( 'VIP_PARSELY_ENABLED' ) ) {
 		$parsely_enabled_constant = constant( 'VIP_PARSELY_ENABLED' );
 
-		// Opt out if constant value isn't true
+		// Opt out if constant value isn't true.
 		if ( true !== $parsely_enabled_constant ) {
 			Parsely_Loader_Info::set_active( false );
 			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_CONSTANT );
@@ -228,7 +280,7 @@ function maybe_load_plugin() {
 	$option_load_status   = get_option( '_wpvip_parsely_mu', null );
 	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
 
-	// If plugin isn't enabled via constant then check for filter and option status
+	// If plugin isn't enabled via constant then check for filter and option status.
 	if ( true !== $parsely_enabled_constant ) {
 		$should_load            = true === $filtered_load_status || '1' === $option_load_status;
 		$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
@@ -247,7 +299,7 @@ function maybe_load_plugin() {
 		}
 
 		// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-		// We need priority 0, so it's executed before `widgets_init`
+		// We need priority 0, so it's executed before `widgets_init`.
 		add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 	}
 
@@ -282,7 +334,7 @@ function maybe_load_plugin() {
 	}
 
 	if ( ! $versions_exist ) {
-		// Attempt to load the submodule
+		// Attempt to load the submodule.
 		$entry_file = __DIR__ . '/wp-parsely/wp-parsely.php';
 	}
 
@@ -292,7 +344,7 @@ function maybe_load_plugin() {
 	}
 	require_once $entry_file;
 
-	// If plugin isn't enabled via constant then set filter or option integration_type
+	// If plugin isn't enabled via constant then set filter or option integration_type.
 	if ( true !== $parsely_enabled_constant ) {
 		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
 		if ( '1' === $option_load_status && true !== $filtered_load_status ) {
@@ -313,6 +365,9 @@ function maybe_load_plugin() {
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin', 1 );
 
+/**
+ * Hides the UI if the plugin is loaded via silent option.
+ */
 function maybe_disable_some_features() {
 	if ( ! isset( $GLOBALS['parsely'] ) || ! is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
 		return;
@@ -344,20 +399,21 @@ function maybe_disable_some_features() {
 
 /**
  * Enum which represent all options to integrate `wp-parsely`.
+ *
+ * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
  */
-// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound
 abstract class Parsely_Integration_Type {
-	// When parsely is active
+	// When parsely is active.
 	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
 	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
 	const ENABLED_CONSTANT                = 'ENABLED_CONSTANT';
 
 	const SELF_MANAGED = 'SELF_MANAGED';
 
-	// When parsely is not active
+	// When parsely is not active.
 	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
 	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on `parsely_blocked` meta attribute or customers can also define it.
+	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on integration meta attribute or customers can also define it.
 
 	const NONE = 'NONE';
 	const NULL = 'NULL';
