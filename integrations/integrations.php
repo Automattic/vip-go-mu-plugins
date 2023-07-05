@@ -30,14 +30,14 @@ class Integrations {
 	 * @throws InvalidArgumentException Excpetion if invalid argument are passed.
 	 */
 	public function register( $integration ): void {
+		if ( ! is_subclass_of( $integration, Integration::class ) ) {
+			throw new InvalidArgumentException( sprintf( 'Integration class "%s" must extend %s.', get_class( $integration ), Integration::class ) );
+		}
+
 		$slug = $integration->get_slug();
 
 		if ( isset( $this->integrations[ $slug ] ) ) {
 			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
-		}
-
-		if ( ! is_subclass_of( $integration, Integration::class ) ) {
-			throw new InvalidArgumentException( sprintf( 'Integration class "%s" must extend %s.', get_class( $integration ), Integration::class ) );
 		}
 
 		$this->integrations[ $slug ] = $integration;

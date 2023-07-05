@@ -1,4 +1,9 @@
 <?php
+/**
+ * Test: VIP Integrations
+ *
+ * @package Automattic\VIP\Integrations
+ */
 
 namespace Automattic\VIP\Integrations;
 
@@ -8,67 +13,59 @@ use stdClass;
 
 require_once __DIR__ . '/fake-integration.php';
 
+/**
+ * Test Class.
+ */
 class VIP_Integrations_Test extends WP_UnitTestCase {
-	// Registration
-
-	public function test__register_integration_with_class_name__loads_integration() {
-		// Reset class flag to ensure previous tests don't affect class registration
-		FakeIntegration::$is_loaded_class = false;
-
-		$integrations = new Integrations();
-		$integrations->register( 'fake-integration-class', FakeIntegration::class );
-
-		// Only activated integrations are loaded by the collection class, so activate FakeIntegration.
-		$integrations->activate( 'fake-integration-class' );
-
-		$integrations->load_active();
-		$this->assertTrue( FakeIntegration::$is_loaded_class );
-	}
-
+	/**
+	 * Test registering integration and then activating it is loading integration.
+	 */
 	public function test__register_integration_as_instantiated_class__loads_integration() {
 		$integrations     = new Integrations();
-		$fake_integration = new FakeIntegration();
-		$integrations->register( 'fake-integration-instance', $fake_integration );
+		$fake_integration = new FakeIntegration( 'fake' );
 
-		$integrations->activate( 'fake-integration-instance' );
-
+		$integrations->register( $fake_integration );
+		$integrations->activate( 'fake' );
 		$integrations->load_active();
+
 		$this->assertTrue( $fake_integration->is_loaded_instance );
 	}
 
-	// Non-activation
-
+	/**
+	 * Test registering integration without activation does not load integration.
+	 */
 	public function test__register_integration_without_activation__does_not_load_integration() {
 		$integrations     = new Integrations();
-		$fake_integration = new FakeIntegration();
-		$integrations->register( 'fake-integration', $fake_integration );
+		$fake_integration = new FakeIntegration( 'fake' );
 
+		$integrations->register( $fake_integration );
 		$integrations->load_active();
+
 		$this->assertFalse( $fake_integration->is_loaded_instance );
 	}
 
-	// Errors
-
+	/**
+	 * Test registering same integration twice throws error.
+	 */
 	public function test__double_slug_registration__throws_invalidArgumentException() {
 		$this->expectException( InvalidArgumentException::class );
 
-		$integrations = new Integrations();
-		$integrations->register( 'non-unique-slug', FakeIntegration::class );
-		$integrations->register( 'non-unique-slug', FakeIntegration::class );
+		$integrations     = new Integrations();
+		$fake_integration = new FakeIntegration( 'fake' );
+
+		$integrations->register( $fake_integration );
+		$integrations->register( $fake_integration );
 	}
 
-	public function test__invalid_class_name__throws_invalidArgumentException() {
-		$this->expectException( InvalidArgumentException::class );
-
-		$integrations = new Integrations();
-		$integrations->register( 'fake-integration', 'not-an-integration-class' );
-	}
-
+	/**
+	 * Test registering integration which is not a subclass of Integration throws error.
+	 */
 	public function test__non_integration_subclass__throws_invalidArgumentException() {
 		$this->expectException( InvalidArgumentException::class );
 
 		$integrations = new Integrations();
 		$random_class = new stdClass();
-		$integrations->register( 'fake-integration', $random_class );
+
+		$integrations->register( $random_class );
 	}
 }
