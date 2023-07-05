@@ -10,14 +10,18 @@ namespace Automattic\VIP\Integrations;
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Disabling due to enums.
 
 /**
- * Enum which represent all possible status for the client integration.
+ * Enum which represent all possible status for the client integration via VIP.
+ *
+ * These should be in sync with the statuses on the backend.
  */
 abstract class Client_Integration_Status {
 	const BLOCKED = 'blocked';
 }
 
 /**
- * Enum which represent all possible status for the site integration.
+ * Enum which represent all possible status for the site integration via VIP.
+ *
+ * These should be in sync with the statuses on the backend.
  */
 abstract class Site_Integration_Status {
 	const ENABLED  = 'enabled';
@@ -27,6 +31,8 @@ abstract class Site_Integration_Status {
 
 /**
  * Abstract base class for all integration implementations.
+ *
+ * @private
  */
 abstract class Integration {
 	/**
@@ -44,7 +50,7 @@ abstract class Integration {
 	private array $config = [];
 
 	/**
-	 * Configurations provided by VIP to enable, disable or block the integration.
+	 * Configurations provided by VIP for setup.
 	 *
 	 * @var array {
 	 *   'client'        => array<string, string>,
@@ -76,7 +82,7 @@ abstract class Integration {
 	 *
 	 * @var bool
 	 */
-	private bool $is_active_by_customer = false;
+	public bool $is_active_by_customer = false;
 
 	/**
 	 * Constructor.
@@ -93,6 +99,8 @@ abstract class Integration {
 	 * Activates this integration with an optional configuration value.
 	 *
 	 * @param array $config An associative array of configuration values for the integration.
+	 *
+	 * @private
 	 */
 	public function activate( array $config = [] ): void {
 		$this->is_active_by_customer = true;
@@ -103,6 +111,8 @@ abstract class Integration {
 	 * Returns true if this integration has been activated.
 	 *
 	 * @return bool
+	 *
+	 * @private
 	 */
 	public function is_active(): bool {
 		if ( $this->is_active_by_customer ) {
@@ -120,13 +130,15 @@ abstract class Integration {
 	 * Return the activation configuration for this integration.
 	 *
 	 * @return array<mixed>
+	 *
+	 * @private
 	 */
 	public function get_config(): array {
 		return $this->config;
 	}
 
 	/**
-	 * Get setup configs provided by VIP.
+	 * Set setup configs provided by VIP.
 	 */
 	private function set_vip_config(): void {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
@@ -143,7 +155,7 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns true if the integration is active from VIP.
+	 * Returns true if the integration is active by VIP.
 	 *
 	 * @return bool
 	 */
@@ -173,9 +185,9 @@ abstract class Integration {
 	}
 
 	/**
-	 * Get config status of given type i.e. client, site, network-sites etc
+	 * Get config value based on given type and key.
 	 *
-	 * @param string $config_type Type of the config whose data is needed.
+	 * @param string $config_type Type of the config whose data is needed i.e. client, site, network-sites etc.
 	 * @param string $key Key of the config from which we have to extract the data.
 	 *
 	 * @return string
@@ -185,12 +197,12 @@ abstract class Integration {
 			return '';
 		}
 
-		// Look for $key inside client or site config.
+		// Look for key inside client or site config.
 		if ( 'network-sites' !== $config_type && isset( $this->vip_config[ $config_type ][ $key ] ) ) {
 			return $this->vip_config[ $config_type ][ $key ];
 		}
 
-		// Look for $key inside network-sites config.
+		// Look for key inside network-sites config.
 		if ( 'network-sites' === $config_type && isset( $this->vip_config[ $config_type ][ get_current_blog_id() ] ) ) {
 			if ( isset( $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ] ) ) {
 				return $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ];
@@ -202,6 +214,8 @@ abstract class Integration {
 
 	/**
 	 * Get slug of the integration.
+	 *
+	 * @private
 	 */
 	public function get_slug(): string {
 		return $this->slug;
@@ -216,6 +230,8 @@ abstract class Integration {
 	 * the plugin is already loaded first.
 	 * 
 	 * @param array $config Configuration for this integration.
+	 *
+	 * @private
 	 */
 	abstract public function load( array $config ): void;
 }

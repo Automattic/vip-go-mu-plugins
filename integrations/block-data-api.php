@@ -26,6 +26,8 @@ class BlockDataApiIntegration extends Integration {
 	 * Applies hooks to load Block Data API plugin.
 	 *
 	 * @param array $config Configuration array for this integration.
+	 *
+	 * @private
 	 */
 	public function load( array $config ): void {
 		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
@@ -39,6 +41,8 @@ class BlockDataApiIntegration extends Integration {
 			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
+			} else {
+				$this->is_active_by_customer = false;
 			}
 		} );
 	}

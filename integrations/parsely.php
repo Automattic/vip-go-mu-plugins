@@ -27,6 +27,8 @@ class ParselyIntegration extends Integration {
 	 * Applies hooks to load plugin.
 	 *
 	 * @param array $config Configuration for this integration.
+	 *
+	 * @private
 	 */
 	public function load( array $config ): void {
 		// Do not load plugin if already loaded by customer code.
@@ -34,18 +36,21 @@ class ParselyIntegration extends Integration {
 			return;
 		}
 
-		// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
+		// Load the version of the plugin that should be set to the latest version.
 		$latest_plugin_path = WPMU_PLUGIN_DIR . '/wp-parsely-' . $this->version . '/wp-parsely.php';
 		if ( file_exists( $latest_plugin_path ) ) {
 			require_once $latest_plugin_path;
 			return;
 		}
 
-		// Load submodule if specified version not exist.
+		// Load submodule if specified version does not exist.
 		$plugin_path = WPMU_PLUGIN_DIR . '/wp-parsely/wp-parsely.php';
 		if ( file_exists( $plugin_path ) ) {
 			require_once $plugin_path;
 			return;
 		}
+
+		// Deactivate the integration if not found.
+		$this->is_active_by_customer = false;
 	}
 }
