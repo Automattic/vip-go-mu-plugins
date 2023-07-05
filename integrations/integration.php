@@ -55,14 +55,14 @@ abstract class Integration {
 	 * @var array {
 	 *   'client'        => array<string, string>,
 	 *   'site'          => array<string, string>,
-	 *   'network-sites' => array<string, array<string, string>>,
+	 *   'network_sites' => array<string, array<string, string>>,
 	 * }
 	 *
 	 * @example
 	 * array(
 	 *  'client'        => array( 'status' => 'blocked' ),
 	 *  'site'          => array( 'status' => 'disabled' ),
-	 *  'network-sites' => array (
+	 *  'network_sites' => array (
 	 *      1 => array (
 	 *          'status' => 'disabled',
 	 *      ),
@@ -178,7 +178,7 @@ abstract class Integration {
 				return false;
 			}
 
-			return $this->get_value_from_vip_config( 'network-sites', 'status' ) === Site_Integration_Status::ENABLED;
+			return $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED;
 		}
 
 		return Site_Integration_Status::ENABLED === $site_status; // Return site status if not multisite.
@@ -198,12 +198,12 @@ abstract class Integration {
 		}
 
 		// Look for key inside client or site config.
-		if ( 'network-sites' !== $config_type && isset( $this->vip_config[ $config_type ][ $key ] ) ) {
+		if ( 'network_sites' !== $config_type && isset( $this->vip_config[ $config_type ][ $key ] ) ) {
 			return $this->vip_config[ $config_type ][ $key ];
 		}
 
 		// Look for key inside network-sites config.
-		if ( 'network-sites' === $config_type && isset( $this->vip_config[ $config_type ][ get_current_blog_id() ] ) ) {
+		if ( 'network_sites' === $config_type && isset( $this->vip_config[ $config_type ][ get_current_blog_id() ] ) ) {
 			if ( isset( $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ] ) ) {
 				return $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ];
 			}
