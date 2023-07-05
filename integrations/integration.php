@@ -85,6 +85,15 @@ abstract class Integration {
 	public bool $is_active_by_customer = false;
 
 	/**
+	 * Name of the filter which we will use to setup the integration configs.
+	 *
+	 * As of now there is no default so each integration will define its own filter in their class.
+	 *
+	 * @var string
+	 */
+	protected string $integration_configs_filter_name = '';
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
@@ -155,7 +164,7 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns true if the integration is active by VIP.
+	 * Returns true if the integration is active by VIP and setup plugin configs which are provided by VIP.
 	 *
 	 * @return bool
 	 */
@@ -172,16 +181,36 @@ abstract class Integration {
 			return false;
 		}
 
-		// Check for network-site enablement if multisite.
+		// Check network site enablement if multisite.
 		if ( is_multisite() ) {
 			if ( is_network_admin() ) {
 				return false;
 			}
 
-			return $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED;
+			// If enabled on network site then set credentials via filter and return true.
+			if ( $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
+				if ( '' !== $this->integration_configs_filter_name ) {
+					add_filter( $this->integration_configs_filter_name, function() {
+						return $this->get_value_from_vip_config( 'network_sites', 'configs' );
+					} );
+				}
+
+				return true;
+			}
 		}
 
-		return Site_Integration_Status::ENABLED === $site_status; // Return site status if not multisite.
+		// If enabled on site then set credentials via filter and return true.
+		if ( Site_Integration_Status::ENABLED === $site_status ) {
+			if ( '' !== $this->integration_configs_filter_name ) {
+				add_filter( $this->integration_configs_filter_name, function() {
+					return $this->get_value_from_vip_config( 'site', 'configs' );
+				} );
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -190,9 +219,9 @@ abstract class Integration {
 	 * @param string $config_type Type of the config whose data is needed i.e. client, site, network-sites etc.
 	 * @param string $key Key of the config from which we have to extract the data.
 	 *
-	 * @return string
+	 * @return string|array
 	 */
-	private function get_value_from_vip_config( string $config_type, string $key ): string {
+	private function get_value_from_vip_config( string $config_type, string $key ) {
 		if ( ! isset( $this->vip_config[ $config_type ] ) ) {
 			return '';
 		}

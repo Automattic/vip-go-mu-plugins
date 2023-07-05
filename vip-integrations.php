@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: VIP Integrations
- * Description: Plugin loading for VIP plugin integrations.
+ * Description: Plugin for loading integrations provided by VIP.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  *
