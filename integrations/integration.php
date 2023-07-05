@@ -47,11 +47,29 @@ abstract class Integration {
 	 * Configurations provided by VIP to enable, disable or block the integration.
 	 *
 	 * @var array {
-	 *   client => array<mixed>,
-	 *   site   => array<mixed>,
+	 *   'client'        => array<string, string>,
+	 *   'site'          => array<string, string>,
+	 *   'network-sites' => array<string, array<string, string>>,
 	 * }
+	 *
+	 * @example
+	 * array(
+	 *  'client'        => array( 'status' => 'blocked' ),
+	 *  'site'          => array( 'status' => 'disabled' ),
+	 *  'network-sites' => array (
+	 *      1 => array (
+	 *          'status' => 'disabled',
+	 *      ),
+	 *      2 => array (
+	 *          'status' => 'enabled',
+	 *      ),
+	 *      3 => array (
+	 *          'status' => 'blocked',
+	 *      ),
+	 *  )
+	 * );
 	 */
-	private array $vip_configs = [];
+	private array $vip_config = [];
 
 	/**
 	 * A boolean indicating if this integration is activated by customer.
@@ -68,7 +86,7 @@ abstract class Integration {
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
 		
-		$this->set_vip_configs();
+		$this->set_vip_config();
 	}
 
 	/**
@@ -83,6 +101,8 @@ abstract class Integration {
 
 	/**
 	 * Returns true if this integration has been activated.
+	 *
+	 * @return bool
 	 */
 	public function is_active(): bool {
 		if ( $this->is_active_by_customer ) {
@@ -98,6 +118,8 @@ abstract class Integration {
 
 	/**
 	 * Return the activation configuration for this integration.
+	 *
+	 * @return array<mixed>
 	 */
 	public function get_config(): array {
 		return $this->config;
@@ -106,7 +128,7 @@ abstract class Integration {
 	/**
 	 * Get setup configs provided by VIP.
 	 */
-	private function set_vip_configs(): void {
+	private function set_vip_config(): void {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
 
 		if ( ! is_readable( $config_file_path ) ) {
@@ -116,34 +138,63 @@ abstract class Integration {
 		$configs = require_once $config_file_path;
 
 		if ( is_array( $configs ) ) {
-			$this->vip_configs = $configs;
+			$this->vip_config = $configs;
 		}
 	}
 
 	/**
 	 * Returns true if the integration is active from VIP.
+	 *
+	 * @return bool
 	 */
 	private function is_active_by_vip(): bool {
 		// Return false if client is blocked.
-		if ( $this->get_config_status( 'client' ) === Client_Integration_Status::BLOCKED ) {
+		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
 			return false;
 		}
 
-		return $this->get_config_status( 'site' ) === Site_Integration_Status::ENABLED;
+		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
+
+		// Return false if site is blocked.
+		if ( Site_Integration_Status::BLOCKED === $site_status ) {
+			return false;
+		}
+
+		// Check for network-site enablement if multisite.
+		if ( is_multisite() ) {
+			if ( is_network_admin() ) {
+				return false;
+			}
+
+			return $this->get_value_from_vip_config( 'network-sites', 'status' ) === Site_Integration_Status::ENABLED;
+		}
+
+		return Site_Integration_Status::ENABLED === $site_status; // Return site status if not multisite.
 	}
 
 	/**
-	 * Get config status of given type i.e. client, site.
+	 * Get config status of given type i.e. client, site, network-sites etc
 	 *
-	 * @param string $config_type Type of the config whose status is needed.
+	 * @param string $config_type Type of the config whose data is needed.
+	 * @param string $key Key of the config from which we have to extract the data.
+	 *
+	 * @return string
 	 */
-	private function get_config_status( string $config_type ): string {
-		if ( ! isset( $this->vip_configs[ $config_type ] ) ) {
+	private function get_value_from_vip_config( string $config_type, string $key ): string {
+		if ( ! isset( $this->vip_config[ $config_type ] ) ) {
 			return '';
 		}
 
-		if ( isset( $this->vip_configs[ $config_type ]['status'] ) ) {
-			return $this->vip_configs[ $config_type ]['status'];
+		// Look for $key inside client or site config.
+		if ( 'network-sites' !== $config_type && isset( $this->vip_config[ $config_type ][ $key ] ) ) {
+			return $this->vip_config[ $config_type ][ $key ];
+		}
+
+		// Look for $key inside network-sites config.
+		if ( 'network-sites' === $config_type && isset( $this->vip_config[ $config_type ][ get_current_blog_id() ] ) ) {
+			if ( isset( $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ] ) ) {
+				return $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ];
+			}
 		}
 
 		return '';
