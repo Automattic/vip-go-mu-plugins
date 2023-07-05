@@ -54,23 +54,29 @@ abstract class Integration {
 	 *
 	 * @var array {
 	 *   'client'        => array<string, string>,
-	 *   'site'          => array<string, string>,
-	 *   'network_sites' => array<string, array<string, string>>,
+	 *   'site'          => array<string, mixed>,
+	 *   'network_sites' => array<string, array<string, mixed>>,
 	 * }
 	 *
 	 * @example
 	 * array(
 	 *  'client'        => array( 'status' => 'blocked' ),
-	 *  'site'          => array( 'status' => 'disabled' ),
+	 *  'site'          => array(
+	 *      'status' => 'enabled',
+	 *      'configs' => array(),
+	 *   ),
 	 *  'network_sites' => array (
 	 *      1 => array (
 	 *          'status' => 'disabled',
+	 *          'configs' => array(),
 	 *      ),
 	 *      2 => array (
 	 *          'status' => 'enabled',
+	 *          'configs' => array(),
 	 *      ),
 	 *      3 => array (
 	 *          'status' => 'blocked',
+	 *          'configs' => array(),
 	 *      ),
 	 *  )
 	 * );
