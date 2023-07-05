@@ -124,14 +124,12 @@ class VIP_Request_Block {
 	 * @return true|void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
-		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
-			newrelic_ignore_transaction();
+		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+			return true;
 		}
 
-		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf( 'VIP Request Block: would block based on "%s" with value of "%s" but it\'s a CLI request', $criteria, $value ) );
-			return true;
+		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
+			newrelic_ignore_transaction();
 		}
 
 		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
