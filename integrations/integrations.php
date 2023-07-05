@@ -38,7 +38,7 @@ class Integrations {
 
 		$slug = $integration->get_slug();
 
-		if ( isset( $this->integrations[ $slug ] ) ) {
+		if ( null !== $this->get( $slug ) ) {
 			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
 		}
 

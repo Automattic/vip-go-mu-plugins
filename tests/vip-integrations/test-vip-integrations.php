@@ -68,4 +68,17 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 
 		$integrations->register( $random_class );
 	}
+
+	/**
+	 * Test activating integration on invalid slug throws error.
+	 */
+	public function test__activating_integration_by_passing_invalid_slug__throws_invalidArgumentException() {
+		$this->expectException( InvalidArgumentException::class );
+
+		$integrations     = new Integrations();
+		$fake_integration = new FakeIntegration( 'fake' );
+
+		$integrations->register( $fake_integration );
+		$integrations->activate( 'invalid-slug' );
+	}
 }
