@@ -172,21 +172,6 @@ switch ( getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' ) ) {
 		break;
 }
 
-/**
- * Get test mode of parsely.
- */
-function get_parsely_test_mode(): string {
-	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
-	return $mode ?: 'disabled';
-}
-
-/**
- * Check if parsely is disabled.
- */
-function is_parsely_disabled(): bool {
-	return in_array( get_parsely_test_mode(), [ 'disabled', 'filter_disabled', 'option_disabled', 'filter_and_option_disabled' ] );
-}
-
 tests_add_filter( 'muplugins_loaded', function () {
 	echo "[WP_PARSELY_INTEGRATION] Removing autoload (so we can manually test)\n";
 	$removed = remove_action( 'plugins_loaded', 'Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin', 1 );
@@ -200,6 +185,7 @@ tests_add_filter( 'muplugins_loaded', function () {
 require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
+require_once __DIR__ . '/utils/utils.php';
 
 require $_tests_dir . '/includes/bootstrap.php';
 

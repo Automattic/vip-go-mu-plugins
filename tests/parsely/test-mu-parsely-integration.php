@@ -6,6 +6,9 @@ use Automattic\Test\Constant_Mocker;
 use Parsely\UI\Row_Actions;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_parsely_test_mode;
+use function Automattic\Test\Utils\is_parsely_disabled;
+
 function test_version() {
 	$major_version = getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' );
 	return $major_version ?: SUPPORTED_VERSIONS[0];

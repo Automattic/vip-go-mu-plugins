@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\is_parsely_disabled;
 use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 
 /**
