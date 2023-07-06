@@ -14,13 +14,14 @@ use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 /**
  * Test Class.
  */
-class ParselyIntegrationTest extends WP_UnitTestCase {
+class Parsely_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Slug of the integration.
 	 *
 	 * @var string
 	 */
 	private string $slug = 'parsely';
+
 	/**
 	 * Test registering integration and then activating it is loading integration.
 	 */
