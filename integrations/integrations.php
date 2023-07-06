@@ -27,7 +27,7 @@ class Integrations {
 	 *
 	 * @param Integration $integration Instantiated integration object.
 	 *
-	 * @throws InvalidArgumentException Excpetion if invalid argument are passed.
+	 * @throws InvalidArgumentException Exception if invalid argument are passed.
 	 *
 	 * @private
 	 */
@@ -73,7 +73,7 @@ class Integrations {
 	 * @param string $slug   A unique identifier for the integration.
 	 * @param array  $config An associative array of configuration values for the integration.
 	 *
-	 * @throws InvalidArgumentException Excpetion if invalid argument are passed.
+	 * @throws InvalidArgumentException Exception if invalid argument are passed.
 	 *
 	 * @private
 	 */
