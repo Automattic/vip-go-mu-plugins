@@ -16,9 +16,25 @@ use function Automattic\Test\Utils\get_private_method;
  */
 class VIP_Integrations_Test extends WP_UnitTestCase {
 	/**
-	 * Test Block Data API integration is supported.
+	 * Test number of supported integrations.
 	 */
-	public function test__block_data_api_integration_is_successfully_registered() {
+	public function test__supported_integrations() {
+		/**
+		 * Test supported integrations.
+		 *
+		 * @var array<Integration> $supported_vip_integrations
+		 */
+		global $supported_vip_integrations;
+
+		$this->assertEquals( 2, count( $supported_vip_integrations ) );
+		$this->assertInstanceOf( BlockDataApiIntegration::class, $supported_vip_integrations[0] );
+		$this->assertInstanceOf( ParselyIntegration::class, $supported_vip_integrations[1] );
+	}
+
+	/**
+	 * Test registration of supported integrations
+	 */
+	public function test__supported_integrations_are_registered() {
 		/**
 		 * VIP Integrations.
 		 *
@@ -29,22 +45,12 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 
 		$parsely_integration = $private_get_method->invoke( $vip_integrations, 'block-data-api' );
 		$this->assertNotNull( $parsely_integration );
-	}
-
-	/**
-	 * Test Parse.ly integration is supported.
-	 */
-	public function test__parsely_integration_is_successfully_registered() {
-		/**
-		 * VIP Integrations.
-		 *
-		 * @var Integrations $vip_integrations
-		 */
-		global $vip_integrations;
-		$private_get_method = get_private_method( $vip_integrations, 'get' );
 
 		$parsely_integration = $private_get_method->invoke( $vip_integrations, 'parsely' );
 		$this->assertNotNull( $parsely_integration );
+
+		$not_supported_integration = $private_get_method->invoke( $vip_integrations, 'non-supported' );
+		$this->assertNull( $not_supported_integration );
 	}
 
 	/**
@@ -64,7 +70,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test loading of activated plugins.
+	 * Test loading of integrations.
 	 */
 	public function test_activated_integrations_are_loaded_on_muplugins_loaded_hook() {
 		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'load_active' ] )->getMock();
@@ -77,21 +83,5 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		do_action( 'muplugins_loaded' );
 
 		$vip_integrations = $temp; // Reset vip integrations from backup.
-	}
-
-	/**
-	 * Test non supported integration
-	 */
-	public function test__non_supported_integration_is_not_successfully_registered() {
-		/**
-		 * VIP Integrations.
-		 *
-		 * @var Integrations $vip_integrations
-		 */
-		global $vip_integrations;
-		$private_get_method = get_private_method( $vip_integrations, 'get' );
-
-		$parsely_integration = $private_get_method->invoke( $vip_integrations, 'non-supported' );
-		$this->assertNull( $parsely_integration );
 	}
 }

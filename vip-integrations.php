@@ -22,9 +22,9 @@ require_once __DIR__ . '/integrations/parsely.php';
  *
  * If the integration is managed by VIP then slug should match with backend.
  *
- * @var array
+ * @var array<Integration>
  */
-$supported_integrations = array(
+$supported_vip_integrations = array(
 	new BlockDataApiIntegration( 'block-data-api' ),
 	new ParselyIntegration( 'parsely' ),
 );
@@ -33,7 +33,7 @@ global $vip_integrations;
 $vip_integrations = new Integrations();
 
 // Register VIP integrations here.
-foreach ( $supported_integrations as $integration ) {
+foreach ( $supported_vip_integrations as $integration ) {
 	$vip_integrations->register( $integration );
 }
 
