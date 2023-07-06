@@ -64,6 +64,22 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Test loading of activated plugins.
+	 */
+	public function test_activated_integrations_are_loaded_on_muplugins_loaded_hook() {
+		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'load_active' ] )->getMock();
+		$mock->expects( $this->once() )->method( 'load_active' )->with();
+
+		global $vip_integrations;
+		$temp             = $vip_integrations; // Backup vip integrations.
+		$vip_integrations = $mock;
+
+		do_action( 'muplugins_loaded' );
+
+		$vip_integrations = $temp; // Reset vip integrations from backup.
+	}
+
+	/**
 	 * Test non supported integration
 	 */
 	public function test__non_supported_integration_is_not_successfully_registered() {
