@@ -51,13 +51,16 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	 * Test activate function.
 	 */
 	public function test_activate_function_is_calling_the_activate_method_from_integrations() {
-		$mock = $this->getMockBuilder( Integrations::class )->onlyMethods( [ 'activate' ] )->getMock();
+		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'activate' ] )->getMock();
 		$mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );
 
 		global $vip_integrations;
+		$temp             = $vip_integrations; // Backup vip integrations.
 		$vip_integrations = $mock;
 
 		activate( 'test-slug', [ 'test-key' => 'test-value' ] );
+
+		$vip_integrations = $temp; // Reset vip integrations from backup.
 	}
 
 	/**
