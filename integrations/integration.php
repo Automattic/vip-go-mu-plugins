@@ -88,7 +88,7 @@ abstract class Integration {
 	 *
 	 * @var bool
 	 */
-	public bool $is_active_by_customer = false;
+	protected bool $is_active_by_customer = false;
 
 	/**
 	 * Name of the filter which we will use to setup the integration configs.
@@ -107,7 +107,10 @@ abstract class Integration {
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
 		
-		$this->set_vip_config();
+		$configs = $this->get_vip_config();
+		if ( is_array( $configs ) ) {
+			$this->vip_config = $configs;
+		}
 	}
 
 	/**
@@ -153,20 +156,20 @@ abstract class Integration {
 	}
 
 	/**
-	 * Set setup configs provided by VIP.
+	 * Get setup configs provided by VIP.
+	 *
+	 * @return null|mixed
 	 */
-	private function set_vip_config(): void {
+	private function get_vip_config() {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
 
 		if ( ! is_readable( $config_file_path ) ) {
-			return;
+			return null;
 		}
-	
+
 		$configs = require_once $config_file_path;
 
-		if ( is_array( $configs ) ) {
-			$this->vip_config = $configs;
-		}
+		return $configs;
 	}
 
 	/**
