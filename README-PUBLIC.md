@@ -1,6 +1,6 @@
-# VIP Go mu-plugins
+# VIP mu-plugins
 
-This is the mu-plugins folder for VIP Go, assembled without submodules for convenience.
+This is the MU-plugins folder for WordPress VIP, assembled without submodules for convenience. This is not the exact repo that gets deployed to production.
 
 Please see our documentation on setting up your [local development environment](https://docs.wpvip.com/how-tos/set-up-a-vip-go-local-development-site/).
 
