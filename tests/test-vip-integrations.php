@@ -14,7 +14,7 @@ use function Automattic\Test\Utils\get_private_method;
 /**
  * Test Class.
  */
-class VIP_Integrations_Test extends WP_UnitTestCase {
+class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 	/**
 	 * Test number of supported integrations.
 	 */

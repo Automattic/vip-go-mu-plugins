@@ -18,7 +18,7 @@ require_once __DIR__ . '/fake-integration.php';
 /**
  * Test Class.
  */
-class Integrations_Test extends WP_UnitTestCase {
+class VIP_Integrations_Test extends WP_UnitTestCase {
 	/**
 	 * Test registering integration and then activating it is loading integration.
 	 */
