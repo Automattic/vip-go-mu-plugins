@@ -104,26 +104,11 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__is_active_by_vip_is_setting_as_false_if_client_status_is_blocked(): void {
-		$this->test_is_active_by_vip_based_on_given_configs(
-			[
-				'client'        => [ 'status' => Client_Integration_Status::BLOCKED ],
-				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
-				'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::ENABLED ] ],
-			],
-			false,
-			false
-		);
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'client' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_is_setting_as_false_if_site_status_is_blocked(): void {
-		$this->test_is_active_by_vip_based_on_given_configs(
-			[
-				'site'          => [ 'status' => Client_Integration_Status::BLOCKED ],
-				'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::ENABLED ] ],
-			],
-			false,
-			false
-		);
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'site' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_is_false_if_integration_is_blocked_on_current_network_site(): void {
@@ -131,14 +116,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip_based_on_given_configs(
-			[
-				'site'          => [ 'status' => Site_Integration_Status::DISABLED ],
-				'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ],
-			],
-			false,
-			false
-		);
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_is_false_if_integration_is_disabled_on_current_network_site(): void {
@@ -146,14 +124,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip_based_on_given_configs(
-			[
-				'site'          => [ 'status' => Site_Integration_Status::DISABLED ],
-				'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ],
-			],
-			false,
-			false
-		);
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_is_true_if_integration_is_enabled_on_current_network_site(): void {
@@ -161,14 +132,26 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip_based_on_given_configs(
-			[
-				'site'          => [ 'status' => Site_Integration_Status::DISABLED ],
-				'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::ENABLED ] ],
+		$filter_name = 'fake_integration_setup_filter';
+		$this->test_is_active_by_vip_based_on_given_configs( [
+			'network_sites' => [
+				1 => [
+					'status' => Site_Integration_Status::ENABLED,
+					'config' => [ 'network sites config' ],
+				],
 			],
-			true,
-			true
-		);
+		], true, true, $filter_name );
+
+		$setup_config_value = apply_filters( $filter_name, '' );
+		$this->assertEquals( [ 'network sites config' ], $setup_config_value );
+	}
+
+	public function test__is_active_by_vip_is_true_without_adding_setup_filter_if_integration_is_enabled_on_current_network_site(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false, '' );
 	}
 
 	public function test__is_active_by_vip_is_false_if_integration_config_is_not_provided_on_current_network_site(): void {
@@ -184,23 +167,41 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__is_active_by_vip_is_true_if_integration_is_enabled_on_site(): void {
-		$this->test_is_active_by_vip_based_on_given_configs( [ 'site' => [ 'status' => Site_Integration_Status::ENABLED ] ], true, true );
+		$filter_name = 'fake_integration_setup_filter';
+		$this->test_is_active_by_vip_based_on_given_configs( [
+			'site' => [
+				'status' => Site_Integration_Status::ENABLED,
+				'config' => [ 'sites config' ],
+			],
+		], true, true, $filter_name );
+
+		$setup_config_value = apply_filters( $filter_name, '' );
+		$this->assertEquals( [ 'sites config' ], $setup_config_value );
+	}
+
+	public function test__is_active_by_vip_is_true_without_adding_setup_filter_if_integration_is_enabled_on_site(): void {
+		$this->test_is_active_by_vip_based_on_given_configs( [ 'site' => [ 'status' => Site_Integration_Status::ENABLED ] ], true, false, '' );
 	}
 
 	public function test__is_active_by_vip_is_false_if_integration_config_is_not_provided_on_site(): void {
 		$this->test_is_active_by_vip_based_on_given_configs( [], false, false );
 	}
 
-	private function test_is_active_by_vip_based_on_given_configs( array $vip_config, bool $expected_is_active_by_vip, bool $expected_has_config_filter ) {
+	private function test_is_active_by_vip_based_on_given_configs(
+		array $vip_config,
+		bool $expected_is_active_by_vip,
+		bool $expected_has_config_filter,
+		string $filter_name = 'fake_integration_setup_filter'
+	) {
 		$integration = new FakeIntegration( 'fake' );
-		get_private_property_as_public( Integration::class, 'setup_config_filter_name' )->setValue( $integration, 'integration_filter_name' );
+		get_private_property_as_public( Integration::class, 'setup_config_filter_name' )->setValue( $integration, $filter_name );
 		get_private_property_as_public( Integration::class, 'is_active_by_vip' )->setValue( $integration, true );
 		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
 
 		$integration->set_is_active_by_vip();
 
 		$this->assertEquals( $expected_is_active_by_vip, $integration->get_is_active_by_vip() );
-		$this->assertEquals( $expected_has_config_filter, has_filter( 'integration_filter_name' ) );
+		$this->assertEquals( $expected_has_config_filter, has_filter( $filter_name ) );
 	}
 
 	private function get_private_vip_config( MockObject $integration ) {
