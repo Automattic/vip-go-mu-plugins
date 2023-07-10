@@ -193,7 +193,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 	private function test_is_active_by_vip_based_on_given_configs( array $vip_config, bool $expected_is_active_by_vip, bool $expected_has_config_filter ) {
 		$integration = new FakeIntegration( 'fake' );
-		get_private_property_as_public( Integration::class, 'integration_config_filter_name' )->setValue( $integration, 'integration_filter_name' );
+		get_private_property_as_public( Integration::class, 'setup_config_filter_name' )->setValue( $integration, 'integration_filter_name' );
 		get_private_property_as_public( Integration::class, 'is_active_by_vip' )->setValue( $integration, true );
 		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
 

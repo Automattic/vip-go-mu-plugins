@@ -104,7 +104,7 @@ abstract class Integration {
 	 *
 	 * @var string
 	 */
-	protected string $integration_config_filter_name = '';
+	protected string $setup_config_filter_name = '';
 
 	/**
 	 * Constructor.
@@ -215,8 +215,8 @@ abstract class Integration {
 
 		// If enabled on network site then set credentials via filter and return true.
 		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
-			if ( '' !== $this->integration_config_filter_name ) {
-				add_filter( $this->integration_config_filter_name, function() {
+			if ( '' !== $this->setup_config_filter_name ) {
+				add_filter( $this->setup_config_filter_name, function() {
 					return $this->get_value_from_vip_config( 'network_sites', 'config' );
 				} );
 			}
@@ -227,8 +227,8 @@ abstract class Integration {
 
 		// If enabled on site then set credentials via filter and return true.
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			if ( '' !== $this->integration_config_filter_name ) {
-				add_filter( $this->integration_config_filter_name, function() {
+			if ( '' !== $this->setup_config_filter_name ) {
+				add_filter( $this->setup_config_filter_name, function() {
 					return $this->get_value_from_vip_config( 'site', 'config' );
 				} );
 			}
