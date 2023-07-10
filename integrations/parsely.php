@@ -18,7 +18,7 @@ class ParselyIntegration extends Integration {
 	 *
 	 * @var string
 	 */
-	protected string $integration_configs_filter_name = 'wp_parsely_credentials';
+	protected string $integration_config_filter_name = 'wp_parsely_credentials';
 
 	/**
 	 * Applies hooks to load plugin.

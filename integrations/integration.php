@@ -104,7 +104,7 @@ abstract class Integration {
 	 *
 	 * @var string
 	 */
-	protected string $integration_configs_filter_name = '';
+	protected string $integration_config_filter_name = '';
 
 	/**
 	 * Constructor.
@@ -202,6 +202,7 @@ abstract class Integration {
 		// Return false if client is blocked.
 		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
 			$this->is_active_by_vip = false;
+			return;
 		}
 
 		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
@@ -209,36 +210,34 @@ abstract class Integration {
 		// Return false if site is blocked.
 		if ( Site_Integration_Status::BLOCKED === $site_status ) {
 			$this->is_active_by_vip = false;
+			return;
 		}
 
-		// Check network site enablement if multisite.
-		if ( is_multisite() ) {
-			if ( is_network_admin() ) {
-				$this->is_active_by_vip = false;
+		// If enabled on network site then set credentials via filter and return true.
+		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
+			if ( '' !== $this->integration_config_filter_name ) {
+				add_filter( $this->integration_config_filter_name, function() {
+					return $this->get_value_from_vip_config( 'network_sites', 'configs' );
+				} );
 			}
 
-			// If enabled on network site then set credentials via filter and return true.
-			if ( $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
-				if ( '' !== $this->integration_configs_filter_name ) {
-					add_filter( $this->integration_configs_filter_name, function() {
-						return $this->get_value_from_vip_config( 'network_sites', 'configs' );
-					} );
-				}
-
-				$this->is_active_by_vip = true;
-			}
+			$this->is_active_by_vip = true;
+			return;
 		}
 
 		// If enabled on site then set credentials via filter and return true.
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			if ( '' !== $this->integration_configs_filter_name ) {
-				add_filter( $this->integration_configs_filter_name, function() {
+			if ( '' !== $this->integration_config_filter_name ) {
+				add_filter( $this->integration_config_filter_name, function() {
 					return $this->get_value_from_vip_config( 'site', 'configs' );
 				} );
 			}
 
 			$this->is_active_by_vip = true;
+			return;
 		}
+
+		$this->is_active_by_vip = false; // Resetting to false if no condition is evaluated.
 	}
 
 	/**
