@@ -91,6 +91,13 @@ abstract class Integration {
 	protected bool $is_active_by_customer = false;
 
 	/**
+	 * A boolean indicating if this integration is activated by VIP.
+	 *
+	 * @var bool
+	 */
+	private bool $is_active_by_vip = false;
+
+	/**
 	 * Name of the filter which we will use to setup the integration configs.
 	 *
 	 * As of now there is no default so each integration will define its own filter in their class.
@@ -110,6 +117,7 @@ abstract class Integration {
 		$configs = $this->get_vip_config_from_file();
 		if ( is_array( $configs ) ) {
 			$this->vip_config = $configs;
+			$this->set_is_active_by_vip();
 		}
 	}
 
@@ -137,7 +145,7 @@ abstract class Integration {
 			return true;
 		}
 
-		if ( $this->is_active_by_vip() ) {
+		if ( $this->get_is_active_by_vip() ) {
 			return true;
 		}
 
@@ -153,6 +161,17 @@ abstract class Integration {
 	 */
 	public function get_config(): array {
 		return $this->config;
+	}
+
+	/**
+	 * Return the value of `is_active_by_vip` property.
+	 *
+	 * @return bool
+	 *
+	 * @private
+	 */
+	public function get_is_active_by_vip(): bool {
+		return $this->is_active_by_vip;
 	}
 
 	/**
@@ -175,25 +194,27 @@ abstract class Integration {
 	/**
 	 * Returns true if the integration is active by VIP and setup plugin configs which are provided by VIP.
 	 *
-	 * @return bool
+	 * @return void
+	 *
+	 * @private
 	 */
-	private function is_active_by_vip(): bool {
+	public function set_is_active_by_vip() {
 		// Return false if client is blocked.
 		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
-			return false;
+			$this->is_active_by_vip = false;
 		}
 
 		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
 
 		// Return false if site is blocked.
 		if ( Site_Integration_Status::BLOCKED === $site_status ) {
-			return false;
+			$this->is_active_by_vip = false;
 		}
 
 		// Check network site enablement if multisite.
 		if ( is_multisite() ) {
 			if ( is_network_admin() ) {
-				return false;
+				$this->is_active_by_vip = false;
 			}
 
 			// If enabled on network site then set credentials via filter and return true.
@@ -204,7 +225,7 @@ abstract class Integration {
 					} );
 				}
 
-				return true;
+				$this->is_active_by_vip = true;
 			}
 		}
 
@@ -216,10 +237,8 @@ abstract class Integration {
 				} );
 			}
 
-			return true;
+			$this->is_active_by_vip = true;
 		}
-
-		return false;
 	}
 
 	/**

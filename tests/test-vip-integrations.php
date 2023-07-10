@@ -9,7 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 
-use function Automattic\Test\Utils\get_private_method;
+use function Automattic\Test\Utils\get_private_method_as_public;
 
 /**
  * Test Class.
@@ -41,15 +41,15 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		 * @var Integrations $vip_integrations
 		 */
 		global $vip_integrations;
-		$private_get_method = get_private_method( $vip_integrations, 'get' );
+		$get_method = get_private_method_as_public( $vip_integrations, 'get' );
 
-		$parsely_integration = $private_get_method->invoke( $vip_integrations, 'block-data-api' );
+		$parsely_integration = $get_method->invoke( $vip_integrations, 'block-data-api' );
 		$this->assertNotNull( $parsely_integration );
 
-		$parsely_integration = $private_get_method->invoke( $vip_integrations, 'parsely' );
+		$parsely_integration = $get_method->invoke( $vip_integrations, 'parsely' );
 		$this->assertNotNull( $parsely_integration );
 
-		$not_supported_integration = $private_get_method->invoke( $vip_integrations, 'non-supported' );
+		$not_supported_integration = $get_method->invoke( $vip_integrations, 'non-supported' );
 		$this->assertNull( $not_supported_integration );
 	}
 
