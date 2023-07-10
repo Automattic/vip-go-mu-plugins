@@ -167,10 +167,8 @@ abstract class Integration {
 	 * Return the value of `is_active_by_vip` property.
 	 *
 	 * @return bool
-	 *
-	 * @private
 	 */
-	public function get_is_active_by_vip(): bool {
+	private function get_is_active_by_vip(): bool {
 		return $this->is_active_by_vip;
 	}
 
@@ -178,10 +176,8 @@ abstract class Integration {
 	 * Get setup config provided by VIP.
 	 *
 	 * @return null|mixed
-	 *
-	 * @private
 	 */
-	public function get_vip_config_from_file() {
+	private function get_vip_config_from_file() {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
 
 		if ( ! is_readable( $config_file_path ) ) {
@@ -195,10 +191,8 @@ abstract class Integration {
 	 * Returns true if the integration is active by VIP and setup plugin config which are provided by VIP.
 	 *
 	 * @return void
-	 *
-	 * @private
 	 */
-	public function set_is_active_by_vip() {
+	private function set_is_active_by_vip() {
 		// Return false if client is blocked.
 		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
 			$this->is_active_by_vip = false;
