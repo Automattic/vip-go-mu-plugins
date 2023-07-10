@@ -63,20 +63,20 @@ abstract class Integration {
 	 *  'client'        => array( 'status' => 'blocked' ),
 	 *  'site'          => array(
 	 *      'status' => 'enabled',
-	 *      'configs' => array(),
+	 *      'config'  => array(),
 	 *   ),
 	 *  'network_sites' => array (
 	 *      1 => array (
 	 *          'status' => 'disabled',
-	 *          'configs' => array(),
+	 *          'config'  => array(),
 	 *      ),
 	 *      2 => array (
 	 *          'status' => 'enabled',
-	 *          'configs' => array(),
+	 *          'config'  => array(),
 	 *      ),
 	 *      3 => array (
 	 *          'status' => 'blocked',
-	 *          'configs' => array(),
+	 *          'config'  => array(),
 	 *      ),
 	 *  )
 	 * );
@@ -98,7 +98,7 @@ abstract class Integration {
 	private bool $is_active_by_vip = false;
 
 	/**
-	 * Name of the filter which we will use to setup the integration configs.
+	 * Name of the filter which we will use to setup the integration config.
 	 *
 	 * As of now there is no default so each integration will define its own filter in their class.
 	 *
@@ -114,9 +114,9 @@ abstract class Integration {
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
 		
-		$configs = $this->get_vip_config_from_file();
-		if ( is_array( $configs ) ) {
-			$this->vip_config = $configs;
+		$config = $this->get_vip_config_from_file();
+		if ( is_array( $config ) ) {
+			$this->vip_config = $config;
 			$this->set_is_active_by_vip();
 		}
 	}
@@ -175,7 +175,7 @@ abstract class Integration {
 	}
 
 	/**
-	 * Get setup configs provided by VIP.
+	 * Get setup config provided by VIP.
 	 *
 	 * @return null|mixed
 	 *
@@ -192,7 +192,7 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns true if the integration is active by VIP and setup plugin configs which are provided by VIP.
+	 * Returns true if the integration is active by VIP and setup plugin config which are provided by VIP.
 	 *
 	 * @return void
 	 *
@@ -217,7 +217,7 @@ abstract class Integration {
 		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
 			if ( '' !== $this->integration_config_filter_name ) {
 				add_filter( $this->integration_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'network_sites', 'configs' );
+					return $this->get_value_from_vip_config( 'network_sites', 'config' );
 				} );
 			}
 
@@ -229,7 +229,7 @@ abstract class Integration {
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
 			if ( '' !== $this->integration_config_filter_name ) {
 				add_filter( $this->integration_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'site', 'configs' );
+					return $this->get_value_from_vip_config( 'site', 'config' );
 				} );
 			}
 
