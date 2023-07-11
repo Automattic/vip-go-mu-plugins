@@ -89,13 +89,6 @@ abstract class Integration {
 	protected bool $is_active_by_customer = false;
 
 	/**
-	 * A boolean indicating if this integration is activated by VIP.
-	 *
-	 * @var bool
-	 */
-	private bool $is_active_by_vip = false;
-
-	/**
 	 * Name of the filter which we will be used to pass the config from platform to integration.
 	 *
 	 * As of now there is no default so each integration will define its own filter in their class.
@@ -111,12 +104,6 @@ abstract class Integration {
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
-		
-		$vip_config = $this->get_vip_config_from_file();
-		if ( is_array( $vip_config ) ) {
-			$this->vip_config = $vip_config;
-			$this->set_is_active_by_vip();
-		}
 	}
 
 	/**
@@ -143,29 +130,63 @@ abstract class Integration {
 			return true;
 		}
 
-		return $this->get_is_active_by_vip();
+		return $this->is_active_by_vip();
 	}
 
 	/**
-	 * Return the customer configuration for this integration.
-	 *
-	 * @return array<mixed>
-	 *
-	 * @private
-	 */
-	public function get_customer_config(): array {
-		return $this->customer_config;
-	}
-
-	/**
-	 * Return the value of `is_active_by_vip` property.
+	 * Returns true and passed available config if the integration is active by VIP.
 	 *
 	 * @return bool
 	 *
 	 * @private
 	 */
-	public function get_is_active_by_vip(): bool {
-		return $this->is_active_by_vip;
+	public function is_active_by_vip(): bool {
+		$vip_config = $this->get_vip_config_from_file();
+		if ( ! is_array( $vip_config ) ) {
+			return false;
+		}
+
+		$this->vip_config = $vip_config;
+
+		// Return false if client is blocked.
+		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
+			return false;
+		}
+
+		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
+
+		// Return false if site is blocked.
+		if ( Site_Integration_Status::BLOCKED === $site_status ) {
+			return false;
+		}
+
+		// If enabled on network site then set credentials via filter and return true.
+		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
+			$have_config = $this->get_value_from_vip_config( 'network_sites', 'config' ) !== '';
+
+			if ( '' !== $this->vip_config_filter_name && $have_config ) {
+				add_filter( $this->vip_config_filter_name, function() {
+					return $this->get_value_from_vip_config( 'network_sites', 'config' );
+				} );
+			}
+
+			return true;
+		}
+
+		// If enabled on site then set credentials via filter and return true.
+		if ( Site_Integration_Status::ENABLED === $site_status ) {
+			$have_config = $this->get_value_from_vip_config( 'site', 'config' ) !== '';
+
+			if ( '' !== $this->vip_config_filter_name && $have_config ) {
+				add_filter( $this->vip_config_filter_name, function() {
+					return $this->get_value_from_vip_config( 'site', 'config' );
+				} );
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/**
@@ -183,59 +204,6 @@ abstract class Integration {
 		}
 
 		return require_once $config_file_path;
-	}
-
-	/**
-	 * Returns true and passed available config if the integration is active by VIP.
-	 *
-	 * @return void
-	 *
-	 * @private
-	 */
-	public function set_is_active_by_vip(): void {
-		// Return false if client is blocked.
-		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
-			$this->is_active_by_vip = false;
-			return;
-		}
-
-		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
-
-		// Return false if site is blocked.
-		if ( Site_Integration_Status::BLOCKED === $site_status ) {
-			$this->is_active_by_vip = false;
-			return;
-		}
-
-		// If enabled on network site then set credentials via filter and return true.
-		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
-			$have_config = $this->get_value_from_vip_config( 'network_sites', 'config' ) !== '';
-
-			if ( '' !== $this->vip_config_filter_name && $have_config ) {
-				add_filter( $this->vip_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'network_sites', 'config' );
-				} );
-			}
-
-			$this->is_active_by_vip = true;
-			return;
-		}
-
-		// If enabled on site then set credentials via filter and return true.
-		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			$have_config = $this->get_value_from_vip_config( 'site', 'config' ) !== '';
-
-			if ( '' !== $this->vip_config_filter_name && $have_config ) {
-				add_filter( $this->vip_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'site', 'config' );
-				} );
-			}
-
-			$this->is_active_by_vip = true;
-			return;
-		}
-
-		$this->is_active_by_vip = false; // Resetting to false if no condition is evaluated.
 	}
 
 	/**
@@ -273,6 +241,17 @@ abstract class Integration {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Return the customer configuration for this integration.
+	 *
+	 * @return array<mixed>
+	 *
+	 * @private
+	 */
+	public function get_customer_config(): array {
+		return $this->customer_config;
 	}
 
 	/**
