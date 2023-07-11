@@ -257,9 +257,10 @@ abstract class Integration {
 		}
 
 		// Look for key inside network-sites config.
-		if ( 'network_sites' === $config_type && isset( $this->vip_config[ $config_type ][ get_current_blog_id() ] ) ) {
-			if ( isset( $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ] ) ) {
-				return $this->vip_config[ $config_type ][ get_current_blog_id() ][ $key ];
+		$blog_id = get_current_blog_id();
+		if ( 'network_sites' === $config_type && isset( $this->vip_config[ $config_type ][ $blog_id ] ) ) {
+			if ( isset( $this->vip_config[ $config_type ][ $blog_id ][ $key ] ) ) {
+				return $this->vip_config[ $config_type ][ $blog_id ][ $key ];
 			}
 		}
 

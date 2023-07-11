@@ -121,7 +121,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
+		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_is_disabled_on_current_network_site(): void {
@@ -129,7 +129,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
+		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_true_if_integration_is_enabled_on_current_network_site(): void {
@@ -140,7 +140,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$filter_name = 'fake_vip_config_filter';
 		$this->test_is_active_by_vip( [
 			'network_sites' => [
-				1 => [
+				'1' => [
 					'status' => Site_Integration_Status::ENABLED,
 					'config' => [ 'network sites config' ],
 				],
@@ -156,7 +156,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ 1 => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false, '' );
+		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false, '' );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_config_is_not_provided_on_current_network_site(): void {
@@ -258,11 +258,11 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				'config' => array( 'site_configs' ),
 			],
 			'network_sites' => [
-				1 => [
+				'1' => [
 					'status' => Site_Integration_Status::ENABLED,
 					'config' => array( 'network_site_1_configs' ),
 				],
-				2 => [
+				'2' => [
 					'status' => Site_Integration_Status::ENABLED,
 					'config' => array( 'network_site_2_configs' ),
 				],
