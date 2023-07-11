@@ -19,7 +19,7 @@ require_once __DIR__ . '/../utils/parsely.utils.php';
  *
  * @return ReflectionProperty
  */
-function get_private_property_as_public( $class_name, $property_name ) {
+function get_class_property_as_public( $class_name, $property_name ) {
 	$reflector = new ReflectionClass( $class_name );
 	$property  = $reflector->getProperty( $property_name );
 
@@ -36,7 +36,7 @@ function get_private_property_as_public( $class_name, $property_name ) {
  *
  * @return ReflectionMethod
  */
-function get_private_method_as_public( $class_name, $method ) {
+function get_class_method_as_public( $class_name, $method ) {
 	$reflector = new ReflectionClass( $class_name );
 	$method    = $reflector->getMethod( $method );
 

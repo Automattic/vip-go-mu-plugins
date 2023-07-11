@@ -13,7 +13,7 @@ use WP_UnitTestCase;
 use InvalidArgumentException;
 use stdClass;
 
-use function Automattic\Test\Utils\get_private_property_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
 
 require_once __DIR__ . '/fake-integration.php';
 
@@ -74,6 +74,6 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	 * @param Integration $integration Object of the integration.
 	 */
 	private function get_is_active_by_customer( $integration ): bool {
-		return get_private_property_as_public( Integration::class, 'is_active_by_customer' )->getValue( $integration );
+		return get_class_property_as_public( Integration::class, 'is_active_by_customer' )->getValue( $integration );
 	}
 }

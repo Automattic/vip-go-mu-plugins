@@ -7,7 +7,7 @@
 
 namespace Automattic\VIP\Integrations;
 
-use function Automattic\Test\Utils\get_private_method_as_public;
+use function Automattic\Test\Utils\get_class_method_as_public;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing
 
@@ -20,15 +20,15 @@ class FakeIntegration extends Integration {
 	protected string $vip_config_filter_name = 'fake_vip_config_filter';
 
 	protected function is_active_by_vip(): bool {
-		return get_private_method_as_public( Integration::class, 'is_active_by_vip' )->invoke( $this );
+		return get_class_method_as_public( Integration::class, 'is_active_by_vip' )->invoke( $this );
 	}
 
 	protected function get_vip_config_from_file() {
-		return get_private_method_as_public( Integration::class, 'get_vip_config_from_file' )->invoke( $this );
+		return get_class_method_as_public( Integration::class, 'get_vip_config_from_file' )->invoke( $this );
 	}
 
 	protected function get_value_from_vip_config( $config_type, $key ) {
-		return get_private_method_as_public( Integration::class, 'get_value_from_vip_config' )->invoke( $this, $config_type, $key );
+		return get_class_method_as_public( Integration::class, 'get_value_from_vip_config' )->invoke( $this, $config_type, $key );
 	}
 
 	/**

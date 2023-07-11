@@ -13,8 +13,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
-use function Automattic\Test\Utils\get_private_method_as_public;
-use function Automattic\Test\Utils\get_private_property_as_public;
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
 
 require_once __DIR__ . '/fake-integration.php';
 
@@ -30,7 +30,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$integration->activate( [ 'config_test' ] );
 
-		$this->assertTrue( get_private_property_as_public( FakeIntegration::class, 'is_active_by_customer' )->getValue( $integration ) );
+		$this->assertTrue( get_class_property_as_public( FakeIntegration::class, 'is_active_by_customer' )->getValue( $integration ) );
 		$this->assertEquals( [ 'config_test' ], $integration->get_customer_config() );
 	}
 
@@ -67,7 +67,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 * @var FakeIntegration&MockObject
 		 */
 		$mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_active_by_vip' ] )->getMock();
-		get_private_property_as_public( Integration::class, 'is_active_by_customer' )->setValue( $mock, true );
+		get_class_property_as_public( Integration::class, 'is_active_by_customer' )->setValue( $mock, true );
 		$mock->expects( $this->exactly( 0 ) )->method( 'is_active_by_vip' );
 
 		$this->assertTrue( $mock->is_active() );
@@ -185,7 +185,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'get_vip_config_from_file' ] )->getMock();
 		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
 
-		$is_active = get_private_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $mock );
+		$is_active = get_class_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $mock );
 
 		$this->assertEquals( $expected_is_active_by_vip, $is_active );
 		$this->assertEquals( $expected_has_config_filter, has_filter( 'fake_vip_config_filter' ) );
@@ -194,7 +194,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$integration = new FakeIntegration( 'fake' );
 
-		$reflection_method = get_private_method_as_public( FakeIntegration::class, 'get_vip_config_from_file' );
+		$reflection_method = get_class_method_as_public( FakeIntegration::class, 'get_vip_config_from_file' );
 
 		$this->assertNull( $reflection_method->invoke( $integration ) );
 	}
@@ -284,9 +284,9 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$expected_value_from_vip_config
 	): void {
 		$integration = new FakeIntegration( 'fake' );
-		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
+		get_class_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
 
-		$config_value = get_private_method_as_public( FakeIntegration::class, 'get_value_from_vip_config' )->invoke( $integration, $config_type, $key );
+		$config_value = get_class_method_as_public( FakeIntegration::class, 'get_value_from_vip_config' )->invoke( $integration, $config_type, $key );
 
 		$this->assertEquals( $expected_value_from_vip_config, $config_value );
 	}

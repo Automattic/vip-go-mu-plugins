@@ -9,7 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 
-use function Automattic\Test\Utils\get_private_method_as_public;
+use function Automattic\Test\Utils\get_class_method_as_public;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
@@ -34,7 +34,7 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		 * @var Integrations $vip_integrations
 		 */
 		global $vip_integrations;
-		$get_method = get_private_method_as_public( $vip_integrations, 'get' );
+		$get_method = get_class_method_as_public( $vip_integrations, 'get' );
 
 		$parsely_integration = $get_method->invoke( $vip_integrations, 'block-data-api' );
 		$this->assertNotNull( $parsely_integration );
