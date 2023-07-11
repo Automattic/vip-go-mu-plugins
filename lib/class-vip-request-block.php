@@ -124,6 +124,10 @@ class VIP_Request_Block {
 	 * @return true|void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
+		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+			return true;
+		}
+
 		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
 			newrelic_ignore_transaction();
 		}
@@ -133,7 +137,6 @@ class VIP_Request_Block {
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 			header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
-			fastcgi_finish_request();
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 			error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
 			exit;
