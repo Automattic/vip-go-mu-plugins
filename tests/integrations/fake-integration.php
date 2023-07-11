@@ -16,7 +16,7 @@ class FakeIntegration extends Integration {
 	/**
 	 * Constructor.
 	 *
-	 * Copying the implementation of parent constructor so that PHPUnit is able to mock the methods properly.
+	 * Copying the implementation of parent constructor so that PHPUnit is able to mock the methods correctly.
 	 *
 	 * @param string $slug Integration's slug.
 	 */
@@ -40,6 +40,10 @@ class FakeIntegration extends Integration {
 
 	public function set_is_active_by_vip() {
 		return get_private_method_as_public( Integration::class, 'set_is_active_by_vip' )->invoke( $this );
+	}
+
+	public function get_value_from_vip_config( $config_type, $key ) {
+		return get_private_method_as_public( Integration::class, 'get_value_from_vip_config' )->invoke( $this, $config_type, $key );
 	}
 
 	/**

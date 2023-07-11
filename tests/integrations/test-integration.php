@@ -7,8 +7,9 @@
 
 namespace Automattic\VIP\Integrations;
 
-// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
+use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
@@ -49,6 +50,10 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		get_private_method_as_public( FakeIntegration::class, '__construct' )->invoke( $integration_mock, 'fake' );
 
 		$this->assertEquals( [ 'configs-in-array' ], $this->get_private_vip_config( $integration_mock ) );
+	}
+
+	private function get_private_vip_config( MockObject $integration ) {
+		return get_private_property_as_public( Integration::class, 'vip_config' )->getValue( $integration );
 	}
 
 	public function test__set_is_active_by_vip_is_getting_called_on_instantiation(): void {
@@ -204,7 +209,95 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_has_config_filter, has_filter( $filter_name ) );
 	}
 
-	private function get_private_vip_config( MockObject $integration ) {
-		return get_private_property_as_public( Integration::class, 'vip_config' )->getValue( $integration );
+	public function test__get_value_from_vip_config_throws_exception_if_invalid_argument_is_passed(): void {
+		$this->expectException( InvalidArgumentException::class );
+		$mocked_vip_configs = [];
+
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'invalid-config-type', 'key', '' );
+	}
+
+	public function test__get_value_from_vip_config_returns_empty_string_if_given_config_type_have_no_data(): void {
+		$mocked_vip_configs = [];
+
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'client', 'status', '' );
+	}
+
+	public function test__get_value_from_vip_config_returns_config_from_client_data(): void {
+		$mocked_vip_configs = [
+			'client' => [
+				'status' => Client_Integration_Status::BLOCKED,
+				'config' => array( 'client_configs' ),
+			],
+		];
+
+		// Test return of string value.
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'client', 'status', Client_Integration_Status::BLOCKED );
+
+		// Test return of array value.
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'client', 'config', array( 'client_configs' ) );
+	}
+
+	public function test__get_value_from_vip_config_returns_config_from_current_network_site(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$mocked_vip_configs = [
+			'site'          => [
+				'status' => Site_Integration_Status::BLOCKED,
+				'config' => array( 'site_configs' ),
+			],
+			'network_sites' => [
+				1 => [
+					'status' => Site_Integration_Status::ENABLED,
+					'config' => array( 'network_site_1_configs' ),
+				],
+				2 => [
+					'status' => Site_Integration_Status::ENABLED,
+					'config' => array( 'network_site_2_configs' ),
+				],
+			],
+		];
+
+		// Test return of string value.
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'network_sites', 'status', Site_Integration_Status::ENABLED );
+
+		// Test return of array value.
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'network_sites', 'config', array( 'network_site_1_configs' ) );
+	}
+
+	public function test__get_value_from_vip_config_returns_empty_string_non_existent_key_is_passed(): void {
+		$mocked_vip_configs = [
+			'site' => [
+				'status' => Site_Integration_Status::BLOCKED,
+				'config' => array( 'site_configs' ),
+			],
+		];
+
+		$this->test_get_value_from_vip_config_based_on_given_configs( $mocked_vip_configs, 'site', 'invalid_key', '' );
+	}
+
+	/**
+	 * Helper function for testing get_value_from_vip_config.
+	 *
+	 * @param array        $vip_config
+	 * @param string       $config_type
+	 * @param string       $key
+	 * @param string|array $expected_value_from_vip_config
+	 *
+	 * @return void
+	 */
+	private function test_get_value_from_vip_config_based_on_given_configs(
+		array $vip_config,
+		string $config_type,
+		string $key,
+		$expected_value_from_vip_config
+	): void {
+		$integration = new FakeIntegration( 'fake' );
+		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
+
+		$config_value = $integration->get_value_from_vip_config( $config_type, $key );
+
+		$this->assertEquals( $expected_value_from_vip_config, $config_value );
 	}
 }

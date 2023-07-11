@@ -7,6 +7,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+use InvalidArgumentException;
+
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Disabling due to enums.
 
 /**
@@ -241,8 +243,14 @@ abstract class Integration {
 	 * @param string $key Key of the config from which we have to extract the data.
 	 *
 	 * @return string|array
+	 *
+	 * @throws InvalidArgumentException Exception if invalid argument is passed.
 	 */
 	private function get_value_from_vip_config( string $config_type, string $key ) {
+		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
+			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
+		}
+
 		if ( ! isset( $this->vip_config[ $config_type ] ) ) {
 			return '';
 		}
