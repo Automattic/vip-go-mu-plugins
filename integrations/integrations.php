@@ -62,7 +62,7 @@ class Integrations {
 	public function load_active(): void {
 		foreach ( $this->integrations as $slug => $integration ) {
 			if ( $integration->is_active() ) {
-				$integration->load( $integration->get_config() );
+				$integration->load( $integration->get_customer_config() );
 			}
 		}
 	}

@@ -11,14 +11,10 @@ use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_private_method_as_public;
 
-/**
- * Test Class.
- */
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+
 class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
-	/**
-	 * Test number of supported integrations.
-	 */
-	public function test__supported_integrations() {
+	public function test__availability_of_supported_integrations(): void {
 		/**
 		 * Test supported integrations.
 		 *
@@ -31,10 +27,7 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		$this->assertInstanceOf( ParselyIntegration::class, $supported_vip_integrations[1] );
 	}
 
-	/**
-	 * Test registration of supported integrations
-	 */
-	public function test__supported_integrations_are_registered() {
+	public function test__all_supported_integrations_are_registered(): void {
 		/**
 		 * VIP Integrations.
 		 *
@@ -53,11 +46,8 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		$this->assertNull( $not_supported_integration );
 	}
 
-	/**
-	 * Test activate function.
-	 */
-	public function test_activate_function_is_calling_the_activate_method_from_integrations() {
-		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'activate' ] )->getMock();
+	public function test_activate_function_is_calling_the_activate_method_from_integrations_class(): void {
+		$mock = $this->getMockBuilder( Integrations::class )->getMock();
 		$mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );
 
 		global $vip_integrations;
@@ -69,11 +59,8 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		$vip_integrations = $temp; // Reset vip integrations from backup.
 	}
 
-	/**
-	 * Test loading of integrations.
-	 */
-	public function test_activated_integrations_are_loaded_on_muplugins_loaded_hook() {
-		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'load_active' ] )->getMock();
+	public function test_activated_integrations_are_loaded_on_muplugins_loaded_hook(): void {
+		$mock = $this->getMockBuilder( Integrations::class )->getMock();
 		$mock->expects( $this->once() )->method( 'load_active' )->with();
 
 		global $vip_integrations;

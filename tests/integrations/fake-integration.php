@@ -1,6 +1,6 @@
 <?php
 /**
- * Tests: Fake Integration.
+ * Fake Integration.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -38,8 +38,8 @@ class FakeIntegration extends Integration {
 		return get_private_method_as_public( Integration::class, 'get_vip_config_from_file' )->invoke( $this );
 	}
 
-	public function set_is_active_by_vip() {
-		return get_private_method_as_public( Integration::class, 'set_is_active_by_vip' )->invoke( $this );
+	public function set_is_active_by_vip(): void {
+		get_private_method_as_public( Integration::class, 'set_is_active_by_vip' )->invoke( $this );
 	}
 
 	public function get_value_from_vip_config( $config_type, $key ) {

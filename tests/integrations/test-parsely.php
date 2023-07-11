@@ -12,21 +12,12 @@ use WP_UnitTestCase;
 use function Automattic\Test\Utils\is_parsely_disabled;
 use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 
-/**
- * Test Class.
- */
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
+
 class Parsely_Integration_Test extends WP_UnitTestCase {
-	/**
-	 * Slug of the integration.
-	 *
-	 * @var string
-	 */
 	private string $slug = 'parsely';
 
-	/**
-	 * Test registering integration and then activating it is loading integration.
-	 */
-	public function test__parsely_integration_is_loaded_if_not_defined_by_customer_and_vice_versa() {
+	public function test__load_call_is_defining_the_enabled_constant_if_plugin_is_not_enabled_already(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 
 		maybe_load_plugin();
@@ -37,6 +28,6 @@ class Parsely_Integration_Test extends WP_UnitTestCase {
 			return;
 		}
 
-		$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );
+		$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) ); // Indicates enablement via filter or option.
 	}
 }

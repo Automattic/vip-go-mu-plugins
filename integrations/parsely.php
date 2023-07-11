@@ -14,14 +14,14 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
-	 * Name of the filter which we will use to setup the plugin configs.
+	 * Name of the filter which we will be used to pass the config from platform to integration.
 	 *
 	 * @var string
 	 */
-	protected string $setup_config_filter_name = 'wp_parsely_credentials';
+	protected string $vip_config_filter_name = 'wp_parsely_credentials';
 
 	/**
-	 * Applies hooks to load plugin.
+	 * Loads the plugin.
 	 *
 	 * @param array $config Configuration for this integration.
 	 *

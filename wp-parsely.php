@@ -399,10 +399,8 @@ function maybe_disable_some_features() {
 
 /**
  * Enum which represent all options to integrate `wp-parsely`.
- *
- * phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
  */
-abstract class Parsely_Integration_Type {
+abstract class Parsely_Integration_Type { // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Classes.OpeningBraceSameLine.ContentAfterBrace
 	// When parsely is active.
 	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
 	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
