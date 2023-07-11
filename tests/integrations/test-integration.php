@@ -137,7 +137,6 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$filter_name = 'fake_vip_config_filter';
 		$this->test_is_active_by_vip( [
 			'network_sites' => [
 				'1' => [
@@ -145,9 +144,9 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 					'config' => [ 'network sites config' ],
 				],
 			],
-		], true, true, $filter_name );
+		], true, true );
 
-		$setup_config_value = apply_filters( $filter_name, '' );
+		$setup_config_value = apply_filters( 'fake_vip_config_filter', '' );
 		$this->assertEquals( [ 'network sites config' ], $setup_config_value );
 	}
 
@@ -156,7 +155,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false, '' );
+		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_config_is_not_provided_on_current_network_site(): void {
@@ -172,20 +171,19 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__is_active_by_vip_returns_true_if_integration_is_enabled_on_site(): void {
-		$filter_name = 'fake_vip_config_filter';
 		$this->test_is_active_by_vip( [
 			'site' => [
 				'status' => Site_Integration_Status::ENABLED,
 				'config' => [ 'sites config' ],
 			],
-		], true, true, $filter_name );
+		], true, true );
 
-		$setup_config_value = apply_filters( $filter_name, '' );
+		$setup_config_value = apply_filters( 'fake_vip_config_filter', '' );
 		$this->assertEquals( [ 'sites config' ], $setup_config_value );
 	}
 
 	public function test__is_active_by_vip_returns_true_without_adding_filter_if_integration_is_enabled_on_site(): void {
-		$this->test_is_active_by_vip( [ 'site' => [ 'status' => Site_Integration_Status::ENABLED ] ], true, false, '' );
+		$this->test_is_active_by_vip( [ 'site' => [ 'status' => Site_Integration_Status::ENABLED ] ], true, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_config_is_not_provided_on_site(): void {
@@ -198,25 +196,22 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	 * @param array   $vip_config
 	 * @param boolean $expected_is_active_by_vip
 	 * @param boolean $expected_has_config_filter
-	 * @param string  $filter_name
 	 *
 	 * @return void
 	 */
 	private function test_is_active_by_vip(
 		array $vip_config,
 		bool $expected_is_active_by_vip,
-		bool $expected_has_config_filter,
-		string $filter_name = 'fake_vip_config_filter'
+		bool $expected_has_config_filter
 	) {
 		$integration = new FakeIntegration( 'fake' );
-		get_private_property_as_public( Integration::class, 'vip_config_filter_name' )->setValue( $integration, $filter_name );
 		get_private_property_as_public( Integration::class, 'is_active_by_vip' )->setValue( $integration, true );
 		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
 
 		$integration->set_is_active_by_vip();
 
 		$this->assertEquals( $expected_is_active_by_vip, $integration->get_is_active_by_vip() );
-		$this->assertEquals( $expected_has_config_filter, has_filter( $filter_name ) );
+		$this->assertEquals( $expected_has_config_filter, has_filter( 'fake_vip_config_filter' ) );
 	}
 
 	public function test__get_value_from_vip_config_throws_exception_if_invalid_argument_is_passed(): void {
