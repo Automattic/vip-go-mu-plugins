@@ -143,11 +143,7 @@ abstract class Integration {
 			return true;
 		}
 
-		if ( $this->get_is_active_by_vip() ) {
-			return true;
-		}
-
-		return false;
+		return $this->get_is_active_by_vip();
 	}
 
 	/**
