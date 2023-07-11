@@ -115,9 +115,10 @@ class CLI {
 	 */
 	private function connect_vaultpress() {
 		// Do not connect to Vaultpress if the loading of the Vaultpress plugin has been skipped.
-		$skip_vp = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+		$skip_vp = ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD );
+
 		if ( $skip_vp ) {
-			WP_CLI::line( '☑️  Vaultpress is skipped by: VIP_VAULTPRESS_SKIP_LOAD' );
+			WP_CLI::line( '☑️  VaultPress is skipped because the plugin is not loaded' );
 			return true;
 		}
 

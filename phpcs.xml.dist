@@ -41,6 +41,7 @@
 	<exclude-pattern>/wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>/wp-parsely/*</exclude-pattern>
 	<exclude-pattern>*/build/*\.asset\.php</exclude-pattern>
+	<exclude-pattern>/vip-integrations/*vip-block-data-api-*/*vendor*</exclude-pattern>
 
 	<!-- How to scan -->
 	<!-- Strip the file paths down to the relevant bit -->
