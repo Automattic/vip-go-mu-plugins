@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_private_method_as_public;
 use function Automattic\Test\Utils\get_private_property_as_public;
 
 require_once __DIR__ . '/fake-integration.php';
@@ -182,9 +183,9 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 * @var FakeIntegration&MockObject
 		 */
 		$mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'get_vip_config_from_file' ] )->getMock();
-		$mock->expects( $this->once() )->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
+		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
 
-		$is_active = $mock->is_active_by_vip();
+		$is_active = get_private_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $mock );
 
 		$this->assertEquals( $expected_is_active_by_vip, $is_active );
 		$this->assertEquals( $expected_has_config_filter, has_filter( 'fake_vip_config_filter' ) );
@@ -193,7 +194,9 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$integration = new FakeIntegration( 'fake' );
 
-		$this->assertNull( $integration->get_vip_config_from_file() );
+		$reflection_method = get_private_method_as_public( FakeIntegration::class, 'get_vip_config_from_file' );
+
+		$this->assertNull( $reflection_method->invoke( $integration ) );
 	}
 
 	public function test__get_value_from_vip_config_throws_exception_if_invalid_argument_is_passed(): void {
@@ -283,7 +286,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$integration = new FakeIntegration( 'fake' );
 		get_private_property_as_public( Integration::class, 'vip_config' )->setValue( $integration, $vip_config );
 
-		$config_value = $integration->get_value_from_vip_config( $config_type, $key );
+		$config_value = get_private_method_as_public( FakeIntegration::class, 'get_value_from_vip_config' )->invoke( $integration, $config_type, $key );
 
 		$this->assertEquals( $expected_value_from_vip_config, $config_value );
 	}

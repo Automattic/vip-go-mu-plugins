@@ -137,10 +137,8 @@ abstract class Integration {
 	 * Returns true and passed available config if the integration is active by VIP.
 	 *
 	 * @return bool
-	 *
-	 * @private
 	 */
-	public function is_active_by_vip(): bool {
+	protected function is_active_by_vip(): bool {
 		$vip_config = $this->get_vip_config_from_file();
 		if ( ! is_array( $vip_config ) ) {
 			return false;
@@ -193,10 +191,8 @@ abstract class Integration {
 	 * Get config provided by VIP from file.
 	 *
 	 * @return null|mixed
-	 *
-	 * @private
 	 */
-	public function get_vip_config_from_file() {
+	protected function get_vip_config_from_file() {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
 
 		if ( ! is_readable( $config_file_path ) ) {
@@ -215,10 +211,8 @@ abstract class Integration {
 	 * @return string|array
 	 *
 	 * @throws InvalidArgumentException Exception if invalid argument is passed.
-	 *
-	 * @private
 	 */
-	public function get_value_from_vip_config( string $config_type, string $key ) {
+	protected function get_value_from_vip_config( string $config_type, string $key ) {
 		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
 			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
 		}
