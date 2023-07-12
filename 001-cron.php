@@ -106,7 +106,7 @@ function wpcom_vip_cron_control_event_object_to_string( $event ) {
 /**
  * Should Cron Control load
  */
-if ( ! wpcom_vip_use_core_cron() ) {
+if ( ! wpcom_vip_use_core_cron() && is_blog_installed() ) {
 	/**
 	 * Prevent plugins/themes from blocking access to our routes
 	 */

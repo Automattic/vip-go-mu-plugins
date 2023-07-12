@@ -40,7 +40,6 @@ function vip_do_non_prod_bar() {
 			position:fixed;
 			margin:0;
 			padding: 0 20px;
-			width: 100%;
 			height: 28px;
 		}
 		#vip-non-prod-bar span {

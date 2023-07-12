@@ -16,7 +16,7 @@ if ( file_exists( __DIR__ . '/action-scheduler-dynamic-queue.php' ) ) {
 // Unregister Jetpack-related cron events when disabled.
 add_action( 'cli_init', function() {
 	$jetpack_is_disabled    = defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD;
-	$vaultpress_is_disabled = $jetpack_is_disabled || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD );
+	$vaultpress_is_disabled = $jetpack_is_disabled || ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD );
 
 	$events_to_unregister = [];
 	if ( $jetpack_is_disabled ) {
@@ -43,6 +43,10 @@ add_action( 'cli_init', function() {
 add_action( 'cli_init', '\Automattic\VIP\Cron\vip_schedule_aggregated_cron' );
 
 function vip_schedule_aggregated_cron() {
+	if ( defined( 'WP_INSTALLING' ) && true === constant( 'WP_INSTALLING' ) ) {
+		return;
+	}
+
 	if ( wp_next_scheduled( 'vip_aggregated_cron_hourly' ) ) {
 		return;
 	}
