@@ -11,6 +11,15 @@ namespace Automattic\VIP\Integrations;
 
 defined( 'ABSPATH' ) || die();
 
+// Safety during the initial rollout. Can be removed later.
+if (
+	! file_exists( __DIR__ . '/integrations/integration.php' )
+	|| ! file_exists( __DIR__ . '/integrations/integrations.php' )
+	|| ! file_exists( __DIR__ . '/integrations/block-data-api.php' )
+) {
+	return;
+}
+
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
