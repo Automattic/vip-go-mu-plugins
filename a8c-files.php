@@ -40,6 +40,7 @@ require_once __DIR__ . '/files/acl/acl.php';
  */
 require_once __DIR__ . '/files/class-meta-updater.php';
 
+use Automattic\Jetpack\Image_CDN\Image_CDN;
 use Automattic\VIP\Files\VIP_Filesystem;
 use Automattic\VIP\Files\Meta_Updater;
 use Automattic\VIP\Utils\Alerts;
@@ -124,9 +125,10 @@ class A8C_Files {
 	}
 
 	private function init_jetpack_photon_filters() {
-		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+		// Jetpack_Photon is deprecated in favor of Automattic\Jetpack\Image_CDN\Image_CDN in 12.2
+		if ( ! class_exists( 'Jetpack_Photon' ) && ! class_exists( Image_CDN::class ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			trigger_error( 'Cannot initialize Photon filters as neither Jetpack_Photon nor Automattic\\Jetpack\\Image_CDN\\Image_CDN class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
 			return;
 		}
 
@@ -163,7 +165,11 @@ class A8C_Files {
 
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
-		Jetpack_Photon::instance();
+		if ( class_exists( Image_CDN::class ) ) {
+			Image_CDN::instance();
+		} else {
+			Jetpack_Photon::instance();
+		}
 
 		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
 		// This is temporary until Jetpack allows more easily running these filters for is_admin().
