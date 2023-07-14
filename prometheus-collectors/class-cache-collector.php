@@ -3,6 +3,8 @@
 namespace Automattic\VIP\Prometheus;
 
 use Prometheus\Counter;
+use Prometheus\Gauge;
+use Prometheus\Histogram;
 use Prometheus\RegistryInterface;
 use WP_Object_Cache;
 
@@ -10,6 +12,8 @@ class Cache_Collector implements CollectorInterface {
 	private ?Counter $cache_hits_counter   = null;
 	private ?Counter $cache_misses_counter = null;
 	private ?Counter $operation_counter    = null;
+	private ?Gauge $alloptions_keys_gauge  = null;
+	private ?Histogram $size               = null;
 
 	private string $blog_id;
 	/**
@@ -37,11 +41,26 @@ class Cache_Collector implements CollectorInterface {
 			);
 		}
 
-		if ( property_exists( $wp_object_cache, 'stats' ) && is_array( $wp_object_cache->stats ) ) {
-			$registry->getOrRegisterCounter(
+		if ( is_callable( [ $wp_object_cache, 'get_stats' ] ) ) {
+			$this->alloptions_keys_gauge = $registry->getOrRegisterGauge(
 				'object_cache',
-				'oprations_total',
-				'Number of operations',
+				'alloptions_keys_total',
+				'Number of keys in alloptions',
+				[ 'site_id' ]
+			);
+
+			$this->size = $registry->getOrRegisterHistogram(
+				'object_cache',
+				'size',
+				'Cache size',
+				[ 'site_id' ],
+				[ 100 * KB_IN_BYTES, 500 * KB_IN_BYTES, MB_IN_BYTES, 5 * MB_IN_BYTES, 10 * MB_IN_BYTES ]
+			);
+
+			$this->operation_counter = $registry->getOrRegisterCounter(
+				'object_cache',
+				'operations_total',
+				'Total number of operations',
 				[ 'site_id', 'operation' ]
 			);
 		}
@@ -70,8 +89,12 @@ class Cache_Collector implements CollectorInterface {
 			$this->cache_misses_counter->incBy( $wp_object_cache->cache_misses, [ $this->blog_id ] );
 		}
 
-		if ( $this->operation_counter ) {
-			foreach ( $wp_object_cache->stats as $operation => $count ) {
+		if ( is_callable( [ $wp_object_cache, 'get_stats' ] ) ) {
+			$stats = $wp_object_cache->get_stats();
+			$this->alloptions_keys_gauge->set( count( wp_cache_get( 'alloptions', 'options' ) ), [ $this->blog_id ] );
+			$this->size->observe( $stats['totals']['size'], [ $this->blog_id ] );
+
+			foreach ( $stats['operation_counts'] as $operation => $count ) {
 				$this->operation_counter->incBy( $count, [ $this->blog_id, (string) $operation ] );
 			}
 		}
