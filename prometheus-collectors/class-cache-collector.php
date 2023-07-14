@@ -13,7 +13,7 @@ class Cache_Collector implements CollectorInterface {
 	private ?Counter $cache_misses_counter = null;
 	private ?Counter $operation_counter    = null;
 	private ?Gauge $alloptions_keys_gauge  = null;
-	private ?Histogram $size               = null;
+	private ?Gauge $size_gauge             = null;
 
 	private string $blog_id;
 	/**
@@ -49,12 +49,11 @@ class Cache_Collector implements CollectorInterface {
 				[ 'site_id' ]
 			);
 
-			$this->size = $registry->getOrRegisterHistogram(
+			$this->size_gauge = $registry->getOrRegisterGauge(
 				'object_cache',
 				'size',
 				'Cache size',
-				[ 'site_id' ],
-				[ 100 * KB_IN_BYTES, 500 * KB_IN_BYTES, MB_IN_BYTES, 5 * MB_IN_BYTES, 10 * MB_IN_BYTES ]
+				[ 'site_id' ]
 			);
 
 			$this->operation_counter = $registry->getOrRegisterCounter(
@@ -92,7 +91,7 @@ class Cache_Collector implements CollectorInterface {
 		if ( is_callable( [ $wp_object_cache, 'get_stats' ] ) ) {
 			$stats = $wp_object_cache->get_stats();
 			$this->alloptions_keys_gauge->set( count( wp_cache_get( 'alloptions', 'options' ) ), [ $this->blog_id ] );
-			$this->size->observe( $stats['totals']['size'], [ $this->blog_id ] );
+			$this->size_gauge->set( $stats['totals']['size'], [ $this->blog_id ] );
 
 			foreach ( $stats['operation_counts'] as $operation => $count ) {
 				$this->operation_counter->incBy( $count, [ $this->blog_id, (string) $operation ] );
