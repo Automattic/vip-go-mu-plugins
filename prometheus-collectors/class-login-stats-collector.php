@@ -23,14 +23,14 @@ class Login_Stats_Collector implements CollectorInterface {
 			'security',
 			'login_limit_exceeded_total',
 			'Number of rate-limited login requests',
-			[ 'site_id' ]
+			[ 'site_id', 'reason' ]
 		);
 
 		$this->password_reset_limit_exceeded_counter = $registry->getOrRegisterCounter(
 			'security',
 			'password_reset_limit_exceeded_total',
 			'Number of rate-limited password reset requests',
-			[ 'site_id' ]
+			[ 'site_id', 'reason' ]
 		);
 
 		$this->successful_login_counter = $registry->getOrRegisterCounter(
@@ -47,18 +47,18 @@ class Login_Stats_Collector implements CollectorInterface {
 			[ 'site_id' ]
 		);
 
-		add_action( 'login_limit_exceeded', [ $this, 'login_limit_exceeded' ] );
-		add_action( 'password_reset_limit_exceeded', [ $this, 'password_reset_limit_exceeded' ] );
+		add_action( 'login_limit_exceeded', [ $this, 'login_limit_exceeded' ], 10, 2 );
+		add_action( 'password_reset_limit_exceeded', [ $this, 'password_reset_limit_exceeded' ], 10, 2 );
 		add_action( 'wp_login', [ $this, 'wp_login' ] );
 		add_action( 'wp_login_failed', [ $this, 'wp_login_failed' ] );
 	}
 
-	public function login_limit_exceeded(): void {
-		$this->login_limit_exceeded_counter->inc( [ $this->blog_id ] );
+	public function login_limit_exceeded( $username, $reason ): void {
+		$this->login_limit_exceeded_counter->inc( [ $this->blog_id, $reason ] );
 	}
 
-	public function password_reset_limit_exceeded(): void {
-		$this->password_reset_limit_exceeded_counter->inc( [ $this->blog_id ] );
+	public function password_reset_limit_exceeded( $username, $reason ): void {
+		$this->password_reset_limit_exceeded_counter->inc( [ $this->blog_id, $reason ] );
 	}
 
 	public function wp_login(): void {

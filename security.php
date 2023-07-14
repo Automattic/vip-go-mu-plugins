@@ -172,19 +172,19 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 	}
 
 	if ( $ip_username_count >= $ip_username_threshold || $ip_count >= $ip_threshold || $username_count >= $username_threshold ) {
-		/**
-		 * Fires when a login limit or password reset is exceeded.
-		 *
-		 * @param string $username Username of the request.
-		 */
-		do_action( "{$event_type}_exceeded", $username );
-
 		$lock_reason = 'username';
 		if ( $ip_username_count >= $ip_username_threshold ) {
 			$lock_reason = 'ip_username';
 		} elseif ( $ip_count >= $ip_threshold ) {
 			$lock_reason = 'ip';
 		}
+
+		/**
+		 * Fires when a login limit or password reset is exceeded.
+		 *
+		 * @param string $username Username of the request.
+		 */
+		do_action( "{$event_type}_limit_exceeded", $username, $lock_reason );
 
 		$default_lockout = $defaults[ "{$lock_reason}_lockout" ];
 		/**
@@ -367,13 +367,11 @@ function wpcom_vip_username_is_limited( $username, $cache_group ) {
 	if ( $is_ip_username_locked || $is_ip_locked || $is_username_locked ) {
 
 		switch ( $cache_group ) {
-
 			case CACHE_GROUP_LOST_PASSWORD_LIMIT:
 				return new WP_Error( ERROR_CODE_LOST_PASSWORD_LIMIT_EXCEEDED, __( 'You have exceeded the password reset limit.  Please wait a few minutes and try again.' ) );
 
 			case CACHE_GROUP_LOGIN_LIMIT:
 				return new WP_Error( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, __( 'You have exceeded the login limit.  Please wait a few minutes and try again.' ) );
-
 		}
 	}
 
