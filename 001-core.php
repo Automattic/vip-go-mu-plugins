@@ -53,6 +53,12 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 		unset( $tests['async']['background_updates'] );
 	}
 
+	// Disable "WP-Content Writable" test.
+	// Code updates are managed in GitHub.
+	if ( isset( $tests['direct'] ) && isset( $tests['direct']['update_temp_backup_writable'] ) ) {
+		unset( $tests['direct']['update_temp_backup_writable'] );
+	}
+
 	return $tests;
 }
 
