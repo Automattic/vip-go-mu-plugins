@@ -85,6 +85,7 @@ class QM_Output_Html_Object_Cache_Group_Stats extends QM_Output_Html {
 				echo '<td>' . esc_html( $this->process_time( $total[ $operation_type ]['time'] ) ) . '</td>';
 				echo '<td>' . esc_html( $this->process_size( $total[ $operation_type ]['size'] ) ) . '</td>';
 
+				echo '</tr>';
 				echo '</tfoot>';
 				$this->output_after_section();
 			}
