@@ -90,7 +90,9 @@ class Cache_Collector implements CollectorInterface {
 
 		if ( is_callable( [ $wp_object_cache, 'get_stats' ] ) ) {
 			$stats = $wp_object_cache->get_stats();
-			$this->alloptions_keys_gauge->set( count( wp_cache_get( 'alloptions', 'options' ) ), [ $this->blog_id ] );
+
+			$alloptions = wp_cache_get( 'alloptions', 'options' );
+			$this->alloptions_keys_gauge->set( is_countable( $alloptions ) ? count( $alloptions ) : 0, [ $this->blog_id ] );
 			$this->size_gauge->set( $stats['totals']['size'], [ $this->blog_id ] );
 
 			foreach ( $stats['operation_counts'] as $operation => $count ) {
