@@ -55,6 +55,10 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// Code updates are managed in GitHub.
 	unset( $tests['direct']['update_temp_backup_writable'] );
 
+	// Disable "Available disk space" test.
+	// We manage the disk space, test gives bogus results.
+	unset( $tests['direct']['available_updates_disk_space'] );
+
 	return $tests;
 }
 
