@@ -47,3 +47,22 @@ add_action(
 		);
 	}
 );
+
+// WordPress 6.3 availability.
+add_action(
+	'vip_admin_notice_init',
+	function( $admin_notice_controller ) {
+		global $wp_version;
+
+		$admin_notice_controller->add(
+			new Admin_Notice(
+				'WordPress 6.3 will be released on August 8th, 2023. Please ensure your sites have been tested against the current Release Candidate.',
+				[
+					new Expression_Condition( version_compare( $wp_version, '6.3', '<' ) ),
+				],
+				'wp-version-6-3',
+				'notice'
+			)
+		);
+	}
+);
