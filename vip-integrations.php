@@ -17,25 +17,9 @@ require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 
-/**
- * List of integrations supported by VIP.
- *
- * If the integration is managed by VIP then slug should match with backend.
- *
- * @var array<Integration>
- */
-$supported_vip_integrations = array(
-	new BlockDataApiIntegration( 'block-data-api' ),
-	new ParselyIntegration( 'parsely' ),
-);
-
-global $vip_integrations;
-$vip_integrations = new Integrations();
-
 // Register VIP integrations here.
-foreach ( $supported_vip_integrations as $integration ) {
-	$vip_integrations->register( $integration );
-}
+IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
+IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 
 /**
  * Activates an integration with an optional configuration value.
@@ -44,13 +28,36 @@ foreach ( $supported_vip_integrations as $integration ) {
  * @param array  $config An associative array of configuration values for the integration.
  */
 function activate( string $slug, array $config = [] ): void {
-	global $vip_integrations;
-	$vip_integrations->activate( $slug, $config );
+	IntegrationsSingleton::instance()->activate( $slug, $config );
 }
 
 // Load integrations in muplugins_loaded:5 to allow integrations to hook
 // muplugins_loaded:10 or any later action.
 add_action( 'muplugins_loaded', function() {
-	global $vip_integrations;
-	$vip_integrations->load_active();
+	IntegrationsSingleton::instance()->load_active();
 }, 5 );
+
+/**
+ * Singleton class for managing integrations.
+ */
+class IntegrationsSingleton {
+	/**
+	 * Instance for Integrations.
+	 *
+	 * @var Integrations|null
+	 */
+	private static $instance = null;
+
+	/**
+	 * Get Integrations instance (initialise if null)
+	 *
+	 * @return Integrations
+	 */
+	public static function instance() {
+		if ( is_null( self::$instance ) ) {
+			self::$instance = new Integrations();
+		}
+
+		return self::$instance;
+	}
+}
