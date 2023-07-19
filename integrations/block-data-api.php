@@ -46,4 +46,12 @@ class BlockDataApiIntegration extends Integration {
 			}
 		} );
 	}
+
+	/**
+	 * Empty implementation of an abstract method which indicates that this
+	 * integration doesn't have any config which needs setup.
+	 *
+	 * @return  void
+	 */
+	public function setup_config(): void { }
 }

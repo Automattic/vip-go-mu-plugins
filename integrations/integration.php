@@ -89,15 +89,6 @@ abstract class Integration {
 	protected bool $is_active_by_customer = false;
 
 	/**
-	 * Name of the filter which we will be used to pass the config from platform to integration.
-	 *
-	 * As of now there is no default so each integration will define its own filter in their class.
-	 *
-	 * @var string
-	 */
-	protected string $vip_config_filter_name = '';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
@@ -162,10 +153,8 @@ abstract class Integration {
 		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
 			$have_config = $this->get_value_from_vip_config( 'network_sites', 'config' ) !== '';
 
-			if ( '' !== $this->vip_config_filter_name && $have_config ) {
-				add_filter( $this->vip_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'network_sites', 'config' );
-				} );
+			if ( $have_config ) {
+				$this->setup_config();
 			}
 
 			return true;
@@ -175,16 +164,32 @@ abstract class Integration {
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
 			$have_config = $this->get_value_from_vip_config( 'site', 'config' ) !== '';
 
-			if ( '' !== $this->vip_config_filter_name && $have_config ) {
-				add_filter( $this->vip_config_filter_name, function() {
-					return $this->get_value_from_vip_config( 'site', 'config' );
-				} );
+			if ( $have_config ) {
+				$this->setup_config();
 			}
 
 			return true;
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get site config provided by VIP.
+	 *
+	 * @return null|mixed
+	 */
+	protected function get_vip_config_of_site() {
+		return $this->get_value_from_vip_config( 'site', 'config' );
+	}
+
+	/**
+	 * Get config of the current network site provided by VIP.
+	 *
+	 * @return null|mixed
+	 */
+	protected function get_vip_config_of_current_network_site() {
+		return $this->get_value_from_vip_config( 'network_sites', 'config' );
 	}
 
 	/**
@@ -212,7 +217,7 @@ abstract class Integration {
 	 *
 	 * @throws InvalidArgumentException Exception if invalid argument is passed.
 	 */
-	private function get_value_from_vip_config( string $config_type, string $key ) {
+	protected function get_value_from_vip_config( string $config_type, string $key ) {
 		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
 			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
 		}
@@ -258,16 +263,26 @@ abstract class Integration {
 	}
 
 	/**
-	 * Abstract base for integration functionality.
 	 * Implement custom action and filter calls to load integration here.
 	 *
 	 * For plugins / integrations that can be added to customer repos, 
 	 * the implementation should hook into plugins_loaded and check if 
 	 * the plugin is already loaded first.
-	 * 
+	 *
 	 * @param array $config Configuration for this integration.
+	 *
+	 * @return void
 	 *
 	 * @private
 	 */
 	abstract public function load( array $config ): void;
+
+	/**
+	 * Implements functionality for setting up the config on a site or network site.
+	 *
+	 * @return void
+	 *
+	 * @private
+	 */
+	abstract public function setup_config(): void;
 }

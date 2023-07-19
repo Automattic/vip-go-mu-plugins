@@ -14,13 +14,6 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
-	 * Name of the filter which we will be used to pass the config from platform to integration.
-	 *
-	 * @var string
-	 */
-	protected string $vip_config_filter_name = 'wp_parsely_credentials';
-
-	/**
 	 * Loads the plugin.
 	 *
 	 * @param array $config Configuration for this integration.
@@ -38,5 +31,20 @@ class ParselyIntegration extends Integration {
 		// all the implementation here such that there will be only one way of managing
 		// the plugin).
 		define( 'VIP_PARSELY_ENABLED', true );
+	}
+
+	/**
+	 * Adds filter which setup vip config of a site or network site.
+	 *
+	 * @return void
+	 */
+	public function setup_config(): void {
+		add_filter( 'wp_parsely_credentials', function() {
+			if ( is_multisite() ) {
+				return $this->get_vip_config_of_current_network_site();
+			}
+
+			return $this->get_vip_config_of_site();
+		} );
 	}
 }
