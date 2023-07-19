@@ -212,7 +212,7 @@ abstract class Integration {
 	 *
 	 * @throws InvalidArgumentException Exception if invalid argument is passed.
 	 */
-	protected function get_value_from_vip_config( string $config_type, string $key ) {
+	private function get_value_from_vip_config( string $config_type, string $key ) {
 		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
 			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
 		}

@@ -14,7 +14,7 @@ use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
-class Parsely_Integration_Test extends WP_UnitTestCase {
+class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
 	public function test__load_call_is_defining_the_enabled_constant_if_plugin_is_not_enabled_already(): void {
