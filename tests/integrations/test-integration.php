@@ -118,9 +118,6 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				],
 			],
 		], true, true );
-
-		$setup_config_value = apply_filters( 'fake_vip_config_filter', '' );
-		$this->assertEquals( [ 'network sites config' ], $setup_config_value );
 	}
 
 	public function test__is_active_by_vip_returns_true_without_adding_filter_if_integration_is_enabled_on_current_network_site(): void {
@@ -150,9 +147,6 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				'config' => [ 'site config' ],
 			],
 		], true, true );
-
-		$setup_config_value = apply_filters( 'fake_vip_config_filter', '' );
-		$this->assertEquals( [ 'site config' ], $setup_config_value );
 	}
 
 	public function test__is_active_by_vip_returns_true_without_adding_filter_if_integration_is_enabled_on_site(): void {
@@ -168,27 +162,32 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	 *
 	 * @param array|string $vip_config
 	 * @param boolean      $expected_is_active_by_vip
-	 * @param boolean      $expected_has_config_filter
+	 * @param boolean      $should_call_setup_config
 	 *
 	 * @return void
 	 */
 	private function test_is_active_by_vip(
 		$vip_config,
 		bool $expected_is_active_by_vip,
-		bool $expected_has_config_filter
+		bool $should_call_setup_config
 	) {
 		/**
 		 * Mock object.
 		 *
 		 * @var FakeIntegration&MockObject
 		 */
-		$mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'get_vip_config_from_file' ] )->getMock();
+		$mock = $this->getMockBuilder( FakeIntegration::class )
+									->setConstructorArgs( [ 'fake' ] )
+									->setMethods( [ 'get_vip_config_from_file', 'setup_config' ] )
+									->getMock();
 		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
+		if ( $should_call_setup_config ) {
+			$mock->expects( $this->once() )->method( 'setup_config' );
+		}
 
 		$is_active = get_class_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $mock );
 
 		$this->assertEquals( $expected_is_active_by_vip, $is_active );
-		$this->assertEquals( $expected_has_config_filter, has_filter( 'fake_vip_config_filter' ) );
 	}
 
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {

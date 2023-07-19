@@ -151,7 +151,7 @@ abstract class Integration {
 
 		// If enabled on network site then set credentials via filter and return true.
 		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
-			$have_config = $this->get_value_from_vip_config( 'network_sites', 'config' ) !== '';
+			$have_config = $this->get_vip_config_of_current_network_site() !== '';
 
 			if ( $have_config ) {
 				$this->setup_config();
@@ -162,7 +162,7 @@ abstract class Integration {
 
 		// If enabled on site then set credentials via filter and return true.
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			$have_config = $this->get_value_from_vip_config( 'site', 'config' ) !== '';
+			$have_config = $this->get_vip_config_of_site() !== '';
 
 			if ( $have_config ) {
 				$this->setup_config();
