@@ -177,7 +177,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 		 *
 		 * @param string $username Username of the request.
 		 */
-		do_action( "{$event_type}_exceeded", $username );
+		do_action( "{$event_type}_limit_exceeded", $username );
 
 		$lock_reason = 'username';
 		if ( $ip_username_count >= $ip_username_threshold ) {
