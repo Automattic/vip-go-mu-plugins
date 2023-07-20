@@ -29,10 +29,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
-			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
+			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
-			\WP_CLI::error( 'exit as nothing to do' );
+			exit;
 		}
 		$backup_roles = array_reverse( $backup_roles, true );
 
@@ -84,10 +84,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		);
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
-			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
+			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
-			\WP_CLI::error( 'exit as nothing to do' );
+			exit;
 		}
 
 		if ( 'latest' === $key ) {
@@ -134,10 +134,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
-			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
+			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
-			\WP_CLI::error('exit as nothing to do');
+			exit;
 		}
 
 		if ( 'latest' === $key ) {
@@ -235,10 +235,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
-			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
+			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
-			\WP_CLI::error( 'exit as nothing to do' );
+			exit;
 		}
 
 		if ( 'latest' === $key ) {
