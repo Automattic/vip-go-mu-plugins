@@ -74,19 +74,23 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__is_active_by_vip_returns_false_if_empty_config_is_provided(): void {
-		$this->test_is_active_by_vip( [], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_provided_config_is_not_of_type_array(): void {
-		$this->test_is_active_by_vip( 'invalid-config', false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, 'invalid-config', false, false );
 	}
 
 	public function test__is_active_by_vip_is_return_false_if_client_status_is_blocked(): void {
-		$this->test_is_active_by_vip( [ 'client' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [ 'client' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_site_status_is_blocked(): void {
-		$this->test_is_active_by_vip( [ 'site' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [ 'site' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_is_blocked_on_current_network_site(): void {
@@ -94,7 +98,17 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$mock->expects( $this->exactly( 0 ) )->method( 'get_vip_config_of_site' );
+		$this->test_is_active_by_vip(
+			$mock,
+			[
+				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
+				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ],
+			],
+			false,
+			false,
+		);
 	}
 
 	public function test__is_active_by_vip_returns_false_if_integration_is_disabled_on_current_network_site(): void {
@@ -102,7 +116,17 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ] ], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$mock->expects( $this->exactly( 0 ) )->method( 'get_vip_config_of_site' );
+		$this->test_is_active_by_vip(
+			$mock,
+			[
+				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
+				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::DISABLED ] ],
+			],
+			false,
+			false,
+		);
 	}
 
 	public function test__is_active_by_vip_returns_true_if_integration_is_enabled_on_current_network_site(): void {
@@ -110,38 +134,101 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
-		$this->test_is_active_by_vip( [
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$mock->expects( $this->exactly( 0 ) )->method( 'get_vip_config_of_site' );
+		$this->test_is_active_by_vip(
+			$mock,
+			[
+				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
+				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ],
+			],
+			true,
+			false,
+		);
+	}
+
+	public function test__is_active_by_vip_returns_true_if_integration_is_not_present_on_current_network_site_but_enabled_on_site(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$mock->expects( $this->exactly( 1 ) )->method( 'get_vip_config_of_site' );
+		$this->test_is_active_by_vip(
+			$mock,
+			[
+				'site' => [ 'status' => Site_Integration_Status::ENABLED ],
+			],
+			true,
+			false,
+		);
+	}
+
+	public function test__is_active_by_vip_returns_false_if_integration_is_not_provided_on_current_network_site(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [
+			'network_sites' => [
+				'2' => [
+					'status' => Site_Integration_Status::ENABLED,
+					'config' => [ 'site config' ],
+				],
+			],
+		], false, false );
+	}
+
+	public function test__is_active_by_vip_returns_true_and_call_setup_config_if_integration_is_enabled_with_config_on_current_network_site(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [
 			'network_sites' => [
 				'1' => [
 					'status' => Site_Integration_Status::ENABLED,
-					'config' => [ 'network sites config' ],
+					'config' => [ 'site config' ],
 				],
 			],
 		], true, true );
 	}
 
-	public function test__is_active_by_vip_returns_true_without_adding_filter_if_integration_is_enabled_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->test_is_active_by_vip( [ 'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ] ], true, false );
-	}
-
-	public function test__is_active_by_vip_returns_false_if_integration_config_is_not_provided_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->test_is_active_by_vip( [], false, false );
-	}
-
 	public function test__is_active_by_vip_returns_false_if_integration_is_disabled_on_site(): void {
-		$this->test_is_active_by_vip( [ 'site' => [ 'status' => Site_Integration_Status::DISABLED ] ], false, false );
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [ 'site' => [ 'status' => Site_Integration_Status::DISABLED ] ], false, false );
 	}
 
 	public function test__is_active_by_vip_returns_true_if_integration_is_enabled_on_site(): void {
-		$this->test_is_active_by_vip( [
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [
+			'site' => [
+				'status' => Site_Integration_Status::ENABLED,
+			],
+		], true, false );
+	}
+
+	public function test__is_active_by_vip_returns_false_if_integration_is_not_provided_on_site(): void {
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$this->test_is_active_by_vip( $mock, [
+			'client'        => [
+				'status' => Site_Integration_Status::ENABLED,
+			],
+			'network_sites' => [
+				'2' => [
+					'status' => Site_Integration_Status::ENABLED,
+					'config' => [ 'site config' ],
+				],
+			],
+		], false, false );
+	}
+
+	public function test__is_active_by_vip_returns_true_and_call_setup_config_if_integration_is_enabled_with_config_on_site(): void {
+		$mock = $this->get_mock_for_is_active_by_vip();
+		$mock->expects( $this->exactly( 0 ) )->method( 'get_vip_config_of_current_network_site' );
+		$this->test_is_active_by_vip( $mock, [
 			'site' => [
 				'status' => Site_Integration_Status::ENABLED,
 				'config' => [ 'site config' ],
@@ -149,43 +236,45 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		], true, true );
 	}
 
-	public function test__is_active_by_vip_returns_true_without_adding_filter_if_integration_is_enabled_on_site(): void {
-		$this->test_is_active_by_vip( [ 'site' => [ 'status' => Site_Integration_Status::ENABLED ] ], true, false );
-	}
-
-	public function test__is_active_by_vip_returns_false_if_integration_config_is_not_provided_on_site(): void {
-		$this->test_is_active_by_vip( [], false, false );
+	/**
+	 * Get mock for testing is_active_by_vip method.
+	 *
+	 * @return MockObject
+	 */
+	private function get_mock_for_is_active_by_vip() {
+		return $this->getMockBuilder( FakeIntegration::class )
+								->setConstructorArgs( [ 'fake' ] )
+								->setMethods( [
+									'get_vip_config_from_file',
+									'get_vip_config_of_site',
+									'get_vip_config_of_current_network_site',
+									'setup_config',
+								] )
+								->getMock();
 	}
 
 	/**
 	 * Helper function for testing `is_active_by_vip`.
 	 *
-	 * @param array|string $vip_config
-	 * @param boolean      $expected_is_active_by_vip
-	 * @param boolean      $should_call_setup_config
+	 * @param MockObject|FakeIntegration $integration_mock
+	 * @param array|string               $vip_config
+	 * @param boolean                    $expected_is_active_by_vip
+	 * @param boolean                    $should_call_setup_config
 	 *
 	 * @return void
 	 */
 	private function test_is_active_by_vip(
+		$integration_mock,
 		$vip_config,
 		bool $expected_is_active_by_vip,
 		bool $should_call_setup_config
 	) {
-		/**
-		 * Mock object.
-		 *
-		 * @var FakeIntegration&MockObject
-		 */
-		$mock = $this->getMockBuilder( FakeIntegration::class )
-									->setConstructorArgs( [ 'fake' ] )
-									->setMethods( [ 'get_vip_config_from_file', 'setup_config' ] )
-									->getMock();
-		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
+		$integration_mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
 		if ( $should_call_setup_config ) {
-			$mock->expects( $this->once() )->method( 'setup_config' );
+			$integration_mock->expects( $this->once() )->method( 'setup_config' );
 		}
 
-		$is_active = get_class_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $mock );
+		$is_active = get_class_method_as_public( FakeIntegration::class, 'is_active_by_vip' )->invoke( $integration_mock );
 
 		$this->assertEquals( $expected_is_active_by_vip, $is_active );
 	}

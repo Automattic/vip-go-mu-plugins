@@ -137,30 +137,40 @@ abstract class Integration {
 
 		$this->vip_config = $vip_config;
 
-		// Return false if client is blocked.
+		// Return false if blocked on client.
 		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
 			return false;
 		}
 
 		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
 
-		// Return false if site is blocked.
+		// Return false if blocked on site.
 		if ( Site_Integration_Status::BLOCKED === $site_status ) {
 			return false;
 		}
 
-		// If enabled on network site then set credentials via filter and return true.
-		if ( is_multisite() && $this->get_value_from_vip_config( 'network_sites', 'status' ) === Site_Integration_Status::ENABLED ) {
-			$have_config = $this->get_vip_config_of_current_network_site() !== '';
+		// If network site then look in network_sites config.
+		if ( is_multisite() ) {
+			$network_site_status = $this->get_value_from_vip_config( 'network_sites', 'status' );
+			
+			// Setup config and return true If enabled on network site.
+			if ( Site_Integration_Status::ENABLED === $network_site_status ) {
+				$have_config = $this->get_vip_config_of_current_network_site() !== '';
 
-			if ( $have_config ) {
-				$this->setup_config();
+				if ( $have_config ) {
+					$this->setup_config();
+				}
+
+				return true;
 			}
 
-			return true;
+			// Return false if status is not enabled but defined. If not defined then look in site config.
+			if ( '' !== $network_site_status ) {
+				return false;
+			}
 		}
 
-		// If enabled on site then set credentials via filter and return true.
+		// Return true if enabled on site.
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
 			$have_config = $this->get_vip_config_of_site() !== '';
 
