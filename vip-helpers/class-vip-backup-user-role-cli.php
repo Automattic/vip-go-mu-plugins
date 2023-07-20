@@ -30,9 +30,9 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
-			$debug_export = var_export($backup_roles, true);
-			\WP_CLI::error_multi_line($debug_export);
-			\WP_CLI::error('exit as nothing to do');
+			$debug_export = var_export( $backup_roles, true );
+			\WP_CLI::error_multi_line( $debug_export );
+			\WP_CLI::error( 'exit as nothing to do' );
 		}
 		$backup_roles = array_reverse( $backup_roles, true );
 
@@ -85,9 +85,9 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
-			$debug_export = var_export($backup_roles, true);
-			\WP_CLI::error_multi_line($debug_export);
-			\WP_CLI::error('exit as nothing to do');
+			$debug_export = var_export( $backup_roles, true );
+			\WP_CLI::error_multi_line( $debug_export );
+			\WP_CLI::error( 'exit as nothing to do' );
 		}
 
 		if ( 'latest' === $key ) {
@@ -135,8 +135,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
-			$debug_export = var_export($backup_roles, true);
-			\WP_CLI::error_multi_line($debug_export);
+			$debug_export = var_export( $backup_roles, true );
+			\WP_CLI::error_multi_line( $debug_export );
 			\WP_CLI::error('exit as nothing to do');
 		}
 
@@ -165,8 +165,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $current_roles as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
-				$debug_export = var_export($role['capabilities'], true);
-				\WP_CLI::error_multi_line($debug_export);
+				$debug_export = var_export( $role['capabilities'], true );
+				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
 				$role['capabilities'] = array();
 			}
@@ -177,8 +177,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $backup as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
-				$debug_export = var_export($role['capabilities'], true);
-				\WP_CLI::error_multi_line($debug_export);
+				$debug_export = var_export( $role['capabilities'], true );
+				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
 				$role['capabilities'] = array();
 			}
@@ -236,9 +236,9 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array' );
-			$debug_export = var_export($backup_roles, true);
-			\WP_CLI::error_multi_line($debug_export);
-			\WP_CLI::error('exit as nothing to do');
+			$debug_export = var_export( $backup_roles, true );
+			\WP_CLI::error_multi_line( $debug_export );
+			\WP_CLI::error( 'exit as nothing to do' );
 		}
 
 		if ( 'latest' === $key ) {
@@ -267,8 +267,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $current_roles as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
-				$debug_export = var_export($role['capabilities'], true);
-				\WP_CLI::error_multi_line($debug_export);
+				$debug_export = var_export( $role['capabilities'], true );
+				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
 				$role['capabilities'] = array();
 			}
@@ -284,8 +284,8 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $backup as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
-				$debug_export = var_export($role['capabilities'], true);
-				\WP_CLI::error_multi_line($debug_export);
+				$debug_export = var_export( $role['capabilities'], true );
+				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
 				$role['capabilities'] = array();
 			}
