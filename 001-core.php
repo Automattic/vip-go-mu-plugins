@@ -37,8 +37,8 @@ function wpcom_vip_disable_core_update_nag() {
 /**
  * Disables action introduced in WordPress 6.3 which, when triggered, will lead
  * to another action being set up which will attempt to clean up a temporary
- * backup directory.The clean up logic will fail on the WordPress VIP platform
- * and is not necessary.
+ * backup directory used during plugin/theme updates. The clean up logic will
+ * fail on the WordPress VIP platform and is not necessary.
  */
 function wpcom_vip_disable_temp_backups_cleanup() {
 	remove_action( 'wp_delete_temp_updater_backups', 'wp_delete_all_temp_backups' );
