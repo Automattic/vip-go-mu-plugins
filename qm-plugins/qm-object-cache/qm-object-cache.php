@@ -29,6 +29,11 @@ add_action( 'plugins_loaded', function() {
 			QM_Collectors::add( new QM_Collector_Object_Cache_Ops() );
 		}
 
+		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-group-stats.php' ) ) {
+			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-group-stats.php';
+			QM_Collectors::add( new QM_Collector_Object_Cache_Group_Stats() );
+		}
+
 		if ( file_exists( __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php' ) ) {
 			require_once __DIR__ . '/collectors/class-qm-collector-object-cache-slow-ops.php';
 			QM_Collectors::add( new QM_Collector_Object_Cache_Slow_Ops() );
@@ -55,6 +60,16 @@ add_action( 'plugins_loaded', function() {
 			$collector = QM_Collectors::get( 'object_cache_ops' );
 			if ( $collector ) {
 				$output['object_cache_ops'] = new QM_Output_Html_Object_Cache_Ops( $collector );
+			}
+		}
+
+		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache-group-stats.php' ) ) {
+			require_once __DIR__ . '/html/class-qm-output-html-object-cache-group-stats.php';
+
+			$collector = QM_Collectors::get( 'object_cache_group_stats' );
+
+			if ( $collector ) {
+				$output['object_cache_group_stats'] = new QM_Output_Html_Object_Cache_Group_Stats( $collector );
 			}
 		}
 

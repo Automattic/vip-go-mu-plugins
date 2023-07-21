@@ -180,6 +180,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 			$this->assertSame( 60 * 5, $lockout );
 			return $lockout;
 		}, 10, 1 );
+		$action_triggered = 0;
+		add_action( 'login_limit_exceeded', function() use ( &$action_triggered ) {
+			$action_triggered++;
+		});
 
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
@@ -190,7 +194,9 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 		$this->assertSame( true, is_wp_error( $result ) );
+		$this->assertSame( 1, $action_triggered );
 	}
+
 	public function test__wpcom_vip_username_is_limited__should_be_limit_even_after_the_event_window() {
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
