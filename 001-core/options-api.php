@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
+
 namespace Automattic\VIP\Core\OptionsAPI;
 
 /**
@@ -9,8 +11,8 @@ namespace Automattic\VIP\Core\OptionsAPI;
  * So by the time this starts filtering, there's already been one occurance of wp_load_alloptions().
  *
  * Here we re-implement most of what core does in wp_load_alloptions(), with some notable adjustments:
- * - 1) Prevent spamming the DB if memcached is unable to add() the key to cache.
- * - 2) (TBD) Kill the request if options cannot be retrieved from the database (or cache).
+ * - 1) Prevent spamming memcached & the DB if memcached is unable to add() the key to cache.
+ * - 2) Kill the request if options cannot be retrieved from the database (or cache).
  */
 add_filter( 'pre_wp_load_alloptions', __NAMESPACE__ . '\pre_wp_load_alloptions_protections', 2, 999 );
 function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cache ) {
@@ -45,9 +47,16 @@ function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cach
 		$alloptions[ $o->option_name ] = $o->option_value;
 	}
 
-	// TODO: Potentially kill the request rather than dangerously continue.
 	if ( empty( $alloptions ) ) {
 		trigger_error( 'VIP: Unable to query alloptions from database.', E_USER_WARNING );
+
+		if ( defined( '_VIP_DIE_ON_ALLOPTIONS_FAILURE' ) && true === constant( '_VIP_DIE_ON_ALLOPTIONS_FAILURE' ) ) {
+			http_response_code( 503 );
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- no need to escape the premade HTML file
+			echo file_get_contents( dirname( __DIR__ ) . '/errors/alloptions-limit.html' );
+			exit;
+		}
+
 		return apply_filters( 'alloptions', apply_filters( 'pre_cache_alloptions', $alloptions ) );
 	}
 
@@ -55,6 +64,11 @@ function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cach
 	$add_result = wp_cache_add( 'alloptions', $alloptions, 'options' );
 
 	if ( false === $add_result && false === wp_cache_get( 'alloptions', 'options', true ) ) {
+		// Prevent memory issues in case something is looping over thousands of subsites.
+		if ( count( $fallback_cache ) > 10 ) {
+			$fallback_cache = [];
+		}
+
 		// Start using the fallback cache if this request both failed to add() to cache, and there is
 		// nothing currently there - indicating there is likely something wrong with the ability to cache alloptions.
 		// Note that this is already the second time the request would have tried.
