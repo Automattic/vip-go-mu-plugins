@@ -25,12 +25,23 @@ if ( false !== WPCOM_IS_VIP_ENV ) {
 
 function wpcom_vip_init_core_restrictions() {
 	add_action( 'admin_init', 'wpcom_vip_disable_core_update_nag' );
+	add_action( 'init', 'wpcom_vip_disable_temp_backups_cleanup' );
 	add_filter( 'map_meta_cap', 'wpcom_vip_disable_core_update_cap', 100, 2 );
 }
 
 function wpcom_vip_disable_core_update_nag() {
 	remove_action( 'admin_notices', 'update_nag', 3 );
 	remove_action( 'network_admin_notices', 'update_nag', 3 );
+}
+
+/**
+ * Disables action introduced in WordPress 6.3 which, when triggered, will lead
+ * to another action being set up which will attempt to clean up a temporary
+ * backup directory.The clean up logic will fail on the WordPress VIP platform
+ * and is not necessary.
+ */
+function wpcom_vip_disable_temp_backups_cleanup() {
+	remove_action( 'wp_delete_temp_updater_backups', 'wp_delete_all_temp_backups' );
 }
 
 function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
