@@ -86,7 +86,7 @@ abstract class Integration {
 	 *
 	 * @var bool
 	 */
-	protected bool $is_active_by_customer = false;
+	protected bool $is_active_via_customer = false;
 
 	/**
 	 * Constructor.
@@ -105,8 +105,8 @@ abstract class Integration {
 	 * @private
 	 */
 	public function activate( array $config = [] ): void {
-		$this->is_active_by_customer = true;
-		$this->customer_config       = $config;
+		$this->is_active_via_customer = true;
+		$this->customer_config        = $config;
 	}
 
 	/**
@@ -117,11 +117,11 @@ abstract class Integration {
 	 * @private
 	 */
 	public function is_active(): bool {
-		if ( $this->is_active_by_customer ) {
+		if ( $this->is_active_via_customer ) {
 			return true;
 		}
 
-		return $this->is_active_by_vip();
+		return $this->is_active_via_vip();
 	}
 
 	/**
@@ -129,7 +129,7 @@ abstract class Integration {
 	 *
 	 * @return bool
 	 */
-	protected function is_active_by_vip(): bool {
+	protected function is_active_via_vip(): bool {
 		$vip_config = $this->get_vip_config_from_file();
 		if ( ! is_array( $vip_config ) ) {
 			return false;

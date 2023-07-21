@@ -42,7 +42,7 @@ class BlockDataApiIntegration extends Integration {
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
-				$this->is_active_by_customer = false;
+				$this->is_active_via_customer = false;
 			}
 		} );
 	}

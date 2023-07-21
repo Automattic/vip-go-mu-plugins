@@ -26,7 +26,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$integrations->activate( 'fake-1' );
 		$integrations->load_active();
 
-		$this->assertTrue( $this->get_is_active_by_customer( $integration_1 ) );
+		$this->assertTrue( $this->get_is_active_via_customer( $integration_1 ) );
 	}
 
 	public function test__load_active_does_not_loads_the_non_activated_integration(): void {
@@ -36,7 +36,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$integrations->register( $integration );
 		$integrations->load_active();
 
-		$this->assertFalse( $this->get_is_active_by_customer( $integration ) );
+		$this->assertFalse( $this->get_is_active_via_customer( $integration ) );
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {
@@ -69,11 +69,11 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Get private property 'is_active_by_customer' from integration object.
+	 * Get private property 'is_active_via_customer' from integration object.
 	 *
 	 * @param Integration $integration Object of the integration.
 	 */
-	private function get_is_active_by_customer( $integration ): bool {
-		return get_class_property_as_public( Integration::class, 'is_active_by_customer' )->getValue( $integration );
+	private function get_is_active_via_customer( $integration ): bool {
+		return get_class_property_as_public( Integration::class, 'is_active_via_customer' )->getValue( $integration );
 	}
 }
