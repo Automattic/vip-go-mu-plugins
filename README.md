@@ -113,13 +113,18 @@ e.g: 20210917.0
 
 Releases are created using GitHub's releases and are effectively a tag in the GitHub repository. Previous releases can be found [here](https://github.com/Automattic/vip-go-mu-plugins/releases/).
 
-To create a new release, please use the `create-release` script. The script requires the [GitHub CLI](https://github.com/cli/cli) to be installed in the computer. It will create the new release, properly tagged and with the expected description.
+To create a new production release:
 
-```
-cd vip-go-mu-plugins
+1. Create a new PR: https://github.com/Automattic/vip-go-mu-plugins/compare/production...staging
+2. Name it `Production release: vYYYYMMDD.0`.
+3. After carefully reviewing and making sure all test have passed, merge it.
+4. The changelog will be generated automatically, and a bot will ping you to proof-read the draft
+5. Any follow-up releases on the same day should increment the last number. E.g. `Production release: vYYYYMMDD.0`
 
-bin/create-release.sh
-```
+To create a new staging release, follow the same steps but name the release `Staging release: vYYYYMMDD.1` (assuming production release has been tagged already.)
+
+https://github.com/Automattic/vip-go-mu-plugins/compare/staging...develop
+
 
 ### Production
 
@@ -130,3 +135,11 @@ bin/create-release.sh
 This is a repo primarily meant for local non-development use.
 
 Every commit merged into `develop` is automatically pushed to the public copy at [Automattic/vip-go-mu-plugins-built](https://github.com/Automattic/vip-go-mu-plugins-built/). This is handled via CI by the [`deploy` action](https://github.com/Automattic/vip-go-mu-plugins/blob/develop/.github/workflows/deploy.yml), which pushes a copy of this repo and expanded submodules.
+
+## Changelog
+
+We use a [script](./ci/changelog-summary.php) to generate changelog entries. This can be debuged by running:
+
+```
+php ci/changelog-summary.php  --debug --dry-run --force --merge-pr 4673 --github-project-username Automattic --github-project-reponame vip-go-mu-plugins
+```
