@@ -8,7 +8,7 @@ namespace Automattic\VIP\Core\OptionsAPI;
  * Add additional protections around the alloptions functionality.
  *
  * Note that there is one (unavoidable) core call to get_option() before this filter is registered (in wp_plugin_directory_constants()),
- * So by the time this starts filtering, there's already been one occurance of wp_load_alloptions().
+ * So by the time this starts filtering, there's already been one occurrence of wp_load_alloptions().
  *
  * Here we re-implement most of what core does in wp_load_alloptions(), with some notable adjustments:
  * - 1) Prevent spamming memcached & the DB if memcached is unable to add() the key to cache.
