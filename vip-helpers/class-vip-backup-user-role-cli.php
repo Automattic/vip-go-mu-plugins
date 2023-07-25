@@ -30,6 +30,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
 			exit;
@@ -85,6 +86,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
 			exit;
@@ -135,6 +137,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
 			exit;
@@ -165,6 +168,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $current_roles as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$debug_export = var_export( $role['capabilities'], true );
 				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
@@ -177,6 +181,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $backup as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$debug_export = var_export( $role['capabilities'], true );
 				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
@@ -236,6 +241,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$backup_roles = get_option( 'vip_backup_user_roles', [] );
 		if ( ! is_array( $backup_roles ) ) {
 			\WP_CLI::warning( 'The option vip_backup_user_roles is not an array, aborting' );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 			$debug_export = var_export( $backup_roles, true );
 			\WP_CLI::error_multi_line( $debug_export );
 			exit;
@@ -267,6 +273,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $current_roles as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$debug_export = var_export( $role['capabilities'], true );
 				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
@@ -284,6 +291,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		foreach ( $backup as $name => $role ) {
 			if ( ! is_array( $role['capabilities'] ) ) {
 				\WP_CLI::warning( 'The role capabilities value is not an array' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 				$debug_export = var_export( $role['capabilities'], true );
 				\WP_CLI::error_multi_line( $debug_export );
 				\WP_CLI::warning( 'Setting to empty array and continuing' );
