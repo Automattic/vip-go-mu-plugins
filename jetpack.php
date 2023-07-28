@@ -121,6 +121,30 @@ function vip_jetpack_token_send_signature_error_headers( $error ) {
 
 add_action( 'jetpack_verify_signature_error', 'vip_jetpack_token_send_signature_error_headers' );
 
+
+/**
+ * Disable the AI Assistant until the issues are resolved
+ *
+ * @param array $extensions available extensions to load
+ * @return array filtered extensions
+ */
+function vip_set_available_jetpack_extensions( $extensions ) {
+	if ( ! is_array( $extensions ) ) {
+		return $extensions;
+	}
+
+	$ai_ext_index = array_search( 'ai-assistant', $extensions, true );
+	if ( false !== $ai_ext_index ) {
+		unset( $extensions[ $ai_ext_index ] );
+		// Re-index the array so that there won't be json_encode mix up between array and object
+		$extensions = array_values( $extensions );
+	}
+
+	return $extensions;
+}
+
+add_action( 'jetpack_set_available_extensions', 'vip_set_available_jetpack_extensions', 0 );
+
 /**
  * Load the jetpack plugin according to several defines:
  * - If VIP_JETPACK_SKIP_LOAD is true, Jetpack will not be loaded
