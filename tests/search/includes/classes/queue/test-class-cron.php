@@ -271,7 +271,7 @@ class Cron_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_configure_concurrency( $cron_limit, $expected ) {
-		define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
+		\define( 'Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT', $cron_limit );
 
 		$result = $this->cron->configure_concurrency( [] );
 
