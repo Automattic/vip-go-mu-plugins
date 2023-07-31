@@ -16,7 +16,7 @@ class Cron {
 	/**
 	 * How many objects to re-index at a time in a single cron job
 	 */
-	const PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT = 1000;
+	const PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT = 500;
 
 	/**
 	 * The name of the recurring cron event that checks for any unscheduled or deadlocked jobs
@@ -89,6 +89,10 @@ class Cron {
 	}
 
 	public function get_max_concurrent_processor_job_count() {
+		if ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'production' ) {
+			return 1;
+		}
+
 		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
 		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
 	}
