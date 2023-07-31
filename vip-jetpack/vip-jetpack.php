@@ -784,7 +784,7 @@ add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX,
  * @return array filtered extensions
  */
 function vip_set_available_jetpack_extensions( $extensions ) {
-	if ( ! is_array( $extensions ) ) {
+	if ( ! is_array( $extensions ) || ! is_admin() || wp_doing_ajax() ) {
 		return $extensions;
 	}
 
