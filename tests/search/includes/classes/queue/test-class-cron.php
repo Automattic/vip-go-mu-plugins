@@ -17,6 +17,10 @@ class Cron_Test extends WP_UnitTestCase {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}
 
+		if ( ! defined( 'VIP_GO_ENV' ) ) {
+			define( 'VIP_GO_ENV', 'production' );
+		}
+
 		require_once __DIR__ . '/../../../../../search/search.php';
 
 		$this->es = Search::instance();
