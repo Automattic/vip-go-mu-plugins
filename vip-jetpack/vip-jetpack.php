@@ -790,6 +790,18 @@ function vip_set_available_jetpack_extensions( $extensions ) {
 
 	$ai_ext_index = array_search( 'ai-assistant', $extensions, true );
 	if ( false !== $ai_ext_index ) {
+		if ( method_exists( 'Jetpack', 'connection' ) && defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
+			$jp_connection = Jetpack::connection();
+
+			if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
+				$owner = $jp_connection->get_connection_owner();
+
+				if ( $owner && WPCOM_VIP_MACHINE_USER_LOGIN !== $owner->user_login ) {
+					return $extensions;
+				}
+			}
+		}
+
 		unset( $extensions[ $ai_ext_index ] );
 		// Re-index the array so that there won't be json_encode mix up between array and object
 		$extensions = array_values( $extensions );
