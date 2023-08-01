@@ -113,13 +113,18 @@ e.g: 20210917.0
 
 Releases are created using GitHub's releases and are effectively a tag in the GitHub repository. Previous releases can be found [here](https://github.com/Automattic/vip-go-mu-plugins/releases/).
 
-To create a new release, please use the `create-release` script. The script requires the [GitHub CLI](https://github.com/cli/cli) to be installed in the computer. It will create the new release, properly tagged and with the expected description.
+To create a new production release:
 
-```
-cd vip-go-mu-plugins
+1. Create a new PR: https://github.com/Automattic/vip-go-mu-plugins/compare/production...staging
+2. Name it `Production release: vYYYYMMDD.0`.
+3. After carefully reviewing and making sure all test have passed, merge it.
+4. The changelog will be generated automatically, and a bot will ping you to proof-read the draft
+5. Any follow-up releases on the same day should increment the last number. E.g. `Production release: vYYYYMMDD.0`
 
-bin/create-release.sh
-```
+To create a new staging release, follow the same steps but name the release `Staging release: vYYYYMMDD.1` (assuming production release has been tagged already.)
+
+https://github.com/Automattic/vip-go-mu-plugins/compare/staging...develop
+
 
 ### Production
 
