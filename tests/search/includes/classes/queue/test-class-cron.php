@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Search\Queue;
 
+use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Search\Queue;
 use Automattic\VIP\Search\Queue\Cron;
 use Automattic\VIP\Search\Search;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -12,7 +14,15 @@ class Cron_Test extends WP_UnitTestCase {
 	/** @var Search */
 	private $es;
 
+	/** @var Queue */
+	private $queue;
+
+	/** @var Cron */
+	private $cron;
+
 	public function setUp(): void {
+		Constant_Mocker::clear();
+
 		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
 			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 		}
@@ -33,6 +43,11 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->queue->empty_queue();
 
 		$this->cron = $this->queue->cron;
+	}
+
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
 	}
 
 	public function test_filter_cron_schedules() {
