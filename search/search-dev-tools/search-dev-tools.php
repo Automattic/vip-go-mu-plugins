@@ -108,7 +108,7 @@ function should_enable_search_dev_tools(): bool {
  * Make sure QM is enabled if Dev Tools are enabled. QM is dependecy for Dev Tools.
  */
 function enforce_query_monitor( $enabled ) {
-	if ( $enabled || ! should_enable_search_dev_tools()) {
+	if ( $enabled || ! should_enable_search_dev_tools() ) {
 		return $enabled;
 	}
 
