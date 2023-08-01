@@ -47,7 +47,7 @@ describe('User Indexable', () => {
 		cy.searchDevToolsResponseOK('"user_email": "testuser@example.com"'); // VIP: Use Search Dev Tools over Debug Bar
 
 		// Test if the user is still found a reindex.
-		cy.wpCli('vip-search index --setup --skip-confirm').its('stdout').should('contain', 'Number of users indexed: 2'); // VIP: There were 3 users from the WooCommerce test. Now there are two.
+		cy.wpCli('vip-search index --setup --skip-confirm').its('stdout').should('contain', 'Number of users indexed: 3'); // VIP: There were 3 users from the WooCommerce test.
 
 		searchUser();
 
