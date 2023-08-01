@@ -25,6 +25,7 @@ add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_filter( 'js_do_concat', __NAMESPACE__ . '\skip_js_do_concat', 10, 2 );
 add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 );
 add_action( 'admin_footer', __NAMESPACE__ . '\print_data', 5 );
+add_filter( 'wpcom_vip_qm_enable', __NAMESPACE__ . '\enforce_query_monitor', 10 );
 
 /**
  * Register Dev Tools Endpoint.
@@ -100,7 +101,18 @@ function rest_callback( \WP_REST_Request $request ) {
  * @return boolean
  */
 function should_enable_search_dev_tools(): bool {
-	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
+	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() );
+}
+
+/**
+ * Make sure QM is enabled if Dev Tools are enabled. QM is dependecy for Dev Tools.
+ */
+function enforce_query_monitor( $enabled ) {
+	if ( $enabled || ! should_enable_search_dev_tools()) {
+		return $enabled;
+	}
+
+	return true;
 }
 
 /**
