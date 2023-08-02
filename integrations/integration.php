@@ -155,9 +155,9 @@ abstract class Integration {
 			
 			// Setup config and return true If enabled on network site.
 			if ( Site_Integration_Status::ENABLED === $network_site_status ) {
-				$have_config = $this->get_vip_config_of_current_network_site() !== '';
+				$have_network_config = $this->get_vip_config_of_current_network_site() !== '';
 
-				if ( $have_config ) {
+				if ( $have_network_config ) {
 					$this->setup_config();
 				}
 
@@ -172,9 +172,9 @@ abstract class Integration {
 
 		// Return true if enabled on site.
 		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			$have_config = $this->get_vip_config_of_site() !== '';
+			$have_site_config = $this->get_vip_config_of_site() !== '';
 
-			if ( $have_config ) {
+			if ( $have_site_config ) {
 				$this->setup_config();
 			}
 
