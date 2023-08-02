@@ -25,8 +25,9 @@ if ( false !== WPCOM_IS_VIP_ENV ) {
 
 function wpcom_vip_init_core_restrictions() {
 	add_action( 'admin_init', 'wpcom_vip_disable_core_update_nag' );
-	add_action( 'init', 'wpcom_vip_disable_temp_backups_cleanup' );
 	add_filter( 'map_meta_cap', 'wpcom_vip_disable_core_update_cap', 100, 2 );
+
+	wpcom_vip_disable_temp_backups_cleanup();
 }
 
 function wpcom_vip_disable_core_update_nag() {
