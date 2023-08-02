@@ -25,11 +25,9 @@ class BlockDataApiIntegration extends Integration {
 	/**
 	 * Applies hooks to load Block Data API plugin.
 	 *
-	 * @param array $config Configuration array for this integration.
-	 *
 	 * @private
 	 */
-	public function load( array $config ): void {
+	public function load(): void {
 		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
 		add_action( 'plugins_loaded', function() {
 			// Do not load plugin if already loaded by customer code.
@@ -42,16 +40,8 @@ class BlockDataApiIntegration extends Integration {
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
-				$this->is_active_via_customer = false;
+				$this->is_active = false;
 			}
 		} );
 	}
-
-	/**
-	 * Empty implementation of an abstract method which indicates that this
-	 * integration doesn't have any config which needs setup.
-	 *
-	 * @return  void
-	 */
-	public function setup_config(): void { }
 }

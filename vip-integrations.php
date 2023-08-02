@@ -14,6 +14,8 @@ defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integrations.php';
+require_once __DIR__ . '/integrations/enums.php';
+require_once __DIR__ . '/integrations/integration-vip-config.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 
@@ -24,8 +26,8 @@ IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' )
 /**
  * Activates an integration with an optional configuration value.
  *
- * @param string $slug A unique identifier for the integration.
- * @param array  $config An associative array of configuration values for the integration.
+ * @param string              $slug A unique identifier for the integration.
+ * @param array<string,mixed> $config An associative array of configuration values for the integration.
  */
 function activate( string $slug, array $config = [] ): void {
 	IntegrationsSingleton::instance()->activate( $slug, $config );
@@ -34,6 +36,7 @@ function activate( string $slug, array $config = [] ): void {
 // Load integrations in muplugins_loaded:5 to allow integrations to hook
 // muplugins_loaded:10 or any later action.
 add_action( 'muplugins_loaded', function() {
+	IntegrationsSingleton::instance()->activate_integrations_via_vip_config();
 	IntegrationsSingleton::instance()->load_active();
 }, 5 );
 

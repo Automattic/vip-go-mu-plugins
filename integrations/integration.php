@@ -7,30 +7,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-use InvalidArgumentException;
-
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- Disabling due to enums.
-
-/**
- * Enum which represent all possible statuses for the client integration via VIP.
- *
- * These should be in sync with the statuses available on the backend.
- */
-abstract class Client_Integration_Status {
-	const BLOCKED = 'blocked';
-}
-
-/**
- * Enum which represent all possible statuses for the site integration via VIP.
- *
- * These should be in sync with the statuses available on the backend.
- */
-abstract class Site_Integration_Status {
-	const ENABLED  = 'enabled';
-	const DISABLED = 'disabled';
-	const BLOCKED  = 'blocked';
-}
-
 /**
  * Abstract base class for all integration implementations.
  *
@@ -49,44 +25,14 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	private array $customer_config = [];
+	private array $config = [];
 
 	/**
-	 * Configuration provided by VIP for setting up the integration on platform.
-	 *
-	 * @var array {
-	 *   'client'        => array<string, string>,
-	 *   'site'          => array<string, mixed>,
-	 *   'network_sites' => array<string, array<string, mixed>>,
-	 * }
-	 *
-	 * @example
-	 * array(
-	 *  'client'        => array( 'status' => 'blocked' ),
-	 *  'site'          => array(
-	 *      'status' => 'enabled',
-	 *      'config'  => array(),
-	 *   ),
-	 *  'network_sites' => array (
-	 *      1 => array (
-	 *          'status' => 'disabled',
-	 *          'config'  => array(),
-	 *      ),
-	 *      2 => array (
-	 *          'status' => 'enabled',
-	 *          'config'  => array(),
-	 *      ),
-	 *  )
-	 * );
-	 */
-	private array $vip_config = [];
-
-	/**
-	 * A boolean indicating if this integration is activated by customer.
+	 * A boolean indicating if this integration is activated.
 	 *
 	 * @var bool
 	 */
-	protected bool $is_active_via_customer = false;
+	protected bool $is_active = false;
 
 	/**
 	 * Constructor.
@@ -105,8 +51,8 @@ abstract class Integration {
 	 * @private
 	 */
 	public function activate( array $config = [] ): void {
-		$this->is_active_via_customer = true;
-		$this->customer_config        = $config;
+		$this->is_active = true;
+		$this->config    = $config;
 	}
 
 	/**
@@ -117,150 +63,18 @@ abstract class Integration {
 	 * @private
 	 */
 	public function is_active(): bool {
-		if ( $this->is_active_via_customer ) {
-			return true;
-		}
-
-		return $this->is_active_via_vip();
+		return $this->is_active;
 	}
 
 	/**
-	 * Returns true and passed available config if the integration is active by VIP.
-	 *
-	 * @return bool
-	 */
-	protected function is_active_via_vip(): bool {
-		$vip_config = $this->get_vip_config_from_file();
-		if ( ! is_array( $vip_config ) ) {
-			return false;
-		}
-
-		$this->vip_config = $vip_config;
-
-		// Return false if blocked on client.
-		if ( $this->get_value_from_vip_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
-			return false;
-		}
-
-		$site_status = $this->get_value_from_vip_config( 'site', 'status' );
-
-		// Return false if blocked on site.
-		if ( Site_Integration_Status::BLOCKED === $site_status ) {
-			return false;
-		}
-
-		// If network site then look in network_sites config.
-		if ( is_multisite() ) {
-			$network_site_status = $this->get_value_from_vip_config( 'network_sites', 'status' );
-			
-			// Setup config and return true If enabled on network site.
-			if ( Site_Integration_Status::ENABLED === $network_site_status ) {
-				$have_network_config = $this->get_vip_config_of_current_network_site() !== '';
-
-				if ( $have_network_config ) {
-					$this->setup_config();
-				}
-
-				return true;
-			}
-
-			// Return false if status is not enabled but defined. If not defined then look in site config.
-			if ( '' !== $network_site_status ) {
-				return false;
-			}
-		}
-
-		// Return true if enabled on site.
-		if ( Site_Integration_Status::ENABLED === $site_status ) {
-			$have_site_config = $this->get_vip_config_of_site() !== '';
-
-			if ( $have_site_config ) {
-				$this->setup_config();
-			}
-
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Get site config provided by VIP.
-	 *
-	 * @return null|mixed
-	 */
-	protected function get_vip_config_of_site() {
-		return $this->get_value_from_vip_config( 'site', 'config' );
-	}
-
-	/**
-	 * Get config of the current network site provided by VIP.
-	 *
-	 * @return null|mixed
-	 */
-	protected function get_vip_config_of_current_network_site() {
-		return $this->get_value_from_vip_config( 'network_sites', 'config' );
-	}
-
-	/**
-	 * Get config provided by VIP from file.
-	 *
-	 * @return null|mixed
-	 */
-	protected function get_vip_config_from_file() {
-		$config_file_path = ABSPATH . 'config/integrations-config/' . $this->slug . '-config.php';
-
-		if ( ! is_readable( $config_file_path ) ) {
-			return null;
-		}
-
-		return require_once $config_file_path;
-	}
-
-	/**
-	 * Get config value based on given type and key.
-	 *
-	 * @param string $config_type Type of the config whose data is needed i.e. client, site, network-sites etc.
-	 * @param string $key Key of the config from which we have to extract the data.
-	 *
-	 * @return string|array
-	 *
-	 * @throws InvalidArgumentException Exception if invalid argument is passed.
-	 */
-	protected function get_value_from_vip_config( string $config_type, string $key ) {
-		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
-			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
-		}
-
-		if ( ! isset( $this->vip_config[ $config_type ] ) ) {
-			return '';
-		}
-
-		// Look for key inside client or site config.
-		if ( 'network_sites' !== $config_type && isset( $this->vip_config[ $config_type ][ $key ] ) ) {
-			return $this->vip_config[ $config_type ][ $key ];
-		}
-
-		// Look for key inside network-sites config.
-		$blog_id = get_current_blog_id();
-		if ( 'network_sites' === $config_type && isset( $this->vip_config[ $config_type ][ $blog_id ] ) ) {
-			if ( isset( $this->vip_config[ $config_type ][ $blog_id ][ $key ] ) ) {
-				return $this->vip_config[ $config_type ][ $blog_id ][ $key ];
-			}
-		}
-
-		return '';
-	}
-
-	/**
-	 * Return the customer configuration for this integration.
+	 * Return the configuration for this integration.
 	 *
 	 * @return array<mixed>
 	 *
 	 * @private
 	 */
-	public function get_customer_config(): array {
-		return $this->customer_config;
+	public function get_config(): array {
+		return $this->config;
 	}
 
 	/**
@@ -279,20 +93,9 @@ abstract class Integration {
 	 * the implementation should hook into plugins_loaded and check if 
 	 * the plugin is already loaded first.
 	 *
-	 * @param array $config Configuration for this integration.
-	 *
 	 * @return void
 	 *
 	 * @private
 	 */
-	abstract public function load( array $config ): void;
-
-	/**
-	 * Implements functionality for setting up the config on a site or network site.
-	 *
-	 * @return void
-	 *
-	 * @private
-	 */
-	abstract public function setup_config(): void;
+	abstract public function load(): void;
 }

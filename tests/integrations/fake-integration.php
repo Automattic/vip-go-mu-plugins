@@ -11,7 +11,5 @@ namespace Automattic\VIP\Integrations;
 
 class FakeIntegration extends Integration {
 
-	public function load( array $config ): void { }
-
-	public function setup_config(): void {}
+	public function load(): void { }
 }
