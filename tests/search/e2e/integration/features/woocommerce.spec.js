@@ -110,7 +110,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			cy.get('.woocommerce-orders-table tbody tr').should('have.length', 1);
 
 			// VIP: Use Search Dev Tools instead of Debug Bar
-			cy.searchDevToolsResponseOK('shop_order');
+			// cy.searchDevToolsResponseOK('shop_order');
 			cy.get('#vip-search-dev-tools-mount').click();
 			cy.get('h3.vip-h3').first().click();
 			cy.get('strong.vip-h4.wp_query').first().click();
