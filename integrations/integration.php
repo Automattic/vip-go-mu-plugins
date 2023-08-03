@@ -30,7 +30,7 @@ abstract class Integration {
 	private array $config = [];
 
 	/**
-	 * A boolean indicating if this integration is activated.
+	 * A boolean indicating if this integration should be loaded. Defaults to false.
 	 *
 	 * @var bool
 	 */
@@ -66,8 +66,6 @@ abstract class Integration {
 	/**
 	 * Returns true if this integration has been activated.
 	 *
-	 * @return bool
-	 *
 	 * @private
 	 */
 	public function is_active(): bool {
@@ -77,7 +75,7 @@ abstract class Integration {
 	/**
 	 * Return the configuration for this integration.
 	 *
-	 * @return array<mixed>
+	 * @return array<string,array>
 	 *
 	 * @private
 	 */
@@ -100,8 +98,6 @@ abstract class Integration {
 	 * For plugins / integrations that can be added to customer repos, 
 	 * the implementation should hook into plugins_loaded and check if 
 	 * the plugin is already loaded first.
-	 *
-	 * @return void
 	 *
 	 * @private
 	 */
