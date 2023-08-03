@@ -14,15 +14,6 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
-	public function test_all_necessary_code_is_getting_imported_by_require_statements(): void {
-		$this->assertFileExists( __DIR__ . '/../integrations/integrations.php' );
-		$this->assertFileExists( __DIR__ . '/../integrations/integrations.php' );
-		$this->assertFileExists( __DIR__ . '/../integrations/enums.php' );
-		$this->assertFileExists( __DIR__ . '/../integrations/integration-config.php' );
-		$this->assertFileExists( __DIR__ . '/../integrations/block-data-api.php' );
-		$this->assertFileExists( __DIR__ . '/../integrations/parsely.php' );
-	}
-
 	public function test_activate_function_is_calling_the_activate_method_from_integrations_class(): void {
 		$integrations_mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'activate' ] )->getMock();
 		$integrations_mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );

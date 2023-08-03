@@ -14,6 +14,8 @@ use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
@@ -45,6 +47,14 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$this->assertTrue( $integration_2->is_active() );
 		$this->assertEquals( [ 'vip-configs' ], $integration_2->get_config() );
 		$this->assertFalse( $integration_3->is_active() );
+	}
+
+	public function test__get_integration_config_returns_instance_of_IntegrationConfig(): void {
+		$integrations = new Integrations();
+
+		$integration_config = get_class_method_as_public( Integrations::class, 'get_integration_config' )->invoke( $integrations, 'slug' );
+
+		$this->assertInstanceOf( IntegrationConfig::class, $integration_config );
 	}
 
 	public function test__load_active_loads_the_activated_integration(): void {
