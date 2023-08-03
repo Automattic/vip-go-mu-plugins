@@ -67,7 +67,7 @@ class Integrations {
 				continue;
 			}
 
-			$vip_config = new IntegrationVipConfig( $slug );
+			$vip_config = new IntegrationConfig( $slug );
 
 			if ( $vip_config->is_active_via_vip() ) {
 				$this->activate( $slug, $vip_config->get_site_config() );

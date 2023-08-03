@@ -1,6 +1,6 @@
 <?php
 /**
- * IntegrationVipConfig.
+ * IntegrationConfig.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -16,7 +16,7 @@ use Site_Integration_Status;
  *
  * @private
  */
-class IntegrationVipConfig {
+class IntegrationConfig {
 	/**
 	 * Configuration of the integration provided by VIP.
 	 *
