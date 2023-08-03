@@ -1,6 +1,6 @@
 <?php
 /**
- * IntegrationConfig.
+ * Integration Configuration.
  *
  * @package Automattic\VIP\Integrations
  */

@@ -1,6 +1,6 @@
 <?php
 /**
- * Integration: Parse.ly
+ * Integration: Parse.ly.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -30,8 +30,13 @@ class ParselyIntegration extends Integration {
 		// the plugin).
 		define( 'VIP_PARSELY_ENABLED', true );
 
-		add_filter( 'wp_parsely_credentials', function() {
-			return $this->get_config();
-		} );
+		add_filter( 'wp_parsely_credentials', array( $this, 'wp_parsely_credentials_callback' ) );
+	}
+
+	/**
+	 * Callback for `wp_parsely_credentials` filter.
+	 */
+	protected function wp_parsely_credentials_callback(): array {
+		return $this->get_config();
 	}
 }
