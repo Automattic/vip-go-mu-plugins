@@ -497,11 +497,10 @@ class Search {
 	 */
 	protected function maybe_enable_ep_query_logging() {
 		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_query_monitor_enabled' ] );
-		add_action( 'plugins_loaded', [ $this, 'load_ep_debug_bar_panel' ] );
+		add_action( 'plugins_loaded', [ $this, 'load_ep_get_query_log_function' ] );
 	}
 
-	public function load_ep_debug_bar_panel() {
-		// Load query log override function to remove Authorization header from requests
+	public function load_ep_get_query_log_function() {
 		require_once __DIR__ . '/../functions/ep-get-query-log.php';
 	}
 
