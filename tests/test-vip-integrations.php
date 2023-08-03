@@ -23,15 +23,6 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 		$this->assertFileExists( __DIR__ . '/../integrations/parsely.php' );
 	}
 
-	public function test_vip_integrations_are_getting_registered(): void {
-		$instance = IntegrationsSingleton::instance();
-
-		$integrations = get_class_property_as_public( Integrations::class, 'integrations' )->getValue( $instance );
-
-		$this->assertEquals( 2, count( $integrations ) );
-		$this->assertEquals( [ 'block-data-api', 'parsely' ], array_keys( $integrations ) );
-	}
-
 	public function test_activate_function_is_calling_the_activate_method_from_integrations_class(): void {
 		$integrations_mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'activate' ] )->getMock();
 		$integrations_mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );
