@@ -11,11 +11,42 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 use InvalidArgumentException;
+use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
 
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
+	public function test__integrations_are_activating_based_on_given_vip_config(): void {
+		$config_mock = $this->getMockBuilder( IntegrationConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
+		$config_mock->expects( $this->exactly( 2 ) )->method( 'is_active_via_vip' )->willReturnOnConsecutiveCalls( true, false );
+		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_site_config' )->willReturnOnConsecutiveCalls( [ 'vip-configs' ] );
+
+		/**
+		 * Integrations mock.
+		 *
+		 * @var MockObject|Integrations
+		 */
+		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'get_integration_config' ] )->getMock();
+		$mock->expects( $this->any() )->method( 'get_integration_config' )->willReturn( $config_mock );
+
+		$integration_1 = new FakeIntegration( 'fake-1' );
+		$integration_2 = new FakeIntegration( 'fake-2' );
+		$integration_3 = new FakeIntegration( 'fake-3' );
+		$mock->register( $integration_1 );
+		$mock->register( $integration_2 );
+		$mock->register( $integration_3 );
+		$mock->activate( 'fake-1', [ 'customer-configs' ] );
+
+		$mock->activate_integrations_via_vip_config();
+
+		$this->assertTrue( $integration_1->is_active() );
+		$this->assertEquals( [ 'customer-configs' ], $integration_1->get_config() );
+		$this->assertTrue( $integration_2->is_active() );
+		$this->assertEquals( [ 'vip-configs' ], $integration_2->get_config() );
+		$this->assertFalse( $integration_3->is_active() );
+	}
+
 	public function test__load_active_loads_the_activated_integration(): void {
 		$integrations = new Integrations();
 

@@ -67,12 +67,23 @@ class Integrations {
 				continue;
 			}
 
-			$vip_config = new IntegrationConfig( $slug );
+			$vip_config = $this->get_integration_config( $slug );
 
 			if ( $vip_config->is_active_via_vip() ) {
 				$this->activate( $slug, $vip_config->get_site_config() );
 			}
 		}
+	}
+
+	/**
+	 * Get IntegrationConfig instance (having this a separate method for mocking in tests).
+	 *
+	 * @param string $slug A unique identifier for the integration.
+	 *
+	 * @return IntegrationConfig
+	 */
+	protected function get_integration_config( string $slug ): IntegrationConfig {
+		return new IntegrationConfig( $slug );
 	}
 
 	/**
