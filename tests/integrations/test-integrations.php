@@ -21,7 +21,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 
 		$integration = new FakeIntegration( 'fake' );
 		$integrations->register( $integration );
-		$integrations->activate( 'fake-1' );
+		$integrations->activate( 'fake' );
 		$integrations->load_active();
 
 		$this->assertTrue( $integration->is_active() );
