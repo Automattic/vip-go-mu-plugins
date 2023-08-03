@@ -18,7 +18,7 @@ use Site_Integration_Status;
  */
 class IntegrationConfig {
 	/**
-	 * Configuration of the integration provided by VIP.
+	 * Configuration provided by VIP.
 	 *
 	 * @var array {
 	 *   'client'        => array<string, string>,
@@ -53,7 +53,7 @@ class IntegrationConfig {
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
-		$this->set_vip_config( $slug );
+		$this->set_config( $slug );
 	}
 
 	/**
@@ -61,7 +61,7 @@ class IntegrationConfig {
 	 *
 	 * @param string $slug A unique identifier for the integration.
 	 */
-	private function set_vip_config( string $slug ): void {
+	private function set_config( string $slug ): void {
 		$config = $this->get_vip_config_from_file( $slug );
 
 		if ( ! is_array( $config ) ) {
@@ -115,8 +115,8 @@ class IntegrationConfig {
 			return true;
 		}
 
-		// Return false if status is defined but not enabled. If status not defined then look in site config.
-		if ( '' !== $network_site_status ) {
+		// Return false if status is defined but other than enabled. If status is not defined then fallback to site config.
+		if ( null !== $network_site_status ) {
 			return false;
 		}
 

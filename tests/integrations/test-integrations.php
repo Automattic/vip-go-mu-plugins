@@ -13,20 +13,18 @@ use WP_UnitTestCase;
 use InvalidArgumentException;
 use stdClass;
 
-use function Automattic\Test\Utils\get_class_property_as_public;
-
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_active_loads_the_activated_integration(): void {
 		$integrations = new Integrations();
 
-		$integration_1 = new FakeIntegration( 'fake-1' );
-		$integrations->register( $integration_1 );
+		$integration = new FakeIntegration( 'fake' );
+		$integrations->register( $integration );
 		$integrations->activate( 'fake-1' );
 		$integrations->load_active();
 
-		$this->assertTrue( $this->get_is_active_via_customer( $integration_1 ) );
+		$this->assertTrue( $integration->is_active() );
 	}
 
 	public function test__load_active_does_not_loads_the_non_activated_integration(): void {
@@ -36,7 +34,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$integrations->register( $integration );
 		$integrations->load_active();
 
-		$this->assertFalse( $this->get_is_active_via_customer( $integration ) );
+		$this->assertFalse( $integration->is_active() );
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {
@@ -66,14 +64,5 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 
 		$integrations->register( $integration );
 		$integrations->activate( 'invalid-slug' );
-	}
-
-	/**
-	 * Get private property 'is_active_via_customer' from integration object.
-	 *
-	 * @param Integration $integration Object of the integration.
-	 */
-	private function get_is_active_via_customer( $integration ): bool {
-		return get_class_property_as_public( Integration::class, 'is_active_via_customer' )->getValue( $integration );
 	}
 }
