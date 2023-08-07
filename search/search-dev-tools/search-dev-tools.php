@@ -100,7 +100,7 @@ function rest_callback( \WP_REST_Request $request ) {
  * @return boolean
  */
 function should_enable_search_dev_tools(): bool {
-	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() );
+	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
 }
 
 /**
