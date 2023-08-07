@@ -9,13 +9,15 @@ class Queue {
 	const CACHE_GROUP                     = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
-	const MAX_BATCH_SIZE = 1000;
+	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
 	/** @var Queue\Schema */
 	public $schema;
 	public $indexables;
 	public $logger;
+	/** @var Queue\Cron */
+	public $cron;
 
 	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
@@ -929,6 +931,7 @@ class Queue {
 						'extra'    => [
 							'homeurl'    => home_url(),
 							'index_name' => $indexable->get_index_name(),
+							'count'      => count( $ids ),
 						],
 					]
 				);
