@@ -776,38 +776,3 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file, $plugin_
 	return $plugin_meta;
 }
 add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 4 );
-
-/**
- * Disable the AI Assistant until the issues are resolved
- *
- * @param array $extensions available extensions to load
- * @return array filtered extensions
- */
-function vip_set_available_jetpack_extensions( $extensions ) {
-	if ( ! is_array( $extensions ) || ! is_admin() || wp_doing_ajax() ) {
-		return $extensions;
-	}
-
-	$ai_ext_index = array_search( 'ai-assistant', $extensions, true );
-	if ( false !== $ai_ext_index ) {
-		if ( method_exists( 'Jetpack', 'connection' ) && defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
-			$jp_connection = Jetpack::connection();
-
-			if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
-				$owner = $jp_connection->get_connection_owner();
-
-				if ( $owner && WPCOM_VIP_MACHINE_USER_LOGIN !== $owner->user_login ) {
-					return $extensions;
-				}
-			}
-		}
-
-		unset( $extensions[ $ai_ext_index ] );
-		// Re-index the array so that there won't be json_encode mix up between array and object
-		$extensions = array_values( $extensions );
-	}
-
-	return $extensions;
-}
-
-add_filter( 'jetpack_set_available_extensions', 'vip_set_available_jetpack_extensions', 0 );
