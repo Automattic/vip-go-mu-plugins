@@ -4,8 +4,8 @@ const LAST_SEEN_UPDATE_USER_META_CACHE_TTL = 60; // Store last seen once per min
 const LAST_SEEN_UPDATE_USER_META_CACHE_KEY_PREFIX = 'vip_last_seen_update_user_meta_cache_key';
 
 add_action( 'set_current_user', 'update_user_last_seen', 10, 0 );
-add_filter ('manage_users_columns', 'users_columns' ) ;
-add_filter ('manage_users_custom_column', 'users_custom_column', 10, 3 ) ;
+add_filter('manage_users_columns', 'users_columns' ) ;
+add_filter('manage_users_custom_column', 'users_custom_column', 10, 3 ) ;
 
 function update_user_last_seen() {
 	global $current_user;
@@ -28,12 +28,12 @@ function update_user_last_seen() {
 	}
 }
 
-function users_columns ($cols) {
+function users_columns($cols) {
 	$cols['last_seen'] = __( 'Last seen' ) ;
 	return $cols;
 }
 
-function users_custom_column ( $default, $column_name, $user_id ) {
+function users_custom_column( $default, $column_name, $user_id ) {
 	if ( 'last_seen' == $column_name ) {
 		$last_seen_timestamp = get_user_meta( $user_id, 'vip_last_seen', true );
 
