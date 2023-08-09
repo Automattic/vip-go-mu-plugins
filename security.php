@@ -16,6 +16,10 @@ require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
 
+if ( defined( 'VIP_USER_LAST_SEEN_ENABLED' ) ) {
+	require_once __DIR__ . '/security/user-last-seen.php';
+}
+
 use Automattic\VIP\Utils\Context;
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'vip_login_limit' );
