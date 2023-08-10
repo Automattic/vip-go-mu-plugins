@@ -137,7 +137,7 @@ class Connection_Pilot {
 		}
 
 		// JP is not connected, attempt reconnection if allowed.
-		if ( self::should_attempt_reconnection( $is_connected ) ) {
+		if ( $this->should_attempt_reconnection( $is_connected ) ) {
 			$this->reconnect( $is_connected );
 		}
 	}
@@ -315,7 +315,7 @@ class Connection_Pilot {
 	 *
 	 * @return bool True if a reconnect should be attempted
 	 */
-	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
+	private function should_attempt_reconnection( \WP_Error $error = null ): bool {
 		// 1) Handle specific errors where we don't want reconnection attempts.
 		if ( is_wp_error( $error ) ) {
 			switch ( $error->get_error_code() ) {
