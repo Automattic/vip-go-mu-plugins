@@ -169,7 +169,7 @@ class Controls {
 	 *
 	 * @return mixed bool|WP_Error True if Akisment had a connection or was (re)connected, WP_Error otherwise.
 	 */
-	public static function connect_akismet(): bool {
+	public static function connect_akismet() {
 		if ( ! class_exists( 'Akismet_Admin' ) || ! method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) || ! function_exists( 'is_akismet_key_invalid' ) ) {
 			return new WP_Error( 'jp-cxn-pilot-akismet-dependencies-missing', 'Akismet is missing required functions/methods to perform the connection.' );
 		}
