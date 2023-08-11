@@ -154,7 +154,7 @@ class Connection_Pilot {
 
 		$prev_connection_error_message = '';
 		if ( is_wp_error( $prev_connection_error ) ) {
-			$prev_connection_error_message = sprintf( ' Initial connection check error: [%s] %s.', $prev_connection_error->get_error_code(), $prev_connection_error->get_error_message() );
+			$prev_connection_error_message = sprintf( ' Initial connection check error: [%s] %s', $prev_connection_error->get_error_code(), $prev_connection_error->get_error_message() );
 		}
 
 		if ( true === $connection_attempt ) {
@@ -270,6 +270,10 @@ class Connection_Pilot {
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
 				gmdate( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
 			);
+		}
+
+		if ( isset( $last_heartbeat['backoff_factor'] ) && $last_heartbeat['backoff_factor'] > 0 ) {
+			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
 		}
 
 		if ( is_wp_error( $wp_error ) ) {
