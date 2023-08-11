@@ -34,7 +34,12 @@ class Post_Stats_Collector implements CollectorInterface {
 
 		foreach ( $metrics as $type => $metric ) {
 			foreach ( $metric as $status => $count ) {
-				$this->post_gauge->set( $count, [ $this->blog_id, $type, $status ] );
+				try {
+					$this->post_gauge->set( $count, [ $this->blog_id, $type, $status ] );
+				} catch ( \TypeError $ex ) {
+					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+					trigger_error( 'Prometheus: metric collection exception: ' . $ex->getMessage(), E_USER_WARNING );
+				}
 			}
 		}
 	}
@@ -58,7 +63,9 @@ class Post_Stats_Collector implements CollectorInterface {
 			$posts        = wp_count_posts( $type );
 			$ret[ $type ] = [];
 			foreach ( $posts as $status => $count ) {
-				$ret[ $type ][ $status ] = $count;
+				if ( is_string( $status ) ) {
+					$ret[ $type ][ $status ] = $count;
+				}
 			}
 		}
 
