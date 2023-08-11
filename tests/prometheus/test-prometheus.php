@@ -2,7 +2,10 @@
 
 namespace Automattic\VIP\Prometheus;
 
+use Prometheus\Counter;
+use Prometheus\Gauge;
 use Prometheus\RegistryInterface;
+use Prometheus\RenderTextFormat;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/class-plugin-helper.php';
@@ -162,5 +165,47 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		$expected = [ $collector1, $collector2, $collector3 ];
 		self::assertEquals( $expected, $plugin->get_collectors() );
+	}
+
+	public function test_safe_adapter(): void {
+		Plugin_Helper::get_instance();
+
+		$collector = new class() implements CollectorInterface {
+			private Gauge $gauge;
+			private Counter $counter;
+			public RegistryInterface $registry;
+
+			public function initialize( RegistryInterface $registry ): void {
+				$this->registry = $registry;
+				$this->gauge    = $registry->getOrRegisterGauge( 'test', 'gauge', '', [ 'A', 'B' ] );
+				$this->counter  = $registry->getOrRegisterCounter( 'test', 'counter', '', [ 'A', 'B' ] );
+			}
+
+			public function collect_metrics(): void {
+				$this->gauge->set( 1, [ '0', 1 ] );
+				$this->counter->inc( [ 0, 1 ] );
+			}
+
+			public function process_metrics(): void {
+				// Do nothing
+			}
+		};
+
+		add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ) use ( $collector ): array {
+			if ( 'vip_mu_plugins_loaded' === $hook ) {
+				return [ $collector ];
+			}
+
+			return $collectors;
+		}, 10, 2 );
+
+		do_action( 'vip_mu_plugins_loaded' );
+
+		$collector->collect_metrics();
+		$renderer = new RenderTextFormat();
+		$actual   = $renderer->render( $collector->registry->getMetricFamilySamples() );
+
+		self::assertStringContainsString( 'test_gauge{A="0",B="1"} 1', $actual );
+		self::assertStringContainsString( 'test_counter{A="0",B="1"} 1', $actual );
 	}
 }
