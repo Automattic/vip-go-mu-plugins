@@ -302,6 +302,8 @@ class Controls {
 	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
+		wp_cache_flush_runtime();
+
 		$options_to_refresh = array(
 			'jetpack_options',
 			'jetpack_private_options',
