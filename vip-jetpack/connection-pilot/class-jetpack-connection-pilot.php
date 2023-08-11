@@ -240,65 +240,6 @@ class Connection_Pilot {
 		}
 	}
 
-	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts = [] ) {
-		$alerts = array(
-			'/VaultPress connection error.*A registration key can only be used on one site/',
-		);
-
-		return array_merge( (array) $existing_alerts, $alerts );
-	}
-
-	/**
-	 * Send an alert to IRC/Slack, and add to logs.
-	 *
-	 * Example message:
-	 * Jetpack is disconnected, but was previously connected under the same domain.
-	 * Site: example.go-vip.co (ID 123). The last known connection was on August 25, 12:11:14 UTC to Cache ID 65432 (example.go-vip.co).
-	 * Jetpack connection error: [jp-cxn-pilot-not-active] Jetpack is not currently active.
-	 *
-	 * @param string   $message optional.
-	 * @param \WP_Error $wp_error optional.
-	 *
-	 * @return mixed True if the message was sent to IRC, false if it failed. If silenced, will just return the message string.
-	 */
-	protected function send_alert( $message = '', $wp_error = null ) {
-		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
-
-		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && -1 != $last_heartbeat['cache_site_id'] ) {
-			$message .= sprintf(
-				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
-				gmdate( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
-			);
-		}
-
-		if ( isset( $last_heartbeat['backoff_factor'] ) && $last_heartbeat['backoff_factor'] > 0 ) {
-			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
-		}
-
-		if ( is_wp_error( $wp_error ) ) {
-			$message .= sprintf( ' Error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
-		}
-
-		\Automattic\VIP\Logstash\log2logstash( [
-			'severity' => 'error',
-			'feature'  => 'jetpack-connection-pilot',
-			'message'  => $message,
-		] );
-
-		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
-		if ( $should_silence_alerts ) {
-			return $message;
-		}
-
-		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed' ];
-		if ( is_wp_error( $wp_error ) && in_array( $wp_error->get_error_code(), $errors_to_ignore, true ) ) {
-			return $message;
-		}
-
-		return Alerts::chat( '#vip-jp-cxn-monitoring', $message );
-	}
-
 	/**
 	 * Checks if the connection pilot should run.
 	 *
@@ -350,6 +291,57 @@ class Connection_Pilot {
 
 		// Barring the above specific scenarios, we'll attempt a reconnection.
 		return true;
+	}
+
+	/**
+	 * Send an alert to IRC/Slack, and add to logs.
+	 *
+	 * Example message:
+	 * Jetpack is disconnected, but was previously connected under the same domain.
+	 * Site: example.go-vip.co (ID 123). The last known connection was on August 25, 12:11:14 UTC to Cache ID 65432 (example.go-vip.co).
+	 * Jetpack connection error: [jp-cxn-pilot-not-active] Jetpack is not currently active.
+	 *
+	 * @param string   $message optional.
+	 * @param \WP_Error $wp_error optional.
+	 *
+	 * @return mixed True if the message was sent to IRC, false if it failed. If silenced, will just return the message string.
+	 */
+	protected function send_alert( $message = '', $wp_error = null ) {
+		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
+
+		$last_heartbeat = $this->last_heartbeat;
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && -1 != $last_heartbeat['cache_site_id'] ) {
+			$message .= sprintf(
+				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
+				gmdate( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
+			);
+		}
+
+		if ( isset( $last_heartbeat['backoff_factor'] ) && $last_heartbeat['backoff_factor'] > 0 ) {
+			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
+		}
+
+		if ( is_wp_error( $wp_error ) ) {
+			$message .= sprintf( ' Error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
+		}
+
+		\Automattic\VIP\Logstash\log2logstash( [
+			'severity' => 'error',
+			'feature'  => 'jetpack-connection-pilot',
+			'message'  => $message,
+		] );
+
+		$should_silence_alerts = defined( 'VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS' ) && VIP_JETPACK_CONNECTION_PILOT_SILENCE_ALERTS;
+		if ( $should_silence_alerts ) {
+			return $message;
+		}
+
+		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed' ];
+		if ( is_wp_error( $wp_error ) && in_array( $wp_error->get_error_code(), $errors_to_ignore, true ) ) {
+			return $message;
+		}
+
+		return Alerts::chat( '#vip-jp-cxn-monitoring', $message );
 	}
 }
 
