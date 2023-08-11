@@ -37,13 +37,13 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( [ 'config_test' ], $integration->get_config() );
 	}
 
-	public function test__calling_active_twice_on_same_integration_throws_LogicException(): void {
-		$this->expectException( LogicException::class );
-
+	public function test__calling_active_twice_on_same_integration_does_not_activate_the_plugin_second_time(): void {
 		$integration = new FakeIntegration( 'fake' );
 
-		$integration->activate();
-		$integration->activate();
+		$integration->activate( array( 'configs-1' ) );
+		$integration->activate( array( 'configs-2' ) );
+
+		$this->assertEquals( array( 'configs-1' ), $integration->get_config() );
 	}
 
 	public function test__is_active_returns_false_when_integration_is_not_active(): void {

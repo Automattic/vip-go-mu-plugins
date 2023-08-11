@@ -7,8 +7,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-use LogicException;
-
 /**
  * Abstract base class for all integration implementations.
  *
@@ -50,13 +48,12 @@ abstract class Integration {
 	 *
 	 * @param array $config An associative array of configuration values for the integration.
 	 *
-	 * @throws LogicException Exception if integration is already activated.
-	 *
 	 * @private
 	 */
 	public function activate( array $config = [] ): void {
+		// Don't do anything if integration is already activated.
 		if ( $this->is_active() ) {
-			throw new LogicException( sprintf( 'VIP Integration with slug "%s" is already activated.', $this->get_slug() ) );
+			return;
 		}
 
 		$this->is_active = true;
