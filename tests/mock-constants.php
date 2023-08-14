@@ -37,6 +37,10 @@ namespace Automattic\Test {
 
 			return self::$constants[ $constant ][0];
 		}
+
+		public static function undefine( string $constant ): void {
+			unset( self::$constants[ $constant ] );
+		}
 	}
 }
 
