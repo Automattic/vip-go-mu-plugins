@@ -64,11 +64,11 @@ class QM_Output_Html_DB_Connections extends QM_Output_Html {
 			echo '<td>' . esc_html( $connection['port'] ) . '</td>';
 			echo '<td>' . esc_html( $connection['user'] ) . '</td>';
 			echo '<td>' . esc_html( $connection['name'] ) . '</td>';
-			echo '<td>' . esc_html( $connection['server_state'] ) . '</td>';
+			echo '<td>' . esc_html( $connection['server_state'] ?? 'N/A' ) . '</td>';
 			echo '<td>' . esc_html( $this->format_elapsed_time( $connection['elapsed'] ) ) . '</td>';
 			echo '<td>' . esc_html( $connection['success'] ? 'true' : 'false' ) . '</td>';
-			echo '<td>' . esc_html( $connection['queries'] ) . '</td>';
-			echo '<td>' . esc_html( $connection['lag'] ) . '</td></tr>';
+			echo '<td>' . esc_html( $connection['queries'] ?? 'N/A' ) . '</td>';
+			echo '<td>' . esc_html( $connection['lag'] ?? 'N/A' ) . '</td></tr>';
 		}
 		echo '</tbody></table>';
 	}
