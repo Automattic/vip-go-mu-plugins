@@ -111,7 +111,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	private function is_wp_content_subfolder_path( $file_path, $subfolder ) {
-		$upgrade_base = sprintf( '%s/%s', WP_CONTENT_DIR, $subfolder );
+		$upgrade_base = sprintf( '%s/%s', constant( 'WP_CONTENT_DIR' ), $subfolder );
 		return 0 === strpos( $file_path, $upgrade_base . '/' ) || $file_path === $upgrade_base;
 	}
 
