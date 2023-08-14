@@ -116,7 +116,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	private function is_upgrade_path( $file_path ) {
-		return $this->is_wp_content_subfolder_path( $file_path, 'upgrade' );
+		return $this->is_wp_content_subfolder_path( $file_path, 'upgrade' ) || $this->is_wp_content_subfolder_path( $file_path, 'upgrade-temp-backup' );
 	}
 
 	private function is_plugins_path( $file_path ) {
