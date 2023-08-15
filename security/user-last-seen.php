@@ -101,7 +101,7 @@ add_filter( 'views_users', function ( $views ) {
 
 	$view = __( 'Blocked Users' );
 	if ( $count ) {
-		$class = $_REQUEST[ 'last_seen_filter' ] ? 'current' : '';
+		$class = isset( $_REQUEST[ 'last_seen_filter' ] ) ? 'current' : '';
 		$view = '<a class="' . $class . '" href="users.php?last_seen_filter=blocked">' . $view . '</a>';
 	}
 	$views['blocked_users'] = $view . ' (' . $count . ')';
