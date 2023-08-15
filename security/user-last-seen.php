@@ -51,34 +51,36 @@ add_filter( 'manage_users_columns', function ( $cols ) {
 } );
 
 add_filter( 'manage_users_custom_column', function ( $default, $column_name, $user_id ) {
-	if ( 'last_seen' == $column_name ) {
-		$last_seen_timestamp = get_user_meta( $user_id, LAST_SEEN_META_KEY, true );
-
-		if ( $last_seen_timestamp ) {
-			$formatted_date = sprintf(
-				__( '%1$s at %2$s' ),
-				date_i18n( get_option('date_format'), $last_seen_timestamp ),
-				date_i18n( get_option('time_format'), $last_seen_timestamp )
-			);
-
-			if ( is_considered_inactive( $user_id ) ) {
-				$unblock_link = '';
-				if ( current_user_can( 'edit_user', array() ) ) {
-					$url = add_query_arg( array(
-						'action' => 'reset_last_seen',
-						'user_id' => $user_id,
-					) );
-
-					$unblock_link = "<div class='row-actions'><span>User blocked due to inactivity. <a class='reset_last_seen_action' href='" . esc_url( $url ) . "'>" . __( 'Unblock' ) . "</a></span></div>";
-				}
-				return sprintf( '<span class="wp-ui-text-notification">%s</span>' . $unblock_link, esc_html__( $formatted_date ) );
-			}
-
-			return sprintf( '<span>%s</span>', esc_html__( $formatted_date ) );
-		}
+	if ( 'last_seen' !== $column_name ) {
+		return $default;
 	}
 
-	return $default;
+	$last_seen_timestamp = get_user_meta( $user_id, LAST_SEEN_META_KEY, true );
+
+	if ( ! $last_seen_timestamp ) {
+		return $default;
+	}
+
+	$formatted_date = sprintf(
+		__( '%1$s at %2$s' ),
+		date_i18n( get_option('date_format'), $last_seen_timestamp ),
+		date_i18n( get_option('time_format'), $last_seen_timestamp )
+	);
+
+	if ( ! is_considered_inactive( $user_id ) ) {
+		return sprintf( '<span>%s</span>', esc_html__( $formatted_date ) );
+	}
+
+	$unblock_link = '';
+	if ( current_user_can( 'edit_user', array() ) ) {
+		$url = add_query_arg( array(
+			'action' => 'reset_last_seen',
+			'user_id' => $user_id,
+		) );
+
+		$unblock_link = "<div class='row-actions'><span>User blocked due to inactivity. <a class='reset_last_seen_action' href='" . esc_url( $url ) . "'>" . __( 'Unblock' ) . "</a></span></div>";
+	}
+	return sprintf( '<span class="wp-ui-text-notification">%s</span>' . $unblock_link, esc_html__( $formatted_date ) );
 }, 10, 3 );
 
 add_action( 'user_row_actions', function ( $actions  ) {
