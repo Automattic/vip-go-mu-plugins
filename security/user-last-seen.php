@@ -122,7 +122,7 @@ add_filter( 'users_list_table_query_args', function ( $args ) {
 	}
 
 	return $args;
-}, 9999 );
+} );
 
 function is_considered_inactive( $user_id ) {
 	if ( ! defined( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
