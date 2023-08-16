@@ -25,6 +25,44 @@ unset( $mu_plugin_dir );
 use Automattic\VIP\Utils\Context;
 
 /**
+ * Adds support for loading blog context via the `--load-blog-id` param.
+ *
+ * Borrowed from WP.com. This does a reverse lookup for the URL based on the specified ID and passes that to WP-CLI.
+ * This ensures that the correct context is loaded. It's helpful in cases where you have an ID but not a URL.
+ *
+ * Usage: `wp --load-blog-id=3 option get home`
+ *
+ * @see https://github.com/wp-cli/wp-cli/issues/5649#issuecomment-1227814680
+ */
+function wp_cli_load_via_blog_id() {
+	if ( ! class_exists( 'WP_CLI' ) ) {
+		return;
+	}
+
+	$load_blog_id = WP_CLI::get_runner()->config['load-blog-id'] ?? null;
+
+	if ( empty( $load_blog_id ) ) {
+		return;
+	}
+
+	if ( ! is_numeric( $load_blog_id ) ) {
+		return WP_CLI::error( 'The --load-blog-id parameter is expected to be a numeric ID.' );
+	}
+
+	$blog = get_site( $blog_id );
+	if ( ! $blog ) {
+		return WP_CLI::error( 'The --load-blog-id value is not a valid blog.' );
+	}
+
+	$url = $blog->domain;
+	if ( $blog->path ) {
+		$url .= $blog->path;
+	}
+
+	WP_CLI::set_url( $url );
+}
+
+/**
  * Log errors retrieving network for a given request
  *
  * @param string $domain
@@ -95,6 +133,11 @@ function handle_not_found_error( $error_type ) {
 		echo file_get_contents( $error_doc );
 		exit;
 	}
+}
+
+// Overrides related to WP-CLI
+if ( Context::is_wp_cli() ) {
+	wp_cli_load_via_blog_id();
 }
 
 /**
