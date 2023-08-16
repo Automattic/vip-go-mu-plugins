@@ -19,9 +19,9 @@ use WP_Widget;
  * @param array|null $old_instance Array of old widget settings.
  * @param WP_Widget $widget_obj The current widget instance.
  * @param Telemetry_System $telemetry_system
- * @return array Updated widget settings
+ * @return array|bool Widget settings (will be unchanged)
  */
-function track_widget_updated( $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ): array {
+function track_widget_updated( $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ): array|bool {
 	if ( ! is_array( $instance ) ) {
 		return $instance;
 	}
