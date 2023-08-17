@@ -25,7 +25,7 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 
 	public function test_integrations_are_activated_via_vip_config_on_muplugins_loaded_hook(): void {
 		$integrations_mock = $this->getMockBuilder( Integrations::class )->getMock();
-		$integrations_mock->expects( $this->once() )->method( 'activate_integrations_via_vip_config' )->with();
+		$integrations_mock->expects( $this->once() )->method( 'activate_platform_integrations' )->with();
 
 		$this->set_integrations( $integrations_mock );
 

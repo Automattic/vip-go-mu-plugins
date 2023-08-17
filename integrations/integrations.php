@@ -7,8 +7,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-use InvalidArgumentException;
-
 /**
  * Class used to track and activate registered integrations.
  *
@@ -27,19 +25,17 @@ class Integrations {
 	 *
 	 * @param Integration $integration Instantiated integration object.
 	 *
-	 * @throws InvalidArgumentException Exception if invalid argument are passed.
-	 *
 	 * @private
 	 */
 	public function register( $integration ): void {
 		if ( ! is_subclass_of( $integration, Integration::class ) ) {
-			throw new InvalidArgumentException( sprintf( 'Integration class "%s" must extend %s.', get_class( $integration ), Integration::class ) );
+			trigger_error( sprintf( 'Integration class "%s" must extend %s.', esc_html( get_class( $integration ) ), esc_html( Integration::class ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
 		$slug = $integration->get_slug();
 
 		if ( null !== $this->get_integration( $slug ) ) {
-			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
+			trigger_error( sprintf( 'Integration with slug "%s" is already registered.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
 		$this->integrations[ $slug ] = $integration;
@@ -60,7 +56,7 @@ class Integrations {
 	 *
 	 * @return void
 	 */
-	public function activate_integrations_via_vip_config() {
+	public function activate_platform_integrations() {
 		foreach ( $this->integrations as $slug => $integration ) {
 			// Don't activate again if integration is already activated and configured by customer.
 			if ( $integration->is_active() ) {
@@ -105,15 +101,13 @@ class Integrations {
 	 * @param string              $slug A unique identifier for the integration.
 	 * @param array<string,mixed> $config An associative array of configuration values for the integration.
 	 *
-	 * @throws InvalidArgumentException Exception if invalid argument are passed.
-	 *
 	 * @private
 	 */
 	public function activate( string $slug, array $config = [] ): void {
 		$integration = $this->get_integration( $slug );
 
 		if ( null === $integration ) {
-			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $slug ) );
+			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
 		$integration->activate( $config );

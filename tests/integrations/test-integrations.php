@@ -10,7 +10,6 @@ namespace Automattic\VIP\Integrations;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 use WP_UnitTestCase;
-use InvalidArgumentException;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
 
@@ -40,7 +39,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$mock->register( $integration_3 );
 		$mock->activate( 'fake-1', [ 'customer-configs' ] );
 
-		$mock->activate_integrations_via_vip_config();
+		$mock->activate_platform_integrations();
 
 		$this->assertTrue( $integration_1->is_active() );
 		$this->assertEquals( [ 'customer-configs' ], $integration_1->get_config() );
@@ -79,7 +78,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {
-		$this->expectException( InvalidArgumentException::class );
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'Integration with slug "fake" is already registered.' );
 
 		$integrations = new Integrations();
 		$integration  = new FakeIntegration( 'fake' );
@@ -89,7 +89,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__non_integration_subclass_throws_invalidArgumentException(): void {
-		$this->expectException( InvalidArgumentException::class );
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'Integration class "stdClass" must extend Automattic\VIP\Integrations\Integration.' );
 
 		$integrations = new Integrations();
 		$random_class = new stdClass();
@@ -98,7 +99,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__activating_integration_by_passing_invalid_slug_throws_invalidArgumentException(): void {
-		$this->expectException( InvalidArgumentException::class );
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'VIP Integration with slug "invalid-slug" is not a registered integration.' );
 
 		$integrations = new Integrations();
 		$integration  = new FakeIntegration( 'fake' );

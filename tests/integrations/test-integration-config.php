@@ -10,7 +10,6 @@ namespace Automattic\VIP\Integrations;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 use Client_Integration_Status;
-use InvalidArgumentException;
 use Site_Integration_Status;
 use WP_UnitTestCase;
 
@@ -223,11 +222,12 @@ class VIP_Integration_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_get_site_config, $mock->get_site_config() );
 	}
 
-	public function test__get_value_from_vip_config_throws_exception_if_invalid_argument_is_passed(): void {
-		$this->expectException( InvalidArgumentException::class );
+	public function test__get_value_from_vip_config_trigger_error_if_invalid_argument_is_passed(): void {
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'config_type param (invalid) must be one of client, site and network_sites.' );
 		$mocked_vip_configs = [];
 
-		$this->test_get_value_from_config( $mocked_vip_configs, 'invalid-config-type', 'key', '' );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'invalid', 'key', '' );
 	}
 
 	public function test__get_value_from_vip_config_returns_null_if_given_config_type_have_no_data(): void {

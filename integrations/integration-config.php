@@ -8,7 +8,6 @@
 namespace Automattic\VIP\Integrations;
 
 use Client_Integration_Status;
-use InvalidArgumentException;
 use Site_Integration_Status;
 
 /**
@@ -127,16 +126,18 @@ class IntegrationConfig {
 	/**
 	 * Get site config.
 	 *
-	 * @return null|array
+	 * @return array
 	 *
 	 * @private
 	 */
 	public function get_site_config() {
 		if ( is_multisite() ) {
-			return $this->get_value_from_config( 'network_sites', 'config' );
+			$config = $this->get_value_from_config( 'network_sites', 'config' );
+		} else {
+			$config = $this->get_value_from_config( 'site', 'config' );
 		}
 
-		return $this->get_value_from_config( 'site', 'config' );
+		return $config ?? array(); // To keep function signature consistent.
 	}
 
 	/**
@@ -145,13 +146,12 @@ class IntegrationConfig {
 	 * @param string $config_type Type of the config whose data is needed i.e. client, site, network-sites etc.
 	 * @param string $key Key of the config from which we have to extract the data.
 	 *
-	 * @return null|array
-	 *
-	 * @throws InvalidArgumentException Exception if invalid argument is passed.
+	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
 	protected function get_value_from_config( string $config_type, string $key ) {
 		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
-			throw new InvalidArgumentException( 'Config type must be one of client, site and network_sites.' );
+			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of client, site and network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return null;
 		}
 
 		if ( ! isset( $this->config[ $config_type ] ) ) {
@@ -164,10 +164,10 @@ class IntegrationConfig {
 		}
 
 		// Look for key inside network-sites config.
-		$blog_id = get_current_blog_id();
-		if ( 'network_sites' === $config_type && isset( $this->config[ $config_type ][ $blog_id ] ) ) {
-			if ( isset( $this->config[ $config_type ][ $blog_id ][ $key ] ) ) {
-				return $this->config[ $config_type ][ $blog_id ][ $key ];
+		$network_site_id = get_current_blog_id();
+		if ( 'network_sites' === $config_type && isset( $this->config[ $config_type ][ $network_site_id ] ) ) {
+			if ( isset( $this->config[ $config_type ][ $network_site_id ][ $key ] ) ) {
+				return $this->config[ $config_type ][ $network_site_id ][ $key ];
 			}
 		}
 

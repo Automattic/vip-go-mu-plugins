@@ -9,7 +9,6 @@ namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
-use LogicException;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/fake-integration.php';
@@ -37,13 +36,14 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( [ 'config_test' ], $integration->get_config() );
 	}
 
-	public function test__calling_active_twice_on_same_integration_does_not_activate_the_plugin_second_time(): void {
+	public function test__calling_activate_twice_on_same_integration_does_not_activate_the_plugin_second_time(): void {
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'VIP Integration with slug "fake" is already activated.' );
+
 		$integration = new FakeIntegration( 'fake' );
 
-		$integration->activate( array( 'configs-1' ) );
-		$integration->activate( array( 'configs-2' ) );
-
-		$this->assertEquals( array( 'configs-1' ), $integration->get_config() );
+		$integration->activate();
+		$integration->activate();
 	}
 
 	public function test__is_active_returns_false_when_integration_is_not_active(): void {

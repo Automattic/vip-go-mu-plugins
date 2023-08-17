@@ -36,7 +36,7 @@ function activate( string $slug, array $config = [] ): void {
 // Load integrations in muplugins_loaded:5 to allow integrations to hook
 // muplugins_loaded:10 or any later action.
 add_action( 'muplugins_loaded', function() {
-	IntegrationsSingleton::instance()->activate_integrations_via_vip_config();
+	IntegrationsSingleton::instance()->activate_platform_integrations();
 	IntegrationsSingleton::instance()->load_active();
 }, 5 );
 

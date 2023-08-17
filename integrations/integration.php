@@ -53,6 +53,7 @@ abstract class Integration {
 	public function activate( array $config = [] ): void {
 		// Don't do anything if integration is already activated.
 		if ( $this->is_active() ) {
+			trigger_error( sprintf( 'VIP Integration with slug "%s" is already activated.', esc_html( $this->get_slug() ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			return;
 		}
 
