@@ -191,7 +191,7 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 		];
 
 		// You can edit your own user account (required to set up 2FA)
-		if ( 'edit_user' === $cap && ! empty( $args ) && $user_id === $args[0] ) {
+		if ( 'edit_user' === $cap && ! empty( $args ) && (int) $user_id === (int) $args[0] ) {
 			$subscriber_caps[] = 'edit_user';
 		}
 
