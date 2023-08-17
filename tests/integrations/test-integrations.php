@@ -19,17 +19,17 @@ require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
 	public function test__integrations_are_activating_based_on_given_vip_config(): void {
-		$config_mock = $this->getMockBuilder( IntegrationConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
 		$config_mock->expects( $this->exactly( 2 ) )->method( 'is_active_via_vip' )->willReturnOnConsecutiveCalls( true, false );
-		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_site_config' )->willReturnOnConsecutiveCalls( [ 'vip-configs' ] );
+		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_site_config' )->willReturnOnConsecutiveCalls( [ 'config_key_1' => 'vip_value' ] );
 
 		/**
 		 * Integrations mock.
 		 *
 		 * @var MockObject|Integrations
 		 */
-		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'get_integration_config' ] )->getMock();
-		$mock->expects( $this->any() )->method( 'get_integration_config' )->willReturn( $config_mock );
+		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'get_integration_vip_config' ] )->getMock();
+		$mock->expects( $this->any() )->method( 'get_integration_vip_config' )->willReturn( $config_mock );
 
 		$integration_1 = new FakeIntegration( 'fake-1' );
 		$integration_2 = new FakeIntegration( 'fake-2' );
@@ -37,23 +37,27 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$mock->register( $integration_1 );
 		$mock->register( $integration_2 );
 		$mock->register( $integration_3 );
-		$mock->activate( 'fake-1', [ 'customer-configs' ] );
+		$mock->activate( 'fake-1', [
+			'option_key_1' => 'value',
+			'config'       => [ 'config_key_1' => 'value' ],
+		] );
 
 		$mock->activate_platform_integrations();
 
 		$this->assertTrue( $integration_1->is_active() );
-		$this->assertEquals( [ 'customer-configs' ], $integration_1->get_config() );
+		$this->assertEquals( [ 'config_key_1' => 'value' ], $integration_1->get_config() );
 		$this->assertTrue( $integration_2->is_active() );
-		$this->assertEquals( [ 'vip-configs' ], $integration_2->get_config() );
+		$this->assertEquals( [ 'config_key_1' => 'vip_value' ], $integration_2->get_config() );
 		$this->assertFalse( $integration_3->is_active() );
+		$this->assertEquals( [], $integration_3->get_config() );
 	}
 
-	public function test__get_integration_config_returns_instance_of_IntegrationConfig(): void {
+	public function test__get_integration_vip_config_returns_instance_of_IntegrationVipConfig(): void {
 		$integrations = new Integrations();
 
-		$integration_config = get_class_method_as_public( Integrations::class, 'get_integration_config' )->invoke( $integrations, 'slug' );
+		$integration_config = get_class_method_as_public( Integrations::class, 'get_integration_vip_config' )->invoke( $integrations, 'slug' );
 
-		$this->assertInstanceOf( IntegrationConfig::class, $integration_config );
+		$this->assertInstanceOf( IntegrationVipConfig::class, $integration_config );
 	}
 
 	public function test__load_active_loads_the_activated_integration(): void {

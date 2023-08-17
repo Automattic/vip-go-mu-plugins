@@ -15,7 +15,7 @@ use Site_Integration_Status;
  *
  * @private
  */
-class IntegrationConfig {
+class IntegrationVipConfig {
 	/**
 	 * Configuration provided by VIP.
 	 *

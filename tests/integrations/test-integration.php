@@ -31,7 +31,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	public function test__activate_is_setting_up_the_plugins_config(): void {
 		$integration = new FakeIntegration( 'fake' );
 
-		$integration->activate( [ 'config_test' ] );
+		$integration->activate( [ 'config' => [ 'config_test' ] ] );
 
 		$this->assertEquals( [ 'config_test' ], $integration->get_config() );
 	}

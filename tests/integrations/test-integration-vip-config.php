@@ -18,12 +18,12 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 
 require_once __DIR__ . '/fake-integration.php';
 
-class VIP_Integration_Config_Test extends WP_UnitTestCase {
+class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$slug               = 'dummy';
-		$integration_config = new IntegrationConfig( $slug );
+		$integration_config = new IntegrationVipConfig( $slug );
 
-		$reflection_method = get_class_method_as_public( IntegrationConfig::class, 'get_vip_config_from_file' );
+		$reflection_method = get_class_method_as_public( IntegrationVipConfig::class, 'get_vip_config_from_file' );
 
 		$this->assertNull( $reflection_method->invoke( $integration_config, $slug ) );
 	}
@@ -31,7 +31,7 @@ class VIP_Integration_Config_Test extends WP_UnitTestCase {
 	public function test__set_config_does_not_set_the_config_if_received_content_from_file_is_not_of_type_array(): void {
 		$mock = $this->get_mock( 'invalid-config' );
 
-		$config = get_class_property_as_public( IntegrationConfig::class, 'config' )->getValue( $mock );
+		$config = get_class_property_as_public( IntegrationVipConfig::class, 'config' )->getValue( $mock );
 
 		$this->assertEquals( [], $config );
 	}
@@ -303,7 +303,7 @@ class VIP_Integration_Config_Test extends WP_UnitTestCase {
 	): void {
 		$mock = $this->get_mock( $vip_config );
 
-		$config_value = get_class_method_as_public( IntegrationConfig::class, 'get_value_from_config' )->invoke( $mock, $config_type, $key );
+		$config_value = get_class_method_as_public( IntegrationVipConfig::class, 'get_value_from_config' )->invoke( $mock, $config_type, $key );
 
 		$this->assertEquals( $expected_value_from_vip_config, $config_value );
 	}
@@ -321,7 +321,7 @@ class VIP_Integration_Config_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject
 		 */
-		$mock = $this->getMockBuilder( IntegrationConfig::class )
+		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
 								->disableOriginalConstructor()
 								->setMethods( [
 									'get_vip_config_from_file',

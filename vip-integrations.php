@@ -15,7 +15,7 @@ defined( 'ABSPATH' ) || die();
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
-require_once __DIR__ . '/integrations/integration-config.php';
+require_once __DIR__ . '/integrations/integration-vip-config.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 

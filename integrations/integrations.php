@@ -63,23 +63,25 @@ class Integrations {
 				continue;
 			}
 
-			$vip_config = $this->get_integration_config( $slug );
+			$vip_config = $this->get_integration_vip_config( $slug );
 
 			if ( $vip_config->is_active_via_vip() ) {
-				$this->activate( $slug, $vip_config->get_site_config() );
+				$this->activate( $slug, [
+					'config' => $vip_config->get_site_config(),
+				] );
 			}
 		}
 	}
 
 	/**
-	 * Get IntegrationConfig instance (having this a separate method for mocking in tests).
+	 * Get IntegrationVipConfig instance (having this a separate method for mocking in tests).
 	 *
 	 * @param string $slug A unique identifier for the integration.
 	 *
-	 * @return IntegrationConfig
+	 * @return IntegrationVipConfig
 	 */
-	protected function get_integration_config( string $slug ): IntegrationConfig {
-		return new IntegrationConfig( $slug );
+	protected function get_integration_vip_config( string $slug ): IntegrationVipConfig {
+		return new IntegrationVipConfig( $slug );
 	}
 
 	/**
@@ -96,20 +98,20 @@ class Integrations {
 	}
 
 	/**
-	 * Activates an integration with an optional configuration value.
+	 * Activates an integration with given options array.
 	 *
 	 * @param string              $slug A unique identifier for the integration.
-	 * @param array<string,mixed> $config An associative array of configuration values for the integration.
+	 * @param array<string,mixed> $options An associative options array for the integration.
 	 *
 	 * @private
 	 */
-	public function activate( string $slug, array $config = [] ): void {
+	public function activate( string $slug, array $options = [] ): void {
 		$integration = $this->get_integration( $slug );
 
 		if ( null === $integration ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
-		$integration->activate( $config );
+		$integration->activate( $options );
 	}
 }
