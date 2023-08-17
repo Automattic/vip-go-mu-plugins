@@ -39,10 +39,10 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 
 	public function test__wp_parsely_credentials_callback_returns_config_of_the_integration(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
-		get_class_property_as_public( Integration::class, 'config' )->setValue( $parsely_integration, [ 'configs' ] );
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [ 'config' => [ 'config_key_1' => 'value' ] ] );
 
 		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration );
 
-		$this->assertEquals( [ 'configs' ], $callback_value );
+		$this->assertEquals( [ 'config_key_1' => 'value' ], $callback_value );
 	}
 }
