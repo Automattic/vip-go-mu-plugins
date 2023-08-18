@@ -72,7 +72,7 @@ add_filter( 'manage_users_custom_column', function ( $default, $column_name, $us
 	}
 
 	$unblock_link = '';
-	if ( current_user_can( 'edit_user', array() ) ) {
+	if ( current_user_can( 'edit_user', $user_id ) ) {
 		$url = add_query_arg( array(
 			'action' => 'reset_last_seen',
 			'user_id' => $user_id,
