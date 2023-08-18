@@ -37,12 +37,31 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'wp_parsely_credentials' ) );
 	}
 
-	public function test__wp_parsely_credentials_callback_returns_config_of_the_integration(): void {
+	public function test__wp_parsely_credentials_callback_returns_original_credentials_of_the_integration(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
-		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [ 'config' => [ 'config_key_1' => 'value' ] ] );
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
+			'config' => [],
+		] );
 
-		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration );
+		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration, [ 'original' ] );
 
-		$this->assertEquals( [ 'config_key_1' => 'value' ], $callback_value );
+		$this->assertEquals( [ 'original' ], $callback_value );
+	}
+
+	public function test__wp_parsely_credentials_callback_returns_platform_credentials_of_the_integration(): void {
+		$parsely_integration = new ParselyIntegration( $this->slug );
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
+			'config' => [
+				'site_id'     => 'value',
+				'invalid_key' => 'value',
+			],
+		] );
+
+		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration, array() );
+
+		$this->assertEquals( [
+			'site_id'    => 'value',
+			'api_secret' => null,
+		], $callback_value );
 	}
 }

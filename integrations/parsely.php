@@ -35,8 +35,21 @@ class ParselyIntegration extends Integration {
 
 	/**
 	 * Callback for `wp_parsely_credentials` filter.
+	 *
+	 * @param array $original_credentials Credentials coming from plugin.
+	 *
+	 * @return array
 	 */
-	protected function wp_parsely_credentials_callback(): array {
-		return $this->get_config();
+	protected function wp_parsely_credentials_callback( $original_credentials ) {
+		$config = $this->get_config();
+		
+		if ( empty( $config ) ) {
+			return $original_credentials;
+		}
+
+		return array(
+			'site_id'    => $config['site_id'] ?? null,
+			'api_secret' => $config['api_secret'] ?? null,
+		);
 	}
 }
