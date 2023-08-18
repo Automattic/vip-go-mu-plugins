@@ -83,7 +83,7 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 					'args'                => array(
 						'user_id' => array(
 							'required' => true,
-							'type'     => 'number',
+							'type'     => 'integer',
 						),
 					),
 				),
@@ -96,7 +96,7 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 					'args'                => array(
 						'user_id' => array(
 							'required' => true,
-							'type'     => 'number',
+							'type'     => 'integer',
 						),
 						'key'     => array(
 							'type'              => 'string',
@@ -227,7 +227,7 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 
 		/**
 		 * Filter the Label for the TOTP.
-		 * 
+		 *
 		 * Must follow the TOTP format for a "label". Do not URL Encode.
 		 *
 		 * @see https://github.com/google/google-authenticator/wiki/Key-Uri-Format#label
@@ -276,6 +276,8 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 		$key = $this->get_user_totp_key( $user->ID );
 
 		wp_enqueue_script( 'two-factor-qr-code-generator' );
+		wp_enqueue_script( 'wp-api-request' );
+		wp_enqueue_script( 'jquery' );
 
 		?>
 		<div id="two-factor-totp-options">
