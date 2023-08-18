@@ -18,7 +18,7 @@ add_filter( 'determine_current_user', function ( $user_id ) {
 		return $user_id;
 	}
 
-	$is_api_request = ( ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) || ( defined( 'REST_REQUEST' ) && REST_REQUEST ) );
+	$is_api_request = Context::is_rest_api() || Context::is_xmlrpc_api();
 
 	if ( $is_api_request && is_considered_inactive( $user_id ) ) {
 		// To block API requests for inactive requests, we need to return a WP_Error object here
@@ -85,7 +85,7 @@ add_filter( 'manage_users_custom_column', function ( $default, $column_name, $us
 
 add_action( 'user_row_actions', function ( $actions  ) {
 	if( isset($_GET['action'] ) && $_GET['action'] === 'reset_last_seen' ){
-		$user_id = $_GET['user_id'];
+		$user_id = absint( $_GET['user_id'] );
 		delete_user_meta( $user_id, LAST_SEEN_META_KEY );
 	}
 
@@ -99,12 +99,12 @@ add_filter( 'views_users', function ( $views ) {
 		return $views;
 	}
 
-	$count = $wpdb->get_var( 'SELECT COUNT(meta_key) FROM ' . $wpdb->usermeta . ' WHERE meta_key = "' . LAST_SEEN_META_KEY . '" AND meta_value < ' . get_inactivity_timestamp() );
+	$count = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(meta_key) FROM ' . $wpdb->usermeta . ' WHERE meta_key = %s AND meta_value < %s', LAST_SEEN_META_KEY, get_inactivity_timestamp() ) );
 
 	$view = __( 'Blocked Users' );
 	if ( $count ) {
 		$class = isset( $_REQUEST[ 'last_seen_filter' ] ) ? 'current' : '';
-		$view = '<a class="' . $class . '" href="users.php?last_seen_filter=blocked">' . $view . '</a>';
+		$view = '<a class="' . esc_attr( $class ) . '" href="users.php?last_seen_filter=blocked">' . esc_html( $view ) . '</a>';
 	}
 	$views['blocked_users'] = $view . ' (' . $count . ')';
 
