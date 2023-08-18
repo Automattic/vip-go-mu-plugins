@@ -1,8 +1,11 @@
 <?php
+/**
+ * Integrations.
+ *
+ * @package Automattic\VIP\Integrations
+ */
 
 namespace Automattic\VIP\Integrations;
-
-use InvalidArgumentException;
 
 /**
  * Class used to track and activate registered integrations.
@@ -13,49 +16,72 @@ class Integrations {
 	/**
 	 * Collection of registered integrations.
 	 *
-	 * @var array<Integration>
+	 * @var array<string,Integration>
 	 */
 	private array $integrations = [];
 
 	/**
 	 * Registers an integration.
 	 *
-	 * @param string             $slug            A unique identifier for the integration.
-	 * @param string|Integration $class_or_object Fully-qualified class or instantiated Integration object.
+	 * @param Integration $integration Instantiated integration object.
 	 *
 	 * @private
 	 */
-	public function register( string $slug, $class_or_object ): void {
-		if ( isset( $this->integrations[ $slug ] ) ) {
-			throw new InvalidArgumentException( sprintf( 'Integration with slug "%s" is already registered.', $slug ) );
+	public function register( $integration ): void {
+		if ( ! is_subclass_of( $integration, Integration::class ) ) {
+			trigger_error( sprintf( 'Integration class "%s" must extend %s.', esc_html( get_class( $integration ) ), esc_html( Integration::class ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
-		if ( is_object( $class_or_object ) ) {
-			$integration_object = $class_or_object;
-		} else {
-			if ( ! class_exists( $class_or_object ) ) {
-				throw new InvalidArgumentException( sprintf( 'Integration class "%s" does not exist.', $class_or_object ) );
-			}
+		$slug = $integration->get_slug();
 
-			$integration_object = new $class_or_object();
+		if ( null !== $this->get_integration( $slug ) ) {
+			trigger_error( sprintf( 'Integration with slug "%s" is already registered.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
 
-		if ( ! is_subclass_of( $integration_object, Integration::class ) ) {
-			throw new InvalidArgumentException( sprintf( 'Integration class "%s" must extend %s.', get_class( $integration_object ), Integration::class ) );
-		}
-
-		$this->integrations[ $slug ] = $integration_object;
+		$this->integrations[ $slug ] = $integration;
 	}
 
 	/**
 	 * Returns a registered integration for a key, or null if not found.
 	 *
 	 * @param string $slug A unique identifier for the integration.
-	 *
-	 * @private
 	 */
-	public function get( string $slug ): ?Integration {
+	private function get_integration( string $slug ): ?Integration {
 		return $this->integrations[ $slug ] ?? null;
+	}
+
+	/**
+	 * Activates integrations based on the configuration provided by VIP
+	 * (only if not already activated by customer).
+	 *
+	 * @return void
+	 */
+	public function activate_platform_integrations() {
+		foreach ( $this->integrations as $slug => $integration ) {
+			// Don't activate again if integration is already activated and configured by customer.
+			if ( $integration->is_active() ) {
+				continue;
+			}
+
+			$vip_config = $this->get_integration_vip_config( $slug );
+
+			if ( $vip_config->is_active_via_vip() ) {
+				$this->activate( $slug, [
+					'config' => $vip_config->get_site_config(),
+				] );
+			}
+		}
+	}
+
+	/**
+	 * Get IntegrationVipConfig instance (having this a separate method for mocking in tests).
+	 *
+	 * @param string $slug A unique identifier for the integration.
+	 *
+	 * @return IntegrationVipConfig
+	 */
+	protected function get_integration_vip_config( string $slug ): IntegrationVipConfig {
+		return new IntegrationVipConfig( $slug );
 	}
 
 	/**
@@ -66,26 +92,26 @@ class Integrations {
 	public function load_active(): void {
 		foreach ( $this->integrations as $slug => $integration ) {
 			if ( $integration->is_active() ) {
-				$integration->load( $integration->get_config() );
+				$integration->load();
 			}
 		}
 	}
 
 	/**
-	 * Activates an integration with an optional configuration value.
+	 * Activates an integration with given options array.
 	 *
-	 * @param string $slug   A unique identifier for the integration.
-	 * @param array  $config An associative array of configuration values for the integration.
+	 * @param string              $slug A unique identifier for the integration.
+	 * @param array<string,mixed> $options An associative options array for the integration.
 	 *
 	 * @private
 	 */
-	public function activate( string $integration_slug, array $config = [] ): void {
-		$integration = $this->get( $integration_slug );
+	public function activate( string $slug, array $options = [] ): void {
+		$integration = $this->get_integration( $slug );
 
 		if ( null === $integration ) {
-			throw new InvalidArgumentException( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', $integration_slug ) );
+			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 		}
-		
-		$integration->activate( $config );
+
+		$integration->activate( $options );
 	}
 }
