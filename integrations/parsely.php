@@ -40,9 +40,9 @@ class ParselyIntegration extends Integration {
 	 *
 	 * @return array
 	 */
-	protected function wp_parsely_credentials_callback( $original_credentials ) {
+	public function wp_parsely_credentials_callback( $original_credentials ) {
 		$config = $this->get_config();
-		
+
 		if ( empty( $config ) ) {
 			return $original_credentials;
 		}
