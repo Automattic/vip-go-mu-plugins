@@ -1292,8 +1292,11 @@ function wpcom_vip_should_load_plugins() {
 
 	$should_load_plugins = true;
 
-	// WP-CLI loaded with --skip-plugins flag
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( wp_installing() && strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) !== '/wp-activate.php' ) {
+		$should_load_plugins = false;
+	} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
+		// WP-CLI loaded with --skip-plugins flag
 		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
 		if ( $skipped_plugins ) {
 			$should_load_plugins = false;
