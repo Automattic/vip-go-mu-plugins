@@ -9,7 +9,6 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 
-use function Automattic\Test\Utils\get_class_method_as_public;
 use function Automattic\Test\Utils\get_class_property_as_public;
 use function Automattic\Test\Utils\is_parsely_disabled;
 use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
@@ -37,18 +36,21 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'wp_parsely_credentials' ) );
 	}
 
-	public function test__wp_parsely_credentials_callback_returns_original_credentials_of_the_integration(): void {
+	public function test__wp_parsely_credentials_callback_returns_original_credentials_of_the_integration_if_platform_config_is_empty(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
 			'config' => [],
 		] );
 
-		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration, [ 'original' ] );
+		$callback_value = $parsely_integration->wp_parsely_credentials_callback( [ 'credential_1' => 'value' ] );
 
-		$this->assertEquals( [ 'original' ], $callback_value );
+		$this->assertEquals( [
+			'is_managed'   => true,
+			'credential_1' => 'value',
+		], $callback_value );
 	}
 
-	public function test__wp_parsely_credentials_callback_returns_platform_credentials_of_the_integration(): void {
+	public function test__wp_parsely_credentials_callback_returns_platform_credentials_of_the_integration_if_platform_config_exists(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
 			'config' => [
@@ -57,9 +59,10 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 			],
 		] );
 
-		$callback_value = get_class_method_as_public( ParselyIntegration::class, 'wp_parsely_credentials_callback' )->invoke( $parsely_integration, array() );
+		$callback_value = $parsely_integration->wp_parsely_credentials_callback( array() );
 
 		$this->assertEquals( [
+			'is_managed' => true,
 			'site_id'    => 'value',
 			'api_secret' => null,
 		], $callback_value );
