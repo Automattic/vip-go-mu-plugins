@@ -44,15 +44,12 @@ class ParselyIntegration extends Integration {
 		$config      = $this->get_config();
 		$credentials = array();
 
-		// If config provided by VIP is empty then take original credentials else take config.
-		if ( empty( $config ) ) {
-			$credentials = $original_credentials;
-		} else {
-			$credentials = array(
-				'site_id'    => $config['site_id'] ?? null,
-				'api_secret' => $config['api_secret'] ?? null,
-			);
-		}
+		// If config provided by VIP is empty then take original credentials else take
+		// credentials from config.
+		$credentials = empty( $config ) ? $original_credentials : array(
+			'site_id'    => $config['site_id'] ?? null,
+			'api_secret' => $config['api_secret'] ?? null,
+		);
 
 		// Adds `is_managed` flag to indicate that platform is managing this integration
 		// and we have to hide the credential banner warning or more.
