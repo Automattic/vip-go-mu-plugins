@@ -41,15 +41,21 @@ class ParselyIntegration extends Integration {
 	 * @return array
 	 */
 	public function wp_parsely_credentials_callback( $original_credentials ) {
-		$config = $this->get_config();
+		$config      = $this->get_config();
+		$credentials = array();
 
+		// If config provided by VIP is empty then take original credentials else take config.
 		if ( empty( $config ) ) {
-			return $original_credentials;
+			$credentials = $original_credentials;
+		} else {
+			$credentials = array(
+				'site_id'    => $config['site_id'] ?? null,
+				'api_secret' => $config['api_secret'] ?? null,
+			);
 		}
 
-		return array(
-			'site_id'    => $config['site_id'] ?? null,
-			'api_secret' => $config['api_secret'] ?? null,
-		);
+		// Adds `is_managed` flag to indicate that platform is managing this integration
+		// and we have to hide the credential banner warning or more.
+		return array_merge( array( 'is_managed' => true ), $credentials );
 	}
 }
