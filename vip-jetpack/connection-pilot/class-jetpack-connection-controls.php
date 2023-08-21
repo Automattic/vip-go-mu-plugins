@@ -59,7 +59,6 @@ class Controls {
 		$is_vip_connection = $connection_owner && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
 		if ( ! $is_vip_connection ) {
 			$connection_owner_login = $connection_owner ? $connection_owner->user_login : 'unknown';
-
 			return new WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s". Current connection owner is: "%s"', WPCOM_VIP_MACHINE_USER_LOGIN, $connection_owner_login ) );
 		}
 
@@ -168,31 +167,31 @@ class Controls {
 	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection on the site
 	 * and the Akismet plugin are required.
 	 *
-	 * @return bool True if connection worked, false otherwise
+	 * @return mixed bool|WP_Error True if Akisment had a connection or was (re)connected, WP_Error otherwise.
 	 */
-	public static function connect_akismet(): bool {
-		if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
+	public static function connect_akismet() {
+		if ( ! class_exists( 'Akismet_Admin' ) || ! method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) || ! function_exists( 'is_akismet_key_invalid' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-akismet-dependencies-missing', 'Akismet is missing required functions/methods to perform the connection.' );
+		}
 
-			if ( is_akismet_key_invalid() ) {
-				$original_user = wp_get_current_user();
-				// Getting wpcomvip user, since it's the owner of the Jetpack connection
-				$vip_user = get_user_by( 'login', 'wpcomvip' );
-				if ( ! $original_user || ! $vip_user ) {
-					return false;
-				}
-
-				wp_set_current_user( $vip_user );
-
-				$result = \Akismet_Admin::connect_jetpack_user();
-				wp_set_current_user( $original_user );
-
-				return $result;
-			}
-
+		if ( ! is_akismet_key_invalid() ) {
 			return true;
 		}
 
-		return false;
+		$user = self::maybe_create_user();
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+
+		// Put the machine user in charge of things.
+		wp_set_current_user( $user->ID );
+
+		$result = \Akismet_Admin::connect_jetpack_user();
+		if ( ! $result ) {
+			return new WP_Error( 'jp-cxn-pilot-akismet-connection-failed', 'Akismet could not be connected.' );
+		}
+
+		return true;
 	}
 
 	/**
@@ -203,12 +202,27 @@ class Controls {
 	 * @return bool|WP_Error True if site is connected, error otherwise.
 	 */
 	public static function connect_vaultpress() {
-		$vaultpress = \VaultPress::init();
-		if ( ! $vaultpress->is_registered() || ! isset( $vaultpress->options['connection'] ) || 'ok' !== $vaultpress->options['connection'] ) {
-			// Remove the VaultPress option from the db to prevent site registration from failing
-			delete_option( 'vaultpress' );
+		if ( ! class_exists( 'VaultPress' ) || ! method_exists( 'VaultPress', 'init' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-vaultpress-dependencies-missing', 'VaultPress is missing required functions/methods to perform the connection.' );
+		}
 
-			return $vaultpress->register_via_jetpack( true );
+		$vaultpress = \VaultPress::init();
+		if ( $vaultpress->is_registered() && isset( $vaultpress->options['connection'] ) && 'ok' === $vaultpress->options['connection'] ) {
+			return true;
+		}
+
+		// Remove the VaultPress option from the db to prevent site registration from failing.
+		delete_option( 'vaultpress' );
+
+		$result = $vaultpress->register_via_jetpack( true );
+
+		if ( true !== $result ) {
+			$error_message = 'VaultPress could not be connected.';
+			if ( is_wp_error( $result ) ) {
+				$error_message .= sprintf( ' Error: [%s] %s', $result->get_error_code(), $result->get_error_message() );
+			}
+
+			return new WP_Error( 'jp-cxn-pilot-vaultpress-connection-failed', $error_message );
 		}
 
 		return true;
@@ -288,6 +302,8 @@ class Controls {
 	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
+		wp_cache_flush_runtime();
+
 		$options_to_refresh = array(
 			'jetpack_options',
 			'jetpack_private_options',

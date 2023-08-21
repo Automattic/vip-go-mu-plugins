@@ -144,26 +144,26 @@ class VIP_Filesystem {
 		 * then be removed.
 		 * - Hanif
 		 */
-		$pos = stripos( $params['path'], LOCAL_UPLOADS );
+		$pos = stripos( $params['path'], constant( 'LOCAL_UPLOADS' ) );
 		if ( false !== $pos ) {
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-			strlen( LOCAL_UPLOADS ) );
+			strlen( constant( 'LOCAL_UPLOADS' ) ) );
 			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-			strlen( LOCAL_UPLOADS ) );
+			strlen( constant( 'LOCAL_UPLOADS' ) ) );
 		} else {
-			$pos               = stripos( $params['path'], WP_CONTENT_DIR );
+			$pos               = stripos( $params['path'], constant( 'WP_CONTENT_DIR' ) );
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-			strlen( WP_CONTENT_DIR ) );
+			strlen( constant( 'WP_CONTENT_DIR' ) ) );
 			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-			strlen( WP_CONTENT_DIR ) );
+			strlen( constant( 'WP_CONTENT_DIR' ) ) );
 		}
 
 		return $params;

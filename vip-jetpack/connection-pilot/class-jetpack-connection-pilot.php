@@ -4,6 +4,7 @@ namespace Automattic\VIP\Jetpack;
 
 use Automattic\VIP\Utils\Alerts;
 use DateTime;
+use WP_Error;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
@@ -81,9 +82,6 @@ class Connection_Pilot {
 
 		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
 		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
-
-		add_filter( 'vip_jetpack_connection_pilot_should_reconnect', array( $this, 'filter_vip_jetpack_connection_pilot_should_reconnect' ), 10, 2 );
-		add_filter( 'vip_jetpack_connection_pilot_silenced_alerts', array( $this, 'filter_vip_jetpack_connection_pilot_silenced_alerts' ) );
 	}
 
 	public function schedule_cron() {
@@ -110,8 +108,6 @@ class Connection_Pilot {
 	/**
 	 * The main cron job callback.
 	 * Checks the JP connection and alerts/auto-resolves when there are problems.
-	 *
-	 * Needs to be static due to how it is added to cron control.
 	 */
 	public function run_connection_pilot() {
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
@@ -120,56 +116,60 @@ class Connection_Pilot {
 			// Everything checks out. Update the heartbeat option and move on.
 			$this->update_heartbeat();
 
-			// Attempting Akismet connection given that Jetpack is connected
+			// Attempting Akismet connection given that Jetpack is connected.
 			$skip_akismet = defined( 'VIP_AKISMET_SKIP_LOAD' ) && VIP_AKISMET_SKIP_LOAD;
 			if ( ! $skip_akismet ) {
 				$akismet_connection_attempt = Connection_Pilot\Controls::connect_akismet();
-				if ( ! $akismet_connection_attempt ) {
-					$this->send_alert( 'Alert: Could not connect Akismet automatically.' );
+				if ( is_wp_error( $akismet_connection_attempt ) ) {
+					$this->send_alert( 'Akismet connection error.', $akismet_connection_attempt );
 				}
 			}
 
-			// Attempting VaultPress connection given that Jetpack is connected
-			$skip_vaultpress = defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD;
+			// Attempting VaultPress connection given that Jetpack is connected.
+			$skip_vaultpress = ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD );
 			if ( ! $skip_vaultpress ) {
 				$vaultpress_connection_attempt = Connection_Pilot\Controls::connect_vaultpress();
 				if ( is_wp_error( $vaultpress_connection_attempt ) ) {
-					$message = sprintf( 'VaultPress connection error: [%s] %s', $vaultpress_connection_attempt->get_error_code(), $vaultpress_connection_attempt->get_error_message() );
-					$this->send_alert( $message );
+					$this->send_alert( 'VaultPress connection error.', $vaultpress_connection_attempt );
 				}
 			}
 
 			return;
 		}
 
-		// Not connected, maybe reconnect
-		if ( ! self::should_attempt_reconnection( $is_connected ) ) {
-			return;
+		// JP is not connected, attempt reconnection if allowed.
+		if ( $this->should_attempt_reconnection( $is_connected ) ) {
+			$this->reconnect( $is_connected );
 		}
-
-		// Got here, so we _should_ attempt a reconnection for this site
-		$this->reconnect();
 	}
 
 	/**
-	 * Perform a JP reconnection
+	 * Perform a JP reconnection.
+	 *
+	 * @param \WP_Error|null $prev_connection_error
+	 * @return void
 	 */
-	public function reconnect() {
-		// Attempt a reconnect
+	public function reconnect( $prev_connection_error = null ) {
+		// Attempt to reconnect.
 		$connection_attempt = Connection_Pilot\Controls::connect_site( 'skip_connection_tests' );
+
+		$prev_connection_error_message = '';
+		if ( is_wp_error( $prev_connection_error ) ) {
+			$prev_connection_error_message = sprintf( ' Initial connection check error: [%s] %s', $prev_connection_error->get_error_code(), $prev_connection_error->get_error_message() );
+		}
 
 		if ( true === $connection_attempt ) {
 			if ( ! empty( $this->last_heartbeat['cache_site_id'] ) && (int) \Jetpack_Options::get_option( 'id' ) !== (int) $this->last_heartbeat['cache_site_id'] ) {
-				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' );
+				$this->send_alert( 'Alert: Jetpack was automatically reconnected, but the connection may have changed cache sites. Needs manual inspection.' . $prev_connection_error_message );
 				return;
 			}
 
-			$this->send_alert( 'Jetpack was successfully (re)connected!' );
+			$this->send_alert( 'Jetpack was successfully (re)connected!' . $prev_connection_error_message );
 			return;
 		}
 
-		// Reconnection failed
-		$this->send_alert( 'Jetpack (re)connection attempt failed.', $connection_attempt );
+		// Reconnection failed.
+		$this->send_alert( 'Jetpack (re)connection attempt failed.' . $prev_connection_error_message, $connection_attempt );
 		$this->update_backoff_factor();
 	}
 
@@ -241,56 +241,57 @@ class Connection_Pilot {
 		}
 	}
 
-	public function filter_vip_jetpack_connection_pilot_should_reconnect( $should, $error = null ) {
-		$error_code = null;
-
-		if ( $error && is_wp_error( $error ) ) {
-			$error_code = $error->get_error_code();
+	/**
+	 * Checks if the connection pilot should run.
+	 *
+	 * @return bool True if the connection pilot should run.
+	 */
+	public static function should_run_connection_pilot(): bool {
+		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
+			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
 		}
 
-		// 1) Had an error
-		switch ( $error_code ) {
-			case 'jp-cxn-pilot-missing-constants':
-			case 'jp-cxn-pilot-development-mode':
-				$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
+	}
 
-				return false;
+	/**
+	 * Checks if a reconnection should be attempted
+	 *
+	 * @param $error \WP_Error|null Optional error thrown by the connection check
+	 *
+	 * @return bool True if a reconnect should be attempted
+	 */
+	private function should_attempt_reconnection( \WP_Error $error = null ): bool {
+		// 1) Handle specific errors where we don't want reconnection attempts.
+		if ( is_wp_error( $error ) ) {
+			switch ( $error->get_error_code() ) {
+				case 'jp-cxn-pilot-missing-constants':
+				case 'jp-cxn-pilot-development-mode':
+					$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
+					return false;
 
-			// It is connected but not under the right account.
-			case 'jp-cxn-pilot-not-vip-owned':
-				$this->send_alert( 'Jetpack is connected to a non-VIP account.', $error );
-
-				return false;
+				// It is connected but not under the right account.
+				case 'jp-cxn-pilot-not-vip-owned':
+					$this->send_alert( 'Jetpack is connected to a non-VIP account.', $error );
+					return false;
+			}
 		}
 
-		// 2) Check the last heartbeat to see if we should back off
+		// 2) Check the last heartbeat to see if the URLs match.
+		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) && md5( get_site_url() ) !== $this->last_heartbeat['hashed_site_url'] ) {
+			// Not connected and current url doesn't match previous url, don't attempt reconnection.
+			$error_message = is_wp_error( $error ) ? sprintf( 'Connection error: [%s] %s.', $error->get_error_code(), $error->get_error_message() ) : 'Unknown connection error.';
+			$this->send_alert( 'Jetpack is disconnected, and it appears the domain has changed.', new WP_Error( 'jp-cxn-pilot-domain-changed', $error_message ) );
+			return false;
+		}
+
+		// 3) Check the last heartbeat to see if we should back off of reconnection attempts.
 		if ( $this->should_back_off() ) {
 			return false;
 		}
 
-		// 3) Check the last heartbeat to see if the URLs match.
-		if ( ! empty( $this->last_heartbeat['hashed_site_url'] ) ) {
-			if ( md5( get_site_url() ) === $this->last_heartbeat['hashed_site_url'] ) {
-				// Not connected, but current url matches previous url, attempt a reconnect
-
-				return true;
-			}
-
-			// Not connected and current url doesn't match previous url, don't attempt reconnection
-			$this->send_alert( 'Jetpack is disconnected, and it appears the domain has changed.' );
-
-			return false;
-		}
-
-		return $should;
-	}
-
-	public function filter_vip_jetpack_connection_pilot_silenced_alerts( $existing_alerts = [] ) {
-		$alerts = array(
-			'/VaultPress connection error.*A registration key can only be used on one site/',
-		);
-
-		return array_merge( (array) $existing_alerts, $alerts );
+		// Barring the above specific scenarios, we'll attempt a reconnection.
+		return true;
 	}
 
 	/**
@@ -317,8 +318,12 @@ class Connection_Pilot {
 			);
 		}
 
+		if ( isset( $last_heartbeat['backoff_factor'] ) && $last_heartbeat['backoff_factor'] > 0 ) {
+			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
+		}
+
 		if ( is_wp_error( $wp_error ) ) {
-			$message .= sprintf( ' Jetpack connection error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
+			$message .= sprintf( ' Error: [%s] %s', $wp_error->get_error_code(), $wp_error->get_error_message() );
 		}
 
 		\Automattic\VIP\Logstash\log2logstash( [
@@ -332,43 +337,15 @@ class Connection_Pilot {
 			return $message;
 		}
 
-		// Bypass alerting on specific set messages, that can be false positives
-		// Array of regexps to match the message that should be ignored
-		$alerts_to_be_silenced = apply_filters( 'vip_jetpack_connection_pilot_silenced_alerts', [] );
-		foreach ( $alerts_to_be_silenced as $alert_regex ) {
-			if ( preg_match( $alert_regex, $message ) ) {
-				return $message;
-			}
+		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed' ];
+		if ( is_wp_error( $wp_error ) && in_array( $wp_error->get_error_code(), $errors_to_ignore, true ) ) {
+			return $message;
 		}
 
 		return Alerts::chat( '#vip-jp-cxn-monitoring', $message );
-	}
-
-	/**
-	 * Checks if the connection pilot should run.
-	 *
-	 * @return bool True if the connection pilot should run.
-	 */
-	public static function should_run_connection_pilot(): bool {
-		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
-			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
-		}
-
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
-	}
-
-	/**
-	 * Checks if a reconnection should be attempted
-	 *
-	 * @param $error \WP_Error|null Optional error thrown by the connection check
-	 *
-	 * @return bool True if a reconnect should be attempted
-	 */
-	public static function should_attempt_reconnection( \WP_Error $error = null ): bool {
-		return apply_filters( 'vip_jetpack_connection_pilot_should_reconnect', true, $error );
 	}
 }
 
 add_action( 'init', function() {
 	Connection_Pilot::instance();
-}, 25);
+}, 25 );

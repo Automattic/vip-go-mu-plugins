@@ -41,6 +41,8 @@ jobs:
           - { wp: latest,  ms: 'no',  jp: 'no',  php: '7.4', phpunit: 7 }
           - { wp: latest,  ms: 'yes', jp: 'no',  php: '7.4', phpunit: 7 }
         # PHP 8.0, Jetpack
+          - { wp: 6.2.x,   ms: 'no',  jp: 'yes', php: '8.0', phpunit: '' }
+          - { wp: 6.2.x,   ms: 'yes', jp: 'yes', php: '8.0', phpunit: '' }
           - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.0', phpunit: '', coverage: 'yes' }
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.0', phpunit: '', coverage: 'yes' }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.0', phpunit: '' }

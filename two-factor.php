@@ -26,7 +26,7 @@ function wpcom_vip_should_force_two_factor() {
 	if ( ! WPCOM_IS_VIP_ENV && ! apply_filters( 'wpcom_vip_is_two_factor_local_testing', false ) ) {
 		return false;
 	}
-	
+
 	// The proxy is the second factor for VIP Support users
 	if ( is_proxied_automattician() ) {
 		return false;
@@ -138,7 +138,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 	if ( is_user_logged_in() ) {
 		$cap     = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' );
 		$limited = current_user_can( $cap );
-		
+
 		// Calculate current_user_can outside map_meta_cap to avoid callback loop
 		add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
 			return $limited;
@@ -148,7 +148,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
 		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
 
-		add_filter( 
+		add_filter(
 			'wpcom_vip_is_user_using_two_factor',
 			function() use ( $is_user_using_two_factor ) {
 				return $is_user_using_two_factor;
@@ -167,7 +167,7 @@ if ( ! defined( 'WP_INSTALLING' ) ) {
 function wpcom_enable_two_factor_plugin() {
 	$enable_two_factor = apply_filters( 'wpcom_vip_enable_two_factor', true );
 	if ( true !== $enable_two_factor ) {
-		return; 
+		return;
 	}
 
 	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
@@ -191,7 +191,7 @@ function wpcom_vip_two_factor_filter_caps( $caps, $cap, $user_id, $args ) {
 		];
 
 		// You can edit your own user account (required to set up 2FA)
-		if ( 'edit_user' === $cap && ! empty( $args ) && $user_id === $args[0] ) {
+		if ( 'edit_user' === $cap && ! empty( $args ) && (int) $user_id === (int) $args[0] ) {
 			$subscriber_caps[] = 'edit_user';
 		}
 
@@ -259,7 +259,7 @@ function wpcom_vip_two_factor_admin_notice() {
 					</a>
 
 					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/" class="button" target="_blank">Learn More</a>
-				</p> 
+				</p>
 			</div>
 	</div>
 	<?php

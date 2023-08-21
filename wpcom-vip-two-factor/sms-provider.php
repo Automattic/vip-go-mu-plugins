@@ -121,7 +121,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
-		if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
+		$action = sanitize_key( $_GET['action'] ?? '' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
+		$provider = sanitize_text_field( $_GET['provider'] ?? '' );
+		$method   = sanitize_text_field( $_SERVER['REQUEST_METHOD'] ?? '' );
+
+		if ( ( 'POST' === $method && 'validate_2fa' !== $action ) || ( 'GET' === $method || 'Two_Factor_SMS' === $provider ) ) {
 			$this->generate_and_send_token( $user );
 		}
 
