@@ -8,15 +8,17 @@ class User_Last_Seen {
 	const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY = 'wpvip_last_seen_release_date_timestamp';
 
 	public function init() {
-		if ( ! defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) || constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'NO_ACTION' ) {
+		if ( ! defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) || constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'NO_ACTION' ) {
 			return;
 		}
 
 		// Use a global cache group to avoid having to the data for each site
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
 
+		add_action( 'admin_init', array( $this, 'register_release_date' ) );
+
 		add_filter( 'determine_current_user', array( $this, 'determine_current_user' ), 30, 1 );
-		add_filter( 'authenticate', array( $this, 'determine_current_user' ), 20, 1 );
+		add_filter( 'authenticate', array( $this, 'authenticate' ), 20, 1 );
 
 		if ( in_array( constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ), array( 'REPORT', 'BLOCK' ) ) ) {
 			add_filter( 'wpmu_users_columns', array( $this, 'add_last_seen_column_head' ) );
@@ -25,17 +27,16 @@ class User_Last_Seen {
 
 			add_filter( 'manage_users_sortable_columns', array( $this, 'add_last_seen_sortable_column' ) );
 			add_filter( 'manage_users-network_sortable_columns', array( $this, 'add_last_seen_sortable_column' ) );
-			add_filter( 'users_list_table_query_args', array( $this, 'last_seen_query_args') );
+			add_filter( 'users_list_table_query_args', array( $this, 'last_seen_order_by_query_args') );
+		}
 
+		if ( $this->is_block_action_enabled() ) {
 			add_filter( 'views_users', array( $this, 'add_blocked_users_filter' ) );
 			add_filter( 'views_users-network', array( $this, 'add_blocked_users_filter' ) );
-		}
+			add_filter( 'users_list_table_query_args', array( $this, 'last_seen_blocked_users_filter_query_args') );
 
-		if ( constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'BLOCK' ) {
 			add_action( 'admin_init', array( $this, 'last_seen_unblock_action' ) );
 		}
-
-		add_action( 'admin_init', array( $this, 'register_release_date' ) );
 	}
 
 	public function determine_current_user( $user_id ) {
@@ -48,7 +49,7 @@ class User_Last_Seen {
 			return $user_id;
 		}
 
-		if ( $this->is_considered_inactive( $user_id ) ) {
+		if ( $this->is_block_action_enabled() && $this->is_considered_inactive( $user_id ) ) {
 			// Force current user to 0 to avoid recursive calls to this filter
 			wp_set_current_user( 0 );
 
@@ -67,30 +68,34 @@ class User_Last_Seen {
 			return $user;
 		}
 
-		if ( $user->ID && $this->is_considered_inactive( $user->ID ) ) {
+		if ( $user->ID && $this->is_block_action_enabled() && $this->is_considered_inactive( $user->ID ) ) {
 			return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'inactive-account-lockdown' ) );;
 		}
 
 		return $user;
 	}
 
-	function add_last_seen_column_head( $columns ) {
+	public function add_last_seen_column_head( $columns ) {
 		$columns[ 'last_seen' ] = __( 'Last seen' );
 		return $columns;
 	}
 
-	function add_last_seen_sortable_column( $columns ) {
+	public function add_last_seen_sortable_column( $columns ) {
 		$columns['last_seen'] = 'last_seen';
 
 		return $columns;
 	}
 
-	function last_seen_query_args( $vars ) {
+	public function last_seen_order_by_query_args( $vars ) {
 		if ( isset( $vars['orderby'] ) && $vars['orderby'] === 'last_seen' ) {
 			$vars[ 'meta_key' ] = self::LAST_SEEN_META_KEY;
 			$vars[ 'orderby' ] = 'meta_value_num';
 		}
 
+		return $vars;
+	}
+
+	public function last_seen_blocked_users_filter_query_args($vars ) {
 		if ( isset( $_REQUEST[ 'last_seen_filter' ] ) && $_REQUEST[ 'last_seen_filter' ] === 'blocked' ) {
 			$vars[ 'meta_key' ] = self::LAST_SEEN_META_KEY;
 			$vars[ 'meta_value' ] = $this->get_inactivity_timestamp();
@@ -101,7 +106,7 @@ class User_Last_Seen {
 		return $vars;
 	}
 
-	function add_last_seen_column_date( $default, $column_name, $user_id ) {
+	public function add_last_seen_column_date( $default, $column_name, $user_id ) {
 		if ( 'last_seen' !== $column_name ) {
 			return $default;
 		}
@@ -118,7 +123,7 @@ class User_Last_Seen {
 			date_i18n( get_option('time_format'), $last_seen_timestamp )
 		);
 
-		if ( ! $this->is_considered_inactive( $user_id ) ) {
+		if ( ! $this->is_block_action_enabled() || ! $this->is_considered_inactive( $user_id ) ) {
 			return sprintf( '<span>%s</span>', esc_html__( $formatted_date ) );
 		}
 
@@ -135,7 +140,7 @@ class User_Last_Seen {
 		return sprintf( '<span class="wp-ui-text-notification">%s</span>' . $unblock_link, esc_html__( $formatted_date ) );
 	}
 
-	function add_blocked_users_filter( $views ) {
+	public function add_blocked_users_filter( $views ) {
 		$blog_id = is_network_admin() ? null : get_current_blog_id();
 
 		$users_query = new \WP_User_Query(
@@ -166,7 +171,7 @@ class User_Last_Seen {
 		return $views;
 	}
 
-	function last_seen_unblock_action() {
+	public function last_seen_unblock_action() {
 		$admin_notices_hook_name = is_network_admin() ? 'network_admin_notices' : 'admin_notices';
 
 		if ( isset( $_GET['reset_last_seen_success'] ) && $_GET['reset_last_seen_success'] === '1' ) {
@@ -233,10 +238,6 @@ class User_Last_Seen {
 	}
 
 	public function is_considered_inactive( $user_id ) {
-		if ( constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) !== 'BLOCK' ) {
-			return false;
-		}
-
 		$last_seen_timestamp = get_user_meta( $user_id, self::LAST_SEEN_META_KEY, true );
 		if ( $last_seen_timestamp ) {
 			return $last_seen_timestamp < $this->get_inactivity_timestamp();
@@ -252,10 +253,12 @@ class User_Last_Seen {
 	}
 
 	public function get_inactivity_timestamp() {
-		if ( ! defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
-			return 0;
-		}
-
 		return strtotime( sprintf('-%d days', constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) ) + self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
+	}
+
+	private function is_block_action_enabled() {
+		return defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) &&
+			defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) &&
+			constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'BLOCK';
 	}
 }
