@@ -16,7 +16,7 @@ require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
 
-if ( defined( 'VIP_USER_LAST_SEEN_ENABLED' ) ) {
+if ( defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) && constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) !== 'NO_ACTION' ) {
 	require_once __DIR__ . '/security/user-last-seen.php';
 }
 

@@ -2,37 +2,41 @@
 namespace Automattic\VIP\Security;
 
 const LAST_SEEN_META_KEY = 'wpvip_last_seen';
+const LAST_SEEN_CACHE_GROUP = 'wpvip_last_seen';
 const LAST_SEEN_UPDATE_USER_META_CACHE_TTL = MINUTE_IN_SECONDS * 5; // Store last seen once every five minute to avoid too many write DB operations
-const LAST_SEEN_UPDATE_USER_META_CACHE_KEY_PREFIX = 'wpvip_last_seen_update_user_meta_cache_key';
-const GROUP = 'wpvip';
+const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY = 'wpvip_last_seen_release_date_timestamp';
+
+// Use a global cache group to avoid having to the data for each site
+wp_cache_add_global_groups( array( LAST_SEEN_CACHE_GROUP ) );
+
+// VIP_SECURITY_INACTIVE_USERS_ACTION= undefined || 'NO_ACTION', 'RECORD_LAST_SEEN', 'REPORT', 'BLOCK'
+// VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS = undefined || number
 
 add_filter( 'determine_current_user', function ( $user_id ) {
 	if ( ! $user_id ) {
 		return $user_id;
 	}
 
-	$cache_key = LAST_SEEN_UPDATE_USER_META_CACHE_KEY_PREFIX . $user_id;
-
-	if ( wp_cache_get( $cache_key, GROUP ) ) {
+	if ( wp_cache_get( $user_id, LAST_SEEN_CACHE_GROUP ) ) {
 		// Last seen meta was checked recently
 		return $user_id;
 	}
 
-	$is_api_request = Context::is_rest_api() || Context::is_xmlrpc_api();
+	if ( is_considered_inactive( $user_id ) ) {
+		// Force current user to 0 to avoid recursive calls to this filter
+		wp_set_current_user( 0 );
 
-	if ( $is_api_request && is_considered_inactive( $user_id ) ) {
-		// To block API requests for inactive requests, we need to return a WP_Error object here
 		return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'inactive-account-lockdown' ) );
 	}
 
-	if ( wp_cache_add( $cache_key, true, GROUP, LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
+	if ( wp_cache_add( $user_id, true, LAST_SEEN_CACHE_GROUP, LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
 		update_user_meta( $user_id, LAST_SEEN_META_KEY, time() );
 	}
 
 	return $user_id;
 }, 30, 1 );
 
-add_filter( 'authenticate', function( $user, string $username, string $password ) {
+add_filter( 'authenticate', function( $user ) {
 	if ( is_wp_error( $user ) ) {
 		return $user;
 	}
@@ -42,12 +46,40 @@ add_filter( 'authenticate', function( $user, string $username, string $password 
 	}
 
 	return $user;
-}, 20, 3 );
+}, 20, 1 );
 
 
-add_filter( 'manage_users_columns', function ( $cols ) {
-	$cols['last_seen'] = __( 'Last seen' );
-	return $cols;
+add_filter( 'wpmu_users_columns', function ( $columns ) {
+	$columns['last_seen'] = __( 'Last seen' );
+	return $columns;
+} );
+
+add_filter( 'manage_users_columns', function ( $columns ) {
+	$columns['last_seen'] = __( 'Last seen' );
+	return $columns;
+} );
+
+add_filter( 'manage_users_sortable_columns', function ( $columns ) {
+	$columns['last_seen'] = 'last_seen';
+
+	return $columns;
+} );
+
+add_filter( 'manage_users-network_sortable_columns', function ( $columns ) {
+	$columns['last_seen'] = 'last_seen';
+
+	return $columns;
+} );
+
+add_filter( 'users_list_table_query_args', function ( $vars ) {
+	if ( isset( $vars['orderby'] ) && $vars['orderby'] === 'last_seen' ) {
+		$vars = array_merge( $vars, array(
+			'meta_key' => LAST_SEEN_META_KEY,
+			'orderby' => 'meta_value_num'
+		) );
+	}
+
+	return $vars;
 } );
 
 add_filter( 'manage_users_custom_column', function ( $default, $column_name, $user_id ) {
@@ -76,6 +108,7 @@ add_filter( 'manage_users_custom_column', function ( $default, $column_name, $us
 		$url = add_query_arg( array(
 			'action' => 'reset_last_seen',
 			'user_id' => $user_id,
+			'reset_last_seen_nonce' => wp_create_nonce( 'reset_last_seen_action' )
 		) );
 
 		$unblock_link = "<div class='row-actions'><span>User blocked due to inactivity. <a class='reset_last_seen_action' href='" . esc_url( $url ) . "'>" . __( 'Unblock' ) . "</a></span></div>";
@@ -83,66 +116,96 @@ add_filter( 'manage_users_custom_column', function ( $default, $column_name, $us
 	return sprintf( '<span class="wp-ui-text-notification">%s</span>' . $unblock_link, esc_html__( $formatted_date ) );
 }, 10, 3 );
 
-add_action( 'user_row_actions', function ( $actions  ) {
-	if( isset($_GET['action'] ) && $_GET['action'] === 'reset_last_seen' ){
-		$user_id = absint( $_GET['user_id'] );
-		delete_user_meta( $user_id, LAST_SEEN_META_KEY );
+
+add_action( 'admin_init', function () {
+	$admin_notices_hook_name = is_network_admin() ? 'network_admin_notices' : 'admin_notices';
+
+	if ( isset( $_GET['reset_last_seen_success'] ) && $_GET['reset_last_seen_success'] === '1' ) {
+		add_action( $admin_notices_hook_name, function() {
+			$class = 'notice notice-success is-dismissible';
+			$error = __( 'User unblocked.', 'inactive-account-lockdown' );
+
+			printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $error ) );
+		} );
 	}
 
-	return $actions;
-}, 10, 1 );
-
-add_filter( 'views_users', function ( $views ) {
-	global $wpdb;
-
-	if ( ! defined( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
-		return $views;
+	if ( ! isset( $_GET['action'] ) || $_GET['action'] !== 'reset_last_seen' ) {
+		return;
 	}
 
-	$count = $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(meta_key) FROM ' . $wpdb->usermeta . ' WHERE meta_key = %s AND meta_value < %s', LAST_SEEN_META_KEY, get_inactivity_timestamp() ) );
+	$user_id = absint( $_GET['user_id'] );
 
-	$view = __( 'Blocked Users' );
-	if ( $count ) {
-		$class = isset( $_REQUEST[ 'last_seen_filter' ] ) ? 'current' : '';
-		$view = '<a class="' . esc_attr( $class ) . '" href="users.php?last_seen_filter=blocked">' . esc_html( $view ) . '</a>';
+	$error = null;
+	if ( ! wp_verify_nonce( $_GET['reset_last_seen_nonce'], 'reset_last_seen_action' ) ) {
+		$error = __( 'Unable to verify your request', 'inactive-account-lockdown' );
 	}
-	$views['blocked_users'] = $view . ' (' . $count . ')';
 
-	return $views;
+	if ( ! get_userdata( $user_id) ) {
+		$error = __( 'User not found.', 'inactive-account-lockdown' );
+	}
+
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		$error = __( 'You do not have permission to unblock this user.', 'inactive-account-lockdown' );
+	}
+
+	if ( ! $error && ! delete_user_meta( $user_id, LAST_SEEN_META_KEY ) ) {
+		$error = __( 'Unable to unblock user.', 'inactive-account-lockdown' );
+	}
+
+	if ( $error ) {
+		add_action( $admin_notices_hook_name, function() use ( $error ) {
+			$class = 'notice notice-error is-dismissible';
+
+			printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $error ) );
+		} );
+		return;
+	}
+
+	$url = remove_query_arg( array(
+		'action',
+		'user_id',
+		'reset_last_seen_nonce',
+	) );
+
+	$url = add_query_arg( array(
+		'reset_last_seen_success' => 1,
+	), $url );
+
+	wp_redirect( $url );
+	exit();
 } );
 
-add_filter( 'users_list_table_query_args', function ( $args ) {
-	if ( ! defined( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
-		return $args;
+add_action( 'admin_init', function () {
+	if ( ! get_option( LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY ) ) {
+		// Right after the first admin_init, set the release date timestamp
+		// to be used as a fallback for users that never logged in before.
+		add_option( LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, time() );
 	}
-
-	if ( isset( $_REQUEST[ 'last_seen_filter' ] ) ) {
-		$args[ 'meta_key' ] = LAST_SEEN_META_KEY;
-		$args[ 'meta_value' ] = get_inactivity_timestamp();
-		$args[ 'meta_type' ] = 'NUMERIC';
-		$args[ 'meta_compare' ] = '<';
-	}
-
-	return $args;
 } );
 
 function is_considered_inactive( $user_id ) {
-	if ( ! defined( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
+	if ( ! defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) || ! constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) !== 'BLOCK' ) {
 		return false;
 	}
 
 	$last_seen_timestamp = get_user_meta( $user_id, LAST_SEEN_META_KEY, true );
-	if ( ! $last_seen_timestamp ) {
-		return false;
+	if ( $last_seen_timestamp ) {
+		return $last_seen_timestamp < get_inactivity_timestamp();
 	}
 
-	return $last_seen_timestamp < get_inactivity_timestamp();
+	$release_date_timestamp = get_option( LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY );
+	if ( $release_date_timestamp ) {
+		return $release_date_timestamp < get_inactivity_timestamp();
+	}
+
+	// Release date is not defined yed, so we can't consider the user inactive.
+	return false;
 }
 
 function get_inactivity_timestamp() {
-	if ( ! defined( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
+	if ( ! defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) {
 		return 0;
 	}
 
-	return strtotime( sprintf('-%d days', constant( 'VIP_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) ) + LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
+	return strtotime( sprintf('-%d days', constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) ) + LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
 }
