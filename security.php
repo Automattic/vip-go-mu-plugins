@@ -16,8 +16,11 @@ require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
 
-if ( defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) && constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) !== 'NO_ACTION' ) {
+if ( defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) ) {
 	require_once __DIR__ . '/security/user-last-seen.php';
+
+	$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
+	$last_seen->init();
 }
 
 use Automattic\VIP\Utils\Context;
