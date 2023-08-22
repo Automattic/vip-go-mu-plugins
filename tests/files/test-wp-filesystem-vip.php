@@ -20,6 +20,8 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		Constant_Mocker::clear();
+		Constant_Mocker::define( 'LOCAL_UPLOADS', '/tmp/uploads' );
+		Constant_Mocker::define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
 		$this->fs_direct_mock  = $this->createMock( WP_Filesystem_Direct::class );

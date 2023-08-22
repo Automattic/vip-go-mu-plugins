@@ -64,7 +64,9 @@ function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cach
 	$add_result = wp_cache_add( 'alloptions', $alloptions, 'options' );
 
 	if ( false === $add_result && false === wp_cache_get( 'alloptions', 'options', true ) ) {
-		trigger_error( 'VIP: Saving to alloptions fallback cache.', E_USER_WARNING );
+		if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' ) ) {
+			trigger_error( 'VIP: Saving to alloptions fallback cache.', E_USER_WARNING );
+		}
 
 		// Prevent memory issues in case something is looping over thousands of subsites.
 		if ( count( $fallback_cache ) > 10 ) {

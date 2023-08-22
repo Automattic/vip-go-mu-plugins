@@ -4,6 +4,7 @@ namespace Automattic\VIP\Jetpack;
 
 use Automattic\VIP\Utils\Alerts;
 use DateTime;
+use WP_Error;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
