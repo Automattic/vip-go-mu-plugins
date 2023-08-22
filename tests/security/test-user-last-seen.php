@@ -55,12 +55,14 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 				'wpvip_last_seen' => strtotime('-31 days'),
 			],
 		]);
+		add_user_meta( $user_inactive_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-31 days') );
 
 		$user_active_id = $this->factory()->user->create([
 			'meta_input' => [
 				'wpvip_last_seen' => strtotime('-29 days'),
 			],
 		]);
+		add_user_meta( $user_active_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-29 days') );
 
 		$last_seen = new User_Last_Seen();
 		$last_seen->init();
@@ -110,11 +112,8 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		$previous_last_seen = sprintf('%d', strtotime('-10 days') );
 
-		$user_id = $this->factory()->user->create([
-			'meta_input' => [
-				'wpvip_last_seen' => $previous_last_seen,
-			],
-		]);
+		$user_id = $this->factory()->user->create();
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, $previous_last_seen );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
 		$last_seen->init();
@@ -139,11 +138,8 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'determine_current_user' );
 
-		$user_id = $this->factory()->user->create([
-			'meta_input' => [
-				'wpvip_last_seen' => strtotime('-100 days'),
-			],
-		]);
+		$user_id = $this->factory()->user->create();
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-100 days') );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
 		$last_seen->init();
@@ -160,11 +156,8 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'authenticate' );
 
-		$user_id = $this->factory()->user->create([
-			'meta_input' => [
-				'wpvip_last_seen' => strtotime('-5 days'),
-			],
-		]);
+		$user_id = $this->factory()->user->create();
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-5 days') );
 
 		$user = get_user_by( 'id', $user_id );
 
@@ -183,11 +176,9 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'authenticate' );
 
-		$user_id = $this->factory()->user->create([
-			'meta_input' => [
-				'wpvip_last_seen' => strtotime('-100 days'),
-			],
-		]);
+		$user_id = $this->factory()->user->create();
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-100 days') );
+
 		$user = get_user_by( 'id', $user_id );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
