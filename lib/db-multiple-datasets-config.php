@@ -54,3 +54,29 @@ function get_primary_dataset() {
 
 	trigger_error( 'primary dataset not found', E_USER_ERROR );
 }
+
+/**
+ * Prevent 'has_published_posts' and 'orderby=post_count' query parameters from being used on sites with
+ * multiple datasets.
+ *
+ * @param \WP_User_Query $wp_user_query The current WP_User_Query instance, passed by reference.
+ */
+function multiple_datasets_pre_get_users( $wp_user_query ) {
+	if ( ! is_null( $wp_user_query->query_vars['has_published_posts'] ) ) {
+		trigger_error(
+			'WP_User_Query was called incorrectly. `has_published_posts` can not be used on sites with multiple datasets, users and posts tables use different DBs.',
+			E_USER_NOTICE
+		);
+
+		$wp_user_query->query_vars['has_published_posts'] = null;
+	}
+
+	if ( ! is_null( $wp_user_query->query_vars['orderby'] ) && 'post_count' === $wp_user_query->query_vars['orderby'] ) {
+		trigger_error(
+			'WP_User_Query was called incorrectly. `orderby = post_count` can not be used on sites with multiple datasets, users and posts tables use different DBs.',
+			E_USER_NOTICE
+		);
+
+		$wp_user_query->query_vars['orderby'] = null;
+	}
+}
