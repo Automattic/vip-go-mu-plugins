@@ -10,6 +10,7 @@ if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 }
 
 $mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+
 if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_ENABLED ) {
 	require_once $mu_plugin_dir . '/lib/db-multiple-datasets-config.php';
 
@@ -17,7 +18,7 @@ if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_E
 	// Register a callback to select the dataset for a given query
 	$wpdb->add_callback( 'Automattic\VIP\DatabaseMultipleDatasetsConfig\dataset_callback', 'dataset' );
 
-	add_action( 'pre_get_users', 'Automattic\VIP\DatabaseMultipleDatasetsConfig\multiple_datasets_pre_get_users' );
+	add_action( 'pre_get_users', 'Automattic\VIP\DatabaseMultipleDatasetsConfig\multiple_datasets_pre_get_users_cleanup' );
 }
 
 require_once $mu_plugin_dir . '/lib/utils/class-context.php';
