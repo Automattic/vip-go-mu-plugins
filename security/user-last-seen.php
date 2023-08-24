@@ -45,10 +45,6 @@ class User_Last_Seen {
 			return $user_id;
 		}
 
-		if ( ! $this->should_check_user_last_seen( $user_id ) ) {
-			return $user_id;
-		}
-
 		if ( wp_cache_get( $user_id, self::LAST_SEEN_CACHE_GROUP ) ) {
 			// Last seen meta was checked recently
 			return $user_id;
@@ -71,10 +67,6 @@ class User_Last_Seen {
 
 	public function authenticate( $user ) {
 		if ( is_wp_error( $user ) ) {
-			return $user;
-		}
-
-		if ( ! $this->should_check_user_last_seen( $user->ID ) ) {
 			return $user;
 		}
 
@@ -260,6 +252,10 @@ class User_Last_Seen {
 	}
 
 	public function is_considered_inactive( $user_id ) {
+		if ( ! $this->should_check_user_last_seen( $user_id ) ) {
+			return false;
+		}
+
 		$last_seen_timestamp = get_user_meta( $user_id, self::LAST_SEEN_META_KEY, true );
 		if ( $last_seen_timestamp ) {
 			return $last_seen_timestamp < $this->get_inactivity_timestamp();
@@ -330,7 +326,7 @@ class User_Last_Seen {
 		$elevated_capabilities = apply_filters( 'vip_security_last_seen_elevated_capabilities', $elevated_capabilities );
 
 		foreach ( $user->allcaps as $capability => $value ) {
-			if ( $value === true && in_array( $capability, $elevated_capabilities ) ) {
+			if ( true === $value && in_array( $capability, $elevated_capabilities ) ) {
 				return true;
 			}
 		}
