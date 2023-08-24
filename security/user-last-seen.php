@@ -18,7 +18,6 @@ class User_Last_Seen {
 		add_action( 'admin_init', array( $this, 'register_release_date' ) );
 
 		add_filter( 'determine_current_user', array( $this, 'determine_current_user' ), 30, 1 );
-		add_filter( 'authenticate', array( $this, 'authenticate' ), 20, 1 );
 
 		if ( in_array( constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ), array( 'REPORT', 'BLOCK' ) ) ) {
 			add_filter( 'wpmu_users_columns', array( $this, 'add_last_seen_column_head' ) );
@@ -31,6 +30,8 @@ class User_Last_Seen {
 		}
 
 		if ( $this->is_block_action_enabled() ) {
+			add_filter( 'authenticate', array( $this, 'authenticate' ), 20, 1 );
+
 			add_filter( 'views_users', array( $this, 'add_blocked_users_filter' ) );
 			add_filter( 'views_users-network', array( $this, 'add_blocked_users_filter' ) );
 			add_filter( 'users_list_table_query_args', array( $this, 'last_seen_blocked_users_filter_query_args' ) );
@@ -44,6 +45,10 @@ class User_Last_Seen {
 			return $user_id;
 		}
 
+		if ( ! $this->should_check_user_last_seen( $user_id ) ) {
+			return $user_id;
+		}
+
 		if ( wp_cache_get( $user_id, self::LAST_SEEN_CACHE_GROUP ) ) {
 			// Last seen meta was checked recently
 			return $user_id;
@@ -53,7 +58,7 @@ class User_Last_Seen {
 			// Force current user to 0 to avoid recursive calls to this filter
 			wp_set_current_user( 0 );
 
-			return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'inactive-account-lockdown' ) );
+			return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ) );
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
@@ -69,10 +74,14 @@ class User_Last_Seen {
 			return $user;
 		}
 
+		if ( ! $this->should_check_user_last_seen( $user->ID ) ) {
+			return $user;
+		}
+
 		if ( $user->ID && $this->is_block_action_enabled() && $this->is_considered_inactive( $user->ID ) ) {
 			return new \WP_Error(
 				'inactive_account',
-				__( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'inactive-account-lockdown' )
+				__( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' )
 			);
 		}
 
@@ -80,7 +89,7 @@ class User_Last_Seen {
 	}
 
 	public function add_last_seen_column_head( $columns ) {
-		$columns['last_seen'] = __( 'Last seen' );
+		$columns['last_seen'] = __( 'Last seen', 'wpvip' );
 		return $columns;
 	}
 
@@ -141,7 +150,7 @@ class User_Last_Seen {
 				'reset_last_seen_nonce' => wp_create_nonce( 'reset_last_seen_action' ),
 			) );
 
-			$unblock_link = "<div class='row-actions'><span>User blocked due to inactivity. <a class='reset_last_seen_action' href='" . esc_url( $url ) . "'>" . __( 'Unblock' ) . '</a></span></div>';
+			$unblock_link = "<div class='row-actions'><span>User blocked due to inactivity. <a class='reset_last_seen_action' href='" . esc_url( $url ) . "'>" . __( 'Unblock', 'wpvip' ) . '</a></span></div>';
 		}
 		return sprintf( '<span class="wp-ui-text-notification">%s</span>' . $unblock_link, esc_html( $date ) );
 	}
@@ -158,24 +167,28 @@ class User_Last_Seen {
 				'meta_value'   => $this->get_inactivity_timestamp(),
 				'meta_type'    => 'NUMERIC',
 				'meta_compare' => '<',
-				'count_total'  => true,
+				'count_total'  => false,
+				'number'       => 1, // To minimize the query time, we only need to know if there are any blocked users to show the link
 			),
 		);
-		$count       = (int) $users_query->get_total();
 
-		$view = __( 'Blocked Users' );
-		if ( $count ) {
-			$url = add_query_arg( array(
-				'last_seen_filter'       => 'blocked',
-				'last_seen_filter_nonce' => wp_create_nonce( 'last_seen_filter' ),
-			) );
+		$views['blocked_users'] = __( 'Blocked Users', 'wpvip' );
 
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$class = isset( $_GET['last_seen_filter'] ) ? 'current' : '';
-
-			$view = '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $url ) . '">' . esc_html( $view ) . '</a>';
+		if ( ! $users_query->get_results() ) {
+			return $views;
 		}
-		$views['blocked_users'] = $view . ' (' . $count . ')';
+
+		$url = add_query_arg( array(
+			'last_seen_filter'       => 'blocked',
+			'last_seen_filter_nonce' => wp_create_nonce( 'last_seen_filter' ),
+		) );
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$class = isset( $_GET['last_seen_filter'] ) ? 'current' : '';
+
+		$view = '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $url ) . '">' . esc_html( $views['blocked_users'] ) . '</a>';
+
+		$views['blocked_users'] = $view;
 
 		return $views;
 	}
@@ -186,7 +199,7 @@ class User_Last_Seen {
 		if ( isset( $_GET['reset_last_seen_success'] ) && '1' === $_GET['reset_last_seen_success'] ) {
 			add_action( $admin_notices_hook_name, function() {
 				$class = 'notice notice-success is-dismissible';
-				$error = __( 'User unblocked.', 'inactive-account-lockdown' );
+				$error = __( 'User unblocked.', 'wpvip' );
 
 				printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $error ) );
 			} );
@@ -200,19 +213,19 @@ class User_Last_Seen {
 
 		$error = null;
 		if ( ! isset( $_GET['reset_last_seen_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( $_GET['reset_last_seen_nonce'] ), 'reset_last_seen_action' ) ) {
-			$error = __( 'Unable to verify your request', 'inactive-account-lockdown' );
+			$error = __( 'Unable to verify your request', 'wpvip' );
 		}
 
 		if ( ! get_userdata( $user_id ) ) {
-			$error = __( 'User not found.', 'inactive-account-lockdown' );
+			$error = __( 'User not found.', 'wpvip' );
 		}
 
 		if ( ! current_user_can( 'edit_user', $user_id ) ) {
-			$error = __( 'You do not have permission to unblock this user.', 'inactive-account-lockdown' );
+			$error = __( 'You do not have permission to unblock this user.', 'wpvip' );
 		}
 
 		if ( ! $error && ! delete_user_meta( $user_id, self::LAST_SEEN_META_KEY ) ) {
-			$error = __( 'Unable to unblock user.', 'inactive-account-lockdown' );
+			$error = __( 'Unable to unblock user.', 'wpvip' );
 		}
 
 		if ( $error ) {
@@ -242,7 +255,7 @@ class User_Last_Seen {
 		if ( ! get_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY ) ) {
 			// Right after the first admin_init, set the release date timestamp
 			// to be used as a fallback for users that never logged in before.
-			add_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, time() );
+			add_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, time(), '', 'no' );
 		}
 	}
 
@@ -262,12 +275,66 @@ class User_Last_Seen {
 	}
 
 	public function get_inactivity_timestamp() {
-		return strtotime( sprintf( '-%d days', constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) ) + self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
+		$days = constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ? absint( constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) : 90;
+
+		return strtotime( sprintf( '-%d days', $days ) ) + self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
 	}
 
 	private function is_block_action_enabled() {
 		return defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) &&
 			defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) &&
 			constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'BLOCK';
+	}
+
+	private function should_check_user_last_seen( $user_id ) {
+		/**
+		 * Filters the users that should be skipped when checking/recording the last seen.
+		 *
+		 * @param array $skip_users The list of users to skip.
+		 */
+		$skip_users = apply_filters( 'vip_security_last_seen_skip_users', array() );
+		if ( in_array( $user_id, $skip_users ) ) {
+			return false;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			throw new \Exception( 'User not found' );
+		}
+
+		$elevated_capabilities = array(
+			'edit_themes',
+			'switch_themes',
+			'activate_plugins',
+			'edit_users',
+			'edit_files',
+			'promote_users',
+			'moderate_comments',
+			'publish_posts',
+			'edit_posts',
+			'delete_posts',
+			'publish_pages',
+			'edit_pages',
+			'manage_options',
+			'manage_network_users',
+			'manage_network_themes',
+			'manage_network_plugins',
+			'manage_network_options',
+		);
+
+		/**
+		 * Filters the last seen elevated capabilities that are used to determine if the last seen should be checked.
+		 *
+		 * @param array $elevated_capabilities The elevated capabilities.
+		 */
+		$elevated_capabilities = apply_filters( 'vip_security_last_seen_elevated_capabilities', $elevated_capabilities );
+
+		foreach ( $user->allcaps as $capability => $value ) {
+			if ( $value === true && in_array( $capability, $elevated_capabilities ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 }
