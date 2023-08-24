@@ -7,8 +7,8 @@
 
 namespace Automattic\VIP\Integrations;
 
-use Client_Integration_Status;
-use Site_Integration_Status;
+use Org_Integration_Status;
+use Env_Integration_Status;
 
 /**
  * Class for managing configuration of integration provided by VIP.
@@ -20,15 +20,15 @@ class IntegrationVipConfig {
 	 * Configuration provided by VIP.
 	 *
 	 * @var array {
-	 *   'client'        => array<string, string>,
-	 *   'site'          => array<string, mixed>,
+	 *   'org'           => array<string, string>,
+	 *   'env'           => array<string, mixed>,
 	 *   'network_sites' => array<string, array<number, mixed>>,
 	 * }
 	 *
 	 * @example
 	 * array(
-	 *  'client'        => array( 'status' => 'blocked' ),
-	 *  'site'          => array(
+	 *  'org'        => array( 'status' => 'blocked' ),
+	 *  'env'        => array(
 	 *      'status' => 'enabled',
 	 *      'config'  => array(),
 	 *   ),
@@ -95,32 +95,32 @@ class IntegrationVipConfig {
 	 * @private
 	 */
 	public function is_active_via_vip(): bool {
-		// Return false if blocked on client.
-		if ( $this->get_value_from_config( 'client', 'status' ) === Client_Integration_Status::BLOCKED ) {
+		// Return false if blocked on org.
+		if ( $this->get_value_from_config( 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
 			return false;
 		}
 
-		$site_status = $this->get_value_from_config( 'site', 'status' );
+		$env_status = $this->get_value_from_config( 'env', 'status' );
 
-		// Return false if blocked on site.
-		if ( Site_Integration_Status::BLOCKED === $site_status ) {
+		// Return false if blocked on env.
+		if ( Env_Integration_Status::BLOCKED === $env_status ) {
 			return false;
 		}
 
-		// Look into network_sites config before because if not present we will fallback to site config.
+		// Look into network_sites config before because if not present we will fallback to env config.
 		$network_site_status = $this->get_value_from_config( 'network_sites', 'status' );
 
-		if ( Site_Integration_Status::ENABLED === $network_site_status ) {
+		if ( Env_Integration_Status::ENABLED === $network_site_status ) {
 			return true;
 		}
 
-		// Return false if status is defined but other than enabled. If status is not defined then fallback to site config.
+		// Return false if status is defined but other than enabled. If status is not defined then fallback to env config.
 		if ( null !== $network_site_status ) {
 			return false;
 		}
 
-		// Return true if enabled on site.
-		return Site_Integration_Status::ENABLED === $site_status;
+		// Return true if enabled on env.
+		return Env_Integration_Status::ENABLED === $env_status;
 	}
 
 	/**
@@ -134,7 +134,7 @@ class IntegrationVipConfig {
 		if ( is_multisite() ) {
 			$config = $this->get_value_from_config( 'network_sites', 'config' );
 		} else {
-			$config = $this->get_value_from_config( 'site', 'config' );
+			$config = $this->get_value_from_config( 'env', 'config' );
 		}
 
 		return $config ?? array(); // To keep function signature consistent.
@@ -143,14 +143,14 @@ class IntegrationVipConfig {
 	/**
 	 * Get config value based on given type and key.
 	 *
-	 * @param string $config_type Type of the config whose data is needed i.e. client, site, network-sites etc.
+	 * @param string $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
 	 * @param string $key Key of the config from which we have to extract the data.
 	 *
 	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
 	protected function get_value_from_config( string $config_type, string $key ) {
-		if ( ! in_array( $config_type, [ 'client', 'site', 'network_sites' ], true ) ) {
-			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of client, site and network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		if ( ! in_array( $config_type, [ 'org', 'env', 'network_sites' ], true ) ) {
+			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of org, env or network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			return null;
 		}
 
@@ -158,7 +158,7 @@ class IntegrationVipConfig {
 			return null;
 		}
 
-		// Look for key inside client or site config.
+		// Look for key inside org or env config.
 		if ( 'network_sites' !== $config_type && isset( $this->config[ $config_type ][ $key ] ) ) {
 			return $this->config[ $config_type ][ $key ];
 		}
