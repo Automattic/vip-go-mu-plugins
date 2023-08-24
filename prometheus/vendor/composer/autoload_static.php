@@ -23,6 +23,7 @@ class ComposerStaticInit4616fa90859a83b560dc1cda55445fd7
     public static $classMap = array (
         'Automattic\\VIP\\Prometheus\\CollectorInterface' => __DIR__ . '/../..' . '/inc/class-collectorinterface.php',
         'Automattic\\VIP\\Prometheus\\Plugin' => __DIR__ . '/../..' . '/inc/class-plugin.php',
+        'Automattic\\VIP\\Prometheus\\SafeAdapter' => __DIR__ . '/../..' . '/inc/class-safeadapter.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 

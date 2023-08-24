@@ -6,10 +6,8 @@ use Automattic\Test\Constant_Mocker;
 use Parsely\UI\Row_Actions;
 use WP_UnitTestCase;
 
-function test_mode() {
-	$mode = getenv( 'WPVIP_PARSELY_INTEGRATION_TEST_MODE' );
-	return $mode ?: 'disabled';
-}
+use function Automattic\Test\Utils\get_parsely_test_mode;
+use function Automattic\Test\Utils\is_parsely_disabled;
 
 function test_version() {
 	$major_version = getenv( 'WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION' );
@@ -27,7 +25,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
-		self::$test_mode     = test_mode();
+		self::$test_mode     = get_parsely_test_mode();
 		self::$major_version = test_version();
 	}
 
@@ -40,7 +38,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			$this->assertEquals( Parsely_Integration_Type::NONE, Parsely_Loader_Info::get_integration_type() );
 			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
 			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
-		} elseif ( $this->is_plugin_disabled() ) {
+		} elseif ( is_parsely_disabled() ) {
 			$this->assertFalse( Parsely_Loader_Info::is_active() );
 		} else {
 			$this->assertTrue( Parsely_Loader_Info::is_active() );
@@ -73,7 +71,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		maybe_load_plugin();
 
-		if ( ! $this->is_plugin_disabled() ) {
+		if ( ! is_parsely_disabled() ) {
 			$this->assertTrue( class_exists( 'Parsely\Parsely' ) );
 			return;
 		}
@@ -86,7 +84,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		maybe_load_plugin();
 		$this->assertFalse( isset( $GLOBALS['parsely'] ) );
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			return;
 		}
 
@@ -258,7 +256,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( has_action( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' ) );
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			return;
 		}
 
@@ -279,7 +277,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_default_parsely_configs() {
 		maybe_load_plugin();
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			$this->assertNull( Parsely_Loader_Info::get_configs() );
 			return;
 		}
@@ -311,7 +309,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_custom_parsely_configs() {
 		maybe_load_plugin();
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			$this->assertNull( Parsely_Loader_Info::get_configs() );
 			return;
 		}
@@ -372,7 +370,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_unprotected_published_posts_show_meta() {
 		maybe_load_plugin();
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			$this->assertFalse( is_callable( '\Parsely\parsely_initialize_plugin' ) );
 			return;
 		}
@@ -400,7 +398,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		maybe_load_plugin();
 
-		if ( $this->is_plugin_disabled() ) {
+		if ( is_parsely_disabled() ) {
 			$this->assertFalse( is_callable( '\Parsely\parsely_initialize_plugin' ) );
 			return;
 		}
@@ -468,9 +466,5 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	private function set_post_globals_for_parsely_activation() {
 		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
 		$_POST['action']  = 'activate-selected';
-	}
-
-	private function is_plugin_disabled(): bool {
-		return in_array( self::$test_mode, [ 'disabled', 'filter_disabled', 'option_disabled', 'filter_and_option_disabled' ] );
 	}
 }

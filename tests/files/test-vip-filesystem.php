@@ -2,10 +2,17 @@
 
 namespace Automattic\VIP\Files;
 
+use Automattic\Test\Constant_Mocker;
+use ErrorException;
 use WP_Error;
+use WP_Filesystem_Base;
+use WP_Filesystem_Direct;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-vip-filesystem.php';
+VIP_Filesystem_Test::configure_constant_mocker();
+
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
 class VIP_Filesystem_Test extends WP_UnitTestCase {
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
@@ -15,29 +22,45 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 */
 	protected $vip_filesystem;
 
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
+	/** @var int */
+	private $original_error_reporting;
 
-		// make sure needed constants are defined
-		if ( ! defined( 'LOCAL_UPLOADS' ) ) {
-			define( 'LOCAL_UPLOADS', '/tmp/uploads' );
-		}
-		if ( ! defined( 'WP_CONTENT_DIR' ) ) {
-			define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
-		}
+	public static $actor;
+
+	public static function configure_constant_mocker(): void {
+		Constant_Mocker::clear();
+		define( 'LOCAL_UPLOADS', '/wp/uploads' );
+		define( 'WP_CONTENT_DIR', '/wp/wordpress/wp-content' );
 	}
 
 	public function setUp(): void {
 		parent::setUp();
+
+		self::$actor = null;
+		self::configure_constant_mocker();
 
 		$this->vip_filesystem = new VIP_Filesystem();
 
 		// add the filters for upload dir tests
 		$add_filters = self::get_method( 'add_filters' );
 		$add_filters->invoke( $this->vip_filesystem );
+
+		$this->original_error_reporting = error_reporting();
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( $errno & error_reporting() ) {
+				throw new ErrorException( $errstr, $errno );
+			}
+
+			return false;
+		}, E_ALL );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		Constant_Mocker::clear();
+
 		// remove the filters
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
@@ -69,10 +92,10 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		return [
 			'local-uploads' => [
 				[
-					'path'    => LOCAL_UPLOADS . '/2019/1',
+					'path'    => constant( 'LOCAL_UPLOADS' ) . '/2019/1',
 					'url'     => 'http://test.com/wp-content/uploads/2019/1',
 					'subdir'  => '/2019/1',
-					'basedir' => LOCAL_UPLOADS,
+					'basedir' => constant( 'LOCAL_UPLOADS' ),
 				],
 				[
 					'path'    => 'vip://wp-content/uploads/2019/1',
@@ -83,10 +106,10 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			],
 			'wp-content'    => [
 				[
-					'path'    => WP_CONTENT_DIR . '/uploads/2019/1',
+					'path'    => constant( 'WP_CONTENT_DIR' ) . '/uploads/2019/1',
 					'url'     => 'http://test.com/wp-content/uploads/2019/1',
 					'subdir'  => '/2019/1',
-					'basedir' => WP_CONTENT_DIR . '/uploads',
+					'basedir' => constant( 'WP_CONTENT_DIR' ) . '/uploads',
 				],
 				[
 					'path'    => 'vip://wp-content/uploads/2019/1',
@@ -136,6 +159,9 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__clean_file_path
 	 */
 	public function test__clean_file_path( $file_path, $expected ) {
+		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
+		Constant_Mocker::define( 'WP_CONTENT_DIR', WP_CONTENT_DIR );
+
 		$clean_file_path = self::get_method( 'clean_file_path' );
 
 		$actual = $clean_file_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
@@ -296,5 +322,42 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			'Failed to generate new unique file name `testfile.exe` (response code: 400)',
 			$actual['error']
 		);
+	}
+
+	/**
+	 * @dataProvider data_get_transport_for_path
+	 */
+	public function test_get_transport_for_path( string $file, string $expected ): void {
+		$direct = new class( '' ) extends WP_Filesystem_Direct {
+			public function put_contents( $file, $contents, $mode = false ) {
+				VIP_Filesystem_Test::$actor = 'direct';
+				return true;
+			}
+		};
+
+		$uploads = new class() extends WP_Filesystem_Base {
+			public function put_contents( $file, $contents, $mode = false ) {
+				VIP_Filesystem_Test::$actor = 'uploads';
+				return true;
+			}
+		};
+
+		$vipfs  = new WP_Filesystem_VIP( [ $uploads, $direct ] );
+		$result = $vipfs->put_contents( $file, 'xxx' );
+		self::assertTrue( $result );
+		self::assertEquals( $expected, self::$actor );
+		self::assertEmpty( $vipfs->errors->get_error_messages() );
+	}
+
+	public function data_get_transport_for_path(): iterable {
+		return [
+			[ ABSPATH . '.maintenance', 'direct' ],
+			[ get_temp_dir() . '/test.txt', 'direct' ],
+			[ constant( 'WP_CONTENT_DIR' ) . '/upgrade/test.txt', 'direct' ],
+			[ constant( 'WP_CONTENT_DIR' ) . '/upgrade-temp-backup/test.txt', 'direct' ],
+			[ constant( 'WP_CONTENT_DIR' ) . '/themes/test.txt', 'direct' ],
+			[ constant( 'WP_CONTENT_DIR' ) . '/plugins/test.txt', 'direct' ],
+			[ constant( 'WP_CONTENT_DIR' ) . '/languages/test.txt', 'direct' ],
+		];
 	}
 }

@@ -22,7 +22,7 @@ export async function getClassList( locator: Locator ): Promise<string[]> {
  */
 export function goToPage( page: Page, url: string ): Promise<unknown> {
     return Promise.all( [
-        page.waitForNavigation( { waitUntil: 'networkidle' } ),
         page.goto( url, { waitUntil: 'load' } ),
+        page.waitForURL( url, { waitUntil: 'load' } ),
     ] );
 }

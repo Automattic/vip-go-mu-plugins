@@ -132,7 +132,7 @@ class QM_Output_Html_Object_Cache_Group_Stats extends QM_Output_Html {
 	 *
 	 * @param $size int|null Raw size
 	 *
-	 * @return $size string Human readable size format
+	 * @return string Human readable size format
 	 */
 	public function process_size( ?int $size ) {
 		return size_format( (int) $size, 2 );
@@ -166,11 +166,11 @@ class QM_Output_Html_Object_Cache_Group_Stats extends QM_Output_Html {
 	 * Outputs a table cell.
 	 *
 	 * @param string $value Value to be outputted in table cell
-	 * @param int|null $weight Weight by sorting priority
+	 * @param float|null $weight Weight by sorting priority
 	 *
 	 * @return void
 	 */
-	public function output_table_cell( ?string $value, int $weight = null ) {
+	public function output_table_cell( ?string $value, ?float $weight = null ) {
 		if ( $weight ) {
 			$weight = ' data-qm-sort-weight="' . esc_attr( $weight ) . '"';
 		}
