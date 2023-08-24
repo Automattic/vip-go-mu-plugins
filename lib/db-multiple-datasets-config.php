@@ -74,13 +74,13 @@ function multiple_datasets_pre_get_users_cleanup( $wp_user_query ) {
 	if ( ! is_null( $wp_user_query->query_vars['orderby'] ) ) {
 		$has_post_count_orderby = false;
 		if ( 'post_count' === $wp_user_query->query_vars['orderby'] ) {
-			$has_post_count_orderby = true;
+			$has_post_count_orderby               = true;
 			$wp_user_query->query_vars['orderby'] = null;
 		}
 
 		if ( is_array( $wp_user_query->query_vars['orderby'] ) && in_array( 'post_count', $wp_user_query->query_vars['orderby'] ) ) {
 			$has_post_count_orderby = true;
-			$key = array_search( 'post_count', $wp_user_query->query_vars['orderby'] );
+			$key                    = array_search( 'post_count', $wp_user_query->query_vars['orderby'] );
 			unset( $wp_user_query->query_vars['orderby'][ $key ] );
 		}
 
