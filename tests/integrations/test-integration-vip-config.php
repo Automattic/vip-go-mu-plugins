@@ -9,8 +9,8 @@ namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
-use Client_Integration_Status;
-use Site_Integration_Status;
+use Org_Integration_Status;
+use Env_Integration_Status;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
@@ -40,12 +40,12 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->test_is_active_via_vip( [], false );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_client_status_is_blocked(): void {
-		$this->test_is_active_via_vip( [ 'client' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false );
+	public function test__is_active_via_vip_returns_false_if_organization_status_is_blocked(): void {
+		$this->test_is_active_via_vip( [ 'org' => [ 'status' => Org_Integration_Status::BLOCKED ] ], false );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_site_status_is_blocked(): void {
-		$this->test_is_active_via_vip( [ 'site' => [ 'status' => Client_Integration_Status::BLOCKED ] ], false );
+	public function test__is_active_via_vip_returns_false_if_environment_status_is_blocked(): void {
+		$this->test_is_active_via_vip( [ 'env' => [ 'status' => Org_Integration_Status::BLOCKED ] ], false );
 	}
 
 	public function test__is_active_via_vip_returns_false_if_integration_is_blocked_on_current_network_site(): void {
@@ -55,8 +55,8 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 
 		$this->test_is_active_via_vip(
 			[
-				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
-				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::BLOCKED ] ],
+				'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
+				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::BLOCKED ] ],
 			],
 			false,
 		);
@@ -69,8 +69,8 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 
 		$this->test_is_active_via_vip(
 			[
-				'site'          => [ 'status' => Site_Integration_Status::ENABLED ],
-				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::DISABLED ] ],
+				'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
+				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::DISABLED ] ],
 			],
 			false,
 		);
@@ -83,21 +83,21 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 
 		$this->test_is_active_via_vip(
 			[
-				'site'          => [ 'status' => Site_Integration_Status::DISABLED ],
-				'network_sites' => [ '1' => [ 'status' => Site_Integration_Status::ENABLED ] ],
+				'env'           => [ 'status' => Env_Integration_Status::DISABLED ],
+				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::ENABLED ] ],
 			],
 			true,
 		);
 	}
 
-	public function test__is_active_via_vip_returns_true_if_integration_is_not_present_on_current_network_site_but_enabled_on_site(): void {
+	public function test__is_active_via_vip_returns_true_if_integration_is_not_present_on_current_network_site_but_enabled_on_environment(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
 
 		$this->test_is_active_via_vip(
 			[
-				'site' => [ 'status' => Site_Integration_Status::ENABLED ],
+				'env' => [ 'status' => Env_Integration_Status::ENABLED ],
 			],
 			true,
 		);
@@ -111,33 +111,33 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->test_is_active_via_vip( [
 			'network_sites' => [
 				'2' => [
-					'status' => Site_Integration_Status::ENABLED,
+					'status' => Env_Integration_Status::ENABLED,
 					'config' => [ 'site config' ],
 				],
 			],
 		], false );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_integration_is_disabled_on_site(): void {
-		$this->test_is_active_via_vip( [ 'site' => [ 'status' => Site_Integration_Status::DISABLED ] ], false );
+	public function test__is_active_via_vip_returns_false_if_integration_is_disabled_on_environment(): void {
+		$this->test_is_active_via_vip( [ 'env' => [ 'status' => Env_Integration_Status::DISABLED ] ], false );
 	}
 
-	public function test__is_active_via_vip_returns_true_if_integration_is_enabled_on_site(): void {
+	public function test__is_active_via_vip_returns_true_if_integration_is_enabled_on_environment(): void {
 		$this->test_is_active_via_vip( [
-			'site' => [
-				'status' => Site_Integration_Status::ENABLED,
+			'env' => [
+				'status' => Env_Integration_Status::ENABLED,
 			],
 		], true );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_site(): void {
+	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_environment(): void {
 		$this->test_is_active_via_vip( [
-			'client'        => [
-				'status' => Site_Integration_Status::ENABLED,
+			'org'           => [
+				'status' => Env_Integration_Status::ENABLED,
 			],
 			'network_sites' => [
 				'2' => [
-					'status' => Site_Integration_Status::ENABLED,
+					'status' => Env_Integration_Status::ENABLED,
 					'config' => [ 'site config' ],
 				],
 			],
@@ -161,25 +161,25 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_is_active_via_vip, $mock->is_active_via_vip() );
 	}
 
-	public function test__get_site_config_returns_value_from_site_config(): void {
+	public function test__get_site_config_returns_value_from_environment_config(): void {
 		if ( is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for non multisite.' );
 		}
 
 		$this->test_get_site_config(
 			[
-				'site'          => [
-					'status' => Site_Integration_Status::ENABLED,
-					'config' => array( 'site-config' ),
+				'env'           => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => array( 'env-config' ),
 				],
 				'network_sites' => [
 					'1' => [
-						'status' => Site_Integration_Status::ENABLED,
+						'status' => Env_Integration_Status::ENABLED,
 						'config' => array( 'network-site-config' ),
 					],
 				],
 			],
-			array( 'site-config' ),
+			array( 'env-config' ),
 		);
 	}
 
@@ -190,13 +190,13 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 
 		$this->test_get_site_config(
 			[
-				'site'          => [
-					'status' => Site_Integration_Status::ENABLED,
-					'config' => array( 'site-config' ),
+				'env'           => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => array( 'env-config' ),
 				],
 				'network_sites' => [
 					'1' => [
-						'status' => Site_Integration_Status::ENABLED,
+						'status' => Env_Integration_Status::ENABLED,
 						'config' => array( 'network-site-config' ),
 					],
 				],
@@ -224,7 +224,7 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 
 	public function test__get_value_from_vip_config_trigger_error_if_invalid_argument_is_passed(): void {
 		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
-		$this->expectExceptionMessage( 'config_type param (invalid) must be one of client, site and network_sites.' );
+		$this->expectExceptionMessage( 'config_type param (invalid) must be one of org, env or network_sites.' );
 		$mocked_vip_configs = [];
 
 		$this->test_get_value_from_config( $mocked_vip_configs, 'invalid', 'key', '' );
@@ -233,19 +233,19 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	public function test__get_value_from_vip_config_returns_null_if_given_config_type_have_no_data(): void {
 		$mocked_vip_configs = [];
 
-		$this->test_get_value_from_config( $mocked_vip_configs, 'client', 'status', null );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'org', 'status', null );
 	}
 
-	public function test__get_value_from_vip_config_returns_config_from_client_data(): void {
+	public function test__get_value_from_vip_config_returns_config_from_organization_data(): void {
 		$mocked_vip_configs = [
-			'client' => [
-				'status' => Client_Integration_Status::BLOCKED,
+			'org' => [
+				'status' => Org_Integration_Status::BLOCKED,
 				'config' => array( 'client_configs' ),
 			],
 		];
 
-		$this->test_get_value_from_config( $mocked_vip_configs, 'client', 'status', Client_Integration_Status::BLOCKED );
-		$this->test_get_value_from_config( $mocked_vip_configs, 'client', 'config', array( 'client_configs' ) );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'org', 'status', Org_Integration_Status::BLOCKED );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'org', 'config', array( 'client_configs' ) );
 	}
 
 	public function test__get_value_from_vip_config_returns_config_of_current_network_site(): void {
@@ -254,35 +254,35 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		}
 
 		$mocked_vip_configs = [
-			'site'          => [
-				'status' => Site_Integration_Status::BLOCKED,
-				'config' => array( 'site_configs' ),
+			'env'           => [
+				'status' => Env_Integration_Status::BLOCKED,
+				'config' => array( 'env_configs' ),
 			],
 			'network_sites' => [
 				'1' => [
-					'status' => Site_Integration_Status::ENABLED,
+					'status' => Env_Integration_Status::ENABLED,
 					'config' => array( 'network_site_1_configs' ),
 				],
 				'2' => [
-					'status' => Site_Integration_Status::ENABLED,
+					'status' => Env_Integration_Status::ENABLED,
 					'config' => array( 'network_site_2_configs' ),
 				],
 			],
 		];
 
-		$this->test_get_value_from_config( $mocked_vip_configs, 'network_sites', 'status', Site_Integration_Status::ENABLED );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'network_sites', 'status', Env_Integration_Status::ENABLED );
 		$this->test_get_value_from_config( $mocked_vip_configs, 'network_sites', 'config', array( 'network_site_1_configs' ) );
 	}
 
 	public function test__get_value_from_vip_config_returns_null_if_non_existent_key_is_passed(): void {
 		$mocked_vip_configs = [
-			'site' => [
-				'status' => Site_Integration_Status::BLOCKED,
-				'config' => array( 'site_configs' ),
+			'env' => [
+				'status' => Env_Integration_Status::BLOCKED,
+				'config' => array( 'env_configs' ),
 			],
 		];
 
-		$this->test_get_value_from_config( $mocked_vip_configs, 'site', 'invalid_key', null );
+		$this->test_get_value_from_config( $mocked_vip_configs, 'env', 'invalid_key', null );
 	}
 
 	/**
