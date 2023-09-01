@@ -7,6 +7,7 @@ use Automattic\VIP\Prometheus\OpCache_Collector;
 use Automattic\VIP\Prometheus\Post_Stats_Collector;
 use Automattic\VIP\Prometheus\Error_Stats_Collector;
 use Automattic\VIP\Prometheus\Potential_Multi_Dataset_Queries_Collector;
+use Automattic\VIP\Prometheus\Multisite_Stats_Collector;
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
 	require_once __DIR__ . '/prometheus/index.php';
@@ -17,6 +18,7 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
 		'/prometheus-collectors/class-error-stats-collector.php',
+		'/prometheus-collectors/class-multisite-stats-collector.php',
 	];
 
 	$should_enable_post_collector = Feature::is_enabled( 'prom-post-collection' );
@@ -44,6 +46,7 @@ if ( defined( 'ABSPATH' ) ) {
 			'error'                           => Error_Stats_Collector::class,
 			'post'                            => Post_Stats_Collector::class,
 			'potential_multi_dataset_queries' => Potential_Multi_Dataset_Queries_Collector::class,
+			'multisite'                       => Multisite_Stats_Collector::class,
 		];
 
 		foreach ( $to_init as $slug => $class ) {
