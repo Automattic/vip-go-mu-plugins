@@ -237,27 +237,9 @@ class Search {
 		return static::$instance;
 	}
 
-	/**
-	 * Whether to load the latest ElasticPress version.
-	 * Can be overridden by defining `VIP_SEARCH_USE_NEXT_EP` to false.
-	 *
-	 * @return bool Whether to load the latest version or not. Defaults to true.
-	 */
-	public static function should_load_new_ep() {
-		if ( defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true !== constant( 'VIP_SEARCH_USE_NEXT_EP' ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
 	protected function load_dependencies() {
 		// Load ElasticPress
-		if ( static::should_load_new_ep() ) {
-			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
-		} else {
-			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-		}
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
