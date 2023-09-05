@@ -31,6 +31,7 @@ class ParselyIntegration extends Integration {
 		define( 'VIP_PARSELY_ENABLED', true );
 
 		add_filter( 'wp_parsely_credentials', array( $this, 'wp_parsely_credentials_callback' ) );
+		add_filter( 'wp_parsely_managed_options', array( $this, 'wp_parsely_managed_options_callback' ) );
 	}
 
 	/**
@@ -54,5 +55,25 @@ class ParselyIntegration extends Integration {
 		// Adds `is_managed` flag to indicate that platform is managing this integration
 		// and we have to hide the credential banner warning or more.
 		return array_merge( array( 'is_managed' => true ), $credentials );
+	}
+
+	/**
+	 * Callback for `wp_parsely_managed_options` filter.
+	 *
+	 * @param array $value Value passed to filter.
+	 *
+	 * @return array
+	 */
+	public function wp_parsely_managed_options_callback( $value ) {
+		return array(
+			'force_https_canonicals' => true,
+			'meta_type'              => 'repeated_metas',
+			// Managed options that will obey the values on database.
+			'cats_as_tags'           => null,
+			'content_id_prefix'      => null,
+			'logo'                   => null,
+			'lowercase_tags'         => null,
+			'use_top_level_cats'     => null,
+		);
 	}
 }
