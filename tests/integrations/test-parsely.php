@@ -18,6 +18,27 @@ use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
+	public function test_is_integration_already_available_via_customer_returns_expected_value(): void {
+		$parsely_integration = new ParselyIntegration( $this->slug );
+
+		if ( is_parsely_disabled() ) {
+			$this->assertFalse( $parsely_integration->is_integration_already_available_via_customer() );
+			return;
+		}
+
+		// Indicates enablement via filter or option.
+		$this->assertTrue( $parsely_integration->is_integration_already_available_via_customer() );
+	}
+
+	public function test__configure_for_vip_is_adding_necessary_hooks_need_for_configuration_on_vip_platform(): void {
+		$parsely_integration = new ParselyIntegration( $this->slug );
+
+		$parsely_integration->configure_for_vip();
+
+		$this->assertEquals( 10, has_filter( 'wp_parsely_credentials', [ $parsely_integration, 'wp_parsely_credentials_callback' ] ) );
+		$this->assertEquals( 10, has_filter( 'wp_parsely_managed_options', [ $parsely_integration, 'wp_parsely_managed_options_callback' ] ) );
+	}
+
 	public function test__load_call_is_defining_the_enabled_constant_if_plugin_is_not_loaded_already(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 

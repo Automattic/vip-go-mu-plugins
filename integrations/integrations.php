@@ -115,7 +115,6 @@ class Integrations {
 
 		if ( null === $integration ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return;
 		}
 
 		$integration->activate( $options );
