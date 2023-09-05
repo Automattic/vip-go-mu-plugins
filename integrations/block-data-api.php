@@ -23,6 +23,14 @@ class BlockDataApiIntegration extends Integration {
 	protected string $version = '1.0';
 
 	/**
+	 * Returns `true` if `Block Data API` is already available via customer code. We will use
+	 * this function to prevent activating of integration from platform side.
+	 */
+	public function is_integration_already_available_via_customer(): bool {
+		return defined( 'VIP_BLOCK_DATA_API_LOADED' );
+	}
+
+	/**
 	 * Applies hooks to load Block Data API plugin.
 	 *
 	 * @private
@@ -30,11 +38,6 @@ class BlockDataApiIntegration extends Integration {
 	public function load(): void {
 		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
 		add_action( 'plugins_loaded', function() {
-			// Do not load plugin if already loaded by customer code.
-			if ( defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
-				return;
-			}
-
 			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
 			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
 			if ( file_exists( $load_path ) ) {
@@ -44,4 +47,9 @@ class BlockDataApiIntegration extends Integration {
 			}
 		} );
 	}
+
+	/**
+	 * Configure `Block Data API` for VIP Platform.
+	 */
+	public function configure_for_vip(): void {}
 }

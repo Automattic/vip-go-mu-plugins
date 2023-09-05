@@ -14,22 +14,32 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
+	 * Returns `true` if `Parse.ly` is already available via customer code. We will use
+	 * this function to prevent loading of integration again from platform side.
+	 */
+	public function is_integration_already_available_via_customer(): bool {
+		return class_exists( 'Parsely\Parsely' );
+	}
+
+	/**
 	 * Loads the plugin.
 	 *
 	 * @private
 	 */
 	public function load(): void {
-		// Do not load plugin if already loaded by customer code.
-		if ( class_exists( 'Parsely\Parsely' ) ) {
-			return;
-		}
-
 		// Activating the integration via setting constant whose implementation is already
 		// handled via Automattic\VIP\WP_Parsely_Integration (ideally we should move
 		// all the implementation here such that there will be only one way of managing
 		// the plugin).
 		define( 'VIP_PARSELY_ENABLED', true );
+	}
 
+	/**
+	 * Configure `Parse.ly` for VIP Platform.
+	 *
+	 * @private
+	 */
+	public function configure_for_vip(): void {
 		add_filter( 'wp_parsely_credentials', array( $this, 'wp_parsely_credentials_callback' ) );
 		add_filter( 'wp_parsely_managed_options', array( $this, 'wp_parsely_managed_options_callback' ) );
 	}

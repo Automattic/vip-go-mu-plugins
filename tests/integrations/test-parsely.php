@@ -18,7 +18,7 @@ use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
-	public function test__load_call_is_defining_the_enabled_constant_and_adding_filters_if_plugin_is_not_enabled_already(): void {
+	public function test__load_call_is_defining_the_enabled_constant_if_plugin_is_not_loaded_already(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 
 		maybe_load_plugin();
@@ -26,16 +26,11 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		if ( is_parsely_disabled() ) {
 			$this->assertTrue( defined( 'VIP_PARSELY_ENABLED' ) );
-			$this->assertEquals( 10, has_filter( 'wp_parsely_credentials', [ $parsely_integration, 'wp_parsely_credentials_callback' ] ) );
-			$this->assertEquals( 10, has_filter( 'wp_parsely_managed_options', [ $parsely_integration, 'wp_parsely_managed_options_callback' ] ) );
-
 			return;
 		}
 
 		// Indicates enablement via filter or option.
 		$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );
-		$this->assertFalse( has_filter( 'wp_parsely_credentials' ) );
-		$this->assertFalse( has_filter( 'wp_parsely_managed_options' ) );
 	}
 
 	public function test__wp_parsely_credentials_callback_returns_original_credentials_of_the_integration_if_platform_config_is_empty(): void {

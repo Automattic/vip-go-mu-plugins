@@ -69,6 +69,11 @@ class Integrations {
 				$this->activate( $slug, [
 					'config' => $vip_config->get_site_config(),
 				] );
+
+				// If integration is activated successfully without any error then configure it for VIP.
+				if ( $integration->is_active() ) {
+					$integration->configure_for_vip();
+				}
 			}
 		}
 	}
@@ -110,6 +115,7 @@ class Integrations {
 
 		if ( null === $integration ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return;
 		}
 
 		$integration->activate( $options );
