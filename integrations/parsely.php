@@ -31,7 +31,9 @@ class ParselyIntegration extends Integration {
 		// handled via Automattic\VIP\WP_Parsely_Integration (ideally we should move
 		// all the implementation here such that there will be only one way of managing
 		// the plugin).
-		define( 'VIP_PARSELY_ENABLED', true );
+		if ( ! defined( 'VIP_PARSELY_ENABLED' ) ) {
+			define( 'VIP_PARSELY_ENABLED', true );
+		}
 	}
 
 	/**
