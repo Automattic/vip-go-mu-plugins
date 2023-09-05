@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.6.0
+        uses: actions/checkout@v4.0.0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@2.25.5
