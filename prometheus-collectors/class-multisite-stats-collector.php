@@ -9,7 +9,7 @@ use Prometheus\RegistryInterface;
  * @codeCoverageIgnore
  */
 class Multisite_Stats_Collector implements CollectorInterface {
-	private Gauge $network_site_gauge;
+	private ?Gauge $network_site_gauge = null;
 
 	public function initialize( RegistryInterface $registry ): void {
 		if ( is_multisite() ) {
