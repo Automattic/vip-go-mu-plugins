@@ -19,9 +19,8 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
 	public function test_is_integration_already_available_via_customer_returns_expected_value(): void {
-		$parsely_integration = new ParselyIntegration( $this->slug );
-
 		maybe_load_plugin();
+		$parsely_integration = new ParselyIntegration( $this->slug );
 
 		if ( is_parsely_disabled() ) {
 			$this->assertFalse( $parsely_integration->is_integration_already_available_via_customer() );

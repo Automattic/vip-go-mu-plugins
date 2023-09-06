@@ -18,7 +18,7 @@ class ParselyIntegration extends Integration {
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_integration_already_available_via_customer(): bool {
-		return class_exists( 'Parsely\Parsely' );
+		return class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
 	}
 
 	/**
