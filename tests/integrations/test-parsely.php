@@ -10,24 +10,21 @@ namespace Automattic\VIP\Integrations;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_property_as_public;
-use function Automattic\Test\Utils\is_parsely_disabled;
-use function Automattic\VIP\WP_Parsely_Integration\maybe_load_plugin;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
-	public function test_is_integration_already_available_via_customer_returns_expected_value(): void {
-		maybe_load_plugin();
+	public function test_is_integration_already_available_via_customer_returns_false_if_parsley_does_not_exist(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
+		$this->assertFalse( $parsely_integration->is_integration_already_available_via_customer() );
+	}
 
-		if ( is_parsely_disabled() ) {
-			$this->assertFalse( $parsely_integration->is_integration_already_available_via_customer() );
-			return;
-		}
+	public function test_is_integration_already_available_via_customer_returns_true_if_parsley_exist(): void {
+		require_once __DIR__ . '/../../wp-parsely/wp-parsely.php';
 
-		// Indicates enablement via filter or option.
+		$parsely_integration = new ParselyIntegration( $this->slug );
 		$this->assertTrue( $parsely_integration->is_integration_already_available_via_customer() );
 	}
 
