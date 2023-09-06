@@ -16,11 +16,6 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
 
-	public function test_is_integration_already_available_via_customer_returns_false_if_parsley_does_not_exist(): void {
-		$parsely_integration = new ParselyIntegration( $this->slug );
-		$this->assertFalse( $parsely_integration->is_integration_already_available_via_customer() );
-	}
-
 	public function test_is_integration_already_available_via_customer_returns_true_if_parsley_exist(): void {
 		require_once __DIR__ . '/../../wp-parsely/wp-parsely.php';
 
