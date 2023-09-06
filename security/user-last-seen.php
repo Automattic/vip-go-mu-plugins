@@ -2,15 +2,20 @@
 namespace Automattic\VIP\Security;
 
 class User_Last_Seen {
-	const LAST_SEEN_META_KEY                          = 'wpvip_last_seen';
-	const LAST_SEEN_CACHE_GROUP                       = 'wpvip_last_seen';
-	const LAST_SEEN_UPDATE_USER_META_CACHE_TTL        = MINUTE_IN_SECONDS * 5; // Store last seen once every five minute to avoid too many write DB operations
-	const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY = 'wpvip_last_seen_release_date_timestamp';
+	const LAST_SEEN_META_KEY                               = 'wpvip_last_seen';
+	const LAST_SEEN_IGNORE_INACTIVITY_CHECK_UNTIL_META_KEY = 'wpvip_last_seen_ignore_inactivity_check_until';
+	const LAST_SEEN_CACHE_GROUP                            = 'wpvip_last_seen';
+	const LAST_SEEN_UPDATE_USER_META_CACHE_TTL             = MINUTE_IN_SECONDS * 5; // Store last seen once every five minute to avoid too many write DB operations
+	const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY      = 'wpvip_last_seen_release_date_timestamp';
+
+	private $release_date = null;
 
 	public function init() {
 		if ( ! defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) || constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'NO_ACTION' ) {
 			return;
 		}
+
+		$this->release_date = get_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY );
 
 		// Use a global cache group since users are shared among network sites.
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
@@ -116,16 +121,15 @@ class User_Last_Seen {
 
 		$last_seen_timestamp = get_user_meta( $user_id, self::LAST_SEEN_META_KEY, true );
 
-		if ( ! $last_seen_timestamp ) {
-			return $default;
+		$date = __( 'Indeterminate', 'wpvip' );
+		if ( $last_seen_timestamp ) {
+			$date = sprintf(
+				/* translators: 1: Comment date, 2: Comment time. */
+				__( '%1$s at %2$s' ),
+				date_i18n( get_option( 'date_format' ), $last_seen_timestamp ),
+				date_i18n( get_option( 'time_format' ), $last_seen_timestamp )
+			);
 		}
-
-		$date = sprintf(
-			/* translators: 1: Comment date, 2: Comment time. */
-			__( '%1$s at %2$s' ),
-			date_i18n( get_option( 'date_format' ), $last_seen_timestamp ),
-			date_i18n( get_option( 'time_format' ), $last_seen_timestamp )
-		);
 
 		if ( ! $this->is_block_action_enabled() || ! $this->is_considered_inactive( $user_id ) ) {
 			return sprintf( '<span>%s</span>', esc_html( $date ) );
@@ -213,7 +217,8 @@ class User_Last_Seen {
 			$error = __( 'You do not have permission to unblock this user.', 'wpvip' );
 		}
 
-		if ( ! $error && ! delete_user_meta( $user_id, self::LAST_SEEN_META_KEY ) ) {
+		$ignore_inactivity_check_until = strtotime( '+2 days' );
+		if ( ! $error && ! update_user_meta( $user_id, self::LAST_SEEN_IGNORE_INACTIVITY_CHECK_UNTIL_META_KEY, $ignore_inactivity_check_until ) ) {
 			$error = __( 'Unable to unblock user.', 'wpvip' );
 		}
 
@@ -250,6 +255,11 @@ class User_Last_Seen {
 
 	public function is_considered_inactive( $user_id ) {
 		if ( ! $this->should_check_user_last_seen( $user_id ) ) {
+			return false;
+		}
+
+		$ignore_inactivity_check_until = get_user_meta( $user_id, self::LAST_SEEN_IGNORE_INACTIVITY_CHECK_UNTIL_META_KEY, true );
+		if ( $ignore_inactivity_check_until && $ignore_inactivity_check_until > time() ) {
 			return false;
 		}
 
@@ -293,6 +303,10 @@ class User_Last_Seen {
 			throw new \Exception( 'User not found' );
 		}
 
+		if ( $user->user_registered && strtotime( $user->user_registered ) > $this->get_inactivity_timestamp() ) {
+			return false;
+		}
+
 		/**
 		 * Filters the last seen elevated capabilities that are used to determine if the last seen should be checked.
 		 *
@@ -324,6 +338,7 @@ class User_Last_Seen {
 				return true;
 			}
 		}
+
 
 		return false;
 	}
