@@ -32,6 +32,19 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $parsely_integration->is_integration_already_available_via_customer() );
 	}
 
+	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
+		$parsely_integration = new ParselyIntegration( $this->slug );
+		$existing_value      = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
+
+		$parsely_integration->load();
+
+		if ( is_null( $existing_value ) || true == $existing_value ) {
+			$this->assertTrue( VIP_PARSELY_ENABLED );
+		} else {
+			$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );
+		}
+	}
+
 	public function test__configure_for_vip_is_adding_necessary_hooks_need_for_configuration_on_vip_platform(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
 
