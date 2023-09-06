@@ -12,7 +12,7 @@ class User_Last_Seen {
 			return;
 		}
 
-		// Use a global cache group to avoid having to the data for each site
+		// Use a global cache group since users are shared among network sites.
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
 
 		add_action( 'admin_init', array( $this, 'register_release_date' ) );
@@ -70,11 +70,8 @@ class User_Last_Seen {
 			return $user;
 		}
 
-		if ( $user->ID && $this->is_block_action_enabled() && $this->is_considered_inactive( $user->ID ) ) {
-			return new \WP_Error(
-				'inactive_account',
-				__( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' )
-			);
+		if ( $user->ID && $this->is_considered_inactive( $user->ID ) ) {
+			return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ) );
 		}
 
 		return $user;
@@ -197,7 +194,7 @@ class User_Last_Seen {
 			} );
 		}
 
-		if ( ! isset( $_GET['user_id'] ) || ! isset( $_GET['action'] ) || 'reset_last_seen' !== $_GET['action'] ) {
+		if ( ! isset( $_GET['user_id'], $_GET['action'] ) || 'reset_last_seen' !== $_GET['action'] ) {
 			return;
 		}
 
@@ -244,7 +241,7 @@ class User_Last_Seen {
 	}
 
 	public function register_release_date() {
-		if ( ! get_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY ) ) {
+		if ( ! wp_doing_ajax() && ! get_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY ) ) {
 			// Right after the first admin_init, set the release date timestamp
 			// to be used as a fallback for users that never logged in before.
 			add_option( self::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, time(), '', 'no' );
@@ -266,27 +263,25 @@ class User_Last_Seen {
 			return $release_date_timestamp < $this->get_inactivity_timestamp();
 		}
 
-		// Release date is not defined yed, so we can't consider the user inactive.
+		// Release date is not defined yet, so we can't consider the user inactive.
 		return false;
 	}
 
-	public function get_inactivity_timestamp() {
+	private function get_inactivity_timestamp() {
 		$days = constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ? absint( constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) : 90;
 
 		return strtotime( sprintf( '-%d days', $days ) ) + self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
 	}
 
 	private function is_block_action_enabled() {
-		return defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) &&
-			defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) &&
-			constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'BLOCK';
+		return defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) && constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'BLOCK';
 	}
 
 	private function should_check_user_last_seen( $user_id ) {
 		/**
 		 * Filters the users that should be skipped when checking/recording the last seen.
 		 *
-		 * @param array $skip_users The list of users to skip.
+		 * @param array $skip_users The list of user IDs to skip.
 		 */
 		$skip_users = apply_filters( 'vip_security_last_seen_skip_users', array() );
 		if ( in_array( $user_id, $skip_users ) ) {
@@ -298,35 +293,34 @@ class User_Last_Seen {
 			throw new \Exception( 'User not found' );
 		}
 
-		$elevated_capabilities = array(
-			'edit_themes',
-			'switch_themes',
-			'activate_plugins',
-			'edit_users',
-			'edit_files',
-			'promote_users',
-			'moderate_comments',
-			'publish_posts',
-			'edit_posts',
-			'delete_posts',
-			'publish_pages',
-			'edit_pages',
-			'manage_options',
-			'manage_network_users',
-			'manage_network_themes',
-			'manage_network_plugins',
-			'manage_network_options',
-		);
-
 		/**
 		 * Filters the last seen elevated capabilities that are used to determine if the last seen should be checked.
 		 *
 		 * @param array $elevated_capabilities The elevated capabilities.
 		 */
-		$elevated_capabilities = apply_filters( 'vip_security_last_seen_elevated_capabilities', $elevated_capabilities );
+		$elevated_capabilities = apply_filters( 'vip_security_last_seen_elevated_capabilities', [
+			'edit_posts',
+			'delete_posts',
+			'publish_posts',
+			'edit_pages',
+			'delete_pages',
+			'publish_pages',
+			'edit_others_posts',
+			'edit_others_pages',
+			'manage_options',
+			'edit_users',
+			'promote_users',
+			'activate_plugins',
+			'manage_network',
+		] );
 
-		foreach ( $user->allcaps as $capability => $value ) {
-			if ( true === $value && in_array( $capability, $elevated_capabilities ) ) {
+		// Prevent infinite loops inside user_can() due to other security logic.
+		if ( is_automattician( $user_id ) ) {
+			return true;
+		}
+
+		foreach ( $elevated_capabilities as $elevated_capability ) {
+			if ( user_can( $user, $elevated_capability ) ) {
 				return true;
 			}
 		}
