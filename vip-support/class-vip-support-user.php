@@ -1038,6 +1038,8 @@ class User {
 			grant_super_admin( $user->ID );
 		}
 
+		do_action( 'vip_support_user_added', $user_id );
+
 		return $user_id;
 	}
 

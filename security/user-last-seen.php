@@ -8,8 +8,6 @@ class User_Last_Seen {
 	const LAST_SEEN_UPDATE_USER_META_CACHE_TTL             = MINUTE_IN_SECONDS * 5; // Store last seen once every five minute to avoid too many write DB operations
 	const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY      = 'wpvip_last_seen_release_date_timestamp';
 
-	private $release_date = null;
-
 	public function init() {
 		if ( ! defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) || constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'NO_ACTION' ) {
 			return;
@@ -21,6 +19,12 @@ class User_Last_Seen {
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
 
 		add_action( 'admin_init', array( $this, 'register_release_date' ) );
+		add_action( 'set_user_role', array( $this, 'user_promoted' ) );
+		add_action( 'vip_support_user_added', function( $user_id ) {
+			$ignore_inactivity_check_until = strtotime( '+2 hours' );
+
+			$this->ignore_inactivity_check_for_user( $user_id, $ignore_inactivity_check_until );
+		} );
 
 		add_filter( 'determine_current_user', array( $this, 'determine_current_user' ), 30, 1 );
 
@@ -218,7 +222,7 @@ class User_Last_Seen {
 		}
 
 		$ignore_inactivity_check_until = strtotime( '+2 days' );
-		if ( ! $error && ! update_user_meta( $user_id, self::LAST_SEEN_IGNORE_INACTIVITY_CHECK_UNTIL_META_KEY, $ignore_inactivity_check_until ) ) {
+		if ( ! $error && ! $this->ignore_inactivity_check_for_user( $user_id, $ignore_inactivity_check_until ) ) {
 			$error = __( 'Unable to unblock user.', 'wpvip' );
 		}
 
@@ -243,6 +247,27 @@ class User_Last_Seen {
 
 		wp_safe_redirect( $url );
 		exit();
+	}
+
+	public function ignore_inactivity_check_for_user( $user_id, $until_timestamp = null ) {
+		if ( ! $until_timestamp ) {
+			$until_timestamp = strtotime( '+2 days' );
+		}
+
+		return update_user_meta( $user_id, self::LAST_SEEN_IGNORE_INACTIVITY_CHECK_UNTIL_META_KEY, $until_timestamp );
+	}
+
+	public function user_promoted( $user_id ) {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			throw new \Exception( 'User not found' );
+		}
+
+		if ( ! $this->user_with_elevated_capabilities( $user ) ) {
+			return;
+		}
+
+		$this->ignore_inactivity_check_for_user( $user_id );
 	}
 
 	public function register_release_date() {
@@ -307,6 +332,10 @@ class User_Last_Seen {
 			return false;
 		}
 
+		return $this->user_with_elevated_capabilities( $user );
+	}
+
+	private function user_with_elevated_capabilities( $user ) {
 		/**
 		 * Filters the last seen elevated capabilities that are used to determine if the last seen should be checked.
 		 *
@@ -329,7 +358,7 @@ class User_Last_Seen {
 		] );
 
 		// Prevent infinite loops inside user_can() due to other security logic.
-		if ( is_automattician( $user_id ) ) {
+		if ( is_automattician( $user->ID ) ) {
 			return true;
 		}
 
@@ -338,7 +367,6 @@ class User_Last_Seen {
 				return true;
 			}
 		}
-
 
 		return false;
 	}
