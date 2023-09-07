@@ -11,11 +11,11 @@ namespace Automattic\VIP\Integrations;
 
 class FakeIntegration extends Integration {
 
-	public function is_integration_already_available_via_customer(): bool {
+	public function is_loaded(): bool {
 		return false;
 	}
 
 	public function load(): void { }
 
-	public function configure_for_vip(): void { }
+	public function configure(): void { }
 }

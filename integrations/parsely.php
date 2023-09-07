@@ -17,7 +17,7 @@ class ParselyIntegration extends Integration {
 	 * Returns `true` if `Parse.ly` is already available via customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */
-	public function is_integration_already_available_via_customer(): bool {
+	public function is_loaded(): bool {
 		return class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
 	}
 
@@ -41,7 +41,7 @@ class ParselyIntegration extends Integration {
 	 *
 	 * @private
 	 */
-	public function configure_for_vip(): void {
+	public function configure(): void {
 		add_filter( 'wp_parsely_credentials', array( $this, 'wp_parsely_credentials_callback' ) );
 		add_filter( 'wp_parsely_managed_options', array( $this, 'wp_parsely_managed_options_callback' ) );
 	}

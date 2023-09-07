@@ -72,7 +72,7 @@ class Integrations {
 
 				// If integration is activated successfully without any error then configure it for VIP.
 				if ( $integration->is_active() ) {
-					$integration->configure_for_vip();
+					$integration->configure();
 				}
 			}
 		}

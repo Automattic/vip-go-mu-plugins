@@ -26,7 +26,7 @@ class BlockDataApiIntegration extends Integration {
 	 * Returns `true` if `Block Data API` is already available via customer code. We will use
 	 * this function to prevent activating of integration from platform side.
 	 */
-	public function is_integration_already_available_via_customer(): bool {
+	public function is_loaded(): bool {
 		return defined( 'VIP_BLOCK_DATA_API_LOADED' );
 	}
 
@@ -51,5 +51,5 @@ class BlockDataApiIntegration extends Integration {
 	/**
 	 * Configure `Block Data API` for VIP Platform.
 	 */
-	public function configure_for_vip(): void {}
+	public function configure(): void {}
 }

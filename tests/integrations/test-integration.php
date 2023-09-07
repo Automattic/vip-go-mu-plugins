@@ -45,8 +45,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|FakeIntegration
 		 */
-		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_integration_already_available_via_customer' ] )->getMock();
-		$integration_mock->expects( $this->once() )->method( 'is_integration_already_available_via_customer' )->willReturn( true );
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
 
 		$integration_mock->activate();
 

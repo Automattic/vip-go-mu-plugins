@@ -52,7 +52,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $integration_3->get_config() );
 	}
 
-	public function test__configure_for_vip_is_getting_called_when_the_integration_is_activated_via_vip_config(): void {
+	public function test__configure_is_getting_called_when_the_integration_is_activated_via_vip_config(): void {
 		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip' ] )->getMock();
 		$config_mock->expects( $this->once() )->method( 'is_active_via_vip' )->willReturn( true );
 		/**
@@ -67,8 +67,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|FakeIntegration
 		 */
-		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'configure_for_vip' ] )->getMock();
-		$integration_mock->expects( $this->once() )->method( 'configure_for_vip' );
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'configure' ] )->getMock();
+		$integration_mock->expects( $this->once() )->method( 'configure' );
 
 		$integrations_mock->register( $integration_mock );
 		$integrations_mock->activate_platform_integrations();

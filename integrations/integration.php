@@ -64,7 +64,7 @@ abstract class Integration {
 	 */
 	public function activate( array $options = [] ): void {
 		// If integration is already available in customer code then don't activate it from platform side.
-		if ( $this->is_integration_already_available_via_customer() ) {
+		if ( $this->is_loaded() ) {
 			trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 				sprintf( 'Prevented activating of integration with slug "%s" because it is already available via customer code.', esc_html( $this->slug ) ),
 				E_USER_WARNING
@@ -110,12 +110,12 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns `true` if the integration is already available via customer code. We will use
-	 * this function to prevent activating of integration from platform side.
+	 * Returns `true` if the integration is already available e.g. via customer code. We will use
+	 * this function to prevent activating of integration again.
 	 *
 	 * @private
 	 */
-	abstract public function is_integration_already_available_via_customer(): bool;
+	abstract public function is_loaded(): bool;
 
 	/**
 	 * Implement custom action and filter calls to load integration here.
@@ -136,5 +136,5 @@ abstract class Integration {
 	 *
 	 * @private
 	 */
-	abstract public function configure_for_vip(): void;
+	abstract public function configure(): void;
 }
