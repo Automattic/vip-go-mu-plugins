@@ -90,7 +90,7 @@ class Sync_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $sync_instance->get_blogs_to_sync() );
 
 		//
-		for ( $i = 1; $i < 15; $i ++ ) {
+		for ( $i = 1; $i < 15; $i++ ) {
 			$network_site_id = self::factory()->blog->create( [
 				'domain' => 'source-domain.com',
 				'path'   => '/' . $i . '/',

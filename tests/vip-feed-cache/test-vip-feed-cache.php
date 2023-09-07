@@ -3,7 +3,7 @@
 class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 	public function test__fetch_feed_build() {
 		// Mock remote request made in fetch_feed()
-		add_filter( 'pre_http_request', function() {
+		add_filter( 'pre_http_request', function () {
 			return [
 				'headers'     => [
 					'content-type' => 'application/rss+xml; charset=utf-8',

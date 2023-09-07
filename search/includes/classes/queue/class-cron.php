@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search\Queue;
 
-use Automattic\VIP\Search\Queue as Queue;
+use Automattic\VIP\Search\Queue;
 use Automattic\WP\Cron_Control\Events_Store;
-use \ElasticPress\Indexables as Indexables;
+use ElasticPress\Indexables;
 use WP_Error;
 
 class Cron {

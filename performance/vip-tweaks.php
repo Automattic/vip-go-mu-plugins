@@ -154,6 +154,6 @@ function wpcom_vip_maybe_bust_available_months_cache( $post_id ) {
 /**
  * Set a max limit on posts_per_page for an infinite scroll request to prevent client-side abuse.
  */
-add_filter( 'infinite_scroll_posts_per_page', function( $posts_per_page ) {
+add_filter( 'infinite_scroll_posts_per_page', function ( $posts_per_page ) {
 	return min( (int) $posts_per_page, 1000 );
 } );

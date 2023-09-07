@@ -36,7 +36,6 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		}
 
 		return $instance;
-
 	}
 
 	/**
@@ -201,7 +200,6 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		$modules = array_values( $modules );
 		return $modules;
 	}
-
 }
 
 WPCOM_VIP_Jetpack_Mandatory::init();

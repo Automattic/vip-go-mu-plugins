@@ -176,11 +176,11 @@ function vip_contact_form_handler() {
 	$content .= sprintf( "\n\nSent from %s on %s", home_url(), date( 'c', time() ) );
 
 	// Filter from name/email. NOTE - not un-hooking the filter because we die() immediately after wp_mail()
-	add_filter( 'wp_mail_from', function() use ( $email ) {
+	add_filter( 'wp_mail_from', function () use ( $email ) {
 		return $email;
 	});
 
-	add_filter( 'wp_mail_from_name', function() use ( $name ) {
+	add_filter( 'wp_mail_from_name', function () use ( $name ) {
 		return $name;
 	});
 

@@ -238,7 +238,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		return $put_results;
-
 	}
 
 	/**

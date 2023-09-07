@@ -21,6 +21,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI
 				throw new ErrorException( $errstr, $errno );
 			}
 

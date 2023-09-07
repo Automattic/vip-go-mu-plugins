@@ -8,7 +8,7 @@ namespace Automattic\VIP\Files\Acl\Restrict_All_Files;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
-function check_file_visibility( $file_visibility, $file_path ) {
+function check_file_visibility() {
 	if ( ! is_user_logged_in() ) {
 		return FILE_IS_PRIVATE_AND_DENIED;
 	}

@@ -40,6 +40,7 @@ class Search_Test extends WP_UnitTestCase {
 		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ): never {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI
 			throw new \Exception( $errstr, $errno );
 		}, E_USER_WARNING );
 	}
@@ -347,7 +348,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->init_es();
 
 		// Simulate a large site
-		$return_big_count = function( $counts ) {
+		$return_big_count = function ( $counts ) {
 			$counts->publish = 2000000;
 
 			return $counts;
@@ -379,7 +380,7 @@ class Search_Test extends WP_UnitTestCase {
 		\ElasticPress\Features::factory()->setup_features();
 
 		// Simulate a large site
-		$return_big_count = function( $counts ) {
+		$return_big_count = function ( $counts ) {
 			$counts              = new \stdClass();
 			$counts->avail_roles = 100;
 			$counts->total_users = 3000000;
@@ -1230,7 +1231,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'ep_total_field_limit',
-			function() {
+			function () {
 				return 1000000;
 			}
 		);
@@ -1247,7 +1248,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'ep_total_field_limit',
-			function() {
+			function () {
 				return 787;
 			}
 		);
@@ -1314,7 +1315,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_taxonomies_allow_list',
-			function( $taxonomies ) {
+			function ( $taxonomies ) {
 				$taxonomies[] = 'post_tag';
 				$taxonomies[] = 'post_tag';
 
@@ -1356,7 +1357,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_taxonomies_allow_list',
-			function() {
+			function () {
 				return array( 'post_tag' );
 			}
 		);
@@ -1411,7 +1412,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_post_meta',
 					'another_one',
@@ -1454,7 +1455,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_post_meta' => true,
 					'another_one'      => true,
@@ -1865,7 +1866,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_key',
 				);
@@ -1888,7 +1889,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_key',
 				);
@@ -1925,7 +1926,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_key',
 				);
@@ -1948,7 +1949,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		\add_filter(
 			'vip_search_post_meta_allow_list',
-			function() {
+			function () {
 				return array(
 					'random_key',
 				);
@@ -2138,11 +2139,11 @@ class Search_Test extends WP_UnitTestCase {
 
 	/* Format:
 	 * [
-	 * 		[
-	 * 			$filter,
-	 * 			$too_low_message,
-	 * 			$too_high_message,
-	 * 		]
+	 *      [
+	 *          $filter,
+	 *          $too_low_message,
+	 *          $too_high_message,
+	 *      ]
 	 * ]
 	 */
 	public function vip_search_ratelimiting_filter_data() {
@@ -2171,7 +2172,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return '30.ffr';
 			}
 		);
@@ -2186,7 +2187,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return 0;
 			}
 		);
@@ -2201,7 +2202,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return PHP_INT_MAX;
 			}
 		);
@@ -2601,7 +2602,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		add_filter(
 			'ep_weighting_configuration_for_search',
-			function( $weight_config ) {
+			function ( $weight_config ) {
 				return $weight_config;
 			}
 		);
@@ -2769,13 +2770,13 @@ class Search_Test extends WP_UnitTestCase {
 /**
  * Overwriting global function so that no real remote request is called
  */
-function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3, $timeout = 1, $retry = 20, $args = array() ) {
+function vip_safe_wp_remote_request() {
 	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
 }
 
 /**
  * Overwriting global function so that no real remote request is called
  */
-function wp_remote_request( $url, $args = array() ) {
+function wp_remote_request() {
 	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request();
 }

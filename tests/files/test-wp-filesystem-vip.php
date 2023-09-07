@@ -37,6 +37,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI
 				throw new ErrorException( $errstr, $errno );
 			}
 
@@ -73,7 +74,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 				'/var/www/file.jpg',
 				false,
 			],
-			'invalid other wp-* path'       => [
+			'invalid ABSPATH path'          => [
 				ABSPATH . '/wp-includes/js/jquery.js',
 				false,
 			],

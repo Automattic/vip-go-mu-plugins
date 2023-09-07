@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
-use \WP_CLI;
+use WP_CLI;
 use WP_Error;
 use WP_Post;
 
@@ -534,7 +534,7 @@ class Search {
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter__ep_do_intercept_request' ], 9999, 5 );
 
 		// Disable query integration by default
-		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5, 2 );
+		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
 		// Rate-limit query integration
@@ -560,7 +560,7 @@ class Search {
 
 		// Enable track_total_hits for all queries for proper result sets if track_total_hits isn't already set
 		// Adjust the post query ES arguments (the whole payload)
-		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ), 10, 3 );
+		add_filter( 'ep_post_formatted_args', array( $this, 'filter__ep_post_formatted_args' ) );
 
 		// Disable query fuzziness by default
 		add_filter( 'ep_fuzziness_arg', '__return_zero', 0 );
@@ -587,7 +587,7 @@ class Search {
 		// Set to 0.001
 		add_filter( 'epwr_weight', array( $this, 'filter__epwr_weight' ), 0 );
 
-		//	Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
+		//  Reduce existing filters based on post meta allow list and make sure the maximum field count is respected
 		add_filter( 'ep_prepare_meta_data', array( $this, 'filter__ep_prepare_meta_data' ), PHP_INT_MAX, 2 );
 
 		// Implement a more convenient way to filter which taxonomies get synced to posts
@@ -649,21 +649,21 @@ class Search {
 		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
 
 		// Store last processed id into option and clean up before & after indexing command
-		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ], 10, 2 );
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ] );
 		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_post_id_option' ] );
 		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
 
 		// Use default ES version as fallback
 		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
 
-		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX, 1 );
+		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX );
 
 		// Since we disable UI toggling, blog option should be dependent on index existing (since it defaults to 'yes' if not found)
 		add_filter( 'blog_option_ep_indexable', [ $this, 'filter__blog_option_ep_indexable' ], PHP_INT_MAX, 2 );
 
-		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 4 );
+		add_filter( 'ep_enable_do_weighting', [ $this, 'filter__ep_enable_do_weighting' ], 9999, 3 );
 
-		add_action( 'publish_ep-pointer', [ $this, 'set_custom_results_existence_cache' ], PHP_INT_MAX, 3 );
+		add_action( 'publish_ep-pointer', [ $this, 'set_custom_results_existence_cache' ], PHP_INT_MAX, 2 );
 		add_action( 'trash_ep-pointer', [ $this, 'set_custom_results_existence_cache' ], PHP_INT_MAX, 3 );
 	}
 
@@ -1315,7 +1315,7 @@ class Search {
 		return defined( 'EP_IS_NETWORK' ) && constant( 'EP_IS_NETWORK' );
 	}
 
-	public static function ep_skip_query_integration( $skip, $query = null ) {
+	public static function ep_skip_query_integration( $skip ) {
 		/**
 		 * Honor filters that skip query integration
 		 *
@@ -1520,7 +1520,7 @@ class Search {
 
 		// The occurrences of 'type' in the results is equal to the number of fields in use.
 		// Since the assoc array can be pretty deeply nested, array_walk_recursive and a type check was used
-		array_walk_recursive( $body, function( $value, $key, $fields ) {
+		array_walk_recursive( $body, function ( $value, $key, $fields ) {
 			if ( 'type' === $key ) {
 				array_push( $fields[0], $key ); // Why reference to [0]? It doesn't want to work otherwise presently.
 			}
@@ -1593,7 +1593,7 @@ class Search {
 	 */
 	public function filter__jetpack_active_modules( $modules ) {
 		// Flatten the array back down now that may have removed values from the middle (to keep indexes correct)
-		return array_values( array_filter( $modules, function( $module ) {
+		return array_values( array_filter( $modules, function ( $module ) {
 			if ( 'search' === $module ) {
 				return false;
 			}
@@ -1625,11 +1625,9 @@ class Search {
 	 * Filter for formatted_args in post queries (adjust the final query arguments before it gets passed to the request handler)
 	 *
 	 * @param array $formatted_args the prepared query arguments (payload)
-	 * @param array $args query vars
-	 * @param array $wp_query an instance of WP_Query
 	 * @return array
 	 */
-	public function filter__ep_post_formatted_args( $formatted_args, $args, $wp_query ) {
+	public function filter__ep_post_formatted_args( $formatted_args ) {
 		// Check if track_total_hits is set
 		// Don't override it if it is
 		if ( ! array_key_exists( 'track_total_hits', $formatted_args ) ) {
@@ -2003,14 +2001,14 @@ class Search {
 			 * Filter out values not set to true since the current format of the allow list as an associative array is:
 			 *
 			 * array (
-			 * 		'key' => true,
+			 *      'key' => true,
 			 * );
 			 *
 			 * which means that anything besides true should logically be discarded
 			 */
 			$post_meta_allow_list = array_filter(
 				$post_meta_allow_list,
-				function( $value ) {
+				function ( $value ) {
 					return true === $value;
 				}
 			);
@@ -2048,12 +2046,10 @@ class Search {
 		if ( $origin_datacenter ) {
 			// We want all indexes to live in the site's origin datacenter
 			$mapping['settings']['index.routing.allocation.include.dc'] = $origin_datacenter;
-		} else {
+		} elseif ( ! is_wp_error( $this->alerts ) ) {
 			// Alert when it is unavailable
-			if ( ! is_wp_error( $this->alerts ) ) {
-				$message = sprintf( 'No origin DC detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
-				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
-			}
+			$message = sprintf( 'No origin DC detected for building mapping on %s: %s', FILES_CLIENT_SITE_ID, home_url() );
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
 
 		return $mapping;
@@ -2251,11 +2247,10 @@ class Search {
 	 * Store last processed post ID into option during bulk indexing operation.
 	 *
 	 * @param array $objects Objects being indexed
-	 * @param array $response Elasticsearch bulk index response
 	 *
 	 * @return void
 	 */
-	public function update_last_processed_post_id_option( $objects, $response ) {
+	public function update_last_processed_post_id_option( $objects ) {
 		$info = [
 			'post_id' => array_key_last( $objects ),
 			'time'    => gmdate( 'Y-m-d H:i:s', time() ),
@@ -2291,10 +2286,9 @@ class Search {
 	/**
 	 * Extend default elasticsearch info cache expiration from 5 minutes.
 	 *
-	 * @param int $time Cache time in seconds
 	 * @return int $time New cache time in seconds
 	 */
-	public function filter__es_info_cache_expiration( $time ) {
+	public function filter__es_info_cache_expiration() {
 		return wp_rand( 24 * HOUR_IN_SECONDS, 36 * HOUR_IN_SECONDS );
 	}
 
@@ -2304,10 +2298,9 @@ class Search {
 	 * @param bool  Whether to enable weight config, defaults to true for search requests that are public or REST
 	 * @param array $weight_config Current weight config
 	 * @param array $args WP Query arguments
-	 * @param array $formatted_args Formatted ES arguments
 	 * @return bool $should_do_weighting New value on whether to enable weight config
 	 */
-	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args, $formatted_args ) {
+	public function filter__ep_enable_do_weighting( $should_do_weighting, $weight_config, $args ) {
 		if ( ! empty( $weight_config ) ) {
 			return $should_do_weighting;
 		}
@@ -2360,9 +2353,8 @@ class Search {
 	 *
 	 * @param int $post_id Post ID.
 	 * @param WP_Post $post Post object.
-	 * @param string $old_status Old post status.
 	 */
-	public function set_custom_results_existence_cache( $post_id, $post, $old_status = '' ) {
+	public function set_custom_results_existence_cache( $post_id, $post ) {
 		$custom_results_existence = $this->get_cached_custom_results_existence();
 		$option_cache_key         = 'vip_custom_results_existence';
 
@@ -2411,7 +2403,7 @@ class Search {
 			'posts_per_page'      => 1,
 			'no_found_rows'       => true,
 			'ignore_sticky_posts' => true,
-			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
 			'suppress_filters'    => true,
 		];
 		$custom_results = new \WP_Query( $args );
@@ -2446,7 +2438,7 @@ class Search {
 	// In case of emergency, nerf this method
 	public function load_collector(): void {
 		require_once __DIR__ . '/class-prometheus-collector.php';
-		add_filter( 'vip_prometheus_collectors', function( $collectors ) {
+		add_filter( 'vip_prometheus_collectors', function ( $collectors ) {
 			$collectors['search'] = Prometheus_Collector::get_instance();
 			return $collectors;
 		} );

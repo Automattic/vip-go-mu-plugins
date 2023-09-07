@@ -4,7 +4,7 @@
 
 namespace Automattic\VIP\Core\OptionsAPI;
 
-/**
+/*
  * Add additional protections around the alloptions functionality.
  *
  * Note that there is one (unavoidable) core call to get_option() before this filter is registered (in wp_plugin_directory_constants()),
