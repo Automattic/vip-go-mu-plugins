@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/fake-integration.php';
@@ -36,6 +37,22 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( [ 'config_test' ], $integration->get_config() );
 	}
 
+	public function test__calling_activate_when_the_integration_is_already_loaded_does_not_activate_the_integration_again(): void {
+		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectExceptionMessage( 'Prevented activating of integration with slug "fake" because it is already loaded.' );
+		/**
+		 * Integration mock.
+		 *
+		 * @var MockObject|FakeIntegration
+		 */
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
+
+		$integration_mock->activate();
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
 	public function test__calling_activate_twice_on_same_integration_does_not_activate_the_plugin_second_time(): void {
 		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
 		$this->expectExceptionMessage( 'VIP Integration with slug "fake" is already activated.' );
@@ -44,6 +61,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$integration->activate();
 		$integration->activate();
+
+		$this->assertFalse( $integration->is_active() );
 	}
 
 	public function test__is_active_returns_false_when_integration_is_not_active(): void {

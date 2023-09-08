@@ -63,10 +63,17 @@ abstract class Integration {
 	 * @private
 	 */
 	public function activate( array $options = [] ): void {
+		// If integration is already available in customer code then don't activate it from platform side.
+		if ( $this->is_loaded() ) {
+			trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				sprintf( 'Prevented activating of integration with slug "%s" because it is already loaded.', esc_html( $this->slug ) ),
+				E_USER_WARNING
+			);
+		}
+
 		// Don't do anything if integration is already activated.
 		if ( $this->is_active() ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is already activated.', esc_html( $this->get_slug() ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return;
 		}
 
 		$this->is_active = true;
@@ -103,6 +110,14 @@ abstract class Integration {
 	}
 
 	/**
+	 * Returns `true` if the integration is already available e.g. via customer code. We will use
+	 * this function to prevent activating of integration again.
+	 *
+	 * @private
+	 */
+	abstract public function is_loaded(): bool;
+
+	/**
 	 * Implement custom action and filter calls to load integration here.
 	 *
 	 * For plugins / integrations that can be added to customer repos, 
@@ -112,4 +127,14 @@ abstract class Integration {
 	 * @private
 	 */
 	abstract public function load(): void;
+
+	/**
+	 * Configure the integration for VIP platform.
+	 *
+	 * If we want to implement functionality only if the integration is enabled via VIP
+	 * then we will use this function.
+	 *
+	 * @private
+	 */
+	abstract public function configure(): void;
 }
