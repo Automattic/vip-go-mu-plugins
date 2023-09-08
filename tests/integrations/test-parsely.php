@@ -25,10 +25,16 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__load_call_returns_without_setting_constant_if_parsely_is_already_loaded(): void {
-		$parsely_integration = new ParselyIntegration( $this->slug );
-		$preload_state       = defined( 'VIP_PARSELY_ENABLED' );
+		/**
+		 * Integration mock.
+		 *
+		 * @var MockObject|ParselyIntegration
+		 */
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
+		$preload_state = defined( 'VIP_PARSELY_ENABLED' );
 
-		$parsely_integration->load();
+		$parsely_integration_mock->load();
 
 		$this->assertEquals( $preload_state, defined( 'VIP_PARSELY_ENABLED' ) );
 	}
