@@ -14,7 +14,7 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
-	 * Returns `true` if `Parse.ly` is already available via customer code. We will use
+	 * Returns `true` if `Parse.ly` is already available e.g. customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_loaded(): bool {
@@ -27,6 +27,14 @@ class ParselyIntegration extends Integration {
 	 * @private
 	 */
 	public function load(): void {
+		// Return if the integration is already loaded.
+			//
+			// In activate() method we do make sure to not activate the integration if its already loaded
+			// but still adding it here as a safety measure i.e. if load() is called directly.
+		if ( $this->is_loaded() ) {
+			return;
+		}
+
 		// Activating the integration via setting constant whose implementation is already
 		// handled via Automattic\VIP\WP_Parsely_Integration (ideally we should move
 		// all the implementation here such that there will be only one way of managing

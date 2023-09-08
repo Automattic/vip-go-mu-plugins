@@ -66,7 +66,7 @@ abstract class Integration {
 		// If integration is already available in customer code then don't activate it from platform side.
 		if ( $this->is_loaded() ) {
 			trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-				sprintf( 'Prevented activating of integration with slug "%s" because it is already available via customer code.', esc_html( $this->slug ) ),
+				sprintf( 'Prevented activating of integration with slug "%s" because it is already loaded.', esc_html( $this->slug ) ),
 				E_USER_WARNING
 			);
 		}

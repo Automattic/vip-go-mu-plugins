@@ -7,6 +7,7 @@
 
 namespace Automattic\VIP\Integrations;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_property_as_public;
@@ -23,11 +24,26 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $parsely_integration->is_loaded() );
 	}
 
-	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
+	public function test__load_call_returns_without_setting_constant_if_parsely_is_already_loaded(): void {
 		$parsely_integration = new ParselyIntegration( $this->slug );
-		$existing_value      = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
+		$preload_state       = defined( 'VIP_PARSELY_ENABLED' );
 
 		$parsely_integration->load();
+
+		$this->assertEquals( $preload_state, defined( 'VIP_PARSELY_ENABLED' ) );
+	}
+
+	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
+		/**
+		 * Integration mock.
+		 *
+		 * @var MockObject|ParselyIntegration
+		 */
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
+		$existing_value = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
+
+		$parsely_integration_mock->load();
 
 		if ( is_null( $existing_value ) || true == $existing_value ) {
 			$this->assertTrue( VIP_PARSELY_ENABLED );

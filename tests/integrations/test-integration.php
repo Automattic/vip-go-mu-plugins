@@ -39,7 +39,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 	public function test__calling_activate_when_the_integration_is_already_loaded_does_not_activate_the_integration_again(): void {
 		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
-		$this->expectExceptionMessage( 'Prevented activating of integration with slug "fake" because it is already available via customer code.' );
+		$this->expectExceptionMessage( 'Prevented activating of integration with slug "fake" because it is already loaded.' );
 		/**
 		 * Integration mock.
 		 *
