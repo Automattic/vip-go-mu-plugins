@@ -80,11 +80,23 @@ class IntegrationVipConfig {
 	protected function get_vip_config_from_file( string $slug ) {
 		$config_file_path = ABSPATH . 'config/integrations-config/' . $slug . '-config.php';
 
-		if ( ! is_readable( $config_file_path ) ) {
+		/**
+		 * Clear realpath cache to get new path else we can get cached path which can be non-existant
+		 * because k8s configmaps updates the file via symlink instead of actually replacing the file and
+		 * PHP cache can hold a reference to the old symlink.
+		 *
+		 * Did tried using `clearstatcache( true, $config_file_path )` but it was giving old symlink,
+		 * `is_readable()` does return correct value (false) for this case but we prefer
+		 * to get the config which `clearstatcache( true )` does return because it gives us new symlink.
+		 */
+		clearstatcache( true );
+		$config_real_path = realpath( $config_file_path );
+
+		if ( ! is_readable( $config_real_path ) ) {
 			return null;
 		}
 
-		return require_once $config_file_path;
+		return require $config_real_path;
 	}
 
 	/**
