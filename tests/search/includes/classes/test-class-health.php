@@ -1182,7 +1182,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		$health->elasticsearch->expects( $this->once() )
 			->method( 'update_index_settings' )
-			->with( $index_name, $expected_updated_settings, true );
+			->with( $index_name, $expected_updated_settings, false );
 
 		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
 
