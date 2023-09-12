@@ -10,20 +10,16 @@
     "dev": "webpack serve",
     "lint": "eslint src"
   },
-  "eslintConfig": {
-    "extends": "wpvip"
-  },
   "eslintIgnore": [
     "build/*"
   ],
   "devDependencies": {
-    "@automattic/eslint-plugin-wpvip": "^0.5.2",
+    "@automattic/eslint-plugin-wpvip": "^0.6.0",
     "@babel/core": "^7.16.0",
-    "@babel/eslint-plugin": "^7.18.10",
-    "@babel/plugin-proposal-class-properties": "^7.16.0",
-    "@babel/plugin-proposal-object-rest-spread": "^7.16.0",
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-transform-class-properties": "^7.16.0",
     "@babel/plugin-transform-object-assign": "^7.16.0",
+    "@babel/plugin-transform-object-rest-spread": "^7.16.0",
+    "@babel/plugin-transform-private-property-in-object": "^7.21.11",
     "@babel/plugin-transform-react-jsx": "^7.16.0",
     "@babel/preset-env": "^7.16.4",
     "acorn": "^8.5.0",
