@@ -1128,7 +1128,7 @@ class Health {
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
 		$index_name               = $indexable->get_index_name();
 		if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
-			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, true );
+			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, false );
 		} else {
 			$result = $indexable->update_index_settings( $desired_settings_to_heal );
 		}
