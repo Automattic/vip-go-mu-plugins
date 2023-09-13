@@ -78,25 +78,29 @@ class IntegrationVipConfig {
 	 * @return null|mixed
 	 */
 	protected function get_vip_config_from_file( string $slug ) {
-		$config_file_path = ABSPATH . 'config/integrations-config/' . $slug . '-config.php';
+		$config_file_directory = ABSPATH . 'config/integrations-config';
+		$config_file_name      = $slug . '-config.php';
+		$config_file_path      = $config_file_directory . '/' . $config_file_name;
 
 		/**
-		 * Clear realpath cache to get new path else we can get cached path which can be non-existant
-		 * because k8s configmaps updates the file via symlink instead of actually replacing the file and
-		 * PHP cache can hold a reference to the old symlink.
+		 * Clear cache to always read data from latest config file.
 		 *
-		 * Did tried using `clearstatcache( true, $config_file_path )` but it was giving old symlink,
-		 * `is_readable()` does return correct value (false) for this case but we prefer
-		 * to get the config which `clearstatcache( true )` does return because it gives us new symlink.
+		 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
+		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
+		 * on it.
 		 */
-		clearstatcache( true );
-		$config_real_path = realpath( $config_file_path );
+		if ( false === file_get_contents( $config_file_path ) ) {
+			clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+			// Clears cache for files created by k8s ConfigMap.
+			clearstatcache( true, $config_file_directory . '/..data' );
+			clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
+		}
 
-		if ( ! is_readable( $config_real_path ) ) {
+		if ( ! is_readable( $config_file_path ) ) {
 			return null;
 		}
 
-		return require $config_real_path;
+		return require $config_file_path;
 	}
 
 	/**
