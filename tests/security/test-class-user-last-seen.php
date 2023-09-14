@@ -6,7 +6,7 @@ use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Security\User_Last_Seen;
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/../../security/user-last-seen.php';
+require_once __DIR__ . '/../../security/class-user-last-seen.php';
 
 class User_Last_Seen_Test extends WP_UnitTestCase {
 	public function setUp(): void {
@@ -46,14 +46,57 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'authenticate' ) );
 	}
 
+	public function test__is_considered_inactive__should_consider_user_registered() {
+		Constant_Mocker::define('VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 30 );
+		update_option( User_Last_Seen::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, strtotime('-100 days' ) );
+
+		// Recent registered user
+		$user1 = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => date('Y-m-d' ) ) );
+
+		// Inactive user (last seen 20 days ago)
+		$user2 = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
+		add_user_meta( $user2, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-31 days') );
+
+		// Active user (last seen 2 days ago)
+		$user3 = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
+		add_user_meta( $user3, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-2 days') );
+
+		// Old user without meta
+		$user4 = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => date('Y-m-d', strtotime('-40 days' ) ) ) );
+
+		$last_seen = new User_Last_Seen();
+		$last_seen->init();
+
+		$this->assertFalse( $last_seen->is_considered_inactive( $user1 ) );
+		$this->assertTrue( $last_seen->is_considered_inactive( $user2 ) );
+		$this->assertFalse( $last_seen->is_considered_inactive( $user3 ) );
+		$this->assertTrue( $last_seen->is_considered_inactive( $user4 ) );
+	}
+
+	public function test__is_considered_inactive__add_extra_time_when_user_is_promoted()
+	{
+		Constant_Mocker::define('VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 30);
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber', 'user_registered' => '2020-01-01' ) );
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-31 days') );
+
+		$user = get_user_by( 'ID', $user_id );
+		$user->set_role( 'administrator' );
+
+		$last_seen = new User_Last_Seen();
+		$last_seen->init();
+
+		$this->assertTrue( $last_seen->is_considered_inactive( $user_id ) );
+	}
+
 	public function test__is_considered_inactive__should_consider_user_meta()
 	{
 		Constant_Mocker::define('VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 30);
 
-		$user_inactive_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$user_inactive_id = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
 		add_user_meta( $user_inactive_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-31 days') );
 
-		$user_active_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$user_active_id = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
 		add_user_meta( $user_active_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-29 days') );
 
 		$last_seen = new User_Last_Seen();
@@ -83,7 +126,7 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		add_option( User_Last_Seen::LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY, strtotime('-16 days') );
 
-		$user_without_meta = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$user_without_meta = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
 		$last_seen->init();
@@ -150,7 +193,7 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'determine_current_user' );
 
-		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		$user_id = $this->factory()->user->create( array( 'role' => 'editor', 'user_registered' => '2020-01-01' ) );
 		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-100 days') );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
@@ -188,7 +231,7 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 
 		remove_all_filters( 'authenticate' );
 
-		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator', 'user_registered' => '2020-01-01' ) );
 		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-100 days') );
 
 		$user = get_user_by( 'id', $user_id );
@@ -246,7 +289,7 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 		remove_all_filters( 'authenticate' );
 		remove_all_filters( 'vip_security_last_seen_elevated_capabilities' );
 
-		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber', 'user_registered' => '2020-01-01' ) );
 		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime('-100 days') );
 
 		$user = get_user_by( 'id', $user_id );
