@@ -14,13 +14,24 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
+	 * Returns `true` if `Parse.ly` is already available e.g. customer code. We will use
+	 * this function to prevent loading of integration again from platform side.
+	 */
+	public function is_loaded(): bool {
+		return class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' );
+	}
+
+	/**
 	 * Loads the plugin.
 	 *
 	 * @private
 	 */
 	public function load(): void {
-		// Do not load plugin if already loaded by customer code.
-		if ( class_exists( 'Parsely\Parsely' ) ) {
+		// Return if the integration is already loaded.
+			//
+			// In activate() method we do make sure to not activate the integration if its already loaded
+			// but still adding it here as a safety measure i.e. if load() is called directly.
+		if ( $this->is_loaded() ) {
 			return;
 		}
 
@@ -28,9 +39,19 @@ class ParselyIntegration extends Integration {
 		// handled via Automattic\VIP\WP_Parsely_Integration (ideally we should move
 		// all the implementation here such that there will be only one way of managing
 		// the plugin).
-		define( 'VIP_PARSELY_ENABLED', true );
+		if ( ! defined( 'VIP_PARSELY_ENABLED' ) ) {
+			define( 'VIP_PARSELY_ENABLED', true );
+		}
+	}
 
+	/**
+	 * Configure `Parse.ly` for VIP Platform.
+	 *
+	 * @private
+	 */
+	public function configure(): void {
 		add_filter( 'wp_parsely_credentials', array( $this, 'wp_parsely_credentials_callback' ) );
+		add_filter( 'wp_parsely_managed_options', array( $this, 'wp_parsely_managed_options_callback' ) );
 	}
 
 	/**
@@ -54,5 +75,25 @@ class ParselyIntegration extends Integration {
 		// Adds `is_managed` flag to indicate that platform is managing this integration
 		// and we have to hide the credential banner warning or more.
 		return array_merge( array( 'is_managed' => true ), $credentials );
+	}
+
+	/**
+	 * Callback for `wp_parsely_managed_options` filter.
+	 *
+	 * @param array $value Value passed to filter.
+	 *
+	 * @return array
+	 */
+	public function wp_parsely_managed_options_callback( $value ) {
+		return array(
+			'force_https_canonicals' => true,
+			'meta_type'              => 'repeated_metas',
+			// Managed options that will obey the values on database.
+			'cats_as_tags'           => null,
+			'content_id_prefix'      => null,
+			'logo'                   => null,
+			'lowercase_tags'         => null,
+			'use_top_level_cats'     => null,
+		);
 	}
 }
