@@ -1291,9 +1291,8 @@ function wpcom_vip_should_load_plugins() {
 	}
 
 	$should_load_plugins = true;
-
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	if ( wp_installing() && strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) !== '/wp-activate.php' ) {
+	if ( wp_installing() && basename( (string) parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) ) !== 'wp-activate.php' ) {
 		$should_load_plugins = false;
 	} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
 		// WP-CLI loaded with --skip-plugins flag
