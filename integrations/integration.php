@@ -70,16 +70,6 @@ abstract class Integration {
 	}
 
 	/**
-	 * Callback for `switch_blog` filter.
-	 */
-	public function switch_blog_callback(): void {
-		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
-		if ( isset( $this->vip_config ) ) {
-			$this->options['config'] = $this->vip_config->get_site_config();
-		}
-	}
-
-	/**
 	 * Activates this integration with given options array.
 	 *
 	 * @param array $options An associative options array for the integration.
@@ -103,6 +93,16 @@ abstract class Integration {
 
 		$this->is_active = true;
 		$this->options   = $options;
+	}
+
+	/**
+	 * Callback for `switch_blog` filter.
+	 */
+	public function switch_blog_callback(): void {
+		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
+		if ( isset( $this->vip_config ) ) {
+			$this->options['config'] = $this->vip_config->get_site_config();
+		}
 	}
 
 	/**
@@ -142,6 +142,10 @@ abstract class Integration {
 	 * @return void
 	 */
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
+		if ( ! $this->is_active() ) {
+			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		}
+
 		$this->vip_config = $vip_config;
 	}
 
