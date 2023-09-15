@@ -73,6 +73,7 @@ class Integrations {
 				// If integration is activated successfully without any error then configure.
 				if ( $integration->is_active() ) {
 					$integration->configure();
+					$integration->set_vip_config( $vip_config );
 				}
 			}
 		}
