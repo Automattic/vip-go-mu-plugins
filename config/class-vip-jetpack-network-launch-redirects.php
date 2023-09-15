@@ -22,7 +22,11 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		if ( defined( 'DISABLE_VIP_LAUNCH_REDIRECTS' ) && true === constant( 'DISABLE_VIP_LAUNCH_REDIRECTS' ) ) {
 			return;
 		}
-
+		/**
+		 * Temporary disabled to see if it's causing issues with the redirect
+		 * TODO Re-enable me
+		 */
+		/*
 		// if they are not enrolled in the SYNC IDC program, skip redirects
 		if ( ! defined( 'JETPACK_SYNC_IDC_OPTIN' ) || true !== constant( 'JETPACK_SYNC_IDC_OPTIN' ) ) {
 			return;
@@ -31,7 +35,8 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// we care only about jetpack requests
 		if ( ! vip_is_jetpack_request() ) {
 			return;
-		}
+		}*/
+
 
 		// TODO we'll need to have some hashing in the options to avoid S&R to change it.
 		// TODO should we have some kind of validation to ensure the data is consistent?
