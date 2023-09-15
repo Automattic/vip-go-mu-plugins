@@ -147,6 +147,10 @@ class IntegrationVipConfig {
 	 * @private
 	 */
 	public function get_site_config() {
+		if ( is_network_admin() ) {
+			return array(); // As of now multisite doesn't support config on environment level.
+		}
+
 		if ( is_multisite() ) {
 			$config = $this->get_value_from_config( 'network_sites', 'config' );
 		} else {
