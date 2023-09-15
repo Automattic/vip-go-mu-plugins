@@ -59,9 +59,9 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( isset( $_SERVER['HTTP_HOST'] ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			$redirect_url  = '';
-			$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] );
+			$uri_unslashed = untrailingslashit( wp_parse_url(  $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
 
-			$requested_url = self::URL_REPLACE_PREFIX . $_SERVER['HTTP_HOST'] . wp_parse_url( $uri_unslashed, PHP_URL_PATH );
+			$requested_url = self::URL_REPLACE_PREFIX . $_SERVER['HTTP_HOST'] . $uri_unslashed;
 			if ( $requested_url && array_key_exists( $requested_url, $valid_redirects ) ) {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 			}
