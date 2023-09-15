@@ -8,7 +8,7 @@ class VIP_Jetpack_Network_Launch_Redirects {
 	private static $instance;
 
 	const NETWORK_TEMP_REDIRECTS_OPTION_NAME = 'vip_network_temp_redirects';
-	const REDIRECT_TTL_MINUTES               = 10;
+	const REDIRECT_TTL_MINUTES               = 60;
 	const LOG_FEATURE_NAME                   = 'vip_network_launch_redirects';
 	// This is used in front of the source domain to avoid the S&R to replace it
 	const URL_REPLACE_PREFIX = '##';
@@ -59,7 +59,9 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( isset( $_SERVER['HTTP_HOST'] ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			$redirect_url  = '';
-			$requested_url = self::URL_REPLACE_PREFIX . $_SERVER['HTTP_HOST'] . wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+			$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] );
+
+			$requested_url = self::URL_REPLACE_PREFIX . $_SERVER['HTTP_HOST'] . wp_parse_url( $uri_unslashed, PHP_URL_PATH );
 			if ( $requested_url && array_key_exists( $requested_url, $valid_redirects ) ) {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 			}
