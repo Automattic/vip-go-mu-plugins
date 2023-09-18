@@ -654,7 +654,7 @@ class Search {
 		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_post_id_option' ] );
 
 		// Use default ES version as fallback
-		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX, 1 );
+		add_filter( 'ep_elasticsearch_version', [ $this, 'fallback_elasticsearch_version' ], PHP_INT_MAX );
 
 		add_filter( 'ep_es_info_cache_expiration', [ $this, 'filter__es_info_cache_expiration' ], PHP_INT_MAX );
 
