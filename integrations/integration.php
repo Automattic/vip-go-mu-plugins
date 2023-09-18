@@ -7,6 +7,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+use Automattic\VIP\Integrations\IntegrationVipConfig;
+
 /**
  * Abstract base class for all integration implementations.
  *
@@ -46,12 +48,25 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
+	 * Instance of VipIntegrationConfig. It's useful to have full configuration info
+	 * available inside each integration, we can use it for cases like multisite,
+	 * tracking etc.
+	 *
+	 * Note: We don't use this property for activation of the integration.
+	 *
+	 * @var IntegrationVipConfig
+	 */
+	private IntegrationVipConfig $vip_config;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
+
+		add_action( 'switch_blog', array( $this, 'switch_blog_callback' ), 10, 2 );
 	}
 
 	/**
@@ -81,6 +96,16 @@ abstract class Integration {
 	}
 
 	/**
+	 * Callback for `switch_blog` filter.
+	 */
+	public function switch_blog_callback(): void {
+		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
+		if ( isset( $this->vip_config ) ) {
+			$this->options['config'] = $this->vip_config->get_site_config();
+		}
+	}
+
+	/**
 	 * Returns true if this integration has been activated.
 	 *
 	 * @private
@@ -107,6 +132,21 @@ abstract class Integration {
 	 */
 	public function get_slug(): string {
 		return $this->slug;
+	}
+
+	/**
+	 * Set vip_config property.
+	 *
+	 * @param IntegrationVipConfig $vip_config Instance of IntegrationVipConfig.
+	 *
+	 * @return void
+	 */
+	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
+		if ( ! $this->is_active() ) {
+			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		}
+
+		$this->vip_config = $vip_config;
 	}
 
 	/**
