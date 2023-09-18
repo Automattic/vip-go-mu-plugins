@@ -1283,17 +1283,17 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 /**
  * Helper function to check if we can load plugins or not.
  */
-function wpcom_vip_should_load_plugins() {
+function wpcom_vip_should_load_plugins( $_reset = false ) {
 	static $should_load_plugins;
 
-	if ( isset( $should_load_plugins ) ) {
+	if ( ! $_reset && isset( $should_load_plugins ) ) {
 		return $should_load_plugins;
 	}
 
 	$should_load_plugins = true;
 
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	if ( wp_installing() && strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ) !== '/wp-activate.php' ) {
+	if ( wp_installing() && ! str_ends_with( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ), '/wp-activate.php' ) ) {
 		$should_load_plugins = false;
 	} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
 		// WP-CLI loaded with --skip-plugins flag
