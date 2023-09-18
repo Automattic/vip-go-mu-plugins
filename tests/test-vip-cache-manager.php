@@ -19,7 +19,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->original_error_reporting = error_reporting();
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new ErrorException( $errstr, $errno );
 			}
 

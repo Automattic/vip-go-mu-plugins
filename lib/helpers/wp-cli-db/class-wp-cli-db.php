@@ -54,7 +54,7 @@ class Wp_Cli_Db {
 		];
 
 		if ( ! in_array( $subcommand, $allowed_subcommands, true ) ) {
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- CLI
+			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 			throw new Exception( "The `wp db $subcommand` subcommand is not permitted for this site." );
 		}
 
