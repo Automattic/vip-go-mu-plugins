@@ -26,7 +26,7 @@ class User_Stats_Collector implements CollectorInterface {
 			'user',
 			'count',
 			'Number of users by role and 2FA status',
-			[ 'site_id', 'role', 'tfa_status' ]
+			[ 'network_site_id', 'role', 'tfa_status' ]
 		);
 	}
 
@@ -38,8 +38,8 @@ class User_Stats_Collector implements CollectorInterface {
 		}
 
 		foreach ( $metrics as $role => $counts ) {
-			foreach ( $counts as $status => $count ) {
-				$this->users_gauge->set( $count, [ $this->blog_id, $role, $status ] );
+			foreach ( $counts as $tfa_status => $count ) {
+				$this->users_gauge->set( $count, [ $this->blog_id, $role, $tfa_status ] );
 			}
 		}
 	}
