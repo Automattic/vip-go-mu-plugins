@@ -76,18 +76,33 @@
 		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
 
 		<!-- Allow short array syntax -->
-		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax.Found" />
 
 		<!-- Do not enforce 'class-' prefix -->
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
 
 		<!-- Allow short ternaries -->
-		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
+		<exclude name="Universal.Operators.DisallowShortTernary.Found" />
 
 		<!-- Generates too many false positives -->
 		<exclude name="WordPress.WP.CapitalPDangit.Misspelled" />
 		<!-- We use trigger_error extensively -->
 		<exclude name="WordPress.PHP.DevelopmentFunctions.error_log_trigger_error" />
+
+		<exclude name="Universal.NamingConventions.NoReservedKeywordParameterNames" />
+	</rule>
+
+	<rule ref="Universal.Files.SeparateFunctionsFromOO.Mixed">
+		<exclude-pattern>/tests/*</exclude-pattern>
+	</rule>
+
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="view_query_monitor" />
+				<element value="vip_support" />
+			</property>
+		</properties>
 	</rule>
 
 </ruleset>

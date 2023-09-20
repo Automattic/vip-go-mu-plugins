@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 /**
  * Setup the apcu hot cache
  *

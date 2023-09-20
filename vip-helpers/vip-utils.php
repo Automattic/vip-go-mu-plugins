@@ -180,10 +180,9 @@ function _vip_contrib_add_upload_cap() {
  * @param int $attachment_id ID of the attachment
  * @param int $width Width of our resized image
  * @param int $height Height of our resized image
- * @param bool $crop (optional) whether or not to crop the image
  * @return string URL of the resized attachmen
  */
-function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height, $crop = false ) {
+function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height ) {
 	$url = wp_get_attachment_url( $attachment_id );
 
 	if ( ! $url ) {
@@ -214,13 +213,13 @@ function wpcom_vip_sharing_twitter_via( $via = '' ) {
 		$via     = preg_replace( '/[^A-Za-z0-9_\-]/', '', $via );
 		$via     = apply_filters( 'sanitize_key', $via, $raw_via );
 
-		$via_callback = function() use ( $via ) {
+		$via_callback = function () use ( $via ) {
 			return $via;
 		};
 	}
 
 	add_filter( 'jetpack_sharing_twitter_via', $via_callback );
-	add_filter( 'jetpack_open_graph_tags', function( $tags ) use ( $via ) {
+	add_filter( 'jetpack_open_graph_tags', function ( $tags ) use ( $via ) {
 		if ( isset( $tags['twitter:site'] ) ) {
 			if ( empty( $via ) ) {
 				unset( $tags['twitter:site'] );
@@ -250,7 +249,7 @@ function wpcom_vip_disable_post_flair() {
  */
 function wpcom_vip_disable_sharing() {
 	// Post Flair sets things up on init so we need to call on that if init hasn't fired yet.
-	_wpcom_vip_call_on_hook_or_execute( function() {
+	_wpcom_vip_call_on_hook_or_execute( function () {
 		remove_filter( 'post_flair', 'sharing_display', 20 );
 		remove_filter( 'the_content', 'sharing_display', 19 );
 		remove_filter( 'the_excerpt', 'sharing_display', 19 );
@@ -265,7 +264,7 @@ function wpcom_vip_disable_sharing() {
  * Note: this disables things like smart buttons and share counts displayed alongside the buttons. Those will need to be handled manually if desired.
  */
 function wpcom_vip_disable_sharing_resources() {
-	_wpcom_vip_call_on_hook_or_execute( function() {
+	_wpcom_vip_call_on_hook_or_execute( function () {
 		add_filter( 'sharing_js', '__return_false' );
 		remove_action( 'wp_head', 'sharing_add_header', 1 );
 	}, 'init', 99 );
@@ -843,11 +842,9 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
 			$timeout = 15;
 		}
-	} else {
-		if ( $timeout > 5 ) {
+	} elseif ( $timeout > 5 ) {
 			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
 			$timeout = 5;
-		}
 	}
 
 	// retry time < 10 seconds will default to 10 seconds.
@@ -890,15 +887,13 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 				'hits' => 1,
 			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		}
-	} else {
-		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
+	} elseif ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array(
 				'time' => $option['time'],
 				'hits' => $option['hits'] - 1,
 			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		} else {
-			wp_cache_delete( $cache_key, $cache_group );
-		}
+	} else {
+		wp_cache_delete( $cache_key, $cache_group );
 	}
 
 	if ( is_wp_error( $response ) ) {
@@ -1039,7 +1034,7 @@ function wpcom_vip_is_valid_domain( $url, $whitelisted_domains ) {
  * @param array $users Array of user logins
  */
 function wpcom_vip_bulk_user_management_whitelist( $users ) {
-	add_filter( 'bulk_user_management_admin_users', function() use ( $users ) {
+	add_filter( 'bulk_user_management_admin_users', function () use ( $users ) {
 		return $users;
 	} );
 }

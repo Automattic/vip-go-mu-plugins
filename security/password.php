@@ -50,7 +50,8 @@ add_action( 'show_user_profile', __NAMESPACE__ . '\add_current_password_field' )
  *
  * @return void
  */
-function add_current_password_field() { ?>
+function add_current_password_field() {
+	?>
 	<table id="nojs-current-pass" class="form-table" role="presentation">
 		<tr>
 			<th><label for="current_pass">Current Password</label></th>

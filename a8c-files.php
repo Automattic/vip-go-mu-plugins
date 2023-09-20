@@ -8,6 +8,7 @@ Author URI: http://automattic.com/
 */
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
 /* Requires at least: 3.9.0
  * due to the dependancy on the filter 'wp_insert_attachment_data'
@@ -73,7 +74,7 @@ class A8C_Files {
 	public function __construct() {
 
 		// Upload size limit is 1GB
-		add_filter( 'upload_size_limit', function() {
+		add_filter( 'upload_size_limit', function () {
 			return 1073741824; // 2^30
 		});
 
@@ -86,7 +87,7 @@ class A8C_Files {
 		add_action( 'init', array( $this, 'init_photon' ) );
 
 		// ensure we always upload with year month folder layouts
-		add_filter( 'pre_option_uploads_use_yearmonth_folders', function() {
+		add_filter( 'pre_option_uploads_use_yearmonth_folders', function () {
 			return '1';
 		} );
 
@@ -153,12 +154,12 @@ class A8C_Files {
 
 		// This is our catch-all to strip dimensions from intermediate images in content.
 		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
-		add_filter( 'the_content', function( $content ) {
+		add_filter( 'the_content', function ( $content ) {
 			add_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			return $content;
 		}, 0 );
 
-		add_filter( 'the_content', function( $content ) {
+		add_filter( 'the_content', function ( $content ) {
 			remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
@@ -487,7 +488,7 @@ class A8C_Files {
 			$end_index   = $start_index + $batch_size;
 
 			// Avoid infinite loops
-			$num_lookups++;
+			++$num_lookups;
 			if ( $num_lookups >= $max_lookups ) {
 				break;
 			}
@@ -507,7 +508,6 @@ class A8C_Files {
 
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
-
 }
 
 class A8C_Files_Utils {

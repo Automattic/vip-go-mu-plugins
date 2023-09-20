@@ -3,7 +3,7 @@
 namespace Automattic\VIP;
 
 use WP_CLI;
-use \Automattic\VIP\Feature as Feature;
+use Automattic\VIP\Feature;
 
 // phpcs:ignore WordPressVIPMinimum.Classes.RestrictedExtendClasses.wp_cli
 class Feature_CLI_Command extends \WP_CLI_Command {

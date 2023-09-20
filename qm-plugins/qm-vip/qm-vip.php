@@ -25,10 +25,10 @@ function register_qm_vip() {
 	}
 
 	QM_Collectors::add( new QM_Collector_VIP() );
-	add_filter( 'qm/outputter/html', 'register_qm_vip_output', 120, 2 );
+	add_filter( 'qm/outputter/html', 'register_qm_vip_output', 120 );
 }
 
-function register_qm_vip_output( array $output, \QM_Collectors $collectors ) {
+function register_qm_vip_output( array $output ) {
 	$collector = \QM_Collectors::get( 'vip' );
 	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-vip.php' ) ) {
 		require_once __DIR__ . '/class-qm-output-html-vip.php';

@@ -425,7 +425,7 @@ require_once __DIR__ . '/jetpack-mandatory.php';
  * Remove certain modules from the list of those that can be activated
  * Blocks access to certain functionality that isn't compatible with the platform.
  */
-add_filter( 'jetpack_get_available_modules', function( $modules ) {
+add_filter( 'jetpack_get_available_modules', function ( $modules ) {
 	// The Photon service is not necessary on VIP Go since the same features are built-in.
 	// Note that we do utilize some of the Photon module's code with our own Files Service.
 	unset( $modules['photon'] );
@@ -445,7 +445,7 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
  * This will prevent issues from the plan option being corrupted,
  * which can then break features like Jetpack Search.
  */
-add_filter( 'pre_option_jetpack_active_plan', function( $pre_option ) {
+add_filter( 'pre_option_jetpack_active_plan', function ( $pre_option ) {
 	if ( true === WPCOM_IS_VIP_ENV
 		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
 		&& Jetpack::is_active() ) {
@@ -460,7 +460,7 @@ add_filter( 'pre_option_jetpack_active_plan', function( $pre_option ) {
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_max_queue_size', function ( $value ) {
 	$value = intval( $value );
 
 	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
@@ -474,7 +474,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_max_queue_lag', function ( $value ) {
 	$value = intval( $value );
 
 	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
@@ -489,7 +489,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
  *
  */
-add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function () {
 	return 4 * MINUTE_IN_SECONDS;
 }, 9999 );
 
@@ -499,13 +499,13 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
  *
  */
-add_filter( 'option_jetpack_sync_settings_sync_wait_time', function() {
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function () {
 	return 1;
 }, 9999 );
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
-	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
+	add_action( 'updating_jetpack_version', function ( $new_version, $old_version ) {
 		// This is a brand new site with no Jetpack data
 		if ( empty( $old_version ) ) {
 			return;
@@ -525,7 +525,7 @@ if ( true === WPCOM_SANDBOXED ) {
 
 // On production servers, only our machine user can manage the Jetpack connection
 if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id ) {
+	add_filter( 'map_meta_cap', function ( $caps, $cap, $user_id ) {
 		switch ( $cap ) {
 			case 'jetpack_connect':
 			case 'jetpack_reconnect':
@@ -590,7 +590,6 @@ function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load 
 	}
 
 	return $should_load;
-
 }
 add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync_for_frontend_get_requests' );
 
@@ -618,7 +617,7 @@ if ( defined( 'JETPACK__VERSION' ) && JETPACK__VERSION < '11.0' ) {
 /**
  * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
  */
-add_filter( 'jetpack_sync_modules', function( $modules ) {
+add_filter( 'jetpack_sync_modules', function ( $modules ) {
 	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
 		return $modules;
 	}
@@ -668,7 +667,7 @@ add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
 /**
  * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
  */
-add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value ) {
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function ( $value ) {
 	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
 	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
 } );
@@ -676,13 +675,13 @@ add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $valu
 /**
  * SSL is always supported on VIP, so avoid unnecessary checks
  */
-add_filter( 'pre_transient_jetpack_https_test', function() {
+add_filter( 'pre_transient_jetpack_https_test', function () {
 	return 1;
 } ); // WP doesn't have __return_one (but it does have __return_zero)
 add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
 
 // And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
-add_filter( 'jetpack_options', function( $value, $name ) {
+add_filter( 'jetpack_options', function ( $value, $name ) {
 	if ( 'fallback_no_verify_ssl_certs' === $name ) {
 		$value = 0;
 	}
@@ -758,11 +757,9 @@ add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
  * @param string[] $plugin_meta An array of the plugin's metadata, including
  *                              the version, author, author URI, and plugin URI.
  * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
- * @param array    $plugin_data An array of plugin data.
- * @param string   $status      Status filter currently applied to the plugin list.
  * @return string[] $plugin_meta Updated plugin's metadata.
  */
-function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file, $plugin_data, $status ) {
+function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
 	if ( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) && ! defined( 'WPCOM_VIP_JETPACK_LOCAL' ) ) {
 		return $plugin_meta;
 	}
@@ -775,4 +772,4 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file, $plugin_
 
 	return $plugin_meta;
 }
-add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 4 );
+add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
