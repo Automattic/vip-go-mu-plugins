@@ -97,7 +97,7 @@ class VIP_Filesystem {
 		add_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
 		add_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
-		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
+		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 
@@ -117,7 +117,6 @@ class VIP_Filesystem {
 	 * @access   private
 	 */
 	private function remove_filters() {
-
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
 		remove_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
 		remove_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
@@ -417,12 +416,11 @@ class VIP_Filesystem {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param   string  $file           Path to file
-	 * @param   int     $attachment_id  Attachment post ID
+	 * @param   string  $file Path to file
 	 *
 	 * @return  string  Path to file
 	 */
-	public function filter_get_attached_file( $file, $attachment_id ) {
+	public function filter_get_attached_file( $file ) {
 		$uploads = wp_get_upload_dir();
 
 		if ( $file && false !== strpos( $file, $uploads['baseurl'] ) ) {

@@ -23,7 +23,6 @@ class Do_Pings_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $result, 'block_encloseme_metadata_filter should return false' );
 		$this->assertFalse( \apply_filters( 'add_post_metadata', $should_update, $object_id, $meta_key, $meta_value, $unique ), 'add_post_metadata should return false' );
-		
 	}
 
 	public function test__block_encloseme_metadata_filter_should_be_false_if_encloseme() {

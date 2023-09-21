@@ -20,6 +20,10 @@ permissions:
   contents: read
 
 env:
+  LOCAL_PHP: "8.0-fpm"
+  LOCAL_DB_TYPE: "mysql"
+  LOCAL_DB_VERSION: "8.0"
+  LOCAL_PHP_MEMCACHED: "true"
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
 
 jobs:
@@ -37,46 +41,67 @@ jobs:
           echo "PHP_FPM_UID=$(id -u)" >> "${GITHUB_ENV}"
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
-      - name: Check out WordPress
-        uses: actions/checkout@v4.0.0
+      - name: Checkout WordPress
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@3df4ab11eba7bda6032a0b82a6bb43b11571feac # v4.0.0
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
-
-      - name: Patch package.json for WP 6.2.2
-        run: |
-          sed -i 's/"version": "6.2.3"/"version": "6.2.2"/' wordpress/package.json
-        if: steps.version.outputs.latest == '6.2.2'
 
       - name: Tweaks
         run: |
           echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
-      - name: Install NodeJS
-        uses: actions/setup-node@v3.8.1
+      - name: Set up Node.js
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3.8.1
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
           cache-dependency-path: 'wordpress/package-lock.json'
 
-      - name: Install Dependencies
-        run: npm ci
+      - name: Set up PHP
+        uses: shivammathur/setup-php@4bd44f22a98a19e0950cbad5f31095157cc9621b # v2.25.4
+        with:
+          php-version: 8.0
+          coverage: none
+
+      # - name: Install Composer dependencies
+      #   uses: ramsey/composer-install@83af392bf5f031813d25e6fe4cd626cdba9a2df6 # v2.2.0
+      #   with:
+      #     working-directory: wordpress
+      - name: Install Composer dependencies
+        run: composer install -n
         working-directory: wordpress
 
-      - name: Install Composer dependencies
-        run: docker-compose run --rm php composer update
+      - name: Downgrade PHPUnit
+        run: composer require --dev -n phpunit/phpunit:9.6.12
+        working-directory: wordpress
+
+      - name: Install npm dependencies
+        run: npm ci
         working-directory: wordpress
 
       - name: Start Docker environment
         run: npm run env:start
+        working-directory: wordpress
+
+      - name: Log running Docker containers
+        run: docker ps -a
+
+      - name: WordPress Docker container debug information
+        run: |
+          docker-compose run --rm mysql mysql --version
+          docker-compose run --rm php php --version
+          docker-compose run --rm php php -m
+          docker-compose run --rm php php -i
+          docker-compose run --rm php locale -a
         working-directory: wordpress
 
       - name: Install WordPress

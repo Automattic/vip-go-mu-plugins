@@ -4,9 +4,9 @@
  */
 namespace Automattic\VIP\Commands;
 
-use \WP_CLI;
-use \Automattic\WP\Cron_Control\Events_Store;
-use \Automattic\VIP\Utils\Alerts;
+use WP_CLI;
+use Automattic\WP\Cron_Control\Events_Store;
+use Automattic\VIP\Utils\Alerts;
 
 class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
@@ -47,7 +47,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 
 		$scheduled_or_running = array_filter(
 			$events,
-			function( $evt ) {
+			function ( $evt ) {
 				return in_array( $evt->status, [ 'pending', 'running' ], true );
 			}
 		);
@@ -92,7 +92,7 @@ class Async_Scheduler_Command extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::success( 'Found matching events' );
 		}
 
-		$events = array_map( function( $event ) use ( $timestamp ) {
+		$events = array_map( function ( $event ) use ( $timestamp ) {
 			return [
 				'ID'              => $event->ID,
 				'status'          => $event->status,
@@ -230,7 +230,7 @@ WP_CLI::add_command(
 	'vip cmd-scheduler',
 	'\Automattic\VIP\Commands\Async_Scheduler_Command',
 	[
-		'before_invoke' => function() {
+		'before_invoke' => function () {
 			// Cron Control is a hard dependency, so let's just bail right away if it's not available
 			if ( ! class_exists( '\Automattic\WP\Cron_Control\Events_Store' ) ) {
 				WP_CLI::error( 'Cron Control is not loaded' );

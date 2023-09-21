@@ -9,6 +9,6 @@
  * No feeds should be really much slower than 1s anyway.
  * If they are, you should find a different feed...
  */
-add_action( 'wp_feed_options', function( $feed ) {
+add_action( 'wp_feed_options', function ( $feed ) {
 	$feed->set_timeout( 3 );
 } );

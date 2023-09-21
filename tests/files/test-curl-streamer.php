@@ -9,12 +9,13 @@ require_once __DIR__ . '/../../files/class-curl-streamer.php';
 class Curl_Streamer_Test extends WP_UnitTestCase {
 	const TEST_FILE_PATH = __DIR__ . '/../fixtures/files/stream.txt';
 
+	private $file_stream;
 	private $curl_streamer;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->file_stream   = fopen( self::TEST_FILE_PATH, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+		$this->file_stream   = fopen( self::TEST_FILE_PATH, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 		$this->curl_streamer = new Curl_Streamer( self::TEST_FILE_PATH );   // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_streamer -- FP
 		$this->curl_streamer->init();
 	}

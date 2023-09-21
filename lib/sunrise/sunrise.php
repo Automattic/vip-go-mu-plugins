@@ -2,9 +2,7 @@
 
 namespace Automattic\VIP\Sunrise;
 
-/**
- * Nothing to see here for single sites
- */
+// Nothing to see here for single sites
 if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }

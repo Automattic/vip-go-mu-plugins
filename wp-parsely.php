@@ -13,9 +13,9 @@
  * @package Automattic\VIP\WP_Parsely_Integration
  */
 
-namespace Automattic\VIP\WP_Parsely_Integration;
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
-use stdClass;
+namespace Automattic\VIP\WP_Parsely_Integration;
 
 /**
  * The default version is the first entry in the SUPPORTED_VERSIONS list.

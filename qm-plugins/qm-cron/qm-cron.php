@@ -21,10 +21,10 @@ function register_qm_cron() {
 	}
 
 	QM_Collectors::add( new QM_Collector_Cron() );
-	add_filter( 'qm/outputter/html', 'register_qm_cron_output', 120, 2 );
+	add_filter( 'qm/outputter/html', 'register_qm_cron_output', 120 );
 }
 
-function register_qm_cron_output( array $output, \QM_Collectors $collectors ) {
+function register_qm_cron_output( array $output ) {
 	$collector = \QM_Collectors::get( 'cron' );
 	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-cron.php' ) ) {
 		require_once __DIR__ . '/class-qm-output-html-cron.php';
