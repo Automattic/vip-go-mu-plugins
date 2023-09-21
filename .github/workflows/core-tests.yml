@@ -67,7 +67,7 @@ jobs:
           cache-dependency-path: 'wordpress/package-lock.json'
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.26.0 # v2.25.4
+        uses: shivammathur/setup-php@2.26.0
         with:
           php-version: 8.0
           coverage: none
