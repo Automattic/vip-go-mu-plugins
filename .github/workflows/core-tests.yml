@@ -80,6 +80,10 @@ jobs:
         run: composer install -n
         working-directory: wordpress
 
+      - name: Downgrade PHPUnit
+        run: composer require --dev -n phpunit/phpunit:9.6.12
+        working-directory: wordpress
+
       - name: Install npm dependencies
         run: npm ci
         working-directory: wordpress
