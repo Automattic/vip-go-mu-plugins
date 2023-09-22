@@ -13,8 +13,10 @@
 
 // Will use the "next" version on these specified environment types by default.
 if ( ! defined( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN' ) ) {
-	if ( in_array( VIP_GO_APP_ENVIRONMENT, [ 'develop', 'preprod', 'staging' ], true ) ) {
+	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( VIP_GO_APP_ENVIRONMENT, [ 'develop', 'preprod', 'staging' ], true ) ) {
 		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', true );
+	} else {
+		define( 'VIP_USE_NEXT_OBJECT_CACHE_DROPIN', false );
 	}
 }
 
