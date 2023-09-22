@@ -54,8 +54,7 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
-
+		$this->force_blog_public_option();
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
 	}
@@ -69,6 +68,31 @@ class Private_Sites {
 		add_action( 'do_feed_rss', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_rss2', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_atom', array( $this, 'action_do_feed' ), -1 );
+	}
+
+	/**
+	 * Force the blog_public option to be -1 and disable checkbox/radio UI in Reading Settings
+	 */
+	public function force_blog_public_option() {
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
+		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
+		wp_add_inline_script( 'vip-disable-blog-public-option-ui', "document.addEventListener(\"DOMContentLoaded\", function() {
+			function disableButton(selector) {
+				var element = document.querySelector(selector);
+				if (element) {
+					element.disabled = true;
+				}
+			}
+
+			var checkbox = 'tr.option-site-visibility input#blog_public[type=\"checkbox\"]';
+			if (document.querySelector(checkbox)) {
+				disableButton(checkbox);
+			} else {
+				disableButton('tr.option-site-visibility input#blog-public[type=\"radio\"]');
+				disableButton('tr.option-site-visibility input#blog-norobots[type=\"radio\"]');
+			}
+		});" );
 	}
 
 	/*
