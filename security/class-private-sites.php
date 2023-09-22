@@ -85,12 +85,22 @@ class Private_Sites {
 				}
 			}
 
+			function updateDescription(message) {
+				var description = document.querySelector('tr.option-site-visibility p.description');
+				if (description) {
+					description.textContent = message;
+				}
+			}
+
 			var checkbox = 'tr.option-site-visibility input#blog_public[type=\"checkbox\"]';
+			var description = document.querySelector('tr.option-site-visibility p.description');
 			if (document.querySelector(checkbox)) {
 				disableButton(checkbox);
+				updateDescription('This option is disabled when the constant \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
 			} else {
 				disableButton('tr.option-site-visibility input#blog-public[type=\"radio\"]');
 				disableButton('tr.option-site-visibility input#blog-norobots[type=\"radio\"]');
+				updateDescription('These options are disabled when \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
 			}
 		});" );
 	}
