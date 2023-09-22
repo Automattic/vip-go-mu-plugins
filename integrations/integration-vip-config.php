@@ -83,29 +83,16 @@ class IntegrationVipConfig {
 		$config_file_path      = $config_file_directory . '/' . $config_file_name;
 
 		/**
-		 * Temporarily disable warnings by clearing the E_WARNING bit.
-		 *
-		 * Reading config file via `file_get_contents()` even with `@` operator generate warnings on PHP 8+.
-		 */
-		$current_error_reporting = error_reporting(); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-		error_reporting( $current_error_reporting & ~E_WARNING ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-
-		/**
 		 * Clear cache to always read data from latest config file.
 		 *
 		 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
 		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
 		 * on it.
 		 */
-		if ( false === file_get_contents( $config_file_path ) ) {
-			clearstatcache( true, $config_file_directory . '/' . $config_file_name );
-			// Clears cache for files created by k8s ConfigMap.
-			clearstatcache( true, $config_file_directory . '/..data' );
-			clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
-		}
-
-		// Restore the original error reporting.
-		error_reporting( $current_error_reporting ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+		clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+		// Clears cache for files created by k8s ConfigMap.
+		clearstatcache( true, $config_file_directory . '/..data' );
+		clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
 
 		if ( ! is_readable( $config_file_path ) ) {
 			return null;
