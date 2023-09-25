@@ -23,26 +23,26 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 	public function test__should_not_load_actions_and_filters_when_env_vars_are_not_defined() {
 		Constant_Mocker::undefine( 'VIP_SECURITY_INACTIVE_USERS_ACTION' );
 
-		remove_all_filters( 'determine_current_user' );
+		remove_all_filters( 'rest_authentication_errors' );
 		remove_all_filters( 'authenticate' );
 
 		$last_seen = new User_Last_Seen();
 		$last_seen->init();
 
-		$this->assertFalse( has_filter( 'determine_current_user' ) );
+		$this->assertFalse( has_filter( 'rest_authentication_errors' ) );
 		$this->assertFalse( has_filter( 'authenticate' ) );
 	}
 
 	public function test__should_not_load_actions_and_filters_when_env_vars_is_set_to_no_action() {
 		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'NO_ACTION' );
 
-		remove_all_filters( 'determine_current_user' );
+		remove_all_filters( 'rest_authentication_errors' );
 		remove_all_filters( 'authenticate' );
 
 		$last_seen = new User_Last_Seen();
 		$last_seen->init();
 
-		$this->assertFalse( has_filter( 'determine_current_user' ) );
+		$this->assertFalse( has_filter( 'rest_authentication_errors' ) );
 		$this->assertFalse( has_filter( 'authenticate' ) );
 	}
 
@@ -158,70 +158,52 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 		$this->assertFalse( $last_seen->is_considered_inactive( $user_without_meta ) );
 	}
 
-	public function test__determine_current_user_should_record_last_seen_meta() {
+	public function test__authenticate_should_record_last_seen_meta() {
 		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'BLOCK' );
 		Constant_Mocker::define( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 15 );
 
-		remove_all_filters( 'determine_current_user' );
+		remove_all_filters( 'authenticate' );
 
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		$user = get_user_by( 'id', $user_id );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
 		$last_seen->init();
 
-		$new_user_id = apply_filters( 'determine_current_user', $user_id, $user_id );
+		$new_user = apply_filters( 'authenticate', $user );
 
 		$current_last_seen = get_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, true );
 
-		$this->assertSame( $new_user_id, $user_id );
+		$this->assertSame( $new_user->ID, $user->ID );
 		$this->assertIsNumeric( $current_last_seen );
 	}
 
-	public function test__determine_current_user_should_record_once_last_seen_meta() {
+	public function test__authenticate_should_record_once_last_seen_meta() {
 		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'BLOCK' );
 		Constant_Mocker::define( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 15 );
 
-		remove_all_filters( 'determine_current_user' );
+		remove_all_filters( 'authenticate' );
 
 		$previous_last_seen = sprintf( '%d', strtotime( '-10 days' ) );
 
 		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, $previous_last_seen );
+		$user = get_user_by( 'id', $user_id );
 
 		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
 		$last_seen->init();
 
-		apply_filters( 'determine_current_user', $user_id, $user_id );
+		apply_filters( 'authenticate', $user );
 
 		$current_last_seen = get_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, true );
 
-		$new_user_id = apply_filters( 'determine_current_user', $user_id, $user_id );
+		$new_user = apply_filters( 'authenticate', $user );
 
 		$cached_last_seen = get_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, true );
 
 		$this->assertTrue( $current_last_seen > $previous_last_seen );
 		$this->assertSame( $current_last_seen, $cached_last_seen );
-		$this->assertSame( $new_user_id, $user_id );
-	}
-
-	public function test__determine_current_user_should_return_an_error_when_user_is_inactive() {
-		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'BLOCK' );
-		Constant_Mocker::define( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 15 );
-
-		remove_all_filters( 'determine_current_user' );
-
-		$user_id = $this->factory()->user->create( array(
-			'role'            => 'editor',
-			'user_registered' => '2020-01-01',
-		) );
-		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime( '-100 days' ) );
-
-		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
-		$last_seen->init();
-
-		$user = apply_filters( 'determine_current_user', $user_id, $user_id );
-
-		$this->assertWPError( $user, 'Expected WP_Error object to be returned' );
+		$this->assertSame( $new_user->ID, $user_id );
 	}
 
 	public function test__authenticate_should_not_return_error_when_user_is_active() {
@@ -263,6 +245,48 @@ class User_Last_Seen_Test extends WP_UnitTestCase {
 		$user = apply_filters( 'authenticate', $user, $user );
 
 		$this->assertWPError( $user, 'Expected WP_Error object to be returned' );
+	}
+
+	public function test__rest_authentication_should_record_last_seen_meta() {
+		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'BLOCK' );
+		Constant_Mocker::define( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 15 );
+
+		remove_all_filters( 'rest_authentication_errors' );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+
+		wp_set_current_user( $user_id );
+
+		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
+		$last_seen->init();
+
+		apply_filters( 'rest_authentication_errors', true );
+
+		$current_last_seen = get_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, true );
+
+		$this->assertIsNumeric( $current_last_seen );
+	}
+
+	public function test__rest_authentication_should_return_an_error_when_user_is_inactive() {
+		Constant_Mocker::define( 'VIP_SECURITY_INACTIVE_USERS_ACTION', 'BLOCK' );
+		Constant_Mocker::define( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS', 15 );
+
+		remove_all_filters( 'rest_authentication_errors' );
+
+		$user_id = $this->factory()->user->create( array(
+			'role'            => 'administrator',
+			'user_registered' => '2020-01-01',
+		) );
+		add_user_meta( $user_id, User_Last_Seen::LAST_SEEN_META_KEY, strtotime( '-100 days' ) );
+
+		wp_set_current_user( $user_id );
+
+		$last_seen = new \Automattic\VIP\Security\User_Last_Seen();
+		$last_seen->init();
+
+		$result = apply_filters( 'rest_authentication_errors', true );
+
+		$this->assertWPError( $result, 'Expected WP_Error object to be returned' );
 	}
 
 	public function test__register_release_date_should_register_release_date_only_once() {
