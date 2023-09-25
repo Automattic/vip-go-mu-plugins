@@ -117,8 +117,8 @@ class User_Stats_Collector implements CollectorInterface {
 
 			foreach ( $user->roles as $role ) {
 				if ( $is_two_factor_enabled_for_user ) {
-					$user_count_by_role[ $role ][ self::TFA_STATUS_ENABLED ]++;
-					$user_count_by_role[ $role ][ self::TFA_STATUS_DISABLED ]--;
+					++$user_count_by_role[ $role ][ self::TFA_STATUS_ENABLED ];
+					--$user_count_by_role[ $role ][ self::TFA_STATUS_DISABLED ];
 				}
 			}
 		}
