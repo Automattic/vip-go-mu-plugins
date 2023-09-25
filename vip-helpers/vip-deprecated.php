@@ -1,6 +1,6 @@
 <?php
 
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter
 
 /**
  * Loads the shared VIP helper file which defines some helpful functions.
@@ -693,10 +693,8 @@ function wpcom_vip_get_meta_desc() {
 			array_push( $words, '...' );
 			$text = implode( ' ', $words );
 		}
-	} else {
-		if ( strlen( $text ) > $length ) {
+	} elseif ( strlen( $text ) > $length ) {
 			$text = mb_strimwidth( $text, 0, $length, '...' );
-		}
 	}
 
 	return $text;

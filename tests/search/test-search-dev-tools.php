@@ -57,7 +57,7 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	 * @dataProvider data_provider_endpoint_urls
 	 */
 	public function test__url_validation( $input, $expected ) {
-		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_url_validate_callback( $input, new \WP_Rest_Request( 'POST' ), 'url' );
+		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_url_validate_callback( $input, new \WP_REST_Request( 'POST' ), 'url' );
 		$this->assertEquals( $val, $expected, 'URL validation failed' );
 	}
 }

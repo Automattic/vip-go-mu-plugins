@@ -50,7 +50,7 @@ function register_rest_routes() {
 				'query' => [
 					'type'              => 'string',
 					'required'          => true,
-					'validate_callback' => function( $value, $request, $param ) {
+					'validate_callback' => function ( $value, $request, $param ) {
 						json_decode( $value );
 						return JSON_ERROR_NONE === json_last_error() ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid JSON', $param ) );
 					},
@@ -170,14 +170,14 @@ function print_data() {
 	$queries = array_values(
 		array_filter(
 			ep_get_query_log(),
-			function( $query ) {
+			function ( $query ) {
 				return false !== stripos( $query['url'], '_search' );
 			}
 		)
 	);
 
 	$mapped_queries = array_map(
-		function( $query ) {
+		function ( $query ) {
 			// The happy path: we sanitize query response, and if a body is empty we populate an empty object
 			if ( is_array( $query['request'] ) ) {
 				$query['request']['body'] = sanitize_query_response( json_decode( $query['request']['body'] ) ?? (object) [] );
@@ -213,7 +213,7 @@ function print_data() {
 			// Because the full list of core query arguments is > 60 elements long and it doesn't look good on the frontend.
 			$query['query_args'] = array_filter(
 				$query['query_args'],
-				function( $v ) {
+				function ( $v ) {
 					return is_bool( $v ) || ( ! is_bool( $v ) && $v );
 				}
 			);

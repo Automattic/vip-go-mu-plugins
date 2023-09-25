@@ -21,7 +21,7 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 				$user->two_factor_enabled = 'true';
 
 				$user_providers             = Two_Factor_Core::get_enabled_providers_for_user( $user );
-				$user_providers             = array_map( function( $provider ) use ( $providers ) {
+				$user_providers             = array_map( function ( $provider ) use ( $providers ) {
 					return $providers[ $provider ]->get_label();
 				}, $user_providers );
 				$user->two_factor_providers = implode( ', ', $user_providers );

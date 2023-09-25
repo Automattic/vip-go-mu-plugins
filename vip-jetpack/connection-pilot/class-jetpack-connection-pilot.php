@@ -346,6 +346,6 @@ class Connection_Pilot {
 	}
 }
 
-add_action( 'init', function() {
+add_action( 'init', function () {
 	Connection_Pilot::instance();
 }, 25 );

@@ -55,7 +55,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 	// WP CLI is allowed, but disable cron
 	if ( Context::is_wp_cli() || $allow_front_end ) {
-		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
+		add_filter( 'pre_option_a8c_cron_control_disable_run', function () {
 			return 1;
 		}, 9999 );
 	} else {
@@ -158,7 +158,7 @@ defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) || define( 'WPCOM_VIP_MACHINE_USER_EMA
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
 if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
-	add_action( 'set_current_user', function() {
+	add_action( 'set_current_user', function () {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 
 		if ( $user && $user->ID ) {
@@ -237,7 +237,7 @@ add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
-	require_once dirname( __FILE__ ) . '/vip-helpers/vip-clean-term-cache.php';
+	require_once __DIR__ . '/vip-helpers/vip-clean-term-cache.php';
 }
 
 // Load WP_CLI helpers
@@ -306,7 +306,7 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 }
 
 // Add custom header for VIP
-add_filter( 'wp_headers', function( $headers ) {
+add_filter( 'wp_headers', function ( $headers ) {
 	$headers['X-hacker']     = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
 	$headers['Host-Header']  = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip

@@ -147,7 +147,7 @@ class Sync {
 		$this->blogs_to_sync = [];
 	}
 
-	public function do_cron( $is_faster_cron = false ) {
+	public function do_cron() {
 		$this->maybe_sync_jetpack_privacy_settings();
 		$this->put_site_details();
 	}

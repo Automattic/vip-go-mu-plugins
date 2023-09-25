@@ -24,13 +24,11 @@ function the_vip_privacy_policy_link( $link ) {
 		return '';
 	}
 
-	$link = sprintf(
+	return sprintf(
 		'%s<br/><a href="https://automattic.com/privacy/">%s</a>',
 		esc_html__( 'Powered by WordPress VIP' ),
 		esc_html__( 'Privacy Policy' )
 	);
-
-	return $link;
 }
 
 /**
@@ -160,7 +158,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the JSON export.
 	 */
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 	$file = fopen( $json_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -176,7 +174,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the HTML export.
 	 */
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 	$file = fopen( $html_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -297,7 +295,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
 	if ( class_exists( '\ZipArchive' ) ) {
-		$zip = new \ZipArchive; // phpcs:ignore WordPress.Classes.ClassInstantiation.MissingParenthesis
+		$zip = new \ZipArchive(); // phpcs:ignore WordPress.Classes.ClassInstantiation.MissingParenthesis
 		if ( true === $zip->open( $local_archive_pathname, \ZipArchive::CREATE ) ) {
 			if ( ! $zip->addFile( $json_report_pathname, 'export.json' ) ) {
 				$error = __( 'Unable to add data to JSON file.' );

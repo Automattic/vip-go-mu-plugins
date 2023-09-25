@@ -9,7 +9,7 @@ use WP_CLI;
 $runner     = WP_CLI::get_runner();
 $assoc_args = $runner->assoc_args;
 
-$media_regenerate_before_invoke = function() use ( &$runner, &$assoc_args ) {
+$media_regenerate_before_invoke = function () use ( &$runner, &$assoc_args ) {
 	// If skip-delete is not set or not true
 	if ( ! isset( $assoc_args['skip-delete'] ) || 'true' !== $assoc_args['skip-delete'] ) {
 		// add skip-delete to the assoc_args array

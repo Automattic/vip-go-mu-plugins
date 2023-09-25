@@ -22,7 +22,7 @@ add_action( 'wp_ajax_dismiss_vip_notice', [ $admin_notice_controller, 'dismiss_v
 add_action( 'admin_init', [ $admin_notice_controller, 'maybe_clean_stale_dismissed_notices' ] );
 add_action(
 	'init',
-	function() use ( $admin_notice_controller ) {
+	function () use ( $admin_notice_controller ) {
 		do_action( 'vip_admin_notice_init', $admin_notice_controller );
 	}
 );
@@ -30,7 +30,7 @@ add_action(
 // Old WP version w/o pinned Jetpack version
 add_action(
 	'vip_admin_notice_init',
-	function( $admin_notice_controller ) {
+	function ( $admin_notice_controller ) {
 		global $wp_version;
 		$message = "We've noticed that you are running WordPress {$wp_version}, which is an outdated version. This prevents you from running the latest version of Jetpack, as the current version of Jetpack only supports 5.9 and up. Please upgrade to the most recent WordPress version to use the latest features of Jetpack.";
 

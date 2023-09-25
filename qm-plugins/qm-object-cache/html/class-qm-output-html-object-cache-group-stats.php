@@ -203,5 +203,4 @@ class QM_Output_Html_Object_Cache_Group_Stats extends QM_Output_Html {
 		echo '</table>';
 		echo '</section>';
 	}
-
 }

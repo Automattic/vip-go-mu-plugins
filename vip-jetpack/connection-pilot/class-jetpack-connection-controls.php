@@ -36,11 +36,9 @@ class Controls {
 			if ( ! \Jetpack::connection()->has_connected_owner() ) {
 				return new WP_Error( 'jp-cxn-pilot-not-connected-owner', 'Jetpack does not have a connected owner.' );
 			}
-		} else {
+		} elseif ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
 			// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
-			if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
-				return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
-			}
+			return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
 		}
 
 		$vip_machine_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );

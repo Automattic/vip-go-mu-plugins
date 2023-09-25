@@ -69,6 +69,12 @@ class Integrations {
 				$this->activate( $slug, [
 					'config' => $vip_config->get_site_config(),
 				] );
+
+				// If integration is activated successfully without any error then configure.
+				if ( $integration->is_active() ) {
+					$integration->configure();
+					$integration->set_vip_config( $vip_config );
+				}
 			}
 		}
 	}

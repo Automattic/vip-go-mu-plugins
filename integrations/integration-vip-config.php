@@ -78,13 +78,27 @@ class IntegrationVipConfig {
 	 * @return null|mixed
 	 */
 	protected function get_vip_config_from_file( string $slug ) {
-		$config_file_path = ABSPATH . 'config/integrations-config/' . $slug . '-config.php';
+		$config_file_directory = ABSPATH . 'config/integrations-config';
+		$config_file_name      = $slug . '-config.php';
+		$config_file_path      = $config_file_directory . '/' . $config_file_name;
+
+		/**
+		 * Clear cache to always read data from latest config file.
+		 *
+		 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
+		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
+		 * on it.
+		 */
+		clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+		// Clears cache for files created by k8s ConfigMap.
+		clearstatcache( true, $config_file_directory . '/..data' );
+		clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
 
 		if ( ! is_readable( $config_file_path ) ) {
 			return null;
 		}
 
-		return require_once $config_file_path;
+		return require $config_file_path;
 	}
 
 	/**
