@@ -239,5 +239,4 @@ class Image {
 		$this->width  = (int) $dimensions['dst_w'];
 		$this->height = (int) $dimensions['dst_h'];
 	}
-
 }

@@ -37,7 +37,7 @@ class BlockDataApiIntegration extends Integration {
 	 */
 	public function load(): void {
 		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
-		add_action( 'plugins_loaded', function() {
+		add_action( 'plugins_loaded', function () {
 			// Return if the integration is already loaded.
 			//
 			// In activate() method we do make sure to not activate the integration if its already loaded

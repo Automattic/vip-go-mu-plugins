@@ -35,7 +35,7 @@ if ( defined( 'ABSPATH' ) ) {
 		}
 	}
 
-	add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ): array {
+	add_filter( 'vip_prometheus_collectors', function ( array $collectors ): array {
 		$to_init = [
 			'cache'                           => Cache_Collector::class,
 			'apcu'                            => APCu_Collector::class,
@@ -53,6 +53,6 @@ if ( defined( 'ABSPATH' ) ) {
 		}
 
 		return $collectors;
-	}, 10, 2 );
+	} );
 }
 // @codeCoverageIgnoreEnd

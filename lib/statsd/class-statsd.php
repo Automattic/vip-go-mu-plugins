@@ -142,7 +142,7 @@ class StatsD {
 
 		// Wrap this in a try/catch - failures in any of this should logged as warnings
 		try {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fsockopen -- false positive, this is a network socket
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fsockopen -- false positive, this is a network socket
 			$fp = fsockopen( $url, $port, $errno, $errstr );
 
 			if ( ! $fp ) {

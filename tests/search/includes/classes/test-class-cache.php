@@ -56,7 +56,7 @@ class Cache_Test extends WP_UnitTestCase {
 			'ep_integrate' => true,
 		] );
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) {
+		$filters = array_filter( $this->apc_filters, function ( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
 
@@ -65,7 +65,7 @@ class Cache_Test extends WP_UnitTestCase {
 		// All of APC's filters should be re-enabled for any non-EP query
 		$q = new WP_Query( [ 'posts_per_page' => 10 ] );
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) {
+		$filters = array_filter( $this->apc_filters, function ( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
 

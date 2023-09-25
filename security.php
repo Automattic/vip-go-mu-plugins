@@ -241,7 +241,7 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
 	_vip_maybe_temporary_lock_account( $username, $cache_group );
 }
 
-add_filter( 'vip_login_ip_username_window', function( $window, $username ) {
+add_filter( 'vip_login_ip_username_window', function ( $window, $username ) {
 	if ( wpcom_vip_is_restricted_username( $username ) ) {
 		// Longer, more-strict interval when logging in as admin
 		return HOUR_IN_SECONDS + $window;

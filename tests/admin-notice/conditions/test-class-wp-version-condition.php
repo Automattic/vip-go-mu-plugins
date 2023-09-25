@@ -43,4 +43,3 @@ class WP_Version_Condition_Test extends TestCase {
 		}
 	}
 }
-

@@ -89,12 +89,10 @@ class IntegrationVipConfig {
 		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
 		 * on it.
 		 */
-		if ( false === @file_get_contents( $config_file_path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
-			clearstatcache( true, $config_file_directory . '/' . $config_file_name );
-			// Clears cache for files created by k8s ConfigMap.
-			clearstatcache( true, $config_file_directory . '/..data' );
-			clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
-		}
+		clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+		// Clears cache for files created by k8s ConfigMap.
+		clearstatcache( true, $config_file_directory . '/..data' );
+		clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
 
 		if ( ! is_readable( $config_file_path ) ) {
 			return null;

@@ -33,7 +33,6 @@ class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase
 
 		$result = wpcom_vip_check_for_404_and_remove_cache_headers( $headers );
 		$this->assertEquals( $result, $expected_headers );
-
 	}
 
 	/**
@@ -77,5 +76,4 @@ class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase
 			),
 		);
 	}
-
 }

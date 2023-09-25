@@ -29,7 +29,7 @@ add_action( 'wp_footer', function () {
 } );
 
 // Handle the opt-in request.
-add_action( 'init', function() {
+add_action( 'init', function () {
 	// phpcs:ignore WordPress.Security.NonceVerification.Missing
 	if ( isset( $_POST['beta-optin'] ) ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Missing
@@ -40,7 +40,7 @@ add_action( 'init', function() {
 
 		// Redirect back to the same page (per the POST-REDIRECT-GET pattern).
 		// Please note the use of the `vip_vary_cache_did_send_headers` action.
-		add_action( 'vip_vary_cache_did_send_headers', function() {
+		add_action( 'vip_vary_cache_did_send_headers', function () {
 			wp_safe_redirect( add_query_arg( '' ) );
 			exit;
 		} );
@@ -48,7 +48,7 @@ add_action( 'init', function() {
 } );
 
 // Display the Like button for beta users.
-add_filter( 'the_content', function( $content ) {
+add_filter( 'the_content', function ( $content ) {
 	$is_user_in_beta = Vary_Cache::is_user_in_group_segment( 'beta', 'yes' );
 	if ( $is_user_in_beta ) {
 		$like_button = '<p><a href="#" class="like-button">❤️ Like this post</a></p>';

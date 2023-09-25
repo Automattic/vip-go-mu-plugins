@@ -150,7 +150,6 @@ class Command extends WP_CLI_Command {
 
 		\WP_CLI::success( __( 'VIP Support roles successfully reset' ) );
 	}
-
 }
 
 \WP_CLI::add_command( 'vipsupport', __NAMESPACE__ . '\Command' );

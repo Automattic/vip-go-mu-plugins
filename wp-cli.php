@@ -18,7 +18,7 @@ function init_is_ssl_toggle() {
 
 // Any time a blog is switched, we should toggle is_ssl() based on their preferred scheme.
 function init_is_ssl_toggle_for_multisite() {
-	add_action( 'switch_blog', function( $new_blog_id, $prev_blog_id ) {
+	add_action( 'switch_blog', function ( $new_blog_id, $prev_blog_id ) {
 		// Not a strict equality check to match core
 		if ( ! wp_is_site_initialized( $new_blog_id ) || $new_blog_id == $prev_blog_id ) {
 			return;
@@ -62,7 +62,7 @@ function disable_display_errors() {
 		return;
 	}
 
-	// phpcs:ignore WordPress.PHP.IniSet.display_errors_Blacklisted
+	// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed
 	ini_set( 'display_errors', 0 );
 }
 

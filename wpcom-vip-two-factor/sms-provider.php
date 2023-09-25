@@ -31,7 +31,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		add_action( 'two-factor-user-options-' . __CLASS__, array( $this, 'user_options' ) );
 		add_action( 'personal_options_update', array( $this, 'user_options_update' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ) );
-		return parent::__construct();
+		parent::__construct();
 	}
 
 	/**
@@ -241,6 +241,5 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			$user = get_userdata( $user_id );
 			$this->generate_and_send_token( $user );
 		}
-
 	}
 }
