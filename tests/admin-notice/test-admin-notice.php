@@ -15,5 +15,4 @@ class Admin_Notice_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( has_filter( 'admin_notices' ) );
 	}
-
 }

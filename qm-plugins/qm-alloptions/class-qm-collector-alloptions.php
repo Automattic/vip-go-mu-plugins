@@ -36,7 +36,7 @@ class QM_Collector_AllOptions extends QM_Collector {
 		}
 
 		// sort by size
-		usort( $options, function( $arr1, $arr2 ) {
+		usort( $options, function ( $arr1, $arr2 ) {
 			if ( $arr1->size === $arr2->size ) {
 				return 0;
 			}

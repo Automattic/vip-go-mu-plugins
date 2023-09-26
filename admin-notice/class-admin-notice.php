@@ -60,7 +60,7 @@ class Admin_Notice {
 	 *
 	 * @return bool
 	 */
-	public function should_render() : bool {
+	public function should_render(): bool {
 		if ( ! $this->cap_condition_exist() && ! is_super_admin() ) {
 			// If there's no Capability_Condition defined, default to not showing the notices for non-super admins
 			return false;

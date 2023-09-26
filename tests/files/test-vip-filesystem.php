@@ -49,6 +49,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( $errno & error_reporting() ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new ErrorException( $errstr, $errno );
 			}
 

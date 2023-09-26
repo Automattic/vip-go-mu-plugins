@@ -126,7 +126,7 @@ add_filter( 'site_status_test_php_modules', 'vip_filter_unnecessary_php_modules_
 
 add_filter(
 	'use_block_editor_for_post',
-	function( $can_edit, $post ) {
+	function ( $can_edit, $post ) {
 		if ( ! isset( $post->post_type ) ) {
 			return $can_edit;
 		}

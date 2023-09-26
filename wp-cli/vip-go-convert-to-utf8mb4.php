@@ -234,7 +234,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 						}
 
 						if ( false !== $new_column_type ) {
-							$columns_to_fix++;
+							++$columns_to_fix;
 
 							if ( 1 === $columns_to_fix ) {
 								$sql .= "ALTER TABLE `$table` ";
@@ -262,7 +262,7 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 				}
 			} // End Table loop
 
-			$pass++;
+			++$pass;
 		}
 
 		echo $sql; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

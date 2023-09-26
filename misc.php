@@ -12,7 +12,7 @@ if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
 }
 
 // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.upload_mimes
-add_filter( 'upload_mimes', function( $mimes ) {
+add_filter( 'upload_mimes', function ( $mimes ) {
 	unset( $mimes['flv'] );
 	return $mimes;
 }, 99999 );
@@ -192,7 +192,7 @@ add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
  * searches the 'path' on /network/sites.php. This improves site search results by
  * adding 'domain' to the columns to search.
  */
-add_filter( 'site_search_columns', function( $cols ) {
+add_filter( 'site_search_columns', function ( $cols ) {
 	$cols[] = 'domain';
 	return $cols;
 });

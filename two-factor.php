@@ -140,7 +140,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		$limited = current_user_can( $cap );
 
 		// Calculate current_user_can outside map_meta_cap to avoid callback loop
-		add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
+		add_filter( 'wpcom_vip_is_two_factor_forced', function () use ( $limited ) {
 			return $limited;
 		}, 9 );
 
@@ -150,7 +150,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 
 		add_filter(
 			'wpcom_vip_is_user_using_two_factor',
-			function() use ( $is_user_using_two_factor ) {
+			function () use ( $is_user_using_two_factor ) {
 				return $is_user_using_two_factor;
 			}
 		);

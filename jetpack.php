@@ -5,7 +5,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 12.5
+ * Version: 12.6
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -29,9 +29,12 @@ function vip_default_jetpack_version() {
 	} elseif ( version_compare( $wp_version, '6.1', '<' ) ) {
 		// WordPress 6.0.x
 		return '12.0';
-	} else {
-		// WordPress 6.1 and newer.
+	} elseif ( version_compare( $wp_version, '6.2', '<' ) ) {
+		// WordPress 6.1.x
 		return '12.5';
+	} else {
+		// WordPress 6.2 and newer.
+		return '12.6';
 	}
 }
 
@@ -168,7 +171,7 @@ function vip_jetpack_load() {
 			// In a rare edge case, the plugin could be present in `active_plugins` option,
 			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
 			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
-			add_filter( 'option_active_plugins', function( $option ) {
+			add_filter( 'option_active_plugins', function ( $option ) {
 				if ( ! is_array( $option ) ) {
 					return $option;
 				}
@@ -184,7 +187,7 @@ function vip_jetpack_load() {
 
 			if ( is_multisite() ) {
 				// The same edge case as above, but for when Jetpack is network activated.
-				add_filter( 'site_option_active_sitewide_plugins', function( $option ) {
+				add_filter( 'site_option_active_sitewide_plugins', function ( $option ) {
 					if ( ! is_array( $option ) ) {
 						return $option;
 					}
