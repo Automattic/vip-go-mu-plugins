@@ -78,7 +78,8 @@ class Private_Sites {
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
-		wp_add_inline_script( 'vip-disable-blog-public-option-ui', "document.addEventListener(\"DOMContentLoaded\", function() {
+		$js_code       = <<<JS
+		document.addEventListener("DOMContentLoaded", function() {
 			function updateProperty(selector, property, value) {
 				const element = document.querySelector(selector);
 				if (element) {
@@ -86,15 +87,19 @@ class Private_Sites {
 				}
 			}
 
-			var checkbox = 'tr.option-site-visibility input#blog_public[type=\"checkbox\"]';
+			var checkbox = 'tr.option-site-visibility input#blog_public[type="checkbox"]';
 			if (document.querySelector(checkbox)) {
 				updateProperty(checkbox, 'disabled', true);
 			} else {
-				updateProperty('tr.option-site-visibility input#blog-public[type=\"radio\"]', 'disabled', true);
-				updateProperty('tr.option-site-visibility input#blog-norobots[type=\"radio\"]', 'disabled', true);
+				updateProperty('tr.option-site-visibility input#blog-public[type="radio"]', 'disabled', true);
+				updateProperty('tr.option-site-visibility input#blog-norobots[type="radio"]', 'disabled', true);
 			}
-			updateProperty('tr.option-site-visibility p.description', 'textContent', 'This option is disabled when the constant \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
-		});" );
+			updateProperty('tr.option-site-visibility p.description', 'textContent', '%s');
+		});
+		JS;
+		$description   = esc_html__( 'This option is disabled when the constant VIP_JETPACK_IS_PRIVATE is enabled.', 'vip' );
+		$final_js_code = sprintf( $js_code, $description );
+		wp_add_inline_script( 'vip-disable-blog-public-option-ui', $final_js_code );
 	}
 
 	/*
