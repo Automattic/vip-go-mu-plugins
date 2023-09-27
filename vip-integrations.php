@@ -19,10 +19,12 @@ require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
 require_once __DIR__ . '/integrations/integration-vip-config.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
+require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/parsely.php';
 
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
+IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 
 /**
