@@ -74,34 +74,26 @@ class Private_Sites {
 	 * Force the blog_public option to be -1 and disable checkbox/radio UI in Reading Settings
 	 */
 	public function force_blog_public_option() {
+		add_filter( 'blog_privacy_selector', '__return_true' );
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
 		wp_add_inline_script( 'vip-disable-blog-public-option-ui', "document.addEventListener(\"DOMContentLoaded\", function() {
-			function disableButton(selector) {
-				var element = document.querySelector(selector);
+			function updateProperty(selector, property, value) {
+				const element = document.querySelector(selector);
 				if (element) {
-					element.disabled = true;
-				}
-			}
-
-			function updateDescription(message) {
-				var description = document.querySelector('tr.option-site-visibility p.description');
-				if (description) {
-					description.textContent = message;
+					element[property] = value;
 				}
 			}
 
 			var checkbox = 'tr.option-site-visibility input#blog_public[type=\"checkbox\"]';
-			var description = document.querySelector('tr.option-site-visibility p.description');
 			if (document.querySelector(checkbox)) {
-				disableButton(checkbox);
-				updateDescription('This option is disabled when the constant \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
+				updateProperty(checkbox, 'disabled', true);
 			} else {
-				disableButton('tr.option-site-visibility input#blog-public[type=\"radio\"]');
-				disableButton('tr.option-site-visibility input#blog-norobots[type=\"radio\"]');
-				updateDescription('These options are disabled when \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
+				updateProperty('tr.option-site-visibility input#blog-public[type=\"radio\"]', 'disabled', true);
+				updateProperty('tr.option-site-visibility input#blog-norobots[type=\"radio\"]', 'disabled', true);
 			}
+			updateProperty('tr.option-site-visibility p.description', 'textContent', 'This option is disabled when the constant \"VIP_JETPACK_IS_PRIVATE\" is enabled.');
 		});" );
 	}
 
