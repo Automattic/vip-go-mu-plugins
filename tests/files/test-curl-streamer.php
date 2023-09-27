@@ -31,6 +31,13 @@ class Curl_Streamer_Test extends WP_UnitTestCase {
 	}
 
 	public function test__init() {
+		global $wp_version;
+
+		$version = preg_replace( '/-.*$/', '', $wp_version );
+		if ( version_compare( $version, '6.4', '>=' ) ) {
+			$this->setExpectedDeprecated( 'http_api_transports' );
+		}
+
 		$expected_transport = 'WP_Http_Curl';
 
 		$wp_http          = new \WP_Http();
