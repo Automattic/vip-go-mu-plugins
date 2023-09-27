@@ -20,6 +20,9 @@ class User_Last_Seen {
 		// Use a global cache group since users are shared among network sites.
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
 
+		add_action( 'set_current_user', array( $this, 'record_activity' ) );
+		add_filter( 'rest_authentication_errors', array( $this, 'rest_authentication' ), PHP_INT_MAX, 1 );
+
 		add_action( 'admin_init', array( $this, 'register_release_date' ) );
 		add_action( 'set_user_role', array( $this, 'user_promoted' ) );
 		add_action( 'vip_support_user_added', function( $user_id ) {
@@ -40,7 +43,6 @@ class User_Last_Seen {
 
 		if ( $this->is_block_action_enabled() ) {
 			add_filter( 'authenticate', array( $this, 'authenticate' ), 20, 1 );
-			add_filter( 'rest_authentication_errors', array( $this, 'rest_authentication' ), PHP_INT_MAX, 1 );
 
 			add_filter( 'views_users', array( $this, 'add_blocked_users_filter' ) );
 			add_filter( 'views_users-network', array( $this, 'add_blocked_users_filter' ) );
@@ -50,15 +52,27 @@ class User_Last_Seen {
 		}
 	}
 
-	public function record_activity( $user_id ) {
-		if ( wp_cache_get( $user_id, self::LAST_SEEN_CACHE_GROUP ) ) {
+	public function record_activity( $user = null ) {
+		if ( $user === null ) {
+			$user = wp_get_current_user();
+		}
+
+		if ( ! $user || ! $user->ID ) {
+			return;
+		}
+
+		if ( ! $this->user_with_elevated_capabilities( $user ) ) {
+			return;
+		}
+
+		if ( wp_cache_get( $user->ID, self::LAST_SEEN_CACHE_GROUP ) ) {
 			// Last seen meta was checked recently
 			return;
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		if ( wp_cache_add( $user_id, true, self::LAST_SEEN_CACHE_GROUP, self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
-			update_user_meta( $user_id, self::LAST_SEEN_META_KEY, time() );
+		if ( wp_cache_add( $user->ID, true, self::LAST_SEEN_CACHE_GROUP, self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
+			update_user_meta( $user->ID, self::LAST_SEEN_META_KEY, time() );
 		}
 	}
 
@@ -77,8 +91,6 @@ class User_Last_Seen {
 			return new \WP_Error( 'inactive_account', __( '<strong>Error</strong>: Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ) );
 		}
 
-		$this->record_activity( $user->ID );
-
 		return $user;
 	}
 
@@ -87,16 +99,16 @@ class User_Last_Seen {
 			return $status;
 		}
 
-		$user_id = get_current_user_id();
-		if ( ! $user_id ) {
+		$user = wp_get_current_user();
+		if ( ! $user->ID ) {
 			return $status;
 		}
 
-		if ( $this->is_considered_inactive( $user_id ) ) {
+		if ( $this->is_block_action_enabled() && $this->is_considered_inactive( $user->ID ) ) {
 			return new \WP_Error( 'inactive_account', __( 'Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ), array( 'status' => 403 ) );
 		}
 
-		$this->record_activity( $user_id );
+		$this->record_activity( $user );
 
 		return $status;
 	}
