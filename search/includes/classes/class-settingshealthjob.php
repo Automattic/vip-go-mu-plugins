@@ -39,6 +39,8 @@ class SettingsHealthJob {
 	 * Instance of the Health class
 	 *
 	 * Useful for overriding in tests via dependency injection
+	 *
+	 * @var Health
 	 */
 	public $health;
 
@@ -46,6 +48,8 @@ class SettingsHealthJob {
 	 * Instance of Search class
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \Automattic\VIP\Search\Search
 	 */
 	public $search;
 
@@ -53,6 +57,8 @@ class SettingsHealthJob {
 	 * Instance of \ElasticPress\Indexables
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \ElasticPress\Indexables
 	 */
 	public $indexables;
 

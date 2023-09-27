@@ -14,7 +14,9 @@ class Queue {
 
 	/** @var Queue\Schema */
 	public $schema;
+	/** @var Indexables */
 	public $indexables;
+	/** @var \Automattic\VIP\Logstash\Logger */
 	public $logger;
 	/** @var Queue\Cron */
 	public $cron;
