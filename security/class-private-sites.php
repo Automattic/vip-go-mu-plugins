@@ -54,7 +54,11 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		$this->force_blog_public_option();
+
+		// Force the blog_public option to be -1 and disable UI
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
+
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
 	}
@@ -68,14 +72,6 @@ class Private_Sites {
 		add_action( 'do_feed_rss', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_rss2', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_atom', array( $this, 'action_do_feed' ), -1 );
-	}
-
-	/**
-	 * Force the blog_public option to be -1 and disable UI
-	 */
-	public function force_blog_public_option() {
-		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 	}
 
 	/**
