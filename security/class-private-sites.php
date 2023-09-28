@@ -74,7 +74,6 @@ class Private_Sites {
 	 * Force the blog_public option to be -1 and disable UI
 	 */
 	public function force_blog_public_option() {
-		add_filter( 'blog_privacy_selector', '__return_true' );
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 	}
