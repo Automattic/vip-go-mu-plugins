@@ -27,7 +27,7 @@ class VipGovernanceIntegration extends Integration {
 	 * this function to prevent activating of integration from platform side.
 	 */
 	public function is_loaded(): bool {
-		return defined( 'VIP_BLOCK_GOVERNANCE_LOADED' );
+		return defined( 'VIP_GOVERNANCE_LOADED' );
 	}
 
 	/**
