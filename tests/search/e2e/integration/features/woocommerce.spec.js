@@ -110,11 +110,11 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			cy.get('.woocommerce-orders-table tbody tr').should('have.length', 1);
 
 			// VIP: Use Search Dev Tools instead of Debug Bar
-			// cy.searchDevToolsResponseOK('shop_order');
+			cy.searchDevToolsResponseOK('shop_order', 2);
 			cy.get('#vip-search-dev-tools-mount').click();
-			cy.get('h3.vip-h3').first().click();
-			cy.get('strong.vip-h4.wp_query').first().click();
-			cy.get('ol.wp_query.vip-collapse-ol').first().should('contain.text','orderby: "date"');
+			cy.get('h3.vip-h3').eq(2).click();
+			cy.get('strong.vip-h4.wp_query').eq(2).click();
+			cy.get('ol.wp_query.vip-collapse-ol').eq(2).should('contain.text','orderby: "date"');
 			cy.get('#vip-search-dev-tools-mount').click();
 
 			cy.logout();

@@ -461,11 +461,12 @@ Cypress.Commands.add('createUser', (userData) => {
 });
 
 // VIP: Check that Search Dev Tools returns a 200 status and a certain text in the response body
-Cypress.Commands.add('searchDevToolsResponseOK', (bodyText) => {
+// If there's more than one ES query, use the index to select the correct one
+Cypress.Commands.add('searchDevToolsResponseOK', (bodyText, index = 0) => {
 	cy.get('#vip-search-dev-tools-mount').click();
-	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	cy.get('h3.vip-h3').eq( index ).should('contain.text','(200)');
 	if ( bodyText ) {
-		cy.get('.line-numbers').first().should('contain.text', bodyText);
+		cy.get('.line-numbers').eq( index ).should('contain.text', bodyText);
 	}
 	cy.get('#vip-search-dev-tools-mount').click();
 });
