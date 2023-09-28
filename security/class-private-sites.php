@@ -71,11 +71,27 @@ class Private_Sites {
 	}
 
 	/**
-	 * Force the blog_public option to be -1 and disable checkbox/radio UI in Reading Settings
+	 * Force the blog_public option to be -1 and disable UI
 	 */
 	public function force_blog_public_option() {
 		add_filter( 'blog_privacy_selector', '__return_true' );
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
+	}
+
+	/**
+	 * Disable checkbox/radio UI in Reading Settings
+	 */
+	public function disable_blog_public_ui() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( 'options-reading' !== $screen->base ) {
+			return;
+		}
+
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
 		$js_code       = <<<JS
