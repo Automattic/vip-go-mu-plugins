@@ -95,14 +95,21 @@ class Private_Sites {
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
 		$js_code       = <<<JS
-		document.addEventListener("DOMContentLoaded", function() {
+		function onContentLoaded(callback) {
+			if (document.readyState !== 'loading') {
+				callback();
+			} else {
+				document.addEventListener('DOMContentLoaded', callback);
+			}
+		}
+
+		onContentLoaded(function() {
 			function updateProperty(selector, property, value) {
 				const element = document.querySelector(selector);
 				if (element) {
 					element[property] = value;
 				}
 			}
-
 			var checkbox = 'tr.option-site-visibility input#blog_public[type="checkbox"]';
 			if (document.querySelector(checkbox)) {
 				updateProperty(checkbox, 'disabled', true);
