@@ -498,10 +498,7 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
  * which can then break features like Jetpack Search.
  */
 add_filter( 'pre_option_jetpack_active_plan', function ( $pre_option ) {
-	if ( true === WPCOM_IS_VIP_ENV
-		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
-		&& ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || defined( 'VIP_JETPACK_SKIP_LOAD' ) && ! VIP_JETPACK_SKIP_LOAD )
-		) {
+	if ( true === WPCOM_IS_VIP_ENV && defined( 'VIP_JETPACK_DEFAULT_PLAN' ) ) {
 		return VIP_JETPACK_DEFAULT_PLAN;
 	}
 
