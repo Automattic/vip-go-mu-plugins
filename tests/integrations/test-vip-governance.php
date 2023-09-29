@@ -7,7 +7,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
