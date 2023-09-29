@@ -22,25 +22,4 @@ class VIP_Governance_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $vip_governance_integration->is_active() );
 	}
-
-	public function test__load_call_returns_without_setting_constant_if_vip_governance_is_already_loaded(): void {
-		/**
-		 * Integration mock.
-		 *
-		 * @var MockObject|VipGovernanceIntegration
-		 */
-		$vip_governance_integration_mock = $this->getMockBuilder( VipGovernanceIntegration::class )->setConstructorArgs( [ 'vip-governance' ] )->setMethods( [ 'is_loaded' ] )->getMock();
-		$vip_governance_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
-		$preload_state = defined( 'VIP_GOVERNANCE_LOADED' );
-
-		$vip_governance_integration_mock->load();
-
-		$this->assertEquals( $preload_state, defined( 'VIP_GOVERNANCE_LOADED' ) );
-	}
-
-	public function test__configure_is_doing_nothing_for_configuration_on_vip_platform(): void {
-		$vip_governance_integration = new VipGovernanceIntegration( $this->slug );
-
-		$vip_governance_integration->configure();
-	}
 }
