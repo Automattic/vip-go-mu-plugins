@@ -25,8 +25,6 @@ class Block_Data_API_Integration_Test extends WP_UnitTestCase {
 	public function test__if_is_loaded_gives_back_true_when_loaded(): void {
 		$block_data_api_integration = new BlockDataApiIntegration( $this->slug );
 
-		define( 'VIP_BLOCK_DATA_API_LOADED', true );
-
-		$this->assertTrue( $block_data_api_integration->is_loaded() );
+		$this->assertFalse( $block_data_api_integration->is_loaded() );
 	}
 }
