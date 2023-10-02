@@ -186,6 +186,8 @@ class Search {
 	public $concurrency_limiter;
 	public $time;
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
+	/** @var Cache */
+	public $cache;
 
 	/**
 	 * Maximum number of queries before rate-limiting kicks in.

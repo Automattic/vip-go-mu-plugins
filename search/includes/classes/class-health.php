@@ -56,8 +56,16 @@ class Health {
 	 * Instance of Search class
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \Automattic\VIP\Search\Search
 	 */
 	public $search;
+
+	/** @var \ElasticPress\Indexables */
+	public $indexables;
+
+	/** @var \ElasticPress\Elasticsearch */
+	public $elasticsearch;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search        = $search;
