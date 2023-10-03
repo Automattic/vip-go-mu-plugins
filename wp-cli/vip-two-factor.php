@@ -22,13 +22,26 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
-	 *      wp vip two-factor report
-	 *      wp vip two-factor report --2fa-enabled=true
-	 *      wp vip two-factor report --2fa-provider=email
-	 *      wp vip two-factor report --role=administrator
-	 *      wp vip two-factor report --role=administrator --2fa-enabled=false
-	 *      wp vip two-factor report --role=administrator --2fa-enabled=true --2fa-provider=email
-	 *      wp vip two-factor report --user_login=wpvip
+	 *     # List 2FA status for all users.
+	 *     $ wp vip two-factor report
+	 *
+	 *     # List users with 2FA enabled. 
+	 *     $ wp vip two-factor report --2fa-enabled=true
+	 *
+	 *     # List users who use email as their authentication factor. 
+	 *     $ wp vip two-factor report --2fa-provider=email
+	 *
+	 *     # List 2FA status for administrators. 
+	 *     $ wp vip two-factor report --role=administrator
+	 *
+	 *     # List administrators who don't have 2FA enabled. 
+	 *     $ wp vip two-factor report --role=administrator --2fa-enabled=false
+	 *
+	 *     # List 2FA status for administrators using the email authentication factor. 
+	 *     $ wp vip two-factor report --role=administrator --2fa-enabled=true --2fa-provider=email
+	 *
+	 *     # List 2FA status only for the wpvip user. 
+	 *     $ wp vip two-factor report --user_login=wpvip
 	 *
 	 * @synopsis [--2fa-enabled=<true|false>] [--role=<string>] [--2fa-provider=<string>] [--user_login=<login|id|email>]
 	 */
