@@ -27,8 +27,8 @@ function query( $query ) {
 	$regex = "/(?:FROM|JOIN|UPDATE|INTO|,)\s+`?($wpdb->base_prefix(\d+)?_?(?:\w+)+?)`?/i";
 
 	$query = preg_replace_callback( $regex, function ($match) use ( $wpdb ) {
-		return str_replace( $match[1], get_dataset_for_table( $wpdb->base_prefix, $match[1] ) . '.' . $match[1], $match[0] );
-	},$query);
+		return str_replace( $match[1], get_dataset_for_table( $wpdb->base_prefix, $match[1] ) . '.' . $match[1] . ' ' . $match[1], $match[0] );
+	}, $query );
 
 	$query .= ' ' . MULTIPLE_DATASET_QUERY_ANNOTATION;
 
