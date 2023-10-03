@@ -2,16 +2,69 @@
 
 namespace Automattic\VIP\DatabaseMultipleDatasetsConfig;
 
+const MULTIPLE_DATASET_QUERY_ANNOTATION = '/* vip_multiple_dataset_query */';
+
 function dataset_callback( $query, $wpdb ) {
 	$table   = $wpdb->table;
-	$dataset = get_dataset_for_table( $wpdb );
+
+	if ( false !== strpos( $query, MULTIPLE_DATASET_QUERY_ANNOTATION ) ) {
+		return [ 'dataset' => 'vtgate' ];
+	}
+
+	$dataset = get_dataset_for_table( $wpdb->base_prefix, $wpdb->table );
 	$wpdb->add_table( $dataset, $table );
 
 	return [ 'dataset' => $dataset ];
 }
 
-function get_dataset_for_table( $wpdb ) {
-	if ( preg_match( '/^' . $wpdb->base_prefix . '(\d+)_/i', $wpdb->table, $matches ) ) {
+function query( $query ) {
+	global $wpdb;
+
+	if ( ! is_multiple_dataset_query( $wpdb->base_prefix, $query ) ) {
+		return $query;
+	}
+
+	$regex = "/(?:FROM|JOIN|UPDATE|INTO|,)\s+`?($wpdb->base_prefix(\d+)?_?(?:\w+)+?)`?/i";
+
+	$query = preg_replace_callback( $regex, function ($match) use ( $wpdb ) {
+		return str_replace( $match[1], get_dataset_for_table( $wpdb->base_prefix, $match[1] ) . '.' . $match[1], $match[0] );
+	},$query);
+
+	$query .= ' ' . MULTIPLE_DATASET_QUERY_ANNOTATION;
+
+	return $query;
+}
+
+function is_multiple_dataset_query( $base_prefix, $query ) {
+	$regex = "/(?:FROM|JOIN|UPDATE|INTO|,)\s+`?$base_prefix(\d+)?_?(\w+)+?`?/i";
+
+	$matches = [];
+	preg_match_all( $regex, $query, $matches, PREG_SET_ORDER );
+
+	$last_global_table = null;
+	$last_blog_table   = null;
+	$blog_ids          = [];
+	foreach ( $matches as $match ) {
+		if ( '' === $match[1] ) {
+			$last_global_table = $match[2];
+		} else {
+			$blog_ids[ $match[1] ] = true;
+			$last_blog_table       = $match[2];
+		}
+	}
+
+	$blog_ids_count = count( $blog_ids );
+
+	if ( $last_blog_table && ( $last_global_table || $blog_ids_count > 1 ) ) {
+		return true;
+	}
+
+	return false;
+}
+
+
+function get_dataset_for_table( $base_prefix, $table ) {
+	if ( preg_match( '/^' . $base_prefix . '(\d+)_/i', $table, $matches ) ) {
 		$blog_id = $matches[1];
 
 		return get_dataset_name_for_blog_id( $blog_id );
