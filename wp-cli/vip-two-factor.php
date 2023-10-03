@@ -30,7 +30,6 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 	 *      wp vip two-factor report --role=administrator --2fa-enabled=true --2fa-provider=email
 	 *      wp vip two-factor report --user_login=wpvip
 	 *
-	 * @subcommand report
 	 * @synopsis [--2fa-enabled=<true|false>] [--role=<string>] [--2fa-provider=<string>] [--user_login=<login|id|email>]
 	 */
 	public function report( $args, $assoc_args ) {
