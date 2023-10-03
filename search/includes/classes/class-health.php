@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables as Indexables;
+use ElasticPress\Indexables;
 
-use \WP_Query as WP_Query;
-use \WP_User_Query as WP_User_Query;
-use \WP_Error as WP_Error;
+use WP_Query;
+use WP_User_Query;
+use WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE        = 300;
@@ -509,7 +509,7 @@ class Health {
 			}
 
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
 			/** @var array|WP_Error */
@@ -525,7 +525,7 @@ class Health {
 
 			// Limit $results size
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
-				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				$error = new WP_Error( 'es_diff_size_limit_reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
@@ -553,7 +553,7 @@ class Health {
 			vip_reset_local_object_cache();
 
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
@@ -633,7 +633,7 @@ class Health {
 		$documents = $indexable->multi_get( $document_ids );
 
 		// Filter out any that weren't found
-		$documents = array_filter( $documents, function( $document ) {
+		$documents = array_filter( $documents, function ( $document ) {
 			return ! is_null( $document );
 		} );
 
@@ -649,7 +649,7 @@ class Health {
 		}
 
 		// Filter out any that are extra or missing in index
-		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
+		$documents = array_filter( $documents, function ( $document ) use ( $diffs ) {
 			$key = self::get_post_key( $document['ID'] );
 			return ! array_key_exists( $key, $diffs );
 		} );
@@ -743,7 +743,7 @@ class Health {
 	}
 
 	public static function filter_expected_post_rows( $rows, $post_types, $post_statuses ) {
-		$filtered = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
+		$filtered = array_filter( $rows, function ( $row ) use ( $post_types, $post_statuses ) {
 			if ( ! in_array( $row->post_type, $post_types, true ) ) {
 				return false;
 			}

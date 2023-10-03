@@ -168,7 +168,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My log message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function log( string $level, string $feature, string $message, array $context = [] ) : void {
+	public function log( string $level, string $feature, string $message, array $context = [] ): void {
 		static::log2logstash( [
 			'severity' => $level,
 			'feature'  => $feature,
@@ -186,7 +186,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My emergency message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function emergency( string $feature, string $message, array $context = [] ) : void {
+	public function emergency( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -199,7 +199,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My alert message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function alert( string $feature, string $message, array $context = [] ) : void {
+	public function alert( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -212,7 +212,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My critical message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function critical( string $feature, string $message, array $context = [] ) : void {
+	public function critical( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -225,7 +225,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My error message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function error( string $feature, string $message, array $context = [] ) : void {
+	public function error( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -238,7 +238,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My warning message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function warning( string $feature, string $message, array $context = [] ) : void {
+	public function warning( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -251,7 +251,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My notice message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function notice( string $feature, string $message, array $context = [] ) : void {
+	public function notice( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -264,7 +264,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My info message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function info( string $feature, string $message, array $context = [] ) : void {
+	public function info( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -277,7 +277,7 @@ class Logger {
 	 * @param string $message Log message; e.g., `My debug message.`.
 	 * @param array  $context Optional. Additional information for log handlers.
 	 */
-	public function debug( string $feature, string $message, array $context = [] ) : void {
+	public function debug( string $feature, string $message, array $context = [] ): void {
 		$this->log( __FUNCTION__, $feature, $message, $context );
 	}
 
@@ -288,7 +288,7 @@ class Logger {
 	 *
 	 * @return array An array of parsed logstash parameters
 	 */
-	protected static function parse_params( array $params ) : array {
+	protected static function parse_params( array $params ): array {
 		// Prepare data.
 		$default_params = [
 			'site_id'         => get_current_network_id(),                    // Required.
@@ -440,7 +440,7 @@ class Logger {
 	 *                    - `user_id` : Optional. Default is current user ID.
 	 *                    - `http_user_agent` : Optional. Default is current user-agent or "cli"
 	 */
-	public static function log2logstash( array $data ) : void {
+	public static function log2logstash( array $data ): void {
 		// Prepare data.
 		$data               = static::parse_params( $data );
 		static $has_alerted = false;
@@ -510,7 +510,7 @@ class Logger {
 	 *
 	 * @since 2020-01-10
 	 */
-	public static function process_entries_on_shutdown() : void {
+	public static function process_entries_on_shutdown(): void {
 		if ( static::$processed_entries ) {
 			return; // Already done.
 		}
@@ -549,7 +549,7 @@ class Logger {
 	 *
 	 * @param array $entry.
 	 */
-	public static function maybe_wp_debug_log_entries( array $entry ) : void {
+	public static function maybe_wp_debug_log_entries( array $entry ): void {
 		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) || ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
 			return; // Not applicable.
 		}
@@ -564,7 +564,7 @@ class Logger {
 	 *
 	 * @param array $entry Data.
 	 */
-	public static function wp_debug_log( array $entry ) : void {
+	public static function wp_debug_log( array $entry ): void {
 		if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {
 			// Don't run this on VIP Go
 			return;

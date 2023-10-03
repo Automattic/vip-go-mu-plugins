@@ -68,7 +68,7 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v4.0.0
+        uses: actions/checkout@v4.1.0
         with:
           submodules: true
 

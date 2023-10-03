@@ -4,6 +4,8 @@
 
 namespace Automattic\VIP\Core\OptionsAPI;
 
+add_filter( 'pre_wp_load_alloptions', __NAMESPACE__ . '\pre_wp_load_alloptions_protections', 999, 2 );
+
 /**
  * Add additional protections around the alloptions functionality.
  *
@@ -14,7 +16,6 @@ namespace Automattic\VIP\Core\OptionsAPI;
  * - 1) Prevent spamming memcached & the DB if memcached is unable to add() the key to cache.
  * - 2) Kill the request if options cannot be retrieved from the database (or cache).
  */
-add_filter( 'pre_wp_load_alloptions', __NAMESPACE__ . '\pre_wp_load_alloptions_protections', 999, 2 );
 function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cache ) {
 	global $wpdb;
 	static $fallback_cache = [];

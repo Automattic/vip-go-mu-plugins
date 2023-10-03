@@ -171,7 +171,7 @@ function vip_jetpack_load() {
 			// In a rare edge case, the plugin could be present in `active_plugins` option,
 			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
 			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
-			add_filter( 'option_active_plugins', function( $option ) {
+			add_filter( 'option_active_plugins', function ( $option ) {
 				if ( ! is_array( $option ) ) {
 					return $option;
 				}
@@ -187,7 +187,7 @@ function vip_jetpack_load() {
 
 			if ( is_multisite() ) {
 				// The same edge case as above, but for when Jetpack is network activated.
-				add_filter( 'site_option_active_sitewide_plugins', function( $option ) {
+				add_filter( 'site_option_active_sitewide_plugins', function ( $option ) {
 					if ( ! is_array( $option ) ) {
 						return $option;
 					}

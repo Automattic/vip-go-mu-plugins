@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Search\Health as Health;
+use Automattic\VIP\Search\Health;
 use Automattic\VIP\Utils\Alerts;
-use \WP_CLI;
+use WP_CLI;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -80,7 +80,7 @@ class SettingsHealthJob {
 
 		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 2 );
 
-		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ], 10, 2 );
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ] );
 
 		// Clean-up last processed ID option
 		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
@@ -289,11 +289,10 @@ class SettingsHealthJob {
 	 * Store last processed post ID into option during bulk indexing operation.
 	 *
 	 * @param array $objects Objects being indexed
-	 * @param array $response Elasticsearch bulk index response
 	 *
 	 * @return void
 	 */
-	public function update_last_processed_id( $objects, $response ) {
+	public function update_last_processed_id( $objects ) {
 		if ( ! wp_doing_cron() ) {
 			return;
 		}

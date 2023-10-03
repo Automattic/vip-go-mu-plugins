@@ -38,5 +38,4 @@ class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( vip_is_jetpack_request() );
 	}
-
 }

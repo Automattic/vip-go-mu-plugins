@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
  * Description: Content analytics made easy. Parse.ly gives creators, marketers and developers the tools to understand content performance, prove content value, and deliver tailored content experiences that drive meaningful results.

@@ -5,7 +5,7 @@ function wpcom_vip_have_twilio_keys() {
 		&& defined( 'TWILIO_SECRET' ) && ! empty( TWILIO_SECRET );
 }
 
-add_filter( 'two_factor_providers', function( $p ) {
+add_filter( 'two_factor_providers', function ( $p ) {
 	if ( wpcom_vip_have_twilio_keys() ) {
 		$p['Two_Factor_SMS'] = __DIR__ . '/sms-provider.php';
 	}

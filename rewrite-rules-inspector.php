@@ -28,7 +28,7 @@ require_once __DIR__ . '/rewrite-rules-inspector/rewrite-rules-inspector.php';
 /**
  * Place the rewrite rules view under the VIP dashboard instead of under tools.php
  */
-add_filter( 'rri_parent_slug', function() {
+add_filter( 'rri_parent_slug', function () {
 	return 'vip-dashboard';
 } );
 
