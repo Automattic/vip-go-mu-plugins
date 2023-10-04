@@ -15,8 +15,6 @@ if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_E
 	global $wpdb;
 	// Register a callback to select the dataset for a given query
 	$wpdb->add_callback( 'Automattic\VIP\DatabaseMultipleDatasetsConfig\dataset_callback', 'dataset' );
-
-	add_filter( 'query', 'Automattic\VIP\DatabaseMultipleDatasetsConfig\query' );
 }
 
 require_once $mu_plugin_dir . '/lib/utils/class-context.php';
