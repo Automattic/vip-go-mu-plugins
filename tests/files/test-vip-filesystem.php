@@ -266,8 +266,12 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$basepath = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_type' ] )
+				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
 				->getMock();
+		
+		$stub->expects( $this->once() )
+				->method( 'validate_file_unique_name' )
+				->will( $this->returnValue( true ) );
 
 		$stub->expects( $this->once() )
 				->method( 'validate_file_type' )
@@ -287,13 +291,16 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$basepath = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_unique_name' ] )
+				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
 				->getMock();
 
 		$stub->expects( $this->once() )
 				->method( 'validate_file_unique_name' )
 				->with( $file['name'], $basepath . '/' )
 				->will( $this->returnValue( 'testfile_1696439069.txt' ) );
+		
+		$stub->expects( $this->once() )
+				->method( 'validate_file_type' );
 
 		$actual = $stub->filter_validate_file( $file );
 
@@ -306,8 +313,12 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		];
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_type' ] )
+				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
 				->getMock();
+		
+		$stub->expects( $this->once() )
+				->method( 'validate_file_unique_name' )
+				->will( $this->returnValue( true ) );
 
 		$stub->expects( $this->once() )
 				->method( 'validate_file_type' );
@@ -328,8 +339,12 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$basepath = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_type' ] )
+				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
 				->getMock();
+
+		$stub->expects( $this->once() )
+				->method( 'validate_file_unique_name' )
+				->will( $this->returnValue( true ) );
 
 		$stub->expects( $this->once() )
 				->method( 'validate_file_type' )
