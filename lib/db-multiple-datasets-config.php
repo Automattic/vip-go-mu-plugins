@@ -2,10 +2,12 @@
 
 namespace Automattic\VIP\DatabaseMultipleDatasetsConfig;
 
+const MULTIPLE_DATASET_QUERY_ANNOTATION = '/* vip_multiple_dataset_query */';
+
 function dataset_callback( $query, $wpdb ) {
 	$table   = $wpdb->table;
 
-	if ( is_multiple_dataset_query( $wpdb->base_prefix, $query ) ) {
+	if ( false !== strpos( $query, MULTIPLE_DATASET_QUERY_ANNOTATION ) ) {
 		return [ 'dataset' => 'vtgate' ];
 	}
 
@@ -13,6 +15,18 @@ function dataset_callback( $query, $wpdb ) {
 	$wpdb->add_table( $dataset, $table );
 
 	return [ 'dataset' => $dataset ];
+}
+
+function query( $query ) {
+	global $wpdb;
+
+	if ( ! is_multiple_dataset_query( $wpdb->base_prefix, $query ) ) {
+		return $query;
+	}
+
+	$query .= ' ' . MULTIPLE_DATASET_QUERY_ANNOTATION;
+
+	return $query;
 }
 
 function is_multiple_dataset_query( $base_prefix, $query ) {
