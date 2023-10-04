@@ -59,8 +59,8 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 					'message'  => 'Potential multi dataset query detected',
 					'blog_id'  => get_current_blog_id(),
 					'extra'    => [
-						'uri'       => $_SERVER['REQUEST_URI'] ?? '',
-						'method'    => $_SERVER['REQUEST_METHOD'] ?? '',
+						'uri'       => isset( $_SERVER['REQUEST_URI'] ) ? sanitize_url( $_SERVER['REQUEST_URI'] ) : '',
+						'method'    => isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( $_SERVER['REQUEST_METHOD'] ) : '',
 						'backtrace' => $backtrace,
 					],
 				]
