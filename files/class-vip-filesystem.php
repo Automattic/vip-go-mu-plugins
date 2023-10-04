@@ -176,9 +176,14 @@ class VIP_Filesystem {
 	public function filter_validate_file( $file ) {
 		$file_name   = $file['name'];
 		$upload_path = trailingslashit( $this->get_upload_path() );
-		$file_path   = $upload_path . $file_name;
 
-		// TODO: run through unique filename?
+		$check_name = $this->validate_file_unique_name( $file_name, $upload_path );
+		if ( $check_name !== true ) {
+			$file['name'] = $check_name;
+			$file_name = $check_name;
+		}
+		
+		$file_path = $upload_path . $file_name;
 
 		$check_type = $this->validate_file_type( $file_path );
 		if ( is_wp_error( $check_type ) ) {
@@ -195,6 +200,24 @@ class VIP_Filesystem {
 		}
 
 		return $file;
+	}
+
+	/**
+	 * Check if file already exists and return a unique filename if it does.
+	 *
+	 * @param  string  Path starting with /wp-content/uploads
+	 */
+	protected function validate_file_unique_name( $file_name, $upload_path ) {
+		$result = $this->stream_wrapper->client->is_file( $upload_path . $file_name );
+		
+		if ( $result === true ) {
+			$file_root = pathinfo($file_name, PATHINFO_FILENAME);
+			$ext = pathinfo($file_name, PATHINFO_EXTENSION);
+			$timestamp = time();
+			return $file_root. '-' .$timestamp. '.' .$ext;
+		}
+		
+		return true;
 	}
 
 	/**
