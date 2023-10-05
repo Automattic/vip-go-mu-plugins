@@ -144,7 +144,7 @@ class Search {
 	private static $query_count_ttl;
 
 	private const DEFAULT_SEARCH_LENGTH          = 80;
-	private const MAX_SEARCH_LENGTH              = 255;
+	private const MAX_SEARCH_LENGTH              = 510;
 	private const DISABLE_POST_META_ALLOW_LIST   = array();
 	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
 	private const POST_FIELD_COUNT_LIMIT         = 5000;
