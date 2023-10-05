@@ -183,7 +183,7 @@ class VIP_Filesystem {
 			$file_name    = $check_name;
 		}
 		
-		$file_path 	= $upload_path . $file_name;
+		$file_path = $upload_path . $file_name;
 
 		$check_type = $this->validate_file_type( $file_path );
 		if ( is_wp_error( $check_type ) ) {
@@ -212,7 +212,7 @@ class VIP_Filesystem {
 		
 		if ( true === $result ) {
 			$file_root = pathinfo( $file_name, PATHINFO_FILENAME );
-			$ext 	   = pathinfo( $file_name, PATHINFO_EXTENSION ) ;
+			$ext       = pathinfo( $file_name, PATHINFO_EXTENSION );
 			$timestamp = time();
 			return $file_root . '-' . $timestamp . '.' . $ext;
 		}
