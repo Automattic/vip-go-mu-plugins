@@ -55,9 +55,4 @@ class BlockDataApiIntegration extends Integration {
 			}
 		} );
 	}
-
-	/**
-	 * Configure `Block Data API` for VIP Platform.
-	 */
-	public function configure(): void {}
 }
