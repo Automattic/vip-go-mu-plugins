@@ -178,12 +178,12 @@ class VIP_Filesystem {
 		$upload_path = trailingslashit( $this->get_upload_path() );
 
 		$check_name = $this->validate_file_unique_name( $file_name, $upload_path );
-		if ( $check_name !== true ) {
+		if ( true !== $check_name ) {
 			$file['name'] = $check_name;
-			$file_name = $check_name;
+			$file_name    = $check_name;
 		}
 		
-		$file_path = $upload_path . $file_name;
+		$file_path 	= $upload_path . $file_name;
 
 		$check_type = $this->validate_file_type( $file_path );
 		if ( is_wp_error( $check_type ) ) {
@@ -210,11 +210,11 @@ class VIP_Filesystem {
 	protected function validate_file_unique_name( $file_name, $upload_path ) {
 		$result = $this->stream_wrapper->client->is_file( $upload_path . $file_name );
 		
-		if ( $result === true ) {
-			$file_root = pathinfo($file_name, PATHINFO_FILENAME);
-			$ext = pathinfo($file_name, PATHINFO_EXTENSION);
+		if ( true === $result ) {
+			$file_root = pathinfo( $file_name, PATHINFO_FILENAME );
+			$ext 	   = pathinfo( $file_name, PATHINFO_EXTENSION ) ;
 			$timestamp = time();
-			return $file_root. '-' .$timestamp. '.' .$ext;
+			return $file_root . '-' . $timestamp . '.' . $ext;
 		}
 		
 		return true;
