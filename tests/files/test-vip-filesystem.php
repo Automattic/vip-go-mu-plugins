@@ -288,9 +288,9 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$file     = [
 			'name' => 'testfile.txt',
 		];
-		
+
 		$new_file_name = 'testfile-1696439069.txt';
-		$basepath      = $this->get_upload_path();
+		$basepath = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
 				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
