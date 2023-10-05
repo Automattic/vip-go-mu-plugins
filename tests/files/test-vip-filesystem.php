@@ -288,7 +288,9 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$file     = [
 			'name' => 'testfile.txt',
 		];
-		$basepath = $this->get_upload_path();
+		
+		$new_file_name = 'testfile-1696439069.txt';
+		$basepath      = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
 				->setMethods( [ 'validate_file_unique_name', 'validate_file_type' ] )
@@ -297,14 +299,14 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$stub->expects( $this->once() )
 				->method( 'validate_file_unique_name' )
 				->with( $file['name'], $basepath . '/' )
-				->will( $this->returnValue( 'testfile_1696439069.txt' ) );
+				->will( $this->returnValue( $new_file_name ) );
 		
 		$stub->expects( $this->once() )
 				->method( 'validate_file_type' );
 
 		$actual = $stub->filter_validate_file( $file );
 
-		$this->assertNotEquals( $file['name'], $actual['name'] );
+		$this->assertEquals( $new_file_name, $actual['name'] );
 	}
 
 	public function test__filter_validate_file__invalid_file_length() {
