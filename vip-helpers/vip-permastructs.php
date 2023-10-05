@@ -46,7 +46,7 @@ function wpcom_vip_load_category_base( $new_category_base ) {
 	// For empty category base, remove the '/category/' from the base, but include the parent category if it's a child
 	if ( '' === $new_category_base ) {
 		add_filter( 'category_link', function ( $link, $term_id ) {
-			return '/' . get_category_parents( $term_id, false, '/', true );
+			return home_url( '/' . get_category_parents( $term_id, false, '/', true ) );
 		}, 9, 2 );
 	}
 }
