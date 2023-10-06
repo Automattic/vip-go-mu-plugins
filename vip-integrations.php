@@ -12,9 +12,8 @@
 
 namespace Automattic\VIP\Integrations;
 
-defined( 'ABSPATH' ) || die();
-
 // @codeCoverageIgnoreStart -- the actual code here is tested individually in the unit tests.
+defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integrations.php';
@@ -28,7 +27,6 @@ require_once __DIR__ . '/integrations/vip-governance.php';
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
-
 // @codeCoverageIgnoreEnd
 
 /**
