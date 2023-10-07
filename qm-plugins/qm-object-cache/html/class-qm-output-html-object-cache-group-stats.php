@@ -89,9 +89,9 @@ class QM_Output_Html_Object_Cache_Group_Stats extends QM_Output_Html {
 				echo '</tfoot>';
 				$this->output_after_section();
 			}
-
-			$this->after_non_tabular_output();
 		}
+
+		$this->after_non_tabular_output();
 	}
 
 	/**
