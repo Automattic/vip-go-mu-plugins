@@ -55,9 +55,4 @@ class VipGovernanceIntegration extends Integration {
 			}
 		} );
 	}
-
-	/**
-	 * Configure `VIP Governance` for VIP Platform.
-	 */
-	public function configure(): void {}
 }
