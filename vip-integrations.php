@@ -14,6 +14,8 @@ namespace Automattic\VIP\Integrations;
 
 defined( 'ABSPATH' ) || die();
 
+// @codeCoverageIgnoreStart - the actual code here is tested individually in the unit tests.
+
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
@@ -24,6 +26,14 @@ require_once __DIR__ . '/integrations/parsely.php';
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
+
+// ToDo: Remove this after the initial deployment of the VIP Governance integration.
+if ( file_exists( __DIR__ . '/integrations/vip-governance.php' ) ) {
+	require_once __DIR__ . '/integrations/vip-governance.php';
+	IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
+}
+
+// @codeCoverageIgnoreEnd
 
 /**
  * Activates an integration with an optional configuration value.
