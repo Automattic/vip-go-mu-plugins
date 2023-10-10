@@ -22,7 +22,7 @@ class Block_Data_API_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $block_data_api_integration->is_active() );
 	}
 
-	public function test__if_is_loaded_gives_back_true_when_loaded(): void {
+	public function test__if_is_loaded_gives_back_false_when_not_loaded(): void {
 		$block_data_api_integration = new BlockDataApiIntegration( $this->slug );
 
 		$this->assertFalse( $block_data_api_integration->is_loaded() );

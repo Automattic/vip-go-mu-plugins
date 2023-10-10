@@ -22,7 +22,7 @@ class VIP_Governance_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $vip_governance_integration->is_active() );
 	}
 
-	public function test__if_is_loaded_gives_back_true_when_loaded(): void {
+	public function test__if_is_loaded_gives_back_false_when_not_loaded(): void {
 		$vip_governance_integration = new VipGovernanceIntegration( $this->slug );
 
 		$this->assertFalse( $vip_governance_integration->is_loaded() );
