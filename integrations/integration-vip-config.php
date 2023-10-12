@@ -109,32 +109,24 @@ class IntegrationVipConfig {
 	 * @private
 	 */
 	public function is_active_via_vip(): bool {
-		// Return false if blocked on org.
+		return Env_Integration_Status::ENABLED === $this->get_site_status();
+	}
+
+	/**
+	 * Get site status.
+	 *
+	 * @return string|null
+	 *
+	 * @private
+	 */
+	public function get_site_status() {
 		if ( $this->get_value_from_config( 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
-			return false;
+			return Org_Integration_Status::BLOCKED;
 		}
 
-		$env_status = $this->get_value_from_config( 'env', 'status' );
-
-		// Return false if blocked on env.
-		if ( Env_Integration_Status::BLOCKED === $env_status ) {
-			return false;
-		}
-
-		// Look into network_sites config before because if not present we will fallback to env config.
-		$network_site_status = $this->get_value_from_config( 'network_sites', 'status' );
-
-		if ( Env_Integration_Status::ENABLED === $network_site_status ) {
-			return true;
-		}
-
-		// Return false if status is defined but other than enabled. If status is not defined then fallback to env config.
-		if ( null !== $network_site_status ) {
-			return false;
-		}
-
-		// Return true if enabled on env.
-		return Env_Integration_Status::ENABLED === $env_status;
+		// Look into network_sites config before and then fallback to env config.
+		return $this->get_value_from_config( 'network_sites', 'status' ) ??
+			$this->get_value_from_config( 'env', 'status' );
 	}
 
 	/**
