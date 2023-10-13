@@ -133,11 +133,6 @@ if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
 	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 		define( 'VIP_JETPACK_SKIP_LOAD', true );
 	}
-
-	// FedRAMP sites do not load Parse.ly by default
-	if ( ! defined( 'VIP_PARSELY_ENABLED' ) ) {
-		define( 'VIP_PARSELY_ENABLED', false );
-	}
 }
 
 $private_dir_path = WP_CONTENT_DIR . '/private'; // Local fallback
