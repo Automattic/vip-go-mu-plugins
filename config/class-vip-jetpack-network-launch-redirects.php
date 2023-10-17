@@ -15,7 +15,7 @@ class VIP_Jetpack_Network_Launch_Redirects {
 
 	public static function maybe_redirect_jetpack_network_launches() {
 		// applies redirects only in the frontend and for multisites
-		if ( ! is_multisite() || is_admin() || ! Context::is_web_request() ) {
+		if ( ! is_multisite() || is_admin() || Context::is_wp_cli() || Context::is_cron() ) { // TODO be more specific about which pages we want to support
 			return;
 		}
 		// check DEFINED constant 'DISABLE_VIP_LAUNCH_REDIRECTS' to skip redirects
