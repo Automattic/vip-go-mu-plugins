@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2fba5d17d8eb1b1d8014f78724722423",
+    "content-hash": "59e6d0f8004139ba6bf2c3308e5a157a",
     "packages": [],
     "packages-dev": [
         {
@@ -305,16 +305,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.3.1",
+            "version": "6.3.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "fc432f78ae5256b7fa28e810cfdf0b968d003699"
+                "reference": "0a18695e2ae028ea8485c45053c14525544c1dc7"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/fc432f78ae5256b7fa28e810cfdf0b968d003699",
-                "reference": "fc432f78ae5256b7fa28e810cfdf0b968d003699",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/0a18695e2ae028ea8485c45053c14525544c1dc7",
+                "reference": "0a18695e2ae028ea8485c45053c14525544c1dc7",
                 "shasum": ""
             },
             "require": {
@@ -322,7 +322,7 @@
                 "php": ">=7.0.0"
             },
             "provide": {
-                "wordpress/core-implementation": "6.3.1"
+                "wordpress/core-implementation": "6.3.2"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -349,7 +349,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2023-08-29T14:28:14+00:00"
+            "time": "2023-10-12T19:02:24+00:00"
         },
         {
             "name": "mustache/mustache",
