@@ -170,11 +170,13 @@ abstract class Integration {
 
 	/**
 	 * Configure the integration for VIP platform.
-	 *
+	 * 
 	 * If we want to implement functionality only if the integration is enabled via VIP
 	 * then we will use this function.
-	 *
+	 * 
+	 * By default, the implementation of this function will be empty.
+	 * 
 	 * @private
 	 */
-	abstract public function configure(): void;
+	public function configure(): void {}
 }
