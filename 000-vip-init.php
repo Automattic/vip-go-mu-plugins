@@ -10,7 +10,6 @@
  */
 
 use Automattic\VIP\Config\Sync;
-use Automattic\VIP\Config\VIP_Jetpack_Network_Launch_Redirects;
 use Automattic\VIP\Utils\Context;
 use Automattic\VIP\Utils\WPComVIP_Restrictions;
 
@@ -304,12 +303,6 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 
 	$encloseme_cleaner = new VIP_Encloseme_Cleanup();
 	$encloseme_cleaner->init();
-
-	// redirects url for jetpack network launches, if needed
-	if ( file_exists( __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php' ) ) {
-		require_once __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php';
-		add_action( 'init', [ VIP_Jetpack_Network_Launch_Redirects::class, 'maybe_redirect_jetpack_network_launches' ] );
-	}
 }
 
 // Add custom header for VIP
