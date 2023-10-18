@@ -185,16 +185,14 @@ class Connection_Pilot {
 			// Ensure we don't go past the max, and support future decreases should they occur.
 			if ( $backoff_factor > self::MAX_BACKOFF_FACTOR ) {
 				$backoff_factor = self::MAX_BACKOFF_FACTOR;
-				$this->update_heartbeat( $backoff_factor );
 			}
 
 			if ( $backoff_factor > 0 ) {
-				$dt_heartbeat = ( new DateTime() )->setTimestamp( $this->last_heartbeat['timestamp'] );
-				$dt_now       = new DateTime();
-				$diff         = $dt_now->diff( $dt_heartbeat, true );
+				$seconds_elapsed = time() - $last_heartbeat_timestamp;
+				$hours_elapsed   = (int) round( $seconds_elapsed / HOUR_IN_SECONDS );
 
-				// Checking the difference in hours from the last heartbeat
-				if ( $diff && $diff->h < $backoff_factor ) {
+				if ( $backoff_factor > $hours_elapsed ) {
+					// We're still in the backoff period.
 					return true;
 				}
 			}
@@ -212,11 +210,15 @@ class Connection_Pilot {
 		$backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
 
 		if ( $backoff_factor >= self::MAX_BACKOFF_FACTOR ) {
-			return;
+			$backoff_factor = self::MAX_BACKOFF_FACTOR;
 		} elseif ( $backoff_factor <= 0 ) {
 			$backoff_factor = 1;
 		} else {
 			$backoff_factor = $backoff_factor * 2;
+
+			if ( $backoff_factor > self::MAX_BACKOFF_FACTOR ) {
+				$backoff_factor = self::MAX_BACKOFF_FACTOR;
+			}
 		}
 
 		$this->update_heartbeat( $backoff_factor );
