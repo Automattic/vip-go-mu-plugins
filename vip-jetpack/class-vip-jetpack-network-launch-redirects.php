@@ -31,13 +31,14 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		if ( ! defined( 'JETPACK_SYNC_IDC_OPTIN' ) || true !== constant( 'JETPACK_SYNC_IDC_OPTIN' ) ) {
 			return;
 		}
-		// we're loading it only now to save resources, we need to include it since we are loaded in the sunrise.
-		$mu_plugin_dir      = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
-		require_once $mu_plugin_dir . '/vip-helpers/vip-utils.php';
-		// we care only about jetpack requests
-		if ( ! vip_is_jetpack_request() ) {
+
+		// there are lots of includes in the vip-utils file, so for now we're only checking if the user agent is jetpack instead of using vip_is_jetpack_request
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$http_user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+		if ( false === stripos( $http_user_agent, 'jetpack' ) ) { // TODO check if there's a way to get the real Jetpack IPs and check against them while in the sunrise.
 			return;
 		}
+
 
 		// TODO we'll need to have some hashing in the options to avoid S&R to change it.
 		// TODO should we have some kind of validation to ensure the data is consistent?
@@ -80,5 +81,7 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// TODO have a scheduled command that cleans the option from expired redirects
 
 	}
+
+
 
 }
