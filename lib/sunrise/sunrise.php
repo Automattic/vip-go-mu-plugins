@@ -23,7 +23,7 @@ require_once $mu_plugin_dir . '/lib/utils/class-context.php';
 unset( $mu_plugin_dir );
 
 use Automattic\VIP\Utils\Context;
-
+use Automattic\VIP\Config\VIP_Jetpack_Network_Launch_Redirects;
 /**
  * Log errors retrieving network for a given request
  *
@@ -40,7 +40,7 @@ function network_not_found( $domain, $path ) {
 	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
 	trigger_error( 'ms_network_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
-	handle_not_found_error( 'network' );
+	handle_not_found_error( 'network', $domain, $path );
 }
 add_action( 'ms_network_not_found', __NAMESPACE__ . '\network_not_found', 9, 2 ); // Priority 9 to log before WP_CLI kills execution
 
@@ -62,11 +62,11 @@ function site_not_found( $network, $domain, $path ) {
 	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
 	trigger_error( 'ms_site_not_found: ' . htmlspecialchars( $data ), E_USER_WARNING );
 
-	handle_not_found_error( 'site' );
+	handle_not_found_error( 'site', $domain, $path );
 }
 add_action( 'ms_site_not_found', __NAMESPACE__ . '\site_not_found', 9, 3 ); // Priority 9 to log before WP_CLI kills execution
 
-function handle_not_found_error( $error_type ) {
+function handle_not_found_error( $error_type, $domain, $path ) {
 	$is_healthcheck = Context::is_healthcheck();
 	if ( $is_healthcheck ) {
 		http_response_code( 200 );
@@ -86,6 +86,12 @@ function handle_not_found_error( $error_type ) {
 			header( 'X-VIP-Go-Maintenance: true' );
 			$error_doc = sprintf( '%s/errors/site-maintenance.html', $mu_plugin_dir );
 		} else {
+			// redirects url for jetpack network launches, if needed
+			if ( file_exists( $mu_plugin_dir . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php' ) ) {
+				require_once $mu_plugin_dir . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php';
+				VIP_Jetpack_Network_Launch_Redirects::maybe_redirect_jetpack_network_launches( $domain, $path );
+			}
+
 			$status_code = 404;
 			$error_doc   = sprintf( '%s/errors/%s-not-found.html', $mu_plugin_dir, $error_type );
 		}

@@ -13,9 +13,9 @@ class VIP_Jetpack_Network_Launch_Redirects {
 	// This is used in front of the source domain to avoid the S&R to replace it
 	const URL_REPLACE_PREFIX = '##';
 
-	public static function maybe_redirect_jetpack_network_launches() {
+	public static function maybe_redirect_jetpack_network_launches( $domain, $path ) {
 		// applies redirects only in the frontend and for multisites
-		if ( ! is_multisite() || is_admin() || Context::is_wp_cli() || Context::is_cron() ) { // TODO be more specific about which pages we want to support
+		if ( ! is_multisite() || is_admin() ) { // TODO be more specific about which pages we want to support
 			return;
 		}
 		// check DEFINED constant 'DISABLE_VIP_LAUNCH_REDIRECTS' to skip redirects
@@ -55,13 +55,13 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		$valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
 			return $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
 		} );
-		// print the string of valid redirects in logs
-		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
-		if ( isset( $_SERVER['HTTP_HOST'] ) && isset( $_SERVER['REQUEST_URI'] ) ) {
-			$redirect_url  = '';
-			$uri_unslashed = untrailingslashit( wp_parse_url(  $_SERVER['REQUEST_URI'], PHP_URL_PATH ) );
 
-			$requested_url = self::URL_REPLACE_PREFIX . $_SERVER['HTTP_HOST'] . $uri_unslashed;
+		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
+		if ( $domain && $path ) { // TODO test this condition both for when we have a path and when we don't
+			$redirect_url  = '';
+			$uri_unslashed = untrailingslashit( $path );
+
+			$requested_url = self::URL_REPLACE_PREFIX . $domain . $uri_unslashed;
 			if ( $requested_url && array_key_exists( $requested_url, $valid_redirects ) ) {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 			}
@@ -81,12 +81,4 @@ class VIP_Jetpack_Network_Launch_Redirects {
 
 	}
 
-	public function log( $severity, $message, $extra = array() ) {
-		\Automattic\VIP\Logstash\log2logstash( array(
-			'severity' => $severity,
-			'feature'  => self::LOG_FEATURE_NAME,
-			'message'  => $message,
-			'extra'    => $extra,
-		) );
-	}
 }
