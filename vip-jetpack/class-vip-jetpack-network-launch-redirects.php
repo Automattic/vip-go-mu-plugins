@@ -2,17 +2,21 @@
 
 namespace Automattic\VIP\Config;
 
-use Automattic\VIP\Utils\Context;
-
 class VIP_Jetpack_Network_Launch_Redirects {
-	private static $instance;
 
 	const NETWORK_TEMP_REDIRECTS_OPTION_NAME = 'vip_network_temp_redirects';
 	const REDIRECT_TTL_MINUTES               = 60;
-	const LOG_FEATURE_NAME                   = 'vip_network_launch_redirects';
 	// This is used in front of the source domain to avoid the S&R to replace it
 	const URL_REPLACE_PREFIX = '##';
 
+	/**
+	 * This function should be called only in the sunrise for multisites, we're expecting the $domain and $path from the
+	 * ms_site_not_found and ms_network_not_found actions.
+	 * @param $domain
+	 * @param $path
+	 *
+	 * @return void
+	 */
 	public static function maybe_redirect_jetpack_network_launches( $domain, $path ) {
 		// applies redirects only in the frontend and for multisites
 		if ( ! is_multisite() || is_admin() ) { // TODO be more specific about which pages we want to support
@@ -68,13 +72,7 @@ class VIP_Jetpack_Network_Launch_Redirects {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 			}
 			if ( $redirect_url ) {
-				if ( did_action( 'plugins_loaded' ) ) {
-					// phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
-					wp_redirect( $redirect_url, 301 );
-				} else {
-					header( "Location: {$redirect_url}", true, 301 );
-				}
-
+				header( "Location: {$redirect_url}", true, 301 );
 				exit;
 			}
 		}
