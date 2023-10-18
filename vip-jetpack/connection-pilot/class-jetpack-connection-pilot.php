@@ -189,7 +189,7 @@ class Connection_Pilot {
 
 			if ( $backoff_factor > 0 ) {
 				$seconds_elapsed = time() - $last_heartbeat_timestamp;
-				$hours_elapsed   = (int) round( $seconds_elapsed / HOUR_IN_SECONDS );
+				$hours_elapsed   = $seconds_elapsed / HOUR_IN_SECONDS;
 
 				if ( $backoff_factor > $hours_elapsed ) {
 					// We're still in the backoff period.
