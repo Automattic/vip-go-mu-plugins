@@ -306,9 +306,10 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 	$encloseme_cleaner->init();
 
 	// redirects url for jetpack network launches, if needed
-	require_once __DIR__ . '/config/class-vip-jetpack-network-launch-redirects.php';
-
-	add_action( 'init', [ VIP_Jetpack_Network_Launch_Redirects::class, 'maybe_redirect_jetpack_network_launches' ] );
+	if ( file_exists( __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php' ) ) {
+		require_once __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php';
+		add_action( 'init', [ VIP_Jetpack_Network_Launch_Redirects::class, 'maybe_redirect_jetpack_network_launches' ] );
+	}
 }
 
 // Add custom header for VIP
