@@ -20,12 +20,11 @@ class User_Last_Seen {
 		// Use a global cache group since users are shared among network sites.
 		wp_cache_add_global_groups( array( self::LAST_SEEN_CACHE_GROUP ) );
 
-		add_action( 'set_current_user', array( $this, 'record_activity' ) );
-		add_filter( 'rest_authentication_errors', array( $this, 'rest_authentication' ), PHP_INT_MAX, 1 );
+		add_filter( 'determine_current_user', array( $this, 'record_activity' ), 30, 1 );
 
 		add_action( 'admin_init', array( $this, 'register_release_date' ) );
 		add_action( 'set_user_role', array( $this, 'user_promoted' ) );
-		add_action( 'vip_support_user_added', function( $user_id ) {
+		add_action( 'vip_support_user_added', function ( $user_id ) {
 			$ignore_inactivity_check_until = strtotime( '+2 hours' );
 
 			$this->ignore_inactivity_check_for_user( $user_id, $ignore_inactivity_check_until );
@@ -43,6 +42,8 @@ class User_Last_Seen {
 
 		if ( $this->is_block_action_enabled() ) {
 			add_filter( 'authenticate', array( $this, 'authenticate' ), 20, 1 );
+			add_filter( 'wp_is_application_passwords_available_for_user', array( $this, 'application_password_authentication' ), PHP_INT_MAX, 2 );
+			add_filter( 'rest_authentication_errors', array( $this, 'rest_authentication_errors' ), PHP_INT_MAX, 1 );
 
 			add_filter( 'views_users', array( $this, 'add_blocked_users_filter' ) );
 			add_filter( 'views_users-network', array( $this, 'add_blocked_users_filter' ) );
@@ -52,28 +53,32 @@ class User_Last_Seen {
 		}
 	}
 
-	public function record_activity( $user = null ) {
-		if ( $user === null ) {
-			$user = wp_get_current_user();
+	public function record_activity( $user_id ) {
+		if ( ! $user_id ) {
+			return $user_id;
 		}
 
-		if ( ! $user || ! $user->ID ) {
-			return;
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return $user_id;
 		}
 
-		if ( ! $this->user_with_elevated_capabilities( $user ) ) {
-			return;
+		if ( $this->is_considered_inactive( $user_id ) ) {
+			// User needs to be unblocked first
+			return $user_id;
 		}
 
-		if ( wp_cache_get( $user->ID, self::LAST_SEEN_CACHE_GROUP ) ) {
+		if ( wp_cache_get( $user_id, self::LAST_SEEN_CACHE_GROUP ) ) {
 			// Last seen meta was checked recently
-			return;
+			return $user_id;
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		if ( wp_cache_add( $user->ID, true, self::LAST_SEEN_CACHE_GROUP, self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
-			update_user_meta( $user->ID, self::LAST_SEEN_META_KEY, time() );
+		if ( wp_cache_add( $user_id, true, self::LAST_SEEN_CACHE_GROUP, self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL ) ) {
+			update_user_meta( $user_id, self::LAST_SEEN_META_KEY, time() );
 		}
+
+		return $user_id;
 	}
 
 	public function authenticate( $user ) {
@@ -94,23 +99,35 @@ class User_Last_Seen {
 		return $user;
 	}
 
-	public function rest_authentication( $status ) {
-		if ( is_wp_error( $status ) || ! $status ) {
-			return $status;
-		}
+	public function rest_authentication_errors( $status ) {
+		global $wp_last_seen_application_password_error;
 
-		$user = wp_get_current_user();
-		if ( ! $user->ID ) {
-			return $status;
+		if ( is_wp_error( $wp_last_seen_application_password_error ) ) {
+			return $wp_last_seen_application_password_error;
 		}
-
-		if ( $this->is_block_action_enabled() && $this->is_considered_inactive( $user->ID ) ) {
-			return new \WP_Error( 'inactive_account', __( 'Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ), array( 'status' => 403 ) );
-		}
-
-		$this->record_activity( $user );
 
 		return $status;
+	}
+
+	/**
+	 * @param bool $available True if application password is available, false otherwise.
+	 * @param \WP_User $user The user to check.
+	 * @return bool
+	 */
+	public function application_password_authentication( $available, $user ) {
+		global $wp_last_seen_application_password_error;
+
+		if ( ! $available || ( $user && ! $user->exists() ) ) {
+			return false;
+		}
+
+		if ( $this->is_considered_inactive( $user->ID ) ) {
+			$wp_last_seen_application_password_error = new \WP_Error( 'inactive_account', __( 'Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ), array( 'status' => 403 ) );
+
+			return false;
+		}
+
+		return $available;
 	}
 
 	public function add_last_seen_column_head( $columns ) {
@@ -221,7 +238,7 @@ class User_Last_Seen {
 		$admin_notices_hook_name = is_network_admin() ? 'network_admin_notices' : 'admin_notices';
 
 		if ( isset( $_GET['reset_last_seen_success'] ) && '1' === $_GET['reset_last_seen_success'] ) {
-			add_action( $admin_notices_hook_name, function() {
+			add_action( $admin_notices_hook_name, function () {
 				$class = 'notice notice-success is-dismissible';
 				$error = __( 'User unblocked.', 'wpvip' );
 
@@ -254,7 +271,7 @@ class User_Last_Seen {
 		}
 
 		if ( $error ) {
-			add_action( $admin_notices_hook_name, function() use ( $error ) {
+			add_action( $admin_notices_hook_name, function () use ( $error ) {
 				$class = 'notice notice-error is-dismissible';
 
 				printf( '<div class="%1$s"><p>%2$s</p></div>', esc_attr( $class ), esc_html( $error ) );
@@ -352,7 +369,7 @@ class User_Last_Seen {
 
 		$user = get_userdata( $user_id );
 		if ( ! $user ) {
-			throw new \Exception( 'User not found' );
+			throw new \Exception( sprintf( 'User #%d found', esc_html( $user_id ) ) );
 		}
 
 		if ( $user->user_registered && strtotime( $user->user_registered ) > $this->get_inactivity_timestamp() ) {
