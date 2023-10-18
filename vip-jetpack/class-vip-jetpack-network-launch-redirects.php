@@ -27,7 +27,9 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		if ( ! defined( 'JETPACK_SYNC_IDC_OPTIN' ) || true !== constant( 'JETPACK_SYNC_IDC_OPTIN' ) ) {
 			return;
 		}
-
+		// we're loading it only now to save resources, we need to include it since we are loaded in the sunrise.
+		$mu_plugin_dir      = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+		require_once $mu_plugin_dir . '/vip-helpers/vip-utils.php';
 		// we care only about jetpack requests
 		if ( ! vip_is_jetpack_request() ) {
 			return;
