@@ -62,26 +62,26 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		$valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
 			return $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
 		} );
-
+		
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( $domain && $path ) { // TODO test this condition both for when we have a path and when we don't
 			$redirect_url  = '';
-			// get the path up till the last /
-			$path_parts = explode( '/', $path );
-			// remove the last element (the file name/query)
-			array_pop( $path_parts );
-			// join the remaining elements
-			$path = implode( '/', $path_parts );
+			// If we're handling an xmlrpc request, get only the path up to the last folder.
+			if ( false !== strpos( $path, 'xmlrpc.php' ) ) {	
+				$path_parts = explode( '/', $path );
+				array_pop( $path_parts );
+				// join the remaining elements
+				$path = implode( '/', $path_parts );
+			}
 
 			$uri_unslashed = untrailingslashit( $path );
-
 			$requested_url = self::URL_REPLACE_PREFIX . $domain . $uri_unslashed;
 
 			if ( $requested_url && array_key_exists( $requested_url, $valid_redirects ) ) {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 				if ( isset( $_SERVER['HTTP_HOST'] ) ){
 					// if we have HTTP_HOST it means the REQUEST_URI is not the full URL, so we need to add the path to the redirect URL
-					$redirect_url =	$valid_redirects[ $requested_url ]['to'] . str_replace( $path, '/', $_SERVER['REQUEST_URI'] );
+					$redirect_url =	$valid_redirects[ $requested_url ]['to'] . str_replace( $path, '', $_SERVER['REQUEST_URI'] );
 				} else {
 					$redirect_url = str_replace( 'https://' . $domain . $uri_unslashed, $valid_redirects[ $requested_url ]['to'], $_SERVER['REQUEST_URI'] );
 				}
