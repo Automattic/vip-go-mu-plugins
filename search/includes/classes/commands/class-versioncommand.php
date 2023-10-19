@@ -2,8 +2,8 @@
 
 namespace Automattic\VIP\Search\Commands;
 
-use \WP_CLI;
-use \ElasticPress\Indexable as Indexable;
+use WP_CLI;
+use ElasticPress\Indexable;
 
 require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 

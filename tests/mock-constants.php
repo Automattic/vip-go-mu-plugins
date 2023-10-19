@@ -1,5 +1,8 @@
 <?php
 
+// phpcs:disable Universal.Namespaces.DisallowCurlyBraceSyntax.Forbidden
+// phpcs:disable Universal.Namespaces.OneDeclarationPerFile.MultipleFound
+
 namespace Automattic\Test {
 
 	use Exception;
@@ -18,6 +21,7 @@ namespace Automattic\Test {
 
 		public static function define( string $constant, $value ): void {
 			if ( isset( self::$constants[ $constant ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( "Constant \"%s\" is already defined. Stacktrace:\n%s", $constant, self::$constants[ $constant ][1] ) );
 			}
 
@@ -32,6 +36,7 @@ namespace Automattic\Test {
 
 		public static function constant( string $constant ) {
 			if ( ! isset( self::$constants[ $constant ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( 'Constant "%s" is not defined', $constant ) );
 			}
 

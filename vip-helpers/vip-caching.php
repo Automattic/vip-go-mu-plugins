@@ -172,6 +172,7 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
 	if ( false === $page_id ) {
 		if ( ! function_exists( 'is_user_logged_in' ) ) {
 			// If too early to call `WP_Query`, fallback to deprecated `get_page_by_title`
+			// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_page_by_titleFound
 			$page    = get_page_by_title( $title, OBJECT, $post_type );
 			$page_id = $page ? $page->ID : 0;
 		} else {
@@ -283,7 +284,7 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
-add_action( 'transition_post_status', function( $new_status, $old_status, $post ) {
+add_action( 'transition_post_status', function ( $new_status, $old_status, $post ) {
 	if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
 		return;
 	}

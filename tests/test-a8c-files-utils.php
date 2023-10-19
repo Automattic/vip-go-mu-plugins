@@ -34,11 +34,11 @@ class VIP_Go_A8C_Files_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data_for_filter_photon_domain
 	 */
 	public function test__filter_photon_domain( $image_url, $expected_photon_url ) {
-		add_filter( 'home_url', function() {
+		add_filter( 'home_url', function () {
 			return 'http://example.com';
 		} );
 
-		add_filter( 'site_url', function() {
+		add_filter( 'site_url', function () {
 			return 'http://subdomain.example.com';
 		} );
 

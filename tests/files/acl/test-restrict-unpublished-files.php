@@ -276,4 +276,3 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_urls, $actual_urls );
 	}
 }
-

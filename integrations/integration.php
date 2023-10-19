@@ -7,6 +7,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+use Automattic\VIP\Integrations\IntegrationVipConfig;
+
 /**
  * Abstract base class for all integration implementations.
  *
@@ -46,12 +48,25 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
+	 * Instance of VipIntegrationConfig. It's useful to have full configuration info
+	 * available inside each integration, we can use it for cases like multisite,
+	 * tracking etc.
+	 *
+	 * Note: We don't use this property for activation of the integration.
+	 *
+	 * @var IntegrationVipConfig
+	 */
+	private IntegrationVipConfig $vip_config;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
+
+		add_action( 'switch_blog', array( $this, 'switch_blog_callback' ), 10, 2 );
 	}
 
 	/**
@@ -78,6 +93,16 @@ abstract class Integration {
 
 		$this->is_active = true;
 		$this->options   = $options;
+	}
+
+	/**
+	 * Callback for `switch_blog` filter.
+	 */
+	public function switch_blog_callback(): void {
+		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
+		if ( isset( $this->vip_config ) ) {
+			$this->options['config'] = $this->vip_config->get_site_config();
+		}
 	}
 
 	/**
@@ -110,6 +135,21 @@ abstract class Integration {
 	}
 
 	/**
+	 * Set vip_config property.
+	 *
+	 * @param IntegrationVipConfig $vip_config Instance of IntegrationVipConfig.
+	 *
+	 * @return void
+	 */
+	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
+		if ( ! $this->is_active() ) {
+			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		}
+
+		$this->vip_config = $vip_config;
+	}
+
+	/**
 	 * Returns `true` if the integration is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration again.
 	 *
@@ -130,11 +170,13 @@ abstract class Integration {
 
 	/**
 	 * Configure the integration for VIP platform.
-	 *
+	 * 
 	 * If we want to implement functionality only if the integration is enabled via VIP
 	 * then we will use this function.
-	 *
+	 * 
+	 * By default, the implementation of this function will be empty.
+	 * 
 	 * @private
 	 */
-	abstract public function configure(): void;
+	public function configure(): void {}
 }

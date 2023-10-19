@@ -72,7 +72,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_filter_expected_post_rows() {
-		add_filter( 'ep_post_sync_kill', function( $skip, $post_id ) {
+		add_filter( 'ep_post_sync_kill', function ( $skip, $post_id ) {
 			return 2 === $post_id;
 		}, 10, 2 );
 

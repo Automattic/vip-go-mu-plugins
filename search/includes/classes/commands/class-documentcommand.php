@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Search\Commands;
 
-use \WP_CLI;
+use WP_CLI;
 
 require_once __DIR__ . '/../../../../vip-helpers/vip-wp-cli.php';
 
@@ -35,7 +35,7 @@ class DocumentCommand extends \WPCOM_VIP_CLI_Command {
 		$type      = $args[0];
 		$object_id = $args[1];
 
-		$search = \Automattic\VIP\Search\Search::instance();
+		\Automattic\VIP\Search\Search::instance();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( $type );
 

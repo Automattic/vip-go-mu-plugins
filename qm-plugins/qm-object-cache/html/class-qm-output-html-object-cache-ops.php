@@ -59,7 +59,7 @@ class QM_Output_Html_Object_Cache_Ops extends QM_Output_Html {
 				$this->output_table_cell( $op['group'] );
 				$this->output_table_cell( $this->process_result( $op['result'] ) );
 				echo '</tr>';
-				$total++;
+				++$total;
 			}
 		}
 		echo '</tbody>';
