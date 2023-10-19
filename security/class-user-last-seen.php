@@ -10,6 +10,13 @@ class User_Last_Seen {
 	const LAST_SEEN_UPDATE_USER_META_CACHE_TTL             = MINUTE_IN_SECONDS * 5; // Store last seen once every five minute to avoid too many write DB operations
 	const LAST_SEEN_RELEASE_DATE_TIMESTAMP_OPTION_KEY      = 'wpvip_last_seen_release_date_timestamp';
 
+	/**
+	 * May store inactive account authentication error for application passwords to be used later in rest_authentication_errors
+	 *
+	 * @var \WP_Error|null
+	 */
+	private $application_password_authentication_error;
+
 	public function init() {
 		if ( ! defined( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) || constant( 'VIP_SECURITY_INACTIVE_USERS_ACTION' ) === 'NO_ACTION' ) {
 			return;
@@ -100,10 +107,8 @@ class User_Last_Seen {
 	}
 
 	public function rest_authentication_errors( $status ) {
-		global $wp_last_seen_application_password_error;
-
-		if ( is_wp_error( $wp_last_seen_application_password_error ) ) {
-			return $wp_last_seen_application_password_error;
+		if ( is_wp_error( $this->application_password_authentication_error ) ) {
+			return $this->application_password_authentication_error;
 		}
 
 		return $status;
@@ -115,14 +120,12 @@ class User_Last_Seen {
 	 * @return bool
 	 */
 	public function application_password_authentication( $available, $user ) {
-		global $wp_last_seen_application_password_error;
-
 		if ( ! $available || ( $user && ! $user->exists() ) ) {
 			return false;
 		}
 
 		if ( $this->is_considered_inactive( $user->ID ) ) {
-			$wp_last_seen_application_password_error = new \WP_Error( 'inactive_account', __( 'Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ), array( 'status' => 403 ) );
+			$this->application_password_authentication_error = new \WP_Error( 'inactive_account', __( 'Your account has been flagged as inactive. Please contact your site administrator.', 'wpvip' ), array( 'status' => 403 ) );
 
 			return false;
 		}
