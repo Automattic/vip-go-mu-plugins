@@ -60,15 +60,23 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// 'timestamp' => int, the time it was created
 		// create an array with only the elements that have not expired
 		$valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
-			return $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
+			return true || $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
 		} );
 
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( $domain && $path ) { // TODO test this condition both for when we have a path and when we don't
 			$redirect_url  = '';
+			// get the path up till the last / 
+			$path_parts = explode( '/', $path );
+			// remove the last element (the file name/query)
+			array_pop( $path_parts );
+			// join the remaining elements
+			$path = implode( '/', $path_parts ); 
+		
 			$uri_unslashed = untrailingslashit( $path );
 
 			$requested_url = self::URL_REPLACE_PREFIX . $domain . $uri_unslashed;
+
 			if ( $requested_url && array_key_exists( $requested_url, $valid_redirects ) ) {
 				$redirect_url = $valid_redirects[ $requested_url ]['to'];
 			}

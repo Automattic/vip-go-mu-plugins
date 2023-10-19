@@ -76,6 +76,7 @@ function handle_not_found_error( $error_type, $domain, $path ) {
 	}
 
 	$is_web_request = Context::is_web_request();
+	$is_xmlrpc_api = Context::is_xmlrpc_api();
 	if ( $is_web_request ) {
 		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 		$is_maintenance_mode = Context::is_maintenance_mode();
@@ -100,6 +101,15 @@ function handle_not_found_error( $error_type, $domain, $path ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- this is a local pre-made HTML file
 		echo file_get_contents( $error_doc );
 		exit;
+	}
+	// TODO instead of checking if it's an xmlrpc request, we should check if it's a jetpack request have this code included once
+	if ( $is_xmlrpc_api ){
+		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+		// redirects url for jetpack network launches, if needed
+		if ( file_exists( $mu_plugin_dir . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php' ) ) {
+			require_once $mu_plugin_dir . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php';
+			VIP_Jetpack_Network_Launch_Redirects::maybe_redirect_jetpack_network_launches( $domain, $path );
+		}
 	}
 }
 
