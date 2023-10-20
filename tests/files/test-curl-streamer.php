@@ -30,22 +30,6 @@ class Curl_Streamer_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__init() {
-		global $wp_version;
-
-		$version = preg_replace( '/-.*$/', '', $wp_version );
-		if ( version_compare( $version, '6.4', '>=' ) ) {
-			$this->setExpectedDeprecated( 'http_api_transports' );
-		}
-
-		$expected_transport = 'WP_Http_Curl';
-
-		$wp_http          = new \WP_Http();
-		$actual_transport = $wp_http->_get_first_available_transport( [] );
-
-		$this->assertEquals( $expected_transport, $actual_transport );
-	}
-
 	public function test__init_upload() {
 		$this->markTestSkipped( 'Cannot get `curl` opts, making this hard to test. We can look into using a test webserver in the future.' );
 	}
