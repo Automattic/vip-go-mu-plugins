@@ -303,7 +303,7 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 	// redirects url for jetpack network launches, if needed
 	if ( file_exists( __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php' ) ) {
 		require_once __DIR__ . '/vip-jetpack/class-vip-jetpack-network-launch-redirects.php';
-		add_action( 'init', [ VIP_Jetpack_Network_Launch_Redirects::class, 'maybe_redirect_jetpack_network_launches' ] );
+		add_action( 'init', [ VIP_Jetpack_Network_Launch_Redirects::class, 'maybe_redirect_jetpack_network_launches_init' ] );
 	}
 }
 

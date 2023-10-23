@@ -1,6 +1,7 @@
 <?php
 
 namespace Automattic\VIP\Config;
+use Automattic\VIP\Utils\Context;
 
 class VIP_Jetpack_Network_Launch_Redirects {
 
@@ -60,14 +61,14 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// 'timestamp' => int, the time it was created
 		// create an array with only the elements that have not expired
 		$valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
-			return $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
+			return true || $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
 		} );
-		
+
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( $domain && $path ) { // TODO test this condition both for when we have a path and when we don't
 			$redirect_url  = '';
 			// If we're handling an xmlrpc request, get only the path up to the last folder.
-			if ( false !== strpos( $path, 'xmlrpc.php' ) ) {	
+			if ( false !== strpos( $path, 'xmlrpc.php' ) ) {
 				$path_parts = explode( '/', $path );
 				array_pop( $path_parts );
 				// join the remaining elements
@@ -96,6 +97,13 @@ class VIP_Jetpack_Network_Launch_Redirects {
 
 	}
 
-
+	// should run only in the init, will load the $domain $path from the request
+	public static function maybe_redirect_jetpack_network_launches_init() {
+		$is_web_or_xmlrpc = Context::is_web_request() || Context::is_xmlrpc_api();
+		if ( ! $is_web_or_xmlrpc ) {
+			return;
+		}
+		self::maybe_redirect_jetpack_network_launches( $_SERVER['HTTP_HOST'] , $_SERVER['REQUEST_URI'] ?? '/' );
+	}
 
 }
