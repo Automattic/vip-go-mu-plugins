@@ -188,7 +188,7 @@ class Connection_Pilot {
 			}
 
 			if ( $backoff_factor > 0 ) {
-				$seconds_elapsed = time() - $last_heartbeat_timestamp;
+				$seconds_elapsed = time() - $this->last_heartbeat['timestamp'];
 				$hours_elapsed   = $seconds_elapsed / HOUR_IN_SECONDS;
 
 				if ( $backoff_factor > $hours_elapsed ) {
