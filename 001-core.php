@@ -173,7 +173,7 @@ add_filter( 'allowed_http_origins', 'vip_only_https_origins', PHP_INT_MAX );
  * @param array $origins
  */
 function vip_only_https_origins( $origins ) {
-    return array_filter( $origins, function( $origin ) {
-        return strpos( $origin, 'https://' ) === 0;
-    });
+	return array_filter( $origins, function ( $origin ) {
+		return strpos( $origin, 'https://' ) === 0;
+	} );
 }
