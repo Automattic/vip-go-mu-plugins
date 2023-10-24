@@ -60,9 +60,11 @@ class VIP_Jetpack_Network_Launch_Redirects {
 		// 'to' => string, the URL to redirect to
 		// 'timestamp' => int, the time it was created
 		// create an array with only the elements that have not expired
-		$valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
-			return true || $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
-		} );
+		// TODO Evaluate if we want to enable the expiration again
+		// $valid_redirects = array_filter( $network_redirects, function ( $redirect ) {
+		// 	return $redirect['timestamp'] > ( time() - self::REDIRECT_TTL_MINUTES * 60 );
+		// } );
+		$valid_redirects = $network_redirects;
 
 		// iterate on the $valid_redirects and se if the request uri matches. If it matches, redirect.
 		if ( $domain && $path ) { // TODO test this condition both for when we have a path and when we don't
@@ -73,6 +75,11 @@ class VIP_Jetpack_Network_Launch_Redirects {
 				array_pop( $path_parts );
 				// join the remaining elements
 				$path = implode( '/', $path_parts );
+			}
+			// extract the query string from the path
+			if ( false !== strpos( $path, '?' ) ) {
+				$path_parts = explode( '?', $path );
+				$path       = $path_parts[0];
 			}
 
 			$uri_unslashed = untrailingslashit( $path );
