@@ -2489,33 +2489,23 @@ class Search_Test extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_enable_ep_query_logging_no_debug_tools_enabled() {
-		add_filter( 'wpcom_vip_qm_enable', '__return_false', PHP_INT_MAX );
+	public function test__maybe_enable_ep_query_logging_no_cap() {
+		wp_set_current_user( 0 );
 
 		$this->init_es();
 
-		$this->assertFalse( defined( 'WP_EP_DEBUG' ) );
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
 	}
 
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test__maybe_enable_ep_query_logging_qm_enabled() {
-		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
-
-		$this->init_es();
-
-		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
-		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__maybe_enable_ep_query_logging_and_qm_enabled() {
-		add_filter( 'wpcom_vip_qm_enable', '__return_true' );
+	public function test__maybe_enable_ep_query_logging_has_cap() {
+		$super_admin = $this->factory()->user->create_and_get( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $super_admin->ID );
 
 		$this->init_es();
 
@@ -2524,6 +2514,26 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
 		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__maybe_enable_ep_query_logging_filtered_cap() {
+		add_filter( 'vip_search_dev_tools_cap', function () {
+			return 'edit_posts';
+		} );
+		$editor = $this->factory()->user->create_and_get( array( 'role' => 'editor' ) );
+		wp_set_current_user( $editor->ID );
+
+		$this->init_es();
+
+		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
+		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
+	}
+
 	public function limit_max_result_window_data() {
 		return [
 			[
