@@ -99,7 +99,7 @@ function rest_callback( \WP_REST_Request $request ) {
  */
 function should_enable_search_dev_tools(): bool {
 	$cap = apply_filters( 'vip_search_dev_tools_cap', 'manage_options' );
-	return ( current_user_can( $cap ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
+	return ( current_user_can( $cap ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) && function_exists( 'ep_get_query_log' );
 }
 
 /**
