@@ -16,8 +16,6 @@ namespace Automattic\VIP\Search\Dev_Tools;
 
 use Automattic\VIP\Search\Search;
 
-define( 'SEARCH_DEV_TOOLS_CAP', 'manage_options' );
-
 add_action( 'rest_api_init', __NAMESPACE__ . '\register_rest_routes' );
 add_action( 'admin_bar_menu', __NAMESPACE__ . '\admin_bar_node', PHP_INT_MAX );
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
@@ -100,7 +98,8 @@ function rest_callback( \WP_REST_Request $request ) {
  * @return boolean
  */
 function should_enable_search_dev_tools(): bool {
-	return ( current_user_can( SEARCH_DEV_TOOLS_CAP ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
+	$cap = apply_filters( 'vip_search_dev_tools_cap', 'manage_options' );
+	return ( current_user_can( $cap ) || is_debug_mode_enabled() ) && function_exists( 'ep_get_query_log' );
 }
 
 /**
