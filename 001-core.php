@@ -174,6 +174,6 @@ add_filter( 'allowed_http_origins', 'vip_only_https_origins' );
  */
 function vip_only_https_origins( $origins ) {
 	return array_filter( $origins, function ( $origin ) {
-		return str_starts_with( $origin, 'https://' ) === 0;
+		return str_starts_with( $origin, 'https://' );
 	} );
 }
