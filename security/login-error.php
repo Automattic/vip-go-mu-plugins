@@ -1,5 +1,6 @@
 <?php
 namespace Automattic\VIP\Security;
+
 use WP_Error;
 
 const FORGET_PWD_MESSAGE = 'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.';
@@ -21,7 +22,7 @@ function use_ambiguous_login_error( $error ): string {
 	}
 
 	// For lostpassword action, use different message.
-	if ( isset( $_GET['action'] ) && 'lostpassword' === $_GET['action'] ) {
+	if ( isset( $_GET['action'] ) && 'lostpassword' === $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return FORGET_PWD_MESSAGE;
 	}
 
@@ -55,7 +56,7 @@ add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 
  * @since 1.1
  */
 function use_ambiguous_confirmation( $errors ): WP_Error {
-	if ( isset( $_GET['checkemail'] ) && 'confirm' === $_GET['checkemail'] ) {
+	if ( isset( $_GET['checkemail'] ) && 'confirm' === $_GET['checkemail'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		foreach ( $errors as &$err ) {
 			if ( isset( $err['confirm'][0] ) ) {
 				$err['confirm'][0] = FORGET_PWD_MESSAGE;
