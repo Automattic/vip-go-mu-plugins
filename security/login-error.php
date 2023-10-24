@@ -7,11 +7,11 @@ const FORGET_PWD_MESSAGE = 'If there is an account associated with the username/
 
 /**
  * Use a login message that does not reveal the type of login error in an attempted brute-force.
- * 
+ *
  * @param string $error Login error message.
- * 
+ *
  * @return string $error Login error message.
- * 
+ *
  * @since 1.1
  */
 function use_ambiguous_login_error( $error ): string {
@@ -48,11 +48,11 @@ add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 
 
 /**
  * Use a message that does not reveal the type of login error in an attempted brute-force on forget password.
- * 
+ *
  * @param WP_Error $errors WP Error object.
- * 
+ *
  * @return WP_Error $errors WP Error object.
- * 
+ *
  * @since 1.1
  */
 function use_ambiguous_confirmation( $errors ): WP_Error {
