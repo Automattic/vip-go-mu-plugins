@@ -89,11 +89,13 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	public function get_test_data__update_backoff_factor() {
 		return [
-			'null' => [ null, 1 ],
-			'zero' => [ 0, 1 ],
-			'one'  => [ 1, 2 ],
-			'two'  => [ 2, 4 ],
-			'max'  => [ 2048, 2048 ],
+			'null'       => [ null, 1 ],
+			'zero'       => [ 0, 1 ],
+			'one_hour'   => [ 1, 2 ],
+			'two_hours'  => [ 2, 4 ],
+			'three_days' => [ 72, 144 ],
+			'max'        => [ 168, 168 ],
+			'over_max'   => [ 2000, 168 ],
 		];
 	}
 
