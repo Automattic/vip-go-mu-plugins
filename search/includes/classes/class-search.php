@@ -498,7 +498,7 @@ class Search {
 	 * This is separate from setup_hooks because some parts of setup_hooks require ElasticPress.
 	 */
 	protected function maybe_enable_ep_query_logging() {
-		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_query_monitor_enabled' ] );
+		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_debug_or_has_cap' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_ep_get_query_log_function' ] );
 	}
 
@@ -507,15 +507,15 @@ class Search {
 	}
 
 	/**
-	 * Check if query monitor or debug bar are enabled. Also check for the debug mode being enabled.
+	 * Check if debug mode is enabled or has search dev tools cap.
 	 * If so, define WP_EP_DEBUG as true so ElasticPress enables query logging.
 	 */
-	public function enable_ep_query_logging_if_query_monitor_enabled() {
+	public function enable_ep_query_logging_if_debug_or_has_cap() {
 		if ( defined( 'WP_EP_DEBUG' ) ) {
 			return;
 		}
 
-		if ( apply_filters( 'wpcom_vip_qm_enable', false ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
+		if ( current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
 			define( 'WP_EP_DEBUG', true );
 		}
 	}
