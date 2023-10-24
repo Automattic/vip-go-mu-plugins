@@ -169,7 +169,7 @@ add_filter( 'allowed_http_origins', 'vip_only_https_origins' );
 
 /**
  * Only allow HTTPS origins on VIP
- * 
+ *
  * @param array $origins
  */
 function vip_only_https_origins( $origins ) {
