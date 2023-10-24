@@ -57,12 +57,13 @@ add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 
  */
 function use_ambiguous_confirmation( $errors ): WP_Error {
 	if ( isset( $_GET['checkemail'] ) && 'confirm' === $_GET['checkemail'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		foreach ( $errors as &$err ) {
-			if ( isset( $err['confirm'][0] ) ) {
-				$err['confirm'][0] = FORGET_PWD_MESSAGE;
-			}
+		$messages = $errors->get_error_messages( 'confirm' );
+		if ( ! empty( $messages ) ) {
+			$errors->remove( 'confirm' );
+			$errors->add( 'confirm', FORGET_PWD_MESSAGE, 'message' );
 		}
 	}
+
 	return $errors;
 }
 add_filter( 'wp_login_errors', __NAMESPACE__ . '\use_ambiguous_confirmation', 99 );
