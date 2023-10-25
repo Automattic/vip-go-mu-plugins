@@ -50,6 +50,8 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		add_filter( 'jetpack_get_default_modules', array( $this, 'filter_jetpack_get_default_modules' ), 99 );
 		// @TODO: Add VIP scanner check to watch for people unhooking this
 		add_filter( 'pre_update_option_jetpack_active_modules', array( $this, 'filter_pre_update_option_jetpack_active_modules' ), 99, 2 );
+
+		add_filter( 'jetpack_disable_scan', '__return_true' ); // Disables loading of scan related code since we don't use it on VIP
 	}
 
 	// HOOKS
