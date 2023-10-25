@@ -80,7 +80,12 @@ final class VIP_SMTP {
 	 * @param PHPMailer $phpmailer 
 	 */
 	public function phpmailer_init( &$phpmailer ): void {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
+			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
+		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
