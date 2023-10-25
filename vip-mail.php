@@ -46,6 +46,17 @@ if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) 
 }
 
 class VIP_Noop_Mailer {
+
+	/**
+	 * @var string
+	 */
+	public $subject;
+
+	/**
+	 * @var string
+	 */
+	public $recipients;
+
 	public function __construct( $phpmailer ) {
 		$this->subject    = $phpmailer->Subject ?? '[No Subject]';
 		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
