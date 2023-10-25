@@ -10,6 +10,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
+namespace Automattic\VIP\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 
