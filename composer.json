@@ -8,7 +8,7 @@
         "yoast/phpunit-polyfills": "2.0.0",
         "johnpbloch/wordpress-core": "6.3.2",
         "wp-phpunit/wp-phpunit": "6.3.1",
-        "wp-cli/wp-cli": "2.8.1"
+        "wp-cli/wp-cli": "2.9.0"
     },
     "config": {
         "allow-plugins": {
