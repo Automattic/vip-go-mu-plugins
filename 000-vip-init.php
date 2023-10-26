@@ -227,7 +227,6 @@ require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
 require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
-require_once __DIR__ . '/vip-helpers/class-vip-media-library-caching.php';
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 

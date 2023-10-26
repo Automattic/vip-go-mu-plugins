@@ -1,18 +1,18 @@
 <?php
 /**
- * Media library caching helpers.
+ * Media library caching.
  * 
- * @package vip-helpers
+ * @package vip-performance
  */
 
  // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
 
-namespace Automattic\VIP\Helpers;
+namespace Automattic\VIP\Performance;
 
 /**
- * VIP Media Library Caching class.
+ * Media Library Caching class.
  */
-class VIP_Media_Library_Caching {
+class Media_Library_Caching {
 	public const MINIMUM_WORDPRESS_VERSION          = '6.4';
 	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types_';
 	public const USING_DEFAULT_MIME_TYPES_CACHE_KEY = 'vip_using_default_mime_types_';
@@ -207,4 +207,4 @@ class VIP_Media_Library_Caching {
 	}
 }
 
-new VIP_Media_Library_Caching();
+new Media_Library_Caching();
