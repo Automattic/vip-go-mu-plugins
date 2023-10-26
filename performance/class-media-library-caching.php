@@ -17,7 +17,7 @@ class Media_Library_Caching {
 	public const CACHE_GROUP                        = 'mime_types';
 	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types_';
 	public const USING_DEFAULT_MIME_TYPES_CACHE_KEY = 'vip_using_default_mime_types_';
-	public const MAX_POSTS_TO_QUERY                 = 100000;
+	public const MAX_POSTS_TO_QUERY_DEFAULT         = 100000; // TODO: benchmark this value.
 
 	/**
 	 * Class initialization.
@@ -63,8 +63,16 @@ class Media_Library_Caching {
 		$mime_types = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false === $mime_types ) {
-			$attachment_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) );
-			$use_defaults     = $attachment_count > self::MAX_POSTS_TO_QUERY;
+
+			/**
+			 * Filters the max number of posts to query for dynamic MIME type caching.
+			 *
+			 * @param bool $max_posts_to_query Max number of posts to query.
+			 */
+			$max_posts_to_query = apply_filters( 'vip_max_posts_to_query_for_mime_type_caching', self::MAX_POSTS_TO_QUERY_DEFAULT );
+
+			$attachment_count = $max_posts_to_query > 0 ? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) ) : 1;
+			$use_defaults     = $attachment_count > $max_posts_to_query;
 
 			if ( $use_defaults ) {
 				// If there are too many posts to query, use the default mime types.
