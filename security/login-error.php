@@ -22,8 +22,7 @@ function use_ambiguous_login_error( $error ): string {
 	// For lostpassword action, use different message.
 	if ( isset( $_GET['action'] ) && 'lostpassword' === $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		return esc_html__(
-			'If there is an account associated with the username/email address, you will receive an email with a 
-			link to reset your password.',
+			'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.',
 			'vip'
 		);
 	}
