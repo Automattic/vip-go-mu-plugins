@@ -14,6 +14,7 @@ namespace Automattic\VIP\Performance;
  */
 class Media_Library_Caching {
 	public const MINIMUM_WORDPRESS_VERSION          = '6.4';
+	public const CACHE_GROUP                        = 'mime_types';
 	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types_';
 	public const USING_DEFAULT_MIME_TYPES_CACHE_KEY = 'vip_using_default_mime_types_';
 	public const MAX_POSTS_TO_QUERY                 = 100000;
@@ -59,7 +60,7 @@ class Media_Library_Caching {
 		global $wpdb;
 
 		$cache_key  = self::AVAILABLE_MIME_TYPES_CACHE_KEY . $type;
-		$mime_types = wp_cache_get( $cache_key );
+		$mime_types = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 		if ( false === $mime_types ) {
 			$attachment_count = $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) );
@@ -74,11 +75,11 @@ class Media_Library_Caching {
 			}
 
 			// Cache the results.
-			wp_cache_set( $cache_key, $mime_types );
-			wp_cache_set( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type, $use_defaults );
+			wp_cache_set( $cache_key, $mime_types, self::CACHE_GROUP );
+			wp_cache_set( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type, $use_defaults, self::CACHE_GROUP );
 		}
 
-		// If there were any previous mime types, merge them with the cached mime types.
+		// If there were any previous MIME types, merge them with the cached MIME types.
 		if ( is_array( $filtered_mime_types ) ) {
 			$mime_types = array_unique( array_merge( $filtered_mime_types, $mime_types ) );
 		}
@@ -110,7 +111,7 @@ class Media_Library_Caching {
 	public static function update_post_mime_types_cache_on_add( $post_id ) {
 		$type = get_post_type( $post_id );
 
-		if ( wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type ) ) {
+		if ( wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type, self::CACHE_GROUP ) ) {
 			return;
 		}
 
@@ -136,11 +137,11 @@ class Media_Library_Caching {
 			return;
 		}
 
-		if ( ! wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $old_post_type ) ) {
-			self::remove_mime_type_from_cache( $old_mime_type, $old_post_type, $post_id );
+		if ( ! wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $old_post_type, self::CACHE_GROUP ) ) {
+			self::delete_mime_type_cache( $old_post_type );
 		}
 
-		if ( ! wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $new_post_type ) ) {
+		if ( ! wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $new_post_type, self::CACHE_GROUP ) ) {
 			self::add_mime_type_to_cache( $new_mime_type, $new_post_type );
 		}
 	}
@@ -154,63 +155,42 @@ class Media_Library_Caching {
 	public static function update_post_mime_types_cache_on_delete( $post_id, $post ) {
 		$type = $post->post_type;
 
-		if ( wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type ) ) {
+		if ( wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY . $type, self::CACHE_GROUP ) ) {
 			return;
 		}
 
-		$mime_type = $post->post_mime_type;
-		self::remove_mime_type_from_cache( $mime_type, $type, $post_id );
+		self::delete_mime_type_cache( $type );
 	}
 
 	/**
 	 * Add a MIME type to the cache.
 	 *
-	 * @param string $mime_type The mime type to add.
+	 * @param string $mime_type The MIME type to add.
 	 * @param string $type      The post type name.
 	 */
 	private static function add_mime_type_to_cache( $mime_type, $type ) {
 		if ( false !== $mime_type ) {
 			$cache_key  = self::AVAILABLE_MIME_TYPES_CACHE_KEY . $type;
-			$mime_types = wp_cache_get( $cache_key );
+			$mime_types = wp_cache_get( $cache_key, self::CACHE_GROUP );
 
 			if ( false !== $mime_types ) {
 				// Add the new mime type to the cache if not present.
 				if ( ! in_array( $mime_type, $mime_types, true ) ) {
 					$mime_types[] = $mime_type;
-					wp_cache_set( $cache_key, $mime_types );
+					wp_cache_set( $cache_key, $mime_types, self::CACHE_GROUP );
 				}
 			}
 		}
 	}
 
 	/**
-	 * Remove a MIME type from the cache.
+	 * Delete the MIME type the cache.
 	 *
-	 * @param string   $mime_type       The mime type to remove.
-	 * @param string   $type            The post type name.
-	 * @param int|null $exclude_post_id The post ID to exclude from the query. Default null.
+	 * @param string $type The post type name.
 	 */
-	private static function remove_mime_type_from_cache( $mime_type, $type, $exclude_post_id = null ) {
-		global $wpdb;
-
-		if ( false !== $mime_type ) {
-			$cache_key  = self::AVAILABLE_MIME_TYPES_CACHE_KEY . $type;
-			$mime_types = wp_cache_get( $cache_key );
-
-			if ( false !== $mime_types ) {
-				// Check if there are any posts left with the mime type before removing it from the cache.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching
-				$count = $wpdb->get_col( $wpdb->prepare( "SELECT 1 FROM $wpdb->posts WHERE ID != %d AND post_type = %s AND post_mime_type = %s LIMIT 1", $exclude_post_id, $type, $mime_type ) );
-
-				if ( $count < 1 ) {
-					// Remove the mime type from the cache if present.
-					if ( in_array( $mime_type, $mime_types, true ) ) {
-						$mime_types = array_diff( $mime_types, array( $mime_type ) );
-						wp_cache_set( $cache_key, $mime_types );
-					}
-				}
-			}
-		}
+	private static function delete_mime_type_cache( $type ) {
+		$cache_key = self::AVAILABLE_MIME_TYPES_CACHE_KEY . $type;
+		wp_cache_delete( $cache_key, self::CACHE_GROUP );
 	}
 }
 
