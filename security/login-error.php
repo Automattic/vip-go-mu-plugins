@@ -3,8 +3,6 @@ namespace Automattic\VIP\Security;
 
 use WP_Error;
 
-const FORGET_PWD_MESSAGE = 'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.';
-
 /**
  * Use a login message that does not reveal the type of login error in an attempted brute-force.
  *
@@ -23,7 +21,11 @@ function use_ambiguous_login_error( $error ): string {
 
 	// For lostpassword action, use different message.
 	if ( isset( $_GET['action'] ) && 'lostpassword' === $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		return FORGET_PWD_MESSAGE;
+		return esc_html__(
+			'If there is an account associated with the username/email address, you will receive an email with a 
+			link to reset your password.',
+			'vip'
+		);
 	}
 
 	$err_codes = $errors->get_error_codes();
@@ -37,7 +39,8 @@ function use_ambiguous_login_error( $error ): string {
 
 	foreach ( $err_types as $err ) {
 		if ( in_array( $err, $err_codes, true ) ) {
-			$error = '<strong>Error</strong>: The username/email address or password is incorrect. Please try again.';
+			$error = '<strong>' . esc_html__( 'Error', 'vip' ) . '</strong>: ' . 
+			esc_html__( 'The username/email address or password is incorrect. Please try again.', 'vip' );
 			break;
 		}
 	}
@@ -60,7 +63,12 @@ function use_ambiguous_confirmation( $errors ): WP_Error {
 		$messages = $errors->get_error_messages( 'confirm' );
 		if ( ! empty( $messages ) ) {
 			$errors->remove( 'confirm' );
-			$errors->add( 'confirm', FORGET_PWD_MESSAGE, 'message' );
+			$errors->add(
+				'confirm',
+				esc_html__( 'If there is an account associated with the username/email address, you will receive an email with a 
+				link to reset your password.', 'vip' ),
+				'message'
+			);
 		}
 	}
 
