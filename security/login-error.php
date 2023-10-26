@@ -64,8 +64,7 @@ function use_ambiguous_confirmation( $errors ): WP_Error {
 			$errors->remove( 'confirm' );
 			$errors->add(
 				'confirm',
-				esc_html__( 'If there is an account associated with the username/email address, you will receive an email with a 
-				link to reset your password.', 'vip' ),
+				esc_html__( 'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.', 'vip' ),
 				'message'
 			);
 		}

@@ -33,7 +33,10 @@ class Login_Error_Test extends WP_UnitTestCase {
 		$actual             = apply_filters( 'wp_login_errors', $errors, admin_url() );
 
 		self::assertInstanceOf( WP_Error::class, $actual );
-		self::assertContains( FORGET_PWD_MESSAGE, $actual->get_error_messages( 'confirm' ) );
+		self::assertContains(
+			'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.',
+			$actual->get_error_messages( 'confirm' )
+		);
 	}
 
 	public function test_ambiguous_reset(): void {
@@ -48,6 +51,9 @@ class Login_Error_Test extends WP_UnitTestCase {
 		$_GET['action'] = 'lostpassword';
 
 		$actual = apply_filters( 'login_errors', $message );
-		self::assertSame( FORGET_PWD_MESSAGE, $actual );
+		self::assertSame(
+			'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.',
+			$actual
+		);
 	}
 }
