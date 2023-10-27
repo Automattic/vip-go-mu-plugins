@@ -4,8 +4,6 @@
  */
 
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.count_user_posts_count_user_posts
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_title_get_page_by_title
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.attachment_url_to_postid_attachment_url_to_postid
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.url_to_postid_url_to_postid
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -97,92 +95,6 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 
 	$term_object = get_term_by( 'slug', $term, $taxonomy );
 	return get_term_link( $term_object );
-}
-
-/**
- * Cached version of get_page_by_title so that we're not making unnecessary SQL all the time
- *
- * @param string $page_title Page title
- * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
- * @param string $post_type Optional. Post type; default is 'page'.
- * @return WP_Post|null WP_Post on success or null on failure
- * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
- */
-function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
-	global $wp_version;
-	if ( version_compare( $wp_version, '6.2', '<' ) ) {
-		_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
-	}
-
-	$cache_key = $post_type . '_' . sanitize_key( $title );
-	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
-
-	if ( false === $page_id ) {
-		if ( ! function_exists( 'is_user_logged_in' ) ) {
-			// If too early to call `WP_Query`, fallback to deprecated `get_page_by_title`
-			// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_page_by_titleFound
-			$page    = get_page_by_title( $title, OBJECT, $post_type );
-			$page_id = $page ? $page->ID : 0;
-		} else {
-			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
-			$query   = new WP_Query(
-				array(
-					'title'          => $title,
-					'post_type'      => $post_type,
-					'posts_per_page' => 1,
-					'orderby'        => 'ID',
-					'order'          => 'ASC',
-					'no_found_rows'  => true,
-					'fields'         => 'ids',
-				),
-			);
-			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
-		}
-		wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
-	}
-
-	if ( $page_id ) {
-		return get_post( $page_id, $output );
-	}
-
-	return null;
-}
-
-/**
- * Cached version of get_page_by_path so that we're not making unnecessary SQL all the time
- *
- * @param string        $page_path Page path
- * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
- * @param string|array  $post_type Optional. Post type; default is 'page'.
- * @return WP_Post|null WP_Post on success or null on failure
- * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
- */
-function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	global $wp_version;
-	if ( version_compare( $wp_version, '6.1', '<' ) ) {
-		_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
-	}
-
- 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-	$cache_key = md5( $page_path . serialize( $post_type ) );
-	$page_id   = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
-
-	if ( false === $page_id ) {
-		$page    = get_page_by_path( $page_path, $output, $post_type );
-		$page_id = $page ? $page->ID : 0;
-		if ( 0 === $page_id ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
-		} else {
-			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', 0 ); // We only store the ID to keep our footprint small
-		}
-	}
-
-	if ( $page_id ) {
-		return get_post( $page_id, $output );
-	}
-
-	return null;
 }
 
 /**
