@@ -6,6 +6,8 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../performance/class-media-library-caching.php';
 
+// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited
+
 class Media_Library_Caching_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
@@ -38,16 +40,86 @@ class Media_Library_Caching_Test extends WP_UnitTestCase {
 	}
 
 	protected function mock_attachments_data() {
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 01', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/jpeg' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 02', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/jpeg' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 03', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/jpeg' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 04', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/gif' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 05', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/gif' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 06', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'image/png' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 07', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'application/octet-stream' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 08', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'video/mp4' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 09', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'audio/mpeg' ) );
-		$this->factory->post->create( array( 'post_title' => 'Mock Attachment 10', 'post_status' => 'inherit', 'post_type' => 'attachment', 'post_mime_type' => 'application/pdf' ) );
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 01',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/jpeg',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 02',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/jpeg',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 03',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/jpeg',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 04',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/gif',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 05',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/gif',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 06',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'image/png',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 07',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'application/octet-stream',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 08',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'video/mp4',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 09',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'audio/mpeg',
+			) 
+		);
+		$this->factory->post->create(
+			array(
+				'post_title'     => 'Mock Attachment 10',
+				'post_status'    => 'inherit',
+				'post_type'      => 'attachment',
+				'post_mime_type' => 'application/pdf',
+			) 
+		);
 	}
 
 	public function test__filters_not_loaded_for_old_versions() {

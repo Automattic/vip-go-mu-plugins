@@ -57,8 +57,6 @@ class Media_Library_Caching {
 	 * @return array An array of MIME types.
 	 */
 	public static function get_cached_post_mime_types( $filtered_mime_types, $type ) {
-		global $wpdb;
-
 		if ( 'attachment' !== $type ) {
 			return $filtered_mime_types;
 		}
@@ -74,6 +72,7 @@ class Media_Library_Caching {
 			 */
 			$max_posts_to_query = apply_filters( 'vip_max_posts_to_query_for_mime_type_caching', self::MAX_POSTS_TO_QUERY_DEFAULT );
 
+			global $wpdb;
 			$attachment_count = $max_posts_to_query > 0 ? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) ) : 1;
 			$use_defaults     = $attachment_count > $max_posts_to_query;
 
