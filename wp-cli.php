@@ -46,6 +46,16 @@ function maybe_toggle_is_ssl() {
 }
 
 /**
+ * Disable the SAVEQUERIES for all the WP CLI interactions, unless already defined.
+ * SAVEQUERIES tracks is quite expensive if turned on and can lead to OOM and performance issues, it should be enabled only when needed.
+ */
+function maybe_disable_savequeries(){
+	if ( ! defined( 'SAVEQUERIES' ) ) {
+		define( 'SAVEQUERIES', false );
+	}
+}
+
+/**
  * Disable `display_errors` for all wp-cli interactions on production servers.
  *
  * Warnings and notices can break things like JSON output,
@@ -70,6 +80,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	disable_display_errors();
 
 	init_is_ssl_toggle();
+
+	maybe_disable_savequeries();
 
 	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
 		require $command;
