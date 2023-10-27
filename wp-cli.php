@@ -49,7 +49,7 @@ function maybe_toggle_is_ssl() {
  * Disable the SAVEQUERIES for all the WP CLI interactions, unless already defined.
  * SAVEQUERIES tracks is quite expensive if turned on and can lead to OOM and performance issues, it should be enabled only when needed.
  */
-function maybe_disable_savequeries(){
+function maybe_disable_savequeries() {
 	if ( ! defined( 'SAVEQUERIES' ) ) {
 		define( 'SAVEQUERIES', false );
 	}
