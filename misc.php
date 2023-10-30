@@ -132,35 +132,6 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 	return $url;
 }
 
-
-function wpcom_vip_query_log() {
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-	if ( '/cache-healthcheck?' === $request_uri ) {
-		return;
-	}
-
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Recommended
-	$action      = $_REQUEST['action'] ?? 'N/A';
-	$num_queries = count( $GLOBALS['wpdb']->queries );
-	// phpcs:ignore WordPress.PHP.DevelopmentFunctions
-	error_log( 'WPCOM VIP Query Log for ' . $request_uri . '  (action: ' . $action . ') ' . $num_queries . 'q: ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
-}
-
-/**
- * Think carefully before enabling this on a production site. Then
- * if you still want to do it, think again, and talk it over with
- * someone else.
- */
-if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
-	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
-		define( 'SAVEQUERIES', true );
-	}
-	// For hyperdb, which doesn't use SAVEQUERIES
-	$GLOBALS['wpdb']->save_queries = SAVEQUERIES;
-	add_action( 'shutdown', 'wpcom_vip_query_log' );
-}
-
 /**
  * Improve perfomance of the `_WP_Editors::wp_link_query` method
  *
