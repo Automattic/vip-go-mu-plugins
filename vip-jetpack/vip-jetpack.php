@@ -73,6 +73,25 @@ add_filter( 'jetpack_get_available_modules', function ( $modules ) {
 }, 999 );
 
 /**
+ * Do not initialize my jetpack admin page for VIP Machine User
+ */
+add_action( 'plugins_loaded', function () {
+	if ( ! is_admin() || wp_doing_ajax() || ! method_exists( 'Jetpack', 'connection' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
+		return;
+	}
+
+	$jp_connection = Jetpack::connection();
+	if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
+		$connection_owner  = $jp_connection->get_connection_owner();
+		$is_vip_connection = isset( $connection_owner->user_login ) && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
+
+		if ( $is_vip_connection ) {
+			add_filter( 'jetpack_my_jetpack_should_initialize', '__return_false' );
+		}
+	}
+} );
+
+/**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
  *
  * Still allows changing the value per site, but locks it into the range
