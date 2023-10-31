@@ -17,7 +17,7 @@ class Media_Library_Caching {
 	public const CACHE_GROUP                        = 'mime_types';
 	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types';
 	public const USING_DEFAULT_MIME_TYPES_CACHE_KEY = 'vip_using_default_mime_types';
-	public const MAX_POSTS_TO_QUERY_DEFAULT         = 100000;
+	public const MAX_POSTS_TO_QUERY_DEFAULT         = 500000;
 
 	/**
 	 * Class initialization.
