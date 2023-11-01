@@ -114,12 +114,21 @@ class Media_Library_Caching {
 	}
 
 	/**
+	 * Check if the default MIME types are being used.
+	 *
+	 * @return bool Whether the default MIME types are being used.
+	 */
+	public static function is_using_default_mime_types() {
+		return wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+	}
+
+	/**
 	 * Update the MIME types cache when a new post is added.
 	 *
 	 * @param int $post_id The post ID.
 	 */
 	public static function update_post_mime_types_cache_on_add( $post_id ) {
-		if ( wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP ) ) {
+		if ( self::is_using_default_mime_types() ) {
 			return;
 		}
 
@@ -147,7 +156,7 @@ class Media_Library_Caching {
 	 */
 	public static function update_post_mime_types_cache_on_edit( $post_id, $post_after, $post_before ) {
 		// Only if the MIME type changed.
-		if ( $post_before->post_mime_type !== $post_after->post_mime_type ) {
+		if ( ! self::is_using_default_mime_types() && $post_before->post_mime_type !== $post_after->post_mime_type ) {
 			wp_cache_delete( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 		}
 	}
@@ -156,7 +165,9 @@ class Media_Library_Caching {
 	 * Update the MIME types cache when a post is deleted.
 	 */
 	public static function update_post_mime_types_cache_on_delete() {
-		wp_cache_delete( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+		if ( ! self::is_using_default_mime_types() ) {
+			wp_cache_delete( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+		}
 	}
 }
 

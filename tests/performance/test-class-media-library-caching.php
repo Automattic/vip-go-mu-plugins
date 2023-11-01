@@ -20,6 +20,7 @@ class Media_Library_Caching_Test extends WP_UnitTestCase {
 		parent::tearDown();
 		remove_all_filters( 'vip_cache_mime_types' );
 		remove_all_filters( 'vip_max_posts_to_query_for_mime_type_caching' );
+		remove_all_filters( 'pre_get_available_post_mime_types' );
 	}
 
 	protected function check_wp_version() {
