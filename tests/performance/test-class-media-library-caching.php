@@ -16,7 +16,7 @@ class Media_Library_Caching_Test extends WP_UnitTestCase {
 		$this->mock_attachments_data();
 	}
 
-	protected function tearDown(): void {
+	public function tearDown(): void {
 		parent::tearDown();
 		remove_all_filters( 'vip_cache_mime_types' );
 		remove_all_filters( 'vip_max_posts_to_query_for_mime_type_caching' );
