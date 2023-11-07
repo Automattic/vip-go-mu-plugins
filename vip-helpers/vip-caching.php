@@ -96,6 +96,11 @@ function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
  */
 
 function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
+	global $wp_version;
+	if ( version_compare( $wp_version, '6.0', '<' ) ) {
+		_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
+	}
+
 	// If $parent is not null, let's skip the cache.
 	if ( null !== $parent ) {
 		return term_exists( $term, $taxonomy, $parent );
@@ -166,6 +171,11 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
+	global $wp_version;
+	if ( version_compare( $wp_version, '6.2', '<' ) ) {
+		_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
+	}
+
 	$cache_key = $post_type . '_' . sanitize_key( $title );
 	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
 
@@ -210,7 +220,12 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+	global $wp_version;
+	if ( version_compare( $wp_version, '6.1', '<' ) ) {
+		_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+	}
+
+ 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 	$cache_key = md5( $page_path . serialize( $post_type ) );
 	$page_id   = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
 
