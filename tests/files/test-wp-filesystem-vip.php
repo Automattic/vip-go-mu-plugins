@@ -6,7 +6,9 @@ namespace Automattic\VIP\Files;
 
 use Automattic\Test\Constant_Mocker;
 use ErrorException;
+use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
+use WP_Filesystem_VIP;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip.php';
@@ -350,5 +352,31 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		// Test languages install
 		$lang_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/languages/test.file', 'write' ] );
 		$this->assertEquals( $lang_install_result, $this->fs_direct_mock );
+	}
+
+	public function test_move_with_no_filesystem(): void {
+		global $wp_filesystem;
+		$save_wp_filesystem = $wp_filesystem;
+
+		try {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- This is the point of the test.
+			$wp_filesystem = null;
+
+			$ok = WP_Filesystem();
+			self::assertTrue( $ok );
+
+			self::assertInstanceOf( WP_Filesystem_VIP::class, $wp_filesystem );
+			/** @var WP_Filesystem_Base $wp_filesystem */
+
+			$tmp    = get_temp_dir();
+			$source = $tmp . 'source.txt';
+			$dest   = $tmp . 'dest.txt';
+
+			$actual = $wp_filesystem->move( $source, $dest );
+			self::assertFalse( $actual );
+		} finally {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$wp_filesystem = $save_wp_filesystem;
+		}
 	}
 }
