@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d1f88f8ce41eb6967141e0fd5bd7c868",
+    "content-hash": "1fe86371ff7b9d490927abb363747997",
     "packages": [],
     "packages-dev": [
         {
@@ -305,16 +305,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.3.2",
+            "version": "6.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "0a18695e2ae028ea8485c45053c14525544c1dc7"
+                "reference": "9affce6bea176c5449353603f888cc6b8b066778"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/0a18695e2ae028ea8485c45053c14525544c1dc7",
-                "reference": "0a18695e2ae028ea8485c45053c14525544c1dc7",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/9affce6bea176c5449353603f888cc6b8b066778",
+                "reference": "9affce6bea176c5449353603f888cc6b8b066778",
                 "shasum": ""
             },
             "require": {
@@ -322,7 +322,7 @@
                 "php": ">=7.0.0"
             },
             "provide": {
-                "wordpress/core-implementation": "6.3.2"
+                "wordpress/core-implementation": "6.4.0"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -349,7 +349,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2023-10-12T19:02:24+00:00"
+            "time": "2023-11-07T19:31:18+00:00"
         },
         {
             "name": "mustache/mustache",
@@ -3070,5 +3070,5 @@
     "platform-overrides": {
         "php": "7.4"
     },
-    "plugin-api-version": "2.3.0"
+    "plugin-api-version": "2.6.0"
 }
