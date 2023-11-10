@@ -10,6 +10,7 @@ require_once __DIR__ . '/class-wp-filesystem-vip-uploads.php';
 require_once __DIR__ . '/class-api-client.php';
 
 use WP_Error;
+use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
 
 class WP_Filesystem_VIP extends \WP_Filesystem_Base {
@@ -218,6 +219,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
+		if ( $source_transport instanceof WP_Filesystem_Direct && $destination_transport instanceof WP_Filesystem_Direct ) {
+			return $source_transport->copy( $source, $destination, $overwrite, $mode );
+		}
+
 		$destination_exists = $destination_transport->exists( $destination );
 		if ( ! $overwrite && $destination_exists ) {
 			/* translators: 1: destination file path 2: overwrite param 3: `true` boolean value */
@@ -248,13 +253,24 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
-		$copy_results = $this->copy( $source, $destination, $overwrite );
-		if ( false === $copy_results ) {
-			return false;
+		$source_transport      = $this->get_transport_for_path( $source );
+		$destination_transport = $this->get_transport_for_path( $destination, 'write' );
+		if ( $source_transport instanceof WP_Filesystem_Direct && $destination_transport instanceof WP_Filesystem_Direct ) {
+			return $source_transport->move( $source, $destination, $overwrite );
 		}
 
-		// We don't need to set the errors here since delete() will take care of it
-		return $this->delete( $source );
+		// WP_Filesystem_Direct::get_contents() invoked by copy() will return '' for directories; this will result in directories being copied as empty files.
+		if ( $source_transport instanceof WP_Filesystem_Base && $source_transport->is_file( $source ) ) {
+			$copy_results = $this->copy( $source, $destination, $overwrite );
+			if ( false === $copy_results ) {
+				return false;
+			}
+
+			// We don't need to set the errors here since delete() will take care of it
+			return $this->delete( $source );
+		}
+
+		return false;
 	}
 
 	/**
