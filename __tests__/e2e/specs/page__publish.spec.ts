@@ -34,6 +34,7 @@ test( 'publish a Page', async ( { page } ) => {
 
     await test.step( 'Write Page', async () => {
         editorPage = new EditorPage( page );
+        await editorPage.dismissPatternSelector();
         await editorPage.enterTitle( titleText );
         await editorPage.enterText( bodyText );
         await editorPage.addImage( 'test_media/image_01.jpg' );
