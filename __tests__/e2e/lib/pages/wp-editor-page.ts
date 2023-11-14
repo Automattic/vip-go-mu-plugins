@@ -48,6 +48,9 @@ const selectors = {
     desktopEditorSidebarButton: 'button[aria-label="Block editor sidebar"]:visible',
     desktopDashboardLink: 'a[aria-description="Returns to the dashboard"]:visible',
     mobileDashboardLink: 'a[aria-current="page"]:visible',
+
+    // Choose a pattern
+    choosePatternCloseButton: '.components-modal__screen-overlay .components-modal__header button',
 };
 
 export class EditorPage {
@@ -76,6 +79,22 @@ export class EditorPage {
         }
 
         const closeButton = this.page.locator( selectors.welcomeTourCloseButton );
+        return closeButton.click( {
+            delay: 20,
+        } );
+    }
+
+    async dismissPatternSelector(): Promise<void> {
+        try {
+            await this.page.waitForSelector( selectors.choosePatternCloseButton, {
+                state: 'visible',
+                timeout: 5000,
+            } );
+        } catch ( err ) {
+            return;
+        }
+
+        const closeButton = this.page.locator( selectors.choosePatternCloseButton );
         return closeButton.click( {
             delay: 20,
         } );
