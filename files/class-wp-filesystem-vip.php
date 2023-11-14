@@ -25,6 +25,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$this->method = 'vip';
 		$this->errors = new WP_Error();
 
+		if ( ! is_array( $dependencies ) || 2 !== count( $dependencies ) ) {
+			$dependencies = request_filesystem_credentials( site_url() );
+		}
+
 		list( $filesystem_uploads, $filesystem_direct ) = $dependencies;
 
 		$this->uploads = $filesystem_uploads;
