@@ -290,6 +290,11 @@ class Search {
 		$this->queue = new Queue();
 		$this->queue->init();
 
+		// VIP Block Index meta
+		require_once __DIR__ . '/class-blockindex.php';
+
+		BlockIndex::instance();
+
 		// Caching layer
 		require_once __DIR__ . '/class-cache.php';
 		$this->cache = new Cache();
