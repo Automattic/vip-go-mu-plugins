@@ -156,8 +156,12 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 		$returned_post_mime_types = get_available_post_mime_types();
 		$cached_post_mime_types   = $this->get_cached_mime_types();
 
+		// Perform a second call to get_available_post_mime_types() to ensure the cached results are returned.
+		$returned_post_mime_types_2 = get_available_post_mime_types();
+
 		$this->assertIsArray( $cached_post_mime_types );
 		$this->assertEquals( $cached_post_mime_types, $returned_post_mime_types );
+		$this->assertEquals( $returned_post_mime_types, $returned_post_mime_types_2 );
 		$this->assertContains( 'image/jpeg', $cached_post_mime_types );
 		$this->assertContains( 'video/mp4', $cached_post_mime_types );
 		$this->assertContains( 'audio/mpeg', $cached_post_mime_types );
@@ -211,10 +215,16 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 		$original_wpdb = $wpdb;
 
 		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Mock $wpdb.
-		$wpdb = $this->getMockBuilder( \wpdb::class )
-					->setConstructorArgs( array( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST ) )
-					->onlyMethods( array( 'get_var' ) )
-					->getMock();
+		$mock_builder = $this->getMockBuilder( \wpdb::class )
+							->setConstructorArgs( array( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST ) );
+
+		if ( method_exists( $mock_builder, 'onlyMethods' ) ) {
+			$mock_builder = $mock_builder->onlyMethods( array( 'get_var' ) );
+		} else {
+			$mock_builder = $mock_builder->setMethods( array( 'get_var' ) );
+		}
+
+		$wpdb = $mock_builder->getMock();
 		$wpdb->method( 'get_var' )->willReturn( null );
 
 		get_available_post_mime_types();
