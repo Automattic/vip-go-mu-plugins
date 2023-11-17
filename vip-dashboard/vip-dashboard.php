@@ -66,10 +66,200 @@ function vip_dashboard_page() {
 		<div class="widgets-area">
 			<?php render_vip_dashboard_widget_welcome(); ?>
 			<?php render_vip_dashboard_widget_contact(); ?>
+
+			<div class="widget">
+				<h2 class="widget__title">Block Index</h2>
+
+				<?php
+					$es_host    = \Automattic\VIP\Search\Search::instance()->get_current_host();
+					$index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
+					$index_url  = sprintf( '%s/%s', $es_host, $index_name );
+
+					$block_types       = vip_block_index_get_indexed_block_types( $index_name, $index_url );
+					$block_type_counts = vip_block_index_get_block_type_counts( $block_types, $index_url );
+
+				?>
+
+				<table>
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'Block Type' ); ?></th>
+							<th><?php esc_html_e( 'Count' ); ?></th>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $block_type_counts as $block_type => $count ) { ?>
+							<tr>
+								<td><code><?php echo esc_html( $block_type ); ?></code></td>
+								<td><?php echo esc_html( number_format_i18n( $count ) ); ?></td>
+								<td><button class="button button-primary" onclick="findBlockIndexPosts(<?php echo esc_attr( wp_json_encode( $block_type ) ); ?>)"><?php esc_html_e( 'Find Posts' ); ?></button></td>
+							</tr>
+						<?php } ?>
+					</tbody>
+				</table>
+				<div class="vip-block-index-results"></div>
+
+				<script>
+				function findBlockIndexPosts( blockType ) {
+					const apiUrl = <?php echo wp_json_encode( rest_url( 'vip-block-index/v1/block-posts/' ) ); ?> + blockType;
+
+					const result = fetch(apiUrl)
+						.then(response => response.json())
+						.then(data => {
+							const posts = data.map(post => {
+								return `<li><a href="${post.post_edit_url}">${post.post_title}</a> (${post.block_count} use${post.block_count === 1 ? '' : 's' })</li>`;
+							});
+
+							const html = `<h3 style="margin-top: 1rem">Posts with <code>${blockType}</code>:</h3><ul>${posts.join('')}</ul>`;
+							document.querySelector('.vip-block-index-results').innerHTML = html;
+						});
+				}
+				</script>
+			</div>
 		</div>
 	</main>
 	<?php
 }
+
+function vip_block_index_get_indexed_block_types( $index_name, $index_url ) {
+	// Get previously indexed block names from ES mapping
+	//
+	// We could also query server-side registered blocks with:
+	//     \WP_Block_Type_Registry::get_instance()->get_all_registered()
+	// However, properties stored in the ES mapping will be more accurate as they include any block types
+	// ever indexed, including client-side or left-over blocks that no longer exist in site code.
+	// This is because parse_blocks() can identify non-server-side-registered blocks.
+
+	$mapping_url              = sprintf( '%s/_mapping', $index_url );
+	$mapping_response         = vip_safe_wp_remote_get( $mapping_url );
+	$mapping                  = json_decode( wp_remote_retrieve_body( $mapping_response ), true );
+	$indexed_block_properties = $mapping[ $index_name ]['mappings']['properties']['vip_block_index_counts']['properties'] ?? [];
+
+	return array_keys( $indexed_block_properties );
+}
+
+function vip_block_index_get_block_type_counts( $block_types, $index_url ) {
+	// Create a query to collect aggregate counts for each block type
+	$aggs = [];
+	foreach ( $block_types as $block_type ) {
+		$aggregatrion_field = sprintf( 'vip_block_index_counts.%s', $block_type );
+
+		$aggs[ $block_type ] = [
+			'sum' => [
+				'field' => $aggregatrion_field,
+			],
+		];
+	}
+
+	// Query for aggregate counts
+	$aggregates_query = [
+		'profile' => false,
+		'aggs'    => $aggs,
+		'from'    => 0,
+		'size'    => 0,
+	];
+
+	$search_url         = sprintf( '%s/_search', $index_url );
+	$aggregate_response = wp_remote_post( $search_url, [
+		'body'    => wp_json_encode( $aggregates_query ),
+		'headers' => [
+			'Content-Type' => 'application/json',
+		],
+	] );
+
+	$aggregate_result        = json_decode( wp_remote_retrieve_body( $aggregate_response ), true );
+	$block_type_aggregations = $aggregate_result['aggregations'] ?? [];
+
+	// Flatten aggregation results into associative array and remove 0 values, e.g.
+	// [
+	//     "core/paragraph" => 21,
+	//     "core/media-text": 5,
+	//     "core/freeform": 2,
+	// }
+	$block_type_counts = array_reduce( array_keys( $block_type_aggregations ), function ( $carry, $block_type ) use ( $block_type_aggregations ) {
+		$block_count = $block_type_aggregations[ $block_type ]['value'] ?? 0;
+
+		if ( $block_count > 0 ) {
+			$carry[ $block_type ] = $block_count;
+		}
+
+		return $carry;
+	}, []);
+
+	// Sort by block count, highest count to lowest
+	arsort( $block_type_counts );
+
+	return $block_type_counts;
+}
+
+function vip_block_index_get_block_type_posts( $block_type, $index_url ) {
+	$block_count_field = sprintf( 'vip_block_index_counts.%s', $block_type );
+	$block_posts_query = [
+		'profile' => false,
+		'query'   => [
+			'bool' => [
+				'filter' => [
+					[
+						'exists' => [
+							'field' => $block_count_field,
+						],
+					],
+				],
+			],
+		],
+		'_source' => [ $block_count_field ],
+		'sort'    => [
+			[ $block_count_field => 'desc' ],
+		],
+		'from'    => 0,
+		'size'    => 1000,
+	];
+
+	$search_url           = sprintf( '%s/_search', $index_url );
+	$block_posts_response = wp_remote_post( $search_url, [
+		'body'    => wp_json_encode( $block_posts_query ),
+		'headers' => [
+			'Content-Type' => 'application/json',
+		],
+	] );
+
+	$block_posts_result     = json_decode( wp_remote_retrieve_body( $block_posts_response ), true );
+	$block_count_posts_hits = $block_posts_result['hits']['hits'] ?? [];
+
+	$block_posts = array_map( function ( $hit ) use ( $block_type ) {
+		$post_id          = $hit['_id'];
+		$post             = get_post( $post_id );
+		$post_block_count = $hit['_source']['vip_block_index_counts'][ $block_type ] ?? 0;
+
+		return [
+			'post_edit_url' => admin_url( sprintf( 'post.php?post=%d&action=edit', $post_id ) ),
+			'post_title'    => $post->post_title,
+			'block_count'   => $post_block_count,
+		];
+	}, $block_count_posts_hits );
+
+	return $block_posts;
+}
+
+function vip_block_index_register_test_endpoint() {
+	register_rest_route( 'vip-block-index/v1', '/block-posts/(?P<blockName>[a-zA-Z0-9-/]+)', [
+		'methods'             => 'GET',
+		'callback'            => 'vip_block_index_register_get_block_type_posts',
+		'permission_callback' => '__return_true',
+	] );
+}
+add_action( 'rest_api_init', 'vip_block_index_register_test_endpoint' );
+
+function vip_block_index_register_get_block_type_posts( WP_REST_Request $request ) {
+	$block_name = $request['blockName'];
+
+	$es_host    = \Automattic\VIP\Search\Search::instance()->get_current_host();
+	$index_name = \ElasticPress\Indexables::factory()->get( 'post' )->get_index_name();
+	$index_url  = sprintf( '%s/%s', $es_host, $index_name );
+
+	return vip_block_index_get_block_type_posts( $block_name, $index_url );
+}
+
 
 /**
  * Support/Contact form handler - sent from React to admin-ajax
