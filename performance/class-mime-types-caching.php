@@ -12,7 +12,7 @@ namespace Automattic\VIP\Performance;
 /**
  * Media Library Caching class.
  */
-class Media_Library_Caching {
+class Mime_Types_Caching {
 	public const MINIMUM_WORDPRESS_VERSION          = '6.4';
 	public const CACHE_GROUP                        = 'mime_types';
 	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types';
@@ -25,15 +25,7 @@ class Media_Library_Caching {
 	public static function init() {
 		global $wp_version;
 
-		/**
-		 * Filters whether the MIME type caching is enabled.
-		 *
-		 * @param bool $cache_mime_types Whether the MIME type caching is enabled. Default false.
-		 */
-		$vip_cache_mime_types = apply_filters( 'vip_cache_mime_types', true );
-
-		if ( $vip_cache_mime_types &&
-			isset( $wp_version ) &&
+		if ( isset( $wp_version ) &&
 			version_compare( $wp_version, self::MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
 			self::enable_post_mime_types_caching();
 		}
@@ -170,5 +162,3 @@ class Media_Library_Caching {
 		}
 	}
 }
-
-add_action( 'init', array( 'Automattic\VIP\Performance\Media_Library_Caching', 'init' ) );
