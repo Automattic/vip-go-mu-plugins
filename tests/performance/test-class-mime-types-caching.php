@@ -120,8 +120,19 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__mime_type_caching_hooked_on_init() {
+		$tag      = 'pre_get_available_post_mime_types';
+		$function = array( 'Automattic\VIP\Performance\Mime_Types_Caching', 'get_cached_post_mime_types' );
+
+		// Filter is already loaded on init action.
+		$before_filter_removal = remove_filter( $tag, $function );
+		$after_filter_removal  = has_filter( $tag, $function );
+		\vip_cache_mime_types(); // Call to class init to re-hook the filter.
+		$filter_after_class_init = has_filter( $tag, $function );
+
 		$this->assertNotFalse( has_action( 'init', 'vip_cache_mime_types' ) );
-		$this->assertNotFalse( has_filter( 'pre_get_available_post_mime_types', array( 'Automattic\VIP\Performance\Mime_Types_Caching', 'get_cached_post_mime_types' ) ) );
+		$this->assertTrue( $before_filter_removal );
+		$this->assertFalse( $after_filter_removal );
+		$this->assertNotFalse( $filter_after_class_init );
 	}
 
 	public function test__default_mime_types() {
@@ -191,6 +202,30 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 		$this->assertEmpty( $returned_post_mime_types );
 		$this->assertFalse( $cached_post_mime_types );
+	}
+
+	public function test__count_query_failure() {
+		global $wpdb;
+
+		// Backup the original $wpdb object.
+		$original_wpdb = $wpdb;
+
+		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Mock $wpdb.
+		$wpdb = $this->getMockBuilder( \wpdb::class )
+					->setConstructorArgs( array( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST ) )
+					->onlyMethods( array( 'get_var' ) )
+					->getMock();
+		$wpdb->method( 'get_var' )->willReturn( null );
+
+		get_available_post_mime_types();
+		$using_default_mime_types = $this->is_using_default_mime_types();
+
+		// Restore the original $wpdb object.
+		$wpdb = $original_wpdb;
+		// phpcs:enable
+
+		// If the count query fails, the default MIME types should be used.
+		$this->assertTrue( $using_default_mime_types );
 	}
 
 	public function test__add_attachment() {

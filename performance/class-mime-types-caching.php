@@ -64,8 +64,8 @@ class Mime_Types_Caching {
 			$max_posts_to_query = apply_filters( 'vip_max_posts_to_query_for_mime_type_caching', self::MAX_POSTS_TO_QUERY_DEFAULT );
 
 			global $wpdb;
-			$attachment_count = $max_posts_to_query > 0 ? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) ) : 1;
-			$use_defaults     = $attachment_count > $max_posts_to_query;
+			$attachment_count = $max_posts_to_query > 0 ? $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(1) FROM {$wpdb->posts} WHERE post_type = %s", $type ) ) : null;
+			$use_defaults     = is_null( $attachment_count ) || $attachment_count > $max_posts_to_query;
 
 			if ( $use_defaults ) {
 				// If there are too many posts to query, use the default MIME types.
@@ -110,6 +110,16 @@ class Mime_Types_Caching {
 	}
 
 	/**
+	 * Check if the default MIME types are being used.
+	 *
+	 * @param array|bool $mime_types MIME type data from cache.
+	 * @return bool Whether the default MIME types are being used.
+	 */
+	public static function is_using_default_mime_types( $mime_types ) {
+		return false === $mime_types || ( $mime_types['using_defaults'] ?? true );
+	}
+
+	/**
 	 * Update the MIME types cache when a new attachment is added.
 	 *
 	 * @param int $post_id The post ID.
@@ -117,7 +127,7 @@ class Mime_Types_Caching {
 	public static function add_mime_type_to_cache( $post_id ) {
 		$mime_types = wp_cache_get( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 
-		if ( false === $mime_types || ( $mime_types['using_defaults'] ?? true ) ) {
+		if ( static::is_using_default_mime_types( $mime_types ) ) {
 			return;
 		}
 
@@ -153,7 +163,7 @@ class Mime_Types_Caching {
 	public static function delete_mime_types_cache() {
 		$mime_types = wp_cache_get( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 
-		if ( false !== $mime_types && ( ! $mime_types['using_defaults'] ?? false ) ) {
+		if ( ! static::is_using_default_mime_types( $mime_types ) ) {
 			wp_cache_delete( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 		}
 	}
