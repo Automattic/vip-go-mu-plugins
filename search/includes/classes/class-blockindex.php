@@ -23,29 +23,16 @@ class BlockIndex {
 
 	protected function setup_hooks() {
 		// Add block type counts to index
-		add_filter( 'ep_prepare_meta_data', array( $this, 'add_block_index_meta' ), 10, 2 );
-
-		// Allow block index meta key
-		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'allow_block_index_meta' ), 10, 2 );
-	}
-
-	public function allow_block_index_meta( $allow, $post ) {
-		$is_indexed = apply_filters( 'vip_search_block_index_post_type', true, $post->post_type );
-
-		if ( $is_indexed ) {
-			$allow['vip_block_index_counts'] = true;
-		}
-
-		return $allow;
+		add_filter( 'ep_post_sync_args_post_prepare_meta', array( $this, 'add_block_index_meta' ), 10, 2 );
 	}
 
 	/**
 	 * Filter for reducing post meta for indexing to only the allow list
 	 */
-	public function add_block_index_meta( $current_meta, $post ) {
-		$current_meta['vip_block_index_counts'] = $this->get_block_type_counts( $post->post_content );
+	public function add_block_index_meta( $post_args ) {
+		$post_args['vip_block_index_counts'] = $this->get_block_type_counts( $post_args['post_content'] ?? '' );
 
-		return $current_meta;
+		return $post_args;
 	}
 
 	public function get_block_type_counts( $post_content ) {
