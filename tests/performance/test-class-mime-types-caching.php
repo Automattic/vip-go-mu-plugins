@@ -4,6 +4,9 @@ namespace Automattic\VIP\Performance;
 
 use WP_UnitTestCase;
 
+/**
+ * Unit tests for MIME_Types_Caching class.
+ */
 class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {

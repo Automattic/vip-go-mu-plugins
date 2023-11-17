@@ -1,6 +1,6 @@
 <?php
 /**
- * Media library caching.
+ * MIME Types Caching.
  *
  * @package vip-performance
  */
@@ -10,7 +10,7 @@
 namespace Automattic\VIP\Performance;
 
 /**
- * Media Library Caching class.
+ * MIME Types Caching class.
  */
 class Mime_Types_Caching {
 	public const MINIMUM_WORDPRESS_VERSION  = '6.4';
