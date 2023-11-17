@@ -4,21 +4,12 @@ namespace Automattic\VIP\Performance;
 
 use WP_UnitTestCase;
 
-// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited
-
-class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
+class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
 		$this->check_wp_version();
 		$this->mock_attachments_data();
-	}
-
-	public function tearDown(): void {
-		parent::tearDown();
-		remove_all_actions( 'vip_cache_mime_types' );
-		remove_all_filters( 'vip_max_posts_to_query_for_mime_type_caching' );
-		remove_all_filters( 'pre_get_available_post_mime_types' );
 	}
 
 	protected function check_wp_version() {
@@ -28,12 +19,6 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 		if ( version_compare( $wp_version, Mime_Types_Caching::MINIMUM_WORDPRESS_VERSION, '<' ) ) {
 			$this->markTestSkipped( 'This test does not run for WordPress versions below ' . Mime_Types_Caching::MINIMUM_WORDPRESS_VERSION );
 		}
-	}
-
-	protected function call_init() {
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
 	}
 
 	protected function mock_attachments_data() {
@@ -126,53 +111,28 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 		return $wpdb->get_var( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' ORDER BY RAND() LIMIT 1;" );
 	}
 
-	protected function set_max_posts_to_query( $max_posts_to_query ) {
-		add_filter(
-			'vip_max_posts_to_query_for_mime_type_caching',
-			function () use ( $max_posts_to_query ) {
-				return $max_posts_to_query;
-			}
-		);
-	}
-
 	protected function get_cached_mime_types() {
-		return wp_cache_get( Mime_Types_Caching::AVAILABLE_MIME_TYPES_CACHE_KEY, Mime_Types_Caching::CACHE_GROUP );
+		return wp_cache_get( Mime_Types_Caching::MIME_TYPES_CACHE_KEY, Mime_Types_Caching::CACHE_GROUP )['available_types'] ?? false;
 	}
 
 	protected function is_using_default_mime_types() {
-		return wp_cache_get( Mime_Types_Caching::USING_DEFAULT_MIME_TYPES_CACHE_KEY, Mime_Types_Caching::CACHE_GROUP );
+		return wp_cache_get( Mime_Types_Caching::MIME_TYPES_CACHE_KEY, Mime_Types_Caching::CACHE_GROUP )['using_defaults'] ?? false;
 	}
 
-	public function test__media_library_caching_hooked_on_init() {
+	public function test__mime_type_caching_hooked_on_init() {
 		$this->assertNotFalse( has_action( 'init', 'vip_cache_mime_types' ) );
-	}
-
-	public function test__filters_not_loaded_for_old_versions() {
-		global $wp_version;
-
-		// Save the original value so we can restore it later.
-		$original_wp_version = $wp_version;
-
-		$wp_version = '6.3';
-		$this->call_init();
-
-		$this->assertFalse( has_action( 'pre_get_available_post_mime_types' ) );
-
-		// Restore the original value after the test is done.
-		$wp_version = $original_wp_version;
-	}
-
-	public function test__filters_not_loaded_when_caching_disabled() {
-		remove_action( 'init', 'vip_cache_mime_types' );
-		$this->call_init();
-
-		$this->assertFalse( has_action( 'pre_get_available_post_mime_types' ) );
+		$this->assertNotFalse( has_filter( 'pre_get_available_post_mime_types', array( 'Automattic\VIP\Performance\Mime_Types_Caching', 'get_cached_post_mime_types' ) ) );
 	}
 
 	public function test__default_mime_types() {
-		$this->set_max_posts_to_query( 5 );
-		$returned_post_mime_types = Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		$max_query_filter = function () {
+			return 5;
+		};
+
+		add_filter( 'vip_max_posts_to_query_for_mime_type_caching', $max_query_filter );
+		$returned_post_mime_types = get_available_post_mime_types();
 		$using_default_mime_types = $this->is_using_default_mime_types();
+		remove_filter( 'vip_max_posts_to_query_for_mime_type_caching', $max_query_filter );
 
 		$this->assertTrue( $using_default_mime_types );
 		$this->assertIsArray( $returned_post_mime_types );
@@ -182,7 +142,7 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_cached_mime_types() {
-		$returned_post_mime_types = Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		$returned_post_mime_types = get_available_post_mime_types();
 		$cached_post_mime_types   = $this->get_cached_mime_types();
 
 		$this->assertIsArray( $cached_post_mime_types );
@@ -194,8 +154,13 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_cached_mime_types_with_previous_data() {
-		$mime_types               = array( 'image/test' );
-		$returned_post_mime_types = Mime_Types_Caching::get_cached_post_mime_types( $mime_types, 'attachment' );
+		$previous_filter = function () {
+			return array( 'image/test' );
+		};
+
+		add_filter( 'pre_get_available_post_mime_types', $previous_filter, 1, 2 );
+		$returned_post_mime_types = get_available_post_mime_types();
+		remove_filter( 'pre_get_available_post_mime_types', $previous_filter, 1 );
 
 		$this->assertIsArray( $returned_post_mime_types );
 		$this->assertContains( 'image/test', $returned_post_mime_types );
@@ -204,7 +169,6 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 	public function test__media_library_form_output() {
 		$matched_mime_types = array();
-		$this->call_init();
 
 		// Extract the logic from media_upload_library_form() in WP core that populates the media types dropdown in wp-admin.
 		list( $post_mime_types, $avail_post_mime_types ) = wp_edit_attachments_query();
@@ -222,21 +186,21 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_cached_mime_types_other_post_types() {
-		$returned_post_mime_types = Mime_Types_Caching::get_cached_post_mime_types( null, 'post' );
+		$returned_post_mime_types = get_available_post_mime_types( 'post' );
+		$cached_post_mime_types   = $this->get_cached_mime_types();
 
-		$this->assertNull( $returned_post_mime_types );
+		$this->assertEmpty( $returned_post_mime_types );
+		$this->assertFalse( $cached_post_mime_types );
 	}
 
 	public function test__add_attachment() {
 		$new_mime_type = 'image/bmp';
 
-		// Register hooks and populate cache.
-		$this->call_init();
-		Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		get_available_post_mime_types();
 
 		$using_default_mime_types      = $this->is_using_default_mime_types();
 		$cached_post_mime_types_before = $this->get_cached_mime_types();
-		$result                        = $this->factory->post->create(
+		$result                        = $this->factory()->post->create(
 			array(
 				'post_title'     => 'Mock Attachment 11',
 				'post_status'    => 'inherit',
@@ -254,16 +218,17 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__add_attachment_when_using_default_mime_types() {
-		$new_mime_type = 'image/bmp';
+		$max_query_filter = function () {
+			return 7;
+		};
 
-		$this->set_max_posts_to_query( 5 );
-
-		$this->call_init();
-		Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		add_filter( 'vip_max_posts_to_query_for_mime_type_caching', $max_query_filter );
+		get_available_post_mime_types();
 
 		$using_default_mime_types      = $this->is_using_default_mime_types();
 		$cached_post_mime_types_before = $this->get_cached_mime_types();
-		$result                        = $this->factory->post->create(
+		$new_mime_type                 = 'image/bmp';
+		$result                        = $this->factory()->post->create(
 			array(
 				'post_title'     => 'Mock Attachment 11',
 				'post_status'    => 'inherit',
@@ -272,6 +237,7 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 			)
 		);
 		$cached_post_mime_types_after  = $this->get_cached_mime_types();
+		remove_filter( 'vip_max_posts_to_query_for_mime_type_caching', $max_query_filter );
 
 		$this->assertTrue( $using_default_mime_types );
 		$this->assertEquals( $cached_post_mime_types_before, $cached_post_mime_types_after );
@@ -281,8 +247,7 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__update_attachment_title() {
-		$this->call_init();
-		Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		get_available_post_mime_types();
 
 		$sample_post_id                = $this->get_sample_post_id();
 		$cached_post_mime_types_before = $this->get_cached_mime_types();
@@ -301,8 +266,7 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__update_attachment_mime_type() {
-		$this->call_init();
-		Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		get_available_post_mime_types();
 
 		$sample_post_id                = $this->get_sample_post_id();
 		$cached_post_mime_types_before = $this->get_cached_mime_types();
@@ -321,8 +285,7 @@ class Media_Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__delete_attachment() {
-		$this->call_init();
-		Mime_Types_Caching::get_cached_post_mime_types( null, 'attachment' );
+		get_available_post_mime_types();
 
 		$sample_post_id                = $this->get_sample_post_id();
 		$cached_post_mime_types_before = $this->get_cached_mime_types();

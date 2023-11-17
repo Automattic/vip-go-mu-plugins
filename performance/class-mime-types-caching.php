@@ -13,11 +13,10 @@ namespace Automattic\VIP\Performance;
  * Media Library Caching class.
  */
 class Mime_Types_Caching {
-	public const MINIMUM_WORDPRESS_VERSION          = '6.4';
-	public const CACHE_GROUP                        = 'mime_types';
-	public const AVAILABLE_MIME_TYPES_CACHE_KEY     = 'vip_available_mime_types';
-	public const USING_DEFAULT_MIME_TYPES_CACHE_KEY = 'vip_using_default_mime_types';
-	public const MAX_POSTS_TO_QUERY_DEFAULT         = 500000;
+	public const MINIMUM_WORDPRESS_VERSION  = '6.4';
+	public const CACHE_GROUP                = 'mime_types';
+	public const MIME_TYPES_CACHE_KEY       = 'vip_mime_types';
+	public const MAX_POSTS_TO_QUERY_DEFAULT = 500000;
 
 	/**
 	 * Class initialization.
@@ -27,7 +26,7 @@ class Mime_Types_Caching {
 
 		if ( isset( $wp_version ) &&
 			version_compare( $wp_version, self::MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
-			self::enable_post_mime_types_caching();
+			static::enable_post_mime_types_caching();
 		}
 	}
 
@@ -36,9 +35,9 @@ class Mime_Types_Caching {
 	 */
 	private static function enable_post_mime_types_caching() {
 		add_filter( 'pre_get_available_post_mime_types', array( __CLASS__, 'get_cached_post_mime_types' ), 10, 2 );
-		add_action( 'add_attachment', array( __CLASS__, 'update_post_mime_types_cache_on_add' ), 10, 1 );
-		add_action( 'attachment_updated', array( __CLASS__, 'update_post_mime_types_cache_on_edit' ), 10, 3 );
-		add_action( 'delete_attachment', array( __CLASS__, 'update_post_mime_types_cache_on_delete' ), 10 );
+		add_action( 'add_attachment', array( __CLASS__, 'add_mime_type_to_cache' ), 10, 1 );
+		add_action( 'attachment_updated', array( __CLASS__, 'update_mime_types_cache' ), 10, 3 );
+		add_action( 'delete_attachment', array( __CLASS__, 'delete_mime_types_cache' ), 10 );
 	}
 
 	/**
@@ -53,7 +52,7 @@ class Mime_Types_Caching {
 			return $filtered_mime_types;
 		}
 
-		$mime_types = wp_cache_get( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+		$mime_types = wp_cache_get( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 
 		if ( false === $mime_types ) {
 
@@ -70,23 +69,28 @@ class Mime_Types_Caching {
 
 			if ( $use_defaults ) {
 				// If there are too many posts to query, use the default MIME types.
-				$mime_types = self::get_default_mime_types();
+				$available_types = static::get_default_mime_types();
 			} else {
 				// Otherwise, use the same query from core.
-				$mime_types = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT post_mime_type FROM $wpdb->posts WHERE post_type = %s", $type ) );
+				$available_types = $wpdb->get_col( $wpdb->prepare( "SELECT DISTINCT post_mime_type FROM $wpdb->posts WHERE post_type = %s", $type ) );
 			}
 
-			// Cache the results.
-			wp_cache_set( self::AVAILABLE_MIME_TYPES_CACHE_KEY, $mime_types, self::CACHE_GROUP );
-			wp_cache_set( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY, $use_defaults, self::CACHE_GROUP );
+			$mime_types = array(
+				'available_types' => $available_types,
+				'using_defaults'  => $use_defaults,
+			);
+
+			wp_cache_set( self::MIME_TYPES_CACHE_KEY, $mime_types, self::CACHE_GROUP );
+		} else {
+			$available_types = $mime_types['available_types'] ?? null;
 		}
 
 		// If there were any previous MIME types, merge them with the cached MIME types.
 		if ( is_array( $filtered_mime_types ) ) {
-			$mime_types = array_unique( array_merge( $filtered_mime_types, $mime_types ) );
+			$available_types = is_array( $available_types ) ? array_unique( array_merge( $filtered_mime_types, $available_types ) ) : $filtered_mime_types;
 		}
 
-		return $mime_types;
+		return $available_types;
 	}
 
 	/**
@@ -106,59 +110,51 @@ class Mime_Types_Caching {
 	}
 
 	/**
-	 * Check if the default MIME types are being used.
-	 *
-	 * @return bool Whether the default MIME types are being used.
-	 */
-	public static function is_using_default_mime_types() {
-		return wp_cache_get( self::USING_DEFAULT_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
-	}
-
-	/**
-	 * Update the MIME types cache when a new post is added.
+	 * Update the MIME types cache when a new attachment is added.
 	 *
 	 * @param int $post_id The post ID.
 	 */
-	public static function update_post_mime_types_cache_on_add( $post_id ) {
-		if ( self::is_using_default_mime_types() ) {
+	public static function add_mime_type_to_cache( $post_id ) {
+		$mime_types = wp_cache_get( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+
+		if ( false === $mime_types || ( $mime_types['using_defaults'] ?? true ) ) {
 			return;
 		}
 
-		$mime_type = get_post_mime_type( $post_id );
+		$mime_type       = get_post_mime_type( $post_id );
+		$available_types = $mime_types['available_types'] ?? false;
 
-		if ( false !== $mime_type ) {
-			$mime_types = wp_cache_get( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
-
-			if ( false !== $mime_types ) {
-				// Add the new MIME type to the cache if not present.
-				if ( ! in_array( $mime_type, $mime_types, true ) ) {
-					$mime_types[] = $mime_type;
-					wp_cache_set( self::AVAILABLE_MIME_TYPES_CACHE_KEY, $mime_types, self::CACHE_GROUP );
-				}
-			}
+		if ( false !== $mime_type &&
+			is_array( $available_types ) &&
+			! in_array( $mime_type, $available_types, true ) ) {
+			// Add the new MIME type to the cache if not present.
+			$mime_types['available_types'][] = $mime_type;
+			wp_cache_set( self::MIME_TYPES_CACHE_KEY, $mime_types, self::CACHE_GROUP );
 		}
 	}
 
 	/**
-	 * Update the MIME types cache when a post is edited.
+	 * Update the MIME types cache when an attachment is edited.
 	 *
 	 * @param int     $post_id     The post ID.
 	 * @param WP_Post $post_after  The post object after the update.
 	 * @param WP_Post $post_before The post object before the update.
 	 */
-	public static function update_post_mime_types_cache_on_edit( $post_id, $post_after, $post_before ) {
+	public static function update_mime_types_cache( $post_id, $post_after, $post_before ) {
 		// Only if the MIME type changed.
-		if ( ! self::is_using_default_mime_types() && $post_before->post_mime_type !== $post_after->post_mime_type ) {
-			wp_cache_delete( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+		if ( $post_before->post_mime_type !== $post_after->post_mime_type ) {
+			static::delete_mime_types_cache();
 		}
 	}
 
 	/**
-	 * Update the MIME types cache when a post is deleted.
+	 * Delete the MIME types cache when a post is deleted.
 	 */
-	public static function update_post_mime_types_cache_on_delete() {
-		if ( ! self::is_using_default_mime_types() ) {
-			wp_cache_delete( self::AVAILABLE_MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+	public static function delete_mime_types_cache() {
+		$mime_types = wp_cache_get( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
+
+		if ( false !== $mime_types && ( ! $mime_types['using_defaults'] ?? false ) ) {
+			wp_cache_delete( self::MIME_TYPES_CACHE_KEY, self::CACHE_GROUP );
 		}
 	}
 }
