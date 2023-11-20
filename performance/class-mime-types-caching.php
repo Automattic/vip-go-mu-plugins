@@ -99,14 +99,7 @@ class Mime_Types_Caching {
 	 * @return string[] An array of default MIME types.
 	 */
 	public static function get_default_mime_types() {
-		// Massage the results from get_post_mime_types() into a flat array.
-		return array_reduce(
-			array_keys( get_post_mime_types() ),
-			function ( $carry, $mime_type ) {
-				return array_merge( $carry, explode( ',', $mime_type ) );
-			},
-			array()
-		);
+		return explode( ',', join( ',', array_keys( get_post_mime_types() ) ) );
 	}
 
 	/**
