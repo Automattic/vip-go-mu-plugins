@@ -69,7 +69,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 		it('Can not display other users orders on the My Account Order page', () => {
 			// enable payment gateway.
 			cy.visitAdminPage('admin.php?page=wc-settings&tab=checkout&section=cod');
-			cy.get('#woocommerce_cod_enabled').check();
+			cy.get('#woocommerce_cod_enabled').check({waitForAnimations: false});
 			cy.get('.button-primary.woocommerce-save-button').click();
 
 			cy.logout();
@@ -87,13 +87,16 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 
 			// checkout and place order.
 			cy.visit('checkout');
-			cy.get('#billing_first_name').type(userData.firstName);
-			cy.get('#billing_last_name').type(userData.lastName);
-			cy.get('#billing_address_1').type(userData.address);
-			cy.get('#billing_city').type(userData.city);
-			cy.get('#billing_postcode').type(userData.postCode);
-			cy.get('#billing_phone').type(userData.phoneNumber);
-			cy.get('#place_order').click();
+			cy.get('#billing-first_name').type(userData.firstName);
+			cy.get('#billing-last_name').type(userData.lastName);
+			cy.get('#billing-address_1').type(userData.address);
+			cy.get('#billing-city').type(userData.city);
+			cy.get('#billing-postcode').type(userData.postCode);
+			cy.get('#billing-phone').type(userData.phoneNumber);
+			cy.get('button.wc-block-components-checkout-place-order-button').trigger('click'); // VIP: Need to use .trigger('click') because Cypress can't click on the button.
+
+			// VIP: Give some time for the order to be placed.
+			cy.wait(2000); // eslint-disable-line cypress/no-unnecessary-waiting
 
 			// ensure order is placed.
 			cy.url().should('include', '/checkout/order-received');
@@ -110,7 +113,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			cy.get('.woocommerce-orders-table tbody tr').should('have.length', 1);
 
 			// VIP: Use Search Dev Tools instead of Debug Bar
-			cy.searchDevToolsResponseOK('shop_order', 2);
+			cy.searchDevToolsResponseOK('shop_order');
 			cy.get('#vip-search-dev-tools-mount').click();
 			cy.get('h3.vip-h3').eq(2).click();
 			cy.get('strong.vip-h4.wp_query').eq(2).click();
