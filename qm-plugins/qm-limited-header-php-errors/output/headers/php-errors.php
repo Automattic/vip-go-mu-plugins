@@ -66,9 +66,9 @@ class QM_Output_Headers_Limited_PHP_Errors extends QM_Output_Headers {
 		// VIP: hack to avoid failed requests due to headers being too large
 		// these are subject to change at any time
 		// All of the values are padded to make sure failsafe is triggered earlier
-		$max_header_length       = 11 * 1024;  // padded
-		$max_total_header_length = 31 * 1024;  // padded
-		$max_total_headers       = 100;        // padded
+		$max_header_length       = 10 * 1024;  // padded
+		$max_total_header_length = 30 * 1024;  // padded
+		$max_total_headers       = 50;        // padded
 
 		$current_headers_length = strlen( join( "\n", headers_list() ) );
 		$current_headers_count  = count( headers_list() );
