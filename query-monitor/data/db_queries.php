@@ -27,24 +27,9 @@ class QM_Data_DB_Queries extends QM_Data {
 	public $expensive;
 
 	/**
-	 * @var array<int, array<string, mixed>>
+	 * @var ?stdClass
 	 */
-	public $rows;
-
-	/**
-	 * @var bool
-	 */
-	public $has_result;
-
-	/**
-	 * @var bool
-	 */
-	public $has_trace;
-
-	/**
-	 * @var bool
-	 */
-	public $has_main_query;
+	public $wpdb;
 
 	/**
 	 * @var ?array<string, array<string, mixed>>
