@@ -7,7 +7,7 @@
 
 class Debug_Bar {
 	/**
-	 * @var array<int, Debug_Bar_Panel>
+	 * @var Debug_Bar_Panel[]
 	 */
 	public $panels = array();
 
@@ -48,7 +48,7 @@ class Debug_Bar {
 		 *
 		 * @since 2.7.0
 		 *
-		 * @param array<int, Debug_Bar_Panel> $panels Array of Debug Bar panel instances.
+		 * @param Debug_Bar_Panel[] $panels Array of Debug Bar panel instances.
 		 */
 		$this->panels = apply_filters( 'debug_bar_panels', array() );
 	}

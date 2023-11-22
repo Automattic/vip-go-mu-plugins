@@ -42,7 +42,6 @@ class QM_Collector_Logger extends QM_DataCollector {
 			add_action( "qm/{$level}", array( $this, $level ), 10, 2 );
 		}
 
-		add_action( 'qm/assert', array( $this, 'assert' ), 10, 3 );
 		add_action( 'qm/log', array( $this, 'log' ), 10, 3 );
 	}
 
@@ -140,49 +139,6 @@ class QM_Collector_Logger extends QM_DataCollector {
 	}
 
 	/**
-	 * @param mixed $assertion
-	 * @param string $message
-	 * @param ?mixed $value
-	 * @return void
-	 */
-	public function assert( $assertion, string $message = '', $value = null ) {
-		$prefix = null;
-
-		if ( $assertion ) {
-			$level = self::DEBUG;
-
-			if ( $message ) {
-				$message = sprintf(
-					/* translators: %s: Assertion message */
-					__( 'Assertion passed: %s', 'query-monitor' ),
-					$message
-				);
-			} else {
-				$message = __( 'Assertion passed', 'query-monitor' );
-			}
-		} else {
-			$level = self::ERROR;
-
-			if ( $message ) {
-				$message = sprintf(
-					/* translators: %s: Assertion message */
-					__( 'Assertion failed: %s', 'query-monitor' ),
-					$message
-				);
-			} else {
-				$message = __( 'Assertion failed', 'query-monitor' );
-			}
-
-			if ( $value !== null ) {
-				$prefix = $message;
-				$message = $value;
-			}
-		}
-
-		$this->store( $level, $message, array(), $prefix );
-	}
-
-	/**
 	 * @param string $level
 	 * @param mixed $message
 	 * @param array<string, mixed> $context
@@ -202,12 +158,11 @@ class QM_Collector_Logger extends QM_DataCollector {
 	 * @param string $level
 	 * @param mixed $message
 	 * @param array<string, mixed> $context
-	 * @param ?string $prefix
 	 * @phpstan-param self::* $level
 	 * @phpstan-param LogMessage $message
 	 * @return void
 	 */
-	protected function store( $level, $message, array $context = array(), string $prefix = null ) {
+	protected function store( $level, $message, array $context = array() ) {
 		$trace = new QM_Backtrace( array(
 			'ignore_hook' => array(
 				current_filter() => true,
@@ -246,7 +201,7 @@ class QM_Collector_Logger extends QM_DataCollector {
 
 		$this->data->counts[ $level ]++;
 		$this->data->logs[] = array(
-			'message' => self::interpolate( $message, $context, $prefix ),
+			'message' => self::interpolate( $message, $context ),
 			'filtered_trace' => $trace->get_filtered_trace(),
 			'component' => $trace->get_component(),
 			'level' => $level,
@@ -256,10 +211,9 @@ class QM_Collector_Logger extends QM_DataCollector {
 	/**
 	 * @param string $message
 	 * @param array<string, mixed> $context
-	 * @param ?string $prefix
 	 * @return string
 	 */
-	protected static function interpolate( $message, array $context = array(), string $prefix = null ) {
+	protected static function interpolate( $message, array $context = array() ) {
 		// build a replacement array with braces around the context keys
 		$replace = array();
 
@@ -269,21 +223,11 @@ class QM_Collector_Logger extends QM_DataCollector {
 				$replace[ "{{$key}}" ] = ( $val ? 'true' : 'false' );
 			} elseif ( is_scalar( $val ) ) {
 				$replace[ "{{$key}}" ] = $val;
-			} elseif ( is_object( $val ) ) {
-				$replace[ "{{$key}}" ] = sprintf( '[%s]', get_class( $val ) );
-			} else {
-				$replace[ "{{$key}}" ] = sprintf( '[%s]', gettype( $val ) );
 			}
 		}
 
 		// interpolate replacement values into the message and return
-		$message = strtr( $message, $replace );
-
-		if ( $prefix !== null ) {
-			$message = $prefix . "\n" . $message;
-		}
-
-		return $message;
+		return strtr( $message, $replace );
 	}
 
 	/**
