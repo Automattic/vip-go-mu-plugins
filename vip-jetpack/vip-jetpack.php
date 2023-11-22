@@ -60,121 +60,152 @@ require_once __DIR__ . '/jetpack-mandatory.php';
  * Remove certain modules from the list of those that can be activated
  * Blocks access to certain functionality that isn't compatible with the platform.
  */
-add_filter( 'jetpack_get_available_modules', function ( $modules ) {
-	// The Photon service is not necessary on VIP Go since the same features are built-in.
-	// Note that we do utilize some of the Photon module's code with our own Files Service.
-	unset( $modules['photon'] );
-	unset( $modules['photon-cdn'] );
+add_filter(
+	'jetpack_get_available_modules',
+	function ( $modules ) {
+		// The Photon service is not necessary on VIP Go since the same features are built-in.
+		// Note that we do utilize some of the Photon module's code with our own Files Service.
+		unset( $modules['photon'] );
+		unset( $modules['photon-cdn'] );
 
-	unset( $modules['site-icon'] );
-	unset( $modules['protect'] );
+		unset( $modules['site-icon'] );
+		unset( $modules['protect'] );
 
-	return $modules;
-}, 999 );
+		return $modules;
+	},
+	999
+);
 
 /**
  * Do not initialize my jetpack admin page for VIP Machine User
  */
-add_action( 'plugins_loaded', function () {
-	if ( ! is_admin() || wp_doing_ajax() || ! method_exists( 'Jetpack', 'connection' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
-		return;
-	}
+add_action(
+	'plugins_loaded',
+	function () {
+		if ( ! is_admin() || wp_doing_ajax() || ! method_exists( 'Jetpack', 'connection' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
+			return;
+		}
 
-	$jp_connection = Jetpack::connection();
-	if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
-		$connection_owner  = $jp_connection->get_connection_owner();
-		$is_vip_connection = isset( $connection_owner->user_login ) && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
+		$jp_connection = Jetpack::connection();
+		if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
+			$connection_owner  = $jp_connection->get_connection_owner();
+			$is_vip_connection = isset( $connection_owner->user_login ) && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
 
-		if ( $is_vip_connection ) {
-			add_filter( 'jetpack_my_jetpack_should_initialize', '__return_false' );
+			if ( $is_vip_connection ) {
+				add_filter( 'jetpack_my_jetpack_should_initialize', '__return_false' );
+			}
 		}
 	}
-} );
+);
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_size', function ( $value ) {
-	$value = intval( $value );
+add_filter(
+	'option_jetpack_sync_settings_max_queue_size',
+	function ( $value ) {
+		$value = intval( $value );
 
-	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
-	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT );
+		$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
+		$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT );
 
-	return $value;
-}, 9999 );
+		return $value;
+	},
+	9999
+);
 
 /**
  * Lock down the jetpack_sync_settings_max_queue_lag to an allowed range
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_lag', function ( $value ) {
-	$value = intval( $value );
+add_filter(
+	'option_jetpack_sync_settings_max_queue_lag',
+	function ( $value ) {
+		$value = intval( $value );
 
-	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
-	$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT );
+		$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
+		$value = max( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT );
 
-	return $value;
-}, 9999 );
+		return $value;
+	},
+	9999
+);
 
 /**
  * Allow incremental syncing via cron to take longer than the default 30 seconds.
  *
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
- *
  */
-add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function () {
-	return 4 * MINUTE_IN_SECONDS;
-}, 9999 );
+add_filter(
+	'option_jetpack_sync_settings_cron_sync_time_limit',
+	function () {
+		return 4 * MINUTE_IN_SECONDS;
+	},
+	9999
+);
 
 /**
  * Reduce the time between sync batches on VIP for performance gains.
  *
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
- *
  */
-add_filter( 'option_jetpack_sync_settings_sync_wait_time', function () {
-	return 1;
-}, 9999 );
+add_filter(
+	'option_jetpack_sync_settings_sync_wait_time',
+	function () {
+		return 1;
+	},
+	9999
+);
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
-	add_action( 'updating_jetpack_version', function ( $new_version, $old_version ) {
-		// This is a brand new site with no Jetpack data
-		if ( empty( $old_version ) ) {
-			return;
-		}
+	add_action(
+		'updating_jetpack_version',
+		function ( $new_version, $old_version ) {
+			// This is a brand new site with no Jetpack data
+			if ( empty( $old_version ) ) {
+				return;
+			}
 
-		// If we're upgrading, then it's fine. We only want to prevent accidental downgrades
-		// Jetpack::maybe_set_version_option() already does this check, but other spots
-		// in JP can trigger this, without the check
-		if ( version_compare( $new_version, $old_version, '>' ) ) {
-			return;
-		}
+			// If we're upgrading, then it's fine. We only want to prevent accidental downgrades
+			// Jetpack::maybe_set_version_option() already does this check, but other spots
+			// in JP can trigger this, without the check
+			if ( version_compare( $new_version, $old_version, '>' ) ) {
+				return;
+			}
 
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- version number is OK
-		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
-	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
+			wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
+		},
+		0,
+		2
+	); // No need to wait till priority 10 since we're going to die anyway
 }
 
 // On production servers, only our machine user can manage the Jetpack connection
 if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function ( $caps, $cap, $user_id ) {
-		switch ( $cap ) {
-			case 'jetpack_connect':
-			case 'jetpack_reconnect':
-			case 'jetpack_disconnect':
-				$user = get_userdata( $user_id );
-				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
-					return [ 'do_not_allow' ];
-				}
-				break;
-		}
+	add_filter(
+		'map_meta_cap',
+		function ( $caps, $cap, $user_id ) {
+			switch ( $cap ) {
+				case 'jetpack_connect':
+				case 'jetpack_reconnect':
+				case 'jetpack_disconnect':
+					$user = get_userdata( $user_id );
+					if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
+						return array( 'do_not_allow' );
+					}
+					break;
+			}
 
-		return $caps;
-	}, 10, 3 );
+			return $caps;
+		},
+		10,
+		3
+	);
 }
 
 function wpcom_vip_did_jetpack_search_query( $query ) {
@@ -253,33 +284,39 @@ if ( defined( 'JETPACK__VERSION' ) && JETPACK__VERSION < '11.0' ) {
 /**
  * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
  */
-add_filter( 'jetpack_sync_modules', function ( $modules ) {
-	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
-		return $modules;
-	}
+add_filter(
+	'jetpack_sync_modules',
+	function ( $modules ) {
+		if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
+			return $modules;
+		}
 
-	if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
-		foreach ( $modules as $key => $module ) {
-			// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
-			if ( in_array( $module, [ 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ], true ) ) {
-				$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
+		if ( defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && true === VIP_JETPACK_FULL_SYNC_IMMEDIATELY ) {
+			foreach ( $modules as $key => $module ) {
+				// Replace Jetpack_Sync_Modules_Full_Sync or Full_Sync with the new module
+				if ( in_array( $module, array( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync', 'Jetpack_Sync_Modules_Full_Sync' ), true ) ) {
+					$modules[ $key ] = 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately';
+				}
 			}
 		}
-	}
 
-	return $modules;
-} );
+		return $modules;
+	}
+);
 
 /**
  * Hide promotions/upgrade cards for now except for sites that we want to opt into Instant Search
  */
-add_filter( 'jetpack_show_promotions', function ( $is_enabled ) {
-	if ( defined( 'VIP_JETPACK_ENABLE_INSTANT_SEARCH' ) && true === VIP_JETPACK_ENABLE_INSTANT_SEARCH ) {
-		return $is_enabled;
-	}
+add_filter(
+	'jetpack_show_promotions',
+	function ( $is_enabled ) {
+		if ( defined( 'VIP_JETPACK_ENABLE_INSTANT_SEARCH' ) && true === VIP_JETPACK_ENABLE_INSTANT_SEARCH ) {
+			return $is_enabled;
+		}
 
-	return false;
-} );
+		return false;
+	}
+);
 
 /**
  * Hide Jetpack's just in time promotions
@@ -295,7 +332,7 @@ function vip_jetpack_admin_enqueue_scripts() {
 		return;
 	}
 	$admin_css_url = plugins_url( '/css/admin-settings.css', __FILE__ );
-	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url, [], '20200511' );
+	wp_enqueue_style( 'vip-jetpack-admin-settings', $admin_css_url, array(), '20200511' );
 }
 
 add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
@@ -303,27 +340,38 @@ add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
 /**
  * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
  */
-add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function ( $value ) {
+add_filter(
+	'pre_option_jetpack_sync_settings_checksum_disable',
+	function ( $value ) {
 	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
-	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
-} );
+		return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
+	}
+);
 
 /**
  * SSL is always supported on VIP, so avoid unnecessary checks
  */
-add_filter( 'pre_transient_jetpack_https_test', function () {
-	return 1;
-} ); // WP doesn't have __return_one (but it does have __return_zero)
+add_filter(
+	'pre_transient_jetpack_https_test',
+	function () {
+		return 1;
+	}
+); // WP doesn't have __return_one (but it does have __return_zero)
 add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
 
 // And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
-add_filter( 'jetpack_options', function ( $value, $name ) {
-	if ( 'fallback_no_verify_ssl_certs' === $name ) {
-		$value = 0;
-	}
+add_filter(
+	'jetpack_options',
+	function ( $value, $name ) {
+		if ( 'fallback_no_verify_ssl_certs' === $name ) {
+			$value = 0;
+		}
 
-	return $value;
-}, 10, 2 );
+		return $value;
+	},
+	10,
+	2
+);
 
 /**
  * Dummy Jetpack menu item if no other menu items are rendered
@@ -413,16 +461,17 @@ add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX,
 /**
  * Enable Jetpack offline mode for Multisites when we're launching a site in the network.
  * This is enabled only if the site is a multisite and they enrolled into the JETPACK_SYNC_IDC_OPTIN.
- * 
+ *
  * The function checks for the `launching` flag in the `vip_launch_tools` cache group.
- * If the flag is set to `true`, it enables the offline mode while the flag is active, blocking 
+ * If the flag is set to `true`, it enables the offline mode while the flag is active, blocking
  * the Jetpack communications from running.
+ *
  * @param bool $offline_mode Whether to enable offline mode.
  * @return bool
  */
 function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 	// If not multisite, return the offline mode value.
-	if (! is_multisite() ){
+	if ( ! is_multisite() ) {
 		return $offline_mode;
 	}
 
@@ -430,9 +479,9 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 	if ( ! defined( 'JETPACK_SYNC_IDC_OPTIN' ) || true !== constant( 'JETPACK_SYNC_IDC_OPTIN' ) ) {
 		return $offline_mode;
 	}
-	if ( wp_cache_get( 'launching', 'vip_launch_tools' ) ){
+	if ( wp_cache_get( 'launching', 'vip_launch_tools' ) ) {
 		$vip_site_launching = wp_cache_get( 'launching', 'vip_launch_tools' );
-		if ( $vip_site_launching === 'true' ){
+		if ( 'true' === $vip_site_launching ) {
 			// enables jetpack offline mode
 			return true;
 		}
