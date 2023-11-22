@@ -20,6 +20,11 @@ class QM_Collector_HTTP extends QM_DataCollector {
 	public $id = 'http';
 
 	/**
+	 * @var string|null
+	 */
+	private $transport = null;
+
+	/**
 	 * @var mixed|null
 	 */
 	private $info = null;
@@ -42,6 +47,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 	 *   end: float,
 	 *   args: array<string, mixed>,
 	 *   response: mixed[]|WP_Error,
+	 *   transport: string|null,
 	 *   info: array<string, mixed>|null,
 	 * }>
 	 */
@@ -62,7 +68,9 @@ class QM_Collector_HTTP extends QM_DataCollector {
 		add_filter( 'pre_http_request', array( $this, 'filter_pre_http_request' ), 9999, 3 );
 		add_action( 'http_api_debug', array( $this, 'action_http_api_debug' ), 9999, 5 );
 
+		add_action( 'requests-curl.before_request', array( $this, 'action_curl_before_request' ), 9999 );
 		add_action( 'requests-curl.after_request', array( $this, 'action_curl_after_request' ), 9999, 2 );
+		add_action( 'requests-fsockopen.before_request', array( $this, 'action_fsockopen_before_request' ), 9999 );
 		add_action( 'requests-fsockopen.after_request', array( $this, 'action_fsockopen_after_request' ), 9999, 2 );
 
 	}
@@ -241,9 +249,15 @@ class QM_Collector_HTTP extends QM_DataCollector {
 	 * @return void
 	 */
 	public function action_http_api_debug( $response, $action, $class, $args, $url ) {
+		$this->transport = null;
+
 		switch ( $action ) {
 
 			case 'response':
+				if ( ! empty( $class ) ) {
+					$this->transport = str_replace( 'wp_http_', '', strtolower( $class ) );
+				}
+
 				$this->log_http_response( $response, $args, $url );
 
 				break;
@@ -257,12 +271,26 @@ class QM_Collector_HTTP extends QM_DataCollector {
 	}
 
 	/**
+	 * @return void
+	 */
+	public function action_curl_before_request() {
+		$this->transport = 'curl';
+	}
+
+	/**
 	 * @param mixed $headers
 	 * @param mixed[] $info
 	 * @return void
 	 */
 	public function action_curl_after_request( $headers, array $info = null ) {
 		$this->info = $info;
+	}
+
+	/**
+	 * @return void
+	 */
+	public function action_fsockopen_before_request() {
+		$this->transport = 'fsockopen';
 	}
 
 	/**
@@ -291,6 +319,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 			'response' => $response,
 			'args' => $args,
 			'info' => $this->info,
+			'transport' => $this->transport,
 		);
 
 		if ( isset( $args['_qm_original_key'] ) ) {
@@ -307,6 +336,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 		$this->http_responses[ $key ] = $http_response;
 
 		$this->info = null;
+		$this->transport = null;
 	}
 
 	/**
@@ -360,7 +390,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 			$ltime = ( $response['end'] - $request['start'] );
 			$redirected_to = null;
 
-			if ( isset( $response['info'] ) && ! empty( $response['info']['url'] ) && is_string( $response['info']['url'] ) ) {
+			if ( isset( $response['info'] ) && is_string( $response['info']['url'] ) && ! empty( $response['info']['url'] ) ) {
 				// Ignore query variables when detecting a redirect.
 				$from = untrailingslashit( preg_replace( '#\?[^$]+$#', '', $request['url'] ) );
 				$to = untrailingslashit( preg_replace( '#\?[^$]+$#', '', $response['info']['url'] ) );
@@ -380,12 +410,12 @@ class QM_Collector_HTTP extends QM_DataCollector {
 				'args' => $response['args'],
 				'component' => $request['component'],
 				'filtered_trace' => $request['filtered_trace'],
-				'host' => $host,
 				'info' => $response['info'],
 				'local' => $local,
 				'ltime' => $ltime,
 				'redirected_to' => $redirected_to,
 				'response' => $response['response'],
+				'transport' => $response['transport'],
 				'type' => $type,
 				'url' => $request['url'],
 			);

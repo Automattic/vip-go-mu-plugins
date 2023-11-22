@@ -119,8 +119,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 				$extension = null;
 			}
 
-			// mysqli_get_client_version() may not exist in Wasm environment.
-			$client = function_exists( 'mysqli_get_client_version' ) ? mysqli_get_client_version() : null;
+			$client = mysqli_get_client_version();
 
 			if ( $client ) {
 				$client_version = implode( '.', QM_Util::get_client_version( $client ) );
@@ -143,7 +142,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 			$this->data->db = array(
 				'info' => $info,
 				'vars' => $mysql_vars,
-				'variables' => is_array( $variables ) ? $variables : array(),
+				'variables' => $variables ?: array(),
 			);
 		}
 
@@ -165,7 +164,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 		if ( function_exists( 'get_loaded_extensions' ) ) {
 			$extensions = get_loaded_extensions();
 			sort( $extensions, SORT_STRING | SORT_FLAG_CASE );
-			$php_data['extensions'] = array_combine( $extensions, array_map( array( $this, 'get_extension_version' ), $extensions ) ) ?: array();
+			$php_data['extensions'] = array_combine( $extensions, array_map( array( $this, 'get_extension_version' ), $extensions ) );
 		} else {
 			$php_data['extensions'] = array();
 		}
@@ -184,15 +183,10 @@ class QM_Collector_Environment extends QM_DataCollector {
 			'COMPRESS_SCRIPTS' => self::format_bool_constant( 'COMPRESS_SCRIPTS' ),
 			'COMPRESS_CSS' => self::format_bool_constant( 'COMPRESS_CSS' ),
 			'WP_ENVIRONMENT_TYPE' => self::format_bool_constant( 'WP_ENVIRONMENT_TYPE' ),
-			'WP_DEVELOPMENT_MODE' => self::format_bool_constant( 'WP_DEVELOPMENT_MODE' ),
 		);
 
 		if ( function_exists( 'wp_get_environment_type' ) ) {
 			$this->data->wp['environment_type'] = wp_get_environment_type();
-		}
-
-		if ( function_exists( 'wp_get_development_mode' ) ) {
-			$this->data->wp['development_mode'] = wp_get_development_mode();
 		}
 
 		$this->data->wp['constants'] = apply_filters( 'qm/environment-constants', $constants );

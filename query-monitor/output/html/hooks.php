@@ -27,16 +27,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 	 * @return string
 	 */
 	public function name() {
-		/** @var QM_Data_Hooks */
-		$data = $this->collector->get_data();
-
-		$name = __( 'Hooks & Actions', 'query-monitor' );
-
-		if ( $data->all_hooks ) {
-			$name = __( 'Hooks, Actions, & Filters', 'query-monitor' );
-		}
-
-		return $name;
+		return __( 'Hooks & Actions', 'query-monitor' );
 	}
 
 	/**
@@ -52,23 +43,13 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 
 		$this->before_tabular_output();
 
-		$callback_label = __( 'Action', 'query-monitor' );
-		$th_type = '';
-
-		if ( $data->all_hooks ) {
-			$callback_label = __( 'Callback', 'query-monitor' );
-			$th_type = '<th scope="col" class="qm-filterable-column">' . $this->build_filter( 'type', array(
-				'action' => __( 'Action', 'query-monitor' ),
-				'filter' => __( 'Filter', 'query-monitor' ),
-			), __( 'Type', 'query-monitor' ) ) . '</th>';
-		}
+		$callback_label = $data->all_hooks ? __( 'Callback', 'query-monitor' ) : __( 'Action', 'query-monitor' );
 
 		echo '<thead>';
 		echo '<tr>';
 		echo '<th scope="col" class="qm-filterable-column">';
 		echo $this->build_filter( 'name', $data->parts, __( 'Hook', 'query-monitor' ) ); // WPCS: XSS ok.
 		echo '</th>';
-		echo $th_type; // WPCS: XSS ok.
 		echo '<th scope="col">' . esc_html__( 'Priority', 'query-monitor' ) . '</th>';
 		echo '<th scope="col">' . esc_html( $callback_label ) . '</th>';
 		echo '<th scope="col" class="qm-filterable-column">';
@@ -80,7 +61,7 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 		echo '</thead>';
 
 		echo '<tbody>';
-		self::output_hook_table( $data->hooks, $data->all_hooks );
+		self::output_hook_table( $data->hooks );
 		echo '</tbody>';
 
 		$this->after_tabular_output();
@@ -88,17 +69,15 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 
 	/**
 	 * @param array<int, mixed[]> $hooks
-	 * @param bool                $all_hooks
 	 * @return void
 	 */
-	public static function output_hook_table( array $hooks, bool $all_hooks ) {
+	public static function output_hook_table( array $hooks ) {
 		$core = __( 'WordPress Core', 'query-monitor' );
 
 		foreach ( $hooks as $hook ) {
 			$row_attr = array();
 			$row_attr['data-qm-name'] = implode( ' ', $hook['parts'] );
 			$row_attr['data-qm-component'] = implode( ' ', $hook['components'] );
-			$row_attr['data-qm-type'] = $hook['type'];
 
 			if ( ! empty( $row_attr['data-qm-component'] ) && $core !== $row_attr['data-qm-component'] ) {
 				$row_attr['data-qm-component'] .= ' non-core';
@@ -155,10 +134,6 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 						}
 						echo '</span></th>';
 
-						if ( $all_hooks ) {
-							$type = ( 'action' === $hook['type'] ) ? __( 'Action', 'query-monitor' ) : __( 'Filter', 'query-monitor' );
-							echo '<td rowspan="' . intval( $rowspan ) . '" class="qm-nowrap qm-ltr"><span class="qm-sticky">' . esc_html( $type ) . '</td>';
-						}
 					}
 
 					if ( isset( $action['callback']['error'] ) ) {
@@ -226,11 +201,6 @@ class QM_Output_Html_Hooks extends QM_Output_Html {
 				echo '<td></td>';
 				echo '<td></td>';
 				echo '<td></td>';
-
-				if ( $all_hooks ) {
-					echo '<td></td>';
-				}
-
 				echo '</tr>';
 			}
 		}

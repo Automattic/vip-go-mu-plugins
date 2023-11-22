@@ -167,7 +167,6 @@
 #wpadminbar .qm-alert {
   background-color: #f60;
 }
-#wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a,
 #wpadminbar #wp-admin-bar-query-monitor-stricts a,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a,
 #wpadminbar #wp-admin-bar-query-monitor-notices a,
@@ -176,9 +175,7 @@
 #wpadminbar .qm-notice {
   background-color: #740;
 }
-#wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a:focus, #wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a:hover,
-#wpadminbar #wp-admin-bar-query-monitor-stricts a:focus,
-#wpadminbar #wp-admin-bar-query-monitor-stricts a:hover,
+#wpadminbar #wp-admin-bar-query-monitor-stricts a:focus, #wpadminbar #wp-admin-bar-query-monitor-stricts a:hover,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a:focus,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a:hover,
 #wpadminbar #wp-admin-bar-query-monitor-notices a:focus,
@@ -244,7 +241,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #wp-admin-bar-query-monitor-default .qm-alert a,
 #wp-admin-bar-query-monitor-default .qm-error a,
 #wp-admin-bar-query-monitor-default .qm-warning a,
-#wp-admin-bar-query-monitor-doing_it_wrong a,
 #wp-admin-bar-query-monitor-deprecateds a,
 #wp-admin-bar-query-monitor-stricts a,
 #wp-admin-bar-query-monitor-notices a,
@@ -442,8 +438,8 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   height: 27px;
 }
 #query-monitor-main.qm-show {
-  height: 60%;
-  width: 60%;
+  height: 40%;
+  width: 40%;
 }
 #query-monitor-main:not(.qm-show-right) {
   width: 100% !important;
@@ -606,7 +602,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   color: var(--qm-panel-menu-fg) !important;
   cursor: pointer !important;
   display: block !important;
-  padding: 7px 32px 7px 10px !important;
+  padding: 6px 32px 6px 10px !important;
   position: relative !important;
   text-decoration: none !important;
   width: 100% !important;
@@ -733,7 +729,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm tfoot th,
 #query-monitor-main .qm tfoot td {
   border: 1px solid var(--qm-cell-border) !important;
-  padding: 6px 6px 5px 6px !important;
+  padding: 5px 5px 4px 5px !important;
   vertical-align: top !important;
 }
 #query-monitor-main .qm tbody th,
@@ -746,7 +742,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   border: 1px solid var(--qm-cell-border) !important;
   border-top: none !important;
   box-shadow: 0 1px 0 var(--qm-cell-border) !important;
-  padding: 5px 5px 5px 6px !important;
+  padding: 5px !important;
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
@@ -789,7 +785,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm td.qm-num {
   font-family: Menlo, Monaco, Consolas, monospace !important;
   font-size: 11px !important;
-  line-height: 20px !important;
+  line-height: 19px !important;
 }
 #query-monitor-main .qm td.qm-row-sql {
   min-width: 25em !important;
@@ -809,7 +805,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   min-width: 15em !important;
 }
 #query-monitor-main .qm td.qm-has-toggle {
-  padding-right: 28px !important;
+  padding-right: 24px !important;
   position: relative !important;
 }
 #query-monitor-main .qm td.qm-has-toggle:not(.qm-toggled-on) .qm-supplemental {
@@ -901,7 +897,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm li {
   display: list-item !important;
   list-style: none !important;
-  line-height: 20px !important;
 }
 #query-monitor-main .qm li::before {
   content: "" !important;
@@ -910,7 +905,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm pre {
   font-family: Menlo, Monaco, Consolas, monospace !important;
   font-size: 11px !important;
-  line-height: 20px !important;
+  line-height: 19px !important;
 }
 #query-monitor-main .qm pre {
   background: transparent !important;
@@ -1264,8 +1259,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm-hide-name,
 #query-monitor-main .qm-hide-type,
 #query-monitor-main .qm-hide-caller,
-#query-monitor-main .qm-hide-component,
-#query-monitor-main .qm-hide-host {
+#query-monitor-main .qm-hide-component {
   display: none !important;
 }
 #query-monitor-main .qm thead th.qm-sortable-column {
