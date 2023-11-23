@@ -21,6 +21,7 @@ namespace Automattic\VIP\WP_Parsely_Integration;
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
 const SUPPORTED_VERSIONS = [
+	'3.12',
 	'3.11',
 	'3.10',
 	'3.9',
