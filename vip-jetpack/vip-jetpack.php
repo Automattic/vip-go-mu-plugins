@@ -428,7 +428,7 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 		return $offline_mode;
 	}
 	$vip_site_launching = wp_cache_get( 'launching', 'vip_launch_tools' );
-	if ( 'true' === $vip_site_launching ) {
+	if ( 'true' === $vip_site_launching || true === $vip_site_launching ) {
 			// enables jetpack offline mode
 			return true;
 	}
