@@ -124,7 +124,7 @@ class QM_Collector_PHP_Errors extends QM_DataCollector {
 			error_reporting( $this->error_reporting );
 		}
 
-		if ( is_string( $this->display_errors ) ) {
+		if ( false !== $this->display_errors ) {
 			ini_set( 'display_errors', $this->display_errors );
 		}
 
@@ -317,9 +317,8 @@ class QM_Collector_PHP_Errors extends QM_DataCollector {
 
 		printf(
 			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
-			'<link rel="stylesheet" href="%1$s?ver=%2$s" media="all" />',
-			esc_url( QueryMonitor::init()->plugin_url( 'assets/query-monitor.css' ) ),
-			esc_attr( QM_VERSION )
+			'<link rel="stylesheet" href="%s" media="all" />',
+			esc_url( QueryMonitor::init()->plugin_url( 'assets/query-monitor.css' ) )
 		);
 
 		// This unused wrapper with an attribute serves to help the #qm-fatal div break out of an
@@ -341,8 +340,11 @@ class QM_Collector_PHP_Errors extends QM_DataCollector {
 			$file = esc_html( $e['file'] );
 		}
 
+		$warning = QueryMonitor::icon( 'warning' );
+
 		printf(
-			'<p><b>%1$s</b>: %2$s<br>in <b>%3$s</b> on line <b>%4$d</b></p>',
+			'<p>%1$s <b>%2$s</b>: %3$s<br>in <b>%4$s</b> on line <b>%5$d</b></p>',
+			$warning,
 			esc_html( $error ),
 			nl2br( esc_html( $e['message'] ), false ),
 			$file,
@@ -472,8 +474,8 @@ class QM_Collector_PHP_Errors extends QM_DataCollector {
 	 * Filters the reportable PHP errors using the table specified. Users can customize the levels
 	 * using the `qm/collect/php_error_levels` filter.
 	 *
-	 * @param array<string, int> $components     The error levels keyed by component name.
-	 * @param string             $component_type The component type, for example 'plugin' or 'theme'.
+	 * @param int[]  $components     The error levels keyed by component name.
+	 * @param string $component_type The component type, for example 'plugin' or 'theme'.
 	 * @return void
 	 */
 	public function filter_reportable_errors( array $components, $component_type ) {
