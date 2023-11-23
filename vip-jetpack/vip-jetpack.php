@@ -422,7 +422,7 @@ add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX,
  * @return bool
  */
 function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
-	$has_jetpack_sync_idc_optin = ! defined( 'JETPACK_SYNC_IDC_OPTIN' ) || true !== constant( 'JETPACK_SYNC_IDC_OPTIN' );
+	$has_jetpack_sync_idc_optin = defined( 'JETPACK_SYNC_IDC_OPTIN' ) && true === constant( 'JETPACK_SYNC_IDC_OPTIN' );
 	// If not multisite, or the site is not enrolling into idc return the offline mode value.
 	if ( ! is_multisite() || ! $has_jetpack_sync_idc_optin ) {
 		return $offline_mode;
