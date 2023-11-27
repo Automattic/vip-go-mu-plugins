@@ -315,6 +315,19 @@ add_filter( 'wp_headers', function ( $headers ) {
 	return $headers;
 } );
 
+// Add custom `robots.txt` to prevent indexing of non-production sites with convenience domains
+add_filter( 'robots_txt', function ( $output ) { // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.robots_txt
+	if ( 'production' !== VIP_GO_ENV && 
+		( false !== strpos( $_SERVER['HTTP_HOST'] ?? '', 'go-vip.co' ) || // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		false !== strpos( $_SERVER['HTTP_HOST'] ?? '', 'go-vip.net' ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$output  = "# Crawling is blocked for go-vip.co and go-vip.net domains\n";
+			$output .= "User-agent: *\n";
+			$output .= "Disallow: /\n";
+	}
+
+	return $output;
+}, 999, 1 );
+
 if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	// Disable core sitemaps
 	//
