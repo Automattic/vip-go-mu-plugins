@@ -2,10 +2,12 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
-use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Integrations\Integration;
+use Automattic\VIP\Integrations\ParselyIntegration;
 use Parsely\UI\Row_Actions;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_property_as_public;
 use function Automattic\Test\Utils\get_parsely_test_mode;
 use function Automattic\Test\Utils\is_parsely_disabled;
 
@@ -292,11 +294,11 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'tracked_post_types'           => array(
 				array(
 					'name'       => 'post',
-					'track_type' => 'do-not-track',
+					'track_type' => 'post',
 				),
 				array(
 					'name'       => 'page',
-					'track_type' => 'do-not-track',
+					'track_type' => 'non-post',
 				),
 				array(
 					'name'       => 'attachment',
@@ -350,6 +352,57 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		// Reset settings.
 		update_option( 'parsely', $current_settings );
+	}
+
+	/**
+	 * Verify Parse.ly data is correctly setting when the plugin is in Managed Mode.
+	 *
+	 * @return void
+	 */
+	public function test_parsely_configs_for_managed_mode() {
+		maybe_load_plugin();
+
+		if ( is_parsely_disabled() ) {
+			$this->assertNull( Parsely_Loader_Info::get_configs() );
+			return;
+		}
+
+		// Arrange.
+		$parsely_integration = new ParselyIntegration( 'parsely' );
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
+			'config' => [
+				'site_id'    => 'site_id_value',
+				'api_secret' => 'api_secret_value',
+			],
+		] );
+		$parsely_integration->configure();
+
+		// Act.
+		$configs = Parsely_Loader_Info::get_configs();
+
+		// Assert.
+		$this->assertEquals( $configs, array(
+			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
+			'site_id'                      => 'site_id_value',
+			'have_api_secret'              => true,
+			'is_javascript_disabled'       => false,
+			'is_autotracking_disabled'     => false,
+			'should_track_logged_in_users' => false,
+			'tracked_post_types'           => array(
+				array(
+					'name'       => 'post',
+					'track_type' => 'post',
+				),
+				array(
+					'name'       => 'page',
+					'track_type' => 'non-post',
+				),
+				array(
+					'name'       => 'attachment',
+					'track_type' => 'do-not-track',
+				),
+			),
+		) );
 	}
 
 	public function test_alter_option_use_repeated_metas() {
