@@ -412,7 +412,7 @@ add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX,
 
 /**
  * Enable Jetpack offline mode for Multisites when we're launching a site in the network.
- * This is enabled only if the site is a multisite and they enrolled into the JETPACK_SYNC_IDC_OPTIN.
+ * This is enabled only if the site is a multisite.
  *
  * The function checks for the `launching` flag in the `vip_launch_tools` cache group.
  * If the flag is set to `true`, it enables the offline mode while the flag is active, blocking
@@ -422,9 +422,8 @@ add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX,
  * @return bool
  */
 function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
-	$has_jetpack_sync_idc_optin = defined( 'JETPACK_SYNC_IDC_OPTIN' ) && true === constant( 'JETPACK_SYNC_IDC_OPTIN' );
-	// If not multisite, or the site is not enrolling into idc return the offline mode value.
-	if ( ! is_multisite() || ! $has_jetpack_sync_idc_optin ) {
+	// If not multisite, return the offline mode value.
+	if ( ! is_multisite() ) {
 		return $offline_mode;
 	}
 	$vip_site_launching = wp_cache_get( 'launching', 'vip_launch_tools' );

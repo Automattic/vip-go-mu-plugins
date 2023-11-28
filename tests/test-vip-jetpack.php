@@ -244,7 +244,6 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		}
 
 		if ( $is_launching ) {
-			define( 'JETPACK_SYNC_IDC_OPTIN', true );
 			wp_cache_set( 'launching', 'true', 'vip_launch_tools', 0 );
 		} else {
 			wp_cache_delete( 'launching', 'vip_launch_tools' );
