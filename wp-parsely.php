@@ -174,6 +174,10 @@ final class Parsely_Loader_Info {
 	 * Get Parse.ly options.
 	 */
 	public static function get_parsely_options(): array {
+		if ( ! self::is_active() ) {
+			return array();
+		}
+
 		$parsely = new Parsely();
 
 		/**
