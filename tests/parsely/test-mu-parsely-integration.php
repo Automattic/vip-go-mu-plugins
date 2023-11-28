@@ -293,6 +293,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			return;
 		}
 
+		\Parsely\parsely_initialize_plugin();
+
 		$this->assertEquals( Parsely_Loader_Info::get_configs(), array(
 			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
 			'site_id'                      => '',
@@ -325,6 +327,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			return;
 		}
 
+		\Parsely\parsely_initialize_plugin();
 		$current_settings = get_option( 'parsely' ) ?: [];
 		update_option( 'parsely', array_merge( $current_settings, array(
 			'apikey'                    => 'example.com',
@@ -387,6 +390,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$parsely_integration->configure();
 
 		// Act.
+		\Parsely\parsely_initialize_plugin();
 		$configs = Parsely_Loader_Info::get_configs();
 
 		// Assert.

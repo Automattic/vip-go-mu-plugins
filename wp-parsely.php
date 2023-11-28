@@ -17,8 +17,6 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
-use Parsely\Parsely;
-
 /**
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
@@ -178,15 +176,17 @@ final class Parsely_Loader_Info {
 			return array();
 		}
 
-		$parsely = new Parsely();
-
 		/**
 		 * Parse.ly options.
 		 *
 		 * @var array
 		 */
-		$parsely_options = $parsely->get_options();
+		$parsely_options = array();
 
+		if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
+			$parsely_options = $GLOBALS['parsely']->get_options();
+		}
+		
 		return $parsely_options;
 	}
 }
