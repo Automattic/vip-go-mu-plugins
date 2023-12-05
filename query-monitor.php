@@ -107,6 +107,10 @@ function wpcom_vip_qm_require() {
 	if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
 		require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
 	}
+
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-limited-header-php-errors/output/headers/php-errors.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-limited-header-php-errors/output/headers/php-errors.php';
+	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
