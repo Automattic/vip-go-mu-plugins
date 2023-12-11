@@ -30,7 +30,7 @@ class Connection_Pilot {
 	/**
 	 * Maximum number of hours that the system will wait to try to reconnect.
 	 */
-	const MAX_BACKOFF_FACTOR = 7 * 24;
+	const MAX_BACKOFF_FACTOR = 7 * 24 * 3;
 
 	/**
 	 * The healtcheck option's current data.
@@ -204,8 +204,8 @@ class Connection_Pilot {
 	private function update_backoff_factor(): void {
 		$backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
 
-		// Start at 1 hour, then double the backoff factor each time.
-		$backoff_factor = $backoff_factor <= 0 ? 1 : $backoff_factor * 2;
+		// Start at 1 hour, then multiply the backoff factor each time.
+		$backoff_factor = $backoff_factor <= 0 ? 1 : $backoff_factor * 6;
 
 		$this->update_heartbeat( min( $backoff_factor, self::MAX_BACKOFF_FACTOR ) );
 	}
