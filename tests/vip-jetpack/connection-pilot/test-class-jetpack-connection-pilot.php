@@ -99,8 +99,8 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			}
 		}
 
-		$test_data['null']     = [ null, $increments[ 0 ] ];
-		$test_data['zero']     = [ 0, $increments[ 0 ] ];
+		$test_data['null']     = [ null, $increments[0] ];
+		$test_data['zero']     = [ 0, $increments[0] ];
 		$test_data['max']      = [ $max_increment, $max_increment ];
 		$test_data['over_max'] = [ $max_increment + 1000, $max_increment ];
 
