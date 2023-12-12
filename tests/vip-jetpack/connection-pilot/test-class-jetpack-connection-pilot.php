@@ -88,9 +88,9 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__update_backoff_factor() {
-		$cp = Connection_Pilot::instance();
-		$increments = $cp::BACKOFF_INCREMENTS;
-		$max_increment = $cp::MAX_BACKOFF_FACTOR;
+		$connection_pilot = Connection_Pilot::instance();
+		$increments       = $connection_pilot::BACKOFF_INCREMENTS;
+		$max_increment    = $connection_pilot::MAX_BACKOFF_FACTOR;
 
 		$test_data = [];
 		foreach ( $increments as $key => $increment ) {
@@ -99,10 +99,10 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			}
 		}
 
-		$test_data[ 'null' ] = [ null, $increments[ 0 ] ];
-		$test_data[ 'zero' ] = [ 0, $increments[ 0 ] ];
-		$test_data[ 'max' ] = [ $max_increment, $max_increment ];
-		$test_data[ 'over_max' ] = [ $max_increment + 1000, $max_increment ];
+		$test_data['null']     = [ null, $increments[ 0 ] ];
+		$test_data['zero']     = [ 0, $increments[ 0 ] ];
+		$test_data['max']      = [ $max_increment, $max_increment ];
+		$test_data['over_max'] = [ $max_increment + 1000, $max_increment ];
 
 		return $test_data;
 	}
