@@ -247,11 +247,8 @@ class Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	public static function should_run_connection_pilot(): bool {
-		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
-			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
-		}
-
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
+		$default = defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ? VIP_JETPACK_AUTO_MANAGE_CONNECTION : false;
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $default );
 	}
 
 	/**
