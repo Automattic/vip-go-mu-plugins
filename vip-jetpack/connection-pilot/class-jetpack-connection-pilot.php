@@ -33,6 +33,12 @@ class Connection_Pilot {
 	const MAX_BACKOFF_FACTOR = 7 * 24 * 3;
 
 	/**
+	 * The number of hours between (failed) connection attempts.
+	 * Starts at a 1 hour delay, ends at the max.
+	 */
+	const BACKOFF_INCREMENTS = [ 1, 12, 24, 48, 96, self::MAX_BACKOFF_FACTOR ];
+
+	/**
 	 * The healtcheck option's current data.
 	 *
 	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
@@ -202,12 +208,18 @@ class Connection_Pilot {
 	 * @return void
 	 */
 	private function update_backoff_factor(): void {
-		$backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
+		$current_backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
 
-		// Start at 1 hour, then multiply the backoff factor each time.
-		$backoff_factor = $backoff_factor <= 0 ? 1 : $backoff_factor * 6;
+		$new_backoff_factor = self::MAX_BACKOFF_FACTOR;
+		foreach ( self::BACKOFF_INCREMENTS as $increment ) {
+			// Pick the next increment in the list.
+			if ( $increment > $current_backoff_factor ) {
+				$new_backoff_factor = $increment;
+				break;
+			}
+		}
 
-		$this->update_heartbeat( min( $backoff_factor, self::MAX_BACKOFF_FACTOR ) );
+		$this->update_heartbeat( min( $new_backoff_factor, self::MAX_BACKOFF_FACTOR ) );
 	}
 
 	/**

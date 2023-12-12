@@ -88,15 +88,23 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__update_backoff_factor() {
-		return [
-			'null'       => [ null, 1 ],
-			'zero'       => [ 0, 1 ],
-			'one_hour'   => [ 1, 2 ],
-			'two_hours'  => [ 2, 4 ],
-			'three_days' => [ 72, 144 ],
-			'max'        => [ 168, 168 ],
-			'over_max'   => [ 2000, 168 ],
-		];
+		$cp = Connection_Pilot::instance();
+		$increments = $cp::BACKOFF_INCREMENTS;
+		$max_increment = $cp::MAX_BACKOFF_FACTOR;
+
+		$test_data = [];
+		foreach ( $increments as $key => $increment ) {
+			if ( isset( $increments[ $key + 1 ] ) ) {
+				$test_data[ 'increment_' . $key ] = [ $increment, $increments[ $key + 1 ] ];
+			}
+		}
+
+		$test_data[ 'null' ] = [ null, $increments[ 0 ] ];
+		$test_data[ 'zero' ] = [ 0, $increments[ 0 ] ];
+		$test_data[ 'max' ] = [ $max_increment, $max_increment ];
+		$test_data[ 'over_max' ] = [ $max_increment + 1000, $max_increment ];
+
+		return $test_data;
 	}
 
 	public function get_test_data__update_heartbeat() {
