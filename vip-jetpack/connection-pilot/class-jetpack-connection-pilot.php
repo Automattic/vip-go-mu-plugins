@@ -194,8 +194,8 @@ class Connection_Pilot {
 			return false;
 		}
 
-		$retry_count = $this->last_heartbeat['retry_count'] ?? 0;
-		if ( $retry_count >= self::MAX_RETRIES ) {
+		$failed_attempts = $this->last_heartbeat['failed_attempts'] ?? 0;
+		if ( $failed_attempts >= self::MAX_RETRIES + 1 ) {
 			return true;
 		}
 
@@ -234,7 +234,7 @@ class Connection_Pilot {
 
 		// Just want to update some values, not overwrite them all.
 		$new_heartbeat['backoff_factor']    = $new_backoff_factor;
-		$new_heartbeat['retry_count']       = isset( $new_heartbeat['retry_count'] ) ? $new_heartbeat['retry_count'] + 1 : 0;
+		$new_heartbeat['failed_attempts']   = isset( $new_heartbeat['failed_attempts'] ) ? $new_heartbeat['failed_attempts'] + 1 : 1;
 		$new_heartbeat['failure_timestamp'] = time();
 
 		$update = update_option( self::HEARTBEAT_OPTION_NAME, $new_heartbeat, false );
@@ -253,7 +253,7 @@ class Connection_Pilot {
 
 		// Reset these, as we're now successfully connected.
 		$option['backoff_factor']    = 0;
-		$option['retry_count']       = 0;
+		$option['failed_attempts']   = 0;
 		$option['failure_timestamp'] = 0;
 
 		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
@@ -340,8 +340,8 @@ class Connection_Pilot {
 			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
 		}
 
-		if ( isset( $last_heartbeat['retry_count'] ) && $last_heartbeat['retry_count'] > 0 ) {
-			$message .= sprintf( ' Retry Count: %s.', $last_heartbeat['retry_count'] );
+		if ( isset( $last_heartbeat['failed_attempts'] ) && $last_heartbeat['failed_attempts'] > 0 ) {
+			$message .= sprintf( ' Failed Attempts: %s.', $last_heartbeat['failed_attempts'] );
 		}
 
 		if ( is_wp_error( $wp_error ) ) {

@@ -22,13 +22,13 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__update_heartbeat_on_failure
 	 */
-	public function test__update_heartbeat_on_failure( ?int $backoff_factor, int $expected_backoff, int $retry_count ) {
+	public function test__update_heartbeat_on_failure( ?int $backoff_factor, int $expected_backoff, int $failed_attempts ) {
 		$last_failure = time() - 1000;
 
 		$this->set_heartbeat( [
 			'site_url'          => 'example.com',
 			'backoff_factor'    => $backoff_factor,
-			'retry_count'       => $retry_count,
+			'failed_attempts'   => $failed_attempts,
 			'failure_timestamp' => $last_failure,
 		] );
 
@@ -38,7 +38,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 		$option = $this->get_heartbeat();
 		$this->assertEquals( $expected_backoff, $option['backoff_factor'] );
-		$this->assertEquals( $retry_count + 1, $option['retry_count'] );
+		$this->assertEquals( $failed_attempts + 1, $option['failed_attempts'] );
 		$this->assertTrue( $option['failure_timestamp'] > $last_failure );
 
 		// Doesn't change.
@@ -54,7 +54,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			'site_url'          => 'example.com',
 			'cache_site_id'     => 22,
 			'backoff_factor'    => 24,
-			'retry_count'       => 2,
+			'failed_attempts'   => 2,
 			'failure_timestamp' => time() - 1000,
 		] );
 
@@ -69,7 +69,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 		// Resets.
 		$this->assertEquals( 0, $option['backoff_factor'] );
-		$this->assertEquals( 0, $option['retry_count'] );
+		$this->assertEquals( 0, $option['failed_attempts'] );
 		$this->assertEquals( 0, $option['failure_timestamp'] );
 	}
 
@@ -78,11 +78,11 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__should_back_off
 	 */
-	public function test__should_back_off( ?int $backoff_factor, ?DateTime $failure_time, ?DateTime $legacy_time, int $retry_count, bool $expected ) {
+	public function test__should_back_off( ?int $backoff_factor, ?DateTime $failure_time, ?DateTime $legacy_time, int $failed_attempts, bool $expected ) {
 		if ( null !== $backoff_factor ) {
 			$this->set_heartbeat( [
 				'backoff_factor'    => $backoff_factor,
-				'retry_count'       => $retry_count,
+				'failed_attempts'   => $failed_attempts,
 				'failure_timestamp' => null === $failure_time ? $legacy_time->getTimestamp() : $failure_time->getTimestamp(),
 			] );
 		}
@@ -117,7 +117,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		$connection_pilot = Connection_Pilot::instance();
 		$max_retries      = $connection_pilot::MAX_RETRIES;
 
-		// [ current backoff factor, last failure's timestamp, legacy timestamp, retry count, expected result ]
+		// [ current backoff factor, last failure's timestamp, legacy timestamp, failed attempts, expected result ]
 		return [
 			'null'                     => [ null, new DateTime(), null, 0, false ],
 			'zero'                     => [ 0, new DateTime(), null, 0, false ],
@@ -127,7 +127,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			'eight-hours-false'        => [ 8, ( new DateTime() )->modify( '-9 hours' ), null, 0, false ],
 			'eight-hours-legacy-true'  => [ 8, null, new DateTime(), 0, true ],
 			'eight-hours-legacy-false' => [ 8, null, ( new DateTime() )->modify( '-9 hours' ), 0, false ],
-			'exceeds-retry-limit-true' => [ 8, ( new DateTime() )->modify( '-9 hours' ), null, $max_retries, true ],
+			'exceeds-retry-limit-true' => [ 8, ( new DateTime() )->modify( '-9 hours' ), null, $max_retries + 1, true ],
 		];
 	}
 
@@ -142,7 +142,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			'cache_site_id'     => $values['cache_site_id'] ?? (int) \Jetpack_Options::get_option( 'id', - 1 ),
 			'success_timestamp' => $values['success_timestamp'] ?? time(),
 			'backoff_factor'    => $values['backoff_factor'] ?? 0,
-			'retry_count'       => $values['retry_count'] ?? 0,
+			'failed_attempts'   => $values['failed_attempts'] ?? 0,
 			'failure_timestamp' => $values['failure_timestamp'] ?? 0,
 		], false );
 
