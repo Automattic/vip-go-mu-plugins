@@ -1307,3 +1307,22 @@ function wpcom_vip_load_geolocation_styles_only_when_needed() {
 function wpcom_vip_disable_instapost() {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 }
+
+/**
+ * `term_exists()` now uses `get_terms()` and is cached.
+ *
+ * @deprecated Since WP 6.0
+ *
+ * @param int|string $term The term to check can be id, slug or name.
+ * @param string     $taxonomy The taxonomy name to use
+ * @param int        $parent Optional. ID of parent term under which to confine the exists search.
+ * @return mixed Returns null if the term does not exist. Returns the term ID
+ *               if no taxonomy is specified and the term ID exists. Returns
+ *               an array of the term ID and the term taxonomy ID the taxonomy
+ *               is specified and the pairing exists.
+ */
+function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
+	_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
+
+	return term_exists( $term, $taxonomy, $parent ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
+}
