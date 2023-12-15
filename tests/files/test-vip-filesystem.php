@@ -280,21 +280,21 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'error', $actual );
 	}
 
-		public function test__filter_validate_file__unique_file() {
-		$file     = [
+	public function test__filter_validate_file__unique_file() {
+		$file             = [
 			'name' => 'testfile.txt',
 		];
 		$unique_file_name = 'testfile_8hj30h.txt';
-		$basepath = $this->get_upload_path();
+		$basepath         = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_name' ] )
-				->getMock();
+			->setMethods( [ 'validate_file_name' ] )
+			->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'validate_file_name' )
-				->with( $basepath . '/' . $file['name'] )
-				->will( $this->returnValue( $unique_file_name ) );
+			->method( 'validate_file_name' )
+			->with( $basepath . '/' . $file['name'] )
+			->will( $this->returnValue( $unique_file_name ) );
 
 		$actual = $stub->filter_validate_file( $file );
 
@@ -303,7 +303,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	}
 
 	public function test__filter_validate_file__invalid_file_length() {
-		$file = [
+		$file     = [
 			'name' => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz.txt',
 		];
 		$basepath = $this->get_upload_path();

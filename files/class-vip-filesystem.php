@@ -185,7 +185,7 @@ class VIP_Filesystem {
 			return $file;
 		} elseif ( $check_file_name !== $file_name ) {
 				$file['name'] = $check_file_name;
-				$file_path = $upload_path . $check_file_name;
+				$file_path    = $upload_path . $check_file_name;
 		}
 
 		$check_length = $this->validate_file_path_length( $file_path );
