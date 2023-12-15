@@ -306,13 +306,16 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$file = [
 			'name' => 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz.txt',
 		];
+		$basepath = $this->get_upload_path();
 
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
 				->setMethods( [ 'validate_file_name' ] )
 				->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'validate_file_name' );
+				->method( 'validate_file_name' )
+				->with( $basepath . '/' . $file['name'] )
+				->will( $this->returnValue( $file['name'] ) );
 
 		$actual = $stub->filter_validate_file( $file );
 
