@@ -600,7 +600,7 @@ function vip_jetpack_load() {
 		} elseif ( ! file_exists( $path ) && defined( 'VIP_JETPACK_PINNED_VERSION' ) && wp_in( constant( 'VIP_JETPACK_PINNED_VERSION' ), $path ) ) {
 			if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-				trigger_error( 'Jetpack loading error:' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
+				trigger_error( 'Jetpack loading error: ' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
 			}
 		}
 	}
