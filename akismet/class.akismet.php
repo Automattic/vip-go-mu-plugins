@@ -73,8 +73,21 @@ class Akismet {
 		add_filter( 'frm_akismet_values', array( 'Akismet', 'prepare_custom_form_values' ) );
 
 		// Fluent Forms
+		/*
+		 * The Fluent Forms  hook names were updated in version 5.0.0. The last version that supported
+		 * the original hook names was 4.3.25, and version 4.3.25 was tested up to WordPress version 6.1.
+		 *
+		 * The legacy hooks are fired before the new hooks. See
+		 * https://github.com/fluentform/fluentform/commit/cc45341afcae400f217470a7bbfb15efdd80454f
+		 *
+		 * The legacy Fluent Forms hooks will be removed when Akismet no longer supports WordPress version 6.1.
+		 * This will provide compatibility with previous versions of Fluent Forms for a reasonable amount of time.
+		 */
 		add_filter( 'fluentform_form_element_start', array( 'Akismet', 'output_custom_form_fields' ) );
 		add_filter( 'fluentform_akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ), 10, 2 );
+		// Current Fluent Form hooks.
+		add_filter( 'fluentform/form_element_start', array( 'Akismet', 'output_custom_form_fields' ) );
+		add_filter( 'fluentform/akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ), 10, 2 );
 
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
@@ -468,7 +481,7 @@ class Akismet {
 			}
 
 			// Prepared as strings since comment_id is an unsigned BIGINT, and using %d will constrain the value to the maximum signed BIGINT.
-			$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
+			$format_string = implode( ', ', array_fill( 0, is_countable( $comment_ids ) ? count( $comment_ids ) : 0, '%s' ) );
 
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
@@ -479,7 +492,7 @@ class Akismet {
 			}
 
 			clean_comment_cache( $comment_ids );
-			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
+			do_action( 'akismet_delete_comment_batch', is_countable( $comment_ids ) ? count( $comment_ids ) : 0 );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->comments ) ) // lucky number
@@ -509,7 +522,7 @@ class Akismet {
 				do_action( 'akismet_batch_delete_count', __FUNCTION__ );
 			}
 
-			do_action( 'akismet_delete_commentmeta_batch', count( $comment_ids ) );
+			do_action( 'akismet_delete_commentmeta_batch', is_countable( $comment_ids ) ? count( $comment_ids ) : 0 );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
@@ -1151,6 +1164,7 @@ class Akismet {
 
 	// return a comma-separated list of role names for the given user
 	public static function get_user_roles( $user_id ) {
+		$comment_user = null;
 		$roles = false;
 
 		if ( !class_exists('WP_User') )
@@ -1159,7 +1173,7 @@ class Akismet {
 		if ( $user_id > 0 ) {
 			$comment_user = new WP_User( $user_id );
 			if ( isset( $comment_user->roles ) )
-				$roles = join( ',', $comment_user->roles );
+				$roles = implode( ',', $comment_user->roles );
 		}
 
 		if ( is_multisite() && is_super_admin( $user_id ) ) {
@@ -1167,7 +1181,7 @@ class Akismet {
 				$roles = 'super_admin';
 			} else {
 				$comment_user->roles[] = 'super_admin';
-				$roles = join( ',', $comment_user->roles );
+				$roles = implode( ',', $comment_user->roles );
 			}
 		}
 
@@ -1426,6 +1440,11 @@ class Akismet {
 	}
 
 	public static function output_custom_form_fields( $post_id ) {
+		if ( 'fluentform/form_element_start' === current_filter() && did_action( 'fluentform_form_element_start' ) ) {
+			// Already did this via the legacy filter.
+			return;
+		}
+
 		// phpcs:ignore WordPress.Security.EscapeOutput
 		echo self::get_akismet_form_fields();
 	}
@@ -1451,6 +1470,11 @@ class Akismet {
 	 * @return array $form
 	 */
 	public static function prepare_custom_form_values( $form, $data = null ) {
+		if ( 'fluentform/akismet_fields' === current_filter() && did_filter( 'fluentform_akismet_fields' ) ) {
+			// Already updated the form fields via the legacy filter.
+			return $form;
+		}
+
 		if ( is_null( $data ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$data = $_POST;
@@ -1592,6 +1616,7 @@ p {
 	}
 
 	public static function pre_check_pingback( $method ) {
+		$pingback_args = array();
 		if ( $method !== 'pingback.ping' )
 			return;
 
@@ -1616,7 +1641,7 @@ p {
 
 			if ( 0 === $call_count ) {
 				// Only pass along the number of entries in the multicall the first time we see it.
-				$multicall_count = count( $wp_xmlrpc_server->message->params );
+				$multicall_count = is_countable( $wp_xmlrpc_server->message->params ) ? count( $wp_xmlrpc_server->message->params ) : 0;
 			}
 
 			/*
