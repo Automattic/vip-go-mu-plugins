@@ -6,14 +6,18 @@ use WP_CLI;
 use WP_CLI\Utils;
 use ElasticPress\Elasticsearch;
 
-use function Automattic\VIP\Logstash\log2logstash;
-
 /**
  * Core commands for interacting with VIP Search
  *
  * @package Automattic\VIP\Search
  */
-class CoreCommand extends \ElasticPress\Command {
+class CoreCommand {
+	private $ep_command;
+
+	public function __construct() {
+		$this->ep_command = new \ElasticPress\Command();
+	}
+
 	private function verify_arguments_compatibility( $assoc_args ) {
 		if ( array_key_exists( 'version', $assoc_args ) && array_key_exists( 'using-versions', $assoc_args ) ) {
 			WP_CLI::error( 'The --version argument is not allowed when specifying --using-versions' );
@@ -285,9 +289,7 @@ class CoreCommand extends \ElasticPress\Command {
 				switch_to_blog( (int) $blog_id );
 				$assoc_args['url'] = home_url();
 				WP_CLI::line( "* Indexing blog {$blog_id}: {$assoc_args['url']}" );
-				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ), [
-					'exit_error' => false,
-				] );
+				$this->ep_command->index( $args, $assoc_args );
 				Utils\wp_clear_object_cache();
 				restore_current_blog();
 			}
@@ -315,8 +317,7 @@ class CoreCommand extends \ElasticPress\Command {
 				]
 			);
 
-			array_unshift( $args, 'elasticpress', 'index' );
-			WP_CLI::run_command( $args, $assoc_args );
+			$this->ep_command->index( $args, $assoc_args );
 		}
 
 		if ( $using_versions ) {
@@ -337,7 +338,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 */
 	public function put_mapping( $args, $assoc_args ) {
 		self::confirm_destructive_operation( $assoc_args );
-		parent::put_mapping( $args, $assoc_args );
+		$this->ep_command->put_mapping( $args, $assoc_args );
 	}
 
 	/**
@@ -383,11 +384,8 @@ class CoreCommand extends \ElasticPress\Command {
 	 * Throw error when delete-index command is attempted to be used.
 	 *
 	 * @subcommand delete-index
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function delete_index( $args, $assoc_args ) {
+	public function delete_index() {
 		WP_CLI::error( 'Please use index versioning to manage your indices: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/' );
 	}
 
@@ -411,11 +409,8 @@ class CoreCommand extends \ElasticPress\Command {
 	 * Return all index names as a JSON object.
 	 *
 	 * @subcommand get-indexes
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_indexes( $args, $assoc_args ) {
+	public function get_indexes() {
 
 		$indexes = $this->list_indexes();
 
@@ -464,8 +459,7 @@ class CoreCommand extends \ElasticPress\Command {
 			WP_CLI::error( "The feature {$args[0]} is not currently supported." );
 		}
 
-		array_unshift( $args, 'elasticpress', 'activate-feature' );
-		WP_CLI::run_command( $args, $assoc_args );
+		$this->ep_command->activate_feature( $args, $assoc_args );
 	}
 
 	/**
@@ -500,19 +494,15 @@ class CoreCommand extends \ElasticPress\Command {
 			WP_CLI::confirm( "Are you sure you want to deactivate $args[0]? This will break all search-related functionality!" );
 		}
 
-		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
-		WP_CLI::run_command( $args, $assoc_args );
+		$this->ep_command->deactivate_feature( $args, $assoc_args );
 	}
 
 	/**
 	 * Get the last indexed post ID on an incomplete indexing operation.
 	 *
 	 * @subcommand get-last-indexed-post-id
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_last_indexed_post_id( $args, $assoc_args ) {
+	public function get_last_indexed_post_id() {
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
@@ -532,7 +522,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function clean_ep_feature_settings( $args, $assoc_args ) {
+	public function clean_ep_feature_settings() {
 		if ( is_multisite() && defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' ) ) {
 			$delete_option = delete_option( 'ep_feature_settings' );
 			if ( $delete_option ) {
