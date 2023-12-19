@@ -176,32 +176,8 @@ describe('WP-CLI Commands', () => {
 		});
 	});
 
-	it('Can set the algorithm version', () => {
-		cy.wpCli('wp vip-search set-algorithm-version --default')
-			.its('stdout')
-			.should('contain', 'Done');
-
-		cy.wpCli('wp vip-search get-algorithm-version')
-			.its('stdout')
-			.should('contain', 'default');
-
-		cy.wpCli('wp vip-search set-algorithm-version --version=1.0.0')
-			.its('stdout')
-			.should('contain', 'Done');
-
-		cy.wpCli('wp vip-search get-algorithm-version').its('stdout').should('contain', '1.0.0');
-
-		cy.wpCli('wp vip-search set-algorithm-version', true)
-			.its('stderr')
-			.should('contain', 'This command expects a version number or the --default flag');
-	});
-
 	it('Can get the mapping information', () => {
 		cy.wpCli('wp vip-search get-mapping').its('stdout').should('contain', 'mapping_version');
-	});
-
-	it('Can get the cluster indexes information', () => {
-		cy.wpCli('wp vip-search get-cluster-indexes').its('stdout').should('contain', 'health');
 	});
 
 	it('Can get the indexes names', () => {

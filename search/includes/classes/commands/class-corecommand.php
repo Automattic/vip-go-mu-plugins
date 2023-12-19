@@ -289,7 +289,9 @@ class CoreCommand {
 				switch_to_blog( (int) $blog_id );
 				$assoc_args['url'] = home_url();
 				WP_CLI::line( "* Indexing blog {$blog_id}: {$assoc_args['url']}" );
-				$this->ep_command->index( $args, $assoc_args );
+				WP_CLI::runcommand( 'vip-search index ' . Utils\assoc_args_to_str( $assoc_args ), [
+					'exit_error' => false,
+				] );
 				Utils\wp_clear_object_cache();
 				restore_current_blog();
 			}
@@ -317,7 +319,8 @@ class CoreCommand {
 				]
 			);
 
-			$this->ep_command->index( $args, $assoc_args );
+			array_unshift( $args, 'elasticpress', 'index' );
+			WP_CLI::run_command( $args, $assoc_args );
 		}
 
 		if ( $using_versions ) {
@@ -533,5 +536,117 @@ class CoreCommand {
 		} else {
 			WP_CLI::error( 'Not a multisite or EP_IS_NETWORK is not enabled!' );
 		}
+	}
+
+	/**
+	 * Stop the current indexing operation.
+	 *
+	 * @subcommand stop-indexing
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function stop_indexing( $args, $assoc_args ) {
+		$this->ep_command->stop_indexing( $args, $assoc_args );
+	}
+
+	/**
+	 * List features (either active or all).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--all]
+	 * : Show all registered features
+	 *
+	 * @subcommand list-features
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function list_features( $args, $assoc_args ) {
+		$this->ep_command->list_features( $args, $assoc_args );
+	}
+
+	/**
+	 * Recreates the alias index which points to every index in the network.
+	 *
+	 * Map network alias to every index in the network for every non-global indexable
+	 *
+	 * @subcommand recreate-network-alias
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function recreate_network_alias( $args, $assoc_args ) {
+		$this->ep_command->recreate_network_alias( $args, $assoc_args );
+	}
+
+	/**
+	 * Clear a sync/index process.
+	 *
+	 * If an index was stopped prematurely and won't start again, this will clear this cached data such that a new index can start.
+	 *
+	 * @subcommand clear-index
+	 * @alias delete-transient
+	 */
+	public function clear_index( $args, $assoc_args ) {
+		$this->ep_command->clear_index( $args, $assoc_args );
+	}
+
+	/**
+	 * Returns the status of an ongoing index operation in JSON array.
+	 *
+	 * Returns the status of an ongoing index operation in JSON array with the following fields:
+	 * indexing | boolean | True if index operation is ongoing or false
+	 * items_indexed | integer | Total number of items indexed
+	 * total_items | integer | Total number of items indexed or -1 if not yet determined
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--pretty]
+	 * : Use this flag to render a pretty-printed version of the JSON response.
+	 *
+	 * @subcommand get-indexing-status
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_indexing_status( $args, $assoc_args ) {
+		$this->ep_command->get_indexing_status( $args, $assoc_args );
+	}
+
+	/**
+	 * Returns a JSON array with the results of the last index (if present) or an empty array.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--pretty]
+	 * : Use this flag to render a pretty-printed version of the JSON response.
+	 *
+	 * @subcommand get-last-index
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_last_index( $args, $assoc_args ) {
+		$this->ep_command->get_last_sync( $args, $assoc_args );
+	}
+
+	/**
+	 * Get the algorithm version.
+	 *
+	 * Get the value of the `ep_search_algorithm_version` option, or
+	 * `default` if empty.
+	 *
+	 * @subcommand get-algorithm-version
+	 */
+	public function get_algorithm_version() {
+		$version = apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) );
+		WP_CLI::line( $version );
+	}
+
+	/**
+	 * Get stats on the current index.
+	 * 
+	 * @subcommand stats
+	 */
+	public function get_stats() {
+		$this->ep_command->stats();
 	}
 }
