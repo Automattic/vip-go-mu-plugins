@@ -92,7 +92,6 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			cy.get('#billing-address_1').type(userData.address);
 			cy.get('#billing-city').type(userData.city);
 			cy.get('#billing-postcode').type(userData.postCode);
-			cy.get('#billing-phone').type(userData.phoneNumber);
 			cy.get('button.wc-block-components-checkout-place-order-button').trigger('click'); // VIP: Need to use .trigger('click') because Cypress can't click on the button.
 
 			// VIP: Give some time for the order to be placed.
