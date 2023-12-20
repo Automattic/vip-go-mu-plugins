@@ -225,9 +225,6 @@ class CoreCommand {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function index( $args, $assoc_args ) {
-		if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
-			self::confirm_destructive_operation( $assoc_args );
-		}
 		$this->verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
@@ -298,6 +295,10 @@ class CoreCommand {
 
 			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
+			if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
+				self::confirm_destructive_operation( $assoc_args );
+			}
+			
 			// Unset our arguments since they don't exist in ElasticPress and causes
 			// an error for indexing operations exclusively for some reason.
 			unset( $assoc_args['version'] );
