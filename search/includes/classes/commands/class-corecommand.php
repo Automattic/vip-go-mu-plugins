@@ -613,9 +613,12 @@ class CoreCommand {
 	}
 
 	/**
-	 * Returns a JSON array with the results of the last index (if present) or an empty array.
+	 * Returns a JSON array with the results of the last CLI index (if present) or an empty array.
 	 *
 	 * ## OPTIONS
+	 *
+	 * [--clear]
+	 * : Clear the `ep_last_cli_index` option.
 	 *
 	 * [--pretty]
 	 * : Use this flag to render a pretty-printed version of the JSON response.
@@ -625,7 +628,7 @@ class CoreCommand {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function get_last_index( $args, $assoc_args ) {
-		$this->ep_command->get_last_sync( $args, $assoc_args );
+		$this->ep_command->get_last_cli_index( $args, $assoc_args );
 	}
 
 	/**

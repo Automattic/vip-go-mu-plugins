@@ -126,14 +126,14 @@ describe('WP-CLI Commands', () => {
 			);
 	});
 
-	it('Can return a string indicating with the appropriate fields if user runs wp vip-search get-last-cli-index command', () => {
+	it('Can return a string indicating with the appropriate fields if user runs wp vip-search get-last-index command', () => {
 		cy.wpCli('wp vip-search index');
 
-		cy.wpCli('wp vip-search get-last-cli-index')
+		cy.wpCli('wp vip-search get-last-index')
 			.its('stdout')
 			.should('contain', '"total":');
 
-		cy.wpCli('wp vip-search get-last-cli-index --clear')
+		cy.wpCli('wp vip-search get-last-index --clear')
 			.its('stdout')
 			.should('contain', '[]');
 	});
