@@ -30,14 +30,20 @@ class Connection_Pilot {
 	/**
 	 * Maximum number of hours that the system will wait to try to reconnect.
 	 */
-	const MAX_BACKOFF_FACTOR = 7 * 24;
+	const MAX_BACKOFF_FACTOR = 7 * 24 * 3;
+
+	/**
+	 * The number of hours between (failed) connection attempts.
+	 * Starts at a 1 hour delay, ends at the max.
+	 */
+	const BACKOFF_INCREMENTS = [ 1, 12, 24, 48, 96, self::MAX_BACKOFF_FACTOR ];
+
+	const MAX_RETRIES = 1;
 
 	/**
 	 * The healtcheck option's current data.
 	 *
-	 * Example: [ 'site_url' => 'https://example.go-vip.co', 'hashed_site_url' => '371a92eb7d5d63007db216dbd3b49187', 'cache_site_id' => 1234, 'timestamp' => 1555124370 ]
-	 *
-	 * @var mixed False if doesn't exist, else an array with the data shown above.
+	 * @var array Connection-related data.
 	 */
 	private $last_heartbeat;
 
@@ -114,7 +120,7 @@ class Connection_Pilot {
 
 		if ( true === $is_connected ) {
 			// Everything checks out. Update the heartbeat option and move on.
-			$this->update_heartbeat();
+			$this->update_heartbeat_on_success();
 
 			// Attempting Akismet connection given that Jetpack is connected.
 			$skip_akismet = defined( 'VIP_AKISMET_SKIP_LOAD' ) && VIP_AKISMET_SKIP_LOAD;
@@ -170,7 +176,7 @@ class Connection_Pilot {
 
 		// Reconnection failed.
 		$this->send_alert( 'Jetpack (re)connection attempt failed.' . $prev_connection_error_message, $connection_attempt );
-		$this->update_backoff_factor();
+		$this->update_heartbeat_on_failure();
 	}
 
 	/**
@@ -179,21 +185,32 @@ class Connection_Pilot {
 	 * @return bool True if CP should back off, false otherwise.
 	 */
 	private function should_back_off(): bool {
-		if ( ! empty( $this->last_heartbeat['backoff_factor'] ) && ! empty( $this->last_heartbeat['timestamp'] ) ) {
-			$backoff_factor = min( $this->last_heartbeat['backoff_factor'], self::MAX_BACKOFF_FACTOR );
-
-			if ( $backoff_factor > 0 ) {
-				$seconds_elapsed = time() - $this->last_heartbeat['timestamp'];
-				$hours_elapsed   = $seconds_elapsed / HOUR_IN_SECONDS;
-
-				if ( $backoff_factor > $hours_elapsed ) {
-					// We're still in the backoff period.
-					return true;
-				}
-			}
+		if ( empty( $this->last_heartbeat['backoff_factor'] ) ) {
+			return false;
 		}
 
-		return false;
+		$backoff_factor = min( $this->last_heartbeat['backoff_factor'], self::MAX_BACKOFF_FACTOR );
+		if ( $backoff_factor <= 0 ) {
+			return false;
+		}
+
+		$failed_attempts = $this->last_heartbeat['failed_attempts'] ?? 0;
+		if ( $failed_attempts >= self::MAX_RETRIES + 1 ) {
+			return true;
+		}
+
+		$last_failure = 0;
+		if ( isset( $this->last_heartbeat['failure_timestamp'] ) ) {
+			$last_failure = $this->last_heartbeat['failure_timestamp'];
+		} elseif ( ! empty( $this->last_heartbeat['timestamp'] ) ) {
+			// Backwards compat.
+			$last_failure = $this->last_heartbeat['timestamp'];
+		}
+
+		$hours_elapsed = ( time() - $last_failure ) / HOUR_IN_SECONDS;
+
+		// We'll backoff (not attempt reconnection) until the hours elapsed exceeds the backoff factor.
+		return $backoff_factor > $hours_elapsed;
 	}
 
 	/**
@@ -201,28 +218,44 @@ class Connection_Pilot {
 	 *
 	 * @return void
 	 */
-	private function update_backoff_factor(): void {
-		$backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
+	private function update_heartbeat_on_failure(): void {
+		$current_backoff_factor = isset( $this->last_heartbeat['backoff_factor'] ) ? (int) $this->last_heartbeat['backoff_factor'] : 0;
 
-		// Start at 1 hour, then double the backoff factor each time.
-		$backoff_factor = $backoff_factor <= 0 ? 1 : $backoff_factor * 2;
+		$new_backoff_factor = self::MAX_BACKOFF_FACTOR;
+		foreach ( self::BACKOFF_INCREMENTS as $increment ) {
+			// Pick the next increment in the list.
+			if ( $increment > $current_backoff_factor ) {
+				$new_backoff_factor = $increment;
+				break;
+			}
+		}
 
-		$this->update_heartbeat( min( $backoff_factor, self::MAX_BACKOFF_FACTOR ) );
+		$new_heartbeat = $this->last_heartbeat;
+
+		// Just want to update some values, not overwrite them all.
+		$new_heartbeat['backoff_factor']    = $new_backoff_factor;
+		$new_heartbeat['failed_attempts']   = isset( $new_heartbeat['failed_attempts'] ) ? $new_heartbeat['failed_attempts'] + 1 : 1;
+		$new_heartbeat['failure_timestamp'] = time();
+
+		$update = update_option( self::HEARTBEAT_OPTION_NAME, $new_heartbeat, false );
+		if ( $update ) {
+			$this->last_heartbeat = $new_heartbeat;
+		}
 	}
 
-	/**
-	 * @param int $backoff_factor
-	 *
-	 * @return void
-	 */
-	private function update_heartbeat( int $backoff_factor = 0 ): void {
+	private function update_heartbeat_on_success(): void {
 		$option = array(
-			'site_url'        => get_site_url(),
-			'hashed_site_url' => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
-			'cache_site_id'   => (int) \Jetpack_Options::get_option( 'id', -1 ), // if no id can be retrieved, we'll fall back to -1
-			'timestamp'       => time(),
-			'backoff_factor'  => $backoff_factor,
+			'site_url'          => get_site_url(),
+			'hashed_site_url'   => md5( get_site_url() ), // used to protect against S&Rs/imports/syncs
+			'cache_site_id'     => (int) \Jetpack_Options::get_option( 'id', -1 ),
+			'success_timestamp' => time(),
 		);
+
+		// Reset these, as we're now successfully connected.
+		$option['backoff_factor']    = 0;
+		$option['failed_attempts']   = 0;
+		$option['failure_timestamp'] = 0;
+
 		$update = update_option( self::HEARTBEAT_OPTION_NAME, $option, false );
 		if ( $update ) {
 			$this->last_heartbeat = $option;
@@ -235,11 +268,8 @@ class Connection_Pilot {
 	 * @return bool True if the connection pilot should run.
 	 */
 	public static function should_run_connection_pilot(): bool {
-		if ( defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ) {
-			return VIP_JETPACK_AUTO_MANAGE_CONNECTION;
-		}
-
-		return apply_filters( 'vip_jetpack_connection_pilot_should_run', false );
+		$default = defined( 'VIP_JETPACK_AUTO_MANAGE_CONNECTION' ) ? VIP_JETPACK_AUTO_MANAGE_CONNECTION : false;
+		return apply_filters( 'vip_jetpack_connection_pilot_should_run', $default );
 	}
 
 	/**
@@ -299,15 +329,19 @@ class Connection_Pilot {
 		$message .= sprintf( ' Site: %s (ID %d).', get_site_url(), defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : 0 );
 
 		$last_heartbeat = $this->last_heartbeat;
-		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['timestamp'] ) && -1 != $last_heartbeat['cache_site_id'] ) {
+		if ( isset( $last_heartbeat['site_url'], $last_heartbeat['cache_site_id'], $last_heartbeat['success_timestamp'] ) && -1 != $last_heartbeat['cache_site_id'] ) {
 			$message .= sprintf(
 				' The last known connection was on %s UTC to Cache Site ID %d (%s).',
-				gmdate( 'F j, H:i', $last_heartbeat['timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
+				gmdate( 'F j, H:i', $last_heartbeat['success_timestamp'] ), $last_heartbeat['cache_site_id'], $last_heartbeat['site_url']
 			);
 		}
 
 		if ( isset( $last_heartbeat['backoff_factor'] ) && $last_heartbeat['backoff_factor'] > 0 ) {
 			$message .= sprintf( ' Backoff Factor: %s hours.', $last_heartbeat['backoff_factor'] );
+		}
+
+		if ( isset( $last_heartbeat['failed_attempts'] ) && $last_heartbeat['failed_attempts'] > 0 ) {
+			$message .= sprintf( ' Failed Attempts: %s.', $last_heartbeat['failed_attempts'] );
 		}
 
 		if ( is_wp_error( $wp_error ) ) {
