@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fcb388fad371b5e31ffc2f40fe302290",
+    "content-hash": "17f45f807d36fba3c64bdaa80d8d0e81",
     "packages": [],
     "packages-dev": [
         {
@@ -2953,16 +2953,16 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "6.4.1",
+            "version": "6.4.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
-                "reference": "7b0f58b0c33ba2569a4de74761c10c629298e7ce"
+                "reference": "aa3c8f5d1b7efc295fd2b37c7264d2356a8c1099"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/7b0f58b0c33ba2569a4de74761c10c629298e7ce",
-                "reference": "7b0f58b0c33ba2569a4de74761c10c629298e7ce",
+                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/aa3c8f5d1b7efc295fd2b37c7264d2356a8c1099",
+                "reference": "aa3c8f5d1b7efc295fd2b37c7264d2356a8c1099",
                 "shasum": ""
             },
             "type": "library",
@@ -2997,7 +2997,7 @@
                 "issues": "https://github.com/wp-phpunit/issues",
                 "source": "https://github.com/wp-phpunit/wp-phpunit"
             },
-            "time": "2023-11-28T00:32:39+00:00"
+            "time": "2023-12-07T00:50:08+00:00"
         },
         {
             "name": "yoast/phpunit-polyfills",
