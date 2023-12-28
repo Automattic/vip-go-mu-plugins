@@ -14,8 +14,8 @@ use ElasticPress\Elasticsearch;
 class CoreCommand {
 	private $ep_command;
 
-	public function __construct() {
-		$this->ep_command = new \ElasticPress\Command();
+	public function __construct( \ElasticPress\Command $ep_command ) {
+		$this->ep_command = $ep_command;
 	}
 
 	private function verify_arguments_compatibility( $assoc_args ) {
@@ -389,7 +389,7 @@ class CoreCommand {
 	 *
 	 * @subcommand delete-index
 	 */
-	public function delete_index() {
+	public function delete_index( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		WP_CLI::error( 'Please use index versioning to manage your indices: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/' );
 	}
 
@@ -401,7 +401,7 @@ class CoreCommand {
 	 * @param array $assoc_args arguments that were passed to the caller command.
 	 * @return void
 	 */
-	public static function confirm_destructive_operation( array $assoc_args ) {
+	public static function confirm_destructive_operation( $assoc_args ) {
 		if ( isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'] ) {
 			return;
 		}
@@ -414,8 +414,7 @@ class CoreCommand {
 	 *
 	 * @subcommand get-indexes
 	 */
-	public function get_indexes() {
-
+	public function get_indexes( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$indexes = $this->list_indexes();
 
 		if ( is_wp_error( $indexes ) ) {
@@ -433,7 +432,7 @@ class CoreCommand {
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_mapping( $args, $assoc_args ) {
+	public function get_mapping( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$index_names = (array) ( isset( $assoc_args['index-name'] ) ? $assoc_args['index-name'] : $this->list_indexes() );
 
 		$path = join( ',', $index_names ) . '/_mapping';
@@ -506,7 +505,7 @@ class CoreCommand {
 	 *
 	 * @subcommand get-last-indexed-post-id
 	 */
-	public function get_last_indexed_post_id() {
+	public function get_last_indexed_post_id( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
@@ -522,11 +521,8 @@ class CoreCommand {
 	 * Clean the ep_feature_settings individual blog option if it exists for sites with EP_IS_NETWORK.
 	 *
 	 * @subcommand clean-ep-feature-settings
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function clean_ep_feature_settings() {
+	public function clean_ep_feature_settings( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( is_multisite() && defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' ) ) {
 			$delete_option = delete_option( 'ep_feature_settings' );
 			if ( $delete_option ) {
@@ -640,7 +636,7 @@ class CoreCommand {
 	 *
 	 * @subcommand get-algorithm-version
 	 */
-	public function get_algorithm_version() {
+	public function get_algorithm_version( $args, $assoc_args ) {  // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$version = apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) );
 		WP_CLI::line( $version );
 	}
@@ -650,7 +646,7 @@ class CoreCommand {
 	 * 
 	 * @subcommand stats
 	 */
-	public function get_stats() {
+	public function get_stats( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$this->ep_command->stats();
 	}
 }
