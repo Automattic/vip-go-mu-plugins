@@ -20,7 +20,7 @@ class BlockDataApiIntegration extends Integration {
 	 *
 	 * @var string
 	 */
-	protected string $version = '1.0';
+	protected string $version = '1.1';
 
 	/**
 	 * Returns `true` if `Block Data API` is already available e.g. via customer code. We will use
