@@ -25,6 +25,7 @@ use Automattic\VIP\Parsely\Telemetry\Tracks;
 const WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID = 'parsely_recommended_widget';
 
 // Telemetry is enabled by default on non-production sites.
+add_filter( 'wp_parsely_enable_wpadmin_telemetry', '__return_true' );
 if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 	require __DIR__ . '/Telemetry/class-telemetry.php';
 	require __DIR__ . '/Telemetry/class-telemetry-system.php';

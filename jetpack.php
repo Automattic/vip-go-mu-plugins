@@ -1,11 +1,10 @@
 <?php
-
 /**
  * Plugin Name: Jetpack
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 12.6
+ * Version: 12.9
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -32,9 +31,12 @@ function vip_default_jetpack_version() {
 	} elseif ( version_compare( $wp_version, '6.2', '<' ) ) {
 		// WordPress 6.1.x
 		return '12.5';
+	} elseif ( version_compare( $wp_version, '6.3', '<' ) ) {
+		// WordPress 6.2.x.
+		return '12.8';
 	} else {
-		// WordPress 6.2 and newer.
-		return '12.6';
+		// WordPress 6.3 and newer.
+		return '12.9';
 	}
 }
 
@@ -593,6 +595,13 @@ function vip_jetpack_load() {
 
 			// We should break even if we failed to load Jetpack, because some constants like JETPACK_VERSION were probably already set
 			break;
+
+			// Trigger a E_USER_WARNING in non-production environments if the pinned version could not be loaded.
+		} elseif ( ! file_exists( $path ) && defined( 'VIP_JETPACK_PINNED_VERSION' ) && wp_in( constant( 'VIP_JETPACK_PINNED_VERSION' ), $path ) ) {
+			if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Jetpack loading error: ' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
+			}
 		}
 	}
 

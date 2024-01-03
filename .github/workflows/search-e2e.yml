@@ -38,7 +38,7 @@ jobs:
       uses: ./.github/actions/prepare-source
 
     - name: "Install node v${{ env.NODE_VERSION }}"
-      uses: actions/setup-node@v3.8.1
+      uses: actions/setup-node@v4.0.1
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
@@ -59,7 +59,7 @@ jobs:
       run: npm run cypress:run
 
     - name: Make artifacts available
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: cypress-artifact

@@ -61,6 +61,8 @@ class Private_Sites {
 
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
+
+		add_filter( 'jetpack_ai_enabled', '__return_false' );
 	}
 
 	/**

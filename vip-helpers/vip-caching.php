@@ -3,7 +3,6 @@
  * This file contains a bunch of helper functions that handle add caching to core WordPress functions.
  */
 
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.count_user_posts_count_user_posts
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_title_get_page_by_title
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
@@ -81,62 +80,6 @@ function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
 }
 
 /**
- * Cached version of term_exists()
- *
- * Term exists calls can pile up on a single pageload.
- * This function adds a layer of caching to prevent lots of queries.
- *
- * @param int|string $term The term to check can be id, slug or name.
- * @param string     $taxonomy The taxonomy name to use
- * @param int        $parent Optional. ID of parent term under which to confine the exists search.
- * @return mixed Returns null if the term does not exist. Returns the term ID
- *               if no taxonomy is specified and the term ID exists. Returns
- *               an array of the term ID and the term taxonomy ID the taxonomy
- *               is specified and the pairing exists.
- */
-
-function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
-	// If $parent is not null, let's skip the cache.
-	if ( null !== $parent ) {
-		return term_exists( $term, $taxonomy, $parent );
-	}
-
-	if ( ! empty( $taxonomy ) ) {
-		$cache_key = $term . '|' . $taxonomy;
-	} else {
-		$cache_key = $term;
-	}
-
-	$cache_value = wp_cache_get( $cache_key, 'term_exists' );
-
-	// term_exists frequently returns null, but (happily) never false
-	if ( false === $cache_value ) {
-		$term_exists = term_exists( $term, $taxonomy );
-		wp_cache_set( $cache_key, $term_exists, 'term_exists', 3 * HOUR_IN_SECONDS );
-	} else {
-		$term_exists = $cache_value;
-	}
-
-	if ( is_wp_error( $term_exists ) ) {
-		$term_exists = null;
-	}
-
-	return $term_exists;
-}
-
-/**
- * Properly clear wpcom_vip_term_exists() cache when a term is updated
- */
-add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
-function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ) {
-	foreach ( array( 'term_id', 'name', 'slug' ) as $field ) {
-		$cache_key   = $deleted_term->$field . '|' . $taxonomy;
-		$cache_group = 'term_exists';
-		wp_cache_delete( $cache_key, $cache_group );
-	}
-}
-
-/**
  * Optimized version of get_term_link that adds caching for slug-based lookups.
  *
  * Returns permalink for a taxonomy term archive, or a WP_Error object if the term does not exist.
@@ -166,6 +109,11 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
+	global $wp_version;
+	if ( version_compare( $wp_version, '6.2', '<' ) ) {
+		_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
+	}
+
 	$cache_key = $post_type . '_' . sanitize_key( $title );
 	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
 
@@ -210,7 +158,12 @@ function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'pa
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+	global $wp_version;
+	if ( version_compare( $wp_version, '6.1', '<' ) ) {
+		_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+	}
+
+ 	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 	$cache_key = md5( $page_path . serialize( $post_type ) );
 	$page_id   = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
 

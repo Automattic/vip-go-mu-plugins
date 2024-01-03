@@ -21,6 +21,8 @@ namespace Automattic\VIP\WP_Parsely_Integration;
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
 const SUPPORTED_VERSIONS = [
+	'3.12',
+	'3.11',
 	'3.10',
 	'3.9',
 	'3.8',
@@ -59,13 +61,6 @@ final class Parsely_Loader_Info {
 	 * @var string
 	 */
 	private static string $version;
-
-	/**
-	 * Options of the plugin.
-	 *
-	 * @var array
-	 */
-	private static array $parsely_options;
 
 	/**
 	 * Check if the plugin is active.
@@ -143,7 +138,7 @@ final class Parsely_Loader_Info {
 		}
 
 		$configs = array();
-		$options = self::get_parsely_options() ?: [];
+		$options = self::get_parsely_options();
 
 		$configs['is_pinned_version']            = has_filter( 'wpvip_parsely_version' );
 		$configs['site_id']                      = $options['apikey'] ?? '';
@@ -178,11 +173,22 @@ final class Parsely_Loader_Info {
 	 * Get Parse.ly options.
 	 */
 	public static function get_parsely_options(): array {
-		if ( ! isset( self::$parsely_options ) ) {
-			self::$parsely_options = get_option( 'parsely', [] );
+		if ( ! self::is_active() ) {
+			return array();
 		}
 
-		return is_array( self::$parsely_options ) ? self::$parsely_options : [];
+		/**
+		 * Parse.ly options.
+		 *
+		 * @var array
+		 */
+		$parsely_options = array();
+
+		if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
+			$parsely_options = $GLOBALS['parsely']->get_options();
+		}
+		
+		return $parsely_options;
 	}
 }
 
