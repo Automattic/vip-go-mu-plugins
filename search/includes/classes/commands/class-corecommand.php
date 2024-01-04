@@ -388,6 +388,9 @@ class CoreCommand {
 	 * Throw error when delete-index command is attempted to be used.
 	 *
 	 * @subcommand delete-index
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function delete_index( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		WP_CLI::error( 'Please use index versioning to manage your indices: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/' );
@@ -401,7 +404,7 @@ class CoreCommand {
 	 * @param array $assoc_args arguments that were passed to the caller command.
 	 * @return void
 	 */
-	public static function confirm_destructive_operation( $assoc_args ) {
+	public static function confirm_destructive_operation( array $assoc_args ) {
 		if ( isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'] ) {
 			return;
 		}
