@@ -6,14 +6,18 @@ use WP_CLI;
 use WP_CLI\Utils;
 use ElasticPress\Elasticsearch;
 
-use function Automattic\VIP\Logstash\log2logstash;
-
 /**
  * Core commands for interacting with VIP Search
  *
  * @package Automattic\VIP\Search
  */
-class CoreCommand extends \ElasticPress\Command {
+class CoreCommand {
+	private $ep_command;
+
+	public function __construct( \ElasticPress\Command $ep_command ) {
+		$this->ep_command = $ep_command;
+	}
+
 	private function verify_arguments_compatibility( $assoc_args ) {
 		if ( array_key_exists( 'version', $assoc_args ) && array_key_exists( 'using-versions', $assoc_args ) ) {
 			WP_CLI::error( 'The --version argument is not allowed when specifying --using-versions' );
@@ -221,9 +225,6 @@ class CoreCommand extends \ElasticPress\Command {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function index( $args, $assoc_args ) {
-		if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
-			self::confirm_destructive_operation( $assoc_args );
-		}
 		$this->verify_arguments_compatibility( $assoc_args );
 
 		$using_versions = $assoc_args['using-versions'] ?? false;
@@ -294,6 +295,10 @@ class CoreCommand extends \ElasticPress\Command {
 
 			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
+			if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
+				self::confirm_destructive_operation( $assoc_args );
+			}
+			
 			// Unset our arguments since they don't exist in ElasticPress and causes
 			// an error for indexing operations exclusively for some reason.
 			unset( $assoc_args['version'] );
@@ -337,7 +342,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 */
 	public function put_mapping( $args, $assoc_args ) {
 		self::confirm_destructive_operation( $assoc_args );
-		parent::put_mapping( $args, $assoc_args );
+		$this->ep_command->put_mapping( $args, $assoc_args );
 	}
 
 	/**
@@ -383,11 +388,11 @@ class CoreCommand extends \ElasticPress\Command {
 	 * Throw error when delete-index command is attempted to be used.
 	 *
 	 * @subcommand delete-index
-	 *
+	 * 
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function delete_index( $args, $assoc_args ) {
+	public function delete_index( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		WP_CLI::error( 'Please use index versioning to manage your indices: https://docs.wpvip.com/how-tos/vip-search/version-with-enterprise-search/' );
 	}
 
@@ -411,12 +416,8 @@ class CoreCommand extends \ElasticPress\Command {
 	 * Return all index names as a JSON object.
 	 *
 	 * @subcommand get-indexes
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_indexes( $args, $assoc_args ) {
-
+	public function get_indexes( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$indexes = $this->list_indexes();
 
 		if ( is_wp_error( $indexes ) ) {
@@ -434,7 +435,7 @@ class CoreCommand extends \ElasticPress\Command {
 	 * @param array $args Positional CLI args.
 	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_mapping( $args, $assoc_args ) {
+	public function get_mapping( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$index_names = (array) ( isset( $assoc_args['index-name'] ) ? $assoc_args['index-name'] : $this->list_indexes() );
 
 		$path = join( ',', $index_names ) . '/_mapping';
@@ -464,8 +465,7 @@ class CoreCommand extends \ElasticPress\Command {
 			WP_CLI::error( "The feature {$args[0]} is not currently supported." );
 		}
 
-		array_unshift( $args, 'elasticpress', 'activate-feature' );
-		WP_CLI::run_command( $args, $assoc_args );
+		$this->ep_command->activate_feature( $args, $assoc_args );
 	}
 
 	/**
@@ -500,19 +500,15 @@ class CoreCommand extends \ElasticPress\Command {
 			WP_CLI::confirm( "Are you sure you want to deactivate $args[0]? This will break all search-related functionality!" );
 		}
 
-		array_unshift( $args, 'elasticpress', 'deactivate-feature' );
-		WP_CLI::run_command( $args, $assoc_args );
+		$this->ep_command->deactivate_feature( $args, $assoc_args );
 	}
 
 	/**
 	 * Get the last indexed post ID on an incomplete indexing operation.
 	 *
 	 * @subcommand get-last-indexed-post-id
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function get_last_indexed_post_id( $args, $assoc_args ) {
+	public function get_last_indexed_post_id( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		$search = \Automattic\VIP\Search\Search::instance();
 
 		$last_id = get_option( $search::LAST_INDEXED_POST_ID_OPTION );
@@ -528,11 +524,8 @@ class CoreCommand extends \ElasticPress\Command {
 	 * Clean the ep_feature_settings individual blog option if it exists for sites with EP_IS_NETWORK.
 	 *
 	 * @subcommand clean-ep-feature-settings
-	 *
-	 * @param array $args Positional CLI args.
-	 * @param array $assoc_args Associative CLI args.
 	 */
-	public function clean_ep_feature_settings( $args, $assoc_args ) {
+	public function clean_ep_feature_settings( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 		if ( is_multisite() && defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' ) ) {
 			$delete_option = delete_option( 'ep_feature_settings' );
 			if ( $delete_option ) {
@@ -543,5 +536,120 @@ class CoreCommand extends \ElasticPress\Command {
 		} else {
 			WP_CLI::error( 'Not a multisite or EP_IS_NETWORK is not enabled!' );
 		}
+	}
+
+	/**
+	 * Stop the current indexing operation.
+	 *
+	 * @subcommand stop-indexing
+	 * 
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function stop_indexing( $args, $assoc_args ) {
+		$this->ep_command->stop_indexing( $args, $assoc_args );
+	}
+
+	/**
+	 * List features (either active or all).
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--all]
+	 * : Show all registered features
+	 *
+	 * @subcommand list-features
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function list_features( $args, $assoc_args ) {
+		$this->ep_command->list_features( $args, $assoc_args );
+	}
+
+	/**
+	 * Recreates the alias index which points to every index in the network.
+	 *
+	 * Map network alias to every index in the network for every non-global indexable
+	 *
+	 * @subcommand recreate-network-alias
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function recreate_network_alias( $args, $assoc_args ) {
+		$this->ep_command->recreate_network_alias( $args, $assoc_args );
+	}
+
+	/**
+	 * Clear a sync/index process.
+	 *
+	 * If an index was stopped prematurely and won't start again, this will clear this cached data such that a new index can start.
+	 *
+	 * @subcommand clear-index
+	 * @alias delete-transient
+	 */
+	public function clear_index( $args, $assoc_args ) {
+		$this->ep_command->clear_index( $args, $assoc_args );
+	}
+
+	/**
+	 * Returns the status of an ongoing index operation in JSON array.
+	 *
+	 * Returns the status of an ongoing index operation in JSON array with the following fields:
+	 * indexing | boolean | True if index operation is ongoing or false
+	 * items_indexed | integer | Total number of items indexed
+	 * total_items | integer | Total number of items indexed or -1 if not yet determined
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--pretty]
+	 * : Use this flag to render a pretty-printed version of the JSON response.
+	 *
+	 * @subcommand get-indexing-status
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_indexing_status( $args, $assoc_args ) {
+		$this->ep_command->get_indexing_status( $args, $assoc_args );
+	}
+
+	/**
+	 * Returns a JSON array with the results of the last CLI index (if present) or an empty array.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--clear]
+	 * : Clear the `ep_last_cli_index` option.
+	 *
+	 * [--pretty]
+	 * : Use this flag to render a pretty-printed version of the JSON response.
+	 *
+	 * @subcommand get-last-index
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
+	 */
+	public function get_last_index( $args, $assoc_args ) {
+		$this->ep_command->get_last_cli_index( $args, $assoc_args );
+	}
+
+	/**
+	 * Get the algorithm version.
+	 *
+	 * Get the value of the `ep_search_algorithm_version` option, or
+	 * `default` if empty.
+	 *
+	 * @subcommand get-algorithm-version
+	 */
+	public function get_algorithm_version( $args, $assoc_args ) {  // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		$version = apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) );
+		WP_CLI::line( $version );
+	}
+
+	/**
+	 * Get stats on the current index.
+	 * 
+	 * @subcommand stats
+	 */
+	public function get_stats( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		$this->ep_command->stats();
 	}
 }
