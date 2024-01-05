@@ -1650,10 +1650,6 @@ function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global
  * @return bool True if the domain is a convenience domain.
  */
 function is_vip_convenience_domain( string $domain ): bool {
-	if ( '' === $domain ) {
-		return false;
-	}
-
 	$domain = strtolower( $domain );
 	return str_ends_with( $domain, '.go-vip.co' ) || str_ends_with( $domain, '.go-vip.net' );
 }
