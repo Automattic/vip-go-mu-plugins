@@ -122,7 +122,7 @@ function rest_endpoint_url_validate_callback( $value, $request, $param ) {
 	$path = trim( parse_url( $value, PHP_URL_PATH ), '/' );
 
 	// Not an allowed endpoint
-	if ( ! wp_endswith( $path, '_search' ) ) {
+	if ( ! str_ends_with( $path, '_search' ) ) {
 		return $error;
 	}
 

@@ -1250,7 +1250,7 @@ class Search {
 		if ( $is_post_request ) {
 			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
 			foreach ( $request_types as $type ) {
-				if ( wp_endswith( $query_path, $type ) ) {
+				if ( str_ends_with( $query_path, $type ) ) {
 					return 30;
 				}
 			}
@@ -1615,7 +1615,7 @@ class Search {
 		foreach ( $widgets as $index => $file ) {
 			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
 			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+			if ( str_ends_with( $file, '/jetpack/modules/widgets/search.php' ) ) {
 				unset( $widgets[ $index ] );
 			}
 		}
