@@ -178,13 +178,14 @@ class VIP_Filesystem {
 		$upload_path = trailingslashit( $this->get_upload_path() );
 		$file_path   = $upload_path . $file_name;
 
-		// TODO: run through unique filename?
-
-		$check_type = $this->validate_file_type( $file_path );
-		if ( is_wp_error( $check_type ) ) {
-			$file['error'] = $check_type->get_error_message();
+		$check_file_name = $this->validate_file_name( $file_path );
+		if ( is_wp_error( $check_file_name ) ) {
+			$file['error'] = $check_file_name->get_error_message();
 
 			return $file;
+		} elseif ( $check_file_name !== $file_name ) {
+				$file['name'] = $check_file_name;
+				$file_path    = $upload_path . $check_file_name;
 		}
 
 		$check_length = $this->validate_file_path_length( $file_path );
@@ -221,9 +222,9 @@ class VIP_Filesystem {
 	 *
 	 * @param   string      $file_path   Path starting with /wp-content/uploads
 	 *
-	 * @return  WP_Error|bool        True if filetype is supported. Else WP_Error.
+	 * @return  WP_Error|string        Unique Filename string if filetype is supported. Else WP_Error.
 	 */
-	protected function validate_file_type( $file_path ) {
+	protected function validate_file_name( $file_path ) {
 		$result = $this->stream_wrapper->client->get_unique_filename( $file_path );
 
 		if ( is_wp_error( $result ) ) {
@@ -235,10 +236,9 @@ class VIP_Filesystem {
 					E_USER_WARNING
 				);
 			}
-			return $result;
 		}
 
-		return true;
+		return $result;
 	}
 
 	/**
