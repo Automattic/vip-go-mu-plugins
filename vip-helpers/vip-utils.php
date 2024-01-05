@@ -1642,11 +1642,12 @@ function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global
 }
 
 /**
- * Checks if a given domain is a VIP convenience domain. Examples of a VIP convenience
- * domain are `example.go-vip.co` and `example.go-vip.net`.
+ * Checks if a given string looks like a VIP convenience domain.
  *
- * @param string $domain Domain to check
- * @return bool True if the domain is a convenience domain
+ * Examples of a VIP convenience domain are `example.go-vip.co` and `example.go-vip.net`.
+ *
+ * @param string $domain Domain to check.
+ * @return bool True if the domain is a convenience domain.
  */
 function is_vip_convenience_domain( string $domain ) {
 	if ( '' === $domain ) {
