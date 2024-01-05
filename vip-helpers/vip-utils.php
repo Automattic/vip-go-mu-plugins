@@ -1649,7 +1649,7 @@ function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global
  * @param string $domain Domain to check.
  * @return bool True if the domain is a convenience domain.
  */
-function is_vip_convenience_domain( string $domain ) {
+function is_vip_convenience_domain( string $domain ): bool {
 	if ( '' === $domain ) {
 		return false;
 	}
