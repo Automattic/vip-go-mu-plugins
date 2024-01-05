@@ -465,7 +465,7 @@ function delete_old_export_files() {
  * @return string The modified robots.txt content.
  */
 function vip_convenience_domain_robots_txt( $output ) {
-	$host = strtolower( $_SERVER['HTTP_HOST'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$host = $_SERVER['HTTP_HOST'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	if ( false !== strpos( $host, '.go-vip.co' ) || false !== strpos( $host, '.go-vip.net' ) ) {
 		$output  = "# Crawling is blocked for go-vip.co and go-vip.net domains\n";
 		$output .= "User-agent: *\n";
