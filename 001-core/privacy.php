@@ -469,8 +469,6 @@ function vip_convenience_domain_robots_txt( $output ) {
 		$output  = "# Crawling is blocked for go-vip.co and go-vip.net domains\n";
 		$output .= "User-agent: *\n";
 		$output .= "Disallow: /\n";
-	
-		return $output;
 	}
 
 	return $output;
