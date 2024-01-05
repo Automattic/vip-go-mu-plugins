@@ -308,7 +308,7 @@ add_filter( 'wp_headers', function ( $headers ) {
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- should be safe, because we are only looking for a substring and don't use the variable for anything else
-	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER['HTTP_HOST'] ?? '', '.go-vip.' ) ) {
+	if ( 'production' !== VIP_GO_ENV || is_vip_convenience_domain( $_SERVER['HTTP_HOST'] ?? '' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 

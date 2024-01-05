@@ -16,8 +16,7 @@ function notice() {
 		get_option( 'blogpublic_notice_dismissed', false ) ||
 		! get_option( 'blog_public' ) ||
 		'-1' === get_option( 'blog_public' ) ||
-		wp_endswith( $home_url_parsed['host'], '.go-vip.co' ) ||
-		wp_endswith( $home_url_parsed['host'], '.go-vip.net' )
+		is_vip_convenience_domain( $home_url_parsed['host'] ?? '' )
 	) {
 		return;
 	}
