@@ -1741,7 +1741,7 @@ class Search {
 		$index_name = $path[0];
 
 		// If it starts with underscore, then we didn't detect the index name and should return null
-		if ( wp_startswith( $index_name, '_' ) ) {
+		if ( str_starts_with( $index_name, '_' ) ) {
 			return null;
 		}
 
