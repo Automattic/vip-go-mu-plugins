@@ -89,7 +89,7 @@ final class VIP_SMTP {
 	}
 
 	/**
-	 * @param PHPMailer $phpmailer 
+	 * @param PHPMailer $phpmailer
 	 */
 	public function phpmailer_init( &$phpmailer ): void {
 		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
@@ -120,6 +120,11 @@ final class VIP_SMTP {
 
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
+
+		if ( defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' ) ) {
+			$phpmailer->Username = VIP_SMTP_USERNAME;
+			$phpmailer->Password = VIP_SMTP_PASSWORD;
+		}
 
 		$tracking_header = $this->get_tracking_header( WPCOM_VIP_MAIL_TRACKING_KEY );
 		if ( false !== $tracking_header ) {
