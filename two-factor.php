@@ -248,14 +248,14 @@ function wpcom_vip_two_factor_admin_notice() {
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
 			<div>
 				<p style="font-weight:bold; font-size:16px;">
-					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">Two Factor Authentication</a> is required to edit content on this site.
+					Access requires your account to have <a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">Two-factor authentication</a> enabled.
 				</p>
 
-				<p>For the safety and security of this site, your account access has been downgraded. Please enable two-factor authentication to restore your access.</p>
+				<p>For the safety and security of this site, your account access has been downgraded. Please enable Two-factor authentication to restore your access.</p>
 
 				<p>
 					<a href="<?php echo esc_url( admin_url( 'profile.php#two-factor-options' ) ); ?>" class="button button-primary">
-						Enable Two-factor Authentication
+						Enable Two-factor authentication
 					</a>
 
 					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/" class="button" target="_blank">Learn More</a>
