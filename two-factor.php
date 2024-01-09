@@ -248,7 +248,7 @@ function wpcom_vip_two_factor_admin_notice() {
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
 			<div>
 				<p style="font-weight:bold; font-size:16px;">
-					Your account requires <a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">two-factor authentication</a> to be enabled.
+					Your account requires <a href="https://docs.wpvip.com/security/two-factor-authentication/">two-factor authentication</a> to be enabled.
 				</p>
 
 				<p>For the safety and security of this site, your account access has been downgraded. Please enable two-factor authentication to restore your access.</p>
