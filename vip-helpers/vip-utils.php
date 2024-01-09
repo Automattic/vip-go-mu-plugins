@@ -355,21 +355,18 @@ function widont( $str = '' ) {
 // Leave these wrapped in function_exists() b/c they are so generically named
 if ( ! function_exists( 'wp_startswith' ) ) :
 	function wp_startswith( $haystack, $needle ) {
-		_deprecated_function( __FUNCTION__, 'PHP 8.0', 'str_starts_with' );
 		return str_starts_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		_deprecated_function( __FUNCTION__, 'PHP 8.0', 'str_ends_with' );
 		return str_ends_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_in' ) ) :
 	function wp_in( $needle, $haystack ) {
-		_deprecated_function( __FUNCTION__, 'PHP 8.0', 'str_contains' );
 		return str_contains( $haystack, $needle );
 	}
 endif;
