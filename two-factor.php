@@ -255,7 +255,7 @@ function wpcom_vip_two_factor_admin_notice() {
 
 				<p>
 					<a href="<?php echo esc_url( admin_url( 'profile.php#two-factor-options' ) ); ?>" class="button button-primary">
-						Enable Two-factor authentication
+						Enable Two-factor Authentication
 					</a>
 
 					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/" class="button" target="_blank">Learn More</a>
