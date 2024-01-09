@@ -527,7 +527,7 @@ class A8C_Files_Utils {
 			return $site_url;
 		}
 
-		if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
+		if ( is_vip_convenience_domain( $image_url_parsed['host'] ?? '' ) ) {
 			return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 		}
 
