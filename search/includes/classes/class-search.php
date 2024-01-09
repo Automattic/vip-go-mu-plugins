@@ -675,7 +675,8 @@ class Search {
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
 			WP_CLI::add_command( 'vip-search documents', __NAMESPACE__ . '\Commands\DocumentCommand' );
-			WP_CLI::add_command( 'vip-search', __NAMESPACE__ . '\Commands\CoreCommand' );
+			$vip_search_core_command = new \Automattic\VIP\Search\Commands\CoreCommand( new \ElasticPress\Command() );
+			WP_CLI::add_command( 'vip-search', $vip_search_core_command );
 		}
 	}
 
