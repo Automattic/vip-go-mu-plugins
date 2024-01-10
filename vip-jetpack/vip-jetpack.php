@@ -435,4 +435,4 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 	return $offline_mode;
 }
 
-add_action( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
