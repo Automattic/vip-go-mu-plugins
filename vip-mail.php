@@ -121,7 +121,8 @@ final class VIP_SMTP {
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
 
-		if ( defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' ) ) {
+		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED'  ) && defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' )) {
+			$phpmailer->SMTPAuth = true;
 			$phpmailer->Username = VIP_SMTP_USERNAME;
 			$phpmailer->Password = VIP_SMTP_PASSWORD;
 		}
