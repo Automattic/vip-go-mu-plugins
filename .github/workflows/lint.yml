@@ -31,7 +31,6 @@ jobs:
         uses: shivammathur/setup-php@2.28.0
         with:
           coverage: none
-          php-version: "8.0"
         env:
           fail-fast: 'true'
 
