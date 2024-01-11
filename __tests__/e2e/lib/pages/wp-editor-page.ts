@@ -74,7 +74,7 @@ export class EditorPage {
 				state: 'visible',
 				timeout: 5000,
 			} );
-		} catch ( err ) {
+		} catch {
 			return;
 		}
 
@@ -90,7 +90,7 @@ export class EditorPage {
 				state: 'visible',
 				timeout: 5000,
 			} );
-		} catch ( err ) {
+		} catch {
 			return;
 		}
 
