@@ -16,6 +16,7 @@
     "@playwright/test": "^1.39.0",
     "asana-phrase": "^0.0.8",
     "eslint": "^8.51.0",
+    "eslint-plugin-deprecation": "^2.0.0",
     "eslint-plugin-playwright": "^0.21.0",
     "playwright": "^1.39.0",
     "typescript": "^5.2.2"
