@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "E2E Tests for mu-plugins",
   "scripts": {
-    "lint": "eslint --fix .",
+    "lint": "eslint .",
     "pretest": "./bin/setup-env.sh",
     "test": "playwright test -c playwright.config.ts",
     "posttest": "vip dev-env destroy --slug=e2e-test-site"
