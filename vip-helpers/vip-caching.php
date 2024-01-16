@@ -3,7 +3,6 @@
  * This file contains a bunch of helper functions that handle add caching to core WordPress functions.
  */
 
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.count_user_posts_count_user_posts
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_title_get_page_by_title
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
@@ -76,67 +75,6 @@ function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
 	foreach ( array( 'name', 'slug' ) as $field ) {
 		$cache_key   = $field . '|' . $taxonomy . '|' . md5( $term->$field );
 		$cache_group = 'get_term_by';
-		wp_cache_delete( $cache_key, $cache_group );
-	}
-}
-
-/**
- * Cached version of term_exists()
- *
- * Term exists calls can pile up on a single pageload.
- * This function adds a layer of caching to prevent lots of queries.
- *
- * @param int|string $term The term to check can be id, slug or name.
- * @param string     $taxonomy The taxonomy name to use
- * @param int        $parent Optional. ID of parent term under which to confine the exists search.
- * @return mixed Returns null if the term does not exist. Returns the term ID
- *               if no taxonomy is specified and the term ID exists. Returns
- *               an array of the term ID and the term taxonomy ID the taxonomy
- *               is specified and the pairing exists.
- */
-
-function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
-	global $wp_version;
-	if ( version_compare( $wp_version, '6.0', '<' ) ) {
-		_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
-	}
-
-	// If $parent is not null, let's skip the cache.
-	if ( null !== $parent ) {
-		return term_exists( $term, $taxonomy, $parent );
-	}
-
-	if ( ! empty( $taxonomy ) ) {
-		$cache_key = $term . '|' . $taxonomy;
-	} else {
-		$cache_key = $term;
-	}
-
-	$cache_value = wp_cache_get( $cache_key, 'term_exists' );
-
-	// term_exists frequently returns null, but (happily) never false
-	if ( false === $cache_value ) {
-		$term_exists = term_exists( $term, $taxonomy );
-		wp_cache_set( $cache_key, $term_exists, 'term_exists', 3 * HOUR_IN_SECONDS );
-	} else {
-		$term_exists = $cache_value;
-	}
-
-	if ( is_wp_error( $term_exists ) ) {
-		$term_exists = null;
-	}
-
-	return $term_exists;
-}
-
-/**
- * Properly clear wpcom_vip_term_exists() cache when a term is updated
- */
-add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
-function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ) {
-	foreach ( array( 'term_id', 'name', 'slug' ) as $field ) {
-		$cache_key   = $deleted_term->$field . '|' . $taxonomy;
-		$cache_group = 'term_exists';
 		wp_cache_delete( $cache_key, $cache_group );
 	}
 }

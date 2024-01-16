@@ -126,14 +126,14 @@ describe('WP-CLI Commands', () => {
 			);
 	});
 
-	it('Can return a string indicating with the appropriate fields if user runs wp vip-search get-last-cli-index command', () => {
+	it('Can return a string indicating with the appropriate fields if user runs wp vip-search get-last-index command', () => {
 		cy.wpCli('wp vip-search index');
 
-		cy.wpCli('wp vip-search get-last-cli-index')
+		cy.wpCli('wp vip-search get-last-index')
 			.its('stdout')
 			.should('contain', '"total":');
 
-		cy.wpCli('wp vip-search get-last-cli-index --clear')
+		cy.wpCli('wp vip-search get-last-index --clear')
 			.its('stdout')
 			.should('contain', '[]');
 	});
@@ -176,32 +176,8 @@ describe('WP-CLI Commands', () => {
 		});
 	});
 
-	it('Can set the algorithm version', () => {
-		cy.wpCli('wp vip-search set-algorithm-version --default')
-			.its('stdout')
-			.should('contain', 'Done');
-
-		cy.wpCli('wp vip-search get-algorithm-version')
-			.its('stdout')
-			.should('contain', 'default');
-
-		cy.wpCli('wp vip-search set-algorithm-version --version=1.0.0')
-			.its('stdout')
-			.should('contain', 'Done');
-
-		cy.wpCli('wp vip-search get-algorithm-version').its('stdout').should('contain', '1.0.0');
-
-		cy.wpCli('wp vip-search set-algorithm-version', true)
-			.its('stderr')
-			.should('contain', 'This command expects a version number or the --default flag');
-	});
-
 	it('Can get the mapping information', () => {
 		cy.wpCli('wp vip-search get-mapping').its('stdout').should('contain', 'mapping_version');
-	});
-
-	it('Can get the cluster indexes information', () => {
-		cy.wpCli('wp vip-search get-cluster-indexes').its('stdout').should('contain', 'health');
 	});
 
 	it('Can get the indexes names', () => {
