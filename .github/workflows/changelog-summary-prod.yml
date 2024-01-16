@@ -65,8 +65,6 @@ jobs:
 
       - name: Setup PHP
         uses: shivammathur/setup-php@2.28.0
-        with:
-          php-version: '7.4'
 
       - name: Install
         uses: ramsey/composer-install@2.2.0
