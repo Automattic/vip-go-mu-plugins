@@ -51,6 +51,10 @@ class User_Stats_Collector implements CollectorInterface {
 			return;
 		}
 
+		if ( ! class_exists( 'Two_Factor_Core' ) ) {
+			return;
+		}
+
 		// Since we bunch everything together under a single label this logic wouldn't make any sense.
 		if ( is_multisite() && wp_count_sites()['all'] > Plugin::MAX_NETWORK_SITES ) {
 			return;
