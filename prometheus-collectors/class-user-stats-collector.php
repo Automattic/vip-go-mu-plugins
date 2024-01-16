@@ -51,6 +51,10 @@ class User_Stats_Collector implements CollectorInterface {
 			return;
 		}
 
+		if ( ! class_exists( 'Two_Factor_Core' ) ) {
+			return;
+		}
+
 		// Since we bunch everything together under a single label this logic wouldn't make any sense.
 		if ( is_multisite() && wp_count_sites()['all'] > Plugin::MAX_NETWORK_SITES ) {
 			return;
@@ -133,7 +137,7 @@ class User_Stats_Collector implements CollectorInterface {
 	 * @return bool True if the user is using 2FA, false otherwise.
 	 */
 	public function is_user_using_two_factor( $user_id ) {
-		return Two_Factor_Core::is_user_using_two_factor( $user_id );
+		return class_exists( 'Two_Factor_Core' ) && Two_Factor_Core::is_user_using_two_factor( $user_id );
 	}
 
 	/**
@@ -143,6 +147,10 @@ class User_Stats_Collector implements CollectorInterface {
 	 * @return array The users with 2FA meta.
 	 */
 	public function get_2fa_users() {
+		if ( ! class_exists( 'Two_Factor_Core' ) ) {
+			return [];
+		}
+
 		$users = get_users( [
 			'count_total' => false,
 			'number'      => -1,
