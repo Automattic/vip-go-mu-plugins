@@ -85,6 +85,7 @@ final class VIP_SMTP {
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
+			add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
 		}
 	}
 
@@ -130,6 +131,33 @@ final class VIP_SMTP {
 	public function filter_wp_mail_from() {
 		return 'donotreply@wpvip.com';
 	}
+
+	public function handle_wp_mail_failures( $error ) {
+		if ( isset( $error->error_data['wp_mail_failed'] ) && is_array( $error->error_data['wp_mail_failed'] ) ) {
+			$error_data = $error->error_data['wp_mail_failed'];
+
+			// If the error is due to the from domain being unmapped, attempt to send it again from our default address
+			if ( isset( $error_data['phpmailer_exception_code'] ) && 553 === $error_data['phpmailer_exception_code'] ) {
+				if ( isset( $error_data['to'], $error_data['subject'], $error_data['message'], $error_data['headers'], $error_data['attachments'] ) ) {
+
+					$to          = is_array( $error_data['to'] ) ? array_map( 'esc_html', $error_data['to'] ) : esc_html( $error_data['to'] );
+					$subject     = esc_html( $error_data['subject'] );
+					$message     = esc_html( $error_data['message'] );
+					$headers     = is_array( $error_data['headers'] ) ? array_map( 'esc_html', $error_data['headers'] ) : esc_html( $error_data['headers'] );
+					$attachments = is_array( $error_data['attachments'] ) ? array_map( 'esc_url', $error_data['attachments'] ) : esc_url( $error_data['attachments'] );
+
+					// Set the from address to our default
+					add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+
+					// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+					wp_mail( $to, $subject, $message, $headers, $attachments );
+
+					remove_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+				}
+			}
+		}
+	}
+
 
 	protected function get_tracking_header( $key ) {
 		// Don't need an environment check, since this should never trigger locally
