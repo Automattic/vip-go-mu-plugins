@@ -76,7 +76,7 @@ runs:
       uses: ramsey/composer-install@2.2.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@1.1.18
+      uses: sjinks/setup-wordpress-test-library@2.0.2
       with:
         version: ${{ inputs.wordpress }}
 
