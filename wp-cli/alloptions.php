@@ -13,6 +13,18 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand find
 	 * @synopsis [--big] [--format=<table>]
+	 *
+	 * ## OPTIONS
+  	 *
+	 * [--format=<format>]
+	 * : Format to use for the output. One of table, json, csv, or yaml.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
 	 */
 	public function find( $args, $assoc_args ) {
 		$defaults = array(
@@ -54,21 +66,25 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 		$options = array_reverse( $options );
 
-		WP_CLI::line();
+		$include_context = 'table' === $assoc_args['format'];
 
-		if ( $assoc_args['big'] ) {
-			WP_CLI::success( sprintf( 'Big options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
-		} else {
-			WP_CLI::success( sprintf( 'All options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
+		if ( $include_context ) {
+			if ( $assoc_args['big'] ) {
+				WP_CLI::success( sprintf( 'Big options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
+			} else {
+				WP_CLI::success( sprintf( 'All options for %s - Blog ID %d:', home_url(), get_current_blog_id() ) );
+			}
 		}
 
 		WP_CLI\Utils\format_items( $assoc_args['format'], $options, array( 'name', 'size' ) );
 
-		WP_CLI::line( sprintf( 'Total size of all option values for this blog: %s', size_format( $total_size ) ) );
-		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s', size_format( strlen( serialize( $alloptions ) ) ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
-		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
-		WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
+		if ( $include_context ) {
+			WP_CLI::line( sprintf( 'Total size of all option values for this blog: %s', size_format( $total_size ) ) );
+			WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s', size_format( strlen( serialize( $alloptions ) ) ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
+			WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
+			WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
+		}
 	}
 }
 
