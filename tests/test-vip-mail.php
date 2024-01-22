@@ -100,6 +100,24 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		self::assertEquals( false, $mailer->SMTPAuth );
 	}
 
+	public function test__handle_wp_mail_failures() {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+
+		// Simulate a mail failure
+		$mail_data = [
+			'to'      => 'test@example.com',
+			'subject' => 'Test Subject',
+			'body'    => 'Test Message',
+		];
+		do_action( 'wp_mail_failed', new \WP_Error( 'wp_mail_failed', 'message', $mail_data ) );
+		$mailer = tests_retrieve_phpmailer_instance();
+		$this->assertEquals( true, isset( $mail_data['attachment'] ) );
+		$this->assertEquals( $mail_data['body'], $mailer->Body );
+		$this->assertEquals( $mail_data['subject'], $mailer->Subject );
+		$this->assertEquals( 'donotreply@wpvip.com', $mailer->From );
+	}
+
+
 	public function test_load_VIP_PHPMailer() {
 		$this->assertTrue( class_exists( '\Automattic\VIP\Mail\VIP_PHPMailer', false ) );
 	}
