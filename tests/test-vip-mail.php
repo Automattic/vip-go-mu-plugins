@@ -80,11 +80,14 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_SMTP_ENABLED', true );
 		Constant_Mocker::define( 'VIP_SMTP_USERNAME', 'username' );
 		Constant_Mocker::define( 'VIP_SMTP_PASSWORD', 'password' );
+		Constant_Mocker::define( 'VIP_SMTP_PORT', 25 );
 
 		wp_mail( 'test@example.com', 'Test', 'Test' );
 		$mailer = tests_retrieve_phpmailer_instance();
 		// Verify that the SMTP settings are set
+		self::assertEquals( 25, $mailer->Port );
 		self::assertEquals( true, $mailer->SMTPAuth );
+		self::assertEquals( PHPMailer::ENCRYPTION_STARTTLS, $mailer->SMTPSecure );
 		self::assertEquals( 'username', $mailer->Username );
 		self::assertEquals( 'password', $mailer->Password );
 	}
