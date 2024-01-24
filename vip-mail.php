@@ -148,7 +148,7 @@ final class VIP_SMTP {
 			$error_data = $error->error_data['wp_mail_failed'];
 
 			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected
-			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by' ) ) {
+			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by user' ) ) {
 					$to          = is_array( $error_data['to'] ) ? array_map( 'esc_html', $error_data['to'] ) : esc_html( $error_data['to'] );
 					$subject     = esc_html( $error_data['subject'] );
 					$message     = esc_html( $error_data['message'] );
