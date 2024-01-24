@@ -36,7 +36,7 @@ test( 'Search Dev Tools', async ( { page } ) => {
 			} ),
 		} );
 
-		return searchPage.ensureQueryResponse( '"world"' );
+		return searchPage.ensureQueryResponse( 'world' );
 	} );
 	await test.step( 'Close DevTools', () => searchPage.closeSearchDevTools() );
 } );

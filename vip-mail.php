@@ -123,9 +123,11 @@ final class VIP_SMTP {
 		$phpmailer->Host = current( $all_smtp_servers );
 
 		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' ) ) {
-			$phpmailer->SMTPAuth = true;
-			$phpmailer->Username = constant( 'VIP_SMTP_USERNAME' );
-			$phpmailer->Password = constant( 'VIP_SMTP_PASSWORD' );
+			$phpmailer->Port       = constant( 'VIP_SMTP_PORT' );
+			$phpmailer->SMTPAuth   = true;
+			$phpmailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+			$phpmailer->Username   = constant( 'VIP_SMTP_USERNAME' );
+			$phpmailer->Password   = constant( 'VIP_SMTP_PASSWORD' );
 		}
 
 		$tracking_header = $this->get_tracking_header( WPCOM_VIP_MAIL_TRACKING_KEY );
