@@ -1,7 +1,4 @@
-/**
- * External dependencies
- */
-import { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 const selectors = {
 	// Editor
@@ -68,36 +65,22 @@ export class EditorPage {
 	/**
 	 * Dismisses the Welcome Tour (card) if it is present.
 	 */
-	async dismissWelcomeTour(): Promise<void> {
-		try {
-			await this.page.waitForSelector( selectors.welcomeTourCloseButton, {
-				state: 'visible',
-				timeout: 5000,
-			} );
-		} catch {
-			return;
-		}
-
-		const closeButton = this.page.locator( selectors.welcomeTourCloseButton );
-		return closeButton.click( {
-			delay: 20,
-		} );
+	dismissWelcomeTour(): Promise<void> {
+		return this.clickButtonIfExists( this.page.locator( selectors.welcomeTourCloseButton ) );
 	}
 
-	async dismissPatternSelector(): Promise<void> {
+	dismissPatternSelector(): Promise<void> {
+		return this.clickButtonIfExists( this.page.locator( selectors.choosePatternCloseButton ) );
+	}
+
+	private async clickButtonIfExists( locator: Locator ): Promise<void> {
 		try {
-			await this.page.waitForSelector( selectors.choosePatternCloseButton, {
-				state: 'visible',
-				timeout: 5000,
-			} );
+			await locator.waitFor( { state: 'visible', timeout: 5000 } );
 		} catch {
 			return;
 		}
 
-		const closeButton = this.page.locator( selectors.choosePatternCloseButton );
-		return closeButton.click( {
-			delay: 20,
-		} );
+		return locator.click( { delay: 20 } );
 	}
 
 	/**
@@ -185,7 +168,7 @@ export class EditorPage {
 			this.page.click( selectors.uploadImageButton ),
 		] );
 		await fileChooser.setFiles( fileName );
-		await this.page.waitForSelector( selectors.spinner, { state: 'detached' } );
+		await this.page.locator( selectors.spinner ).waitFor( { state: 'detached' } );
 	}
 
 	/**
@@ -197,8 +180,7 @@ export class EditorPage {
 	async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
 		await this.page.click( selectors.publishButton( selectors.postToolbar ) );
 		await this.page.click( selectors.publishButton( selectors.publishPanel ) );
-		const viewPublishedArticleButton = await this.page.waitForSelector( selectors.viewButton );
-		const publishedURL = ( await viewPublishedArticleButton.getAttribute( 'href' ) )!;
+		const publishedURL = ( await this.page.locator( selectors.viewButton ).getAttribute( 'href' ) )!;
 
 		if ( visit ) {
 			await this.visitPublishedPost( publishedURL );
