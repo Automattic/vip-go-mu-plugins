@@ -138,14 +138,17 @@ final class VIP_SMTP {
 		return 'donotreply@wpvip.com';
 	}
 
+
+	/**
+	* This function is used to handle the wp_mail failures if the sender address is rejected by the SMTP server
+	* @param WP_Error $error The WP_Error object passed by reference
+	 */
 	public function handle_wp_mail_failures( $error ) {
-		if ( isset( $error->error_data['wp_mail_failed'] ) && is_array( $error->error_data['wp_mail_failed'] ) ) {
+		if ( isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
 			$error_data = $error->error_data['wp_mail_failed'];
 
-			// If the error is due to the from domain being unmapped, attempt to send it again from our default address
-			if ( isset( $error_data['phpmailer_exception_code'] ) && 553 === $error_data['phpmailer_exception_code'] ) {
-				if ( isset( $error_data['to'], $error_data['subject'], $error_data['message'], $error_data['headers'], $error_data['attachments'] ) ) {
-
+			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected
+			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by' ) ) {
 					$to          = is_array( $error_data['to'] ) ? array_map( 'esc_html', $error_data['to'] ) : esc_html( $error_data['to'] );
 					$subject     = esc_html( $error_data['subject'] );
 					$message     = esc_html( $error_data['message'] );
@@ -155,11 +158,10 @@ final class VIP_SMTP {
 					// Set the from address to our default
 					add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
 
-					// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+                    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
 					wp_mail( $to, $subject, $message, $headers, $attachments );
 
 					remove_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
-				}
 			}
 		}
 	}
