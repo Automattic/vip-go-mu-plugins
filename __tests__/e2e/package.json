@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "description": "E2E Tests for mu-plugins",
   "scripts": {
-    "lint": "eslint --fix .",
+    "lint": "eslint .",
     "pretest": "./bin/setup-env.sh",
     "test": "playwright test -c playwright.config.ts",
     "posttest": "vip dev-env destroy --slug=e2e-test-site"
@@ -14,9 +14,11 @@
     "@automattic/eslint-plugin-wpvip": "^0.9.0",
     "@babel/plugin-syntax-decorators": "^7.22.10",
     "@playwright/test": "^1.39.0",
+    "@types/node": "^20.11.0",
     "asana-phrase": "^0.0.8",
     "eslint": "^8.51.0",
-    "eslint-plugin-playwright": "^0.21.0",
+    "eslint-plugin-deprecation": "^2.0.0",
+    "eslint-plugin-playwright": "^0.22.1",
     "playwright": "^1.39.0",
     "typescript": "^5.2.2"
   }
