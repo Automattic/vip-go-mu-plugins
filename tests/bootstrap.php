@@ -94,6 +94,11 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
+tests_add_filter( 'send_headers', function () {
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions
+	print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
+} );
+
 // Disable calls to wordpress.org to get translations
 tests_add_filter( 'translations_api', function ( $res ) {
 	if ( false === $res ) {
