@@ -85,7 +85,9 @@ final class VIP_SMTP {
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
-			add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
+			if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) ) {
+				add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
+			}
 		}
 	}
 
