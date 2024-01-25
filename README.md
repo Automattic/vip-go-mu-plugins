@@ -143,3 +143,4 @@ We use a [script](./ci/changelog-summary.php) to generate changelog entries. Thi
 ```
 php ci/changelog-summary.php  --debug --dry-run --force --merge-pr 4673 --github-project-username Automattic --github-project-reponame vip-go-mu-plugins
 ```
+
