@@ -105,6 +105,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 
 	public function test__handle_wp_mail_failures() {
 		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+		Constant_Mocker::define( 'VIP_SMTP_ENABLED', true );
 
 		// Simulate a mail failure
 		$mail_data = [

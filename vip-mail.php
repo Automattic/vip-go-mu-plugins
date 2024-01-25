@@ -85,9 +85,7 @@ final class VIP_SMTP {
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
-			if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) ) {
-				add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
-			}
+			add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
 		}
 	}
 
@@ -148,7 +146,7 @@ final class VIP_SMTP {
 	* @param WP_Error $error The WP_Error object passed by reference
 	 */
 	public function handle_wp_mail_failures( $error ) {
-		if ( isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
+		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
 			$error_data = $error->error_data['wp_mail_failed'];
 
 			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected
