@@ -350,7 +350,7 @@ class User_Last_Seen {
 	}
 
 	private function get_inactivity_timestamp() {
-		$days = constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ? absint( constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) : 90;
+		$days = defined( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ? absint( constant( 'VIP_SECURITY_CONSIDER_USERS_INACTIVE_AFTER_DAYS' ) ) : 90;
 
 		return strtotime( sprintf( '-%d days', $days ) ) + self::LAST_SEEN_UPDATE_USER_META_CACHE_TTL;
 	}
