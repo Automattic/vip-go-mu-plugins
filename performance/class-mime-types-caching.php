@@ -58,6 +58,8 @@ class Mime_Types_Caching {
 
 			/**
 			 * Filters the max number of posts to query for dynamic MIME type caching.
+			 * When set to zero or a negative number, the default MIME types will
+			 * always be used without prior checking the total number of attachments.
 			 *
 			 * @param bool $max_posts_to_query Max number of posts to query.
 			 */
