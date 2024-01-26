@@ -103,6 +103,28 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		self::assertEquals( false, $mailer->SMTPAuth );
 	}
 
+	public function test__handle_wp_mail_failures() {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+		Constant_Mocker::define( 'VIP_SMTP_ENABLED', true );
+
+		// Simulate a mail failure
+		$mail_data = [
+			'to'                       => [ 'test@example.com' ],
+			'subject'                  => 'Test Subject',
+			'message'                  => 'Test Message',
+			'phpmailer_exception_code' => 1,
+			'attachments'              => [],
+			'headers'                  => [],
+		];
+
+		do_action( 'wp_mail_failed', new \WP_Error( 'wp_mail_failed', 'SMTP Error: The following recipients failed: test@test.com: : Sender address rejected: not owned by user user-123', $mail_data ) );
+		$mailer = tests_retrieve_phpmailer_instance();
+		$this->assertEquals( $mail_data['message'], $mailer->Body );
+		$this->assertEquals( $mail_data['subject'], $mailer->Subject );
+		$this->assertEquals( 'donotreply@wpvip.com', $mailer->From );
+	}
+
+
 	public function test_load_VIP_PHPMailer() {
 		$this->assertTrue( class_exists( '\Automattic\VIP\Mail\VIP_PHPMailer', false ) );
 	}
