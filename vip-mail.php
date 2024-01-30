@@ -142,8 +142,9 @@ final class VIP_SMTP {
 
 
 	/**
-	* This function is used to handle the wp_mail failures if the sender address is rejected by the SMTP server
-	* @param WP_Error $error The WP_Error object passed by reference
+	 * This function is used to handle the wp_mail failures if the sender address is rejected by the SMTP server
+	 *
+	 * @param WP_Error $error The WP_Error object passed by reference
 	 */
 	public function handle_wp_mail_failures( $error ) {
 		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
@@ -151,19 +152,24 @@ final class VIP_SMTP {
 
 			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected
 			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by user' ) ) {
-					$to          = is_array( $error_data['to'] ) ? array_map( 'esc_html', $error_data['to'] ) : esc_html( $error_data['to'] );
-					$subject     = esc_html( $error_data['subject'] );
-					$message     = esc_html( $error_data['message'] );
-					$headers     = is_array( $error_data['headers'] ) ? array_map( 'esc_html', $error_data['headers'] ) : esc_html( $error_data['headers'] );
-					$attachments = is_array( $error_data['attachments'] ) ? array_map( 'esc_url', $error_data['attachments'] ) : esc_url( $error_data['attachments'] );
+				$to          = $error_data['to'] ?? null;
+				$subject     = $error_data['subject'] ?? null;
+				$message     = $error_data['message'] ?? null;
+				$headers     = $error_data['headers'] ?? null;
+				$attachments = $error_data['attachments'] ?? null;
 
-					// Set the from address to our default
-					add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+				// Bail if any of the required parameters are missing from the message data
+				if ( ! isset( $to, $subject, $message ) ) {
+					return;
+				}
 
-                    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-					wp_mail( $to, $subject, $message, $headers, $attachments );
+				// Set the from address to our default
+				add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
 
-					remove_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+				wp_mail( $to, $subject, $message, $headers, $attachments );
+
+				remove_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
 			}
 		}
 	}
