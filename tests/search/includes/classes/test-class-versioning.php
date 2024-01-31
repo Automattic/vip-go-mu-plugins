@@ -37,26 +37,34 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public static function setUpBeforeClass(): void {
+		global $wp_filter;
+
 		parent::setUpBeforeClass();
 
-		remove_all_actions( 'init' );
+		$save_init = clone $wp_filter['init'];
+		try {
+			remove_all_actions( 'init' );
 
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-				'https://es-endpoint1',
-				'https://es-endpoint2',
-			) );
+			if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+				define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+					'https://es-endpoint1',
+					'https://es-endpoint2',
+				) );
+			}
+
+			require_once __DIR__ . '/../../../../search/search.php';
+
+			self::$search = \Automattic\VIP\Search\Search::instance();
+
+			self::$search->queue->schema->prepare_table();
+
+			// Required so that EP registers the Indexables
+			do_action( 'plugins_loaded' );
+			do_action( 'init' );
+		} finally {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$wp_filter['init'] = clone $save_init;
 		}
-
-		require_once __DIR__ . '/../../../../search/search.php';
-
-		self::$search = \Automattic\VIP\Search\Search::instance();
-
-		self::$search->queue->schema->prepare_table();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
 
 		self::$version_instance = self::$search->versioning;
 
