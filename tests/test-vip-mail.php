@@ -75,6 +75,56 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
 	}
 
+	public function test__vip_smtp_enabled() {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+		Constant_Mocker::define( 'VIP_SMTP_ENABLED', true );
+		Constant_Mocker::define( 'VIP_SMTP_USERNAME', 'username' );
+		Constant_Mocker::define( 'VIP_SMTP_PASSWORD', 'password' );
+		Constant_Mocker::define( 'VIP_SMTP_PORT', 25 );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+		// Verify that the SMTP settings are set
+		self::assertEquals( 25, $mailer->Port );
+		self::assertEquals( true, $mailer->SMTPAuth );
+		self::assertEquals( PHPMailer::ENCRYPTION_STARTTLS, $mailer->SMTPSecure );
+		self::assertEquals( 'username', $mailer->Username );
+		self::assertEquals( 'password', $mailer->Password );
+	}
+
+	public function test__vip_smtp_disabled() {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+		Constant_Mocker::define( 'VIP_SMTP_ENABLED', false );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		// Verify that the SMTP Auth settings are not set
+		self::assertEquals( false, $mailer->SMTPAuth );
+	}
+
+	public function test__handle_wp_mail_failures() {
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+		Constant_Mocker::define( 'VIP_SMTP_ENABLED', true );
+
+		// Simulate a mail failure
+		$mail_data = [
+			'to'                       => [ 'test@example.com' ],
+			'subject'                  => 'Test Subject',
+			'message'                  => 'Test Message',
+			'phpmailer_exception_code' => 1,
+			'attachments'              => [],
+			'headers'                  => [],
+		];
+
+		do_action( 'wp_mail_failed', new \WP_Error( 'wp_mail_failed', 'SMTP Error: The following recipients failed: test@test.com: : Sender address rejected: not owned by user user-123', $mail_data ) );
+		$mailer = tests_retrieve_phpmailer_instance();
+		$this->assertEquals( $mail_data['message'], $mailer->Body );
+		$this->assertEquals( $mail_data['subject'], $mailer->Subject );
+		$this->assertEquals( 'donotreply@wpvip.com', $mailer->From );
+	}
+
+
 	public function test_load_VIP_PHPMailer() {
 		$this->assertTrue( class_exists( '\Automattic\VIP\Mail\VIP_PHPMailer', false ) );
 	}
@@ -150,7 +200,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 			},
 			E_ALL
 		);
-		
+
 		add_filter( 'vip_block_wp_mail', '__return_true' );
 
 		$this->expectException( \Exception::class );

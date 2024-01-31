@@ -21,6 +21,7 @@ namespace Automattic\VIP\WP_Parsely_Integration;
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
 const SUPPORTED_VERSIONS = [
+	'3.13',
 	'3.12',
 	'3.11',
 	'3.10',
@@ -187,7 +188,7 @@ final class Parsely_Loader_Info {
 		if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
 			$parsely_options = $GLOBALS['parsely']->get_options();
 		}
-		
+
 		return $parsely_options;
 	}
 }
