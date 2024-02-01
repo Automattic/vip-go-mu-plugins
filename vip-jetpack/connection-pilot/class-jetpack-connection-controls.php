@@ -83,6 +83,10 @@ class Controls {
 		);
 
 		if ( is_wp_error( $response ) ) {
+			if ( 'http_request_failed' === $response->get_error_code() && str_contains( $response->get_error_message(), 'Operation timed out' ) ) {
+				return new WP_Error( 'jp-cxn-pilot-test-timeout', sprintf( 'Failed to test connection (#%s: %s)', $response->get_error_code(), $response->get_error_message() ) );
+			}
+
 			return new WP_Error( 'jp-cxn-pilot-test-fail', sprintf( 'Failed to test connection (#%s: %s)', $response->get_error_code(), $response->get_error_message() ) );
 		}
 
