@@ -122,7 +122,7 @@ function rest_endpoint_url_validate_callback( $value, $request, $param ) {
 	$path = trim( parse_url( $value, PHP_URL_PATH ), '/' );
 
 	// Not an allowed endpoint
-	if ( ! wp_endswith( $path, '_search' ) ) {
+	if ( ! str_ends_with( $path, '_search' ) ) {
 		return $error;
 	}
 
@@ -130,7 +130,7 @@ function rest_endpoint_url_validate_callback( $value, $request, $param ) {
 
 	// Check for the allowed index names.
 	foreach ( explode( ',', $index_part ) as $idx ) {
-		if ( ! wp_startswith( $idx, 'vip-' . FILES_CLIENT_SITE_ID ) ) {
+		if ( ! str_starts_with( $idx, 'vip-' . FILES_CLIENT_SITE_ID ) ) {
 			return $error;
 		}
 	}

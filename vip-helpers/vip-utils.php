@@ -355,19 +355,19 @@ function widont( $str = '' ) {
 // Leave these wrapped in function_exists() b/c they are so generically named
 if ( ! function_exists( 'wp_startswith' ) ) :
 	function wp_startswith( $haystack, $needle ) {
-		return 0 === strpos( (string) $haystack, (string) $needle );
+		return str_starts_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		return substr( (string) $haystack, -strlen( (string) $needle ) ) === $needle;
+		return str_ends_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_in' ) ) :
 	function wp_in( $needle, $haystack ) {
-		return false !== strpos( (string) $haystack, (string) $needle );
+		return str_contains( $haystack, $needle );
 	}
 endif;
 
