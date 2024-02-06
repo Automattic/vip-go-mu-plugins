@@ -288,6 +288,11 @@ class Connection_Pilot {
 					$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
 					return false;
 
+				// If the site is timing out, then attempting to reconnect right now could mess up an otherwise valid connection.
+				case 'jp-cxn-pilot-test-timeout':
+					$this->send_alert( 'Jetpack cannot currently be connected due to site availability issues (request timeout)', $error );
+					return false;
+
 				// It is connected but not under the right account.
 				case 'jp-cxn-pilot-not-vip-owned':
 					$this->send_alert( 'Jetpack is connected to a non-VIP account.', $error );
@@ -359,7 +364,7 @@ class Connection_Pilot {
 			return $message;
 		}
 
-		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed' ];
+		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed', 'jp-cxn-pilot-akismet-connection-failed' ];
 		if ( is_wp_error( $wp_error ) && in_array( $wp_error->get_error_code(), $errors_to_ignore, true ) ) {
 			return $message;
 		}

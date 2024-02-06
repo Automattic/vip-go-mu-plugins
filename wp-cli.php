@@ -36,7 +36,7 @@ function init_is_ssl_toggle_for_multisite() {
  * This function toggles the setting so we get correct URLs generated in the wp-cli context.
  */
 function maybe_toggle_is_ssl() {
-	$is_ssl_siteurl = wp_startswith( get_option( 'siteurl' ), 'https:' );
+	$is_ssl_siteurl = str_starts_with( get_option( 'siteurl' ), 'https:' );
 
 	if ( $is_ssl_siteurl && ! is_ssl() ) {
 		$_SERVER['HTTPS'] = 'on';

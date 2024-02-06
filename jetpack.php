@@ -561,7 +561,7 @@ function vip_jetpack_load() {
 				}
 
 				foreach ( $option as $i => $plugin ) {
-					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+					if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 						unset( $option[ $i ] );
 						break;
 					}
@@ -577,7 +577,7 @@ function vip_jetpack_load() {
 					}
 
 					foreach ( $option as $plugin => $i ) {
-						if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+						if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 							unset( $option[ $plugin ] );
 							break;
 						}
