@@ -126,4 +126,5 @@ runs:
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
+        token: ${{ secrets.CODECOV_TOKEN }}
       if: ${{ steps.coverage.outputs.coverage != 'none' }}
