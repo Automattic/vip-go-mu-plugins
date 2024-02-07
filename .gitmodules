@@ -7,9 +7,6 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = https://github.com/Automattic/nginx-http-concat.git
-[submodule "cron-control"]
-	path = cron-control
-	url = https://github.com/Automattic/Cron-Control.git
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = https://github.com/Automattic/jetpack-force-2fa.git
