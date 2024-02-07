@@ -31,6 +31,3 @@
 [submodule "drop-ins/hyperdb"]
 	path = drop-ins/hyperdb
 	url = https://github.com/automattic/hyperdb
-[submodule "cron/cron-control-legacy"]
-	path = cron/cron-control-legacy
-	url = https://github.com/Automattic/Cron-Control.git
