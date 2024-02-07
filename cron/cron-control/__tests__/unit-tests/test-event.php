@@ -143,7 +143,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 'test_find_action', $event->get_action(), 'found event by args' );
 
 		// Failed find by args.
-		$event = Event::find( [ 'action' => 'non_existant_action', 'timestamp' => 1637447876 ] );
+		$event = Event::find( [ 'action' => 'non_existent_action', 'timestamp' => 1637447876 ] );
 		$this->assertNull( $event, 'could not find event by args' );
 	}
 

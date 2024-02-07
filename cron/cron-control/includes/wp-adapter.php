@@ -236,7 +236,7 @@ function pre_get_ready_cron_jobs( $pre ) {
 
 /**
  * Intercepts requests for the entire 'cron' option.
- * Ideally this is never called any more, but we must support this for backwards compatability.
+ * Ideally this is never called any more, but we must support this for backwards compatibility.
  *
  * @param false $pre False if the process has not been intercepted yet.
  * @return array Cron array, in the format WP expects.
@@ -264,7 +264,7 @@ function pre_get_cron_option( $pre ) {
 
 /**
  * Intercepts 'cron' option update.
- * Ideally this is never called any more either, but we must support this for backwards compatability.
+ * Ideally this is never called any more either, but we must support this for backwards compatibility.
  *
  * @param array $new_value New cron array trying to be saved
  * @param array $old_value Existing cron array (already intercepted via pre_get_cron_option() above)

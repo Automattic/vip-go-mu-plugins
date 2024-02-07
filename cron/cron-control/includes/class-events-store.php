@@ -47,16 +47,16 @@ class Events_Store extends Singleton {
 
 		// Can't rely on the DB_VERSION_OPTION here due to subsite copy/paste scenarios.
 		// Must truly check that the table is installed.
-		if ( wp_cache_get( 'is_installed', 'cron-control' ) ) {
-			return true;
+		$is_installed = wp_cache_get( 'is_installed', 'cron-control', false, $cache_exists );
+		if ( $cache_exists ) {
+			return $is_installed;
 		}
 
 		$table_name = $wpdb->prefix . self::TABLE_SUFFIX;
-		$is_installed = 1 === count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
+		$is_installed = 1 === count( $wpdb->get_col( $wpdb->prepare( 'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_NAME = %s', $table_name ) ) );
 
-		if ( $is_installed ) {
-			wp_cache_set( 'is_installed', true, 'cron-control' );
-		}
+		// Cache the results, will be overridden by _prepare_table() during installation.
+		wp_cache_add( 'is_installed', $is_installed, 'cron-control' );
 
 		return $is_installed;
 	}
@@ -147,10 +147,10 @@ class Events_Store extends Singleton {
 		dbDelta( $schema, true );
 
 		// Confirm that the table was created, and set the option to prevent further updates.
-		$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );
+		$is_installed = 1 === count( $wpdb->get_col( $wpdb->prepare( 'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_NAME = %s', $table_name ) ) );
+		wp_cache_set( 'is_installed', $is_installed, 'cron-control' );
 
-		if ( 1 === $table_count ) {
-			wp_cache_set( 'is_installed', true, 'cron-control' );
+		if ( $is_installed ) {
 			update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
 		}
 
@@ -285,7 +285,7 @@ class Events_Store extends Singleton {
 	 *
 	 * Currently no need for caching here really,
 	 * the action/instance/timestamp combination is the query that often happens on the FE.
-	 * So perhaps room for enhacement there later.
+	 * So perhaps room for enhancement there later.
 	 *
 	 * @param int $id The ID of the event being retrieved.
 	 * @return object|null Raw event object if successful, false otherwise.

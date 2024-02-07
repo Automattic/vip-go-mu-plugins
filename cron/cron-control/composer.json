@@ -12,7 +12,7 @@
     "wp-coding-standards/wpcs": "^2.3",
     "johnpbloch/wordpress-core": "6.1.1",
     "wp-phpunit/wp-phpunit": "6.1.1",
-    "yoast/phpunit-polyfills": "1.0.4",
+    "yoast/phpunit-polyfills": "1.1.0",
     "wp-cli/wp-cli": "*"
   },
   "config": {

@@ -48,7 +48,7 @@ require_once __DIR__ . '/utils.php';
 // Start up the WP testing environment.
 require $_tests_dir . '/includes/bootstrap.php';
 
-// Setup WP CLI depedencies.
+// Setup WP-CLI dependencies.
 if ( ! defined( 'WP_CLI_ROOT' ) ) {
 	define( 'WP_CLI_ROOT', __DIR__ . '/../vendor/wp-cli/wp-cli' );
 }

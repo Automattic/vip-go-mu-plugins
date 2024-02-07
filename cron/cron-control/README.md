@@ -12,7 +12,7 @@ Execute WordPress cron events in parallel, with custom event storage for high-vo
 
 ## Description ##
 
-This plugin sets up a custom cron table for better events storage. Using WP hooks, it then intercepts cron registration/retrieval/deletions. There are two additional interaction layers exposed by the plugin - WP CLI and the REST API.
+This plugin sets up a custom cron table for better events storage. Using WP hooks, it then intercepts cron registration/retrieval/deletions. There are two additional interaction layers exposed by the plugin - WP-CLI and the REST API.
 
 By default the plugin disables default WP cron processing. It is recommended to use the cron control runner to process cron: https://github.com/Automattic/cron-control-runner. This is how we are able to process cron events in parallel, allowing for high-volume and reliable cron.
 
@@ -27,9 +27,9 @@ By default the plugin disables default WP cron processing. It is recommended to 
 
 ### Deviations from WordPress Core ###
 
-* Cron jobs are stored in a custom table and not in the `cron` option in wp_options. As long relevent code uses WP core functions for retrieving events and not direct SQL, all will stay compatible.
+* Cron jobs are stored in a custom table and not in the `cron` option in wp_options. As long relevant code uses WP core functions for retrieving events and not direct SQL, all will stay compatible.
 * Duplicate recurring events with the same action/args/schedule are prevented. If multiple of the same action is needed on the same schedule, can add an arbitrary number to the args array.
-* When the cron control runner is running events, it does so via WP CLI. So the environment can be slightly different than that of a normal web request.
+* When the cron control runner is running events, it does so via WP-CLI. So the environment can be slightly different than that of a normal web request.
 * The cron control runner can process multiple events in parallel, whereas core cron only did 1 at a time. By default, events with the same action will not run in parallel unless specifically granted permission to do so.
 
 ### Adding Internal Events ###
@@ -122,7 +122,7 @@ Run `npm install` then `npm run build` to create/update language files and to co
 ### 3.0 ###
 * Implement WP cron filters that were added in WP 5.1.
 * Cleanup the event's store & introduce new Event() object.
-* Switch to a more effecient caching strategy.
+* Switch to a more efficient caching strategy.
 
 ### 2.0 ###
 * Support additional Internal Events

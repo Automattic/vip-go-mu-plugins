@@ -191,7 +191,7 @@ class Events extends Singleton {
 		 *
 		 * While the events are now out of order with respect to timestamp, they're ordered
 		 * such that one of each action is run before another of an already-run action.
-		 * The timestamp mis-ordering is trivial given that we're only dealing with events
+		 * The timestamp misordering is trivial given that we're only dealing with events
 		 * for the current $job_queue_window.
 		 */
 

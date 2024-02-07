@@ -82,7 +82,7 @@ class Events_Tests extends \WP_UnitTestCase {
 		// Ensure we flatten it w/ all events accounted for.
 		$flattened = Events::flatten_wp_events_array( $formatted );
 		$this->assertEquals( count( $flattened ), 4, 'Returns all expected events' );
-		// Could maybe test more here, but honestly feels like it would couple too closely to the implemention itself.
+		// Could maybe test more here, but honestly feels like it would couple too closely to the implementation itself.
 	}
 
 	private function create_test_events() {

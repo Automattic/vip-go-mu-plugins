@@ -70,7 +70,7 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 		$this->assertNull( $result, 'returns null when given invalid ID' );
 
 		$result = $store->_get_event_raw( PHP_INT_MAX );
-		$this->assertNull( $result, 'returns null when given an non-existant ID' );
+		$this->assertNull( $result, 'returns null when given an non-existent ID' );
 
 		// Event w/ all defaults.
 		$this->run_get_raw_event_test( [
