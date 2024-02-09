@@ -28,7 +28,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	}
 
 	protected function __construct() {
-		add_action( 'two-factor-user-options-' . __CLASS__, array( $this, 'user_options' ) );
+		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
 		add_action( 'personal_options_update', array( $this, 'user_options_update' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ) );
 		parent::__construct();
