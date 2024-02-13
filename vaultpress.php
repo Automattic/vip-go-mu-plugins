@@ -49,7 +49,7 @@ if ( ! defined( 'VAULTPRESS_TIMEOUT' ) ) {
 
 add_filter( 'pre_scan_file', function ( $should_skip_file, $file ) {
 	foreach ( VIP_VAULTPRESS_SKIP_FILES as $vp_skip_file ) {
-		if ( wp_endswith( $file, $vp_skip_file ) ) {
+		if ( str_ends_with( $file, $vp_skip_file ) ) {
 			return true;
 		}
 	}
