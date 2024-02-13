@@ -87,7 +87,7 @@ runs:
 
     - name: Disable JetPack
       shell: bash
-      run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
+      run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV
       if: inputs.jetpack == 'no'
 
     - name: Verify MariaDB connection

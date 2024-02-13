@@ -138,4 +138,3 @@ wpcom-helper.php
 # Cron Control
 /cron-control/runner/
 /cron/cron-control/runner/
-/cron/cron-control-legacy/runner/

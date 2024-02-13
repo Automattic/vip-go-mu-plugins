@@ -7,9 +7,6 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = https://github.com/Automattic/nginx-http-concat.git
-[submodule "cron-control"]
-	path = cron-control
-	url = https://github.com/Automattic/Cron-Control.git
 [submodule "shared-plugins/jetpack-force-2fa"]
 	path = shared-plugins/jetpack-force-2fa
 	url = https://github.com/Automattic/jetpack-force-2fa.git
@@ -34,6 +31,3 @@
 [submodule "drop-ins/hyperdb"]
 	path = drop-ins/hyperdb
 	url = https://github.com/automattic/hyperdb
-[submodule "cron/cron-control-legacy"]
-	path = cron/cron-control-legacy
-	url = https://github.com/Automattic/Cron-Control.git
