@@ -150,8 +150,8 @@ final class VIP_SMTP {
 		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
 			$error_data = $error->error_data['wp_mail_failed'];
 
-			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected
-			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by user' ) ) {
+			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected + avoid re-sending the email from  @wpvip.com address that was rejected to avoid infinite loop
+			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by user' ) && false === strpos( $error->errors['wp_mail_failed'][0], 'donotreply@wpvip.com' ) ) {
 				$to          = $error_data['to'] ?? null;
 				$subject     = $error_data['subject'] ?? null;
 				$message     = $error_data['message'] ?? null;
