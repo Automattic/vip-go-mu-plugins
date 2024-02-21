@@ -100,6 +100,7 @@ class VIP_Filesystem {
 		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+		add_filter( 'font_dir', [ $this, 'filter_wp_font_dir' ], 10, 1 );
 
 		/**
 		 * The core's function recurse_dirsize would call to opendir() which is not supported by the
@@ -124,6 +125,7 @@ class VIP_Filesystem {
 		remove_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		remove_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ] );
 		remove_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
+		remove_filter( 'font_dir', [ $this, 'filter_wp_font_dir' ], 10, 1 );
 		remove_filter( 'pre_recurse_dirsize', '__return_zero' );
 	}
 
@@ -460,5 +462,25 @@ class VIP_Filesystem {
 		unlink( $temp_file );
 
 		return $meta;
+	}
+
+	/**
+	 * Changes the Font Library directory to work with the VIP Filesystem.
+	 */
+	public function filter_wp_font_dir( $defaults ) {
+		// Without removing the filter, there will be an infinite loop, because
+		// calling wp_upload_dir will trigger upload_dir, which includes wp_get_font_dir
+		// in the context of uploading fonts. That ultimately calls this function
+		// again through the font_dir filter.
+		remove_filter( 'upload_dir', 'wp_get_font_dir' );
+		$upload_dir = wp_upload_dir();
+		add_filter( 'upload_dir', 'wp_get_font_dir' );
+	
+		$defaults['basedir'] = $upload_dir['basedir'] . '/fonts';
+		$defaults['baseurl'] = $upload_dir['baseurl'] . '/fonts';
+		$defaults['path']    = $defaults['basedir'];
+		$defaults['url']     = $defaults['baseurl'];
+	
+		return $defaults;
 	}
 }
