@@ -4,6 +4,7 @@ namespace Automattic\VIP\Files;
 
 use Automattic\Test\Constant_Mocker;
 use ErrorException;
+use Parsely\RemoteAPI\Base_Endpoint_Remote;
 use WP_Error;
 use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
@@ -385,5 +386,26 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			[ constant( 'WP_CONTENT_DIR' ) . '/plugins/test.txt', 'direct' ],
 			[ constant( 'WP_CONTENT_DIR' ) . '/languages/test.txt', 'direct' ],
 		];
+	}
+
+	public function test_wp_font_dir() {
+		// Only available in WP 6.5 and newer:
+		if ( ! function_exists( '\wp_get_font_dir' ) ) {
+			$this->assertEquals( true, true );
+			return;
+		}
+		// Simulate filter behavior which happens during upload:
+		add_filter( 'upload_dir', '\wp_get_font_dir' );
+		$font_dir = \wp_get_font_dir();
+		remove_filter( 'upload_dir', '\zwp_get_font_dir' );
+
+		$this->assertEquals( $font_dir, [
+			'path'    => 'vip://wp-contentt/uploads/fonts',
+			'basedir' => 'vip://wp-contentt/uploads/fonts',
+			'url'     => 'http://example.org/wp-content/uploads/fonts',
+			'baseurl' => 'http://example.org/wp-content/uploads/fonts',
+			'subdir'  => '',
+			'error'   => false,
+		] );
 	}
 }
