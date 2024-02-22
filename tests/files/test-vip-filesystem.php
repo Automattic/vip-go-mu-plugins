@@ -4,7 +4,6 @@ namespace Automattic\VIP\Files;
 
 use Automattic\Test\Constant_Mocker;
 use ErrorException;
-use Parsely\RemoteAPI\Base_Endpoint_Remote;
 use WP_Error;
 use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
@@ -394,10 +393,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			$this->assertEquals( true, true );
 			return;
 		}
-		// Simulate filter behavior which happens during upload:
-		add_filter( 'upload_dir', '\wp_get_font_dir' );
+
 		$font_dir = \wp_get_font_dir();
-		remove_filter( 'upload_dir', '\zwp_get_font_dir' );
 
 		$this->assertEquals( $font_dir, [
 			'path'    => 'vip://wp-contentt/uploads/fonts',
