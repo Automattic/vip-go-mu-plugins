@@ -41,6 +41,10 @@ inputs:
     description: The port of the MySQL server.
     required: false
     default: '3306'
+  codecov-token:
+    description: The token to use for CodeCov.
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -126,5 +130,5 @@ runs:
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
-        token: ${{ secrets.CODECOV_TOKEN }}
-      if: ${{ steps.coverage.outputs.coverage != 'none' }}
+        token: ${{ inputs.codecov-token }}
+      if: ${{ steps.coverage.outputs.coverage != 'none' && inputs.codecov-token != '' }}

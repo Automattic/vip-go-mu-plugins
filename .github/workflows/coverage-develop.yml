@@ -51,3 +51,4 @@ jobs:
           jetpack: ${{ matrix.config.jp }}
           php: ${{ matrix.config.php }}
           coverage: 'yes'
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}
