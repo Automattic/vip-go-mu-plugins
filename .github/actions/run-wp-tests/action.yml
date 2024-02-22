@@ -41,6 +41,10 @@ inputs:
     description: The port of the MySQL server.
     required: false
     default: '3306'
+  codecov-token:
+    description: The token to use for CodeCov.
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -122,8 +126,9 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v4.0.0
+      uses: codecov/codecov-action@v4.0.1
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
-      if: ${{ steps.coverage.outputs.coverage != 'none' }}
+        token: ${{ inputs.codecov-token }}
+      if: ${{ steps.coverage.outputs.coverage != 'none' && inputs.codecov-token != '' }}
