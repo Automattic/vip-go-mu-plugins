@@ -100,7 +100,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function generate_and_send_token( $user ) {
-		require_once WPMU_PLUGIN_DIR . '/lib/sms.php';
+		require_once WPVIP_MU_PLUGIN_DIR . '/lib/sms.php';
 
 		$token   = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
 		$message = $this->format_sms_message( $token );

@@ -84,9 +84,9 @@ class VP_Site_Scanner {
 			if ( is_dir( WP_PLUGIN_DIR ) && strpos( realpath( WP_PLUGIN_DIR ), realpath( WP_CONTENT_DIR ) . DIRECTORY_SEPARATOR ) !== 0 && strpos( realpath( WP_PLUGIN_DIR ), realpath( ABSPATH ) . DIRECTORY_SEPARATOR ) !== 0 )
 				$paths['plugins'] = new VP_FileScan( WP_PLUGIN_DIR, $ignore_symlinks );
 
-			// Is WPMU_PLUGIN_DIR inside ABSPATH or WP_CONTENT_DIR?
-			if ( is_dir( WPMU_PLUGIN_DIR ) && strpos( realpath( WPMU_PLUGIN_DIR ), realpath( WP_CONTENT_DIR ) . DIRECTORY_SEPARATOR ) !== 0 && strpos( realpath( WPMU_PLUGIN_DIR ), realpath( ABSPATH ) . DIRECTORY_SEPARATOR ) !== 0 )
-				$paths['mu-plugins'] = new VP_FileScan( WPMU_PLUGIN_DIR, $ignore_symlinks );
+			// Is WPVIP_MU_PLUGIN_DIR inside ABSPATH or WP_CONTENT_DIR?
+			if ( is_dir(  WPVIP_MU_PLUGIN_DIR ) && strpos( realpath( WPVIP_MU_PLUGIN_DIR ), realpath( WP_CONTENT_DIR ) . DIRECTORY_SEPARATOR ) !== 0 && strpos( realpath( WPVIP_MU_PLUGIN_DIR ), realpath( ABSPATH ) . DIRECTORY_SEPARATOR ) !== 0 )
+				$paths['mu-plugins'] = new VP_FileScan( WPVIP_MU_PLUGIN_DIR, $ignore_symlinks );
 
 			update_option( '_vp_current_scan', $paths );
 		}
