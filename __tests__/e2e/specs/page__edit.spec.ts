@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { expect, test } from '@playwright/test';
+import { test } from '@playwright/test';
 
 /**
  * Internal dependencies
@@ -31,16 +31,22 @@ test.beforeAll( async ( { request } ) => {
 		body: bodyText,
 		postType: 'page',
 	} );
+
+	if ( ! response.ok() ) {
+		throw new Error( `Failed to create a new page. HTTP error: ${ response.status() }` );
+	}
+
 	const responseJSON = await response.json() as JSONResponse;
 	postID = responseJSON.id;
 	postURL = responseJSON.link;
-	expect( response.ok() ).toBeTruthy();
 } );
 
 test.afterAll( async ( { request } ) => {
 	// Delete created page
 	const response = await WPAPIHelper.deletePost( request, postID, 'page' );
-	expect( response.ok() ).toBeTruthy();
+	if ( ! response.ok() ) {
+		throw new Error( `Failed to delete the page. HTTP error: ${ response.status() }` );
+	}
 } );
 
 // eslint-disable-next-line playwright/expect-expect
