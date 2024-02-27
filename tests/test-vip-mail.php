@@ -142,9 +142,11 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 
 		do_action( 'wp_mail_failed', new \WP_Error( 'wp_mail_failed', 'SMTP Error: The following recipients failed: test@test.com: : Sender address rejected: not owned by user user-123', $mail_data ) );
 		$mailer = tests_retrieve_phpmailer_instance();
-		$this->assertEquals( $mail_data['message'], $mailer->Body );
-		$this->assertEquals( $mail_data['subject'], $mailer->Subject );
-		$this->assertEquals( 'test@example.com', $mailer->From );
+
+		// mail failure is ignored, hence none of these happened.
+		$this->assertEquals( '', $mailer->Body );
+		$this->assertEquals( '', $mailer->Subject );
+		$this->assertEquals( '', $mailer->From );
 	}
 
 	public function test_load_VIP_PHPMailer() {
