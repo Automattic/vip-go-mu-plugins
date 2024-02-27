@@ -118,10 +118,14 @@ class QM_Util {
 			self::$file_dirs = apply_filters( 'qm/component_dirs', self::$file_dirs );
 
 			self::$file_dirs['plugin'] = WP_PLUGIN_DIR;
-			self::$file_dirs['mu-vendor'] = WPVIP_MU_PLUGIN_DIR . '/vendor';
-			self::$file_dirs['go-plugin'] = WPVIP_MU_PLUGIN_DIR . '/shared-plugins';
-			self::$file_dirs['mu-plugin'] = WPVIP_MU_PLUGIN_DIR;
+			self::$file_dirs['vip-mu-vendor'] = WPVIP_MU_PLUGIN_DIR . '/vendor';
+			self::$file_dirs['vip-go-plugin'] = WPVIP_MU_PLUGIN_DIR . '/shared-plugins';
+			self::$file_dirs['vip-mu-plugin'] = WPVIP_MU_PLUGIN_DIR;
 			self::$file_dirs['vip-plugin'] = get_theme_root() . '/vip/plugins';
+
+			if ( WPVIP_MU_PLUGIN_DIR !== WPMU_PLUGIN_DIR ) {
+				self::$file_dirs['mu-plugin'] = WPMU_PLUGIN_DIR;
+			}
 
 			if ( defined( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR' ) ) {
 				self::$file_dirs['vip-client-mu-plugin'] = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR;
