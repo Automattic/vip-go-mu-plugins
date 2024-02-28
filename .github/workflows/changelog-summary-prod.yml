@@ -67,7 +67,7 @@ jobs:
         uses: shivammathur/setup-php@2.29.0
 
       - name: Install
-        uses: ramsey/composer-install@2.2.0
+        uses: ramsey/composer-install@2.3.0
 
       - name: Execute
         env:
