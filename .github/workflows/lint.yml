@@ -41,7 +41,7 @@ jobs:
           cache: npm
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@2.2.0
+        uses: ramsey/composer-install@3.0.0
 
       - name: Lint files
         run: npm run lint
