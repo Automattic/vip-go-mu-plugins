@@ -1472,10 +1472,11 @@ function is_automattician( $user_id = false ) {
  *
  * @see is_automattician
  *
+ * @param int $user_id A WP User id
  * @return bool True, if the current request is made via the Automattic proxy
  */
-function is_proxied_automattician() {
-	return is_proxied_request() && is_automattician();
+function is_proxied_automattician( $user_id = false ) {
+	return is_proxied_request() && is_automattician( $user_id );
 }
 
 /**
@@ -1485,7 +1486,7 @@ function is_proxied_automattician() {
  */
 function is_proxied_request() {
 	// phpcs:disable WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
-	return defined( 'A8C_PROXIED_REQUEST' ) && true === A8C_PROXIED_REQUEST;
+	return defined( 'A8C_PROXIED_REQUEST' ) && true === constant( 'A8C_PROXIED_REQUEST' );
 }
 
 /**
