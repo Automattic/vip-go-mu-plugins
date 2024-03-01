@@ -13,8 +13,6 @@ use WP_UnitTestCase;
 
 /**
  * @group vip_support_user
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
  */
 class VIPSupportUserProxiedTest extends WP_UnitTestCase {
 
