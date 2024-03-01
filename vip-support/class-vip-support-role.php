@@ -110,7 +110,7 @@ class Role {
 		return $user_caps;
 	}
 
-	public function filter_site_option_site_admins( array $site_admins ) {
+	public function filter_site_option_site_admins( $site_admins ) {
 		$user = wp_get_current_user();
 
 		if ( in_array( self::VIP_SUPPORT_ROLE, $user->roles ) && is_proxied_automattician() ) {
