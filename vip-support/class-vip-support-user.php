@@ -871,6 +871,7 @@ class User {
 		if ( ! $verification_data ) {
 			$verification_data = array(
 				'touch' => time(), // GPL timestamp
+				'email' => null,
 			);
 			$generate_new_code = true;
 		}
