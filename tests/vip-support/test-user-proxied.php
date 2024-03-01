@@ -35,7 +35,7 @@ class VIPSupportUserProxiedTest extends WP_UnitTestCase {
 	}
 
 	public function test__superadmin_filter(): void {
-		if ( ! defined( 'A8C_PROXIED_REQUEST' ) && false === A8C_PROXIED_REQUEST ) { // phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
+		if ( defined( 'A8C_PROXIED_REQUEST' ) && false === A8C_PROXIED_REQUEST ) { // phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
 			$this->markTestIncomplete( 'is_proxied_automattician() needs to be made Constant_Mocker friendly and overridden' );
 		}
 
