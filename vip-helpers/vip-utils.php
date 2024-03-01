@@ -1486,9 +1486,7 @@ function is_proxied_automattician( $user_id = false ) {
  */
 function is_proxied_request() {
 	// phpcs:disable WordPressVIPMinimum.Constants.RestrictedConstants.UsingRestrictedConstant
-	if ( defined( 'A8C_PROXIED_REQUEST' ) && true === constant( 'A8C_PROXIED_REQUEST' ) ) {
-		return true;
-	}
+	return defined( 'A8C_PROXIED_REQUEST' ) && true === constant( 'A8C_PROXIED_REQUEST' );
 }
 
 /**
