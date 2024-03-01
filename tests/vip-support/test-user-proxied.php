@@ -65,6 +65,7 @@ class VIPSupportUserProxiedTest extends WP_UnitTestCase {
 		wp_set_current_user( $vip_user_id );
 		wp_get_current_user()->set_role( Role::VIP_SUPPORT_ROLE );
 
+		$this->assertFalse( is_proxied_automattician( $vip_user_id ) );
 		$this->assertNotContains( 'vip_regular_user', get_super_admins() );
 
 		// Ensure a verified + proxied user is filtered to be a superadmin
@@ -72,6 +73,7 @@ class VIPSupportUserProxiedTest extends WP_UnitTestCase {
 
 		$instance->mark_user_email_verified( $vip_user_id, 'regular-user@automattic.com' );
 
+		$this->assertTrue( is_proxied_automattician( $vip_user_id ) );
 		$this->assertContains( 'vip_regular_user', get_super_admins() );
 	}
 }
