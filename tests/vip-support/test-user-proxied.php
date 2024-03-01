@@ -72,8 +72,6 @@ class VIPSupportUserProxiedTest extends WP_UnitTestCase {
 
 		$instance->mark_user_email_verified( $vip_user_id, 'regular-user@automattic.com' );
 
-		wp_set_current_user( $vip_user_id );
-
 		$this->assertContains( 'vip_regular_user', get_super_admins() );
 	}
 }
