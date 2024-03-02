@@ -61,7 +61,7 @@ runs:
         fi
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.29.0
+      uses: shivammathur/setup-php@2.30.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -77,7 +77,7 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@2.2.0
+      uses: ramsey/composer-install@3.0.0
 
     - name: Set up WordPress and WordPress Test Library
       uses: sjinks/setup-wordpress-test-library@2.0.2
