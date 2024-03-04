@@ -468,13 +468,7 @@ class VIP_Filesystem {
 	 * Changes the Font Library directory to work with the VIP Filesystem.
 	 */
 	public function filter_wp_font_dir( $defaults ) {
-		// Without removing the filter, there will be an infinite loop, because
-		// calling wp_upload_dir will trigger upload_dir, which includes wp_get_font_dir
-		// in the context of uploading fonts. That ultimately calls this function
-		// again through the font_dir filter.
-		remove_filter( 'upload_dir', 'wp_get_font_dir' );
 		$upload_dir = wp_upload_dir();
-		add_filter( 'upload_dir', 'wp_get_font_dir' );
 	
 		$defaults['basedir'] = $upload_dir['basedir'] . '/fonts';
 		$defaults['baseurl'] = $upload_dir['baseurl'] . '/fonts';
