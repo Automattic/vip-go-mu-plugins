@@ -390,7 +390,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	public function test_wp_font_dir() {
 		// Only available in WP 6.5 and newer:
 		if ( ! function_exists( '\wp_get_font_dir' ) ) {
-			$this->assertEquals( true, true );
+			$this->markTestSkipped( 'test_wp_font_dir does not need to run for WP < 6.5.' );
 			return;
 		}
 
