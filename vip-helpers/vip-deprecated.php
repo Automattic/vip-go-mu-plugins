@@ -1308,23 +1308,39 @@ function wpcom_vip_disable_instapost() {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
-if ( ! function_exists( 'wpcom_vip_term_exists' ) ) {
-	/**
-	 * `term_exists()` now uses `get_terms()` and is cached.
-	 *
-	 * @deprecated Since WP 6.0
-	 *
-	 * @param int|string $term The term to check can be id, slug or name.
-	 * @param string     $taxonomy The taxonomy name to use
-	 * @param int        $parent Optional. ID of parent term under which to confine the exists search.
-	 * @return mixed Returns null if the term does not exist. Returns the term ID
-	 *               if no taxonomy is specified and the term ID exists. Returns
-	 *               an array of the term ID and the term taxonomy ID the taxonomy
-	 *               is specified and the pairing exists.
-	 */
-	function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
-		_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
+/**
+ * `term_exists()` now uses `get_terms()` and is cached.
+ *
+ * @deprecated Since WP 6.0
+ *
+ * @param int|string $term The term to check can be id, slug or name.
+ * @param string     $taxonomy The taxonomy name to use
+ * @param int        $parent Optional. ID of parent term under which to confine the exists search.
+ * @return mixed Returns null if the term does not exist. Returns the term ID
+ *               if no taxonomy is specified and the term ID exists. Returns
+ *               an array of the term ID and the term taxonomy ID the taxonomy
+ *               is specified and the pairing exists.
+ */
+function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
+	_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
 
-		return term_exists( $term, $taxonomy, $parent ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
+	return term_exists( $term, $taxonomy, $parent ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
+}
+
+if ( ! function_exists( 'wpcom_vip_get_page_by_path' ) ) {
+	/**
+	 * `get_page_by_path()` is now cached and no longer calls direct SQL.
+	 * 
+	 * @deprecated Since WP 6.1
+	 * 
+	 * @param string        $page_path Page path
+	 * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
+	 * @param string|array  $post_type Optional. Post type; default is 'page'.
+	 * @return WP_Post|null WP_Post on success or null on failure
+	 */
+	function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
+		_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+
+		return get_page_by_path( $page_path, $output, $post_type ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
 	}
 }
