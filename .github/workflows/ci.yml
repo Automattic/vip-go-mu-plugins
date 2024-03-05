@@ -78,3 +78,4 @@ jobs:
           php: ${{ matrix.config.php }}
           phpunit: ${{ matrix.config.phpunit }}
           coverage: ${{ matrix.config.coverage }}
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}

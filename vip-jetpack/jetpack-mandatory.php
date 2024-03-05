@@ -113,13 +113,19 @@ class WPCOM_VIP_Jetpack_Mandatory {
 
 	/**
 	 * Hooks the JP jetpack_get_default_modules filter to add
-	 * in our mandatory modules to the array.
+	 * in our mandatory modules to the array and remove unwanted defaults.
 	 *
 	 * @param array $modules An array of Jetpack module slugs
 	 *
 	 * @return array An array of Jetpack module slugs
 	 */
 	public function filter_jetpack_get_default_modules( $modules ) {
+		foreach ( $modules as $index => $module_name ) {
+			if ( 'enhanced-distribution' === $module_name ) {
+				unset( $modules[ $index ] );
+			}
+		}
+
 		return $this->add_mandatory_modules( $modules );
 	}
 
