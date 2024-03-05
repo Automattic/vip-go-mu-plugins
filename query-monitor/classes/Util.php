@@ -123,6 +123,8 @@ class QM_Util {
 			self::$file_dirs['vip-mu-plugin'] = WPVIP_MU_PLUGIN_DIR;
 			self::$file_dirs['vip-plugin'] = get_theme_root() . '/vip/plugins';
 
+			// In case the mu-plugin directory is different from vip-mu-plugins directory
+			// we have to add it to the file dirs
 			if ( WPVIP_MU_PLUGIN_DIR !== WPMU_PLUGIN_DIR ) {
 				self::$file_dirs['mu-plugin'] = WPMU_PLUGIN_DIR;
 			}

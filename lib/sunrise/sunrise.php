@@ -75,6 +75,8 @@ function handle_not_found_error( $error_type ) {
 
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
+		// Sunrise is loaded before any mu plugins, including 000-vip-init.php
+		// So we can't use the WPVIP_MU_PLUGIN_DIR constant here
 		$mu_plugin_dir       = realpath( __DIR__ . '/../..' );
 		$is_maintenance_mode = Context::is_maintenance_mode();
 		if ( $is_maintenance_mode ) {
