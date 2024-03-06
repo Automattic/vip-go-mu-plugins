@@ -436,3 +436,22 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 }
 
 add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/**
+ * Prevent admin/support users from spawning (usleless, autoloaded) NULL value post_by_email_address* options.
+ * Addresses https://github.com/Automattic/jetpack/issues/35636
+ */
+
+function cleaner_jp_pbe_options()
+{
+    add_filter('pre_update_option_post_by_email_address' . get_current_user_id(), 'no_null_post_by_email_address_options', 10, 3);
+}
+
+function no_null_post_by_email_address_options($value, $old_value, $option)
+{
+    if ($value === 'NULL') {
+        return $old_value;
+    } else {
+        return $value;
+    }
+}
