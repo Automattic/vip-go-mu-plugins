@@ -439,20 +439,24 @@ add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_lau
 
 /**
  * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
- * Returns old_value instead of NULL, which in this context is no option at all.
  * Addresses https://github.com/Automattic/jetpack/issues/35636
  */
+function vip_prevent_jetpack_post_by_email_database_noise() {
+	// Prevent saving an unnecessary NULL option to the database.
+	add_filter( 'pre_update_option_post_by_email_address' . get_current_user_id(), function ( $value, $old_value ) {
+		if ( 'NULL' === $value ) {
+			return $old_value;
+		}
 
-function cleaner_jp_pbe_options()
-{
-    add_filter('pre_update_option_post_by_email_address' . get_current_user_id(), 'no_null_post_by_email_address_options', 10, 3);
+		return $value;
+	}, 10, 2 );
+
+	// Prevent unnecessary API calls for finding the remote email address when the module is disabled.
+	if ( method_exists( 'Jetpack', 'is_module_active' ) && ! Jetpack::is_module_active( 'post-by-email' ) ) {
+		add_filter( 'pre_option_post_by_email_address' . get_current_user_id(), function () {
+			return 'NULL';
+		} );
+	}
 }
 
-function no_null_post_by_email_address_options($value, $old_value, $option)
-{
-    if ($value === 'NULL') {
-        return $old_value;
-    } else {
-        return $value;
-    }
-}
+add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
