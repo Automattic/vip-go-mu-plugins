@@ -438,7 +438,8 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
 
 /**
- * Prevent admin/support users from spawning (usleless, autoloaded) NULL value post_by_email_address* options.
+ * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
+ * Returns old_value instead of NULL, which in this context is no option at all.
  * Addresses https://github.com/Automattic/jetpack/issues/35636
  */
 
