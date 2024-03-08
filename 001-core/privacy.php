@@ -341,7 +341,7 @@ function _upload_archive_file( $archive_path ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
+		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
@@ -371,7 +371,7 @@ function _delete_archive_file( $archive_url ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
+		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
