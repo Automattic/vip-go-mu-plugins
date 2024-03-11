@@ -508,8 +508,10 @@ function wpcom_vip_debug( $type, $data ) {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
-function vary_cache_on_function( $function ) {
-	_deprecated_function( __FUNCTION__, '2.0.0' );
+if ( ! function_exists( 'vary_cache_on_function' ) ) {
+	function vary_cache_on_function( $function ) {
+		_deprecated_function( __FUNCTION__, '2.0.0' );
+	}
 }
 
 /**

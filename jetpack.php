@@ -546,9 +546,9 @@ function vip_jetpack_load() {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} elseif ( '' === $version ) {
-			$path = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
+			$path = WPVIP_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
-			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
+			$path = WPVIP_MU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
 
 		if ( file_exists( $path ) ) {

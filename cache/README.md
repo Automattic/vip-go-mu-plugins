@@ -33,7 +33,7 @@ Let's add this to a new file in `client-mu-plugins` called `beta.php` where we'l
 <?php
 
 // Load the VIP Vary_Cache class
-require_once( WPMU_PLUGIN_DIR . '/cache/class-vary-cache.php' );
+require_once( WPVIP_MU_PLUGIN_DIR . '/cache/class-vary-cache.php' );
 
 use Automattic\VIP\Cache\Vary_Cache;
 ```

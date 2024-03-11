@@ -31,6 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Important - Cache-healthcheck and App-healthcheck
 require_once __DIR__ . '/healthcheck/healthcheck.php';
 
+if ( ! defined( 'WPVIP_MU_PLUGIN_DIR' ) ) {
+	define( 'WPVIP_MU_PLUGIN_DIR', __DIR__ );
+}
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
@@ -126,7 +129,9 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 }
 
 // Define constants for custom VIP Go paths
-define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+if ( ! defined( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR' ) ) {
+	define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+}
 
 if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
 	// FedRAMP sites do not load Jetpack by default

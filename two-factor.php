@@ -172,7 +172,7 @@ function wpcom_enable_two_factor_plugin() {
 
 	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
 	// Switching to require_once so it no longer gets skipped
-	require_once WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
+	require_once WPVIP_MU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
