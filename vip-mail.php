@@ -147,7 +147,8 @@ final class VIP_SMTP {
 	 * @param WP_Error $error The WP_Error object passed by reference
 	 */
 	public function handle_wp_mail_failures( $error ) {
-		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
+		$is_production = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
+		if ( $is_production && defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
 			$error_data = $error->error_data['wp_mail_failed'];
 
 			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected + avoid re-sending the email from  @wpvip.com address that was rejected to avoid infinite loop
