@@ -134,7 +134,7 @@ class Attendant {
 				$added_to_blog = add_user_to_blog( $blog_id, $user->ID, $details['role'] );
 
 				if ( is_wp_error( $added_to_blog ) ) {
-					return new WP_Error( 'jp-cxn-pilot-owner-ms-add-failed', 'Failed to add user to blog.' );
+					return new WP_Error( 'jp-cxn-pilot-owner-ms-add-failed', 'Failed to add user to blog. Error: ' . $added_to_blog->get_error_code() );
 				}
 			}
 
@@ -168,8 +168,8 @@ class Attendant {
 
 		return [
 			'email'        => "vip-jetpack-owner+{$org_id}@wpvip.com",
-			'display_name' => 'VIP Jetpack Connection Owner',
-			'login'        => 'vip-jetpack-connection-owner',
+			'display_name' => 'WPVIP Jetpack Connection Owner',
+			'login'        => 'wpvip-jetpack-connection-owner',
 			'role'         => 'administrator',
 		];
 	}

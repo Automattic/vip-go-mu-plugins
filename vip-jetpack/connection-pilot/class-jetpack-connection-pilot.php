@@ -67,9 +67,11 @@ class Connection_Pilot {
 			Connection_Pilot\Attendant::instance();
 		}
 
-		if ( self::should_run_connection_pilot() ) {
-			$this->init_actions();
-		}
+		add_action( 'init', function () {
+			if ( self::should_run_connection_pilot() ) {
+				$this->init_actions();
+			}
+		}, 25 );
 	}
 
 	/**

@@ -41,11 +41,11 @@ class Controls {
 			return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
 		}
 
-		$jp_master_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
-		if ( ! $jp_master_user->exists() ) {
-			return new WP_Error( 'jp-cxn-pilot-master-user-missing', sprintf( 'Jetpack does not have a valid master user.' ) );
-		} elseif ( ! user_can( $jp_master_user, 'manage_options' ) ) {
-			return new WP_Error( 'jp-cxn-pilot-master-user-caps', sprintf( 'The Jetpack master user does not have admin capabilities.' ) );
+		$jp_primary_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
+		if ( ! $jp_primary_user->exists() ) {
+			return new WP_Error( 'jp-cxn-pilot-primary-user-missing', sprintf( 'Jetpack does not have a valid primary user.' ) );
+		} elseif ( ! user_can( $jp_primary_user, 'manage_options' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-primary-user-caps', sprintf( 'The Jetpack primary user does not have admin capabilities.' ) );
 		}
 
 		$is_connected = self::test_jetpack_connection();
