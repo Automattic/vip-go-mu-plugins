@@ -146,15 +146,16 @@ class Akismet_CLI extends WP_CLI_Command {
 				break;
 		}
  
-		$response = Akismet::http_post(
-			Akismet::build_query( array(
-				'blog' => get_option( 'home' ),
-				'key'  => $api_key,
-				'from' => $interval,
-			) ),
-			'get-stats'
+		$request_args = array(
+			'blog' => get_option( 'home' ),
+			'key'  => $api_key,
+			'from' => $interval,
 		);
  
+		$request_args = apply_filters( 'akismet_request_args', $request_args, 'get-stats' );
+
+		$response = Akismet::http_post( Akismet::build_query( $request_args ), 'get-stats' );
+
 		if ( empty( $response[1] ) ) {
 			WP_CLI::error( __( 'Currently unable to fetch stats. Please try again.', 'akismet' ) );
 		}
