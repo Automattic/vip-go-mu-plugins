@@ -2,7 +2,7 @@
 namespace My\Application;
 
 // Load the VIP Vary_Cache class
-require_once WP_CONTENT_DIR . '/mu-plugins/cache/class-vary-cache.php';
+require_once WPVIP_MU_PLUGIN_DIR . '/cache/class-vary-cache.php';
 
 use Automattic\VIP\Cache\Vary_Cache;
 
