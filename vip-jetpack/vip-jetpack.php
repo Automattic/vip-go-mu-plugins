@@ -399,3 +399,27 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 }
 
 add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/**
+ * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
+ * Addresses https://github.com/Automattic/jetpack/issues/35636
+ */
+function vip_prevent_jetpack_post_by_email_database_noise() {
+	// Prevent saving an unnecessary NULL option to the database.
+	add_filter( 'pre_update_option_post_by_email_address' . get_current_user_id(), function ( $value, $old_value ) {
+		if ( 'NULL' === $value ) {
+			return $old_value;
+		}
+
+		return $value;
+	}, 10, 2 );
+
+	// Prevent unnecessary API calls for finding the remote email address when the module is disabled.
+	if ( method_exists( 'Jetpack', 'is_module_active' ) && ! Jetpack::is_module_active( 'post-by-email' ) ) {
+		add_filter( 'pre_option_post_by_email_address' . get_current_user_id(), function () {
+			return 'NULL';
+		} );
+	}
+}
+
+add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
