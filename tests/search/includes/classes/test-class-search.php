@@ -45,10 +45,22 @@ class Search_Test extends WP_UnitTestCase {
 		}, E_USER_WARNING );
 	}
 
+	public function test_initial_state_no_versions() {
+		$this->init_es();
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$versions  = $this->search_instance->versioning->get_versions( $indexable );
+
+		$this->assertEquals( [], $versions, 'There should be no versions in the initial state' );
+
+		$skip = apply_filters( 'ep_skip_query_integration', false );
+		$this->assertTrue( $skip );
+	}
+
 	public function tearDown(): void {
 		restore_error_handler();
-
 		Constant_Mocker::clear();
+
 		parent::tearDown();
 	}
 
@@ -65,9 +77,12 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 */
 	public function test__vip_search_filter_ep_index_name() {
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'bar' );
 		$this->init_es();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
 
@@ -80,9 +95,13 @@ class Search_Test extends WP_UnitTestCase {
 	 * On "global" indexes, such as users, no blog id will be present
 	 */
 	public function test__vip_search_filter_ep_index_name_global_index() {
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'bar' );
+
 		$this->init_es();
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
@@ -295,6 +314,8 @@ class Search_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
 
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$this->search_instance->versioning->add_version( $indexable );
+		$this->search_instance->versioning->activate_version( $indexable, 1 );
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
 
@@ -320,8 +341,6 @@ class Search_Test extends WP_UnitTestCase {
 		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
 
 		$this->assertEquals( 'vip-123-post', $index_name );
-
-		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
 	public function test__vip_search_filter__ep_global_alias() {
