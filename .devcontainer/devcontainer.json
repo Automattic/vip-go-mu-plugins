@@ -1,0 +1,50 @@
+{
+    "name": "VIP Go MU Plugins",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "wordpress",
+    "workspaceFolder": "/var/www/html/wp-content/mu-plugins",
+    "remoteUser": "vscode",
+    "forwardPorts": [80],
+    "postStartCommand": ".devcontainer/post-start.sh",
+    "features": {
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": false,
+            "installOhMyZsh": false,
+            "installOhMyZshConfig": false,
+            "upgradePackages": true,
+            "username": "vscode",
+            "userUid": 1000,
+            "userGid": 1000
+        },
+        "ghcr.io/devcontainers/features/git:1.2.0": {},
+        "ghcr.io/devcontainers/features/github-cli:1.0.11": {},
+        "ghcr.io/devcontainers/features/node:1": {},
+        "ghcr.io/devcontainers-contrib/features/composer:1": {}
+    },
+    "overrideFeatureInstallOrder": [
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/devcontainers/features/git",
+        "ghcr.io/devcontainers/features/github-cli",
+        "ghcr.io/devcontainers/features/node",
+        "ghcr.io/devcontainers-contrib/features/composer"
+    ],
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "dlech.chmod",
+                "dbaeumer.vscode-eslint",
+                "mrorz.language-gettext",
+                "GitHub.copilot",
+                "bmewburn.vscode-intelephense-client",
+                "MehediDracula.php-namespace-resolver",
+                "wongjn.php-sniffer",
+                "esbenp.prettier-vscode",
+                "getpsalm.psalm-vscode-plugin",
+                "timonwong.shellcheck",
+                "johnbillion.vscode-wordpress-hooks",
+                "ms-azuretools.vscode-docker",
+                "zhiayang.tabindentspacealign"
+            ]
+        }
+    }
+}

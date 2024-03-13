@@ -1,0 +1,21 @@
+services:
+  wordpress:
+    build:
+      context: .docker/wordpress
+      dockerfile: Dockerfile
+    environment:
+      WORDPRESS_DB_HOST: database
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - ../:/var/www/html/wp-content/mu-plugins
+    depends_on:
+      - database
+  database:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wordpress
+      MYSQL_PASSWORD: wordpress
