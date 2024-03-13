@@ -11,7 +11,7 @@ else
     WP_DOMAIN="localhost"
 fi
 
-[ -f .gitmodules ] && git submodule update --init --recursive
+[ -f .gitmodules ] && git submodule update --init --recursive --single-branch --depth=1
 
 second=0
 while ! mysqladmin ping -uroot -ppassword -hdatabase --silent && [ "${second}" -lt 60 ]; do
