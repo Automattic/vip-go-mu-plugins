@@ -10,3 +10,5 @@ RUN \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mariadb-client && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+COPY --chown=www-data:www-data wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
