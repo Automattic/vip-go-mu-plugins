@@ -11,12 +11,7 @@ else
     WP_DOMAIN="localhost"
 fi
 
-# shellcheck disable=SC2164
-cd /var/www/html/wp-content/mu-plugins
-# shellcheck source=/dev/null
-. "${NVM_DIR}/nvm.sh" && nvm install --lts
-npm i
-composer install
+[ -f .gitmodules ] && git submodule update --init --recursive
 
 second=0
 while ! mysqladmin ping -uroot -ppassword -hdatabase --silent && [ "${second}" -lt 60 ]; do
@@ -38,3 +33,9 @@ sudo -E sudo -u www-data -E wp core install \
     --skip-email \
     --skip-plugins \
     --skip-themes
+
+# shellcheck source=/dev/null
+. "${NVM_DIR}/nvm.sh" && nvm install --lts
+[ -f package.json ] && npm i
+[ -f composer.json ] && composer install
+exit 0
