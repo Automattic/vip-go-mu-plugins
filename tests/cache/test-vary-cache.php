@@ -7,7 +7,6 @@ use ErrorException;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/mock-header.php';
-require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
@@ -16,6 +15,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	private $original_cookie;
 	private $original_server;
 	private $original_error_reporting;
+
+	public static function wpSetUpBeforeClass() {
+		require_once __DIR__ . '/../../cache/class-vary-cache.php';
+		Vary_Cache::unload();
+	}
 
 	public function setUp(): void {
 		parent::setUp();
@@ -34,6 +38,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( $errno & error_reporting() ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new ErrorException( $errstr, $errno );
 			}
 
@@ -376,7 +381,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertTrue( self::get_vary_cache_property( 'should_update_group_cookie' ), 'Did not update group cookie' );
 
 		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function( $sent_vary, $sent_cookie ) {
+		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
 			$this->assertTrue( $sent_vary, 'Vary was not sent' );
 			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
 		}, 10, 2 );
@@ -557,7 +562,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
 
 		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function( $sent_vary, $sent_cookie ) {
+		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
 			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
 			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
 		}, 10, 2 );
@@ -586,7 +591,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
 
 		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function( $sent_vary, $sent_cookie ) {
+		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
 			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
 			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
 		}, 10, 2 );
@@ -715,7 +720,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				],
 			],
 		];
-
 	}
 
 	/**

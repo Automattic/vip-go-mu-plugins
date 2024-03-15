@@ -37,12 +37,12 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
 		}
 
-		add_filter( 'vip_search_concurrency_limit_backend', function() use ( $backend ) {
+		add_filter( 'vip_search_concurrency_limit_backend', function () use ( $backend ) {
 			return $backend;
 		} );
 
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
-		add_filter( 'vip_search_max_concurrent_requests', function() {
+		add_filter( 'vip_search_max_concurrent_requests', function () {
 			return 1;
 		} );
 
@@ -58,7 +58,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		// This is how we simulate a concurrent request
 		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
 		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
-		$send_request = function() use ( $es, &$response2, &$send_request, $backend ) {
+		$send_request = function () use ( $es, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );
 			$client2   = new Concurrency_Limiter();
 			$response2 = $es->remote_request( '/_search' );
@@ -106,7 +106,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
-		add_filter( 'vip_search_max_concurrent_requests', function() {
+		add_filter( 'vip_search_max_concurrent_requests', function () {
 			return 1;
 		} );
 
@@ -122,7 +122,7 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		// This is how we simulate a concurrent request
 		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
 		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
-		$send_request = function() use ( $es, &$response2, &$send_request, $backend ) {
+		$send_request = function () use ( $es, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );
 			$client2   = new Concurrency_Limiter();
 			$response2 = $es->remote_request( '/_index' );

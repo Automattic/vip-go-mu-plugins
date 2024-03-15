@@ -43,7 +43,7 @@ class QM_Collector_Object_Cache_Group_Stats extends QM_Collector {
 
 				// Initialize and increment count for each group.
 				$group_stats[ $operation_type ][ $group ]['count'] ??= 0;
-				$group_stats[ $operation_type ][ $group ]['count']++;
+				++$group_stats[ $operation_type ][ $group ]['count'];
 
 				// Add the time and size to the group's stats.
 				$group_stats[ $operation_type ][ $group ]['time'] ??= 0;

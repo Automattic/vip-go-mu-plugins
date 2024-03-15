@@ -53,7 +53,7 @@ function track_widget_updated( $instance, ?array $new_instance, ?array $old_inst
 		$all_keys     = array_unique( array_merge( array_keys( $old_instance ), array_keys( $instance ) ) );
 		$updated_keys = array_reduce(
 			$all_keys,
-			function( $carry, $key ) use ( $old_instance, $instance ) {
+			function ( $carry, $key ) use ( $old_instance, $instance ) {
 				if (
 					isset( $old_instance[ $key ] ) === isset( $instance[ $key ] ) &&
 					wp_json_encode( $old_instance[ $key ] ) === wp_json_encode( $instance[ $key ] )

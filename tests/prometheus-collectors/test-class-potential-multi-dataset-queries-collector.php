@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Prometheus;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use Prometheus\Counter;
 use Prometheus\RegistryInterface;
 use WP_UnitTestCase;
@@ -11,6 +12,7 @@ require_once __DIR__ . '/../../prometheus-collectors/class-potential-multi-datas
 class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 	public Potential_Multi_Dataset_Queries_Collector $collector;
 
+	/** @var MockObject&Counter */
 	public Counter $counter;
 
 	public function setUp(): void {
@@ -22,6 +24,7 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
+		/** @var MockObject&RegistryInterface */
 		$registry_mock = $this->getMockBuilder( RegistryInterface::class )
 			->getMock();
 		$registry_mock->method( 'getOrRegisterCounter' )
@@ -110,12 +113,6 @@ class Test_Potential_Multi_Dataset_Queries_Collector extends WP_UnitTestCase {
 				'posts',
 				'termmeta',
 				'3+',
-			],
-			'SELECT with multiple blog tables without global table' => [
-				'SELECT * FROM wptests_2_termmeta, wptests_3_termmeta',
-				'null',
-				'termmeta',
-				'2',
 			],
 		];
 	}

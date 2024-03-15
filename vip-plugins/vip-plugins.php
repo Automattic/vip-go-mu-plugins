@@ -203,7 +203,6 @@ function wpcom_vip_site_option_active_sitewide_plugins( $value ) {
 	ksort( $value );
 
 	return $value;
-
 }
 add_filter( 'site_option_active_sitewide_plugins', 'wpcom_vip_site_option_active_sitewide_plugins' );
 

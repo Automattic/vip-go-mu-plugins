@@ -213,7 +213,7 @@ class Queue_Test extends WP_UnitTestCase {
 				)
 			);
 
-			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time( $object['id'], $object['type'] ) );
+			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time() );
 
 			$this->assertEquals( $expected_start_time, $row->start_time );
 		}
@@ -1182,11 +1182,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 	/* Format:
 	 * [
-	 * 		[
-	 * 			$filter,
-	 * 			$too_low_message,
-	 * 			$too_high_message,
-	 * 		]
+	 *      [
+	 *          $filter,
+	 *          $too_low_message,
+	 *          $too_high_message,
+	 *      ]
 	 * ]
 	 */
 	public function vip_search_ratelimiting_filter_data() {
@@ -1220,7 +1220,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return '30.ffr';
 			}
 		);
@@ -1235,7 +1235,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return 0;
 			}
 		);
@@ -1254,7 +1254,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return PHP_INT_MAX;
 			}
 		);

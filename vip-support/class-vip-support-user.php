@@ -143,7 +143,6 @@ class User {
 		}
 
 		return $instance;
-
 	}
 
 	/**
@@ -393,7 +392,6 @@ class User {
 			}
 			$this->reverting_role = false;
 		}
-
 	}
 
 	/**
@@ -520,10 +518,8 @@ class User {
 			// @TODO Abstract this into an UNVERIFY method
 			$this->mark_user_email_unverified( $user_id );
 			$this->send_verification_email( $user_id );
-		} else {
-			if ( self::MSG_BLOCK_UPGRADE_NON_A11N == $this->message_replace ) {
+		} elseif ( self::MSG_BLOCK_UPGRADE_NON_A11N == $this->message_replace ) {
 				$this->message_replace = self::MSG_BLOCK_NEW_NON_VIP_USER;
-			}
 		}
 	}
 
@@ -1059,7 +1055,7 @@ class User {
 		// Never remove the machine user.
 		if (
 			( defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_login ) ||
-			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_email )
+			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_EMAIL === $user->user_email )
 		) {
 			return new WP_Error( 'not-removing-machine-user', 'WPCOM VIP machine user cannot be removed!' );
 		}

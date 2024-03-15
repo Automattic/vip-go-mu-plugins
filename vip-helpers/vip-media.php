@@ -78,13 +78,14 @@ function wpcom_vip_download_image( $image_url, $post_id = 0, $description = '', 
  * @param string $strip What data to strip: exif|color|all
  */
 function wpcom_vip_set_image_quality( $quality, $strip = false ) {
-	add_filter( 'wp_get_attachment_url', function( $attachment_url ) use ( $quality, $strip ) {
+	add_filter( 'wp_get_attachment_url', function ( $attachment_url ) use ( $quality, $strip ) {
 		return wpcom_vip_set_image_quality_for_url( $attachment_url, $quality, $strip );
 	});
 
-	add_filter( 'the_content', function( $content ) use ( $quality, $strip ) {
+	add_filter( 'the_content', function ( $content ) use ( $quality, $strip ) {
 		if ( false !== strpos( $content, 'files.wordpress.com' ) ) {
-			$content = preg_replace_callback( '#https?://\w+\.files\.wordpress\.com[^\s"\'>]+#', function( $matches ) use ( $quality, $strip ) {
+			// phpcs:ignore WordPress.WP.CapitalPDangit.MisspelledInText
+			$content = preg_replace_callback( '#https?://\w+\.files\.wordpress\.com[^\s"\'>]+#', function ( $matches ) use ( $quality, $strip ) {
 				return wpcom_vip_set_image_quality_for_url( $matches[0], $quality, $strip );
 			}, $content );
 		}
@@ -92,7 +93,7 @@ function wpcom_vip_set_image_quality( $quality, $strip = false ) {
 	});
 
 	// Photon
-	add_filter('jetpack_photon_pre_args', function( $args ) use ( $quality, $strip ) {
+	add_filter('jetpack_photon_pre_args', function ( $args ) use ( $quality, $strip ) {
 		$args['quality'] = $quality;
 		$args['strip']   = $strip;
 		return $args;

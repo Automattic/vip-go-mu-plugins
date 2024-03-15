@@ -8,8 +8,11 @@
  * @package Automattic\VIP\Integrations
  */
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 namespace Automattic\VIP\Integrations;
 
+// @codeCoverageIgnoreStart -- the actual code here is tested individually in the unit tests.
 defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
@@ -18,10 +21,13 @@ require_once __DIR__ . '/integrations/enums.php';
 require_once __DIR__ . '/integrations/integration-vip-config.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
+require_once __DIR__ . '/integrations/vip-governance.php';
 
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
+IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
+// @codeCoverageIgnoreEnd
 
 /**
  * Activates an integration with an optional configuration value.
@@ -35,7 +41,7 @@ function activate( string $slug, array $config = [] ): void {
 
 // Load integrations in muplugins_loaded:5 to allow integrations to hook
 // muplugins_loaded:10 or any later action.
-add_action( 'muplugins_loaded', function() {
+add_action( 'muplugins_loaded', function () {
 	IntegrationsSingleton::instance()->activate_platform_integrations();
 	IntegrationsSingleton::instance()->load_active();
 }, 5 );

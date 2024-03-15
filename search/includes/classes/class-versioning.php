@@ -4,10 +4,10 @@ namespace Automattic\VIP\Search;
 
 require_once __DIR__ . '/class-settingshealthjob.php';
 
-use \ElasticPress\Indexable as Indexable;
-use \ElasticPress\Indexables as Indexables;
+use ElasticPress\Indexable;
+use ElasticPress\Indexables;
 
-use \WP_Error as WP_Error;
+use WP_Error;
 
 class Versioning {
 	const INDEX_VERSIONS_OPTION                              = 'vip_search_index_versions';
@@ -575,7 +575,7 @@ class Versioning {
 		if ( ! is_int( $new_version ) || $new_version < 2 ) {
 			$new_version = 2;
 		} else {
-			$new_version++;
+			++$new_version;
 		}
 
 		return $new_version;
@@ -1084,7 +1084,7 @@ class Versioning {
 		}
 
 		sort( $versions );
-		$version_objects = array_map( function( $version ) {
+		$version_objects = array_map( function ( $version ) {
 			$version_object = [
 				'number' => $version,
 				'active' => false,

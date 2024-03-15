@@ -1,5 +1,8 @@
 <?php
 
+// phpcs:disable Universal.Namespaces.DisallowCurlyBraceSyntax.Forbidden
+// phpcs:disable Universal.Namespaces.OneDeclarationPerFile.MultipleFound
+
 namespace Automattic\Test {
 
 	use Exception;
@@ -18,6 +21,7 @@ namespace Automattic\Test {
 
 		public static function define( string $constant, $value ): void {
 			if ( isset( self::$constants[ $constant ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( "Constant \"%s\" is already defined. Stacktrace:\n%s", $constant, self::$constants[ $constant ][1] ) );
 			}
 
@@ -32,6 +36,7 @@ namespace Automattic\Test {
 
 		public static function constant( string $constant ) {
 			if ( ! isset( self::$constants[ $constant ] ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( 'Constant "%s" is not defined', $constant ) );
 			}
 
@@ -181,6 +186,22 @@ namespace Automattic\VIP\Files {
 }
 
 namespace Automattic\VIP\Core\Constants {
+	use Automattic\Test\Constant_Mocker;
+
+	function define( $constant, $value ) {
+		return Constant_Mocker::define( $constant, $value );
+	}
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Mail {
 	use Automattic\Test\Constant_Mocker;
 
 	function define( $constant, $value ) {

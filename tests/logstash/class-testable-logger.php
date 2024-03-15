@@ -11,7 +11,7 @@ class Testable_Logger extends Logger {
 		static::$logged_entries    = [];
 	}
 
-	public static function wp_debug_log( array $entry ) : void {
+	public static function wp_debug_log( array $entry ): void {
 		self::$logged_entries[] = $entry;
 	}
 

@@ -2,14 +2,12 @@
 
 namespace Automattic\VIP\Sunrise;
 
-/**
- * Nothing to see here for single sites
- */
+// Nothing to see here for single sites
 if ( ! defined( 'ABSPATH' ) || ! is_multisite() ) {
 	return;
 }
 
-$mu_plugin_dir = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+$mu_plugin_dir = defined( 'WPVIP_MU_PLUGIN_DIR' ) ? constant( 'WPVIP_MU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 
 if ( defined( 'VIP_IS_MULTIPLE_DATASETS_ENABLED' ) && VIP_IS_MULTIPLE_DATASETS_ENABLED ) {
 	require_once $mu_plugin_dir . '/lib/db-multiple-datasets-config.php';
@@ -77,7 +75,7 @@ function handle_not_found_error( $error_type ) {
 
 	$is_web_request = Context::is_web_request();
 	if ( $is_web_request ) {
-		$mu_plugin_dir       = defined( 'WPMU_PLUGIN_DIR' ) ? constant( 'WPMU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
+		$mu_plugin_dir       = defined( 'WPVIP_MU_PLUGIN_DIR' ) ? constant( 'WPVIP_MU_PLUGIN_DIR' ) : constant( 'WP_CONTENT_DIR' ) . '/mu-plugins';
 		$is_maintenance_mode = Context::is_maintenance_mode();
 		if ( $is_maintenance_mode ) {
 			// 503 prevents page from being cached.

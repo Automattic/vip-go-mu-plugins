@@ -22,7 +22,7 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 			'exp' => time() + DAY_IN_SECONDS,
 		] );
 
-		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request ) {
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) use ( &$did_remote_request ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 			}
@@ -42,7 +42,7 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 
 		delete_option( Jetpack_IP_Manager::OPTION_NAME );
 
-		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $current ) {
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) use ( &$did_remote_request, $current ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return [
@@ -74,7 +74,7 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 
 		delete_option( Jetpack_IP_Manager::OPTION_NAME );
 
-		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $response ) {
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) use ( &$did_remote_request, $response ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return $response;
@@ -130,7 +130,7 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 			'exp' => time() - DAY_IN_SECONDS,
 		] );
 
-		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request, $expected ) {
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) use ( &$did_remote_request, $expected ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return [
@@ -164,7 +164,7 @@ class Test_Jetpack_IP_Manager extends WP_UnitTestCase {
 			'exp' => time() - DAY_IN_SECONDS,
 		] );
 
-		add_filter( 'pre_http_request', function( $result, $args, $url ) use ( &$did_remote_request ) {
+		add_filter( 'pre_http_request', function ( $result, $args, $url ) use ( &$did_remote_request ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
 				$did_remote_request = true;
 				return new WP_Error( 'code_phat_gaya' );

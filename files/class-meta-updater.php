@@ -43,7 +43,7 @@ class Meta_Updater {
 		$this->batch_size = $batch_size;
 
 		if ( $log_file ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+			// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 			$this->log_file = fopen( $log_file, 'w' );
 		}
 
@@ -134,7 +134,7 @@ class Meta_Updater {
 			if ( ! isset( $counts[ $result ] ) ) {
 				$counts[ $result ] = 0;
 			}
-			$counts[ $result ]++;
+			++$counts[ $result ];
 
 			if ( $this->log_file ) {
 				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fputcsv

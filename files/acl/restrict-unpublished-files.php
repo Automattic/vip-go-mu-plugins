@@ -132,7 +132,7 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		'orderby'          => 'ID',           // For performance (instead of date as default)
 		'order'            => 'ASC',
 		'fields'           => 'ids',
-		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
+		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
 		'suppress_filters' => true,
 	] );
 

@@ -33,7 +33,7 @@ class Action_Scheduler_Dynamic_Queue {
 		add_filter( 'action_scheduler_allow_async_request_runner', '__return_false', 30 );
 
 		// Allow each queue to run for 120 seconds by default.
-		add_filter( 'action_scheduler_queue_runner_time_limit', function() {
+		add_filter( 'action_scheduler_queue_runner_time_limit', function () {
 			return 120;
 		}, 30 );
 

@@ -9,7 +9,7 @@
 
 namespace Automattic\VIP\Schema;
 
-add_filter( 'dbdelta_create_queries', function( $queries ) {
+add_filter( 'dbdelta_create_queries', function ( $queries ) {
 	global $wpdb;
 	foreach ( $queries as $k => $q ) {
 		// Replace meta_key index with one that indexes meta_value as well

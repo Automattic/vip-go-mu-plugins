@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Search\Health as Health;
+use Automattic\VIP\Search\Health;
 use Automattic\VIP\Utils\Alerts;
 
 require_once __DIR__ . '/class-health.php';
@@ -30,6 +30,8 @@ class HealthJob {
 	 * Instance of the Health class
 	 *
 	 * Useful for overriding in tests via dependency injection
+	 *
+	 * @var Health
 	 */
 	public $health;
 
@@ -37,6 +39,8 @@ class HealthJob {
 	 * Instance of Search class
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \Automattic\VIP\Search\Search
 	 */
 	public $search;
 
@@ -44,6 +48,8 @@ class HealthJob {
 	 * Instance of \ElasticPress\Indexables
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \ElasticPress\Indexables
 	 */
 	public $indexables;
 
@@ -142,7 +148,6 @@ class HealthJob {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			Alerts::chat( '#vip-go-es-alerts', $message, 2 );
 		}
-
 	}
 
 	/**

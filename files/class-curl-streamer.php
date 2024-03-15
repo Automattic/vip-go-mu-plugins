@@ -10,21 +10,15 @@ class Curl_Streamer {
 	}
 
 	public function init() {
-		add_filter( 'http_api_transports', [ $this, 'enforce_curl_transport' ] );
 		add_action( 'http_api_curl', [ $this, 'init_upload' ], 10 );
 	}
 
 	public function deinit() {
-		remove_filter( 'http_api_transports', [ $this, 'enforce_curl_transport' ] );
 		remove_action( 'http_api_curl', [ $this, 'init_upload' ] );
 	}
 
-	public function enforce_curl_transport() {
-		return [ 'curl' ];
-	}
-
 	public function init_upload( $curl_handle ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen -- FP - the file is opened read-only
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- FP - the file is opened read-only
 		$file_stream = fopen( $this->file_path, 'r' );
 
 		if ( ! $file_stream ) {
@@ -42,7 +36,7 @@ class Curl_Streamer {
 	}
 
 	public function handle_upload( $curl_handle, $file_stream, $length ) {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fread
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 		$data = fread( $file_stream, $length );
 		if ( ! $data ) {
 			return '';

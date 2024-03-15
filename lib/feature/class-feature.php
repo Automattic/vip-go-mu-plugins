@@ -57,6 +57,10 @@ class Feature {
 			'develop' => true,
 			'staging' => true,
 		],
+		'prom-user-collection' => [
+			'develop' => true,
+			'staging' => true,
+		],
 	];
 
 	/**

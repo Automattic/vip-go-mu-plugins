@@ -11,6 +11,5 @@ class WPCOM_VIP_Utils_Include_Plugin_Test extends WP_UnitTestCase {
 		_wpcom_vip_include_plugin( __DIR__ . '/include-vip-utils-include-plugin.php' );
 
 		$this->assertTrue( $GLOBALS[ TEST_GLOBAL_VARIABLE ] );
-
 	}
 }

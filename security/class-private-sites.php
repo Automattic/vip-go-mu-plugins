@@ -54,10 +54,15 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
+
+		// Force the blog_public option to be -1 and disable UI
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
+
+		add_filter( 'jetpack_ai_enabled', '__return_false' );
 	}
 
 	/**
@@ -69,6 +74,52 @@ class Private_Sites {
 		add_action( 'do_feed_rss', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_rss2', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_atom', array( $this, 'action_do_feed' ), -1 );
+	}
+
+	/**
+	 * Disable checkbox/radio UI in Reading Settings
+	 */
+	public function disable_blog_public_ui() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( 'options-reading' !== $screen->base ) {
+			return;
+		}
+
+		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
+		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
+		$js_code       = <<<JS
+		function onContentLoaded(callback) {
+			if (document.readyState !== 'loading') {
+				callback();
+			} else {
+				document.addEventListener('DOMContentLoaded', callback);
+			}
+		}
+
+		onContentLoaded(function() {
+			function updateProperty(selector, property, value) {
+				const element = document.querySelector(selector);
+				if (element) {
+					element[property] = value;
+				}
+			}
+			var checkbox = 'tr.option-site-visibility input#blog_public[type="checkbox"]';
+			if (document.querySelector(checkbox)) {
+				updateProperty(checkbox, 'disabled', true);
+			} else {
+				updateProperty('tr.option-site-visibility input#blog-public[type="radio"]', 'disabled', true);
+				updateProperty('tr.option-site-visibility input#blog-norobots[type="radio"]', 'disabled', true);
+			}
+			updateProperty('tr.option-site-visibility p.description', 'textContent', '%s');
+		});
+		JS;
+		$description   = esc_html__( 'This option is disabled when the constant VIP_JETPACK_IS_PRIVATE is enabled.', 'vip' );
+		$final_js_code = sprintf( $js_code, $description );
+		wp_add_inline_script( 'vip-disable-blog-public-option-ui', $final_js_code );
 	}
 
 	/*

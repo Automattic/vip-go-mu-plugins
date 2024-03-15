@@ -369,5 +369,4 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $this->test_image . '?resize=150,150', $get_resized_filename->invokeArgs( $image, [] ) );
 	}
-
 }

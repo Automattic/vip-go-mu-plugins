@@ -17,7 +17,7 @@ if ( true === VIP_GO_ENABLE_HTTP_CONCAT ) {
 	if ( ! isset( $_GET['concat_js'] ) || 'yes' === $_GET['concat_js'] ) {
 		require __DIR__ . '/http-concat/jsconcat.php';
 
-		add_filter( 'js_do_concat', function( $do_concat, $handle ) {
+		add_filter( 'js_do_concat', function ( $do_concat, $handle ) {
 			// Retain < 5.0 behaviour for tinyMCE scripts.
 			// These used to be output individually and bypass concat.
 			// 5.0 registers them as scripts which gets them picked up by out concat.

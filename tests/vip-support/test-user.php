@@ -59,7 +59,6 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		foreach ( $non_a8c_emails as $non_a8c_email ) {
 			$this->assertFalse( $user_instance::is_a8c_email( $non_a8c_email ) );
 		}
-
 	}
 
 	public function provider_valid_vip_support_email_aliases(): array {

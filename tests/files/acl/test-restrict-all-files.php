@@ -61,4 +61,3 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 }
-

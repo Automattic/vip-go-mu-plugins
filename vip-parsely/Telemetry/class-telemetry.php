@@ -66,7 +66,7 @@ class Telemetry {
 		foreach ( $this->events as $event ) {
 			if ( is_string( $event['action_hook'] ) && is_callable( $event['callable'] ) ) {
 				$accepted_args = $event['accepted_args'] ?? 1;
-				$func          = function() use ( $accepted_args, $event ) {
+				$func          = function () use ( $accepted_args, $event ) {
 					if ( $accepted_args > 1 ) {
 						$args   = func_get_args();
 						$args[] = $this->telemetry_system;

@@ -10,6 +10,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
+namespace Automattic\VIP\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -45,6 +46,17 @@ if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) 
 }
 
 class VIP_Noop_Mailer {
+
+	/**
+	 * @var string
+	 */
+	public $subject;
+
+	/**
+	 * @var string
+	 */
+	public $recipients;
+
 	public function __construct( $phpmailer ) {
 		$this->subject    = $phpmailer->Subject ?? '[No Subject]';
 		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
@@ -73,14 +85,20 @@ final class VIP_SMTP {
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
+			add_action( 'wp_mail_failed', array( $this, 'handle_wp_mail_failures' ), PHP_INT_MAX );
 		}
 	}
 
 	/**
-	 * @param PHPMailer $phpmailer 
+	 * @param PHPMailer $phpmailer
 	 */
 	public function phpmailer_init( &$phpmailer ): void {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
+			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
+		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
@@ -104,6 +122,14 @@ final class VIP_SMTP {
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
 
+		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' ) ) {
+			$phpmailer->Port       = constant( 'VIP_SMTP_PORT' );
+			$phpmailer->SMTPAuth   = true;
+			$phpmailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+			$phpmailer->Username   = constant( 'VIP_SMTP_USERNAME' );
+			$phpmailer->Password   = constant( 'VIP_SMTP_PASSWORD' );
+		}
+
 		$tracking_header = $this->get_tracking_header( WPCOM_VIP_MAIL_TRACKING_KEY );
 		if ( false !== $tracking_header ) {
 			$phpmailer->AddCustomHeader( $tracking_header );
@@ -113,6 +139,42 @@ final class VIP_SMTP {
 	public function filter_wp_mail_from() {
 		return 'donotreply@wpvip.com';
 	}
+
+
+	/**
+	 * This function is used to handle the wp_mail failures if the sender address is rejected by the SMTP server
+	 *
+	 * @param WP_Error $error The WP_Error object passed by reference
+	 */
+	public function handle_wp_mail_failures( $error ) {
+		$is_production = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
+		if ( $is_production && defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && isset( $error->error_data['wp_mail_failed'] ) && isset( $error->error_data['wp_mail_failed']['phpmailer_exception_code'] ) && isset( $error->errors['wp_mail_failed'] ) ) {
+			$error_data = $error->error_data['wp_mail_failed'];
+
+			// The phpmailer exception code for Sender Address rejection is 1 and we also are validating the message is matching to the one that's expected + avoid re-sending the email from  @wpvip.com address that was rejected to avoid infinite loop
+			if ( 1 === $error_data['phpmailer_exception_code'] && false !== strpos( $error->errors['wp_mail_failed'][0], 'Sender address rejected: not owned by user' ) && false === strpos( $error->errors['wp_mail_failed'][0], 'donotreply@wpvip.com' ) ) {
+				$to          = $error_data['to'] ?? null;
+				$subject     = $error_data['subject'] ?? null;
+				$message     = $error_data['message'] ?? null;
+				$headers     = $error_data['headers'] ?? null;
+				$attachments = $error_data['attachments'] ?? null;
+
+				// Bail if any of the required parameters are missing from the message data
+				if ( ! isset( $to, $subject, $message ) ) {
+					return;
+				}
+
+				// Set the from address to our default
+				add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+				wp_mail( $to, $subject, $message, $headers, $attachments );
+
+				remove_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), PHP_INT_MAX );
+			}
+		}
+	}
+
 
 	protected function get_tracking_header( $key ) {
 		// Don't need an environment check, since this should never trigger locally

@@ -11,6 +11,9 @@ class VersioningCleanupJob {
 
 	const SEARCH_ALERT_SLACK_CHAT = '#vip-go-es-alerts';
 
+	public $indexables;
+	public $versioning;
+
 	public function __construct( $indexables, $versioning ) {
 		$this->indexables = $indexables;
 		$this->versioning = $versioning;

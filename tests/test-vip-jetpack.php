@@ -232,4 +232,46 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 			[ 'smart', 'dumb', false ],
 		];
 	}
+
+	/**
+	 *
+	 * @dataProvider get_vip_jetpack_offline_mode_data
+	 */
+	public function test__jetpack_vip_filter_jetpack_offline_mode_on_site_launch( $is_launching, $offline_modes, $expected_results ) {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Not relevant on single-site' );
+			return;
+		}
+
+		if ( $is_launching ) {
+			wp_cache_set( 'launching', 'true', 'vip_launch_tools', 0 );
+		} else {
+			wp_cache_delete( 'launching', 'vip_launch_tools' );
+		}
+		$offline_modes_count = count( $offline_modes );
+		for ( $i = 0; $i < $offline_modes_count; $i++ ) {
+			$offline_mode = $offline_modes[ $i ];
+			$expected     = $expected_results[ $i ];
+			$actual       = apply_filters( 'jetpack_offline_mode', $offline_mode );
+			$this->assertEquals( $expected, $actual, 'Value of the jetpack_offline_mode filter is incorrect' );
+		}
+		// clearing the cache for the next run.
+		wp_cache_delete( 'launching', 'vip_launch_tools' );
+	}
+
+	public function get_vip_jetpack_offline_mode_data(): iterable {
+		return array(
+			'not-launching-offline-mode-is-unchanged' =>
+			array(
+				false, // is_launching.
+				array( null, true, false ), // offline_modes.
+				array( null, true, false ), // expected_results.
+			),
+			'launching-offline-mode-is-true'          => array(
+				true, // is_launching.
+				array( null, true, false ), // offline_modes.
+				array( true, true, true ), // expected_results.
+			),
+		);
+	}
 }

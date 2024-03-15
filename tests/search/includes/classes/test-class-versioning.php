@@ -37,26 +37,34 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public static function setUpBeforeClass(): void {
+		global $wp_filter;
+
 		parent::setUpBeforeClass();
 
-		remove_all_actions( 'init' );
+		$save_init = clone $wp_filter['init'];
+		try {
+			remove_all_actions( 'init' );
 
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-				'https://es-endpoint1',
-				'https://es-endpoint2',
-			) );
+			if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+				define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+					'https://es-endpoint1',
+					'https://es-endpoint2',
+				) );
+			}
+
+			require_once __DIR__ . '/../../../../search/search.php';
+
+			self::$search = \Automattic\VIP\Search\Search::instance();
+
+			self::$search->queue->schema->prepare_table();
+
+			// Required so that EP registers the Indexables
+			do_action( 'plugins_loaded' );
+			do_action( 'init' );
+		} finally {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$wp_filter['init'] = clone $save_init;
 		}
-
-		require_once __DIR__ . '/../../../../search/search.php';
-
-		self::$search = \Automattic\VIP\Search\Search::instance();
-
-		self::$search->queue->schema->prepare_table();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
 
 		self::$version_instance = self::$search->versioning;
 
@@ -1409,7 +1417,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$delete_count = 0;
 		$get_count    = 0;
 
-		add_filter( 'ep_do_intercept_request', function( $request, $query, $args ) use ( &$delete_count, &$get_count ) /* NOSONAR */ {
+		add_filter( 'ep_do_intercept_request', function ( $request, $query, $args ) use ( &$delete_count, &$get_count ) /* NOSONAR */ {
 			if ( 'DELETE' === $args['method'] ) {
 				$delete_count++;
 			}
@@ -1711,7 +1719,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider maybe_self_heal_reconstruct_data
 	 */
 	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
-		$indexables_mocks = array_map( function( $slug ) {
+		$indexables_mocks = array_map( function ( $slug ) {
 			$indexable_mock       = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
 			$indexable_mock->slug = $slug;
 			return $indexable_mock;
@@ -1729,7 +1737,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$partially_mocked_versioning
 			->method( 'get_versions' )
-			->will( $this->returnCallback( function( $indexable ) use ( $versioning ) {
+			->will( $this->returnCallback( function ( $indexable ) use ( $versioning ) {
 					return $versioning[ $indexable->slug ];
 			} ) );
 

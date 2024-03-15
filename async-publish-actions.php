@@ -179,7 +179,7 @@ add_action( ASYNC_TRANSITION_EVENT, __NAMESPACE__ . '\_wpcom_do_async_transition
  *   at the same time and `get_post( $post->ID )->post_status` should be used to
  *   verify what state the post is in, if needed).
  */
-add_filter( 'a8c_cron_control_concurrent_event_whitelist', function( $whitelist ) {
+add_filter( 'a8c_cron_control_concurrent_event_whitelist', function ( $whitelist ) {
 	$whitelist[ ASYNC_TRANSITION_EVENT ] = 5; // safe, low number to start
 
 	return $whitelist;

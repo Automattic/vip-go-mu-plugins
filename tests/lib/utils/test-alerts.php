@@ -16,7 +16,7 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function() use ( $mocked_response ) {
+		add_filter( 'pre_http_request', function () use ( $mocked_response ) {
 			return $mocked_response;
 		}, 10, 3 );
 	}

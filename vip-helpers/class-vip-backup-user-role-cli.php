@@ -50,7 +50,6 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		$formatter = new \WP_CLI\Formatter( $assoc_args, [ 'time_key', 'time_h', 'num_roles', 'role_names' ], 'role_backups' );
 		$formatter->display_items( $data );
-
 	}
 
 	/**
@@ -94,12 +93,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		if ( 'latest' === $key ) {
 			$backup = array_pop( $backup_roles );
-		} else {
-			if ( isset( $backup_roles[ $key ] ) ) {
+		} elseif ( isset( $backup_roles[ $key ] ) ) {
 				$backup = $backup_roles[ $key ];
-			} else {
-				\WP_CLI::error( 'Specified backup time_key not found.' );
-			}
+		} else {
+			\WP_CLI::error( 'Specified backup time_key not found.' );
 		}
 
 		if ( $names_only ) {
@@ -107,7 +104,6 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		}
 
 		\WP_CLI::print_value( $backup, $assoc_args );
-
 	}
 
 	/**
@@ -146,13 +142,11 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		if ( 'latest' === $key ) {
 			$date   = gmdate( 'Y-m-d H:i:s', array_key_last( $backup_roles ) );
 			$backup = array_pop( $backup_roles );
-		} else {
-			if ( isset( $backup_roles[ $key ] ) ) {
+		} elseif ( isset( $backup_roles[ $key ] ) ) {
 				$date   = gmdate( 'Y-m-d H:i:s', $key );
 				$backup = $backup_roles[ $key ];
-			} else {
-				\WP_CLI::error( 'Specified backup time_key not found.' );
-			}
+		} else {
+			\WP_CLI::error( 'Specified backup time_key not found.' );
 		}
 
 		$current_roles = get_option( $wpdb->prefix . 'user_roles' );
@@ -220,7 +214,6 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		update_option( $wpdb->prefix . 'user_roles', $backup );
 
 		\WP_CLI::success( sprintf( 'Restored %s backup with %d roles', $key, count( $backup ) ) );
-
 	}
 
 
@@ -249,12 +242,10 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 
 		if ( 'latest' === $key ) {
 			$backup = array_pop( $backup_roles );
-		} else {
-			if ( isset( $backup_roles[ $key ] ) ) {
+		} elseif ( isset( $backup_roles[ $key ] ) ) {
 				$backup = $backup_roles[ $key ];
-			} else {
-				\WP_CLI::error( 'Specified backup time_key not found.' );
-			}
+		} else {
+			\WP_CLI::error( 'Specified backup time_key not found.' );
 		}
 
 		$current_roles = get_option( $wpdb->prefix . 'user_roles' );
@@ -326,7 +317,6 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		$diff = preg_replace( '/(^<.*?$)/m', '%G$1%n', $diff );
 
 		\WP_CLI::log( \WP_CLI::colorize( $diff ) );
-
 	}
 
 	/**
@@ -347,9 +337,7 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 		\Automattic\VIP\do_user_role_backup();
 
 		\WP_CLI::success( 'Current roles backed up.' );
-
 	}
-
 }
 
 WP_CLI::add_command( 'vip role-backup', __NAMESPACE__ . '\VIP_Backup_User_Role_CLI' );

@@ -6,10 +6,10 @@
  * License:     GPLv2 or later
  */
 
-add_filter( 'pre_option_ep_hide_different_server_type_notice', function() {
+add_filter( 'pre_option_ep_hide_different_server_type_notice', function () {
 	return 0;
 } );
 
-add_filter( 'ep_server_type', function() {
+add_filter( 'ep_server_type', function () {
 	return 'opensearch';
 } );

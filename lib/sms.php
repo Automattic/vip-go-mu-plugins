@@ -35,7 +35,7 @@ function send_sms( $to, $message ) {
 		$total_messages = count( $message );
 
 		foreach ( $message as $message_split ) {
-			$counter++;
+			++$counter;
 
 			// Add a counter if we're sending more than one message
 			if ( 1 < $total_messages ) {

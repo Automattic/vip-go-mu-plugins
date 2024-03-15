@@ -2,13 +2,15 @@
 
 namespace Automattic\VIP\Tests;
 
+use WP_UnitTestCase;
+
 use function Automattic\VIP\WP_CLI\maybe_toggle_is_ssl;
 use function Automattic\VIP\WP_CLI\init_is_ssl_toggle_for_multisite;
 
-use WP_UnitTestCase;
-
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
 class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
+	private $initial_https_value;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -58,7 +60,7 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data
 	 */
 	public function test__maybe_toggle_is_ssl( $siteurl, $initial_https_value, $expected_https_value ) {
-		add_filter( 'pre_option_siteurl', function() use ( $siteurl ) {
+		add_filter( 'pre_option_siteurl', function () use ( $siteurl ) {
 			return $siteurl;
 		} );
 
@@ -114,6 +116,5 @@ class VIP_WP_CLI__SSL__Test extends WP_UnitTestCase {
 		// Change from is_ssl() to non-SSL site => is_ssl() === false
 		switch_to_blog( $blog_1_id );
 		$this->assertFalse( isset( $_SERVER['HTTPS'] ) );
-
 	}
 }

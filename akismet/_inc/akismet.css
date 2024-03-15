@@ -99,46 +99,9 @@ table.comments td.comment p a:after {
 	font-size: 120%;
 	margin-top: .5rem;
 }
-.akismet-alert {
-	padding: 0.4em 1em 1.4em 1em;
-	box-sizing: border-box;
-	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
-}
-
-.akismet-alert h3.akismet-key-status {
-	color: #fff;
-	margin: 1em 0 0.5em 0;
-}
-
-.akismet-alert.akismet-critical {
-	background-color: #993300;
-}
-
-.akismet-alert.akismet-active {
-	background-color: #649316;
-}
-
-.akismet-alert p.akismet-key-status {
-	font-size: 24px;
-}
-
-.akismet-alert p.akismet-description {
-	color:#fff;
-	font-size: 14px;
-    margin: 0 0;
-	font-style: normal;
-}
-
-.akismet-alert p.akismet-description a,
-.akismet-alert p.akismet-description a,
-.akismet-alert p.akismet-description a,
-.akismet-alert p.akismet-description a {
-	color: #fff;
-}
 
 .akismet-new-snapshot {
 	margin-top: 1em;
-	padding: 1em;
 	text-align: center;
 	background: #fff;
 }
@@ -148,34 +111,19 @@ table.comments td.comment p a:after {
 	color: #888;
 	font-size: 11px;
     margin: 0;
-    padding: 3px;
-}
-
-.new-snapspot ul {
-	font-size: 12px;
-	width: 100%;
 }
 
 .akismet-new-snapshot ul li {
     color: #999;
-	float: left;
     font-size: 11px;
-	padding: 0 20px;
     text-transform: uppercase;
-	width: 33%;
 	box-sizing: border-box;
 	-moz-box-sizing: border-box;
 	-webkit-box-sizing: border-box;
 	-ms-box-sizing: border-box;
 }
 
-.akismet-new-snapshot ul li:first-child,
-.akismet-new-snapshot ul li:nth-child(2) {
-	border-right:1px dotted #ccc;
-}
-
-.akismet-new-snapshot ul li span {
-    color: #52accc;
+.akismet-new-snapshot__number {
 	display: block;
 	font-size: 32px;
 	font-weight: lighter;
@@ -190,10 +138,6 @@ table.comments td.comment p a:after {
 .akismet-settings th.akismet-api-key {
 	vertical-align: middle;
 	padding-top: 0;
-}
-
-.akismet-settings input[type=text] {
-	width: 75%;
 }
 
 .akismet-settings span.akismet-note{
@@ -312,7 +256,7 @@ table.comments td.comment p a:after {
 	.akismet_activate .aa_a {
 		display: none;
 	}
-	
+
 	.akismet_activate .aa_button_container {
 		width: 100%;
 	}
@@ -328,7 +272,7 @@ table.comments td.comment p a:after {
 	#akismet_setup_prompt .aa_description {
 		display: none;
 	}
-	
+
 	.akismet_activate {
 		min-width: 0;
 	}
@@ -358,10 +302,6 @@ table.comments td.comment p a:after {
 }
 .akismet-masthead__logo-container {
 	padding:.3125rem 0 0
-}
-.akismet-masthead__logo {
-	width:10.375rem;
-	height:1.8125rem;
 }
 .akismet-masthead__logo-link {
 	display:inline-block;
@@ -448,10 +388,8 @@ table.comments td.comment p a:after {
 	margin-top: 1rem;
 	margin-bottom: 0;
 	position: relative;
-	margin: 0 auto 0.625rem auto;
 	box-sizing: border-box;
 	background: white;
-	box-shadow: 0 0 0 1px rgba(200, 215, 225, 0.5), 0 1px 2px #e9eff3;
 }
 
 .akismet-card:after, .akismet-card .inside:after, .akismet-masthead__logo-container:after {
@@ -507,7 +445,7 @@ table.comments td.comment p a:after {
 	width: 54px;
 	height: 54px;
 }
-	
+
 .akismet-box p:after {
 	content: ".";
 	display: block;
@@ -551,25 +489,12 @@ table.comments td.comment p a:after {
 	text-align: center;
 }
 
-.akismet-enter-api-key-box {
-	margin: 1.5rem 0;
-}
-
-.akismet-box .enter-api-key {
-	display: none;
-	margin-top: 1.5rem;
-}
-
 .akismet-box .akismet-toggles {
 	margin: 3rem 0;
 }
 
 .akismet-box .akismet-ak-connect, .akismet-box .toggle-jp-connect {
 	display: none;
-}
-
-.akismet-box .enter-api-key p {
-	padding: 0 1.5rem;
 }
 
 .akismet-button, .akismet-button:hover, .akismet-button:visited {
@@ -699,7 +624,12 @@ div.error.akismet-usage-limit-alert {
 }
 
 .akismet-usage-limit-alert .akismet-usage-limit-cta {
+	border-color: none;
 	text-align: right;
+}
+
+#akismet-plugin-container .akismet-usage-limit-cta a {
+	color: #d63638;
 }
 
 @media (max-width: 550px) {

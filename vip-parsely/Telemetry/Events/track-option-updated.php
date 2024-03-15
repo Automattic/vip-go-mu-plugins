@@ -25,7 +25,7 @@ function track_option_updated( array $old_value, array $value, Telemetry_System 
 	// Get the option keys that got updated.
 	$updated_keys = array_reduce(
 		$all_keys,
-		function( $carry, $key ) use ( $old_value, $value ) {
+		function ( $carry, $key ) use ( $old_value, $value ) {
 			if (
 				// The old key and the new key have the same value.
 				( isset( $old_value[ $key ] ) === isset( $value[ $key ] ) &&

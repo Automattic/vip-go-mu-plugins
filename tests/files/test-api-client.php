@@ -44,7 +44,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response ) {
+		add_filter( 'pre_http_request', function ( $response, $args, $url ) use ( $mocked_response ) {
 			$this->http_requests[] = [
 				'url'  => $url,
 				'args' => $args,

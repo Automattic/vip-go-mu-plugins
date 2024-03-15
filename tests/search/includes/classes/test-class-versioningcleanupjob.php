@@ -12,7 +12,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__versioning_cleanup__will_check_for_all_indexables() {
-		$indexables_mocks = array_map( function( $slug ) {
+		$indexables_mocks = array_map( function ( $slug ) {
 			$indexable_mock       = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
 			$indexable_mock->slug = $slug;
 			return $indexable_mock;
@@ -181,7 +181,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 
 		$result = $instance->get_stale_inactive_versions( $indexable_mock );
 
-		$result_numbers = array_map( function( $element ) {
+		$result_numbers = array_map( function ( $element ) {
 			return $element['number'];
 		}, $result );
 

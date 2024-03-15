@@ -8,13 +8,13 @@ if ( file_exists( __DIR__ . '/action-scheduler-dynamic-queue.php' ) ) {
 
 	// Priority 9 required to be in time for setting the cron-control concurrency whitelist.
 	// We also need to give time for plugins to load up Action Scheduler.
-	add_action( 'after_setup_theme', function() {
+	add_action( 'after_setup_theme', function () {
 		( new Action_Scheduler_Dynamic_Queue() )->init();
 	}, 9 );
 }
 
 // Unregister Jetpack-related cron events when disabled.
-add_action( 'cli_init', function() {
+add_action( 'cli_init', function () {
 	$jetpack_is_disabled    = defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD;
 	$vaultpress_is_disabled = $jetpack_is_disabled || ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD );
 

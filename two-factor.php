@@ -140,7 +140,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		$limited = current_user_can( $cap );
 
 		// Calculate current_user_can outside map_meta_cap to avoid callback loop
-		add_filter( 'wpcom_vip_is_two_factor_forced', function() use ( $limited ) {
+		add_filter( 'wpcom_vip_is_two_factor_forced', function () use ( $limited ) {
 			return $limited;
 		}, 9 );
 
@@ -150,7 +150,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 
 		add_filter(
 			'wpcom_vip_is_user_using_two_factor',
-			function() use ( $is_user_using_two_factor ) {
+			function () use ( $is_user_using_two_factor ) {
 				return $is_user_using_two_factor;
 			}
 		);
@@ -172,7 +172,7 @@ function wpcom_enable_two_factor_plugin() {
 
 	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
 	// Switching to require_once so it no longer gets skipped
-	require_once WPMU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
+	require_once WPVIP_MU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
@@ -248,7 +248,7 @@ function wpcom_vip_two_factor_admin_notice() {
 			<div class="dashicons dashicons-warning" style="display:flex;float:left;margin-right:2rem;font-size:38px;align-items:center;margin-left:-20px;color:#ffb900;"></div>
 			<div>
 				<p style="font-weight:bold; font-size:16px;">
-					<a href="https://wpvip.com/documentation/vip-go/two-factor-authentication-on-vip-go/">Two Factor Authentication</a> is required to edit content on this site.
+					Your account requires <a href="https://docs.wpvip.com/security/two-factor-authentication/">two-factor authentication</a> to be enabled.
 				</p>
 
 				<p>For the safety and security of this site, your account access has been downgraded. Please enable two-factor authentication to restore your access.</p>

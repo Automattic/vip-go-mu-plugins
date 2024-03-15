@@ -57,7 +57,6 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertFalse( $next );
-
 	}
 
 	/**
@@ -81,7 +80,6 @@ class Async_Publish_Actions_Test extends WP_UnitTestCase {
 		$next = wp_next_scheduled( Async_Publish_Actions\ASYNC_TRANSITION_EVENT, $args );
 
 		$this->assertFalse( $next );
-
 	}
 
 	/**

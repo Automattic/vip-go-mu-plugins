@@ -2,8 +2,8 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables;
-use \WP_Error;
+use ElasticPress\Indexables;
+use WP_Error;
 
 class Queue {
 	const CACHE_GROUP                     = 'vip-search-index-queue';
@@ -14,7 +14,9 @@ class Queue {
 
 	/** @var Queue\Schema */
 	public $schema;
+	/** @var Indexables */
 	public $indexables;
+	/** @var \Automattic\VIP\Logstash\Logger */
 	public $logger;
 	/** @var Queue\Cron */
 	public $cron;
@@ -416,7 +418,7 @@ class Queue {
 
 		if ( is_int( $last_index_time ) && $last_index_time ) {
 			// Next index time is last index time + interval
-			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $indexable_slug, $options );
+			$next_index_time = $last_index_time + $this->get_index_interval_time();
 		}
 
 		return $next_index_time;
@@ -474,12 +476,9 @@ class Queue {
 	/**
 	 * Get the interval between successive index operations on a given object
 	 *
-	 * @param int $object_id The id of the object
-	 * @param string $indexable_slug The Indexable slug
-	 * @param array $options (optional) Array of options
 	 * @return int Minimum number of seconds between re-indexes
 	 */
-	public function get_index_interval_time( $object_id, $indexable_slug, $options = array() ) {
+	public function get_index_interval_time() {
 		// Room for future improvement - on non-active index versions, increase the time between re-indexing a given object
 
 		return 60;

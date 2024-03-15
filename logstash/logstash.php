@@ -18,7 +18,6 @@ require_once __DIR__ . '/class-logger.php';
  * @param array $data Log entry data.
  * @internal See {@link VIP_Logstash::log2logstash()} for details.
  */
-function log2logstash( array $data ) : void {
+function log2logstash( array $data ): void {
 	Logger::log2logstash( $data );
 }
-

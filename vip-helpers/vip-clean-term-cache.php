@@ -70,7 +70,6 @@ class VIP_Suspend_Cache_Invalidation {
 			//schedule WP Cron event for purging the cache
 			wp_schedule_single_event( time(), 'wpcom_vip_clean_tax_relations_cache', array( $tt_id, $taxonomy ) );
 		}
-
 	}
 
 	/**

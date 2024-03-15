@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables as Indexables;
+use ElasticPress\Indexables;
 
-use \WP_Query as WP_Query;
-use \WP_User_Query as WP_User_Query;
-use \WP_Error as WP_Error;
+use WP_Query;
+use WP_User_Query;
+use WP_Error;
 
 class Health {
 	const CONTENT_VALIDATION_BATCH_SIZE        = 300;
@@ -56,8 +56,16 @@ class Health {
 	 * Instance of Search class
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \Automattic\VIP\Search\Search
 	 */
 	public $search;
+
+	/** @var \ElasticPress\Indexables */
+	public $indexables;
+
+	/** @var \ElasticPress\Elasticsearch */
+	public $elasticsearch;
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search        = $search;
@@ -173,6 +181,11 @@ class Health {
 				// Since the user indexable is global, we want to include ALL in count.
 				unset( $query->query_vars['blog_id'] );
 			}
+
+			// An improperly formatted ES args filter can break the `wp vip-search health validate-counts` CLI.
+			remove_all_filters( 'ep_formatted_args' );
+			remove_all_filters( 'ep_post_formatted_args' );
+
 			$formatted_args = $indexable->format_args( $query->query_vars, $query );
 
 			// Get exact total count since Elasticsearch default stops at 10,000.
@@ -509,7 +522,7 @@ class Health {
 			}
 
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( 'Validating posts %d - %d', $start_post_id, $next_batch_post_id - 1 ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 
 			/** @var array|WP_Error */
@@ -525,7 +538,7 @@ class Health {
 
 			// Limit $results size
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
-				echo sprintf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( "...%s\n", \WP_CLI::colorize( '🛑' ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
 				$error = new WP_Error( 'es_diff_size_limit_reached', sprintf( 'Reached diff size limit of %d elements, aborting', $max_diff_size ) );
 
@@ -553,7 +566,7 @@ class Health {
 			vip_reset_local_object_cache();
 
 			if ( $is_cli && ! $silent ) {
-				echo sprintf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
@@ -633,7 +646,7 @@ class Health {
 		$documents = $indexable->multi_get( $document_ids );
 
 		// Filter out any that weren't found
-		$documents = array_filter( $documents, function( $document ) {
+		$documents = array_filter( $documents, function ( $document ) {
 			return ! is_null( $document );
 		} );
 
@@ -649,7 +662,7 @@ class Health {
 		}
 
 		// Filter out any that are extra or missing in index
-		$documents = array_filter( $documents, function( $document ) use ( $diffs ) {
+		$documents = array_filter( $documents, function ( $document ) use ( $diffs ) {
 			$key = self::get_post_key( $document['ID'] );
 			return ! array_key_exists( $key, $diffs );
 		} );
@@ -743,7 +756,7 @@ class Health {
 	}
 
 	public static function filter_expected_post_rows( $rows, $post_types, $post_statuses ) {
-		$filtered = array_filter( $rows, function( $row ) use ( $post_types, $post_statuses ) {
+		$filtered = array_filter( $rows, function ( $row ) use ( $post_types, $post_statuses ) {
 			if ( ! in_array( $row->post_type, $post_types, true ) ) {
 				return false;
 			}
@@ -1128,7 +1141,7 @@ class Health {
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
 		$index_name               = $indexable->get_index_name();
 		if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
-			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, true );
+			$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, false );
 		} else {
 			$result = $indexable->update_index_settings( $desired_settings_to_heal );
 		}

@@ -31,7 +31,7 @@ class QM_Collector_VIP extends QM_Collector {
 	}
 
 	private function process_version_file() {
-		$version_file = WPMU_PLUGIN_DIR . '/.version';
+		$version_file = WPVIP_MU_PLUGIN_DIR . '/.version';
 		if ( ! file_exists( $version_file ) ) {
 			$this->set_default_version_info();
 			return;

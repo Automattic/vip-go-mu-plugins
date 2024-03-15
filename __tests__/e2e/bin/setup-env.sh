@@ -31,4 +31,5 @@ vip dev-env start --slug e2e-test-site --skip-wp-versions-check
 vip dev-env shell --root --slug e2e-test-site -- chown -R www-data:www-data /wp
 vip dev-env exec --slug e2e-test-site --quiet -- wp plugin install --activate classic-editor
 vip dev-env exec --slug e2e-test-site --quiet -- wp core update --force --version="${version}"
+vip dev-env exec --slug e2e-test-site --quiet -- wp core update-db
 vip dev-env exec --slug e2e-test-site --quiet -- wp rewrite structure '/%postname%/'

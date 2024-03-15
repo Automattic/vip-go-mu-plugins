@@ -18,10 +18,10 @@ function register_qm_apcu_cache_collector() {
 	}
 
 	QM_Collectors::add( new QM_Collector_Apcu_Cache() );
-	add_filter( 'qm/outputter/html', 'register_qm_apcu_cache_output', 120, 2 );
+	add_filter( 'qm/outputter/html', 'register_qm_apcu_cache_output', 120 );
 }
 
-function register_qm_apcu_cache_output( array $output, \QM_Collectors $collectors ) {
+function register_qm_apcu_cache_output( array $output ) {
 	$collector = \QM_Collectors::get( 'apcu-cache' );
 	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-apcu-cache.php' ) ) {
 		require_once __DIR__ . '/class-qm-output-html-apcu-cache.php';

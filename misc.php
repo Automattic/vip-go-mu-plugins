@@ -12,7 +12,7 @@ if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
 }
 
 // phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.upload_mimes
-add_filter( 'upload_mimes', function( $mimes ) {
+add_filter( 'upload_mimes', function ( $mimes ) {
 	unset( $mimes['flv'] );
 	return $mimes;
 }, 99999 );
@@ -132,35 +132,6 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 	return $url;
 }
 
-
-function wpcom_vip_query_log() {
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$request_uri = $_SERVER['REQUEST_URI'] ?? '';
-	if ( '/cache-healthcheck?' === $request_uri ) {
-		return;
-	}
-
-	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Recommended
-	$action      = $_REQUEST['action'] ?? 'N/A';
-	$num_queries = count( $GLOBALS['wpdb']->queries );
-	// phpcs:ignore WordPress.PHP.DevelopmentFunctions
-	error_log( 'WPCOM VIP Query Log for ' . $request_uri . '  (action: ' . $action . ') ' . $num_queries . 'q: ' . PHP_EOL . print_r( $GLOBALS['wpdb']->queries, true ) );
-}
-
-/**
- * Think carefully before enabling this on a production site. Then
- * if you still want to do it, think again, and talk it over with
- * someone else.
- */
-if ( defined( 'WPCOM_VIP_QUERY_LOG' ) && WPCOM_VIP_QUERY_LOG ) {
-	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
-		define( 'SAVEQUERIES', true );
-	}
-	// For hyperdb, which doesn't use SAVEQUERIES
-	$GLOBALS['wpdb']->save_queries = SAVEQUERIES;
-	add_action( 'shutdown', 'wpcom_vip_query_log' );
-}
-
 /**
  * Improve perfomance of the `_WP_Editors::wp_link_query` method
  *
@@ -192,7 +163,7 @@ add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
  * searches the 'path' on /network/sites.php. This improves site search results by
  * adding 'domain' to the columns to search.
  */
-add_filter( 'site_search_columns', function( $cols ) {
+add_filter( 'site_search_columns', function ( $cols ) {
 	$cols[] = 'domain';
 	return $cols;
 });

@@ -4,6 +4,7 @@ namespace Automattic\VIP\Prometheus;
 
 use Prometheus\Counter;
 use Prometheus\RegistryInterface;
+use function Automattic\VIP\Logstash\log2logstash;
 
 class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 	private Counter $potential_multi_dataset_queries_collector;
@@ -47,6 +48,27 @@ class Potential_Multi_Dataset_Queries_Collector implements CollectorInterface {
 					$last_global_table ?? 'null',
 					$last_blog_table,
 					$blog_ids_count >= 3 ? '3+' : (string) $blog_ids_count,
+				]
+			);
+
+			if ( ! function_exists( '\Automattic\VIP\Logstash\log2logstash' ) ) {
+				return;
+			}
+
+			$backtrace = function_exists( 'wp_debug_backtrace_summary' ) ? wp_debug_backtrace_summary( null, 4, false ) : []; // phpcs:ignore
+			\Automattic\VIP\Logstash\log2logstash(
+				[
+					'severity' => 'debug',
+					'feature'  => 'potential_multi_dataset_queries',
+					'message'  => 'Potential multi dataset query detected',
+					'extra'    => [
+						'uri'               => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( $_SERVER['REQUEST_URI'] ) : '',
+						'http_method'       => isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( $_SERVER['REQUEST_METHOD'] ) : '',
+						'backtrace'         => $backtrace,
+						'last_global_table' => $last_global_table,
+						'last_blog_table'   => $last_blog_table,
+						'blog_ids_count'    => $blog_ids_count,
+					],
 				]
 			);
 		}

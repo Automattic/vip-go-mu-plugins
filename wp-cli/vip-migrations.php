@@ -1,6 +1,6 @@
 <?php
 
-use \WP_CLI\Utils;
+use WP_CLI\Utils;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -219,7 +219,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$threads = 10;
 		$output  = array( array( 'url', 'status' ) );
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen -- should be safe here
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- should be safe here
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
 			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $output_file ) );
@@ -271,7 +271,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			$attachments    = [];
 			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
 			$attachment_ids = array_map(
-				function( $attachment_ids ) {
+				function ( $attachment_ids ) {
 					return (int) $attachment_ids[0];
 				},
 				$wpdb->get_results( $sql, ARRAY_N ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -287,7 +287,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 						$extra_url = $upload_dir['baseurl'] . '/' . $attached_file[0]->meta_value;
 						if ( $extra_url !== $attachment_url ) {
 							$attachments[] = $extra_url;
-							$extra_count++;
+							++$extra_count;
 						}
 					}
 				}
@@ -330,7 +330,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					curl_setopt( $ch[ $index ], CURLOPT_NOBODY, true );
 
 					curl_multi_add_handle( $mh, $ch[ $index ] );
-					$index++;
+					++$index;
 				}
 
 				// Exec the cURL requests.

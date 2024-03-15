@@ -6,7 +6,7 @@
  * Author: trepmal, rebasaurus
  */
 
-add_action( 'plugins_loaded', function() {
+add_action( 'plugins_loaded', function () {
 	/**
 	 * Register collectors and css, only if Query Monitor is enabled.
 	 */
@@ -44,7 +44,7 @@ add_action( 'plugins_loaded', function() {
 	 * Register output. The filter won't run if Query Monitor is not
 	 * installed so we don't have to explicity check for it.
 	 */
-	add_filter( 'qm/outputter/html', function( array $output, QM_Collectors $collectors ) {
+	add_filter( 'qm/outputter/html', function ( array $output ) {
 		if ( file_exists( __DIR__ . '/html/class-qm-output-html-object-cache.php' ) ) {
 			require_once __DIR__ . '/html/class-qm-output-html-object-cache.php';
 
@@ -83,7 +83,7 @@ add_action( 'plugins_loaded', function() {
 		}
 
 		return $output;
-	}, 101, 2 );
+	}, 101 );
 } );
 
 function qm_object_cache_assets() {
@@ -94,7 +94,7 @@ function qm_object_cache_assets() {
  * Cannot run Debug Bar's panel simultaneously,
  * as the output contains ID attributes.
  */
-add_filter( 'debug_bar_panels', function( $panels ) {
+add_filter( 'debug_bar_panels', function ( $panels ) {
 	foreach ( $panels as $k => $panel ) {
 		if ( is_a( $panel, 'Debug_Bar_Object_Cache' ) ) {
 			unset( $panels[ $k ] );

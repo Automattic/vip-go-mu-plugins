@@ -20,7 +20,15 @@ class BlockDataApiIntegration extends Integration {
 	 *
 	 * @var string
 	 */
-	protected string $version = '1.0';
+	protected string $version = '1.1';
+
+	/**
+	 * Returns `true` if `Block Data API` is already available e.g. via customer code. We will use
+	 * this function to prevent activating of integration from platform side.
+	 */
+	public function is_loaded(): bool {
+		return defined( 'VIP_BLOCK_DATA_API_LOADED' );
+	}
 
 	/**
 	 * Applies hooks to load Block Data API plugin.
@@ -29,14 +37,17 @@ class BlockDataApiIntegration extends Integration {
 	 */
 	public function load(): void {
 		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
-		add_action( 'plugins_loaded', function() {
-			// Do not load plugin if already loaded by customer code.
-			if ( defined( 'VIP_BLOCK_DATA_API_LOADED' ) ) {
+		add_action( 'plugins_loaded', function () {
+			// Return if the integration is already loaded.
+			//
+			// In activate() method we do make sure to not activate the integration if its already loaded
+			// but still adding it here as a safety measure i.e. if load() is called directly.
+			if ( $this->is_loaded() ) {
 				return;
 			}
 
 			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {

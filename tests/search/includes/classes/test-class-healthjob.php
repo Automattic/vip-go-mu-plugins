@@ -45,7 +45,7 @@ class HealthJob_Test extends WP_UnitTestCase {
 		add_filter( 'ep_is_indexing', '__return_false' );
 		add_filter( 'ep_last_sync', '__return_true' );
 
-		$enabled_environments = function() {
+		$enabled_environments = function () {
 			return [ 'test' ];
 		};
 

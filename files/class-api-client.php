@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 namespace Automattic\VIP\Files;
 
 use WP_Error;

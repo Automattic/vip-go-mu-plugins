@@ -33,7 +33,7 @@ Let's add this to a new file in `client-mu-plugins` called `beta.php` where we'l
 <?php
 
 // Load the VIP Vary_Cache class
-require_once( WPMU_PLUGIN_DIR . '/cache/class-vary-cache.php' );
+require_once( WPVIP_MU_PLUGIN_DIR . '/cache/class-vary-cache.php' );
 
 use Automattic\VIP\Cache\Vary_Cache;
 ```
@@ -120,9 +120,6 @@ Note: For the purpose of this exercise, we've kept things pretty simple and the 
 ### The Final Result
 
 You can see the completed, working example here: https://github.com/Automattic/vip-go-mu-plugins/blob/master/cache/examples/segmentation-beta/beta.php
-
-### Detailed API Documentation
-For the complete list of the API methods and their functionality, see the [Vary_Cache API documentation](https://automattic.github.io/vip-go-mu-plugins/classes/Automattic.VIP.Cache.Vary_Cache.html)
 
 ---
 

@@ -9,7 +9,7 @@ namespace Automattic\Test\Utils;
 
 use ReflectionClass;
 
-require_once __DIR__ . '/../utils/parsely.utils.php';
+require_once __DIR__ . '/../utils/parsely-utils.php';
 
 /**
  * For testing purpose gets private property of a class by making it as public.

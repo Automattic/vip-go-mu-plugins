@@ -6,10 +6,10 @@
  * License:     GPLv2 or later
  */
 
-add_filter( 'pre_option_ep_hide_es_above_compat_notice', function() {
+add_filter( 'pre_option_ep_hide_es_above_compat_notice', function () {
 	return 0;
 } );
 
-add_filter( 'ep_elasticsearch_version', function() {
+add_filter( 'ep_elasticsearch_version', function () {
 	return '8.0';
 } );

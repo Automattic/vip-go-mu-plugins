@@ -5,6 +5,28 @@ updates:
     package-ecosystem: github-actions
     schedule:
       interval: daily
+    labels:
+      - '[Status] Needs Review'
+      - '[Status] No files to Deploy'
+      - '[Type] Maintenance'
+
+  - directory: /.github/actions/prepare-source
+    package-ecosystem: github-actions
+    schedule:
+      interval: daily
+    labels:
+      - '[Status] Needs Review'
+      - '[Status] No files to Deploy'
+      - '[Type] Maintenance'
+
+  - directory: /.github/actions/run-wp-tests
+    package-ecosystem: github-actions
+    schedule:
+      interval: daily
+    labels:
+      - '[Status] Needs Review'
+      - '[Status] No files to Deploy'
+      - '[Type] Maintenance'
 
   - directory: /
     package-ecosystem: npm
@@ -13,21 +35,31 @@ updates:
     versioning-strategy: increase-if-necessary
     ignore:
       - dependency-name: "cypress"
+    labels:
+      - '[Status] Needs Review'
+      - '[Status] No files to Deploy'
 
   - directory: /__tests__/e2e/
     package-ecosystem: npm
     schedule:
       interval: daily
     versioning-strategy: increase-if-necessary
+    labels:
+      - '[Status] Needs Review'
+      - '[Status] No files to Deploy'
 
   - directory: /search/search-dev-tools/
     package-ecosystem: npm
     schedule:
       interval: daily
     versioning-strategy: increase-if-necessary
+    labels:
+      - '[Status] Needs Review'
 
   - directory: /
     package-ecosystem: composer
     schedule:
       interval: daily
     versioning-strategy: increase-if-necessary
+    labels:
+      - '[Status] Needs Review'

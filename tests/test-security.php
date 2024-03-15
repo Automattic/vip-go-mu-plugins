@@ -100,7 +100,6 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$actual_error_codes = $errors;
 
 		$this->assertEquals( $actual_error_codes->get_error_code(), $original_error_code );
-
 	}
 
 	public function test__lost_password_limit() {
@@ -135,7 +134,6 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		// Now we should have an error.
 		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );
-
 	}
 
 	public function test__wpcom_vip_track_auth_attempt__defaults() {
@@ -176,12 +174,12 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertSame( false, $result );
 	}
 	public function test__wpcom_vip_username_is_limited__should_be_limit_after_few_tries() {
-		add_filter( 'vip_login_ip_username_lockout', function( $lockout ) {
+		add_filter( 'vip_login_ip_username_lockout', function ( $lockout ) {
 			$this->assertSame( 60 * 5, $lockout );
 			return $lockout;
 		}, 10, 1 );
 		$action_triggered = 0;
-		add_action( 'login_limit_exceeded', function() use ( &$action_triggered ) {
+		add_action( 'login_limit_exceeded', function () use ( &$action_triggered ) {
 			$action_triggered++;
 		});
 
@@ -214,7 +212,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function test__wpcom_vip_username_is_limited__should_be_limit_after_3_attempts_fedramp() {
 		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
 
-		add_filter( 'vip_login_ip_username_lockout', function( $lockout ) {
+		add_filter( 'vip_login_ip_username_lockout', function ( $lockout ) {
 			$this->assertSame( 60 * 30, $lockout );
 			return $lockout;
 		}, 10, 1 );
@@ -229,15 +227,15 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__wpcom_vip_track_auth_attempt__correct_defaults() {
-		add_filter( 'vip_login_ip_username_window', function( $window ) {
+		add_filter( 'vip_login_ip_username_window', function ( $window ) {
 			$this->assertSame( 60 * 5, $window );
 			return $window;
 		}, 10, 1 );
-		add_filter( 'vip_login_ip_window', function( $window ) {
+		add_filter( 'vip_login_ip_window', function ( $window ) {
 			$this->assertSame( 60 * 60, $window );
 			return $window;
 		}, 10, 1 );
-		add_filter( 'vip_login_username_window', function( $window ) {
+		add_filter( 'vip_login_username_window', function ( $window ) {
 			$this->assertSame( 60 * 25, $window );
 			return $window;
 		}, 10, 1 );
@@ -248,15 +246,15 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function test__wpcom_vip_track_auth_attempt__correct_defaults_fedramp() {
 		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
 
-		add_filter( 'vip_login_ip_username_window', function( $window ) {
+		add_filter( 'vip_login_ip_username_window', function ( $window ) {
 			$this->assertSame( 60 * 15, $window );
 			return $window;
 		}, 10, 1 );
-		add_filter( 'vip_login_ip_window', function( $window ) {
+		add_filter( 'vip_login_ip_window', function ( $window ) {
 			$this->assertSame( 60 * 15, $window );
 			return $window;
 		}, 10, 1 );
-		add_filter( 'vip_login_username_window', function( $window ) {
+		add_filter( 'vip_login_username_window', function ( $window ) {
 			$this->assertSame( 60 * 15, $window );
 			return $window;
 		}, 10, 1 );

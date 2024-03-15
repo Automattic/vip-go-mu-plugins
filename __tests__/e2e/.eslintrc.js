@@ -1,14 +1,18 @@
+require( '@automattic/eslint-plugin-wpvip/init' );
+
 module.exports = {
-    extends: [
-        'plugin:@automattic/wpvip/base',
-        'plugin:@automattic/wpvip/testing',
-        'plugin:@automattic/wpvip/typescript',
-        'plugin:playwright/playwright-test',
-    ],
-    ignorePatterns: [ 'bin/**/*' ],
-    rules: {
-        indent: [
-            'error', 4,
-        ],
+    parserOptions: {
+        ecmaVersion: 2021,
+        project: [__dirname  + "/tsconfig.json"],
     },
+    extends: [
+        'plugin:@automattic/wpvip/recommended',
+        'plugin:playwright/playwright-test',
+        'plugin:deprecation/recommended',
+    ],
+    ignorePatterns: [ 'bin/**/*', '*.js' ],
+    rules: {
+        '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+    root: true,
 };

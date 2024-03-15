@@ -22,7 +22,7 @@ class CLI {
 		$network = WP_CLI\Utils\get_flag_value( $assoc_args, 'network', false );
 
 		if ( $network && is_multisite() ) {
-			$successful = $this->map_sites( function() {
+			$successful = $this->map_sites( function () {
 				return $this->connect_site();
 			} );
 		} else {
