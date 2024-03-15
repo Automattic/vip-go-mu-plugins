@@ -126,7 +126,7 @@ class Controls {
 	 */
 	public static function connect_site( bool $skip_connection_tests = false, bool $disconnect = false ) {
 		if ( ! self::validate_environment() ) {
-			return new WP_Error( 'jp-cxn-pilot-invalid-environment', 'This is not a valid VIP Go environment.' );
+			return new WP_Error( 'jp-cxn-pilot-invalid-environment', 'This is not a valid WPVIP environment.' );
 		}
 
 		if ( ! $skip_connection_tests && ! $disconnect ) {
