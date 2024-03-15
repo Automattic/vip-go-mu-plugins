@@ -29,8 +29,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 	public static function configure_constant_mocker(): void {
 		Constant_Mocker::clear();
-		define( 'LOCAL_UPLOADS', '/wp/uploads' );
-		define( 'WP_CONTENT_DIR', '/wp/wordpress/wp-content' );
+		define( 'LOCAL_UPLOADS', '/tmp/uploads' );
+		define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
 	}
 
 	public function setUp(): void {
@@ -397,8 +397,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$font_dir = \wp_get_font_dir();
 
 		$this->assertEquals( $font_dir, [
-			'path'    => 'vip://wp-contentt/uploads/fonts',
-			'basedir' => 'vip://wp-contentt/uploads/fonts',
+			'path'    => 'vip://wp-content/uploads/fonts',
+			'basedir' => 'vip://wp-content/uploads/fonts',
 			'url'     => 'http://example.org/wp-content/uploads/fonts',
 			'baseurl' => 'http://example.org/wp-content/uploads/fonts',
 			'subdir'  => '',
