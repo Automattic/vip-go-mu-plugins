@@ -4,7 +4,13 @@
     "service": "wordpress",
     "workspaceFolder": "/var/www/html/wp-content/mu-plugins",
     "remoteUser": "vscode",
-    "forwardPorts": [80],
+    "forwardPorts": [8080],
+    "portsAttributes": {
+        "8080": {
+            "label": "Application",
+            "onAutoForward": "notify"
+        }
+    },
     "postStartCommand": ".devcontainer/post-start.sh",
     "features": {
         "ghcr.io/devcontainers/features/common-utils:2": {
