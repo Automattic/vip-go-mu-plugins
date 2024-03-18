@@ -19,10 +19,12 @@
         "ghcr.io/devcontainers/features/git:1.2.0": {},
         "ghcr.io/devcontainers/features/github-cli:1.0.11": {},
         "ghcr.io/devcontainers/features/node:1": {},
-        "ghcr.io/devcontainers-contrib/features/composer:1": {}
+        "ghcr.io/devcontainers-contrib/features/composer:1": {},
+        "./local-features/sudo": {}
     },
     "overrideFeatureInstallOrder": [
         "ghcr.io/devcontainers/features/common-utils",
+        "./local-features/sudo",
         "ghcr.io/devcontainers/features/git",
         "ghcr.io/devcontainers/features/github-cli",
         "ghcr.io/devcontainers/features/node",

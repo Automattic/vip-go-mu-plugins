@@ -23,7 +23,7 @@ if ! mysqladmin ping -uroot -ppassword -hdatabase --silent; then
     exit 1;
 fi
 
-sudo -E sudo -u www-data -E wp core install \
+sudo -u www-data -E wp core install \
     --path=/var/www/html \
     --url="http://${WP_DOMAIN}" \
     --title="WordPress" \
