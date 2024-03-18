@@ -22,11 +22,11 @@
             "userUid": 1000,
             "userGid": 1000
         },
-        "ghcr.io/devcontainers/features/git:1.2.0": {},
-        "ghcr.io/devcontainers/features/github-cli:1.0.11": {},
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/devcontainers/features/github-cli:1": {},
         "ghcr.io/devcontainers/features/node:1": {},
         "ghcr.io/devcontainers-contrib/features/composer:1": {},
-        "ghcr.io/automattic/vip-codespaces/wp-cli:1.1.0": {},
+        "ghcr.io/automattic/vip-codespaces/wp-cli:1": {},
         "./local-features/sudo": {}
     },
     "overrideFeatureInstallOrder": [
