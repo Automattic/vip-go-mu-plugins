@@ -65,6 +65,17 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$this->assertStringContainsString( 'From: WordPress <donotreply@wpvip.com>', $header );
 	}
 
+	public function test__custom_mail_from() {
+		Constant_Mocker::define( 'VIP_FALLBACK_EMAIL_FROM', 'donotreply@wpvip-email.com' );
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+		$header = $mailer->get_sent()->header;
+
+		$this->assertStringContainsString( 'From: WordPress <donotreply@wpvip-email.com>', $header );
+	}
+
 	public function test__has_tracking_header_with_key() {
 		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
 

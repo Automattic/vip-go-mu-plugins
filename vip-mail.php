@@ -137,6 +137,10 @@ final class VIP_SMTP {
 	}
 
 	public function filter_wp_mail_from() {
+		if ( defined( 'VIP_FALLBACK_EMAIL_FROM' ) ) {
+			return constant( 'VIP_FALLBACK_EMAIL_FROM' );
+		}
+
 		return 'donotreply@wpvip.com';
 	}
 
