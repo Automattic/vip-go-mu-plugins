@@ -4,9 +4,9 @@
     "service": "wordpress",
     "workspaceFolder": "/var/www/html/wp-content/mu-plugins",
     "remoteUser": "vscode",
-    "forwardPorts": [8080],
+    "forwardPorts": [8088],
     "portsAttributes": {
-        "8080": {
+        "8088": {
             "label": "Application",
             "onAutoForward": "notify"
         }

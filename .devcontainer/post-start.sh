@@ -6,13 +6,15 @@ if [ "${CODESPACES:-}" = 'true' ] && [ "${CLOUDENV_ENVIRONMENT_ID:-}" = 'null' ]
 fi
 
 if [ -n "${CODESPACE_NAME}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}" ]; then
-    WP_DOMAIN="${CODESPACE_NAME}-8080.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
+    WP_DOMAIN="${CODESPACE_NAME}-8088.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
 else
     WP_DOMAIN="localhost"
 fi
 
+echo "Checking out submodules..."
 [ -f .gitmodules ] && git submodule update --init --recursive --single-branch --depth=1
 
+echo "Waiting for MySQL to come online..."
 second=0
 while ! mysqladmin ping -uroot -ppassword -hdatabase --silent && [ "${second}" -lt 60 ]; do
     sleep 1
