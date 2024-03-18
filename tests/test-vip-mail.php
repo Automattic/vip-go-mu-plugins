@@ -66,7 +66,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 	}
 
 	public function test__custom_mail_from() {
-		Constant_Mocker::define( 'VIP_FALLBACK_EMAIL_FROM', 'donotreply@wpvip-email.com' );
+		Constant_Mocker::define( 'VIP_FROM_EMAIL_FALLBACK', 'donotreply@wpvip-email.com' );
 		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
 
 		wp_mail( 'test@example.com', 'Test', 'Test' );
