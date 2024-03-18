@@ -7,7 +7,7 @@ RUN \
 
 RUN \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mariadb-client libmemcached-dev libssl-dev zlib1g-dev && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mariadb-client libmemcached-dev libssl-dev zlib1g-dev iputils-ping telnet && \
     pecl install memcached-3.2.0 && \
     docker-php-ext-enable memcached && \
     apt-get clean && \
