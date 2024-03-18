@@ -26,6 +26,7 @@
         "ghcr.io/devcontainers/features/github-cli:1.0.11": {},
         "ghcr.io/devcontainers/features/node:1": {},
         "ghcr.io/devcontainers-contrib/features/composer:1": {},
+        "ghcr.io/automattic/vip-codespaces/wp-cli:1.1.0": {},
         "./local-features/sudo": {}
     },
     "overrideFeatureInstallOrder": [
@@ -34,7 +35,8 @@
         "ghcr.io/devcontainers/features/git",
         "ghcr.io/devcontainers/features/github-cli",
         "ghcr.io/devcontainers/features/node",
-        "ghcr.io/devcontainers-contrib/features/composer"
+        "ghcr.io/devcontainers-contrib/features/composer",
+        "ghcr.io/automattic/vip-codespaces/wp-cli"
     ],
     "customizations": {
         "vscode": {
