@@ -205,6 +205,7 @@ class API_Client {
 		$request_args = [
 			'stream'   => true,
 			'filename' => $tmp_file,
+			'timeout'  => 60,
 		];
 
 		// Prevent webp => jpg transform from running
