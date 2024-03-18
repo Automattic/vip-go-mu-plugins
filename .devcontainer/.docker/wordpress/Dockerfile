@@ -11,4 +11,5 @@ RUN \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --chown=www-data:www-data wp-config-docker.php /usr/src/wordpress/wp-config-docker.php
+COPY --chown=www-data:www-data wp-config-docker.php db-config.php /usr/src/wordpress/
+COPY --chown=www-data:www-data db.php hyperdb.php object-cache.php sunrise.php /usr/src/wordpress/wp-content/

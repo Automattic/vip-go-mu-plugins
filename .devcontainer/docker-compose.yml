@@ -8,10 +8,12 @@ services:
       WORDPRESS_DB_USER: wordpress
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DEBUG: true
     volumes:
       - ../:/var/www/html/wp-content/mu-plugins
     depends_on:
       - database
+      - memcached
   database:
     image: mysql:8
     environment:
@@ -19,3 +21,6 @@ services:
       MYSQL_DATABASE: wordpress
       MYSQL_USER: wordpress
       MYSQL_PASSWORD: wordpress
+  memcached:
+    image: memcached:1.6-alpine
+    command: memcached -m 64

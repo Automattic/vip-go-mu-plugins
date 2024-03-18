@@ -1,5 +1,6 @@
 {
     "id": "sudo",
+    "version": "1.0.0",
     "name": "Permissive sudo",
     "installsAfter": [
         "ghcr.io/devcontainers/features/common-utils"

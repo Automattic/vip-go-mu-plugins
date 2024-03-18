@@ -96,6 +96,12 @@ define( 'NONCE_SALT', getenv_docker( 'WORDPRESS_NONCE_SALT', 'put your unique ph
 // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 $table_prefix = getenv_docker( 'WORDPRESS_TABLE_PREFIX', 'wp_' );
 
+$memcached_servers = [
+	'default' => [
+		0 => 'memcached:11211',
+	],
+];
+
 /**
  * For developers: WordPress debugging mode.
  *
@@ -108,7 +114,7 @@ $table_prefix = getenv_docker( 'WORDPRESS_TABLE_PREFIX', 'wp_' );
  *
  * @link https://developer.wordpress.org/advanced-administration/debug/debug-wordpress/
  */
-define( 'WP_DEBUG', ! ! getenv_docker( 'WORDPRESS_DEBUG', '' ) );
+define( 'WP_DEBUG', (bool) getenv_docker( 'WORDPRESS_DEBUG', '' ) );
 
 /* Add any custom values between this line and the "stop editing" line. */
 
@@ -144,6 +150,33 @@ if ( isset( $_SERVER['HTTP_HOST'] ) && count( explode( ':', $_SERVER['HTTP_HOST'
 if ( ! defined( 'ABSPATH' ) ) {
 	define( 'ABSPATH', __DIR__ . '/' );
 }
+
+if ( file_exists( ABSPATH . '/wp-content/mu-plugins/lib/wpcom-error-handler/wpcom-error-handler.php' ) ) {
+	require_once ABSPATH . '/wp-content/mu-plugins/lib/wpcom-error-handler/wpcom-error-handler.php';
+}
+	
+if ( file_exists( ABSPATH . '/wp-content/mu-plugins/lib/class-vip-request-block.php' ) ) {
+	require_once ABSPATH . '/wp-content/mu-plugins/lib/class-vip-request-block.php';
+}
+
+define( 'DISALLOW_FILE_EDIT', true );
+define( 'DISALLOW_FILE_MODS', true );
+define( 'AUTOMATIC_UPDATER_DISABLED', true );
+define( 'WP_MAX_MEMORY_LIMIT', '512M' );
+define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
+define( 'VIP_GO_ENV', 'local' );
+define( 'VIP_JETPACK_IS_PRIVATE', true );
+define( 'JETPACK_STAGING_MODE', true );
+
+if ( file_exists( ABSPATH . '/wp-content/mu-plugins/000-pre-vip-config/requires.php' ) ) {
+	require_once ABSPATH . '/wp-content/mu-plugins/000-pre-vip-config/requires.php';
+}
+
+define( 'WPCOM_VIP_LOAD_CRON_CONTROL_LOCALLY', true );
+define( 'WP_CRON_CONTROL_SECRET', 'this-is-a-secret' ); // phpcs:ignore WordPressVIPMinimum.Constants.RestrictedConstants.DefiningRestrictedConstant
+define( 'WPCOM_IS_VIP_ENV', false );
+define( 'FILES_CLIENT_SITE_ID', 200508 );
+define( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER', false );
 
 /** Sets up WordPress vars and included files. */
 require_once ABSPATH . 'wp-settings.php';
