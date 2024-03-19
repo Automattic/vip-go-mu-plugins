@@ -150,3 +150,12 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
+
+function include_vip_mu_plugin_component( $file_dirs ) {
+	if ( defined( 'WPVIP_MU_PLUGIN_DIR' ) && WPVIP_MU_PLUGIN_DIR !== WPMU_PLUGIN_DIR ) {
+		$file_dirs['vip-mu-plugin'] = WPVIP_MU_PLUGIN_DIR;
+	}
+
+	return $file_dirs;
+}
+add_filter( 'qm/component_dirs', 'include_vip_mu_plugin_component', PHP_INT_MAX, 1 );

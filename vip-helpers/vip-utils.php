@@ -1192,7 +1192,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false ) {
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
 		if ( wpcom_vip_can_use_shared_plugin( $plugin ) ) {
-			$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
+			$test_directories[] = WPVIP_MU_PLUGIN_DIR . '/shared-plugins';
 		}
 	}
 

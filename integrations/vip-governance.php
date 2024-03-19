@@ -47,7 +47,7 @@ class VipGovernanceIntegration extends Integration {
 			}
 
 			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPMU_PLUGIN_DIR . '/vip-integrations/vip-governance-' . $this->version . '/vip-governance.php';
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-governance-' . $this->version . '/vip-governance.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
