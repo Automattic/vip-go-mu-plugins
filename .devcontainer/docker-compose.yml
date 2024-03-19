@@ -1,8 +1,6 @@
 services:
   wordpress:
-    build:
-      context: .docker/wordpress
-      dockerfile: Dockerfile
+    image: ghcr.io/automattic/vip-codespaces/wpvip-base:latest
     environment:
       WORDPRESS_DB_HOST: database
       WORDPRESS_DB_USER: wordpress
