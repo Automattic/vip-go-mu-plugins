@@ -1,5 +1,5 @@
 {
-    "name": "VIP Go MU Plugins",
+    "name": "WPVIP MU Plugins",
     "dockerComposeFile": "docker-compose.yml",
     "service": "wordpress",
     "workspaceFolder": "/var/www/html/wp-content/mu-plugins",
