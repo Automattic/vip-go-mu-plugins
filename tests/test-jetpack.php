@@ -17,7 +17,7 @@ class VIP_Go__Core__Default_VIP_Jetpack_Version extends WP_UnitTestCase {
 			'6.0'   => '12.0',
 			'6.1'   => '12.5',
 			'6.2'   => '12.8',
-			'6.3'   => $latest,
+			'6.3'   => '13.1',
 			'6.4'   => $latest,
 		];
 
