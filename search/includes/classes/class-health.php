@@ -229,7 +229,8 @@ class Health {
 		$index_version = $search->versioning->get_current_version_number( $users );
 
 		$query_args = [
-			'order' => 'asc',
+			'order'  => 'asc',
+			'number' => 1,
 		];
 
 		$result = ( new self( $search ) )->validate_index_entity_count( $query_args, $users );
