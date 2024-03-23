@@ -436,3 +436,14 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 }
 
 add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/*
+ * Workaround: prevent the "Invite user to WordPress.com" checkbox on "Add New User" page
+ * from blocking new user registration on Jetpack 13.2.
+ */
+add_action( 'muplugins_loaded', function () {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	if ( isset( $_POST['invite_user_wpcom'] ) ) {
+		unset( $_POST['invite_user_wpcom'] );
+	}
+});
