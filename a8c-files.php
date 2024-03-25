@@ -73,9 +73,9 @@ class A8C_Files {
 
 	public function __construct() {
 
-		// Upload size limit is 1GB
+		// Upload size limit is 5GB
 		add_filter( 'upload_size_limit', function () {
-			return 1073741824; // 2^30
+			return 5368709120; // 2^30 * 5
 		});
 
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
