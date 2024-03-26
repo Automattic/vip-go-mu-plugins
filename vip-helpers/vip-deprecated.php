@@ -1329,20 +1329,62 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
 	return term_exists( $term, $taxonomy, $parent ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
 }
 
-if ( ! function_exists( 'wpcom_vip_get_page_by_path' ) ) {
-	/**
-	 * `get_page_by_path()` is now cached and no longer calls direct SQL.
-	 * 
-	 * @deprecated Since WP 6.1
-	 * 
-	 * @param string        $page_path Page path
-	 * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
-	 * @param string|array  $post_type Optional. Post type; default is 'page'.
-	 * @return WP_Post|null WP_Post on success or null on failure
-	 */
-	function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-		_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+/**
+ * `get_page_by_path()` is now cached and no longer calls direct SQL.
+ * 
+ * @deprecated Since WP 6.1
+ * 
+ * @param string        $page_path Page path
+ * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
+ * @param string|array  $post_type Optional. Post type; default is 'page'.
+ * @return WP_Post|null WP_Post on success or null on failure
+ */
+function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
+	_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
 
-		return get_page_by_path( $page_path, $output, $post_type ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
+	return get_page_by_path( $page_path, $output, $post_type ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
+}
+
+if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
+	/**
+	 * Use `WP_Query` to get a page by title.
+	 *
+	 * @param string $page_title Page title
+	 * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
+	 * @param string $post_type Optional. Post type; default is 'page'.
+	 * @return WP_Post|null WP_Post on success or null on failure
+	 * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
+	 */
+	function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
+		global $wp_version;
+		if ( version_compare( $wp_version, '6.2', '<' ) ) {
+			_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
+		}
+
+		$cache_key = $post_type . '_' . sanitize_key( $title );
+		$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
+
+		if ( false === $page_id ) {
+			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
+			$query   = new WP_Query(
+				array(
+					'title'          => $title,
+					'post_type'      => $post_type,
+					'posts_per_page' => 1,
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
+					'no_found_rows'  => true,
+					'fields'         => 'ids',
+				),
+			);
+			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
+			wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
+		}
+
+		if ( $page_id ) {
+			return get_post( $page_id, $output );
+		}
+
+		return null;
 	}
 }
