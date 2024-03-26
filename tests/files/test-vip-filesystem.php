@@ -29,8 +29,8 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 	public static function configure_constant_mocker(): void {
 		Constant_Mocker::clear();
-		define( 'LOCAL_UPLOADS', '/wp/uploads' );
-		define( 'WP_CONTENT_DIR', '/wp/wordpress/wp-content' );
+		define( 'LOCAL_UPLOADS', '/tmp/uploads' );
+		define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
 	}
 
 	public function setUp(): void {
@@ -385,5 +385,24 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			[ constant( 'WP_CONTENT_DIR' ) . '/plugins/test.txt', 'direct' ],
 			[ constant( 'WP_CONTENT_DIR' ) . '/languages/test.txt', 'direct' ],
 		];
+	}
+
+	public function test_wp_font_dir() {
+		// Only available in WP 6.5 and newer:
+		if ( ! function_exists( '\wp_get_font_dir' ) ) {
+			$this->markTestSkipped( 'test_wp_font_dir does not need to run for WP < 6.5.' );
+			return;
+		}
+
+		$font_dir = \wp_get_font_dir();
+
+		$this->assertEquals( $font_dir, [
+			'path'    => 'vip://wp-content/uploads/fonts',
+			'basedir' => 'vip://wp-content/uploads/fonts',
+			'url'     => 'http://example.org/wp-content/uploads/fonts',
+			'baseurl' => 'http://example.org/wp-content/uploads/fonts',
+			'subdir'  => '',
+			'error'   => false,
+		] );
 	}
 }
