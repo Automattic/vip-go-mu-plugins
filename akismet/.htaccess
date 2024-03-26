@@ -23,7 +23,7 @@
 </FilesMatch>
 
 # Akismet images
-<FilesMatch "^(logo-(a|full)-2x\.png|akismet-refresh-logo\.svg|akismet-refresh-logo@2x\.png|arrow-left\.svg)$">
+<FilesMatch "^(logo-(a|full)-2x\.png|akismet-refresh-logo\.svg|akismet-refresh-logo@2x\.png|arrow-left\.svg|icon-external\.svg)$">
 	<IfModule !mod_authz_core.c>
 		Allow from all
 	</IfModule>

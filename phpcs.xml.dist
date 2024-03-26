@@ -15,7 +15,6 @@
 	<exclude-pattern>/advanced-post-cache/*</exclude-pattern>
 	<exclude-pattern>/cron-control/*</exclude-pattern>
 	<exclude-pattern>/cron/cron-control/*</exclude-pattern>
-	<exclude-pattern>/cron/cron-control-legacy/*</exclude-pattern>
 	<exclude-pattern>/debug-bar-cron/*</exclude-pattern>
 	<exclude-pattern>/http-concat/*</exclude-pattern>
 	<exclude-pattern>/jetpack/*</exclude-pattern>

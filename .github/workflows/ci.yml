@@ -62,7 +62,7 @@ jobs:
           MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.1.2
         with:
           submodules: recursive
 
@@ -78,3 +78,4 @@ jobs:
           php: ${{ matrix.config.php }}
           phpunit: ${{ matrix.config.phpunit }}
           coverage: ${{ matrix.config.coverage }}
+          codecov-token: ${{ secrets.CODECOV_TOKEN }}

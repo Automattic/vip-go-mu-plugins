@@ -42,14 +42,14 @@ jobs:
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
       - name: Checkout WordPress
-        uses: actions/checkout@v4.1.1 # v4.0.0
+        uses: actions/checkout@v4.1.2
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v4.1.1 # v4.0.0
+        uses: actions/checkout@v4.1.2
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
@@ -60,14 +60,14 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
-        uses: actions/setup-node@b39b52d1213e96004bfcb1c61a8a6fa8ab84f3e8 # v4.0.1
+        uses: actions/setup-node@v4.0.2
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
           cache-dependency-path: 'wordpress/package-lock.json'
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.29.0
+        uses: shivammathur/setup-php@2.30.1
         with:
           php-version: 8.0
           coverage: none
@@ -80,9 +80,9 @@ jobs:
         run: composer install -n
         working-directory: wordpress
 
-      - name: Downgrade PHPUnit
-        run: composer require --dev -n phpunit/phpunit:9.6.12
-        working-directory: wordpress
+      # - name: Downgrade PHPUnit
+      #   run: composer require --dev -n phpunit/phpunit:^9
+      #   working-directory: wordpress
 
       - name: Install npm dependencies
         run: npm ci

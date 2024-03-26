@@ -1188,8 +1188,8 @@ class Search {
 			return;
 		}
 
-		if ( ! $is_cli ) {
-			global $wp;
+		global $wp;
+		if ( ! $is_cli && isset( $wp->query_vars ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
 		}
@@ -1250,7 +1250,7 @@ class Search {
 		if ( $is_post_request ) {
 			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
 			foreach ( $request_types as $type ) {
-				if ( wp_endswith( $query_path, $type ) ) {
+				if ( str_ends_with( $query_path, $type ) ) {
 					return 30;
 				}
 			}
@@ -1615,7 +1615,7 @@ class Search {
 		foreach ( $widgets as $index => $file ) {
 			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
 			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+			if ( str_ends_with( $file, '/jetpack/modules/widgets/search.php' ) ) {
 				unset( $widgets[ $index ] );
 			}
 		}
@@ -1741,7 +1741,7 @@ class Search {
 		$index_name = $path[0];
 
 		// If it starts with underscore, then we didn't detect the index name and should return null
-		if ( wp_startswith( $index_name, '_' ) ) {
+		if ( str_starts_with( $index_name, '_' ) ) {
 			return null;
 		}
 

@@ -4,7 +4,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 13.0
+ * Version: 13.2.1
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -36,7 +36,7 @@ function vip_default_jetpack_version() {
 		return '12.8';
 	} else {
 		// WordPress 6.3 and newer.
-		return '13.0';
+		return '13.2';
 	}
 }
 
@@ -546,9 +546,9 @@ function vip_jetpack_load() {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} elseif ( '' === $version ) {
-			$path = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
+			$path = WPVIP_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
-			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
+			$path = WPVIP_MU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
 
 		if ( file_exists( $path ) ) {
@@ -561,7 +561,7 @@ function vip_jetpack_load() {
 				}
 
 				foreach ( $option as $i => $plugin ) {
-					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+					if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 						unset( $option[ $i ] );
 						break;
 					}
@@ -577,7 +577,7 @@ function vip_jetpack_load() {
 					}
 
 					foreach ( $option as $plugin => $i ) {
-						if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+						if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 							unset( $option[ $plugin ] );
 							break;
 						}
