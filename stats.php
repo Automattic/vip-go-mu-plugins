@@ -49,7 +49,7 @@ function track_file_upload() {
 		return;
 	}
 
-	$using_streams = false;
+	$using_streams = true;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
 	}
@@ -94,7 +94,7 @@ function track_file_delete() {
 		return;
 	}
 
-	$using_streams = false;
+	$using_streams = true;
 	if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 		$using_streams = (bool) VIP_FILESYSTEM_USE_STREAM_WRAPPER;
 	}
