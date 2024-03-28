@@ -40,9 +40,8 @@ function is_debug_mode_enabled() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_debug   = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_proxied = \is_proxied_request();
-	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
-	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
+	if ( $is_nocache && $is_debug && $is_proxied ) {
 		return true;
 	}
 
