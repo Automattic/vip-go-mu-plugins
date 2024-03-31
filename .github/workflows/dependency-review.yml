@@ -26,3 +26,7 @@ jobs:
 
       - name: Review dependencies
         uses: actions/dependency-review-action@v4.2.5
+        with:
+          comment-summary-in-pr: true
+          show-openssf-scorecard: true
+          vulnerability-check: true
