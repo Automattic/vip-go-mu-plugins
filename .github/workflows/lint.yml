@@ -1,15 +1,15 @@
 name: Lint files
 
 on:
-  push:
-    branches:
-      - develop
-      - staging
-      - production
-      - gh-readonly-queue/**
-  pull_request:
-    branches:
-      - develop
+  # push:
+  #   branches:
+  #     - develop
+  #     - staging
+  #     - production
+  #     - gh-readonly-queue/**
+  # pull_request:
+  #   branches:
+  #     - develop
   workflow_dispatch:
 
 concurrency:

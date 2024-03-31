@@ -3,17 +3,17 @@ env:
   NODE_VERSION: "16"
 
 on:
-  pull_request:
-    branches:
-      - develop
-      - production
-      - staging
-    paths:
-      - 'bin/search/**'
-      - 'search/**'
-      - 'tests/search/e2e/**'
-      - 'package-lock.json'
-      - '.github/workflows/search-e2e.yml'
+  # pull_request:
+  #   branches:
+  #     - develop
+  #     - production
+  #     - staging
+  #   paths:
+  #     - 'bin/search/**'
+  #     - 'search/**'
+  #     - 'tests/search/e2e/**'
+  #     - 'package-lock.json'
+  #     - '.github/workflows/search-e2e.yml'
   workflow_dispatch:
 
 concurrency:
