@@ -1,10 +1,10 @@
 name: CI (Parse.ly)
 
 on:
-  push:
-    branches-ignore:
-      - develop
-      - staging
+  # push:
+  #   branches-ignore:
+  #     - develop
+  #     - staging
   workflow_dispatch:
 
 concurrency:
