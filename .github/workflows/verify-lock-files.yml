@@ -1,0 +1,72 @@
+name: Verify Lock Files
+
+on:
+  pull_request:
+    paths:
+      - 'package-lock.json'
+      - 'composer.lock'
+
+jobs:
+  verify-locks:
+    permissions:
+      contents: read
+      pull-requests: write
+    name: Verify Lock Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the source code
+        uses: actions/checkout@v4.1.1
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        run: |
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          changes="$(git diff --merge-base --name-only "${base}" "${head}")"
+          composer="$(echo "${changes}" | grep -F composer.lock)" || true
+          npm="$(echo "${changes}" | grep -F package-lock.json)" || true
+          echo "COMPOSER_LOCK=${composer}" >> "${GITHUB_ENV}"
+          echo "PACKAGE_LOCK=${npm}" >> "${GITHUB_ENV}"
+
+      - name: Verify Composer changes
+        id: composer_lock
+        if: env.COMPOSER_LOCK
+        run: |
+          CHANGES=""
+          for file in ${COMPOSER_LOCK}; do
+            if [ -f "${file}" ]; then
+              dir=$(dirname "${file}")
+              pwd=$(pwd)
+              rm -f ${file}
+              cd "${dir}"
+              composer install
+              diff=$(git diff --minimal -- composer.lock)
+              if [ -n "${diff}" ]; then
+                echo "::warning file=${file}::Detected suspicious changes to ${file}"
+                CHANGES="1"
+              fi
+              cd "${pwd}"
+            else
+              echo "::warning file=${file}::File ${file} not found"
+            fi
+          done
+          if [ -n "${CHANGES}" ]; then
+            printf '## Composer Lock Changes\n\n```diff\n' > /tmp/pr-body.md
+            git diff --minimal -- composer.lock >> /tmp/pr-body.md
+            printf '\n```\n\n**:warning: Please review thise changes carefully!**' >> /tmp/pr-body.md
+          fi
+          echo "changes=${CHANGES}" >> "${GITHUB_OUTPUT}"
+
+      - name: Post comment
+        if: steps.composer_lock.outputs.changes
+        uses: peter-evans/create-or-update-comment@v4.0.0
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: /tmp/pr-body.md
+
+      - name: Disable automerge
+        if: steps.composer_lock.outputs.changes
+        run: |
+          gh pr merge "${{ github.event.pull_request.number }}" --disable-auto || true
+          gh pr review "${{ github.event.pull_request.number }}" --request-changes --body "Please manually review changes to lock files" || true
