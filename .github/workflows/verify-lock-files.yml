@@ -70,3 +70,5 @@ jobs:
         run: |
           gh pr merge "${{ github.event.pull_request.number }}" --disable-auto || true
           gh pr review "${{ github.event.pull_request.number }}" --request-changes --body "Please manually review changes to lock files" || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
