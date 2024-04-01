@@ -54,7 +54,7 @@ jobs:
           if [ -n "${CHANGES}" ]; then
             printf '## Composer Lock Changes\n\n```diff\n' > /tmp/pr-body.md
             git diff --minimal -- composer.lock >> /tmp/pr-body.md
-            printf '\n```\n\n**:warning: Please review thise changes carefully!**' >> /tmp/pr-body.md
+            printf '\n```\n\n**:warning: Please review these changes carefully!**' >> /tmp/pr-body.md
           fi
           echo "changes=${CHANGES}" >> "${GITHUB_OUTPUT}"
 
