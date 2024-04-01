@@ -29,34 +29,33 @@ jobs:
           echo "COMPOSER_LOCK=${composer}" >> "${GITHUB_ENV}"
           echo "PACKAGE_LOCK=${npm}" >> "${GITHUB_ENV}"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4.0.2
+        with:
+          node-version: 'lts/*'
+
       - name: Verify Composer changes
         id: composer_lock
         if: env.COMPOSER_LOCK
         run: |
-          CHANGES=""
-          for file in ${COMPOSER_LOCK}; do
-            if [ -f "${file}" ]; then
-              dir=$(dirname "${file}")
-              pwd=$(pwd)
-              rm -f ${file}
-              cd "${dir}"
-              composer install
-              diff=$(git diff --minimal -- composer.lock)
-              if [ -n "${diff}" ]; then
-                echo "::warning file=${file}::Detected suspicious changes to ${file}"
-                CHANGES="1"
-              fi
-              cd "${pwd}"
-            else
-              echo "::warning file=${file}::File ${file} not found"
-            fi
-          done
-          if [ -n "${CHANGES}" ]; then
-            printf '## Composer Lock Changes\n\n```diff\n' > /tmp/pr-body.md
-            git diff --minimal -- composer.lock >> /tmp/pr-body.md
-            printf '\n```\n\n**:warning: Please review these changes carefully!**' >> /tmp/pr-body.md
+          node .github/analyze-lockfiles.mjs ${{ env.COMPOSER_LOCK }}
+          diff=$(git diff --minimal)
+          if [ -n "${diff}" ]; then
+            echo "changes=yes" >> "${GITHUB_OUTPUT}"
+            {
+              echo '## Composer Lockfile Changes'
+              echo
+              echo '```diff'
+              echo "${diff}"
+              echo '```'
+              echo
+              echo '**Legend:**'
+              echo '  * `-`: take a closer look at this line!'
+              echo '  * `+`: the replacement when the lock file gets regenerated'
+              echo
+              echo '**:warning: Please review these changes carefully!**'
+            } > /tmp/pr-body.md
           fi
-          echo "changes=${CHANGES}" >> "${GITHUB_OUTPUT}"
 
       - name: Find Comment
         if: steps.composer_lock.outputs.changes
