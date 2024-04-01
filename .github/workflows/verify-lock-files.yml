@@ -58,12 +58,23 @@ jobs:
           fi
           echo "changes=${CHANGES}" >> "${GITHUB_OUTPUT}"
 
+      - name: Find Comment
+        if: steps.composer_lock.outputs.changes
+        uses: peter-evans/find-comment@v3.0.0
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Please review these changes carefully
+
       - name: Post comment
         if: steps.composer_lock.outputs.changes
         uses: peter-evans/create-or-update-comment@v4.0.0
         with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
           body-file: /tmp/pr-body.md
+          edit-mode: replace
 
       - name: Disable automerge
         if: steps.composer_lock.outputs.changes
