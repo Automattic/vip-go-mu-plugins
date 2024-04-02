@@ -423,3 +423,14 @@ function vip_prevent_jetpack_post_by_email_database_noise() {
 }
 
 add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
+
+/*
+ * Workaround: prevent the "Invite user to WordPress.com" checkbox on "Add New User" page
+ * from blocking new user registration on Jetpack 13.2.
+ */
+add_action( 'muplugins_loaded', function () {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	if ( isset( $_POST['invite_user_wpcom'] ) ) {
+		unset( $_POST['invite_user_wpcom'] );
+	}
+});
