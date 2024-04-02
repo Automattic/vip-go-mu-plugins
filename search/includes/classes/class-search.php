@@ -1188,8 +1188,8 @@ class Search {
 			return;
 		}
 
-		if ( ! $is_cli ) {
-			global $wp;
+		global $wp;
+		if ( ! $is_cli && isset( $wp->query_vars ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
 		}
