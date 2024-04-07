@@ -8,7 +8,10 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
+use ErrorException;
 use WP_UnitTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
@@ -18,6 +21,28 @@ use function Automattic\Test\Utils\get_class_method_as_public;
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
+	private $original_error_reporting;
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->original_error_reporting = error_reporting();
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno ); // NOSONAR
+			}
+
+			return false;
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		parent::tearDown();
+	}
+
 	public function test__integrations_are_activating_based_on_given_vip_config(): void {
 		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
 		$config_mock->expects( $this->exactly( 2 ) )->method( 'is_active_via_vip' )->willReturnOnConsecutiveCalls( true, false );
@@ -108,7 +133,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'Integration with slug "fake" is already registered.' );
 
 		$integrations = new Integrations();
@@ -119,7 +145,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__non_integration_subclass_throws_invalidArgumentException(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'Integration class "stdClass" must extend Automattic\VIP\Integrations\Integration.' );
 
 		$integrations = new Integrations();
@@ -129,7 +156,8 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__activating_integration_by_passing_invalid_slug_throws_invalidArgumentException(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'VIP Integration with slug "invalid-slug" is not a registered integration.' );
 
 		$integrations = new Integrations();
