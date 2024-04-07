@@ -97,11 +97,11 @@ jobs:
 
       - name: WordPress Docker container debug information
         run: |
-          docker-compose run --rm mysql mysql --version
-          docker-compose run --rm php php --version
-          docker-compose run --rm php php -m
-          docker-compose run --rm php php -i
-          docker-compose run --rm php locale -a
+          docker compose run --rm mysql mysql --version
+          docker compose run --rm php php --version
+          docker compose run --rm php php -m
+          docker compose run --rm php php -i
+          docker compose run --rm php locale -a
         working-directory: wordpress
 
       - name: Install WordPress
@@ -122,6 +122,5 @@ jobs:
 
       - name: Run external HTTP tests
         run: |
-          sed -i 's/ test_multiple_location_headers/ disabled_test_multiple_location_headers/' tests/phpunit/tests/http/base.php
           node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
         working-directory: wordpress
