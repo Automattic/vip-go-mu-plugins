@@ -4,6 +4,7 @@ namespace Automattic\VIP\Files;
 
 use Automattic\Test\Constant_Mocker;
 use ErrorException;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
@@ -50,7 +51,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		set_error_handler( static function ( int $errno, string $errstr ) {
 			if ( $errno & error_reporting() ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
+				throw new ErrorException( $errstr, $errno ); // NOSONAR
 			}
 
 			return false;
@@ -265,14 +266,15 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		];
 		$basepath = $this->get_upload_path();
 
+		/** @var MockObject&VIP_Filesystem */
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_name' ] )
-				->getMock();
+			->onlyMethods( [ 'validate_file_name' ] )
+			->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'validate_file_name' )
-				->with( $basepath . '/' . $file['name'] )
-				->will( $this->returnValue( $file['name'] ) );
+			->method( 'validate_file_name' )
+			->with( $basepath . '/' . $file['name'] )
+			->will( $this->returnValue( $file['name'] ) );
 
 		$actual = $stub->filter_validate_file( $file );
 
@@ -287,8 +289,9 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$unique_file_name = 'testfile_8hj30h.txt';
 		$basepath         = $this->get_upload_path();
 
+		/** @var MockObject&VIP_Filesystem */
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-			->setMethods( [ 'validate_file_name' ] )
+			->onlyMethods( [ 'validate_file_name' ] )
 			->getMock();
 
 		$stub->expects( $this->once() )
@@ -308,14 +311,15 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		];
 		$basepath = $this->get_upload_path();
 
+		/** @var MockObject&VIP_Filesystem */
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_name' ] )
-				->getMock();
+			->onlyMethods( [ 'validate_file_name' ] )
+			->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'validate_file_name' )
-				->with( $basepath . '/' . $file['name'] )
-				->will( $this->returnValue( $file['name'] ) );
+			->method( 'validate_file_name' )
+			->with( $basepath . '/' . $file['name'] )
+			->will( $this->returnValue( $file['name'] ) );
 
 		$actual = $stub->filter_validate_file( $file );
 
@@ -332,14 +336,15 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		];
 		$basepath = $this->get_upload_path();
 
+		/** @var MockObject&VIP_Filesystem */
 		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-				->setMethods( [ 'validate_file_name' ] )
-				->getMock();
+			->onlyMethods( [ 'validate_file_name' ] )
+			->getMock();
 
 		$stub->expects( $this->once() )
-				->method( 'validate_file_name' )
-				->with( $basepath . '/' . $file['name'] )
-				->will( $this->returnValue( new WP_Error( 'invalid-file-type', 'Failed to generate new unique file name `testfile.exe` (response code: 400)' ) ) );
+			->method( 'validate_file_name' )
+			->with( $basepath . '/' . $file['name'] )
+			->will( $this->returnValue( new WP_Error( 'invalid-file-type', 'Failed to generate new unique file name `testfile.exe` (response code: 400)' ) ) );
 
 		$actual = $stub->filter_validate_file( $file );
 
