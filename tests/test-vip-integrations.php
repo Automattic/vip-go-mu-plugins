@@ -15,7 +15,7 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 
 class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 	public function test_activate_function_is_calling_the_activate_method_from_integrations_class(): void {
-		$integrations_mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'activate' ] )->getMock();
+		$integrations_mock = $this->getMockBuilder( Integrations::class )->onlyMethods( [ 'activate' ] )->getMock();
 		$integrations_mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );
 
 		$this->set_integrations( $integrations_mock );
@@ -46,7 +46,7 @@ class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
 	/**
 	 * Set integrations mock.
 	 *
-	 * @param MockObject $mock
+	 * @param MockObject&Integrations $mock
 	 */
 	private function set_integrations( $mock ): void {
 		$instance = IntegrationsSingleton::instance();

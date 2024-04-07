@@ -79,7 +79,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|FakeIntegration
 		 */
-		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
 
 		$integration_mock->activate();
@@ -113,7 +113,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var IntegrationVipConfig|MockObject
 		 */
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'get_vip_config_from_file' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'get_vip_config_from_file' ] )->getMock();
 		$config_mock->method( 'get_vip_config_from_file' )->willReturn( [
 			'network_sites' => [
 				get_current_blog_id() => [
@@ -131,7 +131,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		// By default return config passed via activate().
 		$this->assertEquals( array( 'activate_config' ), $integration->get_config() );
-		
+
 		// If blog is switched then return config of current network site.
 		switch_to_blog( $blog_2_id );
 		$this->assertEquals( array( 'network_site_2_config' ), $integration->get_config() );
