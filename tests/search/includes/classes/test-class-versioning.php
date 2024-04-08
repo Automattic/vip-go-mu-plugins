@@ -13,12 +13,10 @@ use ElasticPress\Indexables;
 
 // phpcs:disable Squiz.PHP.CommentedOutCode.Found -- false positives
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Versioning_Test extends WP_UnitTestCase {
+	/** @var Versioning */
 	public static $version_instance;
+	/** @var Search */
 	public static $search;
 
 	/** @var array */
@@ -37,64 +35,42 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public static function setUpBeforeClass(): void {
-		global $wp_filter;
-
 		parent::setUpBeforeClass();
 
-		$save_init = clone $wp_filter['init'];
-		try {
-			remove_all_actions( 'init' );
+		require_once __DIR__ . '/../../../../search/search.php';
 
-			if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-				define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-					'https://es-endpoint1',
-					'https://es-endpoint2',
-				) );
-			}
-
-			require_once __DIR__ . '/../../../../search/search.php';
-
-			self::$search = \Automattic\VIP\Search\Search::instance();
-
-			self::$search->queue->schema->prepare_table();
-
-			// Required so that EP registers the Indexables
-			do_action( 'plugins_loaded' );
-			do_action( 'init' );
-		} finally {
-			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-			$wp_filter['init'] = clone $save_init;
-		}
-
-		self::$version_instance = self::$search->versioning;
-
-		add_filter( 'ep_intercept_remote_request', '__return_true' );
-
-		if ( method_exists( Indexable::class, 'build_settings' ) ) {
-			self::$indexable_methods[] = 'build_settings';
-		} else {
-			self::$indexable_methods[] = 'generate_mapping';
-		}
-
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
+		self::$indexable_methods[] = method_exists( Indexable::class, 'build_settings' ) ? 'build_settings' : 'generate_mapping';
 	}
 
 	public function setUp(): void {
 		parent::setUp();
 
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		] );
+
+		remove_all_actions( 'init' );
+		self::$search = new Search();
+		self::$search->init();
+		self::$search->queue->schema->prepare_table();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		do_action( 'init' );
+
+		self::$version_instance = self::$search->versioning;
+
+		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
 	}
 
 	public function tearDown(): void {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-
-		parent::tearDown();
-	}
-
-	public static function tearDownAfterClass(): void {
 		Constant_Mocker::clear();
-
-		parent::tearDownAfterClass();
+		parent::tearDown();
 	}
 
 	public function get_next_version_number_data() {
