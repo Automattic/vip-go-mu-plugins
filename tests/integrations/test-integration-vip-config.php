@@ -8,9 +8,13 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 use Org_Integration_Status;
 use Env_Integration_Status;
+use ErrorException;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
@@ -19,6 +23,28 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
+	private $original_error_reporting;
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->original_error_reporting = error_reporting();
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno ); // NOSONAR
+			}
+
+			return false;
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		parent::tearDown();
+	}
+
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$slug               = 'dummy';
 		$integration_config = new IntegrationVipConfig( $slug );
@@ -223,7 +249,8 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_value_from_vip_config_trigger_error_if_invalid_argument_is_passed(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'config_type param (invalid) must be one of org, env or network_sites.' );
 		$mocked_vip_configs = [];
 
