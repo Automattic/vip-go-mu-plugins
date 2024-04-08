@@ -219,13 +219,8 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Mock $wpdb.
 		$mock_builder = $this->getMockBuilder( \wpdb::class )
-							->setConstructorArgs( array( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST ) );
-
-		if ( method_exists( $mock_builder, 'onlyMethods' ) ) {
-			$mock_builder = $mock_builder->onlyMethods( array( 'get_var' ) );
-		} else {
-			$mock_builder = $mock_builder->setMethods( array( 'get_var' ) );
-		}
+			->setConstructorArgs( array( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST ) )
+			->onlyMethods( array( 'get_var' ) );
 
 		$wpdb = $mock_builder->getMock();
 		$wpdb->method( 'get_var' )->willReturn( null );

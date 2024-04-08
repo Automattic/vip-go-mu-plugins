@@ -39,8 +39,16 @@ function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cach
 	}
 
 	// 3) Otherwise query the DB for fresh results.
+	if ( function_exists( 'wp_autoload_values_to_autoload' ) ) {
+		$values = wp_autoload_values_to_autoload();
+	} else {
+		$values = [ 'yes' ];
+	}
+
+	/** @var string[] $values */
+
 	$suppress      = $wpdb->suppress_errors();
-	$alloptions_db = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE autoload = 'yes'" );
+	$alloptions_db = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE autoload IN ( '" . implode( "', '", esc_sql( $values ) ) . "' )" );
 	$wpdb->suppress_errors( $suppress );
 
 	$alloptions = [];

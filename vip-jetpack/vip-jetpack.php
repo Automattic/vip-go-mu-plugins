@@ -73,25 +73,6 @@ add_filter( 'jetpack_get_available_modules', function ( $modules ) {
 }, 999 );
 
 /**
- * Do not initialize my jetpack admin page for VIP Machine User
- */
-add_action( 'plugins_loaded', function () {
-	if ( ! is_admin() || wp_doing_ajax() || ! method_exists( 'Jetpack', 'connection' ) || ! defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) ) {
-		return;
-	}
-
-	$jp_connection = Jetpack::connection();
-	if ( method_exists( $jp_connection, 'get_connection_owner' ) ) {
-		$connection_owner  = $jp_connection->get_connection_owner();
-		$is_vip_connection = isset( $connection_owner->user_login ) && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
-
-		if ( $is_vip_connection ) {
-			add_filter( 'jetpack_my_jetpack_should_initialize', '__return_false' );
-		}
-	}
-} );
-
-/**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
  *
  * Still allows changing the value per site, but locks it into the range
@@ -157,24 +138,6 @@ if ( true === WPCOM_SANDBOXED ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- version number is OK
 		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
-}
-
-// On production servers, only our machine user can manage the Jetpack connection
-if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function ( $caps, $cap, $user_id ) {
-		switch ( $cap ) {
-			case 'jetpack_connect':
-			case 'jetpack_reconnect':
-			case 'jetpack_disconnect':
-				$user = get_userdata( $user_id );
-				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
-					return [ 'do_not_allow' ];
-				}
-				break;
-		}
-
-		return $caps;
-	}, 10, 3 );
 }
 
 function wpcom_vip_did_jetpack_search_query( $query ) {
@@ -436,3 +399,38 @@ function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
 }
 
 add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/**
+ * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
+ * Addresses https://github.com/Automattic/jetpack/issues/35636
+ */
+function vip_prevent_jetpack_post_by_email_database_noise() {
+	// Prevent saving an unnecessary NULL option to the database.
+	add_filter( 'pre_update_option_post_by_email_address' . get_current_user_id(), function ( $value, $old_value ) {
+		if ( 'NULL' === $value ) {
+			return $old_value;
+		}
+
+		return $value;
+	}, 10, 2 );
+
+	// Prevent unnecessary API calls for finding the remote email address when the module is disabled.
+	if ( method_exists( 'Jetpack', 'is_module_active' ) && ! Jetpack::is_module_active( 'post-by-email' ) ) {
+		add_filter( 'pre_option_post_by_email_address' . get_current_user_id(), function () {
+			return 'NULL';
+		} );
+	}
+}
+
+add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
+
+/*
+ * Workaround: prevent the "Invite user to WordPress.com" checkbox on "Add New User" page
+ * from blocking new user registration on Jetpack 13.2.
+ */
+add_action( 'muplugins_loaded', function () {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	if ( isset( $_POST['invite_user_wpcom'] ) ) {
+		unset( $_POST['invite_user_wpcom'] );
+	}
+});

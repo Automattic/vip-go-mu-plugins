@@ -42,14 +42,14 @@ jobs:
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
       - name: Checkout WordPress
-        uses: actions/checkout@v4.1.1 # v4.0.0
+        uses: actions/checkout@v4.1.2
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v4.1.1 # v4.0.0
+        uses: actions/checkout@v4.1.2
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
@@ -60,14 +60,14 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
-        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        uses: actions/setup-node@v4.0.2
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
           cache-dependency-path: 'wordpress/package-lock.json'
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.30.0
+        uses: shivammathur/setup-php@2.30.2
         with:
           php-version: 8.0
           coverage: none
@@ -80,9 +80,9 @@ jobs:
         run: composer install -n
         working-directory: wordpress
 
-      - name: Downgrade PHPUnit
-        run: composer require --dev -n phpunit/phpunit:9.6.12
-        working-directory: wordpress
+      # - name: Downgrade PHPUnit
+      #   run: composer require --dev -n phpunit/phpunit:^9
+      #   working-directory: wordpress
 
       - name: Install npm dependencies
         run: npm ci
@@ -97,11 +97,11 @@ jobs:
 
       - name: WordPress Docker container debug information
         run: |
-          docker-compose run --rm mysql mysql --version
-          docker-compose run --rm php php --version
-          docker-compose run --rm php php -m
-          docker-compose run --rm php php -i
-          docker-compose run --rm php locale -a
+          docker compose run --rm mysql mysql --version
+          docker compose run --rm php php --version
+          docker compose run --rm php php -m
+          docker compose run --rm php php -i
+          docker compose run --rm php locale -a
         working-directory: wordpress
 
       - name: Install WordPress
@@ -122,6 +122,5 @@ jobs:
 
       - name: Run external HTTP tests
         run: |
-          sed -i 's/ test_multiple_location_headers/ disabled_test_multiple_location_headers/' tests/phpunit/tests/http/base.php
           node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
         working-directory: wordpress
