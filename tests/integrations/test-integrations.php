@@ -44,7 +44,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__integrations_are_activating_based_on_given_vip_config(): void {
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
 		$config_mock->expects( $this->exactly( 2 ) )->method( 'is_active_via_vip' )->willReturnOnConsecutiveCalls( true, false );
 		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_site_config' )->willReturnOnConsecutiveCalls( [ 'config_key_1' => 'vip_value' ] );
 
@@ -53,7 +53,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|Integrations
 		 */
-		$mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'get_integration_vip_config' ] )->getMock();
+		$mock = $this->getMockBuilder( Integrations::class )->onlyMethods( [ 'get_integration_vip_config' ] )->getMock();
 		$mock->expects( $this->any() )->method( 'get_integration_vip_config' )->willReturn( $config_mock );
 
 		$integration_1 = new FakeIntegration( 'fake-1' );
@@ -78,21 +78,21 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__expected_methods_are_getting_called_when_the_integration_is_activated_via_vip_config(): void {
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'is_active_via_vip' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'is_active_via_vip' ] )->getMock();
 		$config_mock->expects( $this->once() )->method( 'is_active_via_vip' )->willReturn( true );
 		/**
 		 * Integrations mock.
 		 *
 		 * @var MockObject|Integrations
 		 */
-		$integrations_mock = $this->getMockBuilder( Integrations::class )->setMethods( [ 'get_integration_vip_config' ] )->getMock();
+		$integrations_mock = $this->getMockBuilder( Integrations::class )->onlyMethods( [ 'get_integration_vip_config' ] )->getMock();
 		$integrations_mock->expects( $this->once() )->method( 'get_integration_vip_config' )->willReturn( $config_mock );
 		/**
 		 * Integration mock.
 		 *
 		 * @var MockObject|FakeIntegration
 		 */
-		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'configure', 'set_vip_config' ] )->getMock();
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->onlyMethods( [ 'configure', 'set_vip_config' ] )->getMock();
 		$integration_mock->expects( $this->once() )->method( 'configure' );
 		$integration_mock->expects( $this->once() )->method( 'set_vip_config' );
 
