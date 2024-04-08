@@ -45,8 +45,10 @@ function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cach
 		$values = [ 'yes' ];
 	}
 
+	/** @var string[] $values */
+
 	$suppress      = $wpdb->suppress_errors();
-	$alloptions_db = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE autoload IN ( '" . implode( "', '", $values ) . "' )" ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	$alloptions_db = $wpdb->get_results( "SELECT option_name, option_value FROM $wpdb->options WHERE autoload IN ( '" . implode( "', '", esc_sql( $values ) ) . "' )" );
 	$wpdb->suppress_errors( $suppress );
 
 	$alloptions = [];
