@@ -6,6 +6,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Utils\Alerts;
+use ElasticPress\Elasticsearch;
 use ElasticPress\Features;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
@@ -96,8 +97,14 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 *
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
+	 *
+	 * @runInSeparateProcess -- necessary because the Elasticpress class should not be loaded
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_filter_ep_index_name__no_constant() {
+		self::assertFalse( defined( 'USE_VIP_ELASTICSEARCH' ) );
+		self::assertFalse( class_exists( Elasticsearch::class, false ) );
+
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
@@ -1816,6 +1823,8 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
+		self::assertFalse( defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) );
+
 		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
