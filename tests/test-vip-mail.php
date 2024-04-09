@@ -17,10 +17,9 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		parent::tearDown();
-
 		Constant_Mocker::clear();
-		remove_all_filters( 'vip_block_wp_mail' );
+		reset_phpmailer_instance();
+		parent::tearDown();
 	}
 
 	public function test__all_smtp_servers__not_array() {
