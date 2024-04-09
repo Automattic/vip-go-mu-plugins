@@ -25,14 +25,8 @@ class Queue_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		Constant_Mocker::clear();
-
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		}
-
-		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
-			Constant_Mocker::define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		}
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		Constant_Mocker::define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
