@@ -8,6 +8,10 @@ use WP_Error;
 
 require_once __DIR__ . '/class-jetpack-connection-controls.php';
 
+if ( file_exists( __DIR__ . '/class-jetpack-connection-attendant.php' ) ) {
+	require_once __DIR__ . '/class-jetpack-connection-attendant.php';
+}
+
 if ( defined( 'WP_CLI' ) && \WP_CLI ) {
 	require_once __DIR__ . '/class-jetpack-connection-cli.php';
 }
@@ -58,9 +62,16 @@ class Connection_Pilot {
 		// The hook always needs to be available so the job can remove itself if it needs to.
 		add_action( self::CRON_ACTION, array( '\Automattic\VIP\Jetpack\Connection_Pilot', 'do_cron' ) );
 
-		if ( self::should_run_connection_pilot() ) {
-			$this->init_actions();
+		// Always initiate so that bot user protections remain in place.
+		if ( class_exists( 'Automattic\VIP\Jetpack\Connection_Pilot\Attendant' ) ) {
+			Connection_Pilot\Attendant::instance();
 		}
+
+		add_action( 'init', function () {
+			if ( self::should_run_connection_pilot() ) {
+				$this->init_actions();
+			}
+		}, 25 );
 	}
 
 	/**
@@ -283,7 +294,7 @@ class Connection_Pilot {
 		// 1) Handle specific errors where we don't want reconnection attempts.
 		if ( is_wp_error( $error ) ) {
 			switch ( $error->get_error_code() ) {
-				case 'jp-cxn-pilot-missing-constants':
+				case 'jp-cxn-pilot-invalid-environment':
 				case 'jp-cxn-pilot-development-mode':
 					$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
 					return false;
@@ -373,6 +384,6 @@ class Connection_Pilot {
 	}
 }
 
-add_action( 'init', function () {
+add_action( 'plugins_loaded', function () {
 	Connection_Pilot::instance();
 }, 25 );

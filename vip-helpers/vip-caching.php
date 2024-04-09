@@ -99,55 +99,6 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 }
 
 /**
- * Cached version of get_page_by_title so that we're not making unnecessary SQL all the time
- *
- * @param string $page_title Page title
- * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
- * @param string $post_type Optional. Post type; default is 'page'.
- * @return WP_Post|null WP_Post on success or null on failure
- * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
- */
-function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
-	global $wp_version;
-	if ( version_compare( $wp_version, '6.2', '<' ) ) {
-		_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
-	}
-
-	$cache_key = $post_type . '_' . sanitize_key( $title );
-	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
-
-	if ( false === $page_id ) {
-		if ( ! function_exists( 'is_user_logged_in' ) ) {
-			// If too early to call `WP_Query`, fallback to deprecated `get_page_by_title`
-			// phpcs:ignore WordPress.WP.DeprecatedFunctions.get_page_by_titleFound
-			$page    = get_page_by_title( $title, OBJECT, $post_type );
-			$page_id = $page ? $page->ID : 0;
-		} else {
-			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
-			$query   = new WP_Query(
-				array(
-					'title'          => $title,
-					'post_type'      => $post_type,
-					'posts_per_page' => 1,
-					'orderby'        => 'ID',
-					'order'          => 'ASC',
-					'no_found_rows'  => true,
-					'fields'         => 'ids',
-				),
-			);
-			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
-		}
-		wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
-	}
-
-	if ( $page_id ) {
-		return get_post( $page_id, $output );
-	}
-
-	return null;
-}
-
-/**
  * Flush the cache for published pages so we don't end up with stale data
  *
  * @param string  $new_status The post's new status

@@ -13,15 +13,11 @@ class Capability_Condition_Test extends TestCase {
 
 	public function setUp(): void {
 		self::$mock_global_functions = $this->getMockBuilder( self::class )
-			->setMethods( [ 'mock_current_user_can' ] )
+			->addMethods( [ 'mock_current_user_can' ] )
 			->getMock();
 	}
 
-	public function mock_current_user_can( string $capability, ...$args ) {
-	}
-
 	public function evaluate_data() {
-
 		return [
 			[ [ true ], true ],
 			[ [ true, true ], true ],
@@ -36,7 +32,6 @@ class Capability_Condition_Test extends TestCase {
 	 * @dataProvider evaluate_data
 	 */
 	public function test__evaluate( $has_capabilities, $expected_result ) {
-
 		self::$mock_global_functions->method( 'mock_current_user_can' )
 			->will( $this->onConsecutiveCalls( ...$has_capabilities ) );
 
@@ -45,7 +40,6 @@ class Capability_Condition_Test extends TestCase {
 		$this->assertEquals( $expected_result, $condition->evaluate() );
 	}
 }
-
 
 /**
  * Overwriting global function so that no real remote request is called
