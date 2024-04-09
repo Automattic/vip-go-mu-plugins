@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Logstash\Logger;
 use ElasticPress\Indexable\User\User;
 use ElasticPress\Indexables;
@@ -12,51 +13,33 @@ use wpdb;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Queue_Test extends WP_UnitTestCase {
 
 	/** @var Search */
 	private $es;
 
-	/** @var \Queue */
+	/** @var Queue */
 	private $queue;
-
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		}
-
-		require_once __DIR__ . '/../../../../search/search.php';
-
-		Search::instance()->init();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-
-		// Users indexable doesn't get registered by default, but we have tests that queue user objects
-		Indexables::factory()->register( new User() );
-	}
 
 	public function setUp(): void {
 		parent::setUp();
 
-		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
-			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		}
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		Constant_Mocker::define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		$this->es = Search::instance();
+		$this->es = new Search();
 		$this->es->init();
 
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		Indexables::factory()->register( new User() );
+
 		$this->queue = $this->es->queue;
-
 		$this->queue->schema->prepare_table();
-
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
@@ -64,7 +47,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-
+		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 
