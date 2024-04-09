@@ -21,19 +21,15 @@ class Cron_Test extends WP_UnitTestCase {
 	private $cron;
 
 	public function setUp(): void {
+		parent::setUp();
 		Constant_Mocker::clear();
 
-		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
-			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		}
-
-		if ( ! defined( 'VIP_GO_ENV' ) ) {
-			define( 'VIP_GO_ENV', 'production' );
-		}
+		define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
+		define( 'VIP_GO_ENV', 'production' );
 
 		require_once __DIR__ . '/../../../../../search/search.php';
 
-		$this->es = Search::instance();
+		$this->es = new Search();
 		$this->es->init();
 
 		$this->queue = $this->es->queue;
