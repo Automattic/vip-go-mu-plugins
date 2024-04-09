@@ -68,7 +68,6 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -1649,6 +1648,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
 		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
 
+		/** @var Indexable&MockObject */
 		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
 		$indexable_mock->slug   = $slug;
 		$indexable_mock->global = $global;
