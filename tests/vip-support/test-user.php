@@ -28,12 +28,8 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		reset_phpmailer_instance();
-		parent::tearDown();
-	}
-
-	public function tearDown(): void {
 		Constant_Mocker::clear();
+		reset_phpmailer_instance();
 		parent::tearDown();
 	}
 
