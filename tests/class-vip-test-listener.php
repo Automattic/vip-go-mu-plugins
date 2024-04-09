@@ -26,7 +26,9 @@ class VIP_Test_Listener implements TestListener {
 		}
 
 		foreach ( self::$globals as $key ) {
-			self::$hooks_saved[ $key ] = $GLOBALS[ $key ];
+			if ( array_key_exists( $key, $GLOBALS ) ) {
+				self::$hooks_saved[ $key ] = $GLOBALS[ $key ];
+			}
 		}
 	}
 
