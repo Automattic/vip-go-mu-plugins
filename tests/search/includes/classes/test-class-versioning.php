@@ -6,30 +6,28 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Utils\Alerts;
+use ElasticPress\Elasticsearch;
+use ElasticPress\Indexable;
+use ElasticPress\Indexables;
 
 // phpcs:disable Squiz.PHP.CommentedOutCode.Found -- false positives
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Versioning_Test extends WP_UnitTestCase {
+	/** @var Versioning */
 	public static $version_instance;
+	/** @var Search */
 	public static $search;
 
 	/** @var array */
 	private static $indexable_methods = [
 		'query_es',
 		'query_db',
-		'format_args',
 		'get_mapping',
 		'prepare_document',
 		'put_mapping',
-		'build_mapping',
 		'index_exists',
 		'get_index_name',
-		'get_index_settings',
-		'update_index_settings',
 	];
 
 	public function mock_http_response( $mocked_response ) {
@@ -37,64 +35,41 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public static function setUpBeforeClass(): void {
-		global $wp_filter;
-
 		parent::setUpBeforeClass();
 
-		$save_init = clone $wp_filter['init'];
-		try {
-			remove_all_actions( 'init' );
+		require_once __DIR__ . '/../../../../search/search.php';
 
-			if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-				define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-					'https://es-endpoint1',
-					'https://es-endpoint2',
-				) );
-			}
-
-			require_once __DIR__ . '/../../../../search/search.php';
-
-			self::$search = \Automattic\VIP\Search\Search::instance();
-
-			self::$search->queue->schema->prepare_table();
-
-			// Required so that EP registers the Indexables
-			do_action( 'plugins_loaded' );
-			do_action( 'init' );
-		} finally {
-			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-			$wp_filter['init'] = clone $save_init;
-		}
-
-		self::$version_instance = self::$search->versioning;
-
-		add_filter( 'ep_intercept_remote_request', '__return_true' );
-
-		if ( method_exists( \ElasticPress\Indexable::class, 'build_settings' ) ) {
-			self::$indexable_methods[] = 'build_settings';
-		} else {
-			self::$indexable_methods[] = 'generate_mapping';
-		}
-
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
+		self::$indexable_methods[] = method_exists( Indexable::class, 'build_settings' ) ? 'build_settings' : 'generate_mapping';
 	}
 
 	public function setUp(): void {
 		parent::setUp();
 
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		] );
+
+		remove_all_actions( 'init' );
+		self::$search = new Search();
+		self::$search->init();
+		self::$search->queue->schema->prepare_table();
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		do_action( 'init' );
+
+		self::$version_instance = self::$search->versioning;
+
+		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
 	}
 
 	public function tearDown(): void {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-
-		parent::tearDown();
-	}
-
-	public static function tearDownAfterClass(): void {
 		Constant_Mocker::clear();
-
-		parent::tearDownAfterClass();
+		parent::tearDown();
 	}
 
 	public function get_next_version_number_data() {
@@ -206,7 +181,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Indexable slug
 				'post',
 				// Expected active version
-				new \WP_Error( 'no-active-version', 'No active version found' ),
+				new WP_Error( 'no-active-version', 'No active version found' ),
 			),
 
 			// No versions tracked
@@ -243,7 +218,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider get_active_version_data
 	 */
 	public function test_get_active_version_number( $versions, $indexable_slug, $expected_active_version ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -336,7 +311,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider get_inactive_versions_data
 	 */
 	public function test_get_inactive_versions( $versions, $indexable_slug, $expected_inactive_versions ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -465,7 +440,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'previous',
 				// Expected normalized version number
-				new \WP_Error( 'no-previous-version' ),
+				new WP_Error( 'no-previous-version' ),
 			),
 
 			// No next
@@ -486,7 +461,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected normalized version number
-				new \WP_Error( 'no-next-version' ),
+				new WP_Error( 'no-next-version' ),
 			),
 
 			// No active
@@ -507,7 +482,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'active',
 				// Expected active version
-				new \WP_Error( 'no-active-version' ),
+				new WP_Error( 'no-active-version' ),
 			),
 
 			// No active, trying to get next
@@ -528,7 +503,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'next',
 				// Expected active version
-				new \WP_Error( 'no-active-index-found' ),
+				new WP_Error( 'no-active-index-found' ),
 			),
 			// Regular, 'inactive'
 			array(
@@ -579,7 +554,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version string to be normalized
 				'inactive',
 				// Expected inactive version
-				new \WP_Error( 'no-inactive-versions-found' ),
+				new WP_Error( 'no-inactive-versions-found' ),
 			),
 		);
 	}
@@ -588,7 +563,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider normalize_version_number_data
 	 */
 	public function test_normalize_version_number( $versions, $indexable_slug, $version_string, $expected_version_number ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -671,7 +646,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider add_version_data
 	 */
 	public function test_add_version( $versions, $indexable_slug, $expected_new_versions ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -829,7 +804,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider activate_version_data
 	 */
 	public function test_activate_version( $versions, $indexable_slug, $version_to_activate, $expected_new_versions ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -899,7 +874,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider activate_version_invalid_data
 	 */
 	public function test_activate_version_invalid( $versions, $indexable_slug, $version_to_activate ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -964,7 +939,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version to deactivate
 				2,
 				// Expected
-				new \WP_Error( 'inactive-index-version-already', 'The index version 2 already inactive' ),
+				new WP_Error( 'inactive-index-version-already', 'The index version 2 already inactive' ),
 			),
 			// With no indexes
 			array(
@@ -975,7 +950,7 @@ class Versioning_Test extends WP_UnitTestCase {
 				// Version to deactivate
 				2,
 				// Expected
-				new \WP_Error( 'invalid-index-version', 'The index version 2 was not found' ),
+				new WP_Error( 'invalid-index-version', 'The index version 2 was not found' ),
 			),
 		);
 	}
@@ -984,7 +959,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider deactivate_version_data
 	 */
 	public function test_deactivate_version( $versions, $indexable_slug, $version_to_deactivate, $expected_new_versions ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
@@ -1075,10 +1050,10 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider delete_version_data
 	 */
 	public function test_delete_version( $start_versions, $indexable_slug, $version_number, $expected_versions ) {
-		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		$indexable = Indexables::factory()->get( $indexable_slug );
 
 		$indexable_mock = $this->getMockBuilder( get_class( $indexable ) )
-			->setMethods( [ 'delete_index' ] )
+			->onlyMethods( [ 'delete_index' ] )
 			->getMock();
 
 		$indexable_mock->expects( $this->once() )
@@ -1100,7 +1075,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_delete_version_invalid() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		$result = self::$version_instance->delete_version( $indexable, 99999 );
 
@@ -1109,7 +1084,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_delete_version_while_active() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		$active_version_number = self::$version_instance->get_active_version_number( $indexable );
 
@@ -1122,7 +1097,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	public function test_current_version_number_overrides() {
 		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		$this->setup_ok_es_requests();
 
@@ -1131,7 +1106,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->clean_up_ok_es_requests();
 
 		$this->assertNotFalse( $result, 'Failed to add new version of index' );
-		$this->assertNotInstanceOf( \WP_Error::class, $result, 'Got WP_Error when adding new index version' );
+		$this->assertNotInstanceOf( WP_Error::class, $result, 'Got WP_Error when adding new index version' );
 
 		// Defaults to active index (1 in our case)
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Default (non-overridden) version number is wrong' );
@@ -1188,8 +1163,8 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$search->queue->empty_queue();
 
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
 
 		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 1 );
 		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
@@ -1323,8 +1298,8 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$search->queue->empty_queue();
 
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
@@ -1351,10 +1326,10 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$search->queue->empty_queue();
 
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( \ElasticPress\Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( \ElasticPress\Indexables::factory()->get( 'post' ) );
+		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
+		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		$sync_manager = $indexable->sync_manager;
 
@@ -1407,7 +1382,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_replicate_deletes_to_other_index_versions() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
 		self::$version_instance->update_versions( $indexable, array() ); // Reset them
@@ -1479,7 +1454,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_version() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		$one = self::$version_instance->get_version( $indexable, 1 );
 
@@ -1552,7 +1527,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 */
 	public function test__get_versions_default( $versioning, $expected ) {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 
 		$result = self::$version_instance->get_versions( $indexable );
@@ -1607,7 +1582,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 */
 	public function test__get_versions( $versioning, $expected ) {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 
 		$result = self::$version_instance->get_versions( $indexable, false );
@@ -1673,7 +1648,8 @@ class Versioning_Test extends WP_UnitTestCase {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
 		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
 
-		$indexable_mock         = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		/** @var Indexable&MockObject */
+		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
 		$indexable_mock->slug   = $slug;
 		$indexable_mock->global = $global;
 
@@ -1720,19 +1696,19 @@ class Versioning_Test extends WP_UnitTestCase {
 	 */
 	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
 		$indexables_mocks = array_map( function ( $slug ) {
-			$indexable_mock       = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+			$indexable_mock       = $this->getMockBuilder( Indexable::class )->getMock();
 			$indexable_mock->slug = $slug;
 			return $indexable_mock;
 		}, $indexables);
 
-		$indexables_mock = $this->getMockBuilder( \ElasticPress\Indexables::class )
-			->setMethods( [ 'get_all' ] )
+		$indexables_mock = $this->getMockBuilder( Indexables::class )
+			->onlyMethods( [ 'get_all' ] )
 			->getMock();
 		$indexables_mock->method( 'get_all' )->willReturn( $indexables_mocks );
 
-		/** @var MockObject&\Automattic\VIP\Search\Versioning */
-		$partially_mocked_versioning = $this->getMockBuilder( \Automattic\VIP\Search\Versioning::class )
-			->setMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
+		/** @var MockObject&Versioning */
+		$partially_mocked_versioning = $this->getMockBuilder( Versioning::class )
+			->onlyMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
 			->getMock();
 
 		$partially_mocked_versioning
@@ -1745,7 +1721,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			->method( 'reconstruct_versions_for_indexable' );
 
 		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
-		$partially_mocked_versioning->alerts                    = $this->createMock( \Automattic\VIP\Utils\Alerts::class );
+		$partially_mocked_versioning->alerts                    = $this->createMock( Alerts::class );
 
 		$partially_mocked_versioning->maybe_self_heal();
 	}
@@ -1788,17 +1764,15 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider get_all_accesible_indicies_data
 	 */
 	public function test__get_all_accesible_indicies( $response, $expected ) {
-		$es_mock = $this->getMockBuilder( \ElasticPress\Elasticsearch::class )
-			->setMethods( [ 'remote_request' ] )
+		$es_mock = $this->getMockBuilder( Elasticsearch::class )
+			->onlyMethods( [ 'remote_request' ] )
 			->getMock();
 		$es_mock->expects( $this->once() )
 			->method( 'remote_request' )
 			->willReturn( $response );
 
-
 		$instance                          = new Versioning();
 		$instance->elastic_search_instance = $es_mock;
-
 
 		$result = $instance->get_all_accesible_indicies();
 
@@ -1926,7 +1900,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider reconstruct_versions_for_indexable_data
 	 */
 	public function test__reconstruct_versions_for_indexable( $indicies, $indexable_data, $expected ) {
-		$indexable_mock         = $this->getMockBuilder( \ElasticPress\Indexable::class )->getMock();
+		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
 		$indexable_mock->slug   = $indexable_data['slug'];
 		$indexable_mock->global = $indexable_data['global'];
 
@@ -1964,7 +1938,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			],
 			[
 				'vip-200',
-				new \WP_Error( 'index-name-not-valid', 'Index name "vip-200" is not valid' ),
+				new WP_Error( 'index-name-not-valid', 'Index name "vip-200" is not valid' ),
 			],
 
 		];
@@ -1980,7 +1954,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test__create_versioned_index_with_mapping__ok_mapping() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX, 5 );
 
@@ -1992,7 +1966,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function test__create_versioned_index_with_mapping__bad_mapping() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_bad' ], PHP_INT_MAX, 5 );
 
@@ -2063,16 +2037,16 @@ class Versioning_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', $app_id );
 
-		/** @var \ElasticPress\Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( \ElasticPress\Indexable::class )
-			->setMethods( self::$indexable_methods )
+		/** @var Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( Indexable::class )
+			->onlyMethods( self::$indexable_methods )
 			->getMock();
 		if ( 'post' === $indexable ) {
-			/** @var \ElasticPress\Indexable\Post&MockObject $mocked_indexable */
+			/** @var Indexable\Post&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'post';
 			$mocked_indexable->global = false;
 		} elseif ( 'user' === $indexable ) {
-			/** @var \ElasticPress\Indexable\User&MockObject $mocked_indexable */
+			/** @var Indexable\User&MockObject $mocked_indexable */
 			$mocked_indexable->slug   = 'user';
 			$mocked_indexable->global = true;
 		}
