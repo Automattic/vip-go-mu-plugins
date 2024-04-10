@@ -4,7 +4,7 @@ import cx from 'classnames';
 import { h } from 'preact';
 import { useState } from 'preact/hooks';
 
-import style from './style.scss';
+import * as style from './style.scss';
 
 /**
  * Collapsible list of values.

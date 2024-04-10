@@ -10,7 +10,7 @@ import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
 
-import style from './style.scss';
+import * as style from './style.scss';
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
