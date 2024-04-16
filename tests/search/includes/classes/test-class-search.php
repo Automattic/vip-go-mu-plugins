@@ -6,6 +6,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Utils\Alerts;
+use ElasticPress\Elasticsearch;
 use ElasticPress\Features;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
@@ -19,10 +20,6 @@ require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.ph
 require_once __DIR__ . '/../../../../search/elasticpress-next/elasticpress.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
 require_once __DIR__ . '/../../../../prometheus.php';
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Search_Test extends WP_UnitTestCase {
 	public static $mock_global_functions;
 	public $test_index_name = 'vip-1234-post-0-v3';
@@ -100,8 +97,14 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test `ep_index_name` filter for ElasticPress + VIP Search
 	 *
 	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
+	 *
+	 * @runInSeparateProcess -- necessary because the Elasticpress class should not be loaded
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_filter_ep_index_name__no_constant() {
+		self::assertFalse( defined( 'USE_VIP_ELASTICSEARCH' ) );
+		self::assertFalse( class_exists( Elasticsearch::class, false ) );
+
 		$mock_indexable = (object) [ 'slug' => 'slug' ];
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
@@ -269,9 +272,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * When current version is 1, the index name should not have a version applied to it
 	 *
 	 * @dataProvider vip_search_filter_ep_index_name_with_versions_data
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_filter_ep_index_name_with_versions( $current_version, $blog_id, $expected_index_name ) {
 		$this->init_es();
@@ -604,8 +604,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_setup_healthchecks_with_enabled() {
 		// Need to filter to enable the HealthJob
@@ -622,8 +620,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that instantiating the HealthJob does not happen when not in production
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__vip_search_setup_healthchecks_disabled_in_non_production_env() {
 		Constant_Mocker::define( 'VIP_GO_ENV', '999' );
@@ -962,23 +958,19 @@ class Search_Test extends WP_UnitTestCase {
 
 	/*
 	 * Ensure is_query_integration_enabled() option works properly with the vip_enable_vip_search_query_integration option
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__is_query_integration_enabled_via_option() {
 		update_option( 'vip_enable_vip_search_query_integration', true );
 
-		$this->assertTrue( Search::is_query_integration_enabled() );
+		self::assertFalse( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) );
+		self::assertFalse( defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) );
+		self::assertTrue( Search::is_query_integration_enabled() );
 
 		delete_option( 'vip_enable_vip_search_query_integration' );
 	}
 
 	/*
-	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION
 	 */
 	public function test__is_query_integration_enabled_via_legacy_constant() {
 		Constant_Mocker::define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', true );
@@ -988,9 +980,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/*
 	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__is_query_integration_enabled_via_constant() {
 		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
@@ -1000,35 +989,28 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * Ensure query integration is enabled when the 'es' query param is set
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__is_query_integration_enabled_via_query_param() {
 		// Set es query string to test override
 		$_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
 
-		$this->assertTrue( Search::is_query_integration_enabled() );
+		try {
+			$this->assertTrue( Search::is_query_integration_enabled() );
+		} finally {
+			unset( $_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] );
+		}
 	}
 
 	public function test_is_network_mode_default() {
 		$this->assertFalse( Search::is_network_mode() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_is_network_mode_with_constant() {
 		Constant_Mocker::define( 'EP_IS_NETWORK', true );
 
 		$this->assertTrue( Search::is_network_mode() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_is_network_mode_with_constant_false() {
 		Constant_Mocker::define( 'EP_IS_NETWORK', false );
 
@@ -1037,9 +1019,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/*
 	 * Ensure that filters disabling query integration are honored
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_query_integration_filter() {
 		// Set constants to enable query integration
@@ -1053,9 +1032,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/*
 	 * Ensure that EP query integration is disabled by default
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__ep_skip_query_integration_default() {
 		$this->assertTrue( Search::ep_skip_query_integration( false ) );
@@ -1135,9 +1111,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * Ensure we do load es-wp-query when query integration is enabled
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__should_load_es_wp_query_query_integration() {
 		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
@@ -1199,56 +1172,29 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_search_string, $wp_query_mock->get( 's' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__limit_field_limit_absolute_maximum_is_20000() {
 		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 
 		$this->assertEquals( 20000, $this->search_instance->limit_field_limit( 1000000 ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__limit_field_limit_should_respect_values_under_maximum() {
 		$this->assertEquals( 777, $this->search_instance->limit_field_limit( 777 ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__ep_total_field_limit_should_limit_total_fields() {
 		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
 
 		$this->init_es();
 
-		\add_filter(
-			'ep_total_field_limit',
-			function () {
-				return 1000000;
-			}
-		);
-
+		add_filter( 'ep_total_field_limit', fn() => 1000000 );
 		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__ep_total_field_limit_should_respect_values_under_the_limit() {
 		$this->init_es();
 
-		\add_filter(
-			'ep_total_field_limit',
-			function () {
-				return 787;
-			}
-		);
+		add_filter( 'ep_total_field_limit', fn() => 787 );
 
 		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
@@ -1295,12 +1241,8 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $input_taxonomy_names, $filtered_taxonomy_names );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_sync_taxonomies_added() {
-		$this->init_es();
+		$this->init_es( false );
 
 		$post = new stdClass();
 
@@ -1310,7 +1252,7 @@ class Search_Test extends WP_UnitTestCase {
 			),
 		);
 
-		\add_filter(
+		add_filter(
 			'vip_search_post_taxonomies_allow_list',
 			function ( $taxonomies ) {
 				$taxonomies[] = 'post_tag';
@@ -1334,10 +1276,6 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_sync_taxonomies_removed() {
 		$this->init_es();
 
@@ -1352,60 +1290,36 @@ class Search_Test extends WP_UnitTestCase {
 			),
 		);
 
-		\add_filter(
-			'vip_search_post_taxonomies_allow_list',
-			function () {
-				return array( 'post_tag' );
-			}
-		);
+		add_filter( 'vip_search_post_taxonomies_allow_list', fn() => [ 'post_tag' ] );
 
 		$filtered_taxonomies = apply_filters( 'ep_sync_taxonomies', $start_taxonomies, $post );
 
 		// Pull out just the names, for easier comparison
 		$filtered_taxonomy_names = wp_list_pluck( $filtered_taxonomies, 'name' );
-
-		$expected_taxonomy_names = array(
-			'post_tag',
-		);
+		$expected_taxonomy_names = [ 'post_tag' ];
 
 		// Should now not include the removed taxonomies
 		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_migration() {
 		Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
 
 		$this->assertTrue( $this->search_instance->is_jetpack_migration() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_migration__no_constant() {
 		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__is_jetpack_migration__different_value() {
 		Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'foo' );
 
 		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
-		\add_filter(
+		add_filter(
 			'vip_search_post_meta_allow_list',
 			function () {
 				return array(
@@ -1431,7 +1345,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post     = new WP_Post( new StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		$meta = $this->search_instance->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -1441,14 +1355,10 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $meta, $post_meta );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default_assoc() {
 		$es = new Search();
 
-		\add_filter(
+		add_filter(
 			'vip_search_post_meta_allow_list',
 			function () {
 				return array(
@@ -1486,7 +1396,7 @@ class Search_Test extends WP_UnitTestCase {
 
 		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
 
-		$post     = new WP_Post( new StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
@@ -1510,9 +1420,6 @@ class Search_Test extends WP_UnitTestCase {
 	/**
 	 * This tests the correct implementaton of the ep_$indexable_mapping filters, but note that these filters
 	 * operate on the mapping and settings together - EP doesn't yet distinguish between them
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__filter__ep_indexable_mapping() {
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
@@ -1536,10 +1443,6 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_indexable_mapping_invalid_datacenter() {
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'foo' );
 		$this->init_es();
@@ -1563,10 +1466,6 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__get_index_routing_allocation_include_dc_from_constant() {
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dca' );
 		$this->init_es();
@@ -1618,8 +1517,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_index_routing_allocation_include_dc_from_endpoints_data
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__get_index_routing_allocation_include_dc_from_endpoints( $endpoints, $expected ) {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
@@ -1698,8 +1595,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_post_meta_allow_list__combinations_for_jetpack_migration_data
 	 */
 	public function test__get_post_meta_allow_list__combinations_for_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
@@ -1709,17 +1604,17 @@ class Search_Test extends WP_UnitTestCase {
 		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
 		$this->init_es();
 
-		$post     = new WP_Post( new StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		if ( is_array( $vip_search_keys ) ) {
-			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+			add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
 				return array_merge( $post_meta, $vip_search_keys );
 			});
 		}
 
 		if ( is_array( $jetpack_added ) ) {
-			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+			add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
 				return array_merge( $post_meta, $jetpack_added );
 			});
 		}
@@ -1763,24 +1658,22 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_post_meta_allow_list__combinations_not_jetpack_migration_data
 	 */
 	public function test__get_post_meta_allow_list__combinations_not_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
 		$this->init_es();
 
-		$post     = new WP_Post( new StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		if ( is_array( $vip_search_keys ) ) {
-			\add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
+			add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
 				return array_merge( $post_meta, $vip_search_keys );
 			});
 		}
 
 		if ( is_array( $jetpack_added ) ) {
-			\add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
+			add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
 				return array_merge( $post_meta, $jetpack_added );
 			});
 		}
@@ -1814,20 +1707,18 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_post_meta_allow_list__processing_array_data
 	 */
 	public function test__get_post_meta_allow_list__processing_array( $returned_by_filter, $expected ) {
 		$this->init_es();
 
-		$post     = new WP_Post( new StdClass() );
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
+		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
-		\add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
+		add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
 			return $returned_by_filter;
 		}, 0);
 
@@ -1836,120 +1727,68 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
 		$this->init_es();
 
 		$this->assertTrue( $this->search_instance->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
-					'random_key',
-				);
-			}
-		);
+		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
 
 		$this->init_es();
 
 		$this->assertFalse( $this->search_instance->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
-					'random_key',
-				);
-			}
-		);
+		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
 
 		$this->init_es();
 
 		$this->assertTrue( $this->search_instance->filter__ep_skip_post_meta_sync( true, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_meta_not_in_allow_list() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
 		$this->init_es();
 
 		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
-					'random_key',
-				);
-			}
-		);
+		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
 
 		$this->init_es();
 
 		$this->assertFalse( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
 		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
 
-		$post = \get_post( $post_id );
+		$post = get_post( $post_id );
 
-		\add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
-					'random_key',
-				);
-			}
-		);
+		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
 
 		$this->init_es();
 
@@ -1981,22 +1820,22 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data
 	 */
 	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
-		$post     = new WP_Post( new StdClass() );
+		self::assertFalse( defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) );
+
+		$post     = new WP_Post( new stdClass() );
 		$post->ID = 0;
 
 		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		\add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
+		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
 
-		\add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
+		add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
 			return array_merge( $meta_keys, $added_keys );
 		}, 0);
 
-		Search::instance();
+		$this->init_es();
 
 		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
 
@@ -2091,8 +1930,6 @@ class Search_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
 		$expected_level = 2;
@@ -2392,7 +2229,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'testing', $this->search_instance->add_attachment_to_ep_indexable_post_types( 'testing' ) );
 		$this->assertEquals( 65, $this->search_instance->add_attachment_to_ep_indexable_post_types( 65 ) );
 		$this->assertEquals( null, $this->search_instance->add_attachment_to_ep_indexable_post_types( null ) );
-		$this->assertEquals( new StdClass(), $this->search_instance->add_attachment_to_ep_indexable_post_types( new StdClass() ) );
+		$this->assertEquals( new stdClass(), $this->search_instance->add_attachment_to_ep_indexable_post_types( new stdClass() ) );
 	}
 
 	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
@@ -2422,7 +2259,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
 		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
 		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
-		$this->assertEquals( new StdClass(), apply_filters( 'ep_indexable_post_types', new StdClass() ) );
+		$this->assertEquals( new stdClass(), apply_filters( 'ep_indexable_post_types', new stdClass() ) );
 	}
 
 	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
@@ -2477,40 +2314,24 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertSame( null, $this->search_instance->get_random_host( false ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_enable_ep_query_logging_no_cap() {
 		wp_set_current_user( 0 );
 
 		$this->init_es();
 
-		do_action( 'plugins_loaded' );
-
 		$this->assertFalse( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_enable_ep_query_logging_has_cap() {
 		$super_admin = $this->factory()->user->create_and_get( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $super_admin->ID );
 
 		$this->init_es();
 
-		do_action( 'plugins_loaded' );
-
 		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
 		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test__maybe_enable_ep_query_logging_filtered_cap() {
 		add_filter( 'vip_search_dev_tools_cap', function () {
 			return 'edit_posts';
@@ -2519,8 +2340,6 @@ class Search_Test extends WP_UnitTestCase {
 		wp_set_current_user( $editor->ID );
 
 		$this->init_es();
-
-		do_action( 'plugins_loaded' );
 
 		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
 		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
@@ -2712,11 +2531,21 @@ class Search_Test extends WP_UnitTestCase {
 	 *
 	 * @return void
 	 */
-	private function init_es() {
+	private function init_es( $run_init = true ) {
+		Constant_Mocker::undefine( 'EP_DASHBOARD_SYNC' );
 		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', false );
+
+		if ( $run_init ) {
+			remove_all_actions( 'init' );
+		}
+
 		$this->search_instance->init();
 
 		do_action( 'plugins_loaded' );
+
+		if ( $run_init ) {
+			do_action( 'init' );
+		}
 	}
 
 	/**

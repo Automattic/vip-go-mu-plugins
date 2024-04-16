@@ -21,19 +21,15 @@ class Cron_Test extends WP_UnitTestCase {
 	private $cron;
 
 	public function setUp(): void {
+		parent::setUp();
 		Constant_Mocker::clear();
 
-		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
-			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		}
-
-		if ( ! defined( 'VIP_GO_ENV' ) ) {
-			define( 'VIP_GO_ENV', 'production' );
-		}
+		define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
+		define( 'VIP_GO_ENV', 'production' );
 
 		require_once __DIR__ . '/../../../../../search/search.php';
 
-		$this->es = Search::instance();
+		$this->es = new Search();
 		$this->es->init();
 
 		$this->queue = $this->es->queue;
@@ -58,10 +54,6 @@ class Cron_Test extends WP_UnitTestCase {
 		self::assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_schedule_sweeper_job() {
 		// Make sure it's not already scheduled
 		$this->cron->disable_sweeper_job();
@@ -77,10 +69,6 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->assertTrue( (bool) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_disable_sweeper_job() {
 		// Make sure it already exists
 		$this->cron->schedule_sweeper_job();

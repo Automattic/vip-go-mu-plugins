@@ -15,10 +15,6 @@ require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
 require_once __DIR__ . '/../../../../search/elasticpress-next/includes/classes/Indexables.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
 require_once __DIR__ . '/../../../../search/elasticpress-next/includes/classes/Elasticsearch.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Health_Test extends WP_UnitTestCase {
 	/** @var array */
 	private static $indexable_methods = [
@@ -40,16 +36,19 @@ class Health_Test extends WP_UnitTestCase {
 	];
 
 	/** @var Search */
-	private static $search_instance;
+	private $search_instance;
+
+	public function setUp(): void {
+		parent::setUp();
+		Constant_Mocker::clear();
+
+		$this->search_instance = new Search();
+		$this->search_instance->init();
+	}
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
 		parent::tearDown();
-	}
-
-	public static function setUpBeforeClass(): void {
-		self::$search_instance = new \Automattic\VIP\Search\Search();
-		self::$search_instance->init();
 	}
 
 	public function test_get_missing_docs_or_posts_diff() {
@@ -471,7 +470,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__returns_result() {
-		$health         = new Health( self::$search_instance );
+		$health         = new Health( $this->search_instance );
 		$expected_count = 42;
 
 		/** @var Indexable&MockObject */
@@ -495,7 +494,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__exception() {
-		$health = new Health( self::$search_instance );
+		$health = new Health( $this->search_instance );
 
 		/** @var Indexable&MockObject */
 		$mocked_indexable = $this->getMockBuilder( Indexable::class )
@@ -514,7 +513,7 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_get_index_entity_count_from_elastic_search__failed_query() {
-		$health = new Health( self::$search_instance );
+		$health = new Health( $this->search_instance );
 
 		/** @var Indexable&MockObject */
 		$mocked_indexable = $this->getMockBuilder( Indexable::class )
@@ -545,7 +544,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		/** @var Health&MockObject */
 		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ self::$search_instance ] )
+			->setConstructorArgs( [ $this->search_instance ] )
 			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -582,7 +581,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		/** @var Health&MockObject */
 		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ self::$search_instance ] )
+			->setConstructorArgs( [ $this->search_instance ] )
 			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -614,7 +613,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		/** @var Health&MockObject */
 		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ self::$search_instance ] )
+			->setConstructorArgs( [ $this->search_instance ] )
 			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
 			->getMock();
 
@@ -644,7 +643,7 @@ class Health_Test extends WP_UnitTestCase {
 		$mocked_indexable->method( 'index_exists' )->willReturn( false );
 		$mocked_indexable->slug = $expected_result['entity'];
 
-		$health = new Health( self::$search_instance );
+		$health = new Health( $this->search_instance );
 		$result = $health->validate_index_entity_count( [], $mocked_indexable );
 
 		$this->assertEquals( $result, $expected_result );
@@ -1241,7 +1240,7 @@ class Health_Test extends WP_UnitTestCase {
 	 * @dataProvider limit_index_settings_to_keys_data
 	 */
 	public function test_limit_index_settings_to_keys( $input, $keys, $expected ) {
-		$health = new Health( self::$search_instance );
+		$health = new Health( $this->search_instance );
 
 		$limited_settings = $health->limit_index_settings_to_keys( $input, $keys );
 
@@ -1386,7 +1385,7 @@ class Health_Test extends WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_data
 	 */
 	public function test_get_index_settings_diff( $actual, $desired, $expected_diff ) {
-		$health = new Health( self::$search_instance );
+		$health = new Health( $this->search_instance );
 
 		$actual_diff = $health->get_index_settings_diff( $actual, $desired );
 

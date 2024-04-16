@@ -7,6 +7,11 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/class-testable-alerts.php';
 
 class Alerts_Test extends WP_UnitTestCase {
+	public static function tearDownAfterClass(): void {
+		Testable_Alerts::clear_instance();
+		parent::tearDownAfterClass();
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 

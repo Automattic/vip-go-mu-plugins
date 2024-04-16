@@ -11,32 +11,9 @@ use WP_Error;
 
 class SettingsHealthJob_Test extends WP_UnitTestCase {
 	/** @var Search */
-	public static $search;
+	public $search;
 	/** @var Versioning */
-	public static $version_instance;
-
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		require_once __DIR__ . '/../../../../search/search.php';
-		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
-		require_once __DIR__ . '/../../../../prometheus.php';
-
-		self::$search = Search::instance();
-		self::$search->init();
-
-		if ( ! Constant_Mocker::defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { // Need to define endpoints for versioning usage
-			Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-				'https://es-endpoint1',
-				'https://es-endpoint2',
-			) );
-		}
-
-		self::$version_instance = self::$search->versioning;
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
-	}
+	public $version_instance;
 
 	public static function tearDownAfterClass(): void {
 		Constant_Mocker::clear();
@@ -46,8 +23,27 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		require_once __DIR__ . '/../../../../search/search.php';
+		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
+		require_once __DIR__ . '/../../../../prometheus.php';
+
+		$this->search = new Search();
+		$this->search->init();
+
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		) );
+
+		$this->version_instance = $this->search->versioning;
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		do_action( 'init' );
+
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
-		self::$search->load_collector();
+		$this->search->load_collector();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 	}
 
@@ -173,7 +169,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
@@ -187,7 +183,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function test__maybe_process_build__two_version_existence() {
 		$indexable = Indexables::factory()->get( 'post' );
 
-		self::$version_instance->add_version( $indexable );
+		$this->version_instance->add_version( $indexable );
 
 		/** @var MockObject&SettingsHealthJob */
 		$stub = $this->getMockBuilder( SettingsHealthJob::class )
@@ -195,7 +191,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->once() )
 			->method( 'send_alert' );
@@ -217,7 +213,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
@@ -244,7 +240,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'check_process_build' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->once() )
 			->method( 'check_process_build' );
@@ -262,7 +258,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'in-progress' );
@@ -285,7 +281,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->disableOriginalConstructor()
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'resume' );
@@ -308,7 +304,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 		->willReturn( 'swap' );

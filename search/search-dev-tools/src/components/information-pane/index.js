@@ -6,7 +6,7 @@ import pluralize from 'pluralize';
 import { h } from 'preact';
 import { useContext, useState } from 'preact/hooks';
 
-import style from './style.scss';
+import * as style from './style.scss';
 import { SearchContext } from '../../context';
 
 // More than this number of elements in the list will be hidden in the collapsible.

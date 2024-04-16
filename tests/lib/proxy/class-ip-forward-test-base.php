@@ -11,6 +11,11 @@ use PHPUnit\Framework\TestCase;
 abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
 
+	/** @var string|null */
+	private $original_remote_addr;
+	/** @var string|null */
+	private $original_x_forwarded_for;
+
 	public function setUp(): void {
 		$this->original_remote_addr     = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : null;
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
