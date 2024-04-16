@@ -19,8 +19,6 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	 */
 
 	public function setUp(): void {
-		$this->search_instance = new \Automattic\VIP\Search\Search();
-
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';
 	}
 
