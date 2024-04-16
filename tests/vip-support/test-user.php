@@ -20,6 +20,13 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 			'user_login' => 'vip-support',
 			'user_pass'  => 'password',
 		) );
+
+		reset_phpmailer_instance();
+	}
+
+	public function tearDown(): void {
+		reset_phpmailer_instance();
+		parent::tearDown();
 	}
 
 	public function test_is_a8c_email(): void {

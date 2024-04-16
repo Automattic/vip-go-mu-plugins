@@ -8,15 +8,40 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 use Automattic\VIP\Integrations\IntegrationVipConfig;
 use Env_Integration_Status;
+use ErrorException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integration_Test extends WP_UnitTestCase {
+	private $original_error_reporting;
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->original_error_reporting = error_reporting();
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno ); // NOSONAR
+			}
+
+			return false;
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		parent::tearDown();
+	}
+
 	public function test__slug_is_setting_up_on_instantiation(): void {
 		$integration = new FakeIntegration( 'fake' );
 
@@ -46,14 +71,15 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__calling_activate_when_the_integration_is_already_loaded_does_not_activate_the_integration_again(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'Prevented activating of integration with slug "fake" because it is already loaded.' );
 		/**
 		 * Integration mock.
 		 *
 		 * @var MockObject|FakeIntegration
 		 */
-		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
 
 		$integration_mock->activate();
@@ -62,7 +88,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__calling_activate_twice_on_same_integration_does_not_activate_the_plugin_second_time(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'VIP Integration with slug "fake" is already activated.' );
 
 		$integration = new FakeIntegration( 'fake' );
@@ -86,7 +113,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var IntegrationVipConfig|MockObject
 		 */
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->setMethods( [ 'get_vip_config_from_file' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'get_vip_config_from_file' ] )->getMock();
 		$config_mock->method( 'get_vip_config_from_file' )->willReturn( [
 			'network_sites' => [
 				get_current_blog_id() => [
@@ -104,7 +131,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		// By default return config passed via activate().
 		$this->assertEquals( array( 'activate_config' ), $integration->get_config() );
-		
+
 		// If blog is switched then return config of current network site.
 		switch_to_blog( $blog_2_id );
 		$this->assertEquals( array( 'network_site_2_config' ), $integration->get_config() );
@@ -121,7 +148,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__set_vip_config_function_throws_error_if_integration_is_not_active(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'Configuration info can only assigned if integration is active.' );
 
 		$integration = new FakeIntegration( 'fake' );

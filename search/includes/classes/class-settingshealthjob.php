@@ -4,7 +4,8 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\Health;
 use Automattic\VIP\Utils\Alerts;
-use WP_CLI;
+use ElasticPress\Indexable;
+use WP_Error;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -209,10 +210,11 @@ class SettingsHealthJob {
 				continue;
 			}
 
+			/** @var Indexable|bool|WP_Error */
 			$indexable = $this->indexables->get( $indexable_slug );
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
-				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
+				$error_message = is_wp_error( $indexable ) ? /** @var WP_Error $indexable */ $indexable->get_error_message() : 'Indexable not found';
 				$message       = sprintf(
 					'Application %s: Failed to load indexable %s when healing index settings on %s: %s',
 					FILES_CLIENT_SITE_ID,
@@ -249,6 +251,7 @@ class SettingsHealthJob {
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
 				if ( is_wp_error( $result['result'] ) ) {
+					/** @var WP_Error $result */
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
 						FILES_CLIENT_SITE_ID,
@@ -360,8 +363,6 @@ class SettingsHealthJob {
 					home_url()
 				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-				return;
 			} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
 				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 			}
@@ -381,7 +382,7 @@ class SettingsHealthJob {
 
 		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
-			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
+			$indexable = new WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
 			$message = sprintf(
