@@ -25,6 +25,11 @@ function run_alloptions_safeguard() {
 		return;
 	}
 
+	// Prevent from running during unit tests.
+	if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+		return;
+	}
+
 	// Uncompressed size thresholds.
 	// Warn should *always* be =< die
 	$alloptions_size_warn = MB_IN_BYTES * 2.5;

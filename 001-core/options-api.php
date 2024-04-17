@@ -17,6 +17,11 @@ add_filter( 'pre_wp_load_alloptions', __NAMESPACE__ . '\pre_wp_load_alloptions_p
  * - 2) Kill the request if options cannot be retrieved from the database (or cache).
  */
 function pre_wp_load_alloptions_protections( $pre_loaded_alloptions, $force_cache ) {
+	// Prevent from running during unit tests.
+	if ( defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS ) {
+		return $pre_loaded_alloptions;
+	}
+
 	global $wpdb;
 	static $fallback_cache = [];
 
