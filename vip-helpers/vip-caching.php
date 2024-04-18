@@ -636,9 +636,17 @@ function vip_reset_local_object_cache() {
 		return;
 	}
 
-	$wp_object_cache->group_ops      = array();
-	$wp_object_cache->memcache_debug = array();
-	$wp_object_cache->cache          = array();
+	$properties = [
+		'group_ops',
+		'memcache_debug',
+		'cache',
+	];
+
+	foreach ( $properties as $property ) {
+		if ( property_exists( $wp_object_cache, $property ) ) {
+			$wp_object_cache->$property = [];
+		}
+	}
 
 	if ( method_exists( $wp_object_cache, '__remoteset' ) ) {
 		$wp_object_cache->__remoteset(); // important
