@@ -17,6 +17,13 @@
  */
 class VIP_Request_Block {
 	/**
+	 * Suppress logging of blocked requests to reduce log noise.
+	 *
+	 * @var bool
+	 */
+	public static $suppressLog = false;
+
+	/**
 	 * Block a specific IP based either on true-client-ip, falling back to x-forwarded-for
 	 *
 	 * 🛑 BE CAREFUL: blocking a reverse proxy IP instead of the client's IP will result in legitimate traffic being blocked!!!
@@ -137,8 +144,11 @@ class VIP_Request_Block {
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 			header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+			if ( ! self::$suppressLog ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+			}
+
 			exit;
 		}
 
