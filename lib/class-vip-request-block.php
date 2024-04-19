@@ -21,7 +21,7 @@ class VIP_Request_Block {
 	 *
 	 * @var bool
 	 */
-	public static $suppressLog = false;
+	public static $suppress_log = false;
 
 	/**
 	 * Block a specific IP based either on true-client-ip, falling back to x-forwarded-for
@@ -144,7 +144,7 @@ class VIP_Request_Block {
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 			header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
-			if ( ! self::$suppressLog ) {
+			if ( ! static::$suppress_log ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
 			}
