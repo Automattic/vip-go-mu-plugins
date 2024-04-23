@@ -1707,7 +1707,7 @@ class Search {
 	public function filter__ep_user_mapping( $mapping ) {
 		$users_count = count_users();
 
-		if ( isset( $users_count->total_users ) && ( $users_count->total_users > self::USER_SHARD_THRESHOLD ) ) {
+		if ( isset( $users_count['total_users'] ) && ( $users_count['total_users'] > self::USER_SHARD_THRESHOLD ) ) {
 			$mapping['settings']['index.number_of_shards'] = 4;
 		}
 
