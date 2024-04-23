@@ -414,16 +414,25 @@ class SettingsHealthJob {
 			}
 		}
 
-		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
-		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf(
-				'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url(),
-				$new_version->get_error_message()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		$current_versions = $this->search->versioning->get_versions( $indexable );
+		if ( count( $current_versions ) > 1 ) {
+			$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
+			if ( is_wp_error( $new_version ) ) {
+				$message = sprintf(
+					'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$new_version->get_error_message()
+				);
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
+		} else {
+			// If we're in a weird state where we have 1 version or less, we should not be attempting to build a new index.
+			// Instead, let's clean-up the locks and return. If we don't do this, we'll end up in a loop.
+			$this->clean_up();
 
 			return;
 		}
@@ -509,7 +518,15 @@ class SettingsHealthJob {
 		);
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
-		// Clean up
+		$this->clean_up();
+	}
+
+	/**
+	 * Clean-up after the build process is complete.
+	 * 
+	 * @return void
+	 */
+	public function clean_up() {
 		$this->delete_last_processed_id();
 		delete_option( self::BUILD_LOCK_NAME );
 	}

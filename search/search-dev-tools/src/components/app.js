@@ -9,7 +9,7 @@ import '../style/style.scss';
 import { GeneralInformation } from './information-pane';
 import Overlay from './overlay';
 import { Queries } from './query';
-import style from './style.scss';
+import * as style from './style.scss';
 import { SearchContext } from '../context';
 
 const AdminBarButton = props => {

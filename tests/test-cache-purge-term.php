@@ -8,6 +8,9 @@ use WPCOM_VIP_Cache_Manager;
 class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 	const TEST_TAXONOMY_SLUG = 'my-cool-taxonomy';
 
+	/** @var WPCOM_VIP_Cache_Manager */
+	private $cache_manager;
+
 	public function setUp(): void {
 		parent::setUp();
 
