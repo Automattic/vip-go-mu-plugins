@@ -387,13 +387,10 @@ class Search_Test extends WP_UnitTestCase {
 		Features::factory()->setup_features();
 
 		// Simulate a large site
-		$return_big_count = function () {
-			$counts              = new stdClass();
-			$counts->avail_roles = 100;
-			$counts->total_users = 3000000;
-
-			return $counts;
-		};
+		$return_big_count = fn () => [
+			'avail_roles' => 100,
+			'total_users' => 3000000,
+		];
 
 		add_filter( 'pre_count_users', $return_big_count );
 
@@ -405,8 +402,6 @@ class Search_Test extends WP_UnitTestCase {
 			$settings = $mapping['settings'];
 		}
 		$this->assertEquals( 4, $settings['index.number_of_shards'] );
-
-		remove_filter( 'pre_count_users', $return_big_count );
 	}
 
 	public function test__vip_search_filter_ep_default_index_number_of_replicas() {
