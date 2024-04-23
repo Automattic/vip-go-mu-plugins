@@ -9,7 +9,7 @@
  * License: GPL2+
  * Text Domain: jetpack
  * Requires at least: 5.7
- * Requires PHP: 5.6
+ * Requires PHP: 8.0
  *
  * @package automattic/jetpack
  */
@@ -528,11 +528,9 @@ function vip_jetpack_load() {
 		return;
 	}
 
-	$jetpack_to_test = array();
-
-	if ( defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ) {
-		$jetpack_to_test[] = 'local';
-	}
+	$jetpack_to_test = [
+		'local',
+	];
 
 	if ( defined( 'VIP_JETPACK_PINNED_VERSION' ) ) {
 		$jetpack_to_test[] = VIP_JETPACK_PINNED_VERSION;
