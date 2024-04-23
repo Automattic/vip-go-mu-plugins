@@ -9,8 +9,6 @@ namespace Automattic\VIP\Integrations;
 
 /**
  * Loads Enterprise Search VIP Integration.
- *
- * @private
  */
 class EnterpriseSearchIntegration extends Integration {
 	/**
@@ -23,8 +21,6 @@ class EnterpriseSearchIntegration extends Integration {
 
 	/**
 	 * Loads the plugin.
-	 *
-	 * @private
 	 */
 	public function load(): void {
 		// Return if the integration is already loaded.
