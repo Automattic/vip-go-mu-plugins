@@ -49,9 +49,11 @@ jobs:
 
       - name: Synchronize files
         run: |
-          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git.bak"
+          set -x
+          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/built-git-bak"
           rsync --delete --delete-excluded -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore" --exclude="/jetpack-*/"
-          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git.bak" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git"
+          ls -la "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/"
+          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/built-git-bak" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git"
       - name: Clean up
         run: |
           TARGET="${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}"
