@@ -49,7 +49,7 @@ jobs:
 
       - name: Synchronize files
         run: |
-          rsync --delete -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore" --exclude="jetpack-*/"
+          rsync --delete --delete-excluded -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore" --exclude="/jetpack-*/"
 
       - name: Clean up
         run: |
