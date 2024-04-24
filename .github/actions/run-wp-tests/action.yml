@@ -89,7 +89,7 @@ runs:
       run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
       if: inputs.multisite == 'yes'
 
-    - name: Disable JetPack
+    - name: Disable Jetpack
       shell: bash
       run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV
       if: inputs.jetpack == 'no'
