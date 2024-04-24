@@ -1129,7 +1129,7 @@ class Health {
 		// Limit to only the settings that we auto-heal
 		$desired_settings_to_heal = self::limit_index_settings_to_keys( $desired_settings, self::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
 		$index_name               = $indexable->get_index_name();
-		$result = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, true );
+		$result                   = $this->elasticsearch->update_index_settings( $index_name, $desired_settings_to_heal, false );
 
 		$index_version = $this->search->versioning->get_current_version_number( $indexable );
 
