@@ -16,7 +16,7 @@ class EnterpriseSearchIntegration extends Integration {
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_loaded(): bool {
-		return class_exists( '\Automattic\VIP\Search\Search' );
+		return class_exists( \Automattic\VIP\Search\Search::class );
 	}
 
 	/**
