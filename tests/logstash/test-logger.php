@@ -188,7 +188,6 @@ class Logger_Test extends WP_UnitTestCase {
 
 		$entries = [
 			[
-				'feature'   => 'a8c_vip_test',
 				'site_id'   => 1,
 				'blog_id'   => 1,
 				'http_host' => 'example.org',

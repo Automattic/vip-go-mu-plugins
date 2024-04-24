@@ -25,10 +25,10 @@ function register_qm_db_connections() {
 	}
 
 	QM_Collectors::add( new QM_Collector_DB_Connections() );
-	add_filter( 'qm/outputter/html', 'register_qm_db_connections_output', 120, 2 );
+	add_filter( 'qm/outputter/html', 'register_qm_db_connections_output', 120 );
 }
 
-function register_qm_db_connections_output( array $output, \QM_Collectors $collectors ) {
+function register_qm_db_connections_output( array $output ) {
 	$collector = \QM_Collectors::get( 'db-connections' );
 	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-db-connections.php' ) ) {
 		require_once __DIR__ . '/class-qm-output-html-db-connections.php';

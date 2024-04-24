@@ -60,20 +60,18 @@ class Cache {
 			remove_filter( 'found_posts', array( $advanced_post_cache_object, 'found_posts' ) );
 
 			$disabled_apc = true;
-		} else {
+		} elseif ( true === $disabled_apc ) {
 			// A non-ES query.
-			if ( true === $disabled_apc ) {
-				/*
-				* Earlier, we disabled Advanced Post Cache
-				* entirely, but now a non-ElasticPress query is
-				* being run, and in such cases it might be useful
-				* to have the Cache enabled. Here we enable
-				* it again.
-				*/
-				$advanced_post_cache_object->__construct();
+			/*
+			* Earlier, we disabled Advanced Post Cache
+			* entirely, but now a non-ElasticPress query is
+			* being run, and in such cases it might be useful
+			* to have the Cache enabled. Here we enable
+			* it again.
+			*/
+			$advanced_post_cache_object->__construct();
 
-				$disabled_apc = false;
-			}
+			$disabled_apc = false;
 		}
 	}
 }

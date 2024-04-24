@@ -8,20 +8,10 @@ require_once __DIR__ . '/../../search/search.php';
 require_once __DIR__ . '/../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Search_Dev_Tools_Test extends WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-
 	public function setUp(): void {
-		$this->search_instance = new \Automattic\VIP\Search\Search();
-
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';
+		do_action( 'rest_api_init' );
 	}
 
 	public function data_provider_endpoint_urls() {
@@ -57,7 +47,7 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	 * @dataProvider data_provider_endpoint_urls
 	 */
 	public function test__url_validation( $input, $expected ) {
-		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_url_validate_callback( $input, new \WP_Rest_Request( 'POST' ), 'url' );
+		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_url_validate_callback( $input, new \WP_REST_Request( 'POST' ), 'url' );
 		$this->assertEquals( $val, $expected, 'URL validation failed' );
 	}
 }

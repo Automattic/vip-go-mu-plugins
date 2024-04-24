@@ -77,7 +77,6 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 			'Autoload changed. %s',
 			WP_CLI::colorize( $cache_success ? 'Cache flushed.' : '%rCache flush failed.%n' )
 		) );
-
 	}
 
 	/**
@@ -124,7 +123,6 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 		}
 
 		WP_CLI::print_value( $option_autoload, $assoc_args );
-
 	}
 
 	/**
@@ -207,7 +205,6 @@ class Option_Autoload extends WPCOM_VIP_CLI_Command {
 	public function refresh( $args, $assoc_args ) {
 
 		WP_CLI::run_command( [ 'cache', 'delete', 'alloptions', 'options' ] );
-
 	}
 
 	/**

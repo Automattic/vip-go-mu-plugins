@@ -10,6 +10,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
 // phpcs:disable WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- PHPMailer does not follow the conventions
+namespace Automattic\VIP\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 
@@ -45,6 +46,17 @@ if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) 
 }
 
 class VIP_Noop_Mailer {
+
+	/**
+	 * @var string
+	 */
+	public $subject;
+
+	/**
+	 * @var string
+	 */
+	public $recipients;
+
 	public function __construct( $phpmailer ) {
 		$this->subject    = $phpmailer->Subject ?? '[No Subject]';
 		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
@@ -77,10 +89,15 @@ final class VIP_SMTP {
 	}
 
 	/**
-	 * @param PHPMailer $phpmailer 
+	 * @param PHPMailer $phpmailer
 	 */
 	public function phpmailer_init( &$phpmailer ): void {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
+			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+			return;
+		}
+
+		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
@@ -103,6 +120,14 @@ final class VIP_SMTP {
 
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
+
+		if ( defined( 'VIP_SMTP_ENABLED' ) && true === constant( 'VIP_SMTP_ENABLED' ) && defined( 'VIP_SMTP_USERNAME' ) && defined( 'VIP_SMTP_PASSWORD' ) ) {
+			$phpmailer->Port       = constant( 'VIP_SMTP_PORT' );
+			$phpmailer->SMTPAuth   = true;
+			$phpmailer->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+			$phpmailer->Username   = constant( 'VIP_SMTP_USERNAME' );
+			$phpmailer->Password   = constant( 'VIP_SMTP_PASSWORD' );
+		}
 
 		$tracking_header = $this->get_tracking_header( WPCOM_VIP_MAIL_TRACKING_KEY );
 		if ( false !== $tracking_header ) {

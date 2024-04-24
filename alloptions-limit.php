@@ -174,5 +174,4 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 		'alloptions-size-alert',
 		'10'
 	);
-
 }

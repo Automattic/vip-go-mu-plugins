@@ -102,7 +102,7 @@ class User {
 	/**
 	 * The Gravatar URL for `VIP_SUPPORT_EMAIL_ADDRESS`.
 	 */
-	const VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR = 'https://secure.gravatar.com/avatar/c83fd21f1122c4d1d8677d6a7a1291d3';
+	const VIP_SUPPORT_EMAIL_ADDRESS_GRAVATAR = 'https://secure.gravatar.com/avatar/c84e75679a6342a8a28793784098c0ee57669854bc0d006b6a7a49a275177696';
 
 	/**
 	 * A flag to indicate reversion and then to prevent recursion.
@@ -143,7 +143,6 @@ class User {
 		}
 
 		return $instance;
-
 	}
 
 	/**
@@ -393,7 +392,6 @@ class User {
 			}
 			$this->reverting_role = false;
 		}
-
 	}
 
 	/**
@@ -520,10 +518,8 @@ class User {
 			// @TODO Abstract this into an UNVERIFY method
 			$this->mark_user_email_unverified( $user_id );
 			$this->send_verification_email( $user_id );
-		} else {
-			if ( self::MSG_BLOCK_UPGRADE_NON_A11N == $this->message_replace ) {
+		} elseif ( self::MSG_BLOCK_UPGRADE_NON_A11N == $this->message_replace ) {
 				$this->message_replace = self::MSG_BLOCK_NEW_NON_VIP_USER;
-			}
 		}
 	}
 
@@ -786,13 +782,15 @@ class User {
 			return true;
 		}
 
+		$allowed_emails = constant( 'VIP_SUPPORT_USER_ALLOWED_EMAILS' );
+
 		// Incorrectly formatted constant, fail fast + closed
-		if ( ! is_array( VIP_SUPPORT_USER_ALLOWED_EMAILS ) ) {
+		if ( ! is_array( $allowed_emails ) ) {
 			return false;
 		}
 
 		// If the override _is_ present, then the user is only allowed if their email is in the array
-		return in_array( $email, VIP_SUPPORT_USER_ALLOWED_EMAILS, true );
+		return in_array( $email, $allowed_emails, true );
 	}
 
 	/**
@@ -1059,7 +1057,7 @@ class User {
 		// Never remove the machine user.
 		if (
 			( defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_login ) ||
-			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_email )
+			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_EMAIL === $user->user_email )
 		) {
 			return new WP_Error( 'not-removing-machine-user', 'WPCOM VIP machine user cannot be removed!' );
 		}

@@ -17,8 +17,8 @@ class Controls {
 	 * @return mixed bool|WP_Error True if JP is properly connected, WP_Error otherwise.
 	 */
 	public static function jetpack_is_connected() {
-		if ( ! self::validate_constants() ) {
-			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some required constants are missing.' );
+		if ( ! self::validate_environment() ) {
+			return new WP_Error( 'jp-cxn-pilot-invalid-environment', 'This is not a valid VIP Go environment.' );
 		}
 
 		if ( ( new \Automattic\Jetpack\Status() )->is_offline_mode() ) {
@@ -36,18 +36,16 @@ class Controls {
 			if ( ! \Jetpack::connection()->has_connected_owner() ) {
 				return new WP_Error( 'jp-cxn-pilot-not-connected-owner', 'Jetpack does not have a connected owner.' );
 			}
-		} else {
+		} elseif ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
 			// The Jetpack::is_active() method just checks if there are user/blog tokens in the database.
-			if ( ! \Jetpack::is_active() || ! \Jetpack_Options::get_option( 'id' ) ) {
-				return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
-			}
+			return new WP_Error( 'jp-cxn-pilot-not-active', 'Jetpack is not currently active.' );
 		}
 
-		$vip_machine_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
-		if ( ! $vip_machine_user->exists() ) {
-			return new WP_Error( 'jp-cxn-pilot-vip-user-missing', sprintf( 'The "%s" VIP user is missing.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
-		} elseif ( ! user_can( $vip_machine_user, 'manage_options' ) ) {
-			return new WP_Error( 'jp-cxn-pilot-vip-user-caps', sprintf( 'The "%s" VIP user does not have admin capabilities.', WPCOM_VIP_MACHINE_USER_LOGIN ) );
+		$jp_primary_user = new \WP_User( \Jetpack_Options::get_option( 'master_user' ) );
+		if ( ! $jp_primary_user->exists() ) {
+			return new WP_Error( 'jp-cxn-pilot-primary-user-missing', sprintf( 'Jetpack does not have a valid primary user.' ) );
+		} elseif ( ! user_can( $jp_primary_user, 'manage_options' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-primary-user-caps', sprintf( 'The Jetpack primary user does not have admin capabilities.' ) );
 		}
 
 		$is_connected = self::test_jetpack_connection();
@@ -55,12 +53,12 @@ class Controls {
 			return $is_connected;
 		}
 
-		$connection_owner  = \Jetpack::connection()->get_connection_owner();
-		$is_vip_connection = $connection_owner && WPCOM_VIP_MACHINE_USER_LOGIN === $connection_owner->user_login;
-		if ( ! $is_vip_connection ) {
-			$connection_owner_login = $connection_owner ? $connection_owner->user_login : 'unknown';
-
-			return new WP_Error( 'jp-cxn-pilot-not-vip-owned', sprintf( 'The connection is not owned by "%s". Current connection owner is: "%s"', WPCOM_VIP_MACHINE_USER_LOGIN, $connection_owner_login ) );
+		$attendant = Attendant::instance();
+		switch ( $attendant->check_connection_owner_validity() ) {
+			case 'is_legacy_vip':
+				return new WP_Error( 'jp-cxn-pilot-has-legacy-vip-owner', 'The connection is owned by the legacy VIP user.' );
+			case 'not_vip':
+				return new WP_Error( 'jp-cxn-pilot-not-vip-owned', 'The connection is not owned by VIP.' );
 		}
 
 		$is_owner_connected = self::test_jetpack_owner_connection();
@@ -86,6 +84,10 @@ class Controls {
 		);
 
 		if ( is_wp_error( $response ) ) {
+			if ( 'http_request_failed' === $response->get_error_code() && str_contains( $response->get_error_message(), 'Operation timed out' ) ) {
+				return new WP_Error( 'jp-cxn-pilot-test-timeout', sprintf( 'Failed to test connection (#%s: %s)', $response->get_error_code(), $response->get_error_message() ) );
+			}
+
 			return new WP_Error( 'jp-cxn-pilot-test-fail', sprintf( 'Failed to test connection (#%s: %s)', $response->get_error_code(), $response->get_error_message() ) );
 		}
 
@@ -123,8 +125,8 @@ class Controls {
 	 * @return mixed bool|WP_Error True if JP was (re)connected, WP_Error otherwise.
 	 */
 	public static function connect_site( bool $skip_connection_tests = false, bool $disconnect = false ) {
-		if ( ! self::validate_constants() ) {
-			return new WP_Error( 'jp-cxn-pilot-missing-constants', 'This is not a valid VIP Go environment or some constants are missing.' );
+		if ( ! self::validate_environment() ) {
+			return new WP_Error( 'jp-cxn-pilot-invalid-environment', 'This is not a valid WPVIP environment.' );
 		}
 
 		if ( ! $skip_connection_tests && ! $disconnect ) {
@@ -140,7 +142,9 @@ class Controls {
 			\Jetpack::disconnect();
 		}
 
-		$user = self::maybe_create_user();
+
+		$attendant = Attendant::instance();
+		$user      = $attendant->ensure_user_exists();
 		if ( is_wp_error( $user ) ) {
 			return $user;
 		}
@@ -168,31 +172,32 @@ class Controls {
 	 * Uses Akismet's function to connect Akismet using the Jetpack. An active Jetpack connection on the site
 	 * and the Akismet plugin are required.
 	 *
-	 * @return bool True if connection worked, false otherwise
+	 * @return mixed bool|WP_Error True if Akisment had a connection or was (re)connected, WP_Error otherwise.
 	 */
-	public static function connect_akismet(): bool {
-		if ( class_exists( 'Akismet_Admin' ) && method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) ) {
+	public static function connect_akismet() {
+		if ( ! class_exists( 'Akismet_Admin' ) || ! method_exists( 'Akismet_Admin', 'connect_jetpack_user' ) || ! function_exists( 'is_akismet_key_invalid' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-akismet-dependencies-missing', 'Akismet is missing required functions/methods to perform the connection.' );
+		}
 
-			if ( is_akismet_key_invalid() ) {
-				$original_user = wp_get_current_user();
-				// Getting wpcomvip user, since it's the owner of the Jetpack connection
-				$vip_user = get_user_by( 'login', 'wpcomvip' );
-				if ( ! $original_user || ! $vip_user ) {
-					return false;
-				}
-
-				wp_set_current_user( $vip_user );
-
-				$result = \Akismet_Admin::connect_jetpack_user();
-				wp_set_current_user( $original_user );
-
-				return $result;
-			}
-
+		if ( ! is_akismet_key_invalid() ) {
 			return true;
 		}
 
-		return false;
+		$attendant = Attendant::instance();
+		$user      = $attendant->ensure_user_exists();
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
+
+		// Put the machine user in charge of things.
+		wp_set_current_user( $user->ID );
+
+		$result = \Akismet_Admin::connect_jetpack_user();
+		if ( ! $result ) {
+			return new WP_Error( 'jp-cxn-pilot-akismet-connection-failed', 'Akismet could not be connected.' );
+		}
+
+		return true;
 	}
 
 	/**
@@ -203,12 +208,27 @@ class Controls {
 	 * @return bool|WP_Error True if site is connected, error otherwise.
 	 */
 	public static function connect_vaultpress() {
-		$vaultpress = \VaultPress::init();
-		if ( ! $vaultpress->is_registered() || ! isset( $vaultpress->options['connection'] ) || 'ok' !== $vaultpress->options['connection'] ) {
-			// Remove the VaultPress option from the db to prevent site registration from failing
-			delete_option( 'vaultpress' );
+		if ( ! class_exists( 'VaultPress' ) || ! method_exists( 'VaultPress', 'init' ) ) {
+			return new WP_Error( 'jp-cxn-pilot-vaultpress-dependencies-missing', 'VaultPress is missing required functions/methods to perform the connection.' );
+		}
 
-			return $vaultpress->register_via_jetpack( true );
+		$vaultpress = \VaultPress::init();
+		if ( $vaultpress->is_registered() && isset( $vaultpress->options['connection'] ) && 'ok' === $vaultpress->options['connection'] ) {
+			return true;
+		}
+
+		// Remove the VaultPress option from the db to prevent site registration from failing.
+		delete_option( 'vaultpress' );
+
+		$result = $vaultpress->register_via_jetpack( true );
+
+		if ( true !== $result ) {
+			$error_message = 'VaultPress could not be connected.';
+			if ( is_wp_error( $result ) ) {
+				$error_message .= sprintf( ' Error: [%s] %s', $result->get_error_code(), $result->get_error_message() );
+			}
+
+			return new WP_Error( 'jp-cxn-pilot-vaultpress-connection-failed', $error_message );
 		}
 
 		return true;
@@ -229,65 +249,13 @@ class Controls {
 	}
 
 	/**
-	 * Maybe add our machine user to the site. Also sanity checks the user's permissions.
-	 *
-	 * @return object \WP_User if successful, WP_Error otherwise.
-	 */
-	private static function maybe_create_user() {
-		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
-
-		if ( ! $user ) {
-			$user_id = wp_insert_user( array(
-				'user_login'   => WPCOM_VIP_MACHINE_USER_LOGIN,
-				'user_email'   => WPCOM_VIP_MACHINE_USER_EMAIL,
-				'display_name' => WPCOM_VIP_MACHINE_USER_NAME,
-				'role'         => WPCOM_VIP_MACHINE_USER_ROLE,
-				'user_pass'    => wp_generate_password( 36 ), // This account can't be logged into, but just in case.
-			) );
-
-			$user = get_userdata( $user_id );
-			if ( is_wp_error( $user_id ) || ! $user ) {
-				return new WP_Error( 'jp-cxn-pilot-user-create-failed', 'Failed to create new user.' );
-			}
-		}
-
-		$user_id = $user->ID;
-
-		// Add user to blog if needed, and ensure they are a super admin.
-		if ( is_multisite() ) {
-			$blog_id = get_current_blog_id();
-
-			if ( ! is_user_member_of_blog( $user_id, $blog_id ) ) {
-				$added_to_blog = add_user_to_blog( $blog_id, $user_id, WPCOM_VIP_MACHINE_USER_ROLE );
-
-				if ( is_wp_error( $added_to_blog ) ) {
-					return new WP_Error( 'jp-cxn-pilot-user-ms-create-failed', 'Failed to add user to blog.' );
-				}
-			}
-
-			if ( ! is_super_admin( $user_id ) ) {
-				// Will also return false if user already is SA.
-				grant_super_admin( $user_id );
-			}
-
-			return $user;
-		}
-
-		// Ensure the correct role is applied.
-		$user_roles = (array) $user->roles;
-		if ( ! in_array( WPCOM_VIP_MACHINE_USER_ROLE, $user_roles, true ) ) {
-			$user->set_role( WPCOM_VIP_MACHINE_USER_ROLE );
-		}
-
-		return $user;
-	}
-
-	/**
 	 * Refresh the options cache.
 	 *
 	 * This helps prevent cache issues for times where the database was directly updated.
 	 */
 	private static function refresh_options_cache() {
+		wp_cache_flush_runtime();
+
 		$options_to_refresh = array(
 			'jetpack_options',
 			'jetpack_private_options',
@@ -301,19 +269,11 @@ class Controls {
 	}
 
 	/**
-	 * Ensures we have all the needed constants available.
+	 * Ensure we are in the right environment.
 	 *
-	 * @return bool True if we have all the needed constants.
+	 * @return bool
 	 */
-	private static function validate_constants() {
-		$required_constants = [
-			defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ),
-			defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ),
-			defined( 'WPCOM_VIP_MACHINE_USER_NAME' ),
-			defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ),
-			defined( 'VIP_GO_APP_ID' ),
-		];
-
-		return ! in_array( false, $required_constants, true );
+	private static function validate_environment() {
+		return defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' );
 	}
 }

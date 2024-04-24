@@ -113,10 +113,6 @@ wpcom-helper.php
 /jetpack*/vendor/automattic/jetpack-password-checker/vendor/symfony/polyfill-php73/Resources/stubs/JsonException.php
 /jetpack*/vendor/automattic/jetpack-password-checker/vendor/sebastian/resource-operations/build/generate.php
 
-# Files in VIP-Block-Data-API that are giving linting errors due to incompatible PHP versions
-**/vip-block-data-api*/vendor/symfony/polyfill-ctype/bootstrap80.php
-**/vip-block-data-api*/vendor/symfony/polyfill-mbstring/bootstrap80.php
-
 # Search Dev Tools
 /search/search-dev-tools/src/
 /search/search-dev-tools/*.config.js
@@ -142,4 +138,3 @@ wpcom-helper.php
 # Cron Control
 /cron-control/runner/
 /cron/cron-control/runner/
-/cron/cron-control-legacy/runner/

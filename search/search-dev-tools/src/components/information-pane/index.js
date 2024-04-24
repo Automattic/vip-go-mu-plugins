@@ -1,13 +1,13 @@
 /* eslint-disable jsx-a11y/no-noninteractive-element-interactions */
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
+import cx from 'classnames';
+import pluralize from 'pluralize';
 import { h } from 'preact';
 import { useContext, useState } from 'preact/hooks';
-import pluralize from 'pluralize';
-import cx from 'classnames';
 
+import * as style from './style.scss';
 import { SearchContext } from '../../context';
-import style from './style.scss';
 
 // More than this number of elements in the list will be hidden in the collapsible.
 const EXPAND_THRESHOLD = 2;

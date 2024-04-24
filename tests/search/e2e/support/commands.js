@@ -28,16 +28,14 @@ import 'cypress-file-upload';
 import './commands/block-editor';
 
 Cypress.Commands.add('login', (username = 'test@test.com', password = 'password') => {
-	cy.session([username,password], () => {
-		cy.visit(`/wp-admin`);
-		cy.get('body').then(($body) => {
-			if ($body.find('#wpwrap').length === 0) {
-				cy.get('input#user_login').clear();
-				cy.get('input#user_login').click().type(username);
-				cy.get('input#user_pass').type(`${password}{enter}`);
-			}
-		});
-	})
+	cy.visit(`/wp-admin`);
+	cy.get('body').then(($body) => {
+		if ($body.find('#wpwrap').length === 0) {
+			cy.get('input#user_login').clear();
+			cy.get('input#user_login').click().type(username);
+			cy.get('input#user_pass').type(`${password}{enter}`);
+		}
+	});
 });
 
 Cypress.Commands.add('visitAdminPage', (page = 'index.php') => {
@@ -461,11 +459,12 @@ Cypress.Commands.add('createUser', (userData) => {
 });
 
 // VIP: Check that Search Dev Tools returns a 200 status and a certain text in the response body
-Cypress.Commands.add('searchDevToolsResponseOK', (bodyText) => {
+// If there's more than one ES query, use the index to select the correct one
+Cypress.Commands.add('searchDevToolsResponseOK', (bodyText, index = 0) => {
 	cy.get('#vip-search-dev-tools-mount').click();
-	cy.get('h3.vip-h3').first().should('contain.text','(200)');
+	cy.get('h3.vip-h3').eq( index ).should('contain.text','(200)');
 	if ( bodyText ) {
-		cy.get('.line-numbers').first().should('contain.text', bodyText);
+		cy.get('.line-numbers').eq( index ).should('contain.text', bodyText);
 	}
 	cy.get('#vip-search-dev-tools-mount').click();
 });

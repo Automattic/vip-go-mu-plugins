@@ -2,20 +2,24 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables;
-use \WP_Error;
+use ElasticPress\Indexables;
+use WP_Error;
 
 class Queue {
 	const CACHE_GROUP                     = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
-	const MAX_BATCH_SIZE = 1000;
+	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
 	/** @var Queue\Schema */
 	public $schema;
+	/** @var Indexables */
 	public $indexables;
+	/** @var \Automattic\VIP\Logstash\Logger */
 	public $logger;
+	/** @var Queue\Cron */
+	public $cron;
 
 	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
@@ -414,7 +418,7 @@ class Queue {
 
 		if ( is_int( $last_index_time ) && $last_index_time ) {
 			// Next index time is last index time + interval
-			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $indexable_slug, $options );
+			$next_index_time = $last_index_time + $this->get_index_interval_time();
 		}
 
 		return $next_index_time;
@@ -472,12 +476,9 @@ class Queue {
 	/**
 	 * Get the interval between successive index operations on a given object
 	 *
-	 * @param int $object_id The id of the object
-	 * @param string $indexable_slug The Indexable slug
-	 * @param array $options (optional) Array of options
 	 * @return int Minimum number of seconds between re-indexes
 	 */
-	public function get_index_interval_time( $object_id, $indexable_slug, $options = array() ) {
+	public function get_index_interval_time() {
 		// Room for future improvement - on non-active index versions, increase the time between re-indexing a given object
 
 		return 60;
@@ -929,6 +930,7 @@ class Queue {
 						'extra'    => [
 							'homeurl'    => home_url(),
 							'index_name' => $indexable->get_index_name(),
+							'count'      => count( $ids ),
 						],
 					]
 				);

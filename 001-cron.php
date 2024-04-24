@@ -123,5 +123,5 @@ if ( ! wpcom_vip_use_core_cron() && is_blog_installed() ) {
 	add_action( 'a8c_cron_control_event_threw_catchable_error', 'wpcom_vip_log_cron_control_event_for_caught_error', 10, 2 );
 	add_action( 'a8c_cron_control_freeing_event_locks_after_uncaught_error', 'wpcom_vip_log_cron_control_event_object' );
 
-	require_once __DIR__ . '/cron-control/cron-control.php';
+	require_once __DIR__ . '/cron/cron-control/cron-control.php';
 }

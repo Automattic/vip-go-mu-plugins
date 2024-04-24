@@ -9,6 +9,10 @@
 
 require_once __DIR__ . '/001-core/privacy.php';
 
+if ( file_exists( __DIR__ . '/001-core/options-api.php' ) ) {
+	require_once __DIR__ . '/001-core/options-api.php';
+}
+
 /**
  * Disable current theme validation
  *
@@ -26,11 +30,23 @@ if ( false !== WPCOM_IS_VIP_ENV ) {
 function wpcom_vip_init_core_restrictions() {
 	add_action( 'admin_init', 'wpcom_vip_disable_core_update_nag' );
 	add_filter( 'map_meta_cap', 'wpcom_vip_disable_core_update_cap', 100, 2 );
+
+	wpcom_vip_disable_temp_backups_cleanup();
 }
 
 function wpcom_vip_disable_core_update_nag() {
 	remove_action( 'admin_notices', 'update_nag', 3 );
 	remove_action( 'network_admin_notices', 'update_nag', 3 );
+}
+
+/**
+ * Disables action introduced in WordPress 6.3 which, when triggered, will lead
+ * to another action being set up which will attempt to clean up a temporary
+ * backup directory used during plugin/theme updates. The clean up logic will
+ * fail on the WordPress VIP platform and is not necessary.
+ */
+function wpcom_vip_disable_temp_backups_cleanup() {
+	remove_action( 'wp_delete_temp_updater_backups', 'wp_delete_all_temp_backups' );
 }
 
 function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
@@ -49,9 +65,15 @@ function wpcom_vip_disable_core_update_cap( $caps, $cap ) {
 function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// Disable "Background Updates" test.
 	// WordPress updates are managed by the VIP team.
-	if ( isset( $tests['async'] ) && isset( $tests['async']['background_updates'] ) ) {
-		unset( $tests['async']['background_updates'] );
-	}
+	unset( $tests['async']['background_updates'] );
+
+	// Disable "WP-Content Writable" test.
+	// Code updates are managed in GitHub.
+	unset( $tests['direct']['update_temp_backup_writable'] );
+
+	// Disable "Available disk space" test.
+	// We manage the disk space, test gives bogus results.
+	unset( $tests['direct']['available_updates_disk_space'] );
 
 	return $tests;
 }
@@ -104,7 +126,7 @@ add_filter( 'site_status_test_php_modules', 'vip_filter_unnecessary_php_modules_
 
 add_filter(
 	'use_block_editor_for_post',
-	function( $can_edit, $post ) {
+	function ( $can_edit, $post ) {
 		if ( ! isset( $post->post_type ) ) {
 			return $can_edit;
 		}

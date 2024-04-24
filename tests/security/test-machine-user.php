@@ -3,10 +3,13 @@
 namespace Automattic\VIP\Security;
 
 use WP_UnitTestCase;
+use WP_User;
 
 require_once __DIR__ . '/../../security/machine-user.php';
 
 class Machine_User_Test extends WP_UnitTestCase {
+	/** @var WP_User */
+	private $machine_user;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -16,7 +19,6 @@ class Machine_User_Test extends WP_UnitTestCase {
 			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
 			'role'       => WPCOM_VIP_MACHINE_USER_ROLE,
 		] );
-
 	}
 
 	public function get_test_data__user_modification_caps() {

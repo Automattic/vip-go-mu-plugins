@@ -18,10 +18,11 @@ use WP_Widget;
  * @param array|null $new_instance Array of new widget settings.
  * @param array|null $old_instance Array of old widget settings.
  * @param WP_Widget $widget_obj The current widget instance.
- * @param Telemetry_System $telemetry_system
- * @return array Updated widget settings
+ * @param Telemetry_System $telemetry_system The telemetry system to use.
+ *
+ * @return array|false Updated widget settings or false.
  */
-function track_widget_updated( $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ): array {
+function track_widget_updated( $instance, ?array $new_instance, ?array $old_instance, WP_Widget $widget_obj, Telemetry_System $telemetry_system ) {
 	if ( ! is_array( $instance ) ) {
 		return $instance;
 	}
@@ -52,7 +53,7 @@ function track_widget_updated( $instance, ?array $new_instance, ?array $old_inst
 		$all_keys     = array_unique( array_merge( array_keys( $old_instance ), array_keys( $instance ) ) );
 		$updated_keys = array_reduce(
 			$all_keys,
-			function( $carry, $key ) use ( $old_instance, $instance ) {
+			function ( $carry, $key ) use ( $old_instance, $instance ) {
 				if (
 					isset( $old_instance[ $key ] ) === isset( $instance[ $key ] ) &&
 					wp_json_encode( $old_instance[ $key ] ) === wp_json_encode( $instance[ $key ] )

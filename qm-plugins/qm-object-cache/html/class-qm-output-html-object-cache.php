@@ -129,5 +129,4 @@ class QM_Output_Html_Object_Cache extends QM_Output_Html {
 		echo '</table>';
 		echo '</section>';
 	}
-
 }

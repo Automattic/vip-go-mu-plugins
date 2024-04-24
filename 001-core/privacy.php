@@ -24,13 +24,11 @@ function the_vip_privacy_policy_link( $link ) {
 		return '';
 	}
 
-	$link = sprintf(
+	return sprintf(
 		'%s<br/><a href="https://automattic.com/privacy/">%s</a>',
 		esc_html__( 'Powered by WordPress VIP' ),
 		esc_html__( 'Privacy Policy' )
 	);
-
-	return $link;
 }
 
 /**
@@ -160,7 +158,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the JSON export.
 	 */
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 	$file = fopen( $json_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -176,7 +174,7 @@ function generate_personal_data_export_file( $request_id ) {
 	/*
 	 * Handle the HTML export.
 	 */
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+	// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 	$file = fopen( $html_report_pathname, 'w' );
 
 	if ( false === $file ) {
@@ -297,7 +295,7 @@ function generate_personal_data_export_file( $request_id ) {
 	// ZipArchive may not be available across all applications.
 	// Use it if it exists, otherwise fallback to PclZip.
 	if ( class_exists( '\ZipArchive' ) ) {
-		$zip = new \ZipArchive; // phpcs:ignore WordPress.Classes.ClassInstantiation.MissingParenthesis
+		$zip = new \ZipArchive(); // phpcs:ignore WordPress.Classes.ClassInstantiation.MissingParenthesis
 		if ( true === $zip->open( $local_archive_pathname, \ZipArchive::CREATE ) ) {
 			if ( ! $zip->addFile( $json_report_pathname, 'export.json' ) ) {
 				$error = __( 'Unable to add data to JSON file.' );
@@ -343,7 +341,7 @@ function _upload_archive_file( $archive_path ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
+		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
@@ -373,7 +371,7 @@ function _delete_archive_file( $archive_url ) {
 	}
 
 	if ( ! class_exists( 'Automattic\VIP\Files\Api_Client' ) ) {
-		require WPMU_PLUGIN_DIR . '/files/class-api-client.php';
+		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
 	$api_client = \Automattic\VIP\Files\new_api_client();
@@ -459,3 +457,22 @@ function delete_old_export_files() {
 		}
 	}
 }
+
+/**
+ * Disable crawling for go-vip.co and go-vip.net domains.
+ * 
+ * @param string $output The robots.txt content.
+ * @return string The modified robots.txt content.
+ */
+function vip_convenience_domain_robots_txt( $output ) {
+	$host = $_SERVER['HTTP_HOST'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( is_vip_convenience_domain( strtolower( $_SERVER['HTTP_HOST'] ?? '' ) ) ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$output  = "# Crawling is blocked for go-vip.co and go-vip.net domains\n";
+		$output .= "User-agent: *\n";
+		$output .= "Disallow: /\n";
+	}
+
+	return $output;
+}
+// phpcs:ignore WordPressVIPMinimum.Hooks.RestrictedHooks.robots_txt
+add_filter( 'robots_txt', __NAMESPACE__ . '\vip_convenience_domain_robots_txt' );

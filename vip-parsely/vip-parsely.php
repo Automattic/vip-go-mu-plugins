@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
  * Description: Content analytics made easy. Parse.ly gives creators, marketers and developers the tools to understand content performance, prove content value, and deliver tailored content experiences that drive meaningful results.
@@ -25,6 +25,7 @@ use Automattic\VIP\Parsely\Telemetry\Tracks;
 const WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID = 'parsely_recommended_widget';
 
 // Telemetry is enabled by default on non-production sites.
+add_filter( 'wp_parsely_enable_wpadmin_telemetry', '__return_true' );
 if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 	require __DIR__ . '/Telemetry/class-telemetry.php';
 	require __DIR__ . '/Telemetry/class-telemetry-system.php';

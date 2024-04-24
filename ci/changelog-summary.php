@@ -3,6 +3,25 @@
 
 require "vendor/autoload.php";
 
+$options = getopt( null, [
+    "link-to-pr", // Add link to the PR at the button of the changelog entry
+    "start-marker:", // Text below line matching this param will be considered changelog entry
+    "end-marker:", // Text until this line will be considered changelog entry
+    "wp-endpoint:", // Endpoint to wordpress site to create posts for
+    "wp-status:", // Status to create changelog post with. Common scenarios are 'draft' or 'published'
+    "wp-tag-ids:", // Default tag IDs to add to the changelog post
+    "verify-commit-hash", // Use --verify-commit-hash=false in order to skip hash validation. This is useful when testing the integration
+    "debug", // Show debug information
+    "dry-run", // Do not actually create the changelog post
+    'force', // Force script through validations
+    'merge-pr:', // Merge PR number
+    'github-project-username:', // Github project username
+    'github-project-reponame:', // Github project reponame
+    'github-token:', // Github token
+] );
+
+$force = array_key_exists( 'force', $options );
+
 function is_env_set() {
     return isset(
         $_SERVER['PROJECT_USERNAME'],
@@ -13,7 +32,7 @@ function is_env_set() {
     );
 }
 
-if ( ! is_env_set() ) {
+if ( ! is_env_set() && ! $force ) {
     echo "The following environment variables need to be set:
     \tPROJECT_USERNAME
     \tPROJECT_REPONAME
@@ -23,27 +42,17 @@ if ( ! is_env_set() ) {
     exit( 1 );
 }
 
-$options = getopt( null, [
-    "link-to-pr", // Add link to the PR at the button of the changelog entry
-    "start-marker:", // Text below line matching this param will be considered changelog entry
-    "end-marker:", // Text until this line will be considered changelog entry
-    "wp-endpoint:", // Endpoint to wordpress site to create posts for
-    "wp-status:", // Status to create changelog post with. Common scenarios are 'draft' or 'published'
-    "wp-tag-ids:", // Default tag IDs to add to the changelog post
-    "verify-commit-hash", // Use --verify-commit-hash=false in order to skip hash validation. This is useful when testing the integration
-    "debug", // Show debug information
-] );
-
-if ( ! isset( $options[ "wp-endpoint" ] ) ) {
+if ( ! isset( $options[ "wp-endpoint" ] ) && ! $force ) {
     echo "Argument --wp-endpoint is mandatory.\n";
     exit( 1 );
 }
 
-define( 'PROJECT_USERNAME', $_SERVER[ 'PROJECT_USERNAME' ] );
-define( 'PROJECT_REPONAME', $_SERVER[ 'PROJECT_REPONAME' ] );
+define( 'PROJECT_USERNAME', $_SERVER[ 'PROJECT_USERNAME' ] ?? $options[ 'github-project-username' ] ?? '');
+define( 'PROJECT_REPONAME', $_SERVER[ 'PROJECT_REPONAME' ] ?? $options[ 'github-project-reponame' ] ?? '');
 define( 'BRANCH', $_SERVER[ 'BRANCH' ] );
+define( 'MERGE_PR', $options[ 'merge-pr' ] ?? false );
 define( 'CHANGELOG_POST_TOKEN', $_SERVER[ 'CHANGELOG_POST_TOKEN' ] );
-define( 'GITHUB_TOKEN', $_SERVER[ 'GITHUB_TOKEN' ] ?? '' );
+define( 'GITHUB_TOKEN', $_SERVER[ 'GITHUB_TOKEN' ] ?? $options[ 'github-token' ] ?? '' );
 define( 'SLACK_WEBHOOK', $_SERVER[ 'SLACK_WEBHOOK' ] ?? '' );
 define( 'GITHUB_ENDPOINT', 'https://api.github.com/repos/' . PROJECT_USERNAME . '/' . PROJECT_REPONAME );
 define( 'PR_CHANGELOG_START_MARKER', '<h2>Changelog Description' );
@@ -54,6 +63,8 @@ define( 'WP_CHANGELOG_TAG_ID', '1784989' );
 define( 'LINK_TO_PR', $options[ 'link-to-pr' ] ?? true );
 define( 'VERIFY_COMMIT_HASH', $options[ 'verify-commit-hash' ] ?? true );
 define( 'DEBUG', array_key_exists( 'debug', $options ) );
+define( 'DRY_RUN', array_key_exists( 'dry-run', $options ) );
+define( 'FORCE', $force );
 define( 'LABEL_NO_FILES_TO_DEPLOY', '[Status] No files to Deploy' );
 define( 'LABEL_READY', '[Status] Ready to deploy' );
 define( 'LABEL_DEPLOYED_PROD', '[Status] Deployed to production' );
@@ -77,7 +88,7 @@ function debug( $arg ) {
 /**
  * Get the latest PR merged to branch.
  *
- * @return int $merged_pr The PR object
+ * @return mixed $merged_pr The PR object
  */
 function fetch_pr_merged_to_branch() {
     $missing_label = BRANCH === 'production' ? LABEL_DEPLOYED_PROD : LABEL_DEPLOYED_STAGING;
@@ -122,7 +133,7 @@ function update_prs( $prs ) {
         curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
         curl_setopt( $ch, CURLOPT_POST, true );
         curl_setopt( $ch, CURLOPT_POSTFIELDS, $body );
-        if ( isset( $_SERVER['GITHUB_TOKEN'] ) ) {
+        if ( GITHUB_TOKEN ) {
             array_push( $headers, 'Authorization:token ' . GITHUB_TOKEN );
         }
         curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
@@ -154,12 +165,12 @@ function maybe_remove_label_from_pr( $pr ) {
     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
     curl_setopt( $ch, CURLOPT_CUSTOMREQUEST, 'DELETE' );
 
-    if ( isset( $_SERVER['GITHUB_TOKEN'] ) ) {
+    if ( GITHUB_TOKEN ) {
         array_push( $headers, 'Authorization:token ' . GITHUB_TOKEN );
     }
 
     curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
-    $data = curl_exec( $ch );
+    curl_exec( $ch );
 }
 
 /**
@@ -318,7 +329,7 @@ function get_changelog_tags( $pr ) {
  * @return array $pr_ids The IDs pulled from the commits
  */
 function get_pr_ids_from_commits( $commit_url ) {
-    $commits = curl_get( $commit_url );
+    $commits = curl_get_all( $commit_url );
     $pr_ids = [];
 
     foreach( $commits as $commit ) {
@@ -349,7 +360,7 @@ function curl_get( $url ) {
     curl_setopt( $ch, CURLOPT_HEADER, 0 );
     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
     // curl_setopt( $ch, CURLOPT_VERBOSE, true );
-    if ( isset( $_SERVER['GITHUB_TOKEN'] ) ) {
+    if ( defined( 'GITHUB_TOKEN' ) && GITHUB_TOKEN ) {
         array_push( $headers, 'Authorization:token ' . GITHUB_TOKEN );
     }
     curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
@@ -362,6 +373,22 @@ function curl_get( $url ) {
     curl_close( $ch );
 
     return json_decode( $data, true );
+}
+
+/**
+ * Wrapper which paginates the GitHub request to fetch everything. Useful when
+ * the endpoint doesn't include pagination information.
+ *
+ * @param string $url URL to get
+ * @return array $data The array with all the data
+ */
+function curl_get_all( $url ) {
+	$all_data = [];
+    $pagination_url = $url . '?per_page=50&page=';
+	for ( $page = 1; ! empty( $data = curl_get( $pagination_url . $page ) ); $page++ ) {
+		$all_data = array_merge( $all_data, $data );
+	}
+	return $all_data;
 }
 
 /**
@@ -382,8 +409,12 @@ function process_pr_ids( $pr_ids ) {
         }
         foreach( $skip_labels as $skip_label ) {
             if ( in_array( $skip_label, $label_names ) ) {
+                echo "Skipping PR {$pr['number']} because it has label $skip_label\n";
                 // If file was already marked as deployed or no files to deploy, skip
-                continue 2;
+                if ( ! FORCE ) {
+                    continue 2;
+                }
+                echo "Not skipping because of force flag\n";
             }
         }
 
@@ -400,7 +431,13 @@ function process_pr_ids( $pr_ids ) {
  * @return void
  */
 function build_changelog_and_update_prs() {
-    $merged_pr = fetch_pr_merged_to_branch();
+
+    $merged_pr = null;
+    if ( MERGE_PR ) {
+        $merged_pr = curl_get( GITHUB_ENDPOINT . '/pulls/' . MERGE_PR );
+    } else {
+        $merged_pr = fetch_pr_merged_to_branch();
+    }
 
     if ( ! $merged_pr || ! isset( $merged_pr['_links']['commits']['href'] ) ) {
         echo "No merged PR found, skipping changelog creation";
@@ -438,6 +475,13 @@ function build_changelog_and_update_prs() {
     if ( BRANCH === 'production' ) {
         $content .= '<hr /><p>Please see the <a href="https://github.com/Automattic/vip-go-mu-plugins/releases/tag/' . rawurlencode( TAG_RELEASE ) . '">full release on GitHub</a>.</p>';
     }
+
+    if ( DRY_RUN ) {
+        echo "Dry run, not creating changelog post:\n\n";
+        echo "$title\n\n$content\n\nTags: " . join( ', ', $tags ) . "\n";
+        exit( 0 );
+    }
+
     $changelog_url = create_changelog_post( $title, $content, $tags, BRANCH );
 
     $prs[] = $merged_pr;

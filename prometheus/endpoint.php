@@ -37,8 +37,9 @@ function create_registry(): RegistryInterface {
 		$storage_backend = InMemory::class;
 	}
 
-	$storage = new $storage_backend();
+	$storage      = new $storage_backend();
+	$safe_adapter = new SafeAdapter( $storage );
 
-	return new CollectorRegistry( $storage );
+	return new CollectorRegistry( $safe_adapter );
 }
 // @codeCoverageIgnoreEnd

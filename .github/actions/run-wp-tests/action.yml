@@ -41,6 +41,10 @@ inputs:
     description: The port of the MySQL server.
     required: false
     default: '3306'
+  codecov-token:
+    description: The token to use for CodeCov.
+    required: false
+    default: ''
 runs:
   using: composite
   steps:
@@ -50,14 +54,14 @@ runs:
       run: |
         if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
           echo "coverage=pcov" >> $GITHUB_OUTPUT
-          echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|debug-bar|debug-bar-cron|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
+          echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
           echo "coverage=none" >> $GITHUB_OUTPUT
           echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
         fi
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.25.2
+      uses: shivammathur/setup-php@2.30.3
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -73,10 +77,10 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@2.2.0
+      uses: ramsey/composer-install@3.0.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@1.1.18
+      uses: sjinks/setup-wordpress-test-library@2.0.2
       with:
         version: ${{ inputs.wordpress }}
 
@@ -85,9 +89,9 @@ runs:
       run: echo "WP_MULTISITE=1" >> $GITHUB_ENV
       if: inputs.multisite == 'yes'
 
-    - name: Disable JetPack
+    - name: Disable Jetpack
       shell: bash
-      run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV 
+      run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV
       if: inputs.jetpack == 'no'
 
     - name: Verify MariaDB connection
@@ -100,10 +104,6 @@ runs:
           second=$((second+1))
         done
         mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
-
-    - name: Fix wp-tests-config.php
-      shell: bash
-      run: ./bin/pretest.sh
 
     - name: Run tests
       shell: bash
@@ -122,8 +122,9 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v3.1.4
+      uses: codecov/codecov-action@v4.3.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
-      if: ${{ steps.coverage.outputs.coverage != 'none' }}
+        token: ${{ inputs.codecov-token }}
+      if: ${{ steps.coverage.outputs.coverage != 'none' && inputs.codecov-token != '' }}

@@ -10,6 +10,7 @@ require_once __DIR__ . '/class-wp-filesystem-vip-uploads.php';
 require_once __DIR__ . '/class-api-client.php';
 
 use WP_Error;
+use WP_Filesystem_Base;
 use WP_Filesystem_Direct;
 
 class WP_Filesystem_VIP extends \WP_Filesystem_Base {
@@ -23,6 +24,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	public function __construct( $dependencies ) {
 		$this->method = 'vip';
 		$this->errors = new WP_Error();
+
+		if ( ! is_array( $dependencies ) || 2 !== count( $dependencies ) ) {
+			$dependencies = request_filesystem_credentials( site_url() );
+		}
 
 		list( $filesystem_uploads, $filesystem_direct ) = $dependencies;
 
@@ -111,12 +116,12 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	}
 
 	private function is_wp_content_subfolder_path( $file_path, $subfolder ) {
-		$upgrade_base = sprintf( '%s/%s', WP_CONTENT_DIR, $subfolder );
+		$upgrade_base = sprintf( '%s/%s', constant( 'WP_CONTENT_DIR' ), $subfolder );
 		return 0 === strpos( $file_path, $upgrade_base . '/' ) || $file_path === $upgrade_base;
 	}
 
 	private function is_upgrade_path( $file_path ) {
-		return $this->is_wp_content_subfolder_path( $file_path, 'upgrade' );
+		return $this->is_wp_content_subfolder_path( $file_path, 'upgrade' ) || $this->is_wp_content_subfolder_path( $file_path, 'upgrade-temp-backup' );
 	}
 
 	private function is_plugins_path( $file_path ) {
@@ -218,6 +223,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
+		if ( $source_transport instanceof WP_Filesystem_Direct && $destination_transport instanceof WP_Filesystem_Direct ) {
+			return $source_transport->copy( $source, $destination, $overwrite, $mode );
+		}
+
 		$destination_exists = $destination_transport->exists( $destination );
 		if ( ! $overwrite && $destination_exists ) {
 			/* translators: 1: destination file path 2: overwrite param 3: `true` boolean value */
@@ -238,7 +247,6 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		}
 
 		return $put_results;
-
 	}
 
 	/**
@@ -249,13 +257,24 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function move( $source, $destination, $overwrite = false ) {
-		$copy_results = $this->copy( $source, $destination, $overwrite );
-		if ( false === $copy_results ) {
-			return false;
+		$source_transport      = $this->get_transport_for_path( $source );
+		$destination_transport = $this->get_transport_for_path( $destination, 'write' );
+		if ( $source_transport instanceof WP_Filesystem_Direct && $destination_transport instanceof WP_Filesystem_Direct ) {
+			return $source_transport->move( $source, $destination, $overwrite );
 		}
 
-		// We don't need to set the errors here since delete() will take care of it
-		return $this->delete( $source );
+		// WP_Filesystem_Direct::get_contents() invoked by copy() will return '' for directories; this will result in directories being copied as empty files.
+		if ( $source_transport instanceof WP_Filesystem_Base && $source_transport->is_file( $source ) ) {
+			$copy_results = $this->copy( $source, $destination, $overwrite );
+			if ( false === $copy_results ) {
+				return false;
+			}
+
+			// We don't need to set the errors here since delete() will take care of it
+			return $this->delete( $source );
+		}
+
+		return false;
 	}
 
 	/**

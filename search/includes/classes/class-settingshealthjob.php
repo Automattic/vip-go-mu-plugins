@@ -2,9 +2,10 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\VIP\Search\Health as Health;
+use Automattic\VIP\Search\Health;
 use Automattic\VIP\Utils\Alerts;
-use \WP_CLI;
+use ElasticPress\Indexable;
+use WP_Error;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -39,6 +40,8 @@ class SettingsHealthJob {
 	 * Instance of the Health class
 	 *
 	 * Useful for overriding in tests via dependency injection
+	 *
+	 * @var Health
 	 */
 	public $health;
 
@@ -46,6 +49,8 @@ class SettingsHealthJob {
 	 * Instance of Search class
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \Automattic\VIP\Search\Search
 	 */
 	public $search;
 
@@ -53,8 +58,17 @@ class SettingsHealthJob {
 	 * Instance of \ElasticPress\Indexables
 	 *
 	 * Useful for overriding (dependency injection) for tests
+	 *
+	 * @var \ElasticPress\Indexables
 	 */
 	public $indexables;
+
+	/**
+	 * Force disable for the specific env ids
+	 *
+	 * @var int[]
+	 */
+	public $health_check_disabled_sites = array();
 
 	public function __construct( \Automattic\VIP\Search\Search $search ) {
 		$this->search     = $search;
@@ -73,13 +87,17 @@ class SettingsHealthJob {
 
 		add_action( self::CRON_EVENT_BUILD_NAME, [ $this, 'build_new_index' ], 10, 2 );
 
-		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ], 10, 2 );
+		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ] );
 
 		// Clean-up last processed ID option
 		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
 		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] );
 
-		$this->schedule_job();
+		if ( $this->is_enabled() ) {
+			$this->schedule_job();
+		} else {
+			$this->disable_job();
+		}
 	}
 
 	/**
@@ -97,6 +115,7 @@ class SettingsHealthJob {
 	public function disable_job() {
 		if ( wp_next_scheduled( self::CRON_EVENT_NAME ) ) {
 			wp_clear_scheduled_hook( self::CRON_EVENT_NAME );
+			wp_clear_scheduled_hook( self::CRON_EVENT_BUILD_NAME );
 		}
 	}
 
@@ -191,10 +210,11 @@ class SettingsHealthJob {
 				continue;
 			}
 
+			/** @var Indexable|bool|WP_Error */
 			$indexable = $this->indexables->get( $indexable_slug );
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
-				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
+				$error_message = is_wp_error( $indexable ) ? /** @var WP_Error $indexable */ $indexable->get_error_message() : 'Indexable not found';
 				$message       = sprintf(
 					'Application %s: Failed to load indexable %s when healing index settings on %s: %s',
 					FILES_CLIENT_SITE_ID,
@@ -231,6 +251,7 @@ class SettingsHealthJob {
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
 				if ( is_wp_error( $result['result'] ) ) {
+					/** @var WP_Error $result */
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
 						FILES_CLIENT_SITE_ID,
@@ -277,11 +298,10 @@ class SettingsHealthJob {
 	 * Store last processed post ID into option during bulk indexing operation.
 	 *
 	 * @param array $objects Objects being indexed
-	 * @param array $response Elasticsearch bulk index response
 	 *
 	 * @return void
 	 */
-	public function update_last_processed_id( $objects, $response ) {
+	public function update_last_processed_id( $objects ) {
 		if ( ! wp_doing_cron() ) {
 			return;
 		}
@@ -343,8 +363,6 @@ class SettingsHealthJob {
 					home_url()
 				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-				return;
 			} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
 				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 			}
@@ -364,7 +382,7 @@ class SettingsHealthJob {
 
 		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
-			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
+			$indexable = new WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
 			$message = sprintf(
@@ -396,16 +414,25 @@ class SettingsHealthJob {
 			}
 		}
 
-		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
-		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf(
-				'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url(),
-				$new_version->get_error_message()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		$current_versions = $this->search->versioning->get_versions( $indexable );
+		if ( count( $current_versions ) > 1 ) {
+			$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
+			if ( is_wp_error( $new_version ) ) {
+				$message = sprintf(
+					'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$new_version->get_error_message()
+				);
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
+		} else {
+			// If we're in a weird state where we have 1 version or less, we should not be attempting to build a new index.
+			// Instead, let's clean-up the locks and return. If we don't do this, we'll end up in a loop.
+			$this->clean_up();
 
 			return;
 		}
@@ -491,8 +518,42 @@ class SettingsHealthJob {
 		);
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
-		// Clean up
+		$this->clean_up();
+	}
+
+	/**
+	 * Clean-up after the build process is complete.
+	 * 
+	 * @return void
+	 */
+	public function clean_up() {
 		$this->delete_last_processed_id();
 		delete_option( self::BUILD_LOCK_NAME );
+	}
+
+	/**
+	 * Is settings health check job enabled
+	 *
+	 * @return bool True if job is enabled. Else, false
+	 */
+	public function is_enabled() {
+		if ( defined( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) && true === constant( 'DISABLE_VIP_SEARCH_HEALTHCHECKS' ) ) {
+			return false;
+		}
+
+		if ( defined( 'VIP_GO_APP_ID' ) && in_array( constant( 'VIP_GO_APP_ID' ), $this->health_check_disabled_sites, true ) ) {
+			return false;
+		}
+
+		$enabled_environments = apply_filters( 'vip_search_healthchecks_enabled_environments', array( 'production' ) );
+
+		$enabled = in_array( constant( 'VIP_GO_ENV' ), $enabled_environments, true );
+
+		/**
+		 * Filter whether to enable VIP search healthcheck
+		 *
+		 * @param bool $enable True to enable the healthcheck cron job
+		 */
+		return apply_filters( 'enable_vip_search_healthchecks', $enabled );
 	}
 }

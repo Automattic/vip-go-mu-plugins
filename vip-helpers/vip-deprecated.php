@@ -1,6 +1,6 @@
 <?php
 
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter
 
 /**
  * Loads the shared VIP helper file which defines some helpful functions.
@@ -508,8 +508,10 @@ function wpcom_vip_debug( $type, $data ) {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 }
 
-function vary_cache_on_function( $function ) {
-	_deprecated_function( __FUNCTION__, '2.0.0' );
+if ( ! function_exists( 'vary_cache_on_function' ) ) {
+	function vary_cache_on_function( $function ) {
+		_deprecated_function( __FUNCTION__, '2.0.0' );
+	}
 }
 
 /**
@@ -693,10 +695,8 @@ function wpcom_vip_get_meta_desc() {
 			array_push( $words, '...' );
 			$text = implode( ' ', $words );
 		}
-	} else {
-		if ( strlen( $text ) > $length ) {
+	} elseif ( strlen( $text ) > $length ) {
 			$text = mb_strimwidth( $text, 0, $length, '...' );
-		}
 	}
 
 	return $text;
@@ -1308,4 +1308,83 @@ function wpcom_vip_load_geolocation_styles_only_when_needed() {
  */
 function wpcom_vip_disable_instapost() {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
+}
+
+/**
+ * `term_exists()` now uses `get_terms()` and is cached.
+ *
+ * @deprecated Since WP 6.0
+ *
+ * @param int|string $term The term to check can be id, slug or name.
+ * @param string     $taxonomy The taxonomy name to use
+ * @param int        $parent Optional. ID of parent term under which to confine the exists search.
+ * @return mixed Returns null if the term does not exist. Returns the term ID
+ *               if no taxonomy is specified and the term ID exists. Returns
+ *               an array of the term ID and the term taxonomy ID the taxonomy
+ *               is specified and the pairing exists.
+ */
+function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
+	_deprecated_function( __FUNCTION__, '6.0', 'term_exists' );
+
+	return term_exists( $term, $taxonomy, $parent ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
+}
+
+/**
+ * `get_page_by_path()` is now cached and no longer calls direct SQL.
+ * 
+ * @deprecated Since WP 6.1
+ * 
+ * @param string        $page_path Page path
+ * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
+ * @param string|array  $post_type Optional. Post type; default is 'page'.
+ * @return WP_Post|null WP_Post on success or null on failure
+ */
+function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
+	_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+
+	return get_page_by_path( $page_path, $output, $post_type ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
+}
+
+if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
+	/**
+	 * Use `WP_Query` to get a page by title.
+	 *
+	 * @param string $page_title Page title
+	 * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
+	 * @param string $post_type Optional. Post type; default is 'page'.
+	 * @return WP_Post|null WP_Post on success or null on failure
+	 * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
+	 */
+	function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
+		global $wp_version;
+		if ( version_compare( $wp_version, '6.2', '<' ) ) {
+			_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
+		}
+
+		$cache_key = $post_type . '_' . sanitize_key( $title );
+		$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
+
+		if ( false === $page_id ) {
+			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
+			$query   = new WP_Query(
+				array(
+					'title'          => $title,
+					'post_type'      => $post_type,
+					'posts_per_page' => 1,
+					'orderby'        => 'ID',
+					'order'          => 'ASC',
+					'no_found_rows'  => true,
+					'fields'         => 'ids',
+				),
+			);
+			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
+			wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
+		}
+
+		if ( $page_id ) {
+			return get_post( $page_id, $output );
+		}
+
+		return null;
+	}
 }

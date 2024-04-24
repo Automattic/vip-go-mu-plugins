@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\Test\Constant_Mocker;
+
 require_once __DIR__ . '/../../files/class-image.php';
 
 /**
@@ -36,12 +38,15 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'LOCAL_UPLOADS', '/tmp/uploads' );
+		Constant_Mocker::define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
+
 		// Add filters so we have consistent filesize meta handling.
 		// (backporting WP 6.0 feature: https://core.trac.wordpress.org/ticket/49412)
 		$this->vip_filesystem = new Automattic\VIP\Files\VIP_Filesystem();
 		$add_filters          = self::getVIPFilesystemMethod( 'add_filters' );
 		$add_filters->invoke( $this->vip_filesystem );
-
 
 		$this->enable_a8c_files();
 	}
@@ -52,6 +57,8 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	 * Remove added uploads.
 	 */
 	public function tearDown(): void {
+		Constant_Mocker::clear();
+
 		// Remove vip filesystem filters.
 		$remove_filters = self::getVIPFilesystemMethod( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
@@ -362,5 +369,4 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $this->test_image . '?resize=150,150', $get_resized_filename->invokeArgs( $image, [] ) );
 	}
-
 }

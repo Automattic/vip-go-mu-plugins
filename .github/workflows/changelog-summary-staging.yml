@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - staging
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -15,15 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.5.3
+        uses: actions/checkout@v4.1.3
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.25.4
-        with:
-          php-version: '7.4'
+        uses: shivammathur/setup-php@2.30.3
 
       - name: Install
-        uses: ramsey/composer-install@2.2.0
+        uses: ramsey/composer-install@3.0.0
 
       - name: Execute
         env:

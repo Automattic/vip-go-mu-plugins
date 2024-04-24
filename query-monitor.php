@@ -40,10 +40,6 @@ function wpcom_vip_qm_enable( $enable ) {
 		return true;
 	}
 
-	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-		return true;
-	}
-
 	return $enable;
 }
 add_filter( 'wpcom_vip_qm_enable', 'wpcom_vip_qm_enable' );
@@ -111,6 +107,10 @@ function wpcom_vip_qm_require() {
 	if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
 		require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
 	}
+
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-limited-header-php-errors/output/headers/php-errors.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-limited-header-php-errors/output/headers/php-errors.php';
+	}
 }
 add_action( 'plugins_loaded', 'wpcom_vip_qm_require', 1 );
 
@@ -150,3 +150,12 @@ function change_dispatchers_shutdown_priority( array $dispatchers ) {
 	return $dispatchers;
 }
 add_filter( 'qm/dispatchers', 'change_dispatchers_shutdown_priority', PHP_INT_MAX, 1 );
+
+function include_vip_mu_plugin_component( $file_dirs ) {
+	if ( defined( 'WPVIP_MU_PLUGIN_DIR' ) && WPVIP_MU_PLUGIN_DIR !== WPMU_PLUGIN_DIR ) {
+		$file_dirs['vip-mu-plugin'] = WPVIP_MU_PLUGIN_DIR;
+	}
+
+	return $file_dirs;
+}
+add_filter( 'qm/component_dirs', 'include_vip_mu_plugin_component', PHP_INT_MAX, 1 );

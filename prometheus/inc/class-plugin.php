@@ -96,7 +96,8 @@ class Plugin {
 			$storage = $storage_backend;
 		}
 
-		return new CollectorRegistry( $storage );
+		$safe_adapter = new SafeAdapter( $storage );
+		return new CollectorRegistry( $safe_adapter );
 	}
 
 	public function get_collectors(): array {
@@ -114,11 +115,7 @@ class Plugin {
 			return;
 		}
 
-		foreach ( $this->collectors as $collector ) {
-			if ( is_callable( [ $collector, 'process_metrics' ] ) ) {
-				$collector->process_metrics();
-			}
-		}
+		array_walk( $this->collectors, fn ( CollectorInterface $collector ) => $collector->process_metrics() );
 	}
 
 	/**

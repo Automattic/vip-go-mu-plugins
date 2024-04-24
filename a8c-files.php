@@ -8,6 +8,7 @@ Author URI: http://automattic.com/
 */
 
 // phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound -- needs refactoring
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
 /* Requires at least: 3.9.0
  * due to the dependancy on the filter 'wp_insert_attachment_data'
@@ -40,6 +41,7 @@ require_once __DIR__ . '/files/acl/acl.php';
  */
 require_once __DIR__ . '/files/class-meta-updater.php';
 
+use Automattic\Jetpack\Image_CDN\Image_CDN;
 use Automattic\VIP\Files\VIP_Filesystem;
 use Automattic\VIP\Files\Meta_Updater;
 use Automattic\VIP\Utils\Alerts;
@@ -71,9 +73,9 @@ class A8C_Files {
 
 	public function __construct() {
 
-		// Upload size limit is 1GB
-		add_filter( 'upload_size_limit', function() {
-			return 1073741824; // 2^30
+		// Upload size limit is 5GB
+		add_filter( 'upload_size_limit', function () {
+			return 5368709120; // 2^30 * 5
 		});
 
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
@@ -85,7 +87,7 @@ class A8C_Files {
 		add_action( 'init', array( $this, 'init_photon' ) );
 
 		// ensure we always upload with year month folder layouts
-		add_filter( 'pre_option_uploads_use_yearmonth_folders', function() {
+		add_filter( 'pre_option_uploads_use_yearmonth_folders', function () {
 			return '1';
 		} );
 
@@ -124,9 +126,10 @@ class A8C_Files {
 	}
 
 	private function init_jetpack_photon_filters() {
-		if ( ! class_exists( 'Jetpack_Photon' ) ) {
+		// Jetpack_Photon is deprecated in favor of Automattic\Jetpack\Image_CDN\Image_CDN in 12.2
+		if ( ! class_exists( 'Jetpack_Photon' ) && ! class_exists( Image_CDN::class ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			trigger_error( 'Cannot initialize Photon filters as the Jetpack_Photon class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
+			trigger_error( 'Cannot initialize Photon filters as neither Jetpack_Photon nor Automattic\\Jetpack\\Image_CDN\\Image_CDN class is not loaded. Please verify that Jetpack is loaded and active to restore this functionality.', E_USER_WARNING );
 			return;
 		}
 
@@ -151,19 +154,23 @@ class A8C_Files {
 
 		// This is our catch-all to strip dimensions from intermediate images in content.
 		// Since this primarily only impacts post_content we do a little dance to add the filter early to `the_content` and then remove it later on in the same hook.
-		add_filter( 'the_content', function( $content ) {
+		add_filter( 'the_content', function ( $content ) {
 			add_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			return $content;
 		}, 0 );
 
-		add_filter( 'the_content', function( $content ) {
+		add_filter( 'the_content', function ( $content ) {
 			remove_filter( 'jetpack_photon_pre_image_url', [ 'A8C_Files_Utils', 'strip_dimensions_from_url_path' ] );
 			return $content;
 		}, 9999999 ); // Jetpack hooks in at 6 9s (999999) so we do 7
 
 		// If Photon isn't active, we need to init the necessary filters.
 		// This takes care of rewriting intermediate images for us.
-		Jetpack_Photon::instance();
+		if ( class_exists( Image_CDN::class ) ) {
+			Image_CDN::instance();
+		} else {
+			Jetpack_Photon::instance();
+		}
 
 		// Jetpack_Photon's downsize filter doesn't run when is_admin(), so we need to fallback to the Go filters.
 		// This is temporary until Jetpack allows more easily running these filters for is_admin().
@@ -481,7 +488,7 @@ class A8C_Files {
 			$end_index   = $start_index + $batch_size;
 
 			// Avoid infinite loops
-			$num_lookups++;
+			++$num_lookups;
 			if ( $num_lookups >= $max_lookups ) {
 				break;
 			}
@@ -501,7 +508,6 @@ class A8C_Files {
 
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
-
 }
 
 class A8C_Files_Utils {
@@ -521,7 +527,7 @@ class A8C_Files_Utils {
 			return $site_url;
 		}
 
-		if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
+		if ( is_vip_convenience_domain( $image_url_parsed['host'] ?? '' ) ) {
 			return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 		}
 

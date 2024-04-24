@@ -2,57 +2,44 @@
 
 namespace Automattic\VIP\Search;
 
+use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Logstash\Logger;
+use ElasticPress\Indexable\User\User;
+use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
+use stdClass;
 use WP_UnitTestCase;
 use wpdb;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Queue_Test extends WP_UnitTestCase {
 
-	/** @var \Automattic\VIP\Search\Search */
+	/** @var Search */
 	private $es;
 
-	/** @var \Automattic\VIP\Search\Queue */
+	/** @var Queue */
 	private $queue;
-
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		}
-
-		require_once __DIR__ . '/../../../../search/search.php';
-
-		\Automattic\VIP\Search\Search::instance()->init();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-
-		// Users indexable doesn't get registered by default, but we have tests that queue user objects
-		\ElasticPress\Indexables::factory()->register( new \ElasticPress\Indexable\User\User() );
-	}
 
 	public function setUp(): void {
 		parent::setUp();
 
-		if ( ! defined( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING' ) ) {
-			define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		}
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		Constant_Mocker::define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
 
 		require_once __DIR__ . '/../../../../search/search.php';
 
-		$this->es = \Automattic\VIP\Search\Search::instance();
+		$this->es = new Search();
 		$this->es->init();
 
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		// Users indexable doesn't get registered by default, but we have tests that queue user objects
+		Indexables::factory()->register( new User() );
+
 		$this->queue = $this->es->queue;
-
 		$this->queue->schema->prepare_table();
-
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
@@ -60,7 +47,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-
+		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 
@@ -213,7 +200,7 @@ class Queue_Test extends WP_UnitTestCase {
 				)
 			);
 
-			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time( $object['id'], $object['type'] ) );
+			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time() );
 
 			$this->assertEquals( $expected_start_time, $row->start_time );
 		}
@@ -544,7 +531,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue don\'t match ids of objects found in the database' );
 	}
 
 	public function test_queue_objects_with_specific_index_version() {
@@ -558,7 +545,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE `index_version` = 2" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$this->assertEquals( $objects, $results, 'ids of objects sent to queue doesn\'t match ids of objects found in the database' );
+		$this->assertEquals( $objects, $results, 'ids of objects sent to queue don\'t match ids of objects found in the database' );
 	}
 
 	public function test__action__ep_after_bulk_index_validation() {
@@ -676,9 +663,9 @@ class Queue_Test extends WP_UnitTestCase {
 			'index_version' => 1,
 		];
 
-		/** @var MockObject&\Automattic\VIP\Search\Queue */
-		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
-			->setMethods( [
+		/** @var MockObject&Queue */
+		$partially_mocked_queue = $this->getMockBuilder( Queue::class )
+			->onlyMethods( [
 				'get_deadlocked_jobs',
 				'delete_jobs_on_the_already_queued_object',
 				'update_jobs',
@@ -730,7 +717,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the value passed into the filter is returned if the sync queue is empty
 	 */
 	public function test__ratelimit_indexing_should_pass_bail_if_sync_queue_empty() {
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = array();
 
 		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );
@@ -748,7 +735,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
 	 */
 	public function test_ratelimit_indexing_cache_count_should_not_exists_if_early_return() {
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = array();
 
 		$this->queue->ratelimit_indexing( true, '', 'hippo' );
@@ -765,7 +752,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
@@ -811,7 +798,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
@@ -850,33 +837,32 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ratelimit_indexing__handles_start_correctly() {
-		/** @var MockObject&\Automattic\VIP\Search\Queue */
-		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
-			->setMethods( [
+		/** @var MockObject&Queue */
+		$partially_mocked_queue = $this->getMockBuilder( Queue::class )
+			->onlyMethods( [
 				'handle_index_limiting_start_timestamp',
 				'maybe_alert_for_prolonged_index_limiting',
-				'record_ratelimited_stat',
 				'intercept_ep_sync_manager_indexing',
 			] )
 			->getMock();
 
-		/** @var MockObject&\Automattic\VIP\Logstash\Logger */
-		$partially_mocked_queue->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-				->setMethods( [ 'log' ] )
-				->getMock();
+		/** @var MockObject&Logger */
+		$partially_mocked_queue->logger = $this->getMockBuilder( Logger::class )
+			->onlyMethods( [ 'log' ] )
+			->getMock();
 
 		$partially_mocked_queue->logger->expects( $this->once() )
-				->method( 'log' )
-				->with(
-					$this->equalTo( 'warning' ),
-					$this->equalTo( 'search_indexing_rate_limiting' ),
-					$this->equalTo(
-						'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
-					),
-					$this->anything()
-				);
+			->method( 'log' )
+			->with(
+				$this->equalTo( 'warning' ),
+				$this->equalTo( 'search_indexing_rate_limiting' ),
+				$this->equalTo(
+					'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
+				),
+				$this->anything()
+			);
 
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$partially_mocked_queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
@@ -888,16 +874,16 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__ratelimit_indexing__clears_start_correctly() {
-		/** @var MockObject&\Automattic\VIP\Search\Queue */
-		$partially_mocked_queue = $this->getMockBuilder( \Automattic\VIP\Search\Queue::class )
-			->setMethods( [
+		/** @var MockObject&Queue */
+		$partially_mocked_queue = $this->getMockBuilder( Queue::class )
+			->onlyMethods( [
 				'clear_index_limiting_start_timestamp',
 			] )
 			->getMock();
 
 		$partially_mocked_queue->expects( $this->once() )->method( 'clear_index_limiting_start_timestamp' );
 
-		$sync_manager             = new \stdClass();
+		$sync_manager             = new stdClass();
 		$sync_manager->sync_queue = range( 3, 9 );
 
 		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
@@ -1182,11 +1168,11 @@ class Queue_Test extends WP_UnitTestCase {
 
 	/* Format:
 	 * [
-	 * 		[
-	 * 			$filter,
-	 * 			$too_low_message,
-	 * 			$too_high_message,
-	 * 		]
+	 *      [
+	 *          $filter,
+	 *          $too_low_message,
+	 *          $too_high_message,
+	 *      ]
 	 * ]
 	 */
 	public function vip_search_ratelimiting_filter_data() {
@@ -1220,7 +1206,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return '30.ffr';
 			}
 		);
@@ -1235,7 +1221,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return 0;
 			}
 		);
@@ -1254,7 +1240,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		add_filter(
 			$filter,
-			function() {
+			function () {
 				return PHP_INT_MAX;
 			}
 		);
@@ -1264,20 +1250,21 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__log_index_ratelimiting_start() {
-		$this->queue->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-				->setMethods( [ 'log' ] )
-				->getMock();
+		/** @var Logger&MockObject */
+		$this->queue->logger = $this->getMockBuilder( Logger::class )
+			->onlyMethods( [ 'log' ] )
+			->getMock();
 
 		$this->queue->logger->expects( $this->once() )
-				->method( 'log' )
-				->with(
-					$this->equalTo( 'warning' ),
-					$this->equalTo( 'search_indexing_rate_limiting' ),
-					$this->equalTo(
-						'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
-					),
-					$this->anything()
-				);
+			->method( 'log' )
+			->with(
+				$this->equalTo( 'warning' ),
+				$this->equalTo( 'search_indexing_rate_limiting' ),
+				$this->equalTo(
+					'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
+				),
+				$this->anything()
+			);
 
 		$this->queue->log_index_ratelimiting_start();
 	}
@@ -1333,7 +1320,7 @@ class Queue_Test extends WP_UnitTestCase {
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
+		$method->setAccessible( true ); // NOSONAR
 		return $method;
 	}
 

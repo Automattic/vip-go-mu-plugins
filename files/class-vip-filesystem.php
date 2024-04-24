@@ -97,7 +97,7 @@ class VIP_Filesystem {
 		add_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
 		add_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
 		add_filter( 'wp_delete_file', [ $this, 'filter_delete_file' ], 20, 1 );
-		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20, 2 );
+		add_filter( 'get_attached_file', [ $this, 'filter_get_attached_file' ], 20 );
 		add_filter( 'wp_generate_attachment_metadata', [ $this, 'filter_wp_generate_attachment_metadata' ], 10, 2 );
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
 
@@ -117,7 +117,6 @@ class VIP_Filesystem {
 	 * @access   private
 	 */
 	private function remove_filters() {
-
 		remove_filter( 'upload_dir', [ $this, 'filter_upload_dir' ], 10 );
 		remove_filter( 'wp_handle_upload_prefilter', [ $this, 'filter_validate_file' ] );
 		remove_filter( 'wp_handle_sideload_prefilter', [ $this, 'filter_validate_file' ] );
@@ -144,26 +143,26 @@ class VIP_Filesystem {
 		 * then be removed.
 		 * - Hanif
 		 */
-		$pos = stripos( $params['path'], LOCAL_UPLOADS );
+		$pos = stripos( $params['path'], constant( 'LOCAL_UPLOADS' ) );
 		if ( false !== $pos ) {
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-			strlen( LOCAL_UPLOADS ) );
+			strlen( constant( 'LOCAL_UPLOADS' ) ) );
 			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content/uploads',
 				$pos,
-			strlen( LOCAL_UPLOADS ) );
+			strlen( constant( 'LOCAL_UPLOADS' ) ) );
 		} else {
-			$pos               = stripos( $params['path'], WP_CONTENT_DIR );
+			$pos               = stripos( $params['path'], constant( 'WP_CONTENT_DIR' ) );
 			$params['path']    = substr_replace( $params['path'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-			strlen( WP_CONTENT_DIR ) );
+			strlen( constant( 'WP_CONTENT_DIR' ) ) );
 			$params['basedir'] = substr_replace( $params['basedir'],
 				self::PROTOCOL . '://wp-content',
 				$pos,
-			strlen( WP_CONTENT_DIR ) );
+			strlen( constant( 'WP_CONTENT_DIR' ) ) );
 		}
 
 		return $params;
@@ -179,13 +178,14 @@ class VIP_Filesystem {
 		$upload_path = trailingslashit( $this->get_upload_path() );
 		$file_path   = $upload_path . $file_name;
 
-		// TODO: run through unique filename?
-
-		$check_type = $this->validate_file_type( $file_path );
-		if ( is_wp_error( $check_type ) ) {
-			$file['error'] = $check_type->get_error_message();
+		$check_file_name = $this->validate_file_name( $file_path );
+		if ( is_wp_error( $check_file_name ) ) {
+			$file['error'] = $check_file_name->get_error_message();
 
 			return $file;
+		} elseif ( $check_file_name !== $file_name ) {
+				$file['name'] = $check_file_name;
+				$file_path    = $upload_path . $check_file_name;
 		}
 
 		$check_length = $this->validate_file_path_length( $file_path );
@@ -222,9 +222,9 @@ class VIP_Filesystem {
 	 *
 	 * @param   string      $file_path   Path starting with /wp-content/uploads
 	 *
-	 * @return  WP_Error|bool        True if filetype is supported. Else WP_Error.
+	 * @return  WP_Error|string        Unique Filename string if filetype is supported. Else WP_Error.
 	 */
-	protected function validate_file_type( $file_path ) {
+	protected function validate_file_name( $file_path ) {
 		$result = $this->stream_wrapper->client->get_unique_filename( $file_path );
 
 		if ( is_wp_error( $result ) ) {
@@ -236,10 +236,9 @@ class VIP_Filesystem {
 					E_USER_WARNING
 				);
 			}
-			return $result;
 		}
 
-		return true;
+		return $result;
 	}
 
 	/**
@@ -417,12 +416,11 @@ class VIP_Filesystem {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param   string  $file           Path to file
-	 * @param   int     $attachment_id  Attachment post ID
+	 * @param   string  $file Path to file
 	 *
 	 * @return  string  Path to file
 	 */
-	public function filter_get_attached_file( $file, $attachment_id ) {
+	public function filter_get_attached_file( $file ) {
 		$uploads = wp_get_upload_dir();
 
 		if ( $file && false !== strpos( $file, $uploads['baseurl'] ) ) {

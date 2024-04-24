@@ -1,8 +1,7 @@
 {
 	"root": true,
-	"plugins": ["@babel"],
 	"extends": [
-		"plugin:@automattic/wpvip/base",
+		"plugin:@automattic/wpvip/javascript",
 		"plugin:@automattic/wpvip/react",
 		"preact"
 	],

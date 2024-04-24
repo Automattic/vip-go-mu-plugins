@@ -3,10 +3,8 @@
  * This file contains a bunch of helper functions that handle add caching to core WordPress functions.
  */
 
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.term_exists_term_exists
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.count_user_posts_count_user_posts
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_title_get_page_by_title
-// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.attachment_url_to_postid_attachment_url_to_postid
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.url_to_postid_url_to_postid
 // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery
@@ -81,62 +79,6 @@ function wp_flush_get_term_by_cache( $term_id, $taxonomy ) {
 }
 
 /**
- * Cached version of term_exists()
- *
- * Term exists calls can pile up on a single pageload.
- * This function adds a layer of caching to prevent lots of queries.
- *
- * @param int|string $term The term to check can be id, slug or name.
- * @param string     $taxonomy The taxonomy name to use
- * @param int        $parent Optional. ID of parent term under which to confine the exists search.
- * @return mixed Returns null if the term does not exist. Returns the term ID
- *               if no taxonomy is specified and the term ID exists. Returns
- *               an array of the term ID and the term taxonomy ID the taxonomy
- *               is specified and the pairing exists.
- */
-
-function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
-	// If $parent is not null, let's skip the cache.
-	if ( null !== $parent ) {
-		return term_exists( $term, $taxonomy, $parent );
-	}
-
-	if ( ! empty( $taxonomy ) ) {
-		$cache_key = $term . '|' . $taxonomy;
-	} else {
-		$cache_key = $term;
-	}
-
-	$cache_value = wp_cache_get( $cache_key, 'term_exists' );
-
-	// term_exists frequently returns null, but (happily) never false
-	if ( false === $cache_value ) {
-		$term_exists = term_exists( $term, $taxonomy );
-		wp_cache_set( $cache_key, $term_exists, 'term_exists', 3 * HOUR_IN_SECONDS );
-	} else {
-		$term_exists = $cache_value;
-	}
-
-	if ( is_wp_error( $term_exists ) ) {
-		$term_exists = null;
-	}
-
-	return $term_exists;
-}
-
-/**
- * Properly clear wpcom_vip_term_exists() cache when a term is updated
- */
-add_action( 'delete_term', 'wp_flush_term_exists', 10, 4 );
-function wp_flush_term_exists( $term, $tt_id, $taxonomy, $deleted_term ) {
-	foreach ( array( 'term_id', 'name', 'slug' ) as $field ) {
-		$cache_key   = $deleted_term->$field . '|' . $taxonomy;
-		$cache_group = 'term_exists';
-		wp_cache_delete( $cache_key, $cache_group );
-	}
-}
-
-/**
  * Optimized version of get_term_link that adds caching for slug-based lookups.
  *
  * Returns permalink for a taxonomy term archive, or a WP_Error object if the term does not exist.
@@ -154,81 +96,6 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 
 	$term_object = get_term_by( 'slug', $term, $taxonomy );
 	return get_term_link( $term_object );
-}
-
-/**
- * Cached version of get_page_by_title so that we're not making unnecessary SQL all the time
- *
- * @param string $page_title Page title
- * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
- * @param string $post_type Optional. Post type; default is 'page'.
- * @return WP_Post|null WP_Post on success or null on failure
- * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
- */
-function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
-	$cache_key = $post_type . '_' . sanitize_key( $title );
-	$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
-
-	if ( false === $page_id ) {
-		if ( ! function_exists( 'is_user_logged_in' ) ) {
-			// If too early to call `WP_Query`, fallback to deprecated `get_page_by_title`
-			$page    = get_page_by_title( $title, OBJECT, $post_type );
-			$page_id = $page ? $page->ID : 0;
-		} else {
-			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
-			$query   = new WP_Query(
-				array(
-					'title'          => $title,
-					'post_type'      => $post_type,
-					'posts_per_page' => 1,
-					'orderby'        => 'ID',
-					'order'          => 'ASC',
-					'no_found_rows'  => true,
-					'fields'         => 'ids',
-				),
-			);
-			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
-		}
-		wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
-	}
-
-	if ( $page_id ) {
-		return get_post( $page_id, $output );
-	}
-
-	return null;
-}
-
-/**
- * Cached version of get_page_by_path so that we're not making unnecessary SQL all the time
- *
- * @param string        $page_path Page path
- * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
- * @param string|array  $post_type Optional. Post type; default is 'page'.
- * @return WP_Post|null WP_Post on success or null on failure
- * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
- */
-function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
-	$cache_key = md5( $page_path . serialize( $post_type ) );
-	$page_id   = wp_cache_get( $cache_key, 'wpcom_vip_get_page_by_path' );
-
-	if ( false === $page_id ) {
-		$page    = get_page_by_path( $page_path, $output, $post_type );
-		$page_id = $page ? $page->ID : 0;
-		if ( 0 === $page_id ) {
-			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', ( 1 * HOUR_IN_SECONDS + mt_rand( 0, HOUR_IN_SECONDS ) ) ); // We only store the ID to keep our footprint small
-		} else {
-			wp_cache_set( $cache_key, $page_id, 'wpcom_vip_get_page_by_path', 0 ); // We only store the ID to keep our footprint small
-		}
-	}
-
-	if ( $page_id ) {
-		return get_post( $page_id, $output );
-	}
-
-	return null;
 }
 
 /**
@@ -283,7 +150,7 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
-add_action( 'transition_post_status', function( $new_status, $old_status, $post ) {
+add_action( 'transition_post_status', function ( $new_status, $old_status, $post ) {
 	if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
 		return;
 	}
@@ -769,9 +636,17 @@ function vip_reset_local_object_cache() {
 		return;
 	}
 
-	$wp_object_cache->group_ops      = array();
-	$wp_object_cache->memcache_debug = array();
-	$wp_object_cache->cache          = array();
+	$properties = [
+		'group_ops',
+		'memcache_debug',
+		'cache',
+	];
+
+	foreach ( $properties as $property ) {
+		if ( property_exists( $wp_object_cache, $property ) ) {
+			$wp_object_cache->$property = [];
+		}
+	}
 
 	if ( method_exists( $wp_object_cache, '__remoteset' ) ) {
 		$wp_object_cache->__remoteset(); // important

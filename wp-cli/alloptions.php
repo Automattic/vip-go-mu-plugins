@@ -44,7 +44,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		}
 
 		// sort by size
-		usort( $options, function( $arr1, $arr2 ) {
+		usort( $options, function ( $arr1, $arr2 ) {
 			if ( $arr1->size === $arr2->size ) {
 				return 0;
 			}
@@ -70,7 +70,6 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
 		WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
 	}
-
 }
 
 WP_CLI::add_command( 'vip alloptions', 'VIP_Go_Alloptions' );

@@ -19,6 +19,11 @@ if ( ! defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) ) {
 	define( 'VIP_VAULTPRESS_SKIP_LOAD', true );
 }
 
+// Avoid loading VaultPress altogether if VIP_VAULTPRESS_ALLOWED is set to false
+if ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) {
+	return;
+}
+
 // Avoid loading VaultPress altogether if VIP_JETPACK_SKIP_LOAD is set to true (Jetpack is required for VP to work in VIP)
 if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD ) {
 	return;
@@ -42,9 +47,9 @@ if ( ! defined( 'VAULTPRESS_TIMEOUT' ) ) {
 	define( 'VAULTPRESS_TIMEOUT', 10 );
 }
 
-add_filter( 'pre_scan_file', function( $should_skip_file, $file ) {
+add_filter( 'pre_scan_file', function ( $should_skip_file, $file ) {
 	foreach ( VIP_VAULTPRESS_SKIP_FILES as $vp_skip_file ) {
-		if ( wp_endswith( $file, $vp_skip_file ) ) {
+		if ( str_ends_with( $file, $vp_skip_file ) ) {
 			return true;
 		}
 	}
