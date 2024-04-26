@@ -55,4 +55,23 @@ class VIP_EnterpriseSearch_Integration_Test extends WP_UnitTestCase {
 			$this->assertTrue( class_exists( '\Automattic\VIP\Search\Search' ) );
 		}
 	}
+
+	public function test__configure_action(): void {
+		$credentials    = [
+			'username' => 'test-username',
+			'password' => 'foo-bar',
+		];
+		$es_integration = new EnterpriseSearchIntegration( $this->slug );
+		$es_integration->configure();
+
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $es_integration, [
+			'config' => $credentials,
+		] );
+
+		do_action( 'vip_search_loaded' );
+
+		$this->assertEquals( 10, has_action( 'vip_search_loaded', [ $es_integration, 'vip_set_es_credentials' ] ) );
+		$this->assertEquals( constant( 'VIP_ELASTICSEARCH_USERNAME' ), $credentials['username'] );
+		$this->assertEquals( constant( 'VIP_ELASTICSEARCH_PASSWORD' ), $credentials['password'] );
+	}
 }

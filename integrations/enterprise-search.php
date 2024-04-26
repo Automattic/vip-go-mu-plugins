@@ -33,4 +33,32 @@ class EnterpriseSearchIntegration extends Integration {
 
 		require_once __DIR__ . '/../search/search.php';
 	}
+
+	/**
+	 * Configure `Enterprise Search` for VIP Platform.
+	 */
+	public function configure(): void {
+		if ( $this->is_es_credentials_set() ) {
+			return;
+		}
+
+		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
+	}
+
+	/**
+	 * Set the Elasticsearch credentials.
+	 */
+	public function vip_set_es_credentials(): void {
+		$config = $this->get_config();
+		if ( isset( $config['username'] ) && isset( $config['password'] ) ) {
+			define( 'VIP_ELASTICSEARCH_USERNAME', $config['username'] );
+			define( 'VIP_ELASTICSEARCH_PASSWORD', $config['password'] );
+		}
+	}
+
+	private function is_es_credentials_set(): bool {
+		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && constant( 'VIP_ELASTICSEARCH_USERNAME' );
+		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && constant( 'VIP_ELASTICSEARCH_PASSWORD' );
+		return $username_defined && $password_defined;
+	}
 }
