@@ -9,7 +9,7 @@ class LogTrackingRequestBlock extends VIP_Request_Block {
 	public static $log_called = false;
 
 	public static function log( string $criteria, string $value ): void {
-			self::$log_called = true;
+		self::$log_called = true;
 	}
 }
 
@@ -69,23 +69,23 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 	}
 
 	public function test__error_log_when_suppress_false(): void {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
+		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
 
 		LogTrackingRequestBlock::$suppress_log = false;
 		LogTrackingRequestBlock::$log_called   = false;
 
-		$actual = LogTrackingRequestBlock::ip( '1.1.1.1' );
+		LogTrackingRequestBlock::ip( '1.1.1.1' );
 
 		self::assertTrue( LogTrackingRequestBlock::$log_called );
 	}
 
 	public function test__no_error_log_when_suppress_true(): void {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
+		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
 		
 		LogTrackingRequestBlock::$suppress_log = true;
 		LogTrackingRequestBlock::$log_called   = false;
 
-		$actual = LogTrackingRequestBlock::ip( '1.1.1.1' );
+		LogTrackingRequestBlock::ip( '1.1.1.1' );
 
 		self::assertFalse( LogTrackingRequestBlock::$log_called );
 	}
