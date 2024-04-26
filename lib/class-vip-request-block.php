@@ -146,12 +146,17 @@ class VIP_Request_Block {
 
 			if ( ! static::$suppress_log ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+				log( $criteria, $value );
 			}
 
 			exit;
 		}
 
 		return true;
+	}
+
+	public static function log( string $criteria, string $value ): void {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
 	}
 }

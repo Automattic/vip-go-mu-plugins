@@ -4,6 +4,15 @@ require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+class LogTrackingRequestBlock extends VIP_Request_Block {
+	public static $log_called = false;
+
+	public static function log( string $criteria, string $value ): void {
+			self::$log_called = true;
+	}
+}
+
 class VIP_Request_Block_Test extends WP_UnitTestCase {
 	/*
 	 * The $_SERVER headers that are used in this class to test
@@ -57,6 +66,28 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 		$actual = VIP_Request_Block::ip( '1.1.1.1' );
 		self::assertFalse( $actual );
+	}
+
+	public function test__error_log_when_suppress_false(): void {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
+
+		LogTrackingRequestBlock::$suppress_log = false;
+		LogTrackingRequestBlock::$log_called   = false;
+
+		$actual = LogTrackingRequestBlock::ip( '1.1.1.1' );
+
+		self::assertTrue( LogTrackingRequestBlock::$log_called );
+	}
+
+	public function test__no_error_log_when_suppress_true(): void {
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
+		
+		LogTrackingRequestBlock::$suppress_log = true;
+		LogTrackingRequestBlock::$log_called   = false;
+
+		$actual = LogTrackingRequestBlock::ip( '1.1.1.1' );
+
+		self::assertFalse( LogTrackingRequestBlock::$log_called );
 	}
 
 	/**
