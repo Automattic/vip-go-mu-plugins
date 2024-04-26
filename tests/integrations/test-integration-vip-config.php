@@ -231,6 +231,28 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test__get_site_config_with_cascading_config(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$this->do_test_get_site_config(
+			[
+				'env'           => [
+					'status'        => Env_Integration_Status::ENABLED,
+					'config'        => array( 'env-config' ),
+					'cascadeConfig' => true,
+				],
+				'network_sites' => [
+					'1' => [
+						'status' => Env_Integration_Status::ENABLED,
+					],
+				],
+			],
+			array( 'env-config' ),
+		);
+	}
+
 	/**
 	 * Helper function for testing `get_site_config`.
 	 *
