@@ -15,7 +15,7 @@ class LogTrackingRequestBlock extends VIP_Request_Block {
 	public static function block_and_log( string $value, string $criteria ) {
 		if ( static::$should_log ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			self::log( $criteria, $value );
+			static::log( $criteria, $value );
 		}
 	}
 }
