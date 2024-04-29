@@ -17,11 +17,11 @@
  */
 class VIP_Request_Block {
 	/**
-	 * Suppress logging of blocked requests to reduce log noise.
+	 * Controls logging of blocked requests (may be too noisy for some environments).
 	 *
 	 * @var bool
 	 */
-	public static $suppress_log = false;
+	protected static $should_log = true;
 
 	/**
 	 * Block a specific IP based either on true-client-ip, falling back to x-forwarded-for
@@ -144,9 +144,9 @@ class VIP_Request_Block {
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 			header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
-			if ( ! static::$suppress_log ) {
+			if ( static::$should_log ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				log( $criteria, $value );
+				self::log( $criteria, $value );
 			}
 
 			exit;
@@ -158,5 +158,15 @@ class VIP_Request_Block {
 	public static function log( string $criteria, string $value ): void {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 		error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+	}
+
+	/**
+	 * Control logging of blocked requests.
+	 *
+	 * @param bool $should_log whether to log blocked requests.
+	 * @return void
+	 */
+	public static function should_log( bool $should_log = true ) {
+		static::$should_log = $should_log;
 	}
 }
