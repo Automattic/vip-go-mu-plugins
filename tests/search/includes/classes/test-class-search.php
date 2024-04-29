@@ -17,7 +17,7 @@ use WP_Post;
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
-require_once __DIR__ . '/../../../../search/elasticpress-next/elasticpress.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
+require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
 require_once __DIR__ . '/../../../../prometheus.php';
 
 class Search_Test extends WP_UnitTestCase {

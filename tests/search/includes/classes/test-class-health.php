@@ -12,8 +12,8 @@ use WP_Error;
 
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-health.php';
-require_once __DIR__ . '/../../../../search/elasticpress-next/includes/classes/Indexables.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
-require_once __DIR__ . '/../../../../search/elasticpress-next/includes/classes/Elasticsearch.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
+require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Indexables.php';
+require_once __DIR__ . '/../../../../search/elasticpress/includes/classes/Elasticsearch.php';
 
 class Health_Test extends WP_UnitTestCase {
 	/** @var array */
