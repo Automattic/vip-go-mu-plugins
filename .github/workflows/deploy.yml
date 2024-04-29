@@ -22,19 +22,19 @@ jobs:
       contents: write
     steps:
       - name: Check out the source code
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.3
         with:
           submodules: recursive
           path: ${{ env.SOURCE_REPO_PATH }}
 
       - name: Check out Automattic/vip-go-mu-plugins-ext
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.3
         with:
           repository: Automattic/vip-go-mu-plugins-ext
           path: ${{ env.EXT_REPO_PATH }}
 
       - name: Check out Automattic/vip-go-mu-plugins-built
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.3
         with:
           repository: Automattic/vip-go-mu-plugins-built
           path: ${{ env.TARGET_REPO_PATH }}
@@ -49,8 +49,9 @@ jobs:
 
       - name: Synchronize files
         run: |
-          rsync --delete -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore"
-
+          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/../built-git-bak"
+          rsync --delete --delete-excluded -a "${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/" "${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/"* "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/" --exclude-from="${GITHUB_WORKSPACE}/${SOURCE_REPO_PATH}/.dockerignore" --exclude-from="${GITHUB_WORKSPACE}/${EXT_REPO_PATH}/.dockerignore" --exclude="/jetpack-*/"
+          mv "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/../built-git-bak" "${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}/.git"
       - name: Clean up
         run: |
           TARGET="${GITHUB_WORKSPACE}/${TARGET_REPO_PATH}"
