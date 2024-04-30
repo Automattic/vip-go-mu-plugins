@@ -6,7 +6,7 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../search/search.php';
 require_once __DIR__ . '/../../search/includes/classes/class-versioning.php';
-require_once __DIR__ . '/../../search/elasticpress-next/elasticpress.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
+require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
 
 class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	public function setUp(): void {

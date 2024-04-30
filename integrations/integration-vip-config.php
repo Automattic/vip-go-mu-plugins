@@ -78,7 +78,9 @@ class IntegrationVipConfig {
 	 * @return null|mixed
 	 */
 	protected function get_vip_config_from_file( string $slug ) {
-		$config_file_directory = ABSPATH . 'config/integrations-config';
+		$config_file_directory = defined( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
+			? constant( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
+			: ABSPATH . 'config/integrations-config';
 		$config_file_name      = $slug . '-config.php';
 		$config_file_path      = $config_file_directory . '/' . $config_file_name;
 
