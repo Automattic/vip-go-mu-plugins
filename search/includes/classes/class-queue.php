@@ -1087,10 +1087,10 @@ class Queue {
 
 		// Increment first to prevent overrunning ratelimiting
 		$increment             = count( $sync_manager->sync_queue );
-		$index_count_in_period = self::index_count_incr( $increment );
+		$index_count_in_period = static::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
-		if ( $index_count_in_period > self::$max_indexing_op_count ) {
+		if ( $index_count_in_period > static::$max_indexing_op_count ) {
 			if ( class_exists( Prometheus_Collector::class ) ) {
 				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
 			}
