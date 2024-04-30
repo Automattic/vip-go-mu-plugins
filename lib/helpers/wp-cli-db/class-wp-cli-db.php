@@ -49,6 +49,7 @@ class Wp_Cli_Db {
 			'query',
 			'prefix',
 			'columns',
+			'size',
 			'tables',
 		];
 
