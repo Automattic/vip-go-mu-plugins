@@ -1276,10 +1276,10 @@ class Queue {
 	 * @return int|bool New value on success, false on failure
 	 */
 	private static function index_count_incr( $increment = 1 ) {
-		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+		if ( false === wp_cache_get( static::INDEX_COUNT_CACHE_KEY, static::INDEX_COUNT_CACHE_GROUP ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
-			self::turn_off_index_ratelimiting();
+			wp_cache_set( static::INDEX_COUNT_CACHE_KEY, 0, static::INDEX_COUNT_CACHE_GROUP, static::$index_count_ttl );
+			static::turn_off_index_ratelimiting();
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
@@ -1292,12 +1292,12 @@ class Queue {
 		if ( false === static::get_indexing_rate_limit_start() ) {
 			$start_timestamp = time();
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
+			wp_cache_set( static::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, static::INDEX_COUNT_CACHE_GROUP );
 		}
 	}
 
 	public function clear_index_limiting_start_timestamp() {
-		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+		wp_cache_delete( static::INDEX_RATE_LIMITED_START_CACHE_KEY, static::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	/**
