@@ -1266,7 +1266,7 @@ class Queue {
 		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
-			static::clear_index_limiting_start_timestamp();
+			\Automattic\VIP\Search\Search::instance()->queue->clear_index_limiting_start_timestamp();
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
