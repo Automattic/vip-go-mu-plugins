@@ -1090,7 +1090,7 @@ class Queue {
 		$index_count_in_period = self::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
-		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
+		if ( $index_count_in_period > self::$max_indexing_op_count ) {
 			if ( class_exists( Prometheus_Collector::class ) ) {
 				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
 			}
@@ -1106,6 +1106,7 @@ class Queue {
 				$this->log_index_ratelimiting_start();
 			}
 		} else {
+			static::turn_off_index_ratelimiting();
 			$this->clear_index_limiting_start_timestamp();
 		}
 
@@ -1172,6 +1173,15 @@ class Queue {
 	public static function turn_on_index_ratelimiting() {
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
+	}
+
+	/**
+	 *  Turn off ratelimit indexing
+	 *
+	 * @return bool void
+	 */
+	public static function turn_off_index_ratelimiting() {
+		wp_cache_delete( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	/**
