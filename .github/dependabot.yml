@@ -38,6 +38,17 @@ updates:
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
 
   - directory: /__tests__/e2e/
     package-ecosystem: npm
@@ -55,6 +66,17 @@ updates:
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
 
   - directory: /
     package-ecosystem: composer
@@ -63,16 +85,3 @@ updates:
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
-
-# Group certain dependencies, which should normally be updated altogether:
-groups:
-  babel:
-    applies-to: version-updates
-    patterns:
-    - "@babel*"
-    - "babel-*"
-  eslint:
-    applies-to: version-updates
-    patterns:
-    - "eslint"
-    - "eslint-*"
