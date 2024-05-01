@@ -64,7 +64,7 @@ updates:
     labels:
       - '[Status] Needs Review'
 
-# Group certain dependencies together, which should normally be updated altogether:
+# Group certain dependencies, which should normally be updated altogether:
 groups:
   babel:
     applies-to: version-updates
