@@ -75,4 +75,4 @@ groups:
     applies-to: version-updates
     patterns:
     - "eslint"
-    - "babel-*"
+    - "eslint-*"
