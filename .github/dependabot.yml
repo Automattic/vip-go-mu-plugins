@@ -63,3 +63,16 @@ updates:
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
+
+# Group certain dependencies together, which should normally be updated altogether:
+  - groups:
+    babel:
+      applies-to: version-updates
+      patterns:
+      - "@babel*"
+      - "babel-*"
+    eslint:
+      applies-to: version-updates
+      patterns:
+      - "eslint"
+      - "babel-*"
