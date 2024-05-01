@@ -49,6 +49,11 @@ updates:
         patterns:
         - "eslint"
         - "eslint-*"
+      react:
+        applies-to: version-updates
+        patterns:
+        - "react"
+        - "react-dom"
 
   - directory: /__tests__/e2e/
     package-ecosystem: npm
