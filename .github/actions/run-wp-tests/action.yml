@@ -61,7 +61,7 @@ runs:
         fi
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.30.3
+      uses: shivammathur/setup-php@2.30.4
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
