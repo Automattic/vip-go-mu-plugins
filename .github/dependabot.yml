@@ -38,6 +38,22 @@ updates:
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
+      react:
+        applies-to: version-updates
+        patterns:
+        - "react"
+        - "react-dom"
 
   - directory: /__tests__/e2e/
     package-ecosystem: npm
@@ -55,6 +71,17 @@ updates:
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
 
   - directory: /
     package-ecosystem: composer
