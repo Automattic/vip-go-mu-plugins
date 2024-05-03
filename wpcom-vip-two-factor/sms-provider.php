@@ -208,7 +208,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 				<input type="submit" class="button" name="vip-two-factor-phone-send-code"
 					value="<?php esc_attr_e( 'Submit', 'two-factor' ); ?>"/>
 				<p><strong>Note:</strong> Please include your country calling code (e.g. +44, +1, +61, etc.) so that the
-					phone number is as per <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank">E.164 standards</a>,
+					phone number is as per <a href="https://www.twilio.com/docs/glossary/what-e164" target="_blank" rel="noopener">E.164 standards</a>,
 					thereby ensuring that the SMS messages are sent correctly.</p>
 			<?php endif; ?>
 		</div>
