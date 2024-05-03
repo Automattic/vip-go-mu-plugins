@@ -46,7 +46,6 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../001-core.php';
 	require_once __DIR__ . '/../a8c-files.php';
 
-	require_once __DIR__ . '/../async-publish-actions.php';
 	require_once __DIR__ . '/../performance.php';
 
 	require_once __DIR__ . '/../security.php';
