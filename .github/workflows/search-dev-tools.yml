@@ -22,7 +22,7 @@ jobs:
       contents: write
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.1.4
+        uses: actions/checkout@v4.1.5
         with:
           token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
