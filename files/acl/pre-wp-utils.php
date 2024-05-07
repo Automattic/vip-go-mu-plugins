@@ -73,6 +73,13 @@ function validate_path( $file_path ) {
 		return false;
 	}
 
+	// Trailing whitespace (like %0A) in the filename. This won't work on our prod servers but will work in dev env.
+	if ( strlen( rtrim( $decoded ) ) !== strlen( $decoded ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( sprintf( 'VIP Files ACL failed due to a possible attack (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		return false;
+	}
+
 	return true;
 }
 
