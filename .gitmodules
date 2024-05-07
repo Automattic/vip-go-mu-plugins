@@ -22,9 +22,6 @@
 [submodule "jetpack"]
 	path = jetpack
 	url = https://github.com/Automattic/jetpack-production.git
-[submodule "search/elasticpress-next"]
-	path = search/elasticpress-next
-	url = https://github.com/Automattic/ElasticPress.git
 [submodule "wp-parsely"]
 	path = wp-parsely
 	url = https://github.com/Parsely/wp-parsely.git
