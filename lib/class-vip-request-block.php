@@ -166,7 +166,25 @@ class VIP_Request_Block {
 	 * @param bool $should_log whether to log blocked requests.
 	 * @return void
 	 */
-	public static function should_log( bool $should_log = true ) {
+	public static function toggle_logging( bool $should_log = true ) {
 		static::$should_log = $should_log;
+	}
+
+	/**
+	 * Enable logging of blocked requests.
+	 *
+	 * @return void
+	 */
+	public static function enable_logging() {
+		static::toggle_logging( true );
+	}
+
+	/**
+	 * Disable logging of blocked requests.
+	 *
+	 * @return void
+	 */
+	public static function disable_logging() {
+		static::toggle_logging( false );
 	}
 }
