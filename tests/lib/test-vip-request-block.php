@@ -85,7 +85,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 	public function test__no_error_log_when_suppressed(): void {
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
 
-		LogTrackingRequestBlock::should_log( false );
+		LogTrackingRequestBlock::toggle_logging( false );
 		LogTrackingRequestBlock::ip( '1.1.1.1' );
 
 		self::assertFalse( LogTrackingRequestBlock::$log_called );
@@ -94,7 +94,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 	public function test__error_log_when_not_suppressed(): void {
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
 
-		LogTrackingRequestBlock::should_log( true );
+		LogTrackingRequestBlock::toggle_logging( true );
 		LogTrackingRequestBlock::ip( '1.1.1.1' );
 
 		self::assertTrue( LogTrackingRequestBlock::$log_called );
