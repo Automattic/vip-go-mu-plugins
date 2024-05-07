@@ -66,6 +66,13 @@ function validate_path( $file_path ) {
 		return false;
 	}
 
+	$decoded = urldecode( $file_path );
+	if ( false !== strpos( $decoded, './' ) ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( sprintf( 'VIP Files ACL failed due to a possible path traversal attack (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		return false;
+	}
+
 	return true;
 }
 
@@ -79,7 +86,9 @@ function validate_path( $file_path ) {
  * @return array $file_paths Indexed array with two entries: 0 is the path before `/wp-content/uploads/` and 1 is the path + file after.
  */
 function sanitize_and_split_path( $file_path ) {
-	list( $pre_wpcontent_path, $post_wpcontent_path ) = explode( '/wp-content/uploads/', $file_path, 2 );
+	$decoded    = urldecode( $file_path );
+	$compressed = preg_replace( '!/{2,}!', '/', $decoded );
+	list( $pre_wpcontent_path, $post_wpcontent_path ) = explode( '/wp-content/uploads/', $compressed, 2 );
 
 	return [
 		$pre_wpcontent_path,
