@@ -30,7 +30,7 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
 		$preload_state = defined( 'VIP_PARSELY_ENABLED' );
 
@@ -45,13 +45,13 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
 		$existing_value = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
 
 		$parsely_integration_mock->load();
 
-		if ( is_null( $existing_value ) || true == $existing_value ) {
+		if ( is_null( $existing_value ) || $existing_value ) {
 			$this->assertTrue( VIP_PARSELY_ENABLED );
 		} else {
 			$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );

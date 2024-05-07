@@ -188,6 +188,7 @@ tests_add_filter( 'muplugins_loaded', function () {
 require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
+require_once __DIR__ . '/class-vip-test-listener.php';
 require_once __DIR__ . '/utils/utils.php';
 
 require $_tests_dir . '/includes/bootstrap.php';

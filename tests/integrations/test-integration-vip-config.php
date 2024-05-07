@@ -340,20 +340,18 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	 *
 	 * @param array|null|string $vip_config
 	 *
-	 * @return MockObject
+	 * @return MockObject&IntegrationVipConfig
 	 */
 	private function get_mock( $vip_config ) {
 		/**
 		 * Config Mock.
 		 *
-		 * @var MockObject
+		 * @var MockObject&IntegrationVipConfig
 		 */
 		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
-								->disableOriginalConstructor()
-								->setMethods( [
-									'get_vip_config_from_file',
-								] )
-								->getMock();
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_vip_config_from_file' ] )
+			->getMock();
 
 		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
 		$mock->__construct( 'slug' );

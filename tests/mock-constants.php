@@ -20,6 +20,7 @@ namespace Automattic\Test {
 		}
 
 		public static function define( string $constant, $value ): void {
+			$constant = ltrim( $constant, '\\' );
 			if ( isset( self::$constants[ $constant ] ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( "Constant \"%s\" is already defined. Stacktrace:\n%s", $constant, self::$constants[ $constant ][1] ) );
@@ -31,10 +32,12 @@ namespace Automattic\Test {
 		}
 
 		public static function defined( string $constant ): bool {
+			$constant = ltrim( $constant, '\\' );
 			return isset( self::$constants[ $constant ] );
 		}
 
 		public static function constant( string $constant ) {
+			$constant = ltrim( $constant, '\\' );
 			if ( ! isset( self::$constants[ $constant ] ) ) {
 				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
 				throw new InvalidArgumentException( sprintf( 'Constant "%s" is not defined', $constant ) );
@@ -44,12 +47,25 @@ namespace Automattic\Test {
 		}
 
 		public static function undefine( string $constant ): void {
+			$constant = ltrim( $constant, '\\' );
 			unset( self::$constants[ $constant ] );
 		}
 	}
 }
 
 namespace Automattic\VIP\Security {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Support_User {
 	use Automattic\Test\Constant_Mocker;
 
 	function defined( $constant ) {
