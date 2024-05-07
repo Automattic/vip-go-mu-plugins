@@ -39,7 +39,7 @@ function vip_default_jetpack_version() {
 		return '13.1';
 	} else {
 		// WordPress 6.4 and newer.
-		return '13.3';
+		return '13.4';
 	}
 }
 
