@@ -922,7 +922,7 @@ class Queue {
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
-				self::index_count_incr( count( $ids ) );
+				static::index_count_incr( count( $ids ) );
 
 				\Automattic\VIP\Logstash\log2logstash(
 					[
@@ -1035,7 +1035,7 @@ class Queue {
 		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
-		if ( ! self::is_indexing_ratelimited() ) {
+		if ( ! static::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
 
@@ -1101,8 +1101,8 @@ class Queue {
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
-			if ( ! self::is_indexing_ratelimited() ) {
-				self::turn_on_index_ratelimiting();
+			if ( ! static::is_indexing_ratelimited() ) {
+				static::turn_on_index_ratelimiting();
 				$this->log_index_ratelimiting_start();
 			}
 		} else {
@@ -1111,7 +1111,7 @@ class Queue {
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		return true === $bail || true === self::is_indexing_ratelimited();
+		return true === $bail || true === static::is_indexing_ratelimited();
 	}
 
 	/**
