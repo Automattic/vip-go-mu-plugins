@@ -102,6 +102,21 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				'en/wp-content/uploads/file.png',
 				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
 			],
+
+			'path-traversal-dot'           => [
+				'/wp-content/uploads/./file.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/./file.jpg)',
+			],
+
+			'path-traversal'               => [
+				'/wp-content/uploads/../file.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/../file.jpg)',
+			],
+
+			'trailing-whitespace'          => [
+				'/wp-content/uploads/file.jpg ',
+				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg )',
+			],
 		];
 	}
 
