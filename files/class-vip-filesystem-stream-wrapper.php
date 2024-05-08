@@ -183,14 +183,6 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		try {
-			// Get the post_id from the file path
-			$file_post_id = wpcom_vip_attachment_url_to_postid( $path );
-
-			// Get attachment metadata from $file_post_id
-			$attachment_metadata = wp_get_attachment_metadata( $file_post_id );
-			$file_size = $attachment_metadata["filesize"];
-			$this->debug( sprintf( 'filesize %s', $file_size ) );
-
 			$result = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) ) {
