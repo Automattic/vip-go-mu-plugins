@@ -239,27 +239,9 @@ class Search {
 		return static::$instance;
 	}
 
-	/**
-	 * Whether to load the latest ElasticPress version.
-	 * Can be overridden by defining `VIP_SEARCH_USE_NEXT_EP` to false.
-	 *
-	 * @return bool Whether to load the latest version or not. Defaults to true.
-	 */
-	public static function should_load_new_ep() {
-		if ( defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true !== constant( 'VIP_SEARCH_USE_NEXT_EP' ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
 	protected function load_dependencies() {
 		// Load ElasticPress
-		if ( static::should_load_new_ep() ) {
-			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
-		} else {
-			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-		}
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
@@ -1188,8 +1170,8 @@ class Search {
 			return;
 		}
 
-		if ( ! $is_cli ) {
-			global $wp;
+		global $wp;
+		if ( ! $is_cli && isset( $wp->query_vars ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
 		}
@@ -1707,7 +1689,7 @@ class Search {
 	public function filter__ep_user_mapping( $mapping ) {
 		$users_count = count_users();
 
-		if ( isset( $users_count->total_users ) && ( $users_count->total_users > self::USER_SHARD_THRESHOLD ) ) {
+		if ( isset( $users_count['total_users'] ) && ( $users_count['total_users'] > self::USER_SHARD_THRESHOLD ) ) {
 			$mapping['settings']['index.number_of_shards'] = 4;
 		}
 

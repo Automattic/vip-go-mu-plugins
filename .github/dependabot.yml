@@ -4,7 +4,7 @@ updates:
   - directory: /
     package-ecosystem: github-actions
     schedule:
-      interval: daily
+      interval: weekly
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
@@ -13,7 +13,7 @@ updates:
   - directory: /.github/actions/prepare-source
     package-ecosystem: github-actions
     schedule:
-      interval: daily
+      interval: weekly
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
@@ -22,7 +22,7 @@ updates:
   - directory: /.github/actions/run-wp-tests
     package-ecosystem: github-actions
     schedule:
-      interval: daily
+      interval: weekly
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
@@ -31,18 +31,34 @@ updates:
   - directory: /
     package-ecosystem: npm
     schedule:
-      interval: daily
+      interval: weekly
     versioning-strategy: increase-if-necessary
     ignore:
       - dependency-name: "cypress"
     labels:
       - '[Status] Needs Review'
       - '[Status] No files to Deploy'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
+      react:
+        applies-to: version-updates
+        patterns:
+        - "react"
+        - "react-dom"
 
   - directory: /__tests__/e2e/
     package-ecosystem: npm
     schedule:
-      interval: daily
+      interval: weekly
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
@@ -51,15 +67,26 @@ updates:
   - directory: /search/search-dev-tools/
     package-ecosystem: npm
     schedule:
-      interval: daily
+      interval: weekly
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
+    groups:
+      babel:
+        applies-to: version-updates
+        patterns:
+        - "@babel*"
+        - "babel-*"
+      eslint:
+        applies-to: version-updates
+        patterns:
+        - "eslint"
+        - "eslint-*"
 
   - directory: /
     package-ecosystem: composer
     schedule:
-      interval: daily
+      interval: weekly
     versioning-strategy: increase-if-necessary
     labels:
       - '[Status] Needs Review'
