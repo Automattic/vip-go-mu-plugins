@@ -201,7 +201,7 @@ class API_Client {
 
 		// calculate timeout
 		$info = array();
-		$this->is_file( $file_path, $info);
+		$this->is_file( $file_path, $info );
 		if ( is_wp_error( $info ) ) {
 			return $info;
 		}
