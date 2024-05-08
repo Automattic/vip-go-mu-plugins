@@ -239,9 +239,9 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->do_test_get_site_config(
 			[
 				'env'           => [
-					'status'        => Env_Integration_Status::ENABLED,
-					'config'        => array( 'env-config' ),
-					'cascadeConfig' => true,
+					'status'         => Env_Integration_Status::ENABLED,
+					'config'         => array( 'env-config' ),
+					'cascade_config' => true,
 				],
 				'network_sites' => [
 					'1' => [

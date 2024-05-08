@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use Automattic\Test\Constant_Mocker;
 
 use function Automattic\Test\Utils\get_class_property_as_public;
 
@@ -16,6 +17,12 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 
 class VIP_EnterpriseSearch_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'enterprise-search';
+
+	public function tearDown(): void {
+		parent::tearDown();
+
+		Constant_Mocker::clear();
+	}
 
 	public function test_is_loaded_returns_true_if_es_exist(): void {
 		require_once __DIR__ . '/../../search/search.php';
@@ -73,5 +80,25 @@ class VIP_EnterpriseSearch_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_action( 'vip_search_loaded', [ $es_integration, 'vip_set_es_credentials' ] ) );
 		$this->assertEquals( constant( 'VIP_ELASTICSEARCH_USERNAME' ), $credentials['username'] );
 		$this->assertEquals( constant( 'VIP_ELASTICSEARCH_PASSWORD' ), $credentials['password'] );
+	}
+
+	public function test__should_not_configure_if_es_constants_are_already_present(): void {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'baz' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', '123' );
+
+		$credentials    = [
+			'username' => 'test-username',
+			'password' => 'foo-bar',
+		];
+		$es_integration = new EnterpriseSearchIntegration( $this->slug );
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $es_integration, [
+			'config' => $credentials,
+		] );
+		$es_integration->configure();
+
+
+		$this->assertEquals( false, has_action( 'vip_search_loaded', [ $es_integration, 'vip_set_es_credentials' ] ) );
+		$this->assertEquals( Constant_Mocker::constant( 'VIP_ELASTICSEARCH_USERNAME' ), 'baz' );
+		$this->assertEquals( Constant_Mocker::constant( 'VIP_ELASTICSEARCH_PASSWORD' ), '123' );
 	}
 }
