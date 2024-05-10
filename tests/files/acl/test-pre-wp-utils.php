@@ -83,39 +83,49 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data__validate_path__invalid() {
 		return [
-			'null-uri'                     => [
+			'null-uri'                       => [
 				null,
 				'VIP Files ACL failed due to empty path',
 			],
 
-			'empty-uri'                    => [
+			'empty-uri'                      => [
 				'',
 				'VIP Files ACL failed due to empty path',
 			],
 
-			'path-no-wp-content'           => [
+			'path-no-wp-content'             => [
 				'/a/path/to/a/file.jpg',
 				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
 
-			'relative-url-with-wp-content' => [
+			'relative-url-with-wp-content'   => [
 				'en/wp-content/uploads/file.png',
 				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
 			],
 
-			'path-traversal-dot'           => [
+			'path-traversal-dot'             => [
 				'/wp-content/uploads/./file.jpg',
 				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/./file.jpg)',
 			],
 
-			'path-traversal'               => [
+			'path-traversal'                 => [
 				'/wp-content/uploads/../file.jpg',
 				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/../file.jpg)',
 			],
 
-			'trailing-whitespace'          => [
+			'path-traversal-urlencoded'      => [
+				'/wp-content/uploads/..%2Ffile.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/..%2Ffile.jpg)',
+			],
+
+			'trailing-whitespace'            => [
 				'/wp-content/uploads/file.jpg ',
 				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg )',
+			],
+
+			'trailing-whitespace-urlencoded' => [
+				'/wp-content/uploads/file.jpg%0a',
+				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg%0a)',
 			],
 		];
 	}
@@ -218,6 +228,14 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				[
 					'',
 					'path/to/wp-content/uploads/otters.png',
+				],
+			],
+
+			'urlencoded'                     => [
+				'/wp-content/uploads/%6B%69%74%74%65%6e%73%2egif',
+				[
+					'',
+					'kittens.gif',
 				],
 			],
 
