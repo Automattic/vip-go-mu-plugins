@@ -11,6 +11,14 @@ namespace Automattic\VIP\Integrations;
  * Loads Enterprise Search VIP Integration.
  */
 class EnterpriseSearchIntegration extends Integration {
+
+	/**
+	 * The version of Enterprise Search to load.
+	 *
+	 * @var string
+	 */
+	protected string $version = '1.0';
+
 	/**
 	 * Returns `true` if Enterprise Search is already available e.g. customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
@@ -31,7 +39,14 @@ class EnterpriseSearchIntegration extends Integration {
 			return;
 		}
 
-		require_once __DIR__ . '/../search/search.php';
+		// Load the version of the plugin that should be set to the latest version, otherwise if it's not found, fallback to the one in MU.
+		$load_path    = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-enterprise-search-' . $this->version . '/src/search.php';
+		$use_versions = false; // Remove this once we are ready to use the versioned plugin.
+		if ( $use_versions && file_exists( $load_path ) ) {
+			require_once $load_path;
+		} else {
+			require_once __DIR__ . '/../search/search.php';
+		}
 	}
 
 	/**
