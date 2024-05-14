@@ -46,7 +46,6 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -799,8 +798,13 @@ class Queue_Test extends WP_UnitTestCase {
 		$table_name = $this->queue->schema->get_table_name();
 
 		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = range( 3, 9 );
+		$sync_manager->sync_queue = [ 1 ];
 
+		$this->queue->offload_indexing_to_queue();
+		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $sync_manager, 'post' );
+		$this->assertTrue( $current_bail );
+
+		$sync_manager->sync_queue            = range( 3, 9 );
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
 
 		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
