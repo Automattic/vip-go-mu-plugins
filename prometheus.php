@@ -22,12 +22,6 @@ if ( defined( 'ABSPATH' ) ) {
 		'/prometheus-collectors/class-multisite-stats-collector.php',
 	];
 
-	$should_enable_post_collector = Feature::is_enabled( 'prom-post-collection' );
-
-	if ( $should_enable_post_collector ) {
-		$files[] = '/prometheus-collectors/class-post-stats-collector.php';
-	}
-
 	$should_enable_user_collector = Feature::is_enabled( 'prom-user-collection' );
 
 	if ( $should_enable_user_collector ) {
@@ -52,7 +46,6 @@ if ( defined( 'ABSPATH' ) ) {
 			'opcache'                         => OpCache_Collector::class,
 			'login'                           => Login_Stats_Collector::class,
 			'error'                           => Error_Stats_Collector::class,
-			'post'                            => Post_Stats_Collector::class,
 			'user'                            => User_Stats_Collector::class,
 			'potential_multi_dataset_queries' => Potential_Multi_Dataset_Queries_Collector::class,
 			'multisite'                       => Multisite_Stats_Collector::class,
