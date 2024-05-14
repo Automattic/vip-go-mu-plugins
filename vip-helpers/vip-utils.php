@@ -1261,7 +1261,6 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	// Array of shared plugins we are not deprecating
 	$protected_shared_plugins = array(
 		'two-factor',
-		'jetpack-force-2fa',
 	);
 
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
