@@ -4,11 +4,32 @@ require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
+class LogTrackingRequestBlock extends VIP_Request_Block {
+	public static $log_called = false;
+
+	public static function log( string $criteria, string $value ): void {
+		self::$log_called = true;
+	}
+
+	public static function block_and_log( string $value, string $criteria ) {
+		if ( static::$should_log ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			static::log( $criteria, $value );
+		}
+	}
+}
+
 class VIP_Request_Block_Test extends WP_UnitTestCase {
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.
 	 */
+
+	public function setUp(): void {
+		parent::setUp();
+		LogTrackingRequestBlock::$log_called = false;
+	}
 
 	public function tearDown(): void {
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
@@ -57,6 +78,26 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 		$actual = VIP_Request_Block::ip( '1.1.1.1' );
 		self::assertFalse( $actual );
+	}
+
+
+
+	public function test__no_error_log_when_suppressed(): void {
+		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
+
+		LogTrackingRequestBlock::toggle_logging( false );
+		LogTrackingRequestBlock::ip( '1.1.1.1' );
+
+		self::assertFalse( LogTrackingRequestBlock::$log_called );
+	}
+
+	public function test__error_log_when_not_suppressed(): void {
+		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
+
+		LogTrackingRequestBlock::toggle_logging( true );
+		LogTrackingRequestBlock::ip( '1.1.1.1' );
+
+		self::assertTrue( LogTrackingRequestBlock::$log_called );
 	}
 
 	/**
