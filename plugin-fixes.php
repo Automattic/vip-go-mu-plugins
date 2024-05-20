@@ -115,3 +115,15 @@ function vip_disable_gform_cleanup_target_dir() {
 	}
 }
 add_action( 'plugins_loaded', 'vip_disable_gform_cleanup_target_dir' );
+
+
+/**
+ * Disable Divi caching since VIP already supports page and object caching.
+ * 
+ * Divi caching can cause bloated media directory, let's just turn it off.
+ * 
+ * @see https://docs.wpvip.com/plugins/incompatibilities/#divi
+ */
+define( 'ET_DISABLE_FILE_BASED_CACHE', true );
+define( 'ET_BUILDER_CACHE_ASSETS', false );
+define( 'ET_BUILDER_CACHE_MODULES', false );
