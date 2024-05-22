@@ -4,7 +4,12 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../plugin-fixes.php';
 
-class VIP_Go_Test_Check_Divi_Setup extends TestCase {
+class VIP_Go_Test_Check_Divi_Compatibility extends TestCase {
+	protected function setUp(): void {
+		parent::setUp();
+		remove_all_filters( 'et_cache_wpfs_credentials' );
+	}
+
 	/**
 	 * Test the vip_divi_compatibility function.
 	 *
