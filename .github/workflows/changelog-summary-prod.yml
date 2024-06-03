@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v4.1.6
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.30.4
+        uses: shivammathur/setup-php@2.30.5
 
       - name: Install
         uses: ramsey/composer-install@3.0.0
