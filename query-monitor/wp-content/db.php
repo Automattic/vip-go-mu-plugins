@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Query Monitor Database Class (Drop-in)
  * Description: Database drop-in for Query Monitor, the developer tools panel for WordPress.
- * Version:     3.12.1
+ * Version:     3.16.3
  * Plugin URI:  https://querymonitor.com/
  * Author:      John Blackbourn
  * Author URI:  https://querymonitor.com/
@@ -12,7 +12,7 @@
  * Ensure this file is symlinked to your wp-content directory to provide
  * additional database query information in Query Monitor's output.
  *
- * @see https://github.com/johnbillion/query-monitor/wiki/db.php-Symlink
+ * @see https://querymonitor.com/help/db-php-symlink/
  *
  * *********************************************************************
  *
@@ -46,6 +46,17 @@ if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
 	return;
 }
 
+# Don't load QM during plugin updates to prevent function signature changes causing issues between versions.
+if ( is_admin() ) {
+	if ( isset( $_GET['action'] ) && 'upgrade-plugin' === $_GET['action'] ) {
+		return;
+	}
+
+	if ( isset( $_POST['action'] ) && 'update-plugin' === $_POST['action'] ) {
+		return;
+	}
+}
+
 // This must be required before vendor/autoload.php so QM can serve its own message about PHP compatibility.
 $qm_dir = dirname( dirname( __FILE__ ) );
 $qm_php = "{$qm_dir}/classes/PHP.php";
@@ -66,6 +77,7 @@ if ( ! file_exists( "{$qm_dir}/vendor/autoload.php" ) ) {
 
 require_once "{$qm_dir}/vendor/autoload.php";
 
+// Safety check to ensure the autoloader is operational.
 if ( ! class_exists( 'QM_Backtrace' ) ) {
 	return;
 }
