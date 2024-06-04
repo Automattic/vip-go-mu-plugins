@@ -50,6 +50,7 @@ abstract class QM_Output_Html_Assets extends QM_Output_Html {
 			// @TODO translator comments or context:
 			'missing' => __( 'Missing', 'query-monitor' ),
 			'broken' => __( 'Missing Dependencies', 'query-monitor' ),
+			'modules' => __( 'Module', 'query-monitor' ),
 			'header' => __( 'Header', 'query-monitor' ),
 			'footer' => __( 'Footer', 'query-monitor' ),
 		);
@@ -69,7 +70,7 @@ abstract class QM_Output_Html_Assets extends QM_Output_Html {
 		echo '<th scope="col" class="qm-filterable-column">';
 		$args = array(
 			'prepend' => array(
-				'local' => $data->host,
+				'local' => $data->full_host,
 			),
 		);
 		echo $this->build_filter( $type . '-host', $hosts, __( 'Host', 'query-monitor' ), $args ); // WPCS: XSS ok.
