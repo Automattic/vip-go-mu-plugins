@@ -397,3 +397,13 @@ function vip_send_wplogin_header( $user ) {
 	return $user;
 }
 add_filter( 'determine_current_user', 'vip_send_wplogin_header', 10000 );
+
+/**
+ * Force secure_logged_in_cookie to be always secure no matter what.
+ * 
+ * @return true Always return true to force secure_logged_in_cookie to be secure.
+ */
+function vip_force_secure_logged_in_cookie() {
+	return true;
+}
+add_filter( 'secure_logged_in_cookie', 'vip_force_secure_logged_in_cookie' );
