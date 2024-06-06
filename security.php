@@ -399,11 +399,16 @@ function vip_send_wplogin_header( $user ) {
 add_filter( 'determine_current_user', 'vip_send_wplogin_header', 10000 );
 
 /**
- * Force secure_logged_in_cookie to be always secure no matter what.
+ * Force secure_logged_in_cookie to be always secure on VIP environments.
  * 
- * @return true Always return true to force secure_logged_in_cookie to be secure.
+ * @param bool $secure_logged_in_cookie Whether the logged in cookie should only be sent over HTTPS.
+ * @return bool Return true on VIP environments, otherwise return the original value.
  */
-function vip_force_secure_logged_in_cookie() {
-	return true;
+function vip_force_secure_logged_in_cookie( $secure_logged_in_cookie ) {
+	if ( Context::is_vip_env() && ! is_local_env() ) {
+		return true;
+	}
+
+	return $secure_logged_in_cookie;
 }
 add_filter( 'secure_logged_in_cookie', 'vip_force_secure_logged_in_cookie' );
