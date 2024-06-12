@@ -57,37 +57,28 @@ class Integrations {
 	 * @return void
 	 */
 	public function activate_platform_integrations() {
+		$vip_configs = VipIntegrationsConfig::get_instance();
+
 		foreach ( $this->integrations as $slug => $integration ) {
 			// Don't activate again if integration is already activated and configured by customer.
 			if ( $integration->is_active() ) {
 				continue;
 			}
 
-			$vip_config = $this->get_integration_vip_config( $slug );
-
-			if ( $vip_config->is_active_via_vip() ) {
+			if ( $vip_configs->is_active_via_vip( $slug ) ) {
 				$this->activate( $slug, [
-					'config' => $vip_config->get_site_config(),
+					'config' => $vip_configs->get_site_config( $slug ),
 				] );
 
 				// If integration is activated successfully without any error then configure.
 				if ( $integration->is_active() ) {
 					$integration->configure();
+
+					$vip_config = $vip_configs->get_vip_config( $slug );
 					$integration->set_vip_config( $vip_config );
 				}
 			}
 		}
-	}
-
-	/**
-	 * Get IntegrationVipConfig instance (having this a separate method for mocking in tests).
-	 *
-	 * @param string $slug A unique identifier for the integration.
-	 *
-	 * @return IntegrationVipConfig
-	 */
-	protected function get_integration_vip_config( string $slug ): IntegrationVipConfig {
-		return new IntegrationVipConfig( $slug );
 	}
 
 	/**
