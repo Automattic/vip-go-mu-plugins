@@ -255,10 +255,12 @@ abstract class Integration {
 
 			// Look for key inside network-sites config.
 			$network_site_id = get_current_blog_id();
-			if ( 'network_sites' === $config_type && isset( $vip_config[ $config_type ][ $network_site_id ] ) ) {
-				if ( isset( $vip_config[ $config_type ][ $network_site_id ][ $key ] ) ) {
-					return $vip_config[ $config_type ][ $network_site_id ][ $key ];
-				}
+			if (
+				'network_sites' === $config_type &&
+				isset( $vip_config[ $config_type ][ $network_site_id ] ) &&
+				isset( $vip_config[ $config_type ][ $network_site_id ][ $key ] )
+			) {
+				return $vip_config[ $config_type ][ $network_site_id ][ $key ];
 			}
 		}
 
