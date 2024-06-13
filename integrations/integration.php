@@ -7,6 +7,9 @@
 
 namespace Automattic\VIP\Integrations;
 
+use Org_Integration_Status;
+use Env_Integration_Status;
+
 /**
  * Abstract base class for all integration implementations.
  *
@@ -54,7 +57,14 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	private array $vip_config;
+	private array $vip_configs;
+
+	/**
+	 * A boolean indicating if the integration have multiple configs.
+	 *
+	 * @var bool
+	 */
+	protected bool $have_multiple_configs = false;
 
 	/**
 	 * Constructor.
@@ -95,12 +105,13 @@ abstract class Integration {
 
 	/**
 	 * Callback for `switch_blog` filter.
+	 *
+	 * @private
 	 */
 	public function switch_blog_callback(): void {
 		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
-		if ( isset( $this->vip_config ) ) {
-			$integrations_config     = VipIntegrationsConfig::get_instance();
-			$this->options['config'] = $integrations_config->get_site_config( $this->slug );
+		if ( isset( $this->vip_configs ) ) {
+			$this->options['config'] = $this->get_site_configs( $this->slug );
 		}
 	}
 
@@ -111,6 +122,17 @@ abstract class Integration {
 	 */
 	public function is_active(): bool {
 		return $this->is_active;
+	}
+
+	/**
+	 * Returns `true` if the integration is enabled in VIP configs else `false`.
+	 *
+	 * @return bool
+	 *
+	 * @private
+	 */
+	public function is_active_via_vip(): bool {
+		return in_array( Env_Integration_Status::ENABLED, $this->get_site_statuses() );
 	}
 
 	/**
@@ -134,18 +156,116 @@ abstract class Integration {
 	}
 
 	/**
-	 * Set vip_config property.
+	 * Set `vip_configs` property.
 	 *
-	 * @param array $vip_config Configurations provided by VIP.
+	 * @param array $vip_configs Configurations provided by VIP.
 	 *
 	 * @return void
+	 *
+	 * @private
 	 */
-	public function set_vip_config( array $vip_config ): void {
-		if ( ! $this->is_active() ) {
-			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	public function set_vip_configs( array $vip_configs ): void {
+		$this->vip_configs = $vip_configs;
+	}
+
+	/**
+	 * Get statuses of the integration in context of current site.
+	 *
+	 * @return array<Env_Integration_Status>
+	 */
+	private function get_site_statuses() {
+		/**
+		 * Statuses of the integration.
+		 *
+		 * @var array<string>
+		 */
+		$statuses = [];
+
+		foreach ( $this->vip_configs as $vip_config ) {
+			if ( $this->get_value_from_config( $vip_config, 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
+				return [ Org_Integration_Status::BLOCKED ];
+			}
+	
+			// Look into network_sites config before and then fallback to env config.
+			$statuses[] = $this->get_value_from_config( $vip_config, 'network_sites', 'status' ) ??
+				$this->get_value_from_config( $vip_config, 'env', 'status' );
 		}
 
-		$this->vip_config = $vip_config;
+		return $statuses;
+	}
+
+	/**
+	 * Get configs of the integration in context of current site.
+	 *
+	 * @return array<mixed> Returns an array if the integration have multiple configs else single object.
+	 *
+	 * @private
+	 */
+	public function get_site_configs() {
+		/**
+		 * Configs of the integration.
+		 *
+		 * @var array<string>
+		 */
+		$configs = [];
+
+		// Get configs of the integration from configurations provided by VIP.
+		foreach ( $this->vip_configs as $vip_config ) {
+			if ( is_multisite() ) {
+				$config = $this->get_value_from_config( $vip_config, 'network_sites', 'config' );
+
+				// If network site config is not found then fallback to env config if it exists.
+				if ( empty( $config ) && true === $this->get_value_from_config( $config, 'env', 'cascade_config' ) ) {
+					$config = $this->get_value_from_config( $vip_config, 'env', 'config' );
+				}
+			} else {
+				$config = $this->get_value_from_config( $vip_config, 'env', 'config' );
+			}
+
+			if ( ! isset( $config ) ) {
+				continue;
+			}
+
+			$configs[] = $config;
+		}
+
+		return ( ! $this->have_multiple_configs && isset( $configs[0] ) ) ? $configs[0] : $configs;
+	}
+
+	/**
+	 * Get config value based on given type and key.
+	 *
+	 * @param array  $vip_config  Configurations provided by VIP.
+	 * @param string $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
+	 * @param string $key Key of the config from which we have to extract the data.
+	 *
+	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
+	 */
+	private function get_value_from_config( array $vip_config, string $config_type, string $key ) {
+
+		if ( ! in_array( $config_type, [ 'org', 'env', 'network_sites' ], true ) ) {
+			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of org, env or network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return null;
+		}
+
+		if ( ! isset( $vip_config[ $config_type ] ) ) {
+			return null;
+		}
+
+		// Look for key inside org or env config.
+		if ( 'network_sites' !== $config_type && isset( $vip_config[ $config_type ][ $key ] ) ) {
+			return $vip_config[ $config_type ][ $key ];
+		}
+
+		// Look for key inside network-sites config.
+		$network_site_id = get_current_blog_id();
+		if ( 'network_sites' === $config_type && isset( $vip_config[ $config_type ][ $network_site_id ] ) ) {
+			if ( isset( $vip_config[ $config_type ][ $network_site_id ][ $key ] ) ) {
+				return $vip_config[ $config_type ][ $network_site_id ][ $key ];
+			}
+		}
+
+		return null;
 	}
 
 	/**
