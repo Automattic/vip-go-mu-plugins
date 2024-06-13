@@ -67,12 +67,30 @@ abstract class Integration {
 	protected bool $have_multiple_configs = false;
 
 	/**
+	 * When an integration doesn't have its own config and is dependent on configs
+	 * of other integrations then we can use this property.
+	 *
+	 * Example:
+	 *
+	 * VIP Composable Blocks integration needs data sources which
+	 * are dependent on Shopify, Airtable etc.
+	 *
+	 * @var array<Integration>
+	 */
+	protected array $child_integrations = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
+
+		// Registers child integrations if any.
+		foreach ( $this->child_integrations as $integration ) {
+			IntegrationsSingleton::instance()->register( $integration );
+		}
 
 		add_action( 'switch_blog', array( $this, 'switch_blog_callback' ), 10 );
 	}
@@ -132,6 +150,13 @@ abstract class Integration {
 	 * @private
 	 */
 	public function is_active_via_vip(): bool {
+		// Returns 'true` if any of the child integrations is active else get the related config for the integration.
+		foreach ( $this->child_integrations as $integration ) {
+			if ( $integration->is_active_via_vip() ) {
+				return true;
+			}
+		}
+
 		return in_array( Env_Integration_Status::ENABLED, $this->get_site_statuses() );
 	}
 
@@ -209,6 +234,15 @@ abstract class Integration {
 		 */
 		$configs = [];
 
+		// If integration have child integrations then merge the config of each child integration and return.
+		if ( count( $this->child_integrations ) ) {
+			foreach ( $this->child_integrations as $integration ) {
+				$configs = array_merge( $configs, $integration->get_config() );
+			}
+
+			return $configs;
+		}
+
 		// Get configs of the integration from configurations provided by VIP.
 		foreach ( $this->vip_configs as $vip_config ) {
 			if ( is_multisite() ) {
@@ -224,6 +258,12 @@ abstract class Integration {
 
 			if ( ! isset( $config ) ) {
 				continue;
+			}
+
+			$config['type'] = $this->slug; // Useful to have it available, specially when integration is dependent on child integrations.
+
+			if ( isset( $vip_config['label'] ) ) {
+				$config['label'] = $vip_config['label']; // Useful to differentiate between multiple configs of same integration.
 			}
 
 			$configs[] = $config;
