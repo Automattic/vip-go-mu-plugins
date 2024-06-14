@@ -328,7 +328,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test__get_site_configs_with_cascading_config(): void {
+	public function test__get_site_configs_returns_value_from_env_config_when_cascading_config_is_true(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite.' );
 		}
