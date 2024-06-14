@@ -102,29 +102,24 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			$this->markTestSkipped( 'Only valid for multisite' );
 		}
 
+		$blog_2_id   = $this->factory()->blog->create_object( [ 'domain' => 'integration-test.site/2' ] );
 		$integration = new FakeIntegration( 'fake' );
-		$integration->activate( [ 'config' => [ 'activate_config' ] ] );
-		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'integration-test.site/2' ] );
-		/**
-		 * Intgration Config Mock.
-		 *
-		 * @var IntegrationVipConfig|MockObject
-		 */
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'get_vip_config_from_file' ] )->getMock();
-		$config_mock->method( 'get_vip_config_from_file' )->willReturn( [
-			'network_sites' => [
-				get_current_blog_id() => [
-					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'network_site_1_config' ),
-				],
-				$blog_2_id            => [
-					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'network_site_2_config' ),
+		$integration->set_vip_configs( [
+			[
+				'network_sites' => [
+					get_current_blog_id() => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => array( 'network_site_1_config' ),
+					],
+					$blog_2_id            => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => array( 'network_site_2_config' ),
+					],
 				],
 			],
 		] );
-		$config_mock->__construct( 'slug' );
-		$integration->set_vip_config( $config_mock );
+
+		$integration->activate( [ 'config' => [ 'activate_config' ] ] );
 
 		// By default return config passed via activate().
 		$this->assertEquals( array( 'activate_config' ), $integration->get_config() );
@@ -142,21 +137,5 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$integration = new FakeIntegration( 'fake' );
 
 		$this->assertFalse( $integration->is_active() );
-	}
-
-	public function test__set_vip_config_function_throws_error_if_integration_is_not_active(): void {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->expectExceptionMessage( 'Configuration info can only assigned if integration is active.' );
-
-		$integration = new FakeIntegration( 'fake' );
-		/**
-		 * Intgration Config Mock.
-		 *
-		 * @var IntegrationVipConfig|MockObject
-		 */
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->getMock();
-
-		$this->assertFalse( $integration->set_vip_config( $config_mock ) );
 	}
 }
