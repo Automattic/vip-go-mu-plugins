@@ -14,13 +14,6 @@ namespace Automattic\VIP\Integrations;
  */
 class VipIntegrationsConfig {
 	/**
-	 * Instance of the class.
-	 *
-	 * @var VipIntegrationsConfig
-	 */
-	private static $instance = null;
-
-	/**
 	 * Directory path where configuration files are stored.
 	 *
 	 * @var string
