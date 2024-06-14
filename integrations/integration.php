@@ -215,7 +215,7 @@ abstract class Integration {
 				$config = $this->get_value_from_config( $vip_config, 'network_sites', 'config' );
 
 				// If network site config is not found then fallback to env config if it exists.
-				if ( empty( $config ) && true === $this->get_value_from_config( $config, 'env', 'cascade_config' ) ) {
+				if ( empty( $config ) && true === $this->get_value_from_config( $vip_config, 'env', 'cascade_config' ) ) {
 					$config = $this->get_value_from_config( $vip_config, 'env', 'config' );
 				}
 			} else {
