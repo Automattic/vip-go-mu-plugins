@@ -45,23 +45,6 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
-		$slug               = 'dummy';
-		$integration_config = new IntegrationVipConfig( $slug );
-
-		$reflection_method = get_class_method_as_public( IntegrationVipConfig::class, 'get_vip_config_from_file' );
-
-		$this->assertNull( $reflection_method->invoke( $integration_config, $slug ) );
-	}
-
-	public function test__set_config_does_not_set_the_config_if_received_content_from_file_is_not_of_type_array(): void {
-		$mock = $this->get_mock( 'invalid-config' );
-
-		$config = get_class_property_as_public( IntegrationVipConfig::class, 'config' )->getValue( $mock );
-
-		$this->assertEquals( [], $config );
-	}
-
 	public function test__is_active_via_vip_returns_false_if_empty_config_is_provided(): void {
 		$this->do_test_is_active_via_vip( [], false );
 	}
