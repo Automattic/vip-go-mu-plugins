@@ -57,7 +57,7 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	private array $vip_configs;
+	private array $vip_configs = [];
 
 	/**
 	 * A boolean indicating if the integration have multiple configs.
@@ -229,6 +229,7 @@ abstract class Integration {
 			$configs[] = $config;
 		}
 
+		// Return config object if integration have only one config else return all configs.
 		return ( ! $this->have_multiple_configs && isset( $configs[0] ) ) ? $configs[0] : $configs;
 	}
 

@@ -75,25 +75,12 @@ class VipIntegrationsConfig {
 	/**
 	 * Constructor.
 	 */
-	private function __construct() {
+	public function __construct() {
 		if ( defined( 'WPVIP_INTEGRATIONS_CONFIG_DIR' ) ) {
 			$this->config_file_dir = constant( 'WPVIP_INTEGRATIONS_CONFIG_DIR' );
 		}
 
 		$this->configs = $this->read_config_files();
-	}
-
-	/**
-	 * Get instance of the class.
-	 *
-	 * @return VipIntegrationsConfig
-	 */
-	public static function get_instance(): VipIntegrationsConfig {
-		if ( null === self::$instance ) {
-			self::$instance = new self();
-		}
-
-		return self::$instance;
 	}
 
 	/**

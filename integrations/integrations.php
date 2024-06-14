@@ -54,9 +54,11 @@ class Integrations {
 	 * Activates integrations based on the configuration provided by VIP
 	 * (only if not already activated by customer).
 	 *
+	 * @param VipIntegrationsConfig $vip_integrations_config Object which contains all configurations.
+	 *
 	 * @return void
 	 */
-	public function activate_platform_integrations() {
+	public function activate_platform_integrations( VipIntegrationsConfig $vip_integrations_config ) {
 		foreach ( $this->integrations as $slug => $integration ) {
 			// Don't activate again if integration is already activated and configured by customer.
 			if ( $integration->is_active() ) {
@@ -64,7 +66,8 @@ class Integrations {
 			}
 
 			// Get configs provided by VIP and assign to integration.
-			$integration->set_vip_configs( VipIntegrationsConfig::get_instance()->get_vip_configs( $slug ) );
+			$vip_configs = $vip_integrations_config->get_vip_configs( $slug );
+			$integration->set_vip_configs( $vip_configs );
 
 			if ( $integration->is_active_via_vip() ) {
 				$this->activate( $slug, [
