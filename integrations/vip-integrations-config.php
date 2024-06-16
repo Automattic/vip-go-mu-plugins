@@ -88,10 +88,6 @@ class VipIntegrationsConfig {
 		foreach ( $file_names as $file_name ) {
 			$config = $this->get_config_file_content( $file_name );
 
-			if ( null === $config ) {
-				continue;
-			}
-
 			if ( is_array( $config ) && isset( $config['type'] ) ) {
 				$type = $config['type'];
 				unset( $config['type'] );

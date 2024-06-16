@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
+use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use ReflectionClass;
 use WP_UnitTestCase;
@@ -39,6 +40,14 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	public function test__constructor_doest_not_set_config_file_dir_property_if_constant_is_not_defined() {
+		$integrations_config   = new VipIntegrationsConfig();
+		$config_file_dir_value = get_class_property_as_public( VipIntegrationsConfig::class, 'config_file_dir' )->getValue( $integrations_config );
+		
+		$this->assertEquals( ABSPATH . 'config/integrations-config', $config_file_dir_value );
+		$this->assertIsString( $config_file_dir_value );
+	}
+
 	public function test__get_config_file_names_returns_an_empty_array_if_dir_does_not_exist(): void {
 		$obj                   = ( new ReflectionClass( VipIntegrationsConfig::class ) )->newInstanceWithoutConstructor();
 		$get_config_file_names = get_class_method_as_public( VipIntegrationsConfig::class, 'get_config_file_names' );
@@ -53,7 +62,7 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		$this->assertNull( $get_config_file_content->invoke( $obj, 'file_name' ) );
 	}
 
-	public function test__configs_property_have_no_value_if_vip_config_is_not_of_type_array(): void {
+	public function test__read_config_files_does_not_set_configs_property_if_vip_config_is_not_of_type_array(): void {
 		$vip_configs = [ [ 'invalid-config' ] ];
 
 		$mock    = $this->get_mock_with_configs( $vip_configs );
@@ -62,7 +71,7 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $configs );
 	}
 
-	public function test__configs_property_have_no_value_if_vip_config_does_not_have_type_property(): void {
+	public function test__read_config_files_does_not_set_configs_property_if_vip_config_does_not_have_type_property(): void {
 		$vip_configs = [ 
 			[ 'env' => [ 'status' => 'enabled' ] ],
 		];
@@ -73,7 +82,7 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $configs );
 	}
 
-	public function test__configs_property_have_value(): void {
+	public function test__read_config_files_successfully_read_all_vip_configs(): void {
 		$vip_configs = [ 
 			[
 				'type' => 'type-one',
