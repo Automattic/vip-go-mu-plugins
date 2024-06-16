@@ -20,6 +20,7 @@ use function Automattic\Test\Utils\reset_custom_error_reporting;
 use function Automattic\Test\Utils\setup_custom_error_reporting;
 
 require_once __DIR__ . '/fake-integration.php';
+require_once __DIR__ . '/fake-multi-config-integration.php';
 
 class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
@@ -246,6 +247,29 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		], true );
 	}
 
+	public function test__is_active_via_vip_returns_false_if_multi_config_integration_is_blocked_on_organization(): void {
+		$vip_configs = [
+			[ 'env' => [ 'status' => Env_Integration_Status::BLOCKED ] ],
+			[ 'env' => [ 'status' => Env_Integration_Status::ENABLED ] ],
+			[ 'org' => [ 'status' => Org_Integration_Status::BLOCKED ] ],
+		];
+
+		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+
+		$this->assertEquals( false, $integration->is_active_via_vip() );
+	}
+
+	public function test__is_active_via_vip_returns_true_if_multiple_instances_of_integration_are_configured_on_environment(): void {
+		$vip_configs = [
+			[ 'env' => [ 'status' => Env_Integration_Status::ENABLED ] ],
+			[ 'env' => [ 'status' => Env_Integration_Status::DISABLED ] ],
+		];
+
+		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+
+		$this->assertEquals( true, $integration->is_active_via_vip() );
+	}
+
 	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_environment(): void {
 		$this->do_test_is_active_via_vip( [
 			[
@@ -350,6 +374,74 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			],
 			array( 'env-config' ),
 		);
+	}
+
+	public function test__get_site_configs_return_env_configs_of_multi_config_integration(): void {
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for single site.' );
+		}
+
+		$vip_configs = [
+			[
+				'env' => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => array( 'env-1-config' ),
+				],
+			],
+			[
+				'env' => [
+					'status' => Env_Integration_Status::DISABLED,
+					'config' => array( 'env-2-config' ),
+				],
+			],
+		];
+
+		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+
+		$this->assertEqualsCanonicalizing( [
+			[ 'env-1-config' ],
+			[ 'env-2-config' ],
+		], $integration->get_site_configs() );
+	}
+
+	public function test__get_site_configs_return_network_site_configs_of_multi_config_integration(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$vip_configs = [
+			[
+				'network_sites' => [
+					'1' => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => array( '1-config' ),
+					],
+				],
+			],
+			[
+				'network_sites' => [
+					'1' => [
+						'status' => Env_Integration_Status::DISABLED,
+						'config' => array( '2-config' ),
+					],
+				],
+			],
+			[
+				'network_sites' => [
+					'2' => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => array( '3-config' ),
+					],
+				],
+			],
+		];
+
+		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+
+		$this->assertEqualsCanonicalizing( [
+			[ '1-config' ],
+			[ '2-config' ],
+		], $integration->get_site_configs() );
 	}
 
 	/**
@@ -462,6 +554,19 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	 */
 	private function get_integration_with_configs( $vip_configs ): Integration {
 		$integration = new FakeIntegration( 'fake' );
+
+		$integration->set_vip_configs( $vip_configs );
+
+		return $integration;
+	}
+
+	/**
+	 * Get `Integration` having multiple configs.
+	 *
+	 * @param array $vip_configs
+	 */
+	private function get_integration_with_multiple_configs( $vip_configs ): Integration {
+		$integration = new FakeMultiConfigIntegration( 'fake-multi-config' );
 
 		$integration->set_vip_configs( $vip_configs );
 

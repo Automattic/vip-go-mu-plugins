@@ -197,15 +197,15 @@ abstract class Integration {
 	/**
 	 * Get configs of the integration in context of current site.
 	 *
-	 * @return array<mixed> Returns an array if the integration have multiple configs else single object.
+	 * @return array<array<mixed>> Returns an array of configs if the integration have multiple configs else single config object.
 	 *
 	 * @private
 	 */
 	public function get_site_configs() {
 		/**
-		 * Configs of the integration.
+		 * Array containing configs of the integration.
 		 *
-		 * @var array<string>
+		 * @var array<array<mixed>>
 		 */
 		$configs = [];
 
