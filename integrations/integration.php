@@ -57,7 +57,7 @@ abstract class Integration {
 	 *
 	 * @var array
 	 */
-	private array $vip_configs;
+	private array $vip_configs = [];
 
 	/**
 	 * A boolean indicating if the integration have multiple configs.
@@ -222,15 +222,15 @@ abstract class Integration {
 	/**
 	 * Get configs of the integration in context of current site.
 	 *
-	 * @return array<mixed> Returns an array if the integration have multiple configs else single object.
+	 * @return array<array<mixed>> Returns an array of configs if the integration have multiple configs else single config object.
 	 *
 	 * @private
 	 */
 	public function get_site_configs() {
 		/**
-		 * Configs of the integration.
+		 * Array containing configs of the integration.
 		 *
-		 * @var array<string>
+		 * @var array<array<mixed>>
 		 */
 		$configs = [];
 
@@ -249,7 +249,7 @@ abstract class Integration {
 				$config = $this->get_value_from_config( $vip_config, 'network_sites', 'config' );
 
 				// If network site config is not found then fallback to env config if it exists.
-				if ( empty( $config ) && true === $this->get_value_from_config( $config, 'env', 'cascade_config' ) ) {
+				if ( empty( $config ) && true === $this->get_value_from_config( $vip_config, 'env', 'cascade_config' ) ) {
 					$config = $this->get_value_from_config( $vip_config, 'env', 'config' );
 				}
 			} else {
@@ -269,6 +269,7 @@ abstract class Integration {
 			$configs[] = $config;
 		}
 
+		// Return config object if integration have only one config else return all configs.
 		return ( ! $this->have_multiple_configs && isset( $configs[0] ) ) ? $configs[0] : $configs;
 	}
 
@@ -282,30 +283,29 @@ abstract class Integration {
 	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
 	private function get_value_from_config( array $vip_config, string $config_type, string $key ) {
+		$value = null;
 
 		if ( ! in_array( $config_type, [ 'org', 'env', 'network_sites' ], true ) ) {
 			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of org, env or network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return null;
-		}
+		} elseif ( isset( $vip_config[ $config_type ] ) ) {
 
-		if ( ! isset( $vip_config[ $config_type ] ) ) {
-			return null;
-		}
+			// Look for key inside org or env config.
+			if ( 'network_sites' !== $config_type && isset( $vip_config[ $config_type ][ $key ] ) ) {
+				return $vip_config[ $config_type ][ $key ];
+			}
 
-		// Look for key inside org or env config.
-		if ( 'network_sites' !== $config_type && isset( $vip_config[ $config_type ][ $key ] ) ) {
-			return $vip_config[ $config_type ][ $key ];
-		}
-
-		// Look for key inside network-sites config.
-		$network_site_id = get_current_blog_id();
-		if ( 'network_sites' === $config_type && isset( $vip_config[ $config_type ][ $network_site_id ] ) ) {
-			if ( isset( $vip_config[ $config_type ][ $network_site_id ][ $key ] ) ) {
+			// Look for key inside network-sites config.
+			$network_site_id = get_current_blog_id();
+			if (
+				'network_sites' === $config_type &&
+				isset( $vip_config[ $config_type ][ $network_site_id ] ) &&
+				isset( $vip_config[ $config_type ][ $network_site_id ][ $key ] )
+			) {
 				return $vip_config[ $config_type ][ $network_site_id ][ $key ];
 			}
 		}
 
-		return null;
+		return $value;
 	}
 
 	/**
