@@ -265,8 +265,6 @@ abstract class Integration {
 			if ( isset( $vip_config['label'] ) ) {
 				$config['label'] = $vip_config['label']; // Useful to differentiate between multiple configs of same integration.
 			}
-
-			$configs[] = $config;
 		}
 
 		// Return config object if integration have only one config else return all configs.
