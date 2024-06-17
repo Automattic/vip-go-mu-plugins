@@ -1,6 +1,6 @@
 <?php
 /**
- * Fake Integration.
+ * Fake integration with multiple configs.
  *
  * @package Automattic\VIP\Integrations
  */
