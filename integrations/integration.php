@@ -55,7 +55,7 @@ abstract class Integration {
 	 *
 	 * Note: We don't use this property for activation of the integration.
 	 *
-	 * @var array
+	 * @var array<array<mixed>>
 	 */
 	private array $vip_configs = [];
 
@@ -256,8 +256,8 @@ abstract class Integration {
 				$config = $this->get_value_from_config( $vip_config, 'env', 'config' );
 			}
 
-			if ( ! isset( $config ) ) {
-				continue;
+			if ( isset( $config ) ) {
+				$configs[] = $config;
 			}
 
 			$config['type'] = $this->slug; // Useful to have it available, specially when integration is dependent on child integrations.
@@ -276,9 +276,9 @@ abstract class Integration {
 	/**
 	 * Get config value based on given type and key.
 	 *
-	 * @param array  $vip_config  Configurations provided by VIP.
-	 * @param string $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
-	 * @param string $key Key of the config from which we have to extract the data.
+	 * @param array<mixed> $vip_config  Configurations provided by VIP.
+	 * @param string       $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
+	 * @param string       $key Key of the config from which we have to extract the data.
 	 *
 	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
