@@ -254,7 +254,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			[ 'org' => [ 'status' => Org_Integration_Status::BLOCKED ] ],
 		];
 
-		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+		$integration = $this->get_multi_setup_integration( $vip_configs );
 
 		$this->assertEquals( false, $integration->is_active_via_vip() );
 	}
@@ -265,7 +265,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			[ 'env' => [ 'status' => Env_Integration_Status::DISABLED ] ],
 		];
 
-		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+		$integration = $this->get_multi_setup_integration( $vip_configs );
 
 		$this->assertEquals( true, $integration->is_active_via_vip() );
 	}
@@ -396,7 +396,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			],
 		];
 
-		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+		$integration = $this->get_multi_setup_integration( $vip_configs );
 
 		$this->assertEqualsCanonicalizing( [
 			[ 'env-1-config' ],
@@ -436,7 +436,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			],
 		];
 
-		$integration = $this->get_integration_with_multiple_configs( $vip_configs );
+		$integration = $this->get_multi_setup_integration( $vip_configs );
 
 		$this->assertEqualsCanonicalizing( [
 			[ '1-config' ],
@@ -561,12 +561,12 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Get `Integration` having multiple configs.
+	 * Get `Integration` having multiple setups.
 	 *
 	 * @param array $vip_configs
 	 */
-	private function get_integration_with_multiple_configs( $vip_configs ): Integration {
-		$integration = new FakeMultiConfigIntegration( 'fake-multi-config' );
+	private function get_multi_setup_integration( $vip_configs ): Integration {
+		$integration = new FakeMultiSetupIntegration( 'fake-multi-setup' );
 
 		$integration->set_vip_configs( $vip_configs );
 
