@@ -19,7 +19,7 @@ class VipComposableBlocksIntegration extends Integration {
 	 *
 	 * @var string
 	 */
-	protected string $version = '1.0';
+	protected string $version = '0.1.0';
 
 	/**
 	 * "VIP Composable Blocks" integration doesn't have its own config and is dependent on configs provided by data source integrations.
