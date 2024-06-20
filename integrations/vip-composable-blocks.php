@@ -7,9 +7,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-require_once 'vip-composable-blocks/airtable.php';
-require_once 'vip-composable-blocks/shopify.php';
-
 /**
  * Loads VIP Composable Blocks Integration.
  *
@@ -25,17 +22,69 @@ class VipComposableBlocksIntegration extends Integration {
 	protected string $version = '1.0';
 
 	/**
+	 * "VIP Composable Blocks" integration doesn't have its own config and is dependent on configs provided by data source integrations.
+	 *
+	 * @var array<Integration>
+	 */
+	protected array $data_source_integrations = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
-		$this->child_integrations = [
-			new AirtableIntegration( 'airtable' ),
-			new ShopifyIntegration( 'shopify' ),
-		];
+		$data_source_slugs = [ 'airtable', 'shopify' ];
+
+		foreach ( $data_source_slugs as $data_source_slug ) {
+			$integration                      = new DataSourceIntegration( $data_source_slug );
+			$this->data_source_integrations[] = $integration;
+
+			IntegrationsSingleton::instance()->register( $integration );
+		}
 
 		parent::__construct( $slug );
+	}
+
+	/**
+	 * Returns `true` if any data source integration is enabled else `false`.
+	 *
+	 * @return bool
+	 *
+	 * @private
+	 */
+	public function is_active_via_vip(): bool {
+		// Returns 'true` if any of the data source integration is active.
+		foreach ( $this->data_source_integrations as $integration ) {
+			if ( $integration->is_active_via_vip() ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get configs of all data source integrations in context of current site.
+	 *
+	 * @return array<array<mixed>> Returns an array of configs.
+	 *
+	 * @private
+	 */
+	public function get_site_configs() {
+		/**
+		 * Array containing configs of the all data source integrations.
+		 *
+		 * @var array<array<mixed>>
+		 */
+		$all_configs = [];
+
+		// Merge configs of all data source integrations.
+		foreach ( $this->data_source_integrations as $integration ) {
+			$all_configs = array_merge( $all_configs, $integration->get_config() );
+		}
+
+		return $all_configs;
 	}
 
 	/**
@@ -79,4 +128,36 @@ class VipComposableBlocksIntegration extends Integration {
 			return $this->get_config();
 		});
 	}
+}
+
+
+/**
+ * Data Source Integration.
+ *
+ * It's a generic class that can be used to create data source integrations.
+ *
+ * @private
+ */
+// phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound, Squiz.Commenting.ClassComment.Missing
+class DataSourceIntegration extends Integration {
+	/**
+	 * A boolean indicating if the integration have multiple setups of same integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $have_multiple_setups = true;
+
+	/**
+	 * Returns status of the plugin.
+	 */
+	public function is_loaded(): bool {
+		return false; // Returning `false` because the integration is a data source for Composable Blocks.
+	}
+
+	/**
+	 * Loads the plugin. No implementation needed because the integration is a data source for Composable Blocks.
+	 *
+	 * @private
+	 */
+	public function load(): void {}
 }
