@@ -174,7 +174,7 @@ class VIP_Filesystem {
 	 * @param  string[]  An array of data for a single file.
 	 */
 	public function filter_validate_file( $file ) {
-		$file_name   = $file['name'];
+		$file_name   = rawurlencode( $file['name'] );
 		$upload_path = trailingslashit( $this->get_upload_path() );
 		$file_path   = $upload_path . $file_name;
 
