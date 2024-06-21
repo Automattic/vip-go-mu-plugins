@@ -76,7 +76,7 @@
   },
   "dependencies": {
     "@wordpress/api-fetch": "^6.16.0",
-    "@wordpress/i18n": "^4.19.0",
+    "@wordpress/i18n": "^5.1.0",
     "chart.js": "^4.0.1",
     "element-closest": "^3.0.2",
     "promise-polyfill": "^8.2.0",
