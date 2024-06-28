@@ -782,13 +782,15 @@ class User {
 			return true;
 		}
 
+		$allowed_emails = constant( 'VIP_SUPPORT_USER_ALLOWED_EMAILS' );
+
 		// Incorrectly formatted constant, fail fast + closed
-		if ( ! is_array( VIP_SUPPORT_USER_ALLOWED_EMAILS ) ) {
+		if ( ! is_array( $allowed_emails ) ) {
 			return false;
 		}
 
 		// If the override _is_ present, then the user is only allowed if their email is in the array
-		return in_array( $email, VIP_SUPPORT_USER_ALLOWED_EMAILS, true );
+		return in_array( $email, $allowed_emails, true );
 	}
 
 	/**

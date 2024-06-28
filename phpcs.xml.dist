@@ -32,7 +32,6 @@
 	<exclude-pattern>/node_modules/*</exclude-pattern>
 	<exclude-pattern>/query-monitor/*</exclude-pattern>
 	<exclude-pattern>/search/elasticpress/*</exclude-pattern>
-	<exclude-pattern>/search/elasticpress-next/*</exclude-pattern>
 	<exclude-pattern>/search/es-wp-query/*</exclude-pattern>
 	<exclude-pattern>/shared-plugins/*</exclude-pattern>
 	<exclude-pattern>/vaultpress/*</exclude-pattern>

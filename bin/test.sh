@@ -115,6 +115,7 @@ docker run \
     ${interactive} \
     --rm \
     --network "${NETWORK_NAME}" \
+    --platform linux/x86_64 \
     -e WP_VERSION \
     -e WP_MULTISITE \
     -e PHP_VERSION \
@@ -125,7 +126,6 @@ docker run \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
-    -e PRETEST_SCRIPT=/home/circleci/project/bin/pretest.sh \
     -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
     -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
     ${DOCKER_OPTIONS} \

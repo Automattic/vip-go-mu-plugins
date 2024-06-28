@@ -6,22 +6,12 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../search/search.php';
 require_once __DIR__ . '/../../search/includes/classes/class-versioning.php';
-require_once __DIR__ . '/../../search/elasticpress-next/elasticpress.php'; // TODO: Switch back to `elasticpress` once we're ready to completely remove the old EP.
+require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Search_Dev_Tools_Test extends WP_UnitTestCase {
-	/**
-	 * Make tests run in separate processes since we're testing state
-	 * related to plugin init, including various constants.
-	 */
-
 	public function setUp(): void {
-		$this->search_instance = new \Automattic\VIP\Search\Search();
-
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';
+		do_action( 'rest_api_init' );
 	}
 
 	public function data_provider_endpoint_urls() {

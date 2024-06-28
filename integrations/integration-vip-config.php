@@ -78,7 +78,9 @@ class IntegrationVipConfig {
 	 * @return null|mixed
 	 */
 	protected function get_vip_config_from_file( string $slug ) {
-		$config_file_directory = ABSPATH . 'config/integrations-config';
+		$config_file_directory = defined( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
+			? constant( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
+			: ABSPATH . 'config/integrations-config';
 		$config_file_name      = $slug . '-config.php';
 		$config_file_path      = $config_file_directory . '/' . $config_file_name;
 
@@ -133,12 +135,14 @@ class IntegrationVipConfig {
 	 * Get site config.
 	 *
 	 * @return array
-	 *
-	 * @private
 	 */
 	public function get_site_config() {
 		if ( is_multisite() ) {
 			$config = $this->get_value_from_config( 'network_sites', 'config' );
+			// If network site config is not found then fallback to env config if it exists
+			if ( empty( $config ) && true === $this->get_value_from_config( 'env', 'cascade_config' ) ) {
+				$config = $this->get_value_from_config( 'env', 'config' );
+			}
 		} else {
 			$config = $this->get_value_from_config( 'env', 'config' );
 		}

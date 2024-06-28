@@ -46,7 +46,6 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../001-core.php';
 	require_once __DIR__ . '/../a8c-files.php';
 
-	require_once __DIR__ . '/../async-publish-actions.php';
 	require_once __DIR__ . '/../performance.php';
 
 	require_once __DIR__ . '/../security.php';
@@ -189,6 +188,7 @@ tests_add_filter( 'muplugins_loaded', function () {
 require_once __DIR__ . '/mock-constants.php';
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/class-speedup-isolated-wp-tests.php';
+require_once __DIR__ . '/class-vip-test-listener.php';
 require_once __DIR__ . '/utils/utils.php';
 
 require $_tests_dir . '/includes/bootstrap.php';

@@ -25,7 +25,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.7
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: softprops/action-gh-release@v2.0.4
+      - uses: softprops/action-gh-release@v2.0.6
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
@@ -61,10 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.2
+        uses: actions/checkout@v4.1.7
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.30.1
+        uses: shivammathur/setup-php@2.30.5
 
       - name: Install
         uses: ramsey/composer-install@3.0.0

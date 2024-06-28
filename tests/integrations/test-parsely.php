@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use Automattic\Test\Constant_Mocker;
 
 use function Automattic\Test\Utils\get_class_property_as_public;
 
@@ -30,13 +31,13 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
-		$preload_state = defined( 'VIP_PARSELY_ENABLED' );
+		$preload_state = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' );
 
 		$parsely_integration_mock->load();
 
-		$this->assertEquals( $preload_state, defined( 'VIP_PARSELY_ENABLED' ) );
+		$this->assertEquals( $preload_state, Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
 	}
 
 	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
@@ -45,16 +46,16 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
-		$existing_value = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
+		$existing_value = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) ? Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) : null;
 
 		$parsely_integration_mock->load();
 
-		if ( is_null( $existing_value ) || true == $existing_value ) {
-			$this->assertTrue( VIP_PARSELY_ENABLED );
+		if ( is_null( $existing_value ) || $existing_value ) {
+			$this->assertTrue( Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) );
 		} else {
-			$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );
+			$this->assertFalse( Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
 		}
 	}
 

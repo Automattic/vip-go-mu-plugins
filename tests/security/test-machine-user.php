@@ -3,10 +3,13 @@
 namespace Automattic\VIP\Security;
 
 use WP_UnitTestCase;
+use WP_User;
 
 require_once __DIR__ . '/../../security/machine-user.php';
 
 class Machine_User_Test extends WP_UnitTestCase {
+	/** @var WP_User */
+	private $machine_user;
 
 	public function setUp(): void {
 		parent::setUp();
