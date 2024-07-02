@@ -104,6 +104,9 @@ function wpcom_vip_qm_require() {
 	if ( file_exists( __DIR__ . '/qm-plugins/qm-vip/qm-vip.php' ) ) {
 		require_once __DIR__ . '/qm-plugins/qm-vip/qm-vip.php';
 	}
+	if ( file_exists( __DIR__ . '/qm-plugins/qm-vip-concat/qm-vip-concat.php' ) ) {
+		require_once __DIR__ . '/qm-plugins/qm-vip-concat/qm-vip-concat.php';
+	}
 	if ( file_exists( __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php' ) ) {
 		require_once __DIR__ . '/qm-plugins/qm-db-connections/qm-db-connections.php';
 	}
