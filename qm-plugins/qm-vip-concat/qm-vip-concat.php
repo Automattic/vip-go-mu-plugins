@@ -6,7 +6,7 @@
  * Author: trepmal
  */
 
-add_action('plugins_loaded', function() {
+add_action('plugins_loaded', function () {
 
 	/**
 	 * Register collector, only if Query Monitor is enabled.
@@ -21,12 +21,12 @@ add_action('plugins_loaded', function() {
 	 * Register output. The filter won't run if Query Monitor is not
 	 * installed so we don't have to explicity check for it.
 	 */
-	add_filter( 'qm/outputter/html', function( array $output, QM_Collectors $collectors ) {
+	add_filter( 'qm/outputter/html', function ( array $output ) {
 		include_once 'class-qm-output-vip-concat.php';
-		if ( $collector = QM_Collectors::get( 'vip_concat' ) ) {
+		$collector = QM_Collectors::get( 'vip_concat' );
+		if ( $collector ) {
 			$output['vip_concat'] = new QM_Output_VIPConcat( $collector );
 		}
 		return $output;
-	}, 101, 2 );
-
-});
+	}, 101 );
+} );

@@ -27,7 +27,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 				__( 'No data logged. <a href="%s">Read about the VIP Platform\'s file concatenation feature</a>.', 'query-monitor' ),
 				'https://docs.wpvip.com/vip-go-mu-plugins/file-concatenation-and-minification/'
 			);
-			echo $this->build_notice( $notice ); // WPCS: XSS ok.
+			echo $this->build_notice( $notice ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --
 
 			$this->after_non_tabular_output();
 
@@ -51,6 +51,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 
 		$level_args = array(
 			'all' => sprintf(
+				/* translators: %s: Total number of items in a list */
 				__( 'All (%d)', 'query-monitor' ),
 				count( $data->logs )
 			),
@@ -59,7 +60,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 		echo '<thead>';
 		echo '<tr>';
 		echo '<th scope="col" class="qm-filterable-column">';
-		echo $this->build_filter( 'type', $levels, __( 'Level', 'query-monitor' ), $level_args ); // WPCS: XSS ok.
+		echo $this->build_filter( 'type', $levels, __( 'Level', 'query-monitor' ), $level_args ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --
 		echo '</th>';
 		echo '<th scope="col" class="qm-col-message">' . esc_html__( 'Message', 'query-monitor' ) . '</th>';
 		echo '</tr>';
@@ -68,7 +69,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 
 		foreach ( $data->logs as $row ) {
 
-			$row_attr = array();
+			$row_attr                 = array();
 			$row_attr['data-qm-type'] = $row['level'];
 
 			$attr = '';
@@ -85,7 +86,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 				$class = '';
 			}
 
-			echo '<tr' . $attr . ' class="' . esc_attr( $class ) . '">'; // WPCS: XSS ok.
+			echo '<tr' . $attr . ' class="' . esc_attr( $class ) . '">'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --
 			echo '<td class="qm-nowrap">';
 
 			if ( $is_warning ) {
@@ -110,7 +111,6 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 		echo '</tbody>';
 
 		$this->after_tabular_output();
-
 	}
 
 	/**
