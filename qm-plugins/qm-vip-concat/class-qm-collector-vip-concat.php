@@ -46,5 +46,4 @@ class QM_Collector_VIPConcat extends QM_Collector_Logger {
 			'vip_concat_warn',
 		);
 	}
-
 }
