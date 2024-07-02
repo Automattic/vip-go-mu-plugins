@@ -22,7 +22,7 @@ export class LoginPage {
 	 * Navigate to login page
 	 *
 	 */
-	visit(): Promise<unknown> {
+	public visit(): Promise<unknown> {
 		return this.page.goto( '/wp-login.php' );
 	}
 
@@ -32,7 +32,7 @@ export class LoginPage {
 	 * @param {string} username Username to login as
 	 * @param {string} password Password for account
 	 */
-	async login( username: string, password: string ): Promise<unknown> {
+	public async login( username: string, password: string ): Promise<unknown> {
 		await this.page.fill( selectors.userField, username );
 		await this.page.fill( selectors.passwordField, password );
 		return Promise.all( [ this.page.waitForURL( '**/wp-admin/**' ), this.page.click( selectors.submitButton ) ] );
