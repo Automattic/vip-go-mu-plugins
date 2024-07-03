@@ -7,7 +7,7 @@ const selectors = {
 };
 
 export class MediaUploadPage {
-	readonly page: Page;
+	private readonly page: Page;
 
 	/**
 	 * Constructs an instance of the component.
@@ -23,7 +23,7 @@ export class MediaUploadPage {
 	 *
 	 * @param { string } mediaFile Media file name
 	 */
-	async uploadFile( mediaFile: string ): Promise<void> {
+	public async uploadFile( mediaFile: string ): Promise<void> {
 		const [ fileChooser ] = await Promise.all( [
 			// It is important to call waitForEvent before click to set up waiting.
 			this.page.waitForEvent( 'filechooser' ),
@@ -38,7 +38,7 @@ export class MediaUploadPage {
 	 *
 	 * @return { Promise<string | null> } Url of uploaded media
 	 */
-	async getMediaUrl(): Promise<string | null> {
+	public async getMediaUrl(): Promise<string | null> {
 		return this.page.locator( selectors.copyURLButton ).getAttribute( 'data-clipboard-text' );
 	}
 }
