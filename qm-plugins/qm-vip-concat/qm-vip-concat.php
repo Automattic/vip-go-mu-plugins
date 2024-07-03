@@ -11,7 +11,7 @@ add_action('plugins_loaded', function () {
 	/**
 	 * Register collector, only if Query Monitor is enabled.
 	 */
-	if ( class_exists( 'QM_Collectors' ) ) {
+	if ( class_exists( 'QM_Collectors' ) && class_exists( 'QM_Collector_Logger' ) ) {
 		include_once 'class-qm-collector-vip-concat.php';
 
 		QM_Collectors::add( new QM_Collector_VIPConcat() );
