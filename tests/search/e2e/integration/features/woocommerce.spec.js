@@ -70,7 +70,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			// enable payment gateway.
 			cy.visitAdminPage('admin.php?page=wc-settings&tab=checkout&section=cod');
 			cy.get('#woocommerce_cod_enabled').check({waitForAnimations: false});
-			cy.get('.button-primary.woocommerce-save-button').click();
+			cy.get('.is-primary.woocommerce-save-button').click();
 
 			cy.logout();
 
@@ -153,7 +153,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			// search order by user's address.
 			cy.get('#post-search-input').clear().type(`${userData.address}{enter}`);
 			cy.searchDevToolsResponseOK(); // VIP: Use Search Dev Tools instead of Debug Bar
-			cy.get('.order_number .order-view').should(
+			cy.get('.order-view').should(
 				'contain.text',
 				`${userData.firstName} ${userData.lastName}`,
 			);
@@ -162,7 +162,7 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 			cy.get('#post-search-input').clear().type(`fantastic-silk-knife{enter}`);
 			cy.searchDevToolsResponseOK(); // VIP: Use Search Dev Tools instead of Debug Bar
 
-			cy.get('.order_number .order-view').should(
+			cy.get('.order-view').should(
 				'contain.text',
 				`${userData.firstName} ${userData.lastName}`,
 			);

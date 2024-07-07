@@ -33,7 +33,7 @@ export class ClassicEditorPage {
 	 *
 	 * @param {string} title Page/Post Title
 	 */
-	async enterTitle( title: string ): Promise<void> {
+	public async enterTitle( title: string ): Promise<void> {
 		await this.page.click( selectors.editorTitle );
 		await this.page.fill( selectors.editorTitle, title );
 	}
@@ -43,7 +43,7 @@ export class ClassicEditorPage {
 	 *
 	 * @param {string} text Text to enter
 	 */
-	async enterText( text: string ): Promise<void> {
+	public async enterText( text: string ): Promise<void> {
 		await this.page.click( selectors.editorFrame );
 		await this.page.keyboard.type( text );
 	}
@@ -53,7 +53,7 @@ export class ClassicEditorPage {
 	 *
 	 * @param {string} fileName Name of image file
 	 */
-	async addImage( fileName: string ): Promise<void> {
+	public async addImage( fileName: string ): Promise<void> {
 		await this.page.click( selectors.insertMediaButton );
 		await this.page.click( selectors.uploadTab );
 
@@ -74,7 +74,7 @@ export class ClassicEditorPage {
 	 * @param {boolean} visit Whether to then visit the page.
 	 * @return {string} Url of the published post or page
 	 */
-	async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
+	public async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
 		const publishedURL = ( await this.page.locator( selectors.permalink ).textContent() )!;
 		await this.page.click( selectors.publishButton );
 
