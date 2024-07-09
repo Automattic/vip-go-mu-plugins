@@ -1443,6 +1443,16 @@ function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
 		$user = new WP_User( $user_id );
 	} else {
+		if ( ! function_exists( 'wp_get_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `plugins_loaded` hook.', null );
+			return false;
+		}
+
+		if ( ! did_action( 'init' ) && ! has_filter( 'determine_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `init` hook without a filter for the `determine_current_user` hook.', null );
+			return false;
+		}
+
 		$user = wp_get_current_user();
 	}
 
