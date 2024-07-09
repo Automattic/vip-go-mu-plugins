@@ -26,7 +26,7 @@ export class PublishedPostPage {
 	 *
 	 * @param {string} text Text to search for in post page
 	 */
-	async validateTextInPost( text: string ): Promise<void> {
+	public async validateTextInPost( text: string ): Promise<void> {
 		// If text isn't found the first time, reload and check again up to 2 more times.
 		let pageTry = 0;
 		/* eslint-disable no-await-in-loop */
@@ -46,7 +46,7 @@ export class PublishedPostPage {
 	 *
 	 * @return {Promise<boolean>} True if image is found, otherwise false
 	 */
-	isImageDisplayed(): Promise<boolean> {
+	public isImageDisplayed(): Promise<boolean> {
 		return this.page.isVisible( selectors.postImage );
 	}
 }
