@@ -24,7 +24,7 @@ class QM_Output_VIPConcat extends QM_Output_Html {
 
 			$notice = sprintf(
 				/* translators: %s: Link to help article */
-				__( 'No data logged. <a href="%s">Read about the VIP Platform\'s file concatenation feature</a>.', 'query-monitor' ),
+				__( 'No data logged. <a href="%s">Read about the WordPress VIP Platform\'s file concatenation feature</a>.', 'query-monitor' ),
 				'https://docs.wpvip.com/vip-go-mu-plugins/file-concatenation-and-minification/'
 			);
 			echo $this->build_notice( $notice ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped --
