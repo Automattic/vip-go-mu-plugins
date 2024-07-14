@@ -1,6 +1,6 @@
 name: Enterprise Search e2e tests
 env:
-  NODE_VERSION: "16"
+  NODE_VERSION: "20"
 
 on:
   pull_request:
@@ -72,4 +72,5 @@ jobs:
 
     - name: Stop Elasticsearch
       if: always()
-      run: cd bin/search/es-docker/ && docker-compose down
+      run: docker compose down
+      working-directory: bin/search/es-docker
