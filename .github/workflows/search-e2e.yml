@@ -1,6 +1,6 @@
 name: Enterprise Search e2e tests
 env:
-  NODE_VERSION: "16"
+  NODE_VERSION: "20"
 
 on:
   pull_request:
