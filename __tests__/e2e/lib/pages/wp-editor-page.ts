@@ -65,11 +65,11 @@ export class EditorPage {
 	/**
 	 * Dismisses the Welcome Tour (card) if it is present.
 	 */
-	dismissWelcomeTour(): Promise<void> {
+	public dismissWelcomeTour(): Promise<void> {
 		return this.clickButtonIfExists( this.page.locator( selectors.welcomeTourCloseButton ) );
 	}
 
-	dismissPatternSelector(): Promise<void> {
+	public dismissPatternSelector(): Promise<void> {
 		return this.clickButtonIfExists( this.page.locator( selectors.choosePatternCloseButton ) );
 	}
 
@@ -88,7 +88,7 @@ export class EditorPage {
 	 *
 	 * @param {string} title Page/Post Title
 	 */
-	async enterTitle( title: string ): Promise<void> {
+	public async enterTitle( title: string ): Promise<void> {
 		await this.page.click( selectors.editorTitleContainer );
 		await this.page.fill( selectors.editorTitle, title );
 	}
@@ -98,7 +98,7 @@ export class EditorPage {
 	 *
 	 * @param {string} text Text to enter
 	 */
-	async enterText( text: string ): Promise<void> {
+	public async enterText( text: string ): Promise<void> {
 		const lines = text.split( '\n' );
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
 			await this.page.click( selectors.blockAppender );
@@ -122,7 +122,7 @@ export class EditorPage {
 	/**
 	 * Clear Title of page or post
 	 */
-	async clearTitle(): Promise<void> {
+	public async clearTitle(): Promise<void> {
 		await this.page.click( selectors.editorTitle );
 		await this.page.keyboard.down( 'Shift' );
 		await this.page.keyboard.press( 'Home' );
@@ -133,7 +133,7 @@ export class EditorPage {
 	/**
 	 * Clear text of page or post
 	 */
-	async clearText(): Promise<void> {
+	public async clearText(): Promise<void> {
 		/* eslint-disable no-await-in-loop */
 		while ( await this.page.isVisible( selectors.block ) ) {
 			await this.page.click( selectors.block );
@@ -151,7 +151,7 @@ export class EditorPage {
 	 *
 	 * @param {string} fileName Name of image file to add
 	 */
-	async addImage( fileName: string ): Promise<void> {
+	public async addImage( fileName: string ): Promise<void> {
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
 			await this.page.click( selectors.blockAppender );
 		} else {
@@ -177,7 +177,7 @@ export class EditorPage {
 	 * @param {boolean} visit Whether to then visit the page.
 	 * @return {string} Url of published post or page
 	 */
-	async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
+	public async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
 		await this.page.click( selectors.publishButton( selectors.postToolbar ) );
 		await this.page.click( selectors.publishButton( selectors.publishPanel ) );
 		const publishedURL = ( await this.page.locator( selectors.viewButton ).getAttribute( 'href' ) )!;
@@ -191,7 +191,7 @@ export class EditorPage {
 	/**
 	 * Updates the post or page.
 	 */
-	update(): Promise<void> {
+	public update(): Promise<void> {
 		return this.page.click( selectors.updateButton );
 	}
 
