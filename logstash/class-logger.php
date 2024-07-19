@@ -524,7 +524,7 @@ class Logger {
 
 		// Process all entries.
 		foreach ( static::$entries as $entry ) {
-			if ( ! defined( 'VIP_GO_ENV' ) || constant( 'VIP_GO_ENV' ) === 'local' ) {
+			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV || constant( 'VIP_GO_ENV' ) === 'local' ) {
 				static::maybe_wp_debug_log_entries( $entry );
 				continue; // Bypassing logstash log writing below in this case.
 			}
