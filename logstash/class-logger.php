@@ -524,7 +524,7 @@ class Logger {
 
 		// Process all entries.
 		foreach ( static::$entries as $entry ) {
-			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
+			if ( ! defined( 'VIP_GO_ENV' ) || constant( 'VIP_GO_ENV' ) === 'local' ) {
 				static::maybe_wp_debug_log_entries( $entry );
 				continue; // Bypassing logstash log writing below in this case.
 			}
@@ -565,7 +565,7 @@ class Logger {
 	 * @param array $entry Data.
 	 */
 	public static function wp_debug_log( array $entry ): void {
-		if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {
+		if ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'local' ) {
 			// Don't run this on VIP Go
 			return;
 		}
