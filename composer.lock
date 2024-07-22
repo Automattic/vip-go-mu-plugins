@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1c0b9a9c18aa8e54fbc5f44a6ba4f944",
+    "content-hash": "5f041bf974e6b3eca4086f76f38b7afb",
     "packages": [],
     "packages-dev": [
         {
@@ -305,24 +305,24 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.5.5",
+            "version": "6.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "be6edfa018053533267a16e73f6623b0fa27b2df"
+                "reference": "d5df1e2231c10c430de90db1728f705f47b6d7c4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/be6edfa018053533267a16e73f6623b0fa27b2df",
-                "reference": "be6edfa018053533267a16e73f6623b0fa27b2df",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/d5df1e2231c10c430de90db1728f705f47b6d7c4",
+                "reference": "d5df1e2231c10c430de90db1728f705f47b6d7c4",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "php": ">=7.0.0"
+                "php": ">=7.2.24"
             },
             "provide": {
-                "wordpress/core-implementation": "6.5.5"
+                "wordpress/core-implementation": "6.6.0"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -349,7 +349,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2024-06-24T17:24:47+00:00"
+            "time": "2024-07-16T16:28:33+00:00"
         },
         {
             "name": "mustache/mustache",
