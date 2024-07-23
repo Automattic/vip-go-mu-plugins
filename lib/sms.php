@@ -50,8 +50,8 @@ function send_sms( $to, $message ) {
 			 * If defined, we want to use the MessagingServiceSid to leverage all the automatic logic of the messaging service to route the SMS from the right "From" number.
 			 * For example in some countries, the "From" number should be a local number to the recipient or an alphanumeric sender ID.
 			 */
-			if ( defined( 'TWILIO_MESSAGING_SERVICE_SID' ) ) {
-				$body['MessagingServiceSid'] = TWILIO_MESSAGING_SERVICE_SID;
+			if ( defined( 'VIP_TWILIO_MESSAGING_SERVICE_SID' ) ) {
+				$body['MessagingServiceSid'] = VIP_TWILIO_MESSAGING_SERVICE_SID;
 			} else {
 				$body['From'] = SMS_FROM_NUMBER;
 			}
