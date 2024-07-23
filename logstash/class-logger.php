@@ -565,11 +565,6 @@ class Logger {
 	 * @param array $entry Data.
 	 */
 	public static function wp_debug_log( array $entry ): void {
-		if ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'local' ) {
-			// Don't run this on VIP Go
-			return;
-		}
-
 		$log_path = WP_CONTENT_DIR . '/debug.log';
 		$log_path = is_string( WP_DEBUG_LOG ) && WP_DEBUG_LOG ? WP_DEBUG_LOG : $log_path;
 
