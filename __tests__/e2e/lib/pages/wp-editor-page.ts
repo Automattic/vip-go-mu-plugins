@@ -156,7 +156,7 @@ export class EditorPage {
 			await this.page.click( selectors.blockAppender );
 		} else {
 			await this.page.click( selectors.editorTitleContainer );
-			await this.page.click( selectors.blockInserter );
+			await this.page.getByLabel( 'Toggle block inserter' ).click();
 		}
 		await this.page.click( selectors.imageBlocks );
 
