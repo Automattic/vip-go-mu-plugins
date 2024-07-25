@@ -69,6 +69,9 @@ jobs:
           ${{ github.workspace }}/tests/cypress/videos/
           ${{ github.workspace }}/tests/cypress/logs/
           ${{ github.workspace }}/cypress/results/
+          ${{ github.workspace }}/tests/search/e2e/screenshots/
+          ${{ github.workspace }}/tests/search/e2e/videos/
+          ${{ github.workspace }}/tests/search/e2e/logs/
 
     - name: Stop Elasticsearch
       if: always()
