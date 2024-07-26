@@ -4,8 +4,12 @@ Cypress.Commands.add('openBlockSettingsSidebar', () => {
 			cy.get('.edit-widgets-header__actions button[aria-label="Settings"]').click();
 			cy.get('.edit-widgets-sidebar__panel-tab').contains('Block').click();
 		} else {
-			cy.get('.edit-post-header__settings button[aria-label="Settings"]').click();
-			cy.get('.edit-post-sidebar__panel-tabs').contains('Block').click();
+			cy.get('.editor-header__settings button[aria-label="Settings"]').then(($btn) => {
+				if (!$btn.hasClass('is-pressed')) {
+					$btn.click();
+				}
+				cy.get('.editor-sidebar__panel-tabs').contains('Block').click();
+			});
 		}
 	});
 });
