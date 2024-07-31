@@ -76,3 +76,23 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 		}
 	);
 }
+
+/**
+ * Allows VIP Support users to use the Parse.ly Content Helper feature.
+ *
+ * @param bool    $current_user_can_use_pch_feature Whether the current user can use the Parse.ly Content Helper feature.
+ * @param string  $feature_name The name of the feature.
+ * @param WP_User $current_user The current user.
+ * @param int     $post_id      The post ID.
+ *
+ * @return bool Whether the current user can use the Parse.ly Content Helper feature.
+ */
+add_filter( 'wp_parsely_current_user_can_use_pch_feature', function( $current_user_can_use_pch_feature, $feature_name, $current_user, $post_id ) {
+	$user_id = $current_user->ID;
+
+	if ( user_can( $user_id, 'vip_support' ) ) {
+		return true;
+	}
+
+	return $current_user_can_use_pch_feature;
+}, 10, 4 );
