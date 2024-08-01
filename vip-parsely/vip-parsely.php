@@ -94,4 +94,4 @@ add_filter( 'wp_parsely_current_user_can_use_pch_feature', function ( $current_u
 	}
 
 	return $current_user_can_use_pch_feature;
-}, 10, 3 );
+}, 999, 3 );
