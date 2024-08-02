@@ -34,7 +34,6 @@
 	<exclude-pattern>/search/elasticpress/*</exclude-pattern>
 	<exclude-pattern>/search/es-wp-query/*</exclude-pattern>
 	<exclude-pattern>/shared-plugins/*</exclude-pattern>
-	<exclude-pattern>/vaultpress/*</exclude-pattern>
 	<exclude-pattern>/vendor/*</exclude-pattern>
 	<exclude-pattern>/wordpress-importer/*</exclude-pattern>
 	<exclude-pattern>/wp-parsely/*</exclude-pattern>
