@@ -19,14 +19,6 @@ function use_ambiguous_login_error( $error ): string {
 		return (string) $error;
 	}
 
-	// For lostpassword action, use different message.
-	if ( isset( $_GET['action'] ) && 'lostpassword' === $_GET['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		return esc_html__(
-			'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.',
-			'vip'
-		);
-	}
-
 	$err_codes = $errors->get_error_codes();
 
 	$err_types = [
@@ -38,7 +30,7 @@ function use_ambiguous_login_error( $error ): string {
 
 	foreach ( $err_types as $err ) {
 		if ( in_array( $err, $err_codes, true ) ) {
-			$error = '<strong>' . esc_html__( 'Error', 'vip' ) . '</strong>: ' . 
+			$error = '<strong>' . esc_html__( 'Error', 'vip' ) . '</strong>: ' .
 			esc_html__( 'The username/email address or password is incorrect. Please try again.', 'vip' );
 			break;
 		}
@@ -47,6 +39,19 @@ function use_ambiguous_login_error( $error ): string {
 	return (string) $error;
 }
 add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 );
+
+function use_ambiguous_password_reset_confirmation( $errors ) {
+	if ( is_wp_error( $errors ) && $errors->has_errors() && ! headers_sent() ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$redirect_to = ! empty( $_REQUEST['redirect_to'] ) ? $_REQUEST['redirect_to'] : 'wp-login.php?checkemail=confirm';
+		wp_safe_redirect( $redirect_to );
+		exit();
+	}
+}
+
+if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] ) {
+	add_action( 'lost_password', __NAMESPACE__ . '\\use_ambiguous_password_reset_confirmation', 0 );
+}
 
 /**
  * Use a message that does not reveal the type of login error in an attempted brute-force on forget password.
