@@ -48,8 +48,8 @@ class Tracks_Event {
 	 * @param array<string, mixed>|array<empty> $event_properties Any properties included in the event.
 	 */
 	public function __construct( string $event_name, array $event_properties ) {
-		$event_data        = self::process_properties( $event_name, $event_properties );
-		$validation_result = self::get_event_validation_result( $event_data );
+		$event_data        = static::process_properties( $event_name, $event_properties );
+		$validation_result = static::get_event_validation_result( $event_data );
 
 		$this->data = $validation_result ?? $event_data;
 	}
@@ -98,19 +98,19 @@ class Tracks_Event {
 		string $event_name,
 		array $event_properties
 	): stdClass {
-		$event = (object) self::sanitize_properties_array( $event_properties );
-		$event = self::set_user_properties( $event );
+		$event = (object) static::sanitize_properties_array( $event_properties );
+		$event = static::set_user_properties( $event );
 
 		// Set event name.
 		$event->_en = preg_replace(
-			'/^(?:' . self::EVENT_NAME_PREFIX . ')?(.*)/',
-			self::EVENT_NAME_PREFIX . '\1',
+			'/^(?:' . static::EVENT_NAME_PREFIX . ')?(.*)/',
+			static::EVENT_NAME_PREFIX . '\1',
 			$event_name
 		) ?? '';
 
 		// Set event timestamp.
 		if ( ! isset( $event->_ts ) ) {
-			$event->_ts = self::get_timestamp();
+			$event->_ts = static::get_timestamp();
 		}
 
 		// Remove non-routable IPs to prevent record from being discarded.
@@ -190,7 +190,7 @@ class Tracks_Event {
 		}
 
 		// Validate Event Name (_en).
-		if ( ! self::event_name_is_valid( $event->_en ) ) {
+		if ( ! static::event_name_is_valid( $event->_en ) ) {
 			return new WP_Error(
 				'invalid_event_name',
 				__( 'A valid event name must be specified', 'vip-telemetry' ),
@@ -200,7 +200,7 @@ class Tracks_Event {
 
 		// Validate property names format.
 		foreach ( array_keys( (array) $event ) as $key ) {
-			if ( ! self::property_name_is_valid( $key ) && '_en' !== $key ) {
+			if ( ! static::property_name_is_valid( $key ) && '_en' !== $key ) {
 				return new WP_Error(
 					'invalid_property_name',
 					__( 'A valid property name must be specified', 'vip-telemetry' ),
@@ -228,7 +228,7 @@ class Tracks_Event {
 	 * @return bool Whether the event name is valid.
 	 */
 	protected static function event_name_is_valid( string $event_name ): bool {
-		return false !== preg_match( self::EVENT_NAME_REGEX, $event_name );
+		return false !== preg_match( static::EVENT_NAME_REGEX, $event_name );
 	}
 
 	/**
@@ -238,7 +238,7 @@ class Tracks_Event {
 	 * @return bool Whether the property name is valid.
 	 */
 	protected static function property_name_is_valid( string $property_name ): bool {
-		return false !== preg_match( self::PROPERTY_NAME_REGEX, $property_name );
+		return false !== preg_match( static::PROPERTY_NAME_REGEX, $property_name );
 	}
 
 	/**

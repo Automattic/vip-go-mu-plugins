@@ -51,11 +51,11 @@ class Tracks_Client {
 	 * @return Tracks_Client
 	 */
 	public static function instance(): Tracks_Client {
-		if ( is_null( self::$instance ) ) {
-			self::$instance = new Tracks_Client();
+		if ( is_null( static::$instance ) ) {
+			static::$instance = new Tracks_Client();
 		}
 
-		return self::$instance;
+		return static::$instance;
 	}
 
 	/**
@@ -73,7 +73,7 @@ class Tracks_Client {
 			return $is_event_recordable;
 		}
 
-		self::instance()->events[] = $event;
+		static::instance()->events[] = $event;
 
 		return true;
 	}
@@ -93,7 +93,7 @@ class Tracks_Client {
 			return $is_event_recordable;
 		}
 
-		$pixel_url = self::instance()->generate_pixel_url( $event );
+		$pixel_url = static::instance()->generate_pixel_url( $event );
 
 		if ( null === $pixel_url ) {
 			return new WP_Error(
@@ -105,7 +105,7 @@ class Tracks_Client {
 
 		// Add the Request Timestamp and URL terminator just before the HTTP
 		// request.
-		$pixel_url .= '&_rt=' . self::build_timestamp() . '&_=_';
+		$pixel_url .= '&_rt=' . static::build_timestamp() . '&_=_';
 
 		$request = wp_safe_remote_get(
 			$pixel_url,
@@ -161,7 +161,7 @@ class Tracks_Client {
 		unset( $args['_rt'], $args['_'] );
 
 		return esc_url_raw(
-			self::PIXEL_BASE_URL . '?' . http_build_query( $args )
+			static::PIXEL_BASE_URL . '?' . http_build_query( $args )
 		);
 	}
 
@@ -170,7 +170,7 @@ class Tracks_Client {
 	 */
 	public function record_remaining_events(): void {
 		foreach ( $this->events as $event ) {
-			self::instance()->record_event_synchronously( $event );
+			static::instance()->record_event_synchronously( $event );
 		}
 	}
 
