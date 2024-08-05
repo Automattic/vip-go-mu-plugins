@@ -23,11 +23,8 @@ export class LostPasswordPage {
 
 	public async resetPassword( login: string ): Promise<Response> {
 		await this.loginField.fill( login );
-		const [ response ] = await Promise.all( [
-			this.page.waitForResponse( ( resp ) => resp.url().includes( '/wp-login.php' ) && resp.request().method() === 'GET' ),
-			this.getPasswordButton.click(),
-		] );
-
-		return response;
+		const responsePromise = this.page.waitForResponse( ( resp ) => resp.url().includes( '/wp-login.php' ) && resp.request().method() === 'GET' );
+		await this.getPasswordButton.click();
+		return responsePromise;
 	}
 }
