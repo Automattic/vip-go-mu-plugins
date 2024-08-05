@@ -9,7 +9,7 @@
     "phpcs:fix": "vendor/bin/phpcbf",
     "lint": "npm run phplint && npm run phpcs",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
-    "prepare": "husky install",
+    "prepare": "husky",
     "search-build": "cd ./tests/search/e2e && 10up-toolkit build",
     "search-env": "wp-env",
     "search-env:install-tests-cli": "./bin/search/install-wp-cli.sh tests-wordpress",
