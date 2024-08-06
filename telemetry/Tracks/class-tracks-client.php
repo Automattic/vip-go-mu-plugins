@@ -37,7 +37,7 @@ class Tracks_Client {
 	/**
 	 * Constructor.
 	 */
-	public function __construct() {
+	private function __construct() {
 		// Track events asynchronously (inject pixels in the footer).
 		add_action( 'admin_footer', array( $this, 'render_tracking_pixels' ) );
 		// Synchronously track any remaining events that could not be added to
