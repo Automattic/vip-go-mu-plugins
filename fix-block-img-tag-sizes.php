@@ -58,7 +58,7 @@ function fix_img_block_sizes($block_content, $block, $instance)
         // Add the width and height attributes to the img tag
         $block_content = preg_replace(
             '/<img ([^>]+)>/',
-            '<img foo="bar" $1 width="' . esc_attr($width) . '" height="' . esc_attr($height) . '">',
+            '<img $1 width="' . esc_attr($width) . '" height="' . esc_attr($height) . '">',
             $block_content
         );
     }
