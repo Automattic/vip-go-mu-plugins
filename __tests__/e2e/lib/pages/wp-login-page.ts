@@ -4,6 +4,7 @@ const selectors = {
 	userField: '#user_login',
 	passwordField: '#user_pass',
 	submitButton: '#wp-submit',
+	lostPasswordLink: '#nav a[href*="wp-login.php?action=lostpassword"]',
 };
 
 export class LoginPage {
@@ -20,7 +21,6 @@ export class LoginPage {
 
 	/**
 	 * Navigate to login page
-	 *
 	 */
 	public visit(): Promise<unknown> {
 		return this.page.goto( '/wp-login.php' );
@@ -36,5 +36,12 @@ export class LoginPage {
 		await this.page.fill( selectors.userField, username );
 		await this.page.fill( selectors.passwordField, password );
 		return Promise.all( [ this.page.waitForURL( '**/wp-admin/**' ), this.page.click( selectors.submitButton ) ] );
+	}
+
+	public lostPassword(): Promise<unknown> {
+		return Promise.all( [
+			this.page.waitForURL( /\/wp-login\.php\?action=lostpassword/ ),
+			this.page.locator( selectors.lostPasswordLink ).click(),
+		] );
 	}
 }
