@@ -33,16 +33,6 @@ abstract class Telemetry_System {
 	abstract protected function activate_tracking(): void;
 
 	/**
-	 * Returns whether wp-admin telemetry is allowed to be enabled. This is off
-	 * by default.
-	 *
-	 * @return bool Whether wp-admin telemetry is allowed to be enabled.
-	 */
-	public static function is_wpadmin_telemetry_allowed(): bool {
-		return apply_filters( 'wp_parsely_enable_wpadmin_telemetry', false );
-	}
-
-	/**
 	 * Registers the passed events so they can be recorded later.
 	 *
 	 * Note: All events must be registered before the run() function of this

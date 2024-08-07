@@ -71,10 +71,6 @@ class Tracks_Event {
 	 *                       WP_Error if the event is generating an error.
 	 */
 	public function is_recordable() {
-		if ( ! Telemetry_System::is_wpadmin_telemetry_allowed() ) {
-			return false;
-		}
-
 		// Don't record events during unit tests and CI runs.
 		if ( 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
 			return false;
