@@ -123,6 +123,17 @@ class Tracks_Event {
 			}
 		}
 
+		// Set VIP organization if it exists.
+		if ( defined( 'VIP_ORG_ID' ) ) {
+			$org_id = constant( 'VIP_ORG_ID' );
+			if ( is_string( $org_id ) && '' !== $org_id ) {
+				$event->vipgo_org = $org_id;
+			}
+		}
+
+		// Check if the user is a VIP user.
+		$event->is_vip_user = is_automattician( get_current_user_id() );
+
 		return $event;
 	}
 
