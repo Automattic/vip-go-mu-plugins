@@ -43,15 +43,15 @@ class Tracks extends Telemetry_System {
 		string $event_name,
 		array $event_properties = array()
 	) {
-		$event = new Tracks_Event( $event_name, $event_properties );
-		$pixel = Tracks_Client::instance();
+		$event  = new Tracks_Event( $event_name, $event_properties );
+		$client = Tracks_Client::instance();
 
 		// Process AJAX/REST request events immediately.
 		if ( wp_doing_ajax() || defined( 'REST_REQUEST' ) ) {
-			$pixel->record_event_synchronously( $event );
+			$client->record_event_synchronously( $event );
 		}
 
-		return $pixel->record_event_asynchronously( $event );
+		return $client->record_event_asynchronously( $event );
 	}
 
 	/**
