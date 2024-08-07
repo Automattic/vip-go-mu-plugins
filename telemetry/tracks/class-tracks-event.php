@@ -19,11 +19,6 @@ use WP_Error;
  */
 class Tracks_Event {
 	/**
-	 * Event name prefix.
-	 */
-	protected const EVENT_NAME_PREFIX = 'viptelemetry_';
-
-	/**
 	 * Event name regex.
 	 */
 	protected const EVENT_NAME_REGEX = '/^(([a-z0-9]+)_){1}([a-z0-9_]+)$/';
@@ -44,11 +39,12 @@ class Tracks_Event {
 	/**
 	 * Constructor.
 	 *
+	 * @param string                            $prefix The event's prefix.
 	 * @param string                            $event_name The event's name.
 	 * @param array<string, mixed>|array<empty> $event_properties Any properties included in the event.
 	 */
-	public function __construct( string $event_name, array $event_properties ) {
-		$event_data        = static::process_properties( $event_name, $event_properties );
+	public function __construct( string $prefix, string $event_name, array $event_properties ) {
+		$event_data        = static::process_properties( $prefix, $event_name, $event_properties );
 		$validation_result = static::get_event_validation_result( $event_data );
 
 		$this->data = $validation_result ?? $event_data;
@@ -86,11 +82,13 @@ class Tracks_Event {
 	/**
 	 * Processes the event's properties to get them ready for validation.
 	 *
+	 * @param string $event_prefix The event's prefix.
 	 * @param string $event_name The event's name.
 	 * @param array<string, mixed>|array<empty> $event_properties Any event properties to be processed.
 	 * @return stdClass The resulting event object with processed properties.
 	 */
 	protected static function process_properties(
+		string $event_prefix,
 		string $event_name,
 		array $event_properties
 	): stdClass {
@@ -99,8 +97,8 @@ class Tracks_Event {
 
 		// Set event name.
 		$event->_en = preg_replace(
-			'/^(?:' . static::EVENT_NAME_PREFIX . ')?(.*)/',
-			static::EVENT_NAME_PREFIX . '\1',
+			'/^(?:' . $event_prefix . ')?(.*)/',
+			$event_prefix . '\1',
 			$event_name
 		) ?? '';
 

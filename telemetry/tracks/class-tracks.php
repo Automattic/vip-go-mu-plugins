@@ -16,6 +16,23 @@ use WP_Error;
  * system.
  */
 class Tracks extends Telemetry_System {
+
+	/**
+	 * The prefix for all event names.
+	 *
+	 * @var string
+	 */
+	protected $event_prefix;
+
+	/**
+	 * Tracks constructor.
+	 * 
+	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
+	 */
+	public function __construct( string $event_prefix = 'vip_' ) {
+		$this->event_prefix = $event_prefix;
+	}
+
 	/**
 	 * Registers the events into WordPress hooks to activate tracking.
 	 */
@@ -43,7 +60,7 @@ class Tracks extends Telemetry_System {
 		string $event_name,
 		array $event_properties = array()
 	) {
-		$event  = new Tracks_Event( $event_name, $event_properties );
+		$event  = new Tracks_Event( $this->event_prefix, $event_name, $event_properties );
 		$client = Tracks_Client::instance();
 
 		// Process AJAX/REST request events immediately.
