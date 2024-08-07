@@ -164,7 +164,7 @@ class Tracks_Event {
 		 * @var string $wp_base_url
 		 */
 		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user_id ) );
-		$event->_ut = 'wpparsely:user_id';
+		$event->_ut = 'viptelemetry:user_id';
 
 		return $event;
 	}
