@@ -48,6 +48,26 @@ class Tracks_Test extends WP_UnitTestCase {
 		self::assertTrue( has_filter( 'test_filter' ) );
 	}
 
+	public function test_should_add_custom_prefix() {
+		$tracks = new Tracks( 'custom_' );
+		$tracks->register_events(
+			[ 'event1' => 'value1' ],
+			[ 'event2' => 'value2' ],
+			[ 'event3' => 'value3' ],
+		);
+
+		$events = self::get_property( 'events' )->getValue( $tracks );
+
+		self::assertCount( 3, $events );
+		self::assertEquals( [ 'event1' => 'value1' ], $events[0] );
+		self::assertEquals( [ 'event2' => 'value2' ], $events[1] );
+		self::assertEquals( [ 'event3' => 'value3' ], $events[2] );
+
+		$prefix = self::get_property( 'event_prefix' )->getValue( $tracks );
+
+		self::assertEquals( 'custom_', $prefix );
+	}
+
 	/**
 	 * Helper function for accessing protected properties.
 	 */
