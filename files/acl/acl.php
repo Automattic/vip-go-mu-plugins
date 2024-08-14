@@ -18,9 +18,9 @@ add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
 	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === constant( 'VIP_FILES_ACL_ENABLED' );
-	$is_restrict_all_enabled         = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
-	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
-	$no_option_set                   = get_option( 'vip_files_acl_restrict_all_enabled', null ) === null && get_option( 'vip_files_acl_restrict_unpublished_enabled', null ) === null;
+	$is_restrict_all_enabled         = get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' );
+	$is_restrict_unpublished_enabled = get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' );
+	$no_option_set                   = null === $is_restrict_all_enabled && null === $is_restrict_unpublished_enabled;
 
 	if ( ! $is_files_acl_enabled ) {
 		// Throw warning if restrictions are enabled but ACL constant is not set.
@@ -33,21 +33,33 @@ function maybe_load_restrictions() {
 		return;
 	}
 
-	if ( $is_restrict_unpublished_enabled ) {
+	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
+		require_once __DIR__ . '/restrict-all-files.php';
+
+		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
+	} elseif ( true === $is_restrict_unpublished_enabled ) {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
-	} elseif ( $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'production' ) ) ) {
-		require_once __DIR__ . '/restrict-all-files.php';
-
-		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
 	}
 }
 
-function get_option_as_bool( $option_name ) {
-	$value = get_option( $option_name, false );
+/**
+ * Get an option as a boolean if it exists. If it does not exist, return null.
+ *
+ * @param string $option_name The name of the option to get.
+ *
+ * @return boolean|null The option value as a boolean, or null if the option does not exist.
+ */
+
+function get_option_as_bool_if_exists( $option_name ) {
+	$value = get_option( $option_name, null );
+
+	if ( null === $value ) {
+		return $value;
+	}
 
 	return in_array( $value, [
 		true,
