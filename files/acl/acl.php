@@ -20,6 +20,7 @@ function maybe_load_restrictions() {
 	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === constant( 'VIP_FILES_ACL_ENABLED' );
 	$is_restrict_all_enabled         = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
 	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
+	$no_option_set                   = get_option( 'vip_files_acl_restrict_all_enabled', null ) === null && get_option( 'vip_files_acl_restrict_unpublished_enabled', null ) === null;
 
 	if ( ! $is_files_acl_enabled ) {
 		// Throw warning if restrictions are enabled but ACL constant is not set.
@@ -32,16 +33,16 @@ function maybe_load_restrictions() {
 		return;
 	}
 
-	if ( $is_restrict_all_enabled ) {
-		require_once __DIR__ . '/restrict-all-files.php';
-
-		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
-	} elseif ( $is_restrict_unpublished_enabled ) {
+	if ( $is_restrict_unpublished_enabled ) {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
+	} elseif ( $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'production' ) ) ) {
+		require_once __DIR__ . '/restrict-all-files.php';
+
+		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
 	}
 }
 
