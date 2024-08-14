@@ -111,9 +111,9 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_option_as_bool__option_not_exists() {
-		$actual_value = get_option_as_bool( 'my_test_get_option_as_bool_option_not_exists' );
+		$actual_value = get_option_as_bool_if_exists( 'my_test_get_option_as_bool_option_not_exists' );
 
-		$this->assertEquals( false, $actual_value );
+		$this->assertEquals( null, $actual_value );
 	}
 
 	public function data_provider__get_option_as_bool__option_exists() {
@@ -166,7 +166,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 	public function test__get_option_as_bool__option_exists( $option_value, $expected_value ) {
 		update_option( 'my_test_get_option_as_bool_option', $option_value );
 
-		$actual_value = get_option_as_bool( 'my_test_get_option_as_bool_option' );
+		$actual_value = get_option_as_bool_if_exists( 'my_test_get_option_as_bool_option' );
 
 		$this->assertEquals( $expected_value, $actual_value );
 	}
