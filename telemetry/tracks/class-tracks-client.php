@@ -22,6 +22,11 @@ class Tracks_Client {
 	protected const PIXEL_BASE_URL = 'https://pixel.wp.com/t.gif';
 
 	/**
+	 * Tracks REST API endpoint for post requests
+	 */
+	protected const TRACKS_ENDPOINT = 'https://public-api.wordpress.com/rest/v1.1/tracks/record';
+
+	/**
 	 * Class singleton instance.
 	 *
 	 * @var ?Tracks_Client
@@ -127,6 +132,58 @@ class Tracks_Client {
 		);
 
 		if ( is_wp_error( $request ) ) {
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => 'error recording event to Tracks',
+				'extra'    => [
+					'error' => $request->get_error_messages(),
+					'event' => (array) $event,
+				],
+			] );
+			return $request;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Record a batch of events using the Tracks REST API
+	 * 
+	 * @param Track_Event[] $events Array of Tracks_Event objects to record
+	 * @return bool|WP_Error True if batch recording succeeded.
+	 *                       WP_Error is any error occured.
+	 */
+	public function batch_record_events( array $events ) {
+		// filter out invalid events
+		$filtered_events = array_filter( $events, function ( $event ) {
+			return $event instanceof Tracks_Event && $event->is_recordable();
+		} );
+
+		// convert array of Tracks_Event objects to associative arrays
+		$event_data = array_map( function ( $event ) {
+			return (array) $event->get_data();
+		}, $filtered_events );
+
+		$request = wp_remote_post(
+			static::TRACKS_ENDPOINT,
+			array(
+				'body'    => wp_json_encode( $event_data ),
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $request ) ) {
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => 'error batch recording events to Tracks',
+				'extra'    => [
+					'error' => $request->get_error_messages(),
+				],
+			] );
 			return $request;
 		}
 
@@ -178,9 +235,7 @@ class Tracks_Client {
 	 * Records any remaining events synchronously.
 	 */
 	public function record_remaining_events(): void {
-		foreach ( $this->events as $event ) {
-			static::instance()->record_event_synchronously( $event );
-		}
+		static::instance()->batch_record_events( $this->events );
 	}
 
 	/**
