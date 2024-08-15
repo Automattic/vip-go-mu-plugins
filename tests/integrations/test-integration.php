@@ -289,8 +289,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Helper function for testing `is_active_via_vip`.
 	 *
-	 * @param array   $vip_configs
-	 * @param boolean $expected_is_active_via_vip
+	 * @param array<VipIntegrationConfig> $vip_configs
+	 * @param boolean                     $expected_is_active_via_vip
 	 *
 	 * @return void
 	 */
@@ -447,8 +447,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Helper function for testing `get_site_configs`.
 	 *
-	 * @param array $vip_configs
-	 * @param mixed $expected_get_site_config
+	 * @param array<VipIntegrationConfig> $vip_configs
+	 * @param mixed                       $expected_get_site_config
 	 *
 	 * @return void
 	 */
@@ -528,10 +528,10 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Helper function for testing `get_value_from_vip_config`.
 	 *
-	 * @param array      $vip_configs
-	 * @param string     $config_type
-	 * @param string     $key
-	 * @param null|array $expected_value_from_vip_config
+	 * @param array<VipIntegrationConfig> $vip_configs
+	 * @param string                      $config_type
+	 * @param string                      $key
+	 * @param null|array                  $expected_value_from_vip_config
 	 *
 	 * @return void
 	 */
@@ -550,7 +550,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Get `Integration` with configs.
 	 *
-	 * @param array $vip_configs
+	 * @param array<VipIntegrationConfig> $vip_configs
 	 */
 	private function get_integration_with_configs( $vip_configs ): Integration {
 		$integration = new FakeIntegration( 'fake' );
@@ -563,7 +563,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Get `Integration` having multiple setups.
 	 *
-	 * @param array $vip_configs
+	 * @param array<VipIntegrationConfig> $vip_configs
 	 */
 	private function get_multi_setup_integration( $vip_configs ): Integration {
 		$integration = new FakeMultiSetupIntegration( 'fake-multi-setup' );

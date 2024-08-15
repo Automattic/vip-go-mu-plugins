@@ -21,16 +21,21 @@ class VipIntegrationsConfig {
 	private $config_file_dir = ABSPATH . 'config/integrations-config';
 
 	/**
+	 * Structure of the integration config.
+	 * 
+	 * @typedef VipIntegrationConfig
+	 * @type array (
+	 *   'label'         => string,
+	 *   'org'           => array<string, string>,
+	 *   'env'           => array<string, mixed>,
+	 *   'network_sites' => array<number, array<string, mixed>>,
+	 * )
+	 */
+
+	/**
 	 * Configurations provided by VIP.
 	 *
-	 * @var array <string, array (
-	 *   array (
-	 *    'label'         => string,
-	 *    'org'           => array<string, string>,
-	 *    'env'           => array<string, mixed>,
-	 *    'network_sites' => array<number, array<string, mixed>>,
-	 *  ),
-	 * )>
+	 * @var array <string, array ( VipIntegrationConfig )>
 	 *
 	 * @example
 	 * array(

@@ -55,7 +55,7 @@ abstract class Integration {
 	 *
 	 * Note: We don't use this property for activation of the integration.
 	 *
-	 * @var array<array<mixed>>
+	 * @var array<VipIntegrationConfig>
 	 */
 	private array $vip_configs = [];
 
@@ -158,7 +158,7 @@ abstract class Integration {
 	/**
 	 * Set `vip_configs` property.
 	 *
-	 * @param array $vip_configs Configurations provided by VIP.
+	 * @param array<VipIntegrationConfig> $vip_configs Configurations provided by VIP.
 	 *
 	 * @return void
 	 *
@@ -197,7 +197,7 @@ abstract class Integration {
 	/**
 	 * Get configs of the integration in context of current site.
 	 *
-	 * @return array<array<mixed>> Returns an array of configs if the integration have multiple configs else single config object.
+	 * @return array<VipIntegrationConfig> Returns an array of configs if the integration have multiple configs else single config object.
 	 *
 	 * @private
 	 */
@@ -205,7 +205,7 @@ abstract class Integration {
 		/**
 		 * Array containing configs of the integration.
 		 *
-		 * @var array<array<mixed>>
+		 * @var array<VipIntegrationConfig>
 		 */
 		$configs = [];
 
@@ -234,13 +234,13 @@ abstract class Integration {
 	/**
 	 * Get config value based on given type and key.
 	 *
-	 * @param array<mixed> $vip_config  Configurations provided by VIP.
-	 * @param string       $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
-	 * @param string       $key Key of the config from which we have to extract the data.
+	 * @param VipIntegrationConfig $vip_config  Configurations provided by VIP.
+	 * @param string               $config_type Type of the config whose data is needed i.e. org, env, network-sites etc.
+	 * @param string               $key Key of the config from which we have to extract the data.
 	 *
 	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
-	private function get_value_from_config( array $vip_config, string $config_type, string $key ) {
+	private function get_value_from_config( $vip_config, string $config_type, string $key ) {
 		$value = null;
 
 		if ( ! in_array( $config_type, [ 'org', 'env', 'network_sites' ], true ) ) {
