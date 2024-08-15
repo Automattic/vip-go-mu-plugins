@@ -11,6 +11,7 @@ namespace Automattic\VIP\Telemetry;
 
 use stdClass;
 use WP_Error;
+use Automattic\VIP\Support_User\User as Support_User;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
@@ -131,7 +132,7 @@ class Tracks_Event {
 		}
 
 		// Check if the user is a VIP user.
-		$event->is_vip_user = is_automattician( get_current_user_id() );
+		$event->is_vip_user = Support_User::user_has_vip_support_role( get_current_user_id() );
 
 		return $event;
 	}
