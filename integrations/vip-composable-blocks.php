@@ -92,7 +92,7 @@ class VipComposableBlocksIntegration extends Integration {
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_loaded(): bool {
-		return defined( 'VIP_COMPOSABLE_BLOCKS__REST_NAMESPACE' );
+		return defined( 'VIP_COMPOSABLE_BLOCKS__PLUGIN_VERSION' );
 	}
 
 	/**
