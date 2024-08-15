@@ -34,13 +34,6 @@ class Tracks extends Telemetry_System {
 	}
 
 	/**
-	 * Registers the events into WordPress hooks to activate tracking.
-	 */
-	public function run(): void {
-		$this->activate_tracking();
-	}
-
-	/**
 	 * Records an event to Tracks by using the Tracks pixel.
 	 *
 	 * Depending on the current context, the pixel will be recorded
@@ -69,28 +62,5 @@ class Tracks extends Telemetry_System {
 		}
 
 		return $client->record_event_asynchronously( $event );
-	}
-
-	/**
-	 * Registers the events into their respective WordPress hooks, so they
-	 * can be recorded when the hook fires.
-	 */
-	protected function activate_tracking(): void {
-		foreach ( $this->events as $event ) {
-			if ( is_string( $event['action_hook'] ) && is_callable( $event['callable'] ) ) {
-				$accepted_args = $event['accepted_args'] ?? 1;
-				$func          = function () use ( $accepted_args, $event ) {
-					if ( $accepted_args > 1 ) {
-						$args   = func_get_args();
-						$args[] = $this;
-					} else {
-						$args = array( $this );
-					}
-					return call_user_func_array( $event['callable'], $args );
-				};
-
-				add_filter( $event['action_hook'], $func, 10, (int) $accepted_args );
-			}
-		}
 	}
 }

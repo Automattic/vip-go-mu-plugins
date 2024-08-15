@@ -16,37 +16,6 @@ use WP_Error;
  */
 abstract class Telemetry_System {
 	/**
-	 * Holds the list of events to be tracked.
-	 *
-	 * @var array<array<string, string|int>>
-	 */
-	protected $events;
-
-	/**
-	 * Registers the telemetry system.
-	 */
-	abstract public function run(): void;
-
-	/**
-	 * Activates event tracking.
-	 */
-	abstract protected function activate_tracking(): void;
-
-	/**
-	 * Registers the passed events so they can be recorded later.
-	 *
-	 * Note: All events must be registered before the run() function of this
-	 * class gets called.
-	 *
-	 * @param array<string, string|int> ...$events The events to register.
-	 */
-	public function register_events( array ...$events ): void {
-		foreach ( $events as $event ) {
-			$this->events[] = $event;
-		}
-	}
-
-	/**
 	 * Records the passed event.
 	 *
 	 * @param string               $event_name The event's name.
