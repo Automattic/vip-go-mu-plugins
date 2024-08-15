@@ -75,10 +75,10 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_active_is_loading_the_corresponding_integration(): void {
 		$integrations = new Integrations();
 		/**
-		* Integration mock .
-		*
-		* @var MockObject|Integration
-		*/
+		 * Integration mock .
+		 *
+		 * @var MockObject|Integration
+		 */
 		$integration_mock = $this->getMockBuilder( FakeIntegration::class )->setConstructorArgs( [ 'fake' ] )->onlyMethods( [ 'load' ] )->getMock();
 		$integration_mock->expects( $this->once() )->method( 'load' );
 

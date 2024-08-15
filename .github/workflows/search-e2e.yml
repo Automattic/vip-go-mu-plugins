@@ -1,6 +1,6 @@
 name: Enterprise Search e2e tests
 env:
-  NODE_VERSION: "16"
+  NODE_VERSION: "20"
 
 on:
   pull_request:
@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4.1.6
+      uses: actions/checkout@v4.1.7
       with:
         submodules: recursive
 
@@ -38,7 +38,7 @@ jobs:
       uses: ./.github/actions/prepare-source
 
     - name: "Install node v${{ env.NODE_VERSION }}"
-      uses: actions/setup-node@v4.0.2
+      uses: actions/setup-node@v4.0.3
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
@@ -69,7 +69,11 @@ jobs:
           ${{ github.workspace }}/tests/cypress/videos/
           ${{ github.workspace }}/tests/cypress/logs/
           ${{ github.workspace }}/cypress/results/
+          ${{ github.workspace }}/tests/search/e2e/screenshots/
+          ${{ github.workspace }}/tests/search/e2e/videos/
+          ${{ github.workspace }}/tests/search/e2e/logs/
 
     - name: Stop Elasticsearch
       if: always()
-      run: cd bin/search/es-docker/ && docker-compose down
+      run: docker compose down
+      working-directory: bin/search/es-docker

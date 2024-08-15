@@ -9,12 +9,12 @@
     "phpcs:fix": "vendor/bin/phpcbf",
     "lint": "npm run phplint && npm run phpcs",
     "update-es-wp-query": "git subtree pull --prefix search/es-wp-query git@github.com:Automattic/es-wp-query master --squash",
-    "prepare": "husky install",
+    "prepare": "husky",
     "search-build": "cd ./tests/search/e2e && 10up-toolkit build",
     "search-env": "wp-env",
     "search-env:install-tests-cli": "./bin/search/install-wp-cli.sh tests-wordpress",
-    "search-env:start": "wp-env start && npm run search-env:install-tests-cli && cd bin/search/es-docker/ && docker-compose up -d",
-    "search-env:stop": "wp-env stop && cd bin/search/es-docker/ && docker-compose down",
+    "search-env:start": "wp-env start && npm run search-env:install-tests-cli && cd bin/search/es-docker/ && docker compose up -d",
+    "search-env:stop": "wp-env stop && cd bin/search/es-docker/ && docker compose down",
     "cypress:delete:reports": "rm cypress/results/* || true",
     "cypress:setup": "./bin/search/setup-cypress-env.sh",
     "cypress:open": "cypress open --config-file tests/search/e2e/cypress.config.js",
@@ -23,14 +23,14 @@
   "author": "Automattic",
   "devDependencies": {
     "@babel/plugin-syntax-decorators": "^7.19.0",
-    "@wordpress/env": "^9.0.0",
+    "@wordpress/env": "^10.2.0",
     "10up-toolkit": "^6.0.0",
     "classnames": "^2.3.1",
     "cypress": "^9.5.0",
     "cypress-file-upload": "^5.0.8",
     "cypress-multi-reporters": "^1.6.1",
     "eslint-plugin-cypress": "^3.0.3",
-    "husky": "9.0.11",
+    "husky": "9.1.4",
     "jsdoc": "^4.0.0",
     "lint-staged": "^15.0.1",
     "mocha-junit-reporter": "^2.1.1",
@@ -75,8 +75,8 @@
     "wpDependencyExternals": true
   },
   "dependencies": {
-    "@wordpress/api-fetch": "^6.16.0",
-    "@wordpress/i18n": "^4.19.0",
+    "@wordpress/api-fetch": "^7.1.0",
+    "@wordpress/i18n": "^5.1.0",
     "chart.js": "^4.0.1",
     "element-closest": "^3.0.2",
     "promise-polyfill": "^8.2.0",
@@ -84,7 +84,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-select": "^5.4.0",
-    "uuid": "^9.0.0",
+    "uuid": "^10.0.0",
     "whatwg-fetch": "^3.6.2"
   }
 }
