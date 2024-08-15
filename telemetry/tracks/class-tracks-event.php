@@ -11,6 +11,7 @@ namespace Automattic\VIP\Telemetry;
 
 use stdClass;
 use WP_Error;
+use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Class that creates and validates Tracks events.
@@ -187,18 +188,36 @@ class Tracks_Event {
 	protected static function get_event_validation_result( stdClass $event ): ?WP_Error {
 		// Check that required fields are defined.
 		if ( ! $event->_en ) {
+			$msg = __( 'The _en property must be specified', 'vip-telemetry' );
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => $msg,
+				'extra'    => [
+					'event' => (array) $event,
+				],
+			] );
 			return new WP_Error(
 				'invalid_event',
-				__( 'The _en property must be specified', 'vip-telemetry' ),
+				$msg,
 				array( 'status' => 400 )
 			);
 		}
 
 		// Validate Event Name (_en).
 		if ( ! static::event_name_is_valid( $event->_en ) ) {
+			$msg = __( 'A valid event name must be specified', 'vip-telemetry' );
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => $msg,
+				'extra'    => [
+					'event' => (array) $event,
+				],
+			] );
 			return new WP_Error(
 				'invalid_event_name',
-				__( 'A valid event name must be specified', 'vip-telemetry' ),
+				$msg,
 				array( 'status' => 400 )
 			);
 		}
@@ -206,9 +225,18 @@ class Tracks_Event {
 		// Validate property names format.
 		foreach ( array_keys( (array) $event ) as $key ) {
 			if ( ! static::property_name_is_valid( $key ) && '_en' !== $key ) {
+				$msg = __( 'A valid property name must be specified', 'vip-telemetry' );
+				log2logstash( [
+					'severity' => 'error',
+					'feature'  => 'telemetry',
+					'message'  => $msg,
+					'extra'    => [
+						'event' => (array) $event,
+					],
+				] );
 				return new WP_Error(
 					'invalid_property_name',
-					__( 'A valid property name must be specified', 'vip-telemetry' ),
+					$msg,
 					array( 'status' => 400 )
 				);
 			}
@@ -216,9 +244,18 @@ class Tracks_Event {
 
 		// Validate User ID (_ui) and User ID Type (_ut).
 		if ( ! ( property_exists( $event, '_ui' ) && property_exists( $event, '_ut' ) ) ) {
+			$msg = __( 'Could not determine user identity and type', 'vip-telemetry' );
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => $msg,
+				'extra'    => [
+					'event' => (array) $event,
+				],
+			] );
 			return new WP_Error(
 				'empty_user_information',
-				__( 'Could not determine user identity and type', 'vip-telemetry' ),
+				$msg,
 				array( 'status' => 400 )
 			);
 		}

@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use WP_Error;
+use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Handles all operations related to the Tracks pixel.
@@ -96,6 +97,14 @@ class Tracks_Client {
 		$pixel_url = static::instance()->generate_pixel_url( $event );
 
 		if ( null === $pixel_url ) {
+			log2logstash( [
+				'severity' => 'error',
+				'feature'  => 'telemetry',
+				'message'  => 'cannot generate tracks pixel for given input',
+				'extra'    => [
+					'event' => (array) $event,
+				],
+			] );
 			return new WP_Error(
 				'invalid_pixel',
 				'cannot generate tracks pixel for given input',
