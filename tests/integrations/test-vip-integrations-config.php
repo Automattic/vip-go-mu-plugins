@@ -40,7 +40,7 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__constructor_doest_not_set_config_file_dir_property_if_constant_is_not_defined() {
+	public function test__constructor_does_not_set_config_file_dir_property_if_constant_is_not_defined() {
 		$integrations_config   = new VipIntegrationsConfig();
 		$config_file_dir_value = get_class_property_as_public( VipIntegrationsConfig::class, 'config_file_dir' )->getValue( $integrations_config );
 		

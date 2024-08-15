@@ -227,7 +227,7 @@ abstract class Integration {
 			}
 
 			if ( isset( $config ) ) {
-				$config['type'] = $this->slug; // Useful to have it available, specially when integration is dependent on multiple integrations.
+				$config['type'] = $this->slug; // Useful specially when integration have multiple setups.
 
 				$configs[] = $config;
 			}
