@@ -22,8 +22,9 @@ class VipIntegrationsConfig {
 
 	/**
 	 * Structure of the integration config.
-	 * 
+	 *
 	 * @typedef VipIntegrationConfig
+	 *
 	 * @type array (
 	 *   'label'         => string,
 	 *   'org'           => array<string, string>,
