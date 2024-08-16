@@ -145,10 +145,21 @@ class Tracks_Event {
 	 * @return stdClass The new event object including identity information.
 	 */
 	protected static function set_user_properties( stdClass $event ): stdClass {
-		$wp_user_id = get_current_user_id();
+		$wp_user = wp_get_current_user();
 
 		// Only track logged-in users.
-		if ( 0 === $wp_user_id ) {
+		if ( 0 === $wp_user->ID ) {
+			return $event;
+		}
+
+		// Set anonymized event user ID
+		if ( defined( 'VIP_TELEMETRY_SALT' ) ) {
+			$salt           = constant( 'VIP_TELEMETRY_SALT' ); // this would be private but globally shared across the platform
+			$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
+
+			$event->_ui = $tracks_user_id;
+			$event->_ut = 'viptelemetry:user_id';
+
 			return $event;
 		}
 
@@ -156,7 +167,7 @@ class Tracks_Event {
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
 			$app_id = constant( 'VIP_GO_APP_ID' );
 			if ( is_integer( $app_id ) && 0 < $app_id ) {
-				$event->_ui = $app_id . '_' . $wp_user_id;
+				$event->_ui = $app_id . '_' . $wp_user->ID;
 				$event->_ut = 'vip_go_app_wp_user';
 
 				return $event;
@@ -174,7 +185,7 @@ class Tracks_Event {
 		 *
 		 * @var string $wp_base_url
 		 */
-		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user_id ) );
+		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user->ID ) );
 		$event->_ut = 'viptelemetry:user_id';
 
 		return $event;
