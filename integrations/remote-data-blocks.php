@@ -1,6 +1,6 @@
 <?php
 /**
- * Integration: VIP Composable Blocks.
+ * Integration: Remote Data Blocks.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -8,25 +8,32 @@
 namespace Automattic\VIP\Integrations;
 
 /**
- * Loads VIP Composable Blocks Integration.
+ * Loads "Remote Data Blocks" Integration.
  *
  * @private
  */
-class VipComposableBlocksIntegration extends Integration {
+class RemoteDataBlocksIntegration extends Integration {
 	/**
-	 * The version of the "VIP Composable Blocks" plugin to load, that's set to the latest version.
-	 * This should be higher than the `lowestVersion` set in "vip-composable-blocks" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
+	 * The version of the "Remote Data Blocks" plugin to load, that's set to the latest version.
+	 * This should be higher than the `lowestVersion` set in "remote-data-blocks" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
 	 *
 	 * @var string
 	 */
 	protected string $version = '0.1.0';
 
 	/**
-	 * "VIP Composable Blocks" integration doesn't have its own config and is dependent on configs provided by data source integrations.
+	 * "Remote Data Blocks" integration doesn't have its own config and is dependent on configs provided by data source integrations.
 	 *
 	 * @var array<Integration>
 	 */
 	protected array $data_source_integrations = [];
+
+	/**
+	 * List of data sources. A new `DataSourceIntegration` object will be instantiated for each data source.
+	 *
+	 * @var array<string>
+	 */
+	protected array $data_source_slugs = [ 'airtable', 'shopify' ];
 
 	/**
 	 * Constructor.
@@ -34,9 +41,7 @@ class VipComposableBlocksIntegration extends Integration {
 	 * @param string $slug Slug of the integration.
 	 */
 	public function __construct( string $slug ) {
-		$data_source_slugs = [ 'airtable', 'shopify' ];
-
-		foreach ( $data_source_slugs as $data_source_slug ) {
+		foreach ( $this->data_source_slugs as $data_source_slug ) {
 			$integration                      = new DataSourceIntegration( $data_source_slug );
 			$this->data_source_integrations[] = $integration;
 
@@ -88,11 +93,11 @@ class VipComposableBlocksIntegration extends Integration {
 	}
 
 	/**
-	 * Returns `true` if `VIP Composable Blocks` is already available e.g. customer code. We will use
+	 * Returns `true` if `Remote Data Blocks` is already available e.g. customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_loaded(): bool {
-		return defined( 'VIP_COMPOSABLE_BLOCKS__PLUGIN_VERSION' );
+		return defined( 'REMOTE_DATA_BLOCKS__PLUGIN_VERSION' );
 	}
 
 	/**
@@ -110,7 +115,7 @@ class VipComposableBlocksIntegration extends Integration {
 		}
 
 		// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-composable-blocks-' . $this->version . '/vip-composable-blocks.php';
+		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-' . $this->version . '/remote-data-blocks.php';
 		if ( file_exists( $load_path ) ) {
 			require_once $load_path;
 		} else {
@@ -124,7 +129,7 @@ class VipComposableBlocksIntegration extends Integration {
 	 * @private
 	 */
 	public function configure(): void {
-		add_filter( 'vip_integration_composable_blocks_config', function () {
+		add_filter( 'vip_integration_remote_data_blocks_config', function () {
 			return $this->get_config();
 		});
 	}
@@ -151,11 +156,11 @@ class DataSourceIntegration extends Integration {
 	 * Returns status of the plugin.
 	 */
 	public function is_loaded(): bool {
-		return false; // Returning `false` because the integration is a data source for Composable Blocks.
+		return false; // Returning `false` because the integration is a data source for "Remote Data Blocks".
 	}
 
 	/**
-	 * Loads the plugin. No implementation needed because the integration is a data source for Composable Blocks.
+	 * Loads the plugin. No implementation needed because the integration is a data source for "Remote Data Blocks".
 	 *
 	 * @private
 	 */
