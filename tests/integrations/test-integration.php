@@ -351,7 +351,8 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->do_test_get_site_config(
 			[
 				[
-					'env' => [
+					'label' => 'Fake Integration',
+					'env'   => [
 						'status' => Env_Integration_Status::ENABLED,
 						'config' => [ 'config_key' => 'env-config-key' ],
 					],
