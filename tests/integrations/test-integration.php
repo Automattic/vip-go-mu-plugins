@@ -111,11 +111,11 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				'network_sites' => [
 					get_current_blog_id() => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network_site_1_config' ),
+						'config' => [ 'config_key' => 'ns-1-config-key' ],
 					],
 					$blog_2_id            => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network_site_2_config' ),
+						'config' => [ 'config_key' => 'ns-2-config-key' ],
 					],
 				],
 			],
@@ -128,11 +128,23 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		// If blog is switched then return config of current network site.
 		switch_to_blog( $blog_2_id );
-		$this->assertEquals( array( 'network_site_2_config' ), $integration->get_config() );
+		$this->assertEquals(
+			[
+				'type'       => 'fake',
+				'config_key' => 'ns-2-config-key',
+			],
+			$integration->get_config()
+		);
 
 		// If blog is restored then return config of the main site.
 		restore_current_blog();
-		$this->assertEquals( array( 'network_site_1_config' ), $integration->get_config() );
+		$this->assertEquals(
+			[
+				'type'       => 'fake',
+				'config_key' => 'ns-1-config-key',
+			],
+			$integration->get_config()
+		);
 	}
 
 	public function test__is_active_returns_false_when_integration_is_not_active(): void {
@@ -314,17 +326,42 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				[
 					'env'           => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'env-config' ),
+						'config' => [ 'config_key' => 'env-config-key' ],
 					],
 					'network_sites' => [
 						'1' => [
 							'status' => Env_Integration_Status::ENABLED,
-							'config' => array( 'network-site-config' ),
+							'config' => [ 'config_key' => 'network-site-config-key' ],
 						],
 					],
 				],
 			],
-			array( 'env-config' ),
+			[
+				'type'       => 'fake',
+				'config_key' => 'env-config-key',
+			],
+		);
+	}
+
+	public function test__get_site_configs_returns_value_with_label_from_environment_config(): void {
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for non multisite.' );
+		}
+
+		$this->do_test_get_site_config(
+			[
+				[
+					'env' => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => [ 'config_key' => 'env-config-key' ],
+					],
+				],
+			],
+			[
+				'type'       => 'fake',
+				'label'      => 'Fake Integration',
+				'config_key' => 'env-config-key',
+			],
 		);
 	}
 
@@ -338,17 +375,20 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				[
 					'env'           => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'env-config' ),
+						'config' => [ 'config_key' => 'env-config-key' ],
 					],
 					'network_sites' => [
 						'1' => [
 							'status' => Env_Integration_Status::ENABLED,
-							'config' => array( 'network-site-config' ),
+							'config' => [ 'config_key' => 'ns-config-key' ],
 						],
 					],
 				],
 			],
-			array( 'network-site-config' ),
+			[
+				'type'       => 'fake',
+				'config_key' => 'ns-config-key',
+			],
 		);
 	}
 
@@ -362,7 +402,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 				[
 					'env'           => [
 						'status'         => Env_Integration_Status::ENABLED,
-						'config'         => array( 'env-config' ),
+						'config'         => [ 'config_key' => 'env-config-key' ],
 						'cascade_config' => true,
 					],
 					'network_sites' => [
@@ -372,7 +412,10 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 					],
 				],
 			],
-			array( 'env-config' ),
+			[
+				'type'       => 'fake',
+				'config_key' => 'env-config-key',
+			],
 		);
 	}
 
@@ -385,23 +428,32 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 			[
 				'env' => [
 					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'env-1-config' ),
+					'config' => [ 'config_key' => 'env-1-config-key' ],
 				],
 			],
 			[
 				'env' => [
 					'status' => Env_Integration_Status::DISABLED,
-					'config' => array( 'env-2-config' ),
+					'config' => [ 'config_key' => 'env-2-config-key' ],
 				],
 			],
 		];
 
 		$integration = $this->get_multi_setup_integration( $vip_configs );
 
-		$this->assertEqualsCanonicalizing( [
-			[ 'env-1-config' ],
-			[ 'env-2-config' ],
-		], $integration->get_site_configs() );
+		$this->assertEqualsCanonicalizing(
+			[
+				[
+					'type'       => 'fake-multi-setup',
+					'config_key' => 'env-1-config-key',
+				],
+				[
+					'type'       => 'fake-multi-setup',
+					'config_key' => 'env-2-config-key',
+				],
+			],
+			$integration->get_site_configs()
+		);
 	}
 
 	public function test__get_site_configs_return_network_site_configs_of_multi_config_integration(): void {
@@ -411,26 +463,29 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$vip_configs = [
 			[
+				'label'         => 'Fake Integration 1',
 				'network_sites' => [
 					'1' => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( '1-config' ),
+						'config' => [ 'config_key' => 'ns-1-config' ],
 					],
 				],
 			],
 			[
+				'label'         => 'Fake Integration 2',
 				'network_sites' => [
 					'1' => [
 						'status' => Env_Integration_Status::DISABLED,
-						'config' => array( '2-config' ),
+						'config' => [ 'config_key' => 'ns-2-config' ],
 					],
 				],
 			],
 			[
+				'label'         => 'Fake Integration 3',
 				'network_sites' => [
 					'2' => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( '3-config' ),
+						'config' => [ 'config_key' => 'ns-3-config' ],
 					],
 				],
 			],
@@ -438,10 +493,21 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$integration = $this->get_multi_setup_integration( $vip_configs );
 
-		$this->assertEqualsCanonicalizing( [
-			[ '1-config' ],
-			[ '2-config' ],
-		], $integration->get_site_configs() );
+		$this->assertEqualsCanonicalizing(
+			[
+				[
+					'type'       => 'fake-multi-setup',
+					'label'      => 'Fake Integration 1',
+					'config_key' => 'ns-1-config',
+				],
+				[
+					'type'       => 'fake-multi-setup',
+					'label'      => 'Fake Integration 2',
+					'config_key' => 'ns-2-config',
+				],
+			],
+			$integration->get_site_configs()
+		);
 	}
 
 	/**

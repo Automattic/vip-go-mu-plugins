@@ -67,7 +67,13 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$this->assertTrue( $integration_1->is_active() );
 		$this->assertEquals( [ 'fake_1_key' => 'value' ], $integration_1->get_config() );
 		$this->assertTrue( $integration_2->is_active() );
-		$this->assertEquals( is_multisite() ? [] : [ 'fake_2_key' => 'vip_value' ], $integration_2->get_config() );
+		$this->assertEquals(
+			is_multisite() ? [] : [
+				'type'       => 'fake-2',
+				'fake_2_key' => 'vip_value',
+			],
+			$integration_2->get_config()
+		);
 		$this->assertFalse( $integration_3->is_active() );
 		$this->assertEquals( [], $integration_3->get_config() );
 	}

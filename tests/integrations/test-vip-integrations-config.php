@@ -37,6 +37,8 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		reset_custom_error_reporting( $this->original_error_reporting );
+		Constant_Mocker::clear();
+
 		parent::tearDown();
 	}
 
@@ -45,7 +47,15 @@ class VIP_Integrations_Config_Test extends WP_UnitTestCase {
 		$config_file_dir_value = get_class_property_as_public( VipIntegrationsConfig::class, 'config_file_dir' )->getValue( $integrations_config );
 		
 		$this->assertEquals( ABSPATH . 'config/integrations-config', $config_file_dir_value );
-		$this->assertIsString( $config_file_dir_value );
+	}
+
+	public function test__constructor_set_config_file_dir_property_if_constant_is_defined() {
+		Constant_Mocker::define( 'WPVIP_INTEGRATIONS_CONFIG_DIR', '/wp-test/config/integrations-config' );
+
+		$integrations_config   = new VipIntegrationsConfig();
+		$config_file_dir_value = get_class_property_as_public( VipIntegrationsConfig::class, 'config_file_dir' )->getValue( $integrations_config );
+		
+		$this->assertEquals( '/wp-test/config/integrations-config', $config_file_dir_value );
 	}
 
 	public function test__get_config_file_names_returns_an_empty_array_if_dir_does_not_exist(): void {
