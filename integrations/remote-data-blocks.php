@@ -33,7 +33,7 @@ class RemoteDataBlocksIntegration extends Integration {
 	 *
 	 * @var array<string>
 	 */
-	protected array $data_source_slugs = [ 'airtable', 'shopify' ];
+	private array $data_source_slugs = [ 'airtable', 'shopify' ];
 
 	/**
 	 * Constructor.
@@ -59,6 +59,11 @@ class RemoteDataBlocksIntegration extends Integration {
 	 * @private
 	 */
 	public function is_active_via_vip(): bool {
+		// Check if "Remote Data Blocks" integration is enabled.
+		if ( ! parent::is_active_via_vip() ) {
+			return false;
+		}
+
 		// Returns 'true` if any of the data source integration is active.
 		foreach ( $this->data_source_integrations as $integration ) {
 			if ( $integration->is_active_via_vip() ) {
