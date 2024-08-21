@@ -233,6 +233,13 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+require_once __DIR__ . '/telemetry/class-telemetry-system.php';
+require_once __DIR__ . '/telemetry/Tracks/class-tracks.php';
+require_once __DIR__ . '/telemetry/Tracks/class-tracks-event.php';
+require_once __DIR__ . '/telemetry/Tracks/class-tracks-client.php';
+echo "Telemtery files loaded\n";
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
