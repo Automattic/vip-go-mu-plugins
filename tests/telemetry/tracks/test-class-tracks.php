@@ -6,10 +6,6 @@ namespace Automattic\VIP\Telemetry;
 
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/../../../telemetry/class-telemetry-system.php';
-require_once __DIR__ . '/../../../telemetry/tracks/class-tracks.php';
-require_once __DIR__ . '/../../../telemetry/tracks/class-tracks-client.php';
-
 class Tracks_Test extends WP_UnitTestCase {
 	public function test_event_prefix() {
 		$tracks       = new Tracks();

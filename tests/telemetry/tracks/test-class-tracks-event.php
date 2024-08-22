@@ -7,8 +7,6 @@ namespace Automattic\VIP\Telemetry;
 use WP_UnitTestCase;
 use Automattic\VIP\Support_User\Role;
 
-require_once __DIR__ . '/../../../telemetry/tracks/class-tracks-event.php';
-
 class Tracks_Event_Test extends WP_UnitTestCase {
 
 	protected const VIP_TELEMETRY_SALT = 'test_salt';
