@@ -238,7 +238,6 @@ require_once __DIR__ . '/telemetry/class-telemetry-system.php';
 require_once __DIR__ . '/telemetry/Tracks/class-tracks.php';
 require_once __DIR__ . '/telemetry/Tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/Tracks/class-tracks-client.php';
-echo "Telemtery files loaded\n";
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
