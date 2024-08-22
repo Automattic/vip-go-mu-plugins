@@ -50,7 +50,7 @@ class VipIntegrationsConfig {
 	 *   ),
 	 *   'parsely' => array(
 	 *     array(
-	 *       'org'        => array( 'status' => 'blocked' ),
+	 *       'org'        => array( 'status' => 'enabled' ),
 	 *       'env'        => array(
 	 *         'status' => 'enabled',
 	 *         'config'  => array(),
