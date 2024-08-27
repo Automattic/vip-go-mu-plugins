@@ -263,6 +263,9 @@ class A8C_Files {
 				$_max_w = 300;
 				$_max_h = 300;
 			}
+		} elseif ( 'medium_large' == $size ) {
+			$_max_w = get_option( 'medium_large_size_w' );
+			$_max_h = get_option( 'medium_large_size_h' );
 		} elseif ( 'large' == $size ) {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );
