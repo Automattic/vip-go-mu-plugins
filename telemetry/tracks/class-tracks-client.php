@@ -124,6 +124,7 @@ class Tracks_Client {
 		$request = wp_safe_remote_get(
 			$pixel_url,
 			array(
+				'user-agent'  => 'viptelemetry',
 				'blocking'    => false,
 				'redirection' => 2,
 				'httpversion' => '1.1',
@@ -154,7 +155,7 @@ class Tracks_Client {
 	 * @return bool|WP_Error True if batch recording succeeded.
 	 *                       WP_Error is any error occured.
 	 */
-	public function batch_record_events( array $events ) {
+	public function batch_record_events( array $events, array $common_props = [] ) {
 		// filter out invalid events
 		$filtered_events = array_filter( $events, function ( $event ) {
 			return $event instanceof Tracks_Event && $event->is_recordable();
@@ -165,11 +166,17 @@ class Tracks_Client {
 			return (array) $event->get_data();
 		}, $filtered_events );
 
+		$body = [
+			'events'      => $event_data,
+			'commonProps' => $common_props,
+		];
+
 		$request = wp_remote_post(
 			static::TRACKS_ENDPOINT,
 			array(
-				'body'    => wp_json_encode( $event_data ),
-				'headers' => array(
+				'body'       => wp_json_encode( $body ),
+				'user-agent' => 'viptelemetry',
+				'headers'    => array(
 					'Content-Type' => 'application/json',
 				),
 			)
