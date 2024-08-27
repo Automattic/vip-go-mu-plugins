@@ -158,7 +158,7 @@ class Tracks_Event {
 			$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
 
 			$event->_ui = $tracks_user_id;
-			$event->_ut = 'viptelemetry:user_id';
+			$event->_ut = 'vip:user_id';
 
 			return $event;
 		}
@@ -186,7 +186,7 @@ class Tracks_Event {
 		 * @var string $wp_base_url
 		 */
 		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user->ID ) );
-		$event->_ut = 'viptelemetry:user_id';
+		$event->_ut = 'vip_go_app_wp_user';
 
 		return $event;
 	}
