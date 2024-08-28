@@ -44,8 +44,6 @@ class Tracks_Client {
 	 * Constructor.
 	 */
 	private function __construct() {
-		// Track events asynchronously (inject pixels in the footer).
-		add_action( 'admin_footer', array( $this, 'render_tracking_pixels' ) );
 		// Synchronously track any remaining events that could not be added to
 		// the footer.
 		add_action( 'shutdown', array( $this, 'record_remaining_events' ) );
@@ -195,23 +193,6 @@ class Tracks_Client {
 		}
 
 		return true;
-	}
-
-	/**
-	 * Outputs a Tracks pixel for every registered event.
-	 */
-	public function render_tracking_pixels(): void {
-		foreach ( $this->events as $event ) {
-			$pixel_url = $this->generate_pixel_url( $event );
-
-			if ( null === $pixel_url ) {
-				continue;
-			}
-
-			echo '<img style="position: fixed;" src="', esc_url( $pixel_url ), '" />';
-		}
-
-		$this->events = array();
 	}
 
 	/**
