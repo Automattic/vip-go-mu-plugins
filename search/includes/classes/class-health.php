@@ -208,6 +208,19 @@ class Health {
 	}
 
 	/**
+	 * Query all posts with and without password for indexing.
+	 *
+	 *
+	 * @param array $args Database arguments
+	 * @return array
+	 */
+	public function query_password_protected_posts( $args ) {
+		$args['has_password'] = null;
+
+		return $args;
+	}
+
+	/**
 	 * Validate DB and ES index users counts
 	 *
 	 * @return array Array containing entity (post/user), type (N/A), error, ES count, DB count, difference
@@ -283,6 +296,16 @@ class Health {
 		$index_version = $search->versioning->get_current_version_number( $posts );
 
 		$health = new self( $search );
+
+		// Check protected_content feature is enabled before the loop starts
+		$protected_content         = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+		$protected_content_enabled = $protected_content ? $protected_content->is_active() : false;
+
+		// Add filter to modify query arguments to include password-protected posts if protected_content is not enabled
+		if ( ! $protected_content_enabled ) {
+			add_filter( 'ep_index_posts_args', [ $health, 'query_password_protected_posts' ] );
+		}
+
 
 		foreach ( $post_types as $post_type ) {
 			$post_indexable = Indexables::factory()->get( 'post' );
