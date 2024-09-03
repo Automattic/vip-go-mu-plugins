@@ -39,7 +39,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'prefix_test_event', $event->get_data()->_en );
 		$this->assertEquals( 'value1', $event->get_data()->property1 );
 		$this->assertEquals( hash_hmac( 'sha256', $user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
-		$this->assertEquals( 'vip:user_id', $event->get_data()->_ut );
+		$this->assertEquals( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertEquals( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
 		$this->assertEquals( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
 	}

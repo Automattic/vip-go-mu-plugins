@@ -158,7 +158,7 @@ class Tracks_Event {
 			$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
 
 			$event->_ui = $tracks_user_id;
-			$event->_ut = 'vip:user_id';
+			$event->_ut = 'vip:user_email';
 
 			return $event;
 		}
