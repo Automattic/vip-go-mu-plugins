@@ -8,7 +8,7 @@ WP_CLI::add_command( 'jetpack-start', __NAMESPACE__ . '\CLI' );
 
 class CLI {
 	/**
-	 * Connect sites to Jetpack, Akismet, and VaultPress.
+	 * Connect sites to Jetpack and Akismet.
 
 	 * [--network]
 	 * : Connect all subsites of this multisite network
@@ -49,9 +49,8 @@ class CLI {
 		}
 
 		$ak_connection = $this->connect_akismet();
-		$vp_connection = $this->connect_vaultpress();
 
-		return true === $ak_connection && true === $vp_connection;
+		return true === $ak_connection;
 	}
 
 	/**
@@ -101,30 +100,6 @@ class CLI {
 		$ak_connection = Controls::connect_akismet();
 		if ( ! $ak_connection ) {
 			WP_CLI::warning( '❌ Could not connect Akismet.' );
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Ensure Vaultpress is connected.
-	 *
-	 * @return bool true if there is a successful connection.
-	 * prints notice if Vaultpress is skipped.
-	 */
-	private function connect_vaultpress() {
-		// Do not connect to Vaultpress if the loading of the Vaultpress plugin has been skipped.
-		$skip_vp = ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && VIP_VAULTPRESS_SKIP_LOAD );
-
-		if ( $skip_vp ) {
-			WP_CLI::line( '☑️  VaultPress is skipped because the plugin is not loaded' );
-			return true;
-		}
-
-		$vp_connection = Controls::connect_vaultpress();
-		if ( is_wp_error( $vp_connection ) ) {
-			WP_CLI::warning( sprintf( '❌ Could not connect VaultPress. Error (%s): %s', $vp_connection->get_error_code(), $vp_connection->get_error_message() ) );
 			return false;
 		}
 
