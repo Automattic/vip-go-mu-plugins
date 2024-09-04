@@ -6,6 +6,7 @@ use Automattic\Memcached\Memcache_Adapter;
 use Automattic\Memcached\Stats;
 
 // Note that this class is in the global namespace for backwards-compatibility reasons.
+#[\AllowDynamicProperties]
 class WP_Object_Cache {
 	public string $flush_group        = 'WP_Object_Cache';
 	public string $global_flush_group = 'WP_Object_Cache_global';

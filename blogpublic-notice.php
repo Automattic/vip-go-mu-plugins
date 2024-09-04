@@ -23,7 +23,7 @@ function notice() {
 
 	printf(
 		'<div id="blogpublic-notice" class="notice notice-warning is-dismissible"><p>Your site may be discoverable. You can change this by <a href="%s">disabling content distribution</a>.</p></div>',
-		'https://docs.wpvip.com/technical-references/restricting-site-access/controlling-content-distribution-via-jetpack/#h-disabling-content-distribution',
+		'https://docs.wpvip.com/wordpress-on-vip/jetpack/content-distribution/#h-disabling-content-distribution',
 	);
 	add_action( 'admin_footer', __NAMESPACE__ . '\dismiss_handler' );
 }
