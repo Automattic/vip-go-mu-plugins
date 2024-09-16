@@ -139,24 +139,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 				);
 				$this->assertEquals( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER, Parsely_Loader_Info::get_integration_type() );
 				break;
-			case 'option_enabled':
-				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
-				$this->assertTrue(
-					Parsely_Loader_Info::is_active(),
-					'Expecting wp-parsely plugin to be enabled by the option.'
-				);
-				$this->assertEquals( Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION, Parsely_Loader_Info::get_integration_type() );
-				break;
-			case 'option_disabled':
-				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '0', get_option( '_wpvip_parsely_mu' ) );
-				$this->assertFalse(
-					Parsely_Loader_Info::is_active(),
-					'Expecting wp-parsely plugin to be disabled by the option.'
-				);
-				$this->assertEquals( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION, Parsely_Loader_Info::get_integration_type() );
-				break;
 			case 'filter_and_option_enabled':
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );

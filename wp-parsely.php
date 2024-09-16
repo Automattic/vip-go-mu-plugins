@@ -281,22 +281,19 @@ function maybe_load_plugin() {
 		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_CONSTANT );
 	}
 
-	$option_load_status   = get_option( '_wpvip_parsely_mu', null );
 	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
 
 	// If plugin isn't enabled via constant then check for filter and option status.
 	if ( true !== $parsely_enabled_constant ) {
-		$should_load            = true === $filtered_load_status || '1' === $option_load_status;
-		$should_prevent_loading = false === $filtered_load_status || '0' === $option_load_status;
+		$should_load            = true === $filtered_load_status;
+		$should_prevent_loading = false === $filtered_load_status;
 
 		// No integration: The site has not enabled parsely.
 		if ( ! $should_load || $should_prevent_loading ) {
 			Parsely_Loader_Info::set_active( false );
 
-			if ( false === $filtered_load_status ) {
+			if ( $should_prevent_loading ) {
 				Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
-			} elseif ( '0' === $option_load_status ) {
-				Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_SILENT_OPTION );
 			}
 
 			return;
@@ -350,12 +347,7 @@ function maybe_load_plugin() {
 
 	// If plugin isn't enabled via constant then set filter or option integration_type.
 	if ( true !== $parsely_enabled_constant ) {
-		$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER;
-		if ( '1' === $option_load_status && true !== $filtered_load_status ) {
-			$integration_type = Parsely_Integration_Type::ENABLED_MUPLUGINS_SILENT_OPTION;
-		}
-
-		Parsely_Loader_Info::set_integration_type( $integration_type );
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER );
 	}
 
 	Parsely_Loader_Info::set_active( true );
@@ -406,16 +398,12 @@ function maybe_disable_some_features() {
  */
 abstract class Parsely_Integration_Type { // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Classes.OpeningBraceSameLine.ContentAfterBrace
 	// When parsely is active.
-	const ENABLED_MUPLUGINS_FILTER        = 'ENABLED_MUPLUGINS_FILTER';
-	const ENABLED_MUPLUGINS_SILENT_OPTION = 'ENABLED_MUPLUGINS_SILENT_OPTION';
-	const ENABLED_CONSTANT                = 'ENABLED_CONSTANT';
-
-	const SELF_MANAGED = 'SELF_MANAGED';
-
+	const ENABLED_MUPLUGINS_FILTER = 'ENABLED_MUPLUGINS_FILTER';
+	const ENABLED_CONSTANT         = 'ENABLED_CONSTANT';
+	const SELF_MANAGED             = 'SELF_MANAGED';
 	// When parsely is not active.
-	const DISABLED_MUPLUGINS_FILTER        = 'DISABLED_MUPLUGINS_FILTER';
-	const DISABLED_MUPLUGINS_SILENT_OPTION = 'DISABLED_MUPLUGINS_SILENT_OPTION';
-	const DISABLED_CONSTANT                = 'DISABLED_CONSTANT'; // Prevent loading of plugin based on integration meta attribute or customers can also define it.
+	const DISABLED_MUPLUGINS_FILTER = 'DISABLED_MUPLUGINS_FILTER';
+	const DISABLED_CONSTANT         = 'DISABLED_CONSTANT';          // Prevent loading of plugin based on integration meta attribute or customers can also define it.
 
 	const NONE = 'NONE';
 	const NULL = 'NULL';
