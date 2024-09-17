@@ -12,6 +12,8 @@
  * Domain Path: /languages/
 */
 
+const VIP_SUPPORT_EMAIL = 'support@wpvip.com';
+
 /**
  * Boot the new VIP Dashboard
  *
@@ -97,7 +99,6 @@ function vip_contact_form_handler() {
 		die();
 	}
 
-	$vipsupportemailaddy  = 'vip-support@wordpress.com';
 	$cc_headers_to_kayako = '';
 
 	$current_user = wp_get_current_user();
@@ -177,16 +178,18 @@ function vip_contact_form_handler() {
 
 	// Filter from name/email. NOTE - not un-hooking the filter because we die() immediately after wp_mail()
 	add_filter( 'wp_mail_from', function () use ( $email ) {
-		return $email;
+		return VIP_SUPPORT_EMAIL;
 	}, PHP_INT_MAX );
 
 	add_filter( 'wp_mail_from_name', function () use ( $name ) {
 		return $name;
 	}, PHP_INT_MAX );
 
-	$headers = "From: \"$name\" <$email>\r\n";
+	$headers  = "From: \"$name\" <" . VIP_SUPPORT_EMAIL . ">\r\n";
+	$headers .= "Reply-To: $email\r\n"; // Add the Reply-To header so ZD can map correct email
+
 	// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-	if ( wp_mail( $vipsupportemailaddy, $subject, $content, $headers . $cc_headers_to_kayako ) ) {
+	if ( wp_mail( VIP_SUPPORT_EMAIL, $subject, $content, $headers . $cc_headers_to_kayako ) ) {
 		$return = array(
 			'status'  => 'success',
 			'message' => __( 'Your support request is on its way, we will be in touch soon.', 'vip-dashboard' ),
@@ -247,7 +250,7 @@ function vip_echo_mailto_vip_hosting( $linktext = 'Send an email to VIP Hosting.
 	$url = add_query_arg( array(
 		'subject' => rawurlencode( __( 'Descriptive subject please', 'vip-dashboard' ) ),
 		'body'    => rawurlencode( $email ),
-	), 'mailto:vip-support@wordpress.com' );
+	), 'mailto:' . VIP_SUPPORT_EMAIL );
 
 	$html = '<a href="' . esc_url( $url ) . '">' . esc_html( $linktext ) . '</a>';
 
