@@ -15,10 +15,9 @@ if ( file_exists( __DIR__ . '/action-scheduler-dynamic-queue.php' ) ) {
 
 // Unregister Jetpack-related cron events when disabled.
 add_action( 'cli_init', function () {
-	$jetpack_is_disabled    = defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD;
-	$vaultpress_is_disabled = $jetpack_is_disabled || ( defined( 'VIP_VAULTPRESS_ALLOWED' ) && false === VIP_VAULTPRESS_ALLOWED ) || ( defined( 'VIP_VAULTPRESS_SKIP_LOAD' ) && true === VIP_VAULTPRESS_SKIP_LOAD );
-
+	$jetpack_is_disabled  = defined( 'VIP_JETPACK_SKIP_LOAD' ) && true === VIP_JETPACK_SKIP_LOAD;
 	$events_to_unregister = [];
+
 	if ( $jetpack_is_disabled ) {
 		$events_to_unregister = array_merge( $events_to_unregister, [
 			'jetpack_sync_cron',
@@ -27,10 +26,6 @@ add_action( 'cli_init', function () {
 			'jetpack_waf_rules_update_cron',
 			'jetpack_v2_heartbeat',
 		] );
-	}
-
-	if ( $vaultpress_is_disabled ) {
-		$events_to_unregister = array_merge( $events_to_unregister, [ 'vp_scan_site', 'vp_scan_next_batch' ] );
 	}
 
 	// When/if the cron event hook runs, unschedule the event so it runs no more.

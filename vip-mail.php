@@ -102,7 +102,11 @@ final class VIP_SMTP {
 			return;
 		}
 
-		if ( 'smtp' === $phpmailer->Mailer ) {
+		$host_overwrite_allow_list = defined( 'VIP_SMTP_HOST_OVERWRITE_ALLOW_LIST' )
+			? array_map( 'trim', explode( ',', constant( 'VIP_SMTP_HOST_OVERWRITE_ALLOW_LIST' ) ) )
+			: [];
+
+		if ( 'smtp' === $phpmailer->Mailer && ! in_array( $phpmailer->Host, $host_overwrite_allow_list, true ) ) {
 			return;
 		}
 
