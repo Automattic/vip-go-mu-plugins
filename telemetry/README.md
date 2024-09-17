@@ -54,6 +54,6 @@ class MyPluginTracker {
 With the class above, you can then initiate event tracking in the main plugin file with these lines:
 
 ```php
-$tracker = new Tracker();
+$tracker = new MyPluginTracker();
 $tracker->register_events();
 ```

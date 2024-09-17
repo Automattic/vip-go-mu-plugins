@@ -25,12 +25,21 @@ class Tracks extends Telemetry_System {
 	protected $event_prefix;
 
 	/**
+	 * Client instance for testing purposes.
+	 *
+	 * @var Tracks_Client
+	 */
+	private $client;
+
+	/**
 	 * Tracks constructor.
 	 * 
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
+	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_' ) {
+	public function __construct( string $event_prefix = 'vip_', Tracks_Client $client = null ) {
 		$this->event_prefix = $event_prefix;
+		$this->client       = $client ?? Tracks_Client::instance();
 	}
 
 	/**
@@ -53,14 +62,8 @@ class Tracks extends Telemetry_System {
 		string $event_name,
 		array $event_properties = array()
 	) {
-		$event  = new Tracks_Event( $this->event_prefix, $event_name, $event_properties );
-		$client = Tracks_Client::instance();
+		$event = new Tracks_Event( $this->event_prefix, $event_name, $event_properties );
 
-		// Process AJAX/REST request events immediately.
-		if ( wp_doing_ajax() || defined( 'REST_REQUEST' ) ) {
-			$client->record_event_synchronously( $event );
-		}
-
-		return $client->record_event_asynchronously( $event );
+		return $this->client->record_event_asynchronously( $event );
 	}
 }
