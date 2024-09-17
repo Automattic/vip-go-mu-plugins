@@ -298,10 +298,6 @@ function maybe_load_plugin() {
 
 			return;
 		}
-
-		// Enqueuing the disabling of Parse.ly features when the plugin is loaded (after the `plugins_loaded` hook)
-		// We need priority 0, so it's executed before `widgets_init`.
-		add_action( 'init', __NAMESPACE__ . '\maybe_disable_some_features', 0 );
 	}
 
 	$versions_to_try = SUPPORTED_VERSIONS;
@@ -360,38 +356,6 @@ function maybe_load_plugin() {
 	}
 }
 add_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin', 1 );
-
-/**
- * Hides the UI if the plugin is loaded via silent option.
- */
-function maybe_disable_some_features() {
-	if ( ! isset( $GLOBALS['parsely'] ) || ! is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
-		return;
-	}
-
-	$filtered_load_status    = apply_filters( 'wpvip_parsely_load_mu', null );
-	$should_disable_features = apply_filters( 'wpvip_parsely_hide_ui_for_mu', true !== $filtered_load_status );
-
-	// If the plugin was not loaded via the filter, hide the UI by default.
-	if ( $should_disable_features ) {
-		remove_action( 'init', 'Parsely\parsely_wp_admin_early_register' );
-		remove_action( 'init', 'Parsely\init_recommendations_block' );
-		remove_action( 'enqueue_block_editor_assets', 'Parsely\init_content_helper' );
-		remove_action( 'admin_init', 'Parsely\parsely_admin_init_register' );
-		remove_action( 'widgets_init', 'Parsely\parsely_recommended_widget_register' );
-
-		// Don't show the row action links.
-		add_filter( 'wp_parsely_enable_row_action_links', '__return_false' );
-		add_filter( 'wp_parsely_enable_rest_api_support', '__return_false' );
-		add_filter( 'wp_parsely_enable_related_api_proxy', '__return_false' );
-
-		// Default to "repeated metas".
-		add_filter( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' );
-
-		// Remove the Parse.ly Recommended Widget.
-		unregister_widget( 'Parsely_Recommended_Widget' );
-	}
-}
 
 /**
  * Enum which represent all options to integrate `wp-parsely`.
