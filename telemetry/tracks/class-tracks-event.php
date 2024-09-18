@@ -98,7 +98,7 @@ class Tracks_Event implements JsonSerializable {
 
 		// Set event name. If the event name doesn't have the prefix, add it.
 		$event->_en = preg_replace(
-			'/^(?:' . $event_prefix . ')?(.*)/',
+			'/^(?:' . $event_prefix . ')?(.+)/',
 			$event_prefix . '\1',
 			$event_name
 		) ?? '';
