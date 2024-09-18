@@ -32,7 +32,7 @@ class Tracks_Client {
 	/**
 	 * Events queued to be sent to the Tracks pixel.
 	 *
-	 * @var array<Tracks_Event_Builder>
+	 * @var array<Tracks_Event>
 	 */
 	protected $events = array();
 
@@ -60,12 +60,12 @@ class Tracks_Client {
 	/**
 	 * Enqueues an event to be recorded asynchronously.
 	 *
-	 * @param Tracks_Event_Builder $event The event to record.
+	 * @param Tracks_Event $event The event to record.
 	 * @return bool|WP_Error True if the event was enqueued for recording.
 	 *                       False if the event is not recordable.
 	 *                       WP_Error if the event is generating an error.
 	 */
-	public function record_event_asynchronously( Tracks_Event_Builder $event ) {
+	public function record_event_asynchronously( Tracks_Event $event ) {
 		$is_event_recordable = $event->is_recordable();
 
 		if ( true !== $is_event_recordable ) {
@@ -80,14 +80,14 @@ class Tracks_Client {
 	/**
 	 * Record a batch of events using the Tracks REST API
 	 * 
-	 * @param Tracks_Event_Builder[] $events Array of Tracks_Event_Builder objects to record
+	 * @param Tracks_Event[] $events Array of Tracks_Event objects to record
 	 * @return bool|WP_Error True if batch recording succeeded.
 	 *                       WP_Error is any error occured.
 	 */
 	public function batch_record_events( array $events, array $common_props = [] ) {
 		// filter out invalid events
 		$valid_events = array_filter( $events, function ( $event ) {
-			return $event instanceof Tracks_Event_Builder && $event->is_recordable() === true;
+			return $event instanceof Tracks_Event && $event->is_recordable() === true;
 		} );
 
 		$body = [
