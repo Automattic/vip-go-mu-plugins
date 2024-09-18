@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry;
 
+use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
+use Automattic\VIP\Telemetry\Tracks\Tracks_Event_Queue;
 use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
@@ -43,7 +45,7 @@ class Tracks_Test extends WP_UnitTestCase {
 	 * Helper function for accessing protected properties.
 	 */
 	protected static function get_property( $name ) {
-		$class    = new \ReflectionClass( __NAMESPACE__ . '\Tracks' );
+		$class    = new \ReflectionClass( Tracks::class );
 		$property = $class->getProperty( $name );
 		$property->setAccessible( true );
 		return $property;

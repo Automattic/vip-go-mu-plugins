@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\VIP\Telemetry;
+namespace Automattic\VIP\Telemetry\Tracks;
 
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;

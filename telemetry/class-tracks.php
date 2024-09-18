@@ -9,11 +9,14 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry;
 
+use Automattic\VIP\Telemetry\Tracks\Tracks_Client;
+use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
+use Automattic\VIP\Telemetry\Tracks\Tracks_Event_Queue;
 use WP_Error;
 
 /**
- * This class comprises the mechanics of sending events to the Automattic Tracks
- * system.
+ * This class comprises the mechanics of sending events to the Automattic
+ * Tracks system.
  */
 class Tracks extends Telemetry_System {
 
@@ -44,7 +47,7 @@ class Tracks extends Telemetry_System {
 	}
 
 	/**
-	 * Records an event to Tracks by using the Tracks pixel.
+	 * Records an event to Tracks by using the Tracks API.
 	 *
 	 * Depending on the current context, the pixel will be recorded
 	 * synchronously (as a GET request) or as asynchronously (as an injected

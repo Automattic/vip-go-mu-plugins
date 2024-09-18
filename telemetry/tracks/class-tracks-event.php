@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\VIP\Telemetry;
+namespace Automattic\VIP\Telemetry\Tracks;
 
 use WP_Error;
 use JsonSerializable;

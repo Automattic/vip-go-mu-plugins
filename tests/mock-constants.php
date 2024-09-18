@@ -249,7 +249,7 @@ namespace Automattic\VIP\Integrations {
 	}
 }
 
-namespace Automattic\VIP\Telemetry {
+namespace Automattic\VIP\Telemetry\Tracks {
 	use Automattic\Test\Constant_Mocker;
 
 	function define( $constant, $value ) {

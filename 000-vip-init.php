@@ -235,7 +235,7 @@ require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
 // Load the Telemetry files
 require_once __DIR__ . '/telemetry/class-telemetry-system.php';
-require_once __DIR__ . '/telemetry/tracks/class-tracks.php';
+require_once __DIR__ . '/telemetry/class-tracks.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-queue.php';

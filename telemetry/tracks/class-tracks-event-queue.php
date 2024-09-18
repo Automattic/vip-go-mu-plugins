@@ -7,7 +7,7 @@
 
 declare(strict_types=1);
 
-namespace Automattic\VIP\Telemetry;
+namespace Automattic\VIP\Telemetry\Tracks;
 
 use WP_Error;
 use function Automattic\VIP\Logstash\log2logstash;
@@ -22,7 +22,7 @@ class Tracks_Event_Queue {
 	private $client;
 
 	/**
-	 * Events queued to be sent to the Tracks pixel.
+	 * Events queued to be sent to the Tracks API.
 	 *
 	 * @var array<Tracks_Event>
 	 */

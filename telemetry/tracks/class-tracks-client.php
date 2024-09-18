@@ -7,14 +7,14 @@
 
 declare(strict_types=1);
 
-namespace Automattic\VIP\Telemetry;
+namespace Automattic\VIP\Telemetry\Tracks;
 
 use WP_Error;
 use WP_Http;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
- * Handles all operations related to the Tracks pixel.
+ * Handles all operations related to the Tracks API.
  */
 class Tracks_Client {
 	/**
