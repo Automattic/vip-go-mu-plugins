@@ -1332,7 +1332,7 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
 /**
  * `get_page_by_path()` is now cached and no longer calls direct SQL.
  * 
- * @deprecated Since WP 6.1
+ * @deprecated Since WP 4.6.0
  * 
  * @param string        $page_path Page path
  * @param string        $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
@@ -1340,7 +1340,7 @@ function wpcom_vip_term_exists( $term, $taxonomy = '', $parent = null ) {
  * @return WP_Post|null WP_Post on success or null on failure
  */
 function wpcom_vip_get_page_by_path( $page_path, $output = OBJECT, $post_type = 'page' ) {
-	_deprecated_function( __FUNCTION__, '6.1', 'get_page_by_path' );
+	_deprecated_function( __FUNCTION__, '4.6', 'get_page_by_path' );
 
 	return get_page_by_path( $page_path, $output, $post_type ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_page_by_path_get_page_by_path
 }
