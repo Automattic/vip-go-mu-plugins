@@ -22,6 +22,7 @@ use function Automattic\VIP\Logstash\log2logstash;
  */
 #[AllowDynamicProperties]
 class Tracks_Event_DTO {
+	/** @var string _en stands for Event Name in A8c Tracks */
 	public string $_en; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
 	/** @var string _ui stands for User ID in A8c Tracks */

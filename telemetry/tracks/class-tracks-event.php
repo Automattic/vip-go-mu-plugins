@@ -21,12 +21,13 @@ use function Automattic\VIP\Logstash\log2logstash;
  */
 class Tracks_Event implements JsonSerializable {
 	/**
-	 * Event name regex.
+	 * Event name regex. Spaces, mixed case, and special characters are not allowed.
 	 */
-	protected const EVENT_NAME_REGEX = '/^(([a-z0-9]+)_){1}([a-z0-9_]+)$/';
+	protected const EVENT_NAME_REGEX = '/^[a-z_][a-z0-9_]*$/';
 
 	/**
-	 * Property name regex.
+	 * Property name regex. Event props should be in snake_case. Example: compressed_size is correct, but compressedSize is not.
+	 * Property names with leading underscores are reserved for special properties.
 	 */
 	protected const PROPERTY_NAME_REGEX = '/^[a-z_][a-z0-9_]*$/';
 
@@ -232,9 +233,10 @@ class Tracks_Event implements JsonSerializable {
 			);
 		}
 
+
 		// Validate property names format.
-		foreach ( array_keys( (array) $event ) as $key ) {
-			if ( ! static::property_name_is_valid( $key ) && '_en' !== $key ) {
+		foreach ( get_object_vars( $event ) as $key => $_ ) {
+			if ( ! static::property_name_is_valid( $key ) ) {
 				$msg = __( 'A valid property name must be specified', 'vip-telemetry' );
 				log2logstash( [
 					'severity' => 'error',
@@ -280,7 +282,7 @@ class Tracks_Event implements JsonSerializable {
 	 * @return bool Whether the event name is valid.
 	 */
 	protected static function event_name_is_valid( string $event_name ): bool {
-		return false !== preg_match( static::EVENT_NAME_REGEX, $event_name );
+		return 1 === preg_match( static::EVENT_NAME_REGEX, $event_name );
 	}
 
 	/**
@@ -290,7 +292,7 @@ class Tracks_Event implements JsonSerializable {
 	 * @return bool Whether the property name is valid.
 	 */
 	protected static function property_name_is_valid( string $property_name ): bool {
-		return false !== preg_match( static::PROPERTY_NAME_REGEX, $property_name );
+		return 1 === preg_match( static::PROPERTY_NAME_REGEX, $property_name );
 	}
 
 	/**
