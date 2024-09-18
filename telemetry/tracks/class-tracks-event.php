@@ -1,6 +1,6 @@
 <?php
 /**
- * Telemetry: Tracks Event Builder class
+ * Telemetry: Tracks Event class
  *
  * @package Automattic\VIP\Telemetry
  */
