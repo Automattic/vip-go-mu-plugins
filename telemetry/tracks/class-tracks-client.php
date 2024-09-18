@@ -31,6 +31,10 @@ class Tracks_Client {
 	 * Constructor.
 	 */
 	public function __construct( WP_Http $http = null ) {
+		if ( 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
+			throw new \Exception( 'WP_Http should be mocked in unit tests' );
+		}
+
 		$this->http = $http ?? _wp_http_get_object();
 	}
 
@@ -42,12 +46,6 @@ class Tracks_Client {
 	 *                       WP_Error is any error occured.
 	 */
 	public function batch_record_events( array $events, array $common_props = [] ) {
-		// Don't record events during unit tests and CI runs.
-		if ( 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
-			// TODO we should not need this at all
-			return true;
-		}
-
 		// filter out invalid events
 		$valid_events = array_filter( $events, function ( $event ) {
 			return $event instanceof Tracks_Event && $event->is_recordable() === true;
