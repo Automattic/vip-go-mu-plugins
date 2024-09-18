@@ -16,17 +16,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 
 	protected const VIP_ORG_ID = '17';
 
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-
-		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', self::VIP_TELEMETRY_SALT );
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', self::VIP_GO_APP_ENVIRONMENT );
-		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
-	}
-
-	public static function tearDownAfterClass(): void {
+	public function tearDown(): void {
 		Constant_Mocker::clear();
-		parent::tearDownAfterClass();
+		parent::tearDown();
 	}
 
 	public function test_should_create_event() {
@@ -36,6 +28,10 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_return_event_data() {
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', self::VIP_TELEMETRY_SALT );
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', self::VIP_GO_APP_ENVIRONMENT );
+		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
+
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
@@ -49,7 +45,8 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertInstanceOf( Tracks_Event_DTO::class, $event->get_data() );
-		$this->assertGreaterThan( ( time() - 10 ) * 1000, $event->get_data()->_ts );
+		$this->assertIsString( $event->get_data()->_ts );
+		$this->assertGreaterThan( ( time() - 10 ) * 1000, (int) $event->get_data()->_ts );
 		$this->assertSame( 'prefix_test_event', $event->get_data()->_en );
 		$this->assertSame( 'value1', $event->get_data()->property1 );
 		$this->assertSame( '1.2.3.4', $event->get_data()->_via_ip );
@@ -57,6 +54,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
 		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
+		$this->assertFalse( $event->get_data()->is_vip_user );
 	}
 
 	public function test_should_not_add_prefix_twice() {
@@ -67,12 +65,63 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'prefixed_event_name', $event->get_data()->_en );
 	}
 
+	public function test_should_not_override_timestamp() {
+		$ts    = 1234567890;
+		$event = new Tracks_Event( 'prefixed_', 'example', [
+			'_ts' => $ts,
+		] );
+
+		$this->assertSame( (string) $ts, $event->get_data()->_ts );
+	}
+
 	public function test_should_encode_complex_properties() {
 		$event = new Tracks_Event( 'prefix_', 'event_name', [ 'example' => [ 'a' => 'b' ] ] );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
 
 		$this->assertSame( '{"a":"b"}', $event->get_data()->example );
+	}
+
+	public function test_should_not_encode_errors_to_json() {
+		$event = new Tracks_Event( 'prefix_', 'bogus name' );
+
+		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
+
+		$this->assertSame( '{}', wp_json_encode( $event ) );
+	}
+
+	public function test_should_fallback_to_vip_go_app_wp_user() {
+		Constant_Mocker::define( 'VIP_GO_APP_ID', 1234 );
+
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
+		$event = new Tracks_Event( 'prefix_', 'test_event' );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertSame( 'vip_go_app_wp_user', $event->get_data()->_ut );
+		$this->assertSame( '1234_' . $user->ID, $event->get_data()->_ui );
+	}
+
+	public function test_should_fallback_to_anon_wp_hash() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
+		$event = new Tracks_Event( 'prefix_', 'test_event' );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertSame( 'anon', $event->get_data()->_ut );
+		$this->assertMatchesRegularExpression( '/^[0-9a-f]+$/', $event->get_data()->_ui );
+	}
+
+	public function test_should_skip_user_properties_for_logged_out_users() {
+		wp_set_current_user( 0 );
+
+		$event = new Tracks_Event( 'prefix_', 'test_event' );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertFalse( isset( $event->get_data()->_ut ) );
+		$this->assertFalse( isset( $event->get_data()->_ui ) );
 	}
 
 	public static function provide_non_routable_ips() {

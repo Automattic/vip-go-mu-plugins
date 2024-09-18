@@ -62,8 +62,15 @@ class Tracks_Event implements JsonSerializable {
 		return $this->data;
 	}
 
+	/**
+	 * Returns the event's data for JSON representation.
+	 */
 	#[\ReturnTypeWillChange]
 	public function jsonSerialize() {
+		if ( is_wp_error( $this->data ) ) {
+			return (object) [];
+		}
+
 		return $this->data;
 	}
 
