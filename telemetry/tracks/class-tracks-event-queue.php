@@ -62,6 +62,10 @@ class Tracks_Event_Queue {
 	 * Records all queued events synchronously.
 	 */
 	public function record_events(): void {
+		if ( [] === $this->events ) {
+			return;
+		}
+
 		$this->client->batch_record_events( $this->events );
 		$this->events = [];
 	}
