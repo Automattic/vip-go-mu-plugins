@@ -57,3 +57,11 @@ With the class above, you can then initiate event tracking in the main plugin fi
 $tracker = new MyPluginTracker();
 $tracker->register_events();
 ```
+
+If necessary to provide global properties to all events, you can pass an array of properties to the `Tracks` constructor:
+
+```php
+$this->tracks = new Tracks( 'myplugin_', [
+    'plugin_version' => '1.2.3',
+] );
+```

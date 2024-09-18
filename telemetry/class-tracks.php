@@ -35,15 +35,23 @@ class Tracks extends Telemetry_System {
 	private $queue;
 
 	/**
+	 * @param array<string, mixed> The global event properties to be included with every event.
+	 */
+	private array $global_event_properties = array();
+
+	/**
 	 * Tracks constructor.
 	 * 
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
+	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
+	 * @param Tracks_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
 	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', Tracks_Event_Queue $queue = null, Tracks_Client $client = null ) {
-		$this->event_prefix = $event_prefix;
-		$client           ??= new Tracks_Client();
-		$this->queue        = $queue ?? new Tracks_Event_Queue( $client );
+	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Tracks_Event_Queue $queue = null, Tracks_Client $client = null ) {
+		$this->event_prefix            = $event_prefix;
+		$this->global_event_properties = $global_event_properties;
+		$client                      ??= new Tracks_Client();
+		$this->queue                   = $queue ?? new Tracks_Event_Queue( $client );
 	}
 
 	/**
@@ -66,6 +74,10 @@ class Tracks extends Telemetry_System {
 		string $event_name,
 		array $event_properties = array()
 	) {
+		if ( [] !== $this->global_event_properties ) {
+			$event_properties = array_merge( $this->global_event_properties, $event_properties );
+		}
+
 		$event = new Tracks_Event( $this->event_prefix, $event_name, $event_properties );
 
 		return $this->queue->record_event_asynchronously( $event );
