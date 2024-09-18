@@ -56,7 +56,7 @@ class Tracks_Event implements JsonSerializable {
 	/**
 	 * Returns the event's data.
 	 *
-	 * @return Tracks_Event|WP_Error Event object if the event was created successfully, WP_Error otherwise.
+	 * @return Tracks_Event_DTO|WP_Error Event object if the event was created successfully, WP_Error otherwise.
 	 */
 	public function get_data() {
 		return $this->data;
