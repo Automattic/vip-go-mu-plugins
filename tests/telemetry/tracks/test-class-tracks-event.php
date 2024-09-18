@@ -48,23 +48,27 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$event = new Tracks_Event( 'prefix_', 'invalid_event', [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( \WP_Error::class, $event->get_data() );
+		$this->assertNotSame( 'empty_user_information', $event->get_data()->get_error_code() );
 	}
 
 	public function test_should_return_error_on_invalid_property_name() {
 		$event = new Tracks_Event( 'prefix_', 'test_event', [ 'invalid_property' => 'value1' ] );
 
 		$this->assertInstanceOf( \WP_Error::class, $event->get_data() );
+		$this->assertNotSame( 'empty_user_information', $event->get_data()->get_error_code() );
 	}
 
 	public function test_should_return_error_on_invalid_property_value() {
 		$event = new Tracks_Event( 'prefix_', 'test_event', [ 'property1' => [ 'value1' ] ] );
 
 		$this->assertInstanceOf( \WP_Error::class, $event->get_data() );
+		$this->assertNotSame( 'empty_user_information', $event->get_data()->get_error_code() );
 	}
 
 	public function test_is_recordable_should_return_wp_error_on_invalid_event() {
 		$event = new Tracks_Event( 'prefix_', 'invalid_event', [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( \WP_Error::class, $event->is_recordable() );
+		$this->assertNotSame( 'empty_user_information', $event->get_data()->get_error_code() );
 	}
 }
