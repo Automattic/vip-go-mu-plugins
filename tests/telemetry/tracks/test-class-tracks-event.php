@@ -54,6 +54,14 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
 	}
 
+	public function test_should_not_add_prefix_twice() {
+		$event = new Tracks_Event( 'prefixed_', 'prefixed_event_name' );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+
+		$this->assertSame( 'prefixed_event_name', $event->get_data()->_en );
+	}
+
 	public function test_should_return_error_on_missing_event_name() {
 		$event = new Tracks_Event( 'prefix_', '', [ 'property1' => 'value1' ] );
 

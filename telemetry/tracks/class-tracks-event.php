@@ -46,7 +46,7 @@ class Tracks_Event implements JsonSerializable {
 	 * @param string                            $event_name The event's name.
 	 * @param array<string, mixed>|array<empty> $event_properties Any properties included in the event.
 	 */
-	public function __construct( string $prefix, string $event_name, array $event_properties ) {
+	public function __construct( string $prefix, string $event_name, array $event_properties = [] ) {
 		$event_data        = static::process_properties( $prefix, $event_name, $event_properties );
 		$validation_result = static::get_event_validation_result( $event_data );
 
