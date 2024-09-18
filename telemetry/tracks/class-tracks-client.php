@@ -31,10 +31,6 @@ class Tracks_Client {
 	 * Constructor.
 	 */
 	public function __construct( WP_Http $http = null ) {
-		if ( null === $http && 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
-			throw new \Exception( 'WP_Http should be mocked in unit tests' );
-		}
-
 		$this->http = $http ?? _wp_http_get_object();
 	}
 
@@ -50,6 +46,10 @@ class Tracks_Client {
 		$valid_events = array_filter( $events, function ( $event ) {
 			return $event instanceof Tracks_Event && $event->is_recordable() === true;
 		} );
+
+		if ( _wp_http_get_object() === $this->http && 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
+			throw new \Exception( 'WP_Http should be mocked in unit tests' );
+		}
 
 		$body = [
 			'events'      => $valid_events,

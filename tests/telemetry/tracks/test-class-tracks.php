@@ -8,6 +8,17 @@ use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
 
+	/** @var (Tracks_Client&\PHPUnit\Framework\MockObject\MockObject)|\PHPUnit\Framework\MockObject\MockObject */
+	private $client;
+
+	public function setUp(): void {
+		$this->client = $this->getMockBuilder( Tracks_Client::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		parent::setUp();
+	}
+
 	public function test_event_queued() {
 		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
 			->disableOriginalConstructor()
@@ -23,11 +34,8 @@ class Tracks_Test extends WP_UnitTestCase {
 			}))
 			->willReturn( true );
 
-		$client = $this->getMockBuilder( Tracks_Client::class )
-			->disableOriginalConstructor()
-			->getMock();
 
-		$tracks = new Tracks( 'test_', $queue, $client );
+		$tracks = new Tracks( 'test_', $queue, $this->client );
 		$this->assertTrue( $tracks->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
 
