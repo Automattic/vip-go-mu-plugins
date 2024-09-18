@@ -39,15 +39,20 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
-		$event = new Tracks_Event( 'prefix_', 'test_event', [ 'property1' => 'value1' ] );
+		$event = new Tracks_Event( 'prefix_', 'test_event', [
+			'property1' => 'value1',
+			'_via_ip'   => '1.2.3.4',
+		] );
 
 		if ( $event->get_data() instanceof WP_Error ) {
 			$this->fail( sprintf( '%s: %s', $event->get_data()->get_error_code(), $event->get_data()->get_error_message() ) );
 		}
 
 		$this->assertInstanceOf( Tracks_Event_DTO::class, $event->get_data() );
+		$this->assertGreaterThan( time() - 10, $event->get_data()->_ts );
 		$this->assertSame( 'prefix_test_event', $event->get_data()->_en );
 		$this->assertSame( 'value1', $event->get_data()->property1 );
+		$this->assertSame( '1.2.3.4', $event->get_data()->_via_ip );
 		$this->assertSame( hash_hmac( 'sha256', $user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
@@ -60,6 +65,22 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
 
 		$this->assertSame( 'prefixed_event_name', $event->get_data()->_en );
+	}
+
+	public static function provide_non_routable_ips() {
+		yield [ '192.168.10.1' ];
+		yield [ '10.11.10.11' ];
+	}
+
+	/**
+	 * @dataProvider provide_non_routable_ips
+	 */
+	public function test_should_remove_non_routable_ips( string $_via_ip ) {
+		$event = new Tracks_Event( 'prefix_', 'example', [ '_via_ip' => $_via_ip ] );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertFalse( isset( $event->get_data()->_via_ip ) );
+		$this->assertStringNotContainsString( 'via_ip', wp_json_encode( $event ) );
 	}
 
 	public function test_should_return_error_on_missing_event_name() {

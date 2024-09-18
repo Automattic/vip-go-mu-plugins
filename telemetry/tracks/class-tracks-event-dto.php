@@ -31,13 +31,15 @@ class Tracks_Event_DTO {
 	/** @var string _ut stands for User Type in A8c Tracks */
 	public string $_ut; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
+	/** @var string */
 	public string $_ts; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
+	/** @var string */
 	public string $_via_ip; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
 	public string $vipgo_env;
 
 	public string $vipgo_org;
 
-	public bool $is_vip_user;
+	public bool $is_vip_user = false;
 }
