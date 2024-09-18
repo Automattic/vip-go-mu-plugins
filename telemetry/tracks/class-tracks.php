@@ -25,11 +25,11 @@ class Tracks extends Telemetry_System {
 	protected $event_prefix;
 
 	/**
-	 * Client instance for testing purposes.
+	 * Event queue.
 	 *
-	 * @var Tracks_Client
+	 * @var Tracks_Event_Queue
 	 */
-	private $client;
+	private $queue;
 
 	/**
 	 * Tracks constructor.
@@ -37,9 +37,10 @@ class Tracks extends Telemetry_System {
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
 	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', Tracks_Client $client = null ) {
+	public function __construct( string $event_prefix = 'vip_', Tracks_Event_Queue $queue = null, Tracks_Client $client = null ) {
 		$this->event_prefix = $event_prefix;
-		$this->client       = $client ?? Tracks_Client::instance();
+		$client           ??= new Tracks_Client();
+		$this->queue        = $queue ?? new Tracks_Event_Queue( $client );
 	}
 
 	/**
@@ -64,6 +65,6 @@ class Tracks extends Telemetry_System {
 	) {
 		$event = new Tracks_Event( $this->event_prefix, $event_name, $event_properties );
 
-		return $this->client->record_event_asynchronously( $event );
+		return $this->queue->record_event_asynchronously( $event );
 	}
 }

@@ -61,6 +61,7 @@ class Tracks_Event implements JsonSerializable {
 		return $this->data;
 	}
 
+	#[\ReturnTypeWillChange]
 	public function jsonSerialize() {
 		return $this->data;
 	}
@@ -71,12 +72,6 @@ class Tracks_Event implements JsonSerializable {
 	 * @return bool|WP_Error True if the event is recordable.
 	 */
 	public function is_recordable() {
-		// Don't record events during unit tests and CI runs.
-		if ( 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
-			// TODO we need to handle this at the destination
-			return false;
-		}
-
 		if ( is_wp_error( $this->data ) ) {
 			return $this->data;
 		}
