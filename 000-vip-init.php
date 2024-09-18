@@ -238,7 +238,9 @@ require_once __DIR__ . '/telemetry/class-telemetry-system.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-event-queue.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
+
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
