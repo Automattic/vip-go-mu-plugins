@@ -19,7 +19,7 @@ use function Automattic\VIP\Logstash\log2logstash;
  *
  * @since 3.12.0
  */
-class Tracks_Event implements JsonSerializable {
+class Tracks_Event extends Telemetry_Event {
 	/**
 	 * Event name regex. Spaces, mixed case, and special characters are not allowed.
 	 */

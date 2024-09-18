@@ -10,28 +10,27 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use WP_Error;
-use function Automattic\VIP\Logstash\log2logstash;
 
 /**
- * Handles queued events to be sent to the Tracks service.
+ * Handles queued events to be sent to the telemetry service.
  */
-class Tracks_Event_Queue {
+class Telemetry_Event_Queue {
 	/**
-	 * @var Tracks_Client
+	 * @var Telemetry_Client The client to use to record events.
 	 */
 	private $client;
 
 	/**
 	 * Events queued to be sent to the Tracks pixel.
 	 *
-	 * @var array<Tracks_Event>
+	 * @var array<Telemetry_Event>
 	 */
 	protected $events = array();
 
 	/**
 	 * Constructor. Registers the shutdown hook to record any and all events.
 	 */
-	public function __construct( Tracks_Client $client ) {
+	public function __construct( Telemetry_Client $client ) {
 		$this->client = $client;
 
 		// Register the shutdown hook to record any and all events
@@ -41,12 +40,12 @@ class Tracks_Event_Queue {
 	/**
 	 * Enqueues an event to be recorded asynchronously.
 	 *
-	 * @param Tracks_Event $event The event to record.
+	 * @param Telemetry_Event $event The event to record.
 	 * @return bool|WP_Error True if the event was enqueued for recording.
 	 *                       False if the event is not recordable.
 	 *                       WP_Error if the event is generating an error.
 	 */
-	public function record_event_asynchronously( Tracks_Event $event ) {
+	public function record_event_asynchronously( Telemetry_Event $event ) {
 		$is_event_recordable = $event->is_recordable();
 
 		if ( true !== $is_event_recordable ) {

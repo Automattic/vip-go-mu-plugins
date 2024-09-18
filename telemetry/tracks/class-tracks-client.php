@@ -14,9 +14,9 @@ use WP_Http;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
- * Handles all operations related to the Tracks pixel.
+ * Handles all operations related to the A8c Tracks.
  */
-class Tracks_Client {
+class Tracks_Client extends Telemetry_Client {
 	/**
 	 * Tracks REST API endpoint for post requests
 	 */

@@ -27,7 +27,7 @@ class Tracks extends Telemetry_System {
 	/**
 	 * Event queue.
 	 *
-	 * @var Tracks_Event_Queue
+	 * @var Telemetry_Event_Queue
 	 */
 	private $queue;
 
@@ -37,10 +37,10 @@ class Tracks extends Telemetry_System {
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
 	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', Tracks_Event_Queue $queue = null, Tracks_Client $client = null ) {
+	public function __construct( string $event_prefix = 'vip_', Telemetry_Event_Queue $queue = null, Tracks_Client $client = null ) {
 		$this->event_prefix = $event_prefix;
 		$client           ??= new Tracks_Client();
-		$this->queue        = $queue ?? new Tracks_Event_Queue( $client );
+		$this->queue        = $queue ?? new Telemetry_Event_Queue( $client );
 	}
 
 	/**
