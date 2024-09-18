@@ -7,6 +7,30 @@ namespace Automattic\VIP\Telemetry;
 use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
+
+	public function test_event_queued() {
+		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$queue->expects( $this->once() )
+			->method( 'record_event_asynchronously' )
+			->with($this->callback(function ( Tracks_Event $event ) {
+				$this->assertSame( 'test_cool_event', $event->get_data()->_en );
+				$this->assertSame( 'bar', $event->get_data()->foo );
+
+				return true;
+			}))
+			->willReturn( true );
+
+		$client = $this->getMockBuilder( Tracks_Client::class )
+			->disableOriginalConstructor()
+			->getMock();
+
+		$tracks = new Tracks( 'test_', $queue, $client );
+		$this->assertTrue( $tracks->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
+	}
+
 	public function test_event_prefix() {
 		$tracks       = new Tracks();
 		$event_prefix = self::get_property( 'event_prefix' )->getValue( $tracks );
