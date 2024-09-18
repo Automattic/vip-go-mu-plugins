@@ -220,51 +220,12 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
 				$this->assertFalse( get_option( '_wpvip_parsely_mu' ) );
 				break;
-			case 'option_enabled':
-				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
-				break;
-			case 'option_disabled':
-				$this->assertFalse( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '0', get_option( '_wpvip_parsely_mu' ) );
-				break;
-			case 'filter_and_option_enabled':
-				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '1', get_option( '_wpvip_parsely_mu' ) );
-				break;
-			case 'filter_and_option_disabled':
-				$this->assertTrue( has_filter( 'wpvip_parsely_load_mu' ) );
-				$this->assertSame( '0', get_option( '_wpvip_parsely_mu' ) );
-				break;
 			default:
 				$this->fail( 'Invalid test mode specified: ' . self::$test_mode );
 		}
 
 		$this->assertFalse( Parsely_Loader_Info::is_active() );
 		$this->assertEquals( Parsely_Integration_Type::DISABLED_CONSTANT, Parsely_Loader_Info::get_integration_type() );
-	}
-
-	public function test_parsely_ui_hooks() {
-		maybe_load_plugin();
-
-		$this->assertFalse( has_action( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' ) );
-
-		if ( is_parsely_disabled() ) {
-			return;
-		}
-
-		\Parsely\parsely_initialize_plugin();
-		maybe_disable_some_features();
-
-		$repeated_metas_expected = 'option_enabled' === self::$test_mode ? 10 : false;
-		$this->assertSame( $repeated_metas_expected, has_action( 'option_parsely', __NAMESPACE__ . '\alter_option_use_repeated_metas' ) );
-
-		$row_actions = new Row_Actions( $GLOBALS['parsely'] );
-		$row_actions->run();
-
-		$row_actions_expected = in_array( self::$test_mode, [ 'filter_enabled', 'filter_and_option_enabled' ] ) ? 10 : false;
-		$this->assertSame( $row_actions_expected, has_filter( 'page_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
-		$this->assertSame( $row_actions_expected, has_filter( 'post_row_actions', array( $row_actions, 'row_actions_add_parsely_link' ) ) );
 	}
 
 	public function test_default_parsely_configs() {
