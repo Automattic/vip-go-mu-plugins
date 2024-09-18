@@ -23,7 +23,7 @@ class Tracks_Client {
 	protected const TRACKS_ENDPOINT = 'https://public-api.wordpress.com/rest/v1.1/tracks/record';
 
 	/**
-	 * @var Tracks_Client
+	 * @var WP_Http
 	 */
 	private $http;
 
