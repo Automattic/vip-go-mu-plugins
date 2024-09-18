@@ -31,7 +31,7 @@ class Tracks_Client {
 	 * Constructor.
 	 */
 	public function __construct( WP_Http $http = null ) {
-		if ( 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
+		if ( null === $http && 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
 			throw new \Exception( 'WP_Http should be mocked in unit tests' );
 		}
 
