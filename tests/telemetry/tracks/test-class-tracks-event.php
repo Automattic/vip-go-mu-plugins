@@ -49,7 +49,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertInstanceOf( Tracks_Event_DTO::class, $event->get_data() );
-		$this->assertGreaterThan( time() - 10, $event->get_data()->_ts );
+		$this->assertGreaterThan( ( time() - 10 ) * 1000, $event->get_data()->_ts );
 		$this->assertSame( 'prefix_test_event', $event->get_data()->_en );
 		$this->assertSame( 'value1', $event->get_data()->property1 );
 		$this->assertSame( '1.2.3.4', $event->get_data()->_via_ip );
@@ -65,6 +65,14 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
 
 		$this->assertSame( 'prefixed_event_name', $event->get_data()->_en );
+	}
+
+	public function test_should_encode_complex_properties() {
+		$event = new Tracks_Event( 'prefix_', 'event_name', [ 'example' => [ 'a' => 'b' ] ] );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+
+		$this->assertSame( '{"a":"b"}', $event->get_data()->example );
 	}
 
 	public static function provide_non_routable_ips() {
