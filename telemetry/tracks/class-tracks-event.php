@@ -192,7 +192,7 @@ class Tracks_Event implements JsonSerializable {
 	/**
 	 * Validates the event object.
 	 *
-	 * @param Tracks_Event_DTO|self $event Event object to validate.
+	 * @param Tracks_Event_DTO $event Event object to validate.
 	 * @return ?WP_Error null if validation passed, error otherwise.
 	 */
 	protected static function get_event_validation_result( Tracks_Event_DTO $event ): ?WP_Error {
