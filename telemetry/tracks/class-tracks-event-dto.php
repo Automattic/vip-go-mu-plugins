@@ -2,7 +2,7 @@
 /**
  * Telemetry: Tracks Event DTO class
  *
- * @package Automattic\VIP\Telemetry
+ * @package Automattic\VIP\Telemetry\Tracks
  */
 
 declare(strict_types=1);
