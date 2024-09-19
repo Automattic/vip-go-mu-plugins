@@ -66,6 +66,8 @@ class Tracks_Event_Queue {
 			return;
 		}
 
+		// No back-off mechanism is implemented here, given the low cost of missing a few events.
+		// We also need to ensure that there's minimal disruption to a site's operations.
 		$this->client->batch_record_events( $this->events );
 		$this->events = [];
 	}
