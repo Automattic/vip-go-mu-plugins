@@ -55,6 +55,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
 		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
 		$this->assertFalse( $event->get_data()->is_vip_user );
+		$this->assertTrue( $event->is_recordable() );
 	}
 
 	public function test_should_not_add_prefix_twice() {
