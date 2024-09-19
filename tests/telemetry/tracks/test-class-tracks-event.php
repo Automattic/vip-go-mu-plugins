@@ -7,6 +7,7 @@ namespace Automattic\VIP\Telemetry\Tracks;
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 use WP_Error;
+use WP_User;
 
 class Tracks_Event_Test extends WP_UnitTestCase {
 
@@ -15,6 +16,15 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	protected const VIP_GO_APP_ENVIRONMENT = 'test';
 
 	protected const VIP_ORG_ID = '17';
+
+	private WP_User $user;
+
+	public function setUp(): void {
+		$this->user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $this->user->ID );
+
+		parent::setUp();
+	}
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
@@ -32,9 +42,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', self::VIP_GO_APP_ENVIRONMENT );
 		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
 
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'test_event', [
 			'property1' => 'value1',
 			'_via_ip'   => '1.2.3.4',
@@ -50,7 +57,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'prefix_test_event', $event->get_data()->_en );
 		$this->assertSame( 'value1', $event->get_data()->property1 );
 		$this->assertSame( '1.2.3.4', $event->get_data()->_via_ip );
-		$this->assertSame( hash_hmac( 'sha256', $user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
+		$this->assertSame( hash_hmac( 'sha256', $this->user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
 		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
@@ -59,9 +66,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_add_prefix_twice() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefixed_', 'prefixed_event_name' );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -70,9 +74,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_override_timestamp() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$ts    = 1234567890;
 		$event = new Tracks_Event( 'prefixed_', 'example', [
 			'_ts' => $ts,
@@ -82,9 +83,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_encode_complex_properties() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'event_name', [ 'example' => [ 'a' => 'b' ] ] );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -93,9 +91,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_encode_errors_to_json() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'bogus name' );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -106,20 +101,14 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	public function test_should_fallback_to_vip_go_app_wp_user() {
 		Constant_Mocker::define( 'VIP_GO_APP_ID', 1234 );
 
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'test_event' );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
 		$this->assertSame( 'vip_go_app_wp_user', $event->get_data()->_ut );
-		$this->assertSame( '1234_' . $user->ID, $event->get_data()->_ui );
+		$this->assertSame( '1234_' . $this->user->ID, $event->get_data()->_ui );
 	}
 
 	public function test_should_fallback_to_anon_wp_hash() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'test_event' );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -146,9 +135,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_non_routable_ips
 	 */
 	public function test_should_remove_non_routable_ips( string $_via_ip ) {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'example', [ '_via_ip' => $_via_ip ] );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -157,9 +143,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_return_error_on_missing_event_name() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', '', [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -179,9 +162,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_invalid_event_names
 	 */
 	public function test_should_return_error_on_invalid_event_name( string $event_name ) {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', $event_name, [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -203,9 +183,6 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_invalid_property_names
 	 */
 	public function test_should_return_error_on_invalid_property_name( string $property_name ) {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
 		$event = new Tracks_Event( 'prefix_', 'test_event', [ $property_name => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
