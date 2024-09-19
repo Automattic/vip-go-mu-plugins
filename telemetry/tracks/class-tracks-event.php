@@ -159,8 +159,9 @@ class Tracks_Event implements JsonSerializable {
 		}
 
 		// Set anonymized event user ID; it should be consistent across environments.
+		// VIP_TELEMETRY_SALT is a private constant shared across the platform.
 		if ( defined( 'VIP_TELEMETRY_SALT' ) ) {
-			$salt           = constant( 'VIP_TELEMETRY_SALT' ); // this would be private but globally shared across the platform
+			$salt           = constant( 'VIP_TELEMETRY_SALT' );
 			$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
 
 			$event->_ui = $tracks_user_id;
@@ -172,7 +173,7 @@ class Tracks_Event implements JsonSerializable {
 		// Users in the VIP environment.
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
 			$app_id = constant( 'VIP_GO_APP_ID' );
-			if ( is_integer( $app_id ) && 0 < $app_id ) {
+			if ( is_integer( $app_id ) && $app_id > 0 ) {
 				$event->_ui = sprintf( '%s_%s', $app_id, $wp_user->ID );
 				$event->_ut = 'vip_go_app_wp_user';
 
