@@ -57,10 +57,6 @@ class Tracks extends Telemetry_System {
 	/**
 	 * Records an event to Tracks by using the Tracks API.
 	 *
-	 * Depending on the current context, the pixel will be recorded
-	 * synchronously (as a GET request) or as asynchronously (as an injected
-	 * pixel into the page's footer).
-	 *
 	 * If the event doesn't pass validation, it gets silently discarded.
 	 *
 	 * @param string                            $event_name The event name. Must be snake_case.

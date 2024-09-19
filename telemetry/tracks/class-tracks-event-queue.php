@@ -1,6 +1,6 @@
 <?php
 /**
- * Telemetry: Tracks Pixel class
+ * Telemetry: event queue.
  *
  * @package Automattic\VIP\Telemetry
  */

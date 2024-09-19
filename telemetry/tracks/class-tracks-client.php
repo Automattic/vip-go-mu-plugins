@@ -1,6 +1,6 @@
 <?php
 /**
- * Telemetry: Tracks Pixel class
+ * Telemetry: Tracks Client class
  *
  * @package Automattic\VIP\Telemetry
  */
