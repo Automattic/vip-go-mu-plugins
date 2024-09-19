@@ -59,6 +59,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_add_prefix_twice() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefixed_', 'prefixed_event_name' );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -67,6 +70,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_override_timestamp() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$ts    = 1234567890;
 		$event = new Tracks_Event( 'prefixed_', 'example', [
 			'_ts' => $ts,
@@ -76,6 +82,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_encode_complex_properties() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', 'event_name', [ 'example' => [ 'a' => 'b' ] ] );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -84,6 +93,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_not_encode_errors_to_json() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', 'bogus name' );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -134,6 +146,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_non_routable_ips
 	 */
 	public function test_should_remove_non_routable_ips( string $_via_ip ) {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', 'example', [ '_via_ip' => $_via_ip ] );
 
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
@@ -142,6 +157,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	}
 
 	public function test_should_return_error_on_missing_event_name() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', '', [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -161,6 +179,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_invalid_event_names
 	 */
 	public function test_should_return_error_on_invalid_event_name( string $event_name ) {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', $event_name, [ 'property1' => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
@@ -182,6 +203,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	 * @dataProvider provide_invalid_property_names
 	 */
 	public function test_should_return_error_on_invalid_property_name( string $property_name ) {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$event = new Tracks_Event( 'prefix_', 'test_event', [ $property_name => 'value1' ] );
 
 		$this->assertInstanceOf( WP_Error::class, $event->get_data() );

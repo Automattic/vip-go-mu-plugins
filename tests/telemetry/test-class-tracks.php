@@ -10,6 +10,9 @@ use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
 	public function test_event_queued() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -30,6 +33,9 @@ class Tracks_Test extends WP_UnitTestCase {
 	}
 
 	public function test_event_queued_with_global_properies() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
 		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
