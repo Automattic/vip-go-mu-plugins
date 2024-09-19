@@ -47,6 +47,11 @@ class Tracks_Client {
 			return $event instanceof Tracks_Event && $event->is_recordable() === true;
 		} );
 
+		// no events - nothing to do
+		if ( [] === $valid_events ) {
+			return true;
+		}
+
 		if ( _wp_http_get_object() === $this->http && 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
 			throw new \Exception( 'WP_Http should be mocked in unit tests' );
 		}
