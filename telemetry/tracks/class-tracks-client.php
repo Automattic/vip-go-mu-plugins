@@ -52,12 +52,6 @@ class Tracks_Client {
 			return true;
 		}
 
-		// @codeCoverageIgnoreStart
-		if ( _wp_http_get_object() === $this->http && 'wptests_capabilities' === wp_get_current_user()->cap_key ) {
-			throw new \Exception( 'WP_Http should be mocked in unit tests' );
-		}
-		// @codeCoverageIgnoreEnd
-
 		$body = [
 			'events'      => $valid_events,
 			'commonProps' => $common_props,
