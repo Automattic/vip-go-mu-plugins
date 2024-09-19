@@ -9,7 +9,7 @@ Tracks is an event tracking tool used to understand user behaviour within Automa
 Example:
 
 ```php
-use Automattic\VIP\Telemetry\Tracks
+use Automattic\VIP\Telemetry\Tracks;
 
 function track_post_status( $new_status, $old_status, $post ) {
 	$tracks = new Tracks( 'myplugin_' );
@@ -17,7 +17,7 @@ function track_post_status( $new_status, $old_status, $post ) {
 	$tracks->record_event( 'post_status_changed', [
 		'new_status' => $new_status,
 		'old_status' => $old_status,
-		'post'       => (array) $post,
+		'post_id'       => $post->ID,
 	] );
 }
 add_action( 'transition_post_status', 'track_post_status', 10, 3 );
