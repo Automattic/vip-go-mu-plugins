@@ -262,7 +262,7 @@ class Tracks_Event implements JsonSerializable {
 		}
 
 		// Validate User ID (_ui) and User ID Type (_ut).
-		if ( ! ( property_exists( $event, '_ui' ) && property_exists( $event, '_ut' ) ) ) {
+		if ( ! isset( $event->_ui ) && ! isset( $event->_ut ) ) {
 			$msg = __( 'Could not determine user identity and type', 'vip-telemetry' );
 			log2logstash( [
 				'severity' => 'error',

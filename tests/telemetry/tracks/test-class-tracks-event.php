@@ -116,14 +116,13 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '/^[0-9a-f]+$/', $event->get_data()->_ui );
 	}
 
-	public function test_should_skip_user_properties_for_logged_out_users() {
+	public function test_should_not_record_events_for_logged_out_users() {
 		wp_set_current_user( 0 );
 
 		$event = new Tracks_Event( 'prefix_', 'test_event' );
 
-		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
-		$this->assertFalse( isset( $event->get_data()->_ut ) );
-		$this->assertFalse( isset( $event->get_data()->_ui ) );
+		$this->assertInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertSame( 'empty_user_information', $event->get_data()->get_error_code() );
 	}
 
 	public static function provide_non_routable_ips() {
