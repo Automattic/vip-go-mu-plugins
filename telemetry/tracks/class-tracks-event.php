@@ -254,8 +254,7 @@ class Tracks_Event implements JsonSerializable {
 			] );
 			return new WP_Error(
 				'invalid_event',
-				$msg,
-				array( 'status' => 400 )
+				$msg
 			);
 		}
 
@@ -272,8 +271,7 @@ class Tracks_Event implements JsonSerializable {
 			] );
 			return new WP_Error(
 				'invalid_event_name',
-				$msg,
-				array( 'status' => 400 )
+				$msg
 			);
 		}
 
@@ -292,8 +290,7 @@ class Tracks_Event implements JsonSerializable {
 				] );
 				return new WP_Error(
 					'invalid_property_name',
-					$msg,
-					array( 'status' => 400 )
+					$msg
 				);
 			}
 		}
@@ -311,8 +308,7 @@ class Tracks_Event implements JsonSerializable {
 			] );
 			return new WP_Error(
 				'empty_user_information',
-				$msg,
-				array( 'status' => 400 )
+				$msg
 			);
 		}
 
