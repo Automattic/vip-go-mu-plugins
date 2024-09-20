@@ -86,7 +86,6 @@ class Tracks_Event implements JsonSerializable {
 	/**
 	 * Returns the event's data for JSON representation.
 	 */
-	#[\ReturnTypeWillChange]
 	public function jsonSerialize(): mixed {
 		$data = $this->get_data();
 
