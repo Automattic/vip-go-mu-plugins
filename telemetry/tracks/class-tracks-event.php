@@ -49,6 +49,11 @@ class Tracks_Event implements JsonSerializable {
 	private array $event_properties;
 
 	/**
+	 * @var float The event's creation timestamp.
+	 */
+	private float $event_timestamp;
+
+	/**
 	 * Variable containing the event's data or an error if one was encountered
 	 * during the event's creation.
 	 *
@@ -67,6 +72,7 @@ class Tracks_Event implements JsonSerializable {
 		$this->prefix           = $prefix;
 		$this->event_name       = $event_name;
 		$this->event_properties = $event_properties;
+		$this->event_timestamp  = microtime( true );
 	}
 
 	/**
@@ -76,8 +82,8 @@ class Tracks_Event implements JsonSerializable {
 	 */
 	public function get_data(): Tracks_Event_DTO|WP_Error {
 		if ( ! isset( $this->data ) ) {
-			$event_data        = static::process_properties( $this->prefix, $this->event_name, $this->event_properties );
-			$validation_result = static::get_event_validation_result( $event_data );
+			$event_data        = $this->process_properties( $this->prefix, $this->event_name, $this->event_properties );
+			$validation_result = $this->get_event_validation_result( $event_data );
 
 			$this->data = $validation_result ?? $event_data;
 		}
@@ -121,7 +127,7 @@ class Tracks_Event implements JsonSerializable {
 	 * @param array<string, mixed>|array<empty> $event_properties Any event properties to be processed.
 	 * @return Tracks_Event_DTO The resulting event object with processed properties.
 	 */
-	protected static function process_properties(
+	protected function process_properties(
 		string $event_prefix,
 		string $event_name,
 		array $event_properties
@@ -138,7 +144,7 @@ class Tracks_Event implements JsonSerializable {
 
 		// Set event timestamp.
 		if ( ! isset( $event->_ts ) ) {
-			$event->_ts = static::milliseconds_since_epoch();
+			$event->_ts = static::milliseconds_since_epoch( $this->event_timestamp );
 		}
 
 		// Remove non-routable IPs to prevent record from being discarded.
@@ -234,7 +240,7 @@ class Tracks_Event implements JsonSerializable {
 	 * @param Tracks_Event_DTO $event Event object to validate.
 	 * @return ?WP_Error null if validation passed, error otherwise.
 	 */
-	protected static function get_event_validation_result( Tracks_Event_DTO $event ): ?WP_Error {
+	protected function get_event_validation_result( Tracks_Event_DTO $event ): ?WP_Error {
 		// Check that required fields are defined.
 		if ( ! $event->_en ) {
 			$msg = __( 'The _en property must be specified to non-empty value', 'vip-telemetry' );
@@ -359,8 +365,8 @@ class Tracks_Event implements JsonSerializable {
 	 *
 	 * @return string
 	 */
-	protected static function milliseconds_since_epoch(): string {
-		$timestamp = round( microtime( true ) * 1000 );
+	protected static function milliseconds_since_epoch( float $microtime ): string {
+		$timestamp = round( $microtime * 1000 );
 
 		return number_format( $timestamp, 0, '', '' );
 	}
