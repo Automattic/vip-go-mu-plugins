@@ -25,7 +25,7 @@ class Tracks_Client {
 	/**
 	 * @var WP_Http
 	 */
-	private $http;
+	private WP_Http $http;
 
 	/**
 	 * Constructor.
@@ -41,7 +41,7 @@ class Tracks_Client {
 	 * @return bool|WP_Error True if batch recording succeeded.
 	 *                       WP_Error is any error occured.
 	 */
-	public function batch_record_events( array $events, array $common_props = [] ) {
+	public function batch_record_events( array $events, array $common_props = [] ): bool|WP_Error {
 		// filter out invalid events
 		$valid_events = array_filter( $events, function ( $event ) {
 			return $event instanceof Tracks_Event && $event->is_recordable() === true;

@@ -32,12 +32,27 @@ class Tracks_Event implements JsonSerializable {
 	protected const PROPERTY_NAME_REGEX = '/^[a-z_][a-z0-9_]*$/';
 
 	/**
+	 * @var string The event's prefix.
+	 */
+	private string $prefix;
+
+	/**
+	 * @var string The event's name.
+	 */
+	private string $event_name;
+
+	/**
+	 * @var array Any properties included in the event.
+	 */
+	private array $event_properties;
+
+	/**
 	 * Variable containing the event's data or an error if one was encountered
 	 * during the event's creation.
 	 *
 	 * @var Tracks_Event_DTO|WP_Error
 	 */
-	protected $data = null;
+	protected Tracks_Event_DTO|WP_Error $data;
 
 	/**
 	 * Constructor.
@@ -47,10 +62,9 @@ class Tracks_Event implements JsonSerializable {
 	 * @param array<string, mixed>|array<empty> $event_properties Any properties included in the event.
 	 */
 	public function __construct( string $prefix, string $event_name, array $event_properties = [] ) {
-		$event_data        = static::process_properties( $prefix, $event_name, $event_properties );
-		$validation_result = static::get_event_validation_result( $event_data );
-
-		$this->data = $validation_result ?? $event_data;
+		$this->prefix           = $prefix;
+		$this->event_name       = $event_name;
+		$this->event_properties = $event_properties;
 	}
 
 	/**
@@ -58,7 +72,14 @@ class Tracks_Event implements JsonSerializable {
 	 *
 	 * @return Tracks_Event_DTO|WP_Error Event object if the event was created successfully, WP_Error otherwise.
 	 */
-	public function get_data() {
+	public function get_data(): Tracks_Event_DTO|WP_Error {
+		if ( ! isset( $this->data ) ) {
+			$event_data        = static::process_properties( $this->prefix, $this->event_name, $this->event_properties );
+			$validation_result = static::get_event_validation_result( $event_data );
+
+			$this->data = $validation_result ?? $event_data;
+		}
+
 		return $this->data;
 	}
 
@@ -66,12 +87,14 @@ class Tracks_Event implements JsonSerializable {
 	 * Returns the event's data for JSON representation.
 	 */
 	#[\ReturnTypeWillChange]
-	public function jsonSerialize() {
-		if ( is_wp_error( $this->data ) ) {
+	public function jsonSerialize(): mixed {
+		$data = $this->get_data();
+
+		if ( is_wp_error( $data ) ) {
 			return (object) [];
 		}
 
-		return $this->data;
+		return $data;
 	}
 
 	/**
@@ -79,9 +102,11 @@ class Tracks_Event implements JsonSerializable {
 	 *
 	 * @return bool|WP_Error True if the event is recordable.
 	 */
-	public function is_recordable() {
-		if ( is_wp_error( $this->data ) ) {
-			return $this->data;
+	public function is_recordable(): bool|WP_Error {
+		$data = $this->get_data();
+
+		if ( is_wp_error( $data ) ) {
+			return $data;
 		}
 
 		return true;

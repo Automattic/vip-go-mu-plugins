@@ -19,14 +19,14 @@ class Tracks_Event_Queue {
 	/**
 	 * @var Tracks_Client
 	 */
-	private $client;
+	private Tracks_Client $client;
 
 	/**
 	 * Events queued to be sent to the Tracks API.
 	 *
 	 * @var array<Tracks_Event>
 	 */
-	protected $events = array();
+	protected array $events = array();
 
 	/**
 	 * Constructor. Registers the shutdown hook to record any and all events.
@@ -46,7 +46,7 @@ class Tracks_Event_Queue {
 	 *                       False if the event is not recordable.
 	 *                       WP_Error if the event is generating an error.
 	 */
-	public function record_event_asynchronously( Tracks_Event $event ) {
+	public function record_event_asynchronously( Tracks_Event $event ): bool|WP_Error {
 		$is_event_recordable = $event->is_recordable();
 
 		if ( true !== $is_event_recordable ) {

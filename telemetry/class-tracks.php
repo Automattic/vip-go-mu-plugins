@@ -69,7 +69,7 @@ class Tracks extends Telemetry_System {
 	public function record_event(
 		string $event_name,
 		array $event_properties = array()
-	) {
+	): bool|WP_Error {
 		if ( [] !== $this->global_event_properties ) {
 			$event_properties = array_merge( $this->global_event_properties, $event_properties );
 		}
