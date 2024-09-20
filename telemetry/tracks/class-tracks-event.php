@@ -17,6 +17,8 @@ use function Automattic\VIP\Logstash\log2logstash;
 /**
  * Class that creates and validates Tracks events.
  *
+ * @see \Automattic\VIP\Parsely\Telemetry\Tracks_Event
+ *
  * @since 3.12.0
  */
 class Tracks_Event implements JsonSerializable {
@@ -217,6 +219,10 @@ class Tracks_Event implements JsonSerializable {
 		 * @var string $wp_base_url
 		 */
 		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user->ID ) );
+
+		/**
+		 * @see \Automattic\VIP\Parsely\Telemetry\Tracks_Event::annotate_with_id_and_type()
+		 */
 		$event->_ut = 'anon'; // Same as the default value in the original code.
 
 		return $event;
