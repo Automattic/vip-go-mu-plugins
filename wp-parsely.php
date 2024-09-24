@@ -283,21 +283,15 @@ function maybe_load_plugin() {
 
 	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
 
-	// If plugin isn't enabled via constant then check for filter and option status.
-	if ( true !== $parsely_enabled_constant ) {
-		$should_load            = true === $filtered_load_status;
-		$should_prevent_loading = false === $filtered_load_status;
+	// If plugin isn't enabled via constant then check for filter if it's enabled.
+	if ( true !== $parsely_enabled_constant && true !== $filtered_load_status ) {
+		Parsely_Loader_Info::set_active( false );
 
-		// No integration: The site has not enabled parsely.
-		if ( ! $should_load || $should_prevent_loading ) {
-			Parsely_Loader_Info::set_active( false );
-
-			if ( $should_prevent_loading ) {
-				Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
-			}
-
-			return;
+		if ( false === $filtered_load_status ) {
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
 		}
+
+		return;
 	}
 
 	$versions_to_try = SUPPORTED_VERSIONS;
