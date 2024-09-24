@@ -265,7 +265,7 @@ function maybe_load_plugin() {
 			break;
 		// Integrations-managed
 		case defined( 'VIP_PARSELY_ENABLED' ):
-			Parsely_Loader_Info::set_active( constant( 'VIP_PARSELY_ENABLED' ) );
+			Parsely_Loader_Info::set_active( true === constant( 'VIP_PARSELY_ENABLED' ) );
 			Parsely_Loader_Info::set_integration_type(
 				Parsely_Loader_Info::is_active()
 					? Parsely_Integration_Type::ENABLED_CONSTANT
