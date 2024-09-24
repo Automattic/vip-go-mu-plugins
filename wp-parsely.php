@@ -258,6 +258,10 @@ function maybe_load_plugin() {
 		case class_exists( 'Parsely' ) || class_exists( 'Parsely\Parsely' ):
 			Parsely_Loader_Info::set_active( true );
 			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::SELF_MANAGED );
+			$parsely_options = Parsely_Loader_Info::get_parsely_options();
+			if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
+				Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
+			}
 			break;
 		// Integrations-managed
 		case defined( 'VIP_PARSELY_ENABLED' ):
@@ -285,13 +289,8 @@ function maybe_load_plugin() {
 			break;
 	}
 
-	if ( ! Parsely_Loader_Info::is_active() ) {
+	if ( ! Parsely_Loader_Info::is_active() || Parsely_Integration_Type::SELF_MANAGED === Parsely_Loader_Info::get_integration_type() ) {
 		return;
-	}
-
-	$parsely_options = Parsely_Loader_Info::get_parsely_options();
-	if ( array_key_exists( 'plugin_version', $parsely_options ) ) {
-		Parsely_Loader_Info::set_version( $parsely_options['plugin_version'] );
 	}
 
 	$versions_to_try = SUPPORTED_VERSIONS;
