@@ -38,7 +38,7 @@ abstract class Integration {
 	 *     'config'?: array,
 	 * }
 	 */
-	private array $options = [];
+	protected array $options = [];
 
 	/**
 	 * A boolean indicating if this integration should be loaded. Defaults to false.
