@@ -176,11 +176,15 @@ final class Parsely_Loader_Info {
 		}
 
 		/**
-		 * Parse.ly options.
+		 * Parse.ly options, plugin may be not loaded at this moment in the runtime, but we want to check the options anyway.
 		 *
 		 * @var array
 		 */
-		$parsely_options = get_option( 'parsely', [] );
+		if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
+			$parsely_options = $GLOBALS['parsely']->get_options();
+		} else {
+			$parsely_options = get_option( 'parsely', [] );
+		}
 
 		return $parsely_options;
 	}
