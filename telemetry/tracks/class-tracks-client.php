@@ -11,12 +11,13 @@ namespace Automattic\VIP\Telemetry\Tracks;
 
 use WP_Error;
 use WP_Http;
+use Automattic\VIP\Telemetry\Telemetry_Client;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Handles all operations related to the Tracks API.
  */
-class Tracks_Client {
+class Tracks_Client extends Telemetry_Client {
 	/**
 	 * Tracks REST API endpoint for post requests
 	 */
@@ -36,7 +37,7 @@ class Tracks_Client {
 
 	/**
 	 * Record a batch of events using the Tracks REST API
-	 * 
+	 *
 	 * @param Tracks_Event[] $events Array of Tracks_Event objects to record
 	 * @return bool|WP_Error True if batch recording succeeded.
 	 *                       WP_Error is any error occured.

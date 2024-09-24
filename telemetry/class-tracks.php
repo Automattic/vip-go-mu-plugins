@@ -11,7 +11,6 @@ namespace Automattic\VIP\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks\Tracks_Client;
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
-use Automattic\VIP\Telemetry\Tracks\Tracks_Event_Queue;
 use WP_Error;
 
 /**
@@ -25,14 +24,14 @@ class Tracks extends Telemetry_System {
 	 *
 	 * @var string
 	 */
-	protected $event_prefix;
+	protected string $event_prefix;
 
 	/**
 	 * Event queue.
 	 *
-	 * @var Tracks_Event_Queue
+	 * @var Telemetry_Event_Queue
 	 */
-	private $queue;
+	private Telemetry_Event_Queue $queue;
 
 	/**
 	 * @param array<string, mixed> The global event properties to be included with every event.
@@ -44,14 +43,14 @@ class Tracks extends Telemetry_System {
 	 * 
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
 	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
-	 * @param Tracks_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
+	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
 	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Tracks_Event_Queue $queue = null, Tracks_Client $client = null ) {
+	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Telemetry_Event_Queue $queue = null, Tracks_Client $client = null ) {
 		$this->event_prefix            = $event_prefix;
 		$this->global_event_properties = $global_event_properties;
 		$client                      ??= new Tracks_Client();
-		$this->queue                   = $queue ?? new Tracks_Event_Queue( $client );
+		$this->queue                   = $queue ?? new Telemetry_Event_Queue( $client );
 	}
 
 	/**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
-use Automattic\VIP\Telemetry\Tracks\Tracks_Event_Queue;
 use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
@@ -13,7 +12,7 @@ class Tracks_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
-		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
+		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -36,7 +35,7 @@ class Tracks_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
-		$queue = $this->getMockBuilder( Tracks_Event_Queue::class )
+		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
 

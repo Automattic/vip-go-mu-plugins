@@ -9,8 +9,8 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry\Tracks;
 
+use Automattic\VIP\Telemetry\Telemetry_Event;
 use WP_Error;
-use JsonSerializable;
 use Automattic\VIP\Support_User\User as Support_User;
 use function Automattic\VIP\Logstash\log2logstash;
 
@@ -21,7 +21,7 @@ use function Automattic\VIP\Logstash\log2logstash;
  *
  * @since 3.12.0
  */
-class Tracks_Event implements JsonSerializable {
+class Tracks_Event extends Telemetry_Event {
 	/**
 	 * Event name regex. Spaces, mixed case, and special characters are not allowed.
 	 */

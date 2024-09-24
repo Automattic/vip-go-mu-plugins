@@ -238,9 +238,11 @@ require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 foreach ( [
 	__DIR__ . '/telemetry/class-telemetry-system.php',
 	__DIR__ . '/telemetry/class-tracks.php',
+	__DIR__ . '/telemetry/class-telemetry-client.php',
+	__DIR__ . '/telemetry/class-telemetry-event-queue.php',
+	__DIR__ . '/telemetry/class-telemetry-event.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
-	__DIR__ . '/telemetry/tracks/class-tracks-event-queue.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
 ] as $file ) {
 	if ( file_exists( $file ) ) {

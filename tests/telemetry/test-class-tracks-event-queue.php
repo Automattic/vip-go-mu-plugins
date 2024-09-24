@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Automattic\VIP\Telemetry\Tracks;
+namespace Automattic\VIP\Telemetry;
 
 use WP_UnitTestCase;
 
-class Tracks_Event_Queue_Test extends WP_UnitTestCase {
+class Telemetry_Event_Queue_Test extends WP_UnitTestCase {
 
 	public function test_should_create_queue_and_record_events() {
-		$client = $this->getMockBuilder( Tracks_Client::class )
+		$client = $this->getMockBuilder( Telemetry_Client::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$event = $this->getMockBuilder( Tracks_Event::class )
+		$event = $this->getMockBuilder( Telemetry_Event::class )
 			->disableOriginalConstructor()
 			->getMock();
 
 		$event->expects( $this->once() )->method( 'is_recordable' )->willReturn( true );
 
-		$bad_event = $this->getMockBuilder( Tracks_Event::class )
+		$bad_event = $this->getMockBuilder( Telemetry_Event::class )
 			->disableOriginalConstructor()
 			->getMock();
 
@@ -30,7 +30,7 @@ class Tracks_Event_Queue_Test extends WP_UnitTestCase {
 			->with( [ $event ] )
 			->willReturn( true );
 
-		$queue = new Tracks_Event_Queue( $client );
+		$queue = new Telemetry_Event_Queue( $client );
 		$queue->record_event_asynchronously( $event );
 		$queue->record_event_asynchronously( $bad_event );
 		$queue->record_events();
