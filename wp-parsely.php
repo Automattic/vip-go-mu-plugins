@@ -350,14 +350,13 @@ add_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_load_plugin', 1 );
  * Enum which represent all options to integrate `wp-parsely`.
  */
 abstract class Parsely_Integration_Type { // phpcs:ignore Generic.Files.OneObjectStructurePerFile.MultipleFound, Generic.Classes.OpeningBraceSameLine.ContentAfterBrace
-	// When parsely is active.
+	// When Parse.ly is active.
 	const ENABLED_MUPLUGINS_FILTER = 'ENABLED_MUPLUGINS_FILTER';
 	const ENABLED_CONSTANT         = 'ENABLED_CONSTANT';
 	const SELF_MANAGED             = 'SELF_MANAGED';
-	// When parsely is not active.
+	// When Parse.ly is not active.
 	const DISABLED_MUPLUGINS_FILTER = 'DISABLED_MUPLUGINS_FILTER';
 	const DISABLED_CONSTANT         = 'DISABLED_CONSTANT';          // Prevent loading of plugin based on integration meta attribute or customers can also define it.
-
+	// When Parse.ly is not configured in any way.
 	const NONE = 'NONE';
-	const NULL = 'NULL';
 }
