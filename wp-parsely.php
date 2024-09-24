@@ -180,11 +180,7 @@ final class Parsely_Loader_Info {
 		 *
 		 * @var array
 		 */
-		$parsely_options = array();
-
-		if ( isset( $GLOBALS['parsely'] ) && is_a( $GLOBALS['parsely'], 'Parsely\Parsely' ) ) {
-			$parsely_options = $GLOBALS['parsely']->get_options();
-		}
+		$parsely_options = get_option( 'parsely', [] );
 
 		return $parsely_options;
 	}
@@ -336,7 +332,9 @@ function maybe_load_plugin() {
 
 	require_once $entry_file;
 
-	Parsely_Loader_Info::set_version( $version );
+	if ( defined( '\Parsely\PARSELY_VERSION' ) ) {
+		Parsely_Loader_Info::set_version( constant( '\Parsely\PARSELY_VERSION' ) );
+	}
 
 	// Require VIP's customizations over wp-parsely.
 	$vip_parsely_plugin = __DIR__ . '/vip-parsely/vip-parsely.php';
