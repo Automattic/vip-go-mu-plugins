@@ -214,17 +214,7 @@ class Tracks_Event extends Telemetry_Event {
 		}
 
 		// All other environments.
-		$wp_base_url = get_option( 'home' );
-		if ( ! is_string( $wp_base_url ) || '' === $wp_base_url ) {
-			$wp_base_url = get_option( 'siteurl' );
-		}
-
-		/**
-		 * The base URL of the site.
-		 *
-		 * @var string $wp_base_url
-		 */
-		$event->_ui = wp_hash( sprintf( '%s|%s', $wp_base_url, $wp_user->ID ) );
+		$event->_ui = wp_hash( sprintf( '%s|%s', get_option( 'home' ), $wp_user->ID ) );
 
 		/**
 		 * @see \Automattic\VIP\Parsely\Telemetry\Tracks_Event::annotate_with_id_and_type()
