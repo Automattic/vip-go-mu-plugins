@@ -268,15 +268,20 @@ function maybe_load_plugin() {
 					: Parsely_Integration_Type::DISABLED_CONSTANT
 			);
 			break;
-		// Filter-managed
+		// Filter-managed - enabled
 		case $filtered_load_status:
 			Parsely_Loader_Info::set_active( true );
 			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_MUPLUGINS_FILTER );
 			break;
-		// Disabled
+		// Filter-managed - disabled
+		case false === $filtered_load_status:
+			Parsely_Loader_Info::set_active( false );
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+			break;
+		// Not configured in any way
 		default:
 			Parsely_Loader_Info::set_active( false );
-			Parsely_Loader_Info::set_integration_type( $filtered_load_status ? Parsely_Integration_Type::NULL : Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::NONE );
 			break;
 	}
 
