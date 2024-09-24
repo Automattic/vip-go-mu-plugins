@@ -17,6 +17,8 @@
 
 namespace Automattic\VIP\WP_Parsely_Integration;
 
+use Parsely\Parsely;
+
 /**
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
@@ -268,29 +270,26 @@ function maybe_load_plugin() {
 
 	if ( defined( 'VIP_PARSELY_ENABLED' ) ) {
 		$parsely_enabled_constant = constant( 'VIP_PARSELY_ENABLED' );
+		Parsely_Loader_Info::set_active( $parsely_enabled_constant );
+		$integration_type = Parsely_Loader_Info::is_active() ? Parsely_Integration_Type::ENABLED_CONSTANT : Parsely_Integration_Type::DISABLED_CONSTANT;
+		Parsely_Loader_Info::set_integration_type( $integration_type );
 
 		// Opt out if constant value isn't true.
-		if ( true !== $parsely_enabled_constant ) {
-			Parsely_Loader_Info::set_active( false );
-			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_CONSTANT );
-
+		if ( ! Parsely_Loader_Info::is_active() ) {
 			return;
 		}
-
-		Parsely_Loader_Info::set_active( true );
-		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::ENABLED_CONSTANT );
 	}
 
 	$filtered_load_status = apply_filters( 'wpvip_parsely_load_mu', null );
 
 	// If plugin isn't enabled via constant then check for filter if it's enabled.
-	if ( true !== $parsely_enabled_constant && true !== $filtered_load_status ) {
-		Parsely_Loader_Info::set_active( false );
+	Parsely_Loader_Info::set_active( (bool) $filtered_load_status );
 
-		if ( false === $filtered_load_status ) {
-			Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
-		}
+	if ( false === $filtered_load_status ) {
+		Parsely_Loader_Info::set_integration_type( Parsely_Integration_Type::DISABLED_MUPLUGINS_FILTER );
+	}
 
+	if ( ! Parsely_Loader_Info::is_active() ) {
 		return;
 	}
 
