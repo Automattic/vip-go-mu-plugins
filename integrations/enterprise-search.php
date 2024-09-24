@@ -55,9 +55,6 @@ class EnterpriseSearchIntegration extends Integration {
 	 */
 	public function load(): void {
 		// Return if the integration is already loaded.
-		//
-		// In activate() method we do make sure to not activate the integration if its already loaded
-		// but still adding it here as a safety measure i.e. if load() is called directly.
 		if ( $this->is_loaded() ) {
 			return;
 		}
