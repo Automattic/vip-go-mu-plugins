@@ -20,11 +20,52 @@ class EnterpriseSearchIntegration extends Integration {
 	protected string $version = '1.0';
 
 	/**
+	 * An optional options array for this integration, added during activation.
+	 *
+	 * In this array we will keep all the common parameters across all integrations
+	 * as direct key/value pair e.g. `version` and we will keep the integration specific
+	 * parameters in `config` as array.
+	 *
+	 * Note: Common parameters are NOT supported currently, we have just tried to
+	 * future proof this common parameters case and related functionality will be
+	 * added in future when we support it.
+	 *
+	 * @var array{
+	 *     'version'?: string,
+	 *     'config'?: array,
+	 * }
+	 */
+	protected array $options = [];
+
+	/**
 	 * Returns `true` if Enterprise Search is already available e.g. customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */
 	public function is_loaded(): bool {
 		return class_exists( \Automattic\VIP\Search\Search::class );
+	}
+
+	/**
+	 * Activates this integration with given options array.
+	 *
+	 * @param array $options An associative options array for the integration.
+	 *                       This can contain common parameters and integration specific parameters in `config` key.
+	 *
+	 * @private
+	 */
+	public function activate( array $options = [] ): void {
+		// If integration is already available in customer code then don't activate it from platform side.
+		if ( $this->is_loaded() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
+			// Do nothing.
+		}
+
+		// Don't do anything if integration is already activated.
+		if ( $this->is_active() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
+			// Do nothing.
+		}
+
+		$this->is_active = true;
+		$this->options   = $options;
 	}
 
 	/**
