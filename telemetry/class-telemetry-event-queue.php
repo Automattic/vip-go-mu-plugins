@@ -26,7 +26,7 @@ class Telemetry_Event_Queue {
 	 *
 	 * @var array<Telemetry_Event>
 	 */
-	protected array $events = array();
+	protected array $events = [];
 
 	/**
 	 * Constructor. Registers the shutdown hook to record any and all events.

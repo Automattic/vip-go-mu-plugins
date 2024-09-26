@@ -27,6 +27,6 @@ abstract class Telemetry_System {
 	 */
 	abstract public function record_event(
 		string $event_name,
-		array $event_properties = array()
+		array $event_properties = []
 	): bool|WP_Error;
 }

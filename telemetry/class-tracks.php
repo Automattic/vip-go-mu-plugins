@@ -36,7 +36,7 @@ class Tracks extends Telemetry_System {
 	/**
 	 * @param array<string, mixed> The global event properties to be included with every event.
 	 */
-	private array $global_event_properties = array();
+	private array $global_event_properties = [];
 
 	/**
 	 * Tracks constructor.
@@ -67,7 +67,7 @@ class Tracks extends Telemetry_System {
 	 */
 	public function record_event(
 		string $event_name,
-		array $event_properties = array()
+		array $event_properties = []
 	): bool|WP_Error {
 		if ( [] !== $this->global_event_properties ) {
 			$event_properties = array_merge( $this->global_event_properties, $event_properties );
