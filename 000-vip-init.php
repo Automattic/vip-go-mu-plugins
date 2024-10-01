@@ -233,6 +233,31 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+// TODO: switch to plain require_once like the above once the telemetry is fully deployed (all files are present)
+$require_telemetry_files = [
+	__DIR__ . '/telemetry/class-telemetry-system.php',
+	__DIR__ . '/telemetry/class-tracks.php',
+	__DIR__ . '/telemetry/class-telemetry-client.php',
+	__DIR__ . '/telemetry/class-telemetry-event-queue.php',
+	__DIR__ . '/telemetry/class-telemetry-event.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
+];
+
+// If there is a missing file, the loop will break and the telemetry files will not be loaded at all
+do {
+	foreach ( $require_telemetry_files as $file ) {
+		if ( ! file_exists( $file ) ) {
+			break;
+		}
+	}
+	foreach ( $require_telemetry_files as $file ) {
+			require_once $file;
+	}
+} while ( false );
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
