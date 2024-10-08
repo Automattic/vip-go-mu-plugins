@@ -150,6 +150,40 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		self::assertEquals( $expected, $mailer->Host );
 	}
 
+	public function test_smtp_servers_not_overwritten_when_not_present_in_host_overwrite_allow_list(): void {
+		Constant_Mocker::define( 'VIP_SMTP_HOST_OVERWRITE_ALLOW_LIST', 'server1,not-preset-server,server2' );
+
+		$GLOBALS['all_smtp_servers'] = [ 'server1', 'server2' ];
+
+		$expected = 'preset-server';
+
+		add_action( 'phpmailer_init', function ( PHPMailer &$phpmailer ) use ( $expected ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host = $expected;
+		} );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		self::assertEquals( $expected, $mailer->Host );
+	}
+
+	public function test_smtp_servers_are_overwritten_when_present_in_host_overwrite_allow_list(): void {
+		Constant_Mocker::define( 'VIP_SMTP_HOST_OVERWRITE_ALLOW_LIST', 'server1,overwritable-host,server2' );
+
+		$GLOBALS['all_smtp_servers'] = [ 'new-host' ];
+
+		add_action( 'phpmailer_init', function ( PHPMailer &$phpmailer ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host = 'overwritable-host';
+		} );
+
+		wp_mail( 'test@example.com', 'Test', 'Test' );
+		$mailer = tests_retrieve_phpmailer_instance();
+
+		self::assertEquals( 'new-host', $mailer->Host );
+	}
+
 	/**
 	 * @ticket GH-3638
 	 */

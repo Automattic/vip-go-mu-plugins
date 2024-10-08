@@ -632,14 +632,16 @@ class Health {
 		$mode    = $options['mode'] ?? null;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_type, post_status, post_password FROM $wpdb->posts WHERE ID >= %d AND ID < %d", $start_post_id, $next_batch_post_id ) );
 
-		$post_types    = $indexable->get_indexable_post_types();
-		$post_statuses = $indexable->get_indexable_post_status();
+		$post_types                = $indexable->get_indexable_post_types();
+		$post_statuses             = $indexable->get_indexable_post_status();
+		$protected_content         = \ElasticPress\Features::factory()->get_registered_feature( 'protected_content' );
+		$protected_content_enabled = $protected_content ? $protected_content->is_active() : false;
 
 		// First we need to see identify which posts are actually expected in the index, by checking the same filters that
 		// are used in ElasticPress\Indexable\Post\SyncManager::action_sync_on_update()
-		$expected_post_rows = self::filter_expected_post_rows( $rows, $post_types, $post_statuses );
+		$expected_post_rows = static::filter_expected_post_rows( $rows, $post_types, $post_statuses, $protected_content_enabled );
 
 		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
@@ -756,13 +758,13 @@ class Health {
 		return $diffs;
 	}
 
-	public static function filter_expected_post_rows( $rows, $post_types, $post_statuses ) {
-		$filtered = array_filter( $rows, function ( $row ) use ( $post_types, $post_statuses ) {
-			if ( ! in_array( $row->post_type, $post_types, true ) ) {
+	public static function filter_expected_post_rows( $rows, $post_types, $post_statuses, $protected_content_enabled ) {
+		return array_filter( $rows, function ( $row ) use ( $post_types, $post_statuses, $protected_content_enabled ) {
+			if ( ! in_array( $row->post_type, $post_types, true ) || ! in_array( $row->post_status, $post_statuses, true ) ) {
 				return false;
 			}
 
-			if ( ! in_array( $row->post_status, $post_statuses, true ) ) {
+			if ( ! $protected_content_enabled && '' !== $row->post_password ) {
 				return false;
 			}
 
@@ -770,8 +772,6 @@ class Health {
 
 			return ! $skipped;
 		} );
-
-		return $filtered;
 	}
 
 	public static function simplified_diff_document_and_prepared_document( $document, $prepared_document ) {

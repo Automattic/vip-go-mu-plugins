@@ -68,7 +68,7 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.1
         with:
           submodules: true
 
@@ -76,7 +76,7 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.3
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: 'lts/*'
           cache: npm
@@ -131,10 +131,10 @@ jobs:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.1
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.3
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: 'lts/*'
           cache: npm

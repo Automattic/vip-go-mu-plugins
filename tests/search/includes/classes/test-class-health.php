@@ -85,49 +85,95 @@ class Health_Test extends WP_UnitTestCase {
 		$rows = array(
 			// Indexed
 			(object) array(
-				'ID'          => 1,
-				'post_type'   => 'post',
-				'post_status' => 'publish',
+				'ID'            => 1,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => '',
 			),
 
 			// Filtered out by ep_post_sync_kill
 			(object) array(
-				'ID'          => 2,
-				'post_type'   => 'post',
-				'post_status' => 'publish',
+				'ID'            => 2,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => '',
 			),
 
 			// Un-indexed post_type
 			(object) array(
-				'ID'          => 3,
-				'post_type'   => 'unindexed',
-				'post_status' => 'publish',
+				'ID'            => 3,
+				'post_type'     => 'unindexed',
+				'post_status'   => 'publish',
+				'post_password' => '',
 			),
 
 			// Un-indexed post_status
 			(object) array(
-				'ID'          => 4,
-				'post_type'   => 'post',
-				'post_status' => 'unindexed',
+				'ID'            => 4,
+				'post_type'     => 'post',
+				'post_status'   => 'unindexed',
+				'post_password' => '',
 			),
 
 			// Indexed
 			(object) array(
-				'ID'          => 5,
-				'post_type'   => 'post',
-				'post_status' => 'publish',
+				'ID'            => 5,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => '',
+			),
+
+			// Protected post
+			(object) array(
+				'ID'            => 6,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => 'test',
 			),
 		);
 
-		$indexed_post_types    = array( 'post' );
-		$indexed_post_statuses = array( 'publish' );
+		$indexed_post_types        = array( 'post' );
+		$indexed_post_statuses     = array( 'publish' );
+		$protected_content_enabled = false;
 
-		$filtered = Health::filter_expected_post_rows( $rows, $indexed_post_types, $indexed_post_statuses );
+		$filtered = Health::filter_expected_post_rows( $rows, $indexed_post_types, $indexed_post_statuses, $protected_content_enabled );
 
 		// Grab just the IDs to make validation simpler
 		$filtered_ids = array_values( wp_list_pluck( $filtered, 'ID' ) );
 
 		$expected_ids = array( 1, 5 );
+
+		$this->assertEquals( $expected_ids, $filtered_ids );
+	}
+
+	public function test_filter_expected_post_rows__protected_content() {
+		$rows = array(
+			(object) array(
+				'ID'            => 1,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => '',
+			),
+
+			// Protected post
+			(object) array(
+				'ID'            => 6,
+				'post_type'     => 'post',
+				'post_status'   => 'publish',
+				'post_password' => 'test',
+			),
+		);
+
+		$indexed_post_types        = array( 'post' );
+		$indexed_post_statuses     = array( 'publish' );
+		$protected_content_enabled = true;
+
+		$filtered = Health::filter_expected_post_rows( $rows, $indexed_post_types, $indexed_post_statuses, $protected_content_enabled );
+
+		// Grab just the IDs to make validation simpler
+		$filtered_ids = array_values( wp_list_pluck( $filtered, 'ID' ) );
+
+		$expected_ids = array( 1, 6 );
 
 		$this->assertEquals( $expected_ids, $filtered_ids );
 	}

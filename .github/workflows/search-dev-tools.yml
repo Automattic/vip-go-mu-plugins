@@ -22,12 +22,12 @@ jobs:
       contents: write
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.1
         with:
           token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.3
+        uses: actions/setup-node@v4.0.4
         with:
           node-version: 'lts/*'
           cache: npm

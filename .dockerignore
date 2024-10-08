@@ -99,7 +99,6 @@ wpcom-helper.php
 /shared-plugins/two-factor/dev-lib/
 /shared-plugins/two-factor/tests/
 **/tests/
-/vaultpress/changelog.txt
 /vip-support/.circleci
 /vip-support/bin/
 /vip-support/features/

@@ -80,7 +80,7 @@ runs:
       uses: ramsey/composer-install@3.0.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@v2.0.3
+      uses: sjinks/setup-wordpress-test-library@v2.1.1
       with:
         version: ${{ inputs.wordpress }}
 
@@ -122,7 +122,7 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v4.5.0
+      uses: codecov/codecov-action@v4.6.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
