@@ -29,13 +29,13 @@ jobs:
           - javascript
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4.2.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3.26.8
+        uses: github/codeql-action/init@v3.26.10
         with:
           languages: ${{ matrix.language }}
           config-file: ./.github/codeql-config.yml
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3.26.8
+        uses: github/codeql-action/analyze@v3.26.10
