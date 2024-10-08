@@ -250,13 +250,15 @@ $require_telemetry_files = [
 do {
 	foreach ( $require_telemetry_files as $file ) {
 		if ( ! file_exists( $file ) ) {
-			break;
+			break 2;
 		}
 	}
 	foreach ( $require_telemetry_files as $file ) {
 			require_once $file;
 	}
 } while ( false );
+
+unset( $require_telemetry_files );
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
