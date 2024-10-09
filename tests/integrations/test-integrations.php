@@ -44,9 +44,9 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__integrations_are_activating_based_on_given_vip_config(): void {
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'is_active_via_vip', 'get_site_config' ] )->getMock();
+		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'is_active_via_vip', 'get_env_config' ] )->getMock();
 		$config_mock->expects( $this->exactly( 2 ) )->method( 'is_active_via_vip' )->willReturnOnConsecutiveCalls( true, false );
-		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_site_config' )->willReturnOnConsecutiveCalls( [ 'config_key_1' => 'vip_value' ] );
+		$config_mock->expects( $this->exactly( 1 ) )->method( 'get_env_config' )->willReturnOnConsecutiveCalls( [ 'config_key_1' => 'vip_value' ] );
 
 		/**
 		 * Integrations mock.
@@ -70,11 +70,11 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$mock->activate_platform_integrations();
 
 		$this->assertTrue( $integration_1->is_active() );
-		$this->assertEquals( [ 'config_key_1' => 'value' ], $integration_1->get_config() );
+		$this->assertEquals( [ 'config_key_1' => 'value' ], $integration_1->get_env_config() );
 		$this->assertTrue( $integration_2->is_active() );
-		$this->assertEquals( [ 'config_key_1' => 'vip_value' ], $integration_2->get_config() );
+		$this->assertEquals( [ 'config_key_1' => 'vip_value' ], $integration_2->get_env_config() );
 		$this->assertFalse( $integration_3->is_active() );
-		$this->assertEquals( [], $integration_3->get_config() );
+		$this->assertEquals( [], $integration_3->get_env_config() );
 	}
 
 	public function test__expected_methods_are_getting_called_when_the_integration_is_activated_via_vip_config(): void {
@@ -100,7 +100,7 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$integrations_mock->activate_platform_integrations();
 
 		$this->assertTrue( $integration_mock->is_active() );
-		$this->assertEquals( [], $integration_mock->get_config() );
+		$this->assertEquals( [], $integration_mock->get_env_config() );
 	}
 
 	public function test__get_integration_vip_config_returns_instance_of_IntegrationVipConfig(): void {
