@@ -28,29 +28,6 @@ class EnterpriseSearchIntegration extends Integration {
 	}
 
 	/**
-	 * Activates this integration with given options array.
-	 *
-	 * @param array $options An associative options array for the integration.
-	 *                       This can contain common parameters and integration specific parameters in `config` key.
-	 *
-	 * @private
-	 */
-	public function activate( array $options = [] ): void {
-		// If integration is already available in customer code then don't activate it from platform side.
-		if ( $this->is_loaded() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
-			// Do nothing.
-		}
-
-		// Don't do anything if integration is already activated.
-		if ( $this->is_active() ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedIf
-			// Do nothing.
-		}
-
-		$this->is_active = true;
-		$this->options   = $options;
-	}
-
-	/**
 	 * Loads the plugin.
 	 */
 	public function load(): void {

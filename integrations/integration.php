@@ -78,17 +78,9 @@ abstract class Integration {
 	 * @private
 	 */
 	public function activate( array $options = [] ): void {
-		// If integration is already available in customer code then don't activate it from platform side.
-		if ( $this->is_loaded() ) {
-			trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-				sprintf( 'Prevented activating of integration with slug "%s" because it is already loaded.', esc_html( $this->slug ) ),
-				E_USER_WARNING
-			);
-		}
-
-		// Don't do anything if integration is already activated.
-		if ( $this->is_active() ) {
-			trigger_error( sprintf( 'VIP Integration with slug "%s" is already activated.', esc_html( $this->get_slug() ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		// Don't do anything if integration is already loaded or activated.
+		if ( $this->is_loaded() || $this->is_active() ) {
+			return;
 		}
 
 		$this->is_active = true;
@@ -144,6 +136,7 @@ abstract class Integration {
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
 		if ( ! $this->is_active() ) {
 			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return;
 		}
 
 		$this->vip_config = $vip_config;
@@ -160,8 +153,8 @@ abstract class Integration {
 	/**
 	 * Implement custom action and filter calls to load integration here.
 	 *
-	 * For plugins / integrations that can be added to customer repos, 
-	 * the implementation should hook into plugins_loaded and check if 
+	 * For plugins / integrations that can be added to customer repos,
+	 * the implementation should hook into plugins_loaded and check if
 	 * the plugin is already loaded first.
 	 *
 	 * @private
@@ -170,12 +163,12 @@ abstract class Integration {
 
 	/**
 	 * Configure the integration for VIP platform.
-	 * 
+	 *
 	 * If we want to implement functionality only if the integration is enabled via VIP
 	 * then we will use this function.
-	 * 
+	 *
 	 * By default, the implementation of this function will be empty.
-	 * 
+	 *
 	 * @private
 	 */
 	public function configure(): void {}

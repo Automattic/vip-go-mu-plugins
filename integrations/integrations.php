@@ -30,12 +30,14 @@ class Integrations {
 	public function register( $integration ): void {
 		if ( ! is_subclass_of( $integration, Integration::class ) ) {
 			trigger_error( sprintf( 'Integration class "%s" must extend %s.', esc_html( get_class( $integration ) ), esc_html( Integration::class ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return;
 		}
 
 		$slug = $integration->get_slug();
 
 		if ( null !== $this->get_integration( $slug ) ) {
 			trigger_error( sprintf( 'Integration with slug "%s" is already registered.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return;
 		}
 
 		$this->integrations[ $slug ] = $integration;
@@ -116,6 +118,7 @@ class Integrations {
 
 		if ( null === $integration ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			return;
 		}
 
 		$integration->activate( $options );
