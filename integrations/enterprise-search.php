@@ -61,7 +61,7 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Set the Elasticsearch credentials.
 	 */
 	public function vip_set_es_credentials(): void {
-		$config = $this->get_config();
+		$config = $this->get_env_config();
 		if ( isset( $config['username'] ) && isset( $config['password'] ) ) {
 			define( 'VIP_ELASTICSEARCH_USERNAME', $config['username'] );
 			define( 'VIP_ELASTICSEARCH_PASSWORD', $config['password'] );

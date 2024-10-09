@@ -126,28 +126,21 @@ class IntegrationVipConfig {
 			return Org_Integration_Status::BLOCKED;
 		}
 
-		// Look into network_sites config before and then fallback to env config.
-		return $this->get_value_from_config( 'network_sites', 'status' ) ??
-			$this->get_value_from_config( 'env', 'status' );
+		// Look into network_sites config first, and then fallback to env config.
+		$network_site_status = is_multisite() ? $this->get_value_from_config( 'network_sites', 'status' ) : null;
+		return $network_site_status ? $network_site_status : $this->get_value_from_config( 'env', 'status' );
 	}
 
-	/**
-	 * Get site config.
-	 *
-	 * @return array
-	 */
-	public function get_site_config() {
-		if ( is_multisite() ) {
-			$config = $this->get_value_from_config( 'network_sites', 'config' );
-			// If network site config is not found then fallback to env config if it exists
-			if ( empty( $config ) && true === $this->get_value_from_config( 'env', 'cascade_config' ) ) {
-				$config = $this->get_value_from_config( 'env', 'config' );
-			}
-		} else {
-			$config = $this->get_value_from_config( 'env', 'config' );
+	public function get_env_config() {
+		return $this->get_value_from_config( 'env', 'config' ) ?? [];
+	}
+
+	public function get_network_site_config() {
+		if ( ! is_multisite() ) {
+			return [];
 		}
 
-		return $config ?? array(); // To keep function signature consistent.
+		return $this->get_value_from_config( 'network_sites', 'config' ) ?? [];
 	}
 
 	/**

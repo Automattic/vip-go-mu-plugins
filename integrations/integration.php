@@ -38,7 +38,7 @@ abstract class Integration {
 	 *     'config'?: array,
 	 * }
 	 */
-	protected array $options = [];
+	private array $options = [];
 
 	/**
 	 * A boolean indicating if this integration should be loaded. Defaults to false.
@@ -65,8 +65,6 @@ abstract class Integration {
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
-
-		add_action( 'switch_blog', array( $this, 'switch_blog_callback' ), 10, 2 );
 	}
 
 	/**
@@ -88,16 +86,6 @@ abstract class Integration {
 	}
 
 	/**
-	 * Callback for `switch_blog` filter.
-	 */
-	public function switch_blog_callback(): void {
-		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
-		if ( isset( $this->vip_config ) ) {
-			$this->options['config'] = $this->vip_config->get_site_config();
-		}
-	}
-
-	/**
 	 * Returns true if this integration has been activated.
 	 *
 	 * @private
@@ -107,14 +95,31 @@ abstract class Integration {
 	}
 
 	/**
-	 * Return the configuration for this integration.
+	 * Return the environment-level configuration for this integration.
 	 *
 	 * @return array<string,array>
-	 *
-	 * @private
 	 */
-	public function get_config(): array {
-		return isset( $this->options['config'] ) ? $this->options['config'] : array();
+	public function get_env_config(): array {
+		// If the integration was activated manually, then return the passed-in config.
+		if ( ! isset( $this->vip_config ) ) {
+			return isset( $this->options['config'] ) ? $this->options['config'] : array();
+		}
+
+		return $this->vip_config->get_env_config();
+	}
+
+	/**
+	 * Return the network-site-level configuration for this integration.
+	 *
+	 * @return array<string,array>
+	 */
+	public function get_network_site_config(): array {
+		// If the integration was activated manually, then return the passed in config.
+		if ( ! isset( $this->vip_config ) ) {
+			return isset( $this->options['config'] ) ? $this->options['config'] : array();
+		}
+
+		return $this->vip_config->get_network_site_config();
 	}
 
 	/**
@@ -134,11 +139,6 @@ abstract class Integration {
 	 * @return void
 	 */
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
-		if ( ! $this->is_active() ) {
-			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return;
-		}
-
 		$this->vip_config = $vip_config;
 	}
 
