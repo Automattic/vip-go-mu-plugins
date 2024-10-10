@@ -164,7 +164,7 @@ class Tracks_Event extends Telemetry_Event {
 		// Set VIP organization if it exists.
 		if ( defined( 'VIP_ORG_ID' ) ) {
 			$org_id = constant( 'VIP_ORG_ID' );
-			if ( is_string( $org_id ) && '' !== $org_id ) {
+			if ( is_scalar( $org_id ) && $org_id ) {
 				$event->vipgo_org = $org_id;
 			}
 		}
