@@ -132,7 +132,7 @@ class IntegrationVipConfig {
 	}
 
 	public function get_env_config() {
-		return $this->get_value_from_config( 'env', 'config' ) ?? [];
+		return $this->get_value_from_config( 'env', 'config' );
 	}
 
 	public function get_network_site_config() {
@@ -140,7 +140,7 @@ class IntegrationVipConfig {
 			return [];
 		}
 
-		return $this->get_value_from_config( 'network_sites', 'config' ) ?? [];
+		return $this->get_value_from_config( 'network_sites', 'config' );
 	}
 
 	/**
