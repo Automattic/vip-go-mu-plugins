@@ -115,20 +115,28 @@ class IntegrationVipConfig {
 	}
 
 	/**
-	 * Get site status.
+	 * Get integration status for site.
+	 *
+	 * For single sites simply return global status.
+	 * For multisites,
+	 * try to get status based on current blog id,
+	 * if not found then fallback to global environment status.
 	 *
 	 * @return string|null
 	 *
-	 * @private
 	 */
 	public function get_site_status() {
 		if ( $this->get_value_from_config( 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
 			return Org_Integration_Status::BLOCKED;
 		}
 
-		// Look into network_sites config first, and then fallback to env config.
-		$network_site_status = is_multisite() ? $this->get_value_from_config( 'network_sites', 'status' ) : null;
-		return $network_site_status ? $network_site_status : $this->get_value_from_config( 'env', 'status' );
+		$env_status = $this->get_value_from_config( 'env', 'status' );
+
+		if ( is_multisite() ) {
+			return $this->get_value_from_config( 'network_sites', 'status' ) ? : $env_status;
+		}
+
+		return $env_status;
 	}
 
 	public function get_env_config() {
