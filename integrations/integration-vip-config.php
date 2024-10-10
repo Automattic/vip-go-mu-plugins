@@ -130,13 +130,11 @@ class IntegrationVipConfig {
 			return Org_Integration_Status::BLOCKED;
 		}
 
-		$env_status = $this->get_value_from_config( 'env', 'status' );
-
-		if ( is_multisite() ) {
-			return $this->get_value_from_config( 'network_sites', 'status' ) ? : $env_status;
+		if ( ! is_multisite() ) {
+			return $this->get_value_from_config( 'env', 'status' );
 		}
 
-		return $env_status;
+		return $this->get_value_from_config( 'network_sites', 'status' ) ? : $this->get_value_from_config( 'env', 'status' );
 	}
 
 	public function get_env_config() {
