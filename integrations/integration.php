@@ -102,7 +102,7 @@ abstract class Integration {
 	public function get_env_config(): array {
 		// If the integration was activated manually, then return the passed-in config.
 		if ( ! isset( $this->vip_config ) ) {
-			return isset( $this->options['config'] ) ? $this->options['config'] : array();
+			return isset( $this->options['config'] ) && is_array( $this->options['config'] ) ? $this->options['config'] : [];
 		}
 
 		return $this->vip_config->get_env_config();
@@ -116,7 +116,7 @@ abstract class Integration {
 	public function get_network_site_config(): array {
 		// If the integration was activated manually, then return the passed in config.
 		if ( ! isset( $this->vip_config ) ) {
-			return isset( $this->options['config'] ) ? $this->options['config'] : array();
+			return isset( $this->options['config'] ) && is_array( $this->options['config'] ) ? $this->options['config'] : [];
 		}
 
 		return $this->vip_config->get_network_site_config();

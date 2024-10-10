@@ -118,35 +118,39 @@ class IntegrationVipConfig {
 	 * Get integration status for site.
 	 *
 	 * For single sites simply return global status.
-	 * For multisites,
-	 * try to get status based on current blog id,
+	 * For multisites, try to get status based on current blog id,
 	 * if not found then fallback to global environment status.
 	 *
 	 * @return string|null
-	 *
 	 */
 	public function get_site_status() {
 		if ( $this->get_value_from_config( 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
 			return Org_Integration_Status::BLOCKED;
 		}
 
-		if ( ! is_multisite() ) {
-			return $this->get_value_from_config( 'env', 'status' );
+		if ( is_multisite() ) {
+			$network_site_status = $this->get_value_from_config( 'network_sites', 'status' );
+
+			if ( $network_site_status ) {
+				return $network_site_status;
+			}
 		}
 
-		return $this->get_value_from_config( 'network_sites', 'status' ) ? : $this->get_value_from_config( 'env', 'status' );
+		return $this->get_value_from_config( 'env', 'status' );
 	}
 
-	public function get_env_config() {
-		return $this->get_value_from_config( 'env', 'config' );
+	public function get_env_config(): array {
+		$config = $this->get_value_from_config( 'env', 'config' );
+		return is_array( $config ) ? $config : [];
 	}
 
-	public function get_network_site_config() {
+	public function get_network_site_config(): array {
 		if ( ! is_multisite() ) {
 			return [];
 		}
 
-		return $this->get_value_from_config( 'network_sites', 'config' );
+		$config = $this->get_value_from_config( 'network_sites', 'config' );
+		return is_array( $config ) ? $config : [];
 	}
 
 	/**
