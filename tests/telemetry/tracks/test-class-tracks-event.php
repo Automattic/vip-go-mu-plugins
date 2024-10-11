@@ -17,6 +17,8 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 
 	protected const VIP_ORG_ID = 17;
 
+	protected const VIP_GO_APP_ID = 2000;
+
 	private WP_User $user;
 
 	public function setUp(): void {
@@ -40,6 +42,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	public function test_should_return_event_data() {
 		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', self::VIP_TELEMETRY_SALT );
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', self::VIP_GO_APP_ENVIRONMENT );
+		Constant_Mocker::define( 'VIP_GO_APP_ID', self::VIP_GO_APP_ID );
 		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
 
 		$event = new Tracks_Event( 'prefix_', 'test_event', [
@@ -60,6 +63,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( hash_hmac( 'sha256', $this->user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
+		$this->assertSame( self::VIP_GO_APP_ID, $event->get_data()->vipgo_app );
 		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
 		$this->assertFalse( $event->get_data()->is_vip_user );
 		$this->assertTrue( $event->is_recordable() );
