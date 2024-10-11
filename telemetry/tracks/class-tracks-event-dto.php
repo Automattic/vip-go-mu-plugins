@@ -39,7 +39,7 @@ class Tracks_Event_DTO {
 
 	public string $vipgo_env;
 
-	public string $vipgo_org;
+	public int $vipgo_org;
 
 	public bool $is_vip_user = false;
 }
