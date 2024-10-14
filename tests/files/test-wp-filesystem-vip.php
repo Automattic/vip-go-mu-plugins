@@ -279,8 +279,6 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_transport_for_path__uploads_streamwrapper() {
-		Constant_Mocker::define( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER', true );
-
 		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
 
 		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/tmp/wordpress/wp-content/uploads/file.file', 'read' ] );
@@ -289,6 +287,8 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_transport_for_path__uploads() {
+		// Now that streamwrapper is enabled by default, we need to define it as disabled for this test.
+		define( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER', false );
 		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
 
 		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/tmp/wordpress/wp-content/uploads/file.file', 'write' ] );
