@@ -163,9 +163,10 @@ class Tracks_Event extends Telemetry_Event {
 
 		// Set VIP app ID if it exists.
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			$app_id = constant( 'VIP_GO_APP_ID' );
-			if ( is_integer( $app_id ) && $app_id > 0 ) {
-				$event->vipgo_app = $app_id;
+			// APP_ID is incorrectly named; it actually references the environment ID
+			$env_id = constant( 'VIP_GO_APP_ID' );
+			if ( is_integer( $env_id ) && $env_id > 0 ) {
+				$event->vip_env_id = $env_id;
 			}
 		}
 
