@@ -15,7 +15,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 
 	protected const VIP_GO_APP_ENVIRONMENT = 'test';
 
-	protected const VIP_ORG_ID = '17';
+	protected const VIP_ORG_ID = 17;
 
 	private WP_User $user;
 
