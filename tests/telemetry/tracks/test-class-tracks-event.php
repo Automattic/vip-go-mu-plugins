@@ -64,7 +64,7 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
 		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
 		$this->assertSame( self::VIP_GO_APP_ID, $event->get_data()->vip_env_id );
-		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
+		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vip_org_id );
 		$this->assertFalse( $event->get_data()->is_vip_user );
 		$this->assertTrue( $event->is_recordable() );
 	}

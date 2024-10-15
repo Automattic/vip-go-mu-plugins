@@ -174,7 +174,7 @@ class Tracks_Event extends Telemetry_Event {
 		if ( defined( 'VIP_ORG_ID' ) ) {
 			$org_id = constant( 'VIP_ORG_ID' );
 			if ( is_integer( $org_id ) && $org_id > 0 ) {
-				$event->vipgo_org = $org_id;
+				$event->vip_org_id = $org_id;
 			}
 		}
 
