@@ -35,10 +35,10 @@ IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'e
  * Activates an integration with an optional configuration value.
  *
  * @param string              $slug A unique identifier for the integration.
- * @param array<string,mixed> $config An associative array of configuration values for the integration.
+ * @param array<string,mixed> $options An associative options array for the integration.
  */
-function activate( string $slug, array $config = [] ): void {
-	IntegrationsSingleton::instance()->activate( $slug, $config );
+function activate( string $slug, array $options = [] ): void {
+	IntegrationsSingleton::instance()->activate( $slug, $options );
 }
 
 // Load integrations in muplugins_loaded:5 to allow integrations to hook

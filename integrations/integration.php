@@ -38,7 +38,7 @@ abstract class Integration {
 	 *     'config'?: array,
 	 * }
 	 */
-	protected array $options = [];
+	private array $options = [];
 
 	/**
 	 * A boolean indicating if this integration should be loaded. Defaults to false.
@@ -65,8 +65,6 @@ abstract class Integration {
 	 */
 	public function __construct( string $slug ) {
 		$this->slug = $slug;
-
-		add_action( 'switch_blog', array( $this, 'switch_blog_callback' ), 10, 2 );
 	}
 
 	/**
@@ -78,31 +76,13 @@ abstract class Integration {
 	 * @private
 	 */
 	public function activate( array $options = [] ): void {
-		// If integration is already available in customer code then don't activate it from platform side.
-		if ( $this->is_loaded() ) {
-			trigger_error( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-				sprintf( 'Prevented activating of integration with slug "%s" because it is already loaded.', esc_html( $this->slug ) ),
-				E_USER_WARNING
-			);
-		}
-
-		// Don't do anything if integration is already activated.
-		if ( $this->is_active() ) {
-			trigger_error( sprintf( 'VIP Integration with slug "%s" is already activated.', esc_html( $this->get_slug() ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		// Don't do anything if integration is already loaded or activated.
+		if ( $this->is_loaded() || $this->is_active() ) {
+			return;
 		}
 
 		$this->is_active = true;
 		$this->options   = $options;
-	}
-
-	/**
-	 * Callback for `switch_blog` filter.
-	 */
-	public function switch_blog_callback(): void {
-		// Updating config to make sure `get_config()` returns config of current blog instead of main site.
-		if ( isset( $this->vip_config ) ) {
-			$this->options['config'] = $this->vip_config->get_site_config();
-		}
 	}
 
 	/**
@@ -115,14 +95,31 @@ abstract class Integration {
 	}
 
 	/**
-	 * Return the configuration for this integration.
+	 * Return the environment-level configuration for this integration.
 	 *
 	 * @return array<string,array>
-	 *
-	 * @private
 	 */
-	public function get_config(): array {
-		return isset( $this->options['config'] ) ? $this->options['config'] : array();
+	public function get_env_config(): array {
+		// If the integration was activated manually, then return the passed-in config.
+		if ( ! isset( $this->vip_config ) ) {
+			return isset( $this->options['config'] ) && is_array( $this->options['config'] ) ? $this->options['config'] : [];
+		}
+
+		return $this->vip_config->get_env_config();
+	}
+
+	/**
+	 * Return the network-site-level configuration for this integration.
+	 *
+	 * @return array<string,array>
+	 */
+	public function get_network_site_config(): array {
+		// If the integration was activated manually, then return the passed in config.
+		if ( ! isset( $this->vip_config ) ) {
+			return isset( $this->options['config'] ) && is_array( $this->options['config'] ) ? $this->options['config'] : [];
+		}
+
+		return $this->vip_config->get_network_site_config();
 	}
 
 	/**
@@ -142,10 +139,6 @@ abstract class Integration {
 	 * @return void
 	 */
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
-		if ( ! $this->is_active() ) {
-			trigger_error( sprintf( 'Configuration info can only assigned if integration is active.' ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		}
-
 		$this->vip_config = $vip_config;
 	}
 
@@ -160,8 +153,8 @@ abstract class Integration {
 	/**
 	 * Implement custom action and filter calls to load integration here.
 	 *
-	 * For plugins / integrations that can be added to customer repos, 
-	 * the implementation should hook into plugins_loaded and check if 
+	 * For plugins / integrations that can be added to customer repos,
+	 * the implementation should hook into plugins_loaded and check if
 	 * the plugin is already loaded first.
 	 *
 	 * @private
@@ -170,12 +163,12 @@ abstract class Integration {
 
 	/**
 	 * Configure the integration for VIP platform.
-	 * 
+	 *
 	 * If we want to implement functionality only if the integration is enabled via VIP
 	 * then we will use this function.
-	 * 
+	 *
 	 * By default, the implementation of this function will be empty.
-	 * 
+	 *
 	 * @private
 	 */
 	public function configure(): void {}
