@@ -656,7 +656,7 @@ class WP_Import extends WP_Importer {
 
 			$post_type_object = get_post_type_object( $post['post_type'] );
 
-			$post_exists = post_exists( $post['post_title'], '', $post['post_date'] );
+			$post_exists = post_exists( $post['post_title'], '', $post['post_date'], $post['post_type'] );
 
 			/**
 			* Filter ID of the existing post corresponding to post currently importing.
