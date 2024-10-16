@@ -450,8 +450,7 @@ class VIP_Filesystem {
 
 		// Save a local copy and read metadata from that
 		$temp_file = wp_tempnam();
-		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
-		file_put_contents( $temp_file, file_get_contents( $file ) );
+		copy( $file, $temp_file );
 		$meta = wp_read_image_metadata( $temp_file );
 
 		add_filter( 'wp_read_image_metadata', [ $this, 'filter_wp_read_image_metadata' ], 10, 2 );
