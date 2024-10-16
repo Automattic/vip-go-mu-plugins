@@ -36,7 +36,7 @@ add_action(
 				$message,
 				[
 					new Expression_Condition( class_exists( 'Jetpack_Force_2FA' ) && class_exists( 'Jetpack' ) && defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.5', '>=' ) ),
-					new Capability_Condition( is_super_admin() ),
+					new Expression_Condition( is_super_admin() ),
 				],
 				'deprecated-standalone-jetpack-2fa-plugin',
 				'error'
