@@ -71,6 +71,7 @@ class Role {
 		}
 		add_filter( 'editable_roles', array( $this, 'filter_editable_roles' ) );
 		add_filter( 'user_has_cap', array( $this, 'filter_user_has_cap' ), PHP_INT_MAX, 4 );
+		add_filter( 'site_option_site_admins', array( $this, 'filter_site_option_site_admins' ), PHP_INT_MAX );
 	}
 
 	// HOOKS
@@ -107,6 +108,16 @@ class Role {
 			}
 		}
 		return $user_caps;
+	}
+
+	public function filter_site_option_site_admins( $site_admins ) {
+		$user = wp_get_current_user();
+
+		if ( in_array( self::VIP_SUPPORT_ROLE, $user->roles ) && is_proxied_automattician() ) {
+			$site_admins[] = $user->user_login;
+		}
+		
+		return $site_admins;
 	}
 
 	/**
