@@ -434,3 +434,15 @@ add_action( 'muplugins_loaded', function () {
 		unset( $_POST['invite_user_wpcom'] );
 	}
 });
+
+/**
+ * Jetpack 13.9 removes the legacy Jetpack_SSO class. Unfortunately, this class is still used by
+ * the deprecated standalone jetpack-force-2fa plugin (which is still in use by some). This is a dummy
+ * class to prevent fatal errors when the standalone plugin is enabled.
+ */
+add_action( 'plugins_loaded', function () {
+	if ( class_exists( 'Jetpack_Force_2FA' ) && ! class_exists( 'Jetpack_SSO' ) && class_exists( 'Jetpack' ) &&
+		defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.9', '>=' ) ) {
+		require_once __DIR__ . '/jetpack-sso-dummy.php';
+	}
+} );
