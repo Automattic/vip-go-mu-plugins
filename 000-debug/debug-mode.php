@@ -42,8 +42,17 @@ function is_debug_mode_enabled() {
 	$is_proxied = \is_proxied_request();
 	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
-	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
+	if ( $is_nocache && $is_debug && $is_proxied ) {
 		return true;
+	}
+
+	if ( $is_local ) {
+		if ( ! function_exists( 'is_user_logged_in' ) ) {
+			require_once ABSPATH . WPINC . '/pluggable.php';
+		}
+		if ( is_user_logged_in() ) {
+			return true;
+		}
 	}
 
 	return false;
