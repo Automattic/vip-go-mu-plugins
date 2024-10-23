@@ -220,4 +220,24 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 
 		$this->assertFalse( $removed_user_obj, 'User was not deleted' );
 	}
+
+	public function test__superadmin_filter(): void {
+		// Ensure a regular user is not filtered to be a superadmin
+		$regular_user_id = $this->factory()->user->create( [
+			'user_email'   => 'regular-user@somedomain.com',
+			'user_login'   => 'regular-user',
+			'display_name' => 'Regular User',
+		] );
+
+		$this->assertFalse( is_super_admin( $regular_user_id ) );
+
+		// Ensure a regular user is not filtered to be a superadmin, without being verified + proxied
+		$vip_user_id = $this->factory()->user->create( [
+			'user_email'   => 'regular-user@automattic.com',
+			'user_login'   => 'vip_regular_user',
+			'display_name' => 'Regular A11n User',
+		] );
+
+		$this->assertFalse( is_super_admin( $vip_user_id ) );
+	}
 }

@@ -641,38 +641,12 @@ class User {
 		if ( ! is_multisite() ) {
 			return;
 		}
-		// If the user:
-		// * Is an inactive support user
-		// * Is a super admin
-		// …revoke their powers
-		if ( self::user_has_vip_support_role( $user->ID, false ) && is_super_admin( $user->ID ) ) {
+
+		// Revoke superadmin if the support user is inactive.
+		$has_inactive_vip_support_role = self::user_has_vip_support_role( $user->ID, false );
+		if ( $has_inactive_vip_support_role && is_super_admin( $user->ID ) ) {
 			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			revoke_super_admin( $user->ID );
-			return;
-		}
-		if ( ! self::user_has_vip_support_role( $user->ID ) ) {
-			// If the user is a super admin, but has been demoted to
-			// the inactive VIP Support role, we should remove
-			// their super powers
-			if ( is_super_admin( $user->ID ) && self::user_has_vip_support_role( $user->ID, false ) ) {
-				// This user is NOT VIP Support, remove
-				// their powers forthwith
-				require_once ABSPATH . '/wp-admin/includes/ms.php';
-				revoke_super_admin( $user->ID );
-			}
-			return;
-		}
-		if ( ! $this->user_has_verified_email( $user->ID ) ) {
-			return;
-		}
-		if ( is_super_admin( $user->ID ) ) {
-			return;
-		}
-		if ( ! is_super_admin( $user->ID ) ) {
-			// This user is VIP Support, verified, let's give them
-			// great power and responsibility
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
-			grant_super_admin( $user->ID );
 		}
 	}
 
@@ -873,6 +847,7 @@ class User {
 		if ( ! $verification_data ) {
 			$verification_data = array(
 				'touch' => time(), // GPL timestamp
+				'email' => null,
 			);
 			$generate_new_code = true;
 		}
@@ -947,10 +922,6 @@ class User {
 		}
 
 		$user->set_role( Role::VIP_SUPPORT_ROLE );
-		if ( is_multisite() ) {
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
-			grant_super_admin( $user_id );
-		}
 		update_user_meta( $user->ID, $GLOBALS['wpdb']->get_blog_prefix() . 'user_level', 10 );
 
 		return true;
@@ -1030,11 +1001,6 @@ class User {
 		$user->set_role( Role::VIP_SUPPORT_ROLE );
 
 		update_user_meta( $user_id, self::VIP_SUPPORT_USER_META_KEY, time() );
-
-		// If this is a multisite, commence super powers!
-		if ( is_multisite() ) {
-			grant_super_admin( $user->ID );
-		}
 
 		return $user_id;
 	}
