@@ -10,10 +10,6 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry\Tracks;
 
 use AllowDynamicProperties;
-use stdClass;
-use WP_Error;
-use Automattic\VIP\Support_User\User as Support_User;
-use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Class that holds necessary properties of Tracks events.

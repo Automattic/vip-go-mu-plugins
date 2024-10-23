@@ -244,6 +244,7 @@ $require_telemetry_files = [
 	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
+	__DIR__ . '/telemetry/tracks/tracks-utils.php',
 ];
 
 // If there is a missing file, the loop will break and the telemetry files will not be loaded at all
