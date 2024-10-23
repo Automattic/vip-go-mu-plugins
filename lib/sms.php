@@ -12,10 +12,11 @@ define( 'TWILIO_ACCOUNT', 'ACe16d3eaebadd491f285297e03b4d3234' );
 /**
  * Send an SMS message to the specified numbers using the Twilio API
  *
- * @param int|array Nnumber(s) to send an SMS to. Accepts formatted and unformatted US numbers, e.g. +14155551212, (415) 555-1212 or 415-555-1212.
+ * @param int|array Number(s) to send an SMS to. Accepts phone numbers in E.164 format e.g. +14155551212
  * @param string Message to send. Longer than 140 chars will be split.
  *
  * @link http://www.twilio.com/docs/api/rest/sending-sms
+ * @link https://www.twilio.com/docs/glossary/what-e164
  */
 function send_sms( $to, $message ) {
 
