@@ -13,6 +13,9 @@ use Automattic\VIP\Telemetry\Tracks\Tracks_Client;
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
 use WP_Error;
 
+use function Automattic\VIP\Telemetry\Tracks\get_base_properties_of_track_event;
+use function Automattic\VIP\Telemetry\Tracks\get_base_properties_of_track_user;
+
 /**
  * This class comprises the mechanics of sending events to the Automattic
  * Tracks system.
@@ -51,6 +54,17 @@ class Tracks extends Telemetry_System {
 		$this->global_event_properties = $global_event_properties;
 		$client                      ??= new Tracks_Client();
 		$this->queue                   = $queue ?? new Telemetry_Event_Queue( $client );
+
+		$this->pass_tracks_props_to_js();
+	}
+
+	public function pass_tracks_props_to_js(): void {
+		add_action('admin_head', function () {
+			$data = array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
+			?>
+			<script type="text/javascript"> var wpvipTracksBaseProps = <?php echo wp_json_encode( $data ); ?>; </script>
+			<?php
+		}); 
 	}
 
 	/**
