@@ -62,7 +62,7 @@ class Tracks extends Telemetry_System {
 		add_action('admin_head', function () {
 			$data = array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
 			?>
-			<script type="text/javascript"> var wpvipTracksBaseProps = <?php echo wp_json_encode( $data ); ?>; </script>
+			<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = <?php echo wp_json_encode( $data ); ?>; </script>
 			<?php
 		}); 
 	}

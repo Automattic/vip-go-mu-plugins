@@ -36,7 +36,7 @@ function get_base_properties_of_track_event(): array {
 	}
 
 	// Check if the user is a VIP user.
-	$base_props['is_vip_user'] = Support_User::user_has_vip_support_role( get_current_user_id() );
+	$props['is_vip_user'] = Support_User::user_has_vip_support_role( get_current_user_id() );
 
 	return $props;
 }
