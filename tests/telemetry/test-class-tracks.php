@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
@@ -12,6 +13,7 @@ class Tracks_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
+		/** @var MockObject|Telemetry_Event_Queue */
 		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -27,7 +29,11 @@ class Tracks_Test extends WP_UnitTestCase {
 			}))
 			->willReturn( true );
 
-		$tracks = new Tracks( 'test_', [], $queue );
+		/** @var MockObject|Tracks */
+		$tracks = $this->getMockBuilder( Tracks::class )->onlyMethods( [ 'pass_tracks_props_to_js' ] )->disableOriginalConstructor()->getMock();
+		$tracks->expects( $this->once() )->method( 'pass_tracks_props_to_js' );
+		$tracks->__construct( 'test_', [], $queue );
+
 		$this->assertTrue( $tracks->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
 
@@ -67,6 +73,18 @@ class Tracks_Test extends WP_UnitTestCase {
 		$tracks       = new Tracks( 'test_' );
 		$event_prefix = self::get_property( 'event_prefix' )->getValue( $tracks );
 		$this->assertEquals( 'test_', $event_prefix );
+	}
+
+	public function test_track_props_are_being_passed_to_wp_dashboard_via_js(): void {
+		remove_action( 'admin_head', 'wp_dashboard_setup' );
+		$tracks = new Tracks();
+		$tracks->pass_tracks_props_to_js();
+
+		ob_start();
+		do_action( 'admin_head' );
+		$output = ob_get_clean();
+
+		$this->assertStringContainsString( '<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = {"is_vip_user":false}; </script>', $output );
 	}
 
 	/**
