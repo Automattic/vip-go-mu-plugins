@@ -195,7 +195,6 @@ class User {
 			return;
 		}
 
-
 		if ( in_array( $current_screen->base, array( 'user-edit', 'profile' ) ) ) {
 			?>
 			<style type="text/css">
