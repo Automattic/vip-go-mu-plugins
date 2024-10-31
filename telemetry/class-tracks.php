@@ -58,13 +58,24 @@ class Tracks extends Telemetry_System {
 		$this->pass_tracks_props_to_js();
 	}
 
+	/**
+	 * Passes the base properties for a track event to JavaScript.
+	 */
 	public function pass_tracks_props_to_js(): void {
 		add_action('admin_head', function () {
-			$data = array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
 			?>
-			<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = <?php echo wp_json_encode( $data ); ?>; </script>
+			<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = <?php echo wp_json_encode( $this->get_tracks_props() ); ?>; </script>
 			<?php
-		}); 
+		});
+	}
+
+	/**
+	 * Returns the base properties for a track event.
+	 *
+	 * @return array<string, mixed> The base properties.
+	 */
+	public function get_tracks_props(): array {
+		return array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
 	}
 
 	/**
