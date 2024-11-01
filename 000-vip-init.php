@@ -330,6 +330,12 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 
 	$encloseme_cleaner = new VIP_Encloseme_Cleanup();
 	$encloseme_cleaner->init();
+
+	// Load vaultpress cleanup cron
+	require_once __DIR__ . '/lib/class-vip-vaultpress-ping-cleanup.php';
+
+	$vaultpress_cleaner = new VIP_VaultPress_Ping_Cleanup();
+	$vaultpress_cleaner->init();
 }
 
 // Add custom header for VIP
