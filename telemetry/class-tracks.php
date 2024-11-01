@@ -42,6 +42,11 @@ class Tracks extends Telemetry_System {
 	private array $global_event_properties = [];
 
 	/**
+	 * Avoids adding the `Tracks` properties multiple times.
+	 */
+	private static $has_track_props_passed_to_js = false;
+
+	/**
 	 * Tracks constructor.
 	 * 
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
@@ -62,11 +67,17 @@ class Tracks extends Telemetry_System {
 	 * Passes the base properties for a track event to JavaScript.
 	 */
 	public function pass_tracks_props_to_js(): void {
-		add_action('admin_head', function () {
+		if ( self::$has_track_props_passed_to_js ) {
+			return;
+		}
+
+		add_action( 'admin_head', function () {
 			?>
 			<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = <?php echo wp_json_encode( $this->get_tracks_props() ); ?>; </script>
 			<?php
-		});
+	
+			self::$has_track_props_passed_to_js = true;
+		} );
 	}
 
 	/**

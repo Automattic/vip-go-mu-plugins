@@ -75,8 +75,22 @@ class Tracks_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'test_', $event_prefix );
 	}
 
-	public function test_track_props_are_being_passed_to_wp_dashboard_via_js(): void {
-		remove_action( 'admin_head', 'wp_dashboard_setup' );
+	public function test_track_props_are_not_passed_to_wp_dashboard_if_already_exist(): void {
+		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, true );
+
+		$tracks = new Tracks();
+		$tracks->pass_tracks_props_to_js();
+
+		ob_start();
+		do_action( 'admin_head' );
+		$output = ob_get_clean();
+
+		$this->assertStringNotContainsString( 'VIP_TRACKS_BASE_PROPS', $output );
+	}
+
+	public function test_track_props_are_passed_to_wp_dashboard(): void {
+		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, false );
+
 		$tracks = new Tracks();
 		$tracks->pass_tracks_props_to_js();
 
