@@ -84,7 +84,13 @@ class Tracks_Test extends WP_UnitTestCase {
 		do_action( 'admin_head' );
 		$output = ob_get_clean();
 
-		$this->assertStringContainsString( '<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = {"is_vip_user":false}; </script>', $output );
+		$props = [
+			'hosting_provider' => 'other',
+			'is_vip_user'      => false,
+			'is_multisite'     => false,
+			'wp_version'       => get_bloginfo( 'version' ),
+		];
+		$this->assertStringContainsString( '<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = ' . wp_json_encode( $props ) . '; </script>', $output );
 	}
 
 	/**

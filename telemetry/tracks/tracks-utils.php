@@ -17,7 +17,12 @@ use Automattic\VIP\Support_User\User as Support_User;
  * @return array<string, mixed> The base properties.
  */
 function get_base_properties_of_track_event(): array {
-	$props = [];
+	$props = [
+		'hosting_provider' => get_hosting_provider(),
+		'is_vip_user'      => Support_User::user_has_vip_support_role( get_current_user_id() ),
+		'is_multisite'     => is_multisite(),
+		'wp_version'       => get_bloginfo( 'version' ),
+	];
 
 	// Set VIP environment if it exists.
 	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
@@ -35,10 +40,26 @@ function get_base_properties_of_track_event(): array {
 		}
 	}
 
-	// Check if the user is a VIP user.
-	$props['is_vip_user'] = Support_User::user_has_vip_support_role( get_current_user_id() );
-
 	return $props;
+}
+
+/**
+ * Check if the site is hosted on VIP.
+ */
+function is_wpvip_site(): bool {
+	return defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' ) === true
+		&& defined( 'WPCOM_SANDBOXED' ) && constant( 'WPCOM_SANDBOXED' ) === false;
+}
+
+/**
+ * Get the hosting provider.
+ */
+function get_hosting_provider(): string {
+	if ( is_wpvip_site() ) {
+		return 'wpvip';
+	}
+
+	return 'other';
 }
 
 /**
