@@ -7,6 +7,7 @@ namespace Automattic\VIP\Telemetry;
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
+use function Automattic\VIP\Telemetry\Tracks\get_hosting_provider;
 use function Automattic\VIP\Telemetry\Tracks\is_wpvip_site;
 
 class Tracks_Utils_Test extends WP_UnitTestCase {
@@ -33,5 +34,18 @@ class Tracks_Utils_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'WPCOM_SANDBOXED', false );
 
 		$this->assertEquals( true, is_wpvip_site() );
+	}
+
+	public function test_get_hosting_provider_returns_wpvip(): void {
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		Constant_Mocker::define( 'WPCOM_SANDBOXED', false );
+
+		$this->assertEquals( 'wpvip', get_hosting_provider() );
+	}
+
+	public function test_get_hosting_provider_returns_other(): void {
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', false );
+
+		$this->assertEquals( 'other', get_hosting_provider() );
 	}
 }
