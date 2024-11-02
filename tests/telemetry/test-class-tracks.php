@@ -101,7 +101,7 @@ class Tracks_Test extends WP_UnitTestCase {
 		$props = [
 			'hosting_provider' => 'other',
 			'is_vip_user'      => false,
-			'is_multisite'     => false,
+			'is_multisite'     => is_multisite(),
 			'wp_version'       => get_bloginfo( 'version' ),
 		];
 		$this->assertStringContainsString( '<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = ' . wp_json_encode( $props ) . '; </script>', $output );
