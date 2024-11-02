@@ -76,7 +76,7 @@ class Tracks_Test extends WP_UnitTestCase {
 	}
 
 	public function test_track_props_are_not_passed_to_wp_dashboard_if_already_exist(): void {
-		remove_all_actions( 'wp_head' );
+		remove_all_actions( 'admin_head' );
 		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, true );
 
 		$tracks = new Tracks();
@@ -90,7 +90,7 @@ class Tracks_Test extends WP_UnitTestCase {
 	}
 
 	public function test_track_props_are_passed_to_wp_dashboard(): void {
-		remove_all_actions( 'wp_head' );
+		remove_all_actions( 'admin_head' );
 		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, false );
 
 		$tracks = new Tracks();
