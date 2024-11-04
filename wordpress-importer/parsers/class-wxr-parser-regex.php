@@ -19,11 +19,11 @@ class WXR_Parser_Regex {
 	public $base_blog_url = '';
 	public $has_gzip;
 
-	function __construct() {
+	public function __construct() {
 		$this->has_gzip = is_callable( 'gzopen' );
 	}
 
-	function parse( $file ) {
+	public function parse( $file ) {
 		$wxr_version  = false;
 		$in_multiline = false;
 
@@ -114,8 +114,8 @@ class WXR_Parser_Regex {
 		);
 	}
 
-	function get_tag( $string, $tag ) {
-		preg_match( "|<$tag.*?>(.*?)</$tag>|is", $string, $return );
+	public function get_tag( $text, $tag ) {
+		preg_match( "|<$tag.*?>(.*?)</$tag>|is", $text, $return );
 		if ( isset( $return[1] ) ) {
 			if ( substr( $return[1], 0, 9 ) == '<![CDATA[' ) {
 				if ( strpos( $return[1], ']]]]><![CDATA[>' ) !== false ) {
@@ -136,7 +136,7 @@ class WXR_Parser_Regex {
 		return $return;
 	}
 
-	function process_category( $c ) {
+	public function process_category( $c ) {
 		$term = array(
 			'term_id'              => $this->get_tag( $c, 'wp:term_id' ),
 			'cat_name'             => $this->get_tag( $c, 'wp:cat_name' ),
@@ -153,7 +153,7 @@ class WXR_Parser_Regex {
 		return $term;
 	}
 
-	function process_tag( $t ) {
+	public function process_tag( $t ) {
 		$term = array(
 			'term_id'         => $this->get_tag( $t, 'wp:term_id' ),
 			'tag_name'        => $this->get_tag( $t, 'wp:tag_name' ),
@@ -169,7 +169,7 @@ class WXR_Parser_Regex {
 		return $term;
 	}
 
-	function process_term( $t ) {
+	public function process_term( $t ) {
 		$term = array(
 			'term_id'          => $this->get_tag( $t, 'wp:term_id' ),
 			'term_taxonomy'    => $this->get_tag( $t, 'wp:term_taxonomy' ),
@@ -187,10 +187,10 @@ class WXR_Parser_Regex {
 		return $term;
 	}
 
-	function process_meta( $string, $tag ) {
+	public function process_meta( $text, $tag ) {
 		$parsed_meta = array();
 
-		preg_match_all( "|<$tag>(.+?)</$tag>|is", $string, $meta );
+		preg_match_all( "|<$tag>(.+?)</$tag>|is", $text, $meta );
 
 		if ( ! isset( $meta[1] ) ) {
 			return $parsed_meta;
@@ -206,7 +206,7 @@ class WXR_Parser_Regex {
 		return $parsed_meta;
 	}
 
-	function process_author( $a ) {
+	public function process_author( $a ) {
 		return array(
 			'author_id'           => $this->get_tag( $a, 'wp:author_id' ),
 			'author_login'        => $this->get_tag( $a, 'wp:author_login' ),
@@ -217,7 +217,7 @@ class WXR_Parser_Regex {
 		);
 	}
 
-	function process_post( $post ) {
+	public function process_post( $post ) {
 		$post_id        = $this->get_tag( $post, 'wp:post_id' );
 		$post_title     = $this->get_tag( $post, 'title' );
 		$post_date      = $this->get_tag( $post, 'wp:post_date' );
@@ -314,32 +314,32 @@ class WXR_Parser_Regex {
 		return $postdata;
 	}
 
-	function _normalize_tag( $matches ) {
+	public function _normalize_tag( $matches ) {
 		return '<' . strtolower( $matches[1] );
 	}
 
-	function fopen( $filename, $mode = 'r' ) {
+	public function fopen( $filename, $mode = 'r' ) {
 		if ( $this->has_gzip ) {
 			return gzopen( $filename, $mode );
 		}
 		return fopen( $filename, $mode );
 	}
 
-	function feof( $fp ) {
+	public function feof( $fp ) {
 		if ( $this->has_gzip ) {
 			return gzeof( $fp );
 		}
 		return feof( $fp );
 	}
 
-	function fgets( $fp, $len = 8192 ) {
+	public function fgets( $fp, $len = 8192 ) {
 		if ( $this->has_gzip ) {
 			return gzgets( $fp, $len );
 		}
 		return fgets( $fp, $len );
 	}
 
-	function fclose( $fp ) {
+	public function fclose( $fp ) {
 		if ( $this->has_gzip ) {
 			return gzclose( $fp );
 		}
