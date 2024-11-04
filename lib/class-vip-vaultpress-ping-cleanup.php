@@ -6,9 +6,6 @@ class VIP_VaultPress_Ping_Cleanup {
 	const CRON_HOOK           = 'vip_vaultpress_ping_cleanup';
 	const CRON_INTERVAL       = 'hourly';
 
-	// How many options to delete per cron run.
-	const QUERY_LIMIT = 500;
-
 	public static function init(): void {
 		if ( ! class_exists( 'VaultPress' ) && defined( 'ENABLE_VIP_VAULTPRESS_PING_CLEANUP' ) && true === ENABLE_VIP_VAULTPRESS_PING_CLEANUP ) {
 			add_action( 'init', array( __CLASS__, 'schedule_cron' ), 99999 );
@@ -34,36 +31,33 @@ class VIP_VaultPress_Ping_Cleanup {
 			return;
 		}
 
-		$option_names = self::get_vaultpress_option_names();
-
 		// Mark cleanup as complete if no options are found.
-		if ( empty( $option_names ) ) {
+		if ( ! self::requires_cleanup() ) {
 			update_option( self::OPTION_NAME, time() );
 			return;
 		}
 
-		self::delete_options( $option_names );
+		self::delete_options();
 	}
 
-	private static function delete_options( array $option_names ): int|bool {
+	private static function delete_options(): int|bool {
 		global $wpdb;
 
-		$option_name_placeholders = implode( ',', array_fill( 0, count( $option_names ), '%s' ) );
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
-		return $wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->options WHERE option_name IN ( $option_name_placeholders )", $option_names ) );
+		return $wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->options WHERE option_name LIKE %s", self::VP_PING_OPTION_NAME ) );
 	}
 
-	private static function get_vaultpress_option_names(): array {
+	private static function requires_cleanup(): bool {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		return $wpdb->get_col(
+		$has_option = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s LIMIT %d",
+				"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s LIMIT 1",
 				self::VP_PING_OPTION_NAME,
-				self::QUERY_LIMIT
 			)
 		);
+
+		return ! is_null( $has_option );
 	}
 }
