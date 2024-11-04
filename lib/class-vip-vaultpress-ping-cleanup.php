@@ -53,7 +53,7 @@ class VIP_VaultPress_Ping_Cleanup {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		$has_option = $wpdb->get_var(
 			$wpdb->prepare(
-				"SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s LIMIT 1",
+				"SELECT 1 FROM $wpdb->options WHERE option_name LIKE %s LIMIT 1",
 				self::VP_PING_OPTION_NAME,
 			)
 		);
