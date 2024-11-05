@@ -6,6 +6,9 @@ class VIP_VaultPress_Ping_Cleanup {
 	const CRON_HOOK           = 'vip_vaultpress_ping_cleanup';
 	const CRON_INTERVAL       = 'hourly';
 
+	// How many options to delete per cron run.
+	const QUERY_LIMIT = 100;
+
 	public static function init(): void {
 		if ( ! class_exists( 'VaultPress' ) && defined( 'ENABLE_VIP_VAULTPRESS_PING_CLEANUP' ) && true === ENABLE_VIP_VAULTPRESS_PING_CLEANUP ) {
 			add_action( 'init', array( __CLASS__, 'schedule_cron' ), 99999 );
@@ -44,7 +47,13 @@ class VIP_VaultPress_Ping_Cleanup {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-		return $wpdb->query( $wpdb->prepare( "DELETE FROM $wpdb->options WHERE option_name LIKE %s", self::VP_PING_OPTION_NAME ) );
+		return $wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM $wpdb->options WHERE option_name LIKE %s LIMIT %d",
+				self::VP_PING_OPTION_NAME,
+				self::QUERY_LIMIT
+			)
+		);
 	}
 
 	private static function requires_cleanup(): bool {
