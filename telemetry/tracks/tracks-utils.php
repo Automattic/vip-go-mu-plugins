@@ -103,3 +103,12 @@ function get_base_properties_of_track_user(): array {
 
 	return $props;
 }
+
+/**
+ * Get the core properties for a Tracks event.
+ *
+ * @return array<string, mixed> The core properties.
+ */
+function get_tracks_core_properties(): array {
+	return array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
+}

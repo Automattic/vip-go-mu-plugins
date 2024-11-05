@@ -72,23 +72,6 @@ class Tracks_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'test_', $event_prefix );
 	}
 
-	public function test_track_props_are_passed_to_wp_dashboard(): void {
-		$tracks = new Tracks();
-
-		wp_set_current_user( 1 );
-		$output = $tracks->get_tracks_core_properties();
-
-		$props = [
-			'hosting_provider' => 'other',
-			'is_vip_user'      => false,
-			'is_multisite'     => is_multisite(),
-			'wp_version'       => get_bloginfo( 'version' ),
-			'_ut'              => 'anon',
-			'_ui'              => wp_hash( sprintf( '%s|%s', get_option( 'home' ), 1 ) ),
-		];
-		$this->assertEquals( $props, $output );
-	}
-
 	/**
 	 * Helper function for accessing protected properties.
 	 */

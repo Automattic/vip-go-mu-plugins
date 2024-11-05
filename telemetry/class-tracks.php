@@ -57,15 +57,6 @@ class Tracks extends Telemetry_System {
 	}
 
 	/**
-	 * Get the core properties for a Tracks event.
-	 *
-	 * @return array<string, mixed> The core properties.
-	 */
-	public function get_tracks_core_properties(): array {
-		return array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
-	}
-
-	/**
 	 * Records an event to Tracks by using the Tracks API.
 	 *
 	 * If the event doesn't pass validation, it gets silently discarded.

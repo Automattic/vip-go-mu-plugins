@@ -9,6 +9,7 @@ use WP_UnitTestCase;
 
 use function Automattic\VIP\Telemetry\Tracks\get_hosting_provider;
 use function Automattic\VIP\Telemetry\Tracks\is_wpvip_site;
+use function Automattic\VIP\Telemetry\Tracks\get_tracks_core_properties;
 
 class Tracks_Utils_Test extends WP_UnitTestCase {
 	public function tear_down() {
@@ -47,5 +48,20 @@ class Tracks_Utils_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', false );
 
 		$this->assertEquals( 'other', get_hosting_provider() );
+	}
+
+	public function test_track_core_properties(): void {
+		wp_set_current_user( 1 );
+		$output = get_tracks_core_properties();
+
+		$props = [
+			'hosting_provider' => 'other',
+			'is_vip_user'      => false,
+			'is_multisite'     => is_multisite(),
+			'wp_version'       => get_bloginfo( 'version' ),
+			'_ut'              => 'anon',
+			'_ui'              => wp_hash( sprintf( '%s|%s', get_option( 'home' ), 1 ) ),
+		];
+		$this->assertEquals( $props, $output );
 	}
 }
