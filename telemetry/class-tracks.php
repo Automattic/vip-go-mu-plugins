@@ -13,9 +13,6 @@ use Automattic\VIP\Telemetry\Tracks\Tracks_Client;
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
 use WP_Error;
 
-use function Automattic\VIP\Telemetry\Tracks\get_base_properties_of_track_event;
-use function Automattic\VIP\Telemetry\Tracks\get_base_properties_of_track_user;
-
 /**
  * This class comprises the mechanics of sending events to the Automattic
  * Tracks system.
