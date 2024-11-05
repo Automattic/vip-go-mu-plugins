@@ -29,10 +29,7 @@ class Tracks_Test extends WP_UnitTestCase {
 			}))
 			->willReturn( true );
 
-		/** @var MockObject|Tracks */
-		$tracks = $this->getMockBuilder( Tracks::class )->onlyMethods( [ 'pass_tracks_props_to_js' ] )->disableOriginalConstructor()->getMock();
-		$tracks->expects( $this->once() )->method( 'pass_tracks_props_to_js' );
-		$tracks->__construct( 'test_', [], $queue );
+		$tracks = new Tracks( 'test_', [], $queue );
 
 		$this->assertTrue( $tracks->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
@@ -75,38 +72,21 @@ class Tracks_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'test_', $event_prefix );
 	}
 
-	public function test_track_props_are_not_passed_to_wp_dashboard_if_already_exist(): void {
-		remove_all_actions( 'admin_head' );
-		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, true );
-
-		$tracks = new Tracks();
-		$tracks->pass_tracks_props_to_js();
-
-		ob_start();
-		do_action( 'admin_head' );
-		$output = ob_get_clean();
-
-		$this->assertStringNotContainsString( 'VIP_TRACKS_BASE_PROPS', $output );
-	}
-
 	public function test_track_props_are_passed_to_wp_dashboard(): void {
-		remove_all_actions( 'admin_head' );
-		self::get_property( 'has_track_props_passed_to_js' )->setValue( null, false );
-
 		$tracks = new Tracks();
-		$tracks->pass_tracks_props_to_js();
 
-		ob_start();
-		do_action( 'admin_head' );
-		$output = ob_get_clean();
+		wp_set_current_user( 1 );
+		$output = $tracks->get_tracks_core_properties();
 
 		$props = [
 			'hosting_provider' => 'other',
 			'is_vip_user'      => false,
 			'is_multisite'     => is_multisite(),
 			'wp_version'       => get_bloginfo( 'version' ),
+			'_ut'              => 'anon',
+			'_ui'              => wp_hash( sprintf( '%s|%s', get_option( 'home' ), 1 ) ),
 		];
-		$this->assertStringContainsString( '<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = ' . wp_json_encode( $props ) . '; </script>', $output );
+		$this->assertEquals( $props, $output );
 	}
 
 	/**

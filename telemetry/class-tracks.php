@@ -42,11 +42,6 @@ class Tracks extends Telemetry_System {
 	private array $global_event_properties = [];
 
 	/**
-	 * Avoids adding the `Tracks` properties multiple times.
-	 */
-	private static $has_track_props_passed_to_js = false;
-
-	/**
 	 * Tracks constructor.
 	 * 
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
@@ -59,33 +54,14 @@ class Tracks extends Telemetry_System {
 		$this->global_event_properties = $global_event_properties;
 		$client                      ??= new Tracks_Client();
 		$this->queue                   = $queue ?? new Telemetry_Event_Queue( $client );
-
-		$this->pass_tracks_props_to_js();
 	}
 
 	/**
-	 * Passes the base properties for a track event to JavaScript.
-	 */
-	public function pass_tracks_props_to_js(): void {
-		if ( self::$has_track_props_passed_to_js ) {
-			return;
-		}
-
-		add_action( 'admin_head', function () {
-			?>
-			<script type="text/javascript"> var VIP_TRACKS_BASE_PROPS = <?php echo wp_json_encode( $this->get_tracks_props() ); ?>; </script>
-			<?php
-	
-			self::$has_track_props_passed_to_js = true;
-		} );
-	}
-
-	/**
-	 * Returns the base properties for a track event.
+	 * Get the core properties for a Tracks event.
 	 *
-	 * @return array<string, mixed> The base properties.
+	 * @return array<string, mixed> The core properties.
 	 */
-	public function get_tracks_props(): array {
+	public function get_tracks_core_properties(): array {
 		return array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
 	}
 
