@@ -28,8 +28,6 @@ jobs:
       matrix:
         config:
         # PHP 8.1, Jetpack
-          - { wp: 6.0.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.0.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.1.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.1.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.2.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
@@ -40,6 +38,8 @@ jobs:
           - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.1', phpunit: '', coverage: 'yes' }
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.1', phpunit: '', coverage: 'yes' }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
