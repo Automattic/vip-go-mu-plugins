@@ -60,6 +60,7 @@ jobs:
       - name: Tweaks
         run: |
           echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
+          cp wordpress/.env.example wordpress/.env
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
