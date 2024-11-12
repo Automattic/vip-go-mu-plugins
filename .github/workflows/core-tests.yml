@@ -42,14 +42,14 @@ jobs:
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
       - name: Checkout WordPress
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins

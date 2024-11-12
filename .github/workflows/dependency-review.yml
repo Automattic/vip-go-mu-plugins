@@ -22,7 +22,7 @@ jobs:
             github.com:443
 
       - name: Check out the source code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
 
       - name: Review dependencies
         uses: actions/dependency-review-action@v4.3.4
