@@ -59,8 +59,11 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( '1.2.3.4', $event->get_data()->_via_ip );
 		$this->assertSame( hash_hmac( 'sha256', $this->user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->_ui );
 		$this->assertSame( 'vip:user_email', $event->get_data()->_ut );
-		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vipgo_env );
-		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vipgo_org );
+		$this->assertSame( self::VIP_GO_APP_ENVIRONMENT, $event->get_data()->vip_env );
+		$this->assertSame( self::VIP_ORG_ID, $event->get_data()->vip_org );
+		$this->assertSame( 'other', $event->get_data()->hosting_provider );
+		$this->assertSame( is_multisite(), $event->get_data()->is_multisite );
+		$this->assertSame( get_bloginfo( 'version' ), $event->get_data()->wp_version );
 		$this->assertFalse( $event->get_data()->is_vip_user );
 		$this->assertTrue( $event->is_recordable() );
 	}

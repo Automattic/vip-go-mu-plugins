@@ -154,16 +154,28 @@ class Tracks_Event extends Telemetry_Event {
 
 		$base_props = get_base_properties_of_track_event();
 
-		if ( isset( $base_props['vipgo_env'] ) ) {
-			$event->vipgo_env = $base_props['vipgo_env'];
+		if ( isset( $base_props['vip_env'] ) ) {
+			$event->vip_env = $base_props['vip_env'];
 		}
 
-		if ( isset( $base_props['vipgo_org'] ) ) {
-			$event->vipgo_org = $base_props['vipgo_org'];
+		if ( isset( $base_props['vip_org'] ) ) {
+			$event->vip_org = $base_props['vip_org'];
+		}
+
+		if ( isset( $base_props['hosting_provider'] ) ) {
+			$event->hosting_provider = $base_props['hosting_provider'];
 		}
 
 		if ( isset( $base_props['is_vip_user'] ) ) {
 			$event->is_vip_user = $base_props['is_vip_user'];
+		}
+
+		if ( isset( $base_props['is_multisite'] ) ) {
+			$event->is_multisite = $base_props['is_multisite'];
+		}
+
+		if ( isset( $base_props['wp_version'] ) ) {
+			$event->wp_version = $base_props['wp_version'];
 		}
 
 		return $event;

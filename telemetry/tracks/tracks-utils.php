@@ -28,7 +28,7 @@ function get_base_properties_of_track_event(): array {
 	if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
 		$app_environment = constant( 'VIP_GO_APP_ENVIRONMENT' );
 		if ( is_string( $app_environment ) && '' !== $app_environment ) {
-			$props['vipgo_env'] = $app_environment;
+			$props['vip_env'] = $app_environment;
 		}
 	}
 
@@ -36,7 +36,7 @@ function get_base_properties_of_track_event(): array {
 	if ( defined( 'VIP_ORG_ID' ) ) {
 		$org_id = constant( 'VIP_ORG_ID' );
 		if ( is_integer( $org_id ) && $org_id > 0 ) {
-			$props['vipgo_org'] = $org_id;
+			$props['vip_org'] = $org_id;
 		}
 	}
 
@@ -82,6 +82,10 @@ function get_hosting_provider(): string {
  * @return array<string, mixed> The base properties.
  */
 function get_base_properties_of_track_user(): array {
+	if ( ! function_exists( 'wp_get_current_user' ) ) {
+		return [];
+	}
+
 	$props = [];
 
 	// Only track logged-in users.
