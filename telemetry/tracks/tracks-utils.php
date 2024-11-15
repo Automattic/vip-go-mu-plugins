@@ -47,14 +47,28 @@ function get_base_properties_of_track_event(): array {
  * Check if the site is hosted on VIP.
  */
 function is_wpvip_site(): bool {
-	return defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' ) === true
-		&& defined( 'WPCOM_SANDBOXED' ) && constant( 'WPCOM_SANDBOXED' ) === false;
+	if ( is_wpvip_sandbox() ) {
+		return false;
+	}
+
+	return defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' ) === true;
+}
+
+/**
+ * Check if the site is hosted on VIP sandbox.
+ */
+function is_wpvip_sandbox(): bool {
+	return defined( 'WPCOM_SANDBOXED' ) && constant( 'WPCOM_SANDBOXED' ) === true;
 }
 
 /**
  * Get the hosting provider.
  */
 function get_hosting_provider(): string {
+	if ( is_wpvip_sandbox() ) {
+		return 'wpvip_sandbox';
+	}
+
 	if ( is_wpvip_site() ) {
 		return 'wpvip';
 	}
