@@ -80,7 +80,7 @@ runs:
       uses: ramsey/composer-install@3.0.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@v2.1.1
+      uses: sjinks/setup-wordpress-test-library@v2.1.2
       with:
         version: ${{ inputs.wordpress }}
 

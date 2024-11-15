@@ -60,6 +60,7 @@ jobs:
             playwright.azureedge.net:443
             production.cloudflare.docker.com:443
             public-api.wordpress.com:443
+            raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
@@ -68,7 +69,7 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
         with:
           submodules: true
 
@@ -131,7 +132,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node
         uses: actions/setup-node@v4.0.4

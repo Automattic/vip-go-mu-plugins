@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 use Automattic\VIP\Parsely\Telemetry\Telemetry;
 use Automattic\VIP\Parsely\Telemetry\Tracks;
+use Automattic\VIP\Support_User\User as Support_User;
 
 /**
  * This is determined by our value passed to the `WP_Widget` constructor.
@@ -89,7 +90,7 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 add_filter( 'wp_parsely_current_user_can_use_pch_feature', function ( $current_user_can_use_pch_feature, $feature_name, $current_user ) {
 	$user_id = $current_user->ID;
 
-	if ( user_can( $user_id, 'vip_support' ) ) {
+	if ( Support_User::user_has_vip_support_role( $user_id ) ) {
 		return true;
 	}
 
