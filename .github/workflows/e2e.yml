@@ -60,6 +60,7 @@ jobs:
             playwright.azureedge.net:443
             production.cloudflare.docker.com:443
             public-api.wordpress.com:443
+            raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443

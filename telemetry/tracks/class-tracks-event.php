@@ -11,7 +11,6 @@ namespace Automattic\VIP\Telemetry\Tracks;
 
 use Automattic\VIP\Telemetry\Telemetry_Event;
 use WP_Error;
-use Automattic\VIP\Support_User\User as Support_User;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
@@ -153,24 +152,19 @@ class Tracks_Event extends Telemetry_Event {
 			unset( $event->_via_ip );
 		}
 
-		// Set VIP environment if it exists.
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			$app_environment = constant( 'VIP_GO_APP_ENVIRONMENT' );
-			if ( is_string( $app_environment ) && '' !== $app_environment ) {
-				$event->vipgo_env = $app_environment;
-			}
+		$base_props = get_base_properties_of_track_event();
+
+		if ( isset( $base_props['vipgo_env'] ) ) {
+			$event->vipgo_env = $base_props['vipgo_env'];
 		}
 
-		// Set VIP organization if it exists.
-		if ( defined( 'VIP_ORG_ID' ) ) {
-			$org_id = constant( 'VIP_ORG_ID' );
-			if ( is_integer( $org_id ) && $org_id > 0 ) {
-				$event->vipgo_org = $org_id;
-			}
+		if ( isset( $base_props['vipgo_org'] ) ) {
+			$event->vipgo_org = $base_props['vipgo_org'];
 		}
 
-		// Check if the user is a VIP user.
-		$event->is_vip_user = Support_User::user_has_vip_support_role( get_current_user_id() );
+		if ( isset( $base_props['is_vip_user'] ) ) {
+			$event->is_vip_user = $base_props['is_vip_user'];
+		}
 
 		return $event;
 	}
@@ -183,43 +177,15 @@ class Tracks_Event extends Telemetry_Event {
 	 * @return Tracks_Event_DTO The new event object including identity information.
 	 */
 	protected static function set_user_properties( Tracks_Event_DTO $event ): Tracks_Event_DTO {
-		$wp_user = wp_get_current_user();
+		$base_props = get_base_properties_of_track_user();
 
-		// Only track logged-in users.
-		if ( 0 === $wp_user->ID ) {
-			return $event;
+		if ( isset( $base_props['_ui'] ) ) {
+			$event->_ui = $base_props['_ui'];
 		}
 
-		// Set anonymized event user ID; it should be consistent across environments.
-		// VIP_TELEMETRY_SALT is a private constant shared across the platform.
-		if ( defined( 'VIP_TELEMETRY_SALT' ) ) {
-			$salt           = constant( 'VIP_TELEMETRY_SALT' );
-			$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
-
-			$event->_ui = $tracks_user_id;
-			$event->_ut = 'vip:user_email';
-
-			return $event;
+		if ( isset( $base_props['_ut'] ) ) {
+			$event->_ut = $base_props['_ut'];
 		}
-
-		// Users in the VIP environment.
-		if ( defined( 'VIP_GO_APP_ID' ) ) {
-			$app_id = constant( 'VIP_GO_APP_ID' );
-			if ( is_integer( $app_id ) && $app_id > 0 ) {
-				$event->_ui = sprintf( '%s_%s', $app_id, $wp_user->ID );
-				$event->_ut = 'vip_go_app_wp_user';
-
-				return $event;
-			}
-		}
-
-		// All other environments.
-		$event->_ui = wp_hash( sprintf( '%s|%s', get_option( 'home' ), $wp_user->ID ) );
-
-		/**
-		 * @see \Automattic\VIP\Parsely\Telemetry\Tracks_Event::annotate_with_id_and_type()
-		 */
-		$event->_ut = 'anon'; // Same as the default value in the original code.
 
 		return $event;
 	}
