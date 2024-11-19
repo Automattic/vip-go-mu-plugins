@@ -187,96 +187,39 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_is_active_via_vip, $mock->is_active_via_vip() );
 	}
 
-	public function test__get_site_config_returns_value_from_environment_config(): void {
-		if ( is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for non multisite.' );
-		}
-
-		$this->do_test_get_site_config(
-			[
-				'env'           => [
+	public function test__get_env_config_returns_value_from_environment_config(): void {
+		$mock = $this->get_mock( [
+			'env'           => [
+				'status' => Env_Integration_Status::ENABLED,
+				'config' => array( 'env-config' ),
+			],
+			'network_sites' => [
+				'1' => [
 					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'env-config' ),
-				],
-				'network_sites' => [
-					'1' => [
-						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network-site-config' ),
-					],
+					'config' => array( 'network-site-config' ),
 				],
 			],
-			array( 'env-config' ),
-		);
+		] );
+
+		$this->assertEquals( array( 'env-config' ), $mock->get_env_config() );
 	}
 
-	public function test__get_site_config_returns_value_from_network_site_config(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_get_site_config(
-			[
-				'env'           => [
+	public function test__get_env_config_returns_value_from_network_site_config(): void {
+		$mock = $this->get_mock( [
+			'env'           => [
+				'status' => Env_Integration_Status::ENABLED,
+				'config' => array( 'env-config' ),
+			],
+			'network_sites' => [
+				'1' => [
 					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'env-config' ),
-				],
-				'network_sites' => [
-					'1' => [
-						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network-site-config' ),
-					],
+					'config' => array( 'network-site-config' ),
 				],
 			],
-			array( 'network-site-config' ),
-		);
-	}
+		] );
 
-	public function test__get_site_config_with_cascading_config(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_get_site_config(
-			[
-				'env'           => [
-					'status'         => Env_Integration_Status::ENABLED,
-					'config'         => array( 'env-config' ),
-					'cascade_config' => true,
-				],
-				'network_sites' => [
-					'1' => [
-						'status' => Env_Integration_Status::ENABLED,
-					],
-				],
-			],
-			array( 'env-config' ),
-		);
-	}
-
-	/**
-	 * Helper function for testing `get_site_config`.
-	 *
-	 * @param array $vip_config
-	 * @param mixed $expected_get_site_config
-	 *
-	 * @return void
-	 */
-	private function do_test_get_site_config(
-		$vip_config,
-		$expected_get_site_config
-	) {
-		$mock = $this->get_mock( $vip_config );
-
-		$this->assertEquals( $expected_get_site_config, $mock->get_site_config() );
-	}
-
-	public function test__get_value_from_vip_config_trigger_error_if_invalid_argument_is_passed(): void {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->expectExceptionMessage( 'config_type param (invalid) must be one of org, env or network_sites.' );
-		$mocked_vip_configs = [];
-
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'invalid', 'key', '' );
+		$expected = is_multisite() ? array( 'network-site-config' ) : array();
+		$this->assertEquals( $expected, $mock->get_network_site_config() );
 	}
 
 	public function test__get_value_from_vip_config_returns_null_if_given_config_type_have_no_data(): void {

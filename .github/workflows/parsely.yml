@@ -42,7 +42,7 @@ jobs:
           MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.2.1
+        uses: actions/checkout@v4.2.2
         with:
           submodules: recursive
 
