@@ -18,6 +18,11 @@ use Automattic\VIP\Parsely\Telemetry\Telemetry;
 use Automattic\VIP\Parsely\Telemetry\Tracks;
 use Automattic\VIP\Support_User\User as Support_User;
 
+// Checks if the VIP Support plugin is active, and if not, includes it.
+if ( ! class_exists( 'Automattic\\VIP\\Support_User\\User' ) ) {
+	require __DIR__ . '/../vip-support/vip-support.php';
+}
+
 /**
  * This is determined by our value passed to the `WP_Widget` constructor.
  *
