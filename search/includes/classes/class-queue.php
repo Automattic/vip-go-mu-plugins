@@ -1028,11 +1028,11 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->get_sync_queue() ) ) {
+		if ( empty( $sync_manager->sync_queue ) ) {
 			return $bail;
 		}
 
-		$this->queue_objects( array_keys( $sync_manager->get_sync_queue() ), $indexable_slug );
+		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
 		if ( ! static::is_indexing_ratelimited() ) {
@@ -1040,7 +1040,7 @@ class Queue {
 		}
 
 		// Empty out the queue now that we've queued those items up
-		$sync_manager->reset_sync_queue();
+		$sync_manager->sync_queue = [];
 
 		return true;
 	}
@@ -1081,12 +1081,12 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->get_sync_queue() ) ) {
+		if ( empty( $sync_manager->sync_queue ) ) {
 			return $bail;
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment             = count( $sync_manager->get_sync_queue() );
+		$increment             = count( $sync_manager->sync_queue );
 		$index_count_in_period = static::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
