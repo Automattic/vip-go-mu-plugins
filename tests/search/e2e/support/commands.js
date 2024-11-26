@@ -54,7 +54,7 @@ Cypress.Commands.add('openWidgetsPage', () => {
 	cy.get('body').then(($body) => {
 		const $button = $body.find('.edit-widgets-welcome-guide .components-modal__header button');
 		if ($button.is(':visible')) {
-			$button.click();
+			$button.trigger('click');
 		}
 	});
 });
@@ -136,11 +136,11 @@ Cypress.Commands.add('publishPost', (postData, viewPost) => {
 	cy.get('.block-editor-default-block-appender__content').type(newPostData.content);
 
 	if (newPostData.status && newPostData.status === 'draft') {
-		cy.get('.editor-post-save-draft').click();
+		cy.get('.editor-post-save-draft').click({ force: true });
 		cy.get('.editor-post-saved-state').should('have.text', 'Saved');
 	} else {
 		cy.get('.editor-post-publish-panel__toggle').should('be.enabled');
-		cy.get('.editor-post-publish-panel__toggle').click();
+		cy.get('.editor-post-publish-panel__toggle').click({ force: true });
 
 		cy.get('.editor-post-publish-button').click();
 
