@@ -20,10 +20,13 @@ permissions:
   contents: read
 
 env:
-  LOCAL_PHP: "8.0-fpm"
+  LOCAL_PHP: "8.2-fpm"
+  LOCAL_PHP_XDEBUG: "false"
+  LOCAL_PHP_XDEBUG_MODE: "develop,debug"
   LOCAL_DB_TYPE: "mysql"
-  LOCAL_DB_VERSION: "8.0"
+  LOCAL_DB_VERSION: "8.3"
   LOCAL_PHP_MEMCACHED: "true"
+  LOCAL_WP_TESTS_DOMAIN: "example.org"
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
 
 jobs:
@@ -57,6 +60,7 @@ jobs:
       - name: Tweaks
         run: |
           echo "define( 'VIP_JETPACK_SKIP_LOAD', 'true' );" >> "wordpress/src/wp-content/mu-plugins/000-vip-init.php"
+          cp wordpress/.env.example wordpress/.env
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
@@ -72,17 +76,10 @@ jobs:
           php-version: 8.0
           coverage: none
 
-      # - name: Install Composer dependencies
-      #   uses: ramsey/composer-install@83af392bf5f031813d25e6fe4cd626cdba9a2df6 # v2.2.0
-      #   with:
-      #     working-directory: wordpress
       - name: Install Composer dependencies
-        run: composer install -n
-        working-directory: wordpress
-
-      # - name: Downgrade PHPUnit
-      #   run: composer require --dev -n phpunit/phpunit:^9
-      #   working-directory: wordpress
+        uses: ramsey/composer-install@3.0.0
+        with:
+          working-directory: wordpress
 
       - name: Install npm dependencies
         run: npm ci
