@@ -33,9 +33,15 @@ class Tracks_Event_DTO {
 	/** @var string */
 	public string $_via_ip; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
-	public string $vipgo_env;
+	public string $vip_env;
 
-	public int $vipgo_org;
+	public int $vip_org;
+
+	public string $hosting_provider = 'other';
 
 	public bool $is_vip_user = false;
+
+	public bool $is_multisite = false;
+
+	public string $wp_version = '';
 }

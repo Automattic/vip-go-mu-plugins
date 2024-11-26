@@ -853,6 +853,176 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->assertStringContainsString( $this->object_cache->blog_prefix, $this->object_cache->key( 'foo', 'non-global-group' ) );
 	}
 
+	public function test_non_persistent_themes_group() {
+		$key = 'theme-test-key';
+		$group = 'themes';
+		$data = [
+			'block_theme' => true,
+			'block_template_folders' => [
+				'wp_template' => 'templates',
+				'wp_template_part' => 'parts'
+			],
+			'headers' => [
+				'Name' => 'Test Theme',
+			],
+			'stylesheet' => 'test-theme',
+			'template' => 'test-theme'
+		];
+		$expiration = 300;
+
+		$this->object_cache->add_non_persistent_groups( 'themes' );
+
+		// Ensure 'themes' is in non-persistent groups
+		$this->assertContains( $group, $this->object_cache->no_mc_groups, "'themes' should be in non-persistent groups" );
+
+		// Step 1: Attempt to get the data before adding
+		$pre_get_result = $this->object_cache->get( $key, $group );
+		$this->assertFalse( $pre_get_result, 'Data should not be present before adding to non-persistent group' );
+
+		// Step 2: Attempt to add the data to cache
+		$add_result = $this->object_cache->add( $key, $data, $group, $expiration );
+		$this->assertTrue( $add_result, 'Adding data to non-persistent group should succeed' );
+
+		// Step 3: Attempt to get the data immediately after adding
+		$get_result = $this->object_cache->get( $key, $group );
+		$this->assertEquals( $data, $get_result, 'Data should be retrieved immediately after adding to non-persistent group' );
+	}
+
+	public function test_non_persistent_group_behavior() {
+		$group = 'non_persistent_group';
+		$this->object_cache->add_non_persistent_groups( $group );
+
+		// Test 1: Verify that get( ) returns false for a non-existent key
+		$this->assertFalse( $this->object_cache->get( 'non_existent_key', $group ) );
+
+		// Test 2: Test setting and getting a value
+		$this->assertTrue( $this->object_cache->set( 'test_key', 'test_value', $group ) );
+		$this->assertEquals( 'test_value', $this->object_cache->get( 'test_key', $group ) );
+
+		// Test 3: Verify that add( ) succeeds for a new key
+		$this->assertTrue( $this->object_cache->add( 'new_key', 'new_value', $group ) );
+		$this->assertEquals( 'new_value', $this->object_cache->get( 'new_key', $group ) );
+
+		// Test 4: Verify that add( ) fails for an existing key
+		$this->assertFalse( $this->object_cache->add( 'test_key', 'another_value', $group ) );
+		$this->assertEquals( 'test_value', $this->object_cache->get( 'test_key', $group ) );
+
+		// Test 5: Test that replace( ) works for an existing key
+		$this->assertTrue( $this->object_cache->replace( 'test_key', 'replaced_value', $group ) );
+		$this->assertEquals( 'replaced_value', $this->object_cache->get( 'test_key', $group ) );
+
+		// Test 6: Verify that replace( ) fails for a non-existent key
+		$this->assertFalse( $this->object_cache->replace( 'non_existent_key', 'some_value', $group ) );
+
+		// Test 7: Test deleting a key
+		$this->assertTrue( $this->object_cache->delete( 'test_key', $group ) );
+		$this->assertFalse( $this->object_cache->get( 'test_key', $group ) );
+
+		// Test 8: Verify that delete returns false for non-existent key
+		$this->assertFalse( $this->object_cache->delete( 'non_existent_key', $group ) );
+	}
+
+	public function test_non_persistent_group_multiple_operations() {
+		$group = 'non_persistent_group';
+		$this->object_cache->add_non_persistent_groups( $group );
+
+		// Test 1: Verify get_multiple behavior
+		$keys = ['key1', 'key2', 'key3'];
+		$results = $this->object_cache->get_multiple( $keys, $group );
+		foreach ( $keys as $key ) {
+			$this->assertFalse( $results[$key] );
+		}
+
+		// Test 2: Verify an add() and a following get() still work
+		$add_result = $this->object_cache->add( 'key1', 'value', $group );
+		$get_result = $this->object_cache->get( 'key1', $group );
+		$this->assertEquals( 'value', $get_result, 'Data should be retrieved immediately after adding to non-persistent group' );
+
+		// Test 3: Verify set_multiple and get_multiple
+		$data = ['key1' => 'value1', 'key2' => 'value2'];
+		$this->assertEquals( $data, $this->object_cache->set_multiple( $data, $group ) );
+		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
+		$this->assertEquals( $data, $results );
+
+		// Test 4: Verify delete_multiple
+		$this->assertEquals(
+			['key1' => true, 'key2' => true],
+			$this->object_cache->delete_multiple( array_keys( $data ), $group )
+		 );
+		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
+		foreach ( array_keys( $data ) as $key ) {
+			$this->assertFalse( $results[$key] );
+		}
+	}
+
+	public function test_non_persistent_group_increment_decrement() {
+		$group = 'non_persistent_group';
+		$this->object_cache->add_non_persistent_groups( $group );
+
+		// Test 1: Increment a non-existent key
+		$this->assertFalse( $this->object_cache->incr( 'counter', 1, $group ) );
+
+		// Test 2: Set and increment a key
+		$this->object_cache->set( 'counter', 5, $group );
+		$this->assertEquals( 6, $this->object_cache->incr( 'counter', 1, $group ) );
+
+		// Test 3: Decrement the key
+		$this->assertEquals( 5, $this->object_cache->decr( 'counter', 1, $group ) );
+
+		// Test 4: Decrement below zero
+		$this->assertEquals( 0, $this->object_cache->decr( 'counter', 10, $group ) );
+
+		// Test 5: Increment and decrement with larger values
+		$this->object_cache->set( 'counter', 50, $group );
+		$this->assertEquals( 100, $this->object_cache->incr( 'counter', 50, $group ) );
+		$this->assertEquals( 75, $this->object_cache->decr( 'counter', 25, $group ) );
+	}
+
+	public function test_non_persistent_group_flush_behavior() {
+		$group = 'non_persistent_group';
+		$this->object_cache->add_non_persistent_groups( $group );
+
+		// Set up some data
+		$this->object_cache->set( 'key1', 'value1', $group );
+		$this->object_cache->set( 'key2', 'value2', $group );
+
+		// Test 1: Verify that flush() clears non-persistent group data
+		$this->assertTrue( $this->object_cache->flush() );
+		$this->assertFalse( $this->object_cache->get( 'key1', $group ) );
+		$this->assertFalse( $this->object_cache->get( 'key2', $group ) );
+
+		// Set up data again
+		$this->object_cache->set( 'key1', 'value1', $group );
+		$this->object_cache->set( 'key2', 'value2', $group );
+
+		// Test 2: Verify that flush_runtime( ) clears non-persistent group data
+		$this->assertTrue( $this->object_cache->flush_runtime() );
+		$this->assertFalse( $this->object_cache->get( 'key1', $group ) );
+		$this->assertFalse( $this->object_cache->get( 'key2', $group ) );
+	}
+
+	public function test_non_persistent_group_replace() {
+		$group = 'non_persistent_group';
+		$this->object_cache->add_non_persistent_groups( $group );
+
+		// Test 1: Replace should fail for a non-existent key
+		$this->assertFalse( $this->object_cache->replace( 'non_existent_key', 'some_value', $group ) );
+
+		// Test 2: Set a value, then replace it
+		$this->assertTrue( $this->object_cache->set( 'test_key', 'initial_value', $group ) );
+		$this->assertTrue( $this->object_cache->replace( 'test_key', 'replaced_value', $group ) );
+		$this->assertEquals( 'replaced_value', $this->object_cache->get( 'test_key', $group ) );
+
+		// Test 3: Attempt to replace after a failed get
+		$this->assertFalse( $this->object_cache->get( 'another_key', $group ) );
+		$this->assertFalse( $this->object_cache->replace( 'another_key', 'new_value', $group ) );
+
+		// Test 4: Set, delete, then attempt to replace
+		$this->object_cache->set( 'delete_me', 'delete_value', $group );
+		$this->object_cache->delete( 'delete_me', $group );
+		$this->assertFalse( $this->object_cache->replace( 'delete_me', 'after_delete_value', $group ) );
+	}
+
 	/*
 	|--------------------------------------------------------------------------
 	| Testing Utils

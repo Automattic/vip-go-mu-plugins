@@ -56,6 +56,7 @@ final class SyncManager_Helper {
 		// Invalidate the request cache on these hooks
 
 		add_action( 'ep_after_bulk_index', [ $this, 'ep_after_bulk_index' ], 10, 3 );
+		add_action( 'ep_after_bulk_index_dynamically', [ $this, 'ep_after_bulk_index' ], 10, 3 );
 		add_action( 'ep_after_index', [ $this, 'ep_after_index' ], 10, 2 );
 	}
 

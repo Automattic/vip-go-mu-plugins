@@ -370,15 +370,9 @@ class WP_Object_Cache {
 			return $value;
 		}
 
+		// For a non-persistant group, if it's not in local cache then it just doesn't exist.
 		if ( $this->is_non_persistent_group( $group ) ) {
-			// This is a bit suboptimal, but keeping for back-compat for now.
 			$found = false;
-
-			$this->cache[ $key ] = [
-				'value' => false,
-				'found' => false,
-			];
-
 			$this->group_ops_stats( 'get_local', $key, $group, null, null, 'not_in_local' );
 
 			return false;
@@ -431,12 +425,7 @@ class WP_Object_Cache {
 
 				$this->group_ops_stats( 'get_local', $cache_key, $group, null, null, 'local' );
 			} elseif ( $this->is_non_persistent_group( $group ) ) {
-				$return[ $key ]             = false;
-				$return_cache[ $cache_key ] = [
-					'value' => false,
-					'found' => false,
-				];
-
+				$return[ $key ] = false;
 				$this->group_ops_stats( 'get_local', $cache_key, $group, null, null, 'not_in_local' );
 			} else {
 				$uncached_keys[ $key ] = $cache_key;

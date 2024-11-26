@@ -38,7 +38,7 @@ jobs:
       uses: ./.github/actions/prepare-source
 
     - name: "Install node v${{ env.NODE_VERSION }}"
-      uses: actions/setup-node@v4.0.4
+      uses: actions/setup-node@v4.1.0
       with:
         node-version: ${{ env.NODE_VERSION }}
         cache: npm
