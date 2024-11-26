@@ -115,39 +115,42 @@ class IntegrationVipConfig {
 	}
 
 	/**
-	 * Get site status.
+	 * Get integration status for site.
+	 *
+	 * For single sites simply return global status.
+	 * For multisites, try to get status based on current blog id,
+	 * if not found then fallback to global environment status.
 	 *
 	 * @return string|null
-	 *
-	 * @private
 	 */
 	public function get_site_status() {
 		if ( $this->get_value_from_config( 'org', 'status' ) === Org_Integration_Status::BLOCKED ) {
 			return Org_Integration_Status::BLOCKED;
 		}
 
-		// Look into network_sites config before and then fallback to env config.
-		return $this->get_value_from_config( 'network_sites', 'status' ) ??
-			$this->get_value_from_config( 'env', 'status' );
-	}
-
-	/**
-	 * Get site config.
-	 *
-	 * @return array
-	 */
-	public function get_site_config() {
 		if ( is_multisite() ) {
-			$config = $this->get_value_from_config( 'network_sites', 'config' );
-			// If network site config is not found then fallback to env config if it exists
-			if ( empty( $config ) && true === $this->get_value_from_config( 'env', 'cascade_config' ) ) {
-				$config = $this->get_value_from_config( 'env', 'config' );
+			$network_site_status = $this->get_value_from_config( 'network_sites', 'status' );
+
+			if ( $network_site_status ) {
+				return $network_site_status;
 			}
-		} else {
-			$config = $this->get_value_from_config( 'env', 'config' );
 		}
 
-		return $config ?? array(); // To keep function signature consistent.
+		return $this->get_value_from_config( 'env', 'status' );
+	}
+
+	public function get_env_config(): array {
+		$config = $this->get_value_from_config( 'env', 'config' );
+		return is_array( $config ) ? $config : [];
+	}
+
+	public function get_network_site_config(): array {
+		if ( ! is_multisite() ) {
+			return [];
+		}
+
+		$config = $this->get_value_from_config( 'network_sites', 'config' );
+		return is_array( $config ) ? $config : [];
 	}
 
 	/**
@@ -159,26 +162,19 @@ class IntegrationVipConfig {
 	 * @return null|string|array Returns `null` if key is not found, `string` if key is "status" and `array` if key is "config".
 	 */
 	protected function get_value_from_config( string $config_type, string $key ) {
-		if ( ! in_array( $config_type, [ 'org', 'env', 'network_sites' ], true ) ) {
-			trigger_error( 'config_type param (' . esc_html( $config_type ) . ') must be one of org, env or network_sites.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return null;
-		}
-
 		if ( ! isset( $this->config[ $config_type ] ) ) {
 			return null;
 		}
 
 		// Look for key inside org or env config.
-		if ( 'network_sites' !== $config_type && isset( $this->config[ $config_type ][ $key ] ) ) {
-			return $this->config[ $config_type ][ $key ];
+		if ( in_array( $config_type, [ 'env', 'org' ], true ) ) {
+			return $this->config[ $config_type ][ $key ] ?? null;
 		}
 
 		// Look for key inside network-sites config.
-		$network_site_id = get_current_blog_id();
-		if ( 'network_sites' === $config_type && isset( $this->config[ $config_type ][ $network_site_id ] ) ) {
-			if ( isset( $this->config[ $config_type ][ $network_site_id ][ $key ] ) ) {
-				return $this->config[ $config_type ][ $network_site_id ][ $key ];
-			}
+		if ( 'network_sites' === $config_type ) {
+			$network_site_id = get_current_blog_id();
+			return $this->config[ $config_type ][ $network_site_id ][ $key ] ?? null;
 		}
 
 		return null;

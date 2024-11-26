@@ -242,6 +242,7 @@ require_once __DIR__ . '/telemetry/class-telemetry-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
+require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 

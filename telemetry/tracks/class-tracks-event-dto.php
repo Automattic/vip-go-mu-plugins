@@ -10,10 +10,6 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry\Tracks;
 
 use AllowDynamicProperties;
-use stdClass;
-use WP_Error;
-use Automattic\VIP\Support_User\User as Support_User;
-use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Class that holds necessary properties of Tracks events.
@@ -37,9 +33,15 @@ class Tracks_Event_DTO {
 	/** @var string */
 	public string $_via_ip; // phpcs:ignore PSR2.Classes.PropertyDeclaration.Underscore
 
-	public string $vipgo_env;
+	public string $vip_env;
 
-	public string $vipgo_org;
+	public int $vip_org;
+
+	public string $hosting_provider = 'other';
 
 	public bool $is_vip_user = false;
+
+	public bool $is_multisite = false;
+
+	public string $wp_version = '';
 }

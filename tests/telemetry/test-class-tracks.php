@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use Automattic\VIP\Telemetry\Tracks\Tracks_Event;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 class Tracks_Test extends WP_UnitTestCase {
@@ -12,6 +13,7 @@ class Tracks_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
+		/** @var MockObject|Telemetry_Event_Queue */
 		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
 			->disableOriginalConstructor()
 			->getMock();
@@ -28,6 +30,7 @@ class Tracks_Test extends WP_UnitTestCase {
 			->willReturn( true );
 
 		$tracks = new Tracks( 'test_', [], $queue );
+
 		$this->assertTrue( $tracks->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
 
