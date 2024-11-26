@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
@@ -17,6 +16,11 @@ declare(strict_types=1);
 use Automattic\VIP\Parsely\Telemetry\Telemetry;
 use Automattic\VIP\Parsely\Telemetry\Tracks;
 use Automattic\VIP\Support_User\User as Support_User;
+
+// Prevent loading this file if it's being loaded during the WordPress installation process.
+if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
+	return;
+}
 
 /**
  * This is determined by our value passed to the `WP_Widget` constructor.
