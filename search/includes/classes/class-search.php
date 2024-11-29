@@ -631,6 +631,7 @@ class Search {
 		add_filter( 'ep_post_tax_excluded_wp_query_root_check', [ $this, 'exclude_es_query_reserved_names' ] );
 
 		add_filter( 'ep_sync_indexable_kill', [ $this, 'do_not_sync_if_no_index' ], PHP_INT_MAX, 2 );
+		add_filter( 'ep_skip_post_meta_sync', [ $this, 'do_not_sync_if_no_index_for_post' ], PHP_INT_MAX, 4 );
 
 		// Store last processed id into option and clean up before & after indexing command
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_post_id_option' ] );
@@ -2218,9 +2219,42 @@ class Search {
 	 */
 	public function do_not_sync_if_no_index( $kill, $indexable_slug ) {
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+		// @see do_not_sync_if_no_index_for_post
+		if ( 'post' === $indexable->slug ) {
+			return $kill;
+		}
+
 		if ( $indexable && ! $indexable->index_exists() ) {
 			$kill = true;
 		}
+
+		return $kill;
+	}
+
+	/**
+	 * Do not sync if no index exists for post.
+	 *
+	 * Skip triggering index exists check for _edit_lock meta key.
+	 * Less requests made to the ES server.
+	 * @see https://github.com/10up/ElasticPress/pull/1899
+	 *
+	 * @param {boolean} $kill Whether to kill the sync or not.
+	 * @param {WP_Post} $post Post object.
+	 * @param {int} $meta_id Meta ID.
+	 * @param {string} $meta_key Meta key.
+	 *
+	 * @return bool
+	 */
+	public function do_not_sync_if_no_index_for_post( $kill, $post, $meta_id, $meta_key ) {
+		if ( '_edit_lock' === $meta_key ) {
+			return true;
+		}
+
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( $indexable && ! $indexable->index_exists() ) {
+			$kill = true;
+		}
+
 		return $kill;
 	}
 
