@@ -1775,7 +1775,13 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->init_es();
 
-		$this->assertFalse( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
+
+		$result = apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
+
+		$this->assertFalse( $result );
 	}
 
 	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
