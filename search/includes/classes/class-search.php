@@ -2249,7 +2249,7 @@ class Search {
 		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		if (
 			$indexable &&
-			! ( empty( $object_id ) && $indexable->sync_manager->delete_all_meta ) &&
+			! ( empty( $post ) && $indexable->sync_manager->delete_all_meta ) &&
 			! $indexable->is_meta_allowed( $meta_key, $post )
 		) {
 			return true;
