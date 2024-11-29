@@ -1763,7 +1763,13 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->init_es();
 
-		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
+
+		$result = apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
+
+		$this->assertTrue( $result );
 	}
 
 	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
@@ -1793,7 +1799,13 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->init_es();
 
-		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' ) );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
+
+		$result = apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
+
+		$this->assertTrue( $result );
 	}
 
 	public function filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data() {
