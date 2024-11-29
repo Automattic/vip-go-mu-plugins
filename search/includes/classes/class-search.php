@@ -2234,7 +2234,7 @@ class Search {
 	/**
 	 * Do not sync if no index exists for post.
 	 *
-	 * Skip triggering index exists check for _edit_lock meta key.
+	 * Skip triggering index exists check for _edit_lock meta key by checking meta allow list.
 	 * Less requests made to the ES server.
 	 * @see https://github.com/10up/ElasticPress/pull/1899
 	 *
@@ -2246,11 +2246,15 @@ class Search {
 	 * @return bool
 	 */
 	public function do_not_sync_if_no_index_for_post( $kill, $post, $meta_id, $meta_key ) {
-		if ( '_edit_lock' === $meta_key ) {
+		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if (
+			$indexable &&
+			! ( empty( $object_id ) && $indexable->sync_manager->delete_all_meta ) &&
+			! $indexable->is_meta_allowed( $meta_key, $post )
+		) {
 			return true;
 		}
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 		if ( $indexable && ! $indexable->index_exists() ) {
 			$kill = true;
 		}
