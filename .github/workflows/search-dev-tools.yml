@@ -27,7 +27,7 @@ jobs:
           token: ${{ secrets.WPCOM_VIP_BOT_TOKEN }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.4
+        uses: actions/setup-node@v4.1.0
         with:
           node-version: 'lts/*'
           cache: npm

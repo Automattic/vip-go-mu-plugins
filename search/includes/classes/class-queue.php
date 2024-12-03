@@ -270,6 +270,7 @@ class Queue {
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+		add_action( 'ep_after_bulk_index_dynamically', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
@@ -1028,11 +1029,11 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
-		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
+		$this->queue_objects( array_keys( $sync_manager->get_sync_queue() ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
 		if ( ! static::is_indexing_ratelimited() ) {
@@ -1040,7 +1041,7 @@ class Queue {
 		}
 
 		// Empty out the queue now that we've queued those items up
-		$sync_manager->sync_queue = [];
+		$sync_manager->reset_sync_queue();
 
 		return true;
 	}
@@ -1081,12 +1082,12 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment             = count( $sync_manager->sync_queue );
+		$increment             = count( $sync_manager->get_sync_queue() );
 		$index_count_in_period = static::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations

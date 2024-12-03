@@ -6,7 +6,7 @@ Cypress.Commands.add('openBlockSettingsSidebar', () => {
 		} else {
 			cy.get('.editor-header__settings button[aria-label="Settings"]').then(($btn) => {
 				if (!$btn.hasClass('is-pressed')) {
-					$btn.click();
+					$btn.trigger('click');
 				}
 				cy.get('.editor-sidebar__panel-tabs').contains('Block').click();
 			});
