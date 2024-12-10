@@ -373,7 +373,7 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
 		}
 
 		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( '%s - Version %s' ), $type, $version );
+		$plugin_meta[0] = sprintf( esc_html__( '%1$s - Version %2$s' ), $type, $version );
 	}
 
 	return $plugin_meta;
