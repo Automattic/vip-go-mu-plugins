@@ -364,16 +364,9 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? 'Local' : 
-			'MU-Plugins';
-		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
-			$version = constant( 'VIP_JETPACK_LOADED_VERSION' );
-		} else {
-			$version = constant( 'JETPACK__VERSION' );
-		}
-
-		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( '%1$s - Version %2$s' ), $type, $version );
+		$type           = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? 'Local' : 'MU-Plugins';
+		$plugin_meta[0] = sprintf( '%s (%s)', $plugin_meta[0], $type );
+		remove_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
 	}
 
 	return $plugin_meta;
