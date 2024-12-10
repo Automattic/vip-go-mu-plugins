@@ -359,16 +359,17 @@ add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
  * @return string[] $plugin_meta Updated plugin's metadata.
  */
 function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
-	if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && VIP_JETPACK_SKIP_LOAD ) {
+	if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && constant( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 		return $plugin_meta;
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ? 'Local': 'MU-Plugins';
+		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? 'Local' : 
+			'MU-Plugins';
 		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
-			$version = VIP_JETPACK_LOADED_VERSION;
+			$version = constant( 'VIP_JETPACK_LOADED_VERSION' );
 		} else {
-			$version = JETPACK__VERSION;
+			$version = constant( 'JETPACK__VERSION' );
 		}
 
 		/* translators: Loaded Jetpack version number */
