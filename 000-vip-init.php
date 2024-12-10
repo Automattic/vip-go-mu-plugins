@@ -245,9 +245,10 @@ $require_telemetry_files = [
 	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
 	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
 	__DIR__ . '/telemetry/tracks/tracks-utils.php',
+	__DIR__ . '/telemetry/class-pendo.php',
+	__DIR__ . '/telemetry/pendo/pendo-utils.php',
 ];
 
-// If there is a missing file, the loop will break and the telemetry files will not be loaded at all
 do {
 	foreach ( $require_telemetry_files as $file ) {
 		if ( ! file_exists( $file ) ) {
