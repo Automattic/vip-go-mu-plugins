@@ -455,8 +455,9 @@ add_action( 'plugins_loaded', function () {
 } );
 
 // https://lobby.vip.wordpress.com/2024/12/10/notice-editor-issues-when-using-jetpack-version-13-7-and-wordpress-version-6-5/
-// Uncomment below line to enable the hotfix
-// add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+// Remove this filter to disable the hotfix:
+// remove_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
 function vip_jetpack_disable_wpcom_block_editor() {
 	global $wp_version;
 	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
