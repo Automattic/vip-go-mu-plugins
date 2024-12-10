@@ -364,9 +364,15 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$version = defined( 'VIP_JETPACK_LOADED_VERSION' ) ? VIP_JETPACK_LOADED_VERSION : JETPACK__VERSION;
+		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && WPCOM_VIP_JETPACK_LOCAL ? 'Local': 'MU-Plugins';
+		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
+			$version = VIP_JETPACK_LOADED_VERSION;
+		} else {
+			$version = JETPACK__VERSION;
+		}
+
 		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( 'Version %s' ), $version );
+		$plugin_meta[0] = sprintf( esc_html__( '%s - Version %s' ), $type, $version );
 	}
 
 	return $plugin_meta;
