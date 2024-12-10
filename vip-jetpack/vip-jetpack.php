@@ -461,7 +461,7 @@ function vip_jetpack_disable_wpcom_block_editor() {
 	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
 	$matching_core_constraints   = version_compare( $wp_version, '6.6', '<' );
 
-	if ( $matching_jetpack_constraints && $matching_core_contstraints ) {
+	if ( $matching_jetpack_constraints && $matching_core_constraints ) {
 		add_filter( 'jetpack_tools_to_include', function ( $tools ) {
 			$key = array_search( 'wpcom-block-editor/class-jetpack-wpcom-block-editor.php', $tools );
 
