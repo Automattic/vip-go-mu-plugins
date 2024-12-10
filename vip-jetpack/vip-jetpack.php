@@ -455,7 +455,8 @@ add_action( 'plugins_loaded', function () {
 } );
 
 // https://lobby.vip.wordpress.com/2024/12/10/notice-editor-issues-when-using-jetpack-version-13-7-and-wordpress-version-6-5/
-add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+// Uncomment below line to enable the hotfix
+// add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
 function vip_jetpack_disable_wpcom_block_editor() {
 	global $wp_version;
 	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
@@ -472,3 +473,17 @@ function vip_jetpack_disable_wpcom_block_editor() {
 		} );
 	}
 }
+// Force cache flush
+add_action( 'plugins_loaded', function () {
+	add_filter( 'script_loader_src',
+		function ( $src, $handle ) {
+			if ( 'wpcom-block-editor-default-editor-script' === $handle ) {
+				return $src . '.vip';
+			}
+
+			return $src;
+		},
+		PHP_INT_MIN,
+		2
+	);
+} );
