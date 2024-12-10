@@ -33,7 +33,8 @@ class Pendo {
 	 */
 	public function __construct() {
 		$this->visitor_properties = Pendo\get_base_properties_of_pendo_user();
-		$this->account_properties = [ 'id' => 'VIP' ];
+		// TODO: Populate with a new constant to get the Salesforce ID of the customer.
+		$this->account_properties = [];
 	}
 
 	/**
@@ -55,18 +56,18 @@ class Pendo {
 	
 	private function is_enabled(): bool {
 		if ( [] === $this->visitor_properties || [] === $this->account_properties ) {
-			//don't enable if we can't track an actual visitor or account
+			//Don't enable if we can't track an actual visitor or account.
 			return false;
 		}
 		if ( ( false === WPCOM_IS_VIP_ENV || true === WPCOM_SANDBOXED ) ) {
-			//limit tracking to production
+			//Limit tracking to production.
 			return false;
 		}
 		if ( defined( 'VIP_IS_FEDRAMP' ) && true === VIP_DISABLE_PENDO ) {
-			//don't track in FedRAMP environments
+			//Don't track in FedRAMP environments.
 			return false;
 		}
-		// Check on a new constant to see if Pendo is disabled by the org.
+		// TODO: Check on a new constant to see if Pendo is disabled by the org.
 		return false;
 	}
 	private function output_pendo_agent(): void {
