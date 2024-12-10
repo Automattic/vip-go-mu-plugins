@@ -351,15 +351,15 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
 
 /**
- * Display correct Jetpack version in wp-admin plugins UI for pinned or local versions.
+ * Display correct Jetpack version in wp-admin plugins UI for pinned, local or default versions.
  *
- * @param string[] $plugin_meta An array of the plugin's metadata, including
- *                              the version, author, author URI, and plugin URI.
- * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
+ * @param string[]  plugin_meta  An array of the plugin's metadata, including
+ *                               the version, author, author URI, and plugin URI.
+ * @param string    $plugin_file Path to the plugin file relative to the plugins directory.
  * @return string[] $plugin_meta Updated plugin's metadata.
  */
 function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
-	if ( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) && ! defined( 'WPCOM_VIP_JETPACK_LOCAL' ) ) {
+	if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && VIP_JETPACK_SKIP_LOAD ) {
 		return $plugin_meta;
 	}
 
