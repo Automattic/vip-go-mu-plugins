@@ -28,7 +28,7 @@
     "classnames": "^2.3.1",
     "cypress": "^9.5.0",
     "cypress-file-upload": "^5.0.8",
-    "cypress-multi-reporters": "^1.6.1",
+    "cypress-multi-reporters": "^2.0.4",
     "eslint-plugin-cypress": "^3.0.3",
     "husky": "9.1.7",
     "jsdoc": "^4.0.0",
