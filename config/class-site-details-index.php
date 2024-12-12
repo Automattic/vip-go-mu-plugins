@@ -259,9 +259,11 @@ class Site_Details_Index {
 		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
 			$search_info['enabled']                   = true;
 			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
+			$search_info['network_enabled']           = defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' );
 		} else {
 			$search_info['enabled']                   = false;
 			$search_info['query_integration_enabled'] = false;
+			$search_info['network_enabled']           = false;
 		}
 
 		return $search_info;
