@@ -72,25 +72,32 @@ function get_option_as_bool_if_exists( $option_name ) {
 /**
  * Check if the path is allowed for the current context.
  *
- * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit. It's the second portion returned by `Pre_Wp_Utils\prepare_request()`
+ * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit.
+ *                          This is the second portion returned by `Pre_Wp_Utils\prepare_request()`.
+ * @return bool True if the file path is valid for the current site, false otherwise.
  */
 function is_valid_path_for_site( $file_path ) {
-	if ( ! is_multisite() ) {
-		return true;
-	}
+	$is_valid = true;
 
-	// If main site, don't allow access to /sites/ subdirectories.
-	if ( is_main_network() && is_main_site() ) {
-		if ( 0 === strpos( $file_path, 'sites/' ) ) {
-			return false;
+	if ( is_multisite() ) {
+		// If main site, don't allow access to `/sites/` subdirectories.
+		if ( is_main_network() && is_main_site() ) {
+			$is_valid = ! str_starts_with( $file_path, 'sites/' );
+		} else {
+			// Check if the file path matches the current site ID's directory.
+			$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+			$is_valid  = str_starts_with( $file_path, $base_path );
 		}
-
-		return true;
 	}
 
-	$base_path = sprintf( 'sites/%d', get_current_blog_id() );
-
-	return 0 === strpos( $file_path, $base_path );
+	/**
+	 * Filter the result of the path validation for the current site.
+	 * Allows to override the logic used to determine if a file path is valid for the current site.
+	 *
+	 * @param bool   $is_valid  Whether the file path is valid for the current site.
+	 * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit.
+	 */
+	return apply_filters( 'vip_files_acl_is_valid_path_for_site', $is_valid, $file_path );
 }
 
 /**
