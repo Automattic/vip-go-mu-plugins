@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: softprops/action-gh-release@v2.1.0
+      - uses: softprops/action-gh-release@v2.2.0
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
