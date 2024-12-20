@@ -60,6 +60,10 @@ runs:
           echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
         fi
 
+    - name: Install svn
+      run: sudo apt-get update && sudo apt-get install -y subversion
+      shell: bash
+
     - name: Set up PHP
       uses: shivammathur/setup-php@2.31.1
       with:
