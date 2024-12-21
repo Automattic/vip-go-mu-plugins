@@ -28,33 +28,6 @@ updates:
       - '[Status] No files to Deploy'
       - '[Type] Maintenance'
 
-  - directory: /
-    package-ecosystem: npm
-    schedule:
-      interval: weekly
-    versioning-strategy: increase-if-necessary
-    ignore:
-      - dependency-name: "cypress"
-    labels:
-      - '[Status] Needs Review'
-      - '[Status] No files to Deploy'
-    groups:
-      babel:
-        applies-to: version-updates
-        patterns:
-        - "@babel*"
-        - "babel-*"
-      eslint:
-        applies-to: version-updates
-        patterns:
-        - "eslint"
-        - "eslint-*"
-      react:
-        applies-to: version-updates
-        patterns:
-        - "react"
-        - "react-dom"
-
   - directory: /__tests__/e2e/
     package-ecosystem: npm
     schedule:
