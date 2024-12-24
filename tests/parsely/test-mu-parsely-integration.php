@@ -337,7 +337,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$configs = Parsely_Loader_Info::get_configs();
 
 		// Assert.
-		$this->assertEquals( $configs, array(
+		$this->assertEquals( array(
 			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
 			'site_id'                      => is_latest_version() ? 'site_id_value' : '',
 			'have_api_secret'              => is_latest_version() ? true : false,
@@ -358,7 +358,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 					'track_type' => 'do-not-track',
 				),
 			),
-		) );
+		), $configs );
 	}
 
 	public function test_alter_option_use_repeated_metas() {
