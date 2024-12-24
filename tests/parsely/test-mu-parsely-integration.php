@@ -339,8 +339,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		// Assert.
 		$this->assertEquals( array(
 			'is_pinned_version'            => has_filter( 'wpvip_parsely_version' ),
-			'site_id'                      => is_latest_version() ? 'site_id_value' : '',
-			'have_api_secret'              => is_latest_version() ? true : false,
+			'site_id'                      => 'site_id_value',
+			'have_api_secret'              => true,
 			'is_javascript_disabled'       => false,
 			'is_autotracking_disabled'     => false,
 			'should_track_logged_in_users' => false,
