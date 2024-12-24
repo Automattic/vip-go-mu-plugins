@@ -244,7 +244,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'have_api_secret'              => false,
 			'is_javascript_disabled'       => false,
 			'is_autotracking_disabled'     => false,
-			'should_track_logged_in_users' => is_latest_version() ? false : true,
+			'should_track_logged_in_users' => false,
 			'tracked_post_types'           => array(
 				array(
 					'name'       => 'post',
@@ -343,7 +343,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			'have_api_secret'              => is_latest_version() ? true : false,
 			'is_javascript_disabled'       => false,
 			'is_autotracking_disabled'     => false,
-			'should_track_logged_in_users' => is_latest_version() ? false : true,
+			'should_track_logged_in_users' => false,
 			'tracked_post_types'           => array(
 				array(
 					'name'       => 'post',
