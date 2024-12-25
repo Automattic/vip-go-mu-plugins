@@ -24,11 +24,9 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 		$options    = array();
 		$alloptions = wp_load_alloptions( true );
-		$total_size = 0;
 
 		foreach ( $alloptions as $name => $val ) {
-			$size        = mb_strlen( $val );
-			$total_size += $size;
+			$size = mb_strlen( $val );
 
 			// find big options only
 			if ( $assoc_args['big'] && $size < 500 ) {
