@@ -65,6 +65,7 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 		WP_CLI\Utils\format_items( $assoc_args['format'], $options, array( 'name', 'size' ) );
 
 		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s', size_format( strlen( serialize( $alloptions ) ) ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog (gzdeflate): %s', size_format( strlen( gzdeflate( serialize( $alloptions ) ) ), 2 ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
 		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
 		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
 		WP_CLI::line( "\tuse `wp option set-autoload <option_name> no` to disable autoload for option" );
