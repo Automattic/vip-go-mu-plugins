@@ -16,6 +16,12 @@ use WP_Error;
  */
 class Pendo {
 
+	/**
+	 * The suffix for all visitor and account properties.
+	 *
+	 * @var string
+	 */
+	protected string $property_suffix;
 
 	/**
 	 * @param array<string, mixed> Visitor properties.
@@ -32,7 +38,8 @@ class Pendo {
 	 * 
 	 */
 	public function __construct() {
-		$this->visitor_properties = Pendo\get_base_properties_of_pendo_user();
+		$this->property_suffix    = '_wordpress';
+		$this->visitor_properties = Pendo\get_base_properties_of_pendo_user( $this->property_suffix );
 		// TODO: Populate with a new constant to get the Salesforce ID of the customer.
 		$this->account_properties = [];
 	}
