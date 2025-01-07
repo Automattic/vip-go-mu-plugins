@@ -260,10 +260,12 @@ class Site_Details_Index {
 			$search_info['enabled']                   = true;
 			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
 			$search_info['network_enabled']           = defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' );
+			$search_info['enabled_by']                = defined( 'VIP_SEARCH_ENABLED_BY' ) ? constant( 'VIP_SEARCH_ENABLED_BY' ) : 'unknown';
 		} else {
 			$search_info['enabled']                   = false;
 			$search_info['query_integration_enabled'] = false;
 			$search_info['network_enabled']           = false;
+			$search_info['enabled_by']                = false;
 		}
 
 		return $search_info;
