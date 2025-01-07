@@ -367,5 +367,11 @@ if ( ! isset( $_SERVER['HTTP_HOST'] ) ) {
 	$_SERVER['HTTP_HOST'] = null;
 }
 
+if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+	if ( ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
+}
+
 do_action( 'vip_loaded' );
 // @codeCoverageIgnoreEnd

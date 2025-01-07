@@ -44,6 +44,10 @@ class EnterpriseSearchIntegration extends Integration {
 		} else {
 			require_once __DIR__ . '/../search/search.php';
 		}
+
+		if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+			define( 'VIP_SEARCH_ENABLED_BY', 'integration' );
+		}
 	}
 
 	/**
