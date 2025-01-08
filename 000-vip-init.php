@@ -280,6 +280,9 @@ if ( Context::is_wp_cli() ) {
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
 	( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) ) {
 	require_once __DIR__ . '/search/search.php';
+	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
 }
 
 // Set WordPress environment type
