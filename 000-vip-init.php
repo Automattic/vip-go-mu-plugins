@@ -282,7 +282,7 @@ if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legac
 	require_once __DIR__ . '/search/search.php';
 	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
 		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
-	}	
+	}
 }
 
 // Set WordPress environment type
