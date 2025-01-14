@@ -134,6 +134,12 @@ class IntegrationVipConfig {
 			if ( $network_site_status ) {
 				return $network_site_status;
 			}
+
+			$env_config = $this->get_env_config();
+			if ( isset( $env_config['network_wide_enable'] ) && 'false' === $env_config['network_wide_enable'] ) {
+				// If network_wide_enable is false, then return disabled status (rather than inheriting) since $network_site_status wasn't found.
+				return Env_Integration_Status::DISABLED;
+			}
 		}
 
 		return $this->get_value_from_config( 'env', 'status' );
