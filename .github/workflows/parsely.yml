@@ -23,8 +23,8 @@ jobs:
       matrix:
         config:
           # Oldest version of the parsely plugin
-          - { wp: latest, parsely: '3.5', mode: 'filter_enabled', php: '8.1' }
-          - { wp: latest, parsely: '3.5', mode: 'filter_disabled', php: '8.1' }
+          - { wp: latest, parsely: '3.15', mode: 'filter_enabled', php: '8.1' }
+          - { wp: latest, parsely: '3.15', mode: 'filter_disabled', php: '8.1' }
 
           # Latest version of the parsely plugin
           - { wp: latest, mode: 'filter_enabled', php: '8.1' }
