@@ -12,13 +12,15 @@ jobs:
   test:
     name: Run tests
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     strategy:
       fail-fast: false
       matrix:
         php:
-          - "7.4"
           - "8.0"
+          - "8.1"
+          - "8.2"
+          - "8.3"
+          - "8.4"
         wpmu:
           - "0"
           - "1"
@@ -34,6 +36,9 @@ jobs:
           - 3306
         options: --health-cmd="healthcheck.sh --innodb_initialized" --health-interval=5s --health-timeout=2s --health-retries=3
     steps:
+      - name: Install svn
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
       - name: Check out source code
         uses: actions/checkout@v3.3.0
 
@@ -42,24 +47,8 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
 
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Cache Composer packages
-        uses: actions/cache@v3.2.3
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('**/composer.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-php-${{ matrix.php }}
-            ${{ runner.os }}-php-
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --ignore-platform-reqs
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@3.0.0
 
       - name: Verify MariaDB connection
         run: |
