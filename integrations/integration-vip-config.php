@@ -61,7 +61,11 @@ class IntegrationVipConfig {
 	 * @param string $slug A unique identifier for the integration.
 	 */
 	private function set_config( string $slug ): void {
-		$config = $this->get_vip_config_from_file( $slug );
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			$config = $this->get_local_config_from_file( $slug );
+		} else {
+			$config = $this->get_vip_config_from_file( $slug );
+		}
 
 		if ( ! is_array( $config ) ) {
 			return;
@@ -101,6 +105,32 @@ class IntegrationVipConfig {
 		}
 
 		return require $config_file_path;
+	}
+
+	/**
+	 * Get config for local dev env and Codespaces
+	 *
+	 * @param string $slug A unique identifier for the integration.
+	 *
+	 * @return null|mixed
+	 */
+	protected function get_local_config_from_file( string $slug ) {
+		$config_file = '/app/integrations.json';
+		if ( ! file_exists( $config_file ) ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
+		$config = json_decode( file_get_contents( $config_file ), true );
+		if ( ! isset( $config[ $slug ] ) ) {
+			return null;
+		}
+
+		// We don't really care about the org config in local dev.
+		// Network config might be tricky if there's mismatch between data.
+		return [
+			'env' => $config[ $slug ],
+		];
 	}
 
 	/**
