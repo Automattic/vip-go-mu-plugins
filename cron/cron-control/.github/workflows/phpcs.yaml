@@ -12,7 +12,6 @@ jobs:
   codestyle:
     name: Run code style check
     runs-on: ubuntu-latest
-    if: "!contains(github.event.head_commit.message, '[ci skip]')"
     steps:
       - name: Check out source code
         uses: actions/checkout@v3.3.0
@@ -20,24 +19,10 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 7.4
+          php-version: 8.1
 
-      - name: Get composer cache directory
-        id: composer-cache
-        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
-
-      - name: Cache Composer packages
-        uses: actions/cache@v3.2.3
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-php-7.4-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-php-7.4
-
-      - name: Validate composer.json and composer.lock
-        run: composer validate
-
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction --ignore-platform-reqs
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@3.0.0
 
       - name: Add error matcher
         run: echo "::add-matcher::$(pwd)/.github/checkstyle-problem-matcher.json"
