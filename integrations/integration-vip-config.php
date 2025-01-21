@@ -61,11 +61,7 @@ class IntegrationVipConfig {
 	 * @param string $slug A unique identifier for the integration.
 	 */
 	private function set_config( string $slug ): void {
-		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			$config = $this->get_local_config_from_file( $slug );
-		} else {
-			$config = $this->get_vip_config_from_file( $slug );
-		}
+		$config = $this->get_vip_config_from_file( $slug );
 
 		if ( ! is_array( $config ) ) {
 			return;
@@ -86,51 +82,34 @@ class IntegrationVipConfig {
 			? constant( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
 			: ABSPATH . 'config/integrations-config';
 		$config_file_name      = $slug . '-config.php';
-		$config_file_path      = $config_file_directory . '/' . $config_file_name;
+		$config_file_path_orig = $config_file_directory . '/' . $config_file_name;
 
-		/**
-		 * Clear cache to always read data from latest config file.
-		 *
-		 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
-		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
-		 * on it.
-		 */
-		clearstatcache( true, $config_file_directory . '/' . $config_file_name );
-		// Clears cache for files created by k8s ConfigMap.
-		clearstatcache( true, $config_file_directory . '/..data' );
-		clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
+		$config_file_path = apply_filters( 'vip_integrations_config_file_path', $config_file_path_orig, $slug );
+		$config_data      = apply_filters( 'vip_integrations_pre_load_config', null, $config_file_path, $slug );
 
-		if ( ! is_readable( $config_file_path ) ) {
-			return null;
+		if ( is_null( $config_data ) ) {
+			if ( $config_file_path_orig === $config_file_path ) {
+				/**
+				 * Clear cache to always read data from latest config file.
+				 *
+				 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
+				 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
+				 * on it.
+				 */
+				clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+				// Clears cache for files created by k8s ConfigMap.
+				clearstatcache( true, $config_file_directory . '/..data' );
+				clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
+			}
+
+			if ( ! is_readable( $config_file_path ) ) {
+				return null;
+			}
+
+			$config_data = require $config_file_path;
 		}
 
-		return require $config_file_path;
-	}
-
-	/**
-	 * Get config for local dev env and Codespaces
-	 *
-	 * @param string $slug A unique identifier for the integration.
-	 *
-	 * @return null|mixed
-	 */
-	protected function get_local_config_from_file( string $slug ) {
-		$config_file = '/app/integrations.json';
-		if ( ! file_exists( $config_file ) ) {
-			return null;
-		}
-
-		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
-		$config = json_decode( file_get_contents( $config_file ), true );
-		if ( ! isset( $config[ $slug ] ) ) {
-			return null;
-		}
-
-		// We don't really care about the org config in local dev.
-		// Network config might be tricky if there's mismatch between data.
-		return [
-			'env' => $config[ $slug ],
-		];
+		return $config_data;
 	}
 
 	/**
