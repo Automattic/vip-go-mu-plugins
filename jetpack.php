@@ -25,7 +25,7 @@ function vip_default_jetpack_version() {
 	} elseif ( version_compare( $wp_version, '6.3', '<' ) ) {
 		// WordPress 6.2.x.
 		return '12.8';
-	} elseif ( version_compare( $wp_version, '6.4', '<' ) ) { 
+	} elseif ( version_compare( $wp_version, '6.4', '<' ) ) {
 		// WordPress 6.3.x
 		return '13.1';
 	} elseif ( version_compare( $wp_version, '6.5', '<' ) ) {
@@ -492,21 +492,16 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 ) );
 
 /**
- * Prevent the jetpack_active_plan from ever being overridden.
- *
- * All VIP sites should always have have a valid Jetpack plan.
- *
- * This will prevent issues from the plan option being corrupted,
- * which can then break features like Jetpack Search.
+ * Prevent the jetpack_active_plan from missing.
+ * All VIP sites should always have a valid Jetpack plan.
  */
-add_filter( 'pre_option_jetpack_active_plan', function ( $pre_option ) {
+add_filter( 'default_option_jetpack_active_plan', function ( $default_value ) {
 	if ( true === WPCOM_IS_VIP_ENV && defined( 'VIP_JETPACK_DEFAULT_PLAN' ) ) {
-		return VIP_JETPACK_DEFAULT_PLAN;
+		$default_value = VIP_JETPACK_DEFAULT_PLAN;
 	}
 
-	return $pre_option;
+	return $default_value;
 } );
-
 
 /**
  * Load the jetpack plugin according to several defines:
