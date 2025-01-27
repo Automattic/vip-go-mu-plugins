@@ -126,7 +126,7 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v5.1.2
+      uses: codecov/codecov-action@v5.3.1
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
