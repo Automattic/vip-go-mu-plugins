@@ -24,11 +24,9 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 		$options    = array();
 		$alloptions = wp_load_alloptions( true );
-		$total_size = 0;
 
 		foreach ( $alloptions as $name => $val ) {
-			$size        = mb_strlen( $val );
-			$total_size += $size;
+			$size = mb_strlen( $val );
 
 			// find big options only
 			if ( $assoc_args['big'] && $size < 500 ) {
@@ -64,11 +62,12 @@ class VIP_Go_Alloptions extends WPCOM_VIP_CLI_Command {
 
 		WP_CLI\Utils\format_items( $assoc_args['format'], $options, array( 'name', 'size' ) );
 
-		WP_CLI::line( sprintf( 'Total size of all option values for this blog: %s', size_format( $total_size ) ) );
 		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog: %s', size_format( strlen( serialize( $alloptions ) ) ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		WP_CLI::line( sprintf( 'Size of serialized alloptions for this blog (compressed): %s', size_format( strlen( gzdeflate( serialize( $alloptions ) ) ), 2 ) ) );    // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+		WP_CLI::line( 'Note: Compressed size is an approximation of the size when stored in object cache.' );
 		WP_CLI::line( "\tuse `wp option get <option_name>` to view a big option" );
 		WP_CLI::line( "\tuse `wp option delete <option_name>` to delete a big option" );
-		WP_CLI::line( "\tuse `wp option autoload set <option_name> no` to disable autoload for option" );
+		WP_CLI::line( "\tuse `wp option set-autoload <option_name> no` to disable autoload for option" );
 	}
 }
 

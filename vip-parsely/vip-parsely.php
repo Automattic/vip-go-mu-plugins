@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
@@ -88,6 +87,13 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
  * @return bool Whether the current user can use the Parse.ly Content Helper feature.
  */
 add_filter( 'wp_parsely_current_user_can_use_pch_feature', function ( $current_user_can_use_pch_feature, $feature_name, $current_user ) {
+	// If the VIP Support User plugin is not active, return the original value.
+	// This prevents a fatal error when the plugin is not active, under certain conditions.
+	// See https://github.com/Automattic/vip-go-mu-plugins/pull/6016
+	if ( ! class_exists( 'Automattic\\VIP\\Support_User\\User' ) ) {
+		return $current_user_can_use_pch_feature;
+	}
+
 	$user_id = $current_user->ID;
 
 	if ( Support_User::user_has_vip_support_role( $user_id ) ) {

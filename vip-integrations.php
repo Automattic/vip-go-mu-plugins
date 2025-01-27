@@ -24,11 +24,19 @@ require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 
+if ( file_exists( __DIR__ . '/integrations/jetpack.php' ) ) {
+	require_once __DIR__ . '/integrations/jetpack.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
+
+if ( class_exists( __NAMESPACE__ . '\\JetpackIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new JetpackIntegration( 'jetpack' ) );
+}
 // @codeCoverageIgnoreEnd
 
 /**
