@@ -371,11 +371,8 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 			$tmp    = get_temp_dir();
 			$source = $tmp . 'source.txt';
 			$dest   = $tmp . 'dest.txt';
-
-			// See https://github.com/Automattic/vip-go-mu-plugins/issues/5445
-			// WP 6.1.4 does not check whether the file exists and spits a warning.
+g.
 			$original = error_reporting();
-			error_reporting( $original & ~E_WARNING );
 			try {
 				$actual = $wp_filesystem->move( $source, $dest );
 			} finally {
