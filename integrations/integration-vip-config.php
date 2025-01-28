@@ -82,25 +82,34 @@ class IntegrationVipConfig {
 			? constant( 'WPVIP_INTEGRATIONS_CONFIG_DIR' )
 			: ABSPATH . 'config/integrations-config';
 		$config_file_name      = $slug . '-config.php';
-		$config_file_path      = $config_file_directory . '/' . $config_file_name;
+		$config_file_path_orig = $config_file_directory . '/' . $config_file_name;
 
-		/**
-		 * Clear cache to always read data from latest config file.
-		 *
-		 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
-		 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
-		 * on it.
-		 */
-		clearstatcache( true, $config_file_directory . '/' . $config_file_name );
-		// Clears cache for files created by k8s ConfigMap.
-		clearstatcache( true, $config_file_directory . '/..data' );
-		clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
+		$config_file_path = apply_filters( 'vip_integrations_config_file_path', $config_file_path_orig, $slug );
+		$config_data      = apply_filters( 'vip_integrations_pre_load_config', null, $config_file_path, $slug );
 
-		if ( ! is_readable( $config_file_path ) ) {
-			return null;
+		if ( is_null( $config_data ) ) {
+			if ( $config_file_path_orig === $config_file_path ) {
+				/**
+				 * Clear cache to always read data from latest config file.
+				 *
+				 * Kubernetes ConfigMap updates the file via symlink instead of actually replacing the file and
+				 * PHP cache can hold a reference to the old symlink that can cause fatal if we use require
+				 * on it.
+				 */
+				clearstatcache( true, $config_file_directory . '/' . $config_file_name );
+				// Clears cache for files created by k8s ConfigMap.
+				clearstatcache( true, $config_file_directory . '/..data' );
+				clearstatcache( true, $config_file_directory . '/..data/' . $config_file_name );
+			}
+
+			if ( ! is_readable( $config_file_path ) ) {
+				return null;
+			}
+
+			$config_data = require $config_file_path;
 		}
 
-		return require $config_file_path;
+		return $config_data;
 	}
 
 	/**
