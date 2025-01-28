@@ -743,14 +743,14 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the queue isn't populated if ratelimiting isn't triggered
 	 */
 	public function test_ratelimit_indexing_queue_should_be_empty_if_no_ratelimiting() {
-		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
-		$post_ids = range( 10, 20 );
-
 		global $wpdb;
 
 		$table_name = $this->queue->schema->get_table_name();
 
 		$this->add_posts_to_queue( range( 3, 9 ) );
+
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
+		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
 
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
@@ -769,6 +769,8 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->sync_manager->reset_sync_queue();
 
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
+		$post_ids = range( 10, 20 );
 		$this->add_posts_to_queue( $post_ids );
 
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
@@ -804,6 +806,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$post_ids = range( 3, 9 );
 		$this->add_posts_to_queue( $post_ids );
 
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
 
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );

@@ -368,10 +368,9 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 			self::assertInstanceOf( WP_Filesystem_VIP::class, $wp_filesystem );
 			/** @var WP_Filesystem_Base $wp_filesystem */
 
-			$tmp    = get_temp_dir();
-			$source = $tmp . 'source.txt';
-			$dest   = $tmp . 'dest.txt';
-g.
+			$tmp      = get_temp_dir();
+			$source   = $tmp . 'source.txt';
+			$dest     = $tmp . 'dest.txt';
 			$original = error_reporting();
 			try {
 				$actual = $wp_filesystem->move( $source, $dest );
