@@ -6,7 +6,7 @@
  * Description:       Import posts, pages, comments, custom fields, categories, tags and more from a WordPress export file.
  * Author:            wordpressdotorg
  * Author URI:        https://wordpress.org/
- * Version:           0.8.1
+ * Version:           0.8.3
  * Requires at least: 5.2
  * Requires PHP:      5.6
  * Text Domain:       wordpress-importer
@@ -34,22 +34,22 @@ if ( ! class_exists( 'WP_Importer' ) ) {
 }
 
 /** Functions missing in older WordPress versions. */
-require_once dirname( __FILE__ ) . '/compat.php';
+require_once __DIR__ . '/compat.php';
 
 /** WXR_Parser class */
-require_once dirname( __FILE__ ) . '/parsers/class-wxr-parser.php';
+require_once __DIR__ . '/parsers/class-wxr-parser.php';
 
 /** WXR_Parser_SimpleXML class */
-require_once dirname( __FILE__ ) . '/parsers/class-wxr-parser-simplexml.php';
+require_once __DIR__ . '/parsers/class-wxr-parser-simplexml.php';
 
 /** WXR_Parser_XML class */
-require_once dirname( __FILE__ ) . '/parsers/class-wxr-parser-xml.php';
+require_once __DIR__ . '/parsers/class-wxr-parser-xml.php';
 
 /** WXR_Parser_Regex class */
-require_once dirname( __FILE__ ) . '/parsers/class-wxr-parser-regex.php';
+require_once __DIR__ . '/parsers/class-wxr-parser-regex.php';
 
 /** WP_Import class */
-require_once dirname( __FILE__ ) . '/class-wp-import.php';
+require_once __DIR__ . '/class-wp-import.php';
 
 function wordpress_importer_init() {
 	load_plugin_textdomain( 'wordpress-importer' );

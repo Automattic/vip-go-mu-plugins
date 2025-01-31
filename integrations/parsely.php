@@ -61,8 +61,7 @@ class ParselyIntegration extends Integration {
 	 * @return array
 	 */
 	public function wp_parsely_credentials_callback( $original_credentials ) {
-		$config      = $this->get_config();
-		$credentials = array();
+		$config = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
 
 		// If config provided by VIP is empty then take original credentials else take
 		// credentials from config.

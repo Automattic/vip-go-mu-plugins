@@ -69,8 +69,14 @@ describe('WooCommerce Feature', { tags: '@slow' }, () => {
 		it('Can not display other users orders on the My Account Order page', () => {
 			// enable payment gateway.
 			cy.visitAdminPage('admin.php?page=wc-settings&tab=checkout&section=cod');
+			cy.get('.woocommerce-layout__header-tasks-reminder-bar', { timeout: 10000 })
+  			.should('be.visible');
+
 			cy.get('#woocommerce_cod_enabled').check({waitForAnimations: false});
-			cy.get('.is-primary.woocommerce-save-button').click();
+			cy.get(
+				`.button-primary.woocommerce-save-button,
+				.components-button.is-primary.woocommerce-save-button`,
+			).click();
 
 			cy.logout();
 

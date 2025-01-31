@@ -146,7 +146,7 @@ class Internal_Events extends Singleton {
 	public function force_publish_missed_schedules() {
 		global $wpdb;
 
-		$missed_posts = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date <= %s LIMIT 0,100;", current_time( 'mysql', false ) ) );
+		$missed_posts = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} p JOIN (SELECT DISTINCT post_type FROM {$wpdb->posts}) AS t ON p.post_type = t.post_type WHERE post_status = 'future' AND post_date <= %s LIMIT 0,100;", current_time( 'mysql', false ) ) );
 
 		foreach ( $missed_posts as $missed_post ) {
 			$missed_post = absint( $missed_post );
@@ -168,7 +168,7 @@ class Internal_Events extends Singleton {
 
 		do {
 			$offset       = max( 0, $page - 1 ) * $quantity;
-			$future_posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_date FROM {$wpdb->posts} WHERE post_status = 'future' AND post_date > %s LIMIT %d,%d", current_time( 'mysql', false ), $offset, $quantity ) );
+			$future_posts = $wpdb->get_results( $wpdb->prepare( "SELECT ID, post_date FROM {$wpdb->posts} p JOIN (SELECT DISTINCT post_type FROM {$wpdb->posts}) AS t ON p.post_type = t.post_type WHERE post_status = 'future' AND post_date > %s LIMIT %d,%d", current_time( 'mysql', false ), $offset, $quantity ) );
 
 			if ( ! empty( $future_posts ) ) {
 				foreach ( $future_posts as $future_post ) {

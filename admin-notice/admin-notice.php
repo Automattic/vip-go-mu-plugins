@@ -27,21 +27,17 @@ add_action(
 	}
 );
 
-// Old WP version w/o pinned Jetpack version
 add_action(
 	'vip_admin_notice_init',
 	function ( $admin_notice_controller ) {
-		global $wp_version;
-		$message = "We've noticed that you are running WordPress {$wp_version}, which is an outdated version. This prevents you from running the latest version of Jetpack, as the current version of Jetpack only supports 5.9 and up. Please upgrade to the most recent WordPress version to use the latest features of Jetpack.";
-
+		$message = 'Heads up! Your site is using a deprecated plugin <a href="https://github.com/Automattic/jetpack-force-2fa/">jetpack-force-2fa</a>. This functionality is already included in Jetpack as of version 13.5. Please remove the plugin to avoid potential conflicts with future Jetpack updates.';
 		$admin_notice_controller->add(
 			new Admin_Notice(
 				$message,
 				[
-					new Expression_Condition( version_compare( $wp_version, '5.9', '<' ) ),
-					new Expression_Condition( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) ),
+					new Expression_Condition( class_exists( 'Jetpack_Force_2FA' ) && class_exists( 'Jetpack' ) && defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.5', '>=' ) ),
 				],
-				'old-wp-versions',
+				'deprecated-standalone-jetpack-2fa-plugin',
 				'error'
 			)
 		);

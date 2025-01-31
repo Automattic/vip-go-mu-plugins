@@ -37,7 +37,6 @@
 	"ignorePaths": [
 		"akismet/**",
 		"jetpack*/**",
-		"vaultpress/**",
 		"wp-parsely-*/**"
 	]
 }

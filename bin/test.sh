@@ -115,7 +115,6 @@ docker run \
     ${interactive} \
     --rm \
     --network "${NETWORK_NAME}" \
-    --platform linux/x86_64 \
     -e WP_VERSION \
     -e WP_MULTISITE \
     -e PHP_VERSION \

@@ -32,9 +32,6 @@ class EnterpriseSearchIntegration extends Integration {
 	 */
 	public function load(): void {
 		// Return if the integration is already loaded.
-		//
-		// In activate() method we do make sure to not activate the integration if its already loaded
-		// but still adding it here as a safety measure i.e. if load() is called directly.
 		if ( $this->is_loaded() ) {
 			return;
 		}
@@ -46,6 +43,10 @@ class EnterpriseSearchIntegration extends Integration {
 			require_once $load_path;
 		} else {
 			require_once __DIR__ . '/../search/search.php';
+		}
+
+		if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+			define( 'VIP_SEARCH_ENABLED_BY', 'integration' );
 		}
 	}
 
@@ -64,7 +65,7 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Set the Elasticsearch credentials.
 	 */
 	public function vip_set_es_credentials(): void {
-		$config = $this->get_config();
+		$config = $this->get_env_config();
 		if ( isset( $config['username'] ) && isset( $config['password'] ) ) {
 			define( 'VIP_ELASTICSEARCH_USERNAME', $config['username'] );
 			define( 'VIP_ELASTICSEARCH_PASSWORD', $config['password'] );

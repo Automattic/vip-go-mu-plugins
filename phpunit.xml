@@ -39,7 +39,6 @@
 			<directory>search/es-wp-query</directory>
 			<directory>shared-plugins</directory>
 			<directory>rewrite-rules-inspector</directory>
-			<directory>vaultpress</directory>
 			<directory>wordpress-importer</directory>
 
 			<directory>tests</directory>

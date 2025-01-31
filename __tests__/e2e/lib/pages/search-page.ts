@@ -65,7 +65,7 @@ export class SearchPage {
 	 * @param {string} searchTerm Search term
 	 * @return {Promise<*>} Resolves after DOMContentLoaded event fires
 	 */
-	visit( searchTerm: string ): Promise<unknown> {
+	public visit( searchTerm: string ): Promise<unknown> {
 		return this.page.goto( `/?s=${ encodeURIComponent( searchTerm ) }`, { waitUntil: 'domcontentloaded' } );
 	}
 
@@ -74,7 +74,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<*>} Resolves when Search DevTools panel is visible
 	 */
-	async openSearchDevTools(): Promise<unknown> {
+	public async openSearchDevTools(): Promise<unknown> {
 		await this.devToolsMenuLocator.click();
 		return expect( this.devToolsContainerLocator ).toBeVisible();
 	}
@@ -84,7 +84,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<number>} Resolves with the number of queries or -1 if the number is unavailable
 	 */
-	async getNumberOfQueries(): Promise<number> {
+	public async getNumberOfQueries(): Promise<number> {
 		const text = ( await this.queryCountLocator.innerText() ).trim();
 		const matches = /^(\d+)/.exec( text );
 		return matches ? Number( matches[ 1 ] ) : -1;
@@ -95,7 +95,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<number>} Resolves with the number of results or -1 if the number is unavailable
 	 */
-	async getNumberOfFirstResults(): Promise<number> {
+	public async getNumberOfFirstResults(): Promise<number> {
 		const text = ( await this.resultCountLocator.first().innerText() ).trim();
 		const matches = /^(\d+)/.exec( text );
 		return matches ? Number( matches[ 1 ] ) : -1;
@@ -106,7 +106,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<boolean>} Whether the panel has been shown
 	 */
-	async expandFirstResults(): Promise<boolean> {
+	public async expandFirstResults(): Promise<boolean> {
 		const queryHandleLocator = this.queryHandleLocator.first();
 
 		let classes = await getClassList( this.queryWrapLocator );
@@ -126,7 +126,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<string>} Parameters as a string
 	 */
-	getWPQuery(): Promise<string> {
+	public getWPQuery(): Promise<string> {
 		return this.getQueryExtrasHelper( 0 );
 	}
 
@@ -135,7 +135,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<string>} Backtrace as a string
 	 */
-	getTrace(): Promise<string> {
+	public getTrace(): Promise<string> {
 		return this.getQueryExtrasHelper( 1 );
 	}
 
@@ -144,7 +144,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<string>} Query
 	 */
-	getQuery(): Promise<string> {
+	public getQuery(): Promise<string> {
 		return this.sourceQueryLocator.inputValue();
 	}
 
@@ -154,7 +154,7 @@ export class SearchPage {
 	 * @param {string} newQuery New Query
 	 * @return {Promise<*>} Resolves on success
 	 */
-	editQuery( newQuery: string ): Promise<unknown> {
+	public editQuery( newQuery: string ): Promise<unknown> {
 		return this.sourceQueryLocator.fill( newQuery );
 	}
 
@@ -163,7 +163,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<string>} Original query
 	 */
-	async resetQuery(): Promise<string> {
+	public async resetQuery(): Promise<string> {
 		await this.queryActionsLocator.nth( 1 ).click();
 		return this.getQuery();
 	}
@@ -173,7 +173,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<*>} Result of the query
 	 */
-	async runQuery(): Promise<unknown> {
+	public async runQuery(): Promise<unknown> {
 		const [ response ] = await Promise.all( [
 			this.page.waitForResponse( ( resp ) => resp.url().endsWith( '/wp-json/vip/v1/search/dev-tools' ) && resp.request().method() === 'POST' && resp.status() === 200 ),
 			this.queryActionsLocator.first().click(),
@@ -188,7 +188,7 @@ export class SearchPage {
 	 * @param {string} substring Substring to check
 	 * @return {Promise<*>} Resolves on success
 	 */
-	ensureQueryResponse( substring: string ): Promise<unknown> {
+	public ensureQueryResponse( substring: string ): Promise<unknown> {
 		return expect( this.queryResultLocator.getByText( substring ) ).toBeVisible();
 	}
 
@@ -197,7 +197,7 @@ export class SearchPage {
 	 *
 	 * @return {Promise<*>} Resolves on success
 	 */
-	closeSearchDevTools(): Promise<unknown> {
+	public closeSearchDevTools(): Promise<unknown> {
 		return this.devToolsCloseButtonLocator.click();
 	}
 

@@ -73,9 +73,9 @@ class A8C_Files {
 
 	public function __construct() {
 
-		// Upload size limit is 5GB
+		// Upload size limit is 2GB
 		add_filter( 'upload_size_limit', function () {
-			return 5368709120; // 2^30 * 5
+			return 2147483648; // 2^30 * 2
 		});
 
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
@@ -263,6 +263,9 @@ class A8C_Files {
 				$_max_w = 300;
 				$_max_h = 300;
 			}
+		} elseif ( 'medium_large' == $size ) {
+			$_max_w = get_option( 'medium_large_size_w' );
+			$_max_h = get_option( 'medium_large_size_h' );
 		} elseif ( 'large' == $size ) {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );

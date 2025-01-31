@@ -201,40 +201,6 @@ class Controls {
 	}
 
 	/**
-	 * Connect a site to VaultPress.
-	 *
-	 * Uses VaultPress' function to connect VaultPress using Jetpack. An active Jetpack connection is required on the site.
-	 *
-	 * @return bool|WP_Error True if site is connected, error otherwise.
-	 */
-	public static function connect_vaultpress() {
-		if ( ! class_exists( 'VaultPress' ) || ! method_exists( 'VaultPress', 'init' ) ) {
-			return new WP_Error( 'jp-cxn-pilot-vaultpress-dependencies-missing', 'VaultPress is missing required functions/methods to perform the connection.' );
-		}
-
-		$vaultpress = \VaultPress::init();
-		if ( $vaultpress->is_registered() && isset( $vaultpress->options['connection'] ) && 'ok' === $vaultpress->options['connection'] ) {
-			return true;
-		}
-
-		// Remove the VaultPress option from the db to prevent site registration from failing.
-		delete_option( 'vaultpress' );
-
-		$result = $vaultpress->register_via_jetpack( true );
-
-		if ( true !== $result ) {
-			$error_message = 'VaultPress could not be connected.';
-			if ( is_wp_error( $result ) ) {
-				$error_message .= sprintf( ' Error: [%s] %s', $result->get_error_code(), $result->get_error_message() );
-			}
-
-			return new WP_Error( 'jp-cxn-pilot-vaultpress-connection-failed', $error_message );
-		}
-
-		return true;
-	}
-
-	/**
 	 * Provision the site with WP.com.
 	 *
 	 * @param int $user_id The VIP machine user ID.

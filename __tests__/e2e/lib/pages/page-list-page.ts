@@ -5,7 +5,7 @@ const selectors = {
 };
 
 export class PageListPage {
-	readonly page: Page;
+	private readonly page: Page;
 
 	/**
 	 * Constructs an instance of the component.
@@ -19,7 +19,7 @@ export class PageListPage {
 	/**
 	 * Navigate to Page List page
 	 */
-	visit(): Promise<unknown> {
+	public visit(): Promise<unknown> {
 		return this.page.goto( '/wp-admin/edit.php?post_type=page' );
 	}
 
@@ -28,7 +28,7 @@ export class PageListPage {
 	 *
 	 * @param { string } pageID ID of the page to be edited
 	 */
-	editPageByID( pageID: string ): Promise<void> {
+	public editPageByID( pageID: string ): Promise<void> {
 		return this.page.click( selectors.pageLink( pageID ) );
 	}
 }

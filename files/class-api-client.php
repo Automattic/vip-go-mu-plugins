@@ -207,6 +207,13 @@ class API_Client {
 			'filename' => $tmp_file,
 		];
 
+		// Prevent webp => jpg transform from running
+		if ( str_ends_with( strtok( $file_path, '?' ), '.webp' ) ) {
+			$request_args['headers'] = [
+				'Accept' => 'image/webp',
+			];
+		}
+
 		// not in cache so get from API
 		$response = $this->call_api( $file_path, 'GET', $request_args );
 

@@ -190,7 +190,12 @@ class User {
 	 * user edit and profile screens.
 	 */
 	public function action_admin_head() {
-		if ( in_array( get_current_screen()->base, array( 'user-edit', 'profile' ) ) ) {
+		$current_screen = get_current_screen();
+		if ( ! $current_screen ) {
+			return;
+		}
+
+		if ( in_array( $current_screen->base, array( 'user-edit', 'profile' ) ) ) {
 			?>
 			<style type="text/css">
 				.vip-support-email-status {

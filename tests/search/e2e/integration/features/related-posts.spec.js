@@ -55,8 +55,8 @@ describe('Related Posts Feature', () => {
 		 * On the last post insert a Related Posts block.
 		 */
 		cy.openBlockInserter();
-		cy.getBlocksList().should('contain.text', 'Related Posts (ElasticPress)');
-		cy.insertBlock('Related Posts (ElasticPress)');
+		cy.getBlocksList().should('contain.text', 'Related Posts');
+		cy.insertBlock('Related Posts');
 
 		/**
 		 * Verify that the block is inserted into the editor, and contains the
@@ -71,7 +71,7 @@ describe('Related Posts Feature', () => {
 		/**
 		 * Set the block to display 2 related posts.
 		 */
-		cy.get('@block').click();
+		cy.get('@block').click('topRight');
 		cy.openBlockSettingsSidebar();
 		cy.get('input[type="number"][aria-label="Number of items"]').clearThenType('2');
 

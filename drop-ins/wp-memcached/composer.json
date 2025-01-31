@@ -12,7 +12,7 @@
         "phpunit/phpunit": "^9.5",
         "vimeo/psalm": "^5.0",
         "wp-phpunit/wp-phpunit": "^6.1",
-        "yoast/phpunit-polyfills": "^1.0"
+        "yoast/phpunit-polyfills": "^1.1"
     },
     "license": "MIT",
     "authors": [
