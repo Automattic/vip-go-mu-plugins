@@ -37,6 +37,15 @@ class Two_Factor_Totp extends Two_Factor_Provider {
 	 */
 	private static $base_32_chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
+	public static function get_instance() {
+		static $instance;
+		$class = __CLASS__;
+		if ( ! is_a( $instance, $class ) ) {
+			$instance = new $class();
+		}
+		return $instance;
+	}
+
 	/**
 	 * Class constructor. Sets up hooks, etc.
 	 *
