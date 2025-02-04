@@ -15,6 +15,23 @@
 abstract class Two_Factor_Provider {
 
 	/**
+	 * Ensures only one instance of the provider class exists in memory at any one time.
+	 *
+	 * @since 0.1-dev
+	 */
+	public static function get_instance() {
+		static $instances = array();
+
+		$class_name = static::class;
+
+		if ( ! isset( $instances[ $class_name ] ) ) {
+			$instances[ $class_name ] = new $class_name;
+		}
+
+		return $instances[ $class_name ];
+	}
+
+	/**
 	 * Class constructor.
 	 *
 	 * @since 0.1-dev
@@ -33,12 +50,38 @@ abstract class Two_Factor_Provider {
 	abstract public function get_label();
 
 	/**
+	 * Returns the "continue with" text provider for the login screen.
+	 *
+	 * @since 0.9.0
+	 *
+	 * @return string
+	 */
+	public function get_alternative_provider_label() {
+		return sprintf(
+			/* translators: the two factor provider name */
+			__( 'Use %s', 'two-factor' ),
+			$this->get_label()
+		);
+	}
+
+	/**
 	 * Prints the name of the provider.
 	 *
 	 * @since 0.1-dev
 	 */
 	public function print_label() {
 		echo esc_html( $this->get_label() );
+	}
+
+	/**
+	 * Retrieves the provider key / slug.
+	 *
+	 * @since 0.9.0
+	 *
+	 * @return string
+	 */
+	public function get_key() {
+		return get_class( $this );
 	}
 
 	/**
@@ -121,5 +164,25 @@ abstract class Two_Factor_Provider {
 		}
 
 		return (string) $code;
+	}
+
+	/**
+	 * Return the user meta keys that need to be deletated on plugin uninstall.
+	 *
+	 * @return array
+	 */
+	public static function uninstall_user_meta_keys() {
+		return array();
+	}
+
+	/**
+	 * Return the option keys that need to be deleted on plugin uninstall.
+	 *
+	 * Note: this method doesn't have access to the instantiated provider object.
+	 *
+	 * @return array
+	 */
+	public static function uninstall_options() {
+		return array();
 	}
 }
