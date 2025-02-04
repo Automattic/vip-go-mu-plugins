@@ -35,6 +35,15 @@ class Two_Factor_Email extends Two_Factor_Provider {
 	 */
 	const INPUT_NAME_RESEND_CODE = 'two-factor-email-code-resend';
 
+	public static function get_instance() {
+		static $instance;
+		$class = __CLASS__;
+		if ( ! is_a( $instance, $class ) ) {
+			$instance = new $class();
+		}
+		return $instance;
+	}
+
 	/**
 	 * Class constructor.
 	 *
