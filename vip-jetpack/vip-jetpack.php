@@ -364,16 +364,10 @@ function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? 'Local' : 
-			'MU-Plugins';
-		if ( defined( 'VIP_JETPACK_LOADED_VERSION' ) ) {
-			$version = constant( 'VIP_JETPACK_LOADED_VERSION' );
-		} else {
-			$version = constant( 'JETPACK__VERSION' );
-		}
-
+		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? '(Local)' : '';
 		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( '%1$s - Version %2$s' ), $type, $version );
+		$plugin_meta[0] = sprintf( esc_html__( 'Version %1$s %2$s' ), constant( 'JETPACK__VERSION' ), $type );
+		remove_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
 	}
 
 	return $plugin_meta;
@@ -452,4 +446,41 @@ add_action( 'plugins_loaded', function () {
 		defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.9', '>=' ) ) {
 		require_once __DIR__ . '/jetpack-sso-dummy.php';
 	}
+} );
+
+/** 
+ * https://lobby.vip.wordpress.com/2024/12/10/notice-editor-issues-when-using-jetpack-version-13-7-and-wordpress-version-6-5/
+ * Remove this filter to disable the hotfix: 
+ * remove_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+ */
+add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+function vip_jetpack_disable_wpcom_block_editor() {
+	global $wp_version;
+	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
+	$matching_core_constraints    = version_compare( $wp_version, '6.6', '<' );
+
+	if ( $matching_jetpack_constraints && $matching_core_constraints ) {
+		add_filter( 'jetpack_tools_to_include', function ( $tools ) {
+			$key = array_search( 'wpcom-block-editor/class-jetpack-wpcom-block-editor.php', $tools );
+
+			if ( $key ) {
+				unset( $tools[ $key ] );
+			}
+			return $tools;
+		} );
+	}
+}
+// Force cache flush
+add_action( 'plugins_loaded', function () {
+	add_filter( 'script_loader_src',
+		function ( $src, $handle ) {
+			if ( 'wpcom-block-editor-default-editor-script' === $handle ) {
+				return $src . '.vip';
+			}
+
+			return $src;
+		},
+		PHP_INT_MIN,
+		2
+	);
 } );

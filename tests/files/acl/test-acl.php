@@ -366,4 +366,59 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
 	}
+
+	public function test__is_valid_path_for_site__multisite_subsite_can_access_other_subsite_with_filter() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		add_filter( 'vip_files_acl_is_valid_path_for_site', '__return_true' );
+
+		// Create two subsites
+		$first_subsite_id  = $this->factory()->blog->create();
+		$second_subsite_id = $this->factory()->blog->create();
+
+		// Get file path from second
+		$file_path = sprintf( 'sites/%d/2021/01/parakeets.gif', $second_subsite_id );
+
+		// Restore first subsite
+		switch_to_blog( $first_subsite_id );
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
+
+	public function test__is_valid_path_for_site__multisite_subsite_can_access_other_paths_with_filter() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		$expected_is_allowed = true;
+
+		add_filter(
+			'vip_files_acl_is_valid_path_for_site',
+			function ( $is_valid, $file_path ) {
+				// Allow access to any file path starting with 'custom-uploads/'.
+				if ( str_starts_with( $file_path, 'custom-uploads/' ) ) {
+					return true;
+				}
+
+				// Return the original validation result for other paths.
+				return $is_valid;
+			},
+			10,
+			2
+		);
+
+		$this->factory()->blog->create();
+
+		$file_path = 'custom-uploads/parakeets.gif';
+
+		$actual_is_allowed = is_valid_path_for_site( $file_path );
+
+		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	}
 }

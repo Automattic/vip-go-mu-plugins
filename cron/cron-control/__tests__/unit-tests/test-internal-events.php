@@ -74,12 +74,27 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		$duplicate_recurring_event2 = Utils::create_test_event( [ 'timestamp' => time() + 200, 'action' => 'recurring_event', 'schedule' => 'hourly', 'interval' => \HOUR_IN_SECONDS ] );
 		$unique_recurring_event     = Utils::create_test_event( [ 'timestamp' => time() + 100, 'action' => 'recurring_event', 'schedule' => 'hourly', 'interval' => \HOUR_IN_SECONDS, 'args' => [ 'unique' ] ] );
 
+		// This prevent events starting with `wp_` from being scheduled, like wp_version_check,
+		// wp_update_plugins or wp_update_themes to avoid affecting the count assertions.
+		$prevent_wp_cron_events = function ( $event ) {
+			if ( str_starts_with( $event->hook, 'wp_' ) ) {
+				return false;
+			}
+			return $event;
+		};
+
+		// Filter to block any WordPress core cron events so the test events are isolated.
+		add_filter( 'schedule_event', $prevent_wp_cron_events );
+
 		// Run the pruning.
 		Cron_Control\Internal_Events::instance()->clean_legacy_data();
 
+		// Remove the filter after the pruning calls.
+		remove_filter( 'schedule_event', $prevent_wp_cron_events );
+
 		// Should have 5 events left, and the oldest IDs should have been kept..
 		$remaining_events = Cron_Control\Events::query( [ 'limit' => 100, 'orderby' => 'ID', 'order' => 'ASC' ] );
-		$this->assertEquals( 5, count( $remaining_events ), 'correct number of registered events left after pruning' );
+		$this->assertCount( 5, $remaining_events, 'correct number of registered events left after pruning' );
 		$this->assertEquals( $remaining_events[0]->get_id(), $original_single_event->get_id(), 'original single event was kept' );
 		$this->assertEquals( $remaining_events[1]->get_id(), $duplicate_single_event->get_id(), 'duplicate single event was also kept' );
 		$this->assertEquals( $remaining_events[2]->get_id(), $unique_single_event->get_id(), 'unique single event was kept' );
@@ -91,5 +106,131 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		$duplicate_recurring_2 = Cron_Control\Event::get( $duplicate_recurring_event2->get_id() );
 		$this->assertEquals( $duplicate_recurring_1->get_status(), Cron_Control\Events_Store::STATUS_COMPLETED, 'duplicate recurring event 1 was marked as completed' );
 		$this->assertEquals( $duplicate_recurring_2->get_status(), Cron_Control\Events_Store::STATUS_COMPLETED, 'duplicate recurring event 2 was marked as completed' );
+	}
+
+	function test_force_publish_missed_schedules() {
+		// Define the filter callback to override post status.
+		$future_insert_filter = function ( $data ) {
+			if ( 'publish' === $data['post_status'] ) {
+				$data['post_status'] = 'future'; // Ensure it remains future even if the date is in the past.
+			}
+			return $data;
+		};
+
+		// Add the filter to ensure 'future' posts with past dates are not auto-published.
+		add_filter( 'wp_insert_post_data', $future_insert_filter );
+
+		// Create two posts with a 'future' status.
+		$this->factory()->post->create(
+			array(
+				'post_title'  => 'Future post that should be published',
+				'post_status' => 'future',
+				'post_type'   => 'post',
+				'post_date'   => gmdate( 'Y-m-d H:i:s', time() - 1000 ),
+			)
+		);
+
+		$this->factory()->post->create(
+			array(
+				'post_title'  => 'Future post that should not be published',
+				'post_status' => 'future',
+				'post_type'   => 'post',
+				'post_date'   => gmdate( 'Y-m-d H:i:s', time() + 1000 ),
+			)
+		);
+
+		// Remove the filter after creating the test posts.
+		remove_filter( 'wp_insert_post_data', $future_insert_filter );
+
+		// Count posts with 'future' status before running the method.
+		$future_posts_before = get_posts(
+			array(
+				'post_status' => 'future',
+				'numberposts' => -1,
+			)
+		);
+
+		$this->assertCount( 2, $future_posts_before, 'Two posts should be scheduled initially.' );
+
+		// Run the function to publish missed schedules.
+		Cron_Control\Internal_Events::instance()->force_publish_missed_schedules();
+
+		// Query posts again after running the function.
+		$future_posts_after = get_posts(
+			array(
+				'post_status' => 'future',
+				'post_type'   => 'post',
+				'numberposts' => -1,
+			)
+		);
+
+		$published_posts = get_posts(
+			array(
+				'post_status' => 'publish',
+				'post_type'   => 'post',
+				'numberposts' => -1,
+			)
+		);
+
+		// Assert counts after the function runs.
+		$this->assertCount( 1, $future_posts_after, 'One post should still be scheduled.' );
+		$this->assertCount( 1, $published_posts, 'One post should be published.' );
+	}
+
+	public function test_confirm_scheduled_posts() {
+		// Create posts with 'future' status.
+		$future_posts = array(
+			$this->factory()->post->create(
+				array(
+					'post_title'  => '1 hour in the future',
+					'post_status' => 'future',
+					'post_type'   => 'post',
+					'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '+1 hour' ) ),
+				)
+			),
+			$this->factory()->post->create(
+				array(
+					'post_title'  => '2 hours in the future',
+					'post_status' => 'future',
+					'post_type'   => 'post',
+					'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '+2 hours' ) ),
+				)
+			),
+			$this->factory()->post->create(
+				array(
+					'post_title'  => '3 hours in the future',
+					'post_status' => 'future',
+					'post_type'   => 'post',
+					'post_date'   => gmdate( 'Y-m-d H:i:s', strtotime( '+3 hours' ) ),
+				)
+			),
+		);
+
+		// Clear existing cron events to isolate the test.
+		Utils::clear_cron_table();
+
+		// Query all cron events to confirm none exist.
+		$events = Cron_Control\Events::query();
+		$this->assertEmpty( $events, 'No scheduled events should exist initially.' );
+
+		// Call the method to confirm scheduled posts.
+		Cron_Control\Internal_Events::instance()->confirm_scheduled_posts();
+
+		// Verify that cron jobs are scheduled for each future post.
+		foreach ( $future_posts as $future_post_id ) {
+			$timestamp = wp_next_scheduled( 'publish_future_post', array( $future_post_id ) );
+			$this->assertNotFalse( $timestamp, "Cron job should be scheduled for post ID: $future_post_id." );
+		}
+
+		// Reschedule one post with a different timestamp and call the method again.
+		$future_post_gmt_time = strtotime( get_gmt_from_date( get_post( $future_posts[0] )->post_date ) . ' GMT' );
+		wp_clear_scheduled_hook( 'publish_future_post', array( $future_posts[0] ) );
+		wp_schedule_single_event( $future_post_gmt_time - 3600, 'publish_future_post', array( $future_posts[0] ) ); // Schedule 1 hour earlier.
+
+		Cron_Control\Internal_Events::instance()->confirm_scheduled_posts();
+
+		// Verify the post's cron job has been rescheduled to the correct timestamp.
+		$rescheduled_timestamp = wp_next_scheduled( 'publish_future_post', array( $future_posts[0] ) );
+		$this->assertEquals( $future_post_gmt_time, $rescheduled_timestamp, 'Cron job for post 1 should be rescheduled to the correct timestamp.' );
 	}
 }
