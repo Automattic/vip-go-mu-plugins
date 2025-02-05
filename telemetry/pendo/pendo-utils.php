@@ -42,9 +42,9 @@ function get_base_properties_of_pendo_user( $property_suffix ): array {
 	$salt           = constant( 'VIP_TELEMETRY_SALT' );
 	$tracks_user_id = hash_hmac( 'sha256', $wp_user->user_email, $salt );
 
-	$props['id']                             = $is_vip_user ? 'vip-' . $tracks_user_id : $tracks_user_id;
-	$props[ 'full_name' . $property_suffix ] = $wp_user->display_name;
-	$props[ 'role' . $property_suffix ]      = $wp_user->roles[0];
+	$props['id']                        = $is_vip_user ? 'vip-' . $tracks_user_id : $tracks_user_id;
+	$props['full_name']                 = $wp_user->display_name;
+	$props[ 'role' . $property_suffix ] = $wp_user->roles[0];
 
 	return $props;
 }
