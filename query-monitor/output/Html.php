@@ -553,8 +553,6 @@ abstract class QM_Output_Html extends QM_Output {
 				return 'phpstorm://open?file=%f&line=%l';
 			case 'vscode':
 				return 'vscode://file/%f:%l';
-			case 'atom':
-				return 'atom://open/?url=file://%f&line=%l';
 			case 'sublime':
 				return 'subl://open/?url=file://%f&line=%l';
 			case 'textmate':
