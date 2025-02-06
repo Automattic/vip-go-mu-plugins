@@ -605,6 +605,16 @@ abstract class QM_Output_Html extends QM_Output {
 	 * @return array<string, string>
 	 */
 	public static function get_file_path_map() {
+		$map = array();
+
+		$host_path = getenv( 'HOST_PATH' );
+
+		if ( ! empty( $host_path ) ) {
+			$source = rtrim( ABSPATH, DIRECTORY_SEPARATOR );
+			$replacement = rtrim( $host_path, DIRECTORY_SEPARATOR );
+			$map[ $source ] = $replacement;
+		}
+
 		/**
 		 * Filters the file path mapping for clickable file links.
 		 *
@@ -613,7 +623,7 @@ abstract class QM_Output_Html extends QM_Output {
 		 *
 		 * @param array<string, string> $file_map Array of file path mappings. Keys are the source paths and values are the replacement paths.
 		 */
-		return apply_filters( 'qm/output/file_path_map', array() );
+		return apply_filters( 'qm/output/file_path_map', $map );
 	}
 
 	/**

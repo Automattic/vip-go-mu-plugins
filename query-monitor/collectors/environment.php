@@ -40,28 +40,30 @@ class QM_Collector_Environment extends QM_DataCollector {
 	 * @return array<string, bool>
 	 */
 	protected static function get_error_levels( $error_reporting ) {
-		$levels = array(
-			'E_ERROR' => false,
-			'E_WARNING' => false,
-			'E_PARSE' => false,
-			'E_NOTICE' => false,
-			'E_CORE_ERROR' => false,
-			'E_CORE_WARNING' => false,
-			'E_COMPILE_ERROR' => false,
-			'E_COMPILE_WARNING' => false,
-			'E_USER_ERROR' => false,
-			'E_USER_WARNING' => false,
-			'E_USER_NOTICE' => false,
-			'E_STRICT' => false,
-			'E_RECOVERABLE_ERROR' => false,
-			'E_DEPRECATED' => false,
-			'E_USER_DEPRECATED' => false,
-			'E_ALL' => false,
+		$constants = array(
+			'E_ERROR' => 1,
+			'E_WARNING' => 2,
+			'E_PARSE' => 4,
+			'E_NOTICE' => 8,
+			'E_CORE_ERROR' => 16,
+			'E_CORE_WARNING' => 32,
+			'E_COMPILE_ERROR' => 64,
+			'E_COMPILE_WARNING' => 128,
+			'E_USER_ERROR' => 256,
+			'E_USER_WARNING' => 512,
+			'E_USER_NOTICE' => 1024,
+			'E_STRICT' => 2048,
+			'E_RECOVERABLE_ERROR' => 4096,
+			'E_DEPRECATED' => 8192,
+			'E_USER_DEPRECATED' => 16384,
+			'E_ALL' => 30719,
 		);
+
+		$levels = array_fill_keys( array_keys( $constants ), false );
 
 		foreach ( $levels as $level => $reported ) {
 			if ( defined( $level ) ) {
-				$c = constant( $level );
+				$c = $constants[ $level ];
 				if ( $error_reporting & $c ) {
 					$levels[ $level ] = true;
 				}
@@ -187,10 +189,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 			'WP_DEVELOPMENT_MODE' => self::format_bool_constant( 'WP_DEVELOPMENT_MODE' ),
 		);
 
-		// WP 5.5
-		if ( function_exists( 'wp_get_environment_type' ) ) {
-			$this->data->wp['environment_type'] = wp_get_environment_type();
-		}
+		$this->data->wp['environment_type'] = wp_get_environment_type();
 
 		// WP 6.3
 		if ( function_exists( 'wp_get_development_mode' ) ) {
@@ -227,6 +226,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 			'host' => null,
 			'OS' => null,
 			'arch' => null,
+			'basicauth' => wp_is_site_protected_by_basic_auth() ? 'true' : 'false',
 		);
 
 		if ( function_exists( 'php_uname' ) ) {
