@@ -43,7 +43,7 @@ class QM_Collector_Doing_It_Wrong extends QM_DataCollector {
 		add_filter( 'deprecated_file_trigger_error', array( $this, 'maybe_prevent_error' ), 999 );
 		add_filter( 'deprecated_argument_trigger_error', array( $this, 'maybe_prevent_error' ), 999 );
 		add_filter( 'deprecated_hook_trigger_error', array( $this, 'maybe_prevent_error' ), 999 );
-		add_filter( 'doing_it_wrong_trigger_error', array( $this, 'maybe_prevent_error' ), 999 );
+		add_filter( 'doing_it_wrong_trigger_error', array( $this, 'maybe_prevent_doing_it_wrong_error' ), 999, 4 );
 	}
 
 	/**
@@ -64,7 +64,7 @@ class QM_Collector_Doing_It_Wrong extends QM_DataCollector {
 		remove_filter( 'deprecated_file_trigger_error', array( $this, 'maybe_prevent_error' ) );
 		remove_filter( 'deprecated_argument_trigger_error', array( $this, 'maybe_prevent_error' ) );
 		remove_filter( 'deprecated_hook_trigger_error', array( $this, 'maybe_prevent_error' ) );
-		remove_filter( 'doing_it_wrong_trigger_error', array( $this, 'maybe_prevent_error' ) );
+		remove_filter( 'doing_it_wrong_trigger_error', array( $this, 'maybe_prevent_doing_it_wrong_error' ), 999 );
 	}
 
 	/**
@@ -80,6 +80,25 @@ class QM_Collector_Doing_It_Wrong extends QM_DataCollector {
 		}
 
 		return $trigger;
+	}
+
+	/**
+	 * Prevents the doing_it_wrong error from being triggered for doing it wrong calls when the
+	 * current user can view Query Monitor output.
+	 *
+	 * @param bool|mixed $trigger Whether to trigger the error for _doing_it_wrong() calls. Default true.
+	 * @param string $function_name The function that was called.
+	 * @param string $message A message explaining what has been done incorrectly.
+	 * @param string $version The version of WordPress where the message was added.
+	 *
+	 * @return bool
+	 */
+	public function maybe_prevent_doing_it_wrong_error( $trigger, $function_name, $message, $version ) {
+		if ( function_exists( 'wp_get_current_user' ) && current_user_can( 'view_query_monitor' ) ) {
+			return false;
+		}
+
+		return $this->is_just_in_time_for_qm_domain( $function_name, $message ) ? false : $trigger;
 	}
 
 	/**
@@ -118,6 +137,10 @@ class QM_Collector_Doing_It_Wrong extends QM_DataCollector {
 	 */
 	public function action_doing_it_wrong_run( $function_name, $message, $version ) {
 		if ( $this->collecting ) {
+			return;
+		}
+
+		if ( $this->is_just_in_time_for_qm_domain( $function_name, $message ) ) {
 			return;
 		}
 
@@ -386,6 +409,18 @@ class QM_Collector_Doing_It_Wrong extends QM_DataCollector {
 		);
 
 		$this->collecting = false;
+	}
+
+	/**
+	 * Whether it is the just_in_time_error for the QM domains.
+	 *
+	 * @param string $function_name Function name.
+	 * @param string $message       Message.
+	 *
+	 * @return bool
+	 */
+	protected function is_just_in_time_for_qm_domain( string $function_name, string $message ): bool {
+		return $function_name === '_load_textdomain_just_in_time' && strpos( $message, '<code>query-monitor' ) !== false;
 	}
 
 }

@@ -28,8 +28,6 @@ jobs:
       matrix:
         config:
         # PHP 8.1, Jetpack
-          - { wp: 6.1.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.1.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.2.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.2.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
           - { wp: 6.3.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
