@@ -28,15 +28,6 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 	 */
 	const NUMBER_OF_CODES = 10;
 
-	public static function get_instance() {
-		static $instance;
-		$class = __CLASS__;
-		if ( ! is_a( $instance, $class ) ) {
-			$instance = new $class();
-		}
-		return $instance;
-	}
-
 	/**
 	 * Class constructor.
 	 *

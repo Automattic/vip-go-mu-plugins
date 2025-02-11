@@ -15,8 +15,8 @@ services:
     ports:
       - 80:80
   database:
-    image: mysql:8
-    command: mysqld --sql-mode=ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION --max_allowed_packet=67M --default-authentication-plugin=mysql_native_password
+    image: mysql:8.4
+    command: mysqld --sql-mode=ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION --max_allowed_packet=67M --mysql-native-password=ON
     environment:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: wordpress

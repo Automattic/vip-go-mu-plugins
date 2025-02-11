@@ -155,3 +155,6 @@ function vip_divi_setup() {
 	});
 }
 add_action( 'after_setup_theme', 'vip_divi_setup' );
+
+// Disable WooCommerce background image regeneration - this is redundant
+add_filter( 'woocommerce_background_image_regeneration', '__return_false' );
