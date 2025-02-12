@@ -51,7 +51,7 @@ function validate_path( $file_path ) {
 
 	// Relative path not allowed
 	if ( '/' !== $file_path[0] ) {
-		log_warning( sprintf( 'VIP Files ACL failed due to relative path' ), htmlspecialchars( $file_path ) );
+		log_warning( 'VIP Files ACL failed due to relative path', htmlspecialchars( $file_path ) );
 
 		return false;
 	}
@@ -59,20 +59,20 @@ function validate_path( $file_path ) {
 	// Missing `/wp-content/uploads/`.
 	// Using `strpos` since we can have subsite / subdirectory paths.
 	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
-		log_warning( sprintf( 'VIP Files ACL failed due to invalid path' ), htmlspecialchars( $file_path ) );
+		log_warning( 'VIP Files ACL failed due to invalid path', htmlspecialchars( $file_path ) );
 
 		return false;
 	}
 
 	$decoded = urldecode( $file_path );
 	if ( false !== strpos( $decoded, './' ) ) {
-		log_warning( sprintf( 'VIP Files ACL failed due to a possible path traversal attack' ), htmlspecialchars( $file_path ) );
+		log_warning( 'VIP Files ACL failed due to a possible path traversal attack', htmlspecialchars( $file_path ) );
 		return false;
 	}
 
 	// Trailing whitespace (like %0A) in the filename. This won't work on our prod servers but will work in dev env.
 	if ( strlen( rtrim( $decoded ) ) !== strlen( $decoded ) ) {
-		log_warning( sprintf( 'VIP Files ACL failed due to a possible attack' ), htmlspecialchars( $file_path ) );
+		log_warning( 'VIP Files ACL failed due to a possible attack', htmlspecialchars( $file_path ) );
 		return false;
 	}
 
