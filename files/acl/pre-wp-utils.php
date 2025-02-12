@@ -19,7 +19,7 @@ namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
  */
 function prepare_request( $file_request_uri ) {
 	if ( ! $file_request_uri ) {
-		trigger_error( 'VIP Files ACL failed due to empty URI', E_USER_WARNING );   // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		log_warning( 'VIP Files ACL failed due to empty URI' );
 
 		return false;
 	}
@@ -44,15 +44,14 @@ function prepare_request( $file_request_uri ) {
  */
 function validate_path( $file_path ) {
 	if ( ! $file_path ) {
-		trigger_error( 'VIP Files ACL failed due to empty path', E_USER_WARNING );  // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		log_warning( 'VIP Files ACL failed due to empty path' );
 
 		return false;
 	}
 
 	// Relative path not allowed
 	if ( '/' !== $file_path[0] ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( 'VIP Files ACL failed due to relative path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		log_warning( sprintf( 'VIP Files ACL failed due to relative path' ), htmlspecialchars( $file_path ) );
 
 		return false;
 	}
@@ -60,27 +59,43 @@ function validate_path( $file_path ) {
 	// Missing `/wp-content/uploads/`.
 	// Using `strpos` since we can have subsite / subdirectory paths.
 	if ( false === strpos( $file_path, '/wp-content/uploads/' ) ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( 'VIP Files ACL failed due to invalid path (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		log_warning( sprintf( 'VIP Files ACL failed due to invalid path' ), htmlspecialchars( $file_path ) );
 
 		return false;
 	}
 
 	$decoded = urldecode( $file_path );
 	if ( false !== strpos( $decoded, './' ) ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( 'VIP Files ACL failed due to a possible path traversal attack (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		log_warning( sprintf( 'VIP Files ACL failed due to a possible path traversal attack' ), htmlspecialchars( $file_path ) );
 		return false;
 	}
 
 	// Trailing whitespace (like %0A) in the filename. This won't work on our prod servers but will work in dev env.
 	if ( strlen( rtrim( $decoded ) ) !== strlen( $decoded ) ) {
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped, WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( 'VIP Files ACL failed due to a possible attack (for %s)', htmlspecialchars( $file_path ) ), E_USER_WARNING );
+		log_warning( sprintf( 'VIP Files ACL failed due to a possible attack' ), htmlspecialchars( $file_path ) );
 		return false;
 	}
 
 	return true;
+}
+
+/**
+ * Log an error to Logstash.
+ *
+ * @param string $message The error message.
+ * @param string $file_path The file path that caused the error.
+ */
+function log_warning( $message, $file_path = null ) {
+	\Automattic\VIP\Logstash\log2logstash(
+		[
+			'severity' => 'warning', // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_log -- E_USER_WARNING is not used here
+			'feature'  => 'files_acl_pre_wp_utils',
+			'message'  => $message,
+			'extra'    => [
+				'file_path' => $file_path,
+			],
+		]
+	);
 }
 
 /**
