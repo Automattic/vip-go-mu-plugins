@@ -44,7 +44,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 			],
 			'Invalid request URI' => [
 				'invalid/path.jpg',
-				'VIP Files ACL failed due to relative path (for invalid/path.jpg)',
+				'VIP Files ACL failed due to relative path',
 			],
 		];
 	}
@@ -53,11 +53,17 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider data__prepare_request
 	 */
 	public function test__prepare_request__warning( string $request_uri, string $expected_message ): void {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->expectExceptionMessage( $expected_message );
+		$log_data    = null;
+		$mock_logger = function ( $data ) use ( &$log_data ) {
+			$log_data = $data;
+		};
 
-		prepare_request( $request_uri );
+		prepare_request( $request_uri, $mock_logger );
+
+		$this->assertNotNull( $log_data, 'log2logstash was not called.' );
+		$this->assertEquals( 'warning', $log_data['severity'] );
+		$this->assertEquals( $expected_message, $log_data['message'] );
+		$this->assertEquals( $request_uri, $log_data['extra']['file_path'] );
 	}
 
 	/**
@@ -95,37 +101,37 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 			'path-no-wp-content'             => [
 				'/a/path/to/a/file.jpg',
-				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
+				'VIP Files ACL failed due to invalid path',
 			],
 
 			'relative-url-with-wp-content'   => [
 				'en/wp-content/uploads/file.png',
-				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
+				'VIP Files ACL failed due to relative path',
 			],
 
 			'path-traversal-dot'             => [
 				'/wp-content/uploads/./file.jpg',
-				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/./file.jpg)',
+				'VIP Files ACL failed due to a possible path traversal attack',
 			],
 
 			'path-traversal'                 => [
 				'/wp-content/uploads/../file.jpg',
-				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/../file.jpg)',
+				'VIP Files ACL failed due to a possible path traversal attack',
 			],
 
 			'path-traversal-urlencoded'      => [
 				'/wp-content/uploads/..%2Ffile.jpg',
-				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/..%2Ffile.jpg)',
+				'VIP Files ACL failed due to a possible path traversal attack',
 			],
 
 			'trailing-whitespace'            => [
 				'/wp-content/uploads/file.jpg ',
-				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg )',
+				'VIP Files ACL failed due to a possible attack',
 			],
 
 			'trailing-whitespace-urlencoded' => [
 				'/wp-content/uploads/file.jpg%0a',
-				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg%0a)',
+				'VIP Files ACL failed due to a possible attack',
 			],
 		];
 	}
@@ -164,11 +170,17 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	 * @dataProvider get_data__validate_path__invalid
 	 */
 	public function test__validate_path__invalid__warning( $file_path, $expected_warning ) {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->expectExceptionMessage( $expected_warning );
+		$log_data    = null;
+		$mock_logger = function ( $data ) use ( &$log_data ) {
+			$log_data = $data;
+		};
 
-		validate_path( $file_path );
+		validate_path( $file_path, $mock_logger );
+
+		$this->assertNotNull( $log_data, 'log2logstash was not called.' );
+		$this->assertEquals( 'warning', $log_data['severity'] );
+		$this->assertEquals( $expected_warning, $log_data['message'] );
+		$this->assertEquals( $file_path, $log_data['extra']['file_path'] );
 	}
 
 	/**
