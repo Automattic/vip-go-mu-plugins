@@ -1228,6 +1228,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: none !important;
 }
 #query-monitor-main .qm-title-heading select,
+#query-monitor-main .qm select.qm-select,
 #query-monitor-main .qm select.qm-filter {
   -webkit-appearance: menulist !important;
   -moz-appearance: menulist !important;
@@ -1249,8 +1250,15 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm-title-heading select {
   max-width: unset !important;
 }
+#query-monitor-main .qm select.qm-select:hover,
 #query-monitor-main .qm select.qm-filter:hover {
   background: var(--qm-cell-bg-hover) !important;
+}
+#query-monitor-main .qm select.qm-select {
+  margin: 0 !important;
+  padding: 4px 10px 4px 4px !important;
+  border-radius: 2px !important;
+  max-width: none !important;
 }
 #query-monitor-main .qm-hide,
 #query-monitor-main .qm-hide-scripts-dependencies,
