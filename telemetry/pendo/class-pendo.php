@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use WP_Error;
+use Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Client;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Event;
 
@@ -114,6 +115,23 @@ class Pendo extends Telemetry_System {
 			$provided_global_event_properties,
 			get_base_properties_of_pendo_track_event(),
 		);
+	}
+
+	/**
+	 * If allowed, inserts the Pendo script into the page to enable Page and
+	 * Feature tracking.
+	 */
+	public static function enable_javascript_library( string|null $snippet_api_key = null ): void {
+		// If the API key is not provided, check if it is defined in the environment.
+		if ( null === $snippet_api_key && defined( 'PENDO_SNIPPET_API_KEY' ) ) {
+			$snippet_api_key = constant( 'PENDO_SNIPPET_API_KEY' );
+		}
+
+		if ( true !== self::is_pendo_enabled_for_environment() ) {
+			return;
+		}
+
+		Pendo_JavaScript_Library::init( $snippet_api_key );
 	}
 
 	/**
