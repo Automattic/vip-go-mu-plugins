@@ -235,14 +235,20 @@ require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
 // Load the Telemetry files
 require_once __DIR__ . '/telemetry/class-telemetry-system.php';
-require_once __DIR__ . '/telemetry/class-tracks.php';
 require_once __DIR__ . '/telemetry/class-telemetry-client.php';
 require_once __DIR__ . '/telemetry/class-telemetry-event-queue.php';
 require_once __DIR__ . '/telemetry/class-telemetry-event.php';
+require_once __DIR__ . '/telemetry/class-telemetry.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
 require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-client.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event.php';
+require_once __DIR__ . '/telemetry/pendo/pendo-utils.php';
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
