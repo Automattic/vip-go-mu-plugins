@@ -412,4 +412,7 @@ function vip_illegal_user_logins( $logins ) {
 	$logins[] = 'admin';
 	return $logins;
 }
-add_filter( 'illegal_user_logins', 'vip_illegal_user_logins' );
+
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	add_filter( 'illegal_user_logins', 'vip_illegal_user_logins' );
+}
