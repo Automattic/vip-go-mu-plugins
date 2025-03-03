@@ -7,7 +7,7 @@ use WP_Error;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
-
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.WP.AlternativeFunctions.file_system_read_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite,WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_rename, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_content, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	/** @var VIP_Filesystem_Stream_Wrapper */
 	private $stream_wrapper;
@@ -304,7 +304,7 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	public function test_local_files() {
 		// Set up the API client mock
 		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
+		$this->stream_wrapper  = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
 		$this->stream_wrapper->register();
 		$this->should_unregister = true;
 		
