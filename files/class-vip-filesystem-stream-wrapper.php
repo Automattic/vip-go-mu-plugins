@@ -2,8 +2,8 @@
 
 namespace Automattic\VIP\Files;
 
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.WP.AlternativeFunctions.file_system_read_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread,
+// phpcs:disable WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite,WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_rename, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 class VIP_Filesystem_Stream_Wrapper {
 
 	/**
@@ -181,11 +181,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @param   string $path URL that was passed to the original function
 	 * @param   string $mode Type of access. See `fopen` docs
-	 * @param   $options
 	 *
 	 * @return  bool    True on success or false on failure
 	 */
-	public function stream_open( $path, $mode, $options, &$opened_path ) {
+	public function stream_open( $path, $mode ) {
 		$this->path = $path;
 		$this->uri  = $path;
 
@@ -592,7 +591,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				if ( $flags & STREAM_URL_STAT_QUIET ) {
 					return false;
 				} else {
-					return trigger_error( "stat(): stat failed for {$path}", E_USER_WARNING );
+					return trigger_error( 'stat(): stat failed for ' . esc_html( $path ), E_USER_WARNING );
 				}
 			}
 
@@ -741,9 +740,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			return rename( $local_from, $local_to );
-		}
-		// Source is local but destination is not
-		elseif ( $from_is_local && ! $to_is_local ) {
+		} elseif ( $from_is_local && ! $to_is_local ) { // // Source is local but destination is not
 			$local_from = self::get_local_tmp_path( $path_from );
 
 			if ( ! file_exists( $local_from ) ) {
@@ -776,9 +773,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			return $result;
-		}
-		// Source is not local but destination is
-		elseif ( ! $from_is_local && $to_is_local ) {
+		} elseif ( ! $from_is_local && $to_is_local ) { // Source is not local but destination.
 			// Trim the source path
 			$path_from = $this->trim_path( $path_from );
 
@@ -1207,7 +1202,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$relative_path = ltrim( $file_path, '/' );
 		}
 
-		$tmp_path = '/tmp/' . $relative_path;
+		$tmp_path = get_temp_dir() . $relative_path;
 
 		// Ensure the directory exists
 		$dir = dirname( $tmp_path );
