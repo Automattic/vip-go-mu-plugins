@@ -81,7 +81,7 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@3.0.0
+      uses: ramsey/composer-install@57532f8be5bda426838819c5ee9afb8af389d51a # 3.0.0
 
     - name: Set up WordPress and WordPress Test Library
       uses: sjinks/setup-wordpress-test-library@v2.1.3
