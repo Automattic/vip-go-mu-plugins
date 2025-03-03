@@ -9,7 +9,7 @@ on:
       - develop
     paths:
       - "search/search-dev-tools/src/**.js"
-      - ".github/workflows/codeql-analysis.yml"
+      - ".github/**.yml"
   schedule:
     - cron: '24 2 * * 6'
 
@@ -27,6 +27,7 @@ jobs:
       matrix:
         language:
           - javascript
+          - actions
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
@@ -39,3 +40,5 @@ jobs:
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3.28.10
+        with:
+          category: "/language:${{matrix.language}}"
