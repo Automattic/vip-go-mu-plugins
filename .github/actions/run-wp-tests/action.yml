@@ -65,7 +65,7 @@ runs:
       shell: bash
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.32.0
+      uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
