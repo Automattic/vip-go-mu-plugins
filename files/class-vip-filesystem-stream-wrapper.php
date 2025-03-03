@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.WP.AlternativeFunctions.file_system_read_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread,
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.WP.AlternativeFunctions.file_system_read_fopen,WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread
 // phpcs:disable WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite,WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_rename, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 class VIP_Filesystem_Stream_Wrapper {
 
@@ -87,7 +87,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Protocol for the stream to register to
 	 *
-	 * @since   1.0.0
+	 * @since   1.0.0w
 	 * @access  private
 	 * @var string  The defined protocol.
 	 */
@@ -870,6 +870,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @return  bool
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
 	public function mkdir( $path, $mode, $options ) {
 		// Check if this is a file that should be handled locally
 		if ( self::is_local_file( $path ) ) {
@@ -882,10 +883,8 @@ class VIP_Filesystem_Stream_Wrapper {
 			return \wp_mkdir_p( $local_path );
 		}
 
-		// Original implementation for non-local files
-		$path = $this->trim_path( $path );
-
-		// ... existing code ...
+		// No such thing as a directory in File service.
+		return true;
 	}
 
 	/**
