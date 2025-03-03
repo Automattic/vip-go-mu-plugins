@@ -124,6 +124,13 @@ class VIP_Filesystem_Stream_Wrapper {
 	private static $local_files = [];
 
 	/**
+	 * File handle for local files
+	 *
+	 * @var resource|null
+	 */
+	private $handle;
+
+	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
 	 * @param API_Client $client
@@ -190,7 +197,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			if ( strpos( $mode, 'w' ) !== false || strpos( $mode, 'a' ) !== false || strpos( $mode, 'x' ) !== false || strpos( $mode, 'c' ) !== false ) {
 				$dir = dirname( $local_path );
 				if ( ! file_exists( $dir ) ) {
-					wp_mkdir_p( $dir );
+					\wp_mkdir_p( $dir );
 				}
 			}
 			
@@ -290,11 +297,20 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @return bool
+	 * @return  bool
 	 */
 	public function stream_eof() {
-		$this->debug( sprintf( 'stream_eof => %s + %s', $this->path, $this->uri ) );
+		// If this is a local file, use the local file handle
+		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+			return feof( $this->handle );
+		}
+		
+		// Original implementation for non-local files
+		if ( ! $this->file ) {
+			return true;
+		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_feof
 		return feof( $this->file );
 	}
 
@@ -699,6 +715,11 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True on successful rename
 	 */
 	public function rename( $path_from, $path_to ) {
+		// If source and destination paths are the same, return true (no action needed)
+		if ( $path_from === $path_to ) {
+			return true;
+		}
+		
 		// Check if source is a local file
 		$from_is_local = self::is_local_file( $path_from );
 		// Check if destination is a local file
@@ -716,7 +737,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			// Create directory for destination if it doesn't exist
 			$dir = dirname( $local_to );
 			if ( ! file_exists( $dir ) ) {
-				wp_mkdir_p( $dir );
+				\wp_mkdir_p( $dir );
 			}
 			
 			return rename( $local_from, $local_to );
@@ -738,8 +759,16 @@ class VIP_Filesystem_Stream_Wrapper {
 			// Trim the destination path
 			$path_to = $this->trim_path( $path_to );
 			
+			// Create a temporary file with the content
+			$tmp_file = tmpfile();
+			fwrite( $tmp_file, $content );
+			rewind( $tmp_file );
+			
 			// Write content to remote file
-			$result = $this->client->upload_from_string( $path_to, $content );
+			$result = $this->client->upload_file( $tmp_file, $path_to );
+			
+			// Close the temporary file
+			fclose( $tmp_file );
 			
 			// If successful, delete the local file
 			if ( $result ) {
@@ -765,7 +794,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			// Create directory for destination if it doesn't exist
 			$dir = dirname( $local_to );
 			if ( ! file_exists( $dir ) ) {
-				wp_mkdir_p( $dir );
+				\wp_mkdir_p( $dir );
 			}
 			
 			$result = file_put_contents( $local_to, $content ) !== false;
@@ -855,7 +884,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				return false;
 			}
 			
-			return wp_mkdir_p( $local_path );
+			return \wp_mkdir_p( $local_path );
 		}
 		
 		// Original implementation for non-local files
@@ -1183,7 +1212,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		// Ensure the directory exists
 		$dir = dirname( $tmp_path );
 		if ( ! file_exists( $dir ) ) {
-			wp_mkdir_p( $dir );
+			\wp_mkdir_p( $dir );
 		}
 		
 		return $tmp_path;

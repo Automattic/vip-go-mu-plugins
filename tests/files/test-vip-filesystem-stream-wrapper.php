@@ -302,6 +302,12 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	 * Test local files functionality
 	 */
 	public function test_local_files() {
+		// Set up the API client mock
+		$this->api_client_mock = $this->createMock( API_Client::class );
+		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( $this->api_client_mock );
+		$this->stream_wrapper->register();
+		$this->should_unregister = true;
+		
 		// Test adding a file to the local files list
 		$test_file = 'vip://wp-content/uploads/test-local-file.txt';
 		$this->assertTrue( VIP_Filesystem_Stream_Wrapper::add_local_file( $test_file ) );
@@ -363,5 +369,11 @@ class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 		// Test removing a file from the local files list
 		$this->assertTrue( VIP_Filesystem_Stream_Wrapper::remove_local_file( $test_file ) );
 		$this->assertFalse( VIP_Filesystem_Stream_Wrapper::is_local_file( $test_file ) );
+		
+		// Clean up
+		if ( $this->should_unregister ) {
+			stream_wrapper_unregister( VIP_Filesystem_Stream_Wrapper::DEFAULT_PROTOCOL );
+			$this->should_unregister = false;
+		}
 	}
 }
