@@ -59,3 +59,26 @@ add_filter( 'filesystem_method_file', function ( $file, $method ) {
 	}
 	return $file;
 }, PHP_INT_MAX, 2 );
+
+/**
+ * Add paths that should be handled by the local filesystem
+ * This can be called from a theme or plugin to configure local paths
+ */
+// phpcs:ignore Universal.Files.SeparateFunctionsFromOO.Mixed
+function vip_add_local_file_path( $path ) {
+	Automattic\VIP\Files\WP_Filesystem_VIP::add_local_path( $path );
+}
+
+/**
+ * Remove a path from the list of paths that should be handled locally
+ */
+function vip_remove_local_file_path( $path ) {
+	Automattic\VIP\Files\WP_Filesystem_VIP::remove_local_path( $path );
+}
+
+// Example usage - add some default paths
+if ( defined( 'VIP_LOCAL_PATHS' ) && is_array( constant( 'VIP_LOCAL_PATHS' ) ) ) {
+	foreach ( VIP_LOCAL_PATHS as $local_path ) {
+		vip_add_local_file_path( $local_path );
+	}
+}

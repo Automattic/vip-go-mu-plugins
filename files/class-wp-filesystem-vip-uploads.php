@@ -55,6 +55,16 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return string|bool The function returns the read data or false on failure.
 	 */
 	public function get_contents( $file ) {
+		// Check if this is a local path that should be handled directly
+		if ( WP_Filesystem_VIP::is_local_path( $file ) ) {
+			$local_path = $this->get_local_path_mapping( $file );
+			if ( file_exists( $local_path ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
+				return file_get_contents( $local_path );
+			}
+			return false;
+		}
+
 		$uploads_path = $this->sanitize_uploads_path( $file );
 
 		$content = $this->api->get_file_content( $uploads_path );
@@ -103,25 +113,43 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 *
 	 * @return bool False upon failure, true otherwise.
 	 */
-	public function put_contents( $file_path, $contents, $mode = false ) {
-		$uploads_path = $this->sanitize_uploads_path( $file_path );
+	public function put_contents( $file, $contents, $mode = false ) {
+		// Check if this is a local path that should be handled directly
+		if ( WP_Filesystem_VIP::is_local_path( $file ) ) {
+			$local_path = $this->get_local_path_mapping( $file );
 
-		$file_name     = basename( $file_path );
-		$tmp_file_path = tempnam( get_temp_dir(), 'uploads-' . $file_name );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
-		file_put_contents( $tmp_file_path, $contents );                         // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			// Ensure the directory exists
+			$dir = dirname( $local_path );
+			if ( ! is_dir( $dir ) ) {
+				wp_mkdir_p( $dir );
+			}
 
-		$response = $this->api->upload_file( $tmp_file_path, $uploads_path );
+			$bytes = file_put_contents( $local_path, $contents );
+			if ( false === $bytes ) {
+				$this->errors->add( 'write-error', "Error writing to file: $local_path" );
+				return false;
+			}
+			return $bytes;
+		}
 
-		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
-		unlink( $tmp_file_path );
+		$uploads_path = $this->sanitize_uploads_path( $file );
 
-		if ( is_wp_error( $response ) ) {
-			$this->errors = $response;
+		// Create a temporary file with the contents
+		$temp_file = wp_tempnam();
+		file_put_contents( $temp_file, $contents );
 
+		// Upload the file
+		$result = $this->api->upload_file( $temp_file, $uploads_path );
+
+		// Remove the temporary file
+		unlink( $temp_file );
+
+		if ( is_wp_error( $result ) ) {
+			$this->errors = $result;
 			return false;
 		}
 
-		return true;
+		return strlen( $contents );
 	}
 
 	/**
@@ -130,12 +158,21 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function delete( $file, $recursive = false, $type = false ) {
+		// Check if this is a local path that should be handled directly
+		if ( WP_Filesystem_VIP::is_local_path( $file ) ) {
+			$local_path = $this->get_local_path_mapping( $file );
+			if ( file_exists( $local_path ) ) {
+				return unlink( $local_path );
+			}
+			return false;
+		}
+
 		$uploads_path = $this->sanitize_uploads_path( $file );
 
-		$response = $this->api->delete_file( $uploads_path );
-		if ( is_wp_error( $response ) ) {
-			$this->errors = $response;
+		$result = $this->api->delete_file( $uploads_path );
 
+		if ( is_wp_error( $result ) ) {
+			$this->errors = $result;
 			return false;
 		}
 
@@ -162,22 +199,29 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Check if a file exists.
+	 * Check if a file exists
 	 *
 	 * @param string $file Path to file.
 	 *
 	 * @return bool Whether $file exists or not.
 	 */
 	public function exists( $file ) {
-		$uploads_path = $this->sanitize_uploads_path( $file );
-
-		// We don't have an API for managing directories.
-		// Let's just assume we can create files on all paths.
-		if ( $this->is_dir( $uploads_path ) ) {
-			return true;
+		// Check if this is a local path that should be handled directly
+		if ( WP_Filesystem_VIP::is_local_path( $file ) ) {
+			$local_path = $this->get_local_path_mapping( $file );
+			return file_exists( $local_path );
 		}
 
-		return $this->api->is_file( $uploads_path );
+		$uploads_path = $this->sanitize_uploads_path( $file );
+
+		$result = $this->api->is_file( $uploads_path );
+
+		if ( is_wp_error( $result ) ) {
+			$this->errors = $result;
+			return false;
+		}
+
+		return (bool) $result;
 	}
 
 	/**
@@ -488,5 +532,21 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 		trigger_error( $error_msg, E_USER_WARNING );
 
 		return $return_value;
+	}
+
+	/**
+	 * Get the local filesystem path for a path that should be handled locally
+	 *
+	 * @param string $path Original path
+	 * @return string Path in the temporary directory
+	 */
+	private function get_local_path_mapping( $path ) {
+		$tmp_dir         = get_temp_dir();
+		$normalized_path = wp_normalize_path( $path );
+
+		// Remove any leading slashes to avoid creating absolute paths in the temp directory
+		$relative_path = ltrim( $normalized_path, '/' );
+
+		return $tmp_dir . 'vip-local/' . $relative_path;
 	}
 }

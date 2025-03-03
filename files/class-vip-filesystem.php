@@ -137,32 +137,26 @@ class VIP_Filesystem {
 	 * @return array Modified output of `wp_upload_dir`
 	 */
 	public function filter_upload_dir( $params ) {
+		// Check if this is a local path that should be handled directly
+		if ( isset( $params['path'] ) && WP_Filesystem_VIP::is_local_path( $params['path'] ) ) {
+			return $params;
+		}
+
 		/**
-		 * This is to account for the a8c-files plugin and should be temporary.
-		 * Eventually, this plugin will replace a8c-files so this check can
-		 * then be removed.
-		 * - Hanif
+		 * If we're not in a `WP_CLI` context, and neither `VIP_FILESYSTEM_USE_STREAM_WRAPPER`
+		 * nor `VIP_GO_ENV` are defined, then we don't need to do anything here
 		 */
-		$pos = stripos( $params['path'], constant( 'LOCAL_UPLOADS' ) );
-		if ( false !== $pos ) {
-			$params['path']    = substr_replace( $params['path'],
-				self::PROTOCOL . '://wp-content/uploads',
-				$pos,
-			strlen( constant( 'LOCAL_UPLOADS' ) ) );
-			$params['basedir'] = substr_replace( $params['basedir'],
-				self::PROTOCOL . '://wp-content/uploads',
-				$pos,
-			strlen( constant( 'LOCAL_UPLOADS' ) ) );
-		} else {
-			$pos               = stripos( $params['path'], constant( 'WP_CONTENT_DIR' ) );
-			$params['path']    = substr_replace( $params['path'],
-				self::PROTOCOL . '://wp-content',
-				$pos,
-			strlen( constant( 'WP_CONTENT_DIR' ) ) );
-			$params['basedir'] = substr_replace( $params['basedir'],
-				self::PROTOCOL . '://wp-content',
-				$pos,
-			strlen( constant( 'WP_CONTENT_DIR' ) ) );
+		if ( ! ( defined( 'WP_CLI' ) && WP_CLI )
+			&& ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' )
+			&& ! defined( 'VIP_GO_ENV' ) ) {
+			return $params;
+		}
+
+		// Don't modify upload_dir when we're dealing with the local filesystem
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' )
+			&& true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+			$params['path']    = str_replace( LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['path'] );
+			$params['basedir'] = str_replace( LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['basedir'] );
 		}
 
 		return $params;
@@ -174,25 +168,17 @@ class VIP_Filesystem {
 	 * @param  string[]  An array of data for a single file.
 	 */
 	public function filter_validate_file( $file ) {
-		$file_name   = rawurlencode( $file['name'] );
-		$upload_path = trailingslashit( $this->get_upload_path() );
-		$file_path   = $upload_path . $file_name;
-
-		$check_file_name = $this->validate_file_name( $file_path );
-		if ( is_wp_error( $check_file_name ) ) {
-			$file['error'] = $check_file_name->get_error_message();
-
+		// Check if this is a local path that should be handled directly
+		if ( isset( $file['tmp_name'] ) && WP_Filesystem_VIP::is_local_path( $file['tmp_name'] ) ) {
 			return $file;
-		} elseif ( $check_file_name !== $file_name ) {
-				$file['name'] = $check_file_name;
-				$file_path    = $upload_path . $check_file_name;
 		}
 
-		$check_length = $this->validate_file_path_length( $file_path );
-		if ( is_wp_error( $check_length ) ) {
-			$file['error'] = $check_length->get_error_message();
+		$file_name   = rawurlencode( $file['name'] );
+		$file_path   = sprintf( '/wp-content/uploads/%s', $file_name );
+		$valid_error = $this->validate_file_path_length( $file_path );
 
-			return $file;
+		if ( is_wp_error( $valid_error ) ) {
+			$file['error'] = $valid_error->get_error_message();
 		}
 
 		return $file;
@@ -257,21 +243,25 @@ class VIP_Filesystem {
 	}
 
 	/**
-	 * Deletes the file and purge the cache
+	 * Filter `wp_delete_file` output
 	 *
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param   string $file_path
+	 * @param   string $file_path Path to file
 	 *
 	 * @return  string
 	 */
 	public function filter_delete_file( $file_path ) {
-		// To ensure we don't needlessly fire off deletes for all sizes of the same image, of
-		// which all except the first result in 404's, keep accounting of what we've deleted.
-		static $deleted_uris = array();
+		// Check if this is a local path that should be handled directly
+		if ( WP_Filesystem_VIP::is_local_path( $file_path ) ) {
+			return $file_path;
+		}
 
-		$file_path = $this->clean_file_path( $file_path );
+		$deleted_uris               = [];
+		static $deleted_uris_static = [];
+
+		$deleted_uris = &$deleted_uris_static;
 
 		$file_uri = $this->get_file_uri_path( $file_path );
 
@@ -280,56 +270,16 @@ class VIP_Filesystem {
 			return '';
 		}
 
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_unlink
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 		if ( ! unlink( $file_path ) ) {
-			return '';
+			return $file_path;
 		}
 
-		// Set our static so we can later recall that this file has already been deleted and purged
 		$deleted_uris[] = $file_uri;
 
-		// We successfully deleted the file, purge the file from the caches
-		$this->purge_file_cache( $file_uri );
-
-		// Return empty value so that `wp_delete_file()` won't try to `unlink` again
+		// Return empty string so that `wp_delete_file()` won't try to `unlink` again
 		return '';
-	}
-
-	/**
-	 * Remove duplicate uploads base directory from file path
-	 *
-	 * Some of the intermediate file paths have the uploads `basedir` occur twice so we will need to
-	 * check for that.
-	 *
-	 * @since   1.0.0
-	 * @access  private
-	 *
-	 * @param   string  $file_path
-	 *
-	 * @return  string
-	 */
-	private function clean_file_path( $file_path ) {
-		$upload_path = wp_get_upload_dir();
-		$basedir     = $upload_path['basedir'];
-		$basedir_len = strlen( $basedir );
-
-		// Find 2nd occurrence of `basedir`; `$file_path` should be at least twice as long as `basedir`
-		if ( strlen( $file_path ) >= 2 * $basedir_len ) {
-			$pos = strpos( $file_path, $basedir, $basedir_len );
-			if ( false !== $pos ) {
-				// +1 to account far trailing slash
-				$file_path = substr( $file_path, $basedir_len + 1 );
-			}
-		}
-
-		// Strip any query params that snuck through
-		$query_string_start = strpos( $file_path, '?' );
-
-		if ( false !== $query_string_start ) {
-			$file_path = substr( $file_path, 0, $query_string_start );
-		}
-
-		return $file_path;
 	}
 
 	/**
@@ -442,6 +392,11 @@ class VIP_Filesystem {
 	 * https://github.com/humanmade/S3-Uploads
 	 */
 	public function filter_wp_read_image_metadata( $meta, $file ) {
+		// If this is a local path that should be handled directly, don't modify
+		if ( WP_Filesystem_VIP::is_local_path( $file ) ) {
+			return $meta;
+		}
+
 		if ( ! wp_is_stream( $file ) ) {
 			return $meta;
 		}

@@ -19,6 +19,96 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	private $direct;
 
 	/**
+	 * List of paths that should be handled by the local filesystem.
+	 * Can contain exact paths or patterns with wildcards (*)
+	 *
+	 * @var array
+	 */
+	private static $local_paths = [];
+
+	/**
+	 * Add a path to the list of paths that should be handled locally
+	 *
+	 * @param string $path Path or pattern to add
+	 * @return void
+	 */
+	public static function add_local_path( $path ) {
+		if ( ! in_array( $path, self::$local_paths, true ) ) {
+			self::$local_paths[] = $path;
+		}
+	}
+
+	/**
+	 * Remove a path from the list of paths that should be handled locally
+	 *
+	 * @param string $path Path or pattern to remove
+	 * @return void
+	 */
+	public static function remove_local_path( $path ) {
+		$key = array_search( $path, self::$local_paths, true );
+		if ( false !== $key ) {
+			unset( self::$local_paths[ $key ] );
+			self::$local_paths = array_values( self::$local_paths ); // Reindex array
+		}
+	}
+
+	/**
+	 * Check if a path should be handled by the local filesystem
+	 *
+	 * @param string $path Path to check
+	 * @return bool True if the path should be handled locally
+	 */
+	public static function is_local_path( $path ) {
+		if ( empty( self::$local_paths ) ) {
+			return false;
+		}
+
+		$normalized_path = wp_normalize_path( $path );
+
+		foreach ( self::$local_paths as $local_path ) {
+			// Check for exact match
+			if ( $normalized_path === $local_path ) {
+				return true;
+			}
+
+			// Check for wildcard pattern match
+			if ( false !== strpos( $local_path, '*' ) ) {
+				$pattern = str_replace(
+					[ '.', '*' ],
+					[ '\.', '.*' ],
+					$local_path
+				);
+				if ( preg_match( '#^' . $pattern . '$#', $normalized_path ) ) {
+					return true;
+				}
+			}
+
+			// Check if path is a directory and the file is inside it
+			if ( '/' === substr( $local_path, -1 ) && 0 === strpos( $normalized_path, $local_path ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the local filesystem path for a path that should be handled locally
+	 *
+	 * @param string $path Original path
+	 * @return string Path in the temporary directory
+	 */
+	private function get_local_path_mapping( $path ) {
+		$tmp_dir         = get_temp_dir();
+		$normalized_path = wp_normalize_path( $path );
+
+		// Remove any leading slashes to avoid creating absolute paths in the temp directory
+		$relative_path = ltrim( $normalized_path, '/' );
+
+		return $tmp_dir . 'vip-local/' . $relative_path;
+	}
+
+	/**
 	 * @param array $dependencies Array that contains an instance of `WP_Filesystem_VIP_Uploads` and `WP_Filesystem_Direct`.
 	 */
 	public function __construct( $dependencies ) {
@@ -45,6 +135,24 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
 	 */
 	private function get_transport_for_path( $filename, $context = 'read' ) {
+		// Check if this path should be handled locally
+		if ( self::is_local_path( $filename ) ) {
+			// Map the path to a local temporary directory path
+			$local_path = $this->get_local_path_mapping( $filename );
+
+			// Ensure the directory exists
+			$dir = dirname( $local_path );
+			if ( ! is_dir( $dir ) ) {
+				wp_mkdir_p( $dir );
+			}
+
+			// Store the original path and the mapped path for later use
+			$this->original_path = $filename;
+			$this->mapped_path   = $local_path;
+
+			return $this->direct;
+		}
+
 		// If we're not in a VIP environment, allow some WP_CLI functionality to work.
 		if ( ! defined( 'VIP_GO_ENV' ) || true !== constant( 'VIP_GO_ENV' ) ) {
 			// Allow access to the maintenance file used by WP-CLI.
@@ -147,6 +255,13 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 		$transport = $this->get_transport_for_path( $file );
 		if ( ! $transport ) {
 			return false;
+		}
+
+		// If this is a local path, use the mapped path
+		if ( isset( $this->mapped_path ) && self::is_local_path( $file ) ) {
+			$file = $this->mapped_path;
+			// Clear the mapped path after use
+			unset( $this->mapped_path );
 		}
 
 		$return = $transport->get_contents( $file );
