@@ -143,7 +143,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			$this->client = $client;
 		}
 
-		$this->protocol = $protocol ? $protocol : self::DEFAULT_PROTOCOL;
+		$this->protocol = $protocol ? $protocol : static::DEFAULT_PROTOCOL;
 
 		$this->debug_mode = false;
 		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' )
@@ -189,8 +189,8 @@ class VIP_Filesystem_Stream_Wrapper {
 		$this->uri  = $path;
 
 		// Check if this is a file that should be handled locally
-		if ( self::is_local_file( $path ) ) {
-			$local_path = self::get_local_tmp_path( $path );
+		if ( static::is_local_file( $path ) ) {
+			$local_path = static::get_local_tmp_path( $path );
 
 			// Create directory if it doesn't exist for write modes
 			if ( strpos( $mode, 'w' ) !== false || strpos( $mode, 'a' ) !== false || strpos( $mode, 'x' ) !== false || strpos( $mode, 'c' ) !== false ) {
@@ -277,7 +277,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		$result = true;
 
 		// If this is a local file, close the local file handle
-		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			$result       = fclose( $this->handle );
 			$this->handle = null;
 		}
@@ -300,7 +300,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_eof() {
 		// If this is a local file, use the local file handle
-		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			return feof( $this->handle );
 		}
 
@@ -327,7 +327,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		$this->debug( sprintf( 'stream_read => %s + %s + %s', $count, $this->path, $this->uri ) );
 
 		// If this is a local file, use the local file handle
-		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			return fread( $this->handle, $count );
 		}
 
@@ -462,7 +462,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		$this->debug( sprintf( 'stream_write =>  %s + %s', $this->path, $this->uri ) );
 
 		// If this is a local file, use the local file handle
-		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			return fwrite( $this->handle, $data );
 		}
 
@@ -508,8 +508,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function unlink( $path ) {
 		// Check if this is a file that should be handled locally
-		if ( self::is_local_file( $path ) ) {
-			$local_path = self::get_local_tmp_path( $path );
+		if ( static::is_local_file( $path ) ) {
+			$local_path = static::get_local_tmp_path( $path );
 
 			if ( ! file_exists( $local_path ) ) {
 				return false;
@@ -556,7 +556,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function stream_stat() {
 		// If this is a local file, use the local file handle
-		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			return fstat( $this->handle );
 		}
 
@@ -584,8 +584,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	 */
 	public function url_stat( $path, $flags ) {
 		// Check if this is a file that should be handled locally
-		if ( self::is_local_file( $path ) ) {
-			$local_path = self::get_local_tmp_path( $path );
+		if ( static::is_local_file( $path ) ) {
+			$local_path = static::get_local_tmp_path( $path );
 
 			if ( ! file_exists( $local_path ) ) {
 				if ( $flags & STREAM_URL_STAT_QUIET ) {
@@ -720,14 +720,14 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		// Check if source is a local file
-		$from_is_local = self::is_local_file( $path_from );
+		$from_is_local = static::is_local_file( $path_from );
 		// Check if destination is a local file
-		$to_is_local = self::is_local_file( $path_to );
+		$to_is_local = static::is_local_file( $path_to );
 
 		// Both source and destination are local files
 		if ( $from_is_local && $to_is_local ) {
-			$local_from = self::get_local_tmp_path( $path_from );
-			$local_to   = self::get_local_tmp_path( $path_to );
+			$local_from = static::get_local_tmp_path( $path_from );
+			$local_to   = static::get_local_tmp_path( $path_to );
 
 			if ( ! file_exists( $local_from ) ) {
 				return false;
@@ -741,7 +741,7 @@ class VIP_Filesystem_Stream_Wrapper {
 
 			return rename( $local_from, $local_to );
 		} elseif ( $from_is_local && ! $to_is_local ) { // // Source is local but destination is not
-			$local_from = self::get_local_tmp_path( $path_from );
+			$local_from = static::get_local_tmp_path( $path_from );
 
 			if ( ! file_exists( $local_from ) ) {
 				return false;
@@ -784,7 +784,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Write content to local file
-			$local_to = self::get_local_tmp_path( $path_to );
+			$local_to = static::get_local_tmp_path( $path_to );
 
 			// Create directory for destination if it doesn't exist
 			$dir = dirname( $local_to );
@@ -873,8 +873,8 @@ class VIP_Filesystem_Stream_Wrapper {
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
 	public function mkdir( $path, $mode, $options ) {
 		// Check if this is a file that should be handled locally
-		if ( self::is_local_file( $path ) ) {
-			$local_path = self::get_local_tmp_path( $path );
+		if ( static::is_local_file( $path ) ) {
+			$local_path = static::get_local_tmp_path( $path );
 
 			if ( file_exists( $local_path ) ) {
 				return false;
@@ -1027,7 +1027,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	* @return  bool
 	*/
 	public function validate( $path, $mode ) {
-		if ( ! in_array( $mode, self::ALLOWED_MODES, true ) ) {
+		if ( ! in_array( $mode, static::ALLOWED_MODES, true ) ) {
 			trigger_error( esc_html( "Mode not supported: { $mode }. Use one 'r', 'w', 'a', or 'x'." ) );
 
 			return false;
@@ -1138,8 +1138,8 @@ class VIP_Filesystem_Stream_Wrapper {
 			return false;
 		}
 
-		if ( ! in_array( $file_path, self::$local_files, true ) ) {
-			self::$local_files[] = $file_path;
+		if ( ! in_array( $file_path, static::$local_files, true ) ) {
+			static::$local_files[] = $file_path;
 			return true;
 		}
 
@@ -1153,11 +1153,11 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return bool True if the file was removed, false otherwise
 	 */
 	public static function remove_local_file( $file_path ) {
-		$key = array_search( $file_path, self::$local_files, true );
+		$key = array_search( $file_path, static::$local_files, true );
 
 		if ( false !== $key ) {
-			unset( self::$local_files[ $key ] );
-			self::$local_files = array_values( self::$local_files ); // Reindex array
+			unset( static::$local_files[ $key ] );
+			static::$local_files = array_values( static::$local_files ); // Reindex array
 			return true;
 		}
 
@@ -1170,7 +1170,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return array List of file paths
 	 */
 	public static function get_local_files() {
-		return self::$local_files;
+		return static::$local_files;
 	}
 
 	/**
@@ -1180,7 +1180,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return bool True if the file should be handled locally, false otherwise
 	 */
 	public static function is_local_file( $file_path ) {
-		return in_array( $file_path, self::$local_files, true );
+		return in_array( $file_path, static::$local_files, true );
 	}
 
 	/**
