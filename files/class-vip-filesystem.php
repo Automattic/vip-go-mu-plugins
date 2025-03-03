@@ -137,28 +137,10 @@ class VIP_Filesystem {
 	 * @return array Modified output of `wp_upload_dir`
 	 */
 	public function filter_upload_dir( $params ) {
-		// Check if this is a local path that should be handled directly
-		if ( isset( $params['path'] ) && WP_Filesystem_VIP::is_local_path( $params['path'] ) ) {
-			return $params;
-		}
-
-		/**
-		 * If we're not in a `WP_CLI` context, and neither `VIP_FILESYSTEM_USE_STREAM_WRAPPER`
-		 * nor `VIP_GO_ENV` are defined, then we don't need to do anything here
-		 */
-		if ( ! ( defined( 'WP_CLI' ) && WP_CLI )
-			&& ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' )
-			&& ! defined( 'VIP_GO_ENV' ) ) {
-			return $params;
-		}
-
-		// Don't modify upload_dir when we're dealing with the local filesystem
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' )
-			&& true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
-			$params['path']    = str_replace( LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['path'] );
-			$params['basedir'] = str_replace( LOCAL_UPLOADS, self::PROTOCOL . '://wp-content/uploads', $params['basedir'] );
-		}
-
+		// Use the VIP protocol for uploads
+		$params['path'] = str_replace( $params['basedir'], 'vip://wp-content/uploads', $params['path'] );
+		$params['basedir'] = 'vip://wp-content/uploads';
+		
 		return $params;
 	}
 
@@ -415,5 +397,21 @@ class VIP_Filesystem {
 		unlink( $temp_file );
 
 		return $meta;
+	}
+
+	/**
+	 * Clean/sanitize a file path
+	 * 
+	 * @param string $file_path The file path to clean
+	 * @return string The cleaned file path
+	 */
+	public function clean_file_path( $file_path ) {
+		// Remove query strings
+		$file_path = preg_replace( '#\?.*$#', '', $file_path );
+		
+		// Remove image dimensions from the path (e.g. image-800x600.jpg -> image.jpg)
+		$file_path = preg_replace( '/-\d+x\d+(?=\.[a-z0-9]+$)/i', '', $file_path );
+		
+		return $file_path;
 	}
 }
