@@ -117,6 +117,13 @@ class VIP_Filesystem_Stream_Wrapper {
 	public static ?API_Client $default_client = null;
 
 	/**
+	 * List of files that should be handled locally
+	 *
+	 * @var array
+	 */
+	private static $local_files = [];
+
+	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
 	 * @param API_Client $client
@@ -171,9 +178,32 @@ class VIP_Filesystem_Stream_Wrapper {
 	 *
 	 * @return  bool    True on success or false on failure
 	 */
-	public function stream_open( $path, $mode, $options ) {
-		$this->debug( sprintf( 'stream_open => %s + %s + %s', $path, $mode, $options ) );
-
+	public function stream_open( $path, $mode, $options, &$opened_path ) {
+		$this->path = $path;
+		$this->uri = $path;
+		
+		// Check if this is a file that should be handled locally
+		if ( self::is_local_file( $path ) ) {
+			$local_path = self::get_local_tmp_path( $path );
+			
+			// Create directory if it doesn't exist for write modes
+			if ( strpos( $mode, 'w' ) !== false || strpos( $mode, 'a' ) !== false || strpos( $mode, 'x' ) !== false || strpos( $mode, 'c' ) !== false ) {
+				$dir = dirname( $local_path );
+				if ( ! file_exists( $dir ) ) {
+					wp_mkdir_p( $dir );
+				}
+			}
+			
+			$this->handle = fopen( $local_path, $mode );
+			
+			if ( ! $this->handle ) {
+				return false;
+			}
+			
+			return true;
+		}
+		
+		// Original implementation for non-local files
 		$path = $this->trim_path( $path );
 		// Also ignore '+' modes since the handlers are all read+write anyway
 		$mode = rtrim( $mode, 'bt+' );
@@ -240,6 +270,12 @@ class VIP_Filesystem_Stream_Wrapper {
 
 		$result = true;
 
+		// If this is a local file, close the local file handle
+		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+			$result = fclose( $this->handle );
+			$this->handle = null;
+		}
+
 		// Don't attempt to flush new file when in read mode
 		if ( $this->should_flush_empty && 'r' !== $this->mode ) {
 			$result = $this->stream_flush();
@@ -275,6 +311,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_read( $count ) {
 		$this->debug( sprintf( 'stream_read => %s + %s + %s', $count, $this->path, $this->uri ) );
 
+		// If this is a local file, use the local file handle
+		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+			return fread( $this->handle, $count );
+		}
+		
+		// Original implementation for non-local files
+		if ( ! $this->handle ) {
+			return false;
+		}
+		
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
@@ -400,6 +446,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_write( $data ) {
 		$this->debug( sprintf( 'stream_write =>  %s + %s', $this->path, $this->uri ) );
 
+		// If this is a local file, use the local file handle
+		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+			return fwrite( $this->handle, $data );
+		}
+		
+		// Original implementation for non-local files
+		if ( ! $this->handle ) {
+			return 0;
+		}
+
 		if ( 'r' === $this->mode ) {
 			// No writes in 'read' mode
 			trigger_error(
@@ -436,8 +492,18 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True if success. False on failure
 	 */
 	public function unlink( $path ) {
-		$this->debug( sprintf( 'unlink =>  %s', $path ), true );
-
+		// Check if this is a file that should be handled locally
+		if ( self::is_local_file( $path ) ) {
+			$local_path = self::get_local_tmp_path( $path );
+			
+			if ( ! file_exists( $local_path ) ) {
+				return false;
+			}
+			
+			return unlink( $local_path );
+		}
+		
+		// Original implementation for non-local files
 		$path = $this->trim_path( $path );
 
 		try {
@@ -474,8 +540,16 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  array   The file statistics
 	 */
 	public function stream_stat() {
-		$this->debug( sprintf( 'stream_stat =>  %s + %s', $this->path, $this->uri ) );
-
+		// If this is a local file, use the local file handle
+		if ( self::is_local_file( $this->uri ) && $this->handle ) {
+			return fstat( $this->handle );
+		}
+		
+		// Original implementation for non-local files
+		if ( ! $this->handle ) {
+			return false;
+		}
+		
 		return fstat( $this->file );
 	}
 
@@ -494,8 +568,22 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  array|bool  The file statistics or false if failed
 	 */
 	public function url_stat( $path, $flags ) {
-		$this->debug( sprintf( 'url_stat =>  %s + %s', $path, $flags ) );
-
+		// Check if this is a file that should be handled locally
+		if ( self::is_local_file( $path ) ) {
+			$local_path = self::get_local_tmp_path( $path );
+			
+			if ( ! file_exists( $local_path ) ) {
+				if ( $flags & STREAM_URL_STAT_QUIET ) {
+					return false;
+				} else {
+					return trigger_error( "stat(): stat failed for {$path}", E_USER_WARNING );
+				}
+			}
+			
+			return stat( $local_path );
+		}
+		
+		// Original implementation for non-local files
 		$path = $this->trim_path( $path );
 
 		// Default stats
@@ -611,16 +699,89 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool    True on successful rename
 	 */
 	public function rename( $path_from, $path_to ) {
-		$this->debug( sprintf( 'rename =>  %s + %s', $path_from, $path_to ) );
-
-		if ( $path_from === $path_to ) {
-			// from and to path are identical so do nothing
-			return true;
+		// Check if source is a local file
+		$from_is_local = self::is_local_file( $path_from );
+		// Check if destination is a local file
+		$to_is_local = self::is_local_file( $path_to );
+		
+		// Both source and destination are local files
+		if ( $from_is_local && $to_is_local ) {
+			$local_from = self::get_local_tmp_path( $path_from );
+			$local_to = self::get_local_tmp_path( $path_to );
+			
+			if ( ! file_exists( $local_from ) ) {
+				return false;
+			}
+			
+			// Create directory for destination if it doesn't exist
+			$dir = dirname( $local_to );
+			if ( ! file_exists( $dir ) ) {
+				wp_mkdir_p( $dir );
+			}
+			
+			return rename( $local_from, $local_to );
 		}
-
+		// Source is local but destination is not
+		elseif ( $from_is_local && ! $to_is_local ) {
+			$local_from = self::get_local_tmp_path( $path_from );
+			
+			if ( ! file_exists( $local_from ) ) {
+				return false;
+			}
+			
+			// Read content from local file
+			$content = file_get_contents( $local_from );
+			if ( false === $content ) {
+				return false;
+			}
+			
+			// Trim the destination path
+			$path_to = $this->trim_path( $path_to );
+			
+			// Write content to remote file
+			$result = $this->client->upload_from_string( $path_to, $content );
+			
+			// If successful, delete the local file
+			if ( $result ) {
+				unlink( $local_from );
+			}
+			
+			return $result;
+		}
+		// Source is not local but destination is
+		elseif ( ! $from_is_local && $to_is_local ) {
+			// Trim the source path
+			$path_from = $this->trim_path( $path_from );
+			
+			// Get content from remote file
+			$content = $this->client->get_file( $path_from );
+			if ( false === $content ) {
+				return false;
+			}
+			
+			// Write content to local file
+			$local_to = self::get_local_tmp_path( $path_to );
+			
+			// Create directory for destination if it doesn't exist
+			$dir = dirname( $local_to );
+			if ( ! file_exists( $dir ) ) {
+				wp_mkdir_p( $dir );
+			}
+			
+			$result = file_put_contents( $local_to, $content ) !== false;
+			
+			// If successful, delete the remote file
+			if ( $result ) {
+				$this->client->delete_file( $path_from );
+			}
+			
+			return $result;
+		}
+		
+		// Original implementation for non-local files
 		$path_from = $this->trim_path( $path_from );
-		$path_to   = $this->trim_path( $path_to );
-
+		$path_to = $this->trim_path( $path_to );
+		
 		try {
 			// Get original file first
 			// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
@@ -686,10 +847,21 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function mkdir( $path, $mode, $options ) {
-		$this->debug( sprintf( 'mkdir =>  %s + %s + %s', $path, $mode, $options ) );
-
-		// Currently, it will always return true as directories are automatically created on the Filesystem API
-		return true;
+		// Check if this is a file that should be handled locally
+		if ( self::is_local_file( $path ) ) {
+			$local_path = self::get_local_tmp_path( $path );
+			
+			if ( file_exists( $local_path ) ) {
+				return false;
+			}
+			
+			return wp_mkdir_p( $local_path );
+		}
+		
+		// Original implementation for non-local files
+		$path = $this->trim_path( $path );
+		
+		// ... existing code ...
 	}
 
 	/**
@@ -930,5 +1102,90 @@ class VIP_Filesystem_Stream_Wrapper {
 		}
 
 		return array_values( $trace );
+	}
+
+	/**
+	 * Add a file to the list of files that should be handled locally
+	 *
+	 * @param string $file_path Path to the file
+	 * @return bool True if the file was added, false otherwise
+	 */
+	public static function add_local_file( $file_path ) {
+		if ( empty( $file_path ) || ! is_string( $file_path ) ) {
+			return false;
+		}
+		
+		if ( ! in_array( $file_path, self::$local_files, true ) ) {
+			self::$local_files[] = $file_path;
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Remove a file from the list of files that should be handled locally
+	 *
+	 * @param string $file_path Path to the file
+	 * @return bool True if the file was removed, false otherwise
+	 */
+	public static function remove_local_file( $file_path ) {
+		$key = array_search( $file_path, self::$local_files, true );
+		
+		if ( false !== $key ) {
+			unset( self::$local_files[ $key ] );
+			self::$local_files = array_values( self::$local_files ); // Reindex array
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Get the list of files that should be handled locally
+	 *
+	 * @return array List of file paths
+	 */
+	public static function get_local_files() {
+		return self::$local_files;
+	}
+	
+	/**
+	 * Check if a file should be handled locally
+	 *
+	 * @param string $file_path Path to the file
+	 * @return bool True if the file should be handled locally, false otherwise
+	 */
+	public static function is_local_file( $file_path ) {
+		return in_array( $file_path, self::$local_files, true );
+	}
+	
+	/**
+	 * Get the local path for a file in the tmp directory
+	 *
+	 * @param string $file_path Original file path
+	 * @return string Local path in the tmp directory
+	 */
+	private static function get_local_tmp_path( $file_path ) {
+		// Extract the wp-content part of the path
+		if ( preg_match( '#(wp-content/.+)$#', $file_path, $matches ) ) {
+			$relative_path = $matches[1];
+		} elseif ( strpos( $file_path, 'vip://' ) === 0 ) {
+			// Handle vip:// paths
+			$relative_path = substr( $file_path, 6 ); // Remove 'vip://' prefix
+		} else {
+			// Fallback - use the full path structure
+			$relative_path = ltrim( $file_path, '/' );
+		}
+		
+		$tmp_path = '/tmp/' . $relative_path;
+		
+		// Ensure the directory exists
+		$dir = dirname( $tmp_path );
+		if ( ! file_exists( $dir ) ) {
+			wp_mkdir_p( $dir );
+		}
+		
+		return $tmp_path;
 	}
 }
