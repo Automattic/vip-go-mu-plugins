@@ -267,4 +267,14 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 	}
+
+	public function test_create_admin_user() {
+		$result = wp_insert_user( [
+			'user_login' => 'admin',
+			'user_email' => 'admin@example.com',
+			'user_pass'  => '53cr3t!',
+		] );
+
+		$this->assertWPError( $result );
+	}
 }
