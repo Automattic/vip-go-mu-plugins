@@ -86,7 +86,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	/**
 	 * Protocol for the stream to register to
 	 *
-	 * @since   1.0.0w
+	 * @since   1.0.0
 	 * @access  private
 	 * @var string  The defined protocol.
 	 */
