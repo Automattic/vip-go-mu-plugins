@@ -587,11 +587,11 @@ class VIP_Filesystem_Stream_Wrapper {
 			$local_path = static::get_local_tmp_path( $path );
 
 			if ( ! file_exists( $local_path ) ) {
-				if ( $flags & STREAM_URL_STAT_QUIET ) {
-					return false;
-				} else {
-					return trigger_error( 'stat(): stat failed for ' . esc_html( $path ), E_USER_WARNING );
+				if ( ! ( $flags & STREAM_URL_STAT_QUIET ) ) {
+					trigger_error( 'stat(): stat failed for ' . esc_html( $path ), E_USER_WARNING );
 				}
+
+				return false;
 			}
 
 			return stat( $local_path );
