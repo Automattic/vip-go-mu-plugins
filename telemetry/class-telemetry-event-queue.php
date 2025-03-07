@@ -60,15 +60,22 @@ class Telemetry_Event_Queue {
 
 	/**
 	 * Records all queued events synchronously.
+	 *
+	 * @return bool|WP_Error True if the events were recorded.
+	 *                       WP_Error if recording the events generated an error.
 	 */
-	public function record_events(): void {
-		if ( [] === $this->events ) {
-			return;
+	public function record_events(): bool|WP_Error {
+		if ( empty( $this->events ) ) {
+			return true;
 		}
 
 		// No back-off mechanism is implemented here, given the low cost of missing a few events.
 		// We also need to ensure that there's minimal disruption to a site's operations.
-		$this->client->batch_record_events( $this->events );
-		$this->events = [];
+		$status = $this->client->batch_record_events( $this->events );
+		if ( true === $status ) {
+			$this->events = [];
+		}
+
+		return $status;
 	}
 }
