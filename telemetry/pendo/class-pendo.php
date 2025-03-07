@@ -122,18 +122,15 @@ class Pendo extends Telemetry_System {
 	/**
 	 * If allowed, inserts the Pendo script into the page to enable Page and
 	 * Feature tracking.
+	 *
+	 * @see Pendo_JavaScript_Library::should_enqueue_script()
 	 */
-	public static function enable_javascript_library( string|null $snippet_api_key = null ): void {
-		// If the API key is not provided, check if it is defined in the environment.
-		if ( null === $snippet_api_key && defined( 'PENDO_SNIPPET_API_KEY' ) ) {
-			$snippet_api_key = constant( 'PENDO_SNIPPET_API_KEY' );
-		}
-
-		if ( true !== self::is_pendo_enabled_for_environment() ) {
+	public static function enable_javascript_library(): void {
+		if ( ! defined( 'VIP_PENDO_SNIPPET_API_KEY' ) ) {
 			return;
 		}
 
-		Pendo_JavaScript_Library::init( $snippet_api_key );
+		Pendo_JavaScript_Library::init( constant( 'VIP_PENDO_SNIPPET_API_KEY' ) );
 	}
 
 	/**
@@ -141,7 +138,7 @@ class Pendo extends Telemetry_System {
 	 *
 	 * @return bool
 	 */
-	private static function is_pendo_enabled_for_environment(): bool {
+	final public static function is_pendo_enabled_for_environment(): bool {
 		// Do not run if disabled via constant.
 		if ( defined( 'VIP_DISABLE_PENDO_TELEMETRY' ) && true === constant( 'VIP_DISABLE_PENDO_TELEMETRY' ) ) {
 			return false;

@@ -9,16 +9,19 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry\Pendo;
 
+use Automattic\VIP\Telemetry\Pendo;
 use WP_Error;
 use function Automattic\VIP\Logstash\log2logstash;
 
 /**
- * This class enqueues the Pendo client library on pages that support it. In
+ * This class enqueues the Pendo client library when it is supported. In
  * contrast to "Track events" which can be sent via server-to-server requests
  * (see `Pendo_Track_Client`), this client library allows use of the "Pages" and
  * "Features" events of Pendo, which must be sent client-side.
  *
  * https://support.pendo.io/hc/en-us/articles/23335876011803-Events-overview
+ *
+ * @see Pendo::enable_javascript_library()
  */
 class Pendo_JavaScript_Library {
 	/**
@@ -51,7 +54,8 @@ class Pendo_JavaScript_Library {
 
 	/**
 	 * Standard singleton class except the caller does not need access to the
-	 * instance, so we name it `init`.
+	 * instance, so we name it `init`. Do not call this method directly; instead
+	 * use `Pendo::enable_javascript_library()`.
 	 *
 	 * @param string $api_key The Pendo snippet API key.
 	 * @return bool|WP_Error True on success or WP_Error if any error occured.
@@ -87,7 +91,7 @@ class Pendo_JavaScript_Library {
 	 * Enqueue the Pendo client library script on supported pages.
 	 */
 	public function enqueue_scripts(): void {
-		if ( ! $this->should_enqueue_scripts() ) {
+		if ( true !== self::should_enqueue_script() ) {
 			return;
 		}
 
@@ -147,10 +151,17 @@ class Pendo_JavaScript_Library {
 
 	/**
 	 * Determine if the Pendo client library should be enqueued for the current
-	 * request. This is separate from the decision of whether to load Pendo at all,
-	 * which is handled by the caller of ::init().
+	 * request.
 	 */
-	private function should_enqueue_scripts(): bool {
-		return current_user_can( 'edit_posts' );
+	final public static function should_enqueue_script(): bool {
+		if ( true !== Pendo::is_pendo_enabled_for_environment() ) {
+			return false;
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			return false;
+		}
+
+		return true;
 	}
 }
