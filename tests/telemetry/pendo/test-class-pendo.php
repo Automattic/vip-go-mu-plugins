@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Client;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Event;
 use PHPUnit\Framework\MockObject\MockObject;
+use WP_Error;
 use WP_UnitTestCase;
 
 class Pendo_Test extends WP_UnitTestCase {
@@ -27,7 +29,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -49,7 +51,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -71,7 +73,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -92,7 +94,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -114,7 +116,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -143,7 +145,7 @@ class Pendo_Test extends WP_UnitTestCase {
 			} ) )
 			->willReturn( true );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertTrue( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
@@ -176,6 +178,26 @@ class Pendo_Test extends WP_UnitTestCase {
 			'foo'        => 'default_foo',
 		], $queue );
 		$this->assertTrue( $pendo->record_event( 'fuzzy_event', [ 'foo' => 'bar' ] ) );
+	}
+
+	public function test_recording_error_with_no_integration_key() {
+		$user = $this->factory()->user->create_and_get();
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$queue = new Telemetry_Event_Queue( new Pendo_Track_Client() );
+		$pendo = new Pendo( 'test_', [], $queue );
+
+		// Valid events are always accepted for asyncronous recording.
+		$this->assertTrue( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
+
+		// Directly call record_events. Normally this is called on shutdown hook.
+		$error = $queue->record_events();
+
+		$this->assertInstanceOf( WP_Error::class, $error );
+		$this->assertSame( 'pendo_track_integration_key_not_defined', $error->get_error_code() );
 	}
 
 	public function test_event_prefix() {

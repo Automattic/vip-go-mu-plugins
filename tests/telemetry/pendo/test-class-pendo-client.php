@@ -47,6 +47,15 @@ class Pendo_Track_Client_Test extends WP_UnitTestCase {
 		$this->assertTrue( $client->batch_record_events( [ $event, $bad_event ], [ 'foo' => 'bar' ] ) );
 	}
 
+	public function test_should_return_error_with_no_integration_key() {
+		$client = new Pendo_Track_Client();
+
+		$error = $client->batch_record_events( [ 'foo' => 'bar' ] );
+
+		$this->assertInstanceOf( WP_Error::class, $error );
+		$this->assertSame( 'pendo_track_integration_key_not_defined', $error->get_error_code() );
+	}
+
 	public function test_should_handle_failed_requests() {
 		/** @var MockObject|WP_Http */
 		$http = $this->getMockBuilder( WP_Http::class )
