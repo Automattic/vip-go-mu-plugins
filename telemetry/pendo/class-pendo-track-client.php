@@ -54,9 +54,9 @@ class Pendo_Track_Client extends Telemetry_Client {
 			log2logstash( [
 				'severity' => 'error',
 				'feature'  => 'telemetry',
-				'message'  => 'Pendo Track secret key is not defined',
+				'message'  => 'Pendo Track integration key is not defined',
 			] );
-			return new WP_Error( 'pendo_track_secret_key_not_defined', 'Pendo Track secret key is not defined' );
+			return new WP_Error( 'pendo_track_integration_key_not_defined', 'Pendo Track integration key is not defined' );
 		}
 
 		// Filter out invalid events.

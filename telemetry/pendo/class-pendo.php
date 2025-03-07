@@ -60,26 +60,28 @@ class Pendo extends Telemetry_System {
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_wordpress_'.
 	 * @param array<string, string|number> $global_event_properties The global event properties to be included with every event.
 	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
-	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
-	 * @param string $track_event_secret_key The Pendo track event secret key, if not defined in the environment.
 	 */
 	public function __construct(
 		string $event_prefix = 'vip_wordpress_',
 		array $global_event_properties = [],
 		Telemetry_Event_Queue $queue = null,
-		Pendo_Track_Client $client = null,
-		string|null $track_event_secret_key = null,
 	) {
-		if ( null === $track_event_secret_key && defined( 'PENDO_TRACK_SECRET_KEY' ) ) {
-			$track_event_secret_key = constant( 'PENDO_TRACK_SECRET_KEY' );
-		}
-
 		$this->event_context           = $this->get_event_context();
 		$this->event_prefix            = $event_prefix;
 		$this->global_event_properties = $this->get_global_event_properties( $global_event_properties );
 		$this->is_enabled              = self::is_pendo_enabled_for_environment();
-		$client                      ??= new Pendo_Track_Client( $track_event_secret_key );
-		$this->queue                   = $queue ?? new Telemetry_Event_Queue( $client );
+		$this->queue                   = $queue ?? $this->create_queue();
+	}
+
+	private function create_queue(): Telemetry_Event_Queue {
+		$track_integration_key = null;
+		if ( defined( 'VIP_PENDO_TRACK_INTEGRATION_KEY' ) ) {
+			$track_integration_key = constant( 'VIP_PENDO_TRACK_INTEGRATION_KEY' );
+		}
+
+		$client = new Pendo_Track_Client( $track_integration_key );
+
+		return new Telemetry_Event_Queue( $client );
 	}
 
 	/**

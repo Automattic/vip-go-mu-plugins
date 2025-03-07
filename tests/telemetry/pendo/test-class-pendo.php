@@ -27,7 +27,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -49,7 +49,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -71,7 +71,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -92,7 +92,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -114,7 +114,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue->expects( $this->never() )
 			->method( 'record_event_asynchronously' );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertFalse( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
@@ -143,7 +143,7 @@ class Pendo_Test extends WP_UnitTestCase {
 			} ) )
 			->willReturn( true );
 
-		$pendo = new Pendo( 'test_', [], $queue, null, 'test-secret' );
+		$pendo = new Pendo( 'test_', [], $queue );
 
 		$this->assertTrue( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
