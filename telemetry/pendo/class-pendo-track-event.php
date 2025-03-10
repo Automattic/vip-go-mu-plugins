@@ -144,7 +144,7 @@ class Pendo_Track_Event extends Telemetry_Event {
 		}
 
 		if ( ! $this->is_snake_case( $event_dto->event ) ) {
-			return $this->log_and_return_error( $event_dto, __( 'The event name must be a non-empty value', 'vip-telemetry' ), 'invalid_event_name' );
+			return $this->log_and_return_error( $event_dto, __( 'The event name must be in snake_case', 'vip-telemetry' ), 'invalid_event_name' );
 		}
 
 		// Validate context names against allow list.
