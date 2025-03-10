@@ -39,7 +39,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 			} ) )
 			->willReturn( true );
 
-		$telemetry = new Telemetry( 'test_', [], $queue, null, 'test-secret' );
+		$telemetry = new Telemetry( 'test_', [], $queue );
 
 		$this->assertTrue( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
@@ -99,7 +99,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 			} ) )
 			->willReturn( true );
 
-		$telemetry = new Telemetry( 'test_', [], $queue, null, 'test-secret' );
+		$telemetry = new Telemetry( 'test_', [], $queue );
 
 		// Returns false because at least one system is disabled.
 		$this->assertFalse( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );

@@ -32,12 +32,11 @@ class Telemetry extends Telemetry_System {
 	 * @param string|null $event_prefix The prefix for all event names, or null to use the default prefix.
 	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
 	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
-	 * @param Telemetry_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = null, array $global_event_properties, Telemetry_Event_Queue $queue = null, Telemetry_Client $client = null ) {
+	public function __construct( string $event_prefix = null, array $global_event_properties, Telemetry_Event_Queue $queue = null ) {
 		$this->systems = [
-			new Pendo( $event_prefix, $global_event_properties, $queue, $client ),
-			new Tracks( $event_prefix, $global_event_properties, $queue, $client ),
+			new Pendo( $event_prefix, $global_event_properties, $queue ),
+			new Tracks( $event_prefix, $global_event_properties, $queue ),
 		];
 	}
 
