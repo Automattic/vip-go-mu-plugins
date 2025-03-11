@@ -65,7 +65,7 @@ runs:
       shell: bash
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.32.0
+      uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -81,7 +81,7 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@3.0.0
+      uses: ramsey/composer-install@57532f8be5bda426838819c5ee9afb8af389d51a # 3.0.0
 
     - name: Set up WordPress and WordPress Test Library
       uses: sjinks/setup-wordpress-test-library@v2.1.3
@@ -126,7 +126,7 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v5.3.1
+      uses: codecov/codecov-action@v5.4.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
