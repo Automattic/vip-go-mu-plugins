@@ -123,7 +123,7 @@ export class EditorPage {
 	 * Clear Title of page or post
 	 */
 	public async clearTitle(): Promise<void> {
-		await this.page.click( selectors.editorTitle, { force: true } );
+		await this.page.click( selectors.editorTitle );
 		await this.page.keyboard.down( 'Shift' );
 		await this.page.keyboard.press( 'Home' );
 		await this.page.keyboard.up( 'Shift' );

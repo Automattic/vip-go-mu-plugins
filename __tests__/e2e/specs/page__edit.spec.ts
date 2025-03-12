@@ -70,8 +70,12 @@ test( 'edit a Page', async ( { page } ) => {
 			'– Thomas A. Edison';
 		editorPage = new EditorPage( page );
 
+		await editorPage.dismissWelcomeTour();
+
 		await editorPage.clearText();
 		await editorPage.clearTitle();
+
+		await editorPage.dismissWelcomeTour();
 		await editorPage.enterTitle( titleText );
 		await editorPage.enterText( bodyText );
 	} );
