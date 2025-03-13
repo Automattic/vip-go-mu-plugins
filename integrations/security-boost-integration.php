@@ -13,6 +13,13 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration {
+
+	/**
+	 * The version of the Security Boost plugin to load, that's set to the latest version.
+	 * This should be higher than the lowestVersion set in "vip-block-data-api" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
+	 *
+	 * @var string
+	 */
 	protected string $version = '1.0';
 
 	public function is_loaded(): bool {
