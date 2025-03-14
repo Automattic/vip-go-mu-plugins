@@ -15,8 +15,8 @@ Author URI: http://automattic.com/
  * used to catch imports and push the files to the VIP MogileFS service
  */
 
-if ( ! defined( 'FILE_SERVICE_ENDPOINT' ) ) {
-	define( 'FILE_SERVICE_ENDPOINT', 'files.vipv2.net' );
+if ( ! defined( 'FILE_SERVICE_URI' ) ) {
+	define( 'FILE_SERVICE_URI', 'https://files.vipv2.net' );
 }
 
 define( 'LOCAL_UPLOADS', '/tmp/uploads' );
