@@ -571,7 +571,8 @@ class A8C_Files {
 		}
 
 		// Get meta for the attachment sizes
-		$metadata = wp_get_attachment_metadata( $image_id );
+		$metadata = wp_get_attachment_metadata( (int) $image_id );
+
 		if ( ! $metadata || empty( $metadata['sizes'][ $size_name ] ) ) {
 			// If no size meta is available for this size, bail
 			return $block_content;
