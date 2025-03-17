@@ -108,14 +108,9 @@ class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'height="200"', $actual, 'Height attribute should be present' );
 			$this->assertStringContainsString( 'class="wp-image-123"', $actual, 'Image class should be preserved' );
 			$this->assertStringContainsString( 'class="wp-block-image size-medium"', $actual, 'Figure class should be preserved' );
+			remove_filter( 'get_post_metadata', $filter, 10 );
 		} else {
 			$this->assertEquals( $expected, $actual );
-		}
-
-
-		// Clean up - remove the filter
-		if ( $metadata ) {
-			remove_filter( 'get_post_metadata', $filter, 10 );
 		}
 
 		// Clean up is_admin filter
