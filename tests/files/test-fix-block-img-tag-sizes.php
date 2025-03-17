@@ -72,6 +72,7 @@ class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 	/**
 	 * Test the fix_img_block_sizes method.
 	 *
+	 * @dataProvider get_data_for_fix_img_block_sizes
 	 * @param bool   $is_admin      Whether we're in admin context.
 	 * @param string $block_content The block content to process.
 	 * @param string $expected      The expected output.
