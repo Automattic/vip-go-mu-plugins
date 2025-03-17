@@ -1,14 +1,9 @@
 <?php
-/**
- * Test cases for the fix_img_block_sizes functionality in A8C_Files class.
- *
- * @package VIP_Go
- */
 
 /**
  * Class VIP_Go_Fix_Block_Img_Tag_Sizes_Test
- *
- * @package VIP_Go
+ * @runTestsInSeparateProcesses
+ * @preserveGlobalState disabled
  */
 class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 	/**
@@ -81,11 +76,10 @@ class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 	 * @return void
 	 */
 	public function test__fix_img_block_sizes( $is_admin, $block_content, $expected, $metadata = null ) {
-
-		$GLOBALS['_is_admin'] = $is_admin;
-		add_filter( 'is_admin', function () {
-			return $GLOBALS['_is_admin'];
-		});
+		
+		if ( $is_admin && ! defined( 'WP_ADMIN' ) ) {
+			define( 'WP_ADMIN', true );
+		}
 
 		// Mock wp_get_attachment_metadata if metadata is provided
 		if ( $metadata ) {
@@ -112,9 +106,5 @@ class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 		} else {
 			$this->assertEquals( $expected, $actual );
 		}
-
-		// Clean up is_admin filter
-		remove_all_filters( 'is_admin' );
-		unset( $GLOBALS['_is_admin'] );
 	}
 }
