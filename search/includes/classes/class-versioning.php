@@ -845,7 +845,7 @@ class Versioning {
 		$inactive_versions = $this->get_inactive_versions( $indexable );
 
 		// If there are no inactive versions or nothing in the queue, we can just skip
-		if ( empty( $inactive_versions ) || empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $inactive_versions ) || empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
@@ -856,7 +856,7 @@ class Versioning {
 				'index_version' => $version['number'],
 			);
 
-			foreach ( $sync_manager->sync_queue as $object_id => $value ) {
+			foreach ( $sync_manager->get_sync_queue() as $object_id => $value ) {
 				/**
 				 * This filter is documented in Versioning::replicate_queued_objects_to_other_versions
 				 */

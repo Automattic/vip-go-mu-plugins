@@ -1,17 +1,16 @@
+import pluralize from 'pluralize';
 import { h } from 'preact';
-import { useCallback, useContext, useState } from 'preact/hooks';
 import { createPortal } from 'preact/compat';
+import { useCallback, useContext, useState } from 'preact/hooks';
 
 // Global styles
 import '../style/style.scss';
 
-import style from './style.scss';
-import Overlay from './overlay';
-import { SearchContext } from '../context';
 import { GeneralInformation } from './information-pane';
+import Overlay from './overlay';
 import { Queries } from './query';
-
-import pluralize from 'pluralize';
+import * as style from './style.scss';
+import { SearchContext } from '../context';
 
 const AdminBarButton = props => {
 	const { queries } = useContext( SearchContext );

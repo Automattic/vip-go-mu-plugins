@@ -140,24 +140,6 @@ if ( true === WPCOM_SANDBOXED ) {
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
 }
 
-// On production servers, only our machine user can manage the Jetpack connection
-if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function ( $caps, $cap, $user_id ) {
-		switch ( $cap ) {
-			case 'jetpack_connect':
-			case 'jetpack_reconnect':
-			case 'jetpack_disconnect':
-				$user = get_userdata( $user_id );
-				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
-					return [ 'do_not_allow' ];
-				}
-				break;
-		}
-
-		return $caps;
-	}, 10, 3 );
-}
-
 function wpcom_vip_did_jetpack_search_query( $query ) {
 	if ( ! defined( 'SAVEQUERIES' ) || ! SAVEQUERIES ) {
 		return;
@@ -369,24 +351,136 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
 
 /**
- * Display correct Jetpack version in wp-admin plugins UI for pinned or local versions.
+ * Display correct Jetpack version in wp-admin plugins UI for pinned, local or default versions.
  *
- * @param string[] $plugin_meta An array of the plugin's metadata, including
- *                              the version, author, author URI, and plugin URI.
- * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
+ * @param string[]  plugin_meta  An array of the plugin's metadata, including
+ *                               the version, author, author URI, and plugin URI.
+ * @param string    $plugin_file Path to the plugin file relative to the plugins directory.
  * @return string[] $plugin_meta Updated plugin's metadata.
  */
 function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
-	if ( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) && ! defined( 'WPCOM_VIP_JETPACK_LOCAL' ) ) {
+	if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && constant( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 		return $plugin_meta;
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$version = defined( 'VIP_JETPACK_LOADED_VERSION' ) ? VIP_JETPACK_LOADED_VERSION : JETPACK__VERSION;
+		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? '(Local)' : '';
 		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( 'Version %s' ), $version );
+		$plugin_meta[0] = sprintf( esc_html__( 'Version %1$s %2$s' ), constant( 'JETPACK__VERSION' ), $type );
+		remove_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
 	}
 
 	return $plugin_meta;
 }
 add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
+
+/**
+ * Enable Jetpack offline mode for Multisites when we're launching a site in the network.
+ * This is enabled only if the site is a multisite.
+ *
+ * The function checks for the `launching` flag in the `vip_launch_tools` cache group.
+ * If the flag is set to `true`, it enables the offline mode while the flag is active, blocking
+ * the Jetpack communications from running.
+ *
+ * @param bool $offline_mode Whether to enable offline mode.
+ * @return bool
+ */
+function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
+	// If not multisite, return the offline mode value.
+	if ( ! is_multisite() ) {
+		return $offline_mode;
+	}
+	$vip_site_launching = wp_cache_get( 'launching', 'vip_launch_tools' );
+	if ( 'true' === $vip_site_launching || true === $vip_site_launching ) {
+		// enables jetpack offline mode
+		return true;
+	}
+	// keep the offline mode as it was.
+	return $offline_mode;
+}
+
+add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/**
+ * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
+ * Addresses https://github.com/Automattic/jetpack/issues/35636
+ */
+function vip_prevent_jetpack_post_by_email_database_noise() {
+	// Prevent saving an unnecessary NULL option to the database.
+	add_filter( 'pre_update_option_post_by_email_address' . get_current_user_id(), function ( $value, $old_value ) {
+		if ( 'NULL' === $value ) {
+			return $old_value;
+		}
+
+		return $value;
+	}, 10, 2 );
+
+	// Prevent unnecessary API calls for finding the remote email address when the module is disabled.
+	if ( method_exists( 'Jetpack', 'is_module_active' ) && ! Jetpack::is_module_active( 'post-by-email' ) ) {
+		add_filter( 'pre_option_post_by_email_address' . get_current_user_id(), function () {
+			return 'NULL';
+		} );
+	}
+}
+
+add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
+
+/*
+ * Workaround: prevent the "Invite user to WordPress.com" checkbox on "Add New User" page
+ * from blocking new user registration on Jetpack 13.2.
+ */
+add_action( 'muplugins_loaded', function () {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	if ( isset( $_POST['invite_user_wpcom'] ) ) {
+		unset( $_POST['invite_user_wpcom'] );
+	}
+});
+
+/**
+ * Jetpack 13.9 removes the legacy Jetpack_SSO class. Unfortunately, this class is still used by
+ * the deprecated standalone jetpack-force-2fa plugin (which is still in use by some). This is a dummy
+ * class to prevent fatal errors when the standalone plugin is enabled.
+ */
+add_action( 'plugins_loaded', function () {
+	if ( class_exists( 'Jetpack_Force_2FA' ) && ! class_exists( 'Jetpack_SSO' ) && class_exists( 'Jetpack' ) &&
+		defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.9', '>=' ) ) {
+		require_once __DIR__ . '/jetpack-sso-dummy.php';
+	}
+} );
+
+/** 
+ * https://lobby.vip.wordpress.com/2024/12/10/notice-editor-issues-when-using-jetpack-version-13-7-and-wordpress-version-6-5/
+ * Remove this filter to disable the hotfix: 
+ * remove_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+ */
+add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+function vip_jetpack_disable_wpcom_block_editor() {
+	global $wp_version;
+	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
+	$matching_core_constraints    = version_compare( $wp_version, '6.6', '<' );
+
+	if ( $matching_jetpack_constraints && $matching_core_constraints ) {
+		add_filter( 'jetpack_tools_to_include', function ( $tools ) {
+			$key = array_search( 'wpcom-block-editor/class-jetpack-wpcom-block-editor.php', $tools );
+
+			if ( $key ) {
+				unset( $tools[ $key ] );
+			}
+			return $tools;
+		} );
+	}
+}
+// Force cache flush
+add_action( 'plugins_loaded', function () {
+	add_filter( 'script_loader_src',
+		function ( $src, $handle ) {
+			if ( 'wpcom-block-editor-default-editor-script' === $handle ) {
+				return $src . '.vip';
+			}
+
+			return $src;
+		},
+		PHP_INT_MIN,
+		2
+	);
+} );

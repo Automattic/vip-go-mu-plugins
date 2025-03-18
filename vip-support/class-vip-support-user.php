@@ -190,7 +190,12 @@ class User {
 	 * user edit and profile screens.
 	 */
 	public function action_admin_head() {
-		if ( in_array( get_current_screen()->base, array( 'user-edit', 'profile' ) ) ) {
+		$current_screen = get_current_screen();
+		if ( ! $current_screen ) {
+			return;
+		}
+
+		if ( in_array( $current_screen->base, array( 'user-edit', 'profile' ) ) ) {
 			?>
 			<style type="text/css">
 				.vip-support-email-status {
@@ -782,13 +787,15 @@ class User {
 			return true;
 		}
 
+		$allowed_emails = constant( 'VIP_SUPPORT_USER_ALLOWED_EMAILS' );
+
 		// Incorrectly formatted constant, fail fast + closed
-		if ( ! is_array( VIP_SUPPORT_USER_ALLOWED_EMAILS ) ) {
+		if ( ! is_array( $allowed_emails ) ) {
 			return false;
 		}
 
 		// If the override _is_ present, then the user is only allowed if their email is in the array
-		return in_array( $email, VIP_SUPPORT_USER_ALLOWED_EMAILS, true );
+		return in_array( $email, $allowed_emails, true );
 	}
 
 	/**
@@ -1055,7 +1062,7 @@ class User {
 		// Never remove the machine user.
 		if (
 			( defined( 'WPCOM_VIP_MACHINE_USER_LOGIN' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_login ) ||
-			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_LOGIN === $user->user_email )
+			( defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) && \WPCOM_VIP_MACHINE_USER_EMAIL === $user->user_email )
 		) {
 			return new WP_Error( 'not-removing-machine-user', 'WPCOM VIP machine user cannot be removed!' );
 		}

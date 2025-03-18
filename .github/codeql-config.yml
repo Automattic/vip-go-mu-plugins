@@ -2,6 +2,7 @@ name: CodeQL Config
 
 paths:
   - search/search-dev-tools/src/
+  - .github/
 
 paths-ignore:
   - node_modules

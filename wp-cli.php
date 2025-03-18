@@ -36,12 +36,22 @@ function init_is_ssl_toggle_for_multisite() {
  * This function toggles the setting so we get correct URLs generated in the wp-cli context.
  */
 function maybe_toggle_is_ssl() {
-	$is_ssl_siteurl = wp_startswith( get_option( 'siteurl' ), 'https:' );
+	$is_ssl_siteurl = str_starts_with( get_option( 'siteurl' ), 'https:' );
 
 	if ( $is_ssl_siteurl && ! is_ssl() ) {
 		$_SERVER['HTTPS'] = 'on';
 	} elseif ( ! $is_ssl_siteurl && is_ssl() ) {
 		unset( $_SERVER['HTTPS'] );
+	}
+}
+
+/**
+ * Disable the SAVEQUERIES for all the WP CLI interactions, unless already defined.
+ * SAVEQUERIES tracks is quite expensive if turned on and can lead to OOM and performance issues, it should be enabled only when needed.
+ */
+function maybe_disable_savequeries() {
+	if ( ! defined( 'SAVEQUERIES' ) ) {
+		define( 'SAVEQUERIES', false );
 	}
 }
 
@@ -70,6 +80,8 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	disable_display_errors();
 
 	init_is_ssl_toggle();
+
+	maybe_disable_savequeries();
 
 	foreach ( glob( __DIR__ . '/wp-cli/*.php' ) as $command ) {
 		require $command;

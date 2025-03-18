@@ -7,7 +7,6 @@ use ErrorException;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/mock-header.php';
-require_once __DIR__ . '/../../cache/class-vary-cache.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
@@ -16,6 +15,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	private $original_cookie;
 	private $original_server;
 	private $original_error_reporting;
+
+	public static function wpSetUpBeforeClass() {
+		require_once __DIR__ . '/../../cache/class-vary-cache.php';
+		Vary_Cache::unload();
+	}
 
 	public function setUp(): void {
 		parent::setUp();

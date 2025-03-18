@@ -7,7 +7,7 @@
 
 class Debug_Bar {
 	/**
-	 * @var Debug_Bar_Panel[]
+	 * @var array<int, Debug_Bar_Panel>
 	 */
 	public $panels = array();
 
@@ -48,7 +48,7 @@ class Debug_Bar {
 		 *
 		 * @since 2.7.0
 		 *
-		 * @param Debug_Bar_Panel[] $panels Array of Debug Bar panel instances.
+		 * @param array<int, Debug_Bar_Panel> $panels Array of Debug Bar panel instances.
 		 */
 		$this->panels = apply_filters( 'debug_bar_panels', array() );
 	}
@@ -60,11 +60,15 @@ class Debug_Bar {
 		$dispatcher = QM_Dispatchers::get( 'html' );
 
 		if ( $this->panels && $dispatcher && $dispatcher::user_can_view() ) {
-			?>
-			<script type="text/javascript">
-			var ajaxurl = '<?php echo esc_url( admin_url( 'admin-ajax.php' ) ); ?>';
-			</script>
-			<?php
+			wp_print_inline_script_tag(
+				sprintf(
+					"var ajaxurl = '%s';",
+					esc_url_raw( admin_url( 'admin-ajax.php' ) )
+				),
+				array(
+					'id' => 'query-monitor-inline-debug-bar',
+				)
+			);
 		}
 	}
 

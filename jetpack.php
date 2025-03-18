@@ -1,11 +1,10 @@
 <?php
-
 /**
  * Plugin Name: Jetpack
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 12.7
+ * Version: 14.4.1
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -20,21 +19,21 @@
 function vip_default_jetpack_version() {
 	global $wp_version;
 
-	if ( version_compare( $wp_version, '5.9', '<' ) ) {
-		// WordPress 5.8.x and older. Not including 5.9.
-		return '10.9';
-	} elseif ( version_compare( $wp_version, '6.0', '<' ) ) {
-		// WordPress 5.9.x
-		return '11.4';
-	} elseif ( version_compare( $wp_version, '6.1', '<' ) ) {
-		// WordPress 6.0.x
-		return '12.0';
-	} elseif ( version_compare( $wp_version, '6.2', '<' ) ) {
-		// WordPress 6.1.x
-		return '12.5';
+	if ( version_compare( $wp_version, '6.3', '<' ) ) {
+		// WordPress 6.2.x.
+		return '12.8';
+	} elseif ( version_compare( $wp_version, '6.4', '<' ) ) {
+		// WordPress 6.3.x
+		return '13.1';
+	} elseif ( version_compare( $wp_version, '6.5', '<' ) ) {
+		// WordPress 6.4.x
+		return '13.6';
+	} elseif ( version_compare( $wp_version, '6.6', '<' ) ) {
+		// WordPress 6.5.x
+		return '14.0';
 	} else {
-		// WordPress 6.2 and newer.
-		return '12.7';
+		// WordPress 6.6 and newer.
+		return '14.4';
 	}
 }
 
@@ -490,21 +489,16 @@ define( 'VIP_JETPACK_DEFAULT_PLAN', array(
 ) );
 
 /**
- * Prevent the jetpack_active_plan from ever being overridden.
- *
- * All VIP sites should always have have a valid Jetpack plan.
- *
- * This will prevent issues from the plan option being corrupted,
- * which can then break features like Jetpack Search.
+ * Prevent the jetpack_active_plan from missing.
+ * All VIP sites should always have a valid Jetpack plan.
  */
-add_filter( 'pre_option_jetpack_active_plan', function ( $pre_option ) {
+add_filter( 'default_option_jetpack_active_plan', function ( $default_value ) {
 	if ( true === WPCOM_IS_VIP_ENV && defined( 'VIP_JETPACK_DEFAULT_PLAN' ) ) {
-		return VIP_JETPACK_DEFAULT_PLAN;
+		$default_value = VIP_JETPACK_DEFAULT_PLAN;
 	}
 
-	return $pre_option;
+	return $default_value;
 } );
-
 
 /**
  * Load the jetpack plugin according to several defines:
@@ -544,9 +538,9 @@ function vip_jetpack_load() {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} elseif ( '' === $version ) {
-			$path = WPMU_PLUGIN_DIR . '/jetpack/jetpack.php';
+			$path = WPVIP_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
 		} else {
-			$path = WPMU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
+			$path = WPVIP_MU_PLUGIN_DIR . "/jetpack-$version/jetpack.php";
 		}
 
 		if ( file_exists( $path ) ) {
@@ -559,7 +553,7 @@ function vip_jetpack_load() {
 				}
 
 				foreach ( $option as $i => $plugin ) {
-					if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+					if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 						unset( $option[ $i ] );
 						break;
 					}
@@ -575,7 +569,7 @@ function vip_jetpack_load() {
 					}
 
 					foreach ( $option as $plugin => $i ) {
-						if ( wp_endswith( $plugin, '/jetpack.php' ) ) {
+						if ( str_ends_with( $plugin, '/jetpack.php' ) ) {
 							unset( $option[ $plugin ] );
 							break;
 						}
@@ -593,6 +587,13 @@ function vip_jetpack_load() {
 
 			// We should break even if we failed to load Jetpack, because some constants like JETPACK_VERSION were probably already set
 			break;
+
+			// Trigger a E_USER_WARNING in non-production environments if the pinned version could not be loaded.
+		} elseif ( ! file_exists( $path ) && defined( 'VIP_JETPACK_PINNED_VERSION' ) && wp_in( constant( 'VIP_JETPACK_PINNED_VERSION' ), $path ) ) {
+			if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Jetpack loading error: ' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
+			}
 		}
 	}
 

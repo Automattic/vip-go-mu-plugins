@@ -329,7 +329,7 @@ function get_changelog_tags( $pr ) {
  * @return array $pr_ids The IDs pulled from the commits
  */
 function get_pr_ids_from_commits( $commit_url ) {
-    $commits = curl_get( $commit_url );
+    $commits = curl_get_all( $commit_url );
     $pr_ids = [];
 
     foreach( $commits as $commit ) {
@@ -360,7 +360,7 @@ function curl_get( $url ) {
     curl_setopt( $ch, CURLOPT_HEADER, 0 );
     curl_setopt( $ch, CURLOPT_RETURNTRANSFER, true );
     // curl_setopt( $ch, CURLOPT_VERBOSE, true );
-    if ( GITHUB_TOKEN ) {
+    if ( defined( 'GITHUB_TOKEN' ) && GITHUB_TOKEN ) {
         array_push( $headers, 'Authorization:token ' . GITHUB_TOKEN );
     }
     curl_setopt( $ch, CURLOPT_HTTPHEADER, $headers );
@@ -373,6 +373,22 @@ function curl_get( $url ) {
     curl_close( $ch );
 
     return json_decode( $data, true );
+}
+
+/**
+ * Wrapper which paginates the GitHub request to fetch everything. Useful when
+ * the endpoint doesn't include pagination information.
+ *
+ * @param string $url URL to get
+ * @return array $data The array with all the data
+ */
+function curl_get_all( $url ) {
+	$all_data = [];
+    $pagination_url = $url . '?per_page=50&page=';
+	for ( $page = 1; ! empty( $data = curl_get( $pagination_url . $page ) ); $page++ ) {
+		$all_data = array_merge( $all_data, $data );
+	}
+	return $all_data;
 }
 
 /**

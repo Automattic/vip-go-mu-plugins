@@ -1,0 +1,13 @@
+{
+    "name": "WPVIP MU Plugins",
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "wordpress",
+    "workspaceFolder": "/var/www/html/wp-content/mu-plugins",
+    "forwardPorts": [80],
+    "portsAttributes": {
+        "80": {
+            "label": "Application",
+            "onAutoForward": "notify"
+        }
+    }
+}

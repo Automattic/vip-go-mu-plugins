@@ -43,21 +43,6 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 	const U2F_ASSET_VERSION = '0.2.1';
 
 	/**
-	 * Ensures only one instance of this class exists in memory at any one time.
-	 *
-	 * @return \Two_Factor_FIDO_U2F
-	 */
-	public static function get_instance() {
-		static $instance;
-
-		if ( ! isset( $instance ) ) {
-			$instance = new self();
-		}
-
-		return $instance;
-	}
-
-	/**
 	 * Class constructor.
 	 *
 	 * @since 0.1-dev
@@ -80,7 +65,7 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 
 		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
 
-		return parent::__construct();
+		parent::__construct();
 	}
 
 	/**
@@ -120,6 +105,15 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 	}
 
 	/**
+	 * Returns the "continue with" text provider for the login screen.
+	 *
+	 * @since 0.9.0
+	 */
+	public function get_alternative_provider_label() {
+		return __( 'Use your security key', 'two-factor' );
+	}
+
+	/**
 	 * Register script dependencies used during login and when
 	 * registering keys in the WP admin.
 	 *
@@ -149,7 +143,7 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 	 * @since 0.1-dev
 	 *
 	 * @param WP_User $user WP_User object of the logged-in user.
-	 * @return null
+	 * @return void
 	 */
 	public function authentication_page( $user ) {
 		require_once ABSPATH . '/wp-admin/includes/template.php';
@@ -171,7 +165,7 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 			?>
 			<p><?php esc_html_e( 'An error occurred while creating authentication data.', 'two-factor' ); ?></p>
 			<?php
-			return null;
+			return;
 		}
 
 		wp_localize_script(
@@ -393,5 +387,18 @@ class Two_Factor_FIDO_U2F extends Two_Factor_Provider {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Return user meta keys to delete during plugin uninstall.
+	 *
+	 * @return array
+	 */
+	public static function uninstall_user_meta_keys() {
+		return array(
+			self::REGISTERED_KEY_USER_META_KEY,
+			self::AUTH_DATA_USER_META_KEY,
+			'_two_factor_fido_u2f_register_request', // From Two_Factor_FIDO_U2F_Admin which is not loaded during uninstall.
+		);
 	}
 }

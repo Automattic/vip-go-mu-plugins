@@ -9,6 +9,7 @@ namespace Automattic\VIP\Integrations;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
+use Automattic\Test\Constant_Mocker;
 
 use function Automattic\Test\Utils\get_class_property_as_public;
 
@@ -30,13 +31,13 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
-		$preload_state = defined( 'VIP_PARSELY_ENABLED' );
+		$preload_state = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' );
 
 		$parsely_integration_mock->load();
 
-		$this->assertEquals( $preload_state, defined( 'VIP_PARSELY_ENABLED' ) );
+		$this->assertEquals( $preload_state, Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
 	}
 
 	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
@@ -45,16 +46,16 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 *
 		 * @var MockObject|ParselyIntegration
 		 */
-		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->setMethods( [ 'is_loaded' ] )->getMock();
+		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
-		$existing_value = defined( 'VIP_PARSELY_ENABLED' ) ? VIP_PARSELY_ENABLED : null;
+		$existing_value = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) ? Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) : null;
 
 		$parsely_integration_mock->load();
 
-		if ( is_null( $existing_value ) || true == $existing_value ) {
-			$this->assertTrue( VIP_PARSELY_ENABLED );
+		if ( is_null( $existing_value ) || $existing_value ) {
+			$this->assertTrue( Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) );
 		} else {
-			$this->assertFalse( defined( 'VIP_PARSELY_ENABLED' ) );
+			$this->assertFalse( Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
 		}
 	}
 
@@ -64,7 +65,6 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		$parsely_integration->configure();
 
 		$this->assertEquals( 10, has_filter( 'wp_parsely_credentials', [ $parsely_integration, 'wp_parsely_credentials_callback' ] ) );
-		$this->assertEquals( 10, has_filter( 'wp_parsely_managed_options', [ $parsely_integration, 'wp_parsely_managed_options_callback' ] ) );
 	}
 
 	public function test__wp_parsely_credentials_callback_returns_original_credentials_of_the_integration_if_platform_config_is_empty(): void {
@@ -96,21 +96,6 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 			'is_managed' => true,
 			'site_id'    => 'value',
 			'api_secret' => null,
-		], $callback_value );
-	}
-
-	public function test__wp_parsely_managed_options_callback_returns_all_managed_options(): void {
-		$parsely_integration = new ParselyIntegration( $this->slug );
-		$callback_value      = $parsely_integration->wp_parsely_managed_options_callback( false );
-
-		$this->assertEquals( [
-			'force_https_canonicals' => true,
-			'meta_type'              => 'repeated_metas',
-			'cats_as_tags'           => null,
-			'content_id_prefix'      => null,
-			'logo'                   => null,
-			'lowercase_tags'         => null,
-			'use_top_level_cats'     => null,
 		], $callback_value );
 	}
 }

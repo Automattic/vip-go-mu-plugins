@@ -93,7 +93,7 @@ class Cron {
 			return 1;
 		}
 
-		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
+		$allowed_total_concurrency = (int) ceil( constant( 'Automattic\\WP\\Cron_Control\\JOB_CONCURRENCY_LIMIT' ) / 4 );
 		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
 	}
 

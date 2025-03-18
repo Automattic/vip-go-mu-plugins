@@ -355,19 +355,19 @@ function widont( $str = '' ) {
 // Leave these wrapped in function_exists() b/c they are so generically named
 if ( ! function_exists( 'wp_startswith' ) ) :
 	function wp_startswith( $haystack, $needle ) {
-		return 0 === strpos( (string) $haystack, (string) $needle );
+		return str_starts_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		return substr( (string) $haystack, -strlen( (string) $needle ) ) === $needle;
+		return str_ends_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_in' ) ) :
 	function wp_in( $needle, $haystack ) {
-		return false !== strpos( (string) $haystack, (string) $needle );
+		return str_contains( $haystack, $needle );
 	}
 endif;
 
@@ -1192,7 +1192,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false ) {
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
 		if ( wpcom_vip_can_use_shared_plugin( $plugin ) ) {
-			$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
+			$test_directories[] = WPVIP_MU_PLUGIN_DIR . '/shared-plugins';
 		}
 	}
 
@@ -1261,7 +1261,6 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	// Array of shared plugins we are not deprecating
 	$protected_shared_plugins = array(
 		'two-factor',
-		'jetpack-force-2fa',
 	);
 
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
@@ -1444,6 +1443,16 @@ function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
 		$user = new WP_User( $user_id );
 	} else {
+		if ( ! function_exists( 'wp_get_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `plugins_loaded` hook.', null );
+			return false;
+		}
+
+		if ( ! did_action( 'init' ) && ! has_filter( 'determine_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `init` hook without a filter for the `determine_current_user` hook.', null );
+			return false;
+		}
+
 		$user = wp_get_current_user();
 	}
 
@@ -1639,4 +1648,17 @@ function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global
 	}
 
 	return $hyperdb->hyper_servers[ $dataset ];
+}
+
+/**
+ * Checks if a given string looks like a VIP convenience domain.
+ *
+ * Examples of a VIP convenience domain are `example.go-vip.co` and `example.go-vip.net`.
+ *
+ * @param string $domain Domain to check.
+ * @return bool True if the domain is a convenience domain.
+ */
+function is_vip_convenience_domain( string $domain ): bool {
+	$domain = strtolower( $domain );
+	return str_ends_with( $domain, '.go-vip.co' ) || str_ends_with( $domain, '.go-vip.net' );
 }

@@ -16,15 +16,14 @@ function notice() {
 		get_option( 'blogpublic_notice_dismissed', false ) ||
 		! get_option( 'blog_public' ) ||
 		'-1' === get_option( 'blog_public' ) ||
-		wp_endswith( $home_url_parsed['host'], '.go-vip.co' ) ||
-		wp_endswith( $home_url_parsed['host'], '.go-vip.net' )
+		is_vip_convenience_domain( $home_url_parsed['host'] ?? '' )
 	) {
 		return;
 	}
 
 	printf(
 		'<div id="blogpublic-notice" class="notice notice-warning is-dismissible"><p>Your site may be discoverable. You can change this by <a href="%s">disabling content distribution</a>.</p></div>',
-		'https://docs.wpvip.com/technical-references/restricting-site-access/controlling-content-distribution-via-jetpack/#h-disabling-content-distribution',
+		'https://docs.wpvip.com/wordpress-on-vip/jetpack/content-distribution/#h-disabling-content-distribution',
 	);
 	add_action( 'admin_footer', __NAMESPACE__ . '\dismiss_handler' );
 }

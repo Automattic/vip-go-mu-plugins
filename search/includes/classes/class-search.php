@@ -239,27 +239,9 @@ class Search {
 		return static::$instance;
 	}
 
-	/**
-	 * Whether to load the latest ElasticPress version.
-	 * Can be overridden by defining `VIP_SEARCH_USE_NEXT_EP` to false.
-	 *
-	 * @return bool Whether to load the latest version or not. Defaults to true.
-	 */
-	public static function should_load_new_ep() {
-		if ( defined( 'VIP_SEARCH_USE_NEXT_EP' ) && true !== constant( 'VIP_SEARCH_USE_NEXT_EP' ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
 	protected function load_dependencies() {
 		// Load ElasticPress
-		if ( static::should_load_new_ep() ) {
-			require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
-		} else {
-			require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-		}
+		require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 		// Load health check cron job
 		require_once __DIR__ . '/class-healthjob.php';
@@ -498,7 +480,7 @@ class Search {
 	 * This is separate from setup_hooks because some parts of setup_hooks require ElasticPress.
 	 */
 	protected function maybe_enable_ep_query_logging() {
-		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_query_monitor_enabled' ] );
+		add_action( 'plugins_loaded', [ $this, 'enable_ep_query_logging_if_debug_or_has_cap' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_ep_get_query_log_function' ] );
 	}
 
@@ -507,15 +489,15 @@ class Search {
 	}
 
 	/**
-	 * Check if query monitor or debug bar are enabled. Also check for the debug mode being enabled.
+	 * Check if debug mode is enabled or has search dev tools cap.
 	 * If so, define WP_EP_DEBUG as true so ElasticPress enables query logging.
 	 */
-	public function enable_ep_query_logging_if_query_monitor_enabled() {
+	public function enable_ep_query_logging_if_debug_or_has_cap() {
 		if ( defined( 'WP_EP_DEBUG' ) ) {
 			return;
 		}
 
-		if ( apply_filters( 'wpcom_vip_qm_enable', false ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
+		if ( current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) {
 			define( 'WP_EP_DEBUG', true );
 		}
 	}
@@ -675,7 +657,8 @@ class Search {
 			WP_CLI::add_command( 'vip-search queue', __NAMESPACE__ . '\Commands\QueueCommand' );
 			WP_CLI::add_command( 'vip-search index-versions', __NAMESPACE__ . '\Commands\VersionCommand' );
 			WP_CLI::add_command( 'vip-search documents', __NAMESPACE__ . '\Commands\DocumentCommand' );
-			WP_CLI::add_command( 'vip-search', __NAMESPACE__ . '\Commands\CoreCommand' );
+			$vip_search_core_command = new \Automattic\VIP\Search\Commands\CoreCommand( new \ElasticPress\Command() );
+			WP_CLI::add_command( 'vip-search', $vip_search_core_command );
 		}
 	}
 
@@ -1187,8 +1170,8 @@ class Search {
 			return;
 		}
 
-		if ( ! $is_cli ) {
-			global $wp;
+		global $wp;
+		if ( ! $is_cli && isset( $wp->query_vars ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
 			$request_url_for_logging = esc_url_raw( add_query_arg( $wp->query_vars, home_url( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) );
 		}
@@ -1249,7 +1232,7 @@ class Search {
 		if ( $is_post_request ) {
 			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
 			foreach ( $request_types as $type ) {
-				if ( wp_endswith( $query_path, $type ) ) {
+				if ( str_ends_with( $query_path, $type ) ) {
 					return 30;
 				}
 			}
@@ -1614,7 +1597,7 @@ class Search {
 		foreach ( $widgets as $index => $file ) {
 			// If the Search widget is included and it's active on a site, it will automatically re-enable the Search module,
 			// even though we filtered it to off earlier, so we need to prevent it from loading
-			if ( wp_endswith( $file, '/jetpack/modules/widgets/search.php' ) ) {
+			if ( str_ends_with( $file, '/jetpack/modules/widgets/search.php' ) ) {
 				unset( $widgets[ $index ] );
 			}
 		}
@@ -1706,7 +1689,7 @@ class Search {
 	public function filter__ep_user_mapping( $mapping ) {
 		$users_count = count_users();
 
-		if ( isset( $users_count->total_users ) && ( $users_count->total_users > self::USER_SHARD_THRESHOLD ) ) {
+		if ( isset( $users_count['total_users'] ) && ( $users_count['total_users'] > self::USER_SHARD_THRESHOLD ) ) {
 			$mapping['settings']['index.number_of_shards'] = 4;
 		}
 
@@ -1740,7 +1723,7 @@ class Search {
 		$index_name = $path[0];
 
 		// If it starts with underscore, then we didn't detect the index name and should return null
-		if ( wp_startswith( $index_name, '_' ) ) {
+		if ( str_starts_with( $index_name, '_' ) ) {
 			return null;
 		}
 

@@ -259,9 +259,13 @@ class Site_Details_Index {
 		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
 			$search_info['enabled']                   = true;
 			$search_info['query_integration_enabled'] = \Automattic\VIP\Search\Search::is_query_integration_enabled();
+			$search_info['network_enabled']           = defined( 'EP_IS_NETWORK' ) && true === constant( 'EP_IS_NETWORK' );
+			$search_info['enabled_by']                = defined( 'VIP_SEARCH_ENABLED_BY' ) ? constant( 'VIP_SEARCH_ENABLED_BY' ) : 'unknown';
 		} else {
 			$search_info['enabled']                   = false;
 			$search_info['query_integration_enabled'] = false;
+			$search_info['network_enabled']           = false;
+			$search_info['enabled_by']                = false;
 		}
 
 		return $search_info;
@@ -292,6 +296,7 @@ class Site_Details_Index {
 
 	/**
 	 * Gather all the information about Parse.ly.
+	 *
 	 * @return array Parse.ly plugin info.
 	 */
 	public function get_parsely_info() {
@@ -348,24 +353,14 @@ class Site_Details_Index {
 	 * and sends it to the site details service
 	 */
 	public function put_site_details() {
-		$site_details      = $this->get_site_details();
-		$url               = null;
-		$token             = null;
-		$new_service_url   = null;
-		$new_service_token = null;
+		$site_details = $this->get_site_details();
+		$url          = null;
+		$token        = null;
 
 		if ( defined( 'VIP_SERVICES_AUTH_TOKENS' ) && ! empty( VIP_SERVICES_AUTH_TOKENS ) ) {
 			$auth_token_details = json_decode( base64_decode( VIP_SERVICES_AUTH_TOKENS ), true );
-			$new_service_url    = $auth_token_details['site']['vip-site-details']['url'] ?? null;
-			$new_service_token  = $auth_token_details['site']['vip-site-details']['token'] ?? null;
-		}
-
-		if ( $new_service_url && $new_service_token ) {
-			$url   = rtrim( $new_service_url, '/' ) . '/sites';
-			$token = $new_service_token;
-		} elseif ( defined( 'SERVICES_API_URL' ) && defined( 'SERVICES_AUTH_TOKEN' ) && ! empty( SERVICES_AUTH_TOKEN ) ) {
-			$url   = rtrim( SERVICES_API_URL, '/' ) . '/site-details/sites';
-			$token = SERVICES_AUTH_TOKEN;
+			$url                = $auth_token_details['site']['vip-site-details']['url'] ?? null;
+			$token              = $auth_token_details['site']['vip-site-details']['token'] ?? null;
 		}
 
 		if ( $url && $token ) {
@@ -378,7 +373,7 @@ class Site_Details_Index {
 				),
 			);
 
-			vip_safe_wp_remote_request( $url, false, 3, 5, 10, $args );
+			vip_safe_wp_remote_request( rtrim( $url, '/' ) . '/sites', false, 3, 5, 10, $args );
 		}
 	}
 

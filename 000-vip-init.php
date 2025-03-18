@@ -31,6 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Important - Cache-healthcheck and App-healthcheck
 require_once __DIR__ . '/healthcheck/healthcheck.php';
 
+if ( ! defined( 'WPVIP_MU_PLUGIN_DIR' ) ) {
+	define( 'WPVIP_MU_PLUGIN_DIR', __DIR__ );
+}
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
@@ -126,7 +129,9 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 }
 
 // Define constants for custom VIP Go paths
-define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+if ( ! defined( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR' ) ) {
+	define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+}
 
 if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
 	// FedRAMP sites do not load Jetpack by default
@@ -228,6 +233,17 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+require_once __DIR__ . '/telemetry/class-telemetry-system.php';
+require_once __DIR__ . '/telemetry/class-tracks.php';
+require_once __DIR__ . '/telemetry/class-telemetry-client.php';
+require_once __DIR__ . '/telemetry/class-telemetry-event-queue.php';
+require_once __DIR__ . '/telemetry/class-telemetry-event.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
+require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
@@ -245,8 +261,11 @@ if ( Context::is_wp_cli() ) {
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
-	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) ) {
 	require_once __DIR__ . '/search/search.php';
+	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
 }
 
 // Set WordPress environment type
@@ -308,7 +327,7 @@ add_filter( 'wp_headers', function ( $headers ) {
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- should be safe, because we are only looking for a substring and don't use the variable for anything else
-	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER['HTTP_HOST'] ?? '', '.go-vip.' ) ) {
+	if ( 'production' !== VIP_GO_ENV || is_vip_convenience_domain( $_SERVER['HTTP_HOST'] ?? '' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 

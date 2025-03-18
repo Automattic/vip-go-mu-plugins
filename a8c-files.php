@@ -73,9 +73,9 @@ class A8C_Files {
 
 	public function __construct() {
 
-		// Upload size limit is 1GB
+		// Upload size limit is 2GB
 		add_filter( 'upload_size_limit', function () {
-			return 1073741824; // 2^30
+			return 2147483648; // 2^30 * 2
 		});
 
 		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
@@ -263,6 +263,9 @@ class A8C_Files {
 				$_max_w = 300;
 				$_max_h = 300;
 			}
+		} elseif ( 'medium_large' == $size ) {
+			$_max_w = get_option( 'medium_large_size_w' );
+			$_max_h = get_option( 'medium_large_size_h' );
 		} elseif ( 'large' == $size ) {
 			$_max_w = get_option( 'large_size_w' );
 			$_max_h = get_option( 'large_size_h' );
@@ -527,7 +530,7 @@ class A8C_Files_Utils {
 			return $site_url;
 		}
 
-		if ( wp_endswith( $image_url_parsed['host'], '.go-vip.co' ) || wp_endswith( $image_url_parsed['host'], '.go-vip.net' ) ) {
+		if ( is_vip_convenience_domain( $image_url_parsed['host'] ?? '' ) ) {
 			return $image_url_parsed['scheme'] . '://' . $image_url_parsed['host'];
 		}
 

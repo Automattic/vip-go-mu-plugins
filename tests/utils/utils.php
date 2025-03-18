@@ -8,6 +8,7 @@
 namespace Automattic\Test\Utils;
 
 use ReflectionClass;
+use ReflectionProperty;
 
 require_once __DIR__ . '/../utils/parsely-utils.php';
 
@@ -23,7 +24,7 @@ function get_class_property_as_public( $class_name, $property_name ) {
 	$reflector = new ReflectionClass( $class_name );
 	$property  = $reflector->getProperty( $property_name );
 
-	$property->setAccessible( true );
+	$property->setAccessible( true ); // NOSONAR
 
 	return $property;
 }
@@ -40,7 +41,18 @@ function get_class_method_as_public( $class_name, $method ) {
 	$reflector = new ReflectionClass( $class_name );
 	$method    = $reflector->getMethod( $method );
 
-	$method->setAccessible( true );
+	$method->setAccessible( true ); // NOSONAR
 
 	return $method;
+}
+
+/**
+ * @psalm-param class-string $class_name
+ */
+function get_static_property_as_public( string $class_name, string $property_name ): ReflectionProperty {
+	$reflection = new ReflectionClass( $class_name );
+	$property   = $reflection->getProperty( $property_name );
+	$property->setAccessible( true ); // NOSONAR
+
+	return $property;
 }

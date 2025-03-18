@@ -13,6 +13,10 @@ use WP_UnitTestCase;
  * @group vip_support_role
  */
 class VIPSupportRoleTest extends WP_UnitTestCase {
+	/** @var int */
+	private $vip_support_user;
+	/** @var int */
+	private $admin_user;
 
 	public function setUp(): void {
 		parent::setUp();
