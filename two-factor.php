@@ -284,7 +284,7 @@ function wpcom_vip_two_factor_admin_notice() {
  */
 add_filter( 'jetpack_account_protection_user_requires_protection', 'wpcom_vip_two_factor_bypass_jetpack_account_protection', 10, 2 );
 function wpcom_vip_two_factor_bypass_jetpack_account_protection( $user_requires_protection, $user ) {
-	if ( Two_Factor_Core::is_user_using_two_factor( $user->ID ) ) {
+	if ( is_callable( array( 'Two_Factor_Core', 'is_user_using_two_factor' ) ) && Two_Factor_Core::is_user_using_two_factor( $user->ID ) ) {
 		return false;
 	}
 
