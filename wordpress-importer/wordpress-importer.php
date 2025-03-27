@@ -6,7 +6,7 @@
  * Description:       Import posts, pages, comments, custom fields, categories, tags and more from a WordPress export file.
  * Author:            wordpressdotorg
  * Author URI:        https://wordpress.org/
- * Version:           0.8.3
+ * Version:           0.8.4
  * Requires at least: 5.2
  * Requires PHP:      5.6
  * Text Domain:       wordpress-importer
