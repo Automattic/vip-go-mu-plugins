@@ -410,9 +410,16 @@ class Site_Details_Index {
 			] );
 
 			if ( true === $result['updated'] ) {
-				$sync_data['last_full_synced'] = $site_details['timestamp'];
-				$sync_data['last_synced']      = $site_details['timestamp'];
-				$sync_data['last_sync_hash']   = $this->get_site_details_data_hash( $site_details );
+				// Stagger the future syncs if this is the first time we're setting the option.
+				if ( empty( $sync_data['last_full_synced'] ) ) {
+					$sync_data['last_full_synced'] = wp_rand( $site_details['timestamp'] - self::DAY_IN_MS, $site_details['timestamp'] );
+					$sync_data['last_synced']      = wp_rand( $site_details['timestamp'] - self::MINUTE_IN_MS * 25, $site_details['timestamp'] );
+				} else {
+					$sync_data['last_full_synced'] = $site_details['timestamp'];
+					$sync_data['last_synced']      = $site_details['timestamp'];
+				}
+
+				$sync_data['last_sync_hash'] = $this->get_site_details_data_hash( $site_details );
 				update_option( self::SYNC_DATA_OPTION, $sync_data, false );
 			}
 		}
