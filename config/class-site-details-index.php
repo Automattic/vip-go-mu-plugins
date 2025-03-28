@@ -410,13 +410,15 @@ class Site_Details_Index {
 			] );
 
 			if ( true === $result['updated'] ) {
+				$timestamp = $site_details['timestamp'];
+
 				// Stagger the future syncs if this is the first time we're setting the option.
 				if ( empty( $sync_data['last_full_synced'] ) ) {
-					$sync_data['last_full_synced'] = wp_rand( $site_details['timestamp'] - self::DAY_IN_MS, $site_details['timestamp'] );
-					$sync_data['last_synced']      = wp_rand( $site_details['timestamp'] - self::MINUTE_IN_MS * 25, $site_details['timestamp'] );
+					$sync_data['last_full_synced'] = wp_rand( $timestamp - self::DAY_IN_MS, $timestamp );
+					$sync_data['last_synced']      = wp_rand( $timestamp - self::MINUTE_IN_MS * 25, $timestamp );
 				} else {
-					$sync_data['last_full_synced'] = $site_details['timestamp'];
-					$sync_data['last_synced']      = $site_details['timestamp'];
+					$sync_data['last_full_synced'] = $timestamp;
+					$sync_data['last_synced']      = $timestamp;
 				}
 
 				$sync_data['last_sync_hash'] = $this->get_site_details_data_hash( $site_details );
@@ -441,7 +443,7 @@ class Site_Details_Index {
 		}
 
 		// Send a full sync at least once per day.
-		if ( ( $current_timestamp - $last_full_sync_timestamp ) > self::DAY_IN_MS ) {
+		if ( $current_timestamp - $last_full_sync_timestamp > self::DAY_IN_MS ) {
 			return 'full';
 		}
 
@@ -454,8 +456,7 @@ class Site_Details_Index {
 		}
 
 		// Send a heartbeat if it's been more than 25 minutes (1/3 of the stale threshold).
-		$last_sync_timestamp = $sync_data['last_synced'] ?? 0;
-		if ( ( $current_timestamp - $last_sync_timestamp ) > ( self::MINUTE_IN_MS * 25 ) ) {
+		if ( $current_timestamp - $last_sync_timestamp > self::MINUTE_IN_MS * 25 ) {
 			return 'heartbeat';
 		}
 
