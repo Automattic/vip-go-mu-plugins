@@ -50,4 +50,28 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 		];
 		$this->assertEquals( $props, $output );
 	}
+
+	public function test_get_base_properties_of_user_with_no_role(): void {
+		$user = $this->factory()->user->create_and_get( [
+			'role'       => [],
+			'user_login' => 'frances',
+			'user_email' => 'frances@ha.com',
+		] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_ORG_ID', 22 );
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', 'test_salt' );
+
+		$output = get_base_properties_of_pendo_user();
+
+		$props = [
+			'account_id'     => 'nosfid_wordpress_22',
+			'country_code'   => 'unknown',
+			'org_id'         => '22',
+			'role_wordpress' => 'unknown',
+			'visitor_id'     => '2a69efbe98bed50d3fee619f409b5ded12fb63f1fab2dd52e211e2b626b49408',
+			'visitor_name'   => 'frances',
+		];
+		$this->assertEquals( $props, $output );
+	}
 }
