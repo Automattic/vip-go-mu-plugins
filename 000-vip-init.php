@@ -234,15 +234,35 @@ require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
 // Load the Telemetry files
-require_once __DIR__ . '/telemetry/class-telemetry-system.php';
-require_once __DIR__ . '/telemetry/class-tracks.php';
-require_once __DIR__ . '/telemetry/class-telemetry-client.php';
-require_once __DIR__ . '/telemetry/class-telemetry-event-queue.php';
-require_once __DIR__ . '/telemetry/class-telemetry-event.php';
-require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
-require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
-require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
-require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
+// Temporary loader during rollout, remove and directly require after rollout.
+$telemetry_files = [
+	__DIR__ . '/telemetry/class-telemetry-system.php',
+	__DIR__ . '/telemetry/class-telemetry-client.php',
+	__DIR__ . '/telemetry/class-telemetry-event-queue.php',
+	__DIR__ . '/telemetry/class-telemetry-event.php',
+	__DIR__ . '/telemetry/class-telemetry.php',
+	__DIR__ . '/telemetry/tracks/class-tracks.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
+	__DIR__ . '/telemetry/tracks/tracks-utils.php',
+	__DIR__ . '/telemetry/pendo/class-pendo.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-client.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event.php',
+	__DIR__ . '/telemetry/pendo/pendo-utils.php',
+];
+
+// Make sure all telemetry files are present before loading them.
+$safe_to_load_telemetry = array_reduce( $telemetry_files, function ( bool $carry, string $file ): bool {
+	return $carry && file_exists( $file );
+}, true );
+
+if ( true === $safe_to_load_telemetry ) {
+	foreach ( $telemetry_files as $file ) {
+		require_once $file;
+	}
+}
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 

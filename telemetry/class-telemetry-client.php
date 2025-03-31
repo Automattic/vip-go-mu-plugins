@@ -22,5 +22,5 @@ abstract class Telemetry_Client {
 	 * @return bool|WP_Error True if batch recording succeeded.
 	 *                       WP_Error is any error occurred.
 	 */
-	abstract public function batch_record_events( array $events, array $common_props = [] );
+	abstract public function batch_record_events( array $events, array $common_props = [] ): bool|WP_Error;
 }
