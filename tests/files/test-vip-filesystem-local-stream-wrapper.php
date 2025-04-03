@@ -25,6 +25,8 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		require_once WPMU_PLUGIN_DIR . '/files/class-vip-filesystem-local-stream-wrapper.php';
+
 		/** @var MockObject&Api_Client */
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
