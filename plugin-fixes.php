@@ -158,3 +158,18 @@ add_action( 'after_setup_theme', 'vip_divi_setup' );
 
 // Disable WooCommerce background image regeneration - this is redundant
 add_filter( 'woocommerce_background_image_regeneration', '__return_false' );
+
+/**
+ * Proxy Twitter embeds to the x-oembed-proxy.wpvip.com endpoint.
+ *
+ * @param string $provider The provider URL.
+ * @return string The proxied provider URL.
+ */
+function vip_proxy_twitter_embed( $provider ) {
+	if ( ! str_starts_with( $provider, 'https://publish.twitter.com/oembed' ) ) {
+		return $provider;
+	}
+
+	return str_replace( 'https://publish.twitter.com/oembed', 'https://x-oembed-proxy.wpvip.com/oembed', $provider );
+}
+add_filter( 'oembed_fetch_url', 'vip_proxy_twitter_embed', 10 );
