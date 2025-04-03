@@ -30,10 +30,10 @@ class Telemetry extends Telemetry_System {
 	 * Telemetry constructor.
 	 *
 	 * @param string|null $event_prefix The prefix for all event names, or null to use the default prefix.
-	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
+	 * @param array<string, mixed>|null $global_event_properties The global event properties to be included with every event.
 	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
 	 */
-	public function __construct( string $event_prefix = null, array $global_event_properties, Telemetry_Event_Queue $queue = null ) {
+	public function __construct( ?string $event_prefix = null, ?array $global_event_properties = [], ?Telemetry_Event_Queue $queue = null ) {
 		$this->systems = [
 			new Pendo( $event_prefix, $global_event_properties, $queue ),
 			new Tracks( $event_prefix, $global_event_properties, $queue ),
