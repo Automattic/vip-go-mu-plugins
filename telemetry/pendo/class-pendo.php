@@ -66,7 +66,7 @@ class Pendo extends Telemetry_System {
 	public function __construct(
 		string $event_prefix = 'vip_wordpress_',
 		array $global_event_properties = [],
-		Telemetry_Event_Queue $queue = null,
+		?Telemetry_Event_Queue $queue = null,
 	) {
 		$this->event_context           = $this->get_event_context();
 		$this->event_prefix            = $event_prefix;
