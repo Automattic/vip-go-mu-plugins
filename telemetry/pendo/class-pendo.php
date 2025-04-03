@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use WP_Error;
+
 use Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Client;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Event;
@@ -127,6 +128,10 @@ class Pendo extends Telemetry_System {
 	 */
 	public static function enable_javascript_library(): void {
 		if ( ! defined( 'VIP_PENDO_SNIPPET_API_KEY' ) ) {
+			return;
+		}
+
+		if ( ! class_exists( 'Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library' ) ) {
 			return;
 		}
 

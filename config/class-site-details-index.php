@@ -20,6 +20,11 @@ class Site_Details_Index {
 	 */
 	private $timestamp = null;
 
+	const SYNC_DATA_OPTION = 'vip_config_sync_data';
+
+	const MINUTE_IN_MS = MINUTE_IN_SECONDS * 1000;
+	const DAY_IN_MS    = DAY_IN_SECONDS * 1000;
+
 	/**
 	 * Standard singleton except accept a timestamp for mocking purposes.
 	 *
@@ -349,32 +354,127 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * Builds the site details structure and then puts it into logstash
-	 * and sends it to the site details service
+	 * Builds the site details and sends it to the site details service.
 	 */
 	public function put_site_details() {
 		$site_details = $this->get_site_details();
-		$url          = null;
-		$token        = null;
+		$sync_data    = get_option( self::SYNC_DATA_OPTION, [] );
+		$sync_data    = is_array( $sync_data ) ? $sync_data : [];
 
-		if ( defined( 'VIP_SERVICES_AUTH_TOKENS' ) && ! empty( VIP_SERVICES_AUTH_TOKENS ) ) {
-			$auth_token_details = json_decode( base64_decode( VIP_SERVICES_AUTH_TOKENS ), true );
-			$url                = $auth_token_details['site']['vip-site-details']['url'] ?? null;
-			$token              = $auth_token_details['site']['vip-site-details']['token'] ?? null;
+		$sync_type = $this->determine_sync_type( $site_details, $sync_data );
+
+		// Run a heartbeat sync.
+		if ( 'heartbeat' === $sync_type ) {
+			$success = $this->send_sync( '/sites/heartbeat', [
+				'client_site_id' => $site_details['client_site_id'],
+				'blog_id'        => $site_details['core']['blog_id'],
+				'timestamp'      => $site_details['timestamp'],
+			] );
+
+			if ( $success ) {
+				$sync_data['last_synced'] = $site_details['timestamp'];
+				update_option( self::SYNC_DATA_OPTION, $sync_data, false );
+			}
 		}
 
-		if ( $url && $token ) {
-			$args = array(
-				'method'  => 'PUT',
-				'body'    => wp_json_encode( $site_details ),
-				'headers' => array(
-					'Authorization' => 'Bearer ' . $token,
-					'Content-Type'  => 'application/json',
-				),
-			);
+		// Run a full sync.
+		if ( 'full' === $sync_type ) {
+			$success = $this->send_sync( '/sites', $site_details );
 
-			vip_safe_wp_remote_request( rtrim( $url, '/' ) . '/sites', false, 3, 5, 10, $args );
+			if ( $success ) {
+				$timestamp = $site_details['timestamp'];
+
+				// Stagger the future syncs if this is the first time we're setting the option.
+				if ( empty( $sync_data['last_full_synced'] ) ) {
+					$sync_data['last_full_synced'] = wp_rand( $timestamp - self::DAY_IN_MS, $timestamp );
+					$sync_data['last_synced']      = wp_rand( $timestamp - self::MINUTE_IN_MS * 25, $timestamp );
+				} else {
+					$sync_data['last_full_synced'] = $timestamp;
+					$sync_data['last_synced']      = $timestamp;
+				}
+
+				$sync_data['last_sync_hash'] = $this->get_site_details_data_hash( $site_details );
+				update_option( self::SYNC_DATA_OPTION, $sync_data, false );
+			}
 		}
+	}
+
+	/**
+	 * Determine if we need a full sync, a heartbeat, or none at all.
+	 */
+	private function determine_sync_type( $site_details, $sync_data ) {
+		$current_timestamp        = $site_details['timestamp'];
+		$last_sync_timestamp      = $sync_data['last_synced'] ?? 0;
+		$last_full_sync_timestamp = $sync_data['last_full_synced'] ?? 0;
+
+		// Safeguard a reset on the timestamps if they have been incorrectly altered.
+		$max_allowed_timestamp = $current_timestamp + ( self::MINUTE_IN_MS * 5 );
+		if ( $last_sync_timestamp > $max_allowed_timestamp || $last_full_sync_timestamp > $max_allowed_timestamp ) {
+			$last_full_sync_timestamp = 0;
+			$last_sync_timestamp      = 0;
+		}
+
+		// Send a full sync at least once per day.
+		if ( $current_timestamp - $last_full_sync_timestamp > self::DAY_IN_MS ) {
+			return 'full';
+		}
+
+		$current_data_hash = $this->get_site_details_data_hash( $site_details );
+		$last_data_hash    = $sync_data['last_sync_hash'] ?? '';
+
+		// Send a full sync if the data has changed.
+		if ( $current_data_hash !== $last_data_hash ) {
+			return 'full';
+		}
+
+		// Send a heartbeat if it's been more than 25 minutes (1/3 of the stale threshold).
+		if ( $current_timestamp - $last_sync_timestamp > self::MINUTE_IN_MS * 25 ) {
+			return 'heartbeat';
+		}
+
+		return 'none';
+	}
+
+	/**
+	 * Hashes the data for comparison purposes, removing the timestamp.
+	 */
+	private function get_site_details_data_hash( $site_details ) {
+		unset( $site_details['timestamp'] );
+		return hash( 'sha256', wp_json_encode( $site_details ) );
+	}
+
+	/**
+	 * Sends sync data to the service.
+	 */
+	private function send_sync( $endpoint, $body ) {
+		if ( ! defined( 'VIP_SERVICES_AUTH_TOKENS' ) || empty( VIP_SERVICES_AUTH_TOKENS ) ) {
+			return false;
+		}
+
+		$auth_tokens = json_decode( base64_decode( VIP_SERVICES_AUTH_TOKENS ), true );
+
+		$url   = $auth_tokens['site']['vip-site-details']['url'] ?? null;
+		$token = $auth_tokens['site']['vip-site-details']['token'] ?? null;
+		if ( ! $url || ! $token ) {
+			return false;
+		}
+
+		$response = vip_safe_wp_remote_request( rtrim( $url, '/' ) . $endpoint, false, 3, 5, 10, [
+			'method'  => 'PUT',
+			'body'    => wp_json_encode( $body ),
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $token,
+				'Content-Type'  => 'application/json',
+			),
+		] );
+
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( is_wp_error( $response ) || 200 !== $response_code ) {
+			return false;
+		}
+
+		$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+		return isset( $response_body['updated'] ) && true === $response_body['updated'];
 	}
 
 	/**
