@@ -397,3 +397,22 @@ function vip_send_wplogin_header( $user ) {
 	return $user;
 }
 add_filter( 'determine_current_user', 'vip_send_wplogin_header', 10000 );
+
+/**
+ * Filters the list of disallowed usernames.
+ *
+ * @param array $usernames Array of disallowed usernames.
+ * @return array $usernames Array of disallowed usernames.
+ */
+function vip_illegal_user_logins( $logins ) {
+	if ( ! is_array( $logins ) ) {
+		$logins = [];
+	}
+
+	$logins[] = 'admin';
+	return $logins;
+}
+
+if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
+	add_filter( 'illegal_user_logins', 'vip_illegal_user_logins' );
+}

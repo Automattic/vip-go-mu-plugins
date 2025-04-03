@@ -53,14 +53,6 @@ class Tracks_Event extends Telemetry_Event {
 	private float $event_timestamp;
 
 	/**
-	 * Variable containing the event's data or an error if one was encountered
-	 * during the event's creation.
-	 *
-	 * @var Tracks_Event_DTO|WP_Error
-	 */
-	protected Tracks_Event_DTO|WP_Error $data;
-
-	/**
 	 * Constructor.
 	 *
 	 * @param string                            $prefix The event's prefix.
@@ -79,43 +71,11 @@ class Tracks_Event extends Telemetry_Event {
 	 *
 	 * @return Tracks_Event_DTO|WP_Error Event object if the event was created successfully, WP_Error otherwise.
 	 */
-	public function get_data(): Tracks_Event_DTO|WP_Error {
-		if ( ! isset( $this->data ) ) {
-			$event_data        = $this->process_properties( $this->prefix, $this->event_name, $this->event_properties );
-			$validation_result = $this->get_event_validation_result( $event_data );
+	protected function generate(): Tracks_Event_DTO|WP_Error {
+		$event_data        = $this->process_properties( $this->prefix, $this->event_name, $this->event_properties );
+		$validation_result = $this->get_event_validation_result( $event_data );
 
-			$this->data = $validation_result ?? $event_data;
-		}
-
-		return $this->data;
-	}
-
-	/**
-	 * Returns the event's data for JSON representation.
-	 */
-	public function jsonSerialize(): mixed {
-		$data = $this->get_data();
-
-		if ( is_wp_error( $data ) ) {
-			return (object) [];
-		}
-
-		return $data;
-	}
-
-	/**
-	 * Returns whether the event can be recorded.
-	 *
-	 * @return bool|WP_Error True if the event is recordable.
-	 */
-	public function is_recordable(): bool|WP_Error {
-		$data = $this->get_data();
-
-		if ( is_wp_error( $data ) ) {
-			return $data;
-		}
-
-		return true;
+		return $validation_result ?? $event_data;
 	}
 
 	/**
