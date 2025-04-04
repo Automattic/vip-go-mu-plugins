@@ -20,7 +20,7 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 	 *
 	 * @var string
 	 */
-	protected string $version = '1.0';
+	protected string $version = '0.1';
 
 	public function is_loaded(): bool {
 		return defined( 'VIP_SECURITY_BUNDLE_LOADED' );
