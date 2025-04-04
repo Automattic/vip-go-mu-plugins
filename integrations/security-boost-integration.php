@@ -23,14 +23,14 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 	protected string $version = '0.1';
 
 	public function is_loaded(): bool {
-		return defined( 'VIP_SECURITY_BUNDLE_LOADED' );
+		return defined( 'VIP_SECURITY_BOOST_LOADED' );
 	}
 
 	public function configure(): void {
 		$configs = $this->get_env_config();
 
-		if ( ! defined( 'VIP_SECURITY_BUNDLE_CONFIGS' ) ) {
-			define( 'VIP_SECURITY_BUNDLE_CONFIGS', $configs );
+		if ( ! defined( 'VIP_SECURITY_BOOST_CONFIGS' ) ) {
+			define( 'VIP_SECURITY_BOOST_CONFIGS', $configs );
 		}
 	}
 
@@ -47,8 +47,8 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 			$this->is_active = false;
 		}
 
-		if ( ! defined( 'VIP_SECURITY_BUNDLE_LOADED' ) ) {
-			define( 'VIP_SECURITY_BUNDLE_LOADED', true );
+		if ( ! defined( 'VIP_SECURITY_BOOST_LOADED' ) ) {
+			define( 'VIP_SECURITY_BOOST_LOADED', true );
 		}
 	}
 }
