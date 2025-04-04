@@ -40,7 +40,7 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 		}
 
 		// Load the version of the plugin that should be set to the latest version, otherwise if it's not found, flag the integration as inactive.
-		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-security-boost-' . $this->version . '/src/vip-security-boost.php';
+		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-security-boost-' . $this->version . '/vip-security-boost.php';
 		if ( file_exists( $load_path ) ) {
 			require_once $load_path;
 		} else {
