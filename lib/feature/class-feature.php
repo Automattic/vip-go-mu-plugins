@@ -44,9 +44,14 @@ class Feature {
 	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
 	 */
 	public static $feature_envs = [
-		'prom-user-collection' => [
+		'prom-user-collection'       => [
 			'develop' => true,
 			'staging' => true,
+		],
+		'stream-wrapper-passthrough' => [
+			'develop' => true,
+			'staging' => true,
+			'preprod' => true,
 		],
 	];
 
