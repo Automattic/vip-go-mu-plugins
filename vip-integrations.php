@@ -37,9 +37,11 @@ IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
+
 if ( class_exists( __NAMESPACE__ . '\\RemoteDataBlocksIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new RemoteDataBlocksIntegration( 'remote-data-blocks' ) );
 }
+
 if ( class_exists( __NAMESPACE__ . '\\JetpackIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new JetpackIntegration( 'jetpack' ) );
 }
