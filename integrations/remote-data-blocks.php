@@ -19,7 +19,7 @@ class RemoteDataBlocksIntegration extends Integration {
 	 *
 	 * @var string
 	 */
-	protected string $version = '0.10';
+	protected string $version = '0.11';
 
 	/**
 	 * Returns `true` if Remote Data Blocks is already available e.g. via customer code. We will use
