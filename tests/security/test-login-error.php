@@ -4,6 +4,7 @@ namespace Automattic\VIP\Security;
 
 use WP_Error;
 use WP_UnitTestCase;
+use WPDieException;
 
 class Login_Error_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
@@ -40,20 +41,37 @@ class Login_Error_Test extends WP_UnitTestCase {
 	}
 
 	public function test_ambiguous_reset(): void {
-		global $errors;
+		$location       = null;
+		$redirect_caled = false;
 
-		$message = 'Something went terribly wrong';
+		add_filter( 'wp_redirect', function ( $dest ) use ( &$location ) {
+			$location = $dest;
+			return $dest;
+		} );
 
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
+		add_filter( 'wp_redirect_status', function () use ( &$redirect_caled ) {
+			$redirect_caled = true;
+			throw new WPDieException( 'Redirect called' );
+		} );
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+
 		$errors = new WP_Error();
-		$errors->add( 'error', $message );
+		$errors->add( 'error', 'Something went terribly wrong' );
 
-		$_GET['action'] = 'lostpassword';
-
-		$actual = apply_filters( 'login_errors', $message );
-		self::assertSame(
-			'If there is an account associated with the username/email address, you will receive an email with a link to reset your password.',
-			$actual
-		);
+		try {
+			do_action( 'lost_password', $errors );
+			static::fail( 'Expected exception' );
+		} catch ( WPDieException $e ) {
+			static::assertEquals( 'Redirect called', $e->getMessage() );
+			static::assertTrue( $redirect_caled );
+			static::assertIsString( $location );
+			static::assertStringContainsString( 'wp-login.php?checkemail=confirm', $location );
+		}
 	}
+}
+
+function headers_sent() {
+	return false;
 }

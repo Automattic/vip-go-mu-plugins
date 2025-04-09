@@ -13,11 +13,11 @@ class QM_Data_HTTP extends QM_Data {
 	 *   component: QM_Component,
 	 *   filtered_trace: list<array<string, mixed>>,
 	 *   info: array<string, mixed>|null,
+	 *   host: string,
 	 *   local: bool,
 	 *   ltime: float,
 	 *   redirected_to: string|null,
 	 *   response: mixed[]|WP_Error,
-	 *   transport: string|null,
 	 *   type: string,
 	 *   url: string,
 	 * }>

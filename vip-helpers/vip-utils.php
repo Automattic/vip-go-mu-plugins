@@ -1261,7 +1261,6 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	// Array of shared plugins we are not deprecating
 	$protected_shared_plugins = array(
 		'two-factor',
-		'jetpack-force-2fa',
 	);
 
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
@@ -1444,6 +1443,16 @@ function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
 		$user = new WP_User( $user_id );
 	} else {
+		if ( ! function_exists( 'wp_get_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `plugins_loaded` hook.', null );
+			return false;
+		}
+
+		if ( ! did_action( 'init' ) && ! has_filter( 'determine_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `init` hook without a filter for the `determine_current_user` hook.', null );
+			return false;
+		}
+
 		$user = wp_get_current_user();
 	}
 

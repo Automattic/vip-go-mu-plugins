@@ -115,3 +115,61 @@ function vip_disable_gform_cleanup_target_dir() {
 	}
 }
 add_action( 'plugins_loaded', 'vip_disable_gform_cleanup_target_dir' );
+
+
+/**
+ * Disable Divi caching since VIP already supports page and object caching.
+ * 
+ * Divi caching can cause bloated media directory, let's just turn it off.
+ * 
+ * @see https://docs.wpvip.com/plugins/incompatibilities/#divi
+ */
+function vip_divi_setup() {
+	if ( ! defined( 'ET_CORE_VERSION' ) ) {
+			return; // Divi is not active
+	}
+
+	// Disable Divi's custom file cache layer and its asset and module caching features
+	if ( ! defined( 'ET_DISABLE_FILE_BASED_CACHE' ) ) {
+			define( 'ET_DISABLE_FILE_BASED_CACHE', true );
+	}
+	if ( ! defined( 'ET_BUILDER_CACHE_ASSETS' ) ) {
+			define( 'ET_BUILDER_CACHE_ASSETS', false );
+	}
+	if ( ! defined( 'ET_BUILDER_CACHE_MODULES' ) ) {
+			define( 'ET_BUILDER_CACHE_MODULES', false );
+	}
+
+	// Define the custom CACHE DIR for Divi theme on VIP
+	$get_wp_vip_upload_dir = wp_get_upload_dir();
+	if ( ! defined( 'ET_CORE_CACHE_DIR' ) ) {
+			define( 'ET_CORE_CACHE_DIR', $get_wp_vip_upload_dir['basedir'] . '/et-cache' );
+	}
+	if ( ! defined( 'ET_CORE_CACHE_DIR_URL' ) ) {
+			define( 'ET_CORE_CACHE_DIR_URL', $get_wp_vip_upload_dir['baseurl'] . '/et-cache' );
+	}
+
+	// Add filter to apply WP_Filesystem credentials
+	add_filter( 'et_cache_wpfs_credentials', function () {
+			return request_filesystem_credentials( site_url() );
+	});
+}
+add_action( 'after_setup_theme', 'vip_divi_setup' );
+
+// Disable WooCommerce background image regeneration - this is redundant
+add_filter( 'woocommerce_background_image_regeneration', '__return_false' );
+
+/**
+ * Proxy Twitter embeds to the x-oembed-proxy.wpvip.com endpoint.
+ *
+ * @param string $provider The provider URL.
+ * @return string The proxied provider URL.
+ */
+function vip_proxy_twitter_embed( $provider ) {
+	if ( ! str_starts_with( $provider, 'https://publish.twitter.com/oembed' ) ) {
+		return $provider;
+	}
+
+	return str_replace( 'https://publish.twitter.com/oembed', 'https://x-oembed-proxy.wpvip.com/oembed', $provider );
+}
+add_filter( 'oembed_fetch_url', 'vip_proxy_twitter_embed', 10 );

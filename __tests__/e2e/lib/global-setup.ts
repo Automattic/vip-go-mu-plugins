@@ -25,6 +25,9 @@ async function globalSetup( config: FullConfig ) {
 	page.setDefaultNavigationTimeout( timeout );
 	await context.tracing.start( { name: 'global-setup', screenshots: true, snapshots: true } );
 
+	process.env.E2E_USER = user;
+	process.env.E2E_PASSWORD = pass;
+
 	try {
 		// Log in to wp-admin
 		await goToPage( page, baseURL! + '/wp-login.php' );

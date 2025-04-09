@@ -1223,7 +1223,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider get_filter__ep_sync_taxonomies_default_data
 	 */
 	public function test__filter__ep_sync_taxonomies_default( $input_taxonomies ) {
-		$this->init_es();
+		$this->init_es( false );
 
 		$post = new stdClass();
 

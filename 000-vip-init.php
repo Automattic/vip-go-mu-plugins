@@ -233,6 +233,37 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+// Temporary loader during rollout, remove and directly require after rollout.
+$telemetry_files = [
+	__DIR__ . '/telemetry/class-telemetry-system.php',
+	__DIR__ . '/telemetry/class-telemetry-client.php',
+	__DIR__ . '/telemetry/class-telemetry-event-queue.php',
+	__DIR__ . '/telemetry/class-telemetry-event.php',
+	__DIR__ . '/telemetry/class-telemetry.php',
+	__DIR__ . '/telemetry/tracks/class-tracks.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
+	__DIR__ . '/telemetry/tracks/tracks-utils.php',
+	__DIR__ . '/telemetry/pendo/class-pendo.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-client.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event.php',
+	__DIR__ . '/telemetry/pendo/pendo-utils.php',
+];
+
+// Make sure all telemetry files are present before loading them.
+$safe_to_load_telemetry = array_reduce( $telemetry_files, function ( bool $carry, string $file ): bool {
+	return $carry && file_exists( $file );
+}, true );
+
+if ( true === $safe_to_load_telemetry ) {
+	foreach ( $telemetry_files as $file ) {
+		require_once $file;
+	}
+}
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
@@ -250,8 +281,11 @@ if ( Context::is_wp_cli() ) {
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
-	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) ) {
 	require_once __DIR__ . '/search/search.php';
+	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
 }
 
 // Set WordPress environment type

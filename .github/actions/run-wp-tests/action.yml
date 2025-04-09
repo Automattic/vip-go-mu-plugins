@@ -60,8 +60,12 @@ runs:
           echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
         fi
 
+    - name: Install svn
+      run: sudo apt-get update && sudo apt-get install -y subversion
+      shell: bash
+
     - name: Set up PHP
-      uses: shivammathur/setup-php@2.30.4
+      uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -77,10 +81,10 @@ runs:
       if: inputs.phpunit != ''
 
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@3.0.0
+      uses: ramsey/composer-install@a2636af0004d1c0499ffca16ac0b4cc94df70565 # 3.1.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@2.0.2
+      uses: sjinks/setup-wordpress-test-library@v2.1.4
       with:
         version: ${{ inputs.wordpress }}
 
@@ -122,7 +126,7 @@ runs:
         "${PHPUNIT}" ${OPTIONS}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v4.3.1
+      uses: codecov/codecov-action@v5.4.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}

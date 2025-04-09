@@ -270,6 +270,7 @@ class Queue {
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+		add_action( 'ep_after_bulk_index_dynamically', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
@@ -922,7 +923,7 @@ class Queue {
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
-				self::index_count_incr( count( $ids ) );
+				static::index_count_incr( count( $ids ) );
 
 				\Automattic\VIP\Logstash\log2logstash(
 					[
@@ -1028,19 +1029,19 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
-		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
+		$this->queue_objects( array_keys( $sync_manager->get_sync_queue() ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
-		if ( ! self::is_indexing_ratelimited() ) {
+		if ( ! static::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
 
 		// Empty out the queue now that we've queued those items up
-		$sync_manager->sync_queue = [];
+		$sync_manager->reset_sync_queue();
 
 		return true;
 	}
@@ -1081,12 +1082,12 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment             = count( $sync_manager->sync_queue );
+		$increment             = count( $sync_manager->get_sync_queue() );
 		$index_count_in_period = static::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
@@ -1101,8 +1102,8 @@ class Queue {
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
-			if ( ! self::is_indexing_ratelimited() ) {
-				self::turn_on_index_ratelimiting();
+			if ( ! static::is_indexing_ratelimited() ) {
+				static::turn_on_index_ratelimiting();
 				$this->log_index_ratelimiting_start();
 			}
 		} else {
@@ -1111,7 +1112,7 @@ class Queue {
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		return true === $bail || true === self::is_indexing_ratelimited();
+		return true === $bail || true === static::is_indexing_ratelimited();
 	}
 
 	/**

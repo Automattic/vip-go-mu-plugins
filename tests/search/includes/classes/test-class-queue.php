@@ -21,6 +21,9 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var Queue */
 	private $queue;
 
+	/** @var SyncManager */
+	private $sync_manager;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -43,10 +46,12 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+
+		$indexable          = Indexables::factory()->get( 'post' );
+		$this->sync_manager = $indexable->sync_manager;
 	}
 
 	public function tearDown(): void {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -303,10 +308,10 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_offload_indexing_to_queue() {
-		$mock_sync_manager = (object) array( 'sync_queue' => [ 1, 2, 3 ] );
+		$this->add_posts_to_queue( range( 1, 3 ) );
 
 		// Make sure we're not already bailing on EP indexing, otherwise the test isn't doing anything
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $mock_sync_manager, 'post' );
+		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
 
 		$this->assertFalse( $current_bail );
 
@@ -314,7 +319,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->offload_indexing_to_queue();
 
 		// Now the filter should return true to bail early from EP indexing
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $mock_sync_manager, 'post' );
+		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
 
 		$this->assertTrue( $current_bail );
 	}
@@ -474,16 +479,12 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_intercept_ep_sync_manager_indexing() {
-		$post_ids = array( 1, 2, 1000 );
+		$this->add_posts_to_queue( [ 1, 2, 1000 ] );
 
-		$mock_sync_manager = (object) array(
-			'sync_queue' => array_fill_keys( $post_ids, true ), // EP stores in id => true format
-		);
-
-		$this->queue->intercept_ep_sync_manager_indexing( false, $mock_sync_manager, 'post' );
+		$this->queue->intercept_ep_sync_manager_indexing( false, $this->sync_manager, 'post' );
 
 		// And the SyncManager's queue should have been emptied
-		$this->assertEmpty( $mock_sync_manager->sync_queue );
+		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
 	}
 
 	public function test_get_jobs_by_range() {
@@ -717,11 +718,8 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the value passed into the filter is returned if the sync queue is empty
 	 */
 	public function test__ratelimit_indexing_should_pass_bail_if_sync_queue_empty() {
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = array();
-
-		$this->assertTrue( $this->queue->ratelimit_indexing( true, $sync_manager, 'post' ), 'should return true since true was passed in' );
-		$this->assertFalse( $this->queue->ratelimit_indexing( false, $sync_manager, 'post' ), 'should return false since false was passed in' );
+		$this->assertTrue( $this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' ), 'should return true since true was passed in' );
+		$this->assertFalse( $this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' ), 'should return false since false was passed in' );
 	}
 
 	/**
@@ -735,11 +733,8 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
 	 */
 	public function test_ratelimit_indexing_cache_count_should_not_exists_if_early_return() {
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = array();
-
 		$this->queue->ratelimit_indexing( true, '', 'hippo' );
-		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist if function calls all returned early' );
 	}
@@ -752,16 +747,16 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = range( 3, 9 );
+		$this->add_posts_to_queue( range( 3, 9 ) );
 
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
 
-		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 
-		foreach ( $sync_manager->sync_queue as $object_id ) {
+		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
@@ -772,13 +767,17 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertCount( 0, $results, "should be 0 occurrences of post id #$object_id in queue table" );
 		}
 
-		$sync_manager->sync_queue = range( 10, 20 );
+		$this->sync_manager->reset_sync_queue();
 
-		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
+		$post_ids = range( 10, 20 );
+		$this->add_posts_to_queue( $post_ids );
+
+		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 
-		foreach ( $sync_manager->sync_queue as $object_id ) {
+		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
@@ -798,16 +797,23 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$table_name = $this->queue->schema->get_table_name();
 
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = range( 3, 9 );
+		$this->add_posts_to_queue( [ 1 ] );
 
+		$this->queue->offload_indexing_to_queue();
+		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
+		$this->assertTrue( $current_bail );
+
+		$post_ids = range( 3, 9 );
+		$this->add_posts_to_queue( $post_ids );
+
+		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
 
-		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 
-		foreach ( $sync_manager->sync_queue as $object_id ) {
+		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
@@ -818,13 +824,14 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertCount( 1, $results, "should be 1 occurrence of post id #$object_id in queue table" );
 		}
 
-		$sync_manager->sync_queue = range( 10, 20 );
+		$post_ids = range( 10, 20 );
+		$this->add_posts_to_queue( $post_ids );
 
-		$this->queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 
-		foreach ( $sync_manager->sync_queue as $object_id ) {
+		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
 			$results = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
@@ -862,15 +869,15 @@ class Queue_Test extends WP_UnitTestCase {
 				$this->anything()
 			);
 
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = range( 3, 9 );
+		$post_ids = range( 3, 9 );
+		$this->add_posts_to_queue( $post_ids );
 
 		$partially_mocked_queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
 
 		$partially_mocked_queue->expects( $this->once() )->method( 'handle_index_limiting_start_timestamp' );
 		$partially_mocked_queue->expects( $this->once() )->method( 'maybe_alert_for_prolonged_index_limiting' );
 
-		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$partially_mocked_queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 	}
 
 	public function test__ratelimit_indexing__clears_start_correctly() {
@@ -883,10 +890,10 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$partially_mocked_queue->expects( $this->once() )->method( 'clear_index_limiting_start_timestamp' );
 
-		$sync_manager             = new stdClass();
-		$sync_manager->sync_queue = range( 3, 9 );
+		$post_ids = range( 3, 9 );
+		$this->add_posts_to_queue( $post_ids );
 
-		$partially_mocked_queue->ratelimit_indexing( true, $sync_manager, 'post' );
+		$partially_mocked_queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 	}
 
 	/**
@@ -1312,6 +1319,15 @@ class Queue_Test extends WP_UnitTestCase {
 			];
 		}
 		return $request;
+	}
+
+	/**
+	 * Helper function for adding an array of post objects to the sync manager queue.
+	 */
+	protected function add_posts_to_queue( $post_ids ) {
+		foreach ( $post_ids as $post_id ) {
+			$this->sync_manager->add_to_queue( $post_id );
+		}
 	}
 
 	/**

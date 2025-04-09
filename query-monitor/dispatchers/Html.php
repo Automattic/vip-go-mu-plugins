@@ -237,13 +237,13 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			'query-monitor',
 			$this->qm->plugin_url( 'assets/query-monitor.css' ),
 			array(),
-			$this->qm->plugin_ver( 'assets/query-monitor.css' )
+			QM_VERSION
 		);
 		wp_enqueue_script(
 			'query-monitor',
 			$this->qm->plugin_url( 'assets/query-monitor.js' ),
 			$deps,
-			$this->qm->plugin_ver( 'assets/query-monitor.js' ),
+			QM_VERSION,
 			false
 		);
 		wp_localize_script(
@@ -303,9 +303,15 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			);
 
 			echo '<!-- Begin Query Monitor output -->' . "\n\n";
-			echo '<script type="text/javascript">' . "\n\n";
-			echo 'var qm = ' . json_encode( $json ) . ';' . "\n\n";
-			echo '</script>' . "\n\n";
+			wp_print_inline_script_tag(
+				sprintf(
+					'var qm = %s;',
+					wp_json_encode( $json )
+				),
+				array(
+					'id' => 'query-monitor-inline-data',
+				)
+			);
 			echo '<div id="query-monitor-ceased"></div>';
 			echo '<!-- End Query Monitor output -->' . "\n\n";
 			return;
@@ -348,7 +354,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			require_once $file;
 		}
 
-		/** @var QM_Output_Html[] */
+		/** @var array<string, QM_Output_Html> $outputters */
 		$outputters = $this->get_outputters( 'html' );
 
 		$this->outputters = $outputters;
@@ -406,9 +412,15 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		);
 
 		echo '<!-- Begin Query Monitor output -->' . "\n\n";
-		echo '<script type="text/javascript">' . "\n\n";
-		echo 'var qm = ' . json_encode( $json ) . ';' . "\n\n";
-		echo '</script>' . "\n\n";
+		wp_print_inline_script_tag(
+			sprintf(
+				'var qm = %s;',
+				wp_json_encode( $json )
+			),
+			array(
+				'id' => 'query-monitor-inline-data',
+			)
+		);
 
 		echo '<svg id="qm-icon-container">';
 		foreach ( (array) glob( $this->qm->plugin_path( 'assets/icons/*.svg' ) ) as $icon ) {
@@ -436,7 +448,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '<div id="qm-title" class="qm-resizer">';
 		echo '<h1 class="qm-title-heading">' . esc_html__( 'Query Monitor', 'query-monitor' ) . '</h1>';
 		echo '<div class="qm-title-heading">';
-		echo '<select>';
+		echo '<select id="qm-title-heading-select">';
 
 		printf(
 			'<option value="%1$s">%2$s</option>',
@@ -561,34 +573,45 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		echo '<h3>' . esc_html__( 'Editor', 'query-monitor' ) . '</h3>';
 
-		echo '<p>' . esc_html__( 'You can set your editor here, so that when you click on stack trace links the file opens in your editor.', 'query-monitor' ) . '</p>';
+		if ( ! has_filter( 'qm/output/file_link_format' ) ) {
+			echo '<p>' . esc_html__( 'You can set your editor here, so that when you click on stack trace links the file opens in your editor.', 'query-monitor' ) . '</p>';
 
-		echo '<p>';
-		echo '<select id="qm-editor-select" name="qm-editor-select" class="qm-filter">';
+			echo '<p>';
+			echo '<select id="qm-editor-select" name="qm-editor-select" class="qm-select">';
 
-		$editors = array(
-			'Default/Xdebug' => '',
-			'Atom' => 'atom',
-			'Netbeans' => 'netbeans',
-			'PhpStorm' => 'phpstorm',
-			'Sublime Text' => 'sublime',
-			'TextMate' => 'textmate',
-			'Visual Studio Code' => 'vscode',
-		);
+			$xdebug_format = ini_get( 'xdebug.file_link_format' );
+			$default_label = ! empty( $xdebug_format ) ? 'Xdebug format' : 'None';
 
-		foreach ( $editors as $name => $value ) {
-			echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $editor, false ) . '>' . esc_html( $name ) . '</option>';
+			$editors = array(
+				$default_label => '',
+				'Netbeans' => 'netbeans',
+				'Nova' => 'nova',
+				'PhpStorm' => 'phpstorm',
+				'Sublime Text' => 'sublime',
+				'TextMate' => 'textmate',
+				'Visual Studio Code' => 'vscode',
+			);
+
+			foreach ( $editors as $name => $value ) {
+				echo '<option value="' . esc_attr( $value ) . '" ' . selected( $value, $editor, false ) . '>' . esc_html( $name ) . '</option>';
+			}
+
+			echo '</select>';
+			echo '</p><p>';
+			echo '<button class="qm-editor-button qm-button">' . esc_html__( 'Set editor cookie', 'query-monitor' ) . '</button>';
+			echo '</p>';
+
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo '<p id="qm-editor-save-status">' . $yes . ' ' . esc_html__( 'Saved! Reload to apply changes.', 'query-monitor' ) . '</p>';
+		} else {
+			printf(
+				/* translators: %s: Name of WordPress filter */
+				esc_html__( 'The file link format for your editor is set by the %s filter.', 'query-monitor' ),
+				'<code>qm/output/file_link_format</code>'
+			);
+			echo '</p>';
 		}
 
-		echo '</select>';
-		echo '</p><p>';
-		echo '<button class="qm-editor-button qm-button">' . esc_html__( 'Set editor cookie', 'query-monitor' ) . '</button>';
-		echo '</p>';
-
-		$yes = QueryMonitor::icon( 'yes-alt' );
-
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '<p id="qm-editor-save-status">' . $yes . ' ' . esc_html__( 'Saved! Reload to apply changes.', 'query-monitor' ) . '</p>';
 		echo '</section>';
 
 		echo '<section>';
@@ -716,17 +739,17 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		 *
 		 * @since  3.1.0
 		 *
-		 * @param QM_Dispatcher_Html $dispatcher The HTML dispatcher instance.
-		 * @param QM_Output_Html[]   $outputters Array of outputters.
+		 * @param QM_Dispatcher_Html            $dispatcher The HTML dispatcher instance.
+		 * @param array<string, QM_Output_Html> $outputters Array of outputters.
 		 */
 		do_action( 'qm/output/after', $this, $this->outputters );
 
 		echo '</div>'; // #qm-panels
 		echo '</div>'; // #qm-wrapper
 		echo '</div>'; // #query-monitor-main
+		echo "\n\n";
 
-		echo '<script type="text/javascript">' . "\n\n";
-		?>
+		wp_print_inline_script_tag( <<<JS
 		window.addEventListener('load', function() {
 			var main = document.getElementById( 'query-monitor-main' );
 			var broken = document.getElementById( 'qm-broken' );
@@ -763,8 +786,11 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 				main.className += ' qm-peek';
 			}
 		} );
-		<?php
-		echo '</script>' . "\n\n";
+		JS,
+			array(
+				'id' => 'query-monitor-inline-worst-case',
+			)
+		);
 		echo '<!-- End Query Monitor output -->' . "\n\n";
 
 	}
@@ -859,6 +885,12 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			return false;
 		}
 
+		// Don't dispatch on the interim login screen:
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( ! empty( $_GET['interim-login'] ) ) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -901,6 +933,104 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		return true;
 
+	}
+
+	/**
+	 * @param string $error
+	 * @param mixed[] $e
+	 * @phpstan-param array{
+	 *   message: string,
+	 *   file: string,
+	 *   line: int,
+	 *   type?: int,
+	 *   trace?: mixed|null,
+	 * } $e
+	 */
+	public function output_fatal( $error, array $e ): void {
+		// This hides the subsequent message from the fatal error handler in core. It cannot be
+		// disabled by a plugin so we'll just hide its output.
+		echo '<style type="text/css"> .wp-die-message { display: none; } </style>';
+
+		printf(
+			// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet
+			'<link rel="stylesheet" href="%1$s?ver=%2$s" media="all" />',
+			esc_url( QueryMonitor::init()->plugin_url( 'assets/query-monitor.css' ) ),
+			esc_attr( QM_VERSION )
+		);
+
+		// This unused wrapper with an attribute serves to help the #qm-fatal div break out of an
+		// attribute if a fatal has occurred within one.
+		echo '<div data-qm="qm">';
+
+		printf(
+			'<div id="qm-fatal" data-qm-message="%1$s" data-qm-file="%2$s" data-qm-line="%3$d">',
+			esc_attr( $e['message'] ),
+			esc_attr( QM_Util::standard_dir( $e['file'], '' ) ),
+			intval( $e['line'] )
+		);
+
+		echo '<div class="qm-fatal-wrap">';
+
+		if ( QM_Output_Html::has_clickable_links() ) {
+			$file = QM_Output_Html::output_filename( $e['file'], $e['file'], $e['line'], true );
+		} else {
+			$file = esc_html( $e['file'] );
+		}
+
+		printf(
+			'<p>%1$s<br>in <b>%2$s</b> on line <b>%3$d</b></p>',
+			nl2br( esc_html( $e['message'] ), false ),
+			$file,
+			intval( $e['line'] )
+		); // WPCS: XSS ok.
+
+		if ( ! empty( $e['trace'] ) ) {
+			echo '<p>Call stack:</p>';
+			echo '<ol>';
+			foreach ( $e['trace'] as $frame ) {
+				$callback = QM_Util::populate_callback( $frame );
+
+				if ( ! isset( $callback['name'] ) ) {
+					continue;
+				}
+
+				$args = array_map( function( $value ) {
+					$type = gettype( $value );
+
+					switch ( $type ) {
+						case 'object':
+							return get_class( $value );
+						case 'boolean':
+							return $value ? 'true' : 'false';
+						case 'integer':
+						case 'double':
+							return $value;
+						case 'string':
+							if ( strlen( $value ) > 50 ) {
+								return "'" . substr( $value, 0, 20 ) . '...' . substr( $value, -20 ) . "'";
+							}
+							return "'" . $value . "'";
+					}
+
+					return $type;
+				}, $frame['args'] ?? array() );
+
+				$name = str_replace( '()', '(' . implode( ', ', $args ) . ')', $callback['name'] );
+
+				printf(
+					'<li>%s</li>',
+					QM_Output_Html::output_filename( $name, $frame['file'], $frame['line'] )
+				); // WPCS: XSS ok.
+			}
+			echo '</ol>';
+		}
+
+		echo '</div>';
+
+		echo '<h2>Query Monitor</h2>';
+
+		echo '</div>';
+		echo '</div>';
 	}
 
 	/**

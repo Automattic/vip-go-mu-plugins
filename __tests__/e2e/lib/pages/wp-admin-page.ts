@@ -5,8 +5,8 @@ const selectors = {
 };
 
 export class WPAdminPage {
-	readonly page: Page;
-	readonly adminBar: Locator;
+	private readonly page: Page;
+	public readonly adminBar: Locator;
 
 	/**
 	 * Constructs an instance of the component.
@@ -21,7 +21,7 @@ export class WPAdminPage {
 	/**
 	 * Navigate to WP Admin
 	 */
-	visit(): Promise<unknown> {
+	public visit(): Promise<unknown> {
 		return this.page.goto( '/wp-admin' );
 	}
 }

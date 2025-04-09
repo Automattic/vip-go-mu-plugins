@@ -30,7 +30,7 @@ class QM_Collector_Conditionals extends QM_DataCollector {
 		 *
 		 * @since 2.7.0
 		 *
-		 * @param string[] $conditionals The list of conditional function names.
+		 * @param array<int, string> $conditionals The list of conditional function names.
 		 */
 		$conds = apply_filters( 'qm/collect/conditionals', array(
 			'is_404',
@@ -49,6 +49,7 @@ class QM_Collector_Conditionals extends QM_DataCollector {
 			'is_feed',
 			'is_front_page',
 			'is_home',
+			'is_login',
 			'is_main_network',
 			'is_main_site',
 			'is_month',
@@ -79,7 +80,7 @@ class QM_Collector_Conditionals extends QM_DataCollector {
 		 *
 		 * @since 2.7.0
 		 *
-		 * @param string[] $conditionals The list of conditional function names.
+		 * @param array<int, string> $conditionals The list of conditional function names.
 		 */
 		$conds = apply_filters( 'query_monitor_conditionals', $conds );
 

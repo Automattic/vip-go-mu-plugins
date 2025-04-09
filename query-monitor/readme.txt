@@ -1,11 +1,10 @@
-# Query Monitor
+# Query Monitor - The developer tools panel for WordPress
+
 Contributors: johnbillion
-Tags: debug, debug-bar, development, performance, query monitor, rest-api
-Requires at least: 5.2
-Tested up to: 6.2
-Stable tag: 3.12.1
-License: GPLv2 or later
-Requires PHP: 7.2
+Tags: debug, debug-bar, development, performance, query monitor
+Tested up to: 6.7
+Stable tag: 3.17.2
+License: GPL v2 or later
 Donate link: https://github.com/sponsors/johnbillion
 
 Query Monitor is the developer tools panel for WordPress.
@@ -18,6 +17,8 @@ It includes some advanced features such as debugging of Ajax calls, REST API cal
 
 Query Monitor focuses heavily on presenting its information in a useful manner, for example by showing aggregate database queries grouped by the plugins, themes, or functions that are responsible for them. It adds an admin toolbar menu showing an overview of the current page, with complete debugging information shown in panels once you select a menu item.
 
+Query Monitor supports versions of WordPress up to three years old, and PHP version 7.4 or higher.
+
 For complete information, please see [the Query Monitor website](https://querymonitor.com/).
 
 Here's an overview of what's shown for each page load:
@@ -25,6 +26,7 @@ Here's an overview of what's shown for each page load:
 * Database queries, including notifications for slow, duplicate, or erroneous queries. Allows filtering by query type (`SELECT`, `UPDATE`, `DELETE`, etc), responsible component (plugin, theme, WordPress core), and calling function, and provides separate aggregate views for each.
 * The template filename, the complete template hierarchy, and names of all template parts that were loaded or not loaded (for block themes and classic themes).
 * PHP errors presented nicely along with their responsible component and call stack, and a visible warning in the admin toolbar.
+* Usage of "Doing it Wrong" or "Deprecated" functionality in the code on your site.
 * Blocks and associated properties within post content and within full site editing (FSE).
 * Matched rewrite rules, associated query strings, and query vars.
 * Enqueued scripts and stylesheets, along with their dependencies, dependents, and alerts for broken dependencies.
@@ -34,6 +36,7 @@ Here's an overview of what's shown for each page load:
 * Environment information, including detailed information about PHP, the database, WordPress, and the web server.
 * The values of all WordPress conditional functions such as `is_single()`, `is_home()`, etc.
 * Transients that were updated.
+* Usage of `switch_to_blog()` and `restore_current_blog()` on Multisite installations.
 
 In addition:
 
@@ -54,17 +57,11 @@ I maintain several other plugins for developers. Check them out:
 
 ### Privacy Statement
 
-Query Monitor is private by default and always will be. It does not persistently store any of the data that it collects. It does not send data to any third party, nor does it include any third party resources.
-
-[Query Monitor's full privacy statement can be found here](https://github.com/johnbillion/query-monitor/wiki/Privacy-Statement).
+Query Monitor is private by default and always will be. It does not persistently store any of the data that it collects. It does not send data to any third party, nor does it include any third party resources. [Query Monitor's full privacy statement can be found here](https://querymonitor.com/privacy/).
 
 ### Accessibility Statement
 
-Query Monitor aims to be fully accessible to all of its users. It implements best practices for web accessibility, outputs semantic and structured markup, uses the accessibility APIs provided by WordPress and web browsers where appropriate, and is fully accessible via keyboard.
-
-That said, Query Monitor does _not_ conform to the Web Content Accessibility Guidelines (WCAG) 2.0 at level AA like WordPress itself does. The main issue is that the user interface uses small font sizes to maintain a high information density for sighted users. Users with poor vision or poor motor skills may struggle to view or interact with some areas of Query Monitor because of this. This is something which I'm acutely aware of and which I work to gradually improve, but the underlying issue of small font sizes remains.
-
-If you've experienced or identified another accessibility issue in Query Monitor, please open a thread in [the Query Monitor plugin support forum](https://wordpress.org/support/plugin/query-monitor/) and I'll try my best to address it swiftly.
+Query Monitor aims to be fully accessible to all of its users. [Query Monitor's full accessibility statement can be found here](https://querymonitor.com/accessibility/).
 
 ## Screenshots
 
@@ -80,9 +77,9 @@ If you've experienced or identified another accessibility issue in Query Monitor
 
 ### Does this plugin work with PHP 8?
 
-Yes, it's actively tested and working up to PHP 8.2.
+Yes, it's actively tested and working up to PHP 8.4.
 
-### Who can access Query Monitor's output?
+### Who can see Query Monitor's output?
 
 By default, Query Monitor's output is only shown to Administrators on single-site installations, and Super Admins on Multisite installations.
 
@@ -92,23 +89,23 @@ In addition to this, you can set an authentication cookie which allows you to vi
 
 Short answer: Yes, but only a little.
 
-Long answer: Query Monitor has a small impact on page generation time because it hooks into WordPress in the same way that other plugins do. The impact is low; typically between 10ms and 100ms depending on the complexity of your site.
+Long answer: Query Monitor has a small impact on page generation time because it hooks into a few places in WordPress in the same way that other plugins do. The impact is negligible.
 
-Query Monitor's memory usage typically accounts for around 10% of the total memory used to generate the page.
+On pages that have an especially high number of database queries (in the hundreds), Query Monitor currently uses more memory than I would like it to. This is due to the amount of data that is captured in the stack trace for each query. I have been and will be working to continually reduce this.
 
 ### Can I prevent Query Monitor from collecting data during long-running requests?
 
-Yes, if anything calls `do_action( 'qm/cease' )` then Query Monitor will cease operating for the remainder of the page generation. It detaches itself from further data collection, discards any data it's collected so far, and skips the output of its information.
+Yes, you can call `do_action( 'qm/cease' )` to instruct Query Monitor to cease operating for the remainder of the page generation. It will detach itself from further data collection, discard any data it's collected so far, and skip the output of its information.
 
 This is useful for long-running operations that perform a very high number of database queries, consume a lot of memory, or otherwise are of no concern to Query Monitor, for example:
 
 * Backing up or restoring your site
-* Exporting a large amount of data
+* Importing or exporting a large amount of data
 * Running security scans
 
 ### Are there any add-on plugins for Query Monitor?
 
-[A list of add-on plugins for Query Monitor can be found here.](https://github.com/johnbillion/query-monitor/wiki/Query-Monitor-Add-on-Plugins)
+[A list of add-on plugins for Query Monitor can be found here.](https://querymonitor.com/help/add-on-plugins/)
 
 In addition, Query Monitor transparently supports add-ons for the Debug Bar plugin. If you have any Debug Bar add-ons installed, deactivate Debug Bar and the add-ons will show up in Query Monitor's menu.
 
@@ -116,28 +113,23 @@ In addition, Query Monitor transparently supports add-ons for the Debug Bar plug
 
 Please use [the issue tracker on Query Monitor's GitHub repo](https://github.com/johnbillion/query-monitor/issues) as it's easier to keep track of issues there, rather than on the wordpress.org support forums.
 
-### Is Query Monitor available on Altis?
+### Is Query Monitor already included with my hosting?
 
-Yes, the [Altis Developer Tools](https://www.altis-dxp.com/resources/developer-docs/dev-tools/) are built on top of Query Monitor.
+Some WordPress hosts bundle Query Monitor as part of their hosting platform, which means you don't need to install it yourself. Here are some that I'm aware of:
 
-### Is Query Monitor available on WordPress.com VIP Go?
-
-Yes, it's included as part of the VIP Go platform. However, a user needs to be granted the `view_query_monitor` capability to see Query Monitor even if they're an administrator.
-
-Please note that information about database queries and the environment is somewhat restricted on VIP. This is a platform restriction and not a Query Monitor issue.
-
-### I'm using multiple instances of `wpdb`. How do I get my additional instances to show up in Query Monitor?
-
-This feature was removed in version 3.12 as it was rarely used and considerably increased the maintenance burden of Query Monitor itself. Feel free to continue using version 3.11 if you need to make use of this feature.
+* [Altis Cloud](https://www.altis-dxp.com/resources/developer-docs/dev-tools/).
+* [WordPress VIP](https://wpvip.com/), although users need to be granted the `view_query_monitor` capability even if they're an Administrator. [See the WordPress VIP documentation for details](https://docs.wpvip.com/performance/query-monitor/enable/).
 
 ### Can I click on stack traces to open the file in my editor?
 
 Yes. You can enable this on the Settings panel.
+
+### How can I report a security bug?
+
+[You can report security bugs through the official Query Monitor Vulnerability Disclosure Program on Patchstack](https://patchstack.com/database/vdp/query-monitor). The Patchstack team helps validate, triage, and handle any security vulnerabilities.
 
 ### Do you accept donations?
 
 [I am accepting sponsorships via the GitHub Sponsors program](https://github.com/sponsors/johnbillion). If you work at an agency that develops with WordPress, ask your company to provide sponsorship in order to invest in its supply chain. The tools that I maintain probably save your company time and money, and GitHub sponsorship can now be done at the organisation level.
 
 In addition, if you like the plugin then I'd love for you to [leave a review](https://wordpress.org/support/view/plugin-reviews/query-monitor). Tell all your friends about it too!
-
-<!-- changelog -->

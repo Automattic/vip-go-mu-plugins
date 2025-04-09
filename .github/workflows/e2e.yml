@@ -36,18 +36,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: block
           allowed-endpoints:
+            1.gravatar.com:443
             1.gravatar.com:80
+            140.82.114.22:443
+            2.gravatar.com:443
             2.gravatar.com:80
             api.github.com:443
+            api.ipify.org:443
             api.wordpress.org:443
-            artifactcache.actions.githubusercontent.com:443
+            api.wordpress.org:80
+            api.wpvip.com:443
             auth.docker.io:443
+            cdn.playwright.dev:443
             dl-cdn.alpinelinux.org:443
-            docker.io:443
             downloads.wordpress.org:443
             e2e-test-site.vipdev.lndo.site:443
             geoip.elastic.co:443
@@ -58,17 +63,22 @@ jobs:
             pkg-containers.githubusercontent.com:443
             planet.wordpress.org:443
             playwright.azureedge.net:443
+            playwright.download.prss.microsoft.com:443
             production.cloudflare.docker.com:443
             public-api.wordpress.com:443
+            raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
+            s0.wp.com:443
+            secure.gravatar.com:443
             storage.googleapis.com:443
+            update.traefik.io:443
             vaultpress.com:443
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v4.1.4
+        uses: actions/checkout@v4.2.2
         with:
           submodules: true
 
@@ -76,7 +86,7 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.3.0
         with:
           node-version: 'lts/*'
           cache: npm
@@ -126,15 +136,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2.7.0
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v4.1.4
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.3.0
         with:
           node-version: 'lts/*'
           cache: npm

@@ -368,14 +368,10 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 			self::assertInstanceOf( WP_Filesystem_VIP::class, $wp_filesystem );
 			/** @var WP_Filesystem_Base $wp_filesystem */
 
-			$tmp    = get_temp_dir();
-			$source = $tmp . 'source.txt';
-			$dest   = $tmp . 'dest.txt';
-
-			// See https://github.com/Automattic/vip-go-mu-plugins/issues/5445
-			// WP 6.1.4 does not check whether the file exists and spits a warning.
+			$tmp      = get_temp_dir();
+			$source   = $tmp . 'source.txt';
+			$dest     = $tmp . 'dest.txt';
 			$original = error_reporting();
-			error_reporting( $original & ~E_WARNING );
 			try {
 				$actual = $wp_filesystem->move( $source, $dest );
 			} finally {

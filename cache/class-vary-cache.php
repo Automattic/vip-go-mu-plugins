@@ -613,9 +613,11 @@ class Vary_Cache {
 	 * @param string $value Cookie Value.
 	 */
 	private static function set_cookie( $name, $value ) {
-		$expiry = time() + self::$cookie_expiry;
+		$expiry        = time() + self::$cookie_expiry;
+		$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
+		$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
 		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
-		setrawcookie( $name, $value, $expiry, COOKIEPATH, COOKIE_DOMAIN );
+		setrawcookie( $name, $value, $expiry, $cookie_path, $cookie_domain );
 	}
 
 	/**
