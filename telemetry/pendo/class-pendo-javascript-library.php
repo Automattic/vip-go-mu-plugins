@@ -129,11 +129,10 @@ class Pendo_JavaScript_Library {
 			'account'   => [
 				// These fields are defined in the VIP Dashboard, but are currently not
 				// available to WordPress environments.
-				// 'id'   => '',
 				// 'name' => '',
-				'salesforce_id' => $user_properties['account_id'],
-				'vip_org_id'    => $user_properties['org_id'],
-				'wp_version'    => $event_properties['wp_version'],
+				'id'         => $user_properties['account_id'],
+				'vip_org_id' => $user_properties['org_id'],
+				'wp_version' => $event_properties['wp_version'],
 			],
 			'env'       => 'io',
 			'globalKey' => $this->browser_global,
