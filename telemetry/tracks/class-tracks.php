@@ -40,17 +40,15 @@ class Tracks extends Telemetry_System {
 
 	/**
 	 * Tracks constructor.
-	 * 
+	 *
 	 * @param string $event_prefix The prefix for all event names. Defaults to 'vip_'.
 	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
 	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
-	 * @param Tracks_Client|null $client The client instance to use. Falls back to the default client when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Telemetry_Event_Queue $queue = null, Tracks_Client $client = null ) {
+	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Telemetry_Event_Queue $queue = null ) {
 		$this->event_prefix            = $event_prefix;
 		$this->global_event_properties = $global_event_properties;
-		$client                      ??= new Tracks_Client();
-		$this->queue                   = $queue ?? new Telemetry_Event_Queue( $client );
+		$this->queue                   = $queue ?? new Telemetry_Event_Queue( new Tracks_Client() );
 	}
 
 	/**
