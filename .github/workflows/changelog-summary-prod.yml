@@ -1,0 +1,85 @@
+name: Changelog Summary - Production
+
+on:
+  push:
+    branches:
+      - production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  tag-release:
+    name: Tag Release
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      id: ${{ steps.id-generator.outputs.id }}
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - name: Check out source code
+        uses: actions/checkout@v4.2.2
+
+      - name: Retrieve tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Get tag name
+        id: id-generator
+        run: |
+          current_date=$(date '+v%Y%m%d.')
+          minor_version=0
+          tag=$(git tag -l "${current_date}*" --sort=-version:refname | head -n 1)
+          if [ -n "${tag}" ]; then
+              minor_version=$(echo "${tag}" | awk -F. '{print $2+1}')
+          fi
+
+          echo "::set-output name=id::${current_date}${minor_version}"
+
+      - name: Tag release
+        run: git tag ${{ steps.id-generator.outputs.id }}
+
+      - name: Push tags
+        run: git push --tags
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: softprops/action-gh-release@c95fe1489396fe8a9eb87c0abf8aa5b2ef267fda # v2.2.1
+        with:
+          generate_release_notes: true
+          tag_name: ${{ steps.id-generator.outputs.id }}
+
+  execute:
+    needs: tag-release
+    name: Run Summary Generator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
+
+      - name: Install
+        uses: ramsey/composer-install@a2636af0004d1c0499ffca16ac0b4cc94df70565 # 3.1.0
+
+      - name: Execute
+        env:
+          CHANGELOG_POST_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          PROJECT_USERNAME: Automattic
+          PROJECT_REPONAME: vip-go-mu-plugins
+          BRANCH: ${{ github.ref_name }}
+          TAG_RELEASE: ${{ needs.tag-release.outputs.id }}
+        run: |
+          php ./ci/changelog-summary.php \
+                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
+                --wp-status=draft \
+                --debug

@@ -18,7 +18,7 @@ if ( ! defined( 'WC_LOG_DIR' ) ) {
 	define( 'WC_LOG_DIR', '/tmp/' );
 }
 
-add_action( 'plugins_loaded', function() {
+add_action( 'plugins_loaded', function () {
 	if ( ! class_exists( 'WooCommerce' ) ) {
 		return;
 	}

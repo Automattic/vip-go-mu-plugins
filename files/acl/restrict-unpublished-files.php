@@ -44,7 +44,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 			return FILE_IS_PUBLIC;
 		}
 
-		$user_has_edit_access = current_user_can( 'edit_post', $parent_post );
+		$user_has_edit_access = current_user_can( 'edit_post', $parent_post->ID );
 
 		if ( $user_has_edit_access ) {
 			return FILE_IS_PRIVATE_AND_ALLOWED;
@@ -132,7 +132,7 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		'orderby'          => 'ID',           // For performance (instead of date as default)
 		'order'            => 'ASC',
 		'fields'           => 'ids',
-		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFiltersTrue
+		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
 		'suppress_filters' => true,
 	] );
 

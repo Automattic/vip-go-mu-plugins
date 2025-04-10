@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Transient storage collector.
  *
@@ -9,9 +9,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class QM_Collector_Transients extends QM_Collector {
+/**
+ * @extends QM_DataCollector<QM_Data_Transients>
+ */
+class QM_Collector_Transients extends QM_DataCollector {
 
 	public $id = 'transients';
+
+	private string $transient_hook_prefix = '';
+
+	public function __construct() {
+		$this->transient_hook_prefix = version_compare( $GLOBALS['wp_version'], '6.8-dev', '>' ) ? 'set' : 'setted';
+
+		parent::__construct();
+	}
+
+	public function get_storage(): QM_Data {
+		return new QM_Data_Transients();
+	}
 
 	/**
 	 * @return void
@@ -19,16 +34,16 @@ class QM_Collector_Transients extends QM_Collector {
 	public function set_up() {
 		parent::set_up();
 
-		add_action( 'setted_site_transient', array( $this, 'action_setted_site_transient' ), 10, 3 );
-		add_action( 'setted_transient', array( $this, 'action_setted_blog_transient' ), 10, 3 );
+		add_action( "{$this->transient_hook_prefix}_site_transient", array( $this, 'action_setted_site_transient' ), 10, 3 );
+		add_action( "{$this->transient_hook_prefix}_transient", array( $this, 'action_setted_blog_transient' ), 10, 3 );
 	}
 
 	/**
 	 * @return void
 	 */
 	public function tear_down() {
-		remove_action( 'setted_site_transient', array( $this, 'action_setted_site_transient' ), 10 );
-		remove_action( 'setted_transient', array( $this, 'action_setted_blog_transient' ), 10 );
+		remove_action( "{$this->transient_hook_prefix}_site_transient", array( $this, 'action_setted_site_transient' ), 10 );
+		remove_action( "{$this->transient_hook_prefix}_transient", array( $this, 'action_setted_blog_transient' ), 10 );
 		parent::tear_down();
 	}
 
@@ -76,9 +91,9 @@ class QM_Collector_Transients extends QM_Collector {
 			'_transient_',
 		), '', $transient );
 
-		$size = strlen( maybe_serialize( $value ) );
+		$size = strlen( (string) maybe_serialize( $value ) );
 
-		$this->data['trans'][] = array(
+		$this->data->trans[] = array(
 			'name' => $name,
 			'filtered_trace' => $trace->get_filtered_trace(),
 			'component' => $trace->get_component(),
@@ -87,7 +102,7 @@ class QM_Collector_Transients extends QM_Collector {
 			'expiration' => $expiration,
 			'exp_diff' => ( $expiration ? human_time_diff( 0, $expiration ) : '' ),
 			'size' => $size,
-			'size_formatted' => size_format( $size ),
+			'size_formatted' => (string) size_format( $size ),
 		);
 	}
 
@@ -95,7 +110,7 @@ class QM_Collector_Transients extends QM_Collector {
 	 * @return void
 	 */
 	public function process() {
-		$this->data['has_type'] = is_multisite();
+		$this->data->has_type = is_multisite();
 	}
 
 }

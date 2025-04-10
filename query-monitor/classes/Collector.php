@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Abstract data collector.
  *
@@ -14,12 +14,9 @@ abstract class QM_Collector {
 	protected $timer;
 
 	/**
-	 * @var array<string, mixed>
+	 * @var QM_Data
 	 */
-	protected $data = array(
-		'types' => array(),
-		'component_times' => array(),
-	);
+	protected $data;
 
 	/**
 	 * @var bool|null
@@ -51,7 +48,9 @@ abstract class QM_Collector {
 	 */
 	public $id = '';
 
-	public function __construct() {}
+	public function __construct() {
+		$this->data = $this->get_storage();
+	}
 
 	/**
 	 * @return void
@@ -70,54 +69,34 @@ abstract class QM_Collector {
 	 * @return void
 	 */
 	protected function log_type( $type ) {
-
-		if ( isset( $this->data['types'][ $type ] ) ) {
-			$this->data['types'][ $type ]++;
+		if ( isset( $this->data->types[ $type ] ) ) {
+			$this->data->types[ $type ]++;
 		} else {
-			$this->data['types'][ $type ] = 1;
+			$this->data->types[ $type ] = 1;
 		}
-
 	}
 
 	/**
-	 * @param string $sql
-	 * @param int $i
-	 * @return void
-	 */
-	protected function maybe_log_dupe( $sql, $i ) {
-
-		$sql = str_replace( array( "\r\n", "\r", "\n" ), ' ', $sql );
-		$sql = str_replace( array( "\t", '`' ), '', $sql );
-		$sql = preg_replace( '/ +/', ' ', $sql );
-		$sql = trim( $sql );
-		$sql = rtrim( $sql, ';' );
-
-		$this->data['dupes'][ $sql ][] = $i;
-
-	}
-
-	/**
-	 * @param stdClass $component
+	 * @param QM_Component $component
 	 * @param float $ltime
-	 * @param string $type
+	 * @param string|int $type
 	 * @return void
 	 */
 	protected function log_component( $component, $ltime, $type ) {
-
-		if ( ! isset( $this->data['component_times'][ $component->name ] ) ) {
-			$this->data['component_times'][ $component->name ] = array(
+		if ( ! isset( $this->data->component_times[ $component->name ] ) ) {
+			$this->data->component_times[ $component->name ] = array(
 				'component' => $component->name,
 				'ltime' => 0,
 				'types' => array(),
 			);
 		}
 
-		$this->data['component_times'][ $component->name ]['ltime'] += $ltime;
+		$this->data->component_times[ $component->name ]['ltime'] += $ltime;
 
-		if ( isset( $this->data['component_times'][ $component->name ]['types'][ $type ] ) ) {
-			$this->data['component_times'][ $component->name ]['types'][ $type ]++;
+		if ( isset( $this->data->component_times[ $component->name ]['types'][ $type ] ) ) {
+			$this->data->component_times[ $component->name ]['types'][ $type ]++;
 		} else {
-			$this->data['component_times'][ $component->name ]['types'][ $type ] = 1;
+			$this->data->component_times[ $component->name ]['types'][ $type ] = 1;
 		}
 
 	}
@@ -126,8 +105,7 @@ abstract class QM_Collector {
 	 * @return float
 	 */
 	public static function timer_stop_float() {
-		global $timestart;
-		return microtime( true ) - $timestart;
+		return microtime( true ) - $_SERVER['REQUEST_TIME_FLOAT'];
 	}
 
 	/**
@@ -140,6 +118,8 @@ abstract class QM_Collector {
 		if ( ! defined( $constant ) ) {
 			/* translators: Undefined PHP constant */
 			return __( 'undefined', 'query-monitor' );
+		} elseif ( constant( $constant ) === '' ) {
+			return __( 'empty string', 'query-monitor' );
 		} elseif ( is_string( constant( $constant ) ) && ! is_numeric( constant( $constant ) ) ) {
 			return constant( $constant );
 		} elseif ( ! constant( $constant ) ) {
@@ -150,17 +130,24 @@ abstract class QM_Collector {
 	}
 
 	/**
-	 * @return array<string, mixed>
+	 * @return QM_Data
 	 */
-	final public function get_data() {
+	public function get_data() {
 		return $this->data;
+	}
+
+	/**
+	 * @return QM_Data
+	 */
+	public function get_storage(): QM_Data {
+		return new QM_Data_Fallback();
 	}
 
 	/**
 	 * @return void
 	 */
 	final public function discard_data() {
-		$this->data = array();
+		$this->data = $this->get_storage();
 	}
 
 	/**
@@ -188,7 +175,7 @@ abstract class QM_Collector {
 		 *
 		 * @since 3.3.0
 		 *
-		 * @param string[] $actions Array of action names that this panel concerns itself with.
+		 * @param array<int, string> $actions Array of action names that this panel concerns itself with.
 		 */
 		$concerned_actions = apply_filters( "qm/collect/concerned_actions/{$id}", $this->get_concerned_actions() );
 
@@ -200,7 +187,7 @@ abstract class QM_Collector {
 		 *
 		 * @since 3.3.0
 		 *
-		 * @param string[] $filters Array of filter names that this panel concerns itself with.
+		 * @param array<int, string> $filters Array of filter names that this panel concerns itself with.
 		 */
 		$concerned_filters = apply_filters( "qm/collect/concerned_filters/{$id}", $this->get_concerned_filters() );
 
@@ -212,7 +199,7 @@ abstract class QM_Collector {
 		 *
 		 * @since 3.3.0
 		 *
-		 * @param string[] $options Array of option names that this panel concerns itself with.
+		 * @param array<int, string> $options Array of option names that this panel concerns itself with.
 		 */
 		$concerned_options = apply_filters( "qm/collect/concerned_options/{$id}", $this->get_concerned_options() );
 
@@ -224,20 +211,20 @@ abstract class QM_Collector {
 		 *
 		 * @since 3.3.0
 		 *
-		 * @param string[] $constants Array of constant names that this panel concerns itself with.
+		 * @param array<int, string> $constants Array of constant names that this panel concerns itself with.
 		 */
 		$concerned_constants = apply_filters( "qm/collect/concerned_constants/{$id}", $this->get_concerned_constants() );
 
 		foreach ( $concerned_actions as $action ) {
 			if ( has_action( $action ) ) {
-				$this->concerned_actions[ $action ] = QM_Hook::process( $action, $wp_filter, true, false );
+				$this->concerned_actions[ $action ] = QM_Hook::process( $action, 'action', $wp_filter, true, false );
 			}
 			$tracked[] = $action;
 		}
 
 		foreach ( $concerned_filters as $filter ) {
 			if ( has_filter( $filter ) ) {
-				$this->concerned_filters[ $filter ] = QM_Hook::process( $filter, $wp_filter, true, false );
+				$this->concerned_filters[ $filter ] = QM_Hook::process( $filter, 'filter', $wp_filter, true, false );
 			}
 			$tracked[] = $filter;
 		}
@@ -259,7 +246,7 @@ abstract class QM_Collector {
 					$option
 				);
 				if ( has_filter( $filter ) ) {
-					$this->concerned_filters[ $filter ] = QM_Hook::process( $filter, $wp_filter, true, false );
+					$this->concerned_filters[ $filter ] = QM_Hook::process( $filter, 'filter', $wp_filter, true, false );
 				}
 				$tracked[] = $filter;
 			}
@@ -326,6 +313,9 @@ abstract class QM_Collector {
 
 	/**
 	 * @param array<string, mixed> $item
+	 * @phpstan-param array{
+	 *   component: QM_Component,
+	 * } $item
 	 * @return bool
 	 */
 	public function filter_remove_qm( array $item ) {

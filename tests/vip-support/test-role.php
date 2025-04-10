@@ -13,6 +13,10 @@ use WP_UnitTestCase;
  * @group vip_support_role
  */
 class VIPSupportRoleTest extends WP_UnitTestCase {
+	/** @var int */
+	private $vip_support_user;
+	/** @var int */
+	private $admin_user;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -25,7 +29,7 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 			'user_pass'  => 'password',
 		) );
 
-		$this->admin_user = $this->factory->user->create( [
+		$this->admin_user = $this->factory()->user->create( [
 			'user_email' => 'admin@automattic.com',
 			'user_login' => 'vip_admin',
 			'role'       => 'administrator',

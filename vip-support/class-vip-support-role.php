@@ -57,7 +57,6 @@ class Role {
 		}
 
 		return $instance;
-
 	}
 
 	/**
@@ -181,7 +180,6 @@ class Role {
 
 		update_option( $option_name, self::VERSION );
 		$this->error_log( 'VIP Support Role: Done upgrade, now at version ' . self::VERSION );
-
 	}
 }
 

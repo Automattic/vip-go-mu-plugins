@@ -5,19 +5,19 @@
  * @package query-monitor
  */
 #query-monitor-main {
-  --qm-container-fg: #444;
+  --qm-container-fg: #333;
   --qm-container-bg: #f3f3f3;
   --qm-container-overflow: #ececec;
   --qm-panel-border: #aaa;
-  --qm-panel-fg: #444;
+  --qm-panel-fg: #333;
   --qm-panel-bg: #fff;
   --qm-panel-separator: #ddd;
   --qm-panel-menu-border: #ddd;
-  --qm-panel-menu-fg: #444;
+  --qm-panel-menu-fg: #333;
   --qm-panel-menu-bg: #f3f3f3;
-  --qm-panel-menu-fg-hover: #444;
+  --qm-panel-menu-fg-hover: #333;
   --qm-panel-menu-bg-hover: #cde;
-  --qm-panel-menu-fg-current: #444;
+  --qm-panel-menu-fg-current: #333;
   --qm-panel-menu-bg-current: #def;
   --qm-panel-menu-bg-current-focus: #f7fbff;
   --qm-panel-menu-fg-selected: #fff;
@@ -26,7 +26,7 @@
   --qm-panel-menu-shadow: #006291;
   --qm-cell-border: #e0e0e0;
   --qm-cell-bg-hover: #eef3fa;
-  --qm-cell-fg-highlight: #444;
+  --qm-cell-fg-highlight: #333;
   --qm-cell-bg-highlight: #ffd;
   --qm-cell-bg-highlight-dark: #ffffaa;
   --qm-cell-bg-stripe: #f9f9f9;
@@ -51,7 +51,7 @@
   --qm-warn-bg-dark: #ffe8e8;
   --qm-warn-border: #ffd6d6;
   --qm-nonselect-fg: #a0a;
-  --qm-selection-fg: #444;
+  --qm-selection-fg: #333;
   --qm-selection-bg: #B9D6FB;
 }
 
@@ -167,6 +167,7 @@
 #wpadminbar .qm-alert {
   background-color: #f60;
 }
+#wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a,
 #wpadminbar #wp-admin-bar-query-monitor-stricts a,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a,
 #wpadminbar #wp-admin-bar-query-monitor-notices a,
@@ -175,7 +176,9 @@
 #wpadminbar .qm-notice {
   background-color: #740;
 }
-#wpadminbar #wp-admin-bar-query-monitor-stricts a:focus, #wpadminbar #wp-admin-bar-query-monitor-stricts a:hover,
+#wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a:focus, #wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a:hover,
+#wpadminbar #wp-admin-bar-query-monitor-stricts a:focus,
+#wpadminbar #wp-admin-bar-query-monitor-stricts a:hover,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a:focus,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a:hover,
 #wpadminbar #wp-admin-bar-query-monitor-notices a:focus,
@@ -241,6 +244,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #wp-admin-bar-query-monitor-default .qm-alert a,
 #wp-admin-bar-query-monitor-default .qm-error a,
 #wp-admin-bar-query-monitor-default .qm-warning a,
+#wp-admin-bar-query-monitor-doing_it_wrong a,
 #wp-admin-bar-query-monitor-deprecateds a,
 #wp-admin-bar-query-monitor-stricts a,
 #wp-admin-bar-query-monitor-notices a,
@@ -263,6 +267,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #wp-admin-bar-query-monitor-placeholder,
 #wp-admin-bar-query-monitor-default {
   display: none;
+}
+
+#qm-icon-container {
+  display: none !important;
 }
 
 #query-monitor-main dl,
@@ -434,8 +442,8 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   height: 27px;
 }
 #query-monitor-main.qm-show {
-  height: 40%;
-  width: 40%;
+  height: 60%;
+  width: 60%;
 }
 #query-monitor-main:not(.qm-show-right) {
   width: 100% !important;
@@ -505,8 +513,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main #qm-title .qm-icon {
   display: inline-block !important;
-}
-#query-monitor-main #qm-title .qm-icon svg {
   height: 20px !important;
   width: 20px !important;
   fill: var(--qm-title-button-fg) !important;
@@ -516,8 +522,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main #qm-title .qm-button-container-close .qm-icon {
   margin: 4px 0 0 !important;
-}
-#query-monitor-main #qm-title .qm-button-container-close .qm-icon svg {
   width: 18px !important;
   height: 18px !important;
 }
@@ -525,14 +529,12 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   transform: scaleX(-1) rotate(90deg) !important;
   padding-top: 5px !important;
 }
-#query-monitor-main #qm-title .qm-button-container-position .qm-icon svg {
+#query-monitor-main #qm-title .qm-button-container-position .qm-icon {
   width: 14px !important;
   height: 14px !important;
 }
 #query-monitor-main #qm-title .qm-button-container-settings .qm-icon {
   margin: 4px 0 0 !important;
-}
-#query-monitor-main #qm-title .qm-button-container-settings .qm-icon svg {
   width: 16px !important;
   height: 16px !important;
 }
@@ -604,7 +606,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   color: var(--qm-panel-menu-fg) !important;
   cursor: pointer !important;
   display: block !important;
-  padding: 6px 32px 6px 10px !important;
+  padding: 7px 32px 7px 10px !important;
   position: relative !important;
   text-decoration: none !important;
   width: 100% !important;
@@ -678,7 +680,8 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: block !important;
 }
 #query-monitor-main .qm:focus {
-  outline: 0 !important; /* @TODO might not need this any more */
+  outline: 0 !important;
+  /* @TODO might not need this any more */
 }
 #query-monitor-main .qm-boxed {
   display: flex !important;
@@ -730,7 +733,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm tfoot th,
 #query-monitor-main .qm tfoot td {
   border: 1px solid var(--qm-cell-border) !important;
-  padding: 5px 5px 4px 5px !important;
+  padding: 6px 6px 5px 6px !important;
   vertical-align: top !important;
 }
 #query-monitor-main .qm tbody th,
@@ -743,7 +746,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   border: 1px solid var(--qm-cell-border) !important;
   border-top: none !important;
   box-shadow: 0 1px 0 var(--qm-cell-border) !important;
-  padding: 5px !important;
+  padding: 5px 5px 5px 6px !important;
   position: -webkit-sticky !important;
   position: sticky !important;
   top: 0 !important;
@@ -786,7 +789,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm td.qm-num {
   font-family: Menlo, Monaco, Consolas, monospace !important;
   font-size: 11px !important;
-  line-height: 19px !important;
+  line-height: 20px !important;
 }
 #query-monitor-main .qm td.qm-row-sql {
   min-width: 25em !important;
@@ -806,7 +809,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   min-width: 15em !important;
 }
 #query-monitor-main .qm td.qm-has-toggle {
-  padding-right: 24px !important;
+  padding-right: 28px !important;
   position: relative !important;
 }
 #query-monitor-main .qm td.qm-has-toggle:not(.qm-toggled-on) .qm-supplemental {
@@ -898,6 +901,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm li {
   display: list-item !important;
   list-style: none !important;
+  line-height: 20px !important;
 }
 #query-monitor-main .qm li::before {
   content: "" !important;
@@ -906,7 +910,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm pre {
   font-family: Menlo, Monaco, Consolas, monospace !important;
   font-size: 11px !important;
-  line-height: 19px !important;
+  line-height: 20px !important;
 }
 #query-monitor-main .qm pre {
   background: transparent !important;
@@ -926,7 +930,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm span.qm-false,
 #query-monitor-main .qm td.qm-false {
   /* @TODO */
-  color: #999 !important;
+  color: #767676 !important;
 }
 #query-monitor-main .qm .qm-num,
 #query-monitor-main .qm code,
@@ -1052,9 +1056,9 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: var(--qm-warn-bg) !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm-non-tabular .qm-warn .qm-icon svg,
-#query-monitor-main .qm thead tr .qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr .qm-warn .qm-icon svg {
+#query-monitor-main .qm-non-tabular .qm-warn .qm-icon,
+#query-monitor-main .qm thead tr .qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr .qm-warn .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm tbody tr th.qm-warn,
@@ -1064,10 +1068,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: var(--qm-warn-bg) !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm tbody tr th.qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr td.qm-warn .qm-icon svg,
-#query-monitor-main .qm tbody tr.qm-warn td .qm-icon svg,
-#query-monitor-main .qm tbody tr.qm-warn th .qm-icon svg {
+#query-monitor-main .qm tbody tr th.qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr td.qm-warn .qm-icon,
+#query-monitor-main .qm tbody tr.qm-warn td .qm-icon,
+#query-monitor-main .qm tbody tr.qm-warn th .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm tbody tr.qm-odd th.qm-warn,
@@ -1083,10 +1087,10 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   background-color: transparent !important;
   color: var(--qm-warn-fg) !important;
 }
-#query-monitor-main .qm-non-tabular .qm-warn code .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn li .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn .qm-info .qm-icon svg,
-#query-monitor-main .qm tbody .qm-warn code .qm-icon svg {
+#query-monitor-main .qm-non-tabular .qm-warn code .qm-icon,
+#query-monitor-main .qm tbody .qm-warn li .qm-icon,
+#query-monitor-main .qm tbody .qm-warn .qm-info .qm-icon,
+#query-monitor-main .qm tbody .qm-warn code .qm-icon {
   fill: var(--qm-warn-fg) !important;
 }
 #query-monitor-main .qm .qm-notice {
@@ -1101,14 +1105,12 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: inline-block !important;
   height: 16px !important;
   width: 16px !important;
-}
-#query-monitor-main .qm .qm-icon svg {
   height: 16px !important;
   width: 16px !important;
   fill: var(--qm-container-fg) !important;
   vertical-align: top !important;
 }
-#query-monitor-main .qm .qm-icon-yes-alt svg {
+#query-monitor-main .qm .qm-icon-yes-alt {
   fill: #0a0 !important;
 }
 #query-monitor-main .qm tbody tr td.qm-highlight,
@@ -1226,6 +1228,7 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   display: none !important;
 }
 #query-monitor-main .qm-title-heading select,
+#query-monitor-main .qm select.qm-select,
 #query-monitor-main .qm select.qm-filter {
   -webkit-appearance: menulist !important;
   -moz-appearance: menulist !important;
@@ -1247,8 +1250,15 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm-title-heading select {
   max-width: unset !important;
 }
+#query-monitor-main .qm select.qm-select:hover,
 #query-monitor-main .qm select.qm-filter:hover {
   background: var(--qm-cell-bg-hover) !important;
+}
+#query-monitor-main .qm select.qm-select {
+  margin: 0 !important;
+  padding: 4px 10px 4px 4px !important;
+  border-radius: 2px !important;
+  max-width: none !important;
 }
 #query-monitor-main .qm-hide,
 #query-monitor-main .qm-hide-scripts-dependencies,
@@ -1262,7 +1272,8 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 #query-monitor-main .qm-hide-name,
 #query-monitor-main .qm-hide-type,
 #query-monitor-main .qm-hide-caller,
-#query-monitor-main .qm-hide-component {
+#query-monitor-main .qm-hide-component,
+#query-monitor-main .qm-hide-host {
   display: none !important;
 }
 #query-monitor-main .qm thead th.qm-sortable-column {
@@ -1280,8 +1291,6 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
 }
 #query-monitor-main .qm .qm-sort-controls .qm-icon {
   margin-right: 0 !important;
-}
-#query-monitor-main .qm .qm-sort-controls svg {
   fill: #ccc !important;
 }
 #query-monitor-main .qm .qm-sorted-desc .qm-sort-controls svg,
@@ -1471,15 +1480,21 @@ body.admin-color-light #wp-admin-bar-query-monitor:not(.qm-all-clear):not(:hover
   padding: 0 0 1em 1em !important;
 }
 #qm-fatal li {
-  margin: 0 0 0.7em !important;
-  list-style: none !important;
+  margin: 0 0 0.7em 1em !important;
 }
 #qm-fatal .qm-info {
   /* @TODO */
   color: #666 !important;
 }
+#qm-fatal a.qm-edit-link svg {
+  display: none;
+}
 
 body#error-page #qm-fatal {
   margin: 0 !important;
   border: none !important;
+}
+
+#qm-logger tr pre {
+  user-select: all;
 }

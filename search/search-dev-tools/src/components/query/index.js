@@ -1,19 +1,20 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions */
 /* eslint-disable jsx-a11y/click-events-have-key-events */
+import cx from 'classnames';
+import ClipboardJS from 'clipboard';
+import pluralize from 'pluralize';
 import { h } from 'preact';
 import { useCallback, useContext, useEffect, useState } from 'preact/hooks';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/plugins/line-numbers/prism-line-numbers.js';
 import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
-import cx from 'classnames';
-import pluralize from 'pluralize';
-import ClipboardJS from 'clipboard';
+
+import * as style from './style.scss';
 import { SearchContext } from '../../context';
 import { postData } from '../../utils';
 import { CollapsibleList } from '../collapsible-list';
 
-import style from './style.scss';
 import '../../style/prism.scss';
 
 /**

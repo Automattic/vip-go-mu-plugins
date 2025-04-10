@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\CLI;
 
-use \WP_CLI;
+use WP_CLI;
 use Automattic\VIP\Files\Meta_Updater;
 
 /**

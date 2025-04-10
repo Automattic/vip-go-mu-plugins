@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Block editor (née Gutenberg) collector.
  *
@@ -9,7 +9,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class QM_Collector_Block_Editor extends QM_Collector {
+/**
+ * @extends QM_DataCollector<QM_Data_Block_Editor>
+ */
+class QM_Collector_Block_Editor extends QM_DataCollector {
 
 	public $id = 'block_editor';
 
@@ -27,6 +30,10 @@ class QM_Collector_Block_Editor extends QM_Collector {
 	 * @var QM_Timer|null
 	 */
 	protected $block_timer = null;
+
+	public function get_storage(): QM_Data {
+		return new QM_Data_Block_Editor();
+	}
 
 	/**
 	 * @return void
@@ -123,28 +130,32 @@ class QM_Collector_Block_Editor extends QM_Collector {
 	public function process() {
 		global $_wp_current_template_content;
 
-		$this->data['block_editor_enabled'] = self::wp_block_editor_enabled();
-
 		if ( ! empty( $_wp_current_template_content ) ) {
 			// Full site editor:
 			$content = $_wp_current_template_content;
 		} elseif ( is_singular() ) {
 			// Post editor:
-			$content = get_post( get_queried_object_id() )->post_content;
+			$post = get_post( get_queried_object_id() );
+
+			if ( ! $post ) {
+				return;
+			}
+
+			$content = $post->post_content;
 		} else {
 			// Nada:
 			return;
 		}
 
-		$this->data['post_has_blocks'] = self::wp_has_blocks( $content );
-		$this->data['post_blocks'] = self::wp_parse_blocks( $content );
-		$this->data['all_dynamic_blocks'] = self::wp_get_dynamic_block_names();
-		$this->data['total_blocks'] = 0;
-		$this->data['has_block_context'] = false;
-		$this->data['has_block_timing'] = false;
+		$this->data->post_has_blocks = has_blocks( $content );
+		$this->data->post_blocks = array_values( parse_blocks( $content ) );
+		$this->data->all_dynamic_blocks = get_dynamic_block_names();
+		$this->data->total_blocks = 0;
+		$this->data->has_block_context = false;
+		$this->data->has_block_timing = false;
 
-		if ( $this->data['post_has_blocks'] ) {
-			$this->data['post_blocks'] = array_values( array_filter( array_map( array( $this, 'process_block' ), $this->data['post_blocks'] ) ) );
+		if ( $this->data->post_has_blocks ) {
+			$this->data->post_blocks = array_values( array_filter( array_map( array( $this, 'process_block' ), $this->data->post_blocks ) ) );
 		}
 	}
 
@@ -161,7 +172,7 @@ class QM_Collector_Block_Editor extends QM_Collector {
 			return null;
 		}
 
-		$this->data['total_blocks']++;
+		$this->data->total_blocks++;
 
 		$block_type = WP_Block_Type_Registry::get_instance()->get_registered( $block['blockName'] );
 		$dynamic = false;
@@ -183,12 +194,12 @@ class QM_Collector_Block_Editor extends QM_Collector {
 
 		if ( $context ) {
 			$block['context'] = $context;
-			$this->data['has_block_context'] = true;
+			$this->data->has_block_context = true;
 		}
 
 		if ( $timing ) {
 			$block['timing'] = $timing->get_time();
-			$this->data['has_block_timing'] = true;
+			$this->data->has_block_timing = true;
 		}
 
 		if ( ! empty( $block['innerBlocks'] ) ) {
@@ -197,53 +208,6 @@ class QM_Collector_Block_Editor extends QM_Collector {
 
 		return $block;
 	}
-
-	/**
-	 * @return bool
-	 */
-	protected static function wp_block_editor_enabled() {
-		return ( function_exists( 'parse_blocks' ) || function_exists( 'gutenberg_parse_blocks' ) );
-	}
-
-	/**
-	 * @param string $content
-	 * @return bool
-	 */
-	protected static function wp_has_blocks( $content ) {
-		if ( function_exists( 'has_blocks' ) ) {
-			return has_blocks( $content );
-		} elseif ( function_exists( 'gutenberg_has_blocks' ) ) {
-			return gutenberg_has_blocks( $content );
-		}
-
-		return false;
-	}
-
-	/**
-	 * @param string $content
-	 * @return mixed[]|null
-	 */
-	protected static function wp_parse_blocks( $content ) {
-		if ( function_exists( 'parse_blocks' ) ) {
-			return parse_blocks( $content );
-		} elseif ( function_exists( 'gutenberg_parse_blocks' ) ) {
-			return gutenberg_parse_blocks( $content );
-		}
-
-		return null;
-	}
-
-	/**
-	 * @return string[]|null
-	 */
-	protected static function wp_get_dynamic_block_names() {
-		if ( function_exists( 'get_dynamic_block_names' ) ) {
-			return get_dynamic_block_names();
-		}
-
-		return array();
-	}
-
 }
 
 /**

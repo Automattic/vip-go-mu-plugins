@@ -90,4 +90,8 @@ class APCu_Collector implements CollectorInterface {
 			}
 		}
 	}
+
+	public function process_metrics(): void {
+		/* Do nothing */
+	}
 }

@@ -7,6 +7,11 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/class-testable-alerts.php';
 
 class Alerts_Test extends WP_UnitTestCase {
+	public static function tearDownAfterClass(): void {
+		Testable_Alerts::clear_instance();
+		parent::tearDownAfterClass();
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -16,7 +21,7 @@ class Alerts_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function() use ( $mocked_response ) {
+		add_filter( 'pre_http_request', function () use ( $mocked_response ) {
 			return $mocked_response;
 		}, 10, 3 );
 	}
@@ -145,13 +150,13 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_details() {
 		return [
 			'invalid-type' => [ 'string' ],
-			'missing-keys' => [ 
+			'missing-keys' => [
 				'alias'       => 'test/alert',
 				'description' => 'Test alert',
 				'entity'      => 'test',
 				'source'      => 'test',
 			],
-			'extra-keys'   => [ 
+			'extra-keys'   => [
 				'alias'       => 'test/alert',
 				'description' => 'Test alert',
 				'entity'      => 'test',
@@ -218,5 +223,59 @@ class Alerts_Test extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'The request returned an invalid response: ' . $mock_response['response']['message'], $result->get_error_message() );
+	}
+
+	public function get_test_data__invalid_pagerduty_details() {
+		return [
+			'invalid-type'             => [ 'string' ],
+			'missing-keys'             => [
+				'source' => 'test',
+			],
+			'empty-keys'               => [
+				'severity' => '',
+				'source'   => 'test',
+			],
+			'extra-keys'               => [
+				'severity' => '',
+				'source'   => 'test',
+				'invalid'  => 'invalid',
+			],
+			'invalid-severity'         => [
+				'severity' => 'invalid',
+				'source'   => 'test',
+			],
+			'non-array-custom-details' => [
+				'severity'       => 'critical',
+				'source'         => 'test',
+				'custom_details' => 'invalid',
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__invalid_pagerduty_details
+	 */
+	public function test__invalid_pagerduty_details( $details ) {
+		$alerts = Testable_Alerts::instance();
+
+		$result = $alerts->validate_pagerduty_details( $details );
+
+		$this->assertWPError( $result );
+	}
+
+	public function test__validate_pagerduty_details() {
+		$details = [
+			'severity'       => 'critical',
+			'source'         => 'test',
+			'custom_details' => [
+				'key' => 'value',
+			],
+		];
+
+		$alerts = Testable_Alerts::instance();
+
+		$result = $alerts->validate_pagerduty_details( $details );
+
+		$this->assertEquals( $details, $result );
 	}
 }

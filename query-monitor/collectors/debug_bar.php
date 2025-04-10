@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Mock 'Debug Bar' data collector.
  *
@@ -66,7 +66,9 @@ function register_qm_collectors_debug_bar() {
 
 	global $debug_bar;
 
-	if ( class_exists( 'Debug_Bar', false ) || qm_debug_bar_being_activated() ) {
+	$debug_bar_exists = isset( $GLOBALS['debug_bar'] ) && ( $GLOBALS['debug_bar'] instanceof Debug_Bar );
+
+	if ( $debug_bar_exists || qm_debug_bar_being_activated() ) {
 		return;
 	}
 

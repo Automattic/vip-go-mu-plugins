@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { Locator, Page } from 'playwright';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * Returns the list of classes for the given element as a string list.
@@ -10,8 +10,8 @@ import { Locator, Page } from 'playwright';
  * @return {string[]} Class list
  */
 export async function getClassList( locator: Locator ): Promise<string[]> {
-    const classList = await locator.evaluate( node => node.classList );
-    return Array.from( Object.values( classList ) );
+	const classList = await locator.evaluate( ( node ) => node.classList );
+	return Array.from( Object.values( classList ) );
 }
 
 /**
@@ -21,8 +21,8 @@ export async function getClassList( locator: Locator ): Promise<string[]> {
  * @param {string} url  URL to navigate to
  */
 export function goToPage( page: Page, url: string ): Promise<unknown> {
-    return Promise.all( [
-        page.waitForNavigation( { waitUntil: 'networkidle' } ),
-        page.goto( url, { waitUntil: 'load' } ),
-    ] );
+	return Promise.all( [
+		page.goto( url, { waitUntil: 'load' } ),
+		page.waitForURL( url, { waitUntil: 'load' } ),
+	] );
 }

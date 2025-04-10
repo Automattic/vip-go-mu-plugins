@@ -17,6 +17,13 @@
  */
 class VIP_Request_Block {
 	/**
+	 * Controls logging of blocked requests (may be too noisy for some environments).
+	 *
+	 * @var bool
+	 */
+	protected static $should_log = true;
+
+	/**
 	 * Block a specific IP based either on true-client-ip, falling back to x-forwarded-for
 	 *
 	 * 🛑 BE CAREFUL: blocking a reverse proxy IP instead of the client's IP will result in legitimate traffic being blocked!!!
@@ -124,6 +131,10 @@ class VIP_Request_Block {
 	 * @return true|void
 	 */
 	public static function block_and_log( string $value, string $criteria ) {
+		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+			return true;
+		}
+
 		if ( extension_loaded( 'newrelic' ) && function_exists( 'newrelic_ignore_transaction' ) ) {
 			newrelic_ignore_transaction();
 		}
@@ -133,12 +144,47 @@ class VIP_Request_Block {
 			header( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT' );
 			header( 'Cache-Control: no-cache, must-revalidate, max-age=0' );
 
-			fastcgi_finish_request();
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+			if ( static::$should_log ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				static::log( $criteria, $value );
+			}
+
 			exit;
 		}
 
 		return true;
+	}
+
+	public static function log( string $criteria, string $value ): void {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( sprintf( 'VIP Request Block: request was blocked based on "%s" with value of "%s"', $criteria, $value ) );
+	}
+
+	/**
+	 * Control logging of blocked requests.
+	 *
+	 * @param bool $should_log whether to log blocked requests.
+	 * @return void
+	 */
+	public static function toggle_logging( bool $should_log = true ) {
+		static::$should_log = $should_log;
+	}
+
+	/**
+	 * Enable logging of blocked requests.
+	 *
+	 * @return void
+	 */
+	public static function enable_logging() {
+		static::toggle_logging( true );
+	}
+
+	/**
+	 * Disable logging of blocked requests.
+	 *
+	 * @return void
+	 */
+	public static function disable_logging() {
+		static::toggle_logging( false );
 	}
 }

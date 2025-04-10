@@ -8,6 +8,9 @@ use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-vip-filesystem-stream-wrapper.php';
 
+/**
+ * @runInSeparateProcess
+ */
 class VIP_Filesystem_Stream_Wrapper_Test extends WP_UnitTestCase {
 	/** @var VIP_Filesystem_Stream_Wrapper */
 	private $stream_wrapper;

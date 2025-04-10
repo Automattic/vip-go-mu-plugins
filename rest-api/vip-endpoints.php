@@ -46,7 +46,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		register_rest_route( $this->namespace, '/sites/', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'list_sites' ),
-			'permission_callback' => function() {
+			'permission_callback' => function () {
 				return wpcom_vip_go_rest_api_request_allowed( $this->namespace, 'manage_sites' );
 			},
 		) );
@@ -54,7 +54,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		register_rest_route( $this->namespace, '/plugins/', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'list_plugins' ),
-			'permission_callback' => function() {
+			'permission_callback' => function () {
 				return wpcom_vip_go_rest_api_request_allowed( $this->namespace );
 			},
 		) );
@@ -62,7 +62,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 		register_rest_route( $this->namespace, '/jetpack/', array(
 			'methods'             => 'GET',
 			'callback'            => array( $this, 'list_jetpack_details' ),
-			'permission_callback' => function() {
+			'permission_callback' => function () {
 				return wpcom_vip_go_rest_api_request_allowed( $this->namespace );
 			},
 		) );

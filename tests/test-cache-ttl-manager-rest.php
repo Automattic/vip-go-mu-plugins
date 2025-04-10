@@ -3,17 +3,21 @@
 namespace Automattic\VIP\Cache;
 
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
+use WP_REST_Server;
 use WP_Test_REST_TestCase;
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
 class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	use ArraySubsetAsserts;
 
+	/** @var WP_REST_Server */
+	private $server;
+
 	public function setUp(): void {
 		parent::setUp();
 
 		global $wp_rest_server;
-		$wp_rest_server = new \WP_REST_Server();
+		$wp_rest_server = new WP_REST_Server();
 		$this->server   = $wp_rest_server;
 		do_action( 'rest_api_init' );
 
@@ -79,7 +83,7 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	 * @dataProvider get_rest_write_methods
 	 */
 	public function test__skip_ttl_for_authenticated_requests( $method ) {
-		$user_id = $this->factory->user->create();
+		$user_id = $this->factory()->user->create();
 		wp_set_current_user( $user_id );
 
 		$response = $this->dispatch_request( $method );

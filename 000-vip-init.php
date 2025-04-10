@@ -31,6 +31,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 // Important - Cache-healthcheck and App-healthcheck
 require_once __DIR__ . '/healthcheck/healthcheck.php';
 
+if ( ! defined( 'WPVIP_MU_PLUGIN_DIR' ) ) {
+	define( 'WPVIP_MU_PLUGIN_DIR', __DIR__ );
+}
 
 if ( ! defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) ) {
 	define( 'WPCOM_VIP_SITE_MAINTENANCE_MODE', false );
@@ -55,7 +58,7 @@ if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
 
 	// WP CLI is allowed, but disable cron
 	if ( Context::is_wp_cli() || $allow_front_end ) {
-		add_filter( 'pre_option_a8c_cron_control_disable_run', function() {
+		add_filter( 'pre_option_a8c_cron_control_disable_run', function () {
 			return 1;
 		}, 9999 );
 	} else {
@@ -126,11 +129,15 @@ if ( ! defined( 'WPCOM_VIP_MAIL_TRACKING_KEY' ) ) {
 }
 
 // Define constants for custom VIP Go paths
-define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+if ( ! defined( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR' ) ) {
+	define( 'WPCOM_VIP_CLIENT_MU_PLUGIN_DIR', WP_CONTENT_DIR . '/client-mu-plugins' );
+}
 
-// FedRAMP sites do not load Jetpack by default
-if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() && ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
-	define( 'VIP_JETPACK_SKIP_LOAD', true );
+if ( method_exists( Context::class, 'is_fedramp' ) && Context::is_fedramp() ) {
+	// FedRAMP sites do not load Jetpack by default
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) ) {
+		define( 'VIP_JETPACK_SKIP_LOAD', true );
+	}
 }
 
 $private_dir_path = WP_CONTENT_DIR . '/private'; // Local fallback
@@ -151,7 +158,7 @@ defined( 'WPCOM_VIP_MACHINE_USER_EMAIL' ) || define( 'WPCOM_VIP_MACHINE_USER_EMA
 defined( 'WPCOM_VIP_MACHINE_USER_ROLE' ) || define( 'WPCOM_VIP_MACHINE_USER_ROLE', 'administrator' );
 
 if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
-	add_action( 'set_current_user', function() {
+	add_action( 'set_current_user', function () {
 		$user = get_user_by( 'login', WPCOM_VIP_MACHINE_USER_LOGIN );
 
 		if ( $user && $user->ID ) {
@@ -195,9 +202,11 @@ if ( WPCOM_SANDBOXED ) {
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
 
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
+
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
-require_once __DIR__ . '/lib/statsd/class-statsd.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
@@ -223,11 +232,42 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+// Temporary loader during rollout, remove and directly require after rollout.
+$telemetry_files = [
+	__DIR__ . '/telemetry/class-telemetry-system.php',
+	__DIR__ . '/telemetry/class-telemetry-client.php',
+	__DIR__ . '/telemetry/class-telemetry-event-queue.php',
+	__DIR__ . '/telemetry/class-telemetry-event.php',
+	__DIR__ . '/telemetry/class-telemetry.php',
+	__DIR__ . '/telemetry/tracks/class-tracks.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event-dto.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-event.php',
+	__DIR__ . '/telemetry/tracks/class-tracks-client.php',
+	__DIR__ . '/telemetry/tracks/tracks-utils.php',
+	__DIR__ . '/telemetry/pendo/class-pendo.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-client.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php',
+	__DIR__ . '/telemetry/pendo/class-pendo-track-event.php',
+	__DIR__ . '/telemetry/pendo/pendo-utils.php',
+];
+
+// Make sure all telemetry files are present before loading them.
+$safe_to_load_telemetry = array_reduce( $telemetry_files, function ( bool $carry, string $file ): bool {
+	return $carry && file_exists( $file );
+}, true );
+
+if ( true === $safe_to_load_telemetry ) {
+	foreach ( $telemetry_files as $file ) {
+		require_once $file;
+	}
+}
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
 if ( true === defined( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) && true === constant( 'WPCOM_VIP_CLEAN_TERM_CACHE' ) ) {
-	require_once dirname( __FILE__ ) . '/vip-helpers/vip-clean-term-cache.php';
+	require_once __DIR__ . '/vip-helpers/vip-clean-term-cache.php';
 }
 
 // Load WP_CLI helpers
@@ -240,8 +280,11 @@ if ( Context::is_wp_cli() ) {
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
-	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) ) {
 	require_once __DIR__ . '/search/search.php';
+	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
 }
 
 // Set WordPress environment type
@@ -266,6 +309,21 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
 }
 
+$non_prod_envs = [
+	'local',
+	'develop',
+	'preprod',
+	'staging',
+	'testing',
+	'uat',
+	'development',
+	'dev',
+	'stage',
+];
+if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) && file_exists( __DIR__ . '/vip-helpers/vip-non-production.php' ) ) {
+	require __DIR__ . '/vip-helpers/vip-non-production.php';
+}
+
 if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 	// Load config related helpers
 	require_once __DIR__ . '/config/class-sync.php';
@@ -281,14 +339,14 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 }
 
 // Add custom header for VIP
-add_filter( 'wp_headers', function( $headers ) {
+add_filter( 'wp_headers', function ( $headers ) {
 	$headers['X-hacker']     = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
 	$headers['Host-Header']  = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
 	// Non-production applications and go-vip.(co|net) domains should not be indexed.
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- should be safe, because we are only looking for a substring and don't use the variable for anything else
-	if ( 'production' !== VIP_GO_ENV || false !== strpos( $_SERVER['HTTP_HOST'] ?? '', '.go-vip.' ) ) {
+	if ( 'production' !== VIP_GO_ENV || is_vip_convenience_domain( $_SERVER['HTTP_HOST'] ?? '' ) ) {
 		$headers['X-Robots-Tag'] = 'noindex, nofollow';
 	}
 
@@ -308,6 +366,10 @@ if ( file_exists( __DIR__ . '/001-core/constants.php' ) ) {
 
 if ( function_exists( '\Automattic\VIP\Core\Constants\define_db_constants' ) ) {
 	define_db_constants( $GLOBALS['wpdb'] );
+}
+
+if ( ! isset( $_SERVER['HTTP_HOST'] ) ) {
+	$_SERVER['HTTP_HOST'] = null;
 }
 
 do_action( 'vip_loaded' );

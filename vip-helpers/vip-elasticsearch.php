@@ -306,10 +306,8 @@ function wpcom_search_api_wp_to_es_args( $args ) {
 		if ( ! $args['orderby'] ) {
 			$args['orderby'] = array( 'relevance' );
 		}
-	} else {
-		if ( ! $args['orderby'] ) {
+	} elseif ( ! $args['orderby'] ) {
 			$args['orderby'] = array( 'date' );
-		}
 	}
 
 	// Validate the "order" field

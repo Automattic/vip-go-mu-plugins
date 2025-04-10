@@ -36,41 +36,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
         with:
           egress-policy: block
           allowed-endpoints:
+            1.gravatar.com:443
             1.gravatar.com:80
+            140.82.114.22:443
+            2.gravatar.com:443
             2.gravatar.com:80
             api.github.com:443
-            api.service.runforesight.com:443
+            api.ipify.org:443
             api.wordpress.org:443
-            artifactcache.actions.githubusercontent.com:443
+            api.wordpress.org:80
+            api.wpvip.com:443
             auth.docker.io:443
+            cdn.playwright.dev:443
             dl-cdn.alpinelinux.org:443
-            docker.io:443
             downloads.wordpress.org:443
             e2e-test-site.vipdev.lndo.site:443
-            foresight-cli-test-artifact-prod.s3-accelerate.amazonaws.com:443
             geoip.elastic.co:443
             ghcr.io:443
             github.com:443
             nodejs.org:443
+            objects.githubusercontent.com:443
             pkg-containers.githubusercontent.com:443
             planet.wordpress.org:443
             playwright.azureedge.net:443
+            playwright.download.prss.microsoft.com:443
             production.cloudflare.docker.com:443
             public-api.wordpress.com:443
+            raw.githubusercontent.com:443
             registry-1.docker.io:443
             registry.npmjs.org:443
             s.w.org:443
+            s0.wp.com:443
+            secure.gravatar.com:443
             storage.googleapis.com:443
-            upload.service.runforesight.com:443
+            update.traefik.io:443
             vaultpress.com:443
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@v4.2.2
         with:
           submodules: true
 
@@ -78,17 +86,11 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v3.6.0
+        uses: actions/setup-node@v4.3.0
         with:
           node-version: 'lts/*'
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
-
-      - name: Instrument workflow processes for E2E tests
-        uses: runforesight/foresight-workflow-kit-action@v1
-        if: success() || failure()
-        with:
-          api_key: ${{secrets.FORESIGHT_API_KEY}}
 
       - name: Install dependencies
         run: npm ci
@@ -120,20 +122,38 @@ jobs:
         run: npm test
         working-directory: __tests__/e2e
 
-      - name: Instrument Tests in ForeSight
-        if: success() || failure()
-        uses: thundra-io/foresight-test-kit-action@v1
-        with:
-          api_key: ${{secrets.FORESIGHT_API_KEY}}
-          test_format: JUNIT
-          test_framework: JEST
-          test_path: __tests__/e2e/results.xml
-
       - name: Archive test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test-results
           path: |
             __tests__/e2e/test-results
             __tests__/e2e/screenshots
+
+  lint_e2e:
+    name: Run ESLint on E2E tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        with:
+          egress-policy: audit
+
+      - name: Check out repository code
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4.3.0
+        with:
+          node-version: 'lts/*'
+          cache: npm
+          cache-dependency-path: __tests__/e2e/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: __tests__/e2e
+
+      - name: Run ESLint
+        run: npm run lint
+        working-directory: __tests__/e2e

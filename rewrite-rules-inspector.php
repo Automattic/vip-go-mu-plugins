@@ -12,7 +12,7 @@
  * Plugin Name:       Rewrite Rules Inspector
  * Plugin URI:        https://wordpress.org/plugins/rewrite-rules-inspector/
  * Description:       Simple WordPress admin tool for inspecting your rewrite rules.
- * Version:           1.3.1
+ * Version:           1.4.0
  * Author:            Automattic, Daniel Bachhuber
  * Author URI:        https://automattic.com/
  * Text Domain:       rewrite-rules-inspector
@@ -28,7 +28,7 @@ require_once __DIR__ . '/rewrite-rules-inspector/rewrite-rules-inspector.php';
 /**
  * Place the rewrite rules view under the VIP dashboard instead of under tools.php
  */
-add_filter( 'rri_parent_slug', function() {
+add_filter( 'rri_parent_slug', function () {
 	return 'vip-dashboard';
 } );
 

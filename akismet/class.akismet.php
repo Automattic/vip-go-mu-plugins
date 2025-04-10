@@ -35,6 +35,9 @@ class Akismet {
 		add_filter( 'preprocess_comment', array( 'Akismet', 'auto_check_comment' ), 1 );
 		add_filter( 'rest_pre_insert_comment', array( 'Akismet', 'rest_auto_check_comment' ), 1 );
 
+		add_action( 'comment_form', array( 'Akismet', 'load_form_js' ) );
+		add_action( 'do_shortcode_tag', array( 'Akismet', 'load_form_js_via_filter' ), 10, 4 );
+
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments' ) );
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_old_comments_meta' ) );
 		add_action( 'akismet_scheduled_delete', array( 'Akismet', 'delete_orphaned_commentmeta' ) );
@@ -42,6 +45,7 @@ class Akismet {
 
 		add_action( 'comment_form',  array( 'Akismet',  'add_comment_nonce' ), 1 );
 		add_action( 'comment_form', array( 'Akismet', 'output_custom_form_fields' ) );
+		add_filter( 'script_loader_tag', array( 'Akismet', 'set_form_js_async' ), 10, 3 );
 
 		add_filter( 'comment_moderation_recipients', array( 'Akismet', 'disable_moderation_emails_if_unreachable' ), 1000, 2 );
 		add_filter( 'pre_comment_approved', array( 'Akismet', 'last_comment_status' ), 10, 2 );
@@ -69,8 +73,21 @@ class Akismet {
 		add_filter( 'frm_akismet_values', array( 'Akismet', 'prepare_custom_form_values' ) );
 
 		// Fluent Forms
+		/*
+		 * The Fluent Forms  hook names were updated in version 5.0.0. The last version that supported
+		 * the original hook names was 4.3.25, and version 4.3.25 was tested up to WordPress version 6.1.
+		 *
+		 * The legacy hooks are fired before the new hooks. See
+		 * https://github.com/fluentform/fluentform/commit/cc45341afcae400f217470a7bbfb15efdd80454f
+		 *
+		 * The legacy Fluent Forms hooks will be removed when Akismet no longer supports WordPress version 6.1.
+		 * This will provide compatibility with previous versions of Fluent Forms for a reasonable amount of time.
+		 */
 		add_filter( 'fluentform_form_element_start', array( 'Akismet', 'output_custom_form_fields' ) );
 		add_filter( 'fluentform_akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ), 10, 2 );
+		// Current Fluent Form hooks.
+		add_filter( 'fluentform/form_element_start', array( 'Akismet', 'output_custom_form_fields' ) );
+		add_filter( 'fluentform/akismet_fields', array( 'Akismet', 'prepare_custom_form_values' ), 10, 2 );
 
 		add_action( 'update_option_wordpress_api_key', array( 'Akismet', 'updated_option' ), 10, 2 );
 		add_action( 'add_option_wordpress_api_key', array( 'Akismet', 'added_option' ), 10, 2 );
@@ -82,8 +99,36 @@ class Akismet {
 		return apply_filters( 'akismet_get_api_key', defined('WPCOM_API_KEY') ? constant('WPCOM_API_KEY') : get_option('wordpress_api_key') );
 	}
 
+	/**
+	 * Exchange the API key for a token that can only be used to access stats pages.
+	 *
+	 * @return string
+	 */
+	public static function get_access_token() {
+		static $access_token = null;
+
+		if ( is_null( $access_token ) ) {
+			$request_args = array( 'api_key' => self::get_api_key() );
+
+			$request_args = apply_filters( 'akismet_request_args', $request_args, 'token' );
+
+			$response = self::http_post( self::build_query( $request_args ), 'token' );
+
+			$access_token = $response[1];
+		}
+
+		return $access_token;
+	}
+
 	public static function check_key_status( $key, $ip = null ) {
-		return self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'verify-key', $ip );
+		$request_args = array(
+			'key' => $key,
+			'blog' => get_option( 'home' ),
+		);
+
+		$request_args = apply_filters( 'akismet_request_args', $request_args, 'verify-key' );
+
+		return self::http_post( self::build_query( $request_args ), 'verify-key', $ip );
 	}
 
 	public static function verify_key( $key, $ip = null ) {
@@ -101,7 +146,14 @@ class Akismet {
 	}
 
 	public static function deactivate_key( $key ) {
-		$response = self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'deactivate' );
+		$request_args = array(
+			'key' => $key,
+			'blog' => get_option( 'home' ),
+		);
+
+		$request_args = apply_filters( 'akismet_request_args', $request_args, 'deactivate' );
+
+		$response = self::http_post( self::build_query( $request_args ), 'deactivate' );
 
 		if ( $response[1] != 'deactivated' )
 			return 'failed';
@@ -228,9 +280,38 @@ class Akismet {
 		if ( ! is_null( $post ) ) {
 			// $post can technically be null, although in the past, it's always been an indicator of another plugin interfering.
 			$comment[ 'comment_post_modified_gmt' ] = $post->post_modified_gmt;
+
+			// Tags and categories are important context in which to consider the comment.
+			$comment['comment_context'] = array();
+
+			$tag_names = wp_get_post_tags( $post->ID, array( 'fields' => 'names' ) );
+
+			if ( $tag_names && ! is_wp_error( $tag_names ) ) {
+				foreach ( $tag_names as $tag_name ) {
+					$comment['comment_context'][] = $tag_name;
+				}
+			}
+
+			$category_names = wp_get_post_categories( $post->ID, array( 'fields' => 'names' ) );
+
+			if ( $category_names && ! is_wp_error( $category_names ) ) {
+				foreach ( $category_names as $category_name ) {
+					$comment['comment_context'][] = $category_name;
+				}
+			}
 		}
 
-		$response = self::http_post( Akismet::build_query( $comment ), 'comment-check' );
+		/**
+		 * Filter the data that is used to generate the request body for the API call.
+		 *
+		 * @since 5.3.1
+		 *
+		 * @param array $comment An array of request data.
+		 * @param string $endpoint The API endpoint being requested.
+		 */
+		$comment = apply_filters( 'akismet_request_args', $comment, 'comment-check' );
+
+		$response = self::http_post( self::build_query( $comment ), 'comment-check' );
 
 		do_action( 'akismet_comment_check_response', $response );
 
@@ -247,6 +328,10 @@ class Akismet {
 
 		if ( isset( $response[0]['x-akismet-pro-tip'] ) )
 	        $commentdata['akismet_pro_tip'] = $response[0]['x-akismet-pro-tip'];
+
+		if ( isset( $response[0]['x-akismet-guid'] ) ) {
+			$commentdata['akismet_guid'] = $response[0]['x-akismet-guid'];
+		}
 
 		if ( isset( $response[0]['x-akismet-error'] ) ) {
 			// An error occurred that we anticipated (like a suspended key) and want the user to act on.
@@ -389,6 +474,10 @@ class Akismet {
 				if ( isset( self::$last_comment['akismet_pro_tip'] ) ) {
 					update_comment_meta( $comment->comment_ID, 'akismet_pro_tip', self::$last_comment['akismet_pro_tip'] );
 				}
+
+				if ( isset( self::$last_comment['akismet_guid'] ) ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_guid', self::$last_comment['akismet_guid'] );
+				}
 			}
 		}
 	}
@@ -428,7 +517,7 @@ class Akismet {
 			}
 
 			// Prepared as strings since comment_id is an unsigned BIGINT, and using %d will constrain the value to the maximum signed BIGINT.
-			$format_string = implode( ", ", array_fill( 0, count( $comment_ids ), '%s' ) );
+			$format_string = implode( ', ', array_fill( 0, is_countable( $comment_ids ) ? count( $comment_ids ) : 0, '%s' ) );
 
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->comments} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
 			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->commentmeta} WHERE comment_id IN ( " . $format_string . " )", $comment_ids ) );
@@ -439,7 +528,7 @@ class Akismet {
 			}
 
 			clean_comment_cache( $comment_ids );
-			do_action( 'akismet_delete_comment_batch', count( $comment_ids ) );
+			do_action( 'akismet_delete_comment_batch', is_countable( $comment_ids ) ? count( $comment_ids ) : 0 );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->comments ) ) // lucky number
@@ -469,7 +558,7 @@ class Akismet {
 				do_action( 'akismet_batch_delete_count', __FUNCTION__ );
 			}
 
-			do_action( 'akismet_delete_commentmeta_batch', count( $comment_ids ) );
+			do_action( 'akismet_delete_commentmeta_batch', is_countable( $comment_ids ) ? count( $comment_ids ) : 0 );
 		}
 
 		if ( apply_filters( 'akismet_optimize_table', ( mt_rand(1, 5000) == 11), $wpdb->commentmeta ) ) // lucky number
@@ -658,7 +747,9 @@ class Akismet {
 		if ( self::is_test_mode() )
 			$c['is_test'] = 'true';
 
-		$response = self::http_post( Akismet::build_query( $c ), 'comment-check' );
+		$c = apply_filters( 'akismet_request_args', $c, 'comment-check' );
+
+		$response = self::http_post( self::build_query( $c ), 'comment-check' );
 
 		if ( ! empty( $response[1] ) ) {
 			return $response[1];
@@ -671,8 +762,6 @@ class Akismet {
 		add_comment_meta( $id, 'akismet_rechecking', true );
 		
 		$api_response = self::check_db_comment( $id, $recheck_reason );
-
-		delete_comment_meta( $id, 'akismet_rechecking' );
 
 		if ( is_wp_error( $api_response ) ) {
 			// Invalid comment ID.
@@ -700,6 +789,8 @@ class Akismet {
 				array( 'response' => substr( $api_response, 0, 50 ) )
 			);
 		}
+
+		delete_comment_meta( $id, 'akismet_rechecking' );
 
 		return $api_response;
 	}
@@ -820,7 +911,9 @@ class Akismet {
 			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
 		}
 
-		$response = Akismet::http_post( Akismet::build_query( $comment ), 'submit-spam' );
+		$comment = apply_filters( 'akismet_request_args', $comment, 'submit-spam' );
+
+		$response = self::http_post( self::build_query( $comment ), 'submit-spam' );
 
 		update_comment_meta( $comment_id, 'akismet_user_result', 'true' );
 
@@ -878,7 +971,9 @@ class Akismet {
 			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
 		}
 
-		$response = self::http_post( Akismet::build_query( $comment ), 'submit-ham' );
+		$comment = apply_filters( 'akismet_request_args', $comment, 'submit-ham' );
+
+		$response = self::http_post( self::build_query( $comment ), 'submit-ham' );
 
 		update_comment_meta( $comment_id, 'akismet_user_result', 'false' );
 
@@ -1111,6 +1206,7 @@ class Akismet {
 
 	// return a comma-separated list of role names for the given user
 	public static function get_user_roles( $user_id ) {
+		$comment_user = null;
 		$roles = false;
 
 		if ( !class_exists('WP_User') )
@@ -1119,7 +1215,7 @@ class Akismet {
 		if ( $user_id > 0 ) {
 			$comment_user = new WP_User( $user_id );
 			if ( isset( $comment_user->roles ) )
-				$roles = join( ',', $comment_user->roles );
+				$roles = implode( ',', $comment_user->roles );
 		}
 
 		if ( is_multisite() && is_super_admin( $user_id ) ) {
@@ -1127,7 +1223,7 @@ class Akismet {
 				$roles = 'super_admin';
 			} else {
 				$comment_user->roles[] = 'super_admin';
-				$roles = join( ',', $comment_user->roles );
+				$roles = implode( ',', $comment_user->roles );
 			}
 		}
 
@@ -1214,13 +1310,12 @@ class Akismet {
 		$akismet_ua = sprintf( 'WordPress/%s | Akismet/%s', $GLOBALS['wp_version'], constant( 'AKISMET_VERSION' ) );
 		$akismet_ua = apply_filters( 'akismet_ua', $akismet_ua );
 
-		$content_length = strlen( $request );
-
-		$api_key   = self::get_api_key();
 		$host      = self::API_HOST;
+		$api_key   = self::get_api_key();
 
-		if ( !empty( $api_key ) )
-			$host = $api_key.'.'.$host;
+		if ( $api_key ) {
+			$request = add_query_arg( 'api_key', $api_key, $request );
+		}
 
 		$http_host = $host;
 		// use a specific IP if provided
@@ -1344,13 +1439,17 @@ class Akismet {
 		}
 	}
 
-	public static function load_form_js() {
-		/* deprecated */
-	}
-
+	/**
+	 * Mark akismet-frontend.js as deferred. Because nothing depends on it, it can run at any time
+	 * after it's loaded, and the browser won't have to wait for it to load to continue
+	 * parsing the rest of the page.
+	 */
 	public static function set_form_js_async( $tag, $handle, $src ) {
-		/* deprecated */
-		return $tag;
+		if ( 'akismet-frontend' !== $handle ) {
+			return $tag;
+		}
+
+		return preg_replace( '/^<script /i', '<script defer ', $tag );
 	}
 
 	public static function get_akismet_form_fields() {
@@ -1363,7 +1462,7 @@ class Akismet {
 			$prefix = '_wpcf7_ak_';
 		}
 
-		$fields .= '<p style="display: none !important;">';
+		$fields .= '<p style="display: none !important;" class="akismet-fields-container" data-prefix="' . esc_attr( $prefix ) . '">';
 		$fields .= '<label>&#916;<textarea name="' . $prefix . 'hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label>';
 
 		if ( ! function_exists( 'amp_is_request' ) || ! amp_is_request() ) {
@@ -1383,6 +1482,11 @@ class Akismet {
 	}
 
 	public static function output_custom_form_fields( $post_id ) {
+		if ( 'fluentform/form_element_start' === current_filter() && did_action( 'fluentform_form_element_start' ) ) {
+			// Already did this via the legacy filter.
+			return;
+		}
+
 		// phpcs:ignore WordPress.Security.EscapeOutput
 		echo self::get_akismet_form_fields();
 	}
@@ -1408,6 +1512,11 @@ class Akismet {
 	 * @return array $form
 	 */
 	public static function prepare_custom_form_values( $form, $data = null ) {
+		if ( 'fluentform/akismet_fields' === current_filter() && did_filter( 'fluentform_akismet_fields' ) ) {
+			// Already updated the form fields via the legacy filter.
+			return $form;
+		}
+
 		if ( is_null( $data ) ) {
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing
 			$data = $_POST;
@@ -1549,6 +1658,7 @@ p {
 	}
 
 	public static function pre_check_pingback( $method ) {
+		$pingback_args = array();
 		if ( $method !== 'pingback.ping' )
 			return;
 
@@ -1573,7 +1683,7 @@ p {
 
 			if ( 0 === $call_count ) {
 				// Only pass along the number of entries in the multicall the first time we see it.
-				$multicall_count = count( $wp_xmlrpc_server->message->params );
+				$multicall_count = is_countable( $wp_xmlrpc_server->message->params ) ? count( $wp_xmlrpc_server->message->params ) : 0;
 			}
 
 			/*
@@ -1738,5 +1848,27 @@ p {
 				'https://akismet.com/privacy/'
 			) . '</p>'
 		);
+	}
+
+	public static function load_form_js() {
+		if (
+			! is_admin()
+			&& ( ! function_exists( 'amp_is_request' ) || ! amp_is_request() )
+			&& self::get_api_key()
+			) {
+			wp_register_script( 'akismet-frontend', plugin_dir_url( __FILE__ ) . '_inc/akismet-frontend.js', array(), filemtime( plugin_dir_path( __FILE__ ) . '_inc/akismet-frontend.js' ), true );
+			wp_enqueue_script( 'akismet-frontend' );
+		}
+	}
+
+	/**
+	 * Add the form JavaScript when we detect that a supported form shortcode is being parsed.
+	 */
+	public static function load_form_js_via_filter( $return_value, $tag, $attr, $m ) {
+		if ( in_array( $tag, array( 'contact-form', 'gravityform', 'contact-form-7', 'formidable', 'fluentform' ) ) ) {
+			self::load_form_js();
+		}
+
+		return $return_value;
 	}
 }

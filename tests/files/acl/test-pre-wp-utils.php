@@ -1,35 +1,72 @@
 <?php
 
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
+use ErrorException;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 require_once __DIR__ . '/../../../files/acl/pre-wp-utils.php';
 
 class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
+	private $original_error_reporting;
 
-	public function test__prepare_request__empty_request_uri() {
-		$this->expectWarning();
-		$this->expectWarningMessage( 'VIP Files ACL failed due to empty URI' );
+	public function setUp(): void {
+		parent::setUp();
 
-		$request_uri = '';
+		$this->original_error_reporting = error_reporting();
 
-		$actual_result = prepare_request( $request_uri );
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno );
+			}
 
-		$this->assertFalse( $actual_result );
+			return false;
+		}, E_USER_WARNING );
 	}
 
-	public function test__prepare_request__invalid_request_uri() {
-		$this->expectWarning();
-		$this->expectExceptionMessage( 'VIP Files ACL failed due to relative path (for invalid/path.jpg)' );
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
 
-		$request_uri = 'invalid/path.jpg';
+		parent::tearDown();
+	}
 
-		$actual_result = prepare_request( $request_uri );
+	public function data__prepare_request(): iterable {
+		return [
+			'Empty request URI'   => [
+				'',
+				'VIP Files ACL failed due to empty URI',
+			],
+			'Invalid request URI' => [
+				'invalid/path.jpg',
+				'VIP Files ACL failed due to relative path (for invalid/path.jpg)',
+			],
+		];
+	}
 
-		$this->assertFalse( $actual_result );
+	/**
+	 * @dataProvider data__prepare_request
+	 */
+	public function test__prepare_request__warning( string $request_uri, string $expected_message ): void {
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
+		$this->expectExceptionMessage( $expected_message );
+
+		prepare_request( $request_uri );
+	}
+
+	/**
+	 * @dataProvider data__prepare_request
+	 */
+	public function test__prepare_request( string $request_uri, string $expected_message ): void {
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		$result = prepare_request( $request_uri );
+		self::assertFalse( $result );
 	}
 
 	public function test__prepare_request__valid() {
@@ -46,34 +83,59 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 
 	public function get_data__validate_path__invalid() {
 		return [
-			'null-uri'                     => [
+			'null-uri'                       => [
 				null,
 				'VIP Files ACL failed due to empty path',
 			],
-	
-			'empty-uri'                    => [
+
+			'empty-uri'                      => [
 				'',
 				'VIP Files ACL failed due to empty path',
 			],
-	
-			'path-no-wp-content'           => [
+
+			'path-no-wp-content'             => [
 				'/a/path/to/a/file.jpg',
 				'VIP Files ACL failed due to invalid path (for /a/path/to/a/file.jpg)',
 			],
-	
-			'relative-url-with-wp-content' => [
+
+			'relative-url-with-wp-content'   => [
 				'en/wp-content/uploads/file.png',
 				'VIP Files ACL failed due to relative path (for en/wp-content/uploads/file.png)',
 			],
+
+			'path-traversal-dot'             => [
+				'/wp-content/uploads/./file.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/./file.jpg)',
+			],
+
+			'path-traversal'                 => [
+				'/wp-content/uploads/../file.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/../file.jpg)',
+			],
+
+			'path-traversal-urlencoded'      => [
+				'/wp-content/uploads/..%2Ffile.jpg',
+				'VIP Files ACL failed due to a possible path traversal attack (for /wp-content/uploads/..%2Ffile.jpg)',
+			],
+
+			'trailing-whitespace'            => [
+				'/wp-content/uploads/file.jpg ',
+				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg )',
+			],
+
+			'trailing-whitespace-urlencoded' => [
+				'/wp-content/uploads/file.jpg%0a',
+				'VIP Files ACL failed due to a possible attack (for /wp-content/uploads/file.jpg%0a)',
+			],
 		];
 	}
-	
+
 	public function get_data__validate_path__valid() {
 		return [
 			'valid-path'                     => [
 				'/wp-content/uploads/kittens.gif',
 			],
-	
+
 			'valid-path-nested'              => [
 				'/wp-content/uploads/subfolder/2099/12/cats.jpg',
 			],
@@ -89,7 +151,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 			'multi-wp-content-directories'   => [
 				'/wp-content/uploads/path/to/wp-content/uploads/otters.png',
 			],
-	
+
 			/* TODO: not supported yet
 			'resized-image' => [
 				'/wp-content/uploads/2021/01/dinos-100x100.jpg',
@@ -101,13 +163,21 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_data__validate_path__invalid
 	 */
-	public function test__validate_path__invalid( $file_path, $expected_warning ) {
-		$this->expectWarning();
-		$this->expectWarningMessage( $expected_warning );
+	public function test__validate_path__invalid__warning( $file_path, $expected_warning ) {
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
+		$this->expectExceptionMessage( $expected_warning );
 
-		$actual_is_valid = validate_path( $file_path );
-	
-		$this->assertFalse( $actual_is_valid );
+		validate_path( $file_path );
+	}
+
+	/**
+	 * @dataProvider get_data__validate_path__invalid
+	 */
+	public function test__validate_path__invalid( $file_path, $expected_warning ) {
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		$result = validate_path( $file_path );
+		self::assertFalse( $result );
 	}
 
 	/**
@@ -115,7 +185,7 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 	 */
 	public function test__validate_path__valid( $file_path ) {
 		$actual_is_valid = validate_path( $file_path );
-	
+
 		$this->assertTrue( $actual_is_valid );
 	}
 
@@ -158,6 +228,14 @@ class VIP_Files_Acl_Pre_Wp_Utils_Test extends WP_UnitTestCase {
 				[
 					'',
 					'path/to/wp-content/uploads/otters.png',
+				],
+			],
+
+			'urlencoded'                     => [
+				'/wp-content/uploads/%6B%69%74%74%65%6e%73%2egif',
+				[
+					'',
+					'kittens.gif',
 				],
 			],
 

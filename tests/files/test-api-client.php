@@ -5,13 +5,11 @@ namespace Automattic\VIP\Files;
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
 use WP_UnitTestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\AssertionRenames;
 
 require_once __DIR__ . '/../../files/class-api-client.php';
 
 class API_Client_Test extends WP_UnitTestCase {
 	use ArraySubsetAsserts;
-	use AssertionRenames;
 
 	/** @var API_Client|null */
 	private $api_client;
@@ -46,7 +44,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', function( $response, $args, $url ) use ( $mocked_response ) {
+		add_filter( 'pre_http_request', function ( $response, $args, $url ) use ( $mocked_response ) {
 			$this->http_requests[] = [
 				'url'  => $url,
 				'args' => $args,
@@ -164,7 +162,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function test__call_api__user_agent() {
-		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test context; this is safe 
+		$original_request_uri   = $_SERVER['REQUEST_URI']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput -- test context; this is safe
 		$_SERVER['REQUEST_URI'] = ' /path?query';
 
 		// Re-initialize so re-generate UA string
@@ -364,7 +362,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->mock_http_response( $mocked_response );
 
 		$file = $this->api_client->get_file( '/wp-content/uploads/get_file.jpg' );
-		
+
 		if ( is_wp_error( $file ) ) {
 			$actual_result = $file;
 		} else {

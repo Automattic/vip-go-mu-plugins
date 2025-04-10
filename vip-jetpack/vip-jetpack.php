@@ -46,371 +46,6 @@ if ( ! defined( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY' ) && 'production' !== VIP_GO
 	define( 'VIP_JETPACK_FULL_SYNC_IMMEDIATELY', true );
 }
 
-// Default plan object for all VIP sites.
-define( 'VIP_JETPACK_DEFAULT_PLAN', array(
-	'product_id'         => 'vip',
-	'product_slug'       => 'vip',
-	'product_name_short' => 'VIP',
-	'product_variation'  => 'vip',
-	'supports'           => array(
-		'videopress',
-		'akismet',
-		'vaultpress',
-		'seo-tools',
-		'google-analytics',
-		'wordads',
-		'search',
-	),
-	'features'           => array(
-		'active'    => array(
-			'premium-themes',
-			'google-analytics',
-			'security-settings',
-			'advanced-seo',
-			'upload-video-files',
-			'video-hosting',
-			'send-a-message',
-			'whatsapp-button',
-			'social-previews',
-			'donations',
-			'core/audio',
-			'republicize',
-			'premium-content/container',
-			'akismet',
-			'vaultpress-backups',
-			'vaultpress-backup-archive',
-			'vaultpress-storage-space',
-			'vaultpress-automated-restores',
-			'vaultpress-security-scanning',
-			'polldaddy',
-			'simple-payments',
-			'support',
-			'wordads-jetpack',
-		),
-		'available' => array(
-			'security-settings'             => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'advanced-seo'                  => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'upload-video-files'            => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'akismet'                       => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'send-a-message'                => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'whatsapp-button'               => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'social-previews'               => array(
-				'jetpack_free',
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'google-analytics'              => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'video-hosting'                 => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'wordads-jetpack'               => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'vaultpress-backups'            => array(
-				'jetpack_premium',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'vaultpress-backup-archive'     => array(
-				'jetpack_premium',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'vaultpress-storage-space'      => array(
-				'jetpack_premium',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'vaultpress-automated-restores' => array(
-				'jetpack_premium',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'simple-payments'               => array(
-				'jetpack_premium',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_business_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-			),
-			'calendly'                      => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'opentable'                     => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'donations'                     => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'core/video'                    => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'core/cover'                    => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-			),
-			'core/audio'                    => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'republicize'                   => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'premium-content/container'     => array(
-				'jetpack_premium',
-				'jetpack_business',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'support'                       => array(
-				'jetpack_premium',
-				'jetpack_personal',
-				'jetpack_premium_monthly',
-				'jetpack_business_monthly',
-				'jetpack_personal_monthly',
-				'jetpack_security_daily',
-				'jetpack_security_daily_monthly',
-				'jetpack_security_realtime',
-				'jetpack_security_realtime_monthly',
-				'jetpack_complete_monthly',
-				'jetpack_security_t1_yearly',
-				'jetpack_security_t1_monthly',
-				'jetpack_security_t2_yearly',
-				'jetpack_security_t2_monthly',
-			),
-			'premium-themes'                => array(
-				'jetpack_business',
-				'jetpack_business_monthly',
-			),
-			'vaultpress-security-scanning'  => array(
-				'jetpack_business',
-				'jetpack_business_monthly',
-			),
-			'polldaddy'                     => array(
-				'jetpack_business',
-				'jetpack_business_monthly',
-			),
-		),
-	),
-) );
-
 /**
  * Add the Connection Pilot. Ensures Jetpack is consistently connected.
  */
@@ -425,7 +60,7 @@ require_once __DIR__ . '/jetpack-mandatory.php';
  * Remove certain modules from the list of those that can be activated
  * Blocks access to certain functionality that isn't compatible with the platform.
  */
-add_filter( 'jetpack_get_available_modules', function( $modules ) {
+add_filter( 'jetpack_get_available_modules', function ( $modules ) {
 	// The Photon service is not necessary on VIP Go since the same features are built-in.
 	// Note that we do utilize some of the Photon module's code with our own Files Service.
 	unset( $modules['photon'] );
@@ -438,29 +73,11 @@ add_filter( 'jetpack_get_available_modules', function( $modules ) {
 }, 999 );
 
 /**
- * Prevent the jetpack_active_plan from ever being overridden.
- *
- * All sites on VIP Go should always have have a valid VIP plan.
- *
- * This will prevent issues from the plan option being corrupted,
- * which can then break features like Jetpack Search.
- */
-add_filter( 'pre_option_jetpack_active_plan', function( $pre_option ) {
-	if ( true === WPCOM_IS_VIP_ENV
-		&& defined( 'VIP_JETPACK_DEFAULT_PLAN' )
-		&& Jetpack::is_active() ) {
-		return VIP_JETPACK_DEFAULT_PLAN;
-	}
-
-	return $pre_option;
-} );
-
-/**
  * Lock down the jetpack_sync_settings_max_queue_size to an allowed range
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_max_queue_size', function ( $value ) {
 	$value = intval( $value );
 
 	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT );
@@ -474,7 +91,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_size', function( $value ) {
  *
  * Still allows changing the value per site, but locks it into the range
  */
-add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
+add_filter( 'option_jetpack_sync_settings_max_queue_lag', function ( $value ) {
 	$value = intval( $value );
 
 	$value = min( $value, VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT );
@@ -489,7 +106,7 @@ add_filter( 'option_jetpack_sync_settings_max_queue_lag', function( $value ) {
  * This will allow more items to be processed per cron event, while leaving a small buffer between completion and the start of the next event (the event interval is 5 mins).
  *
  */
-add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
+add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function () {
 	return 4 * MINUTE_IN_SECONDS;
 }, 9999 );
 
@@ -499,13 +116,13 @@ add_filter( 'option_jetpack_sync_settings_cron_sync_time_limit', function() {
  * By default, this is 10 seconds, but VIP can be more aggressive and doesn't need to wait as long (we'll still wait a small amount).
  *
  */
-add_filter( 'option_jetpack_sync_settings_sync_wait_time', function() {
+add_filter( 'option_jetpack_sync_settings_sync_wait_time', function () {
 	return 1;
 }, 9999 );
 
 // Prevent Jetpack version ping-pong when a sandbox has an old version of stacks
 if ( true === WPCOM_SANDBOXED ) {
-	add_action( 'updating_jetpack_version', function( $new_version, $old_version ) {
+	add_action( 'updating_jetpack_version', function ( $new_version, $old_version ) {
 		// This is a brand new site with no Jetpack data
 		if ( empty( $old_version ) ) {
 			return;
@@ -521,24 +138,6 @@ if ( true === WPCOM_SANDBOXED ) {
 		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- version number is OK
 		wp_die( sprintf( '😱😱😱 Oh no! Looks like your sandbox is trying to change the version of Jetpack (from %1$s => %2$s). This is probably not a good idea. As a precaution, we\'re killing this request to prevent potentially bad things. Please run `vip stacks update` on your sandbox before doing anything else.', $old_version, $new_version ), 400 );
 	}, 0, 2 ); // No need to wait till priority 10 since we're going to die anyway
-}
-
-// On production servers, only our machine user can manage the Jetpack connection
-if ( true === WPCOM_IS_VIP_ENV && is_admin() ) {
-	add_filter( 'map_meta_cap', function( $caps, $cap, $user_id ) {
-		switch ( $cap ) {
-			case 'jetpack_connect':
-			case 'jetpack_reconnect':
-			case 'jetpack_disconnect':
-				$user = get_userdata( $user_id );
-				if ( $user && WPCOM_VIP_MACHINE_USER_LOGIN !== $user->user_login ) {
-					return [ 'do_not_allow' ];
-				}
-				break;
-		}
-
-		return $caps;
-	}, 10, 3 );
 }
 
 function wpcom_vip_did_jetpack_search_query( $query ) {
@@ -590,7 +189,6 @@ function wpcom_vip_disable_jetpack_sync_for_frontend_get_requests( $should_load 
 	}
 
 	return $should_load;
-
 }
 add_filter( 'jetpack_sync_listener_should_load', 'wpcom_vip_disable_jetpack_sync_for_frontend_get_requests' );
 
@@ -618,7 +216,7 @@ if ( defined( 'JETPACK__VERSION' ) && JETPACK__VERSION < '11.0' ) {
 /**
  * Enable the new Full Sync method on sites with the VIP_JETPACK_FULL_SYNC_IMMEDIATELY constant
  */
-add_filter( 'jetpack_sync_modules', function( $modules ) {
+add_filter( 'jetpack_sync_modules', function ( $modules ) {
 	if ( ! class_exists( 'Automattic\\Jetpack\\Sync\\Modules\\Full_Sync_Immediately' ) ) {
 		return $modules;
 	}
@@ -668,7 +266,7 @@ add_action( 'admin_enqueue_scripts', 'vip_jetpack_admin_enqueue_scripts' );
 /**
  * A killswitch for Jetpack Sync Checksum functionality, either disable checksum when a Platform-wide constant is set and true or pass through the value to allow for app-side control.
  */
-add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $value ) {
+add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function ( $value ) {
 	// phpcs:ignore WordPress.PHP.DisallowShortTernary.Found
 	return defined( 'VIP_DISABLE_JETPACK_SYNC_CHECKSUM' ) && VIP_DISABLE_JETPACK_SYNC_CHECKSUM ?: $value;
 } );
@@ -676,13 +274,13 @@ add_filter( 'pre_option_jetpack_sync_settings_checksum_disable', function( $valu
 /**
  * SSL is always supported on VIP, so avoid unnecessary checks
  */
-add_filter( 'pre_transient_jetpack_https_test', function() {
+add_filter( 'pre_transient_jetpack_https_test', function () {
 	return 1;
 } ); // WP doesn't have __return_one (but it does have __return_zero)
 add_filter( 'pre_transient_jetpack_https_test_message', '__return_empty_string' );
 
 // And make sure this JP option gets filtered to 0 to prevent unnecessary checks. Can be removed from here when all supported versions include this fix: https://github.com/Automattic/jetpack/pull/18730
-add_filter( 'jetpack_options', function( $value, $name ) {
+add_filter( 'jetpack_options', function ( $value, $name ) {
 	if ( 'fallback_no_verify_ssl_certs' === $name ) {
 		$value = 0;
 	}
@@ -753,26 +351,136 @@ function vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent ) {
 add_filter( 'pre_jetpack_is_mobile', 'vip_jetpack_is_mobile', PHP_INT_MAX, 3 );
 
 /**
- * Display correct Jetpack version in wp-admin plugins UI for pinned or local versions.
+ * Display correct Jetpack version in wp-admin plugins UI for pinned, local or default versions.
  *
- * @param string[] $plugin_meta An array of the plugin's metadata, including
- *                              the version, author, author URI, and plugin URI.
- * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
- * @param array    $plugin_data An array of plugin data.
- * @param string   $status      Status filter currently applied to the plugin list.
+ * @param string[]  plugin_meta  An array of the plugin's metadata, including
+ *                               the version, author, author URI, and plugin URI.
+ * @param string    $plugin_file Path to the plugin file relative to the plugins directory.
  * @return string[] $plugin_meta Updated plugin's metadata.
  */
-function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file, $plugin_data, $status ) {
-	if ( ! defined( 'VIP_JETPACK_PINNED_VERSION' ) && ! defined( 'WPCOM_VIP_JETPACK_LOCAL' ) ) {
+function vip_filter_plugin_version_jetpack( $plugin_meta, $plugin_file ) {
+	if ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && constant( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 		return $plugin_meta;
 	}
 
 	if ( 'jetpack.php' === $plugin_file ) {
-		$version = defined( 'VIP_JETPACK_LOADED_VERSION' ) ? VIP_JETPACK_LOADED_VERSION : JETPACK__VERSION;
+		$type = defined( 'WPCOM_VIP_JETPACK_LOCAL' ) && constant( 'WPCOM_VIP_JETPACK_LOCAL' ) ? '(Local)' : '';
 		/* translators: Loaded Jetpack version number */
-		$plugin_meta[0] = sprintf( esc_html__( 'Version %s' ), $version );
+		$plugin_meta[0] = sprintf( esc_html__( 'Version %1$s %2$s' ), constant( 'JETPACK__VERSION' ), $type );
+		remove_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
 	}
 
 	return $plugin_meta;
 }
-add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 4 );
+add_filter( 'plugin_row_meta', 'vip_filter_plugin_version_jetpack', PHP_INT_MAX, 2 );
+
+/**
+ * Enable Jetpack offline mode for Multisites when we're launching a site in the network.
+ * This is enabled only if the site is a multisite.
+ *
+ * The function checks for the `launching` flag in the `vip_launch_tools` cache group.
+ * If the flag is set to `true`, it enables the offline mode while the flag is active, blocking
+ * the Jetpack communications from running.
+ *
+ * @param bool $offline_mode Whether to enable offline mode.
+ * @return bool
+ */
+function vip_filter_jetpack_offline_mode_on_site_launch( $offline_mode ) {
+	// If not multisite, return the offline mode value.
+	if ( ! is_multisite() ) {
+		return $offline_mode;
+	}
+	$vip_site_launching = wp_cache_get( 'launching', 'vip_launch_tools' );
+	if ( 'true' === $vip_site_launching || true === $vip_site_launching ) {
+		// enables jetpack offline mode
+		return true;
+	}
+	// keep the offline mode as it was.
+	return $offline_mode;
+}
+
+add_filter( 'jetpack_offline_mode', 'vip_filter_jetpack_offline_mode_on_site_launch', PHP_INT_MAX, 1 );
+
+/**
+ * Prevent admin/support users from spawning (useless, autoloaded) NULL value post_by_email_address* options.
+ * Addresses https://github.com/Automattic/jetpack/issues/35636
+ */
+function vip_prevent_jetpack_post_by_email_database_noise() {
+	// Prevent saving an unnecessary NULL option to the database.
+	add_filter( 'pre_update_option_post_by_email_address' . get_current_user_id(), function ( $value, $old_value ) {
+		if ( 'NULL' === $value ) {
+			return $old_value;
+		}
+
+		return $value;
+	}, 10, 2 );
+
+	// Prevent unnecessary API calls for finding the remote email address when the module is disabled.
+	if ( method_exists( 'Jetpack', 'is_module_active' ) && ! Jetpack::is_module_active( 'post-by-email' ) ) {
+		add_filter( 'pre_option_post_by_email_address' . get_current_user_id(), function () {
+			return 'NULL';
+		} );
+	}
+}
+
+add_action( 'admin_init', 'vip_prevent_jetpack_post_by_email_database_noise' );
+
+/*
+ * Workaround: prevent the "Invite user to WordPress.com" checkbox on "Add New User" page
+ * from blocking new user registration on Jetpack 13.2.
+ */
+add_action( 'muplugins_loaded', function () {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing
+	if ( isset( $_POST['invite_user_wpcom'] ) ) {
+		unset( $_POST['invite_user_wpcom'] );
+	}
+});
+
+/**
+ * Jetpack 13.9 removes the legacy Jetpack_SSO class. Unfortunately, this class is still used by
+ * the deprecated standalone jetpack-force-2fa plugin (which is still in use by some). This is a dummy
+ * class to prevent fatal errors when the standalone plugin is enabled.
+ */
+add_action( 'plugins_loaded', function () {
+	if ( class_exists( 'Jetpack_Force_2FA' ) && ! class_exists( 'Jetpack_SSO' ) && class_exists( 'Jetpack' ) &&
+		defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.9', '>=' ) ) {
+		require_once __DIR__ . '/jetpack-sso-dummy.php';
+	}
+} );
+
+/** 
+ * https://lobby.vip.wordpress.com/2024/12/10/notice-editor-issues-when-using-jetpack-version-13-7-and-wordpress-version-6-5/
+ * Remove this filter to disable the hotfix: 
+ * remove_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+ */
+add_action( 'plugins_loaded', 'vip_jetpack_disable_wpcom_block_editor' );
+function vip_jetpack_disable_wpcom_block_editor() {
+	global $wp_version;
+	$matching_jetpack_constraints = defined( 'JETPACK__VERSION' ) && version_compare( JETPACK__VERSION, '13.7', '<' );
+	$matching_core_constraints    = version_compare( $wp_version, '6.6', '<' );
+
+	if ( $matching_jetpack_constraints && $matching_core_constraints ) {
+		add_filter( 'jetpack_tools_to_include', function ( $tools ) {
+			$key = array_search( 'wpcom-block-editor/class-jetpack-wpcom-block-editor.php', $tools );
+
+			if ( $key ) {
+				unset( $tools[ $key ] );
+			}
+			return $tools;
+		} );
+	}
+}
+// Force cache flush
+add_action( 'plugins_loaded', function () {
+	add_filter( 'script_loader_src',
+		function ( $src, $handle ) {
+			if ( 'wpcom-block-editor-default-editor-script' === $handle ) {
+				return $src . '.vip';
+			}
+
+			return $src;
+		},
+		PHP_INT_MIN,
+		2
+	);
+} );

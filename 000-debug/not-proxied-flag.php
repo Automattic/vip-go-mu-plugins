@@ -1,7 +1,5 @@
 <?php
 
-namespace Automattic\VIP\NotProxiedFlag;
-
 /**
  * Display 'Not Proxied' flag when not proxied.
  *
@@ -17,6 +15,8 @@ namespace Automattic\VIP\NotProxiedFlag;
  * indicating that the caller is not proxied. It is not to
  * be displayed for other users.
  */
+
+namespace Automattic\VIP\NotProxiedFlag;
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\enable_not_proxied_flag' );
 

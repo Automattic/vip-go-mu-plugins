@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * REST API request dispatcher.
  *
@@ -16,7 +16,7 @@ class QM_Dispatcher_REST extends QM_Dispatcher {
 	public function __construct( QM_Plugin $qm ) {
 		parent::__construct( $qm );
 
-		add_filter( 'rest_post_dispatch', array( $this, 'filter_rest_post_dispatch' ), 1, 3 );
+		add_filter( 'rest_post_dispatch', array( $this, 'filter_rest_post_dispatch' ), 1 );
 
 	}
 
@@ -24,11 +24,9 @@ class QM_Dispatcher_REST extends QM_Dispatcher {
 	 * Filters a REST API response in order to add QM's headers.
 	 *
 	 * @param WP_HTTP_Response $result  Result to send to the client. Usually a WP_REST_Response.
-	 * @param WP_REST_Server   $server  Server instance.
-	 * @param WP_REST_Request  $request Request used to generate the response.
 	 * @return WP_HTTP_Response Result to send to the client.
 	 */
-	public function filter_rest_post_dispatch( WP_HTTP_Response $result, WP_REST_Server $server, WP_REST_Request $request ) {
+	public function filter_rest_post_dispatch( WP_HTTP_Response $result ) {
 
 		if ( ! $this->should_dispatch() ) {
 			return $result;
@@ -36,8 +34,10 @@ class QM_Dispatcher_REST extends QM_Dispatcher {
 
 		$this->before_output();
 
-		/* @var QM_Output_Headers[] */
-		foreach ( $this->get_outputters( 'headers' ) as $id => $output ) {
+		/** @var array<string, QM_Output_Headers> $outputters */
+		$outputters = $this->get_outputters( 'headers' );
+
+		foreach ( $outputters as $output ) {
 			$output->output();
 		}
 
@@ -51,7 +51,7 @@ class QM_Dispatcher_REST extends QM_Dispatcher {
 	 * @return void
 	 */
 	protected function before_output() {
-		foreach ( glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
 			include_once $file;
 		}
 	}
@@ -78,6 +78,31 @@ class QM_Dispatcher_REST extends QM_Dispatcher {
 
 	}
 
+	/**
+	 * @param string $message
+	 * @param mixed[] $e
+	 * @phpstan-param array{
+	 *   message: string,
+	 *   file: string,
+	 *   line: int,
+	 *   type?: int,
+	 *   trace?: mixed|null,
+	 * } $e
+	 */
+	public function output_fatal( $message, array $e ): void {
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+		}
+
+		echo wp_json_encode(
+			array(
+				'code' => 'qm_fatal',
+				'message' => $message,
+				'data' => $e,
+			),
+			JSON_UNESCAPED_SLASHES
+		);
+	}
 }
 
 /**

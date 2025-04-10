@@ -14,8 +14,8 @@ wp_cookie_constants();
 define( 'VIP_IS_JETPACK_SSO_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso' );
 define( 'VIP_IS_JETPACK_SSO_2SA_COOKIE', AUTH_COOKIE . '_vip_jetpack_sso_2sa' );
 
-add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
-	add_action( 'set_auth_cookie', function( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
+add_action( 'jetpack_sso_handle_login', function ( $user, $user_data ) {
+	add_action( 'set_auth_cookie', function ( $auth_cookie, $expire, $expiration, $user_id, $scheme, $token ) use ( $user_data ) {
 		$secure = is_ssl();
 
 		$sso_cookie = wp_generate_auth_cookie( $user_id, $expire, 'secure_auth', $token );
@@ -28,7 +28,7 @@ add_action( 'jetpack_sso_handle_login', function( $user, $user_data ) {
 	}, 10, 6 );
 }, 10, 2 );
 
-add_action( 'clear_auth_cookie', function() {
+add_action( 'clear_auth_cookie', function () {
 	if ( ! headers_sent() ) {
 		setcookie( VIP_IS_JETPACK_SSO_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );
 		setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN );

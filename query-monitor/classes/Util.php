@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * General utilities class.
  *
@@ -9,7 +9,7 @@ if ( ! class_exists( 'QM_Util' ) ) {
 class QM_Util {
 
 	/**
-	 * @var array<string, stdClass>
+	 * @var array<string, QM_Component>
 	 */
 	protected static $file_components = array();
 
@@ -27,11 +27,6 @@ class QM_Util {
 	 * @var string|null
 	 */
 	protected static $contentpath = null;
-
-	/**
-	 * @var string|null
-	 */
-	protected static $sort_field = null;
 
 	private function __construct() {}
 
@@ -118,7 +113,7 @@ class QM_Util {
 			 *
 			 * @since 3.6.0
 			 *
-			 * @param string[] $dirs Array of absolute directory paths keyed by component identifier.
+			 * @param array<string, string|null> $dirs Array of absolute directory paths keyed by component identifier.
 			 */
 			self::$file_dirs = apply_filters( 'qm/component_dirs', self::$file_dirs );
 
@@ -159,12 +154,9 @@ class QM_Util {
 	 * Attempts to determine the component responsible for a given file name.
 	 *
 	 * @param string $file An absolute file path.
-	 * @return stdClass A stdClass object (ouch) representing the component.
+	 * @return QM_Component An object representing the component.
 	 */
 	public static function get_file_component( $file ) {
-
-		# @TODO turn this into a class (eg QM_File_Component)
-
 		$file = self::standard_dir( $file );
 		$type = '';
 
@@ -317,7 +309,33 @@ class QM_Util {
 				break;
 		}
 
-		self::$file_components[ $file ] = (object) compact( 'type', 'name', 'context' );
+		if ( 'other' === $type ) {
+			if ( ! function_exists( '_get_dropins' ) ) {
+				require_once trailingslashit( constant( 'ABSPATH' ) ) . 'wp-admin/includes/plugin.php';
+			}
+
+			/** @var array<int, string> $dropins */
+			$dropins = array_keys( _get_dropins() );
+
+			foreach ( $dropins as $dropin ) {
+				$dropin_path = trailingslashit( constant( 'WP_CONTENT_DIR' ) ) . $dropin;
+
+				if ( $file !== $dropin_path ) {
+					continue;
+				}
+
+				$type = 'dropin';
+				/* translators: %s: Drop-in plugin file name */
+				$name = sprintf( __( 'Drop-in: %s', 'query-monitor' ), pathinfo( $dropin, PATHINFO_BASENAME ) );
+			}
+		}
+
+		$component = new QM_Component();
+		$component->type = $type;
+		$component->name = $name;
+		$component->context = $context;
+
+		self::$file_components[ $file ] = $component;
 
 		return self::$file_components[ $file ];
 	}
@@ -325,6 +343,13 @@ class QM_Util {
 	/**
 	 * @param array<string, mixed> $callback
 	 * @return array<string, mixed>
+	 * @phpstan-return array{
+	 *   name?: string,
+	 *   file?: string|false,
+	 *   line?: string|false,
+	 *   error?: WP_Error,
+	 *   component?: QM_Component,
+	 * }
 	 */
 	public static function populate_callback( array $callback ) {
 
@@ -353,14 +378,25 @@ class QM_Util {
 				$callback['name'] = self::shorten_fqn( $class . $access . $callback['function'][1] ) . '()';
 				$ref = new ReflectionMethod( $class, $callback['function'][1] );
 			} elseif ( is_object( $callback['function'] ) ) {
-				if ( is_a( $callback['function'], 'Closure' ) ) {
+				if ( $callback['function'] instanceof Closure ) {
 					$ref = new ReflectionFunction( $callback['function'] );
-					$file = self::standard_dir( $ref->getFileName(), '' );
-					if ( 0 === strpos( $file, '/' ) ) {
-						$file = basename( $ref->getFileName() );
+					$filename = $ref->getFileName();
+
+					if ( $filename ) {
+						$file = self::standard_dir( $filename, '' );
+						if ( 0 === strpos( $file, '/' ) ) {
+							$file = basename( $filename );
+						}
+						$callback['name'] = sprintf(
+							/* translators: A closure is an anonymous PHP function. 1: Line number, 2: File name */
+							__( 'Closure on line %1$d of %2$s', 'query-monitor' ),
+							$ref->getStartLine(),
+							$file
+						);
+					} else {
+						/* translators: A closure is an anonymous PHP function */
+						$callback['name'] = __( 'Unknown closure', 'query-monitor' );
 					}
-					/* translators: 1: Line number, 2: File name */
-					$callback['name'] = sprintf( __( 'Closure on line %1$d of %2$s', 'query-monitor' ), $ref->getStartLine(), $file );
 				} else {
 					// the object should have a __invoke() method
 					$class = get_class( $callback['function'] );
@@ -379,7 +415,7 @@ class QM_Util {
 			$name = trim( $ref->getName() );
 
 			if ( '__lambda_func' === $name || 0 === strpos( $name, 'lambda_' ) ) {
-				if ( preg_match( '|(?P<file>.*)\((?P<line>[0-9]+)\)|', $callback['file'], $matches ) ) {
+				if ( $callback['file'] && preg_match( '|(?P<file>.*)\((?P<line>[0-9]+)\)|', $callback['file'], $matches ) ) {
 					$callback['file'] = $matches['file'];
 					$callback['line'] = $matches['line'];
 					$file = trim( self::standard_dir( $callback['file'], '' ), '/' );
@@ -396,17 +432,18 @@ class QM_Util {
 			if ( ! empty( $callback['file'] ) ) {
 				$callback['component'] = self::get_file_component( $callback['file'] );
 			} else {
-				$callback['component'] = (object) array(
-					'type' => 'php',
-					'name' => 'PHP',
-					'context' => '',
-				);
+				$callback['component'] = new QM_Component();
+				$callback['component']->type = 'php';
+				$callback['component']->name = 'PHP';
+				$callback['component']->context = '';
 			}
 		} catch ( ReflectionException $e ) {
 
 			$callback['error'] = new WP_Error( 'reflection_exception', $e->getMessage() );
 
 		}
+
+		unset( $callback['function'], $callback['class'] );
 
 		return $callback;
 
@@ -450,24 +487,7 @@ class QM_Util {
 	 * @return bool
 	 */
 	public static function is_multi_network() {
-		global $wpdb;
-
-		if ( function_exists( 'is_multi_network' ) ) {
-			return is_multi_network();
-		}
-
-		if ( ! is_multisite() ) {
-			return false;
-		}
-
-		// phpcs:disable
-		$num_sites = $wpdb->get_var( "
-			SELECT COUNT(*)
-			FROM {$wpdb->site}
-		" );
-		// phpcs:enable
-
-		return ( $num_sites > 1 );
+		return ( function_exists( 'is_multi_network' ) && is_multi_network() );
 	}
 
 	/**
@@ -508,7 +528,8 @@ class QM_Util {
 
 		$words = preg_split( '/\b/', trim( $sql ), 2, PREG_SPLIT_NO_EMPTY );
 		$type = 'Unknown';
-		if ( isset( $words[0] ) ) {
+
+		if ( is_array( $words ) && isset( $words[0] ) ) {
 			$type = strtoupper( $words[0] );
 		}
 
@@ -522,6 +543,8 @@ class QM_Util {
 	public static function display_variable( $value ) {
 		if ( is_string( $value ) ) {
 			return $value;
+		} elseif ( $value === null ) {
+			return 'null';
 		} elseif ( is_bool( $value ) ) {
 			return ( $value ) ? 'true' : 'false';
 		} elseif ( is_scalar( $value ) ) {
@@ -600,29 +623,44 @@ class QM_Util {
 	}
 
 	/**
-	 * Helper function for JSON encoding data and formatting it in a consistent and compatible manner.
+	 * Helper function for JSON encoding data and formatting it in a consistent manner.
 	 *
 	 * @param mixed $data The data to be JSON encoded.
 	 * @return string The JSON encoded data.
 	 */
 	public static function json_format( $data ) {
-		$json_options = JSON_PRETTY_PRINT;
-
-		if ( defined( 'JSON_UNESCAPED_SLASHES' ) ) {
-			// phpcs:ignore PHPCompatibility.Constants.NewConstants.json_unescaped_slashesFound
-			$json_options |= JSON_UNESCAPED_SLASHES;
-		}
+		// phpcs:ignore PHPCompatibility.Constants.NewConstants.json_unescaped_slashesFound
+		$json_options = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES;
 
 		$json = json_encode( $data, $json_options );
 
-		if ( ! defined( 'JSON_UNESCAPED_SLASHES' ) ) {
-			$json = wp_unslash( $json );
+		if ( false === $json ) {
+			return '';
 		}
 
 		return $json;
 	}
 
 	/**
+	 * Returns the site editor URL for a given template or template part name.
+	 *
+	 * @param string $template The site template name, for example `twentytwentytwo//header-small-dark`.
+	 * @param string $type     The template type, either 'wp_template_part' or 'wp_template'.
+	 * @return string The admin URL for editing the site template.
+	 */
+	public static function get_site_editor_url( string $template, string $type = 'wp_template_part' ): string {
+		return add_query_arg(
+			array(
+				'postType' => $type,
+				'postId' => urlencode( $template ),
+				'canvas' => 'edit',
+			),
+			admin_url( 'site-editor.php' )
+		);
+	}
+
+	/**
+	 * @deprecated
 	 * @param mixed $data
 	 * @return bool
 	 */
@@ -632,55 +670,24 @@ class QM_Util {
 
 	/**
 	 * @param mixed[] $array
-	 * @param string $field
+	 * @param string  $field
 	 * @return void
 	 */
 	public static function sort( array &$array, $field ) {
-		self::$sort_field = $field;
-		usort( $array, array( __CLASS__, '_sort' ) );
+		usort( $array, function( array $a, array $b ) use ( $field ): int {
+			return $a[ $field ] <=> $b[ $field ];
+		} );
 	}
 
 	/**
 	 * @param mixed[] $array
-	 * @param string $field
+	 * @param string  $field
 	 * @return void
 	 */
 	public static function rsort( array &$array, $field ) {
-		self::$sort_field = $field;
-		usort( $array, array( __CLASS__, '_rsort' ) );
+		usort( $array, function( array $a, array $b ) use ( $field ): int {
+			return $b[ $field ] <=> $a[ $field ];
+		} );
 	}
-
-	/**
-	 * @param array<string, mixed> $a
-	 * @param array<string, mixed> $b
-	 * @return int
-	 * @phpstan-return -1|0|1
-	 */
-	private static function _rsort( $a, $b ) {
-		$field = self::$sort_field;
-
-		if ( $a[ $field ] === $b[ $field ] ) {
-			return 0;
-		} else {
-			return ( $a[ $field ] > $b[ $field ] ) ? -1 : 1;
-		}
-	}
-
-	/**
-	 * @param array<string, mixed> $a
-	 * @param array<string, mixed> $b
-	 * @return int
-	 * @phpstan-return -1|0|1
-	 */
-	private static function _sort( $a, $b ) {
-		$field = self::$sort_field;
-
-		if ( $a[ $field ] === $b[ $field ] ) {
-			return 0;
-		} else {
-			return ( $a[ $field ] > $b[ $field ] ) ? 1 : -1;
-		}
-	}
-
 }
 }

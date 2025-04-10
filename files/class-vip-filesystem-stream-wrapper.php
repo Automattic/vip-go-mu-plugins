@@ -168,11 +168,10 @@ class VIP_Filesystem_Stream_Wrapper {
 	 * @param   string $path URL that was passed to the original function
 	 * @param   string $mode Type of access. See `fopen` docs
 	 * @param   $options
-	 * @param   string $opened_path
 	 *
 	 * @return  bool    True on success or false on failure
 	 */
-	public function stream_open( $path, $mode, $options, &$opened_path ) {
+	public function stream_open( $path, $mode, $options ) {
 		$this->debug( sprintf( 'stream_open => %s + %s + %s', $path, $mode, $options ) );
 
 		$path = $this->trim_path( $path );
@@ -199,7 +198,7 @@ class VIP_Filesystem_Stream_Wrapper {
 				// File doesn't exist on File service so create new file
 				$file = $this->string_to_resource( '', $mode );
 			} else {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 				$file = fopen( $result, $mode );
 			}
 
@@ -276,7 +275,7 @@ class VIP_Filesystem_Stream_Wrapper {
 	public function stream_read( $count ) {
 		$this->debug( sprintf( 'stream_read => %s + %s + %s', $count, $this->path, $this->uri ) );
 
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fread
+		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 		$string = fread( $this->file, $count );
 		if ( false === $string ) {
 			trigger_error(
@@ -637,7 +636,7 @@ class VIP_Filesystem_Stream_Wrapper {
 			}
 
 			// Convert to actual file to upload to new path
-			$file      = fopen( $result, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+			$file      = fopen( $result, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 			$meta      = stream_get_meta_data( $file );
 			$file_path = $meta['uri'];
 
@@ -713,7 +712,7 @@ class VIP_Filesystem_Stream_Wrapper {
 		switch ( $option ) {
 			case STREAM_META_TOUCH:
 				if ( false === file_exists( $path ) ) {
-					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_read_fopen
+					$file = fopen( $path, 'w' );    // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 					if ( is_resource( $file ) ) {
 						$result = fflush( $file );
 						return fclose( $file ) && $result;

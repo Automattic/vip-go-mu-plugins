@@ -1,0 +1,17 @@
+<phpunit
+	bootstrap="__tests__/bootstrap.php"
+	backupGlobals="false"
+	colors="true"
+	convertErrorsToExceptions="true"
+	convertNoticesToExceptions="true"
+	convertWarningsToExceptions="true"
+	>
+	<php>
+		<const name="WP_TESTS_MULTISITE" value="1" />
+	</php>
+	<testsuites>
+		<testsuite name="Unit Tests">
+			<directory prefix="test-" suffix=".php">./__tests__/unit-tests/</directory>
+		</testsuite>
+	</testsuites>
+</phpunit>

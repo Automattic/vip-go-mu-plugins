@@ -3,23 +3,34 @@
  * Test support user
  */
 
-namespace Automattic\VIP\Support_User\Tests;
+namespace Automattic\VIP\Support_User;
 
-use Automattic\VIP\Support_User\User;
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
 /**
  * @group vip_support_user
  */
 class VIPSupportUserTest extends WP_UnitTestCase {
+	private $vip_support_user;
+
 	public function setUp(): void {
 		parent::setUp();
+		Constant_Mocker::clear();
 
 		$this->vip_support_user = User::add( array(
 			'user_email' => 'vip-support@example.test',
 			'user_login' => 'vip-support',
 			'user_pass'  => 'password',
 		) );
+
+		reset_phpmailer_instance();
+	}
+
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		reset_phpmailer_instance();
+		parent::tearDown();
 	}
 
 	public function test_is_a8c_email(): void {
@@ -59,7 +70,6 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		foreach ( $non_a8c_emails as $non_a8c_email ) {
 			$this->assertFalse( $user_instance::is_a8c_email( $non_a8c_email ) );
 		}
-
 	}
 
 	public function provider_valid_vip_support_email_aliases(): array {
@@ -95,12 +105,8 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		$this->assertTrue( $instance->is_allowed_email( 'admin@automattic.com' ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_is_allowed_email_with_config(): void {
-		define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
+		Constant_Mocker::define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
 
 		$instance = User::init();
 
@@ -109,7 +115,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test_is_verified_automattician(): void {
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_email' => 'admin@automattic.com',
 			'user_login' => 'vip_admin',
 		] );
@@ -121,14 +127,10 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		$this->assertTrue( $instance->is_verified_automattician( $user_id ) );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_is_verified_automattician_for_disallowed_user(): void {
-		define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
+		Constant_Mocker::define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
 
-		$user_id = $this->factory->user->create( [
+		$user_id = $this->factory()->user->create( [
 			'user_email' => 'foo@automattic.com',
 			'user_login' => 'vip_foo',
 		] );
@@ -153,14 +155,14 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test__has_vip_support_meta__nope(): void {
-		$user = $this->factory->user->create( array( 'user_login' => 'not-vip-support' ) );
+		$user = $this->factory()->user->create( array( 'user_login' => 'not-vip-support' ) );
 
 		$is_vip_support_user = User::has_vip_support_meta( $user );
 		$this->assertFalse( $is_vip_support_user );
 	}
 
 	public function test__add__update_email_for_existing_user_with_different_login(): void {
-		$existing_user_id = $this->factory->user->create( [
+		$existing_user_id = $this->factory()->user->create( [
 			'user_email' => 'existing123@automattic.com',
 			'user_login' => 'existing-user-123',
 		] );
@@ -183,7 +185,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	public function test__add__update_account_for_existing_user_with_same_login(): void {
-		$existing_user_id = $this->factory->user->create( [
+		$existing_user_id = $this->factory()->user->create( [
 			'user_email'   => 'existing456@automattic.com',
 			'user_login'   => 'vip-support-user-456',
 			'display_name' => 'Existing User',

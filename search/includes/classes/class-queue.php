@@ -2,20 +2,24 @@
 
 namespace Automattic\VIP\Search;
 
-use \ElasticPress\Indexables;
-use \WP_Error;
+use ElasticPress\Indexables;
+use WP_Error;
 
 class Queue {
 	const CACHE_GROUP                     = 'vip-search-index-queue';
 	const OBJECT_LAST_INDEX_TIMESTAMP_TTL = 120; // Must be at least longer than the rate limit intervals
 
-	const MAX_BATCH_SIZE = 1000;
+	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
 	/** @var Queue\Schema */
 	public $schema;
+	/** @var Indexables */
 	public $indexables;
+	/** @var \Automattic\VIP\Logstash\Logger */
 	public $logger;
+	/** @var Queue\Cron */
+	public $cron;
 
 	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
@@ -257,12 +261,16 @@ class Queue {
 	}
 
 	public function setup_hooks() {
+		// We should make sure to apply the settings again after the customer code have been loaded to ensure the consistency.
+		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX );
+
 		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 ); // saved_term fires after SyncManager_Helper actions
 
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
 		// For handling indexing failures
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
+		add_action( 'ep_after_bulk_index_dynamically', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
@@ -311,6 +319,10 @@ class Queue {
 		$indexable = Indexables::factory()->get( $indexable_slug );
 		if ( ! $indexable ) {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
+		}
+
+		if ( ! $indexable->index_exists() ) {
+			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
 		}
 
 		global $wpdb;
@@ -381,6 +393,12 @@ class Queue {
 			return;
 		}
 
+		$indexable = Indexables::factory()->get( $indexable_slug );
+
+		if ( ! $indexable || ! $indexable->index_exists() ) {
+			return;
+		}
+
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug, $options );
 		}
@@ -404,7 +422,7 @@ class Queue {
 
 		if ( is_int( $last_index_time ) && $last_index_time ) {
 			// Next index time is last index time + interval
-			$next_index_time = $last_index_time + $this->get_index_interval_time( $object_id, $indexable_slug, $options );
+			$next_index_time = $last_index_time + $this->get_index_interval_time();
 		}
 
 		return $next_index_time;
@@ -462,12 +480,9 @@ class Queue {
 	/**
 	 * Get the interval between successive index operations on a given object
 	 *
-	 * @param int $object_id The id of the object
-	 * @param string $indexable_slug The Indexable slug
-	 * @param array $options (optional) Array of options
 	 * @return int Minimum number of seconds between re-indexes
 	 */
-	public function get_index_interval_time( $object_id, $indexable_slug, $options = array() ) {
+	public function get_index_interval_time() {
 		// Room for future improvement - on non-active index versions, increase the time between re-indexing a given object
 
 		return 60;
@@ -908,7 +923,7 @@ class Queue {
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
-				self::index_count_incr( count( $ids ) );
+				static::index_count_incr( count( $ids ) );
 
 				\Automattic\VIP\Logstash\log2logstash(
 					[
@@ -919,6 +934,7 @@ class Queue {
 						'extra'    => [
 							'homeurl'    => home_url(),
 							'index_name' => $indexable->get_index_name(),
+							'count'      => count( $ids ),
 						],
 					]
 				);
@@ -1013,19 +1029,19 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
-		$this->queue_objects( array_keys( $sync_manager->sync_queue ), $indexable_slug );
+		$this->queue_objects( array_keys( $sync_manager->get_sync_queue() ), $indexable_slug );
 
 		// If indexing operations are NOT currently ratelimited, queue up a cron event to process these immediately.
-		if ( ! self::is_indexing_ratelimited() ) {
+		if ( ! static::is_indexing_ratelimited() ) {
 			$this->cron->schedule_batch_job();
 		}
 
 		// Empty out the queue now that we've queued those items up
-		$sync_manager->sync_queue = [];
+		$sync_manager->reset_sync_queue();
 
 		return true;
 	}
@@ -1066,17 +1082,19 @@ class Queue {
 			return $bail;
 		}
 
-		if ( empty( $sync_manager->sync_queue ) ) {
+		if ( empty( $sync_manager->get_sync_queue() ) ) {
 			return $bail;
 		}
 
 		// Increment first to prevent overrunning ratelimiting
-		$increment             = count( $sync_manager->sync_queue );
-		$index_count_in_period = self::index_count_incr( $increment );
+		$increment             = count( $sync_manager->get_sync_queue() );
+		$index_count_in_period = static::index_count_incr( $increment );
 
 		// If indexing operation ratelimiting is hit, queue index operations
-		if ( $index_count_in_period > self::$max_indexing_op_count || self::is_indexing_ratelimited() ) {
-			Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+		if ( $index_count_in_period > static::$max_indexing_op_count ) {
+			if ( class_exists( Prometheus_Collector::class ) ) {
+				Prometheus_Collector::increment_ratelimited_index_counter( Search::instance()->get_current_host(), $increment );
+			}
 
 			$this->handle_index_limiting_start_timestamp();
 			$this->maybe_alert_for_prolonged_index_limiting();
@@ -1084,20 +1102,30 @@ class Queue {
 			// Offload indexing to async queue
 			$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 
-			if ( ! self::is_indexing_ratelimited() ) {
-				self::turn_on_index_ratelimiting();
+			if ( ! static::is_indexing_ratelimited() ) {
+				static::turn_on_index_ratelimiting();
 				$this->log_index_ratelimiting_start();
 			}
 		} else {
+			static::turn_off_index_ratelimiting();
 			$this->clear_index_limiting_start_timestamp();
 		}
 
 		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		return true === $bail || true === self::is_indexing_ratelimited();
+		return true === $bail || true === static::is_indexing_ratelimited();
+	}
+
+	/**
+	 * Get the start time for indexing rate limiting
+	 *
+	 * @return int|false Timestamp of when indexing rate limiting started, or false if not set
+	 */
+	public static function get_indexing_rate_limit_start() {
+		return wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	public function maybe_alert_for_prolonged_index_limiting() {
-		$index_limiting_start = wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+		$index_limiting_start = static::get_indexing_rate_limit_start();
 
 		if ( false === $index_limiting_start ) {
 			return;
@@ -1116,7 +1144,7 @@ class Queue {
 			$index_limiting_time
 		);
 
-		$this->alerts->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
+		\Automattic\VIP\Utils\Alerts::instance()->send_to_chat( self::INDEX_RATE_LIMITING_ALERT_SLACK_CHAT, $message, self::INDEX_RATE_LIMITING_ALERT_LEVEL );
 
 		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 
@@ -1146,6 +1174,15 @@ class Queue {
 	public static function turn_on_index_ratelimiting() {
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		return wp_cache_set( self::INDEX_QUEUEING_ENABLED_KEY, true, self::INDEX_COUNT_CACHE_GROUP, self::$index_queueing_ttl );
+	}
+
+	/**
+	 *  Turn off ratelimit indexing
+	 *
+	 * @return bool void
+	 */
+	public static function turn_off_index_ratelimiting() {
+		wp_cache_delete( self::INDEX_QUEUEING_ENABLED_KEY, self::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	/**
@@ -1240,9 +1277,10 @@ class Queue {
 	 * @return int|bool New value on success, false on failure
 	 */
 	private static function index_count_incr( $increment = 1 ) {
-		if ( false === wp_cache_get( self::INDEX_COUNT_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+		if ( false === wp_cache_get( static::INDEX_COUNT_CACHE_KEY, static::INDEX_COUNT_CACHE_GROUP ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( self::INDEX_COUNT_CACHE_KEY, 0, self::INDEX_COUNT_CACHE_GROUP, self::$index_count_ttl );
+			wp_cache_set( static::INDEX_COUNT_CACHE_KEY, 0, static::INDEX_COUNT_CACHE_GROUP, static::$index_count_ttl );
+			static::turn_off_index_ratelimiting();
 		}
 
 		return wp_cache_incr( self::INDEX_COUNT_CACHE_KEY, $increment, self::INDEX_COUNT_CACHE_GROUP );
@@ -1252,14 +1290,15 @@ class Queue {
 	 * Checks if the index limiting start timestamp is set, set it otherwise
 	 */
 	public function handle_index_limiting_start_timestamp() {
-		if ( false === wp_cache_get( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP ) ) {
+		if ( false === static::get_indexing_rate_limit_start() ) {
 			$start_timestamp = time();
-			wp_cache_set( self::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, self::INDEX_COUNT_CACHE_GROUP );
+			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			wp_cache_set( static::INDEX_RATE_LIMITED_START_CACHE_KEY, $start_timestamp, static::INDEX_COUNT_CACHE_GROUP );
 		}
 	}
 
 	public function clear_index_limiting_start_timestamp() {
-		wp_cache_delete( self::INDEX_RATE_LIMITED_START_CACHE_KEY, self::INDEX_COUNT_CACHE_GROUP );
+		wp_cache_delete( static::INDEX_RATE_LIMITED_START_CACHE_KEY, static::INDEX_COUNT_CACHE_GROUP );
 	}
 
 	/**

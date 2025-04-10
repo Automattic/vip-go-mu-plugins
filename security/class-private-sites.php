@@ -54,13 +54,15 @@ class Private_Sites {
 
 		add_filter( 'jetpack_active_modules', array( $this, 'filter_jetpack_active_modules' ) );
 		add_filter( 'jetpack_get_available_modules', array( $this, 'filter_jetpack_get_available_modules' ) );
-		add_filter( 'jetpack_sync_before_enqueue_added_option', array( $this, 'filter_blog_public_option_for_sync' ) );
-		add_filter( 'jetpack_sync_before_enqueue_updated_option', array( $this, 'filter_blog_public_option_for_sync' ) );
-		add_filter( 'jetpack_sync_before_enqueue_deleted_option', array( $this, 'filter_blog_public_option_for_sync' ) );
-		add_filter( 'jetpack_sync_before_send_jetpack_full_sync_options', array( $this, 'filter_blog_public_option_for_full_sync' ), 11 );
+
+		// Force the blog_public option to be -1 and disable UI
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
+
+		add_filter( 'jetpack_ai_enabled', '__return_false' );
 	}
 
 	/**
@@ -72,6 +74,52 @@ class Private_Sites {
 		add_action( 'do_feed_rss', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_rss2', array( $this, 'action_do_feed' ), -1 );
 		add_action( 'do_feed_atom', array( $this, 'action_do_feed' ), -1 );
+	}
+
+	/**
+	 * Disable checkbox/radio UI in Reading Settings
+	 */
+	public function disable_blog_public_ui() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		$screen = get_current_screen();
+		if ( 'options-reading' !== $screen->base ) {
+			return;
+		}
+
+		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
+		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
+		$js_code       = <<<JS
+		function onContentLoaded(callback) {
+			if (document.readyState !== 'loading') {
+				callback();
+			} else {
+				document.addEventListener('DOMContentLoaded', callback);
+			}
+		}
+
+		onContentLoaded(function() {
+			function updateProperty(selector, property, value) {
+				const element = document.querySelector(selector);
+				if (element) {
+					element[property] = value;
+				}
+			}
+			var checkbox = 'tr.option-site-visibility input#blog_public[type="checkbox"]';
+			if (document.querySelector(checkbox)) {
+				updateProperty(checkbox, 'disabled', true);
+			} else {
+				updateProperty('tr.option-site-visibility input#blog-public[type="radio"]', 'disabled', true);
+				updateProperty('tr.option-site-visibility input#blog-norobots[type="radio"]', 'disabled', true);
+			}
+			updateProperty('tr.option-site-visibility p.description', 'textContent', '%s');
+		});
+		JS;
+		$description   = esc_html__( 'This option is disabled when the constant VIP_JETPACK_IS_PRIVATE is enabled.', 'vip' );
+		$final_js_code = sprintf( $js_code, $description );
+		wp_add_inline_script( 'vip-disable-blog-public-option-ui', $final_js_code );
 	}
 
 	/*
@@ -121,48 +169,10 @@ class Private_Sites {
 		return $modules;
 	}
 
-	/**
-	 * Filter the blog_public option when syncing to JP
-	 *
-	 * @param array $args {
-	 *  Sync values.
-	 * @type string Option name.
-	 * @type mixed Old value.
-	 * @type mixed New value.
-	 * }
-	 *
-	 * @return array
-	 */
-	public function filter_blog_public_option_for_sync( $args ) {
-		if ( ! is_array( $args ) ) {
-			return $args;
+	public function filter_restrict_blog_public( $current_value ) {
+		if ( '1' === $current_value || '0' === $current_value ) {
+			return '-1';
 		}
-
-		if ( 'blog_public' === $args[0] ) {
-			$args[2] = '-1';
-		}
-
-		return $args;
-	}
-
-	/**
-	 * Filter the blog_public option when syncing to JP
-	 *
-	 * @param array $args {
-	 *  Sync option values.
-	 * @type string Option name.
-	 * @type mixed Value.
-	 * }
-	 *
-	 * @return array
-	 */
-	public function filter_blog_public_option_for_full_sync( $args ) {
-		if ( ! is_array( $args ) ) {
-			return $args;
-		}
-
-		$args['blog_public'] = '-1';
-
-		return $args;
+		return $current_value;
 	}
 }

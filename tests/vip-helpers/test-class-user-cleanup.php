@@ -90,7 +90,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match() {
 		$user_1_email = 'user@example.com';
-		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -101,9 +101,9 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_multiples() {
 		$user_1_email = 'user@example.com';
-		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 		$user_2_email = 'user2@other.com';
-		$user_2_id    = $this->factory->user->create( array( 'user_email' => $user_2_email ) );
+		$user_2_id    = $this->factory()->user->create( array( 'user_email' => $user_2_email ) );
 
 		$expected_ids = [ $user_1_id, $user_2_id ];
 
@@ -114,7 +114,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__exact_match_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -125,7 +125,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__email_with_plus() {
 		$user_1_email = 'user+extra@example.com';
-		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = [ $user_1_id ];
 
@@ -136,7 +136,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__username_match_different_host() {
 		$user_1_email = 'user+extra@different.com';
-		$this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -147,7 +147,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__host_match_different_username() {
 		$user_1_email = 'different+extra@example.com';
-		$this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		$expected_ids = []; // emails will not match
 
@@ -158,7 +158,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 	public function test__fetch_user_ids_for_emails__no_caps() {
 		$user_1_email = 'user@example.com';
-		$user_1_id    = $this->factory->user->create( array( 'user_email' => $user_1_email ) );
+		$user_1_id    = $this->factory()->user->create( array( 'user_email' => $user_1_email ) );
 
 		get_userdata( $user_1_id )->remove_all_caps();
 
@@ -177,8 +177,8 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 		$this->backup_super_admins();
 
-		$user_id_1 = $this->factory->user->create();
-		$user_id_2 = $this->factory->user->create();
+		$user_id_1 = $this->factory()->user->create();
+		$user_id_2 = $this->factory()->user->create();
 		grant_super_admin( $user_id_1 );
 		grant_super_admin( $user_id_2 );
 
@@ -202,7 +202,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 		$this->backup_super_admins();
 
-		$user_id_1 = $this->factory->user->create();
+		$user_id_1 = $this->factory()->user->create();
 		grant_super_admin( $user_id_1 );
 
 		$expected_results = [
@@ -226,8 +226,8 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 		$this->backup_super_admins();
 
-		$user_id_1 = $this->factory->user->create();
-		$user_id_2 = $this->factory->user->create();
+		$user_id_1 = $this->factory()->user->create();
+		$user_id_2 = $this->factory()->user->create();
 		grant_super_admin( $user_id_1 );
 		grant_super_admin( $user_id_2 );
 
@@ -253,8 +253,8 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 
 		$this->backup_super_admins();
 
-		$user_id_1 = $this->factory->user->create();
-		$user_id_2 = $this->factory->user->create();
+		$user_id_1 = $this->factory()->user->create();
+		$user_id_2 = $this->factory()->user->create();
 		// user_id_1 is not a super admin
 		grant_super_admin( $user_id_2 );
 
@@ -281,9 +281,9 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 		$this->backup_super_admins();
 
 		// 3 super admins, and we only revoke two of them
-		$user_id_1 = $this->factory->user->create();
-		$user_id_2 = $this->factory->user->create();
-		$user_id_3 = $this->factory->user->create();
+		$user_id_1 = $this->factory()->user->create();
+		$user_id_2 = $this->factory()->user->create();
+		$user_id_3 = $this->factory()->user->create();
 		grant_super_admin( $user_id_1 );
 		grant_super_admin( $user_id_2 );
 		grant_super_admin( $user_id_3 );
@@ -304,7 +304,7 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 	}
 
 	public function test__revoke_roles_for_users() {
-		$user_1_id = $this->factory->user->create();
+		$user_1_id = $this->factory()->user->create();
 
 		$expected_results = [
 			$user_1_id => true,

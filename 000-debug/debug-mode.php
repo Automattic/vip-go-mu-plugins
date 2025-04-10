@@ -1,7 +1,5 @@
 <?php
 
-use function Automattic\VIP\Stats\send_pixel;
-
 /**
  * Logged out Debug Mode for VIP
  *
@@ -17,6 +15,8 @@ use function Automattic\VIP\Stats\send_pixel;
  * When in Debug Mode, Query Monitor is accessible for examining details
  * about the request.
  */
+
+use function Automattic\VIP\Stats\send_pixel;
 
 // How long should we enable Debug mode for?
 const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
@@ -109,7 +109,7 @@ function set_debug_mode( bool $set ) {
 }
 
 function enable_debug_tools() {
-	add_filter( 'user_has_cap', function( $user_caps, $caps, $args ) {
+	add_filter( 'user_has_cap', function ( $user_caps, $caps, $args ) {
 		if ( 'view_query_monitor' === $args[0] ) {
 			$user_caps['view_query_monitor'] = true;
 		}
@@ -139,14 +139,13 @@ function show_debug_flag() {
 	<style>
 	#a8c-debug-flag {
 		z-index: 9991;
-		font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
+		font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
 		background: rgb(194,156,105);
-		bottom: 50px;
+		bottom: 145px;
 		left: 20px;
 		position: fixed;
 		width: 93px;
 		height: 28px;
-		line-height: 28px;
 	}
 
 	#a8c-debug-flag a {
@@ -158,9 +157,6 @@ function show_debug_flag() {
 		text-align: center;
 		width: 100%;
 		display: block;
-	}
-
-	#a8c-debug-flag a:hover {
 		text-decoration: none;
 	}
 	</style>

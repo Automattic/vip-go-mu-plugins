@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * The main Query Monitor plugin class.
  *
@@ -25,13 +25,16 @@ class QueryMonitor extends QM_Plugin {
 		add_filter( 'ure_capabilities_groups_tree', array( $this, 'filter_ure_groups' ) );
 		add_filter( 'network_admin_plugin_action_links_query-monitor/query-monitor.php', array( $this, 'filter_plugin_action_links' ) );
 		add_filter( 'plugin_action_links_query-monitor/query-monitor.php', array( $this, 'filter_plugin_action_links' ) );
-		add_filter( 'plugin_row_meta', array( $this, 'filter_plugin_row_meta' ), 10, 4 );
+		add_filter( 'plugin_row_meta', array( $this, 'filter_plugin_row_meta' ), 10, 2 );
 
 		# Load and register built-in collectors:
 		$collectors = array();
-		foreach ( glob( $this->plugin_path( 'collectors/*.php' ) ) as $file ) {
-			$key = basename( $file, '.php' );
-			$collectors[ $key ] = $file;
+		$files = glob( $this->plugin_path( 'collectors/*.php' ) );
+		if ( $files ) {
+			foreach ( $files as $file ) {
+				$key = basename( $file, '.php' );
+				$collectors[ $key ] = $file;
+			}
 		}
 
 		/**
@@ -39,7 +42,8 @@ class QueryMonitor extends QM_Plugin {
 		 *
 		 * @since 2.14.0
 		 *
-		 * @param string[] $collectors Array of file paths to be loaded.
+		 * @param array<string, string> $collectors Array of file paths to be loaded, keyed by the base
+		 *                                          name of the file.
 		 */
 		foreach ( apply_filters( 'qm/built-in-collectors', $collectors ) as $file ) {
 			include_once $file;
@@ -54,16 +58,17 @@ class QueryMonitor extends QM_Plugin {
 	public function filter_plugin_action_links( array $actions ) {
 		return array_merge( array(
 			'settings' => '<a href="#qm-settings">' . esc_html__( 'Settings', 'query-monitor' ) . '</a>',
-			'add-ons' => '<a href="https://github.com/johnbillion/query-monitor/wiki/Query-Monitor-Add-on-Plugins">' . esc_html__( 'Add-ons', 'query-monitor' ) . '</a>',
+			'add-ons' => '<a href="https://querymonitor.com/help/add-on-plugins/">' . esc_html__( 'Add-ons', 'query-monitor' ) . '</a>',
+			'help' => '<a href="https://querymonitor.com/wordpress-debugging/how-to-use/">' . esc_html__( 'Help', 'query-monitor' ) . '</a>',
 		), $actions );
 	}
 
 	/**
 	 * Filters the array of row meta for each plugin in the Plugins list table.
 	 *
-	 * @param string[] $plugin_meta An array of the plugin's metadata.
-	 * @param string   $plugin_file Path to the plugin file relative to the plugins directory.
-	 * @return string[] An array of the plugin's metadata.
+	 * @param array<int, string> $plugin_meta An array of the plugin's metadata.
+	 * @param string             $plugin_file Path to the plugin file relative to the plugins directory.
+	 * @return array<int, string> Updated array of the plugin's metadata.
 	 */
 	public function filter_plugin_row_meta( array $plugin_meta, $plugin_file ) {
 		if ( 'query-monitor/query-monitor.php' !== $plugin_file ) {
@@ -87,18 +92,22 @@ class QueryMonitor extends QM_Plugin {
 	 *
 	 * This does not get called for Super Admins.
 	 *
-	 * @param bool[]   $user_caps     Array of key/value pairs where keys represent a capability name and boolean values
-	 *                                represent whether the user has that capability.
-	 * @param string[] $required_caps Required primitive capabilities for the requested capability.
-	 * @param mixed[]  $args {
+	 * @param array<string, bool> $user_caps     Array of key/value pairs where keys represent a capability name and boolean values
+	 *                                           represent whether the user has that capability.
+	 * @param array<int, string>  $required_caps Required primitive capabilities for the requested capability.
+	 * @param mixed[]             $args {
 	 *     Arguments that accompany the requested capability check.
 	 *
 	 *     @type string    $0 Requested capability.
 	 *     @type int       $1 Concerned user ID.
 	 *     @type mixed  ...$2 Optional second and further parameters.
 	 * }
+	 * @phpstan-param array{
+	 *   0: string,
+	 *   1: int,
+	 * } $args
 	 * @param WP_User  $user          Concerned user object.
-	 * @return bool[] Concerned user's capabilities.
+	 * @return array<string, bool> Concerned user's capabilities.
 	 */
 	public function filter_user_has_cap( array $user_caps, array $required_caps, array $args, WP_User $user ) {
 		if ( 'view_query_monitor' !== $args[0] ) {
@@ -130,15 +139,15 @@ class QueryMonitor extends QM_Plugin {
 		 *
 		 * @since 2.11.2
 		 *
-		 * @param QM_Collector[] $collectors Array of collector instances.
-		 * @param QueryMonitor   $instance   QueryMonitor instance.
+		 * @param array<int, QM_Collector> $collectors Array of collector instances.
+		 * @param QueryMonitor             $instance   QueryMonitor instance.
 		 */
 		foreach ( apply_filters( 'qm/collectors', array(), $this ) as $collector ) {
 			QM_Collectors::add( $collector );
 		}
 
 		# Load dispatchers:
-		foreach ( glob( $this->plugin_path( 'dispatchers/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->plugin_path( 'dispatchers/*.php' ) ) as $file ) {
 			include_once $file;
 		}
 
@@ -147,8 +156,8 @@ class QueryMonitor extends QM_Plugin {
 		 *
 		 * @since 2.11.2
 		 *
-		 * @param QM_Dispatcher[] $dispatchers Array of dispatcher instances.
-		 * @param QueryMonitor    $instance    QueryMonitor instance.
+		 * @param array<int, QM_Dispatcher> $dispatchers Array of dispatcher instances.
+		 * @param QueryMonitor              $instance    QueryMonitor instance.
 		 */
 		foreach ( apply_filters( 'qm/dispatchers', array(), $this ) as $dispatcher ) {
 			QM_Dispatchers::add( $dispatcher );
@@ -212,8 +221,8 @@ class QueryMonitor extends QM_Plugin {
 	 *
 	 * @link https://wordpress.org/plugins/user-role-editor/
 	 *
-	 * @param array<string, array<string, array<string, mixed>>> $groups Array of existing groups.
-	 * @return array<string, array<string, array<string, mixed>>> Updated array of groups.
+	 * @param array<string, array<string, mixed>> $groups Array of existing groups.
+	 * @return array<string, array<string, mixed>> Updated array of groups.
 	 */
 	public function filter_ure_groups( array $groups ) {
 		$groups['query_monitor'] = array(
@@ -258,7 +267,7 @@ class QueryMonitor extends QM_Plugin {
 	 * @param string $file
 	 * @return self
 	 */
-	public static function init( $file = null ) {
+	public static function init( ?string $file = null ) {
 
 		static $instance = null;
 

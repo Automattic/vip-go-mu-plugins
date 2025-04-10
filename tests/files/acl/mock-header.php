@@ -17,3 +17,7 @@ function headers_sent(): bool {
 function header( string $header, bool $replace = true ) {
 	\Automattic\Test\header( $header, $replace );
 }
+
+function http_response_code( $code = 0 ) {
+	return \Automattic\Test\http_response_code( $code );
+}

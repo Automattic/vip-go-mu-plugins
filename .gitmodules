@@ -7,15 +7,6 @@
 [submodule "http-concat"]
 	path = http-concat
 	url = https://github.com/Automattic/nginx-http-concat.git
-[submodule "cron-control"]
-	path = cron-control
-	url = https://github.com/Automattic/Cron-Control.git
-[submodule "shared-plugins/jetpack-force-2fa"]
-	path = shared-plugins/jetpack-force-2fa
-	url = https://github.com/Automattic/jetpack-force-2fa.git
-[submodule "shared-plugins/two-factor"]
-	path = shared-plugins/two-factor
-	url = https://github.com/georgestephanis/two-factor.git
 [submodule "lightweight-term-count-update"]
 	path = lightweight-term-count-update
 	url = https://github.com/Automattic/lightweight-term-count-update
@@ -28,12 +19,6 @@
 [submodule "jetpack"]
 	path = jetpack
 	url = https://github.com/Automattic/jetpack-production.git
-[submodule "search/elasticpress-next"]
-	path = search/elasticpress-next
-	url = https://github.com/Automattic/ElasticPress.git
-[submodule "drop-ins/wp-cache-memcached"]
-	path = drop-ins/wp-cache-memcached
-	url = https://github.com/Automattic/wp-cache-memcached.git
 [submodule "wp-parsely"]
 	path = wp-parsely
 	url = https://github.com/Parsely/wp-parsely.git

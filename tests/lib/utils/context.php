@@ -13,6 +13,11 @@ class Context_Test extends TestCase {
 		Constant_Mocker::clear();
 	}
 
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
+	}
+
 	public function test__is_cache_healthcheck__nope() {
 		$_SERVER['REQUEST_URI'] = '/not-healthcheck-path';
 

@@ -139,7 +139,7 @@ class Schema {
 
 		// Skip verification when running tests. We need to do this because WordPress Test Library
 		// turns CREATE TABLE into CREATE TEMPORARY TABLE, and SHOW TABLES does not list temporary tables
-		if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
+		if ( ! \defined( 'WP_TESTS_DOMAIN' ) ) {
 			// Confirm that the table was created, and set the option to prevent further updates.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			$table_count = count( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table_name ) ) );

@@ -1,0 +1,39 @@
+name: Changelog Summary - Staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  execute:
+    name: Run Summary Generator
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
+
+      - name: Install
+        uses: ramsey/composer-install@a2636af0004d1c0499ffca16ac0b4cc94df70565 # 3.1.0
+
+      - name: Execute
+        env:
+          CHANGELOG_POST_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          PROJECT_USERNAME: Automattic
+          PROJECT_REPONAME: vip-go-mu-plugins
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          php ./ci/changelog-summary.php \
+                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
+                --wp-status=draft \
+                --debug

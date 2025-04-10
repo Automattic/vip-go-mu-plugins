@@ -6,14 +6,16 @@ require_once __DIR__ . '/../../../lib/helpers/environment.php';
 
 use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
 
 class Environment_Test extends TestCase {
-	use ExpectPHPException;
-
 	public function setUp(): void {
 		parent::setUp();
 		Constant_Mocker::clear();
+	}
+
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
 	}
 
 	public function get_var_standard_env() {

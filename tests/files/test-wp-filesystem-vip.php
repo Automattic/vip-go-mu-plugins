@@ -1,10 +1,15 @@
 <?php
 
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+
 namespace Automattic\VIP\Files;
 
-use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+use ErrorException;
+use WP_Filesystem_Base;
+use WP_Filesystem_Direct;
+use WP_Filesystem_VIP;
+use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip.php';
 
@@ -12,20 +17,40 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	private $filesystem;
 	private $fs_uploads_mock;
 	private $fs_direct_mock;
+	private $original_error_reporting;
 
 	public function setUp(): void {
 		parent::setUp();
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'LOCAL_UPLOADS', '/tmp/uploads' );
+		Constant_Mocker::define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
 
 		$this->fs_uploads_mock = $this->createMock( WP_Filesystem_VIP_Uploads::class );
-		$this->fs_direct_mock  = $this->createMock( \WP_Filesystem_Direct::class );
+		$this->fs_direct_mock  = $this->createMock( WP_Filesystem_Direct::class );
 
 		$this->filesystem = new WP_Filesystem_VIP( [
 			$this->fs_uploads_mock,
 			$this->fs_direct_mock,
 		] );
+
+		$this->original_error_reporting = error_reporting();
+
+		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno );
+			}
+
+			return false;
+		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+
 		$this->filesystem = null;
 
 		Constant_Mocker::clear();
@@ -51,7 +76,7 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 				'/var/www/file.jpg',
 				false,
 			],
-			'invalid other wp-* path'       => [
+			'invalid ABSPATH path'          => [
 				ABSPATH . '/wp-includes/js/jquery.js',
 				false,
 			],
@@ -279,15 +304,22 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		$this->assertEquals( $result, $this->fs_direct_mock );
 	}
 
-	public function test__get_transport_for_path__disallowed_write() {
+	public function test__get_transport_for_path__disallowed_write__warning() {
 		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
 
-		$this->expectError();
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
 		$this->expectExceptionMessage( 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `/tmp/wordpress/wp-content/uploads` directories and reads can be performed everywhere.' );
 
-		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
+		$get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
+	}
 
-		$this->assertFalse( $result );
+	public function test__get_transport_for_path__disallowed_write() {
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		$get_transport_for_path = self::get_method( 'get_transport_for_path' );
+
+		$result = $get_transport_for_path->invokeArgs( $this->filesystem, [ '/test/random/directory/file.file', 'write' ] );
+		self::assertFalse( $result );
 	}
 
 	public function test__get_transport_for_path__non_vip_go_env() {
@@ -320,5 +352,36 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		// Test languages install
 		$lang_install_result = $get_transport_for_path->invokeArgs( $this->filesystem, [ WP_CONTENT_DIR . '/languages/test.file', 'write' ] );
 		$this->assertEquals( $lang_install_result, $this->fs_direct_mock );
+	}
+
+	public function test_move_with_no_filesystem(): void {
+		global $wp_filesystem;
+		$save_wp_filesystem = $wp_filesystem;
+
+		try {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- This is the point of the test.
+			$wp_filesystem = null;
+
+			$ok = WP_Filesystem();
+			self::assertTrue( $ok );
+
+			self::assertInstanceOf( WP_Filesystem_VIP::class, $wp_filesystem );
+			/** @var WP_Filesystem_Base $wp_filesystem */
+
+			$tmp      = get_temp_dir();
+			$source   = $tmp . 'source.txt';
+			$dest     = $tmp . 'dest.txt';
+			$original = error_reporting();
+			try {
+				$actual = $wp_filesystem->move( $source, $dest );
+			} finally {
+				error_reporting( $original );
+			}
+
+			self::assertFalse( $actual );
+		} finally {
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+			$wp_filesystem = $save_wp_filesystem;
+		}
 	}
 }

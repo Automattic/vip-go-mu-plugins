@@ -1,6 +1,5 @@
 <?php
-
-/*
+/**
  * Plugin Name: VIP Parse.ly Integration
  * Plugin URI: https://parse.ly
  * Description: Content analytics made easy. Parse.ly gives creators, marketers and developers the tools to understand content performance, prove content value, and deliver tailored content experiences that drive meaningful results.
@@ -16,6 +15,7 @@ declare(strict_types=1);
 
 use Automattic\VIP\Parsely\Telemetry\Telemetry;
 use Automattic\VIP\Parsely\Telemetry\Tracks;
+use Automattic\VIP\Support_User\User as Support_User;
 
 /**
  * This is determined by our value passed to the `WP_Widget` constructor.
@@ -25,6 +25,7 @@ use Automattic\VIP\Parsely\Telemetry\Tracks;
 const WP_PARSELY_RECOMMENDED_WIDGET_BASE_ID = 'parsely_recommended_widget';
 
 // Telemetry is enabled by default on non-production sites.
+add_filter( 'wp_parsely_enable_wpadmin_telemetry', '__return_true' );
 if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 	require __DIR__ . '/Telemetry/class-telemetry.php';
 	require __DIR__ . '/Telemetry/class-telemetry-system.php';
@@ -75,3 +76,29 @@ if ( apply_filters( 'wp_parsely_enable_telemetry_backend', true ) ) {
 		}
 	);
 }
+
+/**
+ * Allows VIP Support users to use the Parse.ly Content Helper feature.
+ *
+ * @param bool    $current_user_can_use_pch_feature Whether the current user can use the Parse.ly Content Helper feature.
+ * @param string  $feature_name The name of the feature.
+ * @param WP_User $current_user The current user.
+ *
+ * @return bool Whether the current user can use the Parse.ly Content Helper feature.
+ */
+add_filter( 'wp_parsely_current_user_can_use_pch_feature', function ( $current_user_can_use_pch_feature, $feature_name, $current_user ) {
+	// If the VIP Support User plugin is not active, return the original value.
+	// This prevents a fatal error when the plugin is not active, under certain conditions.
+	// See https://github.com/Automattic/vip-go-mu-plugins/pull/6016
+	if ( ! class_exists( 'Automattic\\VIP\\Support_User\\User' ) ) {
+		return $current_user_can_use_pch_feature;
+	}
+
+	$user_id = $current_user->ID;
+
+	if ( Support_User::user_has_vip_support_role( $user_id ) ) {
+		return true;
+	}
+
+	return $current_user_can_use_pch_feature;
+}, 999, 3 );

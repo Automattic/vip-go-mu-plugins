@@ -18,8 +18,9 @@ add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
 	$is_files_acl_enabled            = defined( 'VIP_FILES_ACL_ENABLED' ) && true === constant( 'VIP_FILES_ACL_ENABLED' );
-	$is_restrict_all_enabled         = get_option_as_bool( 'vip_files_acl_restrict_all_enabled' );
-	$is_restrict_unpublished_enabled = get_option_as_bool( 'vip_files_acl_restrict_unpublished_enabled' );
+	$is_restrict_all_enabled         = get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' );
+	$is_restrict_unpublished_enabled = get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' );
+	$no_option_set                   = null === $is_restrict_all_enabled && null === $is_restrict_unpublished_enabled;
 
 	if ( ! $is_files_acl_enabled ) {
 		// Throw warning if restrictions are enabled but ACL constant is not set.
@@ -32,11 +33,11 @@ function maybe_load_restrictions() {
 		return;
 	}
 
-	if ( $is_restrict_all_enabled ) {
+	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
-	} elseif ( $is_restrict_unpublished_enabled ) {
+	} elseif ( true === $is_restrict_unpublished_enabled ) {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
@@ -45,8 +46,19 @@ function maybe_load_restrictions() {
 	}
 }
 
-function get_option_as_bool( $option_name ) {
-	$value = get_option( $option_name, false );
+/**
+ * Get an option as a boolean if it exists. If it does not exist, return null.
+ *
+ * @param string $option_name The name of the option to get.
+ *
+ * @return boolean|null The option value as a boolean, or null if the option does not exist.
+ */
+function get_option_as_bool_if_exists( $option_name ) {
+	$value = get_option( $option_name, null );
+
+	if ( null === $value ) {
+		return $value;
+	}
 
 	return in_array( $value, [
 		true,
@@ -60,25 +72,32 @@ function get_option_as_bool( $option_name ) {
 /**
  * Check if the path is allowed for the current context.
  *
- * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit. It's the second portion returned by `Pre_Wp_Utils\prepare_request()`
+ * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit.
+ *                          This is the second portion returned by `Pre_Wp_Utils\prepare_request()`.
+ * @return bool True if the file path is valid for the current site, false otherwise.
  */
 function is_valid_path_for_site( $file_path ) {
-	if ( ! is_multisite() ) {
-		return true;
-	}
+	$is_valid = true;
 
-	// If main site, don't allow access to /sites/ subdirectories.
-	if ( is_main_network() && is_main_site() ) {
-		if ( 0 === strpos( $file_path, 'sites/' ) ) {
-			return false;
+	if ( is_multisite() ) {
+		// If main site, don't allow access to `/sites/` subdirectories.
+		if ( is_main_network() && is_main_site() ) {
+			$is_valid = ! str_starts_with( $file_path, 'sites/' );
+		} else {
+			// Check if the file path matches the current site ID's directory.
+			$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+			$is_valid  = str_starts_with( $file_path, $base_path );
 		}
-
-		return true;
 	}
 
-	$base_path = sprintf( 'sites/%d', get_current_blog_id() );
-
-	return 0 === strpos( $file_path, $base_path );
+	/**
+	 * Filter the result of the path validation for the current site.
+	 * Allows to override the logic used to determine if a file path is valid for the current site.
+	 *
+	 * @param bool   $is_valid  Whether the file path is valid for the current site.
+	 * @param string $file_path Path to the file, minus the `/wp-content/uploads/` bit.
+	 */
+	return apply_filters( 'vip_files_acl_is_valid_path_for_site', $is_valid, $file_path );
 }
 
 /**

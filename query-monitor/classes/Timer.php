@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Timer that collects timing and memory usage.
  *
@@ -8,36 +8,36 @@
 class QM_Timer {
 
 	/**
-	 * @var array<string, mixed>|null
+	 * @var array<string, mixed>
 	 * @phpstan-var array{
 	 *   time: float,
 	 *   memory: int,
-	 *   data: mixed[],
-	 * }|null
+	 *   data: mixed[]|null,
+	 * }
 	 */
-	protected $start = null;
+	protected $start;
 
 	/**
 	 * @var array<string, mixed>|null
 	 * @phpstan-var array{
 	 *   time: float,
 	 *   memory: int,
-	 *   data: mixed[],
+	 *   data: mixed[]|null,
 	 * }|null
 	 */
 	protected $end = null;
 
 	/**
-	 * @var QM_Backtrace|null
+	 * @var QM_Backtrace
 	 */
-	protected $trace = null;
+	protected $trace;
 
 	/**
 	 * @var array<string, array<string, mixed>>
 	 * @phpstan-var array<string, array{
 	 *   time: float,
 	 *   memory: int,
-	 *   data: mixed[],
+	 *   data: mixed[]|null,
 	 * }>
 	 */
 	protected $laps = array();
@@ -46,7 +46,7 @@ class QM_Timer {
 	 * @param mixed[] $data
 	 * @return self
 	 */
-	public function start( array $data = null ) {
+	public function start( ?array $data = null ) {
 		$this->trace = new QM_Backtrace();
 		$this->start = array(
 			'time' => microtime( true ),
@@ -60,7 +60,7 @@ class QM_Timer {
 	 * @param mixed[] $data
 	 * @return self
 	 */
-	public function stop( array $data = null ) {
+	public function stop( ?array $data = null ) {
 
 		$this->end = array(
 			'time' => microtime( true ),
@@ -77,7 +77,7 @@ class QM_Timer {
 	 * @param string $name
 	 * @return self
 	 */
-	public function lap( array $data = null, $name = null ) {
+	public function lap( ?array $data = null, ?string $name = null ) {
 
 		$lap = array(
 			'time' => microtime( true ),
@@ -176,7 +176,7 @@ class QM_Timer {
 	 * @param mixed[] $data
 	 * @return self
 	 */
-	public function end( array $data = null ) {
+	public function end( ?array $data = null ) {
 		return $this->stop( $data );
 	}
 

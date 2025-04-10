@@ -18,10 +18,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
 }
 
+// If VIP_ELASTICSEARCH_DISABLED is explicitly set to `true`, then don't load the plugin
+if ( defined( 'VIP_ELASTICSEARCH_DISABLED' ) && true === constant( 'VIP_ELASTICSEARCH_DISABLED' ) ) {
+	return;
+}
+
 require_once __DIR__ . '/includes/functions/utils.php';
 require_once __DIR__ . '/includes/classes/class-search.php';
 
-if ( \Automattic\VIP\Search\Search::are_es_constants_defined() ) {
+if ( \Automattic\VIP\Search\Search::are_es_constants_defined() && ! wp_installing() ) {
 	$search_plugin = \Automattic\VIP\Search\Search::instance();
 
 	require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Ajax request dispatcher.
  *
@@ -62,7 +62,7 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 	 * @return void
 	 */
 	protected function before_output() {
-		foreach ( glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
 			require_once $file;
 		}
 	}
@@ -112,6 +112,32 @@ class QM_Dispatcher_AJAX extends QM_Dispatcher {
 
 	}
 
+	/**
+	 * @param string $message
+	 * @param mixed[] $e
+	 * @phpstan-param array{
+	 *   message: string,
+	 *   file: string,
+	 *   line: int,
+	 *   type?: int,
+	 *   trace?: mixed|null,
+	 * } $e
+	 */
+	public function output_fatal( $message, array $e ): void {
+		if ( ! headers_sent() ) {
+			header( 'Content-Type: application/json; charset=' . get_option( 'blog_charset' ) );
+		}
+
+		// @TODO
+		echo wp_json_encode(
+			array(
+				'code' => 'qm_fatal',
+				'message' => $message,
+				'data' => $e,
+			),
+			JSON_UNESCAPED_SLASHES
+		);
+	}
 }
 
 /**

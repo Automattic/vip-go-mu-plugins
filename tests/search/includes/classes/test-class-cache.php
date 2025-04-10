@@ -1,44 +1,46 @@
 <?php
 namespace Automattic\VIP\Search;
 
+use Automattic\Test\Constant_Mocker;
 use WP_Query;
 use WP_UnitTestCase;
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Cache_Test extends WP_UnitTestCase {
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
-			define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		}
-	}
+	private $apc_filters = [
+		'posts_request',
+		'posts_results',
+		'post_limits_request',
+		'found_posts_query',
+		'found_posts',
+	];
+
+	/** @var Search */
+	private $es;
 
 	public function setUp(): void {
 		parent::setUp();
+
+		Constant_Mocker::clear();
+		define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+
 		require_once __DIR__ . '/../../../../search/search.php';
 		require_once __DIR__ . '/../../../../advanced-post-cache/advanced-post-cache.php';
 		require_once __DIR__ . '/../../../../prometheus.php';
 
-		$this->apc_filters = [
-			'posts_request',
-			'posts_results',
-			'post_limits_request',
-			'found_posts_query',
-			'found_posts',
-		];
-
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 
-		$this->es = new \Automattic\VIP\Search\Search();
+		$this->es = new Search();
 		$this->es->init();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 
 		\ElasticPress\register_indexable_posts();
 
 		add_filter( 'ep_skip_query_integration', '__return_false', 100 );
+	}
+
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
 	}
 
 	public function test_apc_compat_pre_get_posts_wired() {
@@ -51,21 +53,21 @@ class Cache_Test extends WP_UnitTestCase {
 		}
 
 		// All of APC's filters should be unhooked for EP queries
-		$q = new WP_Query( [
+		new WP_Query( [ // NOSONAR
 			's'            => 'test',
 			'ep_integrate' => true,
 		] );
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) {
+		$filters = array_filter( $this->apc_filters, function ( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
 
 		$this->assertEmpty( $filters, 'Failed to remove APC filters' );
 
 		// All of APC's filters should be re-enabled for any non-EP query
-		$q = new WP_Query( [ 'posts_per_page' => 10 ] );
+		new WP_Query( [ 'posts_per_page' => 10 ] ); // NOSONAR
 
-		$filters = array_filter( $this->apc_filters, function( $filter ) {
+		$filters = array_filter( $this->apc_filters, function ( $filter ) {
 			return false !== has_filter( $filter, [ $GLOBALS['advanced_post_cache_object'], $filter ] );
 		} );
 

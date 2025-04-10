@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Abstract plugin wrapper.
  *
@@ -17,11 +17,6 @@ abstract class QM_Plugin {
 	 * @var string
 	 */
 	public $file = '';
-
-	/**
-	 * @var array<string, string>
-	 */
-	private $icons = array();
 
 	/**
 	 * Class constructor
@@ -59,12 +54,6 @@ abstract class QM_Plugin {
 	 * @return string Version
 	 */
 	final public function plugin_ver( $file ) {
-		$path = $this->plugin_path( $file );
-
-		if ( file_exists( $path ) ) {
-			return (string) filemtime( $path );
-		}
-
 		return QM_VERSION;
 	}
 
@@ -105,28 +94,15 @@ abstract class QM_Plugin {
 	 * @param string $name Icon name.
 	 * @return string Icon HTML.
 	 */
-	public function icon( $name ) {
+	public static function icon( $name ) {
 		if ( 'blank' === $name ) {
 			return '<span class="qm-icon qm-icon-blank"></span>';
 		}
 
-		if ( isset( $this->icons[ $name ] ) ) {
-			return $this->icons[ $name ];
-		}
-
-		$file = $this->plugin_path( "assets/icons/{$name}.svg" );
-
-		if ( ! file_exists( $file ) ) {
-			return '';
-		}
-
-		$this->icons[ $name ] = sprintf(
-			'<span class="qm-icon qm-icon-%1$s" aria-hidden="true">%2$s</span>',
-			esc_attr( $name ),
-			file_get_contents( $file )
+		return sprintf(
+			'<svg class="qm-icon qm-icon-%1$s" aria-hidden="true" width="20" height="20" viewBox="0 0 20 20"><use href="#qm-icon-%1$s" /></svg>',
+			esc_attr( $name )
 		);
-
-		return $this->icons[ $name ];
 	}
 
 }

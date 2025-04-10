@@ -28,10 +28,10 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	}
 
 	protected function __construct() {
-		add_action( 'two-factor-user-options-' . __CLASS__, array( $this, 'user_options' ) );
+		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
 		add_action( 'personal_options_update', array( $this, 'user_options_update' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ) );
-		return parent::__construct();
+		parent::__construct();
 	}
 
 	/**
@@ -100,7 +100,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function generate_and_send_token( $user ) {
-		require_once WPMU_PLUGIN_DIR . '/lib/sms.php';
+		require_once WPVIP_MU_PLUGIN_DIR . '/lib/sms.php';
 
 		$token   = $this->generate_token( $user->ID ); // Store in variable to prevent generating code twice
 		$message = $this->format_sms_message( $token );
@@ -121,7 +121,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
-		if ( ! isset( $_GET['action'] ) || 'validate_2fa' !== $_GET['action'] ) {
+		$action = sanitize_key( $_GET['action'] ?? '' );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
+		$provider = sanitize_text_field( $_GET['provider'] ?? '' );
+		$method   = sanitize_text_field( $_SERVER['REQUEST_METHOD'] ?? '' );
+
+		if ( ( 'POST' === $method && 'validate_2fa' !== $action ) || ( 'GET' === $method || 'Two_Factor_SMS' === $provider ) ) {
 			$this->generate_and_send_token( $user );
 		}
 
@@ -236,6 +241,5 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			$user = get_userdata( $user_id );
 			$this->generate_and_send_token( $user );
 		}
-
 	}
 }

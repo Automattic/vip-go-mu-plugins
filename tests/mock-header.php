@@ -2,12 +2,14 @@
 
 namespace Automattic\Test;
 
-$headers = [];
+$status_code = false;
+$headers     = [];
 
 function header_remove( ?string $name = null ): void {
-	global $headers;
+	global $headers, $status_code;
 	if ( null === $name ) {
-		$headers = [];
+		$headers     = [];
+		$status_code = false;
 	} else {
 		foreach ( $headers as $index => $header ) {
 			$parts = explode( ':', $header, 2 );
@@ -25,8 +27,7 @@ function headers_list(): array {
 }
 
 function headers_sent(): bool {
-	global $headers;
-	return ! empty( $headers );
+	return false;
 }
 
 function header( string $header, bool $replace = true ) {
@@ -39,4 +40,15 @@ function header( string $header, bool $replace = true ) {
 	}
 
 	$headers[] = $header;
+}
+
+function http_response_code( $code = 0 ) {
+	global $status_code;
+	if ( ! $code ) {
+		return $status_code;
+	}
+
+	$previous    = $status_code;
+	$status_code = $code;
+	return $previous;
 }

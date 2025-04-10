@@ -1,11 +1,13 @@
 <?php
 
-use Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException;
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
-	use ExpectPHPException;
-
+	/** @var WPCOM_VIP_Cache_Manager */
 	public $cache_manager;
+
+	private $original_error_reporting;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -13,6 +15,22 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
+
+		$this->original_error_reporting = error_reporting();
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno );
+			}
+
+			return false;
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		parent::tearDown();
 	}
 
 	public function get_data_for_valid_queue_purge_url_test() {
@@ -69,17 +87,25 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
+	public function test__invalid__queue_purge_url__warning( $queue_url ) {
+		$this->expectException( ErrorException::class );
+		$this->expectExceptionCode( E_USER_WARNING );
+		$this->cache_manager->queue_purge_url( $queue_url );
+	}
+
+	/**
+	 * @dataProvider get_data_for_invalid_queue_purge_url_test
+	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		$this->expectWarning();
+		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
 
-		$actual_output = $this->cache_manager->queue_purge_url( $queue_url );
-
-		$this->assertFalse( $actual_output, 'Return value from `queue_purge_url` should be false.' );
-		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
+		$result = $this->cache_manager->queue_purge_url( $queue_url );
+		self::assertFalse( $result );
+		self::assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
 	}
 
 	public function test__page_for_posts_post_purge_url() {
-		$page_for_posts = $this->factory->post->create_and_get(
+		$page_for_posts = $this->factory()->post->create_and_get(
 			[
 				'post_type'  => 'page',
 				'post_title' => 'blog-archive',
@@ -88,7 +114,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		update_option( 'page_for_posts', $page_for_posts->ID );
 		$permalink = get_permalink( $page_for_posts );
 
-		$post = (array) $this->factory->post->create_and_get( [ 'post_title' => 'test post' ] );
+		$post = (array) $this->factory()->post->create_and_get( [ 'post_title' => 'test post' ] );
 
 		$post['post_title'] = 'updated';
 

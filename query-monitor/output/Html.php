@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * Abstract output class for HTML pages.
  *
@@ -49,7 +49,7 @@ abstract class QM_Output_Html extends QM_Output {
 		ob_start();
 		// compat until I convert all the existing outputters to use `get_output()`
 		$this->output();
-		$out = ob_get_clean();
+		$out = (string) ob_get_clean();
 		return $out;
 	}
 
@@ -172,6 +172,7 @@ abstract class QM_Output_Html extends QM_Output {
 		echo '<thead>';
 		echo '<tr>';
 		echo '<th scope="col">' . esc_html__( 'Hook', 'query-monitor' ) . '</th>';
+		echo '<th scope="col">' . esc_html__( 'Type', 'query-monitor' ) . '</th>';
 		echo '<th scope="col">' . esc_html__( 'Priority', 'query-monitor' ) . '</th>';
 		echo '<th scope="col">' . esc_html__( 'Callback', 'query-monitor' ) . '</th>';
 		echo '<th scope="col">' . esc_html__( 'Component', 'query-monitor' ) . '</th>';
@@ -185,7 +186,7 @@ abstract class QM_Output_Html extends QM_Output {
 				continue;
 			}
 
-			QM_Output_Html_Hooks::output_hook_table( $this->collector->$key );
+			QM_Output_Html_Hooks::output_hook_table( $this->collector->$key, true );
 		}
 
 		echo '</tbody>';
@@ -282,10 +283,10 @@ abstract class QM_Output_Html extends QM_Output {
 	/**
 	 * Returns the table filter controls. Safe for output.
 	 *
-	 * @param  string   $name   The name for the `data-` attributes that get filtered by this control.
-	 * @param  string[] $values Option values for this control.
-	 * @param  string   $label  Label text for the filter control.
-	 * @param  array    $args {
+	 * @param  string         $name   The name for the `data-` attributes that get filtered by this control.
+	 * @param  (string|int)[] $values Option values for this control.
+	 * @param  string         $label  Label text for the filter control.
+	 * @param  array          $args {
 	 *     @type string   $highlight The name for the `data-` attributes that get highlighted by this control.
 	 *     @type string[] $prepend   Associative array of options to prepend to the list of values.
 	 *     @type string[] $append    Associative array of options to append to the list of values.
@@ -367,7 +368,7 @@ abstract class QM_Output_Html extends QM_Output {
 	 */
 	protected function build_sorter( $heading = '' ) {
 		$out = '';
-		$out .= '<label class="qm-th">';
+		$out .= '<span class="qm-th">';
 		$out .= '<span class="qm-sort-heading">';
 
 		if ( '#' === $heading ) {
@@ -378,9 +379,9 @@ abstract class QM_Output_Html extends QM_Output {
 
 		$out .= '</span>';
 		$out .= '<button class="qm-sort-controls" aria-label="' . esc_attr__( 'Sort data by this column', 'query-monitor' ) . '">';
-		$out .= QueryMonitor::init()->icon( 'arrow-down' );
+		$out .= QueryMonitor::icon( 'arrow-down' );
 		$out .= '</button>';
-		$out .= '</label>';
+		$out .= '</span>';
 		return $out;
 	}
 
@@ -410,7 +411,7 @@ abstract class QM_Output_Html extends QM_Output {
 			esc_attr( $filter ),
 			esc_attr( $value ),
 			$label,
-			QueryMonitor::init()->icon( 'filter' )
+			QueryMonitor::icon( 'filter' )
 		);
 	}
 
@@ -426,7 +427,7 @@ abstract class QM_Output_Html extends QM_Output {
 			'<a href="%1$s" class="qm-link">%2$s%3$s</a>',
 			esc_attr( $href ),
 			$label,
-			QueryMonitor::init()->icon( 'external' )
+			QueryMonitor::icon( 'external' )
 		);
 	}
 
@@ -458,7 +459,7 @@ abstract class QM_Output_Html extends QM_Output {
 		$regex = 'ADD|AFTER|ALTER|AND|BEGIN|COMMIT|CREATE|DELETE|DESCRIBE|DO|DROP|ELSE|END|EXCEPT|EXPLAIN|FROM|GROUP|HAVING|INNER|INSERT|INTERSECT|LEFT|LIMIT|ON|OR|ORDER|OUTER|RENAME|REPLACE|RIGHT|ROLLBACK|SELECT|SET|SHOW|START|THEN|TRUNCATE|UNION|UPDATE|USE|USING|VALUES|WHEN|WHERE|XOR';
 		$sql = preg_replace( '# (' . $regex . ') #', '<br> $1 ', $sql );
 
-		$keywords = '\b(?:ACTION|ADD|AFTER|ALTER|AND|ASC|AS|AUTO_INCREMENT|BEGIN|BETWEEN|BIGINT|BINARY|BIT|BLOB|BOOLEAN|BOOL|BREAK|BY|CASE|COLLATE|COLUMNS?|COMMIT|CONTINUE|CREATE|DATA(?:BASES?)?|DATE(?:TIME)?|DECIMAL|DECLARE|DEC|DEFAULT|DELAYED|DELETE|DESCRIBE|DESC|DISTINCT|DOUBLE|DO|DROP|DUPLICATE|ELSE|END|ENUM|EXCEPT|EXISTS|EXPLAIN|FIELDS|FLOAT|FORCE|FOREIGN|FOR|FROM|FULL|FUNCTION|GROUP|HAVING|IF|IGNORE|INDEX|INNER|INSERT|INTEGER|INTERSECT|INTERVAL|INTO|INT|IN|IS|JOIN|KEYS?|LEFT|LIKE|LIMIT|LONG(?:BLOB|TEXT)|MEDIUM(?:BLOB|INT|TEXT)|MERGE|MIDDLEINT|NOT|NO|NULLIF|ON|ORDER|OR|OUTER|PRIMARY|PROC(?:EDURE)?|REGEXP|RENAME|REPLACE|RIGHT|RLIKE|ROLLBACK|SCHEMA|SELECT|SET|SHOW|SMALLINT|START|TABLES?|TEXT(?:SIZE)?|THEN|TIME(?:STAMP)?|TINY(?:BLOB|INT|TEXT)|TRUNCATE|UNION|UNIQUE|UNSIGNED|UPDATE|USE|USING|VALUES?|VAR(?:BINARY|CHAR)|WHEN|WHERE|WHILE|XOR)\b';
+		$keywords = '\b(?:ACTION|ADD|AFTER|AGAINST|ALTER|AND|ASC|AS|AUTO_INCREMENT|BEGIN|BETWEEN|BIGINT|BINARY|BIT|BLOB|BOOLEAN|BOOL|BREAK|BY|CASE|COLLATE|COLUMNS?|COMMIT|CONTINUE|CREATE|DATA(?:BASES?)?|DATE(?:TIME)?|DECIMAL|DECLARE|DEC|DEFAULT|DELAYED|DELETE|DESCRIBE|DESC|DISTINCT|DOUBLE|DO|DROP|DUPLICATE|ELSE|END|ENUM|EXCEPT|EXISTS|EXPLAIN|FIELDS|FLOAT|FORCE|FOREIGN|FOR|FROM|FULL|FUNCTION|GROUP|HAVING|IF|IGNORE|INDEX|INNER|INSERT|INTEGER|INTERSECT|INTERVAL|INTO|INT|IN|IS|JOIN|KEYS?|LEFT|LIKE|LIMIT|LONG(?:BLOB|TEXT)|MEDIUM(?:BLOB|INT|TEXT)|MATCH|MERGE|MIDDLEINT|NOT|NO|NULLIF|ON|ORDER|OR|OUTER|PRIMARY|PROC(?:EDURE)?|REGEXP|RENAME|REPLACE|RIGHT|RLIKE|ROLLBACK|SCHEMA|SELECT|SET|SHOW|SMALLINT|START|TABLES?|TEXT(?:SIZE)?|THEN|TIME(?:STAMP)?|TINY(?:BLOB|INT|TEXT)|TRUNCATE|UNION|UNIQUE|UNSIGNED|UPDATE|USE|USING|VALUES?|VAR(?:BINARY|CHAR)|WHEN|WHERE|WHILE|XOR)\b';
 		$sql = preg_replace( '#' . $keywords . '#', '<b>$0</b>', $sql );
 
 		return '<code>' . $sql . '</code>';
@@ -478,7 +479,7 @@ abstract class QM_Output_Html extends QM_Output {
 	/**
 	 * Returns a file path, name, and line number, or a clickable link to the file. Safe for output.
 	 *
-	 * @link https://querymonitor.com/blog/2019/02/clickable-stack-traces-and-function-names-in-query-monitor/
+	 * @link https://querymonitor.com/help/clickable-stack-traces-and-function-names/
 	 *
 	 * @param  string $text        The display text, such as a function name or file name.
 	 * @param  string $file        The full file path and name.
@@ -495,7 +496,7 @@ abstract class QM_Output_Html extends QM_Output {
 			}
 		}
 
-		$link_line = ( $line ) ? $line : 1;
+		$link_line = $line ?: 1;
 
 		if ( ! self::has_clickable_links() ) {
 			$fallback = QM_Util::standard_dir( $file, '' );
@@ -521,7 +522,9 @@ abstract class QM_Output_Html extends QM_Output {
 			}
 		}
 
-		$link = sprintf( self::get_file_link_format(), rawurlencode( $file ), intval( $link_line ) );
+		/** @var string */
+		$link_format = self::get_file_link_format();
+		$link = sprintf( $link_format, rawurlencode( $file ), intval( $link_line ) );
 
 		if ( $is_filename ) {
 			$format = '<a href="%1$s" class="qm-edit-link">%2$s%3$s</a>';
@@ -533,17 +536,16 @@ abstract class QM_Output_Html extends QM_Output {
 			$format,
 			esc_attr( $link ),
 			esc_html( $text ),
-			QueryMonitor::init()->icon( 'edit' )
+			QueryMonitor::icon( 'edit' )
 		);
 	}
 
 	/**
 	 * Provides a protocol URL for edit links in QM stack traces for various editors.
 	 *
-	 * @param string $editor the chosen code editor
-	 * @param string $default_format a format to use if no editor is found
-	 *
-	 * @return string a protocol URL format
+	 * @param string       $editor         The chosen code editor.
+	 * @param string|false $default_format A format to use if no editor is found.
+	 * @return string|false A protocol URL format or boolean false.
 	 */
 	public static function get_editor_file_link_format( $editor, $default_format ) {
 		switch ( $editor ) {
@@ -551,14 +553,14 @@ abstract class QM_Output_Html extends QM_Output {
 				return 'phpstorm://open?file=%f&line=%l';
 			case 'vscode':
 				return 'vscode://file/%f:%l';
-			case 'atom':
-				return 'atom://open/?url=file://%f&line=%l';
 			case 'sublime':
 				return 'subl://open/?url=file://%f&line=%l';
 			case 'textmate':
 				return 'txmt://open/?url=file://%f&line=%l';
 			case 'netbeans':
 				return 'nbopen://%f:%l';
+			case 'nova':
+				return 'nova://open?path=%f&line=%l';
 			default:
 				return $default_format;
 		}
@@ -581,7 +583,7 @@ abstract class QM_Output_Html extends QM_Output {
 			/**
 			 * Filters the clickable file link format.
 			 *
-			 * @link https://querymonitor.com/blog/2019/02/clickable-stack-traces-and-function-names-in-query-monitor/
+			 * @link https://querymonitor.com/help/clickable-stack-traces-and-function-names/
 			 * @since 3.0.0
 			 *
 			 * @param string|false $format The format of the clickable file link, or false if there is none.
@@ -601,15 +603,25 @@ abstract class QM_Output_Html extends QM_Output {
 	 * @return array<string, string>
 	 */
 	public static function get_file_path_map() {
+		$map = array();
+
+		$host_path = getenv( 'HOST_PATH' );
+
+		if ( ! empty( $host_path ) ) {
+			$source = rtrim( ABSPATH, DIRECTORY_SEPARATOR );
+			$replacement = rtrim( $host_path, DIRECTORY_SEPARATOR );
+			$map[ $source ] = $replacement;
+		}
+
 		/**
 		 * Filters the file path mapping for clickable file links.
 		 *
-		 * @link https://querymonitor.com/blog/2019/02/clickable-stack-traces-and-function-names-in-query-monitor/
+		 * @link https://querymonitor.com/help/clickable-stack-traces-and-function-names/
 		 * @since 3.0.0
 		 *
-		 * @param string[] $file_map Array of file path mappings. Keys are the source paths and values are the replacement paths.
+		 * @param array<string, string> $file_map Array of file path mappings. Keys are the source paths and values are the replacement paths.
 		 */
-		return apply_filters( 'qm/output/file_path_map', array() );
+		return apply_filters( 'qm/output/file_path_map', $map );
 	}
 
 	/**

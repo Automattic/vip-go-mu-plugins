@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 /**
  * HTTP redirect dispatcher.
  *
@@ -35,8 +35,10 @@ class QM_Dispatcher_Redirect extends QM_Dispatcher {
 
 		$this->before_output();
 
-		/* @var QM_Output_Headers[] */
-		foreach ( $this->get_outputters( 'headers' ) as $id => $output ) {
+		/** @var array<string, QM_Output_Headers> $outputters */
+		$outputters = $this->get_outputters( 'headers' );
+
+		foreach ( $outputters as $output ) {
 			$output->output();
 		}
 
@@ -50,7 +52,7 @@ class QM_Dispatcher_Redirect extends QM_Dispatcher {
 	 * @return void
 	 */
 	protected function before_output() {
-		foreach ( glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
+		foreach ( (array) glob( $this->qm->plugin_path( 'output/headers/*.php' ) ) as $file ) {
 			require_once $file;
 		}
 	}

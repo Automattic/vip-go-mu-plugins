@@ -180,10 +180,9 @@ function _vip_contrib_add_upload_cap() {
  * @param int $attachment_id ID of the attachment
  * @param int $width Width of our resized image
  * @param int $height Height of our resized image
- * @param bool $crop (optional) whether or not to crop the image
  * @return string URL of the resized attachmen
  */
-function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height, $crop = false ) {
+function wpcom_vip_get_resized_attachment_url( $attachment_id, $width, $height ) {
 	$url = wp_get_attachment_url( $attachment_id );
 
 	if ( ! $url ) {
@@ -214,13 +213,13 @@ function wpcom_vip_sharing_twitter_via( $via = '' ) {
 		$via     = preg_replace( '/[^A-Za-z0-9_\-]/', '', $via );
 		$via     = apply_filters( 'sanitize_key', $via, $raw_via );
 
-		$via_callback = function() use ( $via ) {
+		$via_callback = function () use ( $via ) {
 			return $via;
 		};
 	}
 
 	add_filter( 'jetpack_sharing_twitter_via', $via_callback );
-	add_filter( 'jetpack_open_graph_tags', function( $tags ) use ( $via ) {
+	add_filter( 'jetpack_open_graph_tags', function ( $tags ) use ( $via ) {
 		if ( isset( $tags['twitter:site'] ) ) {
 			if ( empty( $via ) ) {
 				unset( $tags['twitter:site'] );
@@ -250,7 +249,7 @@ function wpcom_vip_disable_post_flair() {
  */
 function wpcom_vip_disable_sharing() {
 	// Post Flair sets things up on init so we need to call on that if init hasn't fired yet.
-	_wpcom_vip_call_on_hook_or_execute( function() {
+	_wpcom_vip_call_on_hook_or_execute( function () {
 		remove_filter( 'post_flair', 'sharing_display', 20 );
 		remove_filter( 'the_content', 'sharing_display', 19 );
 		remove_filter( 'the_excerpt', 'sharing_display', 19 );
@@ -265,7 +264,7 @@ function wpcom_vip_disable_sharing() {
  * Note: this disables things like smart buttons and share counts displayed alongside the buttons. Those will need to be handled manually if desired.
  */
 function wpcom_vip_disable_sharing_resources() {
-	_wpcom_vip_call_on_hook_or_execute( function() {
+	_wpcom_vip_call_on_hook_or_execute( function () {
 		add_filter( 'sharing_js', '__return_false' );
 		remove_action( 'wp_head', 'sharing_add_header', 1 );
 	}, 'init', 99 );
@@ -356,19 +355,19 @@ function widont( $str = '' ) {
 // Leave these wrapped in function_exists() b/c they are so generically named
 if ( ! function_exists( 'wp_startswith' ) ) :
 	function wp_startswith( $haystack, $needle ) {
-		return 0 === strpos( (string) $haystack, (string) $needle );
+		return str_starts_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_endswith' ) ) :
 	function wp_endswith( $haystack, $needle ) {
-		return substr( (string) $haystack, -strlen( (string) $needle ) ) === $needle;
+		return str_ends_with( $haystack, $needle );
 	}
 endif;
 
 if ( ! function_exists( 'wp_in' ) ) :
 	function wp_in( $needle, $haystack ) {
-		return false !== strpos( (string) $haystack, (string) $needle );
+		return str_contains( $haystack, $needle );
 	}
 endif;
 
@@ -445,8 +444,13 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 			if ( $append_old_uri ) {
 				$new_url .= str_replace( $old_path, '', $request_uri );
 			}
-			wp_redirect( $new_url, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-			exit();
+
+			if ( function_exists( 'wp_redirect' ) ) {
+				wp_redirect( $new_url, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+			} else {
+				header( "Location: {$new_url}", true, 301 );
+			}
+			exit;
 		}
 	}
 }
@@ -489,7 +493,12 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 		foreach ( $vip_redirects_array as $old_url => $new_url ) {
 			if ( preg_match( $old_url, $uri, $matches ) ) {
 				$redirect_uri = preg_replace( $old_url, $new_url, $uri );
-				wp_redirect( $redirect_uri, 301 );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
+
+				if ( function_exists( 'wp_redirect' ) ) {
+					wp_redirect( $redirect_uri, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+				} else {
+					header( "Location: {$redirect_uri}", true, 301 );
+				}
 				exit;
 			}
 		}
@@ -676,8 +685,12 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
  */
 function vip_main_feed_redirect( $target ) {
 	if ( wpcom_vip_is_main_feed_requested() && ! wpcom_vip_is_feedservice_ua() ) {
-		wp_redirect( $target, '302' );  // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
-		die;
+		if ( function_exists( 'wp_redirect' ) ) {
+			wp_redirect( $target, 302 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
+		} else {
+			header( "Location: {$target}", true, 302 );
+		}
+		exit;
 	}
 }
 
@@ -829,11 +842,9 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 			_doing_it_wrong( __FUNCTION__, 'Remote POST request timeouts are capped at 15 seconds for admin requests for performance and stability reasons.', null );
 			$timeout = 15;
 		}
-	} else {
-		if ( $timeout > 5 ) {
+	} elseif ( $timeout > 5 ) {
 			_doing_it_wrong( __FUNCTION__, 'Remote request timeouts are capped at 5 seconds for performance and stability reasons.', null );
 			$timeout = 5;
-		}
 	}
 
 	// retry time < 10 seconds will default to 10 seconds.
@@ -876,15 +887,13 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 				'hits' => 1,
 			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
 		}
-	} else {
-		if ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
+	} elseif ( false !== $option && $option['hits'] > 0 && time() - $option['time'] < $retry ) {
 			wp_cache_set( $cache_key, array(
 				'time' => $option['time'],
 				'hits' => $option['hits'] - 1,
 			), $cache_group, $retry );  // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		} else {
-			wp_cache_delete( $cache_key, $cache_group );
-		}
+	} else {
+		wp_cache_delete( $cache_key, $cache_group );
 	}
 
 	if ( is_wp_error( $response ) ) {
@@ -943,7 +952,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 		$email = $user->user_email;
 	}
 
-	$hashed_email = md5( strtolower( trim( $email ) ) );
+	$hashed_email = hash( 'sha256', strtolower( trim( $email ) ) );
 	$profile_url  = esc_url_raw( sprintf( 'https://en.gravatar.com/%s.php', $hashed_email ), array( 'http', 'https' ) );
 
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
@@ -970,7 +979,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
  */
 function wpcom_vip_email_has_gravatar( $email ) {
 
-	$hash = md5( strtolower( trim( $email ) ) );
+	$hash = hash( 'sha256', strtolower( trim( $email ) ) );
 
 	// If not in the cache, check again
 	$has_gravatar = wp_cache_get( $hash, 'email_has_gravatar' );
@@ -1025,7 +1034,7 @@ function wpcom_vip_is_valid_domain( $url, $whitelisted_domains ) {
  * @param array $users Array of user logins
  */
 function wpcom_vip_bulk_user_management_whitelist( $users ) {
-	add_filter( 'bulk_user_management_admin_users', function() use ( $users ) {
+	add_filter( 'bulk_user_management_admin_users', function () use ( $users ) {
 		return $users;
 	} );
 }
@@ -1183,7 +1192,7 @@ function wpcom_vip_load_plugin( $plugin = false, $folder = false ) {
 	} else {
 		$test_directories[] = WP_PLUGIN_DIR;
 		if ( wpcom_vip_can_use_shared_plugin( $plugin ) ) {
-			$test_directories[] = WPMU_PLUGIN_DIR . '/shared-plugins';
+			$test_directories[] = WPVIP_MU_PLUGIN_DIR . '/shared-plugins';
 		}
 	}
 
@@ -1252,7 +1261,6 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 	// Array of shared plugins we are not deprecating
 	$protected_shared_plugins = array(
 		'two-factor',
-		'jetpack-force-2fa',
 	);
 
 	if ( ! defined( 'WPCOM_VIP_DISABLE_SHARED_PLUGINS' ) ) {
@@ -1269,17 +1277,20 @@ function wpcom_vip_can_use_shared_plugin( $plugin ) {
 /**
  * Helper function to check if we can load plugins or not.
  */
-function wpcom_vip_should_load_plugins() {
+function wpcom_vip_should_load_plugins( $_reset = false ) {
 	static $should_load_plugins;
 
-	if ( isset( $should_load_plugins ) ) {
+	if ( ! $_reset && isset( $should_load_plugins ) ) {
 		return $should_load_plugins;
 	}
 
 	$should_load_plugins = true;
 
-	// WP-CLI loaded with --skip-plugins flag
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	if ( wp_installing() && ! str_ends_with( strtok( $_SERVER['REQUEST_URI'] ?? '', '?' ), '/wp-activate.php' ) ) {
+		$should_load_plugins = false;
+	} elseif ( defined( 'WP_CLI' ) && WP_CLI ) {
+		// WP-CLI loaded with --skip-plugins flag
 		$skipped_plugins = \WP_CLI::get_runner()->config['skip-plugins'];
 		if ( $skipped_plugins ) {
 			$should_load_plugins = false;
@@ -1432,6 +1443,16 @@ function is_automattician( $user_id = false ) {
 	if ( $user_id ) {
 		$user = new WP_User( $user_id );
 	} else {
+		if ( ! function_exists( 'wp_get_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `plugins_loaded` hook.', null );
+			return false;
+		}
+
+		if ( ! did_action( 'init' ) && ! has_filter( 'determine_current_user' ) ) {
+			_doing_it_wrong( __FUNCTION__, 'This function should not be called without $user_id before the `init` hook without a filter for the `determine_current_user` hook.', null );
+			return false;
+		}
+
 		$user = wp_get_current_user();
 	}
 
@@ -1627,4 +1648,17 @@ function vip_get_hyper_servers( $hyperdb, $operation = 'all', $dataset = 'global
 	}
 
 	return $hyperdb->hyper_servers[ $dataset ];
+}
+
+/**
+ * Checks if a given string looks like a VIP convenience domain.
+ *
+ * Examples of a VIP convenience domain are `example.go-vip.co` and `example.go-vip.net`.
+ *
+ * @param string $domain Domain to check.
+ * @return bool True if the domain is a convenience domain.
+ */
+function is_vip_convenience_domain( string $domain ): bool {
+	$domain = strtolower( $domain );
+	return str_ends_with( $domain, '.go-vip.co' ) || str_ends_with( $domain, '.go-vip.net' );
 }

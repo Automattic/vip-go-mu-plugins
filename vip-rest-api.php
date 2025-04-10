@@ -26,9 +26,7 @@ function wpcom_vip_generate_go_rest_api_request_token( $namespace, $nonce_salt =
 
 	$hash_data = $tick . '|' . $namespace;
 
-	$hash = hash_hmac( 'sha256', $hash_data, $nonce_salt );
-
-	return $hash;
+	return hash_hmac( 'sha256', $hash_data, $nonce_salt );
 }
 
 /**

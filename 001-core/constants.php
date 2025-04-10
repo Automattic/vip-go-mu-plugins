@@ -40,5 +40,10 @@ function define_db_constants( $hyperdb ): void {
 		define( 'DB_USER', $db[0]['user'] );
 		define( 'DB_PASSWORD', $db[0]['password'] );
 		define( 'DB_NAME', $db[0]['name'] );
+
+		if ( ! isset( $GLOBALS['wpdb']->dbname ) && \Automattic\VIP\Utils\Context::is_wp_cli() ) {
+			// Only assign the property for the database name if we're in WP-CLI (for now).
+			$GLOBALS['wpdb']->dbname = constant( 'DB_NAME' );
+		}
 	}
 }

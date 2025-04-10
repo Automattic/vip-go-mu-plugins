@@ -2,9 +2,9 @@
 
 namespace Automattic\VIP\Search\Queue;
 
-use Automattic\VIP\Search\Queue as Queue;
+use Automattic\VIP\Search\Queue;
 use Automattic\WP\Cron_Control\Events_Store;
-use \ElasticPress\Indexables as Indexables;
+use ElasticPress\Indexables;
 use WP_Error;
 
 class Cron {
@@ -16,7 +16,7 @@ class Cron {
 	/**
 	 * How many objects to re-index at a time in a single cron job
 	 */
-	const PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT = 1000;
+	const PROCESSOR_MAX_OBJECTS_PER_CRON_EVENT = 500;
 
 	/**
 	 * The name of the recurring cron event that checks for any unscheduled or deadlocked jobs
@@ -32,6 +32,11 @@ class Cron {
 	 * Custom cron interval value
 	 */
 	const SWEEPER_CRON_INTERVAL = 1 * \MINUTE_IN_SECONDS;
+
+	/**
+	 * The lock to prevent multiple instances of the sweeper from running
+	 */
+	const SWEEPER_CRON_LOCK = 'vip_search_queue_sweeper_lock';
 
 	/**
 	 * The name of the cron event for processing term updates
@@ -84,7 +89,11 @@ class Cron {
 	}
 
 	public function get_max_concurrent_processor_job_count() {
-		$allowed_total_concurrency = (int) ceil( \Automattic\WP\Cron_Control\JOB_CONCURRENCY_LIMIT / 4 );
+		if ( defined( 'VIP_GO_ENV' ) && constant( 'VIP_GO_ENV' ) !== 'production' ) {
+			return 1;
+		}
+
+		$allowed_total_concurrency = (int) ceil( constant( 'Automattic\\WP\\Cron_Control\\JOB_CONCURRENCY_LIMIT' ) / 4 );
 		return min( self::MAX_PROCESSOR_JOB_COUNT, $allowed_total_concurrency );
 	}
 
@@ -247,6 +256,11 @@ class Cron {
 			$this->disable_sweeper_job();
 		}
 
+		if ( true !== wp_cache_add( self::SWEEPER_CRON_LOCK, time(), 'vip', 5 * MINUTE_IN_SECONDS ) ) {
+			// Bail if it's already running.
+			return;
+		}
+
 		$this->queue->free_deadlocked_jobs();
 
 		$job_count     = $this->get_processor_job_count();
@@ -263,6 +277,8 @@ class Cron {
 
 			$job_count = $this->get_processor_job_count();
 		}
+
+		wp_cache_delete( self::SWEEPER_CRON_LOCK, 'vip' );
 	}
 
 	/**

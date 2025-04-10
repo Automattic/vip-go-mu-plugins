@@ -8,8 +8,7 @@ namespace Automattic\VIP\Support_User;
 use WP_CLI_Command;
 
 /**
- * Implements a WP CLI command that converts guid users to meta users
- * Class command
+ * Implements a WP CLI command that converts guid users to meta users.
  *
  * @package a8c\vip_support
  */
@@ -150,7 +149,6 @@ class Command extends WP_CLI_Command {
 
 		\WP_CLI::success( __( 'VIP Support roles successfully reset' ) );
 	}
-
 }
 
 \WP_CLI::add_command( 'vipsupport', __NAMESPACE__ . '\Command' );
