@@ -1,4 +1,4 @@
-@import './vars.scss';
+@use './vars.scss' as *;
 
 .vip-h2 {
 	@include text-h2();
