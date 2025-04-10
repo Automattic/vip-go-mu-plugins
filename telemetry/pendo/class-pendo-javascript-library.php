@@ -32,11 +32,11 @@ class Pendo_JavaScript_Library {
 	private string|null $api_key;
 
 	/**
-	 * The global variable name for the localized Pendo data.
+	 * The global variable name for our Pendo instance.
 	 *
 	 * @var string
 	 */
-	private string $browser_global = 'VIPPendo';
+	private string $browser_global = 'VIP_PENDO_MU_PLUGINS';
 
 	/**
 	 * Singleton instance.
@@ -102,14 +102,10 @@ class Pendo_JavaScript_Library {
 
 		$script_handle = 'vip-pendo-agent-script';
 		$script_url    = plugins_url( '/js/pendo-agent.js', __FILE__ );
-
-		$localized_data = [
-			'apiKey'   => $this->api_key,
-			'initData' => $initialization_data,
-		];
+		$variable_name = sprintf( '%s_%s', $this->browser_global, 'INIT_DATA' );
 
 		wp_enqueue_script( $script_handle, $script_url, [], '0.4', true );
-		wp_localize_script( $script_handle, $this->browser_global, $localized_data );
+		wp_localize_script( $script_handle, $variable_name, $initialization_data );
 	}
 
 	private function get_initialization_data(): array|WP_Error {
@@ -129,7 +125,8 @@ class Pendo_JavaScript_Library {
 		}
 
 		return [
-			'account' => [
+			'apiKey'    => $this->api_key,
+			'account'   => [
 				// These fields are defined in the VIP Dashboard, but are currently not
 				// available to WordPress environments.
 				// 'id'   => '',
@@ -138,7 +135,12 @@ class Pendo_JavaScript_Library {
 				'vip_org_id'    => $user_properties['org_id'],
 				'wp_version'    => $event_properties['wp_version'],
 			],
-			'visitor' => [
+			'env'       => 'io',
+			'globalKey' => $this->browser_global,
+			// Plugins are imported from `@pendo/agent`, so if plugins are desired,
+			// they need to be configured in the agent script.
+			'plugins'   => [],
+			'visitor'   => [
 				'id'             => $user_properties['visitor_id'],
 				'country_code'   => $user_properties['country_code'],
 				'full_name'      => $user_properties['visitor_name'],
