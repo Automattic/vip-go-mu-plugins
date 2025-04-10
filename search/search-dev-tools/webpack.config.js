@@ -67,7 +67,7 @@ module.exports = function( env ) {
 							loader: 'sass-loader',
 							options: {
 								sourceMap: true,
-								additionalData: `@import "${resolve(__dirname, 'src/style/mixins.scss')}";`,
+								additionalData: `@use "${resolve(__dirname, 'src/style/mixins.scss')}" as *;`,
 							},
 						},
 					],

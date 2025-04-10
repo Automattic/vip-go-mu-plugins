@@ -32,6 +32,8 @@
 		@include text-small();
 
 		&_collapsible {
+			cursor: pointer;
+			position: relative;
 		}
 
 		&_inner {
