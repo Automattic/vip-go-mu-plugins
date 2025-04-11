@@ -23,10 +23,6 @@ function rewrite_50x_headers() {
 			'code'        => 583,
 			'description' => 'Service Unavailable',
 		],
-		502 => [
-			'code'        => 582,
-			'description' => 'Bad Gateway',
-		],
 	];
 
 	// Technically headers_sent() should never be true at this moment.
