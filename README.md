@@ -1,4 +1,54 @@
-# VIP Go mu-plugins
+## 🚀 Quick Start
+This section will help you get the project up and running locally in no time. Whether you're a new contributor or a developer integrating VIP Go MU Plugins in your workflow, follow these steps to bootstrap your environment.
+
+## ✅ Prerequisites
+Make sure you have the following installed:
+
+Docker
+
+Docker Compose
+
+WP-CLI (optional but helpful)
+
+git and composer
+
+## 🛠️ Local Setup (Using Docker)
+Clone the Repository:
+
+git clone https://github.com/Automattic/vip-go-mu-plugins.git
+cd vip-go-mu-plugins
+Start the Local WordPress Environment:
+
+If using a Docker-based setup:
+
+docker-compose up -d
+This will start the WordPress environment with required services.
+
+**Install Dependencies:
+
+composer install
+Access Your Site:
+
+Visit http://localhost:8080 in your browser once the containers are running.
+
+## 🧪 Plugin Verification
+To verify that the VIP MU Plugins are loaded:
+
+Log in to the WordPress dashboard.
+
+Navigate to Plugins > Must-Use.
+
+You should see a list of VIP MU Plugins already activated.
+
+## 🧹 Common Issues & Troubleshooting
+Issue	Fix
+Plugin not loading	Ensure MU plugin files are in the correct /wp-content/mu-plugins folder.
+CORS mismatch or API errors	Check local port and domain configuration in docker-compose.yml. You may need to allow CORS headers in your API.
+WP-CLI not working	Make sure you're running WP-CLI inside the container:
+docker exec -it <container_name> wp plugin list
+Composer errors	Run composer install again and verify vendor/ directory exists.
+## 💡 Pro Tip
+For faster reloads and testing, mount the MU plugin folder directly into your local WordPress project. This way, you can live-test your changes without rebuilding the container each time.# VIP Go mu-plugins
 
 This is the development repo for mu-plugins on [VIP Go](https://wpvip.com/documentation/vip-go/).
 
