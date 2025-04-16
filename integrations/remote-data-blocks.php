@@ -44,13 +44,14 @@ class RemoteDataBlocksIntegration extends Integration {
 			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/remote-data-blocks-<version>/ and check what versions are available.
 			$versions = [];
 			$dir = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/';
+			
 			if ( is_dir( $dir ) ) {
-				$versions = array_filter(
-					scandir( $dir ),
-					function ( $entry ) use ( $dir ) {
-						return is_dir( $dir . $entry ) && preg_match( '/^remote-data-blocks-([0-9.]+)$/', $entry, $matches );
+				$scan_entries = scandir( $dir );
+				foreach ( $scan_entries as $entry ) {
+					if ( preg_match( '/^remote-data-blocks-(\d+\.\d+\.\d+)$/', $entry, $matches ) && is_dir( $dir . $entry ) && file_exists( $dir . $entry . '/remote-data-blocks.php' ) ) {
+						$versions[$entry] = $matches[1]; // Store directory name as key and version as value
 					}
-				);
+				}
 			}
 
 			// if no versions are found, return early.
@@ -60,12 +61,15 @@ class RemoteDataBlocksIntegration extends Integration {
 			}
 
 			// Sort the versions in descending order.
-			usort( $versions, function ( $a, $b ) {
-				return version_compare( $b, $a );
+			uksort( $versions, function ( $a, $b ) use ( $versions ) {
+				return version_compare( $versions[$b], $versions[$a] );
 			} );
 
 			// Load the latest version of the plugin.
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $versions[0] . '/remote-data-blocks.php';
+			$latest_directory = array_key_first( $versions );
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/remote-data-blocks.php';
+
+			// This check isn't strictly necessary, but better safe than sorry.
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
