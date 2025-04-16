@@ -16,6 +16,7 @@ use Automattic\Test\Constant_Mocker;
 
 class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 
+
 	private string $slug = 'remote-data-blocks';
 
 	public function tearDown(): void {
@@ -93,11 +94,14 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( [ 'test' => 'value' ], constant( 'REMOTE_DATA_BLOCKS_CONFIGS' ) );
 	}
 
-	public function test_get_versions_returns_empty_array(): void {
+	public function test_get_versions_returns_versions_for_RDB(): void {
 		$remote_data_blocks_integration = new RemoteDataBlocksIntegration( $this->slug );
 
 		$versions = $remote_data_blocks_integration->get_versions();
 
-		$this->assertEmpty( $versions );
+		// ensure that versions are returned, with a size of at least 1
+		$this->assertIsArray( $versions );
+		$this->assertNotEmpty( $versions );
+		$this->assertGreaterThan( 0, count( $versions ) );
 	}
 }
