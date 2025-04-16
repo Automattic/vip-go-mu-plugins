@@ -15,13 +15,6 @@ namespace Automattic\VIP\Integrations;
 class RemoteDataBlocksIntegration extends Integration {
 
 	/**
-	 * The version of Remote Data Blocks to load.
-	 *
-	 * @var string
-	 */
-	protected string $version = '0.11';
-
-	/**
 	 * Returns `true` if Remote Data Blocks is already available e.g. via customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */
@@ -48,8 +41,31 @@ class RemoteDataBlocksIntegration extends Integration {
 				return;
 			}
 
-			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-' . $this->version . '/remote-data-blocks.php';
+			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/remote-data-blocks-<version>/ and check what versions are available.
+			$versions = [];
+			$dir = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/';
+			if ( is_dir( $dir ) ) {
+				$versions = array_filter(
+					scandir( $dir ),
+					function ( $entry ) use ( $dir ) {
+						return is_dir( $dir . $entry ) && preg_match( '/^remote-data-blocks-([0-9.]+)$/', $entry, $matches );
+					}
+				);
+			}
+
+			// if no versions are found, return early.
+			if ( empty( $versions ) ) {
+				$this->is_active = false;
+				return;
+			}
+
+			// Sort the versions in descending order.
+			usort( $versions, function ( $a, $b ) {
+				return version_compare( $b, $a );
+			} );
+
+			// Load the latest version of the plugin.
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $versions[0] . '/remote-data-blocks.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
