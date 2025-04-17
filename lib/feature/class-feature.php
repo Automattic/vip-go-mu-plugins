@@ -33,7 +33,11 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		'stream-wrapper-passthrough' => [
+			10580 => true,
+		],
+	];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.
