@@ -5,36 +5,36 @@ function render_vip_dashboard_widget_welcome() {
 	<div class="widget">
 		<h2 class="widget__title">Welcome to WordPress VIP</h2>
 
-    <p>WordPress VIP is a partnership between Automattic and the most high-profile, innovative and smart WordPress websites out there. We’re excited to have you here.</p>
+		<p>WordPress VIP is a partnership between Automattic and the most high-profile, innovative and smart WordPress websites out there. We’re excited to have you here.</p>
 
-    <h3 class="widget__subtitle">WPVIP Dashboard Links</h3>
+		<h3 class="widget__subtitle">WPVIP Dashboard Links</h3>
 
-    <a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>" target="_blank">WPVIP Dashboard</a>
+		<a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>" target="_blank">WPVIP Dashboard</a>
 
-    <div class="widget__col-2">
-      <ul class="widget__list">
-        <li>
-          <a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/http" target"_blank">HTTP Performance metrics</a>
-          <span>Origin and Edge http performance metrics</span>
-        </li>
-        <li>
-          <a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/database" target"_blank">Database Performance metrics</a>
-          <span>Database performance metrics</span>
-        </li>
-      </ul>
-    </div>
-    <div class="widget__col-2">
-      <ul class="widget__list">
-        <li>
-          <a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/resource-usage" target"_blank">Resource Usage</a>
-          <span>Application Resource Usage</span>
-        </li>
-        <li>
-          <a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/cache" target"_blank">Cache Performance metrics</a>
-          <span>Cache performance metrics</span>
-        </li>
-      </ul>
-    </div>
+		<div class="widget__col-2">
+			<ul class="widget__list">
+				<li>
+					<a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/http" target"_blank">HTTP Performance metrics</a>
+					<span>Origin and Edge http performance metrics</span>
+				</li>
+				<li>
+					<a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/database" target"_blank">Database Performance metrics</a>
+					<span>Database performance metrics</span>
+				</li>
+			</ul>
+		</div>
+		<div class="widget__col-2">
+			<ul class="widget__list">
+				<li>
+					<a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/resource-usage" target"_blank">Resource Usage</a>
+					<span>Application Resource Usage</span>
+				</li>
+				<li>
+					<a href="https://dashboard.wpvip.com/apps/<?= VIP_GO_APP_ID . "/" . VIP_GO_APP_ENVIRONMENT ?>/perfomance/insights/cache" target"_blank">Cache Performance metrics</a>
+					<span>Cache performance metrics</span>
+				</li>
+			</ul>
+		</div>
 
 		<h3 class="widget__subtitle">Helpful Links</h3>
 
