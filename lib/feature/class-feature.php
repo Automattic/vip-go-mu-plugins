@@ -53,9 +53,7 @@ class Feature {
 			'staging' => true,
 		],
 		'stream-wrapper-passthrough' => [
-			'develop' => true,
-			'staging' => true,
-			'preprod' => true,
+			'non-production' => true,
 		],
 	];
 
