@@ -30,7 +30,8 @@ function is_dir( $dir ) {
 	}
 	
 	// Valid version directories
-	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.0' === $dir ||
+	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.2' === $dir ||
+		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.11' === $dir ||
 		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-2.5' === $dir ) {
 		return true;
 	}
@@ -64,7 +65,8 @@ function scandir( $dir ) {
 	return [
 		'.',
 		'..',
-		'remote-data-blocks-1.0',
+		'remote-data-blocks-1.2',
+		'remote-data-blocks-1.11',
 		'remote-data-blocks-2.5',
 		'some-other-directory',
 	];
@@ -73,7 +75,8 @@ function scandir( $dir ) {
 function file_exists( $file ) {
 	// Valid RDB plugin files
 	return (
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.0/remote-data-blocks.php' === $file ||
+		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.2/remote-data-blocks.php' === $file ||
+		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-1.11/remote-data-blocks.php' === $file ||
 		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/remote-data-blocks-2.5/remote-data-blocks.php' === $file
 	);
 }
@@ -167,17 +170,22 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * Test that get_versions correctly parses directory names and returns correct versions.
 	 */
-	public function test_get_versions_parses_and_returns_correct_versions(): void {
+	public function test_get_versions_parses_and_returns_correct_ordered_versions(): void {
 		$remote_data_blocks_integration = new RemoteDataBlocksIntegration( $this->slug );
 		$versions                       = $remote_data_blocks_integration->get_versions();
 		
 		// Verify the returned versions
 		$this->assertIsArray( $versions );
-		$this->assertCount( 2, $versions );
-		$this->assertArrayHasKey( 'remote-data-blocks-1.0', $versions );
-		$this->assertArrayHasKey( 'remote-data-blocks-2.5', $versions );
-		$this->assertEquals( '1.0', $versions['remote-data-blocks-1.0'] );
+		$this->assertCount( 3, $versions );
+		$this->assertEquals( '1.2', $versions['remote-data-blocks-1.2'] );
+		$this->assertEquals( '1.11', $versions['remote-data-blocks-1.11'] );
 		$this->assertEquals( '2.5', $versions['remote-data-blocks-2.5'] );
+
+		// Check that the versions are correctly ordered by semantic version (2.5 > 1.11 > 1.2)
+		$keys = array_keys( $versions );
+		$this->assertEquals( 'remote-data-blocks-2.5', $keys[0] );
+		$this->assertEquals( 'remote-data-blocks-1.11', $keys[1] );
+		$this->assertEquals( 'remote-data-blocks-1.2', $keys[2] );
 	}
 
 	/**

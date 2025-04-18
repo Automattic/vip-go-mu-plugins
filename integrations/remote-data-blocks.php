@@ -43,7 +43,8 @@ class RemoteDataBlocksIntegration extends Integration {
 				return;
 			}
 
-			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/remote-data-blocks-<version>/ and check what versions are available.
+			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/remote-data-blocks-<version>/
+			// and check what versions are available.
 			$versions = $this->get_versions();
 
 			// if no versions are found, return early.
@@ -51,11 +52,6 @@ class RemoteDataBlocksIntegration extends Integration {
 				$this->is_active = false;
 				return;
 			}
-
-			// Sort the versions in descending order.
-			uksort($versions, function ( $a, $b ) use ( $versions ) {
-				return version_compare( $versions[ $b ], $versions[ $a ] );
-			});
 
 			// Load the latest version of the plugin.
 			$latest_directory = array_key_first( $versions );
@@ -71,22 +67,35 @@ class RemoteDataBlocksIntegration extends Integration {
 	}
 
 	/**
-	 * Get the available versions of Remote Data Blocks.
+	 * Get the available versions of Remote Data Blocks in descending order.
 	 *
-	 * @return array<string, string> An associative array of available versions, where the key is the directory name and the value is the version number.
+	 * @return array<string, string> An associative array of available versions, where the key is the
+	 *                               directory name and the value is the version number. The versions
+	 *                               are sorted in descending order.
 	 */
 	public function get_versions() {
 		$versions = [];
 		$dir      = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/';
+		if ( ! is_dir( $dir ) ) {
+			return $versions;
+		}
 
-		if ( is_dir( $dir ) ) {
-			$scan_entries = scandir( $dir );
-			foreach ( $scan_entries as $entry ) {
-				if ( preg_match( '/^remote-data-blocks-(\d+\.\d+)$/', $entry, $matches ) && is_dir( $dir . $entry ) && file_exists( $dir . $entry . '/remote-data-blocks.php' ) ) {
-					$versions[ $entry ] = $matches[1]; // Store directory name as key and version as value
-				}
+		$scan_entries = scandir( $dir );
+		foreach ( $scan_entries as $entry ) {
+			if (
+				str_contains( $entry, 'remote-data-blocks-' ) &&
+				is_dir( $dir . $entry ) &&
+				file_exists( $dir . $entry . '/remote-data-blocks.php' )
+			) {
+				// Extract the version number from the directory name
+				$versions[ $entry ] = str_replace( 'remote-data-blocks-', '', $entry );
 			}
 		}
+
+		// Sort the versions in descending order.
+		uksort( $versions, function ( $a, $b ) use ( $versions ) {
+			return version_compare( $versions[ $b ], $versions[ $a ] );
+		} );
 
 		return $versions;
 	}
