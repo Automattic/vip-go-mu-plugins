@@ -116,13 +116,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public static ?API_Client $default_client = null;
 
 	/**
-	 * List of files that should be handled locally
-	 *
-	 * @var array
-	 */
-	private static $local_files = array();
-
-	/**
 	 * HashMap for exact filename lookups to provide O(1) performance
 	 *
 	 * @var array
@@ -1151,7 +1144,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			return false;
 		}
 
-		// Check if pattern contains wildcards (* or ? or [)
+		// Check if pattern contains wildcards (* or ? or [).
 		$is_pattern = str_contains( $file_path, '*' ) || str_contains( $file_path, '?' ) ||
 			str_contains( $file_path, '[' );
 
@@ -1161,7 +1154,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			static::$local_files_map[ $file_path ] = true;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**
@@ -1181,7 +1174,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return array List of file paths and patterns
 	 */
 	public static function get_local_files() {
-		return static::$local_files;
+		return array_merge( static::$local_files_map, static::$local_file_patterns );
 	}
 
 	/**
