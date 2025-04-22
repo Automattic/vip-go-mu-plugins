@@ -1161,11 +1161,12 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * Remove a file from the list of files that should be handled locally
 	 *
 	 * @param string $file_path Path to the file or pattern
-	 * @return void
+	 * @return bool True if the file was removed, false otherwise
 	 */
 	public static function remove_local_file( $file_path ) {
 		unset( static::$local_file_patterns[ $file_path ] );
 		unset( static::$local_files_map[ $file_path ] );
+		return true;
 	}
 
 	/**
