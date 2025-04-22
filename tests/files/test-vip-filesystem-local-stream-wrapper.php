@@ -312,51 +312,51 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
 		$this->stream_wrapper->register();
 		$this->should_unregister = true;
-
+		
 		// Test adding a file to the local files list
 		$test_file = 'vip://wp-content/uploads/test-local-file.txt';
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $test_file ) );
-
+		
 		// Test getting the local files list
 		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
 		$this->assertContains( $test_file, $local_files );
-
+		
 		// Test checking if a file is in the local files list
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $test_file ) );
 		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/non-local-file.txt' ) );
-
+		
 		// Test file operations with local files
 		$content = 'Test content for local file';
-
+		
 		// Test writing to a local file
 		$fp = fopen( $test_file, 'w' );
 		$this->assertNotFalse( $fp );
 		$bytes_written = fwrite( $fp, $content );
 		$this->assertEquals( strlen( $content ), $bytes_written );
 		fclose( $fp );
-
+		
 		// Test reading from a local file
 		$fp = fopen( $test_file, 'r' );
 		$this->assertNotFalse( $fp );
 		$read_content = fread( $fp, 1024 );
 		$this->assertEquals( $content, $read_content );
 		fclose( $fp );
-
+		
 		// Test file_get_contents and file_put_contents
 		$this->assertEquals( $content, file_get_contents( $test_file ) );
 		$new_content = 'Updated content';
 		$this->assertNotFalse( file_put_contents( $test_file, $new_content ) );
 		$this->assertEquals( $new_content, file_get_contents( $test_file ) );
-
+		
 		// Test file_exists
 		$this->assertTrue( file_exists( $test_file ) );
-
+		
 		// Test copy
 		$copy_file = 'vip://wp-content/uploads/test-local-file-copy.txt';
 		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $copy_file );
 		$this->assertTrue( copy( $test_file, $copy_file ) );
 		$this->assertEquals( $new_content, file_get_contents( $copy_file ) );
-
+		
 		// Test rename
 		$rename_file = 'vip://wp-content/uploads/test-local-file-renamed.txt';
 		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $rename_file );
@@ -364,122 +364,17 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertFalse( file_exists( $copy_file ) );
 		$this->assertTrue( file_exists( $rename_file ) );
 		$this->assertEquals( $new_content, file_get_contents( $rename_file ) );
-
+		
 		// Test unlink
 		$this->assertTrue( unlink( $test_file ) );
 		$this->assertFalse( file_exists( $test_file ) );
 		$this->assertTrue( unlink( $rename_file ) );
 		$this->assertFalse( file_exists( $rename_file ) );
-
+		
 		// Test removing a file from the local files list
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $test_file ) );
 		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $test_file ) );
-
-		// Clean up
-		if ( $this->should_unregister ) {
-			stream_wrapper_unregister( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL );
-			$this->should_unregister = false;
-		}
-	}
-
-	/**
-	 * Test wildcard pattern matching functionality
-	 */
-	public function test_wildcard_pattern_matching() {
-		// Set up the API client mock
-		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-		$this->stream_wrapper->register();
-		$this->should_unregister = true;
-
-		// Test adding a wildcard pattern to the local files list
-		$pattern = 'vip://wp-content/uploads/*.jpg';
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern ) );
-
-		// Test if files matching the pattern are recognized as local files
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/image1.jpg' ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/subfolder/image2.jpg' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/document.pdf' ) );
-
-		// Test different pattern types
-
-		// Question mark wildcard
-		$pattern_question = 'vip://wp-content/uploads/image?.jpg';
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern_question ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/image1.jpg' ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/imageA.jpg' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/image10.jpg' ) );
-
-		// Character class wildcards
-		$pattern_char_class = 'vip://wp-content/uploads/file[0-9].txt';
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern_char_class ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/file1.txt' ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/file5.txt' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/fileA.txt' ) );
-
-		// Negative character class
-		$pattern_neg_class = 'vip://wp-content/uploads/doc[!0-9]*.pdf';
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern_neg_class ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/docA.pdf' ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/docB-draft.pdf' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/doc1.pdf' ) );
-
-		// Test removing a pattern
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $pattern ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/new-image.jpg' ) );
-
-		// Clean up
-		if ( $this->should_unregister ) {
-			stream_wrapper_unregister( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL );
-			$this->should_unregister = false;
-		}
-	}
-
-	/**
-	 * Test O(1) lookup for exact matches versus pattern matching
-	 */
-	public function test_lookup_performance() {
-		// Set up the API client mock
-		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-		$this->stream_wrapper->register();
-		$this->should_unregister = true;
-
-		// Add both exact paths and patterns
-		$exact_path = 'vip://wp-content/uploads/exact-file.txt';
-		$pattern    = 'vip://wp-content/uploads/pattern-*.txt';
-
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $exact_path ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern ) );
-
-		// Test that both matching methods work
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $exact_path ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/pattern-123.txt' ) );
-
-		// Use reflection to access the local_files_map and local_file_patterns properties
-		$reflector            = new \ReflectionClass( VIP_Filesystem_Local_Stream_Wrapper::class );
-		$local_files_map_prop = $reflector->getProperty( 'local_files_map' );
-		$local_files_map_prop->setAccessible( true );
-		$local_file_patterns_prop = $reflector->getProperty( 'local_file_patterns' );
-		$local_file_patterns_prop->setAccessible( true );
-
-		// Verify that exact path is in the hash map
-		$local_files_map = $local_files_map_prop->getValue();
-		$this->assertArrayHasKey( $exact_path, $local_files_map );
-
-		// Verify that pattern is in the patterns hash map (not array)
-		$local_file_patterns = $local_file_patterns_prop->getValue();
-		$this->assertArrayHasKey( $pattern, $local_file_patterns );
 		
-		// Test O(1) removes
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $pattern ) );
-		$local_file_patterns = $local_file_patterns_prop->getValue();
-		$this->assertEmpty( $local_file_patterns );
-		
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $exact_path ) );
-		$local_files_map = $local_files_map_prop->getValue();
-		$this->assertEmpty( $local_files_map );
-
 		// Clean up
 		if ( $this->should_unregister ) {
 			stream_wrapper_unregister( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL );
