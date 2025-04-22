@@ -1145,7 +1145,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		// Check if pattern contains wildcards (* or ? or [).
-		$is_pattern = str_contains( $file_path, '*' ) || str_contains( $file_path, '?' ) ||
+		$is_pattern = strpbrk( $file_path, '*?[' ) !== false;
 			str_contains( $file_path, '[' );
 
 		if ( $is_pattern ) {
