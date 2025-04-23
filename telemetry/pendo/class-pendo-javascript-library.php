@@ -68,11 +68,6 @@ class Pendo_JavaScript_Library {
 
 		if ( empty( $api_key ) ) {
 			$message = __( 'Pendo snippet API key is not defined', 'vip-telemetry' );
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => $message,
-			] );
 			return new WP_Error( 'pendo_snippet_api_key_not_defined', $message );
 		}
 
@@ -108,6 +103,11 @@ class Pendo_JavaScript_Library {
 		wp_localize_script( $script_handle, $variable_name, $initialization_data );
 	}
 
+	/**
+	 * Get the initialization data for the Pendo client library. We currently do
+	 * not allow customization of the initialization data to minimize the risk of
+	 * collisions with standard property names.
+	 */
 	private function get_initialization_data(): array|WP_Error {
 		$event_properties = get_base_properties_of_pendo_track_event();
 		$user_properties  = get_base_properties_of_pendo_user();
