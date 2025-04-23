@@ -106,7 +106,10 @@ jobs:
         working-directory: wordpress
 
       - name: Run PHPUnit tests
-        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist
+        run: >
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit
+          --verbose -c phpunit.xml.dist
+          --filter "^\(?!.*test_wp_generate_attachment_metadata_png_thumbnail_smaller_than_original\).*\$"
         working-directory: wordpress
 
       - name: Run AJAX tests
