@@ -22,7 +22,7 @@ test( 'Add Media', async ( { page } ) => {
 	await test.step( 'Select add new media', async () => {
 		const wpAdminSidebarComponent = new WPAdminSidebarComponent( page );
 		await wpAdminSidebarComponent.clickMenuItem( 'Media' );
-		await wpAdminSidebarComponent.clickSubMenuItem( 'Add New' );
+		await wpAdminSidebarComponent.clickSubMenuItem( 'Add Media File' );
 	} );
 
 	await test.step( 'Upload Image', () => {

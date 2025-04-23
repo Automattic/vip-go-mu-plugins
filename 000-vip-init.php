@@ -207,7 +207,6 @@ require_once __DIR__ . '/prometheus.php';
 
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
-require_once __DIR__ . '/lib/statsd/class-statsd.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
