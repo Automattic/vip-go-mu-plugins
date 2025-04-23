@@ -116,11 +116,18 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public static ?API_Client $default_client = null;
 
 	/**
-	 * List of files that should be handled locally
+	 * HashMap for exact filename lookups to provide O(1) performance
 	 *
 	 * @var array
 	 */
-	private static $local_files = [];
+	private static $local_files_map = array();
+
+	/**
+	 * HashMap of wildcard patterns for local files
+	 *
+	 * @var array
+	 */
+	private static $local_file_patterns = array();
 
 	/**
 	 * File handle for local files
@@ -1129,7 +1136,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	/**
 	 * Add a file to the list of files that should be handled locally
 	 *
-	 * @param string $file_path Path to the file
+	 * @param string $file_path Path to the file or a pattern.
 	 * @return bool True if the file was added, false otherwise
 	 */
 	public static function add_local_file( $file_path ) {
@@ -1137,39 +1144,38 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			return false;
 		}
 
-		if ( ! in_array( $file_path, static::$local_files, true ) ) {
-			static::$local_files[] = $file_path;
-			return true;
+		// Check if pattern contains wildcards (* or ? or [).
+		$is_pattern = strpbrk( $file_path, '*?[' ) !== false;
+			str_contains( $file_path, '[' );
+
+		if ( $is_pattern ) {
+			static::$local_file_patterns[ $file_path ] = true;
+		} else {
+			static::$local_files_map[ $file_path ] = true;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**
 	 * Remove a file from the list of files that should be handled locally
 	 *
-	 * @param string $file_path Path to the file
+	 * @param string $file_path Path to the file or pattern
 	 * @return bool True if the file was removed, false otherwise
 	 */
 	public static function remove_local_file( $file_path ) {
-		$key = array_search( $file_path, static::$local_files, true );
-
-		if ( false !== $key ) {
-			unset( static::$local_files[ $key ] );
-			static::$local_files = array_values( static::$local_files ); // Reindex array
-			return true;
-		}
-
-		return false;
+		unset( static::$local_file_patterns[ $file_path ] );
+		unset( static::$local_files_map[ $file_path ] );
+		return true;
 	}
 
 	/**
 	 * Get the list of files that should be handled locally
 	 *
-	 * @return array List of file paths
+	 * @return array List of file paths and patterns
 	 */
 	public static function get_local_files() {
-		return static::$local_files;
+		return array_merge( static::$local_files_map, static::$local_file_patterns );
 	}
 
 	/**
@@ -1179,7 +1185,19 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return bool True if the file should be handled locally, false otherwise
 	 */
 	public static function is_local_file( $file_path ) {
-		return in_array( $file_path, static::$local_files, true );
+		// O(1) check for exact matches
+		if ( isset( static::$local_files_map[ $file_path ] ) ) {
+			return true;
+		}
+
+		// Check against wildcard patterns
+		foreach ( static::$local_file_patterns as $pattern => $value ) {
+			if ( fnmatch( $pattern, $file_path, FNM_PATHNAME ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
