@@ -58,12 +58,12 @@ class Pendo_JavaScript_Library {
 	 * use `Pendo::enable_javascript_library()`.
 	 *
 	 * @param string $api_key The Pendo snippet API key.
-	 * @return bool|WP_Error True on success or WP_Error if any error occured.
+	 * @return self|WP_Error Instance on success or WP_Error if any error occured.
 	 */
-	public static function init( string|null $api_key = null ): bool|WP_Error {
-		// Already initialized? Return early.
+	public static function init( string|null $api_key = null ): self|WP_Error {
+		// Already initialized? Return instance.
 		if ( self::$instance instanceof Pendo_JavaScript_Library ) {
-			return true;
+			return self::$instance;
 		}
 
 		if ( empty( $api_key ) ) {
@@ -77,9 +77,9 @@ class Pendo_JavaScript_Library {
 		self::$instance = new Pendo_JavaScript_Library( $api_key );
 
 		// Use a high priority value to enqueue this late.
-		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 99, 0 );
+		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 90, 0 );
 
-		return true;
+		return self::$instance;
 	}
 
 	/**
