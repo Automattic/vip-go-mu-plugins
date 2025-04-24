@@ -7,6 +7,7 @@ namespace Automattic\VIP\Telemetry;
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library;
 use WP_UnitTestCase;
+use function get_bloginfo;
 use function wp_scripts;
 use function wp_set_current_user;
 
@@ -96,8 +97,6 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_initialization_data() {
-		global $wp_version;
-
 		$user = $this->factory()->user->create_and_get( [
 			'role'         => 'author',
 			'display_name' => 'Frances Ha',
@@ -122,7 +121,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 			'account'   => [
 				'id'         => '111',
 				'vip_org_id' => '555',
-				'wp_version' => $wp_version,
+				'wp_version' => get_bloginfo( 'version' ),
 			],
 			'env'       => 'io',
 			'globalKey' => 'VIP_PENDO_MU_PLUGINS',
