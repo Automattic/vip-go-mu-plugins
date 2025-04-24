@@ -77,7 +77,7 @@ class Pendo_JavaScript_Library {
 		self::$instance = new Pendo_JavaScript_Library( $api_key );
 
 		// Use a high priority value to enqueue this late.
-		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 90, 0 );
+		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 99, 0 );
 
 		return self::$instance;
 	}

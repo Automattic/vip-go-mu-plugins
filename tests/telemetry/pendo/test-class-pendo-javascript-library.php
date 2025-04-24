@@ -92,16 +92,19 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	public function test_should_return_singleton_instance() {
 		global $wp_filter;
 
+		$initial_action_count = count( $wp_filter['admin_enqueue_scripts'][99] ?? [] );
+
 		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
 
-		$this->assertSame( 90, has_action( 'admin_enqueue_scripts', [ $instance, 'enqueue_scripts' ] ) );
+		$this->assertSame( 99, has_action( 'admin_enqueue_scripts', [ $instance, 'enqueue_scripts' ] ) );
 
 		// Has only been added once.
-		$this->assertSame( 1, count( $wp_filter['admin_enqueue_scripts'][90] ?? [] ) );
+		$this->assertSame( $initial_action_count + 1, count( $wp_filter['admin_enqueue_scripts'][99] ?? [] ) );
 
 		$this->assertSame( $instance, Pendo_JavaScript_Library::init( 'test_api_key' ) );
 		$this->assertSame( $instance, Pendo_JavaScript_Library::init( 'test_api_key' ) );
-		$this->assertSame( 1, count( $wp_filter['admin_enqueue_scripts'][90] ?? [] ) );
+
+		$this->assertSame( $initial_action_count + 1, count( $wp_filter['admin_enqueue_scripts'][99] ?? [] ) );
 	}
 
 	public function test_initialization_data() {
