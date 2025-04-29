@@ -109,6 +109,50 @@ function track_file_delete() {
 	] );
 }
 
+/**
+ * Tracks the authentication type used during successful XML-RPC requests.
+ */
+function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
+	// Only proceed if it's an XML-RPC request
+	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+		return $user;
+	}
+
+	// We are only interested in successful authentication events.
+	if ( is_wp_error( $user ) || ! ( $user instanceof \WP_User ) ) {
+		return $user;
+	}
+
+	// Default to 'user_pass', assuming standard authentication if not determined otherwise.
+	$auth_type = 'user_pass';
+
+	// Check if the provided password validates as an Application Password for this user.
+	if ( function_exists( 'wp_validate_application_password' ) ) {
+		$validated_app_pass = wp_validate_application_password( $user, $password );
+
+		if ( false !== $validated_app_pass ) {
+			$auth_type = 'app_pass';
+		}
+	}
+
+	// Send the tracking pixel
+	if ( function_exists( 'send_pixel' ) ) {
+		$site_id = 0;
+		if ( defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ) {
+			$site_id = FILES_CLIENT_SITE_ID;
+		}
+
+		send_pixel( [
+			'vip-go-xmlrpc-auth-type' => $auth_type,
+			'vip-go-site-id'          => $site_id,
+		] );
+	}
+
+	// Always return the original $user object to avoid disrupting authentication.
+	return $user;
+}
+add_filter( 'authenticate', 'track_vip_xmlrpc_auth_type', 30, 3 ); // core authenticates on 20
+
 function send_pixel( $stats ) {
 	$query_args = [
 		'v' => 'wpcom-no-pv',
