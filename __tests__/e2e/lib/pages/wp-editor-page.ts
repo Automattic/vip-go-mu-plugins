@@ -3,7 +3,7 @@ import type { Locator, Page } from '@playwright/test';
 const selectors = {
 	// Editor
 	editorTitle: '.editor-post-title__input',
-	editorTitleContainer: '.edit-post-visual-editor__post-title-wrapper',
+	editorTitleContainer: '.edit-post-visual-editor__post-title-wrapper h1',
 
 	// Block inserter
 	blockInserterToggle: 'button.edit-post-header-toolbar__inserter-toggle',
@@ -89,6 +89,7 @@ export class EditorPage {
 	 * @param {string} title Page/Post Title
 	 */
 	public async enterTitle( title: string ): Promise<void> {
+		await this.dismissPatternSelector();
 		await this.page.click( selectors.editorTitleContainer );
 		await this.page.fill( selectors.editorTitle, title );
 	}
@@ -152,11 +153,19 @@ export class EditorPage {
 	 * @param {string} fileName Name of image file to add
 	 */
 	public async addImage( fileName: string ): Promise<void> {
+		await this.dismissPatternSelector();
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
 			await this.page.click( selectors.blockAppender );
 		} else {
-			await this.page.click( selectors.editorTitleContainer );
-			await this.page.getByLabel( 'Toggle block inserter' ).click();
+			const lastBlock = this.page.locator( selectors.paragraphBlocks ).last();
+			await lastBlock.click();
+			const box = await lastBlock.boundingBox();
+			if ( box ) {
+				const offsetX = box.x + ( box.width - 10 );
+				const offsetY = box.y + ( box.height / 2 );
+				await this.page.mouse.move( offsetX, offsetY );
+			}
+			await this.page.getByLabel( 'Add block' ).click();
 		}
 		await this.page.click( selectors.imageBlocks );
 

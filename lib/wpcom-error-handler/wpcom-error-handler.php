@@ -170,7 +170,7 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 			$display_errors_format = "\n%s: %s in %s on line %d [%s] [%s]\n";
 		}
 
-		if ( 'stderr' === $display_errors && defined( 'STDERR' ) && is_resource( STDERR ) ) {
+		if ( 'stderr' === strtolower( $display_errors ) && defined( 'STDERR' ) && is_resource( STDERR ) ) {
 			fprintf( STDERR, $display_errors_format, $string, $message, $file, $line, htmlspecialchars( $source ), htmlspecialchars( $backtrace ) );
 		} else {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
