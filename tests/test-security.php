@@ -280,9 +280,12 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that vipgo username is restricted in non-local environments.
+	 *
+	 * @runInSeparateProcess
 	 */
 	public function test__vipgo_username_restricted_in_non_local() {
 		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'production' );
+		define( 'WP_ENVIRONMENT_TYPE', 'production' );
 
 		$this->factory()->user->create( [
 			'user_login' => 'vipgo',
@@ -298,9 +301,12 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that vipgo username is not restricted in local environment.
+	 *
+	 * @runInSeparateProcess
 	 */
 	public function test__vipgo_username_not_restricted_in_local() {
 		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'local' );
+		define( 'WP_ENVIRONMENT_TYPE', 'local' );
 
 		$user_id = $this->factory()->user->create( [
 			'user_login' => 'vipgo',
