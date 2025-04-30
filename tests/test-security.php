@@ -277,4 +277,40 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 	}
+
+	/**
+	 * Test that vipgo username is restricted in non-local environments.
+	 */
+	public function test__vipgo_username_restricted_in_non_local() {
+		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'production' );
+
+		$this->factory()->user->create( [
+			'user_login' => 'vipgo',
+			'user_email' => 'vipgo@example.com',
+			'user_pass'  => 'secret6',
+		] );
+
+		$result = wp_authenticate( 'vipgo', 'secret6' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'restricted-login', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that vipgo username is not restricted in local environment.
+	 */
+	public function test__vipgo_username_not_restricted_in_local() {
+		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'local' );
+
+		$user_id = $this->factory()->user->create( [
+			'user_login' => 'vipgo',
+			'user_email' => 'vipgo@example.com',
+			'user_pass'  => 'secret7',
+		] );
+
+		$result = wp_authenticate( 'vipgo', 'secret7' );
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( $user_id, $result->ID );
+	}
 }
