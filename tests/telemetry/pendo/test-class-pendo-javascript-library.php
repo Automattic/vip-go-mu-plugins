@@ -24,7 +24,20 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
-		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
+	}
+
+	public function test_enabled_for_users_to_allowed_admin_screens() {
+		global $wp_query;
+
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'parsely-dashboard-page';
+
+		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
 	}
 
 	public function test_disabled_by_opt_out_constant() {
@@ -35,7 +48,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
 	public function test_disabled_for_non_vip_environments() {
@@ -44,7 +57,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
 	public function test_disabled_for_non_production_environments() {
@@ -54,7 +67,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'preprod' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
 	public function test_disabled_for_fedramp_environments() {
@@ -65,7 +78,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
 	public function test_disabled_for_sandbox_environments() {
@@ -76,7 +89,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 		Constant_Mocker::define( 'WPCOM_SANDBOXED', true );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
 	public function test_disabled_for_users_without_edit_post_cap() {
@@ -86,7 +99,27 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script() );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
+	}
+
+	public function test_disabled_for_disallowed_screens() {
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'non-allowed-screen.php' ) );
+	}
+
+	public function test_disabled_for_disallowed_admin_screen() {
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
 	}
 
 	public function test_should_return_singleton_instance() {
@@ -111,7 +144,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
 		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
-		$instance->enqueue_scripts();
+		$instance->enqueue_scripts( 'index.php' );
 
 		$registered_scripts = wp_scripts()->registered;
 		$this->assertArrayHasKey( 'vip-pendo-agent-script', $registered_scripts );

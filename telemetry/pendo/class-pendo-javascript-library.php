@@ -45,6 +45,34 @@ class Pendo_JavaScript_Library {
 	 */
 	private static $instance;
 
+	private static array $allowed_screens = [
+		'admin.php',
+		'edit.php',
+		'edit-tags.php',
+		'index.php',
+		'media-new.php',
+		'options.php',
+		'options-discussion.php',
+		'options-general.php',
+		'options-media.php',
+		'options-permalink.php',
+		'options-privacy.php',
+		'options-reading.php',
+		'options-writing.php',
+		'plugins.php',
+		'post-new.php',
+		'post.php',
+		'site-editor.php',
+		'themes.php',
+		'upload.php',
+	];
+	
+	private static array $allowed_admin_screens = [
+		'parsely-dashboard-page',
+		'parsely-settings',
+		'vip-block-governance',
+	];
+
 	/**
 	 * Constructor.
 	 */
@@ -77,16 +105,18 @@ class Pendo_JavaScript_Library {
 		self::$instance = new Pendo_JavaScript_Library( $api_key );
 
 		// Use a high priority value to enqueue this late.
-		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 99, 0 );
+		add_action( 'admin_enqueue_scripts', [ self::$instance, 'enqueue_scripts' ], 99, 1 );
 
 		return self::$instance;
 	}
 
 	/**
 	 * Enqueue the Pendo client library script on supported pages.
+	 *
+	 * @param string $screen The current admin screen slug.
 	 */
-	public function enqueue_scripts(): void {
-		if ( true !== self::should_enqueue_script() ) {
+	public function enqueue_scripts( string $screen ): void {
+		if ( true !== self::should_enqueue_script( $screen ) ) {
 			return;
 		}
 
@@ -153,13 +183,24 @@ class Pendo_JavaScript_Library {
 	/**
 	 * Determine if the Pendo client library should be enqueued for the current
 	 * request.
+	 *
+	 * @param string $screen The current admin screen slug.
 	 */
-	final public static function should_enqueue_script(): bool {
+	final public static function should_enqueue_script( string $screen ): bool {
 		if ( true !== Pendo::is_pendo_enabled_for_environment() ) {
 			return false;
 		}
 
 		if ( ! current_user_can( 'edit_posts' ) ) {
+			return false;
+		}
+
+		if ( ! in_array( $screen, self::$allowed_screens, true ) ) {
+			return false;
+		}
+
+		// admin.php is further restricted to specific query vars.
+		if ( 'admin.php' === $screen && ! in_array( get_query_var( 'page' ), self::$allowed_admin_screens, true ) ) {
 			return false;
 		}
 
