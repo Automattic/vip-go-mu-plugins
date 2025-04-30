@@ -16,6 +16,9 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
+
+	// Hook XML-RPC authentication type tracking
+	add_filter( 'authenticate', __NAMESPACE__ . '\track_vip_xmlrpc_auth_type', 30, 3 ); // core authenticates on 20
 }
 
 /**
@@ -151,7 +154,6 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 	// Always return the original $user object to avoid disrupting authentication.
 	return $user;
 }
-add_filter( 'authenticate', 'track_vip_xmlrpc_auth_type', 30, 3 ); // core authenticates on 20
 
 function send_pixel( $stats ) {
 	$query_args = [
