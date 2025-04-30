@@ -17,6 +17,9 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
 
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	error_log( 'registering track_vip_xmlrpc_auth_type' );
+
 	// Hook XML-RPC authentication type tracking
 	add_filter( 'authenticate', __NAMESPACE__ . '\track_vip_xmlrpc_auth_type', 30, 3 ); // core authenticates on 20
 }
@@ -139,17 +142,18 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 	}
 
 	// Send the tracking pixel
-	if ( function_exists( 'send_pixel' ) ) {
-		$site_id = 0;
-		if ( defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ) {
-			$site_id = FILES_CLIENT_SITE_ID;
-		}
-
-		send_pixel( [
-			'vip-go-xmlrpc-auth-type' => $auth_type,
-			'vip-go-site-id'          => $site_id,
-		] );
+	$site_id = 0;
+	if ( defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ) {
+		$site_id = FILES_CLIENT_SITE_ID;
 	}
+
+	// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+	error_log( 'track_vip_xmlrpc_auth_type: ' . $auth_type . ' ' . $site_id );
+
+	send_pixel( [
+		'vip-go-xmlrpc-auth-type' => $auth_type,
+		'vip-go-site-id'          => $site_id,
+	] );
 
 	// Always return the original $user object to avoid disrupting authentication.
 	return $user;
