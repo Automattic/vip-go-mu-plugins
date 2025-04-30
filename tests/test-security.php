@@ -1,7 +1,6 @@
 <?php
 
 use Automattic\Test\Constant_Mocker;
-
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
 	private $test_username = 'iamgroot';
@@ -280,11 +279,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that vipgo username is restricted in non-local environments.
-	 *
 	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vipgo_username_restricted_in_non_local() {
-		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'production' );
 		define( 'WP_ENVIRONMENT_TYPE', 'production' );
 
 		$this->factory()->user->create( [
@@ -301,11 +299,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	/**
 	 * Test that vipgo username is not restricted in local environment.
-	 *
 	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
 	public function test__vipgo_username_not_restricted_in_local() {
-		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', 'local' );
 		define( 'WP_ENVIRONMENT_TYPE', 'local' );
 
 		$user_id = $this->factory()->user->create( [
