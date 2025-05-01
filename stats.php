@@ -9,6 +9,8 @@
 
 namespace Automattic\VIP\Stats;
 
+use WP_Application_Passwords;
+
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
@@ -132,12 +134,15 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 	// Default to 'user_pass', assuming standard authentication if not determined otherwise.
 	$auth_type = 'user_pass';
 
-	// Check if the provided password validates as an Application Password for this user.
-	if ( function_exists( 'wp_validate_application_password' ) ) {
-		$validated_app_pass = wp_validate_application_password( $user, $password );
+	if ( wp_is_application_passwords_available() ) {
+		// Check if the provided password validates as an Application Password for this user.
+		$hashed_passwords = WP_Application_Passwords::get_user_application_passwords( $user->ID );
 
-		if ( $validated_app_pass ) {
-			$auth_type = 'app_pass';
+		foreach ( $hashed_passwords as $key => $item ) {
+			if ( WP_Application_Passwords::check_password( $password, $item['password'] ) ) {
+				$auth_type = 'app_pass';
+				break;
+			}
 		}
 	}
 
