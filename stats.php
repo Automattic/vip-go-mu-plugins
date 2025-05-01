@@ -136,7 +136,7 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 	if ( function_exists( 'wp_validate_application_password' ) ) {
 		$validated_app_pass = wp_validate_application_password( $user, $password );
 
-		if ( false !== $validated_app_pass ) {
+		if ( $validated_app_pass ) {
 			$auth_type = 'app_pass';
 		}
 	}
@@ -152,7 +152,7 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 
 	send_pixel( [
 		'vip-go-xmlrpc-auth-type' => $auth_type,
-		'vip-go-site-id'          => $site_id,
+		'vip-go-xmlrpc-site-id'   => $site_id,
 	] );
 
 	// Always return the original $user object to avoid disrupting authentication.
