@@ -381,36 +381,46 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return array
 	 */
 	public function build_purge_request( $url, $method ) {
-		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' === PURGE_SERVER_TYPE ) {
-			global $varnish_servers;
-		} else {
-			$varnish_servers = array( constant( 'PURGE_SERVER_URL' ) );
-		}
-
 		$requests = array();
-
-		if ( empty( $varnish_servers ) ) {
-			return $requests;
-		}
 
 		$parsed = wp_parse_url( $url );
 		if ( empty( $parsed['host'] ) ) {
 			return $requests;
 		}
 
-		foreach ( $varnish_servers as $server ) {
-			if ( 'BAN' == $method ) {
-				$uri = $parsed['path'] . '?' . $parsed['query'];
-			} else {
-				$uri = '/';
-				if ( isset( $parsed['path'] ) ) {
-					$uri = $parsed['path'];
-				}
-				if ( isset( $parsed['query'] ) ) {
-					$uri .= $parsed['query'];
-				}
+		if ( 'BAN' == $method ) {
+			$uri = $parsed['path'] . '?' . $parsed['query'];
+		} else {
+			$uri = '/';
+			if ( isset( $parsed['path'] ) ) {
+				$uri = $parsed['path'];
 			}
+			if ( isset( $parsed['query'] ) ) {
+				$uri .= $parsed['query'];
+			}
+		}
 
+		if ( 'edge-api' === PURGE_SERVER_TYPE ) {
+			return array(
+				array(
+					'host'   => $parsed['host'],
+					'uri'    => $uri,
+					'method' => $method,
+				),
+			);
+		}
+
+		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' === PURGE_SERVER_TYPE ) {
+			global $varnish_servers;
+		} else {
+			$varnish_servers = array( constant( 'PURGE_SERVER_URL' ) );
+		}
+
+		if ( empty( $varnish_servers ) ) {
+			return $requests;
+		}
+
+		foreach ( $varnish_servers as $server ) {
 			$request = array(
 				'host'   => $parsed['host'],
 				'uri'    => $uri,
