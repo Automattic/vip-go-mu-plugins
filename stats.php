@@ -135,6 +135,14 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 	$auth_type = 'user_pass';
 
 	if ( wp_is_application_passwords_available() ) {
+		/*
+		* Strips out anything non-alphanumeric. This is so passwords can be used with
+		* or without spaces to indicate the groupings for readability.
+		*
+		* Generated application passwords are exclusively alphanumeric.
+		*/
+		$password = preg_replace( '/[^a-z\d]/i', '', $password );
+
 		// Check if the provided password validates as an Application Password for this user.
 		$hashed_passwords = WP_Application_Passwords::get_user_application_passwords( $user->ID );
 
