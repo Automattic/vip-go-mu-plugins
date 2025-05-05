@@ -128,10 +128,13 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 		return $user;
 	}
 
-	// Default to 'user_pass', assuming standard authentication if not determined otherwise.
-	$auth_type = 'user_pass';
+	$auth_type = 'none';
 
-	if ( wp_is_application_passwords_available() ) {
+	if ( empty( $password ) ) {
+		$auth_type = 'cookie';  
+	} elseif ( wp_check_password( $password, $user->user_pass ) ) {
+		$auth_type = 'user_pass';
+	} elseif ( wp_is_application_passwords_available() ) {
 		/*
 		* Strips out anything non-alphanumeric. This is so passwords can be used with
 		* or without spaces to indicate the groupings for readability.
