@@ -9,8 +9,6 @@
 
 namespace Automattic\VIP\Stats;
 
-use WP_Application_Passwords;
-
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
@@ -144,10 +142,19 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 		$password = preg_replace( '/[^a-z\d]/i', '', $password );
 
 		// Check if the provided password validates as an Application Password for this user.
-		$hashed_passwords = WP_Application_Passwords::get_user_application_passwords( $user->ID );
+		$hashed_passwords = \WP_Application_Passwords::get_user_application_passwords( $user->ID );
 
 		foreach ( $hashed_passwords as $key => $item ) {
-			if ( WP_Application_Passwords::check_password( $password, $item['password'] ) ) {
+			$password_match = false;
+			// Use the dedicated method if available (WP 6.8+), otherwise fall back to wp_check_password.
+			if ( method_exists( '\WP_Application_Passwords', 'check_password' ) ) {
+				$password_match = \WP_Application_Passwords::check_password( $password, $item['password'] );
+			} else {
+				// phpcs:ignore WordPress.WP.DeprecatedFunctions.wp_check_password_instead_of_hash_equals -- Needed for WP < 6.8 compatibility
+				$password_match = wp_check_password( $password, $item['password'] );
+			}
+
+			if ( $password_match ) {
 				$auth_type = 'app_pass';
 				break;
 			}
