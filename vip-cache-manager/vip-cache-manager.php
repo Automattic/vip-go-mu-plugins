@@ -238,7 +238,7 @@ class WPCOM_VIP_Cache_Manager {
 
 				curl_multi_add_handle( $curl_multi, $curl );
 			}
-		} if ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
+		} elseif ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
 			// Group requests by host first
 			$requests_by_host = array();
 			foreach ( $requests as $req ) {
