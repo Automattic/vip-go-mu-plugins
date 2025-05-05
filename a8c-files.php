@@ -585,8 +585,8 @@ class A8C_Files {
 
 		// Set width/height for img
 		if ( $update_tag_processor->next_tag( 'img' ) ) {
-			$update_tag_processor->set_attribute( 'width', esc_attr( $width ) );
-			$update_tag_processor->set_attribute( 'height', esc_attr( $height ) );
+			$update_tag_processor->set_attribute( 'width', $width );
+			$update_tag_processor->set_attribute( 'height', $height );
 		}
 
 		// Get the result ready
