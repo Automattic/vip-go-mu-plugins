@@ -31,8 +31,11 @@ function vip_default_jetpack_version() {
 	} elseif ( version_compare( $wp_version, '6.6', '<' ) ) {
 		// WordPress 6.5.x
 		return '14.0';
+	} elseif ( version_compare( $wp_version, '6.7', '<' ) ) {
+		// WordPress 6.6.x
+		return '14.5';
 	} else {
-		// WordPress 6.6 and newer.
+		// WordPress 6.7 and newer.
 		return '14.6';
 	}
 }
