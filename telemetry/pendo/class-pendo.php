@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use WP_Error;
+use Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Client;
 use Automattic\VIP\Telemetry\Pendo\Pendo_Track_Event;
 
@@ -64,7 +65,7 @@ class Pendo extends Telemetry_System {
 	public function __construct(
 		string $event_prefix = 'vip_wordpress_',
 		array $global_event_properties = [],
-		Telemetry_Event_Queue $queue = null,
+		?Telemetry_Event_Queue $queue = null,
 	) {
 		$this->event_context           = $this->get_event_context();
 		$this->event_prefix            = $event_prefix;
@@ -119,11 +120,25 @@ class Pendo extends Telemetry_System {
 	}
 
 	/**
+	 * If allowed, inserts the Pendo script into the page to enable Page and
+	 * Feature tracking.
+	 *
+	 * @see Pendo_JavaScript_Library::should_enqueue_script()
+	 */
+	public static function enable_javascript_library(): void {
+		if ( ! defined( 'VIP_PENDO_SNIPPET_API_KEY' ) ) {
+			return;
+		}
+
+		Pendo_JavaScript_Library::init( constant( 'VIP_PENDO_SNIPPET_API_KEY' ) );
+	}
+
+	/**
 	 * Checks if Pendo telemetry is allowed in the current environment.
 	 *
 	 * @return bool
 	 */
-	private static function is_pendo_enabled_for_environment(): bool {
+	final public static function is_pendo_enabled_for_environment(): bool {
 		// Do not run if disabled via constant.
 		if ( defined( 'VIP_DISABLE_PENDO_TELEMETRY' ) && true === constant( 'VIP_DISABLE_PENDO_TELEMETRY' ) ) {
 			return false;

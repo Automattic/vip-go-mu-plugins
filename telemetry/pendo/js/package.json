@@ -1,0 +1,16 @@
+{
+  "name": "vip-mu-plugins-pendo-lib",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "npx esbuild pendo-agent.mjs --bundle --minify --tree-shaking=true --outfile=pendo-agent.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "browserslist": "> 0.5%, last 2 versions, not dead",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@pendo/agent": "2.272.0"
+  },
+  "devDependencies": {}
+}
