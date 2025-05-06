@@ -1,8 +1,6 @@
 <?php
 
 class Test_Stats extends WP_UnitTestCase {
-	private $send_pixel_url_queries = [];
-	private $pre_http_request_callback;
 	private $force_app_passwords_available_callback;
 
 	/**
@@ -13,46 +11,35 @@ class Test_Stats extends WP_UnitTestCase {
 
 	public function set_up() {
 		parent::set_up();
-		$this->send_pixel_url_queries = [];
 
 		// Filter to enable app passwords
 		$this->force_app_passwords_available_callback = '__return_true';
 		add_filter( 'wp_is_application_passwords_available', $this->force_app_passwords_available_callback );
 
-		// Mock wp_remote_get calls to the pixel server
-		$this->pre_http_request_callback = function ( $preempt, $request_args, $url ) {
-			if ( strpos( $url, 'pixel.wp.com/b.gif' ) !== false ) {
-				parse_str( wp_parse_url( $url, PHP_URL_QUERY ), $query_args );
-				$this->send_pixel_url_queries[] = $query_args;
-				return array( 'response' => array( 'code' => 200 ) ); // Prevent actual HTTP request and return a dummy successful response
-			}
-			return $preempt;
-		};
-		add_filter( 'pre_http_request', $this->pre_http_request_callback, 10, 3 );
-
-		// Ensure the hook isn't already added from another test
-		remove_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30 );
+		// Ensure the hook isn't already added from another test and reset state
+		remove_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30 );
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'none';
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
 	}
 
 	public function tear_down() {
-		// Remove the wp_remote_get mock
-		if ( $this->pre_http_request_callback ) {
-			remove_filter( 'pre_http_request', $this->pre_http_request_callback, 10 );
-		}
-
 		// Remove the app password availability filter
 		if ( $this->force_app_passwords_available_callback ) {
 			remove_filter( 'wp_is_application_passwords_available', $this->force_app_passwords_available_callback );
 		}
 
 		// Remove the hook
-		remove_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30 );
+		remove_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30 );
 
 		// Clean up any application passwords created for test users
 		foreach ( $this->test_user_ids_with_app_passwords as $user_id ) {
 			\WP_Application_Passwords::delete_all_application_passwords( $user_id );
 		}
 		$this->test_user_ids_with_app_passwords = []; // Reset for next test
+
+		// Reset state again just in case
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'none';
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
 
 		parent::tear_down();
 	}
@@ -61,28 +48,26 @@ class Test_Stats extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
-	public function test_track_vip_xmlrpc_auth_type_non_xmlrpc_request() {
+	public function test_determine_xmlrpc_password_type_non_xmlrpc_request() {
 		// Ensure XMLRPC_REQUEST is not defined or false
 		define( 'XMLRPC_REQUEST', false );
 
-		$user_id = self::factory()->user->create();
-		$user    = get_user_by( 'id', $user_id );
-
 		// Add the hook we want to test
-		add_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30, 3 );
+		add_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30, 3 );
 
 		// Trigger the filter
 		$result = apply_filters( 'authenticate', null, 'testuser', 'password' );
 
-		// Assert send_pixel was NOT called
-		$this->assertEmpty( $this->send_pixel_url_queries );
-
+		// Assert state was NOT changed from initial 'none'
+		$this->assertEquals( 'none', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertInstanceOf( \WP_Error::class, $result );
-		$this->assertArrayHasKey( 'invalid_username', $result->errors );
 	}
 
-	public function test_track_vip_xmlrpc_auth_type_user_pass_success() {
-		// Define required constants for this test
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_determine_xmlrpc_password_type_user_pass_success() {
 		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
 			define( 'XMLRPC_REQUEST', true );
 		}
@@ -96,29 +81,20 @@ class Test_Stats extends WP_UnitTestCase {
 		$user     = get_user_by( 'id', $user_id );
 
 		// Add the hook we want to test
-		add_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30, 3 );
+		add_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30, 3 );
 
-		// Trigger the filter with a successful authentication result (pass the user object)
-		// In a real scenario, core's authenticate filter (priority 20) would return the $user object first.
+		// Trigger the filter with a successful authentication result
 		$result = apply_filters( 'authenticate', $user, $username, $password );
 
-		// Assert send_pixel was called (via wp_remote_get mock)
-		$this->assertCount( 1, $this->send_pixel_url_queries );
-
-		// Assert the stats arguments are correct
-		$expected_stats = [
-			'v'                         => 'wpcom-no-pv', // Added by send_pixel
-			'x_vip-go-xmlrpc-auth-type' => 'user_pass',
-			'x_vip-go-xmlrpc-site-id'   => (string) FILES_CLIENT_SITE_ID, // Defined in bootstrap as 123
-		];
-		$this->assertEquals( $expected_stats, $this->send_pixel_url_queries[0] );
-
-		// Assert the filter returned the user object unchanged
+		$this->assertEquals( 'user_pass', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertSame( $user, $result );
 	}
 
-	public function test_track_vip_xmlrpc_auth_type_cookie_success() {
-		// Define required constants for this test
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_determine_xmlrpc_password_type_cookie_success() {
 		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
 			define( 'XMLRPC_REQUEST', true );
 		}
@@ -128,54 +104,48 @@ class Test_Stats extends WP_UnitTestCase {
 		$user     = get_user_by( 'id', $user_id );
 
 		// Add the hook we want to test
-		add_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30, 3 );
+		add_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30, 3 );
 
-		// Trigger the filter with a successful authentication result ($user) and an empty password
+		// Trigger the filter with a successful authentication result
 		$result = apply_filters( 'authenticate', $user, $username, '' ); // Empty password indicates cookie auth
 
-		// Assert send_pixel was called
-		$this->assertCount( 1, $this->send_pixel_url_queries );
-
-		// Assert the stats arguments are correct
-		$expected_stats = [
-			'v'                         => 'wpcom-no-pv',
-			'x_vip-go-xmlrpc-auth-type' => 'cookie',
-			'x_vip-go-xmlrpc-site-id'   => (string) FILES_CLIENT_SITE_ID,
-		];
-		$this->assertEquals( $expected_stats, $this->send_pixel_url_queries[0] );
-
-		// Assert the filter returned the user object unchanged
+		$this->assertEquals( 'cookie', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertSame( $user, $result );
 	}
 
-	public function test_track_vip_xmlrpc_auth_type_failure() {
-		// Define required constants for this test
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_determine_xmlrpc_password_type_failure() {
 		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
 			define( 'XMLRPC_REQUEST', true );
 		}
 
 		$username = 'testuser_fail';
 		$password = 'wrongpassword';
-		// No user created or user is irrelevant as auth fails before our hook
 
 		// Add the hook we want to test
-		add_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30, 3 );
+		add_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30, 3 );
 
 		// Trigger the filter with a failed authentication result (WP_Error)
 		$error  = new \WP_Error( 'authentication_failed', 'Authentication failed.' );
 		$result = apply_filters( 'authenticate', $error, $username, $password );
 
-		// Assert send_pixel was NOT called
-		$this->assertEmpty( $this->send_pixel_url_queries );
+		$this->assertEquals( 'none', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertInstanceOf( \WP_Error::class, $result );
 
-		$this->send_pixel_url_queries = []; // Reset for next check
-		$result_null                  = apply_filters( 'authenticate', null, $username, $password );
-		$this->assertEmpty( $this->send_pixel_url_queries );
+		$this->assertEquals( 'none', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
+		$result_null = apply_filters( 'authenticate', null, $username, $password );
+		$this->assertEquals( 'none', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertInstanceOf( \WP_Error::class, $result_null );
 	}
 
-	public function test_track_vip_xmlrpc_auth_type_app_password_success() {
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_determine_xmlrpc_password_type_app_password_success() {
 		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
 			define( 'XMLRPC_REQUEST', true );
 		}
@@ -201,23 +171,123 @@ class Test_Stats extends WP_UnitTestCase {
 		$app_password_plain = $new_password_data[0]; // Plain-text password is at index 0
 
 		// Add the hook we want to test
-		add_filter( 'authenticate', 'Automattic\VIP\Stats\track_vip_xmlrpc_auth_type', 30, 3 );
+		add_filter( 'authenticate', 'Automattic\VIP\Stats\determine_xmlrpc_password_type', 30, 3 );
 
 		// Trigger the filter with the real application password
 		$result = apply_filters( 'authenticate', $user, $username, $app_password_plain );
 
-		// Assert send_pixel was called
-		$this->assertCount( 1, $this->send_pixel_url_queries );
-
-		// Assert the stats arguments are correct
-		$expected_stats = [
-			'v'                         => 'wpcom-no-pv',
-			'x_vip-go-xmlrpc-auth-type' => 'app_pass',
-			'x_vip-go-xmlrpc-site-id'   => (string) FILES_CLIENT_SITE_ID,
-		];
-		$this->assertEquals( $expected_stats, $this->send_pixel_url_queries[0] );
-
-		// Assert the filter returned the user object unchanged
+		$this->assertEquals( 'app_pass', Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertSame( $user, $result );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_record_xmlrpc_auth_telemetry_not_xmlrpc_request() {
+		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
+			define( 'XMLRPC_REQUEST', false );
+		}
+
+		$mock_tracks = $this->getMockBuilder( 'Automattic\VIP\Telemetry\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();
+		
+		// Inject mock tracks instance
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
+		
+		$mock_tracks->expects( $this->never() )->method( 'record_event' );
+
+		do_action( 'xmlrpc_call', 'test.method' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_record_xmlrpc_auth_telemetry_user_not_logged_in() {
+		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
+			define( 'XMLRPC_REQUEST', true );
+		}
+
+		add_action( 'xmlrpc_call', 'Automattic\VIP\Stats\record_xmlrpc_auth_telemetry_on_xmlrpc_call' );
+
+		wp_logout(); // Ensure no user is logged in
+
+		$mock_tracks = $this->getMockBuilder( 'Automattic\VIP\Telemetry\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();    
+
+		// Inject mock tracks instance
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
+
+		$mock_tracks->expects( $this->never() )->method( 'record_event' );
+
+		do_action( 'xmlrpc_call', 'test.method' );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_record_xmlrpc_auth_telemetry_sends_event() {
+		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
+			define( 'XMLRPC_REQUEST', true );
+		}
+
+		add_action( 'xmlrpc_call', 'Automattic\VIP\Stats\record_xmlrpc_auth_telemetry_on_xmlrpc_call' );
+
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$xmlrpc_method_name = 'test.methodName';
+
+		$mock_tracks = $this->getMockBuilder( 'Automattic\VIP\Telemetry\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();
+
+		// Inject the mock instance BEFORE the action is triggered
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = $mock_tracks;
+
+		$expected_site_id = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : 0;
+		$mock_tracks->expects( $this->once() )->method( 'record_event' )->with(
+			'xmlrpc_authentication', 
+			[
+				'password_type' => 'user_pass',
+				'method'        => $xmlrpc_method_name,
+				'site_id'       => $expected_site_id,
+			]
+		);
+
+		do_action( 'xmlrpc_call', $xmlrpc_method_name );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_track_method_bails_if_password_type_is_none() {
+		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
+			define( 'XMLRPC_REQUEST', true );
+		}
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$mock_tracks = $this->getMockBuilder( 'Automattic\VIP\Telemetry\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();
+
+		// Inject mock tracks instance
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'none'; // Ensure type is none
+		Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = $mock_tracks;
+
+		$mock_tracks->expects( $this->never() )->method( 'record_event' );
+
+		do_action( 'xmlrpc_call', 'test.method' );
 	}
 }

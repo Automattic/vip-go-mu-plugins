@@ -7,7 +7,11 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 namespace Automattic\VIP\Stats;
+
+use Automattic\VIP\Telemetry\Tracks;
 
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
@@ -16,9 +20,10 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
-
-	// Hook XML-RPC authentication type tracking
-	add_filter( 'authenticate', __NAMESPACE__ . '\track_vip_xmlrpc_auth_type', 30, 3 ); // core authenticates on 20
+	// Determine the password type and store it in XML_RPC_Auth_Tracker
+	add_filter( 'authenticate', __NAMESPACE__ . '\determine_xmlrpc_password_type', 30, 3 ); // core authenticates on 20
+	// Send the telemetry event on xmlrpc_call
+	add_action( 'xmlrpc_call', __NAMESPACE__ . '\record_xmlrpc_auth_telemetry_on_xmlrpc_call', 10, 1 );
 }
 
 /**
@@ -115,7 +120,7 @@ function track_file_delete() {
 /**
  * Tracks the authentication type used during successful XML-RPC requests.
  */
-function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
+function determine_xmlrpc_password_type( $user, $username, $password ) {
 	// Only proceed if it's an XML-RPC request
 	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
 		return $user;
@@ -126,12 +131,12 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 		return $user;
 	}
 
-	$auth_type = 'none';
+	$password_type = 'none';
 
 	if ( empty( $password ) ) {
-		$auth_type = 'cookie';  
+		$password_type = 'cookie';  
 	} elseif ( wp_check_password( $password, $user->user_pass ) ) {
-		$auth_type = 'user_pass';
+		$password_type = 'user_pass';
 	} elseif ( wp_is_application_passwords_available() ) {
 		/*
 		* Strips out anything non-alphanumeric. This is so passwords can be used with
@@ -155,25 +160,27 @@ function track_vip_xmlrpc_auth_type( $user, $username, $password ) {
 			}
 
 			if ( $password_match ) {
-				$auth_type = 'app_pass';
+				$password_type = 'app_pass';
 				break;
 			}
 		}
 	}
 
-	// Send the tracking pixel
-	$site_id = 0;
-	if ( defined( 'FILES_CLIENT_SITE_ID' ) && FILES_CLIENT_SITE_ID ) {
-		$site_id = FILES_CLIENT_SITE_ID;
-	}
-
-	send_pixel( [
-		'vip-go-xmlrpc-auth-type' => $auth_type,
-		'vip-go-xmlrpc-site-id'   => $site_id,
-	] );
+	XML_RPC_Auth_Tracker::$xmlrpc_password_type = $password_type;
 
 	// Always return the original $user object to avoid disrupting authentication.
 	return $user;
+}
+
+function record_xmlrpc_auth_telemetry_on_xmlrpc_call( $xmlrpc_method ) {
+	if ( ! defined( 'XMLRPC_REQUEST' ) || ! XMLRPC_REQUEST ) {
+		return;
+	}
+	if ( ! is_user_logged_in() ) {
+		return;
+	}
+
+	XML_RPC_Auth_Tracker::track( $xmlrpc_method );
 }
 
 function send_pixel( $stats ) {
@@ -205,4 +212,29 @@ add_filter( 'jetpack_stats_footer_amp_data', __NAMESPACE__ . '\\add_hp' );
 function add_hp( $data ) {
 	$data['hp'] = 'vip';
 	return $data;
+}
+
+// We can't call `$telemetry->record_event()` during `authenticate` because `wp_get_current_user()` won't return the correct user.
+// So we'll use a two-step approach:
+// 1. On `authenticate`, set a static variable with the password type.
+// 2. On `xmlrpc_call`, call `track()` to send the telemetry event.
+class XML_RPC_Auth_Tracker {
+	public static $xmlrpc_password_type = 'none';
+	public static $tracks_instance      = null;
+
+	public static function track( $xmlrpc_method ) {
+		if ( 'none' === self::$xmlrpc_password_type ) {
+			return;
+		}
+		if ( ! self::$tracks_instance ) {
+			self::$tracks_instance = new Tracks();
+		}
+
+		// Send telemetry event
+		self::$tracks_instance->record_event( 'xmlrpc_authentication', [
+			'password_type' => self::$xmlrpc_password_type,
+			'method'        => $xmlrpc_method,
+			'site_id'       => defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : 0,
+		] );
+	}
 }
