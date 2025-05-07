@@ -54,7 +54,8 @@ function vip_strict_sanitize_username( $username ) {
 function wpcom_vip_is_restricted_username( $username ) {
 	return 'admin' === $username
 		|| WPCOM_VIP_MACHINE_USER_LOGIN === $username
-		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username;
+		|| WPCOM_VIP_MACHINE_USER_EMAIL === $username
+		|| ( 'vipgo' === $username && defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' !== constant( 'WP_ENVIRONMENT_TYPE' ) );
 }
 
 /**
