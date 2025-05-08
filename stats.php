@@ -223,16 +223,16 @@ class XML_RPC_Auth_Tracker {
 	public static $tracks_instance      = null;
 
 	public static function track( $xmlrpc_method ) {
-		if ( 'none' === self::$xmlrpc_password_type ) {
+		if ( 'none' === static::$xmlrpc_password_type ) {
 			return;
 		}
-		if ( ! self::$tracks_instance ) {
-			self::$tracks_instance = new Tracks();
+		if ( ! static::$tracks_instance ) {
+			static::$tracks_instance = new Tracks();
 		}
 
 		// Send telemetry event
-		self::$tracks_instance->record_event( 'xmlrpc_authentication', [
-			'password_type' => self::$xmlrpc_password_type,
+		static::$tracks_instance->record_event( 'xmlrpc_authentication', [
+			'password_type' => static::$xmlrpc_password_type,
 			'method'        => $xmlrpc_method,
 			'site_id'       => defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : 0,
 		] );
