@@ -131,6 +131,11 @@ function determine_xmlrpc_password_type( $user, $username, $password ) {
 		return $user;
 	}
 
+	// Skip tracking for Jetpack requests.
+	if ( vip_is_jetpack_request() ) {
+		return;
+	}
+
 	$password_type = 'none';
 
 	if ( empty( $password ) ) {
@@ -173,10 +178,18 @@ function determine_xmlrpc_password_type( $user, $username, $password ) {
 }
 
 function record_xmlrpc_auth_telemetry_on_xmlrpc_call( $xmlrpc_method ) {
+	// Skip tracking for non-XML-RPC requests.
 	if ( ! defined( 'XMLRPC_REQUEST' ) || ! XMLRPC_REQUEST ) {
 		return;
 	}
+
+	// Skip tracking for unauthenticated requests.
 	if ( ! is_user_logged_in() ) {
+		return;
+	}
+
+	// Skip tracking for Jetpack requests.
+	if ( vip_is_jetpack_request() ) {
 		return;
 	}
 
