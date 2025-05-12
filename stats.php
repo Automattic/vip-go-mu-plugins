@@ -21,9 +21,9 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
 	// Determine the password type and store it in XML_RPC_Auth_Tracker
-	add_filter( 'authenticate', __NAMESPACE__ . '\determine_xmlrpc_password_type', 30, 3 ); // core authenticates on 20
+	add_filter( 'application_password_did_authenticate', __NAMESPACE__ . '\application_password_did_authenticate' );
 	// Send the telemetry event on xmlrpc_call
-	add_action( 'xmlrpc_call', __NAMESPACE__ . '\record_xmlrpc_auth_telemetry_on_xmlrpc_call', 10, 1 );
+	add_action( 'xmlrpc_call', __NAMESPACE__ . '\track_xml_rpc_password_type', 10, 1 );
 }
 
 /**
@@ -117,67 +117,7 @@ function track_file_delete() {
 	] );
 }
 
-/**
- * Tracks the authentication type used during successful XML-RPC requests.
- */
-function determine_xmlrpc_password_type( $user, $username, $password ) {
-	// Only proceed if it's an XML-RPC request
-	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
-		return $user;
-	}
-
-	// We are only interested in successful authentication events.
-	if ( is_wp_error( $user ) || ! ( $user instanceof \WP_User ) ) {
-		return $user;
-	}
-
-	// Skip tracking for Jetpack requests.
-	if ( vip_is_jetpack_request() ) {
-		return;
-	}
-
-	$password_type = 'none';
-
-	if ( empty( $password ) ) {
-		$password_type = 'cookie';  
-	} elseif ( wp_check_password( $password, $user->user_pass ) ) {
-		$password_type = 'user_pass';
-	} elseif ( wp_is_application_passwords_available() ) {
-		/*
-		* Strips out anything non-alphanumeric. This is so passwords can be used with
-		* or without spaces to indicate the groupings for readability.
-		*
-		* Generated application passwords are exclusively alphanumeric.
-		*/
-		$password = preg_replace( '/[^a-z\d]/i', '', $password );
-
-		// Check if the provided password validates as an Application Password for this user.
-		$hashed_passwords = \WP_Application_Passwords::get_user_application_passwords( $user->ID );
-
-		foreach ( $hashed_passwords as $key => $item ) {
-			$password_match = false;
-			// Use the dedicated method if available (WP 6.8+), otherwise fall back to wp_check_password.
-			if ( method_exists( '\WP_Application_Passwords', 'check_password' ) ) {
-				$password_match = \WP_Application_Passwords::check_password( $password, $item['password'] );
-			} else {
-				// phpcs:ignore WordPress.WP.DeprecatedFunctions.wp_check_password_instead_of_hash_equals -- Needed for WP < 6.8 compatibility
-				$password_match = wp_check_password( $password, $item['password'] );
-			}
-
-			if ( $password_match ) {
-				$password_type = 'app_pass';
-				break;
-			}
-		}
-	}
-
-	XML_RPC_Auth_Tracker::$xmlrpc_password_type = $password_type;
-
-	// Always return the original $user object to avoid disrupting authentication.
-	return $user;
-}
-
-function record_xmlrpc_auth_telemetry_on_xmlrpc_call( $xmlrpc_method ) {
+function track_xml_rpc_password_type( $xmlrpc_method ) {
 	// Skip tracking for non-XML-RPC requests.
 	if ( ! defined( 'XMLRPC_REQUEST' ) || ! XMLRPC_REQUEST ) {
 		return;
@@ -194,6 +134,27 @@ function record_xmlrpc_auth_telemetry_on_xmlrpc_call( $xmlrpc_method ) {
 	}
 
 	XML_RPC_Auth_Tracker::track( $xmlrpc_method );
+}
+
+function application_password_did_authenticate( $user ) {
+	// Only proceed if it's an XML-RPC request
+	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+		return $user;
+	}
+
+	// We are only interested in successful authentication events.
+	if ( is_wp_error( $user ) || ! ( $user instanceof \WP_User ) ) {
+		return $user;
+	}
+
+	// Skip tracking for Jetpack requests.
+	if ( vip_is_jetpack_request() ) {
+		return $user;
+	}
+
+	XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'app_pass';
+
+	return $user;
 }
 
 function send_pixel( $stats ) {
@@ -227,18 +188,11 @@ function add_hp( $data ) {
 	return $data;
 }
 
-// We can't call `$telemetry->record_event()` during `authenticate` because `wp_get_current_user()` won't return the correct user.
-// So we'll use a two-step approach:
-// 1. On `authenticate`, set a static variable with the password type.
-// 2. On `xmlrpc_call`, call `track()` to send the telemetry event.
 class XML_RPC_Auth_Tracker {
-	public static $xmlrpc_password_type = 'none';
+	public static $xmlrpc_password_type = 'user_pass';
 	public static $tracks_instance      = null;
 
 	public static function track( $xmlrpc_method ) {
-		if ( 'none' === static::$xmlrpc_password_type ) {
-			return;
-		}
 		if ( ! static::$tracks_instance ) {
 			static::$tracks_instance = new Tracks();
 		}
