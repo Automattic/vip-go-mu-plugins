@@ -271,11 +271,11 @@ class WPCOM_VIP_Cache_Manager {
 
 					$headers = [
 						'Content-Type: application/json',
-						sprintf( 'Authorization: Bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
+						sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
 					];
 					if ( 500 < strlen( $data ) ) {
 						$compressed_data = gzencode( $data );
-						$headers[]       = [ 'Content-Encoding: gzip' ];
+						$headers[]       = 'Content-Encoding: gzip';
 						curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
 					} else {
 						curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
