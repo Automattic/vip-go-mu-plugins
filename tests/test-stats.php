@@ -5,7 +5,7 @@ class Test_Stats extends WP_UnitTestCase {
 		parent::set_up();
 
 		// Add the hooks we want to test
-		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		add_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
 		add_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
@@ -14,7 +14,7 @@ class Test_Stats extends WP_UnitTestCase {
 
 	public function tear_down() {
 		// Remove the hooks
-		remove_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		remove_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
 		remove_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		// Reset state again just in case

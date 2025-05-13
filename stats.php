@@ -21,7 +21,7 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
 	// Determine the password type and store it in XML_RPC_Auth_Tracker
-	add_filter( 'application_password_did_authenticate', __NAMESPACE__ . '\application_password_did_authenticate' );
+	add_action( 'application_password_did_authenticate', __NAMESPACE__ . '\application_password_did_authenticate', 10, 1 );
 	// Send the telemetry event on xmlrpc_call
 	add_action( 'xmlrpc_call', __NAMESPACE__ . '\track_xml_rpc_password_type', 10, 1 );
 }
