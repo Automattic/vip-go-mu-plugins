@@ -67,3 +67,9 @@ use Automattic\VIP\Telemetry\Tracks;
 new Pendo( 'myplugin_', [ /* global properties */ ] );
 new Tracks( 'myplugin_', [ /* global properties */ ] );
 ```
+
+## Pendo Page/Feature events
+
+Pendo Page/Feature events are client-side events that are sent to Pendo when a user interacts with a feature or page in the WordPress admin dashboard. It is automatically enabled in environments that support it and have not opted-out. Configuration is largely done via the Pendo platform.
+
+**Note:** While it is possible to send Pendo "Track events" via the client-side library, we should always send them server-side via `Telemetry::record_event()` or `Pendo::record_event()` for consistency and safety. We use a customized version of the Pendo library with a custom browser global that may not follow code examples found in their documentation.
