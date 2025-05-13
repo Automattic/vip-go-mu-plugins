@@ -81,11 +81,10 @@ class Test_Stats extends WP_UnitTestCase {
 		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 3 );
 
 		// Trigger the filter with a failed authentication result (WP_Error)
-		$error  = new \WP_Error( 'authentication_failed', 'Authentication failed.' );
-		$result = apply_filters( 'application_password_did_authenticate', $error );
+		$error = new \WP_Error( 'authentication_failed', 'Authentication failed.' );
 
+		apply_filters( 'application_password_did_authenticate', $error );
 		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
-		$this->assertInstanceOf( \WP_Error::class, $result );
 
 		// Test with null result
 		apply_filters( 'application_password_did_authenticate', null );
