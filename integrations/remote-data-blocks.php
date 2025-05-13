@@ -25,6 +25,11 @@ class RemoteDataBlocksIntegration extends Integration {
 		return defined( 'REMOTE_DATA_BLOCKS__LOADED' );
 	}
 
+	public function get_wp_version(): string {
+		global $wp_version;
+		return $wp_version;
+	}
+
 	/**
 	 * Returns `true` if the current WordPress version is supported by Remote Data Blocks.
 	 *
@@ -33,7 +38,7 @@ class RemoteDataBlocksIntegration extends Integration {
 	 *              version is defined, `false` otherwise.
 	 */
 	public function is_supported_wp_version(): bool {
-		global $wp_version;
+		$wp_version = $this->get_wp_version();
 
 		$config = $this->get_env_config();
 		if (

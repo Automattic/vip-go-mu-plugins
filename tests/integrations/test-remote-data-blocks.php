@@ -104,9 +104,6 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		// Reset our mock state
 		global $mock_filesystem_state;
 		$mock_filesystem_state = null;
-
-		// Unset global wp_version if set by a test
-		unset( $GLOBALS['wp_version'] );
 	}
 
 	public function test_is_loaded_returns_false_when_not_loaded(): void {
@@ -223,17 +220,14 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 	 * @dataProvider wp_version_support_provider
 	 */
 	public function test_is_supported_wp_version( string $current_wp_version, ?array $config, bool $expected_result ): void {
-		global $wp_version;
-		$wp_version = $current_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
-
 		/** @var MockObject|RemoteDataBlocksIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
+			->onlyMethods( [ 'get_env_config', 'get_wp_version' ] )
 			->getMock();
 
 		$integration_mock->method( 'get_env_config' )->willReturn( $config ?? [] );
-
+		$integration_mock->method( 'get_wp_version' )->willReturn( $current_wp_version );
 		$this->assertEquals( $expected_result, $integration_mock->is_supported_wp_version() );
 	}
 
