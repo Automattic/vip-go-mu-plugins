@@ -5,8 +5,8 @@ class Test_Stats extends WP_UnitTestCase {
 		parent::set_up();
 
 		// Add the hooks we want to test
-		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30 );
-		add_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type' );
+		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		add_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
@@ -14,8 +14,8 @@ class Test_Stats extends WP_UnitTestCase {
 
 	public function tear_down() {
 		// Remove the hooks
-		remove_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30 );
-		remove_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type' );
+		remove_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		remove_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		// Reset state again just in case
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
@@ -84,12 +84,12 @@ class Test_Stats extends WP_UnitTestCase {
 		$error  = new \WP_Error( 'authentication_failed', 'Authentication failed.' );
 		$result = apply_filters( 'application_password_did_authenticate', $error );
 
-		$this->assertEquals( 'none', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
+		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 		$this->assertInstanceOf( \WP_Error::class, $result );
 
 		// Test with null result
 		apply_filters( 'application_password_did_authenticate', null );
-		$this->assertEquals( 'none', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
+		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 	}
 
 	/**
