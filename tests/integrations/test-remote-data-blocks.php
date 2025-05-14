@@ -233,10 +233,12 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 
 	public static function wp_version_support_provider(): array {
 		return [
-			'no minimum_wp_version in config' => [ '6.7', [], true ],
-			'wp_version less than minimum'    => [ '5.6', [ 'minimum_wp_version' => '6.7' ], false ],
-			'wp_version equal to minimum'     => [ '6.7.1', [ 'minimum_wp_version' => '6.7' ], true ],
-			'wp_version greater than minimum' => [ '6.8.2', [ 'minimum_wp_version' => '6.7' ], true ],
+			'no minimum_wp_version in config'   => [ '6.7', [], true ],
+			'wp_version less than minimum'      => [ '5.6', [ 'minimum_wp_version' => '6.7' ], false ],
+			'wp_version equal to minimum with patch different' => [ '6.7.1', [ 'minimum_wp_version' => '6.7' ], true ],
+			'wp_version equal to minimum exact' => [ '6.7', [ 'minimum_wp_version' => '6.7' ], true ],
+			'wp_version equal to minimum but more specific' => [ '6.7.0', [ 'minimum_wp_version' => '6.7' ], true ],
+			'wp_version equal to minimum but less specific' => [ '6.7', [ 'minimum_wp_version' => '6.7.0' ], true ],
 		];
 	}
 
