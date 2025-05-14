@@ -25,6 +25,11 @@ class RemoteDataBlocksIntegration extends Integration {
 		return defined( 'REMOTE_DATA_BLOCKS__LOADED' );
 	}
 
+	/**
+	 * Returns the current WordPress version.
+	 *
+	 * Wraps the global `$wp_version` variable in a function to make it easier to mock in tests.
+	 */
 	public function get_wp_version(): string {
 		global $wp_version;
 		return $wp_version;
