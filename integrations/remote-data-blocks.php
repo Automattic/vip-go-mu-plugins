@@ -26,6 +26,31 @@ class RemoteDataBlocksIntegration extends Integration {
 	}
 
 	/**
+	 * Returns `true` if the current WordPress version is supported by Remote Data Blocks.
+	 *
+	 * @return bool `true` if the current WordPress version greater than or equal to the minimum
+	 *              WordPress version defined in the environment config, `false` otherwise.
+	 */
+	public function is_supported_wp_version(): bool {
+		$wp_version = get_bloginfo( 'version' );
+
+		$config = $this->get_env_config();
+		if (
+			isset( $config['minimum_wp_version'] ) &&
+			is_string( $config['minimum_wp_version'] ) &&
+			version_compare( $wp_version, $config['minimum_wp_version'], '>=' )
+		) {
+			return true;
+		}
+
+		/**
+		 * Default to false if the minimum WordPress version is not set to avoid fatals due to
+		 * Remote Data Blocks being loaded on unsupported WordPress versions.
+		 */
+		return false;
+	}
+
+	/**
 	 * Loads the plugin.
 	 *
 	 * This is called after the integration is activated and configured.
@@ -40,6 +65,11 @@ class RemoteDataBlocksIntegration extends Integration {
 			// In activate() method we do make sure to not activate the integration if its already loaded
 			// but still adding it here as a safety measure i.e. if load() is called directly.
 			if ( $this->is_loaded() ) {
+				return;
+			}
+
+			if ( ! $this->is_supported_wp_version() ) {
+				$this->is_active = false;
 				return;
 			}
 
