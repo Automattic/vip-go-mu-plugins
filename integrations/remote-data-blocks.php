@@ -26,35 +26,28 @@ class RemoteDataBlocksIntegration extends Integration {
 	}
 
 	/**
-	 * Returns the current WordPress version.
-	 *
-	 * Wraps the global `$wp_version` variable in a function to make it easier to mock in tests.
-	 */
-	public function get_wp_version(): string {
-		global $wp_version;
-		return $wp_version;
-	}
-
-	/**
 	 * Returns `true` if the current WordPress version is supported by Remote Data Blocks.
 	 *
 	 * @return bool `true` if the current WordPress version greater than or equal to the minimum
-	 *              WordPress version defined in the environment config or if no minimum WordPress
-	 *              version is defined, `false` otherwise.
+	 *              WordPress version defined in the environment config, `false` otherwise.
 	 */
 	public function is_supported_wp_version(): bool {
-		$wp_version = $this->get_wp_version();
+		$wp_version = get_bloginfo( 'version' );
 
 		$config = $this->get_env_config();
 		if (
 			isset( $config['minimum_wp_version'] ) &&
 			is_string( $config['minimum_wp_version'] ) &&
-			version_compare( $wp_version, $config['minimum_wp_version'], '<' )
+			version_compare( $wp_version, $config['minimum_wp_version'], '>=' )
 		) {
-			return false;
+			return true;
 		}
 
-		return true;
+		/**
+		 * Default to false if the minimum WordPress version is not set to avoid fatals due to
+		 * Remote Data Blocks being loaded on unsupported WordPress versions.
+		 */
+		return false;
 	}
 
 	/**

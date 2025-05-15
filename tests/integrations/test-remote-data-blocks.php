@@ -84,9 +84,14 @@ function file_exists( $file ) {
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
-
-
 	private string $slug = 'remote-data-blocks';
+	private static string $original_wp_version;
+
+	public static function setUpBeforeClass(): void {
+		parent::setUpBeforeClass();
+
+		self::$original_wp_version = get_bloginfo( 'version' );
+	}
 
 	public function tearDown(): void {
 		parent::tearDown();
@@ -104,6 +109,10 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		// Reset our mock state
 		global $mock_filesystem_state;
 		$mock_filesystem_state = null;
+
+		// Reset the WordPress version
+		global $wp_version;
+		$wp_version = self::$original_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 	}
 
 	public function test_is_loaded_returns_false_when_not_loaded(): void {
@@ -223,21 +232,32 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|RemoteDataBlocksIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config', 'get_wp_version' ] )
+			->onlyMethods( [ 'get_env_config' ] )
 			->getMock();
 
 		$integration_mock->method( 'get_env_config' )->willReturn( $config ?? [] );
-		$integration_mock->method( 'get_wp_version' )->willReturn( $current_wp_version );
+
+		// Set the WordPress version
+		global $wp_version;
+		$wp_version = $current_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
 		$this->assertEquals( $expected_result, $integration_mock->is_supported_wp_version() );
 	}
 
 	public static function wp_version_support_provider(): array {
 		return [
-			'no minimum_wp_version in config'   => [ '6.7', [], true ],
+			'no minimum_wp_version in config'   => [ '6.7', [], false ],
 			'wp_version less than minimum'      => [ '5.6', [ 'minimum_wp_version' => '6.7' ], false ],
 			'wp_version equal to minimum with patch different' => [ '6.7.1', [ 'minimum_wp_version' => '6.7' ], true ],
 			'wp_version equal to minimum exact' => [ '6.7', [ 'minimum_wp_version' => '6.7' ], true ],
-			'wp_version equal to minimum but more specific' => [ '6.7.0', [ 'minimum_wp_version' => '6.7' ], true ],
+			'wp_version is release candidate'   => [ '6.7-rc1', [ 'minimum_wp_version' => '6.7' ], false ],
+			'wp_version is beta version'        => [ '6.7-beta1', [ 'minimum_wp_version' => '6.7' ], false ],
+			'minimum_wp_version is release candidate with wp_version major release' => [ '6.7', [ 'minimum_wp_version' => '6.7-rc1' ], true ],
+			'minimum_wp_version is release candidate with wp_version patch release' => [ '6.7.1', [ 'minimum_wp_version' => '6.7-rc1' ], true ],
+			'minimum_wp_version is beta version with wp_version major release' => [ '6.7', [ 'minimum_wp_version' => '6.7-beta1' ], true ],
+			'minimum_wp_version is beta version with wp_version patch release' => [ '6.7.1', [ 'minimum_wp_version' => '6.7-beta1' ], true ],
+			'different minor versions'          => [ '6.8.2', [ 'minimum_wp_version' => '6.7.1' ], true ],
+			'different major versions'          => [ '7.0.1', [ 'minimum_wp_version' => '6.7' ], true ],
 		];
 	}
 
