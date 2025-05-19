@@ -5,7 +5,7 @@ class Test_Stats extends WP_UnitTestCase {
 		parent::set_up();
 
 		// Add the hooks we want to test
-		add_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		add_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\maybe_set_xml_rpc_auth_tracker_type', 30, 1 );
 		add_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
@@ -14,7 +14,7 @@ class Test_Stats extends WP_UnitTestCase {
 
 	public function tear_down() {
 		// Remove the hooks
-		remove_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 1 );
+		remove_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\maybe_set_xml_rpc_auth_tracker_type', 30, 1 );
 		remove_action( 'xmlrpc_call', 'Automattic\\VIP\\Stats\\track_xml_rpc_password_type', 10, 1 );
 
 		// Reset state again just in case
@@ -31,9 +31,6 @@ class Test_Stats extends WP_UnitTestCase {
 	public function test_application_password_did_authenticate_non_xmlrpc_request() {
 		// Ensure XMLRPC_REQUEST is not defined or false
 		define( 'XMLRPC_REQUEST', false );
-
-		// Add the hook we want to test
-		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 3 );
 
 		// Create a test user
 		$user = self::factory()->user->create_and_get();
@@ -76,9 +73,6 @@ class Test_Stats extends WP_UnitTestCase {
 		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
 			define( 'XMLRPC_REQUEST', true );
 		}
-
-		// Add the hook we want to test
-		add_filter( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\application_password_did_authenticate', 30, 3 );
 
 		// Trigger the filter with a failed authentication result (WP_Error)
 		$error = new \WP_Error( 'authentication_failed', 'Authentication failed.' );

@@ -21,7 +21,7 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
 	// Determine the password type and store it in XML_RPC_Auth_Tracker
-	add_action( 'application_password_did_authenticate', __NAMESPACE__ . '\application_password_did_authenticate', 10, 1 );
+	add_action( 'application_password_did_authenticate', __NAMESPACE__ . '\maybe_set_xml_rpc_auth_tracker_type', 10, 1 );
 	// Send the telemetry event on xmlrpc_call
 	add_action( 'xmlrpc_call', __NAMESPACE__ . '\track_xml_rpc_password_type', 10, 1 );
 }
@@ -136,25 +136,23 @@ function track_xml_rpc_password_type( $xmlrpc_method ) {
 	XML_RPC_Auth_Tracker::track( $xmlrpc_method );
 }
 
-function application_password_did_authenticate( $user ) {
+function maybe_set_xml_rpc_auth_tracker_type( $user ) {
 	// Only proceed if it's an XML-RPC request
 	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
-		return $user;
+		return;
 	}
 
 	// We are only interested in successful authentication events.
 	if ( is_wp_error( $user ) || ! ( $user instanceof \WP_User ) ) {
-		return $user;
+		return;
 	}
 
 	// Skip tracking for Jetpack requests.
 	if ( vip_is_jetpack_request() ) {
-		return $user;
+		return;
 	}
 
 	XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'app_pass';
-
-	return $user;
 }
 
 function send_pixel( $stats ) {
