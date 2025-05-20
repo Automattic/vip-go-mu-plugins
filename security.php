@@ -207,7 +207,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 			'extra'    => [
 				'uri'              => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( $_SERVER['REQUEST_URI'] ) : '',
 				'http_method'      => isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( $_SERVER['REQUEST_METHOD'] ) : '',
-				'username'         => $username,
+				'username'         => vip_strict_sanitize_username( $username ),
 				'lockout_type'     => $lock_reason,
 				'lockout_duration' => $lock_interval,
 				'ip_address'       => $ip,
