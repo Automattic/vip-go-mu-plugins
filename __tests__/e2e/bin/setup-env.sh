@@ -45,3 +45,6 @@ if [ "${WPVER}" = 'trunk' ]; then
     vip dev-env exec --slug e2e-test-site --quiet -- wp core update-db
 fi
 vip dev-env exec --slug e2e-test-site --quiet -- wp rewrite structure '/%postname%/'
+
+# Change admin password to "password"
+vip dev-env exec --slug e2e-test-site --quiet -- wp user update vipgo --user_pass=password
