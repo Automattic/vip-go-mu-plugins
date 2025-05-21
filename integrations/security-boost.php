@@ -32,6 +32,10 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 		if ( ! defined( 'VIP_SECURITY_BOOST_CONFIGS' ) ) {
 			define( 'VIP_SECURITY_BOOST_CONFIGS', $configs );
 		}
+
+		if ( isset( $configs['version'] ) ) {
+			$this->version = $configs['version'];
+		}
 	}
 
 	public function load(): void {
