@@ -256,8 +256,10 @@ class WPCOM_VIP_Cache_Manager {
 					$req_array = array();
 					foreach ( $req_chunk as $req ) {
 						$req_array[] = array(
-							'type' => $req['method'],
-							'uri'  => $req['uri'],
+							'group' => 'vip-go',
+							'scope' => 'global',
+							'type'  => $req['method'],
+							'uri'   => $req['uri'],
 						);
 					}
 					$data = wp_json_encode( $req_array );
