@@ -65,11 +65,11 @@ class Pendo_JavaScript_Library {
 		'site-editor.php',
 		'themes.php',
 		'upload.php',
+		'parse-ly_page_parsely-settings',
+		'toplevel_page_parsely-dashboard-page',
 	];
-	
+
 	private static array $allowed_admin_screens = [
-		'parsely-dashboard-page',
-		'parsely-settings',
 		'vip-block-governance',
 	];
 
