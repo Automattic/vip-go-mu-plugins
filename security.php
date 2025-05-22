@@ -202,7 +202,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 		// Log which user was locked out, what type of lockout, the lockout duration, and the IP address
 		\Automattic\VIP\Logstash\log2logstash( array(
 			'severity' => 'warning',
-			'feature'  => 'security',
+			'feature'  => "security_lockout_{$lock_reason}",
 			'message'  => sprintf( 'User locked out due to $lock_reason. Username: %s, IP: %s, Interval: %d', $username, $ip, $lock_interval ),
 			'extra'    => [
 				'uri'              => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( $_SERVER['REQUEST_URI'] ) : '',
