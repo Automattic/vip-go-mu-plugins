@@ -197,8 +197,22 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 		 */
 		$lock_interval = apply_filters( "vip_{$event_type}_{$lock_reason}_lockout", $default_lockout, $username );
 
-
 		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys[ "{$lock_reason}_cache_key" ], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+
+		// Log which user was locked out, what type of lockout, the lockout duration, and the IP address
+		\Automattic\VIP\Logstash\log2logstash( array(
+			'severity' => 'warning',
+			'feature'  => "security_lockout_{$lock_reason}",
+			'message'  => sprintf( 'User locked out due to $lock_reason. Username: %s, IP: %s, Interval: %d', $username, $ip, $lock_interval ),
+			'extra'    => [
+				'uri'              => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( $_SERVER['REQUEST_URI'] ) : '',
+				'http_method'      => isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( $_SERVER['REQUEST_METHOD'] ) : '',
+				'username'         => vip_strict_sanitize_username( $username ),
+				'lockout_type'     => $lock_reason,
+				'lockout_duration' => $lock_interval,
+				'ip_address'       => $ip,
+			],
+		) );
 	}
 }
 
