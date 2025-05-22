@@ -177,7 +177,7 @@ add_filter( 'oembed_fetch_url', 'vip_proxy_twitter_embed', 10 );
 /**
 * Ninja Forms (https://wordpress.org/plugins/ninja-forms/)
 *
-* Workaround for a type juggling issue in the Ninja Forms plugin update logic. Valid as of Ninja Forms v3.10.1.
+* Workaround for a type juggling issue in the Ninja Forms plugin update logic. Valid as of Ninja Forms v3.4.34.2.
 *
 * The plugin uses a loose type comparison when checking option values during updates.
 * Specifically, `update_option()` performs a strict `!==` check, and due to Ninja Forms
@@ -190,9 +190,18 @@ add_filter( 'oembed_fetch_url', 'vip_proxy_twitter_embed', 10 );
 * @see: https://plugins.trac.wordpress.org/browser/ninja-forms/trunk/ninja-forms.php#L541
 * @param mixed $value The new value to be saved.
 * @param string $old_value The old value to be replaced.
+* @return mixed The value to be saved.
 */
 function vip_ninja_forms_update_option( $value, $old_value ) {
 	return ( 0 === $value && '0' === $old_value ) ? '0' : $value;
 }
 
-add_filter( 'pre_update_option_ninja_forms_needs_updates', 'vip_ninja_forms_update_option', 10, 2 );
+function vip_ninja_forms_setup() {
+	if (
+		class_exists( 'Ninja_Forms' ) &&
+		defined( 'Ninja_Forms::VERSION' ) &&
+		version_compare( Ninja_Forms::VERSION, '3.4.34.2', '>=' )
+	) {
+		add_filter( 'pre_update_option_ninja_forms_needs_updates', 'vip_ninja_forms_update_option', 10, 2 );
+	}
+}
