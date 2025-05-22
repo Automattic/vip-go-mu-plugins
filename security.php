@@ -203,7 +203,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 		\Automattic\VIP\Logstash\log2logstash( array(
 			'severity' => 'warning',
 			'feature'  => 'security',
-			'message'  => sprintf( 'User %s locked out for %d seconds due to %s from IP %s', $username, $lock_interval, $lock_reason, $ip ),
+			'message'  => sprintf( 'User locked out due to $lock_reason. Username: %s, IP: %s, Interval: %d', $username, $ip, $lock_interval ),
 			'extra'    => [
 				'uri'              => isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( $_SERVER['REQUEST_URI'] ) : '',
 				'http_method'      => isset( $_SERVER['REQUEST_METHOD'] ) ? sanitize_text_field( $_SERVER['REQUEST_METHOD'] ) : '',
