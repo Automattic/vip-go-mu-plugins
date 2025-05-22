@@ -193,15 +193,14 @@ add_filter( 'oembed_fetch_url', 'vip_proxy_twitter_embed', 10 );
 * @return mixed The value to be saved.
 */
 function vip_ninja_forms_update_option( $value, $old_value ) {
-	return ( 0 === $value && '0' === $old_value ) ? '0' : $value;
-}
-
-function vip_ninja_forms_setup() {
 	if (
 		class_exists( 'Ninja_Forms' ) &&
 		defined( 'Ninja_Forms::VERSION' ) &&
 		version_compare( Ninja_Forms::VERSION, '3.4.34.2', '>=' )
 	) {
-		add_filter( 'pre_update_option_ninja_forms_needs_updates', 'vip_ninja_forms_update_option', 10, 2 );
+		return ( 0 === $value && '0' === $old_value ) ? '0' : $value;
 	}
+	return $value;
 }
+
+add_filter( 'pre_update_option_ninja_forms_needs_updates', 'vip_ninja_forms_update_option', 10, 2 );
