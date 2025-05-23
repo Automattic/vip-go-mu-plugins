@@ -104,6 +104,59 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( [ 'test' => 'value' ], constant( 'REMOTE_DATA_BLOCKS_CONFIGS' ) );
 	}
 
+	public function test_configure_adds_service_field_to_child_sources(): void {
+		// Mock child env configs
+		$child_env_configs = [
+			'airtable'      => [
+				'sources' => [
+					[
+						'uuid'           => 'test-uuid-1',
+						'service_config' => [ 'key' => 'value1' ],
+					],
+					[
+						'uuid'           => 'test-uuid-2',
+						'service_config' => [ 'key' => 'value2' ],
+					],
+				],
+			],
+			'google-sheets' => [
+				'sources' => [
+					[
+						'uuid'           => 'test-uuid-3',
+						'service_config' => [ 'key' => 'value3' ],
+					],
+				],
+			],
+		];
+
+		// Create a mock integration that returns our test data
+		/** @var MockObject|RemoteDataBlocksIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'get_child_env_configs' ] )
+			->getMock();
+
+		$integration_mock->method( 'get_child_env_configs' )->willReturn( $child_env_configs );
+
+		$integration_mock->configure();
+
+		$this->assertTrue( defined( 'REMOTE_DATA_BLOCKS_CONFIGS' ) );
+		
+		$configs = constant( 'REMOTE_DATA_BLOCKS_CONFIGS' );
+		$this->assertIsArray( $configs );
+		$this->assertCount( 3, $configs );
+
+		// Verify each source has the service field added
+		$this->assertEquals( 'airtable', $configs[0]['service'] );
+		$this->assertEquals( 'test-uuid-1', $configs[0]['uuid'] );
+		
+		$this->assertEquals( 'airtable', $configs[1]['service'] );
+		$this->assertEquals( 'test-uuid-2', $configs[1]['uuid'] );
+		
+		$this->assertEquals( 'google-sheets', $configs[2]['service'] );
+		$this->assertEquals( 'test-uuid-3', $configs[2]['uuid'] );
+	}
+
 	/**
 	 * @dataProvider wp_version_support_provider
 	 */

@@ -109,6 +109,34 @@ abstract class Integration {
 	}
 
 	/**
+	 * Get child integration configurations.
+	 *
+	 * @return array Associative array of child configurations keyed by integration slug
+	 */
+	public function get_child_configs(): array {
+		// If the integration was activated manually
+		if ( ! isset( $this->vip_config ) ) {
+			return [];
+		}
+
+		return $this->vip_config->get_child_configs();
+	}
+
+	/**
+	 * Get environment configurations for child integrations.
+	 *
+	 * @return array Associative array of child environment configurations keyed by integration slug
+	 */
+	public function get_child_env_configs(): array {
+		// If the integration was activated manually
+		if ( ! isset( $this->vip_config ) ) {
+			return [];
+		}
+
+		return $this->vip_config->get_child_env_configs();
+	}
+
+	/**
 	 * Return the network-site-level configuration for this integration.
 	 *
 	 * @return array<string,array>
