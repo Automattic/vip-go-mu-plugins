@@ -65,11 +65,11 @@ class Pendo_JavaScript_Library {
 		'site-editor.php',
 		'themes.php',
 		'upload.php',
+		'parse-ly_page_parsely-settings',
+		'toplevel_page_parsely-dashboard-page',
 	];
-	
+
 	private static array $allowed_admin_screens = [
-		'parsely-dashboard-page',
-		'parsely-settings',
 		'vip-block-governance',
 	];
 
@@ -195,12 +195,30 @@ class Pendo_JavaScript_Library {
 			return false;
 		}
 
-		if ( ! in_array( $screen, self::$allowed_screens, true ) ) {
+
+		/**
+		 * Filters the list of admin screens where the Pendo JavaScript library should be loaded.
+		 *
+		 * @param array $allowed_screens Array of admin $screen slugs where Pendo is enabled.
+		 */
+		$allowed_screens = apply_filters( 'vip_pendo_allowed_screens', self::$allowed_screens );
+
+		if ( ! in_array( $screen, $allowed_screens, true ) ) {
 			return false;
 		}
 
+		/**
+		 * Filters the list of admin.php pages where the Pendo JavaScript library should be loaded.
+		 *
+		 * These screens are accessed via admin.php?page=[screen_name] and are only used
+		 * when the current screen is admin.php.
+		 *
+		 * @param array $allowed_admin_screens Array of admin.php page slugs where Pendo is enabled.
+		 */
+		$allowed_admin_screens = apply_filters( 'vip_pendo_allowed_admin_screens', self::$allowed_admin_screens );
+
 		// admin.php is further restricted to specific query vars.
-		if ( 'admin.php' === $screen && ! in_array( get_query_var( 'page' ), self::$allowed_admin_screens, true ) ) {
+		if ( 'admin.php' === $screen && ! in_array( get_query_var( 'page' ), $allowed_admin_screens, true ) ) {
 			return false;
 		}
 
