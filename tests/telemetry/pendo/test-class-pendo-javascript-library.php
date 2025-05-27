@@ -35,9 +35,46 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
-		$wp_query->query_vars['page'] = 'parsely-dashboard-page';
+		$wp_query->query_vars['page'] = 'vip-block-governance';
 
 		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+	}
+
+	public function test_enabled_for_filter_allowed_screens() {
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$allow_screen = function ( $screens ) {
+			$screens[] = 'newly-allowed-screen.php';
+			return $screens;
+		};
+
+		add_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
+		remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+	}
+
+	public function test_enabled_for_filter_allowed_admin_screens() {
+		global $wp_query;
+
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'admin-page-slug';
+
+		$allow_admin_screen = function ( $admin_screens ) {
+			$admin_screens[] = 'admin-page-slug';
+			return $admin_screens;
+		};
+
+		add_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
 	}
 
 	public function test_disabled_by_opt_out_constant() {

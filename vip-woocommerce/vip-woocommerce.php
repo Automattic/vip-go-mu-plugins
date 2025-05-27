@@ -27,4 +27,16 @@ add_action( 'plugins_loaded', function () {
 
 		return $check_import_file_path;
 	}, 10, 2 );
+
+	add_filter( 'woocommerce_download_parse_file_path',
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+		function ( $file_path, $remote_file ) {
+			if ( ! str_starts_with( $file_path, 'vip://wp-content' ) ) {
+				return 'vip://wp-content' . $file_path;
+			}
+
+			return $file_path;
+		},
+		10, 2 
+	);
 } );
