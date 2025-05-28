@@ -523,7 +523,7 @@ class Logger {
 		}
 
 		// Process all entries.
-		if ( ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV || constant( 'VIP_GO_ENV' ) === 'local' ) && self::should_wp_debug_log_entries() ) {
+		if ( ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV || constant( 'VIP_GO_ENV' ) === 'local' ) && static::should_wp_debug_log_entries() ) {
 			foreach ( static::$entries as $entry ) {
 				static::wp_debug_log( $entry );
 			}
@@ -542,7 +542,7 @@ class Logger {
 					return;
 				}
 
-				$logs[] = $json;
+				$logs[] = $json_data;
 			}
 			if ( ! empty( $logs ) ) {
 				// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
@@ -583,7 +583,7 @@ class Logger {
 	 * @param array $entry.
 	 */
 	public static function maybe_wp_debug_log_entries( array $entry ): void {
-		if ( ! self::should_wp_debug_log_entries() ) {
+		if ( ! static::should_wp_debug_log_entries() ) {
 			return; // Not applicable.
 		}
 
