@@ -67,6 +67,7 @@ class Pendo_JavaScript_Library {
 		'upload.php',
 		'parse-ly_page_parsely-settings',
 		'toplevel_page_parsely-dashboard-page',
+		'settings_page_remote-data-blocks-settings',
 	];
 
 	private static array $allowed_admin_screens = [
