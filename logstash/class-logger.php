@@ -523,12 +523,14 @@ class Logger {
 		}
 
 		// Process all entries.
-		foreach ( static::$entries as $entry ) {
-			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV ) {
-				static::maybe_wp_debug_log_entries( $entry );
-				continue; // Bypassing logstash log writing below in this case.
+		if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV && self::should_wp_debug_log_entries() ) {
+			foreach ( static::$entries as $entry ) {
+				static::wp_debug_log( $entry );
 			}
 
+			return;
+		}
+		foreach ( static::$entries as $entry ) {
 			$json_data = wp_json_encode( $entry );
 
 			if ( ! $json_data ) {
@@ -543,6 +545,16 @@ class Logger {
 	}
 
 	/**
+	 * Checks whether debug mode is enabled.
+	 *
+	 * @since 2025-05-28
+	 * @return bool
+	 */
+	protected static function should_wp_debug_log_entries(): bool {
+		return apply_filters( 'enable_wp_debug_mode_checks', true ) && defined( 'WP_DEBUG' ) && WP_DEBUG;
+	}
+
+	/**
 	 * Sends data to `WP_DEBUG_LOG` when applicable.
 	 *
 	 * @since 2020-01-10
@@ -550,7 +562,7 @@ class Logger {
 	 * @param array $entry.
 	 */
 	public static function maybe_wp_debug_log_entries( array $entry ): void {
-		if ( ! apply_filters( 'enable_wp_debug_mode_checks', true ) || ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+		if ( ! self::should_wp_debug_log_entries() ) {
 			return; // Not applicable.
 		}
 
