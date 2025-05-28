@@ -1,4 +1,8 @@
 <?php
+/**
+ * Core miscellaneous privacy compatibility.
+ */
+
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 
 namespace Automattic\VIP\Core\Privacy;
