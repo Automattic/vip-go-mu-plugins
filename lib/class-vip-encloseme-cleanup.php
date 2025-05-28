@@ -13,7 +13,7 @@ class VIP_Encloseme_Cleanup {
 
 	public static function init() {
 
-		if ( defined( 'ENABLE_VIP_ENCLOSEME_CLEANUP_ENV' ) && true === ENABLE_VIP_ENCLOSEME_CLEANUP_ENV ) {
+		if ( \Automattic\VIP\Feature::is_enabled_by_percentage( 'vip-encloseme-cleanup' ) ) {
 			add_filter( 'cron_schedules', [ __CLASS__, 'add_cron_schedule' ] ); // phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- by design
 			add_action( 'init', [ __CLASS__, 'schedule_cleanup' ], 99999 );
 			add_action( self::CRON_HOOK, [ __CLASS__, 'cleanup_encloseme_meta' ] );
@@ -70,29 +70,27 @@ class VIP_Encloseme_Cleanup {
 		Alerts::chat( '#vip-go-encloseme-meta-cleanup', sprintf( 'Starting _encloseme meta cleanup for %s.', get_site_url() ) );
 
 		$total = 0;
-		if ( defined( 'ENABLE_VIP_ENCLOSEME_CLEANUP_ENV' ) ) {
-			for ( $count = 0; $count < 10; $count++ ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
-				$pids = $wpdb->get_results(
-					$wpdb->prepare(
-						"SELECT DISTINCT post_id FROM $wpdb->postmeta WHERE meta_key = '_encloseme' LIMIT %d",
-						VIP_ENCLOSEME_LIMIT_SIZE
-					),
-					ARRAY_N
-				);
+		for ( $count = 0; $count < 10; $count++ ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$pids = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT DISTINCT post_id FROM $wpdb->postmeta WHERE meta_key = '_encloseme' LIMIT %d",
+					VIP_ENCLOSEME_LIMIT_SIZE
+				),
+				ARRAY_N
+			);
 
-				if ( empty( $pids ) ) {
-					break; // Bail, no post IDs have been found.
-				}
-
-				foreach ( $pids as $pid ) {
-					delete_post_meta( $pid[0], '_encloseme' );
-				}
-
-				$total += count( $pids );
-
-				sleep( 3 );
+			if ( empty( $pids ) ) {
+				break; // Bail, no post IDs have been found.
 			}
+
+			foreach ( $pids as $pid ) {
+				delete_post_meta( $pid[0], '_encloseme' );
+			}
+
+			$total += count( $pids );
+
+			sleep( 3 );
 		}
 
 		Alerts::chat( '#vip-go-encloseme-meta-cleanup', sprintf( 'Deleted %s _encloseme meta entries for %s.', $total, get_site_url() ) );
