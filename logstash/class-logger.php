@@ -530,6 +530,7 @@ class Logger {
 
 			return;
 		}
+		$path = ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log';
 		foreach ( static::$entries as $entry ) {
 			$json_data = wp_json_encode( $entry );
 
@@ -540,7 +541,7 @@ class Logger {
 
 			// Log to file
 			// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( $json_data . "\n", 3, ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log' );
+			error_log( $json_data . "\n", 3, $path );
 		}
 	}
 
