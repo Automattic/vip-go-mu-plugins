@@ -22,21 +22,39 @@ require_once __DIR__ . '/integrations/integration-vip-config.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
+require_once __DIR__ . '/integrations/enterprise-search.php';
+
+if ( file_exists( __DIR__ . '/integrations/remote-data-blocks.php' ) ) {
+	require_once __DIR__ . '/integrations/remote-data-blocks.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/jetpack.php' ) ) {
+	require_once __DIR__ . '/integrations/jetpack.php';
+}
 
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
+IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
+
+if ( class_exists( __NAMESPACE__ . '\\RemoteDataBlocksIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new RemoteDataBlocksIntegration( 'remote-data-blocks' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\JetpackIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new JetpackIntegration( 'jetpack' ) );
+}
 // @codeCoverageIgnoreEnd
 
 /**
  * Activates an integration with an optional configuration value.
  *
  * @param string              $slug A unique identifier for the integration.
- * @param array<string,mixed> $config An associative array of configuration values for the integration.
+ * @param array<string,mixed> $options An associative options array for the integration.
  */
-function activate( string $slug, array $config = [] ): void {
-	IntegrationsSingleton::instance()->activate( $slug, $config );
+function activate( string $slug, array $options = [] ): void {
+	IntegrationsSingleton::instance()->activate( $slug, $options );
 }
 
 // Load integrations in muplugins_loaded:5 to allow integrations to hook

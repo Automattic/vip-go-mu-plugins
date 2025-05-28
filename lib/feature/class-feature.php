@@ -24,9 +24,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_percentages = [
-		'prom-post-collection' => 0.05,
-	];
+	public static $feature_percentages = [];
 
 	/**
 	 * Holds feature slug and then, key of ids with bool value to enable E.g.
@@ -35,14 +33,7 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [
-		'prom-post-collection' => [
-			6747 => false,
-			6746 => false,
-			6506 => false,
-			6517 => false,
-		],
-	];
+	public static $feature_ids = [];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.
@@ -53,10 +44,6 @@ class Feature {
 	 * @var array Array of values of specific environment names (i.e. staging, production). Also accepts 'non-production' as environment name for all non-production environments.
 	 */
 	public static $feature_envs = [
-		'prom-post-collection' => [
-			'develop' => true,
-			'staging' => true,
-		],
 		'prom-user-collection' => [
 			'develop' => true,
 			'staging' => true,

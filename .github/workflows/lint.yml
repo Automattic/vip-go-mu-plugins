@@ -25,23 +25,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.2.2
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@2.30.0
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
         with:
           coverage: none
         env:
           fail-fast: 'true'
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 'lts/*'
           cache: npm
 
       - name: Install PHP Dependencies
-        uses: ramsey/composer-install@3.0.0
+        uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
 
       - name: Lint files
         run: npm run lint
@@ -51,10 +51,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out source code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.2.2
 
       - name: Setup Node
-        uses: actions/setup-node@v4.0.2
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: 'lts/*'
           cache: npm

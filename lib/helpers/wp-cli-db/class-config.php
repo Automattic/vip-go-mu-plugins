@@ -13,12 +13,12 @@ class Config {
 	private bool $is_batch     = false;
 
 	public function __construct() {
-		$this->is_local = defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'local' || defined( 'WP_ENVIRONMENT_TYPE' ) && constant( 'WP_ENVIRONMENT_TYPE' ) === 'local';
+		$this->is_local = ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && constant( 'VIP_GO_APP_ENVIRONMENT' ) === 'local' ) || ( defined( 'WP_ENVIRONMENT_TYPE' ) && constant( 'WP_ENVIRONMENT_TYPE' ) === 'local' );
 		// We can't check via constants since they are not set yet
 		$this->is_sandbox = class_exists( Environment::class ) && Environment::is_sandbox_container( gethostname(), getenv() );
 		$this->is_batch   = class_exists( Environment::class ) && Environment::is_batch_container( gethostname(), getenv() );
 
-		$this->enabled      = $this->is_batch || $this->is_sandbox || defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' );
+		$this->enabled      = $this->is_batch || $this->is_sandbox || ( defined( 'WPVIP_ENABLE_WP_DB' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB' ) );
 		$this->allow_writes = defined( 'WPVIP_ENABLE_WP_DB_WRITES' ) && 1 === constant( 'WPVIP_ENABLE_WP_DB_WRITES' );
 	}
 
@@ -74,21 +74,27 @@ class Config {
 			$db_servers
 		);
 
-		$server_objects = array_filter( $server_objects, function ( $candidate ) {
+		$filtered_server_objects = array_filter( $server_objects, function ( $candidate ) {
 			return $candidate instanceof DB_Server &&
 				$candidate->can_read() && ! (
 					$candidate->can_write() && ! $this->allow_writes()
 				);
 		} );
 
+		if ( ! $filtered_server_objects ) {
+			$filtered_server_objects = [
+				$server_objects[0],
+			];
+		}
+
 		// Sort the replicas in ascending order of the write priority (if allowed), else sort by read priority.
-		usort( $server_objects, function ( $c0, $c1 ) {
+		usort( $filtered_server_objects, function ( $c0, $c1 ) {
 			if ( $this->allow_writes() ) {
 				return $c0->write_priority() <=> $c1->write_priority();
 			}
 			return $c0->read_priority() <=> $c1->read_priority();
 		} );
 
-		return end( $server_objects );
+		return end( $filtered_server_objects );
 	}
 }

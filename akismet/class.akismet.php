@@ -108,7 +108,11 @@ class Akismet {
 		static $access_token = null;
 
 		if ( is_null( $access_token ) ) {
-			$response = self::http_post( self::build_query( array( 'api_key' => self::get_api_key() ) ), 'token' );
+			$request_args = array( 'api_key' => self::get_api_key() );
+
+			$request_args = apply_filters( 'akismet_request_args', $request_args, 'token' );
+
+			$response = self::http_post( self::build_query( $request_args ), 'token' );
 
 			$access_token = $response[1];
 		}
@@ -117,7 +121,14 @@ class Akismet {
 	}
 
 	public static function check_key_status( $key, $ip = null ) {
-		return self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'verify-key', $ip );
+		$request_args = array(
+			'key' => $key,
+			'blog' => get_option( 'home' ),
+		);
+
+		$request_args = apply_filters( 'akismet_request_args', $request_args, 'verify-key' );
+
+		return self::http_post( self::build_query( $request_args ), 'verify-key', $ip );
 	}
 
 	public static function verify_key( $key, $ip = null ) {
@@ -135,7 +146,14 @@ class Akismet {
 	}
 
 	public static function deactivate_key( $key ) {
-		$response = self::http_post( Akismet::build_query( array( 'key' => $key, 'blog' => get_option( 'home' ) ) ), 'deactivate' );
+		$request_args = array(
+			'key' => $key,
+			'blog' => get_option( 'home' ),
+		);
+
+		$request_args = apply_filters( 'akismet_request_args', $request_args, 'deactivate' );
+
+		$response = self::http_post( self::build_query( $request_args ), 'deactivate' );
 
 		if ( $response[1] != 'deactivated' )
 			return 'failed';
@@ -283,7 +301,17 @@ class Akismet {
 			}
 		}
 
-		$response = self::http_post( Akismet::build_query( $comment ), 'comment-check' );
+		/**
+		 * Filter the data that is used to generate the request body for the API call.
+		 *
+		 * @since 5.3.1
+		 *
+		 * @param array $comment An array of request data.
+		 * @param string $endpoint The API endpoint being requested.
+		 */
+		$comment = apply_filters( 'akismet_request_args', $comment, 'comment-check' );
+
+		$response = self::http_post( self::build_query( $comment ), 'comment-check' );
 
 		do_action( 'akismet_comment_check_response', $response );
 
@@ -300,6 +328,10 @@ class Akismet {
 
 		if ( isset( $response[0]['x-akismet-pro-tip'] ) )
 	        $commentdata['akismet_pro_tip'] = $response[0]['x-akismet-pro-tip'];
+
+		if ( isset( $response[0]['x-akismet-guid'] ) ) {
+			$commentdata['akismet_guid'] = $response[0]['x-akismet-guid'];
+		}
 
 		if ( isset( $response[0]['x-akismet-error'] ) ) {
 			// An error occurred that we anticipated (like a suspended key) and want the user to act on.
@@ -441,6 +473,10 @@ class Akismet {
 
 				if ( isset( self::$last_comment['akismet_pro_tip'] ) ) {
 					update_comment_meta( $comment->comment_ID, 'akismet_pro_tip', self::$last_comment['akismet_pro_tip'] );
+				}
+
+				if ( isset( self::$last_comment['akismet_guid'] ) ) {
+					update_comment_meta( $comment->comment_ID, 'akismet_guid', self::$last_comment['akismet_guid'] );
 				}
 			}
 		}
@@ -711,7 +747,9 @@ class Akismet {
 		if ( self::is_test_mode() )
 			$c['is_test'] = 'true';
 
-		$response = self::http_post( Akismet::build_query( $c ), 'comment-check' );
+		$c = apply_filters( 'akismet_request_args', $c, 'comment-check' );
+
+		$response = self::http_post( self::build_query( $c ), 'comment-check' );
 
 		if ( ! empty( $response[1] ) ) {
 			return $response[1];
@@ -873,7 +911,9 @@ class Akismet {
 			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
 		}
 
-		$response = Akismet::http_post( Akismet::build_query( $comment ), 'submit-spam' );
+		$comment = apply_filters( 'akismet_request_args', $comment, 'submit-spam' );
+
+		$response = self::http_post( self::build_query( $comment ), 'submit-spam' );
 
 		update_comment_meta( $comment_id, 'akismet_user_result', 'true' );
 
@@ -931,7 +971,9 @@ class Akismet {
 			$comment->comment_post_modified_gmt = $post->post_modified_gmt;
 		}
 
-		$response = self::http_post( Akismet::build_query( $comment ), 'submit-ham' );
+		$comment = apply_filters( 'akismet_request_args', $comment, 'submit-ham' );
+
+		$response = self::http_post( self::build_query( $comment ), 'submit-ham' );
 
 		update_comment_meta( $comment_id, 'akismet_user_result', 'false' );
 
@@ -1420,7 +1462,7 @@ class Akismet {
 			$prefix = '_wpcf7_ak_';
 		}
 
-		$fields .= '<p style="display: none !important;">';
+		$fields .= '<p style="display: none !important;" class="akismet-fields-container" data-prefix="' . esc_attr( $prefix ) . '">';
 		$fields .= '<label>&#916;<textarea name="' . $prefix . 'hp_textarea" cols="45" rows="8" maxlength="100"></textarea></label>';
 
 		if ( ! function_exists( 'amp_is_request' ) || ! amp_is_request() ) {

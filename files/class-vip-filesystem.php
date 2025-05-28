@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files;
 
+use Automattic\VIP\Feature;
 use WP_Error;
 
 class VIP_Filesystem {
@@ -64,11 +65,10 @@ class VIP_Filesystem {
 	 * @access  private
 	 */
 	private function load_dependencies() {
-
 		/**
 		 * The class representing the VIP Files stream
 		 */
-		require_once __DIR__ . '/class-vip-filesystem-stream-wrapper.php';
+		require_once __DIR__ . '/class-vip-filesystem-local-stream-wrapper.php';
 	}
 
 	/**
@@ -79,9 +79,11 @@ class VIP_Filesystem {
 	public function run() {
 		$this->add_filters();
 
-		// Create and register stream
-		$this->stream_wrapper = new VIP_Filesystem_Stream_Wrapper( new_api_client(),
-		self::PROTOCOL );
+		$this->stream_wrapper = new VIP_Filesystem_Local_Stream_Wrapper(
+			new_api_client(),
+			self::PROTOCOL
+		);
+
 		$this->stream_wrapper->register();
 	}
 
@@ -174,7 +176,7 @@ class VIP_Filesystem {
 	 * @param  string[]  An array of data for a single file.
 	 */
 	public function filter_validate_file( $file ) {
-		$file_name   = $file['name'];
+		$file_name   = rawurlencode( $file['name'] );
 		$upload_path = trailingslashit( $this->get_upload_path() );
 		$file_path   = $upload_path . $file_name;
 

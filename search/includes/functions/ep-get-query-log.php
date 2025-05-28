@@ -1,9 +1,5 @@
 <?php
-if ( method_exists( '\Automattic\VIP\Search\Search', 'should_load_new_ep' ) && \Automattic\VIP\Search\Search::should_load_new_ep() ) {
-	require_once __DIR__ . '/../../elasticpress-next/elasticpress.php';
-} else {
-	require_once __DIR__ . '/../../elasticpress/elasticpress.php';
-}
+require_once __DIR__ . '/../../elasticpress/elasticpress.php';
 
 // Override query log to remove Authorization header.
 function ep_get_query_log() {

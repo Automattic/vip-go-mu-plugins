@@ -43,10 +43,18 @@ function send_sms( $to, $message ) {
 			}
 
 			$body = array(
-				'From' => SMS_FROM_NUMBER,
 				'To'   => $to_number,
 				'Body' => $message_split,
 			);
+			/**
+			 * If defined, we want to use the MessagingServiceSid to leverage all the automatic logic of the messaging service to route the SMS from the right "From" number.
+			 * For example in some countries, the "From" number should be a local number to the recipient or an alphanumeric sender ID.
+			 */
+			if ( defined( 'VIP_TWILIO_MESSAGING_SERVICE_SID' ) ) {
+				$body['MessagingServiceSid'] = VIP_TWILIO_MESSAGING_SERVICE_SID;
+			} else {
+				$body['From'] = SMS_FROM_NUMBER;
+			}
 
 			$result = send_single_sms_via_rest( $body );
 			if ( is_wp_error( $result ) ) {

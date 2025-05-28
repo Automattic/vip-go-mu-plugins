@@ -1,7 +1,6 @@
 <?php
 
 use Automattic\Test\Constant_Mocker;
-
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
 	private $test_username = 'iamgroot';
@@ -266,5 +265,55 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
 		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+	}
+
+	public function test_create_admin_user() {
+		$result = wp_insert_user( [
+			'user_login' => 'admin',
+			'user_email' => 'admin@example.com',
+			'user_pass'  => '53cr3t!',
+		] );
+
+		$this->assertWPError( $result );
+	}
+
+	/**
+	 * Test that vipgo username is restricted in non-local environments.
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__vipgo_username_restricted_in_non_local() {
+		define( 'WP_ENVIRONMENT_TYPE', 'production' );
+
+		$this->factory()->user->create( [
+			'user_login' => 'vipgo',
+			'user_email' => 'vipgo@example.com',
+			'user_pass'  => 'secret6',
+		] );
+
+		$result = wp_authenticate( 'vipgo', 'secret6' );
+
+		$this->assertWPError( $result );
+		$this->assertEquals( 'restricted-login', $result->get_error_code() );
+	}
+
+	/**
+	 * Test that vipgo username is not restricted in local environment.
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test__vipgo_username_not_restricted_in_local() {
+		define( 'WP_ENVIRONMENT_TYPE', 'local' );
+
+		$user_id = $this->factory()->user->create( [
+			'user_login' => 'vipgo',
+			'user_email' => 'vipgo@example.com',
+			'user_pass'  => 'secret7',
+		] );
+
+		$result = wp_authenticate( 'vipgo', 'secret7' );
+
+		$this->assertNotWPError( $result );
+		$this->assertEquals( $user_id, $result->ID );
 	}
 }

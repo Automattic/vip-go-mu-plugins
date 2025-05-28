@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
+use WP_REST_Server;
 use WP_UnitTestCase;
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication
@@ -16,6 +17,9 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	const VALID_AUTH_MECHANISM   = 'VIP-MACHINE-TOKEN';
 	const INVALID_AUTH_MECHANISM = 'Basic';
 
+	/** @var WP_REST_Server */
+	private $server;
+
 	/**
 	 * Test prep
 	 */
@@ -28,7 +32,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		}
 
 		global $wp_rest_server;
-		$wp_rest_server = new \WP_REST_Server();
+		$wp_rest_server = new WP_REST_Server();
 		$this->server   = $wp_rest_server;
 		do_action( 'rest_api_init' );
 	}

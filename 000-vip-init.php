@@ -207,7 +207,6 @@ require_once __DIR__ . '/prometheus.php';
 
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
-require_once __DIR__ . '/lib/statsd/class-statsd.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
@@ -233,6 +232,30 @@ require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
 
+// Load the Telemetry files
+require_once __DIR__ . '/telemetry/class-telemetry-system.php';
+require_once __DIR__ . '/telemetry/class-telemetry-client.php';
+require_once __DIR__ . '/telemetry/class-telemetry-event-queue.php';
+require_once __DIR__ . '/telemetry/class-telemetry-event.php';
+require_once __DIR__ . '/telemetry/class-telemetry.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
+require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
+require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-client.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php';
+require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event.php';
+require_once __DIR__ . '/telemetry/pendo/pendo-utils.php';
+
+// Temporary loader during rollout, remove and directly require after rollout.
+if ( file_exists( __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php' ) ) {
+	require_once __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php';
+
+	add_action( 'init', [ Automattic\VIP\Telemetry\Pendo::class, 'enable_javascript_library' ] );
+}
+
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
 //enabled on selected sites for now
@@ -250,8 +273,11 @@ if ( Context::is_wp_cli() ) {
 // Warning: Site Details depends on the existence of class Search.
 // If this changes in the future, please ensure that details for search are correctly extracted
 if ( ( defined( 'USE_VIP_ELASTICSEARCH' ) && USE_VIP_ELASTICSEARCH ) || // legacy constant name
-	defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) {
+	( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === VIP_ENABLE_VIP_SEARCH ) ) {
 	require_once __DIR__ . '/search/search.php';
+	if ( ! defined( 'VIP_SEARCH_ENABLED_BY' ) ) {
+		define( 'VIP_SEARCH_ENABLED_BY', 'constant' );
+	}
 }
 
 // Set WordPress environment type

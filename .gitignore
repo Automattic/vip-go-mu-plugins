@@ -30,3 +30,4 @@ jetpack-*/bin
 /test-results/
 cypress/results/
 e2eStorageState.json
+/unique-index-name.php

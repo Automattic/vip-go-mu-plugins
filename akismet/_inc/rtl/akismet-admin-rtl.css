@@ -1,4 +1,4 @@
-/* This file was automatically generated on Aug 25 2023 04:22:56 */
+/* This file was automatically generated on Nov 20 2023 03:10:42 */
 
 #akismet-plugin-container {
 	background-color: var(--akismet-color-light-grey);
@@ -176,7 +176,25 @@
 }
 
 .akismet-card-actions {
+	display: flex;
+	justify-content: flex-end;
 	padding: 1em;
+}
+
+.akismet-card-actions__secondary-action {
+	align-self: center;
+	margin-left: auto;
+}
+
+.akismet-card-actions__secondary-action a[target="_blank"]::after {
+	background: url('../img/icon-external.svg') no-repeat;
+	background-size: contain;
+	content: "";
+	display: inline-block;
+	height: 16px;
+	margin-right: 5px;
+	vertical-align: middle;
+	width: 16px;
 }
 
 .akismet-settings__row label {

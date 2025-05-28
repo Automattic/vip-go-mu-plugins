@@ -29,20 +29,6 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 	const NUMBER_OF_CODES = 10;
 
 	/**
-	 * Ensures only one instance of this class exists in memory at any one time.
-	 *
-	 * @since 0.1-dev
-	 */
-	public static function get_instance() {
-		static $instance;
-		$class = __CLASS__;
-		if ( ! is_a( $instance, $class ) ) {
-			$instance = new $class();
-		}
-		return $instance;
-	}
-
-	/**
 	 * Class constructor.
 	 *
 	 * @since 0.1-dev
@@ -54,7 +40,7 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
 		add_action( 'admin_notices', array( $this, 'admin_notices' ) );
 
-		return parent::__construct();
+		parent::__construct();
 	}
 
 	/**
@@ -70,7 +56,7 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 				'methods'             => WP_REST_Server::CREATABLE,
 				'callback'            => array( $this, 'rest_generate_codes' ),
 				'permission_callback' => function( $request ) {
-					return current_user_can( 'edit_user', $request['user_id'] );
+					return Two_Factor_Core::rest_api_can_edit_user_and_update_two_factor_options( $request['user_id'] );
 				},
 				'args'                => array(
 					'user_id' => array(
@@ -114,7 +100,7 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 					echo wp_kses(
 						sprintf(
 						/* translators: %s: URL for code regeneration */
-							__( 'Two-Factor: You are out of backup codes and need to <a href="%s">regenerate!</a>', 'two-factor' ),
+							__( 'Two-Factor: You are out of recovery codes and need to <a href="%s">regenerate!</a>', 'two-factor' ),
 							esc_url( get_edit_user_link( $user->ID ) . '#two-factor-backup-codes' )
 						),
 						array( 'a' => array( 'href' => true ) )
@@ -132,7 +118,16 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 	 * @since 0.1-dev
 	 */
 	public function get_label() {
-		return _x( 'Backup Verification Codes (Single Use)', 'Provider Label', 'two-factor' );
+		return _x( 'Recovery Codes', 'Provider Label', 'two-factor' );
+	}
+
+	/**
+	 * Returns the "continue with" text provider for the login screen.
+	 *
+	 * @since 0.9.0
+	 */
+	public function get_alternative_provider_label() {
+		return __( 'Use a recovery code', 'two-factor' );
 	}
 
 	/**
@@ -165,24 +160,26 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 		$count = self::codes_remaining_for_user( $user );
 		?>
 		<p id="two-factor-backup-codes">
-			<button type="button" class="button button-two-factor-backup-codes-generate button-secondary hide-if-no-js">
-				<?php esc_html_e( 'Generate Verification Codes', 'two-factor' ); ?>
-			</button>
-			<span class="two-factor-backup-codes-count">
+			<p class="two-factor-backup-codes-count">
 			<?php
 				echo esc_html(
 					sprintf(
-					/* translators: %s: count */
-						_n( '%s unused code remaining.', '%s unused codes remaining.', $count, 'two-factor' ),
+						/* translators: %s: count */
+						_n( '%s unused code remaining, each recovery code can only be used once.', '%s unused codes remaining, each recovery code can only be used once.', $count, 'two-factor' ),
 						$count
 					)
 				);
 			?>
-				</span>
+			</p>
+			<p>
+				<button type="button" class="button button-two-factor-backup-codes-generate button-secondary hide-if-no-js">
+					<?php esc_html_e( 'Generate new recovery codes', 'two-factor' ); ?>
+				</button>
+			</p>
 		</p>
 		<div class="two-factor-backup-codes-wrapper" style="display:none;">
 			<ol class="two-factor-backup-codes-unused-codes"></ol>
-			<p class="description"><?php esc_html_e( 'Write these down!  Once you navigate away from this page, you will not be able to view these codes again.', 'two-factor' ); ?></p>
+			<p class="description"><?php esc_html_e( 'Write these down! Once you navigate away from this page, you will not be able to view these codes again.', 'two-factor' ); ?></p>
 			<p>
 				<a class="button button-two-factor-backup-codes-download button-secondary hide-if-no-js" href="javascript:void(0);" id="two-factor-backup-codes-download-link" download="two-factor-backup-codes.txt"><?php esc_html_e( 'Download Codes', 'two-factor' ); ?></a>
 			<p>
@@ -218,6 +215,25 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 	}
 
 	/**
+	 * Get the backup code length for a user.
+	 *
+	 * @param WP_User $user User object.
+	 *
+	 * @return int Number of characters.
+	 */
+	private function get_backup_code_length( $user ) {
+		/**
+		 * Customize the character count of the backup codes.
+		 *
+		 * @var int $code_length Length of the backup code.
+		 * @var WP_User $user User object.
+		 */
+		$code_length = (int) apply_filters( 'two_factor_backup_code_length', 8, $user );
+
+		return $code_length;
+	}
+
+	/**
 	 * Generates backup codes & updates the user meta.
 	 *
 	 * @since 0.1-dev
@@ -242,8 +258,10 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 			$codes_hashed = (array) get_user_meta( $user->ID, self::BACKUP_CODES_META_KEY, true );
 		}
 
+		$code_length = $this->get_backup_code_length( $user );
+
 		for ( $i = 0; $i < $num_codes; $i++ ) {
-			$code           = $this->get_code();
+			$code           = $this->get_code( $code_length );
 			$codes_hashed[] = wp_hash_password( $code );
 			$codes[]        = $code;
 			unset( $code );
@@ -275,7 +293,7 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 		$count = self::codes_remaining_for_user( $user );
 		$title = sprintf(
 			/* translators: %s: the site's domain */
-			__( 'Two-Factor Backup Codes for %s', 'two-factor' ),
+			__( 'Two-Factor Recovery Codes for %s', 'two-factor' ),
 			home_url( '/' )
 		);
 
@@ -291,11 +309,11 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 
 		$i18n = array(
 			/* translators: %s: count */
-			'count' => esc_html( sprintf( _n( '%s unused code remaining.', '%s unused codes remaining.', $count, 'two-factor' ), $count ) ),
+			'count' => esc_html( sprintf( _n( '%s unused code remaining, each recovery code can only be used once.', '%s unused codes remaining, each recovery code can only be used once.', $count, 'two-factor' ), $count ) ),
 		);
 
 		if ( $request->get_param( 'enable_provider' ) && ! Two_Factor_Core::enable_provider_for_user( $user_id, 'Two_Factor_Backup_Codes' ) ) {
-			return new WP_Error( 'db_error', __( 'Unable to enable Backup Codes provider for this user.', 'two-factor' ), array( 'status' => 500 ) );
+			return new WP_Error( 'db_error', __( 'Unable to enable recovery codes for this user.', 'two-factor' ), array( 'status' => 500 ) );
 		}
 
 		return array(
@@ -329,11 +347,15 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 	 */
 	public function authentication_page( $user ) {
 		require_once ABSPATH . '/wp-admin/includes/template.php';
+
+		$code_length = $this->get_backup_code_length( $user );
+		$code_placeholder = str_repeat( 'X', $code_length );
+
 		?>
-		<p class="two-factor-prompt"><?php esc_html_e( 'Enter a backup verification code.', 'two-factor' ); ?></p>
+		<p class="two-factor-prompt"><?php esc_html_e( 'Enter a recovery code.', 'two-factor' ); ?></p>
 		<p>
-			<label for="authcode"><?php esc_html_e( 'Verification Code:', 'two-factor' ); ?></label>
-			<input type="text" inputmode="numeric" name="two-factor-backup-code" id="authcode" class="input authcode" value="" size="20" pattern="[0-9 ]*" placeholder="1234 5678" data-digits="8" />
+			<label for="authcode"><?php esc_html_e( 'Recovery Code:', 'two-factor' ); ?></label>
+			<input type="text" inputmode="numeric" name="two-factor-backup-code" id="authcode" class="input authcode" value="" size="20" pattern="[0-9 ]*" placeholder="<?php echo esc_attr( $code_placeholder ); ?>" data-digits="<?php echo esc_attr( $code_length ); ?>" />
 		</p>
 		<?php
 		submit_button( __( 'Submit', 'two-factor' ) );
@@ -401,5 +423,16 @@ class Two_Factor_Backup_Codes extends Two_Factor_Provider {
 
 		// Update the backup code master list.
 		update_user_meta( $user->ID, self::BACKUP_CODES_META_KEY, $backup_codes );
+	}
+
+	/**
+	 * Return user meta keys to delete during plugin uninstall.
+	 *
+	 * @return array
+	 */
+	public static function uninstall_user_meta_keys() {
+		return array(
+			self::BACKUP_CODES_META_KEY,
+		);
 	}
 }

@@ -20,12 +20,12 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@v2
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.2.2
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -50,7 +50,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: softprops/action-gh-release@v2.0.3
+      - uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
@@ -61,13 +61,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@2.30.0
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
 
       - name: Install
-        uses: ramsey/composer-install@3.0.0
+        uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
 
       - name: Execute
         env:

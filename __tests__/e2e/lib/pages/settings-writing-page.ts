@@ -7,7 +7,7 @@ const selectors = {
 };
 
 export class SettingsWritingPage {
-	readonly page: Page;
+	private readonly page: Page;
 
 	/**
 	 * Constructs an instance of the component.
@@ -21,7 +21,7 @@ export class SettingsWritingPage {
 	/**
 	 * Navigate to Writing Settings page
 	 */
-	visit(): Promise<unknown> {
+	public visit(): Promise<unknown> {
 		return this.page.goto( '/wp-admin/options-writing.php' );
 	}
 
@@ -30,7 +30,7 @@ export class SettingsWritingPage {
 	 *
 	 * @return { Promise<boolean> } Whether classic editor settings are visible
 	 */
-	hasClassicEditor(): Promise<boolean> {
+	public hasClassicEditor(): Promise<boolean> {
 		const editorSettings = this.page.locator( selectors.classicEditorBlock );
 		return editorSettings.isVisible();
 	}
@@ -38,7 +38,7 @@ export class SettingsWritingPage {
 	/**
 	 * Select settings to allow either block or classic editor
 	 */
-	async allowBothEditors(): Promise<void> {
+	public async allowBothEditors(): Promise<void> {
 		await this.page.click( selectors.classicEditorBlock );
 		await this.page.click( selectors.classicEditorAllow );
 		await this.page.click( selectors.saveButton );

@@ -7,7 +7,11 @@
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 namespace Automattic\VIP\Stats;
+
+use Automattic\VIP\Telemetry\Tracks;
 
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
@@ -16,6 +20,10 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.
 	add_action( 'wp_delete_file', __NAMESPACE__ . '\handle_file_delete', -1, 1 );
+	// Determine the password type and store it in XML_RPC_Auth_Tracker
+	add_action( 'application_password_did_authenticate', __NAMESPACE__ . '\maybe_set_xml_rpc_auth_tracker_type', 10, 1 );
+	// Send the telemetry event on xmlrpc_call
+	add_action( 'xmlrpc_call', __NAMESPACE__ . '\track_xml_rpc_password_type', 10, 1 );
 }
 
 /**
@@ -109,6 +117,44 @@ function track_file_delete() {
 	] );
 }
 
+function track_xml_rpc_password_type( $xmlrpc_method ) {
+	// Skip tracking for non-XML-RPC requests.
+	if ( ! defined( 'XMLRPC_REQUEST' ) || ! XMLRPC_REQUEST ) {
+		return;
+	}
+
+	// Skip tracking for unauthenticated requests.
+	if ( ! is_user_logged_in() ) {
+		return;
+	}
+
+	// Skip tracking for Jetpack requests.
+	if ( vip_is_jetpack_request() ) {
+		return;
+	}
+
+	XML_RPC_Auth_Tracker::track( $xmlrpc_method );
+}
+
+function maybe_set_xml_rpc_auth_tracker_type( $user ) {
+	// Only proceed if it's an XML-RPC request
+	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+		return;
+	}
+
+	// We are only interested in successful authentication events.
+	if ( is_wp_error( $user ) || ! ( $user instanceof \WP_User ) ) {
+		return;
+	}
+
+	// Skip tracking for Jetpack requests.
+	if ( vip_is_jetpack_request() ) {
+		return;
+	}
+
+	XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'app_pass';
+}
+
 function send_pixel( $stats ) {
 	$query_args = [
 		'v' => 'wpcom-no-pv',
@@ -138,4 +184,22 @@ add_filter( 'jetpack_stats_footer_amp_data', __NAMESPACE__ . '\\add_hp' );
 function add_hp( $data ) {
 	$data['hp'] = 'vip';
 	return $data;
+}
+
+class XML_RPC_Auth_Tracker {
+	public static $xmlrpc_password_type = 'user_pass';
+	public static $tracks_instance      = null;
+
+	public static function track( $xmlrpc_method ) {
+		if ( ! static::$tracks_instance ) {
+			static::$tracks_instance = new Tracks();
+		}
+
+		// Send telemetry event
+		static::$tracks_instance->record_event( 'xmlrpc_authentication', [
+			'password_type' => static::$xmlrpc_password_type,
+			'method'        => $xmlrpc_method,
+			'site_id'       => defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : 0,
+		] );
+	}
 }

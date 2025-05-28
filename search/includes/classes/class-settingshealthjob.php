@@ -4,7 +4,8 @@ namespace Automattic\VIP\Search;
 
 use Automattic\VIP\Search\Health;
 use Automattic\VIP\Utils\Alerts;
-use WP_CLI;
+use ElasticPress\Indexable;
+use WP_Error;
 
 require_once __DIR__ . '/class-health.php';
 
@@ -209,10 +210,11 @@ class SettingsHealthJob {
 				continue;
 			}
 
+			/** @var Indexable|bool|WP_Error */
 			$indexable = $this->indexables->get( $indexable_slug );
 
 			if ( is_wp_error( $indexable ) || ! $indexable ) {
-				$error_message = is_wp_error( $indexable ) ? $indexable->get_error_message() : 'Indexable not found';
+				$error_message = is_wp_error( $indexable ) ? /** @var WP_Error $indexable */ $indexable->get_error_message() : 'Indexable not found';
 				$message       = sprintf(
 					'Application %s: Failed to load indexable %s when healing index settings on %s: %s',
 					FILES_CLIENT_SITE_ID,
@@ -249,6 +251,7 @@ class SettingsHealthJob {
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 
 				if ( is_wp_error( $result['result'] ) ) {
+					/** @var WP_Error $result */
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
 						FILES_CLIENT_SITE_ID,
@@ -360,8 +363,6 @@ class SettingsHealthJob {
 					home_url()
 				);
 				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
-
-				return;
 			} elseif ( ! wp_next_scheduled( self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) ) {
 				wp_schedule_single_event( time() + 30, self::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 			}
@@ -381,7 +382,7 @@ class SettingsHealthJob {
 
 		$indexable = $this->indexables->get( $indexable_slug );
 		if ( ! $indexable ) {
-			$indexable = new \WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
+			$indexable = new WP_Error( 'indexable-not-found', sprintf( 'Indexable %s not found - is the feature active?', $indexable_slug ) );
 		}
 		if ( is_wp_error( $indexable ) ) {
 			$message = sprintf(
@@ -413,16 +414,25 @@ class SettingsHealthJob {
 			}
 		}
 
-		$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
-		if ( is_wp_error( $new_version ) ) {
-			$message = sprintf(
-				'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
-				FILES_CLIENT_SITE_ID,
-				$indexable_slug,
-				home_url(),
-				$new_version->get_error_message()
-			);
-			$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+		$current_versions = $this->search->versioning->get_versions( $indexable );
+		if ( count( $current_versions ) > 1 ) {
+			$new_version = $this->search->versioning->set_current_version_number( $indexable, 'next' );
+			if ( is_wp_error( $new_version ) ) {
+				$message = sprintf(
+					'Application %s: An error occurred during setting new %s index on %s for shard requirements: %s',
+					FILES_CLIENT_SITE_ID,
+					$indexable_slug,
+					home_url(),
+					$new_version->get_error_message()
+				);
+				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+	
+				return;
+			}
+		} else {
+			// If we're in a weird state where we have 1 version or less, we should not be attempting to build a new index.
+			// Instead, let's clean-up the locks and return. If we don't do this, we'll end up in a loop.
+			$this->clean_up();
 
 			return;
 		}
@@ -508,7 +518,15 @@ class SettingsHealthJob {
 		);
 		$this->send_alert( '#vip-go-es-alerts', $message, 2 );
 
-		// Clean up
+		$this->clean_up();
+	}
+
+	/**
+	 * Clean-up after the build process is complete.
+	 * 
+	 * @return void
+	 */
+	public function clean_up() {
 		$this->delete_last_processed_id();
 		delete_option( self::BUILD_LOCK_NAME );
 	}

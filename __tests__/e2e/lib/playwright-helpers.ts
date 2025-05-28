@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { Locator, Page } from 'playwright';
+import type { Locator, Page } from '@playwright/test';
 
 /**
  * Returns the list of classes for the given element as a string list.

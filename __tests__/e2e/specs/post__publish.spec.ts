@@ -29,7 +29,7 @@ test( 'publish a Post', async ( { page } ) => {
 	await test.step( 'Select add new post', async () => {
 		const wpAdminSidebarComponent = new WPAdminSidebarComponent( page );
 		await wpAdminSidebarComponent.clickMenuItem( 'Posts' );
-		await wpAdminSidebarComponent.clickSubMenuItem( 'Add New' );
+		await wpAdminSidebarComponent.clickSubMenuItem( 'Add Post' );
 	} );
 
 	await test.step( 'Write Post', async () => {

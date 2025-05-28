@@ -523,7 +523,7 @@ class Logger {
 		}
 
 		// Process all entries.
-		if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV && self::should_wp_debug_log_entries() ) {
+		if ( ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV || constant( 'VIP_GO_ENV' ) === 'local' ) && self::should_wp_debug_log_entries() ) {
 			foreach ( static::$entries as $entry ) {
 				static::wp_debug_log( $entry );
 			}
@@ -598,11 +598,6 @@ class Logger {
 	 * @param array $entry Data.
 	 */
 	public static function wp_debug_log( array $entry ): void {
-		if ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) {
-			// Don't run this on VIP Go
-			return;
-		}
-
 		$log_path = WP_CONTENT_DIR . '/debug.log';
 		$log_path = is_string( WP_DEBUG_LOG ) && WP_DEBUG_LOG ? WP_DEBUG_LOG : $log_path;
 

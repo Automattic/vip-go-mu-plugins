@@ -8,9 +8,13 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 use Org_Integration_Status;
 use Env_Integration_Status;
+use ErrorException;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
@@ -19,6 +23,28 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
+	private $original_error_reporting;
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->original_error_reporting = error_reporting();
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( error_reporting() & $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, $errno ); // NOSONAR
+			}
+
+			return false;
+		}, E_USER_WARNING );
+	}
+
+	public function tearDown(): void {
+		restore_error_handler();
+		error_reporting( $this->original_error_reporting );
+		parent::tearDown();
+	}
+
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$slug               = 'dummy';
 		$integration_config = new IntegrationVipConfig( $slug );
@@ -161,73 +187,39 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_is_active_via_vip, $mock->is_active_via_vip() );
 	}
 
-	public function test__get_site_config_returns_value_from_environment_config(): void {
-		if ( is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for non multisite.' );
-		}
-
-		$this->do_test_get_site_config(
-			[
-				'env'           => [
+	public function test__get_env_config_returns_value_from_environment_config(): void {
+		$mock = $this->get_mock( [
+			'env'           => [
+				'status' => Env_Integration_Status::ENABLED,
+				'config' => array( 'env-config' ),
+			],
+			'network_sites' => [
+				'1' => [
 					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'env-config' ),
-				],
-				'network_sites' => [
-					'1' => [
-						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network-site-config' ),
-					],
+					'config' => array( 'network-site-config' ),
 				],
 			],
-			array( 'env-config' ),
-		);
+		] );
+
+		$this->assertEquals( array( 'env-config' ), $mock->get_env_config() );
 	}
 
-	public function test__get_site_config_returns_value_from_network_site_config(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_get_site_config(
-			[
-				'env'           => [
+	public function test__get_env_config_returns_value_from_network_site_config(): void {
+		$mock = $this->get_mock( [
+			'env'           => [
+				'status' => Env_Integration_Status::ENABLED,
+				'config' => array( 'env-config' ),
+			],
+			'network_sites' => [
+				'1' => [
 					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'env-config' ),
-				],
-				'network_sites' => [
-					'1' => [
-						'status' => Env_Integration_Status::ENABLED,
-						'config' => array( 'network-site-config' ),
-					],
+					'config' => array( 'network-site-config' ),
 				],
 			],
-			array( 'network-site-config' ),
-		);
-	}
+		] );
 
-	/**
-	 * Helper function for testing `get_site_config`.
-	 *
-	 * @param array $vip_config
-	 * @param mixed $expected_get_site_config
-	 *
-	 * @return void
-	 */
-	private function do_test_get_site_config(
-		$vip_config,
-		$expected_get_site_config
-	) {
-		$mock = $this->get_mock( $vip_config );
-
-		$this->assertEquals( $expected_get_site_config, $mock->get_site_config() );
-	}
-
-	public function test__get_value_from_vip_config_trigger_error_if_invalid_argument_is_passed(): void {
-		$this->expectException( 'PHPUnit_Framework_Error_Warning' ); 
-		$this->expectExceptionMessage( 'config_type param (invalid) must be one of org, env or network_sites.' );
-		$mocked_vip_configs = [];
-
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'invalid', 'key', '' );
+		$expected = is_multisite() ? array( 'network-site-config' ) : array();
+		$this->assertEquals( $expected, $mock->get_network_site_config() );
 	}
 
 	public function test__get_value_from_vip_config_returns_null_if_given_config_type_have_no_data(): void {
@@ -313,20 +305,18 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	 *
 	 * @param array|null|string $vip_config
 	 *
-	 * @return MockObject
+	 * @return MockObject&IntegrationVipConfig
 	 */
 	private function get_mock( $vip_config ) {
 		/**
 		 * Config Mock.
 		 *
-		 * @var MockObject
+		 * @var MockObject&IntegrationVipConfig
 		 */
 		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
-								->disableOriginalConstructor()
-								->setMethods( [
-									'get_vip_config_from_file',
-								] )
-								->getMock();
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_vip_config_from_file' ] )
+			->getMock();
 
 		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
 		$mock->__construct( 'slug' );

@@ -4,34 +4,16 @@ namespace Automattic\VIP\Search;
 
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
+use ElasticPress\Indexable;
+use ElasticPress\Indexables;
+use PHPUnit\Framework\MockObject\MockObject;
+use WP_Error;
 
 class SettingsHealthJob_Test extends WP_UnitTestCase {
-	/** @var \Automattic\VIP\Search\Search */
-	public static $search;
-	public static $version_instance;
-
-	public static function setUpBeforeClass(): void {
-		parent::setUpBeforeClass();
-		require_once __DIR__ . '/../../../../search/search.php';
-		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
-		require_once __DIR__ . '/../../../../prometheus.php';
-
-		self::$search = \Automattic\VIP\Search\Search::instance();
-		self::$search->init();
-
-		if ( ! Constant_Mocker::defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) { // Need to define endpoints for versioning usage
-			Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-				'https://es-endpoint1',
-				'https://es-endpoint2',
-			) );
-		}
-
-		self::$version_instance = self::$search->versioning;
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
-	}
+	/** @var Search */
+	public $search;
+	/** @var Versioning */
+	public $version_instance;
 
 	public static function tearDownAfterClass(): void {
 		Constant_Mocker::clear();
@@ -41,17 +23,37 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
+		require_once __DIR__ . '/../../../../search/search.php';
+		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
+		require_once __DIR__ . '/../../../../prometheus.php';
+
+		$this->search = new Search();
+		$this->search->init();
+
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+			'https://es-endpoint2',
+		) );
+
+		$this->version_instance = $this->search->versioning;
+
+		// Required so that EP registers the Indexables
+		do_action( 'plugins_loaded' );
+		do_action( 'init' );
+
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
-		self::$search->load_collector();
+		$this->search->load_collector();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {
-		$error = new \WP_Error( 'foo', 'Bar' );
+		$error = new WP_Error( 'foo', 'Bar' );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
 		$stub->expects( $this->once() )
@@ -61,15 +63,16 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error_per_indexable() {
-		$error                = new \WP_Error( 'foo', 'Bar' );
+		$error                = new WP_Error( 'foo', 'Bar' );
 		$unhealthy_indexables = [
 			'post' => $error,
 			'user' => $error,
 		];
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
 		$stub->expects( $this->exactly( count( $unhealthy_indexables ) ) )
@@ -79,18 +82,19 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__heal_index_settings__reports_error_per_failed_indexable_retrieval() {
-		$error                = new \WP_Error( 'foo', 'Bar' );
+		$error                = new WP_Error( 'foo', 'Bar' );
 		$unhealthy_indexables = [
 			'post' => [],
 			'user' => [],
 		];
 
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
+		$indexables_mock = $this->createMock( Indexables::class );
 		$indexables_mock->method( 'get' )->willReturn( $error );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
 		$stub->indexables = $indexables_mock;
@@ -126,13 +130,13 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			],
 		];
 
-		$indexables_mock = $this->createMock( \ElasticPress\Indexables::class );
-		$indexables_mock->method( 'get' )->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
+		$indexables_mock = $this->createMock( Indexables::class );
+		$indexables_mock->method( 'get' )->willReturn( $this->createMock( Indexable::class ) );
 
-
-		$health_mock = $this->getMockBuilder( \Automattic\VIP\Search\Health::class )
+		/** @var MockObject&Health */
+		$health_mock = $this->getMockBuilder( Health::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'heal_index_settings_for_indexable' ] )
+			->onlyMethods( [ 'heal_index_settings_for_indexable' ] )
 			->getMock();
 
 		$health_mock->method( 'heal_index_settings_for_indexable' )->willReturn( array(
@@ -141,9 +145,10 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			'index_name'    => 'foo-index',
 		) );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
 		$stub->indexables = $indexables_mock;
@@ -156,143 +161,150 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__maybe_process_build__one_version_existence() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'wp_schedule_single_event', 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
 
 		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertIsInt( $event );
 	}
 
 	public function test__maybe_process_build__two_version_existence() {
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
-		self::$version_instance->add_version( $indexable );
+		$this->version_instance->add_version( $indexable );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'wp_schedule_single_event', 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->once() )
 			->method( 'send_alert' );
 
 		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
 	}
 
 	public function test__maybe_process_build__locks() {
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		$indexable = Indexables::factory()->get( 'post' );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'send_alert' ] )
+			->onlyMethods( [ 'send_alert' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
 
 		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
 
-		delete_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME );
+		delete_option( SettingsHealthJob::BUILD_LOCK_NAME );
 
 		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertIsInt( $event );
 	}
 
 	public function test__maybe_process_build() {
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'check_process_build' ] )
+			->onlyMethods( [ 'check_process_build' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->expects( $this->once() )
 			->method( 'check_process_build' );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status    = $stub->maybe_process_build( $indexable );
+		$indexable = Indexables::factory()->get( 'post' );
+		$stub->maybe_process_build( $indexable );
 	}
 
 	public function test__maybe_process_build__in_progress() {
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
-			->setMethods( [ 'check_process_build' ] )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
+			->onlyMethods( [ 'check_process_build' ] )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'in-progress' );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status    = $stub->maybe_process_build( $indexable );
+		$indexable = Indexables::factory()->get( 'post' );
+		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
 	}
 
 	public function test__maybe_process_build__resume() {
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
 		$last_processed_id = '1234';
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
+		update_option( SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
-			->setMethods( [ 'check_process_build' ] )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
+			->onlyMethods( [ 'check_process_build' ] )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'resume' );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status    = $stub->maybe_process_build( $indexable );
+		$indexable = Indexables::factory()->get( 'post' );
+		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] );
 		$this->assertIsInt( $event );
 	}
 
 	public function test__maybe_process_build__swap() {
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
 		$completed_status = 'Indexing completed';
-		update_option( \Automattic\VIP\Search\SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $completed_status );
+		update_option( SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $completed_status );
 
-		$stub = $this->getMockBuilder( \Automattic\VIP\Search\SettingsHealthJob::class )
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
 			->disableOriginalConstructor()
-			->setMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
+			->onlyMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
 			->getMock();
 
-		$stub->search = self::$search;
+		$stub->search = $this->search;
 
 		$stub->method( 'check_process_build' )
 		->willReturn( 'swap' );
@@ -300,10 +312,10 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$stub->expects( $this->once() )
 			->method( 'alert_to_swap_index_versions' );
 
-		$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
-		$status    = $stub->maybe_process_build( $indexable );
+		$indexable = Indexables::factory()->get( 'post' );
+		$stub->maybe_process_build( $indexable );
 
-		$event = \wp_next_scheduled( \Automattic\VIP\Search\SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $completed_status ] );
+		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $completed_status ] );
 		$this->assertFalse( $event );
 	}
 }

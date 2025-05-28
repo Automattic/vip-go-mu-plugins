@@ -178,7 +178,7 @@ $kses_allow_strong = array( 'strong' => true );
 	}
 	?>
 	<div class="akismet-alert is-good">
-		<p><?php esc_html_e( 'Akismet is now protecting your site from spam. Happy blogging!', 'akismet' ); ?></p>
+		<p><?php esc_html_e( 'Akismet is now protecting your site from spam.', 'akismet' ); ?></p>
 		<?php if ( $check_pending_link ) : ?>
 			<p>
 				<?php

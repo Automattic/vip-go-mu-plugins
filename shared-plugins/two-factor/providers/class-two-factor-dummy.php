@@ -15,27 +15,13 @@
 class Two_Factor_Dummy extends Two_Factor_Provider {
 
 	/**
-	 * Ensures only one instance of this class exists in memory at any one time.
-	 *
-	 * @since 0.1-dev
-	 */
-	public static function get_instance() {
-		static $instance;
-		$class = __CLASS__;
-		if ( ! is_a( $instance, $class ) ) {
-			$instance = new $class();
-		}
-		return $instance;
-	}
-
-	/**
 	 * Class constructor.
 	 *
 	 * @since 0.1-dev
 	 */
 	protected function __construct() {
 		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
-		return parent::__construct();
+		parent::__construct();
 	}
 
 	/**
