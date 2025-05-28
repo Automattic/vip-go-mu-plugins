@@ -531,6 +531,26 @@ class Logger {
 			return;
 		}
 		$path = ( is_dir( '/chroot' ) ? '/chroot' : '' ) . '/tmp/logstash.log';
+
+		if ( apply_filters( 'wpcom_vip_logstash_in_memory', false ) ) {
+			$logs = [];
+			foreach ( static::$entries as $entry ) {
+				$json_data = wp_json_encode( $entry );
+
+				if ( ! $json_data ) {
+					trigger_error( 'log2logstash could not encode your log.', E_USER_WARNING );
+					return;
+				}
+
+				$logs[] = $json;
+			}
+			if ( ! empty( $logs ) ) {
+				// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( implode( "\n", $logs ) . "\n", 3, $path );
+			}
+
+			return;
+		}
 		foreach ( static::$entries as $entry ) {
 			$json_data = wp_json_encode( $entry );
 
