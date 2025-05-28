@@ -20,7 +20,7 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 	 *
 	 * @var string
 	 */
-	protected string $version = '0.1';
+	protected string $version = 'latest';
 
 	public function is_loaded(): bool {
 		return defined( 'VIP_SECURITY_BOOST_LOADED' );
@@ -33,7 +33,7 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 			define( 'VIP_SECURITY_BOOST_CONFIGS', $configs );
 		}
 
-		if ( isset( $configs['version'] ) ) {
+		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) ) {
 			$this->version = $configs['version'];
 		}
 	}
@@ -43,8 +43,21 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 			return;
 		}
 
-		// Load the version of the plugin that should be set to the latest version, otherwise if it's not found, flag the integration as inactive.
-		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-security-boost-' . $this->version . '/vip-security-boost.php';
+		// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/vip-security-boost-<version>/
+		// and check what versions are available.
+		$versions = $this->get_versions();
+
+		// if no versions are found, return early.
+		if ( empty( $versions ) ) {
+			$this->is_active = false;
+			return;
+		}
+
+		// Load the selected version of the plugin.
+		$selected_version_folder = $this->get_selected_version_folder();
+		$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/vip-security-boost.php';
+
+		// This check isn't strictly necessary, but better safe than sorry.
 		if ( file_exists( $load_path ) ) {
 			require_once $load_path;
 		} else {
@@ -54,5 +67,62 @@ class SecurityBoostIntegration extends \Automattic\VIP\Integrations\Integration 
 		if ( ! defined( 'VIP_SECURITY_BOOST_LOADED' ) ) {
 			define( 'VIP_SECURITY_BOOST_LOADED', true );
 		}
+	}
+
+	/**
+	 * Get the folder name for the selected version of the integration.
+	 *
+	 * @return string The folder name for the selected version of the integration.
+	 */
+	public function get_selected_version_folder() {
+		$versions = $this->get_versions();
+
+		if ( 'latest' === $this->version ) {
+			return array_key_first( $versions );
+		}
+
+		// find the desired version in the versions array.
+		$desired_version = array_search( $this->version, $versions );
+
+		if ( $desired_version ) {
+			return $desired_version;
+		}
+
+		// if the desired version is not found, return the latest version.
+		return array_key_first( $versions );
+	}
+
+	/**
+	 * Get the available versions of Security Boost in descending order.
+	 *
+	 * @return array<string, string> An associative array of available versions, where the key is the
+	 *                               directory name and the value is the version number. The versions
+	 *                               are sorted in descending order.
+	 */
+	public function get_versions() {
+		$versions = [];
+		$dir      = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/';
+		if ( ! is_dir( $dir ) ) {
+			return $versions;
+		}
+
+		$scan_entries = scandir( $dir );
+		foreach ( $scan_entries as $entry ) {
+			if (
+				str_contains( $entry, 'vip-security-boost-' ) &&
+				is_dir( $dir . $entry ) &&
+				file_exists( $dir . $entry . '/vip-security-boost.php' )
+			) {
+				// Extract the version number from the directory name
+				$versions[ $entry ] = str_replace( 'vip-security-boost-', '', $entry );
+			}
+		}
+
+		// Sort the versions in descending order.
+		uksort( $versions, function ( $a, $b ) use ( $versions ) {
+			return version_compare( $versions[ $b ], $versions[ $a ] );
+		} );
+
+		return $versions;
 	}
 }
