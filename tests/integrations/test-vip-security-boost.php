@@ -69,4 +69,37 @@ class Vip_Security_Boost_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( [ 'test' => 'value' ], constant( 'VIP_SECURITY_BOOST_CONFIGS' ) );
 	}
+
+	public function test_get_selected_version_folder_returns_latest_version_when_version_is_latest(): void {
+		$security_boost_integration          = new SecurityBoostIntegration( $this->slug );
+		$security_boost_integration->version = 'latest';
+		$versions                            = array(
+			'vip-security-boost-2.5'  => '2.5',
+			'vip-security-boost-1.11' => '1.11',
+			'vip-security-boost-1.2'  => '1.2',
+		);
+		$this->assertEquals( 'vip-security-boost-2.5', $security_boost_integration->get_selected_version_folder( $versions ) );
+	}
+
+	public function test_get_selected_version_folder_returns_desired_version_when_version_is_specified(): void {
+		$security_boost_integration          = new SecurityBoostIntegration( $this->slug );
+		$security_boost_integration->version = '1.2';
+		$versions                            = array(
+			'vip-security-boost-2.5'  => '2.5',
+			'vip-security-boost-1.11' => '1.11',
+			'vip-security-boost-1.2'  => '1.2',
+		);
+		$this->assertEquals( 'vip-security-boost-1.2', $security_boost_integration->get_selected_version_folder( $versions ) );
+	}
+
+	public function test_get_selected_version_folder_returns_latest_version_when_version_is_not_specified(): void {
+		$security_boost_integration          = new SecurityBoostIntegration( $this->slug );
+		$security_boost_integration->version = '';
+		$versions                            = array(
+			'vip-security-boost-2.5'  => '2.5',
+			'vip-security-boost-1.11' => '1.11',
+			'vip-security-boost-1.2'  => '1.2',
+		);
+		$this->assertEquals( 'vip-security-boost-2.5', $security_boost_integration->get_selected_version_folder( $versions ) );
+	}
 }
