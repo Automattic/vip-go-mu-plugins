@@ -17,8 +17,6 @@ use ErrorException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/fake-integration.php';
-
 class VIP_Integration_Test extends WP_UnitTestCase {
 	private $original_error_reporting;
 
