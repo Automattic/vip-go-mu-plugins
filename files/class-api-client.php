@@ -207,7 +207,7 @@ class API_Client {
 		}
 
 		$request_timeout = $this->calculate_upload_timeout( $info['size'] );
-		$tmp_file = $this->cache->create_tmp_file();
+		$tmp_file        = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
 		$request_args = [
