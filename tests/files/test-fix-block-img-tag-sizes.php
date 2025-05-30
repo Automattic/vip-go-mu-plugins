@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Class VIP_Go_Fix_Block_Img_Tag_Sizes_Test
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class VIP_Go_Fix_Block_Img_Tag_Sizes_Test extends WP_UnitTestCase {
 
 	protected function setUp(): void {
