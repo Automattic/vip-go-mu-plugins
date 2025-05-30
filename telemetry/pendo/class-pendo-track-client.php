@@ -38,7 +38,7 @@ class Pendo_Track_Client extends Telemetry_Client {
 	/**
 	 * Constructor.
 	 */
-	public function __construct( string|null $api_key = null, WP_Http $http = null ) {
+	public function __construct( string|null $api_key = null, ?WP_Http $http = null ) {
 		$this->api_key = $api_key;
 		$this->http    = $http ?? _wp_http_get_object();
 	}

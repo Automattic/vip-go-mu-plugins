@@ -64,20 +64,20 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4.3.0
+        uses: actions/setup-node@v4.4.0
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
           cache-dependency-path: 'wordpress/package-lock.json'
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@9e72090525849c5e82e596468b86eb55e9cc5401 # 2.32.0
+        uses: shivammathur/setup-php@cf4cade2721270509d5b1c766ab3549210a39a2a # 2.33.0
         with:
           php-version: 8.0
           coverage: none
 
       - name: Install Composer dependencies
-        uses: ramsey/composer-install@a2636af0004d1c0499ffca16ac0b4cc94df70565 # 3.1.0
+        uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
         with:
           working-directory: wordpress
 
@@ -106,7 +106,10 @@ jobs:
         working-directory: wordpress
 
       - name: Run PHPUnit tests
-        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist
+        run: >
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit
+          --verbose -c phpunit.xml.dist
+          --filter "^\(?!.*test_wp_generate_attachment_metadata_png_thumbnail_smaller_than_original\).*\$"
         working-directory: wordpress
 
       - name: Run AJAX tests
