@@ -75,10 +75,10 @@ class A8C_Files {
 
 		// Upload size limit is 4GB
 		add_filter( 'upload_size_limit', function () {
-			return GB_IN_BYTES * 4; 
+			return GB_IN_BYTES * 4;
 		} );
 
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === constant( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 			$this->init_vip_filesystem();
 		}
 
@@ -105,8 +105,10 @@ class A8C_Files {
 			}
 		}
 
-		// Add filter to fix image block sizes
-		add_filter( 'render_block_core/image', array( $this, 'fix_img_block_sizes' ), 10, 3 );
+		if ( ! is_admin() && class_exists( WP_HTML_Tag_Processor::class ) ) {
+			// Add filter to fix image block sizes
+			add_filter( 'render_block_core/image', array( $this, 'fix_img_block_sizes' ) );
+		}
 	}
 
 	/**
@@ -515,26 +517,13 @@ class A8C_Files {
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
 	}
 
-	// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 	/**
 	 * Adds 'correct' w & h values to img tags in core/image blocks
 	 *
 	 * @param string $block_content The block content.
-	 * @param array  $block The full block, including name and attributes.
-	 * @param object $instance The block instance.
 	 * @return string Modified block content.
 	 */
-	public function fix_img_block_sizes( $block_content, $block, $instance ) {
-		// Don't fire in wp-admin, image blocks are fine there
-		if ( is_admin() ) {
-			return $block_content;
-		}
-
-		// If no HTML API, bail
-		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
-			return $block_content;
-		}
-
+	public function fix_img_block_sizes( $block_content ) {
 		// Check img tag
 		$img_tag_processor = new WP_HTML_Tag_Processor( $block_content );
 		if ( ! $img_tag_processor->next_tag( 'img' ) ) {
@@ -579,23 +568,16 @@ class A8C_Files {
 		}
 
 		// Get values ready
-		$width                = $metadata['sizes'][ $size_name ]['width'];
-		$height               = $metadata['sizes'][ $size_name ]['height'];
-		$update_tag_processor = new WP_HTML_Tag_Processor( $block_content );
+		$width  = $metadata['sizes'][ $size_name ]['width'];
+		$height = $metadata['sizes'][ $size_name ]['height'];
 
 		// Set width/height for img
-		if ( $update_tag_processor->next_tag( 'img' ) ) {
-			$update_tag_processor->set_attribute( 'width', $width );
-			$update_tag_processor->set_attribute( 'height', $height );
-		}
+		$img_tag_processor->set_attribute( 'width', $width );
+		$img_tag_processor->set_attribute( 'height', $height );
 
 		// Get the result ready
-		$block_content = $update_tag_processor->get_updated_html();
-
-		// DONE
-		return $block_content;
+		return $img_tag_processor->get_updated_html();
 	}
-	// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
 }
 
 class A8C_Files_Utils {
