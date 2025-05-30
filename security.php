@@ -264,7 +264,8 @@ add_filter( 'vip_login_ip_username_window', function ( $window, $username ) {
  * @return void
  */
 function wpcom_vip_login_limiter( $username, $error ) {
-	if ( in_array( 'expired_session', $error->get_error_codes() ) ) {
+	// `expired_session` must be the only error
+	if ( 'expired_session' === $error->get_error_code() ) {
 		// Don't track login attempts for expired sessions.
 		return;
 	}
