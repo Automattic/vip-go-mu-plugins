@@ -75,10 +75,10 @@ class A8C_Files {
 
 		// Upload size limit is 4GB
 		add_filter( 'upload_size_limit', function () {
-			return GB_IN_BYTES * 4; 
+			return GB_IN_BYTES * 4;
 		} );
 
-		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {
+		if ( defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) && true === constant( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) ) {
 			$this->init_vip_filesystem();
 		}
 
@@ -103,6 +103,11 @@ class A8C_Files {
 				// Schedule meta update job
 				$this->schedule_update_job();
 			}
+		}
+
+		if ( ! is_admin() && class_exists( WP_HTML_Tag_Processor::class ) ) {
+			// Add filter to fix image block sizes
+			add_filter( 'render_block_core/image', array( $this, 'fix_img_block_sizes' ) );
 		}
 	}
 
@@ -510,6 +515,68 @@ class A8C_Files {
 		);
 
 		update_option( self::OPT_NEXT_FILESIZE_INDEX, $start_index, false );
+	}
+
+	/**
+	 * Adds 'correct' w & h values to img tags in core/image blocks
+	 *
+	 * @param string $block_content The block content.
+	 * @return string Modified block content.
+	 */
+	public function fix_img_block_sizes( $block_content ) {
+		// Check img tag
+		$img_tag_processor = new WP_HTML_Tag_Processor( $block_content );
+		if ( ! $img_tag_processor->next_tag( 'img' ) ) {
+			// No img found, bail
+			return $block_content;
+		}
+
+		// Get the image ID class from the img tag
+		$img_class = $img_tag_processor->get_attribute( 'class' );
+		if ( ! $img_class || ! preg_match( '/wp-image-(\d+)/', $img_class, $image_matches ) ) {
+			// If we can't find wp-image-XXX, bail
+			return $block_content;
+		}
+		$image_id = $image_matches[1];
+
+		// Check figure tag
+		$figure_tag_processor = new WP_HTML_Tag_Processor( $block_content );
+		if ( ! $figure_tag_processor->next_tag( 'figure' ) ) {
+			// No figure found, bail
+			return $block_content;
+		}
+
+		// Get the size name class from the figure tag
+		$figure_class = $figure_tag_processor->get_attribute( 'class' );
+		if ( ! $figure_class || ! preg_match( '/size-([^\s"]+)/', $figure_class, $size_matches ) ) {
+			// If we can't find size-xxx, bail
+			return $block_content;
+		}
+		$size_name = $size_matches[1];
+
+		// If the size is full, bail
+		if ( 'full' === $size_name ) {
+			return $block_content;
+		}
+
+		// Get meta for the attachment sizes
+		$metadata = wp_get_attachment_metadata( (int) $image_id );
+
+		if ( ! $metadata || empty( $metadata['sizes'][ $size_name ] ) ) {
+			// If no size meta is available for this size, bail
+			return $block_content;
+		}
+
+		// Get values ready
+		$width  = $metadata['sizes'][ $size_name ]['width'];
+		$height = $metadata['sizes'][ $size_name ]['height'];
+
+		// Set width/height for img
+		$img_tag_processor->set_attribute( 'width', $width );
+		$img_tag_processor->set_attribute( 'height', $height );
+
+		// Get the result ready
+		return $img_tag_processor->get_updated_html();
 	}
 }
 
