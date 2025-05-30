@@ -104,30 +104,7 @@ class RemoteDataBlocksIntegration extends Integration {
 	 *                               are sorted in descending order.
 	 */
 	public function get_versions() {
-		$versions = [];
-		$dir      = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/';
-		if ( ! is_dir( $dir ) ) {
-			return $versions;
-		}
-
-		$scan_entries = scandir( $dir );
-		foreach ( $scan_entries as $entry ) {
-			if (
-				str_contains( $entry, 'remote-data-blocks-' ) &&
-				is_dir( $dir . $entry ) &&
-				file_exists( $dir . $entry . '/remote-data-blocks.php' )
-			) {
-				// Extract the version number from the directory name
-				$versions[ $entry ] = str_replace( 'remote-data-blocks-', '', $entry );
-			}
-		}
-
-		// Sort the versions in descending order.
-		uksort( $versions, function ( $a, $b ) use ( $versions ) {
-			return version_compare( $versions[ $b ], $versions[ $a ] );
-		} );
-
-		return $versions;
+		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'remote-data-blocks', 'remote-data-blocks.php' );
 	}
 
 	/**
