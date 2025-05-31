@@ -199,12 +199,21 @@ class API_Client {
 			return $file;
 		}
 
-		$tmp_file = $this->cache->create_tmp_file();
+		// calculate timeout
+		$info = array();
+		$this->is_file( $file_path, $info );
+		if ( is_wp_error( $info ) ) {
+			return $info;
+		}
+
+		$request_timeout = $this->calculate_upload_timeout( $info['size'] );
+		$tmp_file        = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
 		$request_args = [
 			'stream'   => true,
 			'filename' => $tmp_file,
+			'timeout'  => $request_timeout,
 		];
 
 		// Prevent webp => jpg transform from running
