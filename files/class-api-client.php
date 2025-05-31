@@ -11,7 +11,7 @@ require_once __DIR__ . '/class-api-cache.php';
 
 function new_api_client() {
 	return new API_Client(
-		'https://' . constant( 'FILE_SERVICE_ENDPOINT' ),
+		constant( 'FILE_SERVICE_URI' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
 		constant( 'FILES_ACCESS_TOKEN' ),
 		API_Cache::get_instance()
