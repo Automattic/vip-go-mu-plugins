@@ -25,12 +25,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		parent::tearDown();
-
 		Constant_Mocker::clear();
-
-		// Clean up any action we might have added
-		remove_all_actions( 'plugins_loaded' );
 
 		// Reset our global flag if it was set
 		if ( isset( $GLOBALS['_vip_remote_data_blocks_fired_action'] ) ) {
@@ -44,6 +39,8 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		// Reset the WordPress version
 		global $wp_version;
 		$wp_version = self::$original_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+		parent::tearDown();
 	}
 
 	public function test_is_loaded_returns_false_when_not_loaded(): void {
