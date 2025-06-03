@@ -765,11 +765,9 @@ class User {
 			'a8c.com',
 			'automattic.com',
 			'matticspace.com',
+			'wpvip.com',
 		);
-		if ( in_array( $domain, $a8c_domains ) ) {
-			return true;
-		}
-		return false;
+		return in_array( $domain, $a8c_domains );
 	}
 
 	/**

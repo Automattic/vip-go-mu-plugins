@@ -316,4 +316,20 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertNotWPError( $result );
 		$this->assertEquals( $user_id, $result->ID );
 	}
+
+	public function test_session_expiration(): void {
+		remove_all_filters( 'authenticate' );
+
+		$filter_invoked = false;
+
+		add_filter( 'authenticate', fn () => new WP_Error( 'expired_session', 'Your session has expired. Please log in again.' ), 99 );
+		add_filter( 'vip_login_username_window', static function ( $window ) use ( &$filter_invoked ) {
+			$filter_invoked = true;
+			return $window;
+		}, 10, 1 );
+
+		$user = wp_authenticate( 'some-user', 'some-password' );
+		$this->assertWPError( $user );
+		static::assertFalse( $filter_invoked );
+	}
 }

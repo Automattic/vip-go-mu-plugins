@@ -11,7 +11,7 @@ require_once __DIR__ . '/class-api-cache.php';
 
 function new_api_client() {
 	return new API_Client(
-		'https://' . constant( 'FILE_SERVICE_ENDPOINT' ),
+		constant( 'FILE_SERVICE_URI' ),
 		constant( 'FILES_CLIENT_SITE_ID' ),
 		constant( 'FILES_ACCESS_TOKEN' ),
 		API_Cache::get_instance()
@@ -199,12 +199,21 @@ class API_Client {
 			return $file;
 		}
 
-		$tmp_file = $this->cache->create_tmp_file();
+		// calculate timeout
+		$info = array();
+		$this->is_file( $file_path, $info );
+		if ( is_wp_error( $info ) ) {
+			return $info;
+		}
+
+		$request_timeout = $this->calculate_upload_timeout( $info['size'] );
+		$tmp_file        = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
 		$request_args = [
 			'stream'   => true,
 			'filename' => $tmp_file,
+			'timeout'  => $request_timeout,
 		];
 
 		// Prevent webp => jpg transform from running
