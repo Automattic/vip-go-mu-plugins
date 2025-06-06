@@ -104,6 +104,22 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool False upon failure, true otherwise.
 	 */
 	public function put_contents( $file_path, $contents, $mode = false ) {
+		/**
+		 * Filter to allow or disallow file uploads.
+		 *
+		 * @param bool|WP_Error $allow_upload Whether to allow the file upload. Default true.
+		 * @param string $file_path The path to the file being uploaded.
+		 */
+		$allow_upload = apply_filters( 'vipfs_allow_file_upload', true, $file_path );
+		if ( is_wp_error( $allow_upload ) ) {
+			$this->errors = $allow_upload;
+			return false;
+		}
+
+		if ( false === $allow_upload ) {
+			return false;
+		}
+
 		$uploads_path = $this->sanitize_uploads_path( $file_path );
 
 		$file_name     = basename( $file_path );
