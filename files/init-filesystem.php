@@ -32,7 +32,7 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 
 	add_filter( 'vipfs_allow_file_upload', function ( $allow, $file_path ) {
 		if ( true === $allow ) {
-			$allow = ! preg_match( '/\.(php|html?)$/i', $file_path );
+			$allow = ! preg_match( '/\.php$/i', $file_path );
 		}
 
 		return $allow;
