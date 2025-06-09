@@ -29,14 +29,6 @@ if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 	add_filter( 'filesystem_method', function () {
 		return VIP_FILESYSTEM_METHOD; // The VIP base class transparently handles using the direct filesystem as well as the VIP Go File API
 	}, PHP_INT_MAX );
-
-	add_filter( 'vipfs_allow_file_upload', function ( $allow, $file_path ) {
-		if ( true === $allow ) {
-			$allow = ! preg_match( '/\.php$/i', $file_path );
-		}
-
-		return $allow;
-	}, 19, 2 );
 }
 
 add_filter( 'request_filesystem_credentials', function ( $credentials, $form_post, $type ) {
