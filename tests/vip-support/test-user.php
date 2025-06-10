@@ -33,69 +33,37 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test_is_a8c_email(): void {
-
-		$a8c_emails = array(
-			'vip@matticspace.com',
-			'v.ip@matticspace.com',
-			'vip+test@matticspace.com',
-			'v.ip+test@matticspace.com',
-			'some.user@automattic.com',
-			'someuser@automattic.com',
-			'some.user+test@automattic.com',
-			'someuser+test@automattic.com',
-			'some.user@a8c.com',
-			'someuser@a8c.com',
-			'some.user+test@a8c.com',
-			'someuser+test@a8c.com',
-		);
-
+	/**
+	 * @dataProvider data_a8c_email
+	 */
+	public function test_is_a8c_email( string $email, bool $expected ): void {
 		$user_instance = User::init();
-
-		foreach ( $a8c_emails as $a8c_email ) {
-			$this->assertTrue( $user_instance::is_a8c_email( $a8c_email ) );
-		}
-
-		$non_a8c_emails = array(
-			'someone@example.com',
-			'someone.else@example.com',
-			'automattic.com@example.invalid',
-			'someone@automattic',
-			'matticspace.com@example.com',
-			'a8c.com@example.com',
-			'automattic@bbc.co.uk',
-			'a8c@bbc.co.uk',
-		);
-
-		foreach ( $non_a8c_emails as $non_a8c_email ) {
-			$this->assertFalse( $user_instance::is_a8c_email( $non_a8c_email ) );
-		}
+		self::assertEquals( $expected, $user_instance::is_a8c_email( $email ) );
 	}
 
-	public function provider_valid_vip_support_email_aliases(): array {
+	public function data_a8c_email(): iterable {
 		return [
-			[
-				[
-					'vip-support+test@automattic.com',
-					'vip-support+some_username@automattic.com',
-					'vip-support+areallylongusernameusedhere123@automattic.com',
-				],
-			],
-		];
-	}
-
-	public function provider_invalid_vip_support_email_aliases(): array {
-		return [
-			[
-				[
-					'someone@example.com',
-					'someone@automattic',
-					'someone@automattic.com',
-					'vip+test@example.com',
-					'vip-support+test@example.com',
-					'vip-support@example.com',
-				],
-			],
+			[ 'vip@matticspace.com', true ],
+			[ 'v.ip@matticspace.com', true ],
+			[ 'vip+test@matticspace.com', true ],
+			[ 'v.ip+test@matticspace.com', true ],
+			[ 'some.user@automattic.com', true ],
+			[ 'someuser@automattic.com', true ],
+			[ 'some.user+test@automattic.com', true ],
+			[ 'someuser+test@automattic.com', true ],
+			[ 'some.user@a8c.com', true ],
+			[ 'someuser@a8c.com', true ],
+			[ 'some.user+test@a8c.com', true ],
+			[ 'someuser+test@a8c.com', true ],
+			[ 'someuser@wpvip.com', true ],
+			[ 'someone@example.com', false ],
+			[ 'someone.else@example.com', false ],
+			[ 'automattic.com@example.invalid', false ],
+			[ 'someone@automattic', false ],
+			[ 'matticspace.com@example.com', false ],
+			[ 'a8c.com@example.com', false ],
+			[ 'automattic@bbc.co.uk', false ],
+			[ 'a8c@bbc.co.uk', false ],
 		];
 	}
 

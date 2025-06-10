@@ -258,10 +258,21 @@ add_filter( 'vip_login_ip_username_window', function ( $window, $username ) {
 	return $window;
 }, 10, 2 );
 
-function wpcom_vip_login_limiter( $username ) {
+/**
+ * @param string $username
+ * @param WP_Error $error
+ * @return void
+ */
+function wpcom_vip_login_limiter( $username, $error ) {
+	// `expired_session` must be the only error
+	if ( 'expired_session' === $error->get_error_code() ) {
+		// Don't track login attempts for expired sessions.
+		return;
+	}
+
 	wpcom_vip_track_auth_attempt( $username, CACHE_GROUP_LOGIN_LIMIT );
 }
-add_action( 'wp_login_failed', 'wpcom_vip_login_limiter' );
+add_action( 'wp_login_failed', 'wpcom_vip_login_limiter', 10, 2 );
 
 function wpcom_vip_login_limiter_on_success( $username ) {
 	$cache_keys = _vip_login_cache_keys( $username );
