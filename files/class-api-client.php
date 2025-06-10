@@ -200,13 +200,18 @@ class API_Client {
 		}
 
 		// calculate timeout
-		$info = array();
-		$this->is_file( $file_path, $info );
-		if ( is_wp_error( $info ) ) {
-			return $info;
+		$info     = array();
+		$response = $this->is_file( $file_path, $info );
+		if ( is_wp_error( $response ) ) {
+			return $response;
 		}
 
-		$request_timeout = $this->calculate_upload_timeout( $info['size'] );
+		if ( false === $response ) {
+			/* translators: 1: file path */
+			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
+		}
+
+		$request_timeout = $this->calculate_upload_timeout( $info['size'] ?? 0 );
 		$tmp_file        = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
@@ -272,6 +277,11 @@ class API_Client {
 		return true;
 	}
 
+	/**
+	 * @param string $file_path File path to check
+	 * @param array|null &$info Optional variable to store file info
+	 * @return WP_Error|bool    true if file exists, false if not, or WP_Error on failure
+	 */
 	public function is_file( $file_path, &$info = null ) {
 		// check in cache first
 		$stats = $this->cache->get_file_stats( $file_path );
