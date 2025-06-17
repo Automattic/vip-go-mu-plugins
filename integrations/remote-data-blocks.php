@@ -115,8 +115,27 @@ class RemoteDataBlocksIntegration extends Integration {
 	 * @private
 	 */
 	public function configure(): void {
+		$combined_sources  = [];
+		$child_env_configs = $this->get_child_env_configs();
+
+		foreach ( $child_env_configs as $child_slug => $env_config ) {
+			if (
+				is_array( $env_config ) &&
+				isset( $env_config['sources'] ) &&
+				is_array( $env_config['sources'] ) &&
+				! empty( $env_config['sources'] )
+			) {
+				// Add the service field to each source to identify which child integration it came from
+				$sources_with_service = array_map( function ( $source ) use ( $child_slug ) {
+					return array_merge( $source, [ 'service' => $child_slug ] );
+				}, $env_config['sources'] );
+				
+				$combined_sources = array_merge( $combined_sources, $sources_with_service );
+			}
+		}
+
 		if ( ! defined( 'REMOTE_DATA_BLOCKS_CONFIGS' ) ) {
-			define( 'REMOTE_DATA_BLOCKS_CONFIGS', [] );
+			define( 'REMOTE_DATA_BLOCKS_CONFIGS', $combined_sources );
 		}
 	}
 }

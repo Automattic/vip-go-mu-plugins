@@ -154,11 +154,60 @@ class IntegrationVipConfig {
 		return $this->get_value_from_config( 'env', 'status' );
 	}
 
+	/**
+	 * Get environment-level configuration for this integration.
+	 *
+	 * @return array Environment configuration array, empty array if no config defined
+	 */
 	public function get_env_config(): array {
 		$config = $this->get_value_from_config( 'env', 'config' );
 		return is_array( $config ) ? $config : [];
 	}
 
+	/**
+	 * Get child integration configurations.
+	 *
+	 * Returns the 'children' array from the integration configuration, which contains
+	 * configuration data for child integrations. Each child can have its own 'env',
+	 * 'org', and 'network_sites' sections similar to the parent integration.
+	 *
+	 * @return array Array of child configurations, empty array if no children defined
+	 */
+	public function get_child_configs(): array {
+		if ( isset( $this->config['children'] ) && is_array( $this->config['children'] ) ) {
+			return $this->config['children'];
+		}
+
+		return [];
+	}
+
+	/**
+	 * Get environment configurations for child integrations.
+	 *
+	 * Extracts the 'config' field from the 'env' section of each child configuration,
+	 * preserving the integration slug as the key. This maintains the associative structure
+	 * and consistency with get_env_config() which returns only the config portion.
+	 *
+	 * @return array Associative array of child environment configurations keyed by integration slug
+	 */
+	public function get_child_env_configs(): array {
+		$child_configs = $this->get_child_configs();
+		$child_envs    = [];
+
+		foreach ( $child_configs as $child_slug => $child_config ) {
+			if ( isset( $child_config['env']['config'] ) && is_array( $child_config['env']['config'] ) ) {
+				$child_envs[ $child_slug ] = $child_config['env']['config'];
+			}
+		}
+
+		return $child_envs;
+	}
+
+	/**
+	 * Get network-site-level configuration for this integration.
+	 *
+	 * @return array Network site configuration array, empty array if not multisite or no config defined
+	 */
 	public function get_network_site_config(): array {
 		if ( ! is_multisite() ) {
 			return [];

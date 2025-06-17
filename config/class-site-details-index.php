@@ -78,11 +78,12 @@ class Site_Details_Index {
 		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
-		$site_details['plugins'] = $this->get_plugin_info();
-		$site_details['themes']  = $this->get_theme_info();
-		$site_details['search']  = $this->get_search_info();
-		$site_details['jetpack'] = $this->get_jetpack_info();
-		$site_details['parsely'] = $this->get_parsely_info();
+		$site_details['plugins']    = $this->get_plugin_info();
+		$site_details['themes']     = $this->get_theme_info();
+		$site_details['user_roles'] = $this->get_user_roles();
+		$site_details['search']     = $this->get_search_info();
+		$site_details['jetpack']    = $this->get_jetpack_info();
+		$site_details['parsely']    = $this->get_parsely_info();
 
 		return $site_details;
 	}
@@ -253,6 +254,25 @@ class Site_Details_Index {
 		}
 
 		return $update_data;
+	}
+
+	/**
+	 * Gather all registered user roles on this site.
+	 */
+	public function get_user_roles() {
+		$wp_roles = wp_roles();
+
+		$roles = [];
+		if ( isset( $wp_roles->roles ) && is_array( $wp_roles->roles ) ) {
+			foreach ( $wp_roles->roles as $slug => $role ) {
+				$roles[] = [
+					'slug' => $slug,
+					'name' => $role['name'],
+				];
+			}
+		}
+
+		return $roles;
 	}
 
 	/**
