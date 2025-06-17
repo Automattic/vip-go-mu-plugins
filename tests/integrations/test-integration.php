@@ -133,4 +133,74 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $integration->is_active() );
 	}
+
+	public function test__get_child_configs_returns_empty_array_for_manual_activation(): void {
+		$integration = new FakeIntegration( 'fake' );
+
+		$this->assertEquals( [], $integration->get_child_configs() );
+	}
+
+	public function test__get_child_env_configs_returns_empty_array_for_manual_activation(): void {
+		$integration = new FakeIntegration( 'fake' );
+
+		$this->assertEquals( [], $integration->get_child_env_configs() );
+	}
+
+	public function test__get_child_configs_delegates_to_vip_config_when_present(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$children_config = [
+			'airtable' => [
+				'type' => 'airtable',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => [],
+				],
+			],
+		];
+
+		/** @var MockObject&IntegrationVipConfig $vip_config_mock */
+		$vip_config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_child_configs' ] )
+			->getMock();
+
+		$vip_config_mock->expects( $this->once() )
+			->method( 'get_child_configs' )
+			->willReturn( $children_config );
+
+		$integration = new FakeIntegration( 'fake' );
+		$integration->activate();
+		$integration->set_vip_config( $vip_config_mock );
+
+		$this->assertEquals( $children_config, $integration->get_child_configs() );
+	}
+
+	public function test__get_child_env_configs_delegates_to_vip_config_when_present(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$child_env_configs = [
+			'airtable' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
+		];
+
+		/** @var MockObject&IntegrationVipConfig $vip_config_mock */
+		$vip_config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_child_env_configs' ] )
+			->getMock();
+
+		$vip_config_mock->expects( $this->once() )
+			->method( 'get_child_env_configs' )
+			->willReturn( $child_env_configs );
+
+		$integration = new FakeIntegration( 'fake' );
+		$integration->activate();
+		$integration->set_vip_config( $vip_config_mock );
+
+		$this->assertEquals( $child_env_configs, $integration->get_child_env_configs() );
+	}
 }

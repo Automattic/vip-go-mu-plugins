@@ -300,6 +300,98 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_value_from_vip_config, $config_value );
 	}
 
+	public function test__get_child_configs_returns_empty_array_when_no_children_defined(): void {
+		$mock = $this->get_mock( [] );
+
+		$this->assertEquals( [], $mock->get_child_configs() );
+	}
+
+	public function test__get_child_configs_returns_empty_array_when_children_is_not_array(): void {
+		$mock = $this->get_mock( [ 'children' => 'not-an-array' ] );
+
+		$this->assertEquals( [], $mock->get_child_configs() );
+	}
+
+	public function test__get_child_configs_returns_children_array_when_defined(): void {
+		$children_config = [
+			'airtable'      => [
+				'type' => 'airtable',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => [ 'sources' => [] ],
+				],
+			],
+			'google-sheets' => [
+				'type' => 'google-sheets',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => [ 'sources' => [] ],
+				],
+			],
+		];
+
+		$mock = $this->get_mock( [ 'children' => $children_config ] );
+
+		$this->assertEquals( $children_config, $mock->get_child_configs() );
+	}
+
+	public function test__get_child_env_configs_returns_empty_array_when_no_children_defined(): void {
+		$mock = $this->get_mock( [] );
+
+		$this->assertEquals( [], $mock->get_child_env_configs() );
+	}
+
+	public function test__get_child_env_configs_returns_only_config_portion_from_child_envs(): void {
+		$children_config = [
+			'airtable'      => [
+				'type' => 'airtable',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
+				],
+			],
+			'google-sheets' => [
+				'type' => 'google-sheets',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => [ 'sources' => [ [ 'uuid' => 'test-2' ] ] ],
+				],
+			],
+			'invalid-child' => [
+				'type' => 'invalid',
+				'env'  => [
+					'status' => 'enabled',
+					// No config field
+				],
+			],
+		];
+
+		$expected = [
+			'airtable'      => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
+			'google-sheets' => [ 'sources' => [ [ 'uuid' => 'test-2' ] ] ],
+		];
+
+		$mock = $this->get_mock( [ 'children' => $children_config ] );
+
+		$this->assertEquals( $expected, $mock->get_child_env_configs() );
+	}
+
+	public function test__get_child_env_configs_handles_non_array_config_gracefully(): void {
+		$children_config = [
+			'airtable' => [
+				'type' => 'airtable',
+				'env'  => [
+					'status' => 'enabled',
+					'config' => 'not-an-array',
+				],
+			],
+		];
+
+		$mock = $this->get_mock( [ 'children' => $children_config ] );
+
+		$this->assertEquals( [], $mock->get_child_env_configs() );
+	}
+
 	/**
 	 * Get mock.
 	 *
