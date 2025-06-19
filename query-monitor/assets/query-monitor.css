@@ -164,9 +164,6 @@
 #wpadminbar .quicklinks .menupop ul li.qm-true > a:focus, #wpadminbar .quicklinks .menupop ul li.qm-true > a:hover {
   color: #47a747 !important;
 }
-#wpadminbar .qm-alert {
-  background-color: #f60;
-}
 #wpadminbar #wp-admin-bar-query-monitor-doing_it_wrong a,
 #wpadminbar #wp-admin-bar-query-monitor-stricts a,
 #wpadminbar #wp-admin-bar-query-monitor-deprecateds a,
@@ -199,6 +196,9 @@
 #wpadminbar .qm-expensive:focus,
 #wpadminbar .qm-expensive:hover {
   background-color: #a25800;
+}
+#wpadminbar .qm-alert {
+  background-color: #f60;
 }
 #wpadminbar #wp-admin-bar-query-monitor-logger-warning a,
 #wpadminbar #wp-admin-bar-query-monitor-warnings a,
