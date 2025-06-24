@@ -106,7 +106,7 @@ class ES_WP_Tax_Query extends WP_Tax_Query {
 		}
 
 		// Filter to remove empties.
-		$filters = array_filter( $filters );
+		$filters = array_values( array_filter( $filters ) );
 
 		if ( ! empty( $relation ) && 'or' === strtolower( $relation ) ) {
 			$relation = 'should';
@@ -297,8 +297,6 @@ class ES_WP_Tax_Query extends WP_Tax_Query {
 	 * @param string $resulting_field The resulting field.
 	 */
 	public function transform_query( &$query, $resulting_field ) {
-		global $wpdb;
-
 		if ( empty( $query['terms'] ) ) {
 			return;
 		}
@@ -309,50 +307,56 @@ class ES_WP_Tax_Query extends WP_Tax_Query {
 
 		$resulting_field = sanitize_key( $resulting_field );
 
-		// phpcs:disable WordPress.DB.PreparedSQL.NotPrepared, WordPress.VIP.DirectDatabaseQuery.NoCaching, WordPress.VIP.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-		switch ( $query['field'] ) {
-			case 'slug':
-			case 'name':
-				$terms = "'" . implode( "','", array_map( 'sanitize_title_for_query', $query['terms'] ) ) . "'";
-				$terms = $wpdb->get_col(
-					"
-					SELECT $wpdb->term_taxonomy.$resulting_field
-					FROM $wpdb->term_taxonomy
-					INNER JOIN $wpdb->terms USING (term_id)
-					WHERE taxonomy = '{$query['taxonomy']}'
-					AND $wpdb->terms.{$query['field']} IN ($terms)
-				" 
-				);
-				break;
-			case 'term_taxonomy_id':
-				$terms = implode( ',', array_map( 'intval', $query['terms'] ) );
-				$terms = $wpdb->get_col(
-					"
-					SELECT $resulting_field
-					FROM $wpdb->term_taxonomy
-					WHERE term_taxonomy_id IN ($terms)
-				" 
-				);
-				break;
-			default:
-				$terms = implode( ',', array_map( 'intval', $query['terms'] ) );
-				$terms = $wpdb->get_col(
-					"
-					SELECT $resulting_field
-					FROM $wpdb->term_taxonomy
-					WHERE taxonomy = '{$query['taxonomy']}'
-					AND term_id IN ($terms)
-				" 
-				);
-		}
-		// phpcs:enable WordPress.DB.PreparedSQL.NotPrepared, WordPress.VIP.DirectDatabaseQuery.NoCaching, WordPress.VIP.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery
-
-		if ( 'AND' === $query['operator'] && count( $terms ) < count( $query['terms'] ) ) {
-			$query = new WP_Error( 'Inexistent terms' );
+		// Empty 'terms' always results in a null transformation.
+		$terms = array_values( array_filter( $query['terms'] ) );
+		if ( empty( $terms ) ) {
+			$query['terms'] = array();
+			$query['field'] = $resulting_field;
 			return;
 		}
 
-		$query['terms'] = $terms;
+		$args = array(
+			'get'                    => 'all',
+			'number'                 => 0,
+			'taxonomy'               => $query['taxonomy'],
+			'update_term_meta_cache' => false,
+			'orderby'                => 'none',
+		);
+
+		// Term query parameter name depends on the 'field' being searched on.
+		switch ( $query['field'] ) {
+			case 'slug':
+				$args['slug'] = $terms;
+				break;
+			case 'name':
+				$args['name'] = $terms;
+				break;
+			case 'term_taxonomy_id':
+				$args['term_taxonomy_id'] = $terms;
+				break;
+			default:
+				$args['include'] = wp_parse_id_list( $terms );
+				break;
+		}
+
+		if ( ! is_taxonomy_hierarchical( $query['taxonomy'] ) ) {
+			$args['number'] = count( $terms );
+		}
+
+		$term_query = new WP_Term_Query();
+		$term_list  = $term_query->query( $args );
+
+		if ( is_wp_error( $term_list ) ) {
+			$query = $term_list;
+			return;
+		}
+
+		if ( 'AND' === $query['operator'] && count( $term_list ) < count( $query['terms'] ) ) {
+			$query = new WP_Error( 'inexistent_terms', __( 'Inexistent terms.', 'es-wp-query' ) );
+			return;
+		}
+
+		$query['terms'] = wp_list_pluck( $term_list, $resulting_field );
 		$query['field'] = $resulting_field;
 	}
 }
