@@ -500,14 +500,32 @@ class WPCOM_VIP_Cache_Manager {
 			$requests = array_merge( $requests, $this->build_purge_request( $url, 'PURGE' ) );
 		}
 
-		$this->ban_urls   = [];
-		$this->purge_urls = [];
-
 		if ( empty( $requests ) ) {
 			return;
 		}
 
 		$this->curl_multi( $requests );
+
+		/**
+		 * After PURGE URLs are executed.
+		 *
+		 * @param array $this->purge_urls {
+		 *     An array of URLs that were to be PURGEd
+		 * }
+		 */
+		do_action( 'wpcom_vip_cache_after_execute_purges', $this->purge_urls );
+
+		/**
+		 * After BAN requests executed.
+		 *
+		 * @param array $this->ban_urls {
+		 *     An array of BAN requests
+		 * }
+		 */
+		do_action( 'wpcom_vip_cache_after_execute_bans', $this->ban_urls );
+
+		$this->ban_urls   = [];
+		$this->purge_urls = [];
 	}
 
 	public function purge_site_cache() {
