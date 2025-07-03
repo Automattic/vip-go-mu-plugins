@@ -402,7 +402,7 @@ class WPCOM_VIP_Cache_Manager {
 			}
 		}
 
-		if ( defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
+		if ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
 			return array(
 				array(
 					'host'   => $parsed['host'],
