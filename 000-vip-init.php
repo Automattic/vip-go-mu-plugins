@@ -333,7 +333,7 @@ if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {
 
 // Add custom header for VIP
 add_filter( 'wp_headers', function ( $headers ) {
-	$headers['X-hacker']     = 'If you\'re reading this, you should visit wpvip.com/careers and apply to join the fun, mention this header.';
+	$headers['X-hacker']     = 'If you\'re reading this, you should visit https://join.a8c.com/viphacker and apply to join the fun, mention this header.';
 	$headers['X-Powered-By'] = 'WordPress VIP <https://wpvip.com>';
 	$headers['Host-Header']  = 'a9130478a60e5f9135f765b23f26593b'; // md5 -s wpvip
 
