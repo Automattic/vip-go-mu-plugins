@@ -59,6 +59,7 @@ class EnterpriseSearchIntegration extends Integration {
 		}
 
 		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
+		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
 	}
 
 	/**
@@ -76,5 +77,14 @@ class EnterpriseSearchIntegration extends Integration {
 		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && constant( 'VIP_ELASTICSEARCH_USERNAME' );
 		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && constant( 'VIP_ELASTICSEARCH_PASSWORD' );
 		return $username_defined && $password_defined;
+	}
+
+	/**
+	 * Set the Elasticsearch version.
+	 */
+	public function vip_set_es_version(): void {
+		$config = $this->get_env_config();
+		$es_version = isset( $config['elasticsearch_version'] ) ? $config['elasticsearch_version'] : '7';
+		define( 'VIP_ELASTICSEARCH_VERSION', $es_version );
 	}
 }
