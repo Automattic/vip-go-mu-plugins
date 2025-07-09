@@ -54,12 +54,12 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Configure `Enterprise Search` for VIP Platform.
 	 */
 	public function configure(): void {
+		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
+		
 		if ( $this->is_es_credentials_set() ) {
 			return;
 		}
-
 		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
-		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
 	}
 
 	/**
@@ -83,7 +83,7 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Set the Elasticsearch version.
 	 */
 	public function vip_set_es_version(): void {
-		$config = $this->get_env_config();
+		$config     = $this->get_env_config();
 		$es_version = isset( $config['elasticsearch_version'] ) ? $config['elasticsearch_version'] : '7';
 		define( 'VIP_ELASTICSEARCH_VERSION', $es_version );
 	}

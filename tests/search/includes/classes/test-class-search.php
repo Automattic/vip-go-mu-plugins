@@ -1470,6 +1470,36 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'dca', $origin_dc );
 	}
 
+	public function test__get_index_routing_allocation_include_dc_dca_es8_routes_to_dfw() {
+		// Mock the current host to return a DCA endpoint
+		$mock_search = $this->getMockBuilder( Search::class )
+			->onlyMethods( [ 'get_current_host' ] )
+			->getMock();
+		$mock_search->method( 'get_current_host' )->willReturn( 'https://es-ha.dca.vipv2.net' );
+
+		// Define ES8 version
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
+
+		$result = $mock_search->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( 'dfw', $result );
+	}
+
+	public function test__get_index_routing_allocation_include_dc_dca_es7_does_not_route_to_dfw() {
+		// Mock the current host to return a DCA endpoint
+		$mock_search = $this->getMockBuilder( Search::class )
+			->onlyMethods( [ 'get_current_host' ] )
+			->getMock();
+		$mock_search->method( 'get_current_host' )->willReturn( 'https://es-ha.dca.vipv2.net' );
+
+		// Define ES7 version
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '7' );
+
+		$result = $mock_search->get_index_routing_allocation_include_dc();
+
+		$this->assertEquals( 'dca', $result );
+	}
+
 	public function get_index_routing_allocation_include_dc_from_endpoints_data() {
 		return array(
 			// Valid
