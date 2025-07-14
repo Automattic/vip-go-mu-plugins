@@ -25,6 +25,7 @@ require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 require_once __DIR__ . '/integrations/security-boost.php';
+require_once __DIR__ . '/integrations/tollbit.php';
 
 if ( file_exists( __DIR__ . '/integrations/remote-data-blocks.php' ) ) {
 	require_once __DIR__ . '/integrations/remote-data-blocks.php';
@@ -40,6 +41,7 @@ IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' )
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
 IntegrationsSingleton::instance()->register( new SecurityBoostIntegration( 'security-boost' ) );
+IntegrationsSingleton::instance()->register( new TollbitIntegration( 'tollbit' ) );
 
 if ( class_exists( __NAMESPACE__ . '\\RemoteDataBlocksIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new RemoteDataBlocksIntegration( 'remote-data-blocks' ) );
