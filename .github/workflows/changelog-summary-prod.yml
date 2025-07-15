@@ -20,7 +20,7 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
         with:
           egress-policy: audit
 
@@ -83,3 +83,21 @@ jobs:
                 --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
                 --wp-status=draft \
                 --debug
+
+  changelog:
+    needs: execute
+    name: Docs Site Changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - uses: Automattic/vip-actions/changelog@fa05dc9293764a50401a293f2c9312924afbaab3 # trunk
+        with:
+          endpoint: ${{ vars.DOCS_CHANGELOG_POST_ENDPOINT }}
+          endpoint-token: ${{ secrets.DOCS_CHANGELOG_POST_TOKEN }}
+          endpoint-auth-type: 'basic'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          status: 'draft'
+          category-id: '98'
+          tag-id: '95'
+          link-to-pr: true
+
