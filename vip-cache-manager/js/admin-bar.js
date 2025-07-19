@@ -54,13 +54,12 @@
 		const urls = getURLsToPurge();
 
 		try {
-			const res = await postData( ajaxurl, { nonce, urls } );
-			const { success, data } = res;
+			const { data } = await postData( ajaxurl, { nonce, urls } );
 
 			btn.textContent = data.result || 'Success';
 			btn.disabled = true;
 			btn.removeEventListener( 'click', onClickHandler );
-		} catch ( err ) {
+		} catch {
 			purgeInProgress = false;
 			btn.textContent = '❌ Cache Purge Failed';
 		}
