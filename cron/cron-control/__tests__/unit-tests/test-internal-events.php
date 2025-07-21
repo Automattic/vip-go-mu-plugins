@@ -5,17 +5,17 @@ namespace Automattic\WP\Cron_Control\Tests;
 use Automattic\WP\Cron_Control;
 
 class Internal_Events_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		Utils::clear_cron_table();
 	}
 
-	function tearDown(): void {
+	public function tearDown(): void {
 		Utils::clear_cron_table();
 		parent::tearDown();
 	}
 
-	function test_internal_events_are_scheduled() {
+	public function test_internal_events_are_scheduled() {
 		Cron_Control\Internal_Events::instance()->schedule_internal_events();
 		$scheduled_events = Cron_Control\Events::query( [ 'limit' => 100 ] );
 
@@ -28,7 +28,7 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		}
 	}
 
-	function test_migrate_legacy_cron_events() {
+	public function test_migrate_legacy_cron_events() {
 		global $wpdb;
 
 		// Ensure we start with an empty cron option.
@@ -43,7 +43,7 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		$cron_array['version'] = 2;
 
 		// Put the legacy event directly into the cron option, avoiding our special filtering. @codingStandardsIgnoreLine
-		$result = $wpdb->query( $wpdb->prepare( "INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s)", 'cron', serialize( $cron_array ), 'yes' ) );
+		$wpdb->query( $wpdb->prepare( "INSERT INTO `$wpdb->options` (`option_name`, `option_value`, `autoload`) VALUES (%s, %s, %s)", 'cron', serialize( $cron_array ), 'yes' ) );
 		wp_cache_delete( 'alloptions', 'options' );
 		wp_cache_delete( 'notoptions', 'options' );
 		wp_cache_delete( 'cron', 'options' );
@@ -62,7 +62,7 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		$this->assertNull( $cron_row, 'cron option was deleted' );
 	}
 
-	function test_prune_duplicate_events() {
+	public function test_prune_duplicate_events() {
 		// We don't prune single events, even if duplicates.
 		$original_single_event  = Utils::create_test_event( [ 'timestamp' => time(), 'action' => 'single_event', 'args' => [ 'same' ] ] );
 		$duplicate_single_event = Utils::create_test_event( [ 'timestamp' => time() + 100, 'action' => 'single_event', 'args' => [ 'same' ] ] );
@@ -108,7 +108,7 @@ class Internal_Events_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( $duplicate_recurring_2->get_status(), Cron_Control\Events_Store::STATUS_COMPLETED, 'duplicate recurring event 2 was marked as completed' );
 	}
 
-	function test_force_publish_missed_schedules() {
+	public function test_force_publish_missed_schedules() {
 		// Define the filter callback to override post status.
 		$future_insert_filter = function ( $data ) {
 			if ( 'publish' === $data['post_status'] ) {

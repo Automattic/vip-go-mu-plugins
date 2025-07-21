@@ -6,7 +6,7 @@ use Automattic\WP\Cron_Control\CLI;
 use WP_Site;
 
 class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Skipping tests that only run on multisites.' );
 		}
@@ -14,11 +14,7 @@ class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
 		parent::setUp();
 	}
 
-	function tearDown(): void {
-		parent::tearDown();
-	}
-
-	function test_list_sites_removes_inactive_subsites() {
+	public function test_list_sites_removes_inactive_subsites() {
 		add_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 
 		// The archived/spam/deleted subsites should not be returned.
@@ -29,7 +25,7 @@ class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
 		remove_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 	}
 
-	function test_list_sites_2_hosts() {
+	public function test_list_sites_2_hosts() {
 		add_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 
 		// With two hosts, all active sites should still be returned.
@@ -41,7 +37,7 @@ class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
 		remove_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 	}
 
-	function test_list_sites_7_hosts() {
+	public function test_list_sites_7_hosts() {
 		add_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 
 		// With seven hosts, our current request should only be given two of the active sites.
@@ -53,7 +49,7 @@ class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
 		remove_filter( 'sites_pre_query', [ $this, 'mock_get_sites' ], 10, 2 );
 	}
 
-	function mock_hosts_list( $number_of_hosts ) {
+	public function mock_hosts_list( $number_of_hosts ) {
 		// Always have the "current" host.
 		$heartbeats = [ gethostname() => time() ];
 
@@ -66,7 +62,7 @@ class Orchestrate_Sites_Tests extends \WP_UnitTestCase {
 		wp_cache_set( CLI\Orchestrate_Sites::RUNNER_HOST_HEARTBEAT_KEY, $heartbeats );
 	}
 
-	function mock_get_sites( $site_data, $query_class ) {
+	public function mock_get_sites( $site_data, $query_class ) {
 		if ( $query_class->query_vars['count'] ) {
 			return 7;
 		}
