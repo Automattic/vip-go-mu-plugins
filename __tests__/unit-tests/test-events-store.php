@@ -6,17 +6,17 @@ use Automattic\WP\Cron_Control\Events_Store;
 use Automattic\WP\Cron_Control\Event;
 
 class Events_Store_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		Utils::clear_cron_table();
 	}
 
-	function tearDown(): void {
+	public function tearDown(): void {
 		Utils::clear_cron_table();
 		parent::tearDown();
 	}
 
-	function test_table_exists() {
+	public function test_table_exists() {
 		global $wpdb;
 
 		$table_name = Utils::get_table_name();
@@ -25,7 +25,7 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 		$this->assertTrue( Events_Store::is_installed() );
 	}
 
-	function test_event_creation() {
+	public function test_event_creation() {
 		$store = Events_Store::instance();
 
 		// We don't validate fields here, so not much to test other than return values.
@@ -43,7 +43,7 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 		$this->assertTrue( 0 === $empty_result, 'empty event was not inserted' );
 	}
 
-	function test_event_updates() {
+	public function test_event_updates() {
 		$store = Events_Store::instance();
 
 		// Make a valid event.
@@ -63,7 +63,7 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 		$this->assertFalse( $failed_result, 'event was not updated due to invalid args' );
 	}
 
-	function test_get_raw_event() {
+	public function test_get_raw_event() {
 		$store = Events_Store::instance();
 
 		$result = $store->_get_event_raw( -1 );
@@ -174,7 +174,7 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( $event_two->get_timestamp(), $result[0]->timestamp, 'found the right event' );
 		$this->assertEquals( $event_three->get_timestamp(), $result[1]->timestamp, 'found the right event' );
 
-		$event_five = Utils::create_test_event( array_merge( $args, [ 'timestamp' => time() + 5 ] ) );
+		Utils::create_test_event( array_merge( $args, [ 'timestamp' => time() + 5 ] ) );
 
 		// Should find all but the last event that is not due yet.
 		$result = $store->_query_events_raw( [
@@ -207,10 +207,10 @@ class Events_Store_Tests extends \WP_UnitTestCase {
 	public function test_query_raw_events_orderby() {
 		$store = Events_Store::instance();
 
-		$event_one   = Utils::create_test_event( [ 'timestamp' => 5, 'action' => 'test_query_raw_events_orderby' ] );
-		$event_two   = Utils::create_test_event( [ 'timestamp' => 2, 'action' => 'test_query_raw_events_orderby' ] );
-		$event_three = Utils::create_test_event( [ 'timestamp' => 3, 'action' => 'test_query_raw_events_orderby' ] );
-		$event_four  = Utils::create_test_event( [ 'timestamp' => 1, 'action' => 'test_query_raw_events_orderby' ] );
+		$event_one = Utils::create_test_event( [ 'timestamp' => 5, 'action' => 'test_query_raw_events_orderby' ] );
+		Utils::create_test_event( [ 'timestamp' => 2, 'action' => 'test_query_raw_events_orderby' ] );
+		Utils::create_test_event( [ 'timestamp' => 3, 'action' => 'test_query_raw_events_orderby' ] );
+		$event_four = Utils::create_test_event( [ 'timestamp' => 1, 'action' => 'test_query_raw_events_orderby' ] );
 
 		// Default orderby should be timestamp ASC
 		$result = $store->_query_events_raw();

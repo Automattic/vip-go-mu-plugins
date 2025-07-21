@@ -6,18 +6,18 @@ use Automattic\WP\Cron_Control\Events;
 use Automattic\WP\Cron_Control\Event;
 
 class Events_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		Utils::clear_cron_table();
 	}
 
-	function tearDown(): void {
+	public function tearDown(): void {
 		Utils::clear_cron_table();
 		parent::tearDown();
 	}
 
 	// The actual query functionality is largely tested in the data store already, so here we just ensure the returns are as expected.
-	function test_query() {
+	public function test_query() {
 		// Create 2 test events.
 		Utils::create_test_event( [ 'action' => 'test_query_action', 'args' => [ 'first' ], 'timestamp' => 1 ] );
 		Utils::create_test_event( [ 'action' => 'test_query_action', 'args' => [ 'second' ], 'timestamp' => 2 ] );
@@ -33,7 +33,7 @@ class Events_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( $events, [], 'Returns empty array when no results found' );
 	}
 
-	function test_format_events_for_wp() {
+	public function test_format_events_for_wp() {
 		$events = $this->create_test_events();
 
 		$expected_format = [
@@ -73,7 +73,7 @@ class Events_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( $empty_formatted, [], 'Returns empty array when no events to format' );
 	}
 
-	function test_flatten_wp_events_array() {
+	public function test_flatten_wp_events_array() {
 		// Setup an events array the way WP gives it to us.
 		$events = $this->create_test_events();
 		$formatted = Events::format_events_for_wp( array_values( $events ) );
@@ -122,7 +122,7 @@ class Events_Tests extends \WP_UnitTestCase {
 		return $events;
 	}
 
-	function test_get_events() {
+	public function test_get_events() {
 		$events = Events::instance();
 
 		$test_events = $this->register_active_events_for_listing();

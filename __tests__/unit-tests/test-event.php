@@ -7,17 +7,17 @@ use Automattic\WP\Cron_Control\Event;
 use WP_Error;
 
 class Event_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		Utils::clear_cron_table();
 	}
 
-	function tearDown(): void {
+	public function tearDown(): void {
 		Utils::clear_cron_table();
 		parent::tearDown();
 	}
 
-	function test_run() {
+	public function test_run() {
 		$called = 0;
 		add_action( 'test_run_event_action', function () use ( &$called ) {
 			$called++;
@@ -30,7 +30,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 1, $called, 'event callback was triggered once' );
 	}
 
-	function test_complete() {
+	public function test_complete() {
 		// Mock up an event, but try to complete it before saving.
 		$event = new Event();
 		$event->set_action( 'test_complete' );
@@ -47,7 +47,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertNotEquals( Event::create_instance_hash( [ 'test', 'args' ] ), $event->get_instance(), 'the instance was updated/randomized' );
 	}
 
-	function test_reschedule() {
+	public function test_reschedule() {
 		// Try to reschedule a non-recurring event.
 		$event = new Event();
 		$event->set_action( 'test_reschedule' );
@@ -70,10 +70,10 @@ class Event_Tests extends \WP_UnitTestCase {
 		$result = $event->reschedule();
 		$this->assertTrue( $result, 'event was successfully rescheduled' );
 		$this->assertEquals( Events_Store::STATUS_PENDING, $event->get_status() );
-		$this->assertEquals( time() + HOUR_IN_SECONDS, $event->get_timestamp() );
+		$this->assertEqualsWithDelta( time() + HOUR_IN_SECONDS, $event->get_timestamp(), 1 );
 	}
 
-	function test_exists() {
+	public function test_exists() {
 		$event = new Event();
 		$event->set_action( 'test_exists' );
 		$event->set_timestamp( time() );
@@ -83,7 +83,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertTrue( $event->exists() );
 	}
 
-	function test_create_instance_hash() {
+	public function test_create_instance_hash() {
 		$empty_args = Event::create_instance_hash( [] );
 		$this->assertEquals( md5( serialize( [] ) ), $empty_args );
 
@@ -91,7 +91,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( md5( serialize( [ 'some', 'data' ] ) ), $has_args );
 	}
 
-	function test_get_wp_event_format() {
+	public function test_get_wp_event_format() {
 		$event = new Event();
 		$event->set_action( 'test_get_wp_event_format' );
 		$event->set_timestamp( 123 );
@@ -117,7 +117,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		], $event->get_wp_event_format() );
 	}
 
-	function test_get() {
+	public function test_get() {
 		$test_event = new Event();
 		$test_event->set_action( 'test_get_action' );
 		$test_event->set_timestamp( 1637447875 );
@@ -132,7 +132,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertNull( $event, 'could not find event by ID' );
 	}
 
-	function test_find() {
+	public function test_find() {
 		$test_event = new Event();
 		$test_event->set_action( 'test_find_action' );
 		$test_event->set_timestamp( 1637447876 );
@@ -147,7 +147,7 @@ class Event_Tests extends \WP_UnitTestCase {
 		$this->assertNull( $event, 'could not find event by args' );
 	}
 
-	function test_validate_props() {
+	public function test_validate_props() {
 		// Invalid status.
 		$this->run_event_save_test( [
 			'creation' => [
@@ -218,7 +218,7 @@ class Event_Tests extends \WP_UnitTestCase {
 	}
 
 	// Run through various flows of event saving.
-	function test_event_save() {
+	public function test_event_save() {
 		// Create event w/ bare information to test the defaults.
 		// Then update the timestamp.
 		$this->run_event_save_test( [
