@@ -54,12 +54,11 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Configure `Enterprise Search` for VIP Platform.
 	 */
 	public function configure(): void {
-		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
-		
-		if ( $this->is_es_credentials_set() ) {
-			return;
+		if ( ! $this->is_es_credentials_set() ) {
+			add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
 		}
-		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
+		add_action( 'vip_search_loaded', array( $this, 'vip_set_search_offloading' ) );
+		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
 	}
 
 	/**
@@ -67,16 +66,34 @@ class EnterpriseSearchIntegration extends Integration {
 	 */
 	public function vip_set_es_credentials(): void {
 		$config = $this->get_env_config();
-		if ( isset( $config['username'] ) && isset( $config['password'] ) ) {
-			define( 'VIP_ELASTICSEARCH_USERNAME', $config['username'] );
-			define( 'VIP_ELASTICSEARCH_PASSWORD', $config['password'] );
+		if ( ! isset( $config['username'] ) || ! isset( $config['password'] ) ) {
+			return;
 		}
+
+		define( 'VIP_ELASTICSEARCH_USERNAME', $config['username'] );
+		define( 'VIP_ELASTICSEARCH_PASSWORD', $config['password'] );
 	}
 
 	private function is_es_credentials_set(): bool {
 		$username_defined = defined( 'VIP_ELASTICSEARCH_USERNAME' ) && constant( 'VIP_ELASTICSEARCH_USERNAME' );
 		$password_defined = defined( 'VIP_ELASTICSEARCH_PASSWORD' ) && constant( 'VIP_ELASTICSEARCH_PASSWORD' );
 		return $username_defined && $password_defined;
+	}
+
+	/**
+	 * Set search offloading.
+	 */
+	public function vip_set_search_offloading(): void {
+		$config = $this->get_env_config();
+		if ( ! isset( $config['offload_search'] ) ) {
+			return;
+		}
+
+		if ( 'true' === $config['offload_search'] ) {
+			add_filter( 'vip_search_query_integration_enabled', '__return_true', PHP_INT_MAX );
+		} elseif ( 'false' === $config['offload_search'] ) {
+			add_filter( 'vip_search_query_integration_enabled', '__return_false', PHP_INT_MAX );
+		}
 	}
 
 	/**
