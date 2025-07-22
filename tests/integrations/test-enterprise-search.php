@@ -101,4 +101,52 @@ class VIP_EnterpriseSearch_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( Constant_Mocker::constant( 'VIP_ELASTICSEARCH_USERNAME' ), 'baz' );
 		$this->assertEquals( Constant_Mocker::constant( 'VIP_ELASTICSEARCH_PASSWORD' ), '123' );
 	}
+
+	public function test_configure_adds_query_integration_filter_when_offload_search_true(): void {
+		$es_integration = new EnterpriseSearchIntegration( $this->slug );
+
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $es_integration, [
+			'config' => [ 'offload_search' => 'true' ],
+		] );
+
+		$es_integration->configure();
+		do_action( 'vip_search_loaded' );
+
+		$this->assertTrue( has_filter( 'vip_search_query_integration_enabled', '__return_true' ) !== false );
+		$this->assertTrue( apply_filters( 'vip_search_query_integration_enabled', null ) );
+		$this->assertTrue( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	public function test_configure_adds_query_integration_filter_when_offload_search_false(): void {
+		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true ); // Should have no effect
+
+		$es_integration = new EnterpriseSearchIntegration( $this->slug );
+
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $es_integration, [
+			'config' => [ 'offload_search' => 'false' ],
+		] );
+
+		$es_integration->configure();
+		do_action( 'vip_search_loaded' );
+
+		$this->assertTrue( has_filter( 'vip_search_query_integration_enabled', '__return_false' ) !== false );
+		$this->assertFalse( apply_filters( 'vip_search_query_integration_enabled', null ) );
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
+
+	public function test_configure_does_not_add_query_integration_filter_when_offload_search_not_present(): void {
+		$es_integration = new EnterpriseSearchIntegration( $this->slug );
+
+		get_class_property_as_public( Integration::class, 'options' )->setValue( $es_integration, [
+			'config' => [],
+		] );
+
+		$es_integration->configure();
+		do_action( 'vip_search_loaded' );
+
+		$this->assertFalse( has_filter( 'vip_search_query_integration_enabled', '__return_true' ) );
+		$this->assertFalse( has_filter( 'vip_search_query_integration_enabled', '__return_false' ) );
+		$this->assertNull( apply_filters( 'vip_search_query_integration_enabled', null ) );
+		$this->assertFalse( \Automattic\VIP\Search\Search::is_query_integration_enabled() );
+	}
 }

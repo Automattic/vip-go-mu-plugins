@@ -5,6 +5,7 @@
 
 namespace Automattic\VIP\Support_User;
 
+use Automattic\VIP\Utils\Context;
 use WP_Error;
 use WP_User;
 
@@ -1149,4 +1150,9 @@ class User {
 	}
 }
 
-User::init();
+// Skip the User initialization if WP_INSTALLING is defined.
+// This prevents the User from being initialized during the installation process, which could lead to issues if
+// the user is not yet fully set up or if the database is not ready for it.
+if ( ! Context::is_installing() ) {
+	User::init();
+}
