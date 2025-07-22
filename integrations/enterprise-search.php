@@ -103,5 +103,22 @@ class EnterpriseSearchIntegration extends Integration {
 		$config     = $this->get_env_config();
 		$es_version = isset( $config['elasticsearch_version'] ) ? $config['elasticsearch_version'] : '7';
 		define( 'VIP_ELASTICSEARCH_VERSION', $es_version );
+
+		if ( 'migration_in_progress' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+			$original_hosts = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
+			if ( ! is_array( $original_hosts ) || empty( $original_hosts ) ) {
+				return;
+			}
+
+			$migration_hosts = [];
+			if ( isset( $original_hosts[0] ) ) {
+				$migration_hosts[] = preg_replace( '/:\d+$/', ':9244', $original_hosts[0] );
+			}
+			if ( isset( $original_hosts[1] ) ) {
+				$migration_hosts[] = preg_replace( '/:\d+$/', ':9245', $original_hosts[1] );
+			}
+
+			define( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS', $migration_hosts );
+		}
 	}
 }
