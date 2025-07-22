@@ -25,7 +25,10 @@ require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 require_once __DIR__ . '/integrations/security-boost.php';
-require_once __DIR__ . '/integrations/tollbit.php';
+
+if ( file_exists( __DIR__ . '/integrations/tollbit.php' ) ) {
+	require_once __DIR__ . '/integrations/tollbit.php';
+}
 
 if ( file_exists( __DIR__ . '/integrations/remote-data-blocks.php' ) ) {
 	require_once __DIR__ . '/integrations/remote-data-blocks.php';
