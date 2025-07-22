@@ -44,7 +44,9 @@ IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' )
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
 IntegrationsSingleton::instance()->register( new SecurityBoostIntegration( 'security-boost' ) );
-IntegrationsSingleton::instance()->register( new TollbitIntegration( 'tollbit' ) );
+if ( class_exists( TollbitIntegration::class ) ) {
+	IntegrationsSingleton::instance()->register( new TollbitIntegration( 'tollbit' ) );
+}
 
 if ( class_exists( __NAMESPACE__ . '\\RemoteDataBlocksIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new RemoteDataBlocksIntegration( 'remote-data-blocks' ) );
