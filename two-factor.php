@@ -141,7 +141,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		$limited = current_user_can( $cap );
 
 		// Calculate current_user_can outside map_meta_cap to avoid callback loop
-		// while we could use the internal wpcom_vip_internal_is_two_factor_forced filter, we won't here, as it would take precedence over any old customer filter.
+		// While we could use the internal wpcom_vip_internal_is_two_factor_forced filter here, we intentionally don't to avoid taking precedence over existing customer filters.
 		add_filter( 'wpcom_vip_is_two_factor_forced', function () use ( $limited ) {
 			return $limited;
 		}, 9 );
