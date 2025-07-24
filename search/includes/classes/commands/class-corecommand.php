@@ -104,41 +104,60 @@ class CoreCommand {
 	/**
 	 * List all active indexes.
 	 *
+	 * @param array $indexes List of all index names from ES.
+	 *
 	 * @return array $indexes Array of active indexes.
 	 */
-	private function list_active_indexes() {
-		$indexes    = [];
-		$search     = \Automattic\VIP\Search\Search::instance();
-		$indexables = $search->indexables->get_all();
-		$blog_ids   = ( is_multisite() ) ? get_sites( [ 'fields' => 'ids' ] ) : [ get_current_blog_id() ];
-		foreach ( $indexables as $indexable ) {
-			if ( $indexable->global ) {
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
-				}
+	private function list_active_indexes( $indexes ) {
+		if ( ! is_array( $indexes ) ) {
+			WP_CLI::error( 'list_active_indexes: Could not retrieve all indexes!' );
+		}
+
+		$search = \Automattic\VIP\Search\Search::instance();
+
+		// Match the following formats: vip-<siteID>-<indexable>-v<version> or vip-<siteID>-<indexable>-<blogID>-v<version>
+		// or vip-<siteID>-<indexable>-<blogID>
+		$pattern        = '/^vip-(\d+)-([a-z_]+)(?:-(\d+))?(?:-v(\d+))?$/';
+		$active_indexes = [];
+		foreach ( $indexes as $index_name ) {
+			if ( ! preg_match( $pattern, $index_name, $matches ) ) {
 				continue;
 			}
 
-			foreach ( $blog_ids as $blog_id ) {
-				if ( is_multisite() ) {
-					switch_to_blog( $blog_id );
-				}
-				
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
-				}
-				
-				if ( is_multisite() ) {
-					restore_current_blog();
-				}
+			$indexable_slug = $matches[2];
+			$blog_id        = isset( $matches[3] ) ? (int) $matches[3] : null; // If null, it's likely a global indexable
+			$version        = isset( $matches[4] ) ? (int) $matches[4] : 1;
+
+			if ( is_multisite() && $blog_id ) {
+				switch_to_blog( $blog_id );
+			}
+
+			$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
+			if ( ! $indexable ) {
+				continue;
+			}
+
+			$active_version = $search->versioning->get_active_version_number( $indexable );
+			if ( is_wp_error( $active_version ) ) {
+				WP_CLI::error(
+					sprintf(
+						'Could not get active version for index "%s": %s',
+						$index_name,
+						$active_version->get_error_message(),
+					)
+				);
+			}
+
+			if ( $active_version === $version && ! in_array( $index_name, $active_indexes, true ) ) {
+				$active_indexes[] = $index_name;
+			}
+
+			if ( is_multisite() && $blog_id ) {
+				restore_current_blog();
 			}
 		}
 
-		return $indexes;
+		return $active_indexes;
 	}
 
 	/**
@@ -465,11 +484,9 @@ class CoreCommand {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function get_indexes( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$indexes = [];
+		$indexes = $this->list_indexes();
 		if ( isset( $assoc_args['active'] ) && $assoc_args['active'] ) {
-			$indexes = $this->list_active_indexes();
-		} else {
-			$indexes = $this->list_indexes();
+			$indexes = $this->list_active_indexes( $indexes );
 		}
 
 		if ( is_wp_error( $indexes ) ) {
