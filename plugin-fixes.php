@@ -204,3 +204,46 @@ function vip_ninja_forms_update_option( $value, $old_value ) {
 }
 
 add_filter( 'pre_update_option_ninja_forms_needs_updates', 'vip_ninja_forms_update_option', 10, 2 );
+
+/**
+ * Post SMTP < 3.3.0 - Subscriber+ Account Takeover via Email Log Exposure
+ * Security patch to add missing capability check on get_details() function
+ * See https://vipjira.atlassian.net/browse/BREAKING-980  OR #vip-breaking-1105 Slack thread
+ */
+function vip_post_smtp_security_patch() {
+	if ( ! class_exists( 'PostmanOptions' ) ) {
+		return;
+	}
+
+	// Check if it's a vulnerable version (< 3.3.0)
+	if ( defined( 'POSTMAN_PLUGIN_VERSION' ) && version_compare( POSTMAN_PLUGIN_VERSION, '3.3.0', '>=' ) ) {
+		return; // Already patched
+	}
+
+	// Add capability check via map_meta_cap filter
+	add_filter( 'map_meta_cap', 'vip_post_smtp_block_email_log_access', 10, 4 );
+}
+
+/**
+ * Block email log access for Post SMTP plugin
+ *
+ * @param array  $caps     The user's capabilities.
+ * @param string $_cap     The capability being checked.
+ * @param int    $_user_id The user ID.
+ * @param array  $_args    Additional arguments.
+ * @return array Modified capabilities array.
+ */
+function vip_post_smtp_block_email_log_access( $caps, $_cap, $_user_id, $_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
+	// Intercept requests that might access email logs
+	if ( is_admin() && ! current_user_can( 'manage_options' ) ) {
+		// Check if this is an email log access attempt
+		if ( doing_action( 'wp_ajax_postman_email_log_entry' ) ||
+			( isset( $_GET['page'] ) && 'postman_email_log' === $_GET['page'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return array( 'manage_options' ); // Require admin-level access
+		}
+	}
+
+	return $caps;
+}
+
+add_action( 'plugins_loaded', 'vip_post_smtp_security_patch' );
