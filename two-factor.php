@@ -130,8 +130,9 @@ function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {
 		return false;
 	}
-
-	return apply_filters( 'wpcom_vip_is_two_factor_forced', false );
+	$is_enforced = apply_filters( 'wpcom_vip_is_two_factor_forced', false );
+	// apply an internal filter so that we can detect if a site uses the wpcom_vip_is_two_factor_forced filter
+	return apply_filters( 'wpcom_vip_internal_is_two_factor_forced', $is_enforced );
 }
 
 function wpcom_vip_enforce_two_factor_plugin() {
@@ -140,6 +141,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		$limited = current_user_can( $cap );
 
 		// Calculate current_user_can outside map_meta_cap to avoid callback loop
+		// While we could use the internal wpcom_vip_internal_is_two_factor_forced filter here, we intentionally don't to avoid taking precedence over existing customer filters.
 		add_filter( 'wpcom_vip_is_two_factor_forced', function () use ( $limited ) {
 			return $limited;
 		}, 9 );
