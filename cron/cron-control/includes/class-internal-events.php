@@ -85,7 +85,7 @@ class Internal_Events extends Singleton {
 	 */
 	private function prepare_internal_events_schedules() {
 		$internal_events_schedules = [
-			'a8c_cron_control_minute' => [
+			'a8c_cron_control_minute'      => [
 				'interval' => 2 * MINUTE_IN_SECONDS,
 				'display'  => __( 'Cron Control internal job - every 2 minutes (used to be 1 minute)', 'automattic-cron-control' ),
 			],
@@ -189,7 +189,7 @@ class Internal_Events extends Singleton {
 				}
 			}
 
-			$page++;
+			++$page;
 
 			if ( count( $future_posts ) < $quantity || $page > 5 ) {
 				break;

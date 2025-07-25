@@ -254,8 +254,8 @@ class Event {
 		return isset( $this->id );
 	}
 
-	public function is_recurring() : bool {
-		// To allow validation to do it's job, here we just see if the props have ever been set.
+	public function is_recurring(): bool {
+		// To allow validation to do its job, here we just see if the props have ever been set.
 		return isset( $this->schedule, $this->interval );
 	}
 
