@@ -159,7 +159,7 @@ function pre_clear_scheduled_hook( $pre, $hook, $args ) {
 		$events     = Events::query( $query_args );
 		$all_events = array_merge( $all_events, $events );
 
-		$query_args['page']++;
+		++$query_args['page'];
 	} while ( ! empty( $events ) );
 
 	$all_successful = true;
@@ -254,7 +254,7 @@ function pre_get_cron_option( $pre ) {
 		$events     = Events::query( $query_args );
 		$all_events = array_merge( $all_events, $events );
 
-		$query_args['page']++;
+		++$query_args['page'];
 	} while ( ! empty( $events ) );
 
 	$cron_array = Events::format_events_for_wp( $all_events );

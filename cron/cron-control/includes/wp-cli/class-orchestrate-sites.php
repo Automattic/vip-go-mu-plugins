@@ -61,22 +61,24 @@ class Orchestrate_Sites extends \WP_CLI_Command {
 	 * @param int $group      Group number.
 	 */
 	private function display_sites( $num_groups = 1, $group = 0 ) {
-		$site_count = get_sites( [ 'count' => 1 ] );
+		$site_query = array(
+			'archived' => 0,
+			'spam'     => 0,
+			'deleted'  => 0,
+		);
+
+		$site_count = get_sites( array_merge( array( 'count' => 1 ), $site_query ) );
+
 		if ( $site_count > self::MAX_SITES ) {
-			trigger_error( 'Cron-Control: This multisite has more than ' . self::MAX_SITES . ' subsites, currently unsupported.', E_USER_WARNING );
+			trigger_error( sprintf( 'Cron-Control: This multisite has more than %u active subsites, currently unsupported.', self::MAX_SITES ), E_USER_WARNING );
 		}
 
 		// Keep the query simple, then process the results.
-		$all_sites = get_sites( [ 'number' => self::MAX_SITES ] );
+		$all_sites = get_sites( array_merge( array( 'number' => self::MAX_SITES ), $site_query ) );
 		$sites_to_display = [];
 		foreach ( $all_sites as $index => $site ) {
 			if ( $index % $num_groups !== $group ) {
 				// The site does not belong to this group.
-				continue;
-			}
-
-			if ( in_array( '1', array( $site->archived, $site->spam, $site->deleted ), true ) ) {
-				// Deactivated subsites don't need cron run on them.
 				continue;
 			}
 
@@ -116,7 +118,7 @@ class Orchestrate_Sites extends \WP_CLI_Command {
 		// If a host has missed 2 heartbeats, remove it from jobs processing.
 		$heartbeats = array_filter(
 			$heartbeats,
-			function( $timestamp ) use ( $heartbeat_interval ) {
+			function ( $timestamp ) use ( $heartbeat_interval ) {
 				if ( time() - ( $heartbeat_interval * 2 ) > $timestamp ) {
 					return false;
 				}

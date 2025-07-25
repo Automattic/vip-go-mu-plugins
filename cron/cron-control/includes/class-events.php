@@ -146,7 +146,7 @@ class Events extends Singleton {
 	 * Trim events queue down to a specific limit.
 	 *
 	 * @param array $events         List of events to be run in the current period.
-	 * @param array $max_queue_size Maximum number of events to return.
+	 * @param int   $max_queue_size Maximum number of events to return.
 	 * @return array
 	 */
 	private function reduce_queue( $events, $max_queue_size ): array {
@@ -169,7 +169,7 @@ class Events extends Singleton {
 				// Check and do the move.
 				if ( $action_counts[ $action ] < $i ) {
 					$reduced_queue[] = $event;
-					$action_counts[ $action ]++;
+					++$action_counts[ $action ];
 					unset( $events[ $key ] );
 				}
 			}
@@ -177,12 +177,10 @@ class Events extends Singleton {
 			// When done with an iteration and events remain, start again from the beginning of the $events array.
 			if ( empty( $events ) ) {
 				break;
-			} else {
-				$i++;
-				reset( $events );
-
-				continue;
 			}
+
+			++$i;
+			reset( $events );
 		} while ( $i <= 15 && count( $reduced_queue ) < $max_queue_size && ! empty( $events ) );
 
 		/**
