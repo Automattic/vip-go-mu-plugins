@@ -75,12 +75,12 @@ export class EditorPage {
 
 	private async clickButtonIfExists( locator: Locator ): Promise<void> {
 		try {
-			await locator.waitFor( { state: 'visible', timeout: 5000 } );
+			await locator.click( { timeout: 5000, trial: true } );
 		} catch {
 			return;
 		}
 
-		return locator.click( { delay: 20 } );
+		return locator.click( { delay: 20, timeout: 1000 } );
 	}
 
 	/**
