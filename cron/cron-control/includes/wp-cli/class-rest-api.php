@@ -7,7 +7,7 @@
 
 namespace Automattic\WP\Cron_Control\CLI;
 
-use \Automattic\WP\Cron_Control\Event;
+use Automattic\WP\Cron_Control\Event;
 
 /**
  * Make requests to Cron Control's REST API

@@ -7,7 +7,7 @@
 
 namespace Automattic\WP\Cron_Control\CLI;
 
-use \Automattic\WP\Cron_Control\Events_Store;
+use Automattic\WP\Cron_Control\Events_Store;
 use Automattic\WP\Cron_Control;
 
 /**
@@ -464,7 +464,7 @@ class Events extends \WP_CLI_Command {
 			$result = $event->complete();
 
 			if ( true === $result ) {
-				$success_count++;
+				++$success_count;
 			}
 
 			$progress->tick();

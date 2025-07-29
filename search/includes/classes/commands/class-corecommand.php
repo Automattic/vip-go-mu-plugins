@@ -102,6 +102,46 @@ class CoreCommand {
 	}
 
 	/**
+	 * List all active indexes.
+	 *
+	 * @return array $indexes Array of active indexes.
+	 */
+	private function list_active_indexes() {
+		$indexes    = [];
+		$search     = \Automattic\VIP\Search\Search::instance();
+		$indexables = $search->indexables->get_all();
+		$blog_ids   = ( is_multisite() ) ? get_sites( [ 'fields' => 'ids' ] ) : [ get_current_blog_id() ];
+		foreach ( $indexables as $indexable ) {
+			if ( $indexable->global ) {
+				$active_version = $search->versioning->get_active_version_number( $indexable );
+				if ( ! is_wp_error( $active_version ) ) {
+					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
+					$indexes[]  = $index_name;
+				}
+				continue;
+			}
+
+			foreach ( $blog_ids as $blog_id ) {
+				if ( is_multisite() ) {
+					switch_to_blog( $blog_id );
+				}
+				
+				$active_version = $search->versioning->get_active_version_number( $indexable );
+				if ( ! is_wp_error( $active_version ) ) {
+					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
+					$indexes[]  = $index_name;
+				}
+				
+				if ( is_multisite() ) {
+					restore_current_blog();
+				}
+			}
+		}
+
+		return $indexes;
+	}
+
+	/**
 	 * List all of the available indexes.
 	 *
 	 * @return array|WP_Error $indexes Array of available indexes.
@@ -415,10 +455,22 @@ class CoreCommand {
 	/**
 	 * Return all index names as a JSON object.
 	 *
+	 * ## OPTIONS
+	 *
+	 * [--active]
+	 * : Only show active indexes.
+	 *
 	 * @subcommand get-indexes
+	 * @param array $args Positional CLI args.
+	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function get_indexes( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$indexes = $this->list_indexes();
+		$indexes = [];
+		if ( isset( $assoc_args['active'] ) && $assoc_args['active'] ) {
+			$indexes = $this->list_active_indexes();
+		} else {
+			$indexes = $this->list_indexes();
+		}
 
 		if ( is_wp_error( $indexes ) ) {
 			WP_CLI::error( wp_json_encode( $indexes ) );
