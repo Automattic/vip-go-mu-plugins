@@ -11,17 +11,17 @@ use Automattic\WP\Cron_Control\Event;
 use Automattic\WP\Cron_Control;
 
 class WP_Adapter_Tests extends \WP_UnitTestCase {
-	function setUp(): void {
+	public function setUp(): void {
 		parent::setUp();
 		Utils::clear_cron_table();
 	}
 
-	function tearDown(): void {
+	public function tearDown(): void {
 		Utils::clear_cron_table();
 		parent::tearDown();
 	}
 
-	function test_pre_schedule_event() {
+	public function test_pre_schedule_event() {
 		// Test single/one-time event.
 		$this->run_schedule_test( (object) [
 			'timestamp' => time() + 500,
@@ -54,7 +54,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 'cron-control:wp:duplicate-event', $fail_result->get_error_code() );
 	}
 
-	function test_pre_reschedule_event() {
+	public function test_pre_reschedule_event() {
 		$event_args = (object) [
 			'timestamp' => time() - 500, // Past "due" keeps the calculation simple
 			'hook'      => 'test_pre_reschedule_event',
@@ -80,7 +80,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 'cron-control:wp:event-not-found', $fail_result->get_error_code() );
 	}
 
-	function test_pre_unschedule_event() {
+	public function test_pre_unschedule_event() {
 		$event = (object) [
 			'timestamp' => time(),
 			'hook'      => 'test_pre_unschedule_event',
@@ -104,7 +104,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 'cron-control:wp:event-not-found', $fail_result->get_error_code() );
 	}
 
-	function test_pre_clear_scheduled_hook() {
+	public function test_pre_clear_scheduled_hook() {
 		$event_details = [
 			'hook'      => 'test_pre_clear_scheduled_hook',
 			'schedule'  => false,
@@ -139,7 +139,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 0, $result, 'no events were cleared' );
 	}
 
-	function test_pre_unschedule_hook() {
+	public function test_pre_unschedule_hook() {
 		$event_details = [
 			'hook'      => 'test_pre_unschedule_hook',
 			'schedule'  => false,
@@ -171,7 +171,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( 0, $result, 'nothing was cleared' );
 	}
 
-	function test_pre_get_scheduled_event() {
+	public function test_pre_get_scheduled_event() {
 		$event_details = (object) [
 			'hook'      => 'test_pre_get_scheduled_event',
 			'args'      => [],
@@ -196,7 +196,7 @@ class WP_Adapter_Tests extends \WP_UnitTestCase {
 		$this->assertEquals( $result->timestamp, $event_details->timestamp, 'fetched the next occurring event' );
 	}
 
-	function test_pre_get_ready_cron_jobs() {
+	public function test_pre_get_ready_cron_jobs() {
 		$ready_jobs = Cron_Control\pre_get_ready_cron_jobs( null );
 		$this->assertTrue( [] === $ready_jobs, 'returns no ready jobs' );
 

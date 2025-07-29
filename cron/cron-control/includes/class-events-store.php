@@ -532,7 +532,7 @@ class Events_Store extends Singleton {
 		return $formatting;
 	}
 
-	private static function flush_event_cache( string $event_action = null, string $event_instance = null ) {
+	private static function flush_event_cache( ?string $event_action = null, ?string $event_instance = null ) {
 		// Always have to flush the query caches.
 		wp_cache_set( 'last_changed', microtime(), 'cron-control-queries' );
 
