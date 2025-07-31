@@ -208,19 +208,33 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 		 * wp_cache_get
 		 */
 		public function wp_cache_get( $value, $id, $flag, $force ) {
-			if ( true === $force ) {
-				// Don't intercept if we're explicitly bypassing local caches
-				return false;
-			}
+			// Guard to avoid infinite recursion
+			static $is_running = false;
 
-			$intercept = $this->do_intercept_key( $id, $flag );
-			if ( ! $intercept ) {
+			if ( $is_running ) {
 				return $value;
 			}
-			switch ( $intercept['model']['mode'] ) {
-				case 'passive':
-					return $this->passive_wp_cache_get( $intercept, $force );
+			
+			$is_running = true;
+
+			try {
+				if ( true === $force ) {
+					// Don't intercept if we're explicitly bypassing local caches
+					return false;
+				}
+
+				$intercept = $this->do_intercept_key( $id, $flag );
+				if ( ! $intercept ) {
+					return $value;
+				}
+				switch ( $intercept['model']['mode'] ) {
+					case 'passive':
+						return $this->passive_wp_cache_get( $intercept, $force );
+				}
+			} finally {
+				$is_running = false;
 			}
+
 			return $value;
 		}
 
