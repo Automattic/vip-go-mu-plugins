@@ -1,14 +1,14 @@
-# Copyright (C) 2022 Erick Hitter, Automattic
+# Copyright (C) 2025 Erick Hitter, Automattic
 # This file is distributed under the same license as the Cron Control package.
 msgid ""
 msgstr ""
 "Project-Id-Version: Cron Control 3.1\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/cron-control\n"
-"POT-Creation-Date: 2022-01-25 18:26:12+00:00\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/Cron-Control\n"
+"POT-Creation-Date: 2025-07-19 22:39:04+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2022-MO-DA HO:MI+ZONE\n"
+"PO-Revision-Date: 2025-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: en\n"
@@ -22,7 +22,7 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-Bookmarks: \n"
 "X-Textdomain-Support: yes\n"
-"X-Generator: grunt-wp-i18n 1.0.3\n"
+"X-Generator: grunt-wp-i18n 1.0.4\n"
 
 #: includes/class-events.php:218
 msgid "Invalid or incomplete request data."
@@ -185,48 +185,6 @@ msgstr ""
 #: includes/wp-cli/class-events.php:268 includes/wp-cli/class-rest-api.php:103
 msgid "true"
 msgstr ""
-
-#: includes/wp-cli/class-events.php:343
-msgid "%s year"
-msgid_plural "%s years"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:344
-msgid "%s month"
-msgid_plural "%s months"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:345
-msgid "%s week"
-msgid_plural "%s weeks"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:346
-msgid "%s day"
-msgid_plural "%s days"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:347
-msgid "%s hour"
-msgid_plural "%s hours"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:348
-msgid "%s minute"
-msgid_plural "%s minutes"
-msgstr[0] ""
-msgstr[1] ""
-
-#: includes/wp-cli/class-events.php:349
-msgid "%s second"
-msgid_plural "%s seconds"
-msgstr[0] ""
-msgstr[1] ""
 
 #: includes/wp-cli/class-events.php:397
 msgid "Invalid event ID"
