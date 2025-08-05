@@ -64,7 +64,7 @@ jobs:
         uses: actions/checkout@v4.2.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@0f7f1d08e3e32076e51cae65eb0b0c871405b16e # 2.34.1
+        uses: shivammathur/setup-php@ccf2c627fe61b1b4d924adfcbd19d661a18133a0 # 2.35.2
 
       - name: Install
         uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
@@ -90,7 +90,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4.2.2
-      - uses: Automattic/vip-actions/changelog@a10bde8914496b7386d10fc5df9b4ffa2fd72ef1 # trunk
+      - uses: Automattic/vip-actions/changelog@8e0e16376698771d5aded6c6d74f3d1f120b7b5a # trunk
         with:
           endpoint: ${{ vars.DOCS_CHANGELOG_POST_ENDPOINT }}
           endpoint-token: ${{ secrets.DOCS_CHANGELOG_POST_TOKEN }}
