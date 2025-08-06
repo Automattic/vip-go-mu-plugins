@@ -100,11 +100,18 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Set the Elasticsearch version.
 	 */
 	public function vip_set_es_version(): void {
-		$config     = $this->get_env_config();
+		$config = $this->get_env_config();
+
 		$es_version = isset( $config['elasticsearch_version'] ) ? $config['elasticsearch_version'] : '7';
 		define( 'VIP_ELASTICSEARCH_VERSION', $es_version );
 
-		if ( 'migration_in_progress' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
+		$migration_in_progress = isset( $config['elasticsearch_migration_in_progress'] ) ? $config['elasticsearch_migration_in_progress'] 
+			: 'false';
+		if ( 'true' === $migration_in_progress ) {
+			define( 'VIP_ELASTICSEARCH_MIGRATION', true );
+		}
+
+		if ( '8' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && 'true' === $migration_in_progress ) {
 			$original_hosts = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
 			if ( ! is_array( $original_hosts ) || empty( $original_hosts ) ) {
 				return;
