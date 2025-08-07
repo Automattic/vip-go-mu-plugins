@@ -314,7 +314,7 @@ class Events_Store extends Singleton {
 		global $wpdb;
 
 		$valid_args = [
-			'action' => [
+			'action'        => [
 				'default'    => null,
 				'validation' => 'is_string',
 			],
@@ -322,41 +322,41 @@ class Events_Store extends Singleton {
 				'default'    => null,
 				'validation' => 'is_string',
 			],
-			'args' => [
+			'args'          => [
 				'default'    => null,
 				'validation' => 'is_array',
 			],
-			'instance' => [
+			'instance'      => [
 				'default'    => null,
 				'validation' => 'is_string',
 			],
-			'timestamp' => [
+			'timestamp'     => [
 				'default'    => null,
 				'validation' => fn( $ts ) => self::validate_timestamp( $ts ),
 			],
-			'schedule' => [
+			'schedule'      => [
 				'default'    => null,
 				'validation' => 'is_string',
 			],
-			'status' => [
+			'status'        => [
 				'default'    => self::ACTIVE_STATUSES,
 				'validation' => fn( $status ) => self::validate_status( $status ),
 			],
-			'limit' => [
+			'limit'         => [
 				'default'    => 100,
 				'validation' => 'is_int',
 			],
-			'page' => [
+			'page'          => [
 				'default'    => 1,
 				'validation' => fn( $page ) => is_int( $page ) && $page >= 1,
 			],
-			'orderby' => [
+			'orderby'       => [
 				'default'    => 'timestamp',
 				'validation' => fn( $orderby ) => is_null( $orderby ) || ( is_string( $orderby ) && in_array( $orderby, [ 'timestamp', 'ID' ], true ) ),
 			],
-			'order' => [
+			'order'         => [
 				'default'    => 'ASC',
-				'validation' => fn( $order ) => is_string( $order ) && in_array( strtoupper( $order ), [ 'ASC', 'DESC'], true ),
+				'validation' => fn( $order ) => is_string( $order ) && in_array( strtoupper( $order ), [ 'ASC', 'DESC' ], true ),
 			],
 		];
 
@@ -532,7 +532,7 @@ class Events_Store extends Singleton {
 		return $formatting;
 	}
 
-	private static function flush_event_cache( string $event_action = null, string $event_instance = null ) {
+	private static function flush_event_cache( ?string $event_action = null, ?string $event_instance = null ) {
 		// Always have to flush the query caches.
 		wp_cache_set( 'last_changed', microtime(), 'cron-control-queries' );
 

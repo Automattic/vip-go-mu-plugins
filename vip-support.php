@@ -7,6 +7,4 @@
  * License:      GPLv2 or later
  */
 
-if ( ! defined( 'WP_INSTALLING' ) ) {
-	require_once __DIR__ . '/vip-support/vip-support.php';
-}
+require_once __DIR__ . '/vip-support/vip-support.php';
