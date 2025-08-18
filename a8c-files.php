@@ -289,7 +289,14 @@ class A8C_Files {
 			$_max_w = $content_width;
 			$_max_h = 0;
 		} else {
-			$_max_w = 1024;
+			/**
+			 * Filter the default maximum width for image resizing when no other constraints are available.
+			 *
+			 * @param int $max_width Default maximum width. Default 1024.
+			 * @param int $id Attachment ID for image.
+			 * @param array|string $size Size of image, either array or string.
+			 */
+			$_max_w = apply_filters( 'vip_go_default_image_max_width', 1024, $id, $size );
 			$_max_h = 0;
 		}
 
