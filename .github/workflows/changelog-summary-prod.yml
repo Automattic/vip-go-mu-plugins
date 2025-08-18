@@ -90,14 +90,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
-      - uses: Automattic/vip-actions/changelog@8e0e16376698771d5aded6c6d74f3d1f120b7b5a # trunk
+      - uses: Automattic/vip-actions/changelog@trunk
         with:
-          endpoint: ${{ vars.DOCS_CHANGELOG_POST_ENDPOINT }}
-          endpoint-token: ${{ secrets.DOCS_CHANGELOG_POST_TOKEN }}
+          endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
+          endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
           endpoint-auth-type: 'basic'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          status: 'draft'
-          category-id: '98'
-          tag-id: '95'
-          link-to-pr: true
+          status: 'publish'
+          terms: changelog_category:108
+          tag-id: '112'
+          link-to-pr: false
 
