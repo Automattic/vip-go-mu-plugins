@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
-      - uses: Automattic/vip-actions/changelog@8e0e16376698771d5aded6c6d74f3d1f120b7b5a # trunk
+      - uses: Automattic/vip-actions/changelog@52569737661b6dc7474c86d4b608ffb08c0af27a # trunk
         with:
           endpoint: ${{ vars.DOCS_CHANGELOG_POST_ENDPOINT }}
           endpoint-token: ${{ secrets.DOCS_CHANGELOG_POST_TOKEN }}
