@@ -1024,6 +1024,9 @@ class Search {
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
 		}
 
+		// Mirror write requests to migration ES hosts if in migration mode
+		$this->mirror_write_to_migration_hosts( $query, $args, $type );
+
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			add_site_option( $index_exists_option_name, $response );
@@ -1035,6 +1038,62 @@ class Search {
 		}
 
 		return $response;
+	}
+
+	/**
+	 * Mirror write requests to migration ES hosts during migration.
+	 *
+	 * @param array $query The original query array.
+	 * @param array $args The original request args.
+	 * @param string|null $type The type of request.
+	 */
+	protected function mirror_write_to_migration_hosts( $query, $args, $type = null ) {
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+			return;
+		}
+
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) || ! is_array( constant( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) ) ) {
+			return;
+		}
+
+		$allowed_write_types = [
+			'index',
+			'bulk_index',
+			'delete',
+		];
+		if ( ! $type || ! in_array( $type, $allowed_write_types, true ) ) {
+			return;
+		}
+
+		$migration_hosts = constant( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' );
+		if ( ! is_array( $migration_hosts ) || empty( $migration_hosts ) ) {
+			return;
+		}
+
+		$migration_host = $migration_hosts[ array_rand( $migration_hosts ) ];
+		$migration_url  = $this->build_migration_url( $query['url'], $migration_host );
+		if ( ! $migration_url ) {
+			return;
+		}
+
+		$migration_response = wp_remote_request( $migration_url, $args );
+		if ( is_wp_error( $migration_response ) || wp_remote_retrieve_response_code( $migration_response ) >= 400 ) {
+			$this->logger->log(
+				'error',
+				'es_migration_mirror_failed',
+				'Failed to mirror request to migration host',
+				[
+					'response_code'    => wp_remote_retrieve_response_code( $migration_response ),
+					'response_message' => wp_remote_retrieve_response_message( $migration_response ),
+					'migration_url'    => $migration_url,
+					'method'           => $args['method'] ?? null,
+					'request_body'     => isset( $args['body'] ) ? $this->sanitize_ep_query_for_logging( [ 'body' => $args['body'] ] ) : null,
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
+					'backtrace'        => wp_debug_backtrace_summary(),
+					'type'             => $type,
+				],
+			);
+		}
 	}
 
 	/**
@@ -2439,5 +2498,37 @@ class Search {
 			$collectors['search'] = Prometheus_Collector::get_instance();
 			return $collectors;
 		} );
+	}
+
+	/**
+	 * Build migration URL by replacing the host while preserving path, query, and fragment
+	 *
+	 * @param string $original_url Original URL
+	 * @param string $migration_host Migration host URL
+	 * 
+	 * @return string|null Migration URL or null if parsing fails
+	 */
+	private function build_migration_url( string $original_url, string $migration_host ): ?string {
+		$parsed_url = wp_parse_url( $original_url );
+		
+		if ( ! $parsed_url ) {
+			return null;
+		}
+
+		$migration_url = $migration_host;
+		
+		if ( isset( $parsed_url['path'] ) ) {
+			$migration_url .= $parsed_url['path'];
+		}
+		
+		if ( isset( $parsed_url['query'] ) ) {
+			$migration_url .= '?' . $parsed_url['query'];
+		}
+		
+		if ( isset( $parsed_url['fragment'] ) ) {
+			$migration_url .= '#' . $parsed_url['fragment'];
+		}
+		
+		return $migration_url;
 	}
 }
