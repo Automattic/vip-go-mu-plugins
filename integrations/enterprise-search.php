@@ -111,7 +111,7 @@ class EnterpriseSearchIntegration extends Integration {
 			define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
 		}
 
-		if ( '8' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && 'true' === $migration_in_progress ) {
+		if ( '7' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && 'true' === $migration_in_progress ) {
 			$original_hosts = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
 			if ( ! is_array( $original_hosts ) || empty( $original_hosts ) ) {
 				return;
