@@ -81,9 +81,7 @@ function parse_request() {
 	 */
 
 	// Return array of data about the request.
-	$parsed_request = compact( 'requested_path', 'requested_file', 'self' );
-
-	return $parsed_request;
+	return compact( 'requested_path', 'requested_file', 'self' );
 }
 
 /**
@@ -100,14 +98,14 @@ function set_doing_cron() {
 }
 
 // Helper method for deprecating publicly accessibly functions/methods.
-function _deprecated_function( string $function, string $replacement = '', $error_level = 2 ) {
+function _deprecated_function( string $func, string $replacement = '', $error_level = 2 ) {
 	$error_levels = [
 		'debug'  => 1,
 		'notice' => 2,
 		'warn'   => 3,
 	];
 
-	$message = sprintf( 'Cron-Control: Deprecation. %s is deprecated and will soon be removed.', $function );
+	$message = sprintf( 'Cron-Control: Deprecation. %s is deprecated and will soon be removed.', $func );
 	if ( ! empty( $replacement ) ) {
 		$message .= sprintf( ' Use %s instead.', $replacement );
 	}
@@ -128,6 +126,5 @@ function _deprecated_function( string $function, string $replacement = '', $erro
 	// Use E_USER_NOTICE only in Debug mode.
 	if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 		trigger_error( $message, E_USER_NOTICE );
-		return;
 	}
 }

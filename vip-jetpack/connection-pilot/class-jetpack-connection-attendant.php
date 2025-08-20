@@ -23,7 +23,8 @@ class Attendant {
 		add_filter( 'authenticate', [ $this, 'prevent_login' ], 30, 2 );
 		add_filter( 'wp_is_application_passwords_available_for_user', [ $this, 'disable_application_passwords' ], 15, 2 );
 		add_filter( 'map_meta_cap', [ $this, 'modify_user_capabilties' ], PHP_INT_MAX, 4 );
-		add_filter( 'wpcom_vip_is_two_factor_forced', [ $this, 'bypass_two_factor_auth' ], PHP_INT_MAX );
+		// using the internal filter for 2FA.
+		add_filter( 'wpcom_vip_internal_is_two_factor_forced', [ $this, 'bypass_two_factor_auth' ], PHP_INT_MAX );
 		add_action( 'plugins_loaded', [ $this, 'remove_my_jetpack_page' ], 30 );
 	}
 
