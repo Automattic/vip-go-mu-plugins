@@ -1048,15 +1048,11 @@ class Search {
 	 * @param string|null $type The type of request.
 	 */
 	protected function mirror_write_to_migration_hosts( $query, $args, $type = null ) {
-		if ( ! defined( 'VIP_ELASTICSEARCH_VERSION' ) || constant( 'VIP_ELASTICSEARCH_VERSION' ) !== '8' ) {
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
 			return;
 		}
 
 		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) || ! is_array( constant( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) ) ) {
-			return;
-		}
-
-		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION' ) ) {
 			return;
 		}
 

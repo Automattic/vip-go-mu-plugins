@@ -108,7 +108,7 @@ class EnterpriseSearchIntegration extends Integration {
 		$migration_in_progress = isset( $config['elasticsearch_migration_in_progress'] ) ? $config['elasticsearch_migration_in_progress'] 
 			: 'false';
 		if ( 'true' === $migration_in_progress ) {
-			define( 'VIP_ELASTICSEARCH_MIGRATION', true );
+			define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
 		}
 
 		if ( '8' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && 'true' === $migration_in_progress ) {

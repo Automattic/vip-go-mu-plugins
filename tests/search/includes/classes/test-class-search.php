@@ -331,6 +331,83 @@ class Search_Test extends WP_UnitTestCase {
 		delete_option( Versioning::INDEX_VERSIONS_OPTION );
 	}
 
+	public function test__vip_search_sends_http_requests_via_helper_functions() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint1',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		self::$mock_global_functions->expects( $this->exactly( 2 ) )
+			->method( 'mock_wp_remote_request' )
+			->with( $this->callback( function ( $url ) {
+				return in_array( $url, [
+					'https://es-endpoint1/vip-123-post-1',
+					'https://es-endpoint1/vip-123-post-1/_bulk',
+				] );
+			} ) )
+			->willReturn([
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			]);
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
+	}
+
+	public function test__vip_search_sends_double_writes_when_upgrading() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint7',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS', array(
+			'https://es-endpoint8',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		self::$mock_global_functions->expects( $this->exactly( 3 ) )
+			->method( 'mock_wp_remote_request' )
+			->with( $this->callback( function ( $url ) {
+				return in_array( $url, [
+					'https://es-endpoint7/vip-123-post-1',
+					'https://es-endpoint7/vip-123-post-1/_bulk',
+					'https://es-endpoint8/vip-123-post-1/_bulk',
+				] );
+			} ) )
+			->willReturn([
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			]);
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
+	}
+
 	public function test__vip_search_filter__ep_global_alias() {
 		$this->init_es();
 
@@ -2613,13 +2690,13 @@ class Search_Test extends WP_UnitTestCase {
 /**
  * Overwriting global function so that no real remote request is called
  */
-function vip_safe_wp_remote_request() {
-	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request();
+function vip_safe_wp_remote_request( ...$args ) {
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request( ...$args );
 }
 
 /**
  * Overwriting global function so that no real remote request is called
  */
-function wp_remote_request() {
-	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request();
+function wp_remote_request( ...$args ) {
+	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request( ...$args );
 }
