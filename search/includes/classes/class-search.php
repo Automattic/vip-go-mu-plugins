@@ -2533,7 +2533,7 @@ class Search {
 		$port = $parsed_url['port'];
 
 		if ( $port ) {
-			if ( $elasticsearch_version === self::ELASTICSEARCH_MIGRATION_SEVEN ) {
+			if ( self::ELASTICSEARCH_MIGRATION_SEVEN === $elasticsearch_version ) {
 				// If the version is 7, replace the next version ports (when present) with the 7 ports
 				$port = str_replace( $elasticsearch_next_ports, $elasticsearch_seven_ports, $port );
 			} else {
@@ -2578,11 +2578,13 @@ class Search {
 			return true;
 		}
 
-		if ( isset( $_GET['vip-test-es-next'] ) && $_GET['vip-test-es-next'] ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-test-es-next'] ) && 'true' === $_GET['vip-test-es-next'] ) {
 			return true;
 		}
 
-		if ( isset( $_COOKIE['vip-test-es-next'] ) && $_COOKIE['vip-test-es-next'] ) {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		if ( isset( $_COOKIE['vip-test-es-next'] ) && 'true' === $_COOKIE['vip-test-es-next'] ) {
 			return true;
 		}
 
