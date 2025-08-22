@@ -933,8 +933,10 @@ class Search {
 			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
 		}
 
+		$is_testing_next_version = $this->is_testing_next_version();
+
 		// Cache handling
-		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
+		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args ) && ! $is_testing_next_version;
 		$cached_response = false;
 
 		if ( $is_cacheable ) {
@@ -954,8 +956,6 @@ class Search {
 		$start_time = microtime( true );
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
-
-		$is_testing_next_version = $this->is_testing_next_version();
 
 		if ( $is_testing_next_version ) {
 			$url = $this->build_elasticsearch_url( $query['url'], self::ELASTICSEARCH_MIGRATION_NEXT );
@@ -2573,12 +2573,12 @@ class Search {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( isset( $_GET['vip-test-es-next'] ) && 'true' === $_GET['vip-test-es-next'] ) {
+		if ( isset( $_GET['vip-search-test-es-next'] ) && ( 'true' === $_GET['vip-search-test-es-next'] || '1' === $_GET['vip-search-test-es-next'] ) ) {
 			return true;
 		}
 
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-		if ( isset( $_COOKIE['vip-test-es-next'] ) && 'true' === $_COOKIE['vip-test-es-next'] ) {
+		if ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( 'true' === $_COOKIE['vip-search-test-es-next'] || '1' === $_COOKIE['vip-search-test-es-next'] ) ) {
 			return true;
 		}
 
