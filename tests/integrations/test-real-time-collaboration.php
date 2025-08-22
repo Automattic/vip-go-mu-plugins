@@ -100,18 +100,18 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->getMock();
 
 		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_url' => 'wss://test.example.com/ws',
+			'web_socket_url' => 'wss://test.example.com/_ws',
 		] );
 
 		$integration_mock->configure();
 
 		$this->assertTrue( defined( 'VIP_RTC_WS_URL' ) );
-		$this->assertEquals( 'wss://test.example.com/ws', constant( 'VIP_RTC_WS_URL' ) );
+		$this->assertEquals( 'wss://test.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
 	}
 
 	public function test_configure_does_not_redefine_existing_constants(): void {
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'existing-secret' );
-		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://existing.example.com/ws' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://existing.example.com/_ws' );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
@@ -121,13 +121,13 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 		$integration_mock->method( 'get_env_config' )->willReturn( [
 			'web_socket_auth_secret' => 'new-secret',
-			'web_socket_url'         => 'wss://new.example.com/ws',
+			'web_socket_url'         => 'wss://new.example.com/_ws',
 		] );
 
 		$integration_mock->configure();
 
 		$this->assertEquals( 'existing-secret', constant( 'VIP_RTC_WS_AUTH_SECRET' ) );
-		$this->assertEquals( 'wss://existing.example.com/ws', constant( 'VIP_RTC_WS_URL' ) );
+		$this->assertEquals( 'wss://existing.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
 	}
 
 	public function test_configure_handles_missing_config_values(): void {
