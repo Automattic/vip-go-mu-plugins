@@ -50,11 +50,11 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->method( 'is_loaded' )
 			->willReturn( true );
 
+		$integration_mock->load();
+
 		// If early return works, get_versions should never be called
 		$integration_mock->expects( $this->never() )
 			->method( 'get_versions' );
-
-		$integration_mock->load();
 	}
 
 	public function test_load_sets_inactive_if_no_versions_found(): void {
