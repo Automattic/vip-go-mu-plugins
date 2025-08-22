@@ -17,8 +17,8 @@ class Search {
 	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW                  = 10000;
 
-	private const ELASTICSEARCH_MIGRATION_SEVEN = '7';
-	private const ELASTICSEARCH_MIGRATION_NEXT  = '8';
+	public const ELASTICSEARCH_MIGRATION_SEVEN = '7';
+	public const ELASTICSEARCH_MIGRATION_NEXT  = '8';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.

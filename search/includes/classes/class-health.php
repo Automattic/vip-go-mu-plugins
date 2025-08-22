@@ -1095,7 +1095,7 @@ class Health {
 				// TODO: Remove once DCA is supported on ES8
 				if ( 'index.routing.allocation.include.dc' === $key && 
 					'dfw' === $actual_settings[ $key ] && 'dca' === $desired_settings[ $key ] &&
-					defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === '8' ) {
+					defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === Search::ELASTICSEARCH_MIGRATION_NEXT ) {
 					continue;
 				}
 

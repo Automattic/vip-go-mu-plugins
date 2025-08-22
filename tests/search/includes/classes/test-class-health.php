@@ -1494,6 +1494,8 @@ class Health_Test extends WP_UnitTestCase {
 
 	// TODO: Remove once DCA is supported on ES8
 	public function test__health_check_dc_routing_ok_dca_es8() {
+		Constant_Mocker::clear();
+
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
 
 		$actual_settings  = [ 'index.routing.allocation.include.dc' => 'dfw' ];
