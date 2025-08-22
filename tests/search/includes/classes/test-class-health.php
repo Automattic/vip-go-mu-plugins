@@ -1491,28 +1491,4 @@ class Health_Test extends WP_UnitTestCase {
 		$correct_mapping = Health::validate_post_index_mapping( $index_name, $mapping );
 		$this->assertEquals( $expected_result, $correct_mapping );
 	}
-
-	// TODO: Remove once DCA is supported on ES8
-	public function test__health_check_dc_routing_ok_dca_es8() {
-		Constant_Mocker::clear();
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
-
-		$actual_settings  = [ 'index.routing.allocation.include.dc' => 'dfw' ];
-		$desired_settings = [ 'index.routing.allocation.include.dc' => 'dca' ];
-
-		$diff = Health::get_index_settings_diff( $actual_settings, $desired_settings );
-
-		$this->assertArrayNotHasKey( 'index.routing.allocation.include.dc', $diff );
-	}
-
-	// TODO: Remove once DCA is supported on ES8
-	public function test__health_check_dc_routing_not_ok_dca_es7() {
-		$actual_settings  = [ 'index.routing.allocation.include.dc' => 'dfw' ];
-		$desired_settings = [ 'index.routing.allocation.include.dc' => 'dca' ];
-
-		$diff = Health::get_index_settings_diff( $actual_settings, $desired_settings );
-
-		$this->assertArrayHasKey( 'index.routing.allocation.include.dc', $diff );
-	}
 }

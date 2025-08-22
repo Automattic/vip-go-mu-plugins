@@ -2126,12 +2126,6 @@ class Search {
 			return null;
 		}
 
-		// For now, force all DCA ES8 indexes to be routed to DFW
-		// TODO: Remove once DCA is supported on ES8
-		if ( defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === self::ELASTICSEARCH_MIGRATION_NEXT && 'dca' === $dc ) {
-			return 'dfw';
-		}
-
 		return $dc;
 	}
 
