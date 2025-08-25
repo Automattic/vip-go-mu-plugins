@@ -960,9 +960,7 @@ class Search {
 		if ( $is_testing_next_version ) {
 			$url = $this->build_elasticsearch_url( $query['url'], self::ELASTICSEARCH_MIGRATION_NEXT );
 
-			if ( ! headers_sent() ) {
-				header( sprintf( 'X-Elasticsearch-Version: %s', self::ELASTICSEARCH_MIGRATION_NEXT ) );
-			}
+			add_action( 'send_headers', fn() => header( sprintf( 'X-Elasticsearch-Version: %s', self::ELASTICSEARCH_MIGRATION_NEXT ) ) );
 		} else {
 			$url = $this->build_elasticsearch_url( $query['url'] );
 		}
