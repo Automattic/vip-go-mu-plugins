@@ -1063,6 +1063,7 @@ class Search {
 	 * @param array $query The original query array.
 	 * @param array $args The original request args.
 	 * @param string|null $type The type of request.
+	 * @param bool $is_testing_next_version Whether we're testing the next version.
 	 */
 	protected function mirror_write_to_migration_hosts( $query, $args, $type = null, $is_testing_next_version = false ) {
 		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
@@ -2513,9 +2514,6 @@ class Search {
 			return $url;
 		}
 
-		$elasticsearch_seven_ports = [ 9234, 9235 ];
-		$elasticsearch_next_ports  = [ 9244, 9245 ];
-
 		$parsed_url = wp_parse_url( $url );
 
 		if ( ! $parsed_url ) {
@@ -2523,44 +2521,26 @@ class Search {
 			return $url;
 		}
 
-		$host = $parsed_url['host'];
 		$port = $parsed_url['port'];
 
-		if ( $port ) {
-			if ( self::ELASTICSEARCH_MIGRATION_SEVEN === $elasticsearch_version ) {
-				// If the version is 7, replace the next version ports (when present) with the 7 ports
-				$port = str_replace( $elasticsearch_next_ports, $elasticsearch_seven_ports, $port );
-			} else {
-				// If the version is not 7, replace the 7 ports (when present) with the next version ports
-				$port = str_replace( $elasticsearch_seven_ports, $elasticsearch_next_ports, $port );
-			}
+		if ( ! $port ) {
+			// If no port is specified, return the original URL
+			return $url;
 		}
 
-		$new_url = '';
+		if ( self::ELASTICSEARCH_MIGRATION_SEVEN === $elasticsearch_version ) {
+			$from = [ '/:9244/', '/:9245/' ];
+			$to   = [ ':9234', ':9235' ];
 
-		if ( isset( $parsed_url['scheme'] ) ) {
-			$new_url .= $parsed_url['scheme'] . '://';
+			// If the version is 7, replace the next version ports with the 7 ports
+			return preg_replace( $from, $to, $url, 1 );
 		}
 
-		$new_url .= $host;
+		$from = [ '/:9234/', '/:9235/' ];
+		$to   = [ ':9244', ':9245' ];
 
-		if ( isset( $port ) ) {
-			$new_url .= sprintf( ':%d', $port );
-		}
-
-		if ( isset( $parsed_url['path'] ) ) {
-			$new_url .= $parsed_url['path'];
-		}
-
-		if ( isset( $parsed_url['query'] ) ) {
-			$new_url .= '?' . $parsed_url['query'];
-		}
-
-		if ( isset( $parsed_url['fragment'] ) ) {
-			$new_url .= '#' . $parsed_url['fragment'];
-		}
-
-		return $new_url;
+		// If the version is not 7, replace the 7 ports with the next version ports
+		return preg_replace( $from, $to, $url, 1 );
 	}
 
 	private function current_user_can_test_next_version(): bool {

@@ -406,7 +406,7 @@ class Search_Test extends WP_UnitTestCase {
 
 	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint:9235',
+			'https://es-endpoint:9235/weirdpath:9235',
 		) );
 
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
@@ -422,9 +422,9 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'mock_wp_remote_request' )
 			->with( $this->callback( function ( $url ) {
 				return in_array( $url, [
-					'https://es-endpoint:9245/vip-123-post-1',       // Next version host
-					'https://es-endpoint:9245/vip-123-post-1/_bulk', // Next version host
-					'https://es-endpoint:9235/vip-123-post-1/_bulk', // Mirror to the current host
+					'https://es-endpoint:9245/weirdpath:9235/vip-123-post-1',       // Next version host
+					'https://es-endpoint:9245/weirdpath:9235/vip-123-post-1/_bulk', // Next version host
+					'https://es-endpoint:9235/weirdpath:9235/vip-123-post-1/_bulk', // Mirror to the current host
 				] );
 			} ) )
 			->willReturn([
