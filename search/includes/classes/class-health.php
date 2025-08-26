@@ -1091,14 +1091,6 @@ class Health {
 					'actual'   => 'N/A',
 				);
 			} elseif ( $actual_settings[ $key ] != $desired_settings[ $key ] ) { // Intentionally weak comparison b/c some types like doubles don't translate to JSON
-				// Special handling for DC routing: DCA ES8 indexes can have 'dfw' actual with 'dca' desired
-				// TODO: Remove once DCA is supported on ES8
-				if ( 'index.routing.allocation.include.dc' === $key && 
-					'dfw' === $actual_settings[ $key ] && 'dca' === $desired_settings[ $key ] &&
-					defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === '8' ) {
-					continue;
-				}
-
 				$diff[ $key ] = array(
 					'expected' => $desired_settings[ $key ],
 					'actual'   => $actual_settings[ $key ],

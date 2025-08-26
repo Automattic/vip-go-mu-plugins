@@ -16,6 +16,9 @@ class Search {
 	public const SEARCH_ALERT_SLACK_CHAT            = '#vip-go-es-alerts';
 	public const SEARCH_ALERT_LEVEL                 = 2; // Level 2 = 'alert'
 	public const MAX_RESULT_WINDOW                  = 10000;
+
+	public const ELASTICSEARCH_MIGRATION_SEVEN = '7';
+	public const ELASTICSEARCH_MIGRATION_NEXT  = '8';
 	/**
 	 * Empty for now. Will flesh out once migration path discussions are underway and/or the same meta are added to the filter across many
 	 * sites.
@@ -455,6 +458,10 @@ class Search {
 
 		if ( ! defined( 'ES_SHIELD' ) && ( defined( 'VIP_ELASTICSEARCH_USERNAME' ) && defined( 'VIP_ELASTICSEARCH_PASSWORD' ) ) ) {
 			define( 'ES_SHIELD', sprintf( '%s:%s', constant( 'VIP_ELASTICSEARCH_USERNAME' ), constant( 'VIP_ELASTICSEARCH_PASSWORD' ) ) );
+		}
+
+		if ( ! defined( 'VIP_ELASTICSEARCH_VERSION' ) ) {
+			define( 'VIP_ELASTICSEARCH_VERSION', self::ELASTICSEARCH_MIGRATION_SEVEN );
 		}
 
 		// Do not allow sync via Dashboard (WP-CLI is preferred for indexing).
@@ -926,8 +933,10 @@ class Search {
 			$args['headers'][ $rq_header ] = $allheaders[ $rq_header ];
 		}
 
+		$is_testing_next_version = $this->is_testing_next_version();
+
 		// Cache handling
-		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args );
+		$is_cacheable    = $this->is_url_query_cacheable( $query['url'], $args ) && ! $is_testing_next_version;
 		$cached_response = false;
 
 		if ( $is_cacheable ) {
@@ -948,16 +957,24 @@ class Search {
 
 		$timeout = $this->get_http_timeout_for_query( $query, $args );
 
+		if ( $is_testing_next_version ) {
+			$url = $this->build_elasticsearch_url( $query['url'], self::ELASTICSEARCH_MIGRATION_NEXT );
+
+			add_action( 'send_headers', fn() => header( sprintf( 'X-Elasticsearch-Version: %s', self::ELASTICSEARCH_MIGRATION_NEXT ) ) );
+		} else {
+			$url = $this->build_elasticsearch_url( $query['url'] );
+		}
+
 		/**
 		 * Skip vip_safe_wp_remote_request for non-query (search) requests
 		 * Any timeouts happening in non-search/non-query context shouldn't count towards the request disabling threshold.
 		 */
 		if ( 'query' === $type ) {
-			$response = vip_safe_wp_remote_request( $query['url'], false, 5, $timeout, 10, $args );
+			$response = vip_safe_wp_remote_request( $url, false, 5, $timeout, 10, $args );
 			self::query_count_incr();
 		} else {
 			$args['timeout'] = $timeout;
-			$response        = wp_remote_request( $query['url'], $args );
+			$response        = wp_remote_request( $url, $args );
 		}
 
 		$end_time = microtime( true );
@@ -1025,7 +1042,7 @@ class Search {
 		}
 
 		// Mirror write requests to migration ES hosts if in migration mode
-		$this->mirror_write_to_migration_hosts( $query, $args, $type );
+		$this->mirror_write_to_migration_hosts( $query, $args, $type, $is_testing_next_version );
 
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
@@ -1046,13 +1063,10 @@ class Search {
 	 * @param array $query The original query array.
 	 * @param array $args The original request args.
 	 * @param string|null $type The type of request.
+	 * @param bool $is_testing_next_version Whether we're testing the next version.
 	 */
-	protected function mirror_write_to_migration_hosts( $query, $args, $type = null ) {
+	protected function mirror_write_to_migration_hosts( $query, $args, $type = null, $is_testing_next_version = false ) {
 		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
-			return;
-		}
-
-		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) || ! is_array( constant( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' ) ) ) {
 			return;
 		}
 
@@ -1065,18 +1079,15 @@ class Search {
 			return;
 		}
 
-		$migration_hosts = constant( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS' );
-		if ( ! is_array( $migration_hosts ) || empty( $migration_hosts ) ) {
-			return;
+		$version = self::ELASTICSEARCH_MIGRATION_NEXT;
+		if ( $is_testing_next_version ) {
+			// When testing the next version, we should mirror to version 7, since the regular requests are going to version 8.
+			$version = self::ELASTICSEARCH_MIGRATION_SEVEN;
 		}
 
-		$migration_host = $migration_hosts[ array_rand( $migration_hosts ) ];
-		$migration_url  = $this->build_migration_url( $query['url'], $migration_host );
-		if ( ! $migration_url ) {
-			return;
-		}
+		$url = $this->build_elasticsearch_url( $query['url'], $version );
 
-		$migration_response = wp_remote_request( $migration_url, $args );
+		$migration_response = wp_remote_request( $url, $args );
 		if ( is_wp_error( $migration_response ) || wp_remote_retrieve_response_code( $migration_response ) >= 400 ) {
 			$this->logger->log(
 				'error',
@@ -1085,7 +1096,7 @@ class Search {
 				[
 					'response_code'    => wp_remote_retrieve_response_code( $migration_response ),
 					'response_message' => wp_remote_retrieve_response_message( $migration_response ),
-					'migration_url'    => $migration_url,
+					'migration_url'    => $url,
 					'method'           => $args['method'] ?? null,
 					'request_body'     => isset( $args['body'] ) ? $this->sanitize_ep_query_for_logging( [ 'body' => $args['body'] ] ) : null,
 					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_wp_debug_backtrace_summary
@@ -2114,12 +2125,6 @@ class Search {
 			return null;
 		}
 
-		// For now, force all DCA ES8 indexes to be routed to DFW
-		// TODO: Remove once DCA is supported on ES8
-		if ( defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === '8' && 'dca' === $dc ) {
-			return 'dfw';
-		}
-
 		return $dc;
 	}
 
@@ -2297,6 +2302,8 @@ class Search {
 
 	public function action__init() {
 		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+
+		$this->handle_testing_next_version_session_update();
 	}
 
 	/**
@@ -2500,35 +2507,92 @@ class Search {
 		} );
 	}
 
-	/**
-	 * Build migration URL by replacing the host while preserving path, query, and fragment
-	 *
-	 * @param string $original_url Original URL
-	 * @param string $migration_host Migration host URL
-	 * 
-	 * @return string|null Migration URL or null if parsing fails
-	 */
-	private function build_migration_url( string $original_url, string $migration_host ): ?string {
-		$parsed_url = wp_parse_url( $original_url );
-		
-		if ( ! $parsed_url ) {
-			return null;
+	private function build_elasticsearch_url( string $url, ?string $elasticsearch_version = null ): string {
+		if ( ! $elasticsearch_version ) {
+			// If no version is provided, we return the original URL
+			// which uses the host provided by the VIP_ELASTICSEARCH_ENDPOINTS constant
+			return $url;
 		}
 
-		$migration_url = $migration_host;
-		
-		if ( isset( $parsed_url['path'] ) ) {
-			$migration_url .= $parsed_url['path'];
+		$parsed_url = wp_parse_url( $url );
+
+		if ( ! $parsed_url || ! $parsed_url['port'] ) {
+			return $url;
 		}
-		
-		if ( isset( $parsed_url['query'] ) ) {
-			$migration_url .= '?' . $parsed_url['query'];
+
+		$elasticsearch_seven_ports = [ ':9234', ':9235' ];
+		$elasticsearch_next_ports  = [ ':9244', ':9245' ];
+
+		if ( self::ELASTICSEARCH_MIGRATION_SEVEN === $elasticsearch_version ) {
+			// If the version is 7, replace the next version ports (when present) with the 7 ports
+			return str_replace( $elasticsearch_next_ports, $elasticsearch_seven_ports, $url );
+		} else {
+			// If the version is not 7, replace the 7 ports (when present) with the next version ports
+			return str_replace( $elasticsearch_seven_ports, $elasticsearch_next_ports, $url );
 		}
-		
-		if ( isset( $parsed_url['fragment'] ) ) {
-			$migration_url .= '#' . $parsed_url['fragment'];
+	}
+
+	private function current_user_can_test_next_version(): bool {
+		return current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) );
+	}
+
+	private function handle_testing_next_version_session_update(): void {
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+			return;
 		}
-		
-		return $migration_url;
+
+		if ( ! $this->current_user_can_test_next_version() ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-search-test-es-next'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( 'session' === $_GET['vip-search-test-es-next'] ) {
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+				setcookie(
+					'vip-search-test-es-next',
+					'1',
+					0, // Expires at the end of the session
+				);
+			} elseif ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( 'false' === $_GET['vip-search-test-es-next'] || '0' === $_GET['vip-search-test-es-next'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+				setcookie(
+					'vip-search-test-es-next',
+					false,
+					0,
+				);
+			}
+		}
+	}
+
+	private function is_testing_next_version(): bool {
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+			return false;
+		}
+
+		if ( defined( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) && constant( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
+			return true;
+		}
+
+		if ( ! $this->current_user_can_test_next_version() ) {
+			return false;
+		}
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-search-test-es-next'] ) &&
+			( 'true' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				|| '1' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				|| 'session' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			) ) {
+			return true;
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		if ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( '1' === $_COOKIE['vip-search-test-es-next'] || 'true' === $_COOKIE['vip-search-test-es-next'] ) ) {
+			return true;
+		}
+
+		return false;
 	}
 }
