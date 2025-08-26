@@ -2516,31 +2516,20 @@ class Search {
 
 		$parsed_url = wp_parse_url( $url );
 
-		if ( ! $parsed_url ) {
-			// If parsing fails, return the original URL
+		if ( ! $parsed_url || ! $parsed_url['port'] ) {
 			return $url;
 		}
 
-		$port = $parsed_url['port'];
-
-		if ( ! $port ) {
-			// If no port is specified, return the original URL
-			return $url;
-		}
+		$elasticsearch_seven_ports = [ ':9234', ':9235' ];
+		$elasticsearch_next_ports  = [ ':9244', ':9245' ];
 
 		if ( self::ELASTICSEARCH_MIGRATION_SEVEN === $elasticsearch_version ) {
-			$from = [ '/:9244/', '/:9245/' ];
-			$to   = [ ':9234', ':9235' ];
-
-			// If the version is 7, replace the next version ports with the 7 ports
-			return preg_replace( $from, $to, $url, 1 );
+			// If the version is 7, replace the next version ports (when present) with the 7 ports
+			return str_replace( $elasticsearch_next_ports, $elasticsearch_seven_ports, $url );
+		} else {
+			// If the version is not 7, replace the 7 ports (when present) with the next version ports
+			return str_replace( $elasticsearch_seven_ports, $elasticsearch_next_ports, $url );
 		}
-
-		$from = [ '/:9234/', '/:9235/' ];
-		$to   = [ ':9244', ':9245' ];
-
-		// If the version is not 7, replace the 7 ports with the next version ports
-		return preg_replace( $from, $to, $url, 1 );
 	}
 
 	private function current_user_can_test_next_version(): bool {
