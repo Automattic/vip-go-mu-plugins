@@ -10,9 +10,14 @@ require_once __DIR__ . '/class-health.php';
 class HealthJob {
 
 	/**
-	 * The name of the scheduled cron event to run the validate contnets check
+	 * The name of the scheduled cron event to run the validate contents check
 	 */
 	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
+
+	/**
+	 * The name of the scheduled cron event to run the validate contents check on the next ES cluster (during migration)
+	 */
+	const CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT = 'vip_search_health_validate_content_migration_next';
 
 	/**
 	 * @var int the number after which the alert should be sent for inconsistencies found.
@@ -67,6 +72,7 @@ class HealthJob {
 	public function init() {
 		// We always add this action so that the job can unregister itself if it no longer should be running
 		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME, [ $this, 'validate_contents' ] );
+		add_action( self::CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT, [ $this, 'validate_contents_migration_next' ] );
 
 		if ( ! $this->is_enabled() ) {
 			return;
@@ -84,6 +90,11 @@ class HealthJob {
 		if ( ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME ) ) {
 			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
 			wp_schedule_event( time() + ( mt_rand( 1, 7 ) * DAY_IN_SECONDS ) + ( mt_rand( 1, 24 ) * HOUR_IN_SECONDS ), 'weekly', self::CRON_EVENT_VALIDATE_CONTENT_NAME );
+		}
+
+		if ( defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && ! wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT ) ) {
+			// phpcs:disable WordPress.WP.AlternativeFunctions.rand_mt_rand
+			wp_schedule_event( time() + ( mt_rand( 1, 24 ) * HOUR_IN_SECONDS ), 'daily', self::CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT );
 		}
 
 		if ( wp_next_scheduled( 'vip_search_healthcheck' ) ) {
@@ -146,6 +157,70 @@ class HealthJob {
 
 		if ( is_wp_error( $results ) && 'es_content_validation_already_ongoing' !== $results->get_error_code() ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
+			Alerts::chat( '#vip-go-es-alerts', $message, 2 );
+		}
+	}
+
+	/**
+	 * Check index health
+	 */
+	public function validate_contents_migration_next() {
+		// Check if job has been disabled
+		if ( ! $this->is_enabled() ) {
+			$this->disable_job();
+
+			return;
+		}
+
+		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+			if ( wp_next_scheduled( self::CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT ) ) {
+				wp_clear_scheduled_hook( self::CRON_EVENT_VALIDATE_CONTENT_NAME_MIGRATION_NEXT );
+			}
+
+			return;
+		}
+
+		if ( ! defined( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
+			define( 'VIP_ELASTICSEARCH_TEST_ES_NEXT', true );
+		}
+
+		if ( ! constant( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
+			return;
+		}
+
+		$post_indexable = $this->indexables->get( 'post' );
+		// Don't run the checks if the index is not built or is indexing.
+		if ( ! $post_indexable || ! $post_indexable->index_exists() || \ElasticPress\Utils\is_indexing() ) {
+			return;
+		}
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation_migration_next',
+				'message'  => 'Post content validation started for migration next',
+				'extra'    => [
+					'homeurl' => home_url(),
+				],
+			)
+		);
+
+		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
+
+		\Automattic\VIP\Logstash\log2logstash(
+			array(
+				'severity' => 'info',
+				'feature'  => 'search_content_validation_migration_next',
+				'message'  => 'Post content validation for migration next completed',
+				'extra'    => [
+					'homeurl'    => home_url(),
+					'index_name' => $post_indexable->get_index_name(),
+				],
+			)
+		);
+
+		if ( is_wp_error( $results ) && 'es_content_validation_already_ongoing' !== $results->get_error_code() ) {
+			$message = sprintf( 'Cron validate-contents for migration next error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			Alerts::chat( '#vip-go-es-alerts', $message, 2 );
 		}
 	}

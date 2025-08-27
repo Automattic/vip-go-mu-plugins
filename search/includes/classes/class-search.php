@@ -1057,6 +1057,10 @@ class Search {
 		return $response;
 	}
 
+	private function is_migration_in_progress() {
+		return defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' );
+	}
+
 	/**
 	 * Mirror write requests to migration ES hosts during migration.
 	 *
@@ -1066,7 +1070,7 @@ class Search {
 	 * @param bool $is_testing_next_version Whether we're testing the next version.
 	 */
 	protected function mirror_write_to_migration_hosts( $query, $args, $type = null, $is_testing_next_version = false ) {
-		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+		if ( ! $this->is_migration_in_progress() ) {
 			return;
 		}
 
@@ -1080,8 +1084,10 @@ class Search {
 		}
 
 		$version = self::ELASTICSEARCH_MIGRATION_NEXT;
-		if ( $is_testing_next_version ) {
-			// When testing the next version, we should mirror to version 7, since the regular requests are going to version 8.
+		if ( $is_testing_next_version || ( defined( 'VIP_ELASTICSEARCH_VERSION ' ) && self::ELASTICSEARCH_MIGRATION_NEXT === constant( 'VIP_ELASTICSEARCH_VERSION ' ) ) ) {
+			// During Elasticsearch migration from v7 to v8, mirror write operations to v7 in these scenarios:
+			//   1) Testing: User is testing v8, so regular queries go to v8 - mirror to v7 for data consistency
+			//   2) Post-migration rollback protection: Production is on v8 but within graceful rollback period - keep v7 synced
 			$version = self::ELASTICSEARCH_MIGRATION_SEVEN;
 		}
 
@@ -2567,7 +2573,7 @@ class Search {
 	}
 
 	private function is_testing_next_version(): bool {
-		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
+		if ( ! $this->is_migration_in_progress() ) {
 			return false;
 		}
 
