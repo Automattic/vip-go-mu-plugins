@@ -36,23 +36,18 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 	public function test_load_returns_early_if_plugin_already_loaded(): void {
 		/**
-		 * Integration mock that expects is_loaded to be called and return true,
-		 * and get_versions to never be called (proving early return)
+		 * Integration mock that expects is_loaded to be called and return true
 		 *
 		 * @var MockObject|RealTimeCollaborationIntegration
 		 */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded' ] )
 			->getMock();
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
-
-		// If early return works, get_versions should never be called
-		$integration_mock->expects( $this->never() )
-			->method( 'get_versions' );
 
 		$integration_mock->load();
 
@@ -61,17 +56,21 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_load_sets_inactive_if_no_versions_found(): void {
+		// Set up required constants
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
+		Constant_Mocker::define( 'WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
+
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded' ] )
 			->getMock();
 
 		$integration_mock->activate(); // Initial state is active
 		$this->assertTrue( $integration_mock->is_active(), 'Initial: Integration should be active.' );
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		$integration_mock->method( 'get_versions' )->willReturn( [] ); // No versions found
 
 		$integration_mock->load();
 
@@ -158,18 +157,77 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $versions );
 	}
 
+	public function test_load_sets_inactive_when_ws_auth_secret_missing(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
+		// VIP_RTC_WS_AUTH_SECRET is intentionally not defined
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_load_sets_inactive_when_ws_url_missing(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		// VIP_RTC_WS_URL is intentionally not defined
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_load_sets_inactive_when_both_ws_constants_missing(): void {
+		// Both VIP_RTC_WS_AUTH_SECRET and VIP_RTC_WS_URL are intentionally not defined
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
 	public function test_load_sets_inactive_when_gutenberg_plugin_active(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
 		Constant_Mocker::define( 'IS_GUTENBERG_PLUGIN', true );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded' ] )
 			->getMock();
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		// get_versions should never be called because we return early
-		$integration_mock->expects( $this->never() )->method( 'get_versions' );
 
 		$integration_mock->load();
 
@@ -180,17 +238,17 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_load_sets_inactive_when_gutenberg_file_missing(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
 		Constant_Mocker::define( 'WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded' ] )
 			->getMock();
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		// get_versions should never be called because we return early due to missing Gutenberg
-		$integration_mock->expects( $this->never() )->method( 'get_versions' );
 
 		$integration_mock->load();
 

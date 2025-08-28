@@ -28,11 +28,49 @@ class RealTimeCollaborationIntegration extends Integration {
 	}
 
 	/**
+	 * Check if all requirements are met to load the integration.
+	 */
+	private function can_load(): bool {
+		// Check required configuration constants
+		if ( ! defined( 'VIP_RTC_WS_AUTH_SECRET' ) || ! defined( 'VIP_RTC_WS_URL' ) ) {
+			return false;
+		}
+
+		// Check Gutenberg requirements
+		if ( $this->is_gutenberg_plugin_active() ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	private function get_gutenberg_path(): string|false {
+		$gutenberg_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/gutenberg/gutenberg.php';
+		if ( ! file_exists( $gutenberg_path ) ) {
+			return false;
+		}
+
+		return $gutenberg_path;
+	}
+
+	private function get_plugin_path(): string|false {
+		$versions = $this->get_versions();
+		if ( empty( $versions ) ) {
+			return false;
+		}
+		$latest_directory = array_key_first( $versions );
+		$load_path        = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-real-time-collaboration.php';
+		if ( ! file_exists( $load_path ) ) {
+			return false;
+		}
+
+		return $load_path;
+	}
+
+	/**
 	 * Loads the plugin.
 	 *
 	 * This is called after the integration is activated and configured.
-	 *
-	 * @private
 	 */
 	public function load(): void {
 		/*
@@ -50,49 +88,25 @@ class RealTimeCollaborationIntegration extends Integration {
 				return;
 			}
 
-			/**
-			 * Load the custom build of Gutenberg from vip-integrations.
-			 *
-			 * Built from - https://github.com/Automattic/gutenberg/tree/add/experimental-collaborative-editing
-			 * This has the code required to support collaborative editing.
-			 */
-			$gutenberg_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/gutenberg/gutenberg.php';
-			if ( file_exists( $gutenberg_path ) && ! $this->is_gutenberg_plugin_active() ) {
-				require_once $gutenberg_path;
-			} else {
-				/**
-				 * Return early and don't load the plugin if either -
-				 * - Gutenberg is active separately as a plugin, so we don't load our custom build
-				 *   of Gutenberg to avoid conflicts.
-				 * - The custom build of Gutenberg is not available since that is required for the
-				 *   integration to work.
-				 */
+			if ( ! $this->can_load() ) {
+				$this->is_active = false;
+				return;
+			}
+
+			$gutenberg_path = $this->get_gutenberg_path();
+			$load_path      = $this->get_plugin_path();
+
+			if ( false === $gutenberg_path || false === $load_path ) {
 				$this->is_active = false;
 				return;
 			}
 
 			/**
-			 * Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/vip-real-time-collaboration-<version>/
-			 * and check what versions are available.
+			 * Load the custom build of Gutenberg from vip-integrations
+			 * and the latest version of the vip-real-time-collaboration plugin.
 			 */
-			$versions = $this->get_versions();
-
-			// if no versions are found, return early.
-			if ( empty( $versions ) ) {
-				$this->is_active = false;
-				return;
-			}
-
-			// Load the latest version of the plugin.
-			$latest_directory = array_key_first( $versions );
-			$load_path        = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-real-time-collaboration.php';
-
-			// This check isn't strictly necessary, but better safe than sorry.
-			if ( file_exists( $load_path ) ) {
-				require_once $load_path;
-			} else {
-				$this->is_active = false;
-			}
+			require_once $gutenberg_path;
+			require_once $load_path;
 		}, 1);
 	}
 
@@ -115,8 +129,6 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Configure Real-Time Collaboration for VIP Platform.
 	 *
 	 * This is called after the integration is activated but before the plugin is loaded.
-	 *
-	 * @private
 	 */
 	public function configure(): void {
 		$env_config = $this->get_env_config();
