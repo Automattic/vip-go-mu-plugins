@@ -50,11 +50,14 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->method( 'is_loaded' )
 			->willReturn( true );
 
-		$integration_mock->load();
-
 		// If early return works, get_versions should never be called
 		$integration_mock->expects( $this->never() )
 			->method( 'get_versions' );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
 	}
 
 	public function test_load_sets_inactive_if_no_versions_found(): void {
@@ -71,6 +74,9 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$integration_mock->method( 'get_versions' )->willReturn( [] ); // No versions found
 
 		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
 
 		$this->assertFalse( $integration_mock->is_active() );
 	}
@@ -150,5 +156,47 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$versions        = $rtc_integration->get_versions();
 
 		$this->assertIsArray( $versions );
+	}
+
+	public function test_load_sets_inactive_when_gutenberg_plugin_active(): void {
+		Constant_Mocker::define( 'IS_GUTENBERG_PLUGIN', true );
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+		// get_versions should never be called because we return early
+		$integration_mock->expects( $this->never() )->method( 'get_versions' );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_load_sets_inactive_when_gutenberg_file_missing(): void {
+		Constant_Mocker::define( 'WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+		// get_versions should never be called because we return early due to missing Gutenberg
+		$integration_mock->expects( $this->never() )->method( 'get_versions' );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
 	}
 }
