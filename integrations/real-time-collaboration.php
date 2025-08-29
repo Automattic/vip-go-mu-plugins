@@ -138,7 +138,7 @@ class RealTimeCollaborationIntegration extends Integration {
 			define( 'VIP_RTC_WS_AUTH_SECRET', $env_config['web_socket_auth_secret'] );
 		}
 
-		// Set up WebSocket URL constant with dummy value
+		// Set up WebSocket URL constant
 		if ( isset( $env_config['web_socket_url'] ) && ! defined( 'VIP_RTC_WS_URL' ) ) {
 			define( 'VIP_RTC_WS_URL', $env_config['web_socket_url'] );
 		}
