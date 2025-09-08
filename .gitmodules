@@ -25,3 +25,6 @@
 [submodule "drop-ins/hyperdb"]
 	path = drop-ins/hyperdb
 	url = https://github.com/automattic/hyperdb
+[submodule "twilio-sdk"]
+	path = twilio-sdk
+	url = https://github.com/twilio/twilio-php.git
