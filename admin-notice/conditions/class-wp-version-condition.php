@@ -10,11 +10,11 @@ class WP_Version_Condition implements Condition {
 	/**
 	 * __construct
 	 *
-	 * @param  ?string $minimum_version - version on which condition should start passing (inclussive)
-	 * @param  ?string $maximum_version - version on which condition should no longer pass (exclusive)
+	 * @param  string|null $minimum_version - version on which condition should start passing (inclussive)
+	 * @param  string|null $maximum_version - version on which condition should no longer pass (exclusive)
 	 * @return WP_Version_Condition
 	 */
-	public function __construct( ?string $minimum_version, string $maximum_version = null ) {
+	public function __construct( ?string $minimum_version, ?string $maximum_version = null ) {
 		$this->minimum_version = $minimum_version;
 		$this->maximum_version = $maximum_version;
 	}

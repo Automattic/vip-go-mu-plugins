@@ -36,7 +36,7 @@ class Meta_Updater {
 	 *
 	 * @param int $batch_size
 	 */
-	public function __construct( int $batch_size = 0, string $log_file = null ) {
+	public function __construct( int $batch_size = 0, ?string $log_file = null ) {
 		if ( 0 >= $batch_size ) {
 			$batch_size = self::DEFAULT_BATCH_SIZE;
 		}
