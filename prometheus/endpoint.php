@@ -27,8 +27,10 @@ $registry = create_registry();
 
 header( 'Content-Type: text/plain' );
 $renderer = new RenderTextFormat();
-// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
-echo $renderer->render( $registry->getMetricFamilySamples() );
+if ( 0 ) {
+	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
+	echo $renderer->render( $registry->getMetricFamilySamples() );
+}
 
 /**
  * Create a registry for Prometheus metrics.
