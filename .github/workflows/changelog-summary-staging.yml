@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v5.0.0
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@20529878ed81ef8e78ddf08b480401e6101a850f # 2.35.3
+        uses: shivammathur/setup-php@ec406be512d7077f68eed36e63f4d91bc006edc4 # 2.35.4
 
       - name: Install
         uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
@@ -44,14 +44,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5.0.0
-      - uses: Automattic/vip-actions/changelog@52569737661b6dc7474c86d4b608ffb08c0af27a # trunk
+      - uses: Automattic/vip-actions/changelog@a83b38ef1ac701c4d8ca2b27bac2d6ebad17e684
         with:
-          endpoint: ${{ vars.DOCS_CHANGELOG_POST_ENDPOINT }}
-          endpoint-token: ${{ secrets.DOCS_CHANGELOG_POST_TOKEN }}
+          endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
+          endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
           endpoint-auth-type: 'basic'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          status: 'draft'
-          category-id: '97'
-          tag-id: '96'
-          link-to-pr: true
+          status: 'publish'
+          terms: changelog_category:109
+          tag-id: '116'
+          link-to-pr: false
 

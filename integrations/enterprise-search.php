@@ -58,7 +58,6 @@ class EnterpriseSearchIntegration extends Integration {
 			add_action( 'vip_search_loaded', array( $this, 'vip_set_es_credentials' ) );
 		}
 		add_action( 'vip_search_loaded', array( $this, 'vip_set_search_offloading' ) );
-		add_action( 'vip_search_loaded', array( $this, 'vip_set_es_version' ) );
 	}
 
 	/**
@@ -93,39 +92,6 @@ class EnterpriseSearchIntegration extends Integration {
 			add_filter( 'vip_search_query_integration_enabled', '__return_true', PHP_INT_MAX );
 		} elseif ( 'false' === $config['offload_search'] ) {
 			add_filter( 'vip_search_query_integration_enabled', '__return_false', PHP_INT_MAX );
-		}
-	}
-
-	/**
-	 * Set the Elasticsearch version.
-	 */
-	public function vip_set_es_version(): void {
-		$config = $this->get_env_config();
-
-		$es_version = isset( $config['elasticsearch_version'] ) ? $config['elasticsearch_version'] : '7';
-		define( 'VIP_ELASTICSEARCH_VERSION', $es_version );
-
-		$migration_in_progress = isset( $config['elasticsearch_migration_in_progress'] ) ? $config['elasticsearch_migration_in_progress'] 
-			: 'false';
-		if ( 'true' === $migration_in_progress ) {
-			define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
-		}
-
-		if ( '7' === $es_version && defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) && 'true' === $migration_in_progress ) {
-			$original_hosts = constant( 'VIP_ELASTICSEARCH_ENDPOINTS' );
-			if ( ! is_array( $original_hosts ) || empty( $original_hosts ) ) {
-				return;
-			}
-
-			$migration_hosts = [];
-			if ( isset( $original_hosts[0] ) ) {
-				$migration_hosts[] = preg_replace( '/:\d+$/', ':9244', $original_hosts[0] );
-			}
-			if ( isset( $original_hosts[1] ) ) {
-				$migration_hosts[] = preg_replace( '/:\d+$/', ':9245', $original_hosts[1] );
-			}
-
-			define( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS', $migration_hosts );
 		}
 	}
 }

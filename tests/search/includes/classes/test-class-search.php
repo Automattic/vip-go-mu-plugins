@@ -333,7 +333,7 @@ class Search_Test extends WP_UnitTestCase {
 
 	public function test__vip_search_sends_http_requests_via_helper_functions() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1',
+			'https://es-endpoint1:9235',
 		) );
 
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
@@ -346,8 +346,8 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'mock_wp_remote_request' )
 			->with( $this->callback( function ( $url ) {
 				return in_array( $url, [
-					'https://es-endpoint1/vip-123-post-1',
-					'https://es-endpoint1/vip-123-post-1/_bulk',
+					'https://es-endpoint1:9235/vip-123-post-1',
+					'https://es-endpoint1:9235/vip-123-post-1/_bulk',
 				] );
 			} ) )
 			->willReturn([
@@ -368,11 +368,7 @@ class Search_Test extends WP_UnitTestCase {
 
 	public function test__vip_search_sends_double_writes_when_upgrading() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint7',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_ENDPOINTS', array(
-			'https://es-endpoint8',
+			'https://es-endpoint:9235',
 		) );
 
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
@@ -387,9 +383,48 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'mock_wp_remote_request' )
 			->with( $this->callback( function ( $url ) {
 				return in_array( $url, [
-					'https://es-endpoint7/vip-123-post-1',
-					'https://es-endpoint7/vip-123-post-1/_bulk',
-					'https://es-endpoint8/vip-123-post-1/_bulk',
+					'https://es-endpoint:9235/vip-123-post-1',
+					'https://es-endpoint:9235/vip-123-post-1/_bulk',
+					'https://es-endpoint:9245/vip-123-post-1/_bulk',
+				] );
+			} ) )
+			->willReturn([
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			]);
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
+	}
+
+	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint:9235/weirdpath9235',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_TEST_ES_NEXT', true );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		self::$mock_global_functions->expects( $this->exactly( 3 ) )
+			->method( 'mock_wp_remote_request' )
+			->with( $this->callback( function ( $url ) {
+				return in_array( $url, [
+					'https://es-endpoint:9245/weirdpath9235/vip-123-post-1',       // Next version host
+					'https://es-endpoint:9245/weirdpath9235/vip-123-post-1/_bulk', // Next version host
+					'https://es-endpoint:9235/weirdpath9235/vip-123-post-1/_bulk', // Mirror to the current host
 				] );
 			} ) )
 			->willReturn([
@@ -1545,31 +1580,6 @@ class Search_Test extends WP_UnitTestCase {
 		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
 
 		$this->assertEquals( 'dca', $origin_dc );
-	}
-
-	// TODO: Remove once DCA is supported on ES8
-	public function test__dca_es8_routing_to_dfw() {
-		$mock_search = $this->getMockBuilder( Search::class )
-			->onlyMethods( [ 'get_current_host' ] )
-			->getMock();
-		$mock_search->method( 'get_current_host' )->willReturn( 'https://es-ha.dca.vipv2.net' );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
-
-		$result = $mock_search->get_index_routing_allocation_include_dc();
-		$this->assertEquals( 'dfw', $result );
-	}
-
-	// TODO: Remove once DCA is supported on ES8
-	public function test__dca_existing_es_version_does_not_route_to_dfw() {
-		$mock_search = $this->getMockBuilder( Search::class )
-			->onlyMethods( [ 'get_current_host' ] )
-			->getMock();
-		$mock_search->method( 'get_current_host' )->willReturn( 'https://es-ha.dca.vipv2.net' );
-
-		$result = $mock_search->get_index_routing_allocation_include_dc();
-
-		$this->assertEquals( 'dca', $result );
 	}
 
 	public function get_index_routing_allocation_include_dc_from_endpoints_data() {
