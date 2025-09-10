@@ -144,8 +144,8 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 	}
 
 	// E_STRICT is deprecated in PHP 8.4 so it needs to be behind a version check.
-	if ( null === $type && version_compare( PHP_VERSION, '8.4', '<' ) && E_STRICT === $type ) {
-		$type = 'Strict Standards';
+	if ( version_compare( PHP_VERSION, '8.4', '<' ) && E_STRICT === $type ) {
+		$string = 'Strict Standards';
 	}
 
 	// @ error suppression
