@@ -15,6 +15,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 	const SMS_CONFIGURED_META_KEY = '_vip_two_factor_sms_configured';
 
+	const QATAR_PHONE_REGEX = '/^\+?974[3-7]\d{7}$/';
+
 	public static function get_instance() {
 		static $instance;
 		$class = __CLASS__;
@@ -39,7 +41,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		$phone = get_user_meta( $user_id, self::PHONE_META_KEY, true );
 
 		if ( Two_Factor_Twilio_Verify_API::is_available() ) {
-			if ( preg_match( '/^\+?974[3-7]\d{7}$/', $phone ) ) { // Qatar number
+			if ( preg_match( self::QATAR_PHONE_REGEX, $phone ) ) {
 				return new Two_Factor_Twilio_Verify_API( $user_id, $phone );
 			}
 		}
