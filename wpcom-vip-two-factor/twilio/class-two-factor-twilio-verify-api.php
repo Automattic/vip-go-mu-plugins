@@ -90,7 +90,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 
 		if ( empty( $verification_sid ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf( 'Could not find a Twilio Verify SID for user %d to verify the 2FA code ', $verification_sid ) );
+			error_log( sprintf( 'Could not find a Twilio Verify SID for user %d to verify the 2FA code ', $this->user_id, $verification_sid ) );
 			return false;
 		}
 
