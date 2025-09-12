@@ -1,8 +1,8 @@
 <?php
 
-require_once __DIR__ . '/twilio/interface-two-factor-twilio-sms.php';
-require_once __DIR__ . '/twilio/class-two-factor-twilio-sms-api.php';
-require_once __DIR__ . '/twilio/class-two-factor-twilio-verify-api.php';
+if ( file_exists( __DIR__ . '/twilio/interface-two-factor-twilio-sms.php' ) ) {
+	require_once __DIR__ . '/twilio/interface-two-factor-twilio-sms.php';
+}
 
 /**
  * Class for creating an sms provider.
@@ -42,10 +42,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 		if ( Two_Factor_Twilio_Verify_API::is_available() ) {
 			if ( preg_match( self::QATAR_PHONE_REGEX, $phone ) ) {
+				require_once __DIR__ . '/twilio/class-two-factor-twilio-sms-api.php';
 				return new Two_Factor_Twilio_Verify_API( $user_id, $phone );
 			}
 		}
 
+		require_once __DIR__ . '/twilio/class-two-factor-twilio-verify-api.php';
 		return new Two_Factor_Twilio_SMS_API( $user_id, $phone );
 	}
 

@@ -1,5 +1,9 @@
 <?php
 
+if ( file_exists( __DIR__ . '/interface-two-factor-twilio-sms.php' ) ) {
+	require_once __DIR__ . '/interface-two-factor-twilio-sms.php';
+}
+
 /**
  * Twilio SMS strategy for 2FA using Twilio's Verify API.
  *
