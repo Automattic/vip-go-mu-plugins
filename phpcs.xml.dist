@@ -20,7 +20,6 @@
 	<exclude-pattern>/jetpack/*</exclude-pattern>
 	<exclude-pattern>/lightweight-term-count-update/*</exclude-pattern>
 	<exclude-pattern>/rewrite-rules-inspector/*</exclude-pattern>
-	<exclude-pattern>/twilio-sdk/*</exclude-pattern>
 
 	<!-- Other directories -->
 	<exclude-pattern>\.git/*</exclude-pattern>
