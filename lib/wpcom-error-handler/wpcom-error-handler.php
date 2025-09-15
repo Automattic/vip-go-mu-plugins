@@ -131,9 +131,6 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 		case E_USER_NOTICE:
 			$string = 'Notice';
 			break;
-		case E_STRICT:
-			$string = 'Strict Standards';
-			break;
 		case E_RECOVERABLE_ERROR:
 			$string = 'Catchable fatal error';
 			$die    = true;
@@ -144,6 +141,11 @@ function wpcom_custom_error_handler( $whether_i_may_die, $type, $message, $file,
 			break;
 		case 0:
 			return true;
+	}
+
+	// E_STRICT is deprecated in PHP 8.4 so it needs to be behind a version check.
+	if ( version_compare( PHP_VERSION, '8.4', '<' ) && E_STRICT === $type ) {
+		$string = 'Strict Standards';
 	}
 
 	// @ error suppression

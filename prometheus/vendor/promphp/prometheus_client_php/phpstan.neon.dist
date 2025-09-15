@@ -1,10 +1,10 @@
+includes:
+    - phpstan/include-by-php-version.php
+
 parameters:
     level: 8
     paths:
         - src
         - tests
-    reportUnmatchedIgnoredErrors: false
     ignoreErrors:
-        -
-            # REDIS stuff only runs with it available
-            '#Constant REDIS_HOST not found\.#'
+        - '#Call to method Redis::[a-zA-Z0-9_]+\(\) with incorrect case: [a-zA-Z0-9_]+#'
