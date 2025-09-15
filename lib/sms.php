@@ -58,12 +58,14 @@ function send_sms( $to, $message ) {
 
 			$result = send_single_sms_via_rest( $body );
 			if ( is_wp_error( $result ) ) {
-				$masked_number = substr( $to_number, 0, ( (int) strlen( $to_number ) / 1.5 ) ) . 'xxx';
+				$masked_number = substr( $to_number, 0, floor( strlen( $to_number ) / 1.5 ) ) . 'xxx';
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 				trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', esc_html( $masked_number ), esc_html( $result->get_error_message() ) ), E_USER_WARNING );
+				return $result;
 			}
 		}
 	}
+	return true;
 }
 
 function send_single_sms_via_rest( $body ) {

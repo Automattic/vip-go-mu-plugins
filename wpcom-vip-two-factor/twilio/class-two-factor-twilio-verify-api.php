@@ -49,7 +49,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 			'Channel' => 'sms',
 			// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
 			// 'CustomFriendlyName' => $this->get_friendly_name( $home_url_without_protocol ), // FIXME: Use once Twilio enables Custom Friendly Names
-			'Tags'    => wp_json_encode([
+			'Tags'    => wp_json_encode( [
 				'blog_id'        => get_current_blog_id(),
 				'domain'         => $home_url_without_protocol,
 				'environment_id' => VIP_GO_APP_ID,
@@ -142,7 +142,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 
 		if ( is_wp_error( $response ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf('Twilio Verify validation request failed for user %d and sid %s: %s',
+			error_log( sprintf( 'Twilio Verify validation request failed for user %d and sid %s: %s',
 				$this->user_id,
 				$verification_sid,
 				$response->get_error_message()
@@ -165,7 +165,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 			}
 
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf('Twilio Verify validation request failed for user %d and sid %s: %s',
+			error_log( sprintf( 'Twilio Verify validation request failed for user %d and sid %s: %s',
 				$this->user_id,
 				$verification_sid,
 				$error_message

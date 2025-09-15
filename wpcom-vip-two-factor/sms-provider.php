@@ -3,6 +3,12 @@
 if ( file_exists( __DIR__ . '/twilio/interface-two-factor-twilio-sms.php' ) ) {
 	require_once __DIR__ . '/twilio/interface-two-factor-twilio-sms.php';
 }
+if ( file_exists( __DIR__ . '/twilio/class-two-factor-twilio-sms-api.php' ) ) {
+	require_once __DIR__ . '/twilio/class-two-factor-twilio-sms-api.php';
+}
+if ( file_exists( __DIR__ . '/twilio/class-two-factor-twilio-verify-api.php' ) ) {
+	require_once __DIR__ . '/twilio/class-two-factor-twilio-verify-api.php';
+}
 
 /**
  * Class for creating an sms provider.
@@ -37,17 +43,15 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param int $user_id
 	 * @return Two_Factor_Twilio_SMS
 	 */
-	private function get_sms_strategy( int $user_id ): Two_Factor_Twilio_SMS {
+	public function get_sms_strategy( int $user_id ): Two_Factor_Twilio_SMS {
 		$phone = get_user_meta( $user_id, self::PHONE_META_KEY, true );
 
 		if ( Two_Factor_Twilio_Verify_API::is_available() ) {
 			if ( preg_match( self::QATAR_PHONE_REGEX, $phone ) ) {
-				require_once __DIR__ . '/twilio/class-two-factor-twilio-sms-api.php';
 				return new Two_Factor_Twilio_Verify_API( $user_id, $phone );
 			}
 		}
 
-		require_once __DIR__ . '/twilio/class-two-factor-twilio-verify-api.php';
 		return new Two_Factor_Twilio_SMS_API( $user_id, $phone );
 	}
 
@@ -64,9 +68,11 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function generate_and_send_token( $user ) {
-		$result = $this->get_sms_strategy( $user->ID )->send_code( $this->get_code() );
+		$strategy = $this->get_sms_strategy( $user->ID );
+		$result   = $strategy->send_code( $this->get_code() );
 
 		if ( is_wp_error( $result ) ) {
+			$strategy->cleanup_verification_data();
 			return new WP_Error( 'verification_failed', __( 'Failed to send verification code.', 'two-factor' ) );
 		}
 	}

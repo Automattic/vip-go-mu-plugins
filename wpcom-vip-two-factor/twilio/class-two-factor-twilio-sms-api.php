@@ -25,18 +25,16 @@ class Two_Factor_Twilio_SMS_API implements Two_Factor_Twilio_SMS {
 	 * Send a code to the user via SMS
 	 *
 	 * @param string $code Code to send to the user.
-	 * @return bool true on success, false on failure.
+	 * @return bool|WP_Error true on success, or WP_Error on failure.
 	 */
-	public function send_code( string $code ): bool {
+	public function send_code( string $code ): bool|WP_Error {
 		require_once WPVIP_MU_PLUGIN_DIR . '/lib/sms.php';
 
 		update_user_meta( $this->user_id, self::TOKEN_META_KEY, wp_hash( $code ) );
 
 		$message = $this->format_sms_message( $code );
 
-		\Automattic\VIP\SMS\send_sms( $this->phone, $message );
-
-		return true;
+		return \Automattic\VIP\SMS\send_sms( $this->phone, $message );
 	}
 
 	/**
