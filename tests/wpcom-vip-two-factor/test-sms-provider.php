@@ -30,6 +30,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Set up error handler to the same used in production
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		$this->original_error_handler = set_error_handler( 'wpcom_error_handler' );
+		// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed
+		ini_set( 'display_errors', '0' ); // wpcom_error_handler logs to stderr
+		// phpcs:ignore WordPress.PHP.IniSet.Risky
+		ini_set( 'error_log', '/dev/null' ); // wpcom_error_handler logs to error_log
 
 		$this->http_requests       = [];
 		$this->http_response_mocks = [];
