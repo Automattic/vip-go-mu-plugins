@@ -45,7 +45,7 @@ class Tracks extends Telemetry_System {
 	 * @param array<string, mixed> $global_event_properties The global event properties to be included with every event.
 	 * @param Telemetry_Event_Queue|null $queue The event queue to use. Falls back to the default queue when none provided.
 	 */
-	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], Telemetry_Event_Queue $queue = null ) {
+	public function __construct( string $event_prefix = 'vip_', array $global_event_properties = [], ?Telemetry_Event_Queue $queue = null ) {
 		$this->event_prefix            = $event_prefix;
 		$this->global_event_properties = $global_event_properties;
 		$this->queue                   = $queue ?? new Telemetry_Event_Queue( new Tracks_Client() );

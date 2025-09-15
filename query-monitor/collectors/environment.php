@@ -330,12 +330,11 @@ class QM_Collector_Environment extends QM_DataCollector {
 
 /**
  * @param array<string, QM_Collector> $collectors
- * @param QueryMonitor $qm
  * @return array<string, QM_Collector>
  */
-function register_qm_collector_environment( array $collectors, QueryMonitor $qm ) {
+function register_qm_collector_environment( array $collectors ) {
 	$collectors['environment'] = new QM_Collector_Environment();
 	return $collectors;
 }
 
-add_filter( 'qm/collectors', 'register_qm_collector_environment', 20, 2 );
+add_filter( 'qm/collectors', 'register_qm_collector_environment', 20 );
