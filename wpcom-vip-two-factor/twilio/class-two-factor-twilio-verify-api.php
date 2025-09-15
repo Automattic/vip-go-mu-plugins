@@ -45,11 +45,11 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 		$endpoint = sprintf( '%s/Services/%s/Verifications', self::TWILIO_VERIFY_BASE_URL, VIP_TWILIO_VERIFY_SERVICE_SID );
 
 		$body = array(
-			'To'      => $this->phone,
-			'Channel' => 'sms',
+			'To'                 => $this->phone,
+			'Channel'            => 'sms',
 			// phpcs:ignore Squiz.PHP.CommentedOutCode.Found
-			// 'CustomFriendlyName' => $this->get_friendly_name( $home_url_without_protocol ), // FIXME: Use once Twilio enables Custom Friendly Names
-			'Tags'    => wp_json_encode( [
+			'CustomFriendlyName' => $this->get_friendly_name( $home_url_without_protocol ),
+			'Tags'               => wp_json_encode( [
 				'blog_id'        => get_current_blog_id(),
 				'domain'         => $home_url_without_protocol,
 				'environment_id' => VIP_GO_APP_ID,

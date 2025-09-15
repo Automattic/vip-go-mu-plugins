@@ -221,9 +221,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertNull( $result );
 
 		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/VAf7cfbffb441b4ac785b76646020688c0/Verifications', [
-			'To'      => '+97476543210',
-			'Channel' => 'sms',
-			'Tags'    => wp_json_encode( [
+			'To'                 => '+97476543210',
+			'Channel'            => 'sms',
+			'CustomFriendlyName' => 'example.org',
+			'Tags'               => wp_json_encode( [
 				'blog_id'        => 1,
 				'domain'         => 'example.org', // LOCAL_WP_TESTS_DOMAIN
 				'environment_id' => 12345,
@@ -251,9 +252,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertEquals( 'Failed to send verification code.', $result->get_error_message() );
 
 		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/VAf7cfbffb441b4ac785b76646020688c0/Verifications', [
-			'To'      => '+97476543210',
-			'Channel' => 'sms',
-			'Tags'    => wp_json_encode( [
+			'To'                 => '+97476543210',
+			'Channel'            => 'sms',
+			'CustomFriendlyName' => 'example.org',
+			'Tags'               => wp_json_encode( [
 				'blog_id'        => 1,
 				'domain'         => 'example.org', // LOCAL_WP_TESTS_DOMAIN
 				'environment_id' => 12345,
@@ -281,9 +283,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertEquals( 'Failed to send verification code.', $result->get_error_message() );
 
 		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/VAf7cfbffb441b4ac785b76646020688c0/Verifications', [
-			'To'      => '+97476543210',
-			'Channel' => 'sms',
-			'Tags'    => wp_json_encode( [
+			'To'                 => '+97476543210',
+			'Channel'            => 'sms',
+			'CustomFriendlyName' => 'example.org',
+			'Tags'               => wp_json_encode( [
 				'blog_id'        => 1,
 				'domain'         => 'example.org', // LOCAL_WP_TESTS_DOMAIN
 				'environment_id' => 12345,
