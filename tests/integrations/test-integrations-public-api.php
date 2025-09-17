@@ -130,7 +130,7 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result['is_loaded'] ); // FakeIntegration returns false
 		$this->assertEquals( FakeIntegration::class, $result['class'] );
 		$this->assertEquals( [ 'api_key' => 'test-key' ], $result['env_config'] );
-		$this->assertEquals( [], $result['site_config'] );
+		$this->assertEquals( [ 'api_key' => 'test-key' ], $result['site_config'] );
 		$this->assertEquals( [], $result['child_configs'] );
 	}
 
