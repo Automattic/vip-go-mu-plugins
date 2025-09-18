@@ -10,15 +10,21 @@ class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 				],
 				'cookies'     => [],
 				'filename'    => null,
-				'response'    => 200,
+				'response'    => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
 				'status_code' => 200,
 				'success'     => 1,
 				'body'        => file_get_contents( __DIR__ . '/test.rss' ),
 			];
 		}, 10, 3 );
 
-		$url   = 'https://www.example.com/test.rss';
-		$feed  = fetch_feed( $url );
+		$url  = 'https://www.example.com/test.rss';
+		$feed = fetch_feed( $url );
+
+		$this->assertNotWPError( $feed );
+
 		$build = $feed->data['build'];
 		$this->assertIsNumeric( $build );
 
