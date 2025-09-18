@@ -5,6 +5,7 @@ use Prometheus\Exception\StorageException;
 use Prometheus\MetricFamilySamples;
 use Prometheus\Storage\Adapter as StorageAdapter;
 use Throwable;
+use UnexpectedValueException;
 
 class SafeAdapter implements StorageAdapter {
 	private StorageAdapter $wrapped;
@@ -17,7 +18,14 @@ class SafeAdapter implements StorageAdapter {
 	 * @return MetricFamilySamples[]
 	 */
 	public function collect(): array {
-		return $this->wrapped->collect();
+		try {
+			return $this->wrapped->collect();
+		} catch ( UnexpectedValueException $ex ) {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			trigger_error( 'Prometheus: UnexpectedValueException during metrics collection: ' . $ex->getMessage() . '; wiping the storage and retrying', E_USER_WARNING );
+			$this->wrapped->wipeStorage();
+			return $this->wrapped->collect();
+		}
 	}
 
 	/**
@@ -66,7 +74,7 @@ class SafeAdapter implements StorageAdapter {
 			$this->wrapped->$method( $data );
 		} catch ( Throwable $ex ) {
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			trigger_error( 'Prometheus: metric collection exception: ' . $ex->getMessage(), E_USER_WARNING );
+			trigger_error( 'Prometheus: metrics collection exception: ' . $ex->getMessage(), E_USER_WARNING );
 		}
 	}
 }
