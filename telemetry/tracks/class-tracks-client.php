@@ -31,7 +31,7 @@ class Tracks_Client extends Telemetry_Client {
 	/**
 	 * Constructor.
 	 */
-	public function __construct( WP_Http $http = null ) {
+	public function __construct( ?WP_Http $http = null ) {
 		$this->http = $http ?? _wp_http_get_object();
 	}
 

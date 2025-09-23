@@ -142,7 +142,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @param API_Client $client
 	 * @param string $protocol
 	 */
-	public function __construct( API_Client $client = null, $protocol = null ) {
+	public function __construct( ?API_Client $client = null, $protocol = null ) {
 		if ( is_null( $client ) ) {
 			$this->client = static::$default_client ?: new_api_client();
 		} else {
@@ -153,7 +153,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 
 		$this->debug_mode = false;
 		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' )
-			&& true === VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG ) {
+			&& true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) ) {
 			$this->debug_mode = true;
 		}
 

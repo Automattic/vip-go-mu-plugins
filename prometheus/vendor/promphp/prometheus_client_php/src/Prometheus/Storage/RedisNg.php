@@ -15,7 +15,7 @@ use Prometheus\MetricFamilySamples;
 use Prometheus\Summary;
 use RuntimeException;
 
-class Redis implements Adapter
+class RedisNg implements Adapter
 {
     const PROMETHEUS_METRIC_KEYS_SUFFIX = '_METRIC_KEYS';
 
@@ -237,17 +237,10 @@ LUA
                 $connection_successful = $this->redis->connect($this->options['host'], (int)$this->options['port'], (float)$this->options['timeout']);
             }
             if (!$connection_successful) {
-                throw new StorageException(
-                    sprintf("Can't connect to Redis server. %s", $this->redis->getLastError()),
-                    0
-                );
+                throw new StorageException("Can't connect to Redis server", 0);
             }
         } catch (\RedisException $e) {
-            throw new StorageException(
-                sprintf("Can't connect to Redis server. %s", $e->getMessage()),
-                $e->getCode(),
-                $e
-            );
+            throw new StorageException("Can't connect to Redis server", 0, $e);
         }
     }
 
@@ -298,30 +291,35 @@ LUA
     public function updateSummary(array $data): void
     {
         $this->ensureOpenConnection();
-
-        // store meta
+// store meta
         $summaryKey = self::$prefix . Summary::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX;
+        $summaryKeyIndexKey = self::$prefix . Summary::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX . ":keys";
+        if (!$this->redis->sIsMember($summaryKeyIndexKey, $summaryKey . ':' . $data["name"])) {
+            $this->redis->sAdd($summaryKeyIndexKey, $summaryKey . ':' . $data["name"]);
+        }
+
         $metaKey = $summaryKey . ':' . $this->metaKey($data);
         $json = json_encode($this->metaData($data));
         if (false === $json) {
             throw new RuntimeException(json_last_error_msg());
         }
-        $this->redis->setNx($metaKey, $json);/** @phpstan-ignore-line */
-
+        $this->redis->setnx($metaKey, $json);
 
         // store value key
         $valueKey = $summaryKey . ':' . $this->valueKey($data);
+
         $json = json_encode($this->encodeLabelValues($data['labelValues']));
         if (false === $json) {
             throw new RuntimeException(json_last_error_msg());
         }
-        $this->redis->setNx($valueKey, $json);/** @phpstan-ignore-line */
+        $this->redis->setnx($valueKey, $json);
 
         // trick to handle uniqid collision
         $done = false;
         while (!$done) {
             $sampleKey = $valueKey . ':' . uniqid('', true);
             $done = $this->redis->set($sampleKey, $data['value'], ['NX', 'EX' => $data['maxAgeSeconds']]);
+            $this->redis->sAdd($summaryKey . ':' . $data["name"] . ":value:keys", $sampleKey);
         }
     }
 
@@ -408,6 +406,7 @@ LUA
 
     /**
      * @return mixed[]
+     * @throws MetricJsonException
      */
     private function collectHistograms(): array
     {
@@ -434,6 +433,7 @@ LUA
                 }
                 $allLabelValues[] = $d['labelValues'];
             }
+
             if (json_last_error() !== JSON_ERROR_NONE) {
                 $this->throwMetricJsonException($key);
             }
@@ -494,7 +494,7 @@ LUA
      *
      * @return string
      */
-    private function removePrefixFromKey(string $key): string
+    private function removePrefixFromKey(string $key): string  /** @phpstan-ignore-line */
     {
         // @phpstan-ignore-next-line false positive, phpstan thinks getOptions returns int
         if ($this->redis->getOption(\Redis::OPT_PREFIX) === null) {
@@ -510,13 +510,12 @@ LUA
     private function collectSummaries(): array
     {
         $math = new Math();
-        $summaryKey = self::$prefix . Summary::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX;
-        $keys = $this->redis->keys($summaryKey . ':*:meta');
+        $summaryKeyIndexKey = self::$prefix . Summary::TYPE . self::PROMETHEUS_METRIC_KEYS_SUFFIX . ":keys";
 
+        $keys = $this->redis->sMembers($summaryKeyIndexKey);
         $summaries = [];
-        foreach ($keys as $metaKeyWithPrefix) {
-            $metaKey = $this->removePrefixFromKey($metaKeyWithPrefix);
-            $rawSummary = $this->redis->get($metaKey);
+        foreach ($keys as $metaKey) {
+            $rawSummary = $this->redis->get($metaKey . ':meta');
             if ($rawSummary === false) {
                 continue;
             }
@@ -531,71 +530,60 @@ LUA
                 'quantiles' => $metaData['quantiles'],
                 'samples' => [],
             ];
-
-            $values = $this->redis->keys($summaryKey . ':' . $metaData['name'] . ':*:value');
-            foreach ($values as $valueKeyWithPrefix) {
-                $valueKey = $this->removePrefixFromKey($valueKeyWithPrefix);
-                $rawValue = $this->redis->get($valueKey);
+            $values = $this->redis->sMembers($metaKey . ':value:keys');
+            $samples = [];
+            foreach ($values as $valueKey) {
+                $rawValue = explode(":", $valueKey);
                 if ($rawValue === false) {
                     continue;
                 }
-                $value = json_decode($rawValue, true);
-                $encodedLabelValues = $value;
+                $encodedLabelValues = $rawValue[2];
                 $decodedLabelValues = $this->decodeLabelValues($encodedLabelValues);
 
-                $samples = [];
-                $sampleValues = $this->redis->keys($summaryKey . ':' . $metaData['name'] . ':' . $encodedLabelValues . ':value:*');
-                foreach ($sampleValues as $sampleValueWithPrefix) {
-                    $sampleValue = $this->removePrefixFromKey($sampleValueWithPrefix);
-                    $samples[] = (float)$this->redis->get($sampleValue);
+                $return = $this->redis->get($valueKey);
+                if ($return !== false) {
+                    $samples[] = (float)$return;
+                }
+            }
+            if (count($samples) === 0) {
+                if (isset($valueKey)) {
+                    $this->redis->del($valueKey);
                 }
 
-                if (count($samples) === 0) {
-                    try {
-                        $this->redis->del($valueKey);
-                    } catch (\RedisException $e) {
-                        // ignore if we can't delete the key
-                    }
-                    continue;
-                }
+                continue;
+            }
 
-                // Compute quantiles
-                sort($samples);
-                foreach ($data['quantiles'] as $quantile) {
-                    $data['samples'][] = [
-                        'name' => $metaData['name'],
-                        'labelNames' => ['quantile'],
-                        'labelValues' => array_merge($decodedLabelValues, [$quantile]),
-                        'value' => $math->quantile($samples, $quantile),
-                    ];
-                }
+            assert(isset($decodedLabelValues));
 
-                // Add the count
+            // Compute quantiles
+            sort($samples);
+            foreach ($data['quantiles'] as $quantile) {
                 $data['samples'][] = [
-                    'name' => $metaData['name'] . '_count',
-                    'labelNames' => [],
-                    'labelValues' => $decodedLabelValues,
-                    'value' => count($samples),
-                ];
-
-                // Add the sum
-                $data['samples'][] = [
-                    'name' => $metaData['name'] . '_sum',
-                    'labelNames' => [],
-                    'labelValues' => $decodedLabelValues,
-                    'value' => array_sum($samples),
+                    'name' => $metaData['name'],
+                    'labelNames' => ['quantile'],
+                    'labelValues' => array_merge($decodedLabelValues, [$quantile]),
+                    'value' => $math->quantile($samples, $quantile),
                 ];
             }
 
-            if (count($data['samples']) > 0) {
-                $summaries[] = $data;
-            } else {
-                try {
-                    $this->redis->del($metaKey);
-                } catch (\RedisException $e) {
-                    // ignore if we can't delete the key
-                }
-            }
+            // Add the count
+            $data['samples'][] = [
+                'name' => $metaData['name'] . '_count',
+                'labelNames' => [],
+                'labelValues' => $decodedLabelValues,
+                'value' => count($samples),
+            ];
+
+            // Add the sum
+            $data['samples'][] = [
+                'name' => $metaData['name'] . '_sum',
+                'labelNames' => [],
+                'labelValues' => $decodedLabelValues,
+                'value' => array_sum($samples),
+            ];
+
+
+            $summaries[] = $data;
         }
         return $summaries;
     }
@@ -654,7 +642,6 @@ LUA
                 continue;
             }
             $counter = json_decode($raw['__meta'], true);
-
             unset($raw['__meta']);
             $counter['samples'] = [];
             foreach ($raw as $k => $value) {
@@ -664,7 +651,6 @@ LUA
                     'labelValues' => json_decode($k, true),
                     'value' => $value,
                 ];
-
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $this->throwMetricJsonException($key, $counter['name']);
                 }
