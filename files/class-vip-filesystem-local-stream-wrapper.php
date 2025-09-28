@@ -226,7 +226,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		// Original implementation for non-local files
 		$path = $this->trim_path( $path );
 		// Also ignore '+' modes since the handlers are all read+write anyway
-		$mode = trim( $mode, 'bet+' );
+		$mode = str_replace( [ 'b', 'e', 't', '+' ], '', $mode );
 
 		if ( ! $this->validate( $path, $mode ) ) {
 			return false;
