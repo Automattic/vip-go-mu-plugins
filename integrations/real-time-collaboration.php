@@ -153,6 +153,6 @@ class RealTimeCollaborationIntegration extends Integration {
 		}
 
 		// Set up WordPress hooks to display integration plugins in the plugins list
-		$this->setup_plugin_display_hooks( __( 'Enabled via VIP Integrations', 'vip-integrations' ) );
+		$this->setup_plugin_display_hooks();
 	}
 }

@@ -18,15 +18,15 @@
  *     use IntegrationPluginDisplayTrait;
  *
  *     public function configure(): void {
- *         // Setup hooks with optional custom message
- *         $this->setup_plugin_display_hooks('Enabled via My Integration');
+ *         // Setup hooks to display integration plugins
+ *         $this->setup_plugin_display_hooks();
  *     }
  *
  *     public function load(): void {
  *         // Load your plugin
  *         require_once $plugin_path;
  *
- *         // Register it for display
+ *         // Register it for display (will show as "Enabled via WPVIP Integrations")
  *         $relative_path = str_replace(WP_CONTENT_DIR . '/mu-plugins/', '', $plugin_path);
  *         $this->register_integration_plugin($relative_path);
  *     }
@@ -39,8 +39,8 @@
  *     use IntegrationPluginDisplayTrait;
  *
  *     public function configure(): void {
- *         // Setup hooks with custom message
- *         $this->setup_plugin_display_hooks(__('Enabled via VIP Integrations', 'vip-integrations'));
+ *         // Setup display hooks
+ *         $this->setup_plugin_display_hooks();
  *     }
  *
  *     public function load(): void {
@@ -103,11 +103,9 @@ trait IntegrationPluginDisplayTrait {
 	/**
 	 * Custom message to display for integration plugins.
 	 *
-	 * Shared across all integrations - first integration to call setup_plugin_display_hooks() wins.
-	 *
 	 * @var string
 	 */
-	private static $plugin_display_message = '';
+	private static $plugin_display_message = 'Enabled via WPVIP Integrations';
 
 	/**
 	 * Register a plugin loaded by this integration for display in WordPress admin.
@@ -137,16 +135,8 @@ trait IntegrationPluginDisplayTrait {
 	 *
 	 * This should be called from the integration's configure() method.
 	 * Hooks are only initialized once, even if called by multiple integrations.
-	 *
-	 * @param string $message Optional. Custom message to display for plugins.
-	 *                        Default: 'Enabled via VIP Integrations'
 	 */
-	protected function setup_plugin_display_hooks( string $message = '' ): void {
-		// Set the display message ONCE (first caller wins)
-		if ( empty( self::$plugin_display_message ) ) {
-			self::$plugin_display_message = $message ?: __( 'Enabled via VIP Integrations', 'vip-integrations' );
-		}
-
+	protected function setup_plugin_display_hooks(): void {
 		// Only initialize hooks once
 		if ( self::$display_hooks_initialized ) {
 			return;
@@ -432,6 +422,5 @@ trait IntegrationPluginDisplayTrait {
 		self::$loaded_integration_plugins = array();
 		self::$display_hooks_initialized  = false;
 		self::$buffer_started             = false;
-		self::$plugin_display_message     = '';
 	}
 }
