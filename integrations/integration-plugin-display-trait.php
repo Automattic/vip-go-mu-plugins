@@ -116,8 +116,8 @@ trait IntegrationPluginDisplayTrait {
 	 *                            Example: 'vip-integrations/my-plugin-1.0/my-plugin.php'
 	 */
 	protected function register_integration_plugin( string $plugin_path ): void {
-		if ( ! in_array( $plugin_path, self::$loaded_integration_plugins, true ) ) {
-			self::$loaded_integration_plugins[] = $plugin_path;
+		if ( ! in_array( $plugin_path, static::$loaded_integration_plugins, true ) ) {
+			static::$loaded_integration_plugins[] = $plugin_path;
 		}
 	}
 
@@ -127,7 +127,7 @@ trait IntegrationPluginDisplayTrait {
 	 * @return array Array of plugin paths relative to mu-plugins directory.
 	 */
 	protected static function get_loaded_integration_plugins(): array {
-		return self::$loaded_integration_plugins;
+		return static::$loaded_integration_plugins;
 	}
 
 	/**
@@ -138,11 +138,11 @@ trait IntegrationPluginDisplayTrait {
 	 */
 	protected function setup_plugin_display_hooks(): void {
 		// Only initialize hooks once
-		if ( self::$display_hooks_initialized ) {
+		if ( static::$display_hooks_initialized ) {
 			return;
 		}
 
-		self::$display_hooks_initialized = true;
+		static::$display_hooks_initialized = true;
 
 		// Core plugin display hooks
 		add_filter( 'all_plugins', [ $this, 'filter_all_plugins' ] );
@@ -172,7 +172,7 @@ trait IntegrationPluginDisplayTrait {
 	 * @return array Modified array with integration plugins added.
 	 */
 	public function filter_all_plugins( $all_plugins ): array {
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		foreach ( $integration_plugins as $plugin_path ) {
 			// Skip if already in the list
@@ -225,7 +225,7 @@ trait IntegrationPluginDisplayTrait {
 		}
 
 		$active_plugins      = is_array( $active_plugins ) ? $active_plugins : array();
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		return array_unique( array_merge( $active_plugins, $integration_plugins ) );
 	}
@@ -245,7 +245,7 @@ trait IntegrationPluginDisplayTrait {
 		}
 
 		$active_plugins      = is_array( $active_plugins ) ? $active_plugins : array();
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		foreach ( $integration_plugins as $plugin ) {
 			$active_plugins[ $plugin ] = time();
@@ -264,7 +264,7 @@ trait IntegrationPluginDisplayTrait {
 	 */
 	public function filter_update_active_plugins( $active_plugins ): array {
 		$active_plugins      = is_array( $active_plugins ) ? $active_plugins : array();
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		return array_values( array_diff( $active_plugins, $integration_plugins ) );
 	}
@@ -279,7 +279,7 @@ trait IntegrationPluginDisplayTrait {
 	 */
 	public function filter_update_network_active_plugins( $active_plugins ): array {
 		$active_plugins      = is_array( $active_plugins ) ? $active_plugins : array();
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		return array_diff_key( $active_plugins, array_flip( $integration_plugins ) );
 	}
@@ -294,7 +294,7 @@ trait IntegrationPluginDisplayTrait {
 	 * @return array Modified array of action links.
 	 */
 	public function filter_plugin_action_links( $actions, $plugin_file ): array {
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		if ( in_array( $plugin_file, $integration_plugins, true ) ) {
 			// Remove activate/deactivate links
@@ -302,7 +302,7 @@ trait IntegrationPluginDisplayTrait {
 
 			// Add custom status message using the same class as code-activated plugins
 			// This will trigger the existing JS to hide the checkbox
-			$actions['vip-code-activated-plugin'] = self::$plugin_display_message;
+			$actions['vip-code-activated-plugin'] = static::$plugin_display_message;
 		}
 
 		return $actions;
@@ -348,7 +348,7 @@ trait IntegrationPluginDisplayTrait {
 	 * when it tries to validate integration plugins that aren't in the standard plugins directory.
 	 */
 	public function cleanup_recently_activated(): void {
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
 		if ( empty( $integration_plugins ) ) {
 			return;
@@ -378,13 +378,13 @@ trait IntegrationPluginDisplayTrait {
 	 * Uses output buffering to filter out specific error messages from the admin page output.
 	 */
 	public function suppress_deactivation_notices(): void {
-		$integration_plugins = self::get_loaded_integration_plugins();
+		$integration_plugins = static::get_loaded_integration_plugins();
 
-		if ( empty( $integration_plugins ) || self::$buffer_started ) {
+		if ( empty( $integration_plugins ) || static::$buffer_started ) {
 			return;
 		}
 
-		self::$buffer_started = true;
+		static::$buffer_started = true;
 
 		// Use output buffering to filter out error notices about integration plugins
 		ob_start( function ( $buffer ) use ( $integration_plugins ) {
@@ -419,8 +419,8 @@ trait IntegrationPluginDisplayTrait {
 	 * @internal
 	 */
 	protected static function reset_plugin_display_for_tests(): void {
-		self::$loaded_integration_plugins = array();
-		self::$display_hooks_initialized  = false;
-		self::$buffer_started             = false;
+		static::$loaded_integration_plugins = array();
+		static::$display_hooks_initialized  = false;
+		static::$buffer_started             = false;
 	}
 }
