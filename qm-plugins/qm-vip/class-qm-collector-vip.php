@@ -89,27 +89,35 @@ class QM_Collector_VIP extends QM_Collector {
 	}
 
 	/**
-	 * Get Elasticsearch version using the canonical search-dev-tools function
+	 * Get Elasticsearch version using the canonical Search class method
 	 *
 	 * @return string ES version information with migration context
 	 */
 	private function get_elasticsearch_version_from_search_dev_tools() {
-		// Use the canonical function from search-dev-tools if available
-		if ( function_exists( '\Automattic\VIP\Search\Dev_Tools\get_current_elasticsearch_version' ) ) {
-			$version = \Automattic\VIP\Search\Dev_Tools\get_current_elasticsearch_version();
+		// Get the base ES version
+		$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
 
-			// For QM display, we want a more concise format
-			if ( strpos( $version, 'Migration: Using ES8' ) !== false ) {
-				return preg_replace( '/^([^(]+)\s*\(Migration:.*?\)/', '$1 (Using ES8)', $version );
-			} elseif ( strpos( $version, 'Migration: Using ES7' ) !== false ) {
-				return preg_replace( '/^([^(]+)\s*\(Migration:.*?\)/', '$1 (Using ES7)', $version );
-			}
+		// Check if migration is in progress
+		$migration_in_progress = defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' );
 
-			return $version;
+		if ( ! $migration_in_progress ) {
+			return $base_version;
 		}
 
-		// Fallback to basic ES version if search-dev-tools function isn't available
-		return \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
+		// Use the canonical method from Search class
+		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
+			$search_instance = \Automattic\VIP\Search\Search::instance();
+			$is_testing_next = $search_instance->is_testing_next_version();
+
+			if ( $is_testing_next ) {
+				return sprintf( '%s (Using ES8)', $base_version );
+			} else {
+				return sprintf( '%s (Using ES7)', $base_version );
+			}
+		}
+
+		// Fallback if Search class not available
+		return $base_version;
 	}
 
 	/**

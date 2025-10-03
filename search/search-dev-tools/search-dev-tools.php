@@ -381,25 +381,8 @@ function get_current_elasticsearch_version() {
 	}
 
 	// Migration is in progress - determine which version is being used
-	// Replicate the is_testing_next_version logic since it's private
-	$is_testing_next = false;
-
-	if ( defined( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) && constant( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
-		$is_testing_next = true;
-	} elseif ( current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) ) ) {
-		// Check for query parameter
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( isset( $_GET['vip-search-test-es-next'] ) &&
-			( 'true' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				|| '1' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				|| 'session' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			) ) {
-			$is_testing_next = true;
-			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-		} elseif ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( '1' === $_COOKIE['vip-search-test-es-next'] || 'true' === $_COOKIE['vip-search-test-es-next'] ) ) {
-			$is_testing_next = true;
-		}
-	}
+	$search_instance = \Automattic\VIP\Search\Search::instance();
+	$is_testing_next = $search_instance->is_testing_next_version();
 
 	if ( $is_testing_next ) {
 		return sprintf( '%s (Migration: Using ES8, writes mirrored to ES7)', $base_version );
