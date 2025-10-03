@@ -373,22 +373,7 @@ function get_current_elasticsearch_version() {
 	// Get the base ES version
 	$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
 
-	// Check if migration is in progress
-	$migration_in_progress = defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' );
-
-	if ( ! $migration_in_progress ) {
-		return $base_version;
-	}
-
-	// Migration is in progress - determine which version is being used
-	$search_instance = \Automattic\VIP\Search\Search::instance();
-	$is_testing_next = $search_instance->is_testing_next_version();
-
-	if ( $is_testing_next ) {
-		return sprintf( '%s (Migration: Using ES8)', $base_version );
-	} else {
-		return sprintf( '%s (Migration: Using ES7)', $base_version );
-	}
+		return sprintf( '%s (Migration: %s)', $base_version, \Automattic\VIP\Search\Search::instance()->is_testing_next_version() ? 'Using ES8' : 'Using ES7' );
 }
 
 /**
