@@ -275,13 +275,6 @@ function print_data() {
 				],
 			],
 			[
-				'label'   => 'Algorithm Version',
-				'value'   => apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) ),
-				'options' => [
-					'collapsible' => false,
-				],
-			],
-			[
 				'label'   => 'Elasticsearch Version',
 				'value'   => get_current_elasticsearch_version(),
 				'options' => [
