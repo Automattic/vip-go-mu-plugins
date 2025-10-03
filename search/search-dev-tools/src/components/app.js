@@ -13,8 +13,31 @@ import * as style from './style.scss';
 import { SearchContext } from '../context';
 
 const AdminBarButton = props => {
-	const { queries } = useContext( SearchContext );
-	return ( <button { ...props }>Search: { pluralize( 'query', queries.length, true ) }</button> );
+	const { queries, information } = useContext( SearchContext );
+
+	// Extract ES version information
+	const getESVersion = () => {
+		const esInfo = information?.find( info => info.label === 'Elasticsearch Version' );
+		if ( ! esInfo || ! esInfo.value ) {
+			return '';
+		}
+
+		// Check if we're in migration mode and determine version
+		if ( esInfo.value.includes( 'Using ES8' ) ) {
+			return ' (ES8)';
+		} else if ( esInfo.value.includes( 'Using ES7' ) ) {
+			return ' (ES7)';
+		} else if ( esInfo.value.includes( 'Migration' ) ) {
+			// Fallback parsing for migration context
+			return esInfo.value.includes( 'ES8' ) ? ' (ES8)' : ' (ES7)';
+		}
+
+		return '';
+	};
+
+	const esVersion = getESVersion();
+
+	return ( <button { ...props }>Search: { queries.length }Q { esVersion }</button> );
 };
 
 /**
