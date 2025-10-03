@@ -366,11 +366,6 @@ function sanitize_query_response( object $response_body ): object {
  * @return string ES version information with migration context
  */
 function get_current_elasticsearch_version() {
-	// Check if VIP Search is enabled
-	if ( ! defined( 'VIP_ENABLE_VIP_SEARCH' ) || ! constant( 'VIP_ENABLE_VIP_SEARCH' ) ) {
-		return 'VIP Search not enabled';
-	}
-
 	if ( ! method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
 		return 'Version detection unavailable';
 	}
