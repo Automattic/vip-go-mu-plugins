@@ -1,4 +1,3 @@
-import pluralize from 'pluralize';
 import { h } from 'preact';
 import { createPortal } from 'preact/compat';
 import { useCallback, useContext, useState } from 'preact/hooks';
