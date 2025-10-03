@@ -84,32 +84,8 @@ class QM_Collector_VIP extends QM_Collector {
 		}
 
 		if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
-			$this->data->app['es_version'] = $this->get_elasticsearch_version_from_search_dev_tools();
+			$this->data->app['es_version'] = \Automattic\VIP\Search\Dev_Tools\get_current_elasticsearch_version();
 		}
-	}
-
-	/**
-	 * Get Elasticsearch version using the canonical Search class method
-	 *
-	 * @return string ES version information with migration context
-	 */
-	private function get_elasticsearch_version_from_search_dev_tools() {
-		// Get the base ES version
-		$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
-
-		// Use the canonical method from Search class
-		if ( class_exists( '\Automattic\VIP\Search\Search' ) ) {
-			$search_instance = \Automattic\VIP\Search\Search::instance();
-			$is_testing_next = $search_instance->is_testing_next_version();
-
-			if ( $is_testing_next ) {
-				return sprintf( '%s (Using ES8)', $base_version );
-			} elseif ( defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
-				return sprintf( '%s (Using ES7)', $base_version );
-			}
-		}
-
-		return $base_version;
 	}
 
 	/**
