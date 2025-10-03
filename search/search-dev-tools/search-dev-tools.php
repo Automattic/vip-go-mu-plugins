@@ -385,9 +385,9 @@ function get_current_elasticsearch_version() {
 	$is_testing_next = $search_instance->is_testing_next_version();
 
 	if ( $is_testing_next ) {
-		return sprintf( '%s (Migration: Using ES8, writes mirrored to ES7)', $base_version );
+		return sprintf( '%s (Migration: Using ES8)', $base_version );
 	} else {
-		return sprintf( '%s (Migration: Using ES7, writes mirrored to ES8)', $base_version );
+		return sprintf( '%s (Migration: Using ES7)', $base_version );
 	}
 }
 
