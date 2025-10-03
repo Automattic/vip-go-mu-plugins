@@ -281,6 +281,13 @@ function print_data() {
 					'collapsible' => false,
 				],
 			],
+			[
+				'label'   => 'Elasticsearch Version',
+				'value'   => get_current_elasticsearch_version(),
+				'options' => [
+					'collapsible' => false,
+				],
+			],
 
 		],
 		'nonce'                   => wp_create_nonce( 'wp_rest' ),
@@ -358,6 +365,59 @@ function sanitize_query_response( object $response_body ): object {
 	}
 
 	return $response_body;
+}
+
+/**
+ * Get current Elasticsearch version information including ES7/ES8 migration context
+ *
+ * @return string ES version information with migration context
+ */
+function get_current_elasticsearch_version() {
+	// Check if VIP Search is enabled
+	if ( ! defined( 'VIP_ENABLE_VIP_SEARCH' ) || ! constant( 'VIP_ENABLE_VIP_SEARCH' ) ) {
+		return 'VIP Search not enabled';
+	}
+
+	if ( ! method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
+		return 'Version detection unavailable';
+	}
+
+	// Get the base ES version
+	$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
+
+	// Check if migration is in progress
+	$migration_in_progress = defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' );
+
+	if ( ! $migration_in_progress ) {
+		return $base_version;
+	}
+
+	// Migration is in progress - determine which version is being used
+	// Replicate the is_testing_next_version logic since it's private
+	$is_testing_next = false;
+
+	if ( defined( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) && constant( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
+		$is_testing_next = true;
+	} elseif ( current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) ) ) {
+		// Check for query parameter
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['vip-search-test-es-next'] ) &&
+			( 'true' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				|| '1' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				|| 'session' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			) ) {
+			$is_testing_next = true;
+			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		} elseif ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( '1' === $_COOKIE['vip-search-test-es-next'] || 'true' === $_COOKIE['vip-search-test-es-next'] ) ) {
+			$is_testing_next = true;
+		}
+	}
+
+	if ( $is_testing_next ) {
+		return sprintf( '%s (Migration: Using ES8, writes mirrored to ES7)', $base_version );
+	} else {
+		return sprintf( '%s (Migration: Using ES7, writes mirrored to ES8)', $base_version );
+	}
 }
 
 /**

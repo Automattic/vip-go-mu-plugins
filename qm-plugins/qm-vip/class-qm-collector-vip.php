@@ -84,7 +84,48 @@ class QM_Collector_VIP extends QM_Collector {
 		}
 
 		if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
-			$this->data->app['es_version'] = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version();
+			$this->data->app['es_version'] = $this->get_elasticsearch_version_with_migration_context();
+		}
+	}
+
+	/**
+	 * Get Elasticsearch version with ES7/ES8 migration context
+	 *
+	 * @return string ES version information with migration context
+	 */
+	private function get_elasticsearch_version_with_migration_context() {
+		// Get the base ES version
+		$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
+
+		$migration_in_progress = defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' );
+
+		if ( ! $migration_in_progress ) {
+			return $base_version;
+		}
+
+		$is_testing_next = false;
+
+		if ( defined( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) && constant( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' ) ) {
+			$is_testing_next = true;
+		} elseif ( current_user_can( 'manage_options' ) ) {
+			// Check for query parameter
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			if ( isset( $_GET['vip-search-test-es-next'] ) &&
+				( 'true' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					|| '1' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+					|| 'session' === $_GET['vip-search-test-es-next'] // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				) ) {
+				$is_testing_next = true;
+				// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+			} elseif ( isset( $_COOKIE['vip-search-test-es-next'] ) && ( '1' === $_COOKIE['vip-search-test-es-next'] || 'true' === $_COOKIE['vip-search-test-es-next'] ) ) {
+				$is_testing_next = true;
+			}
+		}
+
+		if ( $is_testing_next ) {
+			return sprintf( '%s (Using ES8)', $base_version );
+		} else {
+			return sprintf( '%s (Using ES7)', $base_version );
 		}
 	}
 
