@@ -194,7 +194,7 @@ Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41).
 
 2. **WordPress Compatibility:** Minimum WordPress 6.2 (`phpcs.xml.dist` line 65).
 
-3. **No Breaking Changes to Public APIs:** This code runs on thousands of WordPress sites. Breaking changes to public functions/filters/actions require deprecation periods.
+3. **No Breaking Changes to Public APIs:** This code runs on thousands of WordPress sites. Breaking changes to public functions/filters/actions require careful consideration, and if not possible to avoid, deprecation period and graceful fallbacks need to be implemented.
 
 4. **Test Coverage Required:** All new features should include PHPUnit tests in `tests/` directory matching the structure of the code being tested.
 
