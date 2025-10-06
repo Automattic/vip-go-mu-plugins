@@ -83,7 +83,7 @@ class QM_Collector_VIP extends QM_Collector {
 			$this->data->app['jetpack'] = constant( 'JETPACK__VERSION' );
 		}
 
-		if ( defined( 'VIP_ENABLE_VIP_SEARCH' ) && true === constant( 'VIP_ENABLE_VIP_SEARCH' ) && method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
+		if ( method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
 			$this->data->app['es_version'] = \Automattic\VIP\Search\Dev_Tools\get_current_elasticsearch_version();
 		}
 	}
