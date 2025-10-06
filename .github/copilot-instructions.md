@@ -190,7 +190,7 @@ Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41).
 
 ## Important Constraints
 
-1. **PHP Version Support:** Code must work on PHP 7.4+. Avoid syntax/features exclusive to PHP 8.0+.
+1. **PHP Version Support:** Code must work on PHP 8.1+. Avoid syntax/features for older PHP versions.
 
 2. **WordPress Compatibility:** Minimum WordPress 6.2 (`phpcs.xml.dist` line 65).
 
