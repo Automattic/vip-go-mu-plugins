@@ -103,7 +103,7 @@ All PRs to `develop` branch trigger these workflows:
 1. **CI Workflow** (`.github/workflows/ci.yml`):
    - Runs PHPUnit tests across matrix of WP versions (6.4.x-nightly), PHP versions (8.1-8.4), multisite yes/no, Jetpack yes/no
    - Uses MySQL 8 service container
-   - Takes 30-45 minutes for full matrix
+   - Takes about 10 minutes for full matrix
    - Generates code coverage for latest WP + PHP 8.1
 
 2. **Lint Workflow** (`.github/workflows/lint.yml`):
