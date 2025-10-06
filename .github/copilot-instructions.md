@@ -196,7 +196,7 @@ Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41).
 
 3. **No Breaking Changes to Public APIs:** This code runs on thousands of WordPress sites. Breaking changes to public functions/filters/actions require careful consideration, and if not possible to avoid, deprecation period and graceful fallbacks need to be implemented.
 
-4. **No Code Duplication** IF there are existing solutions in the codebase always try to re-use that, if that requires class/method definition visibility changes that's okay to consider or ask user about.
+4. **No Code Duplication** If there are existing solutions in the codebase, always try to re-use them. If that requires class/method definition visibility changes, that's okay to consider or ask the user about.
 
 5. **Defensive Coding** ALWAYS add file_exists checks if a PR introduces new files to avoid transient deploy errors (deploys are non-atomic). If calling third-party dependencies assume they may be disabled from loading and use appropriate function_exists, method_exists checks.
 
