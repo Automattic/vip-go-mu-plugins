@@ -1,8 +1,8 @@
-# VIP Go MU-Plugins - Coding Agent Instructions
+# WordPress VIP MU-Plugins - Coding Agent Instructions
 
 ## Repository Overview
 
-This is the development repository for mu-plugins (must-use plugins) that power the VIP Go platform. It's a large WordPress plugin collection (~60+ top-level directories) written primarily in PHP, supporting PHP 7.4, 8.0, 8.1, 8.2, 8.3, and 8.4.
+This is the development repository for mu-plugins (must-use plugins) that power the WordPress VIP platform. It's a large WordPress plugin collection (~60+ top-level directories) written primarily in PHP, supporting 8.1, 8.2, 8.3, and 8.4.
 
 **Key Characteristics:**
 - Type: WordPress mu-plugins collection
@@ -60,7 +60,7 @@ npm run phpcs:fix
 ./bin/test.sh
 ```
 - Self-contained Docker environment (downloads MySQL 8 and test runner images on first run)
-- Takes 2-5 minutes for full test suite
+- Takes 2-10 minutes for full test suite
 - Uses `phpunit.xml` configuration
 - Supports filtering: `./bin/test.sh --filter test_name_here`
 
@@ -196,11 +196,17 @@ Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41).
 
 3. **No Breaking Changes to Public APIs:** This code runs on thousands of WordPress sites. Breaking changes to public functions/filters/actions require careful consideration, and if not possible to avoid, deprecation period and graceful fallbacks need to be implemented.
 
-4. **Test Coverage Required:** All new features should include PHPUnit tests in `tests/` directory matching the structure of the code being tested.
+4. **No Code Duplication** IF there are existing solutions in the codebase always try to re-use that, if that requires class/method definition visibility changes that's okay to consider or ask user about.
 
-5. **PHPCS Compliance:** All PHP code must pass PHPCS. Use `npm run phpcs:fix` for auto-fixable issues.
+5. **Defensive Coding** ALWAYS add file_exists checks if a PR introduces new files to avoid transient deploy errors (deploys are non-atomic). If calling third-party dependencies assume they may be disabled from loading and use appropriate function_exists, method_exists checks.
 
-6. **Submodules are Read-Only:** Never commit changes to submodule directories (jetpack, elasticpress, etc.). These are managed separately.
+6. **Type Safety** argument and return type hints are encouraged EXCEPT FOR WordPress action and filter callbacks - we can't guarantee arguments and return types on those because of how hooks system works (userland code can easily return unexpected type resulting in fatal errors)
+
+7. **Test Coverage Required:** All new features should include PHPUnit tests in `tests/` directory matching the structure of the code being tested.
+
+8. **PHPCS Compliance:** All PHP code must pass PHPCS. Use `npm run phpcs:fix` for auto-fixable issues.
+
+9. **Submodules are Read-Only:** Never commit changes to submodule directories (jetpack, elasticpress, etc.). These are managed separately.
 
 ## Quick Reference for Common Tasks
 
