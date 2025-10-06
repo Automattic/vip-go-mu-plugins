@@ -2566,7 +2566,7 @@ class Search {
 		}
 	}
 
-	private function is_testing_next_version(): bool {
+	public function is_testing_next_version(): bool {
 		if ( ! defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) || ! constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
 			return false;
 		}

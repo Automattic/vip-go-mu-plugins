@@ -275,8 +275,8 @@ function print_data() {
 				],
 			],
 			[
-				'label'   => 'Algorithm Version',
-				'value'   => apply_filters( 'ep_search_algorithm_version', get_option( 'ep_search_algorithm_version', '3.5' ) ),
+				'label'   => 'Elasticsearch Version',
+				'value'   => get_current_elasticsearch_version(),
 				'options' => [
 					'collapsible' => false,
 				],
@@ -358,6 +358,22 @@ function sanitize_query_response( object $response_body ): object {
 	}
 
 	return $response_body;
+}
+
+/**
+ * Get current Elasticsearch version information including ES7/ES8 migration context
+ *
+ * @return string ES version information with migration context
+ */
+function get_current_elasticsearch_version() {
+	if ( ! method_exists( '\ElasticPress\Elasticsearch', 'get_elasticsearch_version' ) ) {
+		return 'Version detection unavailable';
+	}
+
+	// Get the base ES version
+	$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
+
+		return sprintf( '%s (Migration: %s)', $base_version, \Automattic\VIP\Search\Search::instance()->is_testing_next_version() ? 'Using ES8' : 'Using ES7' );
 }
 
 /**
