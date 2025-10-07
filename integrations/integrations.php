@@ -48,7 +48,7 @@ class Integrations {
 	 *
 	 * @param string $slug A unique identifier for the integration.
 	 */
-	private function get_integration( string $slug ): ?Integration {
+	public function get_integration( string $slug ): ?Integration {
 		return $this->integrations[ $slug ] ?? null;
 	}
 
@@ -120,5 +120,81 @@ class Integrations {
 		}
 
 		$integration->activate( $options );
+	}
+
+	/**
+	 * Check if a specific integration is enabled (registered and active).
+	 *
+	 * @param string $slug A unique identifier for the integration.
+	 * @return bool True if integration is enabled, false otherwise.
+	 */
+	public function is_integration_enabled( string $slug ): bool {
+		$integration = $this->get_integration( $slug );
+		return $integration && $integration->is_active();
+	}
+
+	/**
+	 * Get all enabled integrations.
+	 *
+	 * @return array<string,Integration> Array of enabled integrations keyed by slug.
+	 */
+	public function get_enabled_integrations(): array {
+		return array_filter( $this->integrations, function ( Integration $integration ) {
+			return $integration->is_active();
+		});
+	}
+
+	/**
+	 * Get all registered integrations (enabled and disabled).
+	 *
+	 * @return array<string,Integration> Array of all integrations keyed by slug.
+	 */
+	public function get_all_integrations(): array {
+		return $this->integrations;
+	}
+
+	/**
+	 * Get detailed information about a specific integration.
+	 *
+	 * @param string $slug A unique identifier for the integration.
+	 * @return array|null Array with integration details or null if not found.
+	 */
+	public function get_integration_info( string $slug ): ?array {
+		$integration = $this->get_integration( $slug );
+		
+		if ( ! $integration ) {
+			return null;
+		}
+
+		return [
+			'slug'          => $integration->get_slug(),
+			'is_active'     => $integration->is_active(),
+			'is_loaded'     => $integration->is_loaded(),
+			'class'         => get_class( $integration ),
+			'env_config'    => $integration->get_env_config(),
+			'site_config'   => $integration->get_network_site_config(),
+			'child_configs' => $integration->get_child_configs(),
+		];
+	}
+
+	/**
+	 * Get a summary of all integrations with their status information.
+	 *
+	 * @return array<string,array> Summary array with integration info keyed by slug.
+	 */
+	public function get_integrations_summary(): array {
+		$summary = [];
+		
+		foreach ( $this->integrations as $slug => $integration ) {
+			$summary[ $slug ] = [
+				'slug'       => $slug,
+				'is_active'  => $integration->is_active(),
+				'is_loaded'  => $integration->is_loaded(),
+				'class'      => get_class( $integration ),
+				'has_config' => ! empty( $integration->get_env_config() ),
+			];
+		}
+
+		return $summary;
 	}
 }

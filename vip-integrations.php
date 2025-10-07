@@ -69,6 +69,63 @@ function activate( string $slug, array $options = [] ): void {
 	IntegrationsSingleton::instance()->activate( $slug, $options );
 }
 
+/**
+ * Check if a specific integration is enabled.
+ *
+ * @param string $slug A unique identifier for the integration.
+ * @return bool True if integration is enabled, false otherwise.
+ */
+function wpvip_is_integration_enabled( string $slug ): bool {
+	return IntegrationsSingleton::instance()->is_integration_enabled( $slug );
+}
+
+/**
+ * Get a specific integration instance.
+ *
+ * @param string $slug A unique identifier for the integration.
+ * @return Integration|null Integration instance if found and enabled, null otherwise.
+ */
+function wpvip_get_integration( string $slug ): ?Integration {
+	return IntegrationsSingleton::instance()->get_integration( $slug );
+}
+
+/**
+ * Get integration information including status and configuration.
+ *
+ * @param string $slug A unique identifier for the integration.
+ * @return array|null Integration info array or null if not found.
+ */
+function wpvip_get_integration_info( string $slug ): ?array {
+	return IntegrationsSingleton::instance()->get_integration_info( $slug );
+}
+
+/**
+ * Get all enabled integrations.
+ *
+ * @return array<string,Integration> Array of enabled integrations keyed by slug.
+ */
+function wpvip_get_enabled_integrations(): array {
+	return IntegrationsSingleton::instance()->get_enabled_integrations();
+}
+
+/**
+ * Get all registered integrations (enabled and disabled).
+ *
+ * @return array<string,Integration> Array of all integrations keyed by slug.
+ */
+function wpvip_get_all_integrations(): array {
+	return IntegrationsSingleton::instance()->get_all_integrations();
+}
+
+/**
+ * Get a summary of all integrations with their status information.
+ *
+ * @return array<string,array> Summary array with integration info keyed by slug.
+ */
+function wpvip_get_integrations_summary(): array {
+	return IntegrationsSingleton::instance()->get_integrations_summary();
+}
+
 // Load integrations in muplugins_loaded:5 to allow integrations to hook
 // muplugins_loaded:10 or any later action.
 add_action( 'muplugins_loaded', function () {
