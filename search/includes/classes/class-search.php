@@ -2533,7 +2533,7 @@ class Search {
 	}
 
 	private function current_user_can_test_next_version(): bool {
-		return current_user_can( apply_filters( 'vip_search_dev_tools_cap', 'manage_options' ) );
+		return true;
 	}
 
 	private function handle_testing_next_version_session_update(): void {
