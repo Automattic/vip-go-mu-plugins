@@ -362,8 +362,10 @@ trait IntegrationPluginDisplayTrait {
 		ob_start( function ( $buffer ) use ( $integration_plugins ) {
 			foreach ( $integration_plugins as $plugin ) {
 				// Remove error notices for "Plugin file does not exist"
+				// Pattern matches the exact WordPress error format:
+				// <div ... class="notice error"><p>The plugin <code>PATH</code> has been deactivated due to an error: Plugin file does not exist.</p></div>
 				$escaped_plugin = preg_quote( $plugin, '/' );
-				$pattern        = '/<div[^>]*\berror\b[^>]*>.*?<p>.*?<code>' . $escaped_plugin . '<\/code>.*?has been deactivated due to an error.*?Plugin file does not exist\..*?<\/p>.*?<\/div>/s';
+				$pattern        = '/<div[^>]*\bnotice\b[^>]*\berror\b[^>]*><p>The plugin <code>' . $escaped_plugin . '<\/code> has been deactivated due to an error: Plugin file does not exist\.<\/p><\/div>\s*/';
 				$buffer         = preg_replace( $pattern, '', $buffer );
 			}
 			return $buffer;
