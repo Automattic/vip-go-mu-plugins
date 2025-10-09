@@ -3,7 +3,7 @@
  * Trait: Integration Plugin Display
  *
  * Provides functionality to make plugins loaded by VIP Integrations appear in the
- * WordPress admin plugins list with custom status messages.
+ * WordPress admin plugins list.
  *
  * This trait handles all the WordPress hooks and filters needed to:
  * - Display integration plugins in the plugins list
@@ -29,34 +29,6 @@
  *         // Register it for display (will show as "Enabled via WPVIP Integrations")
  *         $relative_path = str_replace(WP_CONTENT_DIR . '/mu-plugins/', '', $plugin_path);
  *         $this->register_integration_plugin($relative_path);
- *     }
- * }
- * ```
- *
- * Real-World Example (Real-Time Collaboration Integration):
- * ```php
- * class RealTimeCollaborationIntegration extends Integration {
- *     use IntegrationPluginDisplayTrait;
- *
- *     public function configure(): void {
- *         // Setup display hooks
- *         $this->setup_plugin_display_hooks();
- *     }
- *
- *     public function load(): void {
- *         add_action('plugins_loaded', function () {
- *             // Load Gutenberg
- *             $gutenberg_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/gutenberg/gutenberg.php';
- *             require_once $gutenberg_path;
- *
- *             // Load RTC plugin
- *             $rtc_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-real-time-collaboration-0.1/vip-real-time-collaboration.php';
- *             require_once $rtc_path;
- *
- *             // Register both for display in plugins list
- *             $this->register_integration_plugin('vip-integrations/gutenberg/gutenberg.php');
- *             $this->register_integration_plugin('vip-integrations/vip-real-time-collaboration-0.1/vip-real-time-collaboration.php');
- *         }, 1);
  *     }
  * }
  * ```
