@@ -102,21 +102,37 @@ class RealTimeCollaborationIntegration extends Integration {
 				return;
 			}
 
-			// Get relative paths for plugin registration
-			$gutenberg_relative = str_replace( WP_CONTENT_DIR . '/mu-plugins/', '', $gutenberg_path );
-			$rtc_relative       = str_replace( WP_CONTENT_DIR . '/mu-plugins/', '', $load_path );
-
-			// Register these plugins so they show up in the WordPress plugins list
-			$this->register_integration_plugin( $gutenberg_relative );
-			$this->register_integration_plugin( $rtc_relative );
-
 			/**
 			 * Load the custom build of Gutenberg from vip-integrations
 			 * and the latest version of the vip-real-time-collaboration plugin.
 			 */
 			require_once $gutenberg_path;
 			require_once $load_path;
+
+			$this->register_plugins_for_display( $gutenberg_path, $load_path );
 		}, 1);
+	}
+
+	/**
+	 * Register integration plugins for display in the WordPress plugins list.
+	 *
+	 * Only registers plugins that have successfully loaded by checking their
+	 * respective constants or hooks.
+	 */
+	private function register_plugins_for_display( string $gutenberg_path, string $load_path ): void {
+		// Check if Gutenberg actually loaded
+		if ( $this->is_gutenberg_plugin_active() ) {
+			$gutenberg_relative = str_replace( WP_CONTENT_DIR . '/mu-plugins/', '', $gutenberg_path );
+			$this->register_integration_plugin( $gutenberg_relative );
+		}
+
+		// Register RTC plugin only after it has fully loaded and initialized
+		// The 'vip_real_time_collaboration_loaded' action is fired after all compatibility
+		// checks pass, ensuring the plugin actually loaded successfully
+		add_action( 'vip_real_time_collaboration_loaded', function () use ( $load_path ) {
+			$rtc_relative = str_replace( WP_CONTENT_DIR . '/mu-plugins/', '', $load_path );
+			$this->register_integration_plugin( $rtc_relative );
+		} );
 	}
 
 	/**
