@@ -381,18 +381,4 @@ trait IntegrationPluginDisplayTrait {
 			999
 		);
 	}
-
-	/**
-	 * Reset plugin display state for testing purposes.
-	 *
-	 * This method is intended for use in unit tests to reset the static state
-	 * between test runs.
-	 *
-	 * @internal
-	 */
-	protected static function reset_plugin_display_for_tests(): void {
-		static::$loaded_integration_plugins = array();
-		static::$display_hooks_initialized  = false;
-		static::$buffer_started             = false;
-	}
 }

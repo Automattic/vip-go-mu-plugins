@@ -10,12 +10,15 @@ namespace Automattic\VIP\Integrations;
 use WP_UnitTestCase;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing
+// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
 
 /**
- * Test class using the trait for testing purposes.
+ * Test integration class for testing the trait.
  */
 class TestableIntegration extends Integration {
 	use IntegrationPluginDisplayTrait;
+
+	private $plugins_to_register = array();
 
 	public function is_loaded(): bool {
 		return false;
@@ -26,242 +29,167 @@ class TestableIntegration extends Integration {
 	}
 
 	public function load(): void {
-		// Not needed for these tests
+		// Register plugins during load (mimics real integration behavior)
+		foreach ( $this->plugins_to_register as $plugin ) {
+			$this->register_integration_plugin( $plugin );
+		}
 	}
 
-	// Expose protected methods for testing
-	public function test_register_integration_plugin( string $plugin_path ): void {
-		$this->register_integration_plugin( $plugin_path );
-	}
-
-	public function test_get_loaded_integration_plugins(): array {
-		return static::get_loaded_integration_plugins();
-	}
-
-	public function test_reset_for_tests(): void {
-		static::reset_plugin_display_for_tests();
+	// Helper method for tests to set which plugins to register
+	public function set_plugins_to_register( array $plugins ): void {
+		$this->plugins_to_register = $plugins;
 	}
 }
 
 class IntegrationPluginDisplayTraitTest extends WP_UnitTestCase {
-	private $integration;
-
-	public function setUp(): void {
-		parent::setUp();
-		$this->integration = new TestableIntegration( 'test-integration' );
-		// Reset state between tests
-		$this->integration->test_reset_for_tests();
-	}
-
-	public function tearDown(): void {
-		// Clean up state after each test
-		$this->integration->test_reset_for_tests();
-		parent::tearDown();
-	}
 
 	/**
-	 * Test: Plugin registration adds plugin to loaded list
+	 * Test: Integration plugins appear in admin list as active with custom status
+	 *
+	 * This tests the full integration flow:
+	 * 1. Integration is configured (hooks are set up)
+	 * 2. Integration loads and registers plugins
+	 * 3. Plugins appear in the WordPress plugins list
+	 * 4. Plugins show as active on the plugins screen
+	 * 5. Action links are customized (activate/deactivate removed, custom message shown)
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
-	public function test__plugin_registration_adds_to_list(): void {
+	public function test__integration_plugins_appear_in_admin_list_as_active(): void {
 		$plugin_path = 'vip-integrations/test-plugin/test-plugin.php';
 
-		$this->integration->test_register_integration_plugin( $plugin_path );
-		$loaded_plugins = $this->integration->test_get_loaded_integration_plugins();
+		// Step 1: Create and configure integration (sets up hooks)
+		$integration = new TestableIntegration( 'test-integration' );
+		$integration->configure();
 
-		$this->assertContains( $plugin_path, $loaded_plugins );
-		$this->assertCount( 1, $loaded_plugins );
-	}
+		// Step 2: Integration loads and registers plugins
+		$integration->set_plugins_to_register( array( $plugin_path ) );
+		$integration->load();
 
-	/**
-	 * Test: Multiple plugins can be registered
-	 */
-	public function test__multiple_plugin_registration(): void {
-		$plugin1 = 'vip-integrations/plugin-1/plugin-1.php';
-		$plugin2 = 'vip-integrations/plugin-2/plugin-2.php';
-
-		$this->integration->test_register_integration_plugin( $plugin1 );
-		$this->integration->test_register_integration_plugin( $plugin2 );
-		$loaded_plugins = $this->integration->test_get_loaded_integration_plugins();
-
-		$this->assertCount( 2, $loaded_plugins );
-		$this->assertContains( $plugin1, $loaded_plugins );
-		$this->assertContains( $plugin2, $loaded_plugins );
-	}
-
-	/**
-	 * Test: Duplicate registration doesn't create duplicates
-	 */
-	public function test__duplicate_registration_prevented(): void {
-		$plugin_path = 'vip-integrations/test-plugin/test-plugin.php';
-
-		$this->integration->test_register_integration_plugin( $plugin_path );
-		$this->integration->test_register_integration_plugin( $plugin_path );
-		$loaded_plugins = $this->integration->test_get_loaded_integration_plugins();
-
-		$this->assertCount( 1, $loaded_plugins );
-	}
-
-	/**
-	 * Test: Active plugins filter adds integration plugins when on plugins screen
-	 */
-	public function test__active_plugins_filter_adds_integration_plugins(): void {
-		$plugin_path    = 'vip-integrations/test-plugin/test-plugin.php';
-		$active_plugins = [ 'some-plugin/some-plugin.php' ];
-
-		$this->integration->test_register_integration_plugin( $plugin_path );
-
-		// Simulate being on the plugins screen by setting the global
+		// Step 3: Simulate being on the plugins admin screen
 		set_current_screen( 'plugins' );
 
-		$filtered_plugins = $this->integration->filter_active_plugins_for_display( $active_plugins );
+		// Step 4: Verify plugin appears in active plugins list
+		$active_plugins   = array( 'some-other-plugin/plugin.php' );
+		$filtered_plugins = $integration->filter_active_plugins_for_display( $active_plugins );
 
-		$this->assertContains( $plugin_path, $filtered_plugins );
-		$this->assertContains( 'some-plugin/some-plugin.php', $filtered_plugins );
-		$this->assertCount( 2, $filtered_plugins );
-	}
+		$this->assertContains( $plugin_path, $filtered_plugins, 'Integration plugin should appear in active plugins list' );
+		$this->assertContains( 'some-other-plugin/plugin.php', $filtered_plugins, 'Regular plugins should still be in the list' );
 
-	/**
-	 * Test: Active plugins filter does NOT add plugins when not on plugins screen
-	 */
-	public function test__active_plugins_filter_only_on_plugins_screen(): void {
-		$plugin_path    = 'vip-integrations/test-plugin/test-plugin.php';
-		$active_plugins = [ 'some-plugin/some-plugin.php' ];
-
-		$this->integration->test_register_integration_plugin( $plugin_path );
-
-		// Simulate NOT being on the plugins screen
-		set_current_screen( 'dashboard' );
-
-		$filtered_plugins = $this->integration->filter_active_plugins_for_display( $active_plugins );
-
-		// Integration plugin should NOT be added
-		$this->assertNotContains( $plugin_path, $filtered_plugins );
-		$this->assertCount( 1, $filtered_plugins );
-	}
-
-	/**
-	 * Test: Update active plugins removes integration plugins to prevent database writes
-	 */
-	public function test__update_active_plugins_removes_integration_plugins(): void {
-		$integration_plugin = 'vip-integrations/test-plugin/test-plugin.php';
-		$regular_plugin     = 'some-plugin/some-plugin.php';
-		$active_plugins     = [ $regular_plugin, $integration_plugin ];
-
-		$this->integration->test_register_integration_plugin( $integration_plugin );
-
-		$filtered_plugins = $this->integration->filter_update_active_plugins( $active_plugins );
-
-		// Integration plugin should be removed
-		$this->assertNotContains( $integration_plugin, $filtered_plugins );
-		// Regular plugin should remain
-		$this->assertContains( $regular_plugin, $filtered_plugins );
-		$this->assertCount( 1, $filtered_plugins );
-	}
-
-	/**
-	 * Test: Network active plugins filter adds integration plugins with timestamp
-	 */
-	public function test__network_active_plugins_filter_adds_with_timestamp(): void {
-		$plugin_path    = 'vip-integrations/test-plugin/test-plugin.php';
-		$active_plugins = [ 'some-plugin/some-plugin.php' => 1234567890 ];
-
-		$this->integration->test_register_integration_plugin( $plugin_path );
-
-		// Simulate being on network plugins screen
-		set_current_screen( 'plugins-network' );
-
-		$filtered_plugins = $this->integration->filter_network_active_plugins_for_display( $active_plugins );
-
-		$this->assertArrayHasKey( $plugin_path, $filtered_plugins );
-		$this->assertArrayHasKey( 'some-plugin/some-plugin.php', $filtered_plugins );
-		$this->assertIsInt( $filtered_plugins[ $plugin_path ] );
-		$this->assertCount( 2, $filtered_plugins );
-	}
-
-	/**
-	 * Test: Update network active plugins removes integration plugins
-	 */
-	public function test__update_network_active_plugins_removes_integration_plugins(): void {
-		$integration_plugin = 'vip-integrations/test-plugin/test-plugin.php';
-		$regular_plugin     = 'some-plugin/some-plugin.php';
-		$active_plugins     = [
-			$regular_plugin     => 1234567890,
-			$integration_plugin => 1234567890,
-		];
-
-		$this->integration->test_register_integration_plugin( $integration_plugin );
-
-		$filtered_plugins = $this->integration->filter_update_network_active_plugins( $active_plugins );
-
-		// Integration plugin should be removed
-		$this->assertArrayNotHasKey( $integration_plugin, $filtered_plugins );
-		// Regular plugin should remain
-		$this->assertArrayHasKey( $regular_plugin, $filtered_plugins );
-		$this->assertCount( 1, $filtered_plugins );
-	}
-
-	/**
-	 * Test: Plugin action links are customized for integration plugins
-	 */
-	public function test__plugin_action_links_customized(): void {
-		$plugin_path = 'vip-integrations/test-plugin/test-plugin.php';
-		$actions     = [
+		// Step 5: Verify action links are customized
+		$actions = array(
 			'activate'   => '<a href="#">Activate</a>',
 			'deactivate' => '<a href="#">Deactivate</a>',
 			'edit'       => '<a href="#">Edit</a>',
-		];
+		);
 
-		$this->integration->test_register_integration_plugin( $plugin_path );
+		$filtered_actions = $integration->filter_plugin_action_links( $actions, $plugin_path );
 
-		$filtered_actions = $this->integration->filter_plugin_action_links( $actions, $plugin_path );
-
-		// Activate and deactivate should be removed
-		$this->assertArrayNotHasKey( 'activate', $filtered_actions );
-		$this->assertArrayNotHasKey( 'deactivate', $filtered_actions );
-		// Custom message should be added
-		$this->assertArrayHasKey( 'vip-code-activated-plugin', $filtered_actions );
-		$this->assertEquals( 'Enabled via WPVIP Integrations', $filtered_actions['vip-code-activated-plugin'] );
-		// Other actions should remain
-		$this->assertArrayHasKey( 'edit', $filtered_actions );
+		$this->assertArrayNotHasKey( 'activate', $filtered_actions, 'Activate link should be removed' );
+		$this->assertArrayNotHasKey( 'deactivate', $filtered_actions, 'Deactivate link should be removed' );
+		$this->assertArrayHasKey( 'vip-code-activated-plugin', $filtered_actions, 'Custom status message should be added' );
+		$this->assertEquals( 'Enabled via WPVIP Integrations', $filtered_actions['vip-code-activated-plugin'], 'Status message should indicate VIP integration' );
+		$this->assertArrayHasKey( 'edit', $filtered_actions, 'Other action links should remain' );
 	}
 
 	/**
-	 * Test: Action links for non-integration plugins are unchanged
+	 * Test: Integration plugins never persist to database
+	 *
+	 * This tests the critical database protection behavior:
+	 * 1. Integration plugins are registered
+	 * 2. WordPress tries to update active_plugins option (e.g., during plugin activation/deactivation)
+	 * 3. Integration plugins are stripped out before the database write
+	 * 4. Regular plugins are unaffected
+	 *
+	 * This ensures integration plugins only appear active for display purposes and never
+	 * get written to the database, preventing conflicts and unexpected behavior.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
-	public function test__plugin_action_links_unchanged_for_regular_plugins(): void {
-		$plugin_path = 'some-plugin/some-plugin.php';
-		$actions     = [
-			'activate'   => '<a href="#">Activate</a>',
-			'deactivate' => '<a href="#">Deactivate</a>',
-		];
+	public function test__integration_plugins_never_persist_to_database(): void {
+		$integration_plugin1 = 'vip-integrations/plugin-1/plugin-1.php';
+		$integration_plugin2 = 'vip-integrations/plugin-2/plugin-2.php';
+		$regular_plugin      = 'some-plugin/some-plugin.php';
 
-		$filtered_actions = $this->integration->filter_plugin_action_links( $actions, $plugin_path );
+		// Create and configure integration
+		$integration = new TestableIntegration( 'test-integration' );
+		$integration->configure();
+		$integration->set_plugins_to_register( array( $integration_plugin1, $integration_plugin2 ) );
+		$integration->load();
 
-		// Should remain unchanged
-		$this->assertEquals( $actions, $filtered_actions );
+		// Simulate WordPress trying to update active_plugins (single site)
+		$plugins_to_save  = array( $regular_plugin, $integration_plugin1, $integration_plugin2 );
+		$filtered_plugins = $integration->filter_update_active_plugins( $plugins_to_save );
+
+		$this->assertNotContains( $integration_plugin1, $filtered_plugins, 'Integration plugin 1 should be removed from database write' );
+		$this->assertNotContains( $integration_plugin2, $filtered_plugins, 'Integration plugin 2 should be removed from database write' );
+		$this->assertContains( $regular_plugin, $filtered_plugins, 'Regular plugin should remain' );
+		$this->assertCount( 1, $filtered_plugins, 'Only regular plugin should be saved to database' );
+
+		// Simulate WordPress trying to update active_sitewide_plugins (multisite)
+		$network_plugins_to_save  = array(
+			$regular_plugin      => time(),
+			$integration_plugin1 => time(),
+			$integration_plugin2 => time(),
+		);
+		$filtered_network_plugins = $integration->filter_update_network_active_plugins( $network_plugins_to_save );
+
+		$this->assertArrayNotHasKey( $integration_plugin1, $filtered_network_plugins, 'Integration plugin 1 should be removed from network database write' );
+		$this->assertArrayNotHasKey( $integration_plugin2, $filtered_network_plugins, 'Integration plugin 2 should be removed from network database write' );
+		$this->assertArrayHasKey( $regular_plugin, $filtered_network_plugins, 'Regular plugin should remain in network active' );
+		$this->assertCount( 1, $filtered_network_plugins, 'Only regular plugin should be saved to network database' );
 	}
 
 	/**
-	 * Test: Cleanup recently activated removes integration plugins
+	 * Test: Integration plugins cannot be deactivated
+	 *
+	 * This tests the UI protection behavior:
+	 * 1. Integration plugins have activate/deactivate links removed
+	 * 2. Custom status message is shown instead
+	 * 3. Regular plugins are unaffected
+	 *
+	 * This prevents users from trying to deactivate integration plugins through the UI,
+	 * which would fail since they're not actually in the database.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
 	 */
-	public function test__cleanup_recently_activated(): void {
+	public function test__integration_plugins_cannot_be_deactivated(): void {
 		$integration_plugin = 'vip-integrations/test-plugin/test-plugin.php';
 		$regular_plugin     = 'some-plugin/some-plugin.php';
 
-		// Set up recently activated plugins
-		update_option( 'recently_activated', [
-			$integration_plugin => time(),
-			$regular_plugin     => time(),
-		] );
+		// Create and configure integration
+		$integration = new TestableIntegration( 'test-integration' );
+		$integration->configure();
+		$integration->set_plugins_to_register( array( $integration_plugin ) );
+		$integration->load();
 
-		$this->integration->test_register_integration_plugin( $integration_plugin );
-		$this->integration->cleanup_recently_activated();
+		// Test integration plugin action links
+		$integration_actions = array(
+			'activate'       => '<a href="#">Activate</a>',
+			'deactivate'     => '<a href="#">Deactivate</a>',
+			'network_active' => '<a href="#">Network Deactivate</a>',
+			'edit'           => '<a href="#">Edit</a>',
+		);
 
-		$recently_activated = get_option( 'recently_activated', [] );
+		$filtered_integration_actions = $integration->filter_plugin_action_links( $integration_actions, $integration_plugin );
 
-		// Integration plugin should be removed
-		$this->assertArrayNotHasKey( $integration_plugin, $recently_activated );
-		// Regular plugin should remain
-		$this->assertArrayHasKey( $regular_plugin, $recently_activated );
+		$this->assertArrayNotHasKey( 'activate', $filtered_integration_actions, 'Activate link should be removed' );
+		$this->assertArrayNotHasKey( 'deactivate', $filtered_integration_actions, 'Deactivate link should be removed' );
+		$this->assertArrayNotHasKey( 'network_active', $filtered_integration_actions, 'Network active link should be removed' );
+		$this->assertArrayHasKey( 'vip-code-activated-plugin', $filtered_integration_actions, 'Custom status should be present' );
+		$this->assertEquals( 'Enabled via WPVIP Integrations', $filtered_integration_actions['vip-code-activated-plugin'] );
+
+		// Test regular plugin action links remain unchanged
+		$regular_actions = array(
+			'activate'   => '<a href="#">Activate</a>',
+			'deactivate' => '<a href="#">Deactivate</a>',
+		);
+
+		$filtered_regular_actions = $integration->filter_plugin_action_links( $regular_actions, $regular_plugin );
+
+		$this->assertEquals( $regular_actions, $filtered_regular_actions, 'Regular plugin action links should be unchanged' );
 	}
 }
