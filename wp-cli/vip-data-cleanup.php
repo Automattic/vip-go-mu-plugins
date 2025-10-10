@@ -34,7 +34,8 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
 	private function cleanup_all_sites( $operation ) {
 		$this->ensure_correct_global_schema();
-
+		// This should be network cache flush.
+		wp_cache_flush();
 		if ( ! is_multisite() ) {
 			$this->cleanup_site( $operation );
 		} else {
