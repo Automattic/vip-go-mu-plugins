@@ -4,7 +4,7 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInita1f2d545accb788d2e64cacc9d9f3005
+class ComposerStaticInit648cba886c65ae1aaa32611df205c382
 {
     public static $classMap = array (
         'Debug_Bar' => __DIR__ . '/../..' . '/classes/debug_bar.php',
@@ -17,6 +17,18 @@ class ComposerStaticInita1f2d545accb788d2e64cacc9d9f3005
         'QM_Collector_Assets' => __DIR__ . '/../..' . '/classes/Collector_Assets.php',
         'QM_Collectors' => __DIR__ . '/../..' . '/classes/Collectors.php',
         'QM_Component' => __DIR__ . '/../..' . '/classes/Component.php',
+        'QM_Component_Altis_Vendor' => __DIR__ . '/../..' . '/classes/Component_Altis_Vendor.php',
+        'QM_Component_Core' => __DIR__ . '/../..' . '/classes/Component_Core.php',
+        'QM_Component_Dropin' => __DIR__ . '/../..' . '/classes/Component_Dropin.php',
+        'QM_Component_MU_Plugin' => __DIR__ . '/../..' . '/classes/Component_MU_Plugin.php',
+        'QM_Component_MU_Vendor' => __DIR__ . '/../..' . '/classes/Component_MU_Vendor.php',
+        'QM_Component_Other' => __DIR__ . '/../..' . '/classes/Component_Other.php',
+        'QM_Component_PHP' => __DIR__ . '/../..' . '/classes/Component_PHP.php',
+        'QM_Component_Plugin' => __DIR__ . '/../..' . '/classes/Component_Plugin.php',
+        'QM_Component_Stylesheet' => __DIR__ . '/../..' . '/classes/Component_Stylesheet.php',
+        'QM_Component_Template' => __DIR__ . '/../..' . '/classes/Component_Template.php',
+        'QM_Component_Unknown' => __DIR__ . '/../..' . '/classes/Component_Unknown.php',
+        'QM_Component_VIP_Plugin' => __DIR__ . '/../..' . '/classes/Component_VIP_Plugin.php',
         'QM_DB' => __DIR__ . '/../..' . '/classes/DB.php',
         'QM_Data' => __DIR__ . '/../..' . '/classes/Data.php',
         'QM_DataCollector' => __DIR__ . '/../..' . '/classes/DataCollector.php',
@@ -46,8 +58,15 @@ class ComposerStaticInita1f2d545accb788d2e64cacc9d9f3005
         'QM_Data_Theme' => __DIR__ . '/../..' . '/data/theme.php',
         'QM_Data_Timing' => __DIR__ . '/../..' . '/data/timing.php',
         'QM_Data_Transients' => __DIR__ . '/../..' . '/data/transients.php',
+        'QM_Deprecated_Argument_Run' => __DIR__ . '/../..' . '/classes/Deprecated_Argument_Run.php',
+        'QM_Deprecated_Class_Run' => __DIR__ . '/../..' . '/classes/Deprecated_Class_Run.php',
+        'QM_Deprecated_Constructor_Run' => __DIR__ . '/../..' . '/classes/Deprecated_Constructor_Run.php',
+        'QM_Deprecated_File_Included' => __DIR__ . '/../..' . '/classes/Deprecated_File_Included.php',
+        'QM_Deprecated_Function_Run' => __DIR__ . '/../..' . '/classes/Deprecated_Function_Run.php',
+        'QM_Deprecated_Hook_Run' => __DIR__ . '/../..' . '/classes/Deprecated_Hook_Run.php',
         'QM_Dispatcher' => __DIR__ . '/../..' . '/classes/Dispatcher.php',
         'QM_Dispatchers' => __DIR__ . '/../..' . '/classes/Dispatchers.php',
+        'QM_Doing_It_Wrong_Run' => __DIR__ . '/../..' . '/classes/Doing_It_Wrong_Run.php',
         'QM_Hook' => __DIR__ . '/../..' . '/classes/Hook.php',
         'QM_Output' => __DIR__ . '/../..' . '/classes/Output.php',
         'QM_Output_Headers' => __DIR__ . '/../..' . '/output/Headers.php',
@@ -92,13 +111,14 @@ class ComposerStaticInita1f2d545accb788d2e64cacc9d9f3005
         'QM_Plugin' => __DIR__ . '/../..' . '/classes/Plugin.php',
         'QM_Timer' => __DIR__ . '/../..' . '/classes/Timer.php',
         'QM_Util' => __DIR__ . '/../..' . '/classes/Util.php',
+        'QM_Wrong' => __DIR__ . '/../..' . '/classes/Wrong.php',
         'QueryMonitor' => __DIR__ . '/../..' . '/classes/QueryMonitor.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->classMap = ComposerStaticInita1f2d545accb788d2e64cacc9d9f3005::$classMap;
+            $loader->classMap = ComposerStaticInit648cba886c65ae1aaa32611df205c382::$classMap;
 
         }, null, ClassLoader::class);
     }

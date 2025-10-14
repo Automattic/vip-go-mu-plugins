@@ -124,7 +124,14 @@ class QM_Collector_HTTP extends QM_DataCollector {
 	public function get_concerned_filters() {
 		return array(
 			'block_local_requests',
+			'http_allowed_safe_ports',
+			'http_headers_useragent',
 			'http_request_args',
+			'http_request_host_is_external',
+			'http_request_redirection_count',
+			'http_request_reject_unsafe_urls',
+			'http_request_timeout',
+			'http_request_version',
 			'http_response',
 			'https_local_ssl_verify',
 			'https_ssl_verify',
@@ -287,11 +294,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 			/** @var string */
 			$original_key = $args['_qm_original_key'];
 			$this->http_responses[ $original_key ]['end'] = $this->http_requests[ $original_key ]['start'];
-			$this->http_responses[ $original_key ]['response'] = new WP_Error( 'http_request_not_executed', sprintf(
-				/* translators: %s: Hook name */
-				__( 'Request not executed due to a filter on %s', 'query-monitor' ),
-				'pre_http_request'
-			) );
+			$this->http_responses[ $original_key ]['response'] = new WP_Error( 'http_request_not_executed' );
 		}
 
 		$this->http_responses[ $key ] = $http_response;
@@ -328,7 +331,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 
 			if ( empty( $response['response'] ) ) {
 				// Timed out
-				$response['response'] = new WP_Error( 'http_request_timed_out', __( 'Request timed out', 'query-monitor' ) );
+				$response['response'] = new WP_Error( 'http_request_timed_out' );
 				$response['end'] = floatval( $request['start'] + $response['args']['timeout'] );
 			}
 
@@ -341,7 +344,7 @@ class QM_Collector_HTTP extends QM_DataCollector {
 				$type = 'non-blocking';
 			} else {
 				$code = intval( wp_remote_retrieve_response_code( $response['response'] ) );
-				$type = "http:{$code}";
+				$type = "HTTP {$code}";
 				if ( ( $code >= 400 ) && ( 'HEAD' !== $request['args']['method'] ) ) {
 					$this->data->errors['warning'][] = $key;
 				}
@@ -385,6 +388,131 @@ class QM_Collector_HTTP extends QM_DataCollector {
 			);
 		}
 
+	}
+
+	/**
+	 * Log a Guzzle HTTP request.
+	 *
+	 * @since 3.19.0
+	 *
+	 * @param \Psr\Http\Message\RequestInterface $request    The Guzzle request object.
+	 * @param \Psr\Http\Message\ResponseInterface|null $response The Guzzle response object, or null if an exception occurred.
+	 * @param \Exception|null $exception The exception thrown, or null if the request was successful.
+	 * @param string $url        The request URL.
+	 * @param float $start_time  The request start time.
+	 * @param QM_Backtrace $trace The backtrace object.
+	 * @param array<string, mixed> $options Guzzle request options.
+	 */
+	public function log_guzzle_request( $request, $response, $exception, string $url, float $start_time, QM_Backtrace $trace, array $options ) : void {
+		$end_time = microtime( true );
+		$ltime = $end_time - $start_time;
+		$key = $start_time . $url;
+		$args = array(
+			'method' => $request->getMethod(),
+			'timeout' => $options['timeout'] ?? 30,
+			'blocking' => true,
+			'sslverify' => $options['verify'] ?? true,
+			'_qm_guzzle' => true,
+		);
+
+		if ( $exception ) {
+			$wp_error = new WP_Error( 'guzzle_request_failed', $exception->getMessage() );
+			$type = 'error';
+			$response_data = $wp_error;
+		} else {
+			$response_data = array(
+				'headers' => array(),
+				'body' => (string) $response->getBody(),
+				'response' => array(
+					'code' => $response->getStatusCode(),
+					'message' => $response->getReasonPhrase(),
+				),
+				'cookies' => array(),
+				'filename' => null,
+			);
+
+			foreach ( $response->getHeaders() as $name => $values ) {
+				$response_data['headers'][ $name ] = implode( ', ', $values );
+			}
+
+			$code = $response->getStatusCode();
+			$type = "HTTP {$code}";
+		}
+
+		$home_host = (string) parse_url( home_url(), PHP_URL_HOST );
+		$host = (string) parse_url( $url, PHP_URL_HOST );
+		$local = ( $host === $home_host );
+
+		$this->log_type( $type );
+		$this->log_component( $trace->get_component(), $ltime, $type );
+
+		$this->data->http[ $key ] = array(
+			'args' => $args,
+			'component' => $trace->get_component(),
+			'filtered_trace' => $trace->get_filtered_trace(),
+			'host' => $host,
+			'info' => null,
+			'local' => $local,
+			'ltime' => $ltime,
+			'redirected_to' => null,
+			'response' => $response_data,
+			'type' => $type,
+			'url' => $url,
+			'intercepted' => false,
+		);
+
+		$this->data->ltime += $ltime;
+
+		if ( $exception || ( $response && $response->getStatusCode() >= 400 ) ) {
+			$this->data->errors['warning'][] = $key;
+		}
+	}
+
+	/**
+	 * Creates a Guzzle middleware for logging HTTP requests to Query Monitor.
+	 *
+	 * Usage:
+	 *
+	 *   $stack = HandlerStack::create();
+	 *   $stack->push( QM_Collector_HTTP::guzzle_middleware() );
+	 *   $client = new Client( [ 'handler' => $stack ] );
+	 *
+	 * @since 3.19.0
+	 *
+	 * @return callable Guzzle middleware callable.
+	 */
+	public static function guzzle_middleware(): callable {
+		return function ( callable $handler ) {
+			return function ( \Psr\Http\Message\RequestInterface $request, array $options ) use ( $handler ) {
+				$collector = QM_Collectors::get( 'http' );
+
+				if ( ! ( $collector instanceof QM_Collector_HTTP ) ) {
+					return $handler( $request, $options );
+				}
+
+				$url = (string) $request->getUri();
+				$start_time = microtime( true );
+
+				$trace = new QM_Backtrace( array(
+					'ignore_namespace' => array(
+						'GuzzleHttp' => true,
+					),
+				) );
+
+				$promise = $handler( $request, $options );
+
+				return $promise->then(
+					function ( \Psr\Http\Message\ResponseInterface $response ) use ( $collector, $request, $options, $url, $start_time, $trace ) {
+						$collector->log_guzzle_request( $request, $response, null, $url, $start_time, $trace, $options );
+						return $response;
+					},
+					function ( \Exception $exception ) use ( $collector, $request, $options, $url, $start_time, $trace ) {
+						$collector->log_guzzle_request( $request, null, $exception, $url, $start_time, $trace, $options );
+						throw $exception;
+					}
+				);
+			};
+		};
 	}
 
 }
