@@ -3,7 +3,7 @@
         'name' => 'johnbillion/query-monitor',
         'pretty_version' => 'dev-release',
         'version' => 'dev-release',
-        'reference' => '8a766f15108a249f81e08a3367df5dcf76b72894',
+        'reference' => 'f4b24eb1b4d641351ce1033880e6c1a76efcf1dc',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'johnbillion/query-monitor' => array(
             'pretty_version' => 'dev-release',
             'version' => 'dev-release',
-            'reference' => '8a766f15108a249f81e08a3367df5dcf76b72894',
+            'reference' => 'f4b24eb1b4d641351ce1033880e6c1a76efcf1dc',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
