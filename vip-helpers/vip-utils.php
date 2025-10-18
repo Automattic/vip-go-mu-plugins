@@ -1509,7 +1509,7 @@ function is_local_env() {
 /**
  * Is the current request being made from Jetpack servers?
  *
- * NOTE - This checks the REMOTE_ADDR against known JP IPs. The IP can still be spoofed,
+ * NOTE - This checks the REMOTE_ADDR and HTTP_X_FORWARDED_FOR IPs against known JP IPs. The IP can still be spoofed,
  * (but usually an attacker cannot receive the response), so it is important to treat it accordingly
  *
  * @return bool Bool indicating if the current request came from JP servers
@@ -1533,7 +1533,24 @@ function vip_is_jetpack_request() {
 	$jetpack_ips = Jetpack_IP_Manager::get_jetpack_ips();
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
-	return IpUtils::check_ip( $_SERVER['REMOTE_ADDR'], $jetpack_ips ) || IpUtils::check_ip( $_SERVER['HTTP_X_FORWARDED_FOR'], $jetpack_ips );
+	$remote_addr = $_SERVER['REMOTE_ADDR'] ? [ trim( $_SERVER['REMOTE_ADDR'] ) ] : [];
+
+	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$forwarded_for = $_SERVER['HTTP_X_FORWARDED_FOR'] ?? '';
+
+	// Support multiple IPs in X_FORWARDED_FOR to handle proxies.
+	$forwarded_ips = strpos( $forwarded_for, ',' ) !== false ? array_map( 'trim', explode( ',', $forwarded_for ) ) : ( $forwarded_for ? [ $forwarded_for ] : [] );
+
+	$all_ips = array_merge( $remote_addr, $forwarded_ips );
+
+	foreach ( $all_ips as $ip ) {
+		if ( IpUtils::check_ip( $ip, $jetpack_ips ) ) {
+			// If any IP matches a Jetpack IP, return early.
+			return true;
+		}
+	}
+
+	return false;
 }
 
 /**
