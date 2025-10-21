@@ -75,41 +75,6 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 		$this->addToAssertionCount( 1 );
 	}
 
-	public function test__cleanup_all_sites__sets_srtm_for_multisite_iterator() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'This test requires multisite' );
-		}
-
-		global $wpdb;
-
-		// Store original srtm value
-		$original_srtm = null;
-		if ( property_exists( $wpdb, 'srtm' ) ) {
-			$original_srtm = $wpdb->srtm;
-		}
-
-		// Add srtm property if it doesn't exist
-		if ( ! property_exists( $wpdb, 'srtm' ) ) {
-			$wpdb->srtm = false;
-		}
-
-		// Set to false initially
-		$wpdb->srtm = false;
-
-		// Simulate the cleanup_all_sites multisite path
-		if ( property_exists( $wpdb, 'srtm' ) ) {
-			$wpdb->srtm = true;
-		}
-
-		// Verify srtm was set
-		$this->assertTrue( $wpdb->srtm, 'srtm should be set to true in multisite cleanup' );
-
-		// Restore
-		if ( null !== $original_srtm ) {
-			$wpdb->srtm = $original_srtm;
-		}
-	}
-
 	public function test__property_exists_check_pattern() {
 		// Test that the property_exists pattern used in the code works correctly
 
