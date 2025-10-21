@@ -38,4 +38,23 @@ class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( vip_is_jetpack_request() );
 	}
+
+	/**
+	 * @dataProvider data__vip_is_jetpack_request__xff
+	 */
+	public function test__vip_is_jetpack_request__xff( $xff, $expected ) {
+		//phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
+		$_SERVER['HTTP_USER_AGENT'] = 'jetpack';
+		//phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+		$_SERVER['HTTP_X_FORWARDED_FOR'] = $xff;
+
+		$this->assertSame( $expected, vip_is_jetpack_request() );
+	}
+
+	public function data__vip_is_jetpack_request__xff() {
+		return [
+			'positive' => [ '127.0.0.1, 192.0.96.202, ::1', true ],
+			'negative' => [ '127.0.0.1, ::1', false ],
+		];
+	}
 }

@@ -94,7 +94,7 @@ class WPCOM_VIP_Cache_Manager {
 					'id'     => 'vip-purge-page',
 					'parent' => null,
 					'group'  => null,
-					'title'  => 'Purge Cache for Page',
+					'title'  => 'Purge Page Cache',
 					'href'   => '#',
 					'meta'   => [
 						'title' => 'Purge Page cache for this page and its assets',
