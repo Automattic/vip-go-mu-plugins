@@ -478,4 +478,177 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 			$this->should_unregister = false;
 		}
 	}
+
+	public function test__global_helpers__add_before_initialization() {
+		// Simulate calling the global helper before the stream wrapper is initialized
+		// by creating a fresh environment
+		global $_wpvip_fs_local_files_buffer;
+		$_wpvip_fs_local_files_buffer = array(
+			'add'    => array(),
+			'remove' => array(),
+		);
+
+		// Add files using the global helper
+		$result1 = wpvip_fs_local_file_add( 'vip://wp-content/uploads/temp.txt' );
+		$result2 = wpvip_fs_local_file_add( 'vip://wp-content/uploads/cache/*.json' );
+
+		$this->assertTrue( $result1 );
+		$this->assertTrue( $result2 );
+
+		// Verify they are in the buffer
+		$this->assertContains( 'vip://wp-content/uploads/temp.txt', $_wpvip_fs_local_files_buffer['add'] );
+		$this->assertContains( 'vip://wp-content/uploads/cache/*.json', $_wpvip_fs_local_files_buffer['add'] );
+
+		// Now merge the buffer
+		VIP_Filesystem_Local_Stream_Wrapper::merge_buffered_local_files();
+
+		// Verify the buffer was cleared
+		$this->assertEmpty( $_wpvip_fs_local_files_buffer['add'] );
+		$this->assertEmpty( $_wpvip_fs_local_files_buffer['remove'] );
+
+		// Verify files were added to the stream wrapper
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/temp.txt', $local_files );
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $local_files );
+	}
+
+	public function test__global_helpers__add_after_initialization() {
+		// When class is loaded, should call static method directly
+		$result = wpvip_fs_local_file_add( 'vip://wp-content/uploads/direct.txt' );
+
+		$this->assertTrue( $result );
+
+		// Verify it was added directly to the stream wrapper
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/direct.txt', $local_files );
+	}
+
+	public function test__global_helpers__remove_before_initialization() {
+		global $_wpvip_fs_local_files_buffer;
+		$_wpvip_fs_local_files_buffer = array(
+			'add'    => array(),
+			'remove' => array(),
+		);
+
+		// Add then remove before initialization
+		wpvip_fs_local_file_add( 'vip://wp-content/uploads/temp.txt' );
+		$result = wpvip_fs_local_file_remove( 'vip://wp-content/uploads/temp.txt' );
+
+		$this->assertTrue( $result );
+
+		// Verify it's not in the add buffer
+		$this->assertNotContains( 'vip://wp-content/uploads/temp.txt', $_wpvip_fs_local_files_buffer['add'] );
+
+		// Verify the list is empty
+		$list = wpvip_fs_local_file_list();
+		$this->assertEmpty( $list );
+	}
+
+	public function test__global_helpers__remove_after_initialization() {
+		// Add a file first
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://wp-content/uploads/to-remove.txt' );
+
+		// Verify it exists
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
+
+		// Remove it using global helper
+		$result = wpvip_fs_local_file_remove( 'vip://wp-content/uploads/to-remove.txt' );
+
+		$this->assertTrue( $result );
+
+		// Verify it was removed
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayNotHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
+	}
+
+	public function test__global_helpers__list_before_initialization() {
+		global $_wpvip_fs_local_files_buffer;
+		$_wpvip_fs_local_files_buffer = array(
+			'add'    => array( 'vip://file1.txt', 'vip://file2.txt' ),
+			'remove' => array(),
+		);
+
+		$list = wpvip_fs_local_file_list();
+
+		$this->assertArrayHasKey( 'vip://file1.txt', $list );
+		$this->assertArrayHasKey( 'vip://file2.txt', $list );
+		$this->assertCount( 2, $list );
+	}
+
+	public function test__global_helpers__list_after_initialization() {
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file1.txt' );
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file2.txt' );
+
+		$list = wpvip_fs_local_file_list();
+
+		$this->assertArrayHasKey( 'vip://file1.txt', $list );
+		$this->assertArrayHasKey( 'vip://file2.txt', $list );
+	}
+
+	public function test__global_helpers__invalid_input() {
+		// Test with empty string
+		$result = wpvip_fs_local_file_add( '' );
+		$this->assertFalse( $result );
+
+		// Test with non-string
+		$result = wpvip_fs_local_file_add( null );
+		$this->assertFalse( $result );
+
+		$result = wpvip_fs_local_file_add( 123 );
+		$this->assertFalse( $result );
+
+		// Same for remove
+		$result = wpvip_fs_local_file_remove( '' );
+		$this->assertFalse( $result );
+
+		$result = wpvip_fs_local_file_remove( null );
+		$this->assertFalse( $result );
+	}
+
+	public function test__global_helpers__pattern_matching() {
+		// Add a wildcard pattern
+		wpvip_fs_local_file_add( 'vip://wp-content/uploads/cache/*.json' );
+
+		// Check if it's recognized as a pattern
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $local_files );
+
+		// Test that a matching file is recognized
+		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' );
+		$this->assertTrue( $is_local );
+
+		// Test that a non-matching file is not recognized
+		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.txt' );
+		$this->assertFalse( $is_local );
+	}
+
+	public function test__merge_buffered_local_files__mixed_operations() {
+		global $_wpvip_fs_local_files_buffer;
+
+		// Simulate a complex scenario with both adds and removes
+		$_wpvip_fs_local_files_buffer = array(
+			'add'    => array(
+				'vip://file1.txt',
+				'vip://file2.txt',
+				'vip://file3.txt',
+			),
+			'remove' => array(
+				'vip://file2.txt',
+			),
+		);
+
+		// Merge the buffer
+		VIP_Filesystem_Local_Stream_Wrapper::merge_buffered_local_files();
+
+		// Verify buffer was cleared
+		$this->assertEmpty( $_wpvip_fs_local_files_buffer['add'] );
+		$this->assertEmpty( $_wpvip_fs_local_files_buffer['remove'] );
+
+		// Verify correct files are in the local files list
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://file1.txt', $local_files );
+		$this->assertArrayNotHasKey( 'vip://file2.txt', $local_files ); // Was removed
+		$this->assertArrayHasKey( 'vip://file3.txt', $local_files );
+	}
 }
