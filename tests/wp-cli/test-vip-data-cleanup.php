@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../wp-cli/vip-data-cleanup.php';
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
 class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 	private $original_srtm;
-	private $srtm_existed;
+	private bool $srtm_existed;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -26,8 +26,10 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		// Restore the srtm property state
 		global $wpdb;
-		if ( $this->srtm_existed && property_exists( $wpdb, 'srtm' ) ) {
+		if ( $this->srtm_existed ) {
 			$wpdb->srtm = $this->original_srtm;
+		} elseif ( property_exists( $wpdb, 'srtm' ) ) {
+			unset( $wpdb->srtm );
 		}
 
 		parent::tearDown();
@@ -36,12 +38,7 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 	public function test__datasync__sets_srtm_flag_when_property_exists() {
 		global $wpdb;
 
-		// Add srtm property if it doesn't exist for testing
-		if ( ! property_exists( $wpdb, 'srtm' ) ) {
-			$wpdb->srtm = false;
-		}
-
-		// Set to false initially
+		// Ensure srtm property exists and is set to false initially
 		$wpdb->srtm = false;
 
 		// Simulate the datasync() method logic for setting srtm
