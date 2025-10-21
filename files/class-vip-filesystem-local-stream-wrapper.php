@@ -172,9 +172,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return  bool    true if success, false if failure
 	 */
 	public function register() {
-		// Merge any buffered local file state from before initialization
-		static::merge_buffered_local_files();
-
 		if ( in_array( $this->protocol, stream_get_wrappers(), true ) ) {
 			stream_wrapper_unregister( $this->protocol );
 		}
@@ -1173,45 +1170,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 */
 	public static function get_local_files() {
 		return array_merge( static::$local_files_map, static::$local_file_patterns );
-	}
-
-	/**
-	 * Merge buffered local file state from global helper functions
-	 *
-	 * This method is called during stream wrapper registration to ensure that
-	 * any calls to wpvip_fs_local_file_add() or wpvip_fs_local_file_remove()
-	 * made before the stream wrapper was initialized are properly applied.
-	 *
-	 * @return void
-	 */
-	public static function merge_buffered_local_files() {
-		global $_wpvip_fs_local_files_buffer;
-
-		// Return early if buffer doesn't exist or is empty
-		if ( ! isset( $_wpvip_fs_local_files_buffer )
-			|| ( empty( $_wpvip_fs_local_files_buffer['add'] ) && empty( $_wpvip_fs_local_files_buffer['remove'] ) ) ) {
-			return;
-		}
-
-		// Process all buffered additions
-		if ( ! empty( $_wpvip_fs_local_files_buffer['add'] ) ) {
-			foreach ( $_wpvip_fs_local_files_buffer['add'] as $file_path ) {
-				static::add_local_file( $file_path );
-			}
-		}
-
-		// Process all buffered removals
-		if ( ! empty( $_wpvip_fs_local_files_buffer['remove'] ) ) {
-			foreach ( $_wpvip_fs_local_files_buffer['remove'] as $file_path ) {
-				static::remove_local_file( $file_path );
-			}
-		}
-
-		// Clear the buffer to prevent duplicate processing
-		$_wpvip_fs_local_files_buffer = array(
-			'add'    => array(),
-			'remove' => array(),
-		);
 	}
 
 	/**

@@ -771,17 +771,6 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
 add_filter( 'big_image_size_threshold', '__return_false' );
 
 /**
- * Buffer for local files before Stream Wrapper is initialized
- *
- * @var array
- */
-global $_wpvip_fs_local_files_buffer;
-$_wpvip_fs_local_files_buffer = array(
-	'add'    => array(),
-	'remove' => array(),
-);
-
-/**
  * Add a file or pattern to be handled locally by the VIP Filesystem Stream Wrapper
  *
  * Files added to this list will be stored in the local temporary directory instead of
@@ -802,26 +791,16 @@ $_wpvip_fs_local_files_buffer = array(
  * @return bool True if the file was added successfully, false otherwise
  */
 function wpvip_fs_local_file_add( $file_path ) {
-	if ( empty( $file_path ) || ! is_string( $file_path ) ) {
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'add_local_file' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
 		return false;
 	}
 
-	// If the Stream Wrapper class is loaded, use it directly
-	if ( class_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper' ) ) {
-		return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $file_path );
-	}
-
-	// Otherwise, buffer the request for later
-	global $_wpvip_fs_local_files_buffer;
-	$_wpvip_fs_local_files_buffer['add'][] = $file_path;
-
-	// Remove from the remove buffer if it was previously marked for removal
-	$_wpvip_fs_local_files_buffer['remove'] = array_diff(
-		$_wpvip_fs_local_files_buffer['remove'],
-		array( $file_path )
-	);
-
-	return true;
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $file_path );
 }
 
 /**
@@ -834,26 +813,16 @@ function wpvip_fs_local_file_add( $file_path ) {
  * @return bool True if the file was removed successfully, false otherwise
  */
 function wpvip_fs_local_file_remove( $file_path ) {
-	if ( empty( $file_path ) || ! is_string( $file_path ) ) {
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'remove_local_file' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
 		return false;
 	}
 
-	// If the Stream Wrapper class is loaded, use it directly
-	if ( class_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper' ) ) {
-		return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $file_path );
-	}
-
-	// Otherwise, buffer the request for later
-	global $_wpvip_fs_local_files_buffer;
-	$_wpvip_fs_local_files_buffer['remove'][] = $file_path;
-
-	// Remove from the add buffer if it was previously added
-	$_wpvip_fs_local_files_buffer['add'] = array_diff(
-		$_wpvip_fs_local_files_buffer['add'],
-		array( $file_path )
-	);
-
-	return true;
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $file_path );
 }
 
 /**
@@ -865,20 +834,14 @@ function wpvip_fs_local_file_remove( $file_path ) {
  * @return array List of file paths and patterns configured for local handling
  */
 function wpvip_fs_local_file_list() {
-	// If the Stream Wrapper class is loaded, use it directly
-	if ( class_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper' ) ) {
-		return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'get_local_files' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
+		return array();
 	}
 
-	// Otherwise, return the buffered state
-	global $_wpvip_fs_local_files_buffer;
-
-	// Calculate the effective list by starting with adds and removing any removes
-	$effective_list = array_diff(
-		$_wpvip_fs_local_files_buffer['add'],
-		$_wpvip_fs_local_files_buffer['remove']
-	);
-
-	// Return as an associative array with true values (matching the class implementation)
-	return array_fill_keys( $effective_list, true );
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
 }
