@@ -1533,7 +1533,7 @@ function vip_is_jetpack_request() {
 	$jetpack_ips = Jetpack_IP_Manager::get_jetpack_ips();
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
-	$all_ips = $_SERVER['REMOTE_ADDR'] ? [ trim( $_SERVER['REMOTE_ADDR'] ) ] : [];
+	$all_ips = ! empty( $_SERVER['REMOTE_ADDR'] ) ? [ trim( $_SERVER['REMOTE_ADDR'] ) ] : [];
 
 	// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 	if ( ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) {
