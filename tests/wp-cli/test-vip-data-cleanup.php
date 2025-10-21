@@ -52,24 +52,4 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 		// Assert that srtm was set to true
 		$this->assertTrue( $wpdb->srtm, 'srtm should be set to true when property exists' );
 	}
-
-	public function test__wpdb_object_has_srtm_property_in_hyperdb_environment() {
-		global $wpdb;
-
-		// In a HyperDB environment, $wpdb should have the srtm property
-		// This test documents the expected behavior when HyperDB is loaded
-
-		// We can't assume HyperDB is loaded, so we test that our code
-		// handles both cases gracefully
-		$has_srtm = property_exists( $wpdb, 'srtm' );
-
-		// This should not throw an error regardless
-		$this->assertIsBool( $has_srtm );
-
-		// If srtm exists, verify we can set it
-		if ( $has_srtm ) {
-			$wpdb->srtm = true;
-			$this->assertTrue( $wpdb->srtm );
-		}
-	}
 }
