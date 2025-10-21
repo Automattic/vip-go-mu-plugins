@@ -59,52 +59,6 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test__datasync__handles_missing_srtm_property_gracefully() {
-		// Create a minimal object without srtm property
-		$mock_wpdb = new \stdClass();
-
-		// Verify property doesn't exist
-		$this->assertFalse( property_exists( $mock_wpdb, 'srtm' ) );
-
-		// Simulate the check from datasync() - should not throw an error
-		if ( property_exists( $mock_wpdb, 'srtm' ) ) {
-			$mock_wpdb->srtm = true;
-		}
-
-		// No exception should be thrown
-		$this->addToAssertionCount( 1 );
-	}
-
-	public function test__property_exists_check_pattern() {
-		// Test that the property_exists pattern used in the code works correctly
-
-		// Test with an object that has the property
-		$obj_with_property       = new \stdClass();
-		$obj_with_property->srtm = false;
-
-		$this->assertTrue( property_exists( $obj_with_property, 'srtm' ) );
-
-		// Set it to true through the pattern
-		if ( property_exists( $obj_with_property, 'srtm' ) ) {
-			$obj_with_property->srtm = true;
-		}
-
-		$this->assertTrue( $obj_with_property->srtm );
-
-		// Test with an object that doesn't have the property
-		$obj_without_property = new \stdClass();
-
-		$this->assertFalse( property_exists( $obj_without_property, 'srtm' ) );
-
-		// Try to set it - should be safe with property_exists check
-		if ( property_exists( $obj_without_property, 'srtm' ) ) {
-			$obj_without_property->srtm = true;
-		}
-
-		// Property should still not exist
-		$this->assertFalse( property_exists( $obj_without_property, 'srtm' ) );
-	}
-
 	public function test__wpdb_object_has_srtm_property_in_hyperdb_environment() {
 		global $wpdb;
 
