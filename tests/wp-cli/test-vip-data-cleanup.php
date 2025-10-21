@@ -9,21 +9,26 @@ require_once __DIR__ . '/../../wp-cli/vip-data-cleanup.php';
 
 // phpcs:ignore PEAR.NamingConventions.ValidClassName.Invalid
 class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
-	private $wpdb_backup;
+	private $original_srtm;
+	private $srtm_existed;
 
 	public function setUp(): void {
 		parent::setUp();
 
-		// Backup the global $wpdb
+		// Backup the srtm property state
 		global $wpdb;
-		$this->wpdb_backup = $wpdb;
+		$this->srtm_existed = property_exists( $wpdb, 'srtm' );
+		if ( $this->srtm_existed ) {
+			$this->original_srtm = $wpdb->srtm;
+		}
 	}
 
 	public function tearDown(): void {
-		// Restore global $wpdb
+		// Restore the srtm property state
 		global $wpdb;
-		// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restoring backup in test teardown
-		$wpdb = $this->wpdb_backup;
+		if ( $this->srtm_existed && property_exists( $wpdb, 'srtm' ) ) {
+			$wpdb->srtm = $this->original_srtm;
+		}
 
 		parent::tearDown();
 	}
@@ -31,18 +36,12 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 	public function test__datasync__sets_srtm_flag_when_property_exists() {
 		global $wpdb;
 
-		// Store original srtm value
-		$original_srtm = null;
-		if ( property_exists( $wpdb, 'srtm' ) ) {
-			$original_srtm = $wpdb->srtm;
-		}
-
-		// Add srtm property if it doesn't exist
+		// Add srtm property if it doesn't exist for testing
 		if ( ! property_exists( $wpdb, 'srtm' ) ) {
 			$wpdb->srtm = false;
 		}
 
-		// Verify it's not already true
+		// Set to false initially
 		$wpdb->srtm = false;
 
 		// Simulate the datasync() method logic for setting srtm
@@ -52,11 +51,6 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 
 		// Assert that srtm was set to true
 		$this->assertTrue( $wpdb->srtm, 'srtm should be set to true when property exists' );
-
-		// Restore
-		if ( null !== $original_srtm ) {
-			$wpdb->srtm = $original_srtm;
-		}
 	}
 
 	public function test__wpdb_object_has_srtm_property_in_hyperdb_environment() {
@@ -74,10 +68,8 @@ class VIP_Data_Cleanup_Command__Test extends WP_UnitTestCase {
 
 		// If srtm exists, verify we can set it
 		if ( $has_srtm ) {
-			$original   = $wpdb->srtm;
 			$wpdb->srtm = true;
 			$this->assertTrue( $wpdb->srtm );
-			$wpdb->srtm = $original;
 		}
 	}
 }
