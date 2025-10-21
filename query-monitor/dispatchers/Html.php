@@ -176,7 +176,6 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		if ( ! file_exists( $this->qm->plugin_path( 'assets/query-monitor.css' ) ) ) {
 			add_action( 'admin_notices', array( $this, 'build_warning' ) );
-			return;
 		}
 
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_assets' ), -9999 );
@@ -305,7 +304,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 			echo '<!-- Begin Query Monitor output -->' . "\n\n";
 			wp_print_inline_script_tag(
 				sprintf(
-					'var qm = %s;',
+					'var QueryMonitorData = %s;',
 					wp_json_encode( $json )
 				),
 				array(
@@ -414,7 +413,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 		echo '<!-- Begin Query Monitor output -->' . "\n\n";
 		wp_print_inline_script_tag(
 			sprintf(
-				'var qm = %s;',
+				'var QueryMonitorData = %s;',
 				wp_json_encode( $json )
 			),
 			array(
