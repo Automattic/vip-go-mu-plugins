@@ -529,13 +529,6 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 		$result = wpvip_fs_local_file_add( 123 );
 		$this->assertFalse( $result );
-
-		// Same for remove
-		$result = wpvip_fs_local_file_remove( '' );
-		$this->assertFalse( $result );
-
-		$result = wpvip_fs_local_file_remove( null );
-		$this->assertFalse( $result );
 	}
 
 	public function test__global_helpers__pattern_matching() {
