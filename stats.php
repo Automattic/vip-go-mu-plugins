@@ -15,7 +15,14 @@ use Automattic\VIP\Telemetry\Tracks;
 
 // Limit tracking to production
 if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
-	add_action( 'transition_post_status', __NAMESPACE__ . '\track_publish_post', 9999, 2 );
+	
+	// Record created time of a post
+	add_action( 'save_post', __NAMESPACE__ . '\record_created_time', 9999, 3 );
+	
+	// Record published time and send telemetry when post is published
+	add_action( 'transition_post_status', __NAMESPACE__ . '\record_published_time', 9999, 2 );
+	add_action( 'viptel_send_publish_telemetry', __NAMESPACE__ . '\send_publish_telemetry', 10, 1 );
+	
 	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999 );
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
 	// Which makes it hard to differentiate between full size and thumbs.
@@ -27,20 +34,88 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 }
 
 /**
- * Count publish events regardless of post type
+ * Record the created time of a post
  */
-function track_publish_post( $new_status, $old_status ) {
-	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+function record_created_time( $post_id, $post ) {
+	// Skip if this is an update, autosave, or revision
+	if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 		return;
 	}
 
+	// Skip if post is auto-draft (but allow draft and other statuses)
+	if ( 'auto-draft' === $post->post_status ) {
+		return;
+	}
+	
+	// Add created time (only if not already set due to $unique = true)
+	add_post_meta( $post_id, '_vip_edtel_created_time', gmdate( 'c' ), true );
+}
+
+function record_published_time( $new_status, $old_status, $post ) {
+	// Only record when transitioning to publish from non-publish
 	if ( 'publish' !== $new_status || 'publish' === $old_status ) {
 		return;
 	}
 
-	send_pixel([
-		'vip-go-publish-post' => FILES_CLIENT_SITE_ID,
-	]);
+	// Skip revisions
+	if ( wp_is_post_revision( $post ) ) {
+		return;
+	}
+
+	// Skip if this is an initial save (old_status is empty or 'auto-draft')
+	if ( empty( $old_status ) || 'auto-draft' === $old_status ) {
+		return;
+	}
+
+	// Add published time (only if not already set due to $unique = true)
+	add_post_meta( $post->ID, '_vip_edtel_published_time', gmdate( 'c' ), true );
+
+	// Defensive check for VIP Telemetry class
+	if ( ! class_exists( 'Automattic\\VIP\\Telemetry\\Tracks' ) ) {
+		return;
+	}
+
+	wp_schedule_single_event( ( time() + 30 ), 'viptel_send_publish_telemetry', array( $post->ID ) );
+}
+
+function send_publish_telemetry( $post_id ) {
+	$post = get_post( $post_id );
+	if ( ! $post ) {
+		return;
+	}
+
+	// Get RTC state
+	$rtc_state = get_post_meta( $post_id, '_vip_rtc_state', true );
+
+	// Prepare event properties
+	$properties = array(
+		'post_type'  => sanitize_text_field( $post->post_type ),
+		'word_count' => absint( str_word_count( wp_strip_all_tags( $post->post_content ) ) ),
+		'is_rtc'     => ! empty( $rtc_state ),
+	);
+
+	// Get created and published times
+	$created_time   = get_post_meta( $post_id, '_vip_edtel_created_time', true );
+	$published_time = get_post_meta( $post_id, '_vip_edtel_published_time', true );
+
+	// Calculate time difference if both times exist
+	$created_to_published_seconds = null;
+	if ( $created_time && $published_time ) {
+		$created_timestamp   = strtotime( $created_time );
+		$published_timestamp = strtotime( $published_time );
+		if ( $created_timestamp && $published_timestamp ) {
+			$created_to_published_seconds = max( 0, $published_timestamp - $created_timestamp );
+		}
+	}
+	$properties['created_to_published_seconds'] = $created_to_published_seconds;
+
+	// Send telemetry event
+	try {
+		$tracks = new Tracks( 'vip' );
+		$tracks::record_event( 'post_published', $properties );
+	} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+		// fail silently because we don't want to fill up error logs if our internal tracking fails
+	}
 }
 
 /**
