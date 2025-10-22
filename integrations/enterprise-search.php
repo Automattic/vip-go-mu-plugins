@@ -83,7 +83,12 @@ class EnterpriseSearchIntegration extends Integration {
 	 * Set search offloading.
 	 */
 	public function vip_set_search_offloading(): void {
-		$config = $this->get_env_config();
+		if ( ! is_multisite() ) {
+			$config = $this->get_env_config();
+		} else {
+			$config = $this->get_network_site_config();
+		}
+
 		if ( ! isset( $config['offload_search'] ) ) {
 			return;
 		}
