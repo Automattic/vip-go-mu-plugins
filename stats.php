@@ -37,6 +37,9 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
  * Record the created time of a post
  */
 function record_created_time( $post_id, $post ) {
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
 	// Skip if this is an update, autosave, or revision
 	if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
 		return;
@@ -52,6 +55,10 @@ function record_created_time( $post_id, $post ) {
 }
 
 function record_published_time( $new_status, $old_status, $post ) {
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
+
 	// Only record when transitioning to publish from non-publish
 	if ( 'publish' !== $new_status || 'publish' === $old_status ) {
 		return;
