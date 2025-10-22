@@ -69,11 +69,6 @@ function record_published_time( $new_status, $old_status, $post ) {
 		return;
 	}
 
-	// Skip if this is an initial save (old_status is empty or 'auto-draft')
-	if ( empty( $old_status ) || 'auto-draft' === $old_status ) {
-		return;
-	}
-
 	// Add published time (only if not already set due to $unique = true)
 	add_post_meta( $post->ID, '_vip_edtel_published_time', gmdate( 'c' ), true );
 
@@ -86,6 +81,12 @@ function record_published_time( $new_status, $old_status, $post ) {
 }
 
 function send_publish_telemetry( $post_id ) {
+
+	$post_id = absint( $post_id );
+	if ( ! $post_id ) {
+		return;
+	}
+
 	$post = get_post( $post_id );
 	if ( ! $post ) {
 		return;
