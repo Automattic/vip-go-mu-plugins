@@ -23,21 +23,17 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  *
  * The plugin ignores the value of `WPCF7_UPLOADS_TMP_DIR` if it is not
  * within a set of paths allowed by the plugin. The plugin allows the path
- * defined in `WP_TEMP_DIR`, so this fix uses the plugin's `wpcf7_upload_dir`
+ * defined in `WP_TEMP_DIR`, so this fix uses the plugin's `wpcf7_init`
  * filter to set `WP_TEMP_DIR` to `/tmp/` so that the plugin will allow the
  * path that we defined earlier in `WPCF7_UPLOADS_TMP_DIR`.
- *
- * @param array $uploads See wp_upload_dir() for description.
- * @return array Information about the upload directory.
  */
-function vip_wpcf7_upload_dir( $uploads ) {
+// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
+function vip_wpcf7_upload_dir() {
 	if ( ! defined( 'WP_TEMP_DIR' ) ) {
 		define( 'WP_TEMP_DIR', get_temp_dir() );
 	}
-
-	return $uploads;
 }
-add_filter( 'wpcf7_upload_dir', 'vip_wpcf7_upload_dir', 10, 1 );
+add_filter( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 ); 
 
 /**
  * AMP for WordPress (https://github.com/ampproject/amp-wp)
