@@ -158,7 +158,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 		$php_data['user'] = self::get_current_user();
 
 		// https://www.php.net/supported-versions.php
-		$php_data['old'] = version_compare( $php_data['version'], '8.1', '<' );
+		$php_data['old'] = version_compare( $php_data['version'], '8.3', '<' );
 
 		foreach ( $this->php_vars as $setting ) {
 			$php_data['variables'][ $setting ] = ini_get( $setting ) ?: null;
@@ -267,21 +267,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 	 * @return string
 	 */
 	protected static function get_server_version( wpdb $db ) {
-		$version = null;
-
-		if ( method_exists( $db, 'db_server_info' ) ) {
-			$version = $db->db_server_info();
-		}
-
-		if ( ! $version ) {
-			$version = $db->get_var( 'SELECT VERSION()' );
-		}
-
-		if ( ! $version ) {
-			$version = __( 'Unknown', 'query-monitor' );
-		}
-
-		return $version;
+		return $db->db_server_info();
 	}
 
 	/**
@@ -330,11 +316,12 @@ class QM_Collector_Environment extends QM_DataCollector {
 
 /**
  * @param array<string, QM_Collector> $collectors
+ * @param QueryMonitor $qm
  * @return array<string, QM_Collector>
  */
-function register_qm_collector_environment( array $collectors ) {
+function register_qm_collector_environment( array $collectors, QueryMonitor $qm ) {
 	$collectors['environment'] = new QM_Collector_Environment();
 	return $collectors;
 }
 
-add_filter( 'qm/collectors', 'register_qm_collector_environment', 20 );
+add_filter( 'qm/collectors', 'register_qm_collector_environment', 20, 2 );

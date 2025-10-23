@@ -502,6 +502,15 @@ abstract class QM_Output_Html extends QM_Output {
 
 		$link_line = $line ?: 1;
 
+		if ( 0 === strpos( $text, '{closure:/' ) ) {
+			$text = sprintf(
+				/* translators: A closure is an anonymous PHP function. 1: Line number, 2: File name */
+				__( 'Closure on line %1$d of %2$s', 'query-monitor' ),
+				$line,
+				QM_Util::standard_dir( $file, '' )
+			);
+		}
+
 		if ( ! self::has_clickable_links() ) {
 			$fallback = QM_Util::standard_dir( $file, '' );
 			if ( $line ) {
@@ -645,5 +654,6 @@ abstract class QM_Output_Html extends QM_Output {
 	public static function has_clickable_links() {
 		return ( false !== self::get_file_link_format() );
 	}
+
 
 }
