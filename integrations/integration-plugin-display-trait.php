@@ -327,10 +327,8 @@ trait IntegrationPluginDisplayTrait {
 			return;
 		}
 
-		static::$buffer_started = true;
-
 		// Use output buffering to filter out error notices about integration plugins
-		ob_start( function ( $buffer ) use ( $integration_plugins ) {
+		static::$buffer_started = ob_start( function ( $buffer ) use ( $integration_plugins ) {
 			foreach ( $integration_plugins as $plugin ) {
 				// Remove error notices for "Plugin file does not exist"
 				// Pattern matches the exact WordPress error format:
