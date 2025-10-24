@@ -36,6 +36,33 @@ function vip_wpcf7_upload_dir() {
 add_filter( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 ); 
 
 /**
+ * Versions of CF7 prior to v5.8.1 attempt to clean-up uploaded attachments
+ * somewhere within `wp-content`, ignoring the value of WPCF7_UPLOADS_TMP_DIR if
+ * it is not within `wp-content`. This does not work because we disable `open_dir()`,
+ * flooding the PHP logs with `opendir() Failed to open directory` warnings.
+ *
+ * @return void
+ */
+function vip_disable_wpcf7_cleanup_upload_files() {
+	if ( defined( 'WPCF7_VERSION' ) && version_compare( WPCF7_VERSION, '5.8.1', '>=' ) ) {
+		return; // CF7 v5.8.1 and later uses WP_TEMP_DIR correctly
+	} else {
+		// Return early if the relevant functions do not exist
+		if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) || ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
+			return;
+		}
+
+		// Check if the action is queued and if the tmp directories match
+		// (they might match if the plugin is an old version, or has been patched)
+		$priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
+		if ( false !== $priority && WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
+			remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
+		}
+	}
+}
+add_action( 'plugins_loaded', 'vip_disable_wpcf7_cleanup_upload_files' );
+
+/**
  * AMP for WordPress (https://github.com/ampproject/amp-wp)
  * Make sure the `amp` query var has an explicit value.
  * Avoids issues when filtering the deprecated `query_string` hook.
