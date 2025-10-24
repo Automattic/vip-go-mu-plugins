@@ -374,7 +374,9 @@ function get_current_elasticsearch_version() {
 	$base_version = \ElasticPress\Elasticsearch::factory()->get_elasticsearch_version() ?: 'Unknown';
 
 	if ( defined( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) && constant( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS' ) ) {
-		return sprintf( '%s (Migration: %s)', $base_version, \Automattic\VIP\Search\Search::instance()->is_testing_next_version() ? 'Using ES8' : 'Using ES7' );
+		$constant_value          = defined( 'VIP_ELASTICSEARCH_VERSION' ) ? constant( 'VIP_ELASTICSEARCH_VERSION' ) : 'Unknown';
+		$is_testing_next_version = \Automattic\VIP\Search\Search::instance()->is_testing_next_version();
+		return sprintf( '%s (Migration: %s)', $base_version, '8' === $constant_value || $is_testing_next_version ? 'Using ES8' : 'Using ES7' );
 	}
 
 	return $base_version;

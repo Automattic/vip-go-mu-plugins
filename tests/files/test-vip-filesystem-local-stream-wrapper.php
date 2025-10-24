@@ -478,4 +478,73 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 			$this->should_unregister = false;
 		}
 	}
+
+	public function test__global_helpers__add() {
+		// Add files using the global helper
+		$result = wpvip_fs_local_file_add( 'vip://wp-content/uploads/direct.txt' );
+
+		$this->assertTrue( $result );
+
+		// Verify it was added to the stream wrapper
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/direct.txt', $local_files );
+	}
+
+	public function test__global_helpers__remove() {
+		// Add a file first
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://wp-content/uploads/to-remove.txt' );
+
+		// Verify it exists
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
+
+		// Remove it using global helper
+		$result = wpvip_fs_local_file_remove( 'vip://wp-content/uploads/to-remove.txt' );
+
+		$this->assertTrue( $result );
+
+		// Verify it was removed
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayNotHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
+	}
+
+	public function test__global_helpers__list() {
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file1.txt' );
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file2.txt' );
+
+		$list = wpvip_fs_local_file_list();
+
+		$this->assertArrayHasKey( 'vip://file1.txt', $list );
+		$this->assertArrayHasKey( 'vip://file2.txt', $list );
+	}
+
+	public function test__global_helpers__invalid_input() {
+		// Test with empty string
+		$result = wpvip_fs_local_file_add( '' );
+		$this->assertFalse( $result );
+
+		// Test with non-string
+		$result = wpvip_fs_local_file_add( null );
+		$this->assertFalse( $result );
+
+		$result = wpvip_fs_local_file_add( 123 );
+		$this->assertFalse( $result );
+	}
+
+	public function test__global_helpers__pattern_matching() {
+		// Add a wildcard pattern
+		wpvip_fs_local_file_add( 'vip://wp-content/uploads/cache/*.json' );
+
+		// Check if it's recognized as a pattern
+		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $local_files );
+
+		// Test that a matching file is recognized
+		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' );
+		$this->assertTrue( $is_local );
+
+		// Test that a non-matching file is not recognized
+		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.txt' );
+		$this->assertFalse( $is_local );
+	}
 }
