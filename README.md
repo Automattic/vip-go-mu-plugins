@@ -138,7 +138,7 @@ Every commit merged into `develop` is automatically pushed to the public copy at
 
 ## Changelog
 
-We use a [script](./ci/changelog-summary.php) to generate changelog entries. This can be debuged by running:
+We use a [script](./ci/changelog-summary.php) to process changelog entries and update PR labels. This can be debuged by running:
 
 ```
 php ci/changelog-summary.php  --debug --dry-run --force --merge-pr 4673 --github-project-username Automattic --github-project-reponame vip-go-mu-plugins
