@@ -130,7 +130,6 @@ trait IntegrationPluginDisplayTrait {
 		add_filter( 'pre_update_site_option_active_sitewide_plugins', [ $this, 'filter_update_network_active_plugins' ] );
 
 		// Cleanup and error suppression
-		add_action( 'admin_init', [ $this, 'cleanup_recently_activated' ], 1 );
 		add_action( 'admin_notices', [ $this, 'suppress_deactivation_notices' ], 1 );
 		add_action( 'network_admin_notices', [ $this, 'suppress_deactivation_notices' ], 1 );
 	}
@@ -311,34 +310,6 @@ trait IntegrationPluginDisplayTrait {
 	 */
 	private function is_network_plugins_screen(): bool {
 		return $this->is_admin_screen( 'plugins-network' );
-	}
-
-	/**
-	 * Clean up recently activated list to prevent validation errors.
-	 *
-	 * This prevents WordPress from showing "Plugin file does not exist" errors
-	 * when it tries to validate integration plugins that aren't in the standard plugins directory.
-	 */
-	public function cleanup_recently_activated(): void {
-		$integration_plugins = static::get_loaded_integration_plugins();
-
-		if ( empty( $integration_plugins ) ) {
-			return;
-		}
-
-		$recently_activated = get_option( 'recently_activated', array() );
-		$modified           = false;
-
-		foreach ( $integration_plugins as $plugin ) {
-			if ( isset( $recently_activated[ $plugin ] ) ) {
-				unset( $recently_activated[ $plugin ] );
-				$modified = true;
-			}
-		}
-
-		if ( $modified ) {
-			update_option( 'recently_activated', $recently_activated );
-		}
 	}
 
 	/**
