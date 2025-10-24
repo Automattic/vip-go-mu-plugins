@@ -482,12 +482,10 @@ function build_changelog_and_update_prs() {
         exit( 0 );
     }
 
-    $changelog_url = create_changelog_post( $title, $content, $tags, BRANCH );
-
     $prs[] = $merged_pr;
     update_prs( $prs, BRANCH );
 
-    ping_slack( $changelog_url );
+    echo "PR labels updated successfully. Changelog post creation and Slack notification have been disabled.\n";
 }
 
 build_changelog_and_update_prs();
