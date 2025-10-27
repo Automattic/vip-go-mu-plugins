@@ -118,7 +118,7 @@ To create a new production release:
 1. Create a new PR: https://github.com/Automattic/vip-go-mu-plugins/compare/production...staging
 2. Name it `Production release: vYYYYMMDD.0`.
 3. After carefully reviewing and making sure all test have passed, merge it.
-4. The changelog will be generated automatically, and a bot will ping you to proof-read the draft
+4. The changelog will be generated automatically.
 5. Any follow-up releases on the same day should increment the last number. E.g. `Production release: vYYYYMMDD.0`
 
 To create a new staging release, follow the same steps but name the release `Staging release: vYYYYMMDD.1` (assuming production release has been tagged already.)
@@ -138,8 +138,4 @@ Every commit merged into `develop` is automatically pushed to the public copy at
 
 ## Changelog
 
-We use a [script](./ci/changelog-summary.php) to generate changelog entries. This can be debuged by running:
-
-```
-php ci/changelog-summary.php  --debug --dry-run --force --merge-pr 4673 --github-project-username Automattic --github-project-reponame vip-go-mu-plugins
-```
+During releases, we use a [custom action](https://github.com/Automattic/vip-build-tools/blob/master/scripts/github-changelog.php) to generate changelog entries.

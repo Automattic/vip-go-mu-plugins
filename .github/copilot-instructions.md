@@ -159,7 +159,7 @@ All PRs to `develop` branch trigger these workflows:
 
 **Tooling:**
 - `bin/`: Utility scripts (test.sh, php-lint.sh, etc.)
-- `ci/`: CI-related scripts (changelog-summary.php)
+- `ci/`: CI-related scripts (update-prs.php)
 
 ### Files Excluded from PHPCS
 Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41). When editing code, ensure you're not in an excluded directory if you expect PHPCS to validate it.
