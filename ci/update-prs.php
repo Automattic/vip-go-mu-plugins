@@ -279,7 +279,7 @@ function update_prs() {
     $prs = process_pr_ids( $pr_ids );
 
     $prs[] = $merged_pr;
-    update_prs_with_labels( $prs, BRANCH );
+    update_prs_with_labels( $prs );
 }
 
 update_prs();
