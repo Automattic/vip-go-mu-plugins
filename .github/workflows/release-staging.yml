@@ -1,4 +1,4 @@
-name: Changelog Summary - Staging
+name: Release - Staging
 
 on:
   push:
@@ -11,8 +11,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  execute:
-    name: Run Summary Generator
+  update-prs:
+    name: Update PRs with Labels
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -26,20 +26,15 @@ jobs:
 
       - name: Execute
         env:
-          CHANGELOG_POST_TOKEN: ${{ secrets.CHANGELOG_BEARER_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           PROJECT_USERNAME: Automattic
           PROJECT_REPONAME: vip-go-mu-plugins
           BRANCH: ${{ github.ref_name }}
         run: |
-          php ./ci/changelog-summary.php \
-                --wp-endpoint=https://public-api.wordpress.com/wp/v2/sites/wpvipchangelog.wordpress.com/posts \
-                --wp-status=draft \
-                --debug
+          php ./ci/update-prs.php --debug
 
   changelog:
-    needs: execute
+    needs: update-prs
     name: Docs Site Changelog
     runs-on: ubuntu-latest
     steps:
