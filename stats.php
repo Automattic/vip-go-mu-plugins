@@ -72,6 +72,11 @@ function record_published_time( $new_status, $old_status, $post ) {
 	// Add published time (only if not already set due to $unique = true)
 	add_post_meta( $post->ID, '_vip_edtel_published_time', gmdate( 'c' ), true );
 
+	// Retaining existing tracking
+	send_pixel([
+		'vip-go-publish-post' => FILES_CLIENT_SITE_ID,
+	]);
+
 	// Defensive check for VIP Telemetry class
 	if ( ! class_exists( 'Automattic\\VIP\\Telemetry\\Tracks' ) ) {
 		return;
