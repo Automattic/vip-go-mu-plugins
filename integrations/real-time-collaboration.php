@@ -8,8 +8,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-defined( 'ABSPATH' ) || exit();
-
 /**
  * Loads Real-Time Collaboration VIP Integration.
  *
@@ -63,11 +61,6 @@ class RealTimeCollaborationIntegration extends Integration {
 
 		// Check WordPress version requirement
 		global $wp_version;
-
-		// Account for plugins overriding the $wp_version global, look at gutenberg.php for reference.
-		/** @psalm-suppress MissingFile */
-		// This is a built-in WordPress file, so we can ignore the warning here.
-		include ABSPATH . WPINC . '/version.php';
 
 		if ( isset( $wp_version ) && version_compare( $wp_version, '6.7', '<' ) ) {
 			return false;
