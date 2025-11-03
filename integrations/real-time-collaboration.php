@@ -8,6 +8,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+defined( 'ABSPATH' ) || exit();
+
 /**
  * Loads Real-Time Collaboration VIP Integration.
  *
@@ -31,6 +33,24 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Check if all requirements are met to load the integration.
 	 */
 	private function can_load(): bool {
+		// Check PHP version requirement
+		$php_version = phpversion();
+		if ( is_string( $php_version ) && version_compare( $php_version, '8.2', '<' ) ) {
+			return false;
+		}
+
+		// Check WordPress version requirement
+		global $wp_version;
+
+		// Account for plugins overriding the $wp_version global, look at gutenberg.php for reference.
+		/** @psalm-suppress MissingFile */
+		// This is a built-in WordPress file, so we can ignore the warning here.
+		include ABSPATH . WPINC . '/version.php';
+
+		if ( version_compare( $wp_version, '6.7', '<' ) ) {
+			return false;
+		}
+
 		// Check required configuration constants
 		if ( ! defined( 'VIP_RTC_WS_AUTH_SECRET' ) || ! defined( 'VIP_RTC_WS_URL' ) ) {
 			return false;
