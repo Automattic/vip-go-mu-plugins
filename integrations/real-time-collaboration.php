@@ -29,15 +29,7 @@ class RealTimeCollaborationIntegration extends Integration {
 			return false;
 		}
 
-		// Need to ensure that development mode bypasses this check.
-		// For dev builds, this is defined in the Gutenberg plugin's main file.
-		// For production builds, this is removed entirely.
-		// This is useful for when we are testing mu-plugins integration locally.
-		if ( defined( 'GUTENBERG_DEVELOPMENT_MODE' ) && constant( 'GUTENBERG_DEVELOPMENT_MODE' ) ) {
-			return false;
-		}
-
-		// If its not development mode, and the version is set, check the version.
+		// If the version is set, check the version.
 		if ( defined( 'GUTENBERG_VERSION' ) && is_string( constant( 'GUTENBERG_VERSION' ) ) ) {
 			/** @var string $gutenberg_version */
 			$gutenberg_version = constant( 'GUTENBERG_VERSION' );
