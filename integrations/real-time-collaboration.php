@@ -26,7 +26,29 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Check if the Gutenberg plugin is active.
 	 */
 	private function is_gutenberg_plugin_active(): bool {
-		return defined( 'IS_GUTENBERG_PLUGIN' ) && constant( 'IS_GUTENBERG_PLUGIN' );
+		// Gutenberg plugin isn't active.
+		if ( ! defined( 'IS_GUTENBERG_PLUGIN' ) || ! constant( 'IS_GUTENBERG_PLUGIN' ) ) {
+			return false;
+		}
+
+		// Need to ensure that development mode bypasses this check.
+		// For dev builds, this is defined in the Gutenberg plugin's main file.
+		// For production builds, this is removed entirely.
+		// This is useful for when we are testing mu-plugins integration locally.
+		if ( defined( 'GUTENBERG_DEVELOPMENT_MODE' ) && constant( 'GUTENBERG_DEVELOPMENT_MODE' ) ) {
+			return false;
+		}
+
+		// If its not development mode, and the version is set, check the version.
+		if ( defined( 'GUTENBERG_VERSION' ) && is_string( constant( 'GUTENBERG_VERSION' ) ) ) {
+			/** @var string $gutenberg_version */
+			$gutenberg_version = constant( 'GUTENBERG_VERSION' );
+			// TODO: Update this to 21.9.0 in 2 weeks.
+			return version_compare( $gutenberg_version, '21.7.0', '>=' );
+		}
+
+		// Gutenberg plugin is active but we can't determine the version, so assume it's incompatible.
+		return false;
 	}
 
 	/**
@@ -47,7 +69,7 @@ class RealTimeCollaborationIntegration extends Integration {
 		// This is a built-in WordPress file, so we can ignore the warning here.
 		include ABSPATH . WPINC . '/version.php';
 
-		if ( version_compare( $wp_version, '6.7', '<' ) ) {
+		if ( isset( $wp_version ) && version_compare( $wp_version, '6.7', '<' ) ) {
 			return false;
 		}
 
