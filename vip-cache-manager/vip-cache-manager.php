@@ -264,7 +264,7 @@ class WPCOM_VIP_Cache_Manager {
 					}
 					$data = wp_json_encode( $req_array );
 
-					$curl = curl_init( sprintf( 'https://%s/.vip/edge-cache-purge', $host ) );
+					$curl = curl_init( 'https://go-vip.net/.vip/edge-cache-purge' );
 
 					curl_setopt( $curl, CURLOPT_HEADER, false );
 					curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
@@ -272,6 +272,7 @@ class WPCOM_VIP_Cache_Manager {
 					curl_setopt( $curl, CURLOPT_POST, true );
 
 					$headers = [
+						sprintf( 'Host: %s', $host ),
 						'Content-Type: application/json',
 						sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
 					];
