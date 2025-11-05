@@ -27,13 +27,12 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  * filter to set `WP_TEMP_DIR` to `/tmp/` so that the plugin will allow the
  * path that we defined earlier in `WPCF7_UPLOADS_TMP_DIR`.
  */
-// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
 function vip_wpcf7_upload_dir() {
 	if ( ! defined( 'WP_TEMP_DIR' ) ) {
 		define( 'WP_TEMP_DIR', get_temp_dir() );
 	}
 }
-add_filter( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 ); 
+add_action( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 ); 
 
 /**
  * Versions of CF7 prior to v5.8.1 attempt to clean-up uploaded attachments
@@ -44,9 +43,7 @@ add_filter( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 );
  * @return void
  */
 function vip_disable_wpcf7_cleanup_upload_files() {
-	if ( defined( 'WPCF7_VERSION' ) && version_compare( WPCF7_VERSION, '5.8.1', '>=' ) ) {
-		return; // CF7 v5.8.1 and later uses WP_TEMP_DIR correctly
-	} else {
+	if ( ! defined( 'WPCF7_VERSION' ) || ! version_compare( WPCF7_VERSION, '5.8.1', '>=' ) ) {
 		// Return early if the relevant functions do not exist
 		if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) || ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
 			return;
