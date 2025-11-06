@@ -74,6 +74,12 @@ class Pendo_JavaScript_Library {
 		'vip-block-governance',
 	];
 
+	private static array $required_integrations = [
+		'parsely',
+		'remote-data-blocks',
+		'real-time-collaboration',
+	];
+
 	/**
 	 * Constructor.
 	 */
@@ -196,6 +202,22 @@ class Pendo_JavaScript_Library {
 			return false;
 		}
 
+		if ( ! function_exists( 'wpvip_get_enabled_integrations' ) ) {
+			return false;
+		}
+
+		/**
+		 * Filters the list of integrations that must be enabled for Pendo JavaScript library to be loaded.
+		 *
+		 * @param array $required_integrations Array of integration slugs that must be enabled.
+		 */
+		$required_integrations = apply_filters( 'vip_pendo_required_integrations', self::$required_integrations );
+
+		$enabled_integrations     = wpvip_get_enabled_integrations();
+		$has_required_integration = (bool) array_intersect( $required_integrations, array_keys( $enabled_integrations ) );
+		if ( ! $has_required_integration ) {
+			return false;
+		}
 
 		/**
 		 * Filters the list of admin screens where the Pendo JavaScript library should be loaded.
