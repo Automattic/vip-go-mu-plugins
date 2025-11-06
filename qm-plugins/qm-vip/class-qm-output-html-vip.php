@@ -34,6 +34,15 @@ class QM_Output_Html_VIP extends QM_Output_Html {
 
 		// App section
 		$this->output_before_section( 'Application' );
+		if ( isset( $data->app['slug'] ) ) {
+			$this->output_table_row( 'Name', $data->app['slug'] );
+		}
+		if ( isset( $data->app['environment'] ) ) {
+			$this->output_table_row( 'Environment', $data->app['environment'] );
+		}
+		if ( isset( $data->app['alias'] ) ) {
+			$this->output_table_row( 'Alias', $data->app['alias'] );
+		}
 		if ( isset( $data->app['id'] ) ) {
 			$this->output_table_row( 'ID', $data->app['id'] );
 		}
