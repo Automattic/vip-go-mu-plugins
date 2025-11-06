@@ -12,6 +12,15 @@ function wpvip_get_app_name(): string {
 }
 
 /**
+ * Get the application environment.
+ *
+ * @return string The application environment (e.g., 'production', 'develop', 'local'), or empty string if not defined.
+ */
+function wpvip_get_app_environment(): string {
+	return Context::get_environment();
+}
+
+/**
  * Get the application alias in the format used by VIP-CLI.
  *
  * Returns the application alias in the format `<app-slug>.<environment>`,
