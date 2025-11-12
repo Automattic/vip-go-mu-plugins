@@ -177,9 +177,7 @@ class Health {
 			}
 
 			// Avoid modifying query_vars to avoid breaking `wp vip-search health validate-counts` CLI.
-			if ( 'user' !== $indexable->slug ) {
-				remove_all_actions( 'parse_query' );
-			}
+			remove_all_actions( 'parse_query' );
 			$query = self::query_objects( $query_args, $indexable->slug );
 			if ( 'user' === $indexable->slug && isset( $query->query_vars['blog_id'] ) ) {
 				// Since the user indexable is global, we want to include ALL in count.
