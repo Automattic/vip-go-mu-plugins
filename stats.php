@@ -20,8 +20,7 @@ if ( true === WPCOM_IS_VIP_ENV && false === WPCOM_SANDBOXED ) {
 	add_action( 'save_post', __NAMESPACE__ . '\record_created_time', 9999, 3 );
 	
 	// Record published time and send telemetry when post is published
-	add_action( 'transition_post_status', __NAMESPACE__ . '\record_published_time', 9999, 2 );
-	add_action( 'viptel_send_publish_telemetry', __NAMESPACE__ . '\send_publish_telemetry', 10, 1 );
+	add_action( 'transition_post_status', __NAMESPACE__ . '\record_published_time', 9999, 3 );
 	
 	add_filter( 'wp_handle_upload', __NAMESPACE__ . '\handle_file_upload', 9999 );
 	// Hook early because overrides in a8c-files and stream wrapper return empty.
@@ -69,9 +68,6 @@ function record_published_time( $new_status, $old_status, $post ) {
 		return;
 	}
 
-	// Add published time (only if not already set due to $unique = true)
-	add_post_meta( $post->ID, '_vip_edtel_published_time', gmdate( 'c' ), true );
-
 	// Retaining existing tracking
 	send_pixel([
 		'vip-go-publish-post' => FILES_CLIENT_SITE_ID,
@@ -82,7 +78,7 @@ function record_published_time( $new_status, $old_status, $post ) {
 		return;
 	}
 
-	wp_schedule_single_event( ( time() + 30 ), 'viptel_send_publish_telemetry', array( $post->ID ) );
+	send_publish_telemetry( $post->ID );
 }
 
 function send_publish_telemetry( $post_id ) {
@@ -107,9 +103,9 @@ function send_publish_telemetry( $post_id ) {
 		'is_rtc'     => ! empty( $rtc_state ),
 	);
 
-	// Get created and published times
+	// Get created time and published time (from post_date)
 	$created_time   = get_post_meta( $post_id, '_vip_edtel_created_time', true );
-	$published_time = get_post_meta( $post_id, '_vip_edtel_published_time', true );
+	$published_time = $post->post_date;
 
 	// Calculate time difference if both times exist
 	$created_to_published_seconds = null;
@@ -125,7 +121,7 @@ function send_publish_telemetry( $post_id ) {
 	// Send telemetry event
 	try {
 		$tracks = new Tracks( 'vip' );
-		$tracks::record_event( 'post_published', $properties );
+		$tracks->record_event( 'post_published', $properties );
 	} catch ( Exception $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
 		// fail silently because we don't want to fill up error logs if our internal tracking fails
 	}
