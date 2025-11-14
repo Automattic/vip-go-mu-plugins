@@ -214,8 +214,7 @@ class Pendo_JavaScript_Library {
 		$required_integrations = apply_filters( 'vip_pendo_required_integrations', self::$required_integrations );
 
 		$enabled_integrations     = wpvip_get_enabled_integrations();
-		$has_required_integration = (bool) array_intersect( $required_integrations, array_keys( $enabled_integrations ) );
-		if ( ! $has_required_integration ) {
+		if ( empty( array_intersect( $required_integrations, array_keys( $enabled_integrations ) ) ) ) {
 			return false;
 		}
 
