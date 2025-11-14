@@ -212,8 +212,7 @@ class Pendo_JavaScript_Library {
 		 * @param array $required_integrations Array of integration slugs that must be enabled.
 		 */
 		$required_integrations = apply_filters( 'vip_pendo_required_integrations', self::$required_integrations );
-
-		$enabled_integrations     = wpvip_get_enabled_integrations();
+		$enabled_integrations  = wpvip_get_enabled_integrations();
 		if ( empty( array_intersect( $required_integrations, array_keys( $enabled_integrations ) ) ) ) {
 			return false;
 		}
