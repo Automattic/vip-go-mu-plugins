@@ -91,6 +91,9 @@ final class VIP_SMTP {
 		}
 
 		add_action( 'wp_mail_succeeded', array( $this, 'track_email_event' ), 10, 1 );
+
+		// empty prefix to match 'wpcom_email_send' event name.
+		$this->tracks_instance = new Tracks( '' );
 	}
 
 	/**
@@ -227,11 +230,6 @@ final class VIP_SMTP {
 			return;
 		}
 
-		if ( ! $this->tracks_instance ) {
-			// Use empty prefix to match 'wpcom_email_send' event name format.
-			$this->tracks_instance = new Tracks( '' );
-		}
-
 		$event_args = $this->build_tracks_event_args( $mail_data );
 		if ( ! $event_args ) {
 			return;
@@ -275,7 +273,9 @@ final class VIP_SMTP {
 		if ( is_array( $user_email ) && ! empty( $user_email ) ) {
 			$user_email = $user_email[0];
 		}
-		$event_args['email_domain'] = explode( '@', $user_email, 2 )[1];
+		if ( is_email( $user_email ) ) {
+			$event_args['email_domain'] = explode( '@', $user_email, 2 )[1];
+		}
 
 		$ui   = null;
 		$user = get_user_by( 'email', $user_email );
@@ -298,7 +298,7 @@ final class VIP_SMTP {
 		$event_args['_ui'] = $ui;
 
 		$wpcom_blog_id = \Jetpack_Options::get_option( 'id' );
-		if ( ! empty( $ui ) && ! empty( $email_name ) ) {
+		if ( ! empty( $ui ) ) {
 			$event_args['email_id'] = md5( uniqid( $ui . '-vip_mail' ) . '-' . $wpcom_blog_id );
 		}
 
