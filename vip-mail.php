@@ -13,6 +13,7 @@ License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2
 namespace Automattic\VIP\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
+use Automattic\VIP\Telemetry\Tracks;
 
 if ( ! class_exists( 'PHPMailer\PHPMailer\PHPMailer' ) ) {
 	require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
@@ -71,6 +72,8 @@ class VIP_Noop_Mailer {
 final class VIP_SMTP {
 	private static ?VIP_SMTP $instance = null;
 
+	private ?Tracks $tracks_instance = null;
+
 	public static function instance(): self {
 		if ( null === self::$instance ) {
 			self::$instance = new self();
@@ -86,18 +89,15 @@ final class VIP_SMTP {
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
 		}
+
+		add_action( 'wp_mail_succeeded', array( $this, 'track_email_event' ), 10, 1 );
 	}
 
 	/**
 	 * @param PHPMailer $phpmailer
 	 */
 	public function phpmailer_init( &$phpmailer ): void {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
-			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
-			return;
-		}
-
-		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
+		if ( $this->is_mail_blocked() ) {
 			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
 			return;
 		}
@@ -214,6 +214,95 @@ final class VIP_SMTP {
 		}
 
 		return $caller;
+	}
+
+	/**
+	 * Track successful email send events via Tracks.
+	 *
+	 * @param array $mail_data Array containing email data for successful sends.
+	 * @return void
+	 */
+	public function track_email_event( array $mail_data ): void {
+		if ( $this->is_mail_blocked() ) {
+			return;
+		}
+
+		if ( ! $this->tracks_instance ) {
+			// Use empty prefix to match 'wpcom_email_send' event name format.
+			$this->tracks_instance = new Tracks( '' );
+		}
+
+		$event_args = $this->build_tracks_event_args( $mail_data );
+		if ( ! $event_args ) {
+			return;
+		}
+		$this->tracks_instance->record_event( 'wpcom_email_send', $event_args );
+	}
+
+	/**
+	 * Check if mail is blocked. Constant will take precedence over filter.
+	 *
+	 * @return bool True if mail is blocked, false otherwise.
+	 */
+	protected function is_mail_blocked(): bool {
+		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) {
+			return true;
+		}
+
+		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Build Tracks event arguments for email send tracking.
+	 *
+	 * @param array $mail_data Array containing email data.
+	 * @return array|null Event arguments for Tracks, or null if the event cannot be tracked.
+	 */
+	protected function build_tracks_event_args( array $mail_data ): array|null {
+		if ( ! class_exists( 'Jetpack' ) || ! \Jetpack::is_connection_ready() ) {
+			return null;
+		}
+
+		$event_args = [];
+
+		$event_args['date_sent'] = gmdate( 'Y-m-d' );
+
+		$user_email = $mail_data['to'] ?? [];
+		if ( is_array( $user_email ) && ! empty( $user_email ) ) {
+			$user_email = $user_email[0];
+		}
+		$event_args['email_domain'] = explode( '@', $user_email, 2 )[1];
+
+		$ui   = null;
+		$user = get_user_by( 'email', $user_email );
+		if ( $user ) {
+			$wpcom_user_id = get_user_meta( $user->ID, 'wpcom_id', true );
+			if ( $wpcom_user_id ) {
+				$ui                    = $wpcom_user_id;
+				$event_args['user_id'] = $wpcom_user_id;
+			}
+		}
+		if ( ! $ui ) {
+			if ( ! defined( 'TRACKS_ANON_ID_HMAC_KEY' ) ) {
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+				error_log( sprintf( '%s: Empty anon user tracking key; check that `TRACKS_ANON_ID_HMAC_KEY` is correctly defined.', __METHOD__ ) );
+				return null;
+			}
+			$ui                = hash_hmac( 'md5', $user_email, constant( 'TRACKS_ANON_ID_HMAC_KEY' ) );
+			$event_args['_ut'] = 'anon';
+		}
+		$event_args['_ui'] = $ui;
+
+		$wpcom_blog_id = \Jetpack_Options::get_option( 'id' );
+		if ( ! empty( $ui ) && ! empty( $email_name ) ) {
+			$event_args['email_id'] = md5( uniqid( $ui . '-vip_mail' ) . '-' . $wpcom_blog_id );
+		}
+
+		return $event_args;
 	}
 }
 
