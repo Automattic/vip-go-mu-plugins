@@ -78,7 +78,7 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5.0.1
         with:
           submodules: true
 
@@ -141,7 +141,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v5.0.1
 
       - name: Setup Node
         uses: actions/setup-node@v6.0.0
