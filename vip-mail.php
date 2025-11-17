@@ -299,7 +299,7 @@ final class VIP_SMTP {
 
 		$wpcom_blog_id = \Jetpack_Options::get_option( 'id' );
 		if ( ! empty( $ui ) ) {
-			$event_args['email_id'] = md5( uniqid( $ui . '-vip_mail' ) . '-' . $wpcom_blog_id );
+			$event_args['email_id'] = md5( uniqid( $ui . '-vip-mail' ) . '-' . $wpcom_blog_id );
 		}
 
 		return $event_args;
