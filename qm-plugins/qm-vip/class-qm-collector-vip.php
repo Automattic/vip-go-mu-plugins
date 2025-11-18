@@ -59,6 +59,21 @@ class QM_Collector_VIP extends QM_Collector {
 	private function process_app() {
 		$env = constant( 'VIP_GO_APP_ENVIRONMENT' );
 
+		$app_slug = wpvip_get_app_name();
+		if ( '' !== $app_slug ) {
+			$this->data->app['slug'] = $app_slug;
+		}
+
+		$app_environment = wpvip_get_app_environment();
+		if ( '' !== $app_environment ) {
+			$this->data->app['environment'] = $app_environment;
+		}
+
+		$app_alias = wpvip_get_app_alias();
+		if ( '' !== $app_alias ) {
+			$this->data->app['alias'] = $app_alias;
+		}
+
 		if ( 'local' !== $env ) {
 			if ( defined( 'VIP_GO_APP_ID' ) ) {
 				$this->data->app['id'] = constant( 'VIP_GO_APP_ID' );
