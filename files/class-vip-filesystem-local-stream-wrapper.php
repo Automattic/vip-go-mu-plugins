@@ -179,6 +179,12 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		return stream_wrapper_register( $this->protocol, get_called_class(), STREAM_IS_URL );
 	}
 
+	private static function is_read_only_mode( $mode ) {
+		// Remove `b`, `t` and `e` as they do not affect read/write (e.g., `rb`, `tre` are still read-only modes)
+		$mode = str_replace( [ 'b', 't', 'e' ], '', $mode );
+		return 'r' === $mode;
+	}
+
 	/**
 	 * Opens a file
 	 *
@@ -190,7 +196,9 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 *
 	 * @return  bool    True on success or false on failure
 	 */
-	public function stream_open( $path, $mode ) {
+	public function stream_open( $path, $mode, $options ) {
+		$this->debug( sprintf( 'stream_open => %s + %s + %d', $path, $mode, $options ) );
+
 		$this->path = $path;
 		$this->uri  = $path;
 
@@ -199,7 +207,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			$local_path = static::get_local_tmp_path( $path );
 
 			// Create directory if it doesn't exist for write modes
-			if ( strpos( $mode, 'w' ) !== false || strpos( $mode, 'a' ) !== false || strpos( $mode, 'x' ) !== false || strpos( $mode, 'c' ) !== false ) {
+			if ( ! static::is_read_only_mode( $mode ) ) {
 				$dir = dirname( $local_path );
 				if ( ! file_exists( $dir ) ) {
 					\wp_mkdir_p( $dir );
@@ -218,7 +226,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		// Original implementation for non-local files
 		$path = $this->trim_path( $path );
 		// Also ignore '+' modes since the handlers are all read+write anyway
-		$mode = rtrim( $mode, 'bt+' );
+		$mode = str_replace( [ 'b', 'e', 't', '+' ], '', $mode );
 
 		if ( ! $this->validate( $path, $mode ) ) {
 			return false;
@@ -424,7 +432,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return  bool  True if position was updated, False if not
 	 */
 	public function stream_seek( $offset, $whence ) {
-		$this->debug( sprintf( 'stream_seak =>  %s + %s + %s + %s', $offset, $whence, $this->path, $this->uri ) );
+		$this->debug( sprintf( 'stream_seek =>  %s + %s + %s + %s', $offset, $whence, $this->path, $this->uri ) );
 
 		if ( ! $this->seekable ) {
 			// File not seekable
@@ -927,7 +935,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	/**
 	 * Called in response to stream_select()
 	 *
-	 * @link http://php.net/manual/en/streamwrapper.stream-castt.php
+	 * @link http://php.net/manual/en/streamwrapper.stream-cast.php
 	 *
 	 * @since   1.0.0
 	 * @access  public
