@@ -15,6 +15,15 @@ namespace Automattic\VIP\Integrations;
  */
 class RemoteDataBlocksIntegration extends Integration {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param string $slug Slug of the integration.
+	 */
+	public function __construct( string $slug ) {
+		parent::__construct( $slug );
+		$this->enable_pendo_tracking = true;
+	}
 
 	/**
 	 * Returns `true` if Remote Data Blocks is already available e.g. via customer code. We will use

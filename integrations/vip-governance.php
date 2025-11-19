@@ -23,6 +23,16 @@ class VipGovernanceIntegration extends Integration {
 	protected string $version = '1.0';
 
 	/**
+	 * Constructor.
+	 *
+	 * @param string $slug Slug of the integration.
+	 */
+	public function __construct( string $slug ) {
+		parent::__construct( $slug );
+		$this->enable_pendo_tracking = true;
+	}
+
+	/**
 	 * Returns `true` if `VIP Governance` is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration from platform side.
 	 */

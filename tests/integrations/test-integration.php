@@ -203,4 +203,16 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $child_env_configs, $integration->get_child_env_configs() );
 	}
+
+	public function test__should_track_in_pendo_returns_false_by_default(): void {
+		$integration = new FakeIntegration( 'fake' );
+
+		$this->assertFalse( $integration->should_track_in_pendo() );
+	}
+
+	public function test__should_track_in_pendo_can_be_set_to_true_in_constructor(): void {
+		$integration = new FakeIntegrationWithPendoTracking( 'fake' );
+
+		$this->assertTrue( $integration->should_track_in_pendo() );
+	}
 }

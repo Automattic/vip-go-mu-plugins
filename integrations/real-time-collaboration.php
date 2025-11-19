@@ -15,6 +15,16 @@ namespace Automattic\VIP\Integrations;
  */
 class RealTimeCollaborationIntegration extends Integration {
 
+	/**
+	 * Constructor.
+	 *
+	 * @param string $slug Slug of the integration.
+	 */
+	public function __construct( string $slug ) {
+		parent::__construct( $slug );
+		$this->enable_pendo_tracking = true;
+	}
+
 	public function is_loaded(): bool {
 		// Check for the existence of the plugin version constant defined in the main plugin file.
 		return defined( 'VIP_REAL_TIME_COLLABORATION__LOADED' );

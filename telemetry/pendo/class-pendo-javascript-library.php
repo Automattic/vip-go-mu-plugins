@@ -74,12 +74,6 @@ class Pendo_JavaScript_Library {
 		'vip-block-governance',
 	];
 
-	private static array $tracked_integrations = [
-		'parsely',
-		'remote-data-blocks',
-		'real-time-collaboration',
-	];
-
 	/**
 	 * Constructor.
 	 */
@@ -206,8 +200,15 @@ class Pendo_JavaScript_Library {
 			return false;
 		}
 
-		$enabled_integrations = wpvip_get_enabled_integrations();
-		if ( empty( array_intersect( self::$tracked_integrations, array_keys( $enabled_integrations ) ) ) ) {
+		$enabled_integrations    = wpvip_get_enabled_integrations();
+		$has_tracked_integration = false;
+		foreach ( $enabled_integrations as $integration ) {
+			if ( $integration->should_track_in_pendo() ) {
+				$has_tracked_integration = true;
+				break;
+			}
+		}
+		if ( ! $has_tracked_integration ) {
 			return false;
 		}
 
