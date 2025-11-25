@@ -81,4 +81,28 @@ class Context {
 		$request_uri = $_SERVER['REQUEST_URI'] ?? '';
 		return '/.vip-prom-metrics' === $request_uri;
 	}
+
+	/**
+	 * Get the application slug.
+	 *
+	 * @return string The application slug, or empty string if not defined.
+	 */
+	public static function get_app_slug(): string {
+		if ( defined( 'VIP_GO_APP_SLUG' ) ) {
+			return constant( 'VIP_GO_APP_SLUG' );
+		}
+		return '';
+	}
+
+	/**
+	 * Get the application environment.
+	 *
+	 * @return string The application environment, or empty string if not defined.
+	 */
+	public static function get_environment(): string {
+		if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) ) {
+			return constant( 'VIP_GO_APP_ENVIRONMENT' );
+		}
+		return '';
+	}
 }

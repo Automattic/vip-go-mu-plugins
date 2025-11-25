@@ -476,9 +476,7 @@ class Search {
 				define( 'SAVEQUERIES', false );
 			}
 
-			if ( ! defined( 'EP_QUERY_LOG' ) ) {
-				define( 'EP_QUERY_LOG', false );
-			}
+			add_filter( 'ep_disable_query_logging', '__return_true' );
 		}
 	}
 
