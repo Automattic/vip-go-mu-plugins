@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin name: Cache Manager
-Description: Automatically clears the Varnish cache when necessary
+Description: Automatically clears the edge cache when necessary
 Author: Automattic
 Author URI: http://automattic.com/
 Version: 1.1
@@ -200,14 +200,94 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function manual_purge_message() {
-		echo "<div id='message' class='updated fade'><p><strong>" . esc_html__( 'Varnish cache purged!', 'varnish-http-purge' ) . '</strong></p></div>';
+		echo "<div id='message' class='updated fade'><p><strong>" . esc_html__( 'Cache purged!', 'vip-cache-manager' ) . '</strong></p></div>';
 	}
 
 	public function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
-		if ( defined( 'PURGE_BATCH_SERVER_URL' ) && defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
-			$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
+		if ( $this->is_batch_mangle_mode() ) {
+			$this->add_batch_mangle_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		if ( $this->is_edge_api_mode() ) {
+			$this->add_edge_api_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		if ( $this->is_mangle_mode() ) {
+			$this->add_mangle_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		curl_multi_close( $curl_multi );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( 'vip-cache-manager: Unsupported PURGE_SERVER_TYPE configuration.' );
+	}
+
+	private function is_batch_mangle_mode(): bool {
+		return $this->is_mangle_mode() && defined( 'PURGE_BATCH_SERVER_URL' );
+	}
+
+	private function is_edge_api_mode(): bool {
+		return defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE;
+	}
+
+	private function is_mangle_mode(): bool {
+		return defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE;
+	}
+
+	private function add_batch_mangle_handles( $curl_multi, $requests ): void {
+		$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
+
+		foreach ( $req_chunks as $req_chunk ) {
+			$req_array = array();
+			foreach ( $req_chunk as $req ) {
+				$req_array[] = array(
+					'group' => 'vip-go',
+					'scope' => 'global',
+					'type'  => $req['method'],
+					'uri'   => $req['host'] . $req['uri'],
+				);
+			}
+
+			$data = wp_json_encode( $req_array );
+			$curl = curl_init( constant( 'PURGE_BATCH_SERVER_URL' ) );
+
+			curl_setopt( $curl, CURLOPT_HEADER, false );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_setopt( $curl, CURLOPT_POST, true );
+
+			if ( 500 < strlen( $data ) ) {
+				$compressed_data = gzencode( $data );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
+				curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
+			} else {
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
+				curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+			}
+
+			curl_multi_add_handle( $curl_multi, $curl );
+		}
+	}
+
+	private function add_edge_api_handles( $curl_multi, $requests ): void {
+		$requests_by_host = array();
+		foreach ( $requests as $req ) {
+			$host = $req['host'];
+			if ( ! isset( $requests_by_host[ $host ] ) ) {
+				$requests_by_host[ $host ] = array();
+			}
+			$requests_by_host[ $host ][] = $req;
+		}
+
+		foreach ( $requests_by_host as $host => $host_requests ) {
+			$req_chunks = array_chunk( $host_requests, self::CACHE_PURGE_BATCH_SIZE, true );
 			foreach ( $req_chunks as $req_chunk ) {
 				$req_array = array();
 				foreach ( $req_chunk as $req ) {
@@ -215,129 +295,63 @@ class WPCOM_VIP_Cache_Manager {
 						'group' => 'vip-go',
 						'scope' => 'global',
 						'type'  => $req['method'],
-						'uri'   => $req['host'] . $req['uri'],
+						'uri'   => $req['uri'],
 					);
 				}
-				$data = wp_json_encode( $req_array );
 
-				$curl = curl_init( constant( 'PURGE_BATCH_SERVER_URL' ) );
+				$data = wp_json_encode( $req_array );
+				$curl = curl_init( 'https://go-vip.net/.vip/edge-cache-purge' );
 
 				curl_setopt( $curl, CURLOPT_HEADER, false );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
 				curl_setopt( $curl, CURLOPT_POST, true );
 
+				$headers = [
+					sprintf( 'Host: %s', $host ),
+					'Content-Type: application/json',
+					sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
+				];
+
 				if ( 500 < strlen( $data ) ) {
 					$compressed_data = gzencode( $data );
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
+					$headers[]       = 'Content-Encoding: gzip';
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
 				} else {
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
 				}
 
-				curl_multi_add_handle( $curl_multi, $curl );
-			}
-		} elseif ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
-			// Group requests by host first
-			$requests_by_host = array();
-			foreach ( $requests as $req ) {
-				$host = $req['host'];
-				if ( ! isset( $requests_by_host[ $host ] ) ) {
-					$requests_by_host[ $host ] = array();
-				}
-				$requests_by_host[ $host ][] = $req;
-			}
-
-			// Process each host group separately
-			foreach ( $requests_by_host as $host => $host_requests ) {
-				$req_chunks = array_chunk( $host_requests, self::CACHE_PURGE_BATCH_SIZE, true );
-				foreach ( $req_chunks as $req_chunk ) {
-					$req_array = array();
-					foreach ( $req_chunk as $req ) {
-						$req_array[] = array(
-							'group' => 'vip-go',
-							'scope' => 'global',
-							'type'  => $req['method'],
-							'uri'   => $req['uri'],
-						);
-					}
-					$data = wp_json_encode( $req_array );
-
-					$curl = curl_init( 'https://go-vip.net/.vip/edge-cache-purge' );
-
-					curl_setopt( $curl, CURLOPT_HEADER, false );
-					curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-					curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-					curl_setopt( $curl, CURLOPT_POST, true );
-
-					$headers = [
-						sprintf( 'Host: %s', $host ),
-						'Content-Type: application/json',
-						sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
-					];
-					if ( 500 < strlen( $data ) ) {
-						$compressed_data = gzencode( $data );
-						$headers[]       = 'Content-Encoding: gzip';
-						curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
-					} else {
-						curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
-					}
-
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
-
-					curl_multi_add_handle( $curl_multi, $curl );
-				}
-			}
-		} elseif ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
-			foreach ( $requests as $req ) {
-				$data = array(
-					'group' => 'vip-go',
-					'scope' => 'global',
-					'type'  => $req['method'],
-					'uri'   => $req['host'] . $req['uri'],
-					'cb'    => 'nil',
-				);
-				$json = wp_json_encode( $data );
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
-				curl_setopt( $curl, CURLOPT_POST, true );
-				curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
-					'Content-Type: application/json',
-					'Content-Length: ' . strlen( $json ),
-				) );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_multi_add_handle( $curl_multi, $curl );
-			}
-		} else {
-			foreach ( $requests as $req ) {
-				// Purge HTTP
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: http' ) );
-				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_setopt( $curl, CURLOPT_NOBODY, true );
-				curl_setopt( $curl, CURLOPT_HEADER, true );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-				curl_multi_add_handle( $curl_multi, $curl );
-				// Purge HTTPS
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: https' ) );
-				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_setopt( $curl, CURLOPT_NOBODY, true );
-				curl_setopt( $curl, CURLOPT_HEADER, true );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
 				curl_multi_add_handle( $curl_multi, $curl );
 			}
 		}
+	}
 
+	private function add_mangle_handles( $curl_multi, $requests ): void {
+		foreach ( $requests as $req ) {
+			$data = array(
+				'group' => 'vip-go',
+				'scope' => 'global',
+				'type'  => $req['method'],
+				'uri'   => $req['host'] . $req['uri'],
+				'cb'    => 'nil',
+			);
+			$json = wp_json_encode( $data );
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+			curl_setopt( $curl, CURLOPT_POST, true );
+			curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+				'Content-Type: application/json',
+				'Content-Length: ' . strlen( $json ),
+			) );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+			curl_multi_add_handle( $curl_multi, $curl );
+		}
+	}
+
+	private function run_curl_multi( $curl_multi ): void {
 		$running = true;
 
 		while ( $running ) {
@@ -391,8 +405,12 @@ class WPCOM_VIP_Cache_Manager {
 			return $requests;
 		}
 
-		if ( 'BAN' == $method ) {
-			$uri = $parsed['path'] . '?' . $parsed['query'];
+		if ( 'BAN' === $method ) {
+			$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+			$uri  = $path;
+			if ( isset( $parsed['query'] ) ) {
+				$uri .= '?' . $parsed['query'];
+			}
 		} else {
 			$uri = '/';
 			if ( isset( $parsed['path'] ) ) {
@@ -403,41 +421,11 @@ class WPCOM_VIP_Cache_Manager {
 			}
 		}
 
-		if ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
-			return array(
-				array(
-					'host'   => $parsed['host'],
-					'uri'    => $uri,
-					'method' => $method,
-				),
-			);
-		}
-
-		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' === PURGE_SERVER_TYPE ) {
-			global $varnish_servers;
-		} else {
-			$varnish_servers = array( constant( 'PURGE_SERVER_URL' ) );
-		}
-
-		if ( empty( $varnish_servers ) ) {
-			return $requests;
-		}
-
-		foreach ( $varnish_servers as $server ) {
-			$request = array(
-				'host'   => $parsed['host'],
-				'uri'    => $uri,
-				'method' => $method,
-			);
-
-			if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' == PURGE_SERVER_TYPE ) {
-				$srv             = explode( ':', $server[0] );
-				$request['ip']   = $srv[0];
-				$request['port'] = $srv[1];
-			}
-
-			$requests[] = $request;
-		}
+		$requests[] = array(
+			'host'   => $parsed['host'],
+			'uri'    => $uri,
+			'method' => $method,
+		);
 
 		return $requests;
 	}
