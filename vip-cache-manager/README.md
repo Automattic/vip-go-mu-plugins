@@ -183,7 +183,7 @@ Control which users can access cache purge functionality.
 ```php
 add_filter( 'vip_cache_manager_can_purge_cache', function( $can_purge, $user ) {
     // Allow editors to purge cache
-    if ( user_can( $user, 'edit_others_posts' ) ) {
+    if ( $user->has_cap( 'edit_others_posts' ) ) {
         return true;
     }
     return $can_purge;
