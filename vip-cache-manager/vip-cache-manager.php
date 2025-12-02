@@ -70,7 +70,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
 
-		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
+		add_action( 'wp_dashboard_setup', array( $this, 'register_dashboard_widget' ) );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 		add_action( 'admin_bar_menu', [ $this, 'admin_bar_callback' ], 100, 1 );
@@ -170,28 +170,28 @@ class WPCOM_VIP_Cache_Manager {
 		return [
 			'site'    => [
 				'label'       => __( 'Purge entire site cache', 'vip-cache-manager' ),
-				'description' => __( 'Ban all cached pages and reset private-file metadata.', 'vip-cache-manager' ),
+				'description' => __( 'Clear all origin responses, static files, uploads, and private file visibility metadata.', 'vip-cache-manager' ),
 				'callback'    => 'purge_site_cache',
 				'message'     => __( 'Site cache purge queued.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-site-purge',
 			],
 			'origin'  => [
-				'label'       => __( 'Purge origin content', 'vip-cache-manager' ),
-				'description' => __( 'Clear cached content fetched from origins without touching uploads.', 'vip-cache-manager' ),
+				'label'       => __( 'Purge WordPress responses', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached WordPress responses without touching uploads or static files.', 'vip-cache-manager' ),
 				'callback'    => 'purge_origin_cache',
-				'message'     => __( 'Origin content purge queued.', 'vip-cache-manager' ),
+				'message'     => __( 'WordPress responses purge queued.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-origin-purge',
 			],
 			'uploads' => [
 				'label'       => __( 'Purge uploads', 'vip-cache-manager' ),
-				'description' => __( 'Remove cached media uploads while leaving other content cached.', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached VIP File Service uploads.', 'vip-cache-manager' ),
 				'callback'    => 'purge_uploads_cache',
 				'message'     => __( 'Uploads purge queued.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-uploads-purge',
 			],
 			'static'  => [
 				'label'       => __( 'Purge static files', 'vip-cache-manager' ),
-				'description' => __( 'Refresh cached static assets such as CSS and JS.', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached static assets such as theme and core CSS, JS, and images.', 'vip-cache-manager' ),
 				'callback'    => 'purge_static_files_cache',
 				'message'     => __( 'Static files purge queued.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-static-purge',
@@ -275,30 +275,44 @@ class WPCOM_VIP_Cache_Manager {
 		);
 	}
 
-	public function get_manual_purge_link() {
+	public function register_dashboard_widget() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
 		}
 
-		echo '<hr>';
+		wp_add_dashboard_widget(
+			'vip_cache_manager_purge',
+			__( 'Edge Cache Controls', 'vip-cache-manager' ),
+			array( $this, 'render_dashboard_widget' )
+		);
+	}
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- previously escaped and safe HTML tags only
-		echo '<p>' . esc_html__( 'Use the tools below to target specific cache layers.' ) . "</p>\n";
+	public function render_dashboard_widget() {
+		if ( ! $this->can_purge_cache() ) {
+			echo '<p>' . esc_html__( 'You do not have permission to manage page cache purges.', 'vip-cache-manager' ) . '</p>';
+		} else {
+			echo '<ul class="vip-cache-manager-purge-actions">';
 
-		$actions = $this->get_manual_purge_actions_config();
+			echo '<p>' . esc_html__( 'Use the tools below to clear all edge cache or specific cache groups. Be advised, clearing the edge cache will result in temporary increase in load on your origin servers and may impact your site\'s performance.', 'vip-cache-manager' ) . '</p>';
+			echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
 
-		echo '<ul class="vip-cache-manager-purge-actions">';
+			foreach ( $this->get_manual_purge_actions_config() as $action_key => $action_config ) {
+				echo '<hr /><li>';
+				printf(
+					'<p><strong>%s</strong><br />%s</p>',
+					esc_html( $action_config['label'] ),
+					esc_html( $action_config['description'] )
+				);
+				printf(
+					'<p><span class="button"><a href="%s"><strong>%s</strong></a></span></p>',
+					esc_url( $this->build_manual_purge_url( $action_key ) ),
+					esc_html__( 'Run purge', 'vip-cache-manager' )
+				);
+				echo '</li>';
+			}
 
-		foreach ( $actions as $action_key => $action_config ) {
-			$url = $this->build_manual_purge_url( $action_key );
-			echo '<li>';
-			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- strings escaped above
-			echo '<p><strong>' . esc_html( $action_config['label'] ) . '</str	ong><br />' . esc_html( $action_config['description'] ) . '</p>';
-			echo '<p><span class="button"><a href="' . esc_url( $url ) . '"><strong>' . esc_html__( 'Run purge', 'vip-cache-manager' ) . '</strong></a></span></p>';
-			echo '</li>';
+			echo '</ul>';
 		}
-
-		echo '</ul>';
 	}
 
 	public function manual_purge_message() {
@@ -1017,12 +1031,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function can_purge_cache() {
-		if ( ! function_exists( 'is_proxied_automattician' ) ) {
-			// Local environment; no purging necessary here
-			return false;
-		}
-
-		return is_proxied_automattician();
+		return ( function_exists( 'is_proxied_automattician' ) && is_proxied_automattician() ) || $this->current_user_can_purge_cache();
 	}
 
 	private function current_user_can_purge_cache(): bool {
