@@ -51,3 +51,48 @@ function wpcom_vip_purge_edge_cache_for_post( $post ) {
 function wpcom_vip_purge_edge_cache_for_term( $term ) {
 	return WPCOM_VIP_Cache_Manager::instance()->queue_term_purge( $term );
 }
+
+/**
+ * Ban the full VIP Go site cache.
+ *
+ * @return bool True when the ban was queued.
+ */
+function wpcom_vip_purge_edge_cache_for_site() {
+	return WPCOM_VIP_Cache_Manager::instance()->purge_site_cache();
+}
+
+/**
+ * Purge cached content that originated from origin servers.
+ *
+ * @return bool True when the purge was queued.
+ */
+function wpcom_vip_purge_edge_cache_for_origin_content() {
+	return WPCOM_VIP_Cache_Manager::instance()->purge_origin_cache();
+}
+
+/**
+ * Purge cached uploads/media objects only.
+ *
+ * @return bool True when the purge was queued.
+ */
+function wpcom_vip_purge_edge_cache_for_uploads() {
+	return WPCOM_VIP_Cache_Manager::instance()->purge_uploads_cache();
+}
+
+/**
+ * Purge cached static assets (CSS/JS) only.
+ *
+ * @return bool True when the purge was queued.
+ */
+function wpcom_vip_purge_edge_cache_for_static_files() {
+	return WPCOM_VIP_Cache_Manager::instance()->purge_static_files_cache();
+}
+
+/**
+ * Purge cached visibility metadata for private files.
+ *
+ * @return bool True when the purge was queued.
+ */
+function wpcom_vip_purge_edge_cache_for_private_files() {
+	return WPCOM_VIP_Cache_Manager::instance()->purge_private_files_cache();
+}

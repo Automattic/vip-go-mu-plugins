@@ -29,10 +29,17 @@ class WPCOM_VIP_Cache_Manager {
 	const MAX_PURGE_BATCH_URLS   = 4000;
 	const MAX_BAN_URLS           = 10;
 	const CACHE_PURGE_BATCH_SIZE = 2000;
+	const SPECIAL_PURGE_PATHS    = [
+		'origin'        => '/.vip/purge-all-origin',
+		'uploads'       => '/.vip/purge-all-uploads',
+		'static'        => '/.vip/purge-all-static-files',
+		'private_files' => '/.vip/purge-all-private-files',
+	];
 
-	private $ban_urls          = array();
-	private $purge_urls        = array();
-	private $site_cache_purged = false;
+	private $ban_urls                    = array();
+	private $purge_urls                  = array();
+	private $site_cache_purged           = false;
+	private $manual_purge_notice_message = '';
 
 	public static function instance() {
 		static $instance = false;
@@ -52,13 +59,10 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
-		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
-			$this->purge_site_cache();
-			\Automattic\VIP\Stats\send_pixel( [
-				'vip-cache-action'            => 'dashboard-site-purge',
-				'vip-cache-url-purge-by-site' => VIP_GO_APP_ID,
-			] );
-			add_action( 'admin_notices', array( $this, 'manual_purge_message' ) );
+		$manual_action = $this->get_requested_manual_purge_action();
+
+		if ( $this->can_purge_cache() && $manual_action && check_admin_referer( 'manual_purge' ) ) {
+			$this->handle_manual_purge_action( $manual_action );
 		}
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
@@ -117,6 +121,97 @@ class WPCOM_VIP_Cache_Manager {
 				'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
 			] );
 		}
+	}
+
+	private function get_requested_manual_purge_action(): ?string {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['cm_purge_action'] ) ) {
+			return sanitize_key( wp_unslash( $_GET['cm_purge_action'] ) );
+		}
+
+		if ( isset( $_GET['cm_purge_all'] ) ) {
+			return 'site';
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		return null;
+	}
+
+	private function handle_manual_purge_action( string $action ): void {
+		$actions = $this->get_manual_purge_actions_config();
+
+		if ( ! isset( $actions[ $action ] ) ) {
+			return;
+		}
+
+		$callback = [ $this, $actions[ $action ]['callback'] ];
+
+		if ( is_callable( $callback ) ) {
+			call_user_func( $callback );
+		}
+
+		$this->manual_purge_notice_message = $actions[ $action ]['message'];
+
+		$pixel_data = [
+			'vip-cache-action'           => $actions[ $action ]['stat'],
+			'vip-cache-url-purge-status' => 'success',
+		];
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			$pixel_data['vip-cache-url-purge-by-site'] = VIP_GO_APP_ID;
+		}
+
+		\Automattic\VIP\Stats\send_pixel( $pixel_data );
+
+		add_action( 'admin_notices', array( $this, 'manual_purge_message' ) );
+	}
+
+	private function get_manual_purge_actions_config(): array {
+		return [
+			'site'    => [
+				'label'       => __( 'Purge entire site cache', 'vip-cache-manager' ),
+				'description' => __( 'Ban all cached pages and reset private-file metadata.', 'vip-cache-manager' ),
+				'callback'    => 'purge_site_cache',
+				'message'     => __( 'Site cache purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-site-purge',
+			],
+			'origin'  => [
+				'label'       => __( 'Purge origin content', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached content fetched from origins without touching uploads.', 'vip-cache-manager' ),
+				'callback'    => 'purge_origin_cache',
+				'message'     => __( 'Origin content purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-origin-purge',
+			],
+			'uploads' => [
+				'label'       => __( 'Purge uploads', 'vip-cache-manager' ),
+				'description' => __( 'Remove cached media uploads while leaving other content cached.', 'vip-cache-manager' ),
+				'callback'    => 'purge_uploads_cache',
+				'message'     => __( 'Uploads purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-uploads-purge',
+			],
+			'static'  => [
+				'label'       => __( 'Purge static files', 'vip-cache-manager' ),
+				'description' => __( 'Refresh cached static assets such as CSS and JS.', 'vip-cache-manager' ),
+				'callback'    => 'purge_static_files_cache',
+				'message'     => __( 'Static files purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-static-purge',
+			],
+			'private' => [
+				'label'       => __( 'Reset private file visibility', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached visibility information for private files.', 'vip-cache-manager' ),
+				'callback'    => 'purge_private_files_cache',
+				'message'     => __( 'Private file visibility cache purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-private-files-purge',
+			],
+		];
+	}
+
+	private function build_manual_purge_url( string $action ): string {
+		$query_args = [
+			'cm_purge_action' => $action,
+		];
+
+		return wp_nonce_url( add_query_arg( $query_args, admin_url() ), 'manual_purge' );
 	}
 
 	/**
@@ -187,20 +282,29 @@ class WPCOM_VIP_Cache_Manager {
 
 		echo '<hr>';
 
-		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- previously escaped and safe HTML tags only
+		echo '<p>' . esc_html__( 'Use the tools below to target specific cache layers.' ) . "</p>\n";
 
-		$button_html  = esc_html__( 'Press the button below to force a purge of the entire page cache. If you are sandboxed, it will purge the sandbox cache by default. ' );
-		$button_html .= '<strong>' . esc_html__( 'This button is visible to Automatticans only.' ) . '</strong>';
-		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
-		$button_html .= esc_html__( 'Purge Page Cache' );
-		$button_html .= '</strong></a></span>';
+		$actions = $this->get_manual_purge_actions_config();
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() and esc_url() were used above
-		echo "<p>{$button_html}</p>\n";
+		echo '<ul class="vip-cache-manager-purge-actions">';
+
+		foreach ( $actions as $action_key => $action_config ) {
+			$url = $this->build_manual_purge_url( $action_key );
+			echo '<li>';
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- strings escaped above
+			echo '<p><strong>' . esc_html( $action_config['label'] ) . '</str	ong><br />' . esc_html( $action_config['description'] ) . '</p>';
+			echo '<p><span class="button"><a href="' . esc_url( $url ) . '"><strong>' . esc_html__( 'Run purge', 'vip-cache-manager' ) . '</strong></a></span></p>';
+			echo '</li>';
+		}
+
+		echo '</ul>';
 	}
 
 	public function manual_purge_message() {
-		echo "<div id='message' class='updated fade'><p><strong>" . esc_html__( 'Cache purged!', 'vip-cache-manager' ) . '</strong></p></div>';
+		$message = $this->manual_purge_notice_message ? $this->manual_purge_notice_message : __( 'Cache purged!', 'vip-cache-manager' );
+
+		echo "<div id='message' class='updated fade'><p><strong>" . esc_html( $message ) . '</strong></p></div>';
 	}
 
 	public function curl_multi( $requests ) {
@@ -499,13 +603,54 @@ class WPCOM_VIP_Cache_Manager {
 		$this->curl_multi( $requests );
 	}
 
-	public function purge_site_cache() {
+	public function purge_site_cache(): bool {
 		if ( $this->site_cache_purged ) {
-			return;
+			return false;
 		}
 
-		$this->ban_urls[]        = untrailingslashit( home_url() ) . '/(?!wp\-content\/uploads\/).*';
+		$this->ban_urls[]        = trailingslashit( home_url() );
 		$this->site_cache_purged = true;
+
+		return true;
+	}
+
+	/**
+	 * Queue a purge for cached origin responses only.
+	 */
+	public function purge_origin_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['origin'] );
+	}
+
+	/**
+	 * Queue a purge for cached uploads only.
+	 */
+	public function purge_uploads_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['uploads'] );
+	}
+
+	/**
+	 * Queue a purge for cached static assets only.
+	 */
+	public function purge_static_files_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['static'] );
+	}
+
+	/**
+	 * Queue a purge for cached private file visibility metadata.
+	 */
+	public function purge_private_files_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['private_files'] );
+	}
+
+	private function queue_special_purge_url( string $path ): bool {
+		if ( empty( $path ) ) {
+			return false;
+		}
+
+		$base = trailingslashit( home_url() );
+		$url  = $base . ltrim( $path, '/' );
+
+		return $this->queue_purge_url( $url );
 	}
 
 	public function queue_post_purge( $post_id ) {
