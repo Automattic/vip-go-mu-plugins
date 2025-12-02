@@ -46,7 +46,7 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 		}
 
 		// Queue a specific URL purge.
-		wpcom_vip_purge_edge_cache_for_url( $args[0] );
+		wpvip_purge_edge_cache_for_url( $args[0] );
 
 		WP_CLI::success( 'URL purged from the VIP page cache.' );
 	}
