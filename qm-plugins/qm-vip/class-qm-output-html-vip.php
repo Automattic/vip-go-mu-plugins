@@ -34,27 +34,37 @@ class QM_Output_Html_VIP extends QM_Output_Html {
 
 		// App section
 		$this->output_before_section( 'Application' );
-		if ( isset( $data->app['id'] ) ) {
-			$this->output_table_row( 'ID', $data->app['id'] );
+
+		$app_fields = [
+			'slug'        => 'Name',
+			'environment' => 'Environment',
+			'alias'       => 'Alias',
+			'id'          => 'ID',
+			'name'        => 'Name',
+			'branch'      => 'Branch',
+			'commit'      => 'Commit',
+			'jetpack'     => 'Jetpack',
+			'es_version'  => 'Elasticsearch',
+			'fedramp'     => 'FedRAMP',
+		];
+
+		foreach ( $app_fields as $key => $label ) {
+			if ( ! isset( $data->app[ $key ] ) ) {
+				continue;
+			}
+
+			$value = $data->app[ $key ];
+			$link  = '';
+
+			if ( 'commit' === $key ) {
+				$link = 'https://github.com/automattic/vip-go-mu-plugins/commit/' . $value;
+			} elseif ( 'fedramp' === $key ) {
+				$value = $value ? 'Yes' : 'No';
+			}
+
+			$this->output_table_row( $label, $value, $link );
 		}
-		if ( isset( $data->app['name'] ) ) {
-			$this->output_table_row( 'Name', $data->app['name'] );
-		}
-		if ( isset( $data->app['branch'] ) ) {
-			$this->output_table_row( 'Branch', $data->app['branch'] );
-		}
-		if ( isset( $data->app['commit'] ) ) {
-			$this->output_table_row( 'Commit', $data->app['commit'] );
-		}
-		if ( isset( $data->app['jetpack'] ) ) {
-			$this->output_table_row( 'Jetpack', $data->app['jetpack'] );
-		}
-		if ( isset( $data->app['es_version'] ) ) {
-			$this->output_table_row( 'Elasticsearch', $data->app['es_version'] );
-		}
-		if ( isset( $data->app['fedramp'] ) ) {
-			$this->output_table_row( 'FedRAMP', $data->app['fedramp'] ? 'Yes' : 'No' );
-		}
+
 		$this->output_after_section();
 
 		$this->after_non_tabular_output();

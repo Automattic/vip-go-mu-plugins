@@ -23,24 +23,19 @@ if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) ) {
  *
  * The plugin ignores the value of `WPCF7_UPLOADS_TMP_DIR` if it is not
  * within a set of paths allowed by the plugin. The plugin allows the path
- * defined in `WP_TEMP_DIR`, so this fix uses the plugin's `wpcf7_upload_dir`
+ * defined in `WP_TEMP_DIR`, so this fix uses the plugin's `wpcf7_init`
  * filter to set `WP_TEMP_DIR` to `/tmp/` so that the plugin will allow the
  * path that we defined earlier in `WPCF7_UPLOADS_TMP_DIR`.
- *
- * @param array $uploads See wp_upload_dir() for description.
- * @return array Information about the upload directory.
  */
-function vip_wpcf7_upload_dir( $uploads ) {
+function vip_wpcf7_upload_dir() {
 	if ( ! defined( 'WP_TEMP_DIR' ) ) {
 		define( 'WP_TEMP_DIR', get_temp_dir() );
 	}
-
-	return $uploads;
 }
-add_filter( 'wpcf7_upload_dir', 'vip_wpcf7_upload_dir', 10, 1 );
+add_action( 'wpcf7_init', 'vip_wpcf7_upload_dir', 10, 0 ); 
 
 /**
- * Recent versions of CF7 attempt to clean-up uploaded attachments
+ * Versions of CF7 prior to v5.8.1 attempt to clean-up uploaded attachments
  * somewhere within `wp-content`, ignoring the value of WPCF7_UPLOADS_TMP_DIR if
  * it is not within `wp-content`. This does not work because we disable `open_dir()`,
  * flooding the PHP logs with `opendir() Failed to open directory` warnings.
@@ -48,16 +43,18 @@ add_filter( 'wpcf7_upload_dir', 'vip_wpcf7_upload_dir', 10, 1 );
  * @return void
  */
 function vip_disable_wpcf7_cleanup_upload_files() {
-	// Return early if the relevant functions do not exist
-	if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) || ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
-		return;
-	}
+	if ( ! defined( 'WPCF7_VERSION' ) || ! version_compare( WPCF7_VERSION, '5.8.1', '>=' ) ) {
+		// Return early if the relevant functions do not exist
+		if ( ! defined( 'WPCF7_UPLOADS_TMP_DIR' ) || ! function_exists( 'wpcf7_cleanup_upload_files' ) || ! function_exists( 'wpcf7_upload_tmp_dir' ) ) {
+			return;
+		}
 
-	// Check if the action is queued and if the tmp directories match
-	// (they might match if the plugin is an old version, or has been patched)
-	$priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
-	if ( false !== $priority && WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
-		remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
+		// Check if the action is queued and if the tmp directories match
+		// (they might match if the plugin is an old version, or has been patched)
+		$priority = has_action( 'shutdown', 'wpcf7_cleanup_upload_files' );
+		if ( false !== $priority && WPCF7_UPLOADS_TMP_DIR !== wpcf7_upload_tmp_dir() ) {
+			remove_action( 'shutdown', 'wpcf7_cleanup_upload_files', $priority );
+		}
 	}
 }
 add_action( 'plugins_loaded', 'vip_disable_wpcf7_cleanup_upload_files' );

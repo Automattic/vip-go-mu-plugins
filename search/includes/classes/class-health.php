@@ -176,6 +176,10 @@ class Health {
 				add_filter( 'ep_exclude_password_protected_from_search', '__return_false' );
 			}
 
+			// Ensure query_vars stay un-modified because some third-party plugins modify it 
+			// (e.g. orderby) and break `wp health validate-counts` CLI.
+			remove_all_actions( 'parse_query' );
+
 			$query = self::query_objects( $query_args, $indexable->slug );
 			if ( 'user' === $indexable->slug && isset( $query->query_vars['blog_id'] ) ) {
 				// Since the user indexable is global, we want to include ALL in count.
