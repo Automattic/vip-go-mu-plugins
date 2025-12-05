@@ -146,15 +146,29 @@ class WPCOM_VIP_Cache_Manager {
 
 		$callback = [ $this, $actions[ $action ]['callback'] ];
 
+		$result  = null;
+		$success = true;
+
 		if ( is_callable( $callback ) ) {
-			call_user_func( $callback );
+			$result = call_user_func( $callback );
 		}
 
-		$this->manual_purge_notice_message = $actions[ $action ]['message'];
+		if ( is_wp_error( $result ) ) {
+			$success                           = false;
+			$this->manual_purge_notice_message = $result->get_error_message();
+		} elseif ( false === $result ) {
+			$success = false;
+		}
+
+		if ( $success && empty( $this->manual_purge_notice_message ) ) {
+			$this->manual_purge_notice_message = $actions[ $action ]['message'];
+		} elseif ( ! $success && empty( $this->manual_purge_notice_message ) ) {
+			$this->manual_purge_notice_message = __( 'Unable to queue cache purge.', 'vip-cache-manager' );
+		}
 
 		$pixel_data = [
 			'vip-cache-action'           => $actions[ $action ]['stat'],
-			'vip-cache-url-purge-status' => 'success',
+			'vip-cache-url-purge-status' => $success ? 'success' : 'error',
 		];
 
 		if ( defined( 'VIP_GO_APP_ID' ) ) {
@@ -174,6 +188,16 @@ class WPCOM_VIP_Cache_Manager {
 				'callback'    => 'purge_site_cache',
 				'message'     => __( 'Site cache purge queued.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-site-purge',
+			],
+			'url'     => [
+				'type'        => 'url',
+				'label'       => __( 'Purge specific URL', 'vip-cache-manager' ),
+				'description' => __( 'Enter the full URL (including scheme) to purge a single page without affecting other cache content.', 'vip-cache-manager' ),
+				'placeholder' => __( 'https://example.com/path', 'vip-cache-manager' ),
+				'button'      => __( 'Purge URL', 'vip-cache-manager' ),
+				'callback'    => 'purge_single_url',
+				'message'     => __( 'URL purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-url-purge',
 			],
 			'origin'  => [
 				'label'       => __( 'Purge WordPress responses', 'vip-cache-manager' ),
@@ -289,14 +313,19 @@ class WPCOM_VIP_Cache_Manager {
 
 	public function render_dashboard_widget() {
 		if ( ! $this->can_purge_cache() ) {
-			echo '<p>' . esc_html__( 'You do not have permission to manage page cache purges.', 'vip-cache-manager' ) . '</p>';
+			echo '<p>' . esc_html__( 'You do not have permission to manage page cache.', 'vip-cache-manager' ) . '</p>';
 		} else {
-			echo '<ul class="vip-cache-manager-purge-actions">';
-
+			$this->render_dashboard_widget_url_form();
 			echo '<p>' . esc_html__( 'Use the tools below to clear all edge cache or specific cache groups. Be advised, clearing the edge cache will result in temporary increase in load on your origin servers and may impact your site\'s performance.', 'vip-cache-manager' ) . '</p>';
 			echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
 
+			echo '<ul class="vip-cache-manager-purge-actions">';
+
 			foreach ( $this->get_manual_purge_actions_config() as $action_key => $action_config ) {
+				if ( isset( $action_config['type'] ) && 'url' === $action_config['type'] ) {
+					continue;
+				}
+
 				echo '<hr /><li>';
 				printf(
 					'<p><strong>%s</strong><br />%s</p>',
@@ -314,6 +343,41 @@ class WPCOM_VIP_Cache_Manager {
 			echo '</ul>';
 		}
 	}
+
+	private function render_dashboard_widget_url_form() {
+		$actions = $this->get_manual_purge_actions_config();
+
+		if ( ! isset( $actions['url'] ) ) {
+			return;
+		}
+
+		$config = $actions['url'];
+
+		printf(
+			'<form method="get" action="%s" class="vip-cache-manager-url-form">',
+			esc_url( admin_url() )
+		);
+		wp_nonce_field( 'manual_purge' );
+		echo '<input type="hidden" name="cm_purge_action" value="url" />';
+
+		printf(
+			'<p><strong><label for="vip-cache-manager-url">%s</label></strong></p>',
+			esc_html( $config['label'] )
+		);
+		printf(
+			'<p><input type="url" id="vip-cache-manager-url" name="vip_cache_manager_url" class="large-text" placeholder="%s" required /></p>',
+			esc_attr( $config['placeholder'] )
+		);
+		if ( ! empty( $config['description'] ) ) {
+			printf( '<p class="description">%s</p>', esc_html( $config['description'] ) );
+		}
+		printf(
+			'<p><button type="submit" class="button button-primary">%s</button></p><hr />',
+			esc_html( $config['button'] )
+		);
+		echo '</form>';
+	}
+
 
 	public function manual_purge_message() {
 		$message = $this->manual_purge_notice_message ? $this->manual_purge_notice_message : __( 'Cache purged!', 'vip-cache-manager' );
@@ -989,6 +1053,18 @@ class WPCOM_VIP_Cache_Manager {
 
 		$this->purge_urls[] = $normalized_url;
 		return true;
+	}
+
+	private function purge_single_url() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verified in handle_manual_purge_action().
+		$url = isset( $_REQUEST['vip_cache_manager_url'] ) ? esc_url_raw( wp_unslash( $_REQUEST['vip_cache_manager_url'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) ) {
+			return new \WP_Error( 'invalid_url', __( 'Please enter a valid URL to purge.', 'vip-cache-manager' ) );
+		}
+
+		return $this->queue_purge_url( $url );
 	}
 
 	/**
