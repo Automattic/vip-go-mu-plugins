@@ -65,7 +65,6 @@ export class ClassicEditorPage {
 		await fileChooser.setFiles( fileName );
 		await this.page.click( selectors.addMediaButton );
 		await this.page.waitForLoadState( 'load' );
-		this.page.frameLocator( selectors.editorFrame ).locator( selectors.postImage );
 	}
 
 	/**

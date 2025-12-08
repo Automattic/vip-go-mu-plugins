@@ -769,3 +769,79 @@ if ( defined( 'FILES_CLIENT_SITE_ID' ) && defined( 'FILES_ACCESS_TOKEN' ) ) {
  * This is not needed on VIP Go since we use Photon for dynamic image work.
  */
 add_filter( 'big_image_size_threshold', '__return_false' );
+
+/**
+ * Add a file or pattern to be handled locally by the VIP Filesystem Stream Wrapper
+ *
+ * Files added to this list will be stored in the local temporary directory instead of
+ * being uploaded to the VIP Files Service. This is useful for files that need to be
+ * processed locally or should not be persisted remotely.
+ *
+ * Supports exact file paths and wildcard patterns using fnmatch syntax:
+ * - Use `*` to match any number of characters except directory separators
+ * - Use `?` to match a single character
+ * - Use `[abc]` to match any character in the set
+ *
+ * Examples:
+ * - `vip://wp-content/uploads/temp-file.txt` - Exact file path
+ * - `vip://wp-content/uploads/cache/*.json` - All JSON files in cache directory
+ * - `vip://wp-content/uploads/tmp/*` - All files in tmp directory
+ *
+ * @param string $file_path Path to the file or a wildcard pattern
+ * @return bool True if the file was added successfully, false otherwise
+ */
+function wpvip_fs_local_file_add( $file_path ) {
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'add_local_file' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
+		return false;
+	}
+
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $file_path );
+}
+
+/**
+ * Remove a file or pattern from local handling by the VIP Filesystem Stream Wrapper
+ *
+ * Files removed from the local list will be handled by the VIP Files Service instead
+ * of being stored locally.
+ *
+ * @param string $file_path Path to the file or pattern to remove
+ * @return bool True if the file was removed successfully, false otherwise
+ */
+function wpvip_fs_local_file_remove( $file_path ) {
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'remove_local_file' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
+		return false;
+	}
+
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $file_path );
+}
+
+/**
+ * Get the list of files and patterns being handled locally by the VIP Filesystem Stream Wrapper
+ *
+ * Returns an array of file paths and wildcard patterns that are configured to be
+ * handled locally instead of being uploaded to the VIP Files Service.
+ *
+ * @return array List of file paths and patterns configured for local handling
+ */
+function wpvip_fs_local_file_list() {
+	if ( ! method_exists( 'Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper', 'get_local_files' ) ) {
+		_doing_it_wrong(
+			__FUNCTION__,
+			'VIP Filesystem Stream Wrapper is not loaded. Please ensure VIP_FILESYSTEM_USE_STREAM_WRAPPER is defined and set to true.',
+			'1.0.0'
+		);
+		return array();
+	}
+
+	return \Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
+}
