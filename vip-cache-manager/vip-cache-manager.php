@@ -193,7 +193,7 @@ class WPCOM_VIP_Cache_Manager {
 				'type'        => 'url',
 				'label'       => __( 'Purge specific URL', 'vip-cache-manager' ),
 				'description' => __( 'Enter the full URL (including scheme) to purge a single page without affecting other cache content.', 'vip-cache-manager' ),
-				'placeholder' => __( 'https://example.com/path', 'vip-cache-manager' ),
+				'placeholder' => home_url( '/' ),
 				'button'      => __( 'Purge URL', 'vip-cache-manager' ),
 				'callback'    => 'purge_single_url',
 				'message'     => __( 'URL purge queued.', 'vip-cache-manager' ),
@@ -322,9 +322,6 @@ class WPCOM_VIP_Cache_Manager {
 			echo '<hr />';
 
 			$this->render_dashboard_widget_scope_form( $actions );
-
-			echo '<p>' . esc_html__( 'Use these controls to clear all edge cache or target specific cache groups. Be advised, large purges increase load on origin servers and may temporarily impact site performance.', 'vip-cache-manager' ) . '</p>';
-			echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
 		}
 	}
 
@@ -379,6 +376,9 @@ class WPCOM_VIP_Cache_Manager {
 		wp_nonce_field( 'manual_purge' );
 
 		echo '<p><strong><label for="vip-cache-manager-scope">' . esc_html__( 'Purge cache scope', 'vip-cache-manager' ) . '</label></strong></p>';
+
+		echo '<p>' . esc_html__( 'Use these controls to clear all edge cache or target specific cache groups. Be advised, purging entire cache can increase load on origin servers and may temporarily impact site performance.', 'vip-cache-manager' ) . '</p>';
+
 		echo '<p><select id="vip-cache-manager-scope" name="cm_purge_action" class="widefat">';
 
 		foreach ( $scope_actions as $key => $config ) {
@@ -393,14 +393,18 @@ class WPCOM_VIP_Cache_Manager {
 
 		printf(
 			'<p><button type="submit" class="button button-primary">%s</button></p>',
-			esc_html__( 'Run purge', 'vip-cache-manager' )
+			esc_html__( 'Purge cache', 'vip-cache-manager' )
 		);
-		echo '</form>';
+		echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
+
+		echo '
+		</form>';
 	}
 
 
 	public function manual_purge_message() {
-		$message = $this->manual_purge_notice_message ? $this->manual_purge_notice_message : __( 'Cache purged!', 'vip-cache-manager' );
+		$key     = sanitize_key( $_GET['cm_purge_action'] ?? 'site' ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended 
+		$message = $this->get_manual_purge_actions_config()[ $key ]['message'];
 
 		echo "<div id='message' class='updated fade'><p><strong>" . esc_html( $message ) . '</strong></p></div>';
 	}
