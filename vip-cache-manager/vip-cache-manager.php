@@ -431,8 +431,8 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		curl_multi_close( $curl_multi );
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-		error_log( 'vip-cache-manager: Unsupported PURGE_SERVER_TYPE configuration.' );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( 'vip-cache-manager: Unsupported PURGE_SERVER_TYPE configuration.' );
 	}
 
 	private function is_batch_mangle_mode(): bool {
@@ -566,8 +566,8 @@ class WPCOM_VIP_Cache_Manager {
 			} while ( CURLM_CALL_MULTI_PERFORM === $result );
 
 			if ( CURLM_OK !== $result ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'curl_multi_exec() returned something different than CURLM_OK' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( 'curl_multi_exec() returned something different than CURLM_OK' );
 			}
 
 			curl_multi_select( $curl_multi, 0.2 );
@@ -578,13 +578,13 @@ class WPCOM_VIP_Cache_Manager {
 			$info = curl_getinfo( $completed['handle'] );
 
 			if ( ! $info['http_code'] && curl_error( $completed['handle'] ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) );
 			}
 
 			if ( '200' != $info['http_code'] ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] );
 			}
 
 			curl_multi_remove_handle( $curl_multi, $completed['handle'] );
