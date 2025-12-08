@@ -315,38 +315,20 @@ class WPCOM_VIP_Cache_Manager {
 		if ( ! $this->can_purge_cache() ) {
 			echo '<p>' . esc_html__( 'You do not have permission to manage page cache.', 'vip-cache-manager' ) . '</p>';
 		} else {
-			$this->render_dashboard_widget_url_form();
-			echo '<p>' . esc_html__( 'Use the tools below to clear all edge cache or specific cache groups. Be advised, clearing the edge cache will result in temporary increase in load on your origin servers and may impact your site\'s performance.', 'vip-cache-manager' ) . '</p>';
+			$actions = $this->get_manual_purge_actions_config();
+
+			$this->render_dashboard_widget_url_form( $actions );
+
+			echo '<hr />';
+
+			$this->render_dashboard_widget_scope_form( $actions );
+
+			echo '<p>' . esc_html__( 'Use these controls to clear all edge cache or target specific cache groups. Be advised, large purges increase load on origin servers and may temporarily impact site performance.', 'vip-cache-manager' ) . '</p>';
 			echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
-
-			echo '<ul class="vip-cache-manager-purge-actions">';
-
-			foreach ( $this->get_manual_purge_actions_config() as $action_key => $action_config ) {
-				if ( isset( $action_config['type'] ) && 'url' === $action_config['type'] ) {
-					continue;
-				}
-
-				echo '<hr /><li>';
-				printf(
-					'<p><strong>%s</strong><br />%s</p>',
-					esc_html( $action_config['label'] ),
-					esc_html( $action_config['description'] )
-				);
-				printf(
-					'<p><span class="button"><a href="%s"><strong>%s</strong></a></span></p>',
-					esc_url( $this->build_manual_purge_url( $action_key ) ),
-					esc_html__( 'Run purge', 'vip-cache-manager' )
-				);
-				echo '</li>';
-			}
-
-			echo '</ul>';
 		}
 	}
 
-	private function render_dashboard_widget_url_form() {
-		$actions = $this->get_manual_purge_actions_config();
-
+	private function render_dashboard_widget_url_form( array $actions ) {
 		if ( ! isset( $actions['url'] ) ) {
 			return;
 		}
@@ -372,8 +354,46 @@ class WPCOM_VIP_Cache_Manager {
 			printf( '<p class="description">%s</p>', esc_html( $config['description'] ) );
 		}
 		printf(
-			'<p><button type="submit" class="button button-primary">%s</button></p><hr />',
+			'<p><button type="submit" class="button button-primary">%s</button></p>',
 			esc_html( $config['button'] )
+		);
+		echo '</form>';
+	}
+
+	private function render_dashboard_widget_scope_form( array $actions ) {
+		$scope_actions = array_filter(
+			$actions,
+			static function ( $config ) {
+				return ! isset( $config['type'] ) || 'url' !== $config['type'];
+			}
+		);
+
+		if ( empty( $scope_actions ) ) {
+			return;
+		}
+
+		printf(
+			'<form method="get" action="%s" class="vip-cache-manager-scope-form">',
+			esc_url( admin_url() )
+		);
+		wp_nonce_field( 'manual_purge' );
+
+		echo '<p><strong><label for="vip-cache-manager-scope">' . esc_html__( 'Purge cache scope', 'vip-cache-manager' ) . '</label></strong></p>';
+		echo '<p><select id="vip-cache-manager-scope" name="cm_purge_action" class="widefat">';
+
+		foreach ( $scope_actions as $key => $config ) {
+			printf(
+				'<option value="%s">%s</option>',
+				esc_attr( $key ),
+				esc_html( $config['label'] )
+			);
+		}
+
+		echo '</select></p>';
+
+		printf(
+			'<p><button type="submit" class="button button-primary">%s</button></p>',
+			esc_html__( 'Run purge', 'vip-cache-manager' )
 		);
 		echo '</form>';
 	}
