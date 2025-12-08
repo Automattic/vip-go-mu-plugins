@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5.0.0
+        uses: actions/checkout@v6.0.0
 
       - name: Setup PHP
         uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
@@ -38,7 +38,7 @@ jobs:
     name: Docs Site Changelog
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5.0.0
+      - uses: actions/checkout@v6.0.0
       - uses: Automattic/vip-actions/changelog@64cb27606455c925183e07065f050846d69b2120
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'

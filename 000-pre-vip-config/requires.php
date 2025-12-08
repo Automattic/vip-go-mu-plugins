@@ -14,6 +14,7 @@ $files = [
 	'/lib/environment/class-environment.php',
 	'/lib/helpers/environment.php',
 	'/lib/utils/class-context.php',
+	'/lib/helpers/app.php',
 ];
 
 $cli_files = [
