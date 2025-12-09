@@ -89,12 +89,26 @@ class API_Client {
 			'user-agent' => $this->user_agent,
 		] );
 
-		$response = wp_remote_request( $request_url, $request_args );
+		$attempts = 5;
+		$delay    = 250;
+		while ( $attempts > 0 ) {
+			$response = wp_remote_request( $request_url, $request_args );
 
-		// Debug log
-		if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
-			true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) ) {
-			$this->log_request( $path, $method, $request_args );
+			// Debug log
+			if ( defined( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) &&
+				true === constant( 'VIP_FILESYSTEM_STREAM_WRAPPER_DEBUG' ) ) {
+				$this->log_request( $path, $method, $request_args );
+			}
+
+			if ( ! is_wp_error( $response ) || ! in_array( $method, [ 'GET', 'HEAD' ], true ) || ! str_contains( $response->get_error_message(), 'cURL error 18' ) ) {
+				break;
+			}
+
+			--$attempts;
+			if ( $attempts > 0 ) {
+				usleep( $delay * 1000 );
+				$delay += 250;
+			}
 		}
 
 		return $response;
