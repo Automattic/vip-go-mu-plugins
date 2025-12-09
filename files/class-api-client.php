@@ -105,8 +105,10 @@ class API_Client {
 			}
 
 			--$attempts;
-			usleep( $delay * 1000 );
-			$delay += 250;
+			if ( $attempts > 0 ) {
+				usleep( $delay * 1000 );
+				$delay += 250;
+			}
 		}
 
 		return $response;
