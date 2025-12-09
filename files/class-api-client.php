@@ -100,7 +100,7 @@ class API_Client {
 				$this->log_request( $path, $method, $request_args );
 			}
 
-			if ( ! is_wp_error( $response ) || ! in_array( $method, [ 'GET', 'HEAD' ], true ) || false === strpos( $response->get_error_message(), 'cURL error 18' ) ) {
+			if ( ! is_wp_error( $response ) || ! in_array( $method, [ 'GET', 'HEAD' ], true ) || ! str_contains( $response->get_error_message(), 'cURL error 18' ) ) {
 				break;
 			}
 
