@@ -39,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.0
-      - uses: Automattic/vip-actions/changelog@64cb27606455c925183e07065f050846d69b2120
+      - uses: Automattic/vip-actions/changelog@dfb03933cc5a3ca35505c5ff3a4a04a24bab2669
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
