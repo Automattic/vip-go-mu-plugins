@@ -91,7 +91,7 @@ export class EditorPage {
 	 *
 	 * @param {string} text Text to enter
 	 */
-	public async enterText( text: string ): Promise<unknown> {
+	public async enterText( text: string ): Promise<void> {
 		const lines = text.split( '\n' );
 		let locator: Locator;
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
@@ -107,13 +107,15 @@ export class EditorPage {
 		// text such as 'First sentence\nSecond sentence', as it is all put in one line.
 		// frame.type() will respect newlines like a human would, but it is slow.
 		// This approach will run faster than using frame.type() while respecting the newline chars.
-		return Promise.all(
-			lines.map( async ( line, index ) => {
-				const lineLocator = this.page.locator( `${ selectors.paragraphBlocks }:nth-of-type(${ index + 1 })` );
-				await lineLocator.fill( line );
-				await lineLocator.press( 'Enter' );
-			} ),
-		);
+		/* eslint-disable no-await-in-loop */
+		for ( let idx = 0; idx < lines.length; ++idx ) {
+			// eslint-disable-next-line security/detect-object-injection
+			const line = lines[ idx ];
+			const lineLocator = this.page.locator( `${ selectors.paragraphBlocks }:nth-of-type(${ idx + 1 })` );
+			await lineLocator.fill( line );
+			await lineLocator.press( 'Enter' );
+		}
+		/* eslint-enable no-await-in-loop */
 	}
 
 	/**
@@ -135,7 +137,8 @@ export class EditorPage {
 		while ( await locator.isVisible() ) {
 			await locator.click();
 			await locator.selectText();
-			await locator.press( 'Backspace' );
+			await locator.press( 'Backspace' ); // Kill the text
+			await locator.press( 'Backspace' ); // Kill the block
 		}
 		/* eslint-enable no-await-in-loop */
 	}
@@ -201,11 +204,11 @@ export class EditorPage {
 	 *
 	 * @param {string} url Url to visit
 	 */
-	private async visitPublishedPost( url: string ): Promise<unknown> {
+	private async visitPublishedPost( url: string ): Promise<unknown[]> {
 		const locator = this.page.locator( selectors.viewButton );
 		await locator.evaluate( ( el ) => el.removeAttribute( 'target' ) );
 		return Promise.all( [
-			this.page.waitForURL( url, { waitUntil: 'load' } ),
+			this.page.waitForURL( url, { waitUntil: 'domcontentloaded' } ),
 			locator.click(),
 		] );
 	}
