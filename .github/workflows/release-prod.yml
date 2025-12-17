@@ -25,7 +25,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
 
       - name: Setup PHP
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
@@ -83,7 +83,7 @@ jobs:
     name: Docs Site Changelog
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.0
+      - uses: actions/checkout@v6.0.1
       - uses: Automattic/vip-actions/changelog@dfb03933cc5a3ca35505c5ff3a4a04a24bab2669
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
