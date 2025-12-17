@@ -209,7 +209,12 @@ export class EditorPage {
 	 *
 	 * @param {string} url Url to visit
 	 */
-	private visitPublishedPost( url: string ): Promise<unknown> {
+	private async visitPublishedPost( url: string ): Promise<unknown> {
+		const prebublishChecksLocator = this.page.getByRole( 'checkbox', { name: 'Always show pre-publish checks.' } );
+		if ( await prebublishChecksLocator.count() > 0 ) {
+			await prebublishChecksLocator.uncheck();
+		}
+
 		return Promise.all( [
 			this.page.waitForURL( url, { waitUntil: 'load' } ),
 			this.page.click( selectors.viewButton ),
