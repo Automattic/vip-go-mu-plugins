@@ -28,7 +28,6 @@ class API_Cache_Test extends WP_UnitTestCase {
 
 	public static function get_property( $object, $name ) {
 		$property = new \ReflectionProperty( get_class( $object ), $name );
-		$property->setAccessible( true );
 		return $property;
 	}
 
