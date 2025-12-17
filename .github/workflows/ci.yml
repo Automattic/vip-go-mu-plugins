@@ -27,31 +27,44 @@ jobs:
       fail-fast: false
       matrix:
         config:
-        # PHP 8.1, Jetpack
-          - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.6.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.1', phpunit: '', coverage: 'yes' }
-          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.1', phpunit: '', coverage: 'yes' }
-          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.1', phpunit: '' }
-          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.1', phpunit: '' }
-        # No Jetpack, WP latest, PHP 8.1
-          - { wp: latest,  ms: 'no',  jp: 'no',  php: '8.1', phpunit: '' }
-          - { wp: latest,  ms: 'yes', jp: 'no',  php: '8.1', phpunit: '' }
-        # PHP 8.2, Jetpack
-          - { wp: latest, ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
-          - { wp: latest, ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
-        # PHP 8.3, Jetpack
+        # PHP 8.2
+          - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: latest,  ms: 'no',  jp: 'yes', php: '8.2', phpunit: '', coverage: 'yes' }
+          - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.2', phpunit: '', coverage: 'yes' }
+          - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
+          - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+        # PHP 8.3
+          - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.6.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-        # PHP 8.4, Jetpack
+        # PHP 8.4
+          - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
+          - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
+        # PHP 8.5
+          - { wp: latest, ms: 'no',  jp: 'yes', php: '8.5', phpunit: '' }
+          - { wp: latest, ms: 'yes', jp: 'yes', php: '8.5', phpunit: '' }
     services:
       mysql:
         image: mysql:8
