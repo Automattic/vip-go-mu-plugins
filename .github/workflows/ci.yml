@@ -42,6 +42,9 @@ jobs:
           - { wp: latest,  ms: 'yes', jp: 'yes', php: '8.2', phpunit: '', coverage: 'yes' }
           - { wp: nightly, ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
           - { wp: nightly, ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
+        # PHP 8.2, no JP
+          - { wp: latest,  ms: 'no',  jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
+          - { wp: latest,  ms: 'yes', jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
         # PHP 8.3
           - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
@@ -58,8 +61,8 @@ jobs:
         # PHP 8.4
           - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
+          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
         # PHP 8.5
