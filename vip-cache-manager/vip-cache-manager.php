@@ -1152,7 +1152,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function current_user_can_purge_cache(): bool {
-		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'manage_options' ), wp_get_current_user() );
+		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'edit_others_posts' ), wp_get_current_user() );
 	}
 }
 
