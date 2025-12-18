@@ -84,11 +84,11 @@
 
 			const json = await response.json();
 			result.textContent = ( json && json.data && json.data.message ) ? json.data.message : 'Done.';
-			result.classList.add( 'success' );
+			result.classList.add( 'notice-success' );
 			result.classList.add( 'notice' );
 		} catch ( e ) {
 			result.textContent = 'Request failed.';
-			result.classList.add( 'error' );
+			result.classList.add( 'notice-error' );
 			result.classList.add( 'notice' );
 		} finally {
 			submit.disabled = false;
