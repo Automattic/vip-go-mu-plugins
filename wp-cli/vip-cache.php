@@ -36,7 +36,12 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 		}
 
 		if ( 'site' === $scope && ! isset( $assoc_args['skip-confirm'] ) ) {
-			WP_CLI::confirm( "⚠️ You're about to invalidate Page Cache for the whole site, this can severely impact performance and stability for large sites. Are you sure?" );
+			WP_CLI::confirm(
+				sprintf(
+					"⚠️ You're about to invalidate Page Cache for (%s). This can impact performance and stability for large sites. Are you sure?",
+					trailingslashit( home_url() )
+				)
+			);
 		}
 
 		call_user_func( $scopes[ $scope ]['callback'] );

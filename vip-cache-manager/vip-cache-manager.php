@@ -391,7 +391,7 @@ class WPCOM_VIP_Cache_Manager {
 		echo '<p class="vip-cache-manager-dashboard-result" aria-live="polite"></p>';
 		echo '</form>';
 
-		echo '<p>Read more about <a href="https://docs.wpvip.com/cache/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
+		echo '<p>Read more about <a href="https://docs.wpvip.com/caching/page-cache/purging/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
 	}
 
 
