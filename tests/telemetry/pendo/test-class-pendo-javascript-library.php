@@ -5,19 +5,98 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry;
 
 use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Integrations\FakeIntegrationWithPendoTracking;
+use Automattic\VIP\Integrations\IntegrationsSingleton;
 use Automattic\VIP\Telemetry\Pendo\Pendo_JavaScript_Library;
 use WP_UnitTestCase;
+use function Automattic\Test\Utils\get_class_property_as_public;
+use function Automattic\VIP\Integrations\activate;
 use function get_bloginfo;
 use function wp_scripts;
 use function wp_set_current_user;
 
+require_once __DIR__ . '/../../../vip-integrations.php';
+require_once __DIR__ . '/../../integrations/fake-integration.php';
+
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
-	public function tearDown(): void {
+	public function tearDown(): void {  
+		// Reset IntegrationsSingleton to ensure clean state between tests
+		$property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$property->setValue( null, null );
+	
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 
-	public function test_enabled_for_users_with_edit_post_cap() {
+	private function enable_fake_integration_with_pendo_tracking(): void {
+		$integration = new FakeIntegrationWithPendoTracking( 'fake-test-integration' );
+		IntegrationsSingleton::instance()->register( $integration );
+		activate( 'fake-test-integration' );
+	}
+
+	public function test_disabled_for_users_with_edit_post_cap_and_no_tracked_integrations() {
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
+	}
+
+	public function test_disabled_for_users_to_allowed_admin_screens_and_no_tracked_integrations() {
+		global $wp_query;
+
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'vip-block-governance';
+
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+	}
+
+	public function test_disabled_for_filter_allowed_screens_and_no_tracked_integrations() {
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$allow_screen = function ( $screens ) {
+			$screens[] = 'newly-allowed-screen.php';
+			return $screens;
+		};
+
+		add_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
+		remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+	}
+
+	public function test_disabled_for_filter_allowed_admin_screens_and_no_tracked_integrations() {
+		global $wp_query;
+
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'admin-page-slug';
+
+		$allow_admin_screen = function ( $admin_screens ) {
+			$admin_screens[] = 'admin-page-slug';
+			return $admin_screens;
+		};
+
+		add_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+	}
+
+	public function test_enabled_for_users_with_edit_post_cap_and_a_tracked_integration() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
 
@@ -27,7 +106,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
 	}
 
-	public function test_enabled_for_users_to_allowed_admin_screens() {
+	public function test_enabled_for_users_to_allowed_admin_screens_and_a_tracked_integration() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		global $wp_query;
 
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
@@ -40,7 +121,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
 	}
 
-	public function test_enabled_for_filter_allowed_screens() {
+	public function test_enabled_for_filter_allowed_screens_and_a_tracked_integration() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
 
@@ -57,7 +140,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
 	}
 
-	public function test_enabled_for_filter_allowed_admin_screens() {
+	public function test_enabled_for_filter_allowed_admin_screens_and_a_tracked_integration() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		global $wp_query;
 
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
@@ -167,6 +252,8 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_initialization_data() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [
 			'role'         => 'author',
 			'display_name' => 'Frances Ha',
