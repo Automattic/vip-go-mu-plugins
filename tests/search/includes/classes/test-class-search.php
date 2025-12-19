@@ -2617,7 +2617,6 @@ class Search_Test extends WP_UnitTestCase {
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\Search' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true ); // NOSONAR
 		return $method;
 	}
 
@@ -2628,7 +2627,6 @@ class Search_Test extends WP_UnitTestCase {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
 
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true ); // NOSONAR
 
 		return $property;
 	}
