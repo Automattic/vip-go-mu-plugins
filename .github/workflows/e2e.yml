@@ -34,9 +34,11 @@ jobs:
   Run_e2e_tests:
     name: Run E2E Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: block
           allowed-endpoints:
@@ -134,9 +136,11 @@ jobs:
   lint_e2e:
     name: Run ESLint on E2E tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@20cf305ff2072d973412fa9b1e3a4f227bda3c76 # v2.14.0
         with:
           egress-policy: audit
 
