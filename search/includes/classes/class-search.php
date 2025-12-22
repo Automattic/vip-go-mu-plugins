@@ -233,7 +233,7 @@ class Search {
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
-	public static function instance() {
+	public static function instance(): Search {
 		if ( ! ( static::$instance instanceof Search ) ) {
 			static::$instance = new Search();
 			static::$instance->init();

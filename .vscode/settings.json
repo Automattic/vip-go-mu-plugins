@@ -1,0 +1,10 @@
+{
+  "workbench.colorCustomizations": {
+    "[GitHub Dark Dimmed]": {
+      "editorWhitespace.foreground": "#767984"
+    },
+    "activityBar.background": "#302E13",
+    "titleBar.activeBackground": "#44411B",
+    "titleBar.activeForeground": "#FBFAF4"
+  }
+}
