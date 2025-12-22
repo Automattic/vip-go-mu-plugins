@@ -125,7 +125,7 @@ jobs:
         working-directory: __tests__/e2e
 
       - name: Archive test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: test-results
