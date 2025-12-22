@@ -233,6 +233,11 @@ class Search {
 		return $endpoints_defined && $username_defined && $password_defined;
 	}
 
+	/**
+	 * Get the singleton instance of the Search class
+	 *
+	 * @return Search
+	 */
 	public static function instance(): Search {
 		if ( ! ( static::$instance instanceof Search ) ) {
 			static::$instance = new Search();
