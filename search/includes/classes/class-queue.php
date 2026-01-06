@@ -509,9 +509,10 @@ class Queue {
 	 *
 	 * @param array $job_ids Array of job ids to update
 	 * @param array $data Data to update jobs with
+	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'scheduled')
 	 * @return array Array of jobs updated
 	 */
-	public function update_jobs( $job_ids, $data ) {
+	public function update_jobs( $job_ids, $data, $where_status = null ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -527,6 +528,9 @@ class Queue {
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
 		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		if ( null !== $where_status ) {
+			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
+		}
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -745,7 +749,7 @@ class Queue {
 		$this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
-		) );
+		), 'queued' );
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
@@ -898,7 +902,7 @@ class Queue {
 		// Set them as running
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
 
 		$indexables = Indexables::factory();
 
