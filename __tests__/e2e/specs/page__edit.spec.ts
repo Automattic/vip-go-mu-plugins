@@ -54,6 +54,8 @@ test( 'edit a Page', async ( { page } ) => {
 	let editorPage: EditorPage;
 	let pageListPage: PageListPage;
 
+	await test.step( 'Automatically dismiss annoying nuisances', () => EditorPage.automaticallyDismissAnnoyingNuisances( page ) );
+
 	await test.step( 'Go to Page List page', () => {
 		pageListPage = new PageListPage( page );
 		return pageListPage.visit();
@@ -70,12 +72,9 @@ test( 'edit a Page', async ( { page } ) => {
 			'– Thomas A. Edison';
 		editorPage = new EditorPage( page );
 
-		await editorPage.dismissWelcomeTour();
-
 		await editorPage.clearText();
 		await editorPage.clearTitle();
 
-		await editorPage.dismissWelcomeTour();
 		await editorPage.enterTitle( titleText );
 		await editorPage.enterText( bodyText );
 	} );

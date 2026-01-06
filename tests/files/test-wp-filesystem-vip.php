@@ -64,7 +64,6 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
 		return $method;
 	}
 
