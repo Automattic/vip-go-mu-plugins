@@ -15,14 +15,6 @@ namespace Automattic\VIP\Integrations;
 class BlockDataApiIntegration extends Integration {
 
 	/**
-	 * The version of the Block Data API plugin to load, that's set to the latest version.
-	 * This should be higher than the lowestVersion set in "vip-block-data-api" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
-	 *
-	 * @var string
-	 */
-	protected string $version = '1.4';
-
-	/**
 	 * Returns `true` if `Block Data API` is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration from platform side.
 	 */
@@ -46,13 +38,37 @@ class BlockDataApiIntegration extends Integration {
 				return;
 			}
 
-			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
+			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/vip-block-data-api-<version>/
+			// and check what versions are available.
+			$versions = $this->get_versions();
+
+			// if no versions are found, return early.
+			if ( empty( $versions ) ) {
+				$this->is_active = false;
+				return;
+			}
+
+			// Load the latest version of the plugin.
+			$latest_directory = array_key_first( $versions );
+			$load_path        = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-block-data-api.php';
+
+			// This check isn't strictly necessary, but better safe than sorry.
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
-				$this->is_active = false;
+				$this->is_active = false;   
 			}
 		} );
+	}
+
+	/**
+	 * Get the available versions of Block Data API in descending order.
+	 *
+	 * @return array<string, string> An associative array of available versions, where the key is the
+	 *                               directory name and the value is the version number. The versions
+	 *                               are sorted in descending order.
+	 */
+	public function get_versions() {
+		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-block-data-api', 'vip-block-data-api.php' );
 	}
 }
