@@ -56,7 +56,7 @@ class BlockDataApiIntegration extends Integration {
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
-				$this->is_active = false;   
+				$this->is_active = false;
 			}
 		} );
 	}
