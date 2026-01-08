@@ -156,4 +156,28 @@ class VIP_Integration_Utils_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $versions );
 		$this->assertEmpty( $versions );
 	}
+
+	/**
+	 * Test that get_latest_version returns the latest version.
+	 */
+	public function test_get_latest_version_returns_latest_version(): void {
+		global $mock_filesystem_state;
+		$mock_filesystem_state = 'full';
+
+		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
+
+		$this->assertEquals( '2.5', $latest_version );
+	}
+
+	/**
+	 * Test that get_latest_version returns null when no versions are found.
+	 */
+	public function test_get_latest_version_returns_null_when_no_versions_are_found(): void {
+		global $mock_filesystem_state;
+		$mock_filesystem_state = 'empty';
+
+		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
+
+		$this->assertNull( $latest_version );
+	}
 }

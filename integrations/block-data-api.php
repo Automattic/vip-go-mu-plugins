@@ -38,19 +38,16 @@ class BlockDataApiIntegration extends Integration {
 				return;
 			}
 
-			// Get all the entries in the path of WPVIP_MU_PLUGIN_DIR/vip-integrations/vip-block-data-api-<version>/
-			// and check what versions are available.
-			$versions = $this->get_versions();
+			// Load the latest version of the plugin.
+			$latest_directory = $this->get_latest_version();
 
-			// if no versions are found, return early.
-			if ( empty( $versions ) ) {
+			if ( empty( $latest_directory ) ) {
 				$this->is_active = false;
 				return;
 			}
 
-			// Load the latest version of the plugin.
-			$latest_directory = array_key_first( $versions );
-			$load_path        = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-block-data-api.php';
+			// Load the plugin.
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-block-data-api.php';
 
 			// This check isn't strictly necessary, but better safe than sorry.
 			if ( file_exists( $load_path ) ) {
@@ -62,13 +59,11 @@ class BlockDataApiIntegration extends Integration {
 	}
 
 	/**
-	 * Get the available versions of Block Data API in descending order.
+	 * Get the latest version of Block Data API.
 	 *
-	 * @return array<string, string> An associative array of available versions, where the key is the
-	 *                               directory name and the value is the version number. The versions
-	 *                               are sorted in descending order.
+	 * @return string|null The latest version of Block Data API or null if no versions are found.
 	 */
-	public function get_versions() {
-		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-block-data-api', 'vip-block-data-api.php' );
+	public function get_latest_version() {
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-block-data-api', 'vip-block-data-api.php' );
 	}
 }
