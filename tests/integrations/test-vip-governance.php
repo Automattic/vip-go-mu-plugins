@@ -33,14 +33,14 @@ class VIP_Governance_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|VipGovernanceIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( VipGovernanceIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded', 'get_latest_version' ] )
 			->getMock();
 
 		$integration_mock->activate(); // Initial state is active
 		$this->assertTrue( $integration_mock->is_active(), 'Initial: Integration should be active.' );
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		$integration_mock->method( 'get_versions' )->willReturn( [] );
+		$integration_mock->method( 'get_latest_version' )->willReturn( null );
 
 		$integration_mock->load();
 
