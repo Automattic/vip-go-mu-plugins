@@ -166,7 +166,7 @@ class VIP_Integration_Utils_Test extends WP_UnitTestCase {
 
 		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
 
-		$this->assertEquals( '2.5', $latest_version );
+		$this->assertEquals( 'fake-2.5', $latest_version );
 	}
 
 	/**
