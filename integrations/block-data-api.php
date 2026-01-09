@@ -15,14 +15,6 @@ namespace Automattic\VIP\Integrations;
 class BlockDataApiIntegration extends Integration {
 
 	/**
-	 * The version of the Block Data API plugin to load, that's set to the latest version.
-	 * This should be higher than the lowestVersion set in "vip-block-data-api" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
-	 *
-	 * @var string
-	 */
-	protected string $version = '1.4';
-
-	/**
 	 * Returns `true` if `Block Data API` is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration from platform side.
 	 */
@@ -46,13 +38,32 @@ class BlockDataApiIntegration extends Integration {
 				return;
 			}
 
-			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-block-data-api-' . $this->version . '/vip-block-data-api.php';
+			// Load the latest version of the plugin.
+			$latest_directory = $this->get_latest_version();
+
+			if ( empty( $latest_directory ) ) {
+				$this->is_active = false;
+				return;
+			}
+
+			// Load the plugin.
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-block-data-api.php';
+
+			// This check isn't strictly necessary, but better safe than sorry.
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
 				$this->is_active = false;
 			}
 		} );
+	}
+
+	/**
+	 * Get the latest version of Block Data API.
+	 *
+	 * @return string|null The latest version of Block Data API or null if no versions are found.
+	 */
+	public function get_latest_version() {
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-block-data-api', 'vip-block-data-api.php' );
 	}
 }
