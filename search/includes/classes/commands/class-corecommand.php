@@ -113,7 +113,7 @@ class CoreCommand {
 		$blog_ids   = ( is_multisite() ) ? get_sites(
 			[
 				'fields' => 'ids',
-				'number' => PHP_INT_MAX,
+				'number' => 20000,
 			]
 		) : [ get_current_blog_id() ];
 		foreach ( $indexables as $indexable ) {
