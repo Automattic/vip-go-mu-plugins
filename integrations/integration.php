@@ -182,7 +182,7 @@ abstract class Integration {
 	 *
 	 * @return bool
 	 */
-	public function should_track_in_pendo(): bool {
+	final public function should_track_in_pendo(): bool {
 		return $this->enable_pendo_tracking;
 	}
 

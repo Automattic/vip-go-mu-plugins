@@ -14,16 +14,12 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class RemoteDataBlocksIntegration extends Integration {
-
 	/**
-	 * Constructor.
+	 * Enable Pendo tracking for this integration.
 	 *
-	 * @param string $slug Slug of the integration.
+	 * @var bool
 	 */
-	public function __construct( string $slug ) {
-		parent::__construct( $slug );
-		$this->enable_pendo_tracking = true;
-	}
+	protected bool $enable_pendo_tracking = true;
 
 	/**
 	 * Returns `true` if Remote Data Blocks is already available e.g. via customer code. We will use

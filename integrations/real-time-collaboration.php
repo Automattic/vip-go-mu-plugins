@@ -14,16 +14,12 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class RealTimeCollaborationIntegration extends Integration {
-
 	/**
-	 * Constructor.
+	 * Enable Pendo tracking for this integration.
 	 *
-	 * @param string $slug Slug of the integration.
+	 * @var bool
 	 */
-	public function __construct( string $slug ) {
-		parent::__construct( $slug );
-		$this->enable_pendo_tracking = true;
-	}
+	protected bool $enable_pendo_tracking = true;
 
 	public function is_loaded(): bool {
 		// Check for the existence of the plugin version constant defined in the main plugin file.

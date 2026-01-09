@@ -14,14 +14,11 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
-	 * Constructor.
+	 * Enable Pendo tracking for this integration.
 	 *
-	 * @param string $slug Slug of the integration.
+	 * @var bool
 	 */
-	public function __construct( string $slug ) {
-		parent::__construct( $slug );
-		$this->enable_pendo_tracking = true;
-	}
+	protected bool $enable_pendo_tracking = true;
 
 	/**
 	 * Returns `true` if `Parse.ly` is already available e.g. customer code. We will use
