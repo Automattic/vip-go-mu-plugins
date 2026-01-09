@@ -150,11 +150,11 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( defined( 'VIP_RTC_WS_URL' ) );
 	}
 
-	public function test_get_latest_version_returns_latest_version(): void {
+	public function test_get_latest_version_returns_null_when_no_versions_are_found(): void {
 		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
 		$latest_version  = $rtc_integration->get_latest_version();
 
-		$this->assertIsString( $latest_version );
+		$this->assertNull( $latest_version );
 	}
 
 	public function test_load_sets_inactive_when_ws_auth_secret_missing(): void {
