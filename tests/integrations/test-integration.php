@@ -210,7 +210,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $integration->should_track_in_pendo() );
 	}
 
-	public function test__should_track_in_pendo_can_be_set_to_true_in_constructor(): void {
+	public function test__should_track_in_pendo_returns_true_when_enabled(): void {
 		$integration = new FakeIntegrationWithPendoTracking( 'fake' );
 
 		$this->assertTrue( $integration->should_track_in_pendo() );
