@@ -62,7 +62,7 @@ const App = () => {
 						<Queries />
 					</div>
 				</Overlay> ),
-				document.getElementById( 'search-dev-tools-portal' ), // eslint-disable-line no-undef
+				document.getElementById( 'search-dev-tools-portal' ),
 			) }
 		</div>
 	</SearchContext.Provider>

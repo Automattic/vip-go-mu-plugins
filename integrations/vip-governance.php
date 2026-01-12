@@ -53,13 +53,32 @@ class VipGovernanceIntegration extends Integration {
 				return;
 			}
 
-			// Load the version of the plugin that should be set to the latest version, otherwise if it's not found deactivate the integration.
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/vip-governance-' . $this->version . '/vip-governance.php';
+			// Load the latest version of the plugin.
+			$latest_directory = $this->get_latest_version();
+
+			if ( empty( $latest_directory ) ) {
+				$this->is_active = false;
+				return;
+			}
+
+			// Load the plugin.
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-governance.php';
+
+			// This check isn't strictly necessary, but better safe than sorry.
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
 				$this->is_active = false;
 			}
 		} );
+	}
+
+	/**
+	 * Get the latest version of VIP Governance.
+	 *
+	 * @return string|null The latest version of VIP Governance or null if no versions are found.
+	 */
+	public function get_latest_version() {
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-governance', 'vip-governance.php' );
 	}
 }

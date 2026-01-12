@@ -110,7 +110,12 @@ class CoreCommand {
 		$indexes    = [];
 		$search     = \Automattic\VIP\Search\Search::instance();
 		$indexables = $search->indexables->get_all();
-		$blog_ids   = ( is_multisite() ) ? get_sites( [ 'fields' => 'ids' ] ) : [ get_current_blog_id() ];
+		$blog_ids   = ( is_multisite() ) ? get_sites(
+			[
+				'fields' => 'ids',
+				'number' => 20000,
+			]
+		) : [ get_current_blog_id() ];
 		foreach ( $indexables as $indexable ) {
 			if ( $indexable->global ) {
 				$active_version = $search->versioning->get_active_version_number( $indexable );
