@@ -186,7 +186,9 @@ class API_Client {
 		if ( empty( $mime ) && extension_loaded( 'fileinfo' ) ) {
 			$finfo = finfo_open( FILEINFO_MIME_TYPE );
 			$mime  = finfo_file( $finfo, $filename );
-			finfo_close( $finfo );
+			if ( \PHP_VERSION_ID < 80500 ) {
+				finfo_close( $finfo );
+			}
 		}
 
 		return is_string( $mime ) ? $mime : '';

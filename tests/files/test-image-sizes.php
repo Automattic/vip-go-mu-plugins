@@ -100,7 +100,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	protected static function getMethod( $name ) {
 		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
 		return $method;
 	}
 
@@ -110,7 +109,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	protected static function getVIPFilesystemMethod( $name ) {
 		$class  = new \ReflectionClass( 'Automattic\VIP\Files\VIP_Filesystem' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
 		return $method;
 	}
 
