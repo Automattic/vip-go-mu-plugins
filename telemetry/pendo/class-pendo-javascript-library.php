@@ -196,11 +196,7 @@ class Pendo_JavaScript_Library {
 			return false;
 		}
 
-		if ( ! function_exists( '\Automattic\VIP\Integrations\wpvip_get_enabled_integrations' ) ) {
-			return false;
-		}
-
-		$enabled_integrations    = \Automattic\VIP\Integrations\wpvip_get_enabled_integrations();
+		$enabled_integrations = wpvip_get_enabled_integrations();
 		$has_tracked_integration = false;
 		foreach ( $enabled_integrations as $integration ) {
 			if ( $integration->should_track_in_pendo() ) {
