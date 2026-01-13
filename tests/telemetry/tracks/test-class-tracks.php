@@ -78,7 +78,6 @@ class Tracks_Test extends WP_UnitTestCase {
 	protected static function get_property( $name ) {
 		$class    = new \ReflectionClass( Tracks::class );
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true );
 		return $property;
 	}
 }

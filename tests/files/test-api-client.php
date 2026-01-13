@@ -79,13 +79,11 @@ class API_Client_Test extends WP_UnitTestCase {
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
 		return $method;
 	}
 
 	public static function get_property( $object, $name ) {
 		$property = new \ReflectionProperty( get_class( $object ), $name );
-		$property->setAccessible( true );
 		return $property;
 	}
 
