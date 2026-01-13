@@ -197,14 +197,14 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|RemoteDataBlocksIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'is_supported_wp_version', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded', 'is_supported_wp_version', 'get_latest_version' ] )
 			->getMock();
 
 		$integration_mock->activate(); // Set is_active to true before testing load()
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
 		$integration_mock->method( 'is_supported_wp_version' )->willReturn( false );
-		$integration_mock->expects( $this->never() )->method( 'get_versions' );
+		$integration_mock->expects( $this->never() )->method( 'get_latest_version' );
 
 		$integration_mock->load();
 		do_action( 'plugins_loaded' );
@@ -216,7 +216,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|RemoteDataBlocksIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'is_supported_wp_version', 'get_versions' ] )
+			->onlyMethods( [ 'is_loaded', 'is_supported_wp_version', 'get_latest_version' ] )
 			->getMock();
 
 		$integration_mock->activate(); // Initial state is active
@@ -224,7 +224,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 
 		$integration_mock->method( 'is_loaded' )->willReturn( false );
 		$integration_mock->method( 'is_supported_wp_version' )->willReturn( true );
-		$integration_mock->method( 'get_versions' )->willReturn( [] ); // No versions found
+		$integration_mock->method( 'get_latest_version' )->willReturn( null ); // No versions found
 
 		$integration_mock->load();
 		do_action( 'plugins_loaded' );
