@@ -605,6 +605,9 @@ class Search {
 		add_filter( 'ep_term_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
 		add_filter( 'ep_user_mapping', array( $this, 'filter__ep_indexable_mapping' ) );
 
+		// Strip ngram filters from config mapping
+		add_filter( 'ep_config_mapping', array( $this, 'filter__ep_config_mapping' ), PHP_INT_MAX );
+
 		// Better shard counts
 		add_filter( 'ep_default_index_number_of_shards', array( $this, 'filter__ep_default_index_number_of_shards' ) );
 		if ( defined( 'VIP_GO_ENV' ) && 'production' === constant( 'VIP_GO_ENV' ) ) {
@@ -1754,6 +1757,12 @@ class Search {
 		$mapping['settings']['index.indexing.slowlog.threshold.index.warn'] = '4900ms';
 		$mapping['settings']['index.indexing.slowlog.source']               = '1000';
 
+		// Strip ngram filters from analysis settings
+		$mapping = $this->strip_ngram_filters( $mapping );
+
+		// Strip ngram field from post_content
+		$mapping = $this->strip_ngram_post_fields( $mapping );
+
 		return $mapping;
 	}
 
@@ -2116,6 +2125,8 @@ class Search {
 			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
 		}
 
+		$mapping = $this->strip_ngram_filters( $mapping );
+
 		return $mapping;
 	}
 
@@ -2129,6 +2140,135 @@ class Search {
 		}
 
 		return $dc;
+	}
+
+	/**
+	 * Filter for ep_config_mapping to strip ngram filters
+	 *
+	 * @param array $mapping The mapping array to process
+	 * @param string $index The index name
+	 * 
+	 * @return array The mapping with ngram filters removed
+	 */
+	public function filter__ep_config_mapping( $mapping ) {
+		return $this->strip_ngram_filters( $mapping );
+	}
+	
+	/**
+	 * Strip ngram filters, tokenizers, analyzers, and settings from Elasticsearch mapping
+	 *
+	 * @param array $mapping The mapping array to process
+	 * 
+	 * @return array The mapping with ngram-related items removed
+	 */
+	private function strip_ngram_filters( $mapping ) {
+		if ( ! is_array( $mapping ) || ! isset( $mapping['settings']['analysis'] ) ) {
+			return $mapping;
+		}
+
+		$analysis                  =& $mapping['settings']['analysis'];
+		$filter_names_to_remove    = [];
+		$tokenizer_names_to_remove = [];
+
+		if ( isset( $analysis['filter'] ) && is_array( $analysis['filter'] ) ) {
+			foreach ( $analysis['filter'] as $name => $config ) {
+				if ( ! is_array( $config ) ) {
+					continue;
+				}
+
+				if ( isset( $config['type'] ) && 'ngram' === $config['type'] ) {
+					$filter_names_to_remove[] = $name;
+					unset( $analysis['filter'][ $name ] );
+				}
+			}
+		}
+
+		if ( isset( $analysis['tokenizer'] ) && is_array( $analysis['tokenizer'] ) ) {
+			foreach ( $analysis['tokenizer'] as $name => $config ) {
+				if ( ! is_array( $config ) ) {
+					continue;
+				}
+
+				if ( isset( $config['type'] ) && 'ngram' === $config['type'] ) {
+					$tokenizer_names_to_remove[] = $name;
+					unset( $analysis['tokenizer'][ $name ] );
+				}
+			}
+		}
+
+		if ( empty( $filter_names_to_remove ) && empty( $tokenizer_names_to_remove ) ) {
+			return $mapping;
+		}
+
+		if ( ! empty( $filter_names_to_remove ) || ! empty( $tokenizer_names_to_remove ) ) {
+			$blocked_items = array();
+			if ( ! empty( $filter_names_to_remove ) ) {
+				$blocked_items[] = 'filters: ' . implode( ', ', $filter_names_to_remove );
+			}
+			if ( ! empty( $tokenizer_names_to_remove ) ) {
+				$blocked_items[] = 'tokenizers: ' . implode( ', ', $tokenizer_names_to_remove );
+			}
+
+			$message = sprintf(
+				'Application %d - %s blocked ngram analysis from ES mapping (%s)',
+				FILES_CLIENT_SITE_ID,
+				home_url(),
+				implode( '; ', $blocked_items )
+			);
+
+			if ( ! is_wp_error( $this->alerts ) ) {
+				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+			}
+		}
+
+		if ( isset( $analysis['analyzer'] ) && is_array( $analysis['analyzer'] ) ) {
+			foreach ( $analysis['analyzer'] as $name => $config ) {
+				if ( ! is_array( $config ) ) {
+					continue;
+				}
+
+				$should_remove = false;
+				$filters       = $config['filter'] ?? [];
+				foreach ( $filter_names_to_remove as $removed ) {
+					if ( in_array( $removed, $filters, true ) ) {
+						$should_remove = true;
+						break;
+					}
+				}
+
+				if ( ! $should_remove ) {
+					$tokenizer = $config['tokenizer'] ?? null;
+					if ( is_string( $tokenizer ) && in_array( $tokenizer, $tokenizer_names_to_remove, true ) ) {
+						$should_remove = true;
+					}
+				}
+
+				if ( $should_remove ) {
+					unset( $analysis['analyzer'][ $name ] );
+				}
+			}
+		}
+
+		return $mapping;
+	}
+
+	/**
+	 * Strip ngram field from post_content in post mappings
+	 *
+	 * @param array $mapping The mapping array to process
+	 * 
+	 * @return array The mapping with ngram fields removed
+	 */
+	private function strip_ngram_post_fields( $mapping ) {
+		if ( ! is_array( $mapping ) || ! isset( $mapping['mappings']['properties']['post_content']['fields'] ) ) {
+			return $mapping;
+		}
+
+		if ( isset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] ) ) {
+			unset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] );
+		}
+
+		return $mapping;
 	}
 
 	/**
