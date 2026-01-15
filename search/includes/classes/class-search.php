@@ -2146,7 +2146,6 @@ class Search {
 	 * Filter for ep_config_mapping to strip ngram filters
 	 *
 	 * @param array $mapping The mapping array to process
-	 * @param string $index The index name
 	 * 
 	 * @return array The mapping with ngram filters removed
 	 */
@@ -2200,26 +2199,7 @@ class Search {
 			return $mapping;
 		}
 
-		if ( ! empty( $filter_names_to_remove ) || ! empty( $tokenizer_names_to_remove ) ) {
-			$blocked_items = array();
-			if ( ! empty( $filter_names_to_remove ) ) {
-				$blocked_items[] = 'filters: ' . implode( ', ', $filter_names_to_remove );
-			}
-			if ( ! empty( $tokenizer_names_to_remove ) ) {
-				$blocked_items[] = 'tokenizers: ' . implode( ', ', $tokenizer_names_to_remove );
-			}
-
-			$message = sprintf(
-				'Application %d - %s blocked ngram analysis from ES mapping (%s)',
-				FILES_CLIENT_SITE_ID,
-				home_url(),
-				implode( '; ', $blocked_items )
-			);
-
-			if ( ! is_wp_error( $this->alerts ) ) {
-				$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
-			}
-		}
+		$this->send_ngram_blocking_alert( $filter_names_to_remove, $tokenizer_names_to_remove );
 
 		if ( isset( $analysis['analyzer'] ) && is_array( $analysis['analyzer'] ) ) {
 			foreach ( $analysis['analyzer'] as $name => $config ) {
@@ -2253,6 +2233,32 @@ class Search {
 	}
 
 	/**
+	 * Send an alert when ngram filters or tokenizers are blocked from ES mapping
+	 *
+	 * @param array $filter_names_to_remove Array of filter names that were blocked
+	 * @param array $tokenizer_names_to_remove Array of tokenizer names that were blocked
+	 */
+	private function send_ngram_blocking_alert( array $filter_names_to_remove, array $tokenizer_names_to_remove ) {
+		$blocked_items = [];
+		if ( ! empty( $filter_names_to_remove ) ) {
+			$blocked_items[] = 'filters: ' . implode( ', ', $filter_names_to_remove );
+		}
+		if ( ! empty( $tokenizer_names_to_remove ) ) {
+			$blocked_items[] = 'tokenizers: ' . implode( ', ', $tokenizer_names_to_remove );
+		}
+		$message = sprintf(
+			'Application %d - %s blocked ngram analysis from ES mapping (%s)',
+			FILES_CLIENT_SITE_ID,
+			home_url(),
+			implode( '; ', $blocked_items )
+		);
+
+		if ( ! is_wp_error( $this->alerts ) ) {
+			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
+		}
+	}
+
+	/**
 	 * Strip ngram field from post_content in post mappings
 	 *
 	 * @param array $mapping The mapping array to process
@@ -2264,8 +2270,15 @@ class Search {
 			return $mapping;
 		}
 
-		if ( isset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] ) ) {
-			unset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] );
+		$fields =& $mapping['mappings']['properties']['post_content']['fields'];
+
+		if ( isset( $fields['ngram'] ) ) {
+			unset( $fields['ngram'] );
+		}
+
+		// To ensure mapping is valid, remove unnecessary key if no fields are left
+		if ( empty( $fields ) ) {
+			unset( $fields );
 		}
 
 		return $mapping;
