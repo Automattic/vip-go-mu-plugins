@@ -424,11 +424,10 @@ class CoreCommand {
 		$index_name = $indexable->get_index_name();
 
 		$settings = Elasticsearch::factory()->get_index_settings( $index_name );
-		
+
 		if ( is_wp_error( $settings ) ) {
 			WP_CLI::error( sprintf( 'Error getting index settings: %s', $settings->get_error_message() ) );
 		}
-		
 		if ( isset( $settings['error'] ) ) {
 			WP_CLI::error(
 				sprintf(
