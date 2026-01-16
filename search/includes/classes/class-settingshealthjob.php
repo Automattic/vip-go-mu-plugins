@@ -249,8 +249,7 @@ class SettingsHealthJob {
 				}
 
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
-
-				if ( is_wp_error( $result['result'] ) ) {
+				if ( is_wp_error( $result['result'] ) || false === $result['result'] ) {
 					/** @var WP_Error $result */
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
@@ -258,7 +257,7 @@ class SettingsHealthJob {
 						$indexable_slug,
 						$result['index_version'],
 						home_url(),
-						$result['result']->get_error_message(),
+						is_wp_error( $result['result'] ) ? $result['result']->get_error_message() : 'Unknown error',
 					);
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
