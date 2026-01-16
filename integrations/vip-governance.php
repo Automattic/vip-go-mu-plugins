@@ -15,14 +15,6 @@ namespace Automattic\VIP\Integrations;
 class VipGovernanceIntegration extends Integration {
 
 	/**
-	 * The version of the VIP Governance plugin to load, that's set to the latest version.
-	 * This should be higher than the lowestVersion set in "vip-governance" config (https://github.com/Automattic/vip-go-mu-plugins-ext/blob/trunk/config.json)
-	 *
-	 * @var string
-	 */
-	protected string $version = '1.0';
-
-	/**
 	 * Enable Pendo tracking for this integration.
 	 *
 	 * @var bool
