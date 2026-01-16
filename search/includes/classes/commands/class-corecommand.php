@@ -107,42 +107,45 @@ class CoreCommand {
 	 * @return array $indexes Array of active indexes.
 	 */
 	private function list_active_indexes() {
-		$indexes    = [];
-		$search     = \Automattic\VIP\Search\Search::instance();
-		$indexables = $search->indexables->get_all();
-		$blog_ids   = ( is_multisite() ) ? get_sites(
+		$indexes  = [];
+		$search   = \Automattic\VIP\Search\Search::instance();
+		$blog_ids = ( is_multisite() ) ? get_sites(
 			[
 				'fields' => 'ids',
 				'number' => 20000,
 			]
 		) : [ get_current_blog_id() ];
-		foreach ( $indexables as $indexable ) {
-			if ( $indexable->global ) {
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
-				}
-				continue;
+		
+		foreach ( $blog_ids as $blog_id ) {
+			if ( is_multisite() ) {
+				switch_to_blog( $blog_id );
 			}
-
-			foreach ( $blog_ids as $blog_id ) {
-				if ( is_multisite() ) {
-					switch_to_blog( $blog_id );
-				}
-				
+			
+			\ElasticPress\Features::factory()->setup_features();
+			
+			$site_indexables = $search->indexables->get_all();
+			foreach ( $site_indexables as $indexable ) {
 				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
+				
+				if ( is_wp_error( $active_version ) ) {
+					continue;
 				}
 				
-				if ( is_multisite() ) {
-					restore_current_blog();
+				$index_name = $search->versioning->get_index_name( $indexable, $active_version );
+				
+				// For global indexables, skip if already in the array
+				if ( $indexable->global && in_array( $index_name, $indexes, true ) ) {
+					continue;
 				}
+				
+				$indexes[] = $index_name;
+			}
+			
+			if ( is_multisite() ) {
+				restore_current_blog();
 			}
 		}
-
+		
 		return $indexes;
 	}
 
