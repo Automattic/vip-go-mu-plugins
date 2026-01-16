@@ -126,19 +126,12 @@ class CoreCommand {
 			$site_indexables = $search->indexables->get_all();
 			foreach ( $site_indexables as $indexable ) {
 				$active_version = $search->versioning->get_active_version_number( $indexable );
-				
 				if ( is_wp_error( $active_version ) ) {
 					continue;
 				}
 				
 				$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-				
-				// For global indexables, skip if already in the array
-				if ( $indexable->global && in_array( $index_name, $indexes, true ) ) {
-					continue;
-				}
-				
-				$indexes[] = $index_name;
+				$indexes[]  = $index_name;
 			}
 			
 			if ( is_multisite() ) {
@@ -146,7 +139,7 @@ class CoreCommand {
 			}
 		}
 		
-		return $indexes;
+		return array_unique( $indexes );
 	}
 
 	/**
