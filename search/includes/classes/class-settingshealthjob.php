@@ -250,7 +250,6 @@ class SettingsHealthJob {
 
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
 				if ( is_wp_error( $result['result'] ) || false === $result['result'] ) {
-					/** @var WP_Error $result */
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
 						FILES_CLIENT_SITE_ID,
