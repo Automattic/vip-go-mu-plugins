@@ -121,21 +121,23 @@ class CoreCommand {
 				switch_to_blog( $blog_id );
 			}
 			
-			\ElasticPress\Features::factory()->setup_features();
-			
-			$site_indexables = $search->indexables->get_all();
-			foreach ( $site_indexables as $indexable ) {
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( is_wp_error( $active_version ) ) {
-					continue;
-				}
+			try {
+				\ElasticPress\Features::factory()->setup_features();
 				
-				$index_name             = $search->versioning->get_index_name( $indexable, $active_version );
-				$indexes[ $index_name ] = true;
-			}
-			
-			if ( is_multisite() ) {
-				restore_current_blog();
+				$site_indexables = $search->indexables->get_all();
+				foreach ( $site_indexables as $indexable ) {
+					$active_version = $search->versioning->get_active_version_number( $indexable );
+					if ( is_wp_error( $active_version ) ) {
+						continue;
+					}
+					
+					$index_name             = $search->versioning->get_index_name( $indexable, $active_version );
+					$indexes[ $index_name ] = true;
+				}
+			} finally {
+				if ( is_multisite() ) {
+					restore_current_blog();
+				}
 			}
 		}
 		
