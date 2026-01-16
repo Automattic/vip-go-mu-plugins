@@ -130,8 +130,8 @@ class CoreCommand {
 					continue;
 				}
 				
-				$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-				$indexes[]  = $index_name;
+				$index_name             = $search->versioning->get_index_name( $indexable, $active_version );
+				$indexes[ $index_name ] = true;
 			}
 			
 			if ( is_multisite() ) {
@@ -139,7 +139,7 @@ class CoreCommand {
 			}
 		}
 		
-		return array_unique( $indexes );
+		return array_keys( $indexes );
 	}
 
 	/**
