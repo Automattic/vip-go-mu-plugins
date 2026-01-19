@@ -1012,7 +1012,7 @@ class Health {
 		$versions         = $this->search->versioning->get_versions( $indexable );
 		$version_to_check = 1;
 
-		// Check if this is the default version 1 (no versions stored yet))
+		// Check if this is the default version 1 (no versions stored yet)
 		$is_default_version = isset( $versions[1] ) && null === $versions[1]['created_time']
 			&& null === $versions[1]['activated_time'];
 		if ( ! $is_default_version ) {
