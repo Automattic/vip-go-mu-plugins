@@ -1145,6 +1145,150 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $actual_diff );
 	}
 
+	public function test_get_index_versions_settings_diff_for_indexable__only_returns_active_version() {
+		$index_name     = 'vip-123-post-1';
+		$active_version = 2;
+		
+		/** @var Search&MockObject */
+		$mock_search = $this->createMock( Search::class );
+
+		/** @var Versioning&MockObject */
+		$versioning_mock = $this->getMockBuilder( Versioning::class )
+			->onlyMethods( [ 'get_versions', 'get_active_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		$versions = [
+			1 => [
+				'number'         => 1,
+				'active'         => false,
+				'created_time'   => 1234567890,
+				'activated_time' => 1234567890,
+			],
+			2 => [
+				'number'         => 2,
+				'active'         => true,
+				'created_time'   => 1234567900,
+				'activated_time' => 1234567900,
+			],
+		];
+
+		$versioning_mock->method( 'get_versions' )->willReturn( $versions );
+		$versioning_mock->method( 'get_active_version_number' )->willReturn( $active_version );
+		$versioning_mock->method( 'set_current_version_number' )->willReturn( true );
+		$versioning_mock->method( 'reset_current_version_number' )->willReturn( true );
+
+		$mock_search->versioning = $versioning_mock;
+
+		$health = new Health( $mock_search );
+
+		/** @var Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( Indexable::class )
+			->onlyMethods( self::$indexable_methods )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+
+		/** @var Elasticsearch&MockObject */
+		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
+			->onlyMethods( [ 'get_index_settings' ] )
+			->getMock();
+
+		$health->elasticsearch->method( 'get_index_settings' )
+			->willReturn( [
+				$index_name => [
+					'settings' => [ 'index.number_of_replicas' => 2 ],
+				],
+			] );
+
+		$mocked_indexable->method( 'generate_mapping' )
+			->willReturn( [
+				'settings' => [ 'index.number_of_replicas' => 1 ],
+			] );
+
+		// Verify that set_current_version_number is called with the active version (2), not version 1
+		$versioning_mock->expects( $this->once() )
+			->method( 'set_current_version_number' )
+			->with( $mocked_indexable, $active_version );
+
+		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
+
+		$this->assertCount( 1, $result );
+		$this->assertEquals( $active_version, $result[0]['index_version'] );
+		$this->assertNotEmpty( $result[0]['diff'] );
+	}
+
+	public function test_get_index_versions_settings_diff_for_indexable__uses_default_version_when_no_versions_stored() {
+		$index_name = 'vip-123-post-1';
+		
+		// Mock search and the versioning instance
+		/** @var Search&MockObject */
+		$mock_search = $this->createMock( Search::class );
+
+		/** @var Versioning&MockObject */
+		$versioning_mock = $this->getMockBuilder( Versioning::class )
+			->onlyMethods( [ 'get_versions', 'get_active_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
+			->getMock();
+
+		// Mock default version (no versions stored yet)
+		$default_versions = [
+			1 => [
+				'number'         => 1,
+				'active'         => true,
+				'created_time'   => null,
+				'activated_time' => null,
+			],
+		];
+
+		$versioning_mock->method( 'get_versions' )->willReturn( $default_versions );
+		$versioning_mock->method( 'set_current_version_number' )->willReturn( true );
+		$versioning_mock->method( 'reset_current_version_number' )->willReturn( true );
+
+		$mock_search->versioning = $versioning_mock;
+
+		$health = new Health( $mock_search );
+
+		/** @var Indexable&MockObject */
+		$mocked_indexable = $this->getMockBuilder( Indexable::class )
+			->onlyMethods( self::$indexable_methods )
+			->getMock();
+
+		$mocked_indexable->slug = 'post';
+		$mocked_indexable->method( 'index_exists' )->willReturn( true );
+		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
+
+		/** @var Elasticsearch&MockObject */
+		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
+			->onlyMethods( [ 'get_index_settings' ] )
+			->getMock();
+
+		$health->elasticsearch->method( 'get_index_settings' )
+			->willReturn( [
+				$index_name => [
+					'settings' => [ 'index.number_of_replicas' => 2 ],
+				],
+			] );
+
+		$mocked_indexable->method( 'generate_mapping' )
+			->willReturn( [
+				'settings' => [ 'index.number_of_replicas' => 1 ],
+			] );
+
+		$versioning_mock->expects( $this->once() )
+			->method( 'set_current_version_number' )
+			->with( $mocked_indexable, 1 );
+
+		$versioning_mock->expects( $this->never() )
+			->method( 'get_active_version_number' );
+
+		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
+
+		$this->assertCount( 1, $result );
+		$this->assertEquals( 1, $result[0]['index_version'] );
+		$this->assertNotEmpty( $result[0]['diff'] );
+	}
+
 	public function heal_index_settings_for_indexable_data() {
 		return array(
 			// Regular healing

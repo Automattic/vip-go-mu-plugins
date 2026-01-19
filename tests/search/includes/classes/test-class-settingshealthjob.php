@@ -113,19 +113,11 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 					'index_version' => 1,
 					'diff'          => [ 'index.max_result_window' => [] ],
 				],
-				[
-					'index_version' => 2,
-					'diff'          => [],
-				],
 			],
 			'user' => [
 				[
 					'index_version' => 1,
-					'diff'          => [ 'index.max_shingle_diff' => [] ],
-				],
-				[
-					'index_version' => 2,
-					'diff'          => [],
+					'diff'          => [], // user has no diff, so won't be healed
 				],
 			],
 		];
@@ -169,65 +161,6 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$health_mock->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
 			->method( 'heal_index_settings_for_indexable' );
-
-		$stub->heal_index_settings( $unhealthy_indexables );
-	}
-
-	public function test__heal_index_settings__only_heals_active_index() {
-		$active_version       = 2;
-		$unhealthy_indexables = [
-			'post' => [
-				[
-					'index_version' => 1,
-					'diff'          => [ 'index.max_result_window' => [] ],
-				],
-				[
-					'index_version' => 2,
-					'diff'          => [ 'index.number_of_replicas' => [] ],
-				],
-			],
-		];
-
-		$indexable_mock  = $this->createMock( Indexable::class );
-		$indexables_mock = $this->createMock( Indexables::class );
-		$indexables_mock->method( 'get' )->with( 'post' )->willReturn( $indexable_mock );
-
-		$versioning_mock = $this->getMockBuilder( Versioning::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'get_active_version_number' ] )
-			->getMock();
-
-		$versioning_mock->method( 'get_active_version_number' )
-			->with( $indexable_mock )
-			->willReturn( $active_version );
-
-		$search_mock             = $this->createMock( Search::class );
-		$search_mock->versioning = $versioning_mock;
-
-		$health_mock = $this->getMockBuilder( Health::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'heal_index_settings_for_indexable' ] )
-			->getMock();
-
-		$health_mock->method( 'heal_index_settings_for_indexable' )->willReturn( array(
-			'result'        => true,
-			'index_version' => $active_version,
-			'index_name'    => 'foo-index',
-		) );
-
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert', 'maybe_process_build' ] )
-			->getMock();
-
-		$stub->indexables = $indexables_mock;
-		$stub->health     = $health_mock;
-		$stub->search     = $search_mock;
-
-		// Only the active version (2) should be healed, not version 1
-		$health_mock->expects( $this->once() )
-			->method( 'heal_index_settings_for_indexable' )
-			->with( $indexable_mock, [ 'index_version' => $active_version ] );
 
 		$stub->heal_index_settings( $unhealthy_indexables );
 	}
