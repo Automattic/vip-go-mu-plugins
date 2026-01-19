@@ -179,12 +179,10 @@ class SettingsHealthJob {
 					continue;
 				}
 
-				$indexable = $this->indexables->get( $indexable_slug );
 				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
-					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
 					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
-						// Don't keep alerting if it's an active index in process of being re-built.
-						continue;
+					// Don't keep alerting if it's an active index in process of being re-built.
+					continue;
 				}
 
 				$message = sprintf(
@@ -231,11 +229,6 @@ class SettingsHealthJob {
 			// Each individual entry in $versions is an array of results, one per index version.
 			foreach ( $versions as $result ) {
 				if ( empty( $result['diff'] ) ) {
-					continue;
-				}
-
-				// Only heal index settings if the index is active.
-				if ( $this->search->versioning->get_active_version_number( $indexable ) !== $result['index_version'] ) {
 					continue;
 				}
 
