@@ -54,12 +54,13 @@ class RealTimeCollaborationIntegration extends Integration {
 	}
 
 	private function get_plugin_path(): string|false {
-		$versions = $this->get_versions();
-		if ( empty( $versions ) ) {
+		$latest_directory = $this->get_latest_version();
+		if ( empty( $latest_directory ) ) {
 			return false;
 		}
-		$latest_directory = array_key_first( $versions );
-		$load_path        = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-real-time-collaboration.php';
+		// Load the plugin.
+		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-real-time-collaboration.php';
+		// This check isn't strictly necessary, but better safe than sorry.
 		if ( ! file_exists( $load_path ) ) {
 			return false;
 		}
@@ -111,18 +112,12 @@ class RealTimeCollaborationIntegration extends Integration {
 	}
 
 	/**
-	 * Get the available versions of Real-Time Collaboration in descending order.
+	 * Get the latest version of Real-Time Collaboration.
 	 *
-	 * @return array<string, string> An associative array of available versions, where the key is the
-	 *                               directory name and the value is the version number. The versions
-	 *                               are sorted in descending order.
+	 * @return string|null The latest version of Real-Time Collaboration or null if no versions are found.
 	 */
-	public function get_versions() {
-		return get_available_versions(
-			WPVIP_MU_PLUGIN_DIR . '/vip-integrations/',
-			'vip-real-time-collaboration',
-			'vip-real-time-collaboration.php'
-		);
+	public function get_latest_version() {
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-real-time-collaboration', 'vip-real-time-collaboration.php' );
 	}
 
 	/**
