@@ -19,11 +19,18 @@ require_once __DIR__ . '/../../../vip-integrations.php';
 require_once __DIR__ . '/../../integrations/fake-integration.php';
 
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
-	public function tearDown(): void {  
+	public function tearDown(): void {
+		global $wp_query;
+
+		// Reset query vars to prevent test pollution
+		if ( isset( $wp_query ) && isset( $wp_query->query_vars ) ) {
+			unset( $wp_query->query_vars['page'] );
+		}
+
 		// Reset IntegrationsSingleton to ensure clean state between tests
 		$property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
 		$property->setValue( null, null );
-	
+
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -70,8 +77,11 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_pendo_allowed_screens', $allow_screen );
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
-		remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		try {
+			$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
+		} finally {
+			remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		}
 	}
 
 	public function test_disabled_for_filter_allowed_admin_screens_and_no_tracked_integrations() {
@@ -90,8 +100,11 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
-		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
-		remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		try {
+			$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		} finally {
+			remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		}
 	}
 
 	public function test_enabled_for_users_with_edit_post_cap_and_a_tracked_integration() {
@@ -136,8 +149,11 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_pendo_allowed_screens', $allow_screen );
-		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
-		remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		try {
+			$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'newly-allowed-screen.php' ) );
+		} finally {
+			remove_filter( 'vip_pendo_allowed_screens', $allow_screen );
+		}
 	}
 
 	public function test_enabled_for_filter_allowed_admin_screens_and_a_tracked_integration() {
@@ -158,8 +174,11 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		};
 
 		add_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
-		$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
-		remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		try {
+			$this->assertTrue( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		} finally {
+			remove_filter( 'vip_pendo_allowed_admin_screens', $allow_admin_screen );
+		}
 	}
 
 	public function test_disabled_by_opt_out_constant() {
