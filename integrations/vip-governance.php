@@ -15,6 +15,13 @@ namespace Automattic\VIP\Integrations;
 class VipGovernanceIntegration extends Integration {
 
 	/**
+	 * Enable Pendo tracking for this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $enable_pendo_tracking = true;
+
+	/**
 	 * Returns `true` if `VIP Governance` is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration from platform side.
 	 */
