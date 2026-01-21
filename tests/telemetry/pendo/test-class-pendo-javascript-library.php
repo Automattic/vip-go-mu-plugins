@@ -19,16 +19,26 @@ require_once __DIR__ . '/../../../vip-integrations.php';
 require_once __DIR__ . '/../../integrations/fake-integration.php';
 
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
+	public function setUp(): void {
+		parent::setUp();
+
+		// Ensure singletons start fresh (protects against previous test's tearDown not running)
+		// this is duplicative of the tearDown method, but without it tests are flaky.
+		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
+		$pendo_property->setValue( null, null );
+
+		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$integrations_property->setValue( null, null );
+	}
+
 	public function tearDown(): void {
 		// Reset Pendo_JavaScript_Library singleton (removes admin_enqueue_scripts hook)
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		// Clear IntegrationsSingleton state without nulling the instance
-		// This avoids potential caching issues with reflection-modified static properties
-		$integrations_instance = IntegrationsSingleton::instance();
-		$integrations_array    = get_class_property_as_public( get_class( $integrations_instance ), 'integrations' );
-		$integrations_array->setValue( $integrations_instance, [] );
+		// Reset IntegrationsSingleton to ensure clean state between tests
+		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$integrations_property->setValue( null, null );
 
 		Constant_Mocker::clear();
 		parent::tearDown();
