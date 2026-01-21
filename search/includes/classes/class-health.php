@@ -1009,18 +1009,26 @@ class Health {
 	}
 
 	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$versions = $this->search->versioning->get_versions( $indexable );
+		$versions         = $this->search->versioning->get_versions( $indexable );
+		$version_to_check = 1;
+
+		// Check if this is the default version 1 (no versions stored yet)
+		$is_default_version = isset( $versions[1] ) && null === $versions[1]['created_time']
+			&& null === $versions[1]['activated_time'];
+		if ( ! $is_default_version ) {
+			$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
+			if ( is_wp_error( $version_to_check ) ) {
+				return $version_to_check;
+			}
+		}
+
+		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
+			'index_version' => $version_to_check,
+		) );
 
 		$diff = [];
-
-		foreach ( $versions as $version ) {
-			$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
-				'index_version' => $version['number'],
-			) );
-
-			if ( is_array( $version_result ) && ! empty( $version_result ) ) {
-				$diff[] = $version_result;
-			}
+		if ( is_array( $version_result ) && ! empty( $version_result ) ) {
+			$diff[] = $version_result;
 		}
 
 		return $diff;

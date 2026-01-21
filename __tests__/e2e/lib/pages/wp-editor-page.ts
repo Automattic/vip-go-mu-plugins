@@ -62,25 +62,18 @@ export class EditorPage {
 		this.page = page;
 	}
 
-	/**
-	 * Dismisses the Welcome Tour (card) if it is present.
-	 */
-	public dismissWelcomeTour(): Promise<void> {
-		return this.clickButtonIfExists( this.page.locator( selectors.welcomeTourCloseButton ) );
-	}
-
-	public dismissPatternSelector(): Promise<void> {
-		return this.clickButtonIfExists( this.page.locator( selectors.choosePatternCloseButton ) );
-	}
-
-	private async clickButtonIfExists( locator: Locator ): Promise<void> {
-		try {
-			await locator.click( { timeout: 5000, trial: true } );
-		} catch {
-			return;
-		}
-
-		return locator.click( { delay: 20, timeout: 1000 } );
+	public static automaticallyDismissAnnoyingNuisances( page: Page ): Promise<unknown[]> {
+		const clickLocatorHandler = ( locator: Locator ): Promise<void> => locator.click();
+		return Promise.all( [
+			page.addLocatorHandler(
+				page.locator( selectors.welcomeTourCloseButton ),
+				clickLocatorHandler,
+			),
+			page.addLocatorHandler(
+				page.locator( selectors.choosePatternCloseButton ),
+				clickLocatorHandler,
+			),
+		] );
 	}
 
 	/**
@@ -89,9 +82,8 @@ export class EditorPage {
 	 * @param {string} title Page/Post Title
 	 */
 	public async enterTitle( title: string ): Promise<void> {
-		await this.dismissPatternSelector();
-		await this.page.click( selectors.editorTitleContainer );
-		await this.page.fill( selectors.editorTitle, title );
+		await this.page.locator( selectors.editorTitleContainer ).click();
+		await this.page.locator( selectors.editorTitle ).fill( title );
 	}
 
 	/**
@@ -101,34 +93,39 @@ export class EditorPage {
 	 */
 	public async enterText( text: string ): Promise<void> {
 		const lines = text.split( '\n' );
+		let locator: Locator;
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
-			await this.page.click( selectors.blockAppender );
+			locator = this.page.locator( selectors.blockAppender );
 		} else {
-			await this.page.click( selectors.paragraphBlocks );
+			locator = this.page.locator( selectors.paragraphBlocks ).last();
 		}
+
+		await locator.click();
 
 		// Playwright does not break up newlines in Gutenberg. This causes issues when we expect
 		// text to be broken into new lines/blocks. This presents an unexpected issue when entering
 		// text such as 'First sentence\nSecond sentence', as it is all put in one line.
 		// frame.type() will respect newlines like a human would, but it is slow.
 		// This approach will run faster than using frame.type() while respecting the newline chars.
-		await Promise.all(
-			lines.map( async ( line, index ) => {
-				await this.page.fill( `${ selectors.paragraphBlocks }:nth-of-type(${ index + 1 })`, line );
-				await this.page.keyboard.press( 'Enter' );
-			} ),
-		);
+		/* eslint-disable no-await-in-loop */
+		for ( let idx = 0; idx < lines.length; ++idx ) {
+			// eslint-disable-next-line security/detect-object-injection
+			const line = lines[ idx ];
+			const lineLocator = this.page.locator( `${ selectors.paragraphBlocks }:nth-of-type(${ idx + 1 })` );
+			await lineLocator.fill( line );
+			await lineLocator.press( 'Enter' );
+		}
+		/* eslint-enable no-await-in-loop */
 	}
 
 	/**
 	 * Clear Title of page or post
 	 */
 	public async clearTitle(): Promise<void> {
-		await this.page.click( selectors.editorTitle );
-		await this.page.keyboard.down( 'Shift' );
-		await this.page.keyboard.press( 'Home' );
-		await this.page.keyboard.up( 'Shift' );
-		await this.page.keyboard.press( 'Backspace' );
+		const locator = this.page.locator( selectors.editorTitle );
+		await locator.click();
+		await locator.selectText();
+		await locator.press( 'Backspace' );
 	}
 
 	/**
@@ -136,13 +133,12 @@ export class EditorPage {
 	 */
 	public async clearText(): Promise<void> {
 		/* eslint-disable no-await-in-loop */
-		while ( await this.page.isVisible( selectors.block ) ) {
-			await this.page.click( selectors.block );
-			await this.page.keyboard.down( 'Shift' );
-			await this.page.keyboard.press( 'Home' );
-			await this.page.keyboard.up( 'Shift' );
-			await this.page.keyboard.press( 'Backspace' );
-			await this.page.keyboard.press( 'Backspace' );
+		const locator = this.page.locator( selectors.block );
+		while ( await locator.isVisible() ) {
+			await locator.click();
+			await locator.selectText();
+			await locator.press( 'Backspace' ); // Kill the text
+			await locator.press( 'Backspace' ); // Kill the block
 		}
 		/* eslint-enable no-await-in-loop */
 	}
@@ -153,7 +149,6 @@ export class EditorPage {
 	 * @param {string} fileName Name of image file to add
 	 */
 	public async addImage( fileName: string ): Promise<void> {
-		await this.dismissPatternSelector();
 		if ( await this.page.isVisible( selectors.blockAppender ) ) {
 			await this.page.click( selectors.blockAppender );
 		} else {
@@ -209,10 +204,12 @@ export class EditorPage {
 	 *
 	 * @param {string} url Url to visit
 	 */
-	private visitPublishedPost( url: string ): Promise<unknown> {
+	private async visitPublishedPost( url: string ): Promise<unknown[]> {
+		const locator = this.page.locator( selectors.viewButton );
+		await locator.evaluate( ( el ) => el.removeAttribute( 'target' ) );
 		return Promise.all( [
-			this.page.waitForURL( url, { waitUntil: 'load' } ),
-			this.page.click( selectors.viewButton ),
+			this.page.waitForURL( url, { waitUntil: 'domcontentloaded' } ),
+			locator.click(),
 		] );
 	}
 }

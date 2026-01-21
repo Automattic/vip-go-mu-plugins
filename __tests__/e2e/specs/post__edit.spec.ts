@@ -59,6 +59,8 @@ test( 'edit a Post', async ( { page } ) => {
 		return postListPage.visit();
 	} );
 
+	await test.step( 'Automatically dismiss annoying nuisances', () => EditorPage.automaticallyDismissAnnoyingNuisances( page ) );
+
 	await test.step( 'Select post to edit', () => {
 		return postListPage.editPostByID( postID );
 	} );

@@ -357,6 +357,45 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( '2040-01-01 00:00:00', $job2->start_time );
 	}
 
+	public function test_update_jobs_with_where_condition() {
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 2, 'post' );
+
+		$job1 = $this->queue->get_next_job_for_object( 1, 'post' );
+		$job2 = $this->queue->get_next_job_for_object( 2, 'post' );
+
+		// Set job1 to 'scheduled' status
+		$this->queue->update_job( $job1->job_id, array( 'status' => 'scheduled' ) );
+
+		// Try to update both jobs to 'running', but only if status is 'scheduled'
+		// job1 is 'scheduled', job2 is 'queued', so only job1 should be updated
+		$this->queue->update_jobs( array( $job1->job_id, $job2->job_id ), array( 'status' => 'running' ), 'scheduled' );
+
+		// Verify job1 was updated
+		$job1_updated = $this->queue->get_jobs_by_ids( array( $job1->job_id ) );
+		$this->assertEquals( 'running', $job1_updated[0]->status );
+
+		// Verify job2 was NOT updated (still 'queued')
+		$job2_updated = $this->queue->get_jobs_by_ids( array( $job2->job_id ) );
+		$this->assertEquals( 'queued', $job2_updated[0]->status );
+	}
+
+	public function test_checkout_jobs_same_time() {
+		$this->queue->queue_object( 1, 'post' );
+		$job = $this->queue->get_next_job_for_object( 1, 'post' );
+
+		// Simulate another process already checking out this job
+		$this->queue->update_job( $job->job_id, array( 'status' => 'scheduled' ) );
+
+		// Try to checkout the job (should fail because it's no longer 'queued')
+		$checked_out_jobs = $this->queue->checkout_jobs( 10 );
+
+		// The job should not be in the checked out jobs because it was already scheduled
+		$checked_out_job_ids = wp_list_pluck( $checked_out_jobs, 'job_id' );
+		$this->assertNotContains( $job->job_id, $checked_out_job_ids, 'Job that was already scheduled should not be checked out again' );
+	}
+
+
 	public function test_delete_jobs() {
 		$this->queue->queue_object( 1, 'post' );
 		$this->queue->queue_object( 2, 'post' );
@@ -470,6 +509,10 @@ class Queue_Test extends WP_UnitTestCase {
 		$job_count = $this->queue->count_jobs( 'all' );
 
 		$this->assertEquals( $job_count, count( $object_ids ), 'job count in database should match jobs added to queue' );
+
+		// Set jobs to 'scheduled' status before processing
+		$job_ids = wp_list_pluck( $jobs, 'job_id' );
+		$this->queue->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
 		$this->queue->process_jobs( $jobs );
 
@@ -1336,7 +1379,6 @@ class Queue_Test extends WP_UnitTestCase {
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true ); // NOSONAR
 		return $method;
 	}
 

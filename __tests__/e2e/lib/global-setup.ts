@@ -46,10 +46,8 @@ async function globalSetup( config: FullConfig ) {
 			process.env.E2E_CLASSIC_TESTS = 'false';
 		}
 
-		// Dismiss editor welcome
+		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
 		await goToPage( page, baseURL! + '/wp-admin/post-new.php' );
-		const editorPage = new EditorPage( page );
-		await editorPage.dismissWelcomeTour();
 	} catch ( error ) {
 		// eslint-disable-next-line no-console
 		console.log( error );
