@@ -404,6 +404,45 @@ class Search_Test extends WP_UnitTestCase {
 		$indexable->bulk_index( [ $post_id ] );
 	}
 
+	public function test__vip_search_sends_double_writes_after_upgrade_and_migration_in_progress() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint:9245',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		self::$mock_global_functions->expects( $this->exactly( 3 ) )
+			->method( 'mock_wp_remote_request' )
+			->with( $this->callback( function ( $url ) {
+				return in_array( $url, [
+					'https://es-endpoint:9245/vip-123-post-1',       // Next version host
+					'https://es-endpoint:9245/vip-123-post-1/_bulk', // Next version host
+					'https://es-endpoint:9235/vip-123-post-1/_bulk', // Mirror to old version host
+				] );
+			} ) )
+			->willReturn([
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			]);
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
+	}
+
 	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9235/weirdpath9235',
