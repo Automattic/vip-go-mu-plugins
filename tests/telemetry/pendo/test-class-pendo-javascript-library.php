@@ -24,9 +24,11 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		// Reset IntegrationsSingleton to ensure clean state between tests
-		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
-		$integrations_property->setValue( null, null );
+		// Clear IntegrationsSingleton state without nulling the instance
+		// This avoids potential caching issues with reflection-modified static properties
+		$integrations_instance = IntegrationsSingleton::instance();
+		$integrations_array    = get_class_property_as_public( get_class( $integrations_instance ), 'integrations' );
+		$integrations_array->setValue( $integrations_instance, [] );
 
 		Constant_Mocker::clear();
 		parent::tearDown();
