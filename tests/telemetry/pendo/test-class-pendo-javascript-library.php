@@ -20,16 +20,13 @@ require_once __DIR__ . '/../../integrations/fake-integration.php';
 
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
-		global $wp_query;
-
-		// Reset query vars to prevent test pollution
-		if ( isset( $wp_query ) && isset( $wp_query->query_vars ) ) {
-			unset( $wp_query->query_vars['page'] );
-		}
+		// Reset Pendo_JavaScript_Library singleton (removes admin_enqueue_scripts hook)
+		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
+		$pendo_property->setValue( null, null );
 
 		// Reset IntegrationsSingleton to ensure clean state between tests
-		$property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
-		$property->setValue( null, null );
+		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$integrations_property->setValue( null, null );
 
 		Constant_Mocker::clear();
 		parent::tearDown();
