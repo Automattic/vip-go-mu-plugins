@@ -69,6 +69,10 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * @return string|false The path to the Gutenberg plugin, or false if not found.
 	 */
 	private function get_gutenberg_path(): string|false {
+		if ( ! defined( 'VIP_RTC_GUTENBERG_VERSION' ) ) {
+			return false;
+		}
+
 		// Empty string means use the unversioned folder
 		if ( '' === VIP_RTC_GUTENBERG_VERSION ) {
 			$gutenberg_folder = 'gutenberg';
@@ -90,6 +94,10 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * @return string|false The path to the RTC plugin, or false if not found.
 	 */
 	private function get_plugin_path(): string|false {
+		if ( ! defined( 'VIP_RTC_PLUGIN_VERSION' ) ) {
+			return false;
+		}
+
 		$plugin_directory = 'vip-real-time-collaboration-' . VIP_RTC_PLUGIN_VERSION;
 
 		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $plugin_directory . '/vip-real-time-collaboration.php';
