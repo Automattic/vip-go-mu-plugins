@@ -15,6 +15,19 @@ namespace Automattic\VIP\Integrations;
  */
 class RealTimeCollaborationIntegration extends Integration {
 	/**
+	 * Version of the vip-real-time-collaboration plugin to load.
+	 * Used to control staged rollouts (e.g., staging gets new version first).
+	 */
+	const VIP_RTC_PLUGIN_VERSION = '0.1';
+
+	/**
+	 * Version of the Gutenberg plugin to load.
+	 * Empty string means load from the unversioned 'gutenberg' folder.
+	 * A version number (e.g., '1.0') loads from 'gutenberg-1.0' folder.
+	 */
+	const VIP_RTC_GUTENBERG_VERSION = '';
+
+	/**
 	 * Enable Pendo tracking for this integration.
 	 *
 	 * @var bool
@@ -50,8 +63,22 @@ class RealTimeCollaborationIntegration extends Integration {
 		return true;
 	}
 
+	/**
+	 * Get the path to the Gutenberg plugin.
+	 *
+	 * @return string|false The path to the Gutenberg plugin, or false if not found.
+	 */
 	private function get_gutenberg_path(): string|false {
-		$gutenberg_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/gutenberg/gutenberg.php';
+		// Empty string means use the unversioned folder
+		if ( defined( 'VIP_RTC_GUTENBERG_VERSION' ) && '' === constant( 'VIP_RTC_GUTENBERG_VERSION' ) ) {
+			$gutenberg_folder = 'gutenberg';
+		} elseif ( defined( 'VIP_RTC_GUTENBERG_VERSION' ) && '' !== constant( 'VIP_RTC_GUTENBERG_VERSION' ) ) {
+			$gutenberg_folder = 'gutenberg-' . constant( 'VIP_RTC_GUTENBERG_VERSION' );
+		} else {
+			return false;
+		}
+
+		$gutenberg_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $gutenberg_folder . '/gutenberg.php';
 		if ( ! file_exists( $gutenberg_path ) ) {
 			return false;
 		}
@@ -59,14 +86,19 @@ class RealTimeCollaborationIntegration extends Integration {
 		return $gutenberg_path;
 	}
 
+	/**
+	 * Get the path to the RTC plugin.
+	 *
+	 * @return string|false The path to the RTC plugin, or false if not found.
+	 */
 	private function get_plugin_path(): string|false {
-		$latest_directory = $this->get_latest_version();
-		if ( empty( $latest_directory ) ) {
+		if ( defined( 'VIP_RTC_PLUGIN_VERSION' ) ) {
+			$plugin_directory = 'vip-real-time-collaboration-' . constant( 'VIP_RTC_PLUGIN_VERSION' );
+		} else {
 			return false;
 		}
-		// Load the plugin.
-		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/vip-real-time-collaboration.php';
-		// This check isn't strictly necessary, but better safe than sorry.
+
+		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $plugin_directory . '/vip-real-time-collaboration.php';
 		if ( ! file_exists( $load_path ) ) {
 			return false;
 		}
@@ -110,20 +142,11 @@ class RealTimeCollaborationIntegration extends Integration {
 
 			/**
 			 * Load the custom build of Gutenberg from vip-integrations
-			 * and the latest version of the vip-real-time-collaboration plugin.
+			 * and the configured version of the vip-real-time-collaboration plugin.
 			 */
 			require_once $gutenberg_path;
 			require_once $load_path;
 		}, 1);
-	}
-
-	/**
-	 * Get the latest version of Real-Time Collaboration.
-	 *
-	 * @return string|null The latest version of Real-Time Collaboration or null if no versions are found.
-	 */
-	public function get_latest_version() {
-		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'vip-real-time-collaboration', 'vip-real-time-collaboration.php' );
 	}
 
 	/**
