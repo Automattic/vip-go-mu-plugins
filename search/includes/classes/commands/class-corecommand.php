@@ -423,9 +423,22 @@ class CoreCommand {
 
 		$index_name = $indexable->get_index_name();
 
-		$settings = Elasticsearch::factory()->get_mapping( $index_name );
+		$settings = Elasticsearch::factory()->get_index_settings( $index_name );
 
-		$keys = array_keys( $settings );
+		if ( is_wp_error( $settings ) ) {
+			WP_CLI::error( sprintf( 'Error getting index settings: %s', $settings->get_error_message() ) );
+		}
+		if ( isset( $settings['error'] ) ) {
+			WP_CLI::error(
+				sprintf(
+					'Error getting index settings: %s',
+					isset( $settings['error']['root_cause'][0]['reason'] ) ? $settings['error']['root_cause'][0]['reason'] : 'Unknown error'
+				)
+			);
+		}
+
+		$settings = $settings[ $index_name ]['settings'] ?? [];
+		$keys     = array_keys( $settings );
 		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $settings ), $keys );
 	}
 
