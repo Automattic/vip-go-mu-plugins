@@ -58,6 +58,9 @@ class Command extends WP_CLI_Command {
 			\WP_CLI::error( $user_id );
 		}
 
+		// Enable Two-Factor Email authentication for the new support user.
+		update_user_meta( $user_id, '_two_factor_enabled_providers', array( 'Two_Factor_Email' ) );
+
 		$msg = "Added user $user_id with login {$user_login}, they are verified as a VIP Support user and ready to go";
 		\WP_CLI::success( $msg );
 	}

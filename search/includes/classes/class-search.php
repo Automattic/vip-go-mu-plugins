@@ -1086,8 +1086,9 @@ class Search {
 		}
 
 		$version = self::ELASTICSEARCH_MIGRATION_NEXT;
-		if ( $is_testing_next_version ) {
-			// When testing the next version, we should mirror to version 7, since the regular requests are going to version 8.
+		if ( $is_testing_next_version || ( defined( 'VIP_ELASTICSEARCH_VERSION' ) && constant( 'VIP_ELASTICSEARCH_VERSION' ) === self::ELASTICSEARCH_MIGRATION_NEXT ) ) {
+			// If testing or already running the next Elasticsearch version, mirror write requests to the previous version.
+			// This duplicates writes to the older cluster to allow rollbacks during the post-migration rollback window.
 			$version = self::ELASTICSEARCH_MIGRATION_SEVEN;
 		}
 
