@@ -83,10 +83,23 @@
 			} );
 
 			const json = await response.json();
-			result.textContent = ( json && json.data && json.data.message ) ? json.data.message : 'Done.';
-			result.classList.add( 'notice-success' );
+			const hasMessage = json && json.data && json.data.message;
+			const isSuccess = response.ok && ( ! json || json.success !== false );
+			const message = hasMessage ? json.data.message : ( isSuccess ? 'Done.' : 'Request failed.' );
+
+			// Clear previous notice state before setting new one.
+			result.classList.remove( 'notice-success', 'notice-error' );
+
+			result.textContent = message;
+			if ( isSuccess ) {
+				result.classList.add( 'notice-success' );
+			} else {
+				result.classList.add( 'notice-error' );
+			}
 			result.classList.add( 'notice' );
 		} catch ( e ) {
+			// Network or unexpected error.
+			result.classList.remove( 'notice-success', 'notice-error' );
 			result.textContent = 'Request failed.';
 			result.classList.add( 'notice-error' );
 			result.classList.add( 'notice' );
