@@ -8,12 +8,14 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   update-prs:
     name: Update PRs with Labels
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.2
@@ -37,6 +39,8 @@ jobs:
     needs: update-prs
     name: Docs Site Changelog
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v6.0.2
       - uses: Automattic/vip-actions/changelog@c8022b66e78461df4f802b935dc0dbb8399f96bc
