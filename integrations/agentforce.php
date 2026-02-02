@@ -1,6 +1,6 @@
 <?php
 /**
- * Integration: VIP Agentforce.
+ * Integration: Agentforce.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -8,14 +8,14 @@
 namespace Automattic\VIP\Integrations;
 
 /**
- * Loads the VIP Agentforce integration.
+ * Loads the Agentforce integration.
  *
  * @private
  */
-class VipAgentforceIntegration extends Integration {
+class AgentforceIntegration extends Integration {
 
 	/**
-	 * The version of the VIP Agentforce plugin to load, defaults to the latest version.
+	 * The version of the Agentforce plugin to load, defaults to the latest version.
 	 *
 	 * @var string
 	 */
@@ -61,7 +61,7 @@ class VipAgentforceIntegration extends Integration {
 	}
 
 	/**
-	 * Get the available versions of VIP Agentforce in descending order.
+	 * Get the available versions of Agentforce in descending order.
 	 *
 	 * @return array<string, string> An associative array of available versions, where the key is the
 	 *                               directory name and the value is the version number. The versions

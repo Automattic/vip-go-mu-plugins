@@ -26,8 +26,8 @@ require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 require_once __DIR__ . '/integrations/security-boost.php';
 
-if ( file_exists( __DIR__ . '/integrations/vip-agentforce.php' ) ) {
-	require_once __DIR__ . '/integrations/vip-agentforce.php';
+if ( file_exists( __DIR__ . '/integrations/agentforce.php' ) ) {
+	require_once __DIR__ . '/integrations/agentforce.php';
 }
 
 if ( file_exists( __DIR__ . '/integrations/remote-data-blocks.php' ) ) {
@@ -49,8 +49,8 @@ IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
 IntegrationsSingleton::instance()->register( new SecurityBoostIntegration( 'security-boost' ) );
 
-if ( class_exists( __NAMESPACE__ . '\\VipAgentforceIntegration' ) ) {
-	IntegrationsSingleton::instance()->register( new VipAgentforceIntegration( 'vip-agentforce' ) );
+if ( class_exists( __NAMESPACE__ . '\\AgentforceIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new AgentforceIntegration( 'agentforce' ) );
 }
 
 if ( class_exists( __NAMESPACE__ . '\\RemoteDataBlocksIntegration' ) ) {
