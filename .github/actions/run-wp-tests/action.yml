@@ -52,13 +52,16 @@ runs:
       id: coverage
       shell: bash
       run: |
-        if [ "${{ inputs.coverage }}" = "yes" ] && [ -n "${{ inputs.coverage-file }}" ]; then
+        if [ "${COVERAGE}" = "yes" ] && [ -n "${COVERAGE_FILE}" ]; then
           echo "coverage=pcov" >> $GITHUB_OUTPUT
           echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
           echo "coverage=none" >> $GITHUB_OUTPUT
           echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
         fi
+      env:
+        COVERAGE: ${{ inputs.coverage }}
+        COVERAGE_FILE: ${{ inputs.coverage-file }}
 
     - name: Install svn
       run: sudo apt-get update && sudo apt-get install -y subversion
@@ -76,9 +79,11 @@ runs:
     - name: Install PHPUnit
       shell: bash
       run: |
-        wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${{ inputs.phpunit }}.phar"
+        wget -q -O /usr/local/bin/phpunit "https://phar.phpunit.de/phpunit-${PHPUNIT_VERSION}.phar"
         chmod +x /usr/local/bin/phpunit
       if: inputs.phpunit != ''
+      env:
+        PHPUNIT_VERSION: ${{ inputs.phpunit }}
 
     - name: Install PHP Dependencies
       uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
@@ -103,27 +108,33 @@ runs:
       run: |
         echo Waiting for MySQL to come online...
         second=0
-        while ! mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent && [ "${second}" -lt 60 ]; do
+        while ! mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent && [ "${second}" -lt 60 ]; do
           sleep 1
           second=$((second+1))
         done
-        mysqladmin ping -h "${{ inputs.mysql-host }}" -P ${{ inputs.mysql-port }} --silent
+        mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent
+      env:
+        MYSQL_HOST: ${{ inputs.mysql-host }}
+        MYSQL_PORT: ${{ inputs.mysql-port }}
 
     - name: Run tests
       shell: bash
       run: |
-        if [ -n "${{ inputs.phpunit }}" ]; then
+        if [ -n "${PHPUNIT_VERSION}" ]; then
           PHPUNIT=phpunit
         else
           PHPUNIT=vendor/bin/phpunit
         fi
         OPTIONS=
-        if [ "${{ steps.coverage.outputs.coverage }}" != 'none' ]; then
+        if [ "${COVERAGE}" != 'none' ]; then
           OPTIONS="${OPTIONS} --coverage-clover=clover.xml"
         else
           OPTIONS="${OPTIONS} --order-by=random"
         fi
         "${PHPUNIT}" ${OPTIONS}
+      env:
+        PHPUNIT_VERSION: ${{ inputs.phpunit }}
+        COVERAGE: ${{ steps.coverage.outputs.coverage }}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@v5.5.2
