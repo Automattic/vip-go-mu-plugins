@@ -1,0 +1,41 @@
+#wpcom-sandboxed-bar {
+	z-index: 9991;
+	color:<?php echo esc_html( apply_filters( 'wpcom_sandbox_bar_debug_info_color', '#ddd' ) ); ?>;
+	font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
+	bottom: 110px;
+	left: 0;
+	position:fixed;
+	margin:0;
+	padding: 0 20px;
+	width: 100%;
+	height: 28px;
+}
+#wpcom-sandboxed-bar span {
+	display: none;
+	float: left;
+	padding: 0 10px;
+	background: #fff;
+	color: #333;
+}
+
+#wpcom-sandboxed-bar:before {
+	content: 'Sandboxed';
+	text-transform: uppercase;
+	background: #d54e21;
+	color: #fff;
+	letter-spacing: 0.2em;
+	text-shadow: none;
+	font-size: 9px;
+	font-weight: bold;
+	padding: 0 10px;
+	float: left;
+	cursor: pointer;
+}
+#wpcom-sandboxed-bar.sbx-debug span {
+	display: inline-block;
+}
+@media print {
+	div#wpcom-sandboxed-bar {
+		display: none !important;
+	}
+}
