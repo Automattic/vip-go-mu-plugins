@@ -45,14 +45,14 @@ jobs:
           echo "PHP_FPM_GID=$(id -g)" >> "${GITHUB_ENV}"
 
       - name: Checkout WordPress
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           repository: wordpress/wordpress-develop
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
       - name: Check out source code
-        uses: actions/checkout@v6.0.1
+        uses: actions/checkout@v6.0.2
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
@@ -64,7 +64,7 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6.1.0
+        uses: actions/setup-node@v6.2.0
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
