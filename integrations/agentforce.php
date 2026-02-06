@@ -28,6 +28,10 @@ class AgentforceIntegration extends Integration {
 	public function configure(): void {
 		$configs = $this->get_env_config();
 
+		if ( ! defined( 'VIP_AGENTFORCE_CONFIGS' ) ) {
+			define( 'VIP_AGENTFORCE_CONFIGS', $configs );
+		}
+
 		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) ) {
 			$this->version = $configs['version'];
 		}

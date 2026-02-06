@@ -48,6 +48,23 @@ class Agentforce_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'latest', $agentforce_integration->version );
 	}
 
+	public function test_configure_defines_config_constant(): void {
+		$agentforce_integration = new AgentforceIntegration( $this->slug );
+		$agentforce_integration->configure();
+
+		$this->assertTrue( defined( 'VIP_AGENTFORCE_CONFIGS' ) );
+		$this->assertEquals( [], constant( 'VIP_AGENTFORCE_CONFIGS' ) );
+	}
+
+	public function test_configure_does_not_redefine_constant(): void {
+		Constant_Mocker::define( 'VIP_AGENTFORCE_CONFIGS', [ 'test' => 'value' ] );
+
+		$agentforce_integration = new AgentforceIntegration( $this->slug );
+		$agentforce_integration->configure();
+
+		$this->assertEquals( [ 'test' => 'value' ], constant( 'VIP_AGENTFORCE_CONFIGS' ) );
+	}
+
 	public function test_get_selected_version_folder_returns_latest_version_when_version_is_latest(): void {
 		$agentforce_integration          = new AgentforceIntegration( $this->slug );
 		$agentforce_integration->version = 'latest';
