@@ -86,9 +86,9 @@ class AgentforceIntegration extends Integration {
 		}
 
 		// find the desired version in the versions array.
-		$desired_version = array_search( $this->version, $versions );
+		$desired_version = array_search( $this->version, $versions, true );
 
-		if ( $desired_version ) {
+		if ( false !== $desired_version ) {
 			return $desired_version;
 		}
 
