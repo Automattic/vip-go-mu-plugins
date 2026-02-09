@@ -174,6 +174,7 @@ class Pendo_JavaScript_Library {
 			'visitor'   => [
 				'id'             => $user_properties['visitor_id'],
 				'country_code'   => $user_properties['country_code'],
+				'email'          => $user_properties['email'],
 				'full_name'      => $user_properties['visitor_name'],
 				// This suffix ensures we don't override role attributes from other
 				// contexts, such as the VIP Dashboard.
