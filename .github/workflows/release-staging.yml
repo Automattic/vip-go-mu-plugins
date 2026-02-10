@@ -43,7 +43,7 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v6.0.2
-      - uses: Automattic/vip-actions/changelog@c8022b66e78461df4f802b935dc0dbb8399f96bc
+      - uses: Automattic/vip-actions/changelog@2bcb000c7bae0a75493afed7cf47f4529cdd2c8e
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
@@ -53,4 +53,4 @@ jobs:
           terms: changelog_category:109
           tag-id: '116'
           link-to-pr: false
-
+          changelog-title: 'VIP MU plugins PR #{pr}'
