@@ -21,7 +21,7 @@ add_action( 'admin_bar_menu', __NAMESPACE__ . '\admin_bar_node', PHP_INT_MAX );
 add_action( 'wp_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_filter( 'js_do_concat', __NAMESPACE__ . '\skip_js_do_concat', 10, 2 );
-add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 );
+add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 ); // Must be below 20 (`wp_print_footer_scripts`)
 add_action( 'admin_footer', __NAMESPACE__ . '\print_data', 5 );
 
 /**
@@ -288,10 +288,8 @@ function print_data() {
 		'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
 	];
 
+	wp_print_inline_script_tag( sprintf( 'var VIPSearchDevTools = %s;', wp_json_encode( $data, JSON_PRETTY_PRINT ) ) );
 	?>
-<script>
-	var VIPSearchDevTools = <?php echo wp_json_encode( $data, JSON_PRETTY_PRINT ); ?>;
-</script>
 <div id="search-dev-tools-portal"></div>
 	<?php
 }

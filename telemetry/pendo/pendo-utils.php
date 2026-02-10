@@ -58,6 +58,7 @@ function get_base_properties_of_pendo_user(): array|null {
 		'country_code'   => sanitize_text_field( $_SERVER['GEOIP_COUNTRY_CODE'] ?? 'unknown' ),
 		'org_id'         => (string) $vip_org_id,
 		'role_wordpress' => $wp_user->roles[0] ?? 'unknown', // The suffix helps prevent collisions with other contexts like the VIP Dashboard.
+		'email'          => strtolower( sanitize_email( $wp_user->user_email ) ),
 		'visitor_id'     => (string) $user_id,
 		'visitor_name'   => $wp_user->display_name,
 	];
