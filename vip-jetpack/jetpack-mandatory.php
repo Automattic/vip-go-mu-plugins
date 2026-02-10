@@ -90,11 +90,7 @@ class WPCOM_VIP_Jetpack_Mandatory {
 		}
 
 		$output = 'var wpcom_vip_jetpack_forced = ' . wp_json_encode( $forced_modules ) . ';';
-		echo "<script type='text/javascript'>", PHP_EOL; // CDATA and type='text/javascript' is not needed for HTML 5
-		echo '/* <![CDATA[ */', PHP_EOL;
-		echo $output, PHP_EOL;  // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo '/* ]]> */', PHP_EOL;
-		echo '</script>', PHP_EOL;
+		wp_print_inline_script_tag( $output );
 	}
 
 	/**
