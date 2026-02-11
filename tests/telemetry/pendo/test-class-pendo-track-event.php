@@ -92,6 +92,27 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$this->assertTrue( $event->is_recordable() );
 	}
 
+	public function test_should_return_vip_prefixed_visitor_id() {
+		$user = $this->factory()->user->create_and_get( [
+			'user_email' => 'vip@example.com',
+		] );
+		$user->add_role( 'vip_support' );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', self::VIP_TELEMETRY_SALT );
+		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
+		Constant_Mocker::define( 'VIP_SF_ACCOUNT_ID', self::VIP_SF_ACCOUNT_ID );
+		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', self::WP_ENVIRONMENT_TYPE );
+
+		$event = new Pendo_Track_Event( 'prefix_', 'test_event' );
+
+		if ( $event->get_data() instanceof WP_Error ) {
+			$this->fail( sprintf( '%s: %s', $event->get_data()->get_error_code(), $event->get_data()->get_error_message() ) );
+		}
+
+		$this->assertSame( 'vip-vip@example.com', $event->get_data()->visitorId );
+	}
+
 	public function test_should_not_add_prefix_twice() {
 		$event = new Pendo_Track_Event( 'prefixed_', 'prefixed_event_name' );
 

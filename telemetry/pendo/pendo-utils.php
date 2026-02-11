@@ -50,7 +50,12 @@ function get_base_properties_of_pendo_user(): array|null {
 	$vip_org_id  = $event_props['vip_org'] ?? 'unknown';
 	$sf_org_id   = defined( 'VIP_SF_ACCOUNT_ID' ) ? constant( 'VIP_SF_ACCOUNT_ID' ) : sprintf( 'nosfid_wordpress_%s', $vip_org_id );
 	$email       = strtolower( sanitize_email( $wp_user->user_email ) );
-	$visitor_id  = $is_vip_user ? 'vip-' . $email : $email;
+
+	if ( '' === $email ) {
+		return null;
+	}
+
+	$visitor_id = $is_vip_user ? 'vip-' . $email : $email;
 
 	return [
 		'account_id'     => (string) $sf_org_id,

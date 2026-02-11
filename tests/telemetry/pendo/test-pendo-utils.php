@@ -52,6 +52,22 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 		$this->assertEquals( $props, $output );
 	}
 
+	public function test_get_base_properties_of_vip_user(): void {
+		$user = $this->factory()->user->create_and_get( [
+			'user_login' => 'vip-support',
+			'user_email' => 'vip@example.com',
+		] );
+		$user->add_role( 'vip_support' );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_ORG_ID', 33 );
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', 'test_salt' );
+
+		$output = get_base_properties_of_pendo_user();
+
+		$this->assertSame( 'vip-vip@example.com', $output['visitor_id'] );
+	}
+
 	public function test_get_base_properties_of_user_with_no_role(): void {
 		$user = $this->factory()->user->create_and_get( [
 			'role'       => [],

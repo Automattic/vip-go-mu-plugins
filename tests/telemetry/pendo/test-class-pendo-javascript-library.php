@@ -279,6 +279,53 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$this->assertSame( $instance, Pendo_JavaScript_Library::init( 'test_api_key' ) );
 	}
 
+	public function test_initialization_data_for_vip_user() {
+		$this->enable_fake_integration_with_pendo_tracking();
+
+		$user = $this->factory()->user->create_and_get( [
+			'role'         => 'author',
+			'display_name' => 'VIP User',
+			'user_email'   => 'vip@example.com',
+		] );
+		$user->add_role( 'vip_support' );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'VIP_ORG_ID', 555 );
+		Constant_Mocker::define( 'VIP_SF_ACCOUNT_ID', 111 );
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', 'test_salt' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+
+		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'index.php' );
+
+		$registered_scripts = wp_scripts()->registered;
+		$this->assertArrayHasKey( 'vip-pendo-agent-script', $registered_scripts );
+
+		$expected_data = [
+			'apiKey'    => 'test_api_key',
+			'account'   => [
+				'id'         => '111',
+				'vip_org_id' => '555',
+				'wp_version' => get_bloginfo( 'version' ),
+			],
+			'env'       => 'io',
+			'globalKey' => 'VIP_PENDO_MU_PLUGINS',
+			'plugins'   => [],
+			'visitor'   => [
+				'id'             => 'vip-vip@example.com',
+				'country_code'   => 'unknown',
+				'email'          => 'vip@example.com',
+				'full_name'      => 'VIP User',
+				'role_wordpress' => 'author',
+			],
+		];
+
+		$serialized_data = sprintf( 'var %s = %s;', 'VIP_PENDO_MU_PLUGINS_INIT_DATA', wp_json_encode( $expected_data ) );
+
+		$this->assertSame( $serialized_data, $registered_scripts['vip-pendo-agent-script']->extra['data'] );
+	}
+
 	public function test_initialization_data() {
 		$this->enable_fake_integration_with_pendo_tracking();
 
