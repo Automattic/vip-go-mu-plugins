@@ -312,7 +312,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 			'globalKey' => 'VIP_PENDO_MU_PLUGINS',
 			'plugins'   => [],
 			'visitor'   => [
-				'id'             => '2a69efbe98bed50d3fee619f409b5ded12fb63f1fab2dd52e211e2b626b49408',
+				'id'             => 'frances@ha.com',
 				'country_code'   => 'unknown',
 				'email'          => 'frances@ha.com',
 				'full_name'      => 'Frances Ha',

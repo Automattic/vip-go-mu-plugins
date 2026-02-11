@@ -71,7 +71,7 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$this->assertIsFloat( $event->get_data()->timestamp );
 		$this->assertGreaterThan( ( time() - 10 ) * 1000, $event->get_data()->timestamp );
 		$this->assertSame( 'track', $event->get_data()->type );
-		$this->assertSame( hash_hmac( 'sha256', $this->user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->visitorId );
+		$this->assertSame( strtolower( $this->user->user_email ), $event->get_data()->visitorId );
 
 		// Test event context.
 		$this->assertSame( 'http://test.cool/page', $event->get_data()->context->url );
