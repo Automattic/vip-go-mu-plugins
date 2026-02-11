@@ -57,6 +57,7 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 			'user_login' => 'vip-support',
 			'user_email' => 'vip@example.com',
 		] );
+		wp_roles()->add_role( 'vip_support', 'VIP Support' );
 		$user->add_role( 'vip_support' );
 		wp_set_current_user( $user->ID );
 

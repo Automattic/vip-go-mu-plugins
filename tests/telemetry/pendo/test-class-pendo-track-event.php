@@ -96,6 +96,7 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get( [
 			'user_email' => 'vip@example.com',
 		] );
+		wp_roles()->add_role( 'vip_support', 'VIP Support' );
 		$user->add_role( 'vip_support' );
 		wp_set_current_user( $user->ID );
 

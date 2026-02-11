@@ -40,6 +40,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
 		$integrations_property->setValue( null, null );
 
+		wp_deregister_script( 'vip-pendo-agent-script' );
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -287,6 +288,7 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 			'display_name' => 'VIP User',
 			'user_email'   => 'vip@example.com',
 		] );
+		wp_roles()->add_role( 'vip_support', 'VIP Support' );
 		$user->add_role( 'vip_support' );
 		wp_set_current_user( $user->ID );
 
