@@ -71,7 +71,7 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$this->assertIsFloat( $event->get_data()->timestamp );
 		$this->assertGreaterThan( ( time() - 10 ) * 1000, $event->get_data()->timestamp );
 		$this->assertSame( 'track', $event->get_data()->type );
-		$this->assertSame( hash_hmac( 'sha256', $this->user->user_email, self::VIP_TELEMETRY_SALT ), $event->get_data()->visitorId );
+		$this->assertSame( strtolower( $this->user->user_email ), $event->get_data()->visitorId );
 
 		// Test event context.
 		$this->assertSame( 'http://test.cool/page', $event->get_data()->context->url );
@@ -90,6 +90,28 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'value2', $event->get_data()->properties->property2 );
 
 		$this->assertTrue( $event->is_recordable() );
+	}
+
+	public function test_should_return_vip_prefixed_visitor_id() {
+		$user = $this->factory()->user->create_and_get( [
+			'user_email' => 'vip@example.com',
+		] );
+		wp_roles()->add_role( 'vip_support', 'VIP Support' );
+		$user->add_role( 'vip_support' );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', self::VIP_TELEMETRY_SALT );
+		Constant_Mocker::define( 'VIP_ORG_ID', self::VIP_ORG_ID );
+		Constant_Mocker::define( 'VIP_SF_ACCOUNT_ID', self::VIP_SF_ACCOUNT_ID );
+		Constant_Mocker::define( 'WP_ENVIRONMENT_TYPE', self::WP_ENVIRONMENT_TYPE );
+
+		$event = new Pendo_Track_Event( 'prefix_', 'test_event' );
+
+		if ( $event->get_data() instanceof WP_Error ) {
+			$this->fail( sprintf( '%s: %s', $event->get_data()->get_error_code(), $event->get_data()->get_error_message() ) );
+		}
+
+		$this->assertSame( 'vip-vip@example.com', $event->get_data()->visitorId );
 	}
 
 	public function test_should_not_add_prefix_twice() {

@@ -45,10 +45,28 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 			'country_code'   => 'unknown',
 			'org_id'         => '11',
 			'role_wordpress' => 'administrator',
-			'visitor_id'     => 'f492ac7d4b4e1b795d8ebe8a142d003fdac45e33490d47573a7b78a91a52bde9',
+			'email'          => 'admin@example.org',
+			'visitor_id'     => 'admin@example.org',
 			'visitor_name'   => 'admin',
 		];
 		$this->assertEquals( $props, $output );
+	}
+
+	public function test_get_base_properties_of_vip_user(): void {
+		$user = $this->factory()->user->create_and_get( [
+			'user_login' => 'vip-support',
+			'user_email' => 'vip@example.com',
+		] );
+		wp_roles()->add_role( 'vip_support', 'VIP Support' );
+		$user->add_role( 'vip_support' );
+		wp_set_current_user( $user->ID );
+
+		Constant_Mocker::define( 'VIP_ORG_ID', 33 );
+		Constant_Mocker::define( 'VIP_TELEMETRY_SALT', 'test_salt' );
+
+		$output = get_base_properties_of_pendo_user();
+
+		$this->assertSame( 'vip-vip@example.com', $output['visitor_id'] );
 	}
 
 	public function test_get_base_properties_of_user_with_no_role(): void {
@@ -69,7 +87,8 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 			'country_code'   => 'unknown',
 			'org_id'         => '22',
 			'role_wordpress' => 'unknown',
-			'visitor_id'     => '2a69efbe98bed50d3fee619f409b5ded12fb63f1fab2dd52e211e2b626b49408',
+			'email'          => 'frances@ha.com',
+			'visitor_id'     => 'frances@ha.com',
 			'visitor_name'   => 'frances',
 		];
 		$this->assertEquals( $props, $output );
