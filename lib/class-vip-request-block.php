@@ -55,7 +55,7 @@ class VIP_Request_Block {
 		if ( ! empty( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) ) {
 			$true_ip = $_SERVER['HTTP_TRUE_CLIENT_IP'];
 		}
-		else if ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+		elseif ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
 			$true_ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
 		}
 		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
