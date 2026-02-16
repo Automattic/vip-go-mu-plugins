@@ -41,8 +41,21 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      pull-requests: read
     steps:
+      - name: Checkout repository
       - uses: actions/checkout@v6.0.2
+
+      - name: Extract version from PR title
+        id: version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Extract version (YYYYMMDD.x) and check for null.
+          version=$(gh api "/repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].title | if . then capture(": (?<v>v[0-9]{8}\\.[0-9]+)") | .v else empty end')
+          echo "version=${version:-release}" >> "$GITHUB_OUTPUT"
+
+      - name: Create changelog
       - uses: Automattic/vip-actions/changelog@2bcb000c7bae0a75493afed7cf47f4529cdd2c8e
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
@@ -53,4 +66,4 @@ jobs:
           terms: changelog_category:109
           tag-id: '116'
           link-to-pr: false
-          changelog-title: 'VIP MU plugins PR #{pr}'
+          changelog-title: "VIP MU plugins ${{ steps.version.outputs.version }}"
