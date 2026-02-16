@@ -51,10 +51,16 @@ class VIP_Request_Block {
 		}
 
 		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		$true_ip = '';
 		if ( ! empty( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) ) {
-			$hdr = strtolower( $_SERVER['HTTP_TRUE_CLIENT_IP'] );
+			$true_ip = $_SERVER['HTTP_TRUE_CLIENT_IP'];
+		}
+		else if ( ! empty( $_SERVER['HTTP_CF_CONNECTING'] ) ) {
+			$true_ip = $_SERVER['HTTP_CF_CONNECTING'];
+		}
+		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		if ( ! empty( true_ip ) ) {
+			$hdr = strtolower( true_ip );
 			$bin = inet_pton( $hdr );
 			if ( $bin === $ip || $hdr === $value ) {
 				return static::block_and_log( $value, 'true-client-ip' );
