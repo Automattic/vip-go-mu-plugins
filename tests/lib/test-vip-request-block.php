@@ -93,7 +93,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 	public function test__cf_connecting_ip_takes_precedence_over_x_forwarded_for(): void {
 		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
-		$_SERVER['HTTP_X_FORWARDED_FOR']   = '1.1.1.1, 8.8.8.8';
+		$_SERVER['HTTP_X_FORWARDED_FOR']  = '1.1.1.1, 8.8.8.8';
 
 		$actual = VIP_Request_Block::ip( '5.5.5.5' );
 		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_CF_CONNECTING_IP (takes precedence over HTTP_X_FORWARDED_FOR)' );
