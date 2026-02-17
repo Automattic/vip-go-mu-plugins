@@ -24,7 +24,7 @@ class VIP_Request_Block {
 	protected static $should_log = true;
 
 	/**
-	 * Block a specific IP based either on true-client-ip ( or HTTP_CF_CONNECTING_IP for non-enterprise CloudFront accounts ), falling back to x-forwarded-for
+	 * Block a specific IP based either on true-client-ip (or HTTP_CF_CONNECTING_IP for non-enterprise Cloudflare accounts), falling back to x-forwarded-for
 	 *
 	 * 🛑 BE CAREFUL: blocking a reverse proxy IP instead of the client's IP will result in legitimate traffic being blocked!!!
 	 * 🛑 ALWAYS: use `whois {IP}` to look up the IP before making the changes.
