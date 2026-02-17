@@ -89,7 +89,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout repository
-      - uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v6.0.2
 
       - name: Extract version from PR title
         id: version
@@ -101,7 +101,7 @@ jobs:
           echo "version=${version:-release}" >> "$GITHUB_OUTPUT"
 
       - name: Create changelog
-      - uses: Automattic/vip-actions/changelog@2bcb000c7bae0a75493afed7cf47f4529cdd2c8e
+        uses: Automattic/vip-actions/changelog@2bcb000c7bae0a75493afed7cf47f4529cdd2c8e
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
