@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "20996ac43b1375d0e1098f9351733af9",
+    "content-hash": "5e5832c29ca184d57fcc2161b7ab43ee",
     "packages": [],
     "packages-dev": [
         {
@@ -305,16 +305,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.9.0",
+            "version": "6.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "4626d4e896c36ab77a69ce58627bc76243b5dd07"
+                "reference": "840ffab74cb3d19cc0076363358f783041b5f3cf"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/4626d4e896c36ab77a69ce58627bc76243b5dd07",
-                "reference": "4626d4e896c36ab77a69ce58627bc76243b5dd07",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/840ffab74cb3d19cc0076363358f783041b5f3cf",
+                "reference": "840ffab74cb3d19cc0076363358f783041b5f3cf",
                 "shasum": ""
             },
             "require": {
@@ -322,7 +322,7 @@
                 "php": ">=7.2.24"
             },
             "provide": {
-                "wordpress/core-implementation": "6.9.0"
+                "wordpress/core-implementation": "6.9.1"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -349,7 +349,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2025-12-02T19:10:58+00:00"
+            "time": "2026-02-03T18:03:48+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -3112,16 +3112,16 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "6.9.0",
+            "version": "6.9.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
-                "reference": "448dc57a97c7225d2ac6271876682fca4c2ed340"
+                "reference": "15fd216bf6516670d8d07b938675925bfa5c15b0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/448dc57a97c7225d2ac6271876682fca4c2ed340",
-                "reference": "448dc57a97c7225d2ac6271876682fca4c2ed340",
+                "url": "https://api.github.com/repos/wp-phpunit/wp-phpunit/zipball/15fd216bf6516670d8d07b938675925bfa5c15b0",
+                "reference": "15fd216bf6516670d8d07b938675925bfa5c15b0",
                 "shasum": ""
             },
             "type": "library",
@@ -3156,7 +3156,7 @@
                 "issues": "https://github.com/wp-phpunit/issues",
                 "source": "https://github.com/wp-phpunit/wp-phpunit"
             },
-            "time": "2025-12-03T01:19:46+00:00"
+            "time": "2026-02-04T01:48:23+00:00"
         },
         {
             "name": "yoast/phpunit-polyfills",

@@ -4,79 +4,36 @@ if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' === constant( 'VIP_GO
 	return;
 }
 
-add_action( 'wp_footer', 'vip_do_non_prod_bar', 10000 );
-add_action( 'admin_footer', 'vip_do_non_prod_bar', 10000 );
-
 function vip_do_non_prod_bar() {
+	$environment = constant( 'VIP_GO_APP_ENVIRONMENT' );
+	if ( 'local' === $environment && 'true' === getenv( 'CODESPACES' ) ) {
+		$environment = 'codespaces';
+	}
+	?>
+	<div id="vip-non-prod-bar">
+		<span>
+			<strong><?php echo esc_html( $environment ); ?></strong>
+		</span>
+	</div>
+	<?php
+}
+
+function vip_non_prod_enqueue_scripts() {
 	if ( ! current_user_can( 'edit_posts' ) ) {
 		return;
 	}
 
-	if ( apply_filters( 'vip_show_non_prod_bar', true ) ) :
-		$environment = constant( 'VIP_GO_APP_ENVIRONMENT' );
-		if ( 'local' === $environment && 'true' === getenv( 'CODESPACES' ) ) {
-			$environment = 'codespaces';
-		}
+	if ( apply_filters( 'vip_show_non_prod_bar', true ) ) {
+		wp_register_style( 'vip-non-prod-bar', plugins_url( '/assets/nonprod.css', __FILE__ ), [], '1.0' );
+		wp_register_script( 'vip-non-prod-bar', plugins_url( '/assets/nonprod.js', __FILE__ ), [], '1.0', true );
 
-		?>
-		<div id="vip-non-prod-bar">
-			<span>
-				<strong><?php echo esc_html( $environment ); ?></strong>
-			</span>
-		</div>
-		<script>
-			const nonProdBar = document.getElementById('vip-non-prod-bar');
-			nonProdBar.addEventListener( 'click', function() {
-				this.classList.toggle('which-env');
-			} );
+		wp_enqueue_style( 'vip-non-prod-bar' );
+		wp_enqueue_script( 'vip-non-prod-bar' );
 
-			const debugBar = document.getElementById('a8c-debug-flag');
-			if ( debugBar ) {
-				// Account for proper stacking of the debug bar
-				nonProdBar.style.bottom = '180px';
-			}
-		</script>
-		<style>
-		#vip-non-prod-bar {
-			z-index: 9991;
-			font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
-			left: 0;
-			bottom: 145px;
-			position:fixed;
-			margin:0;
-			padding: 0 20px;
-			height: 28px;
-		}
-		#vip-non-prod-bar span {
-			display: none;
-			float: left;
-			padding: 0 10px;
-			background: #fff;
-			color: #333;
-		}
-
-		#vip-non-prod-bar:before {
-			content: 'Non-production';
-			text-transform: uppercase;
-			background: #4c2c92;
-			color: #fff;
-			letter-spacing: 0.2em;
-			text-shadow: none;
-			font-size: 9px;
-			font-weight: bold;
-			padding: 0 10px;
-			float: left;
-			cursor: pointer;
-		}
-		#vip-non-prod-bar.which-env span {
-			display: inline-block;
-		}
-		@media print {
-			div#vip-non-prod-bar {
-				display: none !important;
-			}
-		}
-		</style>
-		<?php
-	endif;
+		add_action( 'wp_footer', 'vip_do_non_prod_bar', 10000 );
+		add_action( 'admin_footer', 'vip_do_non_prod_bar', 10000 );
+	}
 }
+
+add_action( 'wp_enqueue_scripts', 'vip_non_prod_enqueue_scripts' );
+add_action( 'admin_enqueue_scripts', 'vip_non_prod_enqueue_scripts' );

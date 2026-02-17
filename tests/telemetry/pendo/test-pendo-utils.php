@@ -45,6 +45,7 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 			'country_code'   => 'unknown',
 			'org_id'         => '11',
 			'role_wordpress' => 'administrator',
+			'email'          => 'admin@example.org',
 			'visitor_id'     => 'f492ac7d4b4e1b795d8ebe8a142d003fdac45e33490d47573a7b78a91a52bde9',
 			'visitor_name'   => 'admin',
 		];
@@ -69,6 +70,7 @@ class Pendo_Utils_Test extends WP_UnitTestCase {
 			'country_code'   => 'unknown',
 			'org_id'         => '22',
 			'role_wordpress' => 'unknown',
+			'email'          => 'frances@ha.com',
 			'visitor_id'     => '2a69efbe98bed50d3fee619f409b5ded12fb63f1fab2dd52e211e2b626b49408',
 			'visitor_name'   => 'frances',
 		];
