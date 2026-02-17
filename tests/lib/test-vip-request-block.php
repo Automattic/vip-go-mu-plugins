@@ -33,7 +33,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
-		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT'] );
+		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_CF_CONNECTING_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT'] );
 		parent::tearDown();
 	}
 
@@ -80,7 +80,34 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		self::assertFalse( $actual );
 	}
 
+	public function test__true_client_ip_takes_precedence_over_cf_connecting_ip(): void {
+		$_SERVER['HTTP_TRUE_CLIENT_IP']   = '4.4.4.4';
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
 
+		$actual = VIP_Request_Block::ip( '4.4.4.4' );
+		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_TRUE_CLIENT_IP' );
+
+		$actual = VIP_Request_Block::ip( '5.5.5.5' );
+		self::assertFalse( $actual, 'Expected request not to be blocked when IP only in HTTP_CF_CONNECTING_IP, since HTTP_TRUE_CLIENT_IP takes precedence' );
+	}
+
+	public function test__cf_connecting_ip_takes_precedence_over_x_forwarded_for(): void {
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
+		$_SERVER['HTTP_X_FORWARDED_FOR']   = '1.1.1.1, 8.8.8.8';
+
+		$actual = VIP_Request_Block::ip( '5.5.5.5' );
+		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_CF_CONNECTING_IP (takes precedence over HTTP_X_FORWARDED_FOR)' );
+
+		$actual = VIP_Request_Block::ip( '1.1.1.1' );
+		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_X_FORWARDED_FOR' );
+	}
+
+	public function test__error_raised_when_cf_connecting_ip(): void {
+		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
+
+		$actual = VIP_Request_Block::ip( '5.5.5.5' );
+		self::assertTrue( $actual );
+	}
 
 	public function test__no_error_log_when_suppressed(): void {
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';

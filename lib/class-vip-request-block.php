@@ -59,8 +59,8 @@ class VIP_Request_Block {
 			$true_ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
 		}
 		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
-		if ( ! empty( true_ip ) ) {
-			$hdr = strtolower( true_ip );
+		if ( ! empty( $true_ip ) ) {
+			$hdr = strtolower( $true_ip );
 			$bin = inet_pton( $hdr );
 			if ( $bin === $ip || $hdr === $value ) {
 				return static::block_and_log( $value, 'true-client-ip' );
