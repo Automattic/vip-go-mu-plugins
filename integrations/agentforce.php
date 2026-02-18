@@ -28,7 +28,7 @@ class AgentforceIntegration extends Integration {
 	public function configure(): void {
 		$org_config = $this->get_org_config();
 		$env_config = $this->get_env_config();
-		$configs = array_merge( $org_config, $env_config );
+		$configs    = array_merge( $org_config, $env_config );
 
 		if ( ! defined( 'VIP_AGENTFORCE_CONFIGS' ) ) {
 			define( 'VIP_AGENTFORCE_CONFIGS', $configs );

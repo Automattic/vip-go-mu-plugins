@@ -207,7 +207,7 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	public function test__get_org_config_returns_value_from_organization_config(): void {
 		$mock = $this->get_mock( [
 			'org' => [
-				'status' => Org_Integration_Status::ENABLED,
+				'status' => 'enabled',
 				'config' => array( 'org-config' ),
 			],
 		] );
@@ -218,7 +218,7 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	public function test__get_org_config_returns_empty_array_when_no_config(): void {
 		$mock = $this->get_mock( [
 			'org' => [
-				'status' => Org_Integration_Status::ENABLED,
+				'status' => 'enabled',
 			],
 		] );
 
