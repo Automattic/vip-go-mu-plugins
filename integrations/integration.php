@@ -118,7 +118,7 @@ abstract class Integration {
 	/**
 	 * Return the organization-level configuration for this integration.
 	 *
-	 * @return array<string,array>
+	 * @return array<string,mixed>
 	 */
 	public function get_org_config(): array {
 		// If the integration was activated manually, org config is not available.
