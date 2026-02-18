@@ -116,6 +116,20 @@ abstract class Integration {
 	}
 
 	/**
+	 * Return the organization-level configuration for this integration.
+	 *
+	 * @return array<string,array>
+	 */
+	public function get_org_config(): array {
+		// If the integration was activated manually, org config is not available.
+		if ( ! isset( $this->vip_config ) ) {
+			return [];
+		}
+
+		return $this->vip_config->get_org_config();
+	}
+
+	/**
 	 * Get child integration configurations.
 	 *
 	 * @return array Associative array of child configurations keyed by integration slug

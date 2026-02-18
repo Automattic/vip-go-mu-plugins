@@ -165,6 +165,16 @@ class IntegrationVipConfig {
 	}
 
 	/**
+	 * Get organization-level configuration for this integration.
+	 *
+	 * @return array Organization configuration array, empty array if no config defined
+	 */
+	public function get_org_config(): array {
+		$config = $this->get_value_from_config( 'org', 'config' );
+		return is_array( $config ) ? $config : [];
+	}
+
+	/**
 	 * Get child integration configurations.
 	 *
 	 * Returns the 'children' array from the integration configuration, which contains
