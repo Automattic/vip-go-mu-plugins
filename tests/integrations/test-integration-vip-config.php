@@ -204,6 +204,27 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( array( 'env-config' ), $mock->get_env_config() );
 	}
 
+	public function test__get_org_config_returns_value_from_organization_config(): void {
+		$mock = $this->get_mock( [
+			'org' => [
+				'status' => Org_Integration_Status::ENABLED,
+				'config' => array( 'org-config' ),
+			],
+		] );
+
+		$this->assertEquals( array( 'org-config' ), $mock->get_org_config() );
+	}
+
+	public function test__get_org_config_returns_empty_array_when_no_config(): void {
+		$mock = $this->get_mock( [
+			'org' => [
+				'status' => Org_Integration_Status::ENABLED,
+			],
+		] );
+
+		$this->assertEquals( array(), $mock->get_org_config() );
+	}
+
 	public function test__get_env_config_returns_value_from_network_site_config(): void {
 		$mock = $this->get_mock( [
 			'env'           => [

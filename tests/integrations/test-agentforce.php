@@ -10,6 +10,7 @@ namespace Automattic\VIP\Integrations;
 
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
+use PHPUnit\Framework\MockObject\MockObject;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
@@ -63,6 +64,67 @@ class Agentforce_Integration_Test extends WP_UnitTestCase {
 		$agentforce_integration->configure();
 
 		$this->assertEquals( [ 'test' => 'value' ], constant( 'VIP_AGENTFORCE_CONFIGS' ) );
+	}
+
+	public function test_configure_merges_org_and_env_config(): void {
+		$vip_config_mock = $this->get_vip_config_mock( [
+			'org' => [
+				'status' => 'enabled',
+				'config' => [ 'ingestion_api_token' => 'org-token' ],
+			],
+			'env' => [
+				'status' => 'enabled',
+				'config' => [ 'ingestion_api_sync_all_posts' => true ],
+			],
+		] );
+
+		$agentforce_integration = new AgentforceIntegration( $this->slug );
+		$agentforce_integration->set_vip_config( $vip_config_mock );
+		$agentforce_integration->configure();
+
+		$configs = constant( 'VIP_AGENTFORCE_CONFIGS' );
+		$this->assertArrayHasKey( 'ingestion_api_token', $configs );
+		$this->assertArrayHasKey( 'ingestion_api_sync_all_posts', $configs );
+		$this->assertEquals( 'org-token', $configs['ingestion_api_token'] );
+		$this->assertTrue( $configs['ingestion_api_sync_all_posts'] );
+	}
+
+	public function test_configure_works_when_org_config_is_empty(): void {
+		$vip_config_mock = $this->get_vip_config_mock( [
+			'org' => [
+				'status' => 'enabled',
+			],
+			'env' => [
+				'status' => 'enabled',
+				'config' => [ 'env_key' => 'env-value' ],
+			],
+		] );
+
+		$agentforce_integration = new AgentforceIntegration( $this->slug );
+		$agentforce_integration->set_vip_config( $vip_config_mock );
+		$agentforce_integration->configure();
+
+		$configs = constant( 'VIP_AGENTFORCE_CONFIGS' );
+		$this->assertArrayHasKey( 'env_key', $configs );
+		$this->assertEquals( 'env-value', $configs['env_key'] );
+	}
+
+	/**
+	 * Get a mock IntegrationVipConfig.
+	 *
+	 * @param array $vip_config The config to return from the mock.
+	 * @return MockObject&IntegrationVipConfig
+	 */
+	private function get_vip_config_mock( array $vip_config ) {
+		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_vip_config_from_file' ] )
+			->getMock();
+
+		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
+		$mock->__construct( $this->slug );
+
+		return $mock;
 	}
 
 	public function test_get_selected_version_folder_returns_latest_version_when_version_is_latest(): void {
