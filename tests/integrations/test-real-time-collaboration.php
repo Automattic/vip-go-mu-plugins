@@ -55,7 +55,7 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		do_action( 'plugins_loaded' );
 	}
 
-	public function test_load_sets_inactive_if_no_versions_found(): void {
+	public function test_load_sets_inactive_if_plugin_file_not_found(): void {
 		// Set up required constants
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
@@ -148,13 +148,6 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( defined( 'VIP_RTC_WS_AUTH_SECRET' ) );
 		$this->assertFalse( defined( 'VIP_RTC_WS_URL' ) );
-	}
-
-	public function test_get_versions_returns_array(): void {
-		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
-		$versions        = $rtc_integration->get_versions();
-
-		$this->assertIsArray( $versions );
 	}
 
 	public function test_load_sets_inactive_when_ws_auth_secret_missing(): void {

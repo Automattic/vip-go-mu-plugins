@@ -179,12 +179,10 @@ class SettingsHealthJob {
 					continue;
 				}
 
-				$indexable = $this->indexables->get( $indexable_slug );
 				if ( isset( $result['diff']['index.number_of_shards'] ) && 1 === count( $result['diff'] )
-					&& $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version']
 					&& false !== get_option( self::BUILD_LOCK_NAME ) ) {
-						// Don't keep alerting if it's an active index in process of being re-built.
-						continue;
+					// Don't keep alerting if it's an active index in process of being re-built.
+					continue;
 				}
 
 				$message = sprintf(
@@ -233,8 +231,9 @@ class SettingsHealthJob {
 				if ( empty( $result['diff'] ) ) {
 					continue;
 				}
-				// Check if active index needs to be re-built in the background.
-				if ( isset( $result['diff']['index.number_of_shards'] ) && $this->search->versioning->get_active_version_number( $indexable ) === $result['index_version'] ) {
+
+				// Check if index needs to be re-built in the background.
+				if ( isset( $result['diff']['index.number_of_shards'] ) ) {
 					$this->maybe_process_build( $indexable );
 				}
 
@@ -249,16 +248,14 @@ class SettingsHealthJob {
 				}
 
 				$result = $this->health->heal_index_settings_for_indexable( $indexable, $options );
-
-				if ( is_wp_error( $result['result'] ) ) {
-					/** @var WP_Error $result */
+				if ( is_wp_error( $result['result'] ) || false === $result['result'] ) {
 					$message = sprintf(
 						'Application %s: Failed to heal index settings for indexable %s and index version %d on %s: %s',
 						FILES_CLIENT_SITE_ID,
 						$indexable_slug,
 						$result['index_version'],
 						home_url(),
-						$result['result']->get_error_message(),
+						is_wp_error( $result['result'] ) ? $result['result']->get_error_message() : 'Unknown error',
 					);
 
 					$this->send_alert( '#vip-go-es-alerts', $message, 2 );

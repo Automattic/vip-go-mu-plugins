@@ -107,38 +107,41 @@ class CoreCommand {
 	 * @return array $indexes Array of active indexes.
 	 */
 	private function list_active_indexes() {
-		$indexes    = [];
-		$search     = \Automattic\VIP\Search\Search::instance();
-		$indexables = $search->indexables->get_all();
-		$blog_ids   = ( is_multisite() ) ? get_sites( [ 'fields' => 'ids' ] ) : [ get_current_blog_id() ];
-		foreach ( $indexables as $indexable ) {
-			if ( $indexable->global ) {
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
-				}
-				continue;
+		$indexes  = [];
+		$search   = \Automattic\VIP\Search\Search::instance();
+		$blog_ids = ( is_multisite() ) ? get_sites(
+			[
+				'fields' => 'ids',
+				'number' => 20000,
+			]
+		) : [ get_current_blog_id() ];
+		
+		foreach ( $blog_ids as $blog_id ) {
+			if ( is_multisite() ) {
+				switch_to_blog( $blog_id );
 			}
-
-			foreach ( $blog_ids as $blog_id ) {
-				if ( is_multisite() ) {
-					switch_to_blog( $blog_id );
-				}
+			
+			try {
+				\ElasticPress\Features::factory()->setup_features();
 				
-				$active_version = $search->versioning->get_active_version_number( $indexable );
-				if ( ! is_wp_error( $active_version ) ) {
-					$index_name = $search->versioning->get_index_name( $indexable, $active_version );
-					$indexes[]  = $index_name;
+				$site_indexables = $search->indexables->get_all();
+				foreach ( $site_indexables as $indexable ) {
+					$active_version = $search->versioning->get_active_version_number( $indexable );
+					if ( is_wp_error( $active_version ) ) {
+						continue;
+					}
+					
+					$index_name             = $search->versioning->get_index_name( $indexable, $active_version );
+					$indexes[ $index_name ] = true;
 				}
-				
+			} finally {
 				if ( is_multisite() ) {
 					restore_current_blog();
 				}
 			}
 		}
-
-		return $indexes;
+		
+		return array_keys( $indexes );
 	}
 
 	/**
@@ -418,9 +421,22 @@ class CoreCommand {
 
 		$index_name = $indexable->get_index_name();
 
-		$settings = Elasticsearch::factory()->get_mapping( $index_name );
+		$settings = Elasticsearch::factory()->get_index_settings( $index_name );
 
-		$keys = array_keys( $settings );
+		if ( is_wp_error( $settings ) ) {
+			WP_CLI::error( sprintf( 'Error getting index settings: %s', $settings->get_error_message() ) );
+		}
+		if ( isset( $settings['error'] ) ) {
+			WP_CLI::error(
+				sprintf(
+					'Error getting index settings: %s',
+					isset( $settings['error']['root_cause'][0]['reason'] ) ? $settings['error']['root_cause'][0]['reason'] : 'Unknown error'
+				)
+			);
+		}
+
+		$settings = $settings[ $index_name ]['settings'] ?? [];
+		$keys     = array_keys( $settings );
 		\WP_CLI\Utils\format_items( $assoc_args['format'] ?? 'table', array( $settings ), $keys );
 	}
 

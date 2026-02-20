@@ -404,6 +404,45 @@ class Search_Test extends WP_UnitTestCase {
 		$indexable->bulk_index( [ $post_id ] );
 	}
 
+	public function test__vip_search_sends_double_writes_after_upgrade_and_migration_in_progress() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
+			'https://es-endpoint:9245',
+		) );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		self::$mock_global_functions->expects( $this->exactly( 3 ) )
+			->method( 'mock_wp_remote_request' )
+			->with( $this->callback( function ( $url ) {
+				return in_array( $url, [
+					'https://es-endpoint:9245/vip-123-post-1',       // Next version host
+					'https://es-endpoint:9245/vip-123-post-1/_bulk', // Next version host
+					'https://es-endpoint:9235/vip-123-post-1/_bulk', // Mirror to old version host
+				] );
+			} ) )
+			->willReturn([
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			]);
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
+	}
+
 	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9235/weirdpath9235',
@@ -2611,13 +2650,290 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
 	}
 
+	public function test__filter__ep_config_mapping_strips_ngram_filter() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'filter' => array(
+						'ep_ngram_filter' => array(
+							'type'     => 'ngram',
+							'min_gram' => 3,
+							'max_gram' => 15,
+						),
+						'edge_ngram'      => array(
+							'type'     => 'edge_ngram',
+							'min_gram' => 3,
+							'max_gram' => 10,
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+
+		$this->assertArrayNotHasKey( 'ep_ngram_filter', $filtered['settings']['analysis']['filter'], 'ep_ngram_filter should be removed' );
+		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
+	}
+
+	public function test__filter__ep_config_mapping_strips_ngram_analyzers_that_reference_removed_filters() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'filter'   => array(
+						'ep_ngram_filter' => array(
+							'type'     => 'ngram',
+							'min_gram' => 3,
+							'max_gram' => 15,
+						),
+					),
+					'analyzer' => array(
+						'ep_ngram'        => array(
+							'type'      => 'custom',
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase', 'asciifolding', 'ep_ngram_filter' ),
+						),
+						'ep_ngram_search' => array(
+							'type'      => 'custom',
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase', 'asciifolding' ),
+						),
+						'default'         => array(
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase' ),
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+
+		// ep_ngram should be removed because it references ep_ngram_filter which was removed
+		$this->assertArrayNotHasKey( 'ep_ngram', $filtered['settings']['analysis']['analyzer'], 'ep_ngram analyzer should be removed because it references removed filter' );
+		// ep_ngram_search should NOT be removed because it doesn't reference the removed filter
+		$this->assertArrayHasKey( 'ep_ngram_search', $filtered['settings']['analysis']['analyzer'], 'ep_ngram_search analyzer should be kept because it does not reference removed filter' );
+		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
+	}
+
+	public function test__filter__ep_indexable_mapping_strips_ngram_filter() {
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'filter' => array(
+						'ep_ngram_filter' => array(
+							'type'     => 'ngram',
+							'min_gram' => 3,
+							'max_gram' => 15,
+						),
+						'edge_ngram'      => array(
+							'type'     => 'edge_ngram',
+							'min_gram' => 3,
+							'max_gram' => 10,
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_post_mapping', $mapping );
+
+		$this->assertArrayNotHasKey( 'ep_ngram_filter', $filtered['settings']['analysis']['filter'], 'ep_ngram_filter should be removed' );
+		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
+	}
+
+	public function test__filter__ep_post_mapping_strips_ngram_field() {
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(),
+			'mappings' => array(
+				'properties' => array(
+					'post_content' => array(
+						'type'   => 'text',
+						'fields' => array(
+							'ngram' => array(
+								'type'            => 'text',
+								'analyzer'        => 'ep_ngram',
+								'search_analyzer' => 'ep_ngram_search',
+							),
+							'raw'   => array(
+								'type' => 'keyword',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_post_mapping', $mapping );
+
+		$this->assertArrayNotHasKey( 'ngram', $filtered['mappings']['properties']['post_content']['fields'], 'post_content.ngram field should be removed' );
+		$this->assertArrayHasKey( 'raw', $filtered['mappings']['properties']['post_content']['fields'], 'post_content.raw field should be kept' );
+	}
+
+	public function test__filter__ep_post_mapping_strips_ngram_field_when_no_fields_exist() {
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(),
+			'mappings' => array(
+				'properties' => array(
+					'post_content' => array(
+						'type' => 'text',
+					),
+				),
+			),
+		);
+
+		$indexable = Indexables::factory()->get( 'post' );
+		if ( ! $indexable ) {
+			$this->markTestSkipped( 'Post indexable not available' );
+		}
+
+		$filtered = apply_filters( 'ep_post_mapping', $mapping );
+
+		$this->assertArrayNotHasKey( 'fields', $filtered['mappings']['properties']['post_content'], 'post_content should not have fields when ngram field does not exist' );
+	}
+
+	public function test__filter__ep_config_mapping_strips_ngram_filter_by_type() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'filter' => array(
+						'custom_ngram_filter' => array(
+							'type'     => 'ngram',
+							'min_gram' => 2,
+							'max_gram' => 10,
+						),
+						'edge_ngram'          => array(
+							'type'     => 'edge_ngram',
+							'min_gram' => 3,
+							'max_gram' => 10,
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+
+		$this->assertArrayNotHasKey( 'custom_ngram_filter', $filtered['settings']['analysis']['filter'], 'Filter with type ngram should be removed' );
+		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
+	}
+
+	public function test__filter__ep_config_mapping_strips_ngram_tokenizers() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'tokenizer' => array(
+						'custom_ngram_tokenizer' => array(
+							'type'     => 'ngram',
+							'min_gram' => 2,
+							'max_gram' => 10,
+						),
+						'standard'               => array(
+							'type' => 'standard',
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+
+		$this->assertArrayNotHasKey( 'custom_ngram_tokenizer', $filtered['settings']['analysis']['tokenizer'], 'Tokenizer with type ngram should be removed' );
+		$this->assertArrayHasKey( 'standard', $filtered['settings']['analysis']['tokenizer'], 'standard tokenizer should be kept' );
+	}
+
+	public function test__filter__ep_config_mapping_strips_analyzers_referencing_removed_tokenizers() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'tokenizer' => array(
+						'my_ngram_tokenizer' => array(
+							'type'     => 'ngram',
+							'min_gram' => 2,
+							'max_gram' => 10,
+						),
+					),
+					'analyzer'  => array(
+						'custom_analyzer' => array(
+							'type'      => 'custom',
+							'tokenizer' => 'my_ngram_tokenizer',
+							'filter'    => array( 'lowercase' ),
+						),
+						'default'         => array(
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase' ),
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+		$this->assertArrayNotHasKey( 'custom_analyzer', $filtered['settings']['analysis']['analyzer'], 'Analyzer referencing removed ngram tokenizer should be removed' );
+		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
+	}
+
+	public function test__filter__ep_config_mapping_strips_custom_analyzer_names_referencing_removed_filters() {
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(
+				'analysis' => array(
+					'filter'   => array(
+						'my_custom_ngram' => array(
+							'type'     => 'ngram',
+							'min_gram' => 3,
+							'max_gram' => 15,
+						),
+					),
+					'analyzer' => array(
+						'my_custom_analyzer' => array(
+							'type'      => 'custom',
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase', 'my_custom_ngram' ),
+						),
+						'default'            => array(
+							'tokenizer' => 'standard',
+							'filter'    => array( 'lowercase' ),
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+
+		$this->assertArrayNotHasKey( 'my_custom_analyzer', $filtered['settings']['analysis']['analyzer'], 'Custom analyzer referencing removed ngram filter should be removed' );
+		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
+	}
+
 	/**
 	 * Helper function for accessing protected methods.
 	 */
 	protected static function get_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\Search' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true ); // NOSONAR
 		return $method;
 	}
 
@@ -2628,7 +2944,6 @@ class Search_Test extends WP_UnitTestCase {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
 
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true ); // NOSONAR
 
 		return $property;
 	}

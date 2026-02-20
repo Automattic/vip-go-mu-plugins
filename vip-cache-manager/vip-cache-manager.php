@@ -36,10 +36,9 @@ class WPCOM_VIP_Cache_Manager {
 		'private_files' => '/.vip/purge-all-private-files',
 	];
 
-	private $ban_urls                    = array();
-	private $purge_urls                  = array();
-	private $site_cache_purged           = false;
-	private $manual_purge_notice_message = '';
+	private $ban_urls          = array();
+	private $purge_urls        = array();
+	private $site_cache_purged = false;
 
 	public static function instance() {
 		static $instance = false;
@@ -57,12 +56,6 @@ class WPCOM_VIP_Cache_Manager {
 		// Cache purging disabled, bail
 		if ( defined( 'VIP_GO_DISABLE_CACHE_PURGING' ) && true === VIP_GO_DISABLE_CACHE_PURGING ) {
 			return;
-		}
-
-		$manual_action = $this->get_requested_manual_purge_action();
-
-		if ( $this->can_purge_cache() && $manual_action && check_admin_referer( 'manual_purge' ) ) {
-			$this->handle_manual_purge_action( $manual_action );
 		}
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
@@ -123,26 +116,6 @@ class WPCOM_VIP_Cache_Manager {
 				'ajaxurl' => add_query_arg( [ 'action' => 'vip_purge_page_cache' ], admin_url( 'admin-ajax.php' ) ),
 			] );
 		}
-	}
-
-	private function get_requested_manual_purge_action(): ?string {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		if ( isset( $_GET['cm_purge_action'] ) ) {
-			return sanitize_key( wp_unslash( $_GET['cm_purge_action'] ) );
-		}
-
-		if ( isset( $_GET['cm_purge_all'] ) ) {
-			return 'site';
-		}
-		// phpcs:enable WordPress.Security.NonceVerification.Recommended
-
-		return null;
-	}
-
-	private function handle_manual_purge_action( string $action ): void {
-		$result                            = $this->run_purge_action( $action );
-		$this->manual_purge_notice_message = $result['message'];
-		add_action( 'admin_notices', array( $this, 'manual_purge_message' ) );
 	}
 
 	private function run_purge_action( string $action, array $context = array() ): array {
@@ -251,13 +224,6 @@ class WPCOM_VIP_Cache_Manager {
 		];
 	}
 
-	private function build_manual_purge_url( string $action ): string {
-		$query_args = [
-			'cm_purge_action' => $action,
-		];
-
-		return wp_nonce_url( add_query_arg( $query_args, admin_url() ), 'manual_purge' );
-	}
 
 	/**
 	 * AJAX callback that performs basic security checks and payload validation and queues urls for the purge.
@@ -394,11 +360,6 @@ class WPCOM_VIP_Cache_Manager {
 		echo '<p>Read more about <a href="https://docs.wpvip.com/caching/page-cache/purging/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
 	}
 
-
-	public function manual_purge_message() {
-		$message = $this->manual_purge_notice_message ? $this->manual_purge_notice_message : __( 'Cache purged!', 'vip-cache-manager' );
-		echo "<div id='message' class='updated fade'><p><strong>" . esc_html( $message ) . '</strong></p></div>';
-	}
 
 	public function enqueue_dashboard_widget_assets( $hook_suffix ) {
 		if ( 'index.php' !== $hook_suffix || ! $this->can_purge_cache() ) {
@@ -1136,7 +1097,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function purge_single_url() {
-		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verified in handle_manual_purge_action().
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verified in ajax_dashboard_widget_purge().
 		$url = isset( $_REQUEST['vip_cache_manager_url'] ) ? esc_url_raw( wp_unslash( $_REQUEST['vip_cache_manager_url'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
@@ -1191,7 +1152,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function current_user_can_purge_cache(): bool {
-		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'manage_options' ), wp_get_current_user() );
+		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'edit_others_posts' ), wp_get_current_user() );
 	}
 }
 

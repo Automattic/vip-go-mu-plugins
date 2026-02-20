@@ -106,32 +106,36 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__heal_index_settings__heal_indexables_with_diff() {
-		$indexable_versions_with_non_empty_diff = 1;
+		$indexable_versions_with_non_empty_diff = 1; // only post has diff
 		$unhealthy_indexables                   = [
 			'post' => [
 				[
 					'index_version' => 1,
 					'diff'          => [ 'index.max_result_window' => [] ],
 				],
-				[
-					'index_version' => 2,
-					'diff'          => [],
-				],
 			],
 			'user' => [
 				[
 					'index_version' => 1,
-					'diff'          => [ 'index.max_shingle_diff' => [] ],
-				],
-				[
-					'index_version' => 2,
-					'diff'          => [],
+					'diff'          => [], // user has no diff, so won't be healed
 				],
 			],
 		];
 
 		$indexables_mock = $this->createMock( Indexables::class );
 		$indexables_mock->method( 'get' )->willReturn( $this->createMock( Indexable::class ) );
+
+		$versioning_mock = $this->getMockBuilder( Versioning::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_active_version_number' ] )
+			->getMock();
+
+		// Both indexables have version 1 as active
+		$versioning_mock->method( 'get_active_version_number' )
+			->willReturn( 1 );
+
+		$search_mock             = $this->createMock( Search::class );
+		$search_mock->versioning = $versioning_mock;
 
 		/** @var MockObject&Health */
 		$health_mock = $this->getMockBuilder( Health::class )
@@ -153,6 +157,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$stub->indexables = $indexables_mock;
 		$stub->health     = $health_mock;
+		$stub->search     = $search_mock;
 
 		$health_mock->expects( $this->exactly( $indexable_versions_with_non_empty_diff ) )
 			->method( 'heal_index_settings_for_indexable' );

@@ -1987,7 +1987,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		$class = new \ReflectionClass( __NAMESPACE__ . '\Versioning' );
 
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true ); // NOSONAR
 
 		return $property;
 	}

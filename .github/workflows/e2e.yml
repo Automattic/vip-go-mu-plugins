@@ -34,9 +34,11 @@ jobs:
   Run_e2e_tests:
     name: Run E2E Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
           egress-policy: block
           allowed-endpoints:
@@ -78,7 +80,7 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.2
         with:
           submodules: true
 
@@ -86,7 +88,7 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@v6.2.0
         with:
           node-version: 'lts/*'
           cache: npm
@@ -123,7 +125,7 @@ jobs:
         working-directory: __tests__/e2e
 
       - name: Archive test results
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         if: failure()
         with:
           name: test-results
@@ -134,17 +136,19 @@ jobs:
   lint_e2e:
     name: Run ESLint on E2E tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.2
 
       - name: Setup Node
-        uses: actions/setup-node@v6.0.0
+        uses: actions/setup-node@v6.2.0
         with:
           node-version: 'lts/*'
           cache: npm

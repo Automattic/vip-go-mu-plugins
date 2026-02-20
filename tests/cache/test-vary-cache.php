@@ -66,7 +66,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	protected static function get_vary_cache_method( $name ) {
 		$class  = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$method = $class->getMethod( $name );
-		$method->setAccessible( true );
 		return $method;
 	}
 
@@ -76,7 +75,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	protected static function get_vary_cache_property( $name ) {
 		$class    = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
 		$property = $class->getProperty( $name );
-		$property->setAccessible( true );
 		return $property->getValue();
 	}
 

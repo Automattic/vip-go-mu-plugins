@@ -163,7 +163,6 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		foreach ( $properties as $property => $value ) {
 			$reflection = new \ReflectionProperty( WPCOM_VIP_Cache_Manager::class, $property );
-			$reflection->setAccessible( true );
 			$reflection->setValue( $this->cache_manager, $value );
 		}
 	}

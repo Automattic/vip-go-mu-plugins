@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   tag-release:
@@ -20,12 +19,12 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
         with:
           egress-policy: audit
 
       - name: Check out source code
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.2
 
       - name: Retrieve tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
@@ -50,7 +49,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2.4.2
+      - uses: softprops/action-gh-release@a06a81a03ee405af7f2048a818ed3f03bbf83c7b # v2.5.0
         with:
           generate_release_notes: true
           tag_name: ${{ steps.id-generator.outputs.id }}
@@ -59,12 +58,15 @@ jobs:
     needs: tag-release
     name: Update PRs with Labels
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.2
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
 
       - name: Install
         uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
@@ -82,9 +84,11 @@ jobs:
     needs: update-prs
     name: Docs Site Changelog
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v6.0.0
-      - uses: Automattic/vip-actions/changelog@64cb27606455c925183e07065f050846d69b2120
+      - uses: actions/checkout@v6.0.2
+      - uses: Automattic/vip-actions/changelog@c8022b66e78461df4f802b935dc0dbb8399f96bc
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}

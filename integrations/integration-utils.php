@@ -39,3 +39,24 @@ function get_available_versions( string $dir, string $folder_prefix, string $ent
 
 	return $versions;
 }
+
+/**
+ * Get the latest version of the integration.
+ *
+ * @param string $dir The directory to scan for versions.
+ * @param string $folder_prefix The prefix of the folder name.
+ * @param string $entry_file The entry file of the integration.
+ * @return string|null The latest version of the integration or null if no versions are found.
+ */
+function get_latest_version( string $dir, string $folder_prefix, string $entry_file ): string|null {
+	// Get all the available versions in the directory, sorted in descending order.
+	$versions = get_available_versions( $dir, $folder_prefix, $entry_file );
+
+	// If no versions are found, return null.
+	if ( empty( $versions ) ) {
+		return null;
+	}
+
+	// Return the latest version.
+	return array_key_first( $versions );
+}

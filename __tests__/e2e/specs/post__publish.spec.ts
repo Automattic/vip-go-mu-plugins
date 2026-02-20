@@ -26,6 +26,8 @@ test( 'publish a Post', async ( { page } ) => {
 		return expect( wpAdminPage.adminBar ).toBeVisible();
 	} );
 
+	await test.step( 'Automatically dismiss annoying nuisances', () => EditorPage.automaticallyDismissAnnoyingNuisances( page ) );
+
 	await test.step( 'Select add new post', async () => {
 		const wpAdminSidebarComponent = new WPAdminSidebarComponent( page );
 		await wpAdminSidebarComponent.clickMenuItem( 'Posts' );
