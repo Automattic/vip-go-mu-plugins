@@ -1,0 +1,39 @@
+#vip-non-prod-bar {
+	z-index: 9991;
+	font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
+	left: 0;
+	bottom: 145px;
+	position:fixed;
+	margin:0;
+	padding: 0 20px;
+	height: 28px;
+}
+#vip-non-prod-bar span {
+	display: none;
+	float: left;
+	padding: 0 10px;
+	background: #fff;
+	color: #333;
+}
+
+#vip-non-prod-bar:before {
+	content: 'Non-production';
+	text-transform: uppercase;
+	background: #4c2c92;
+	color: #fff;
+	letter-spacing: 0.2em;
+	text-shadow: none;
+	font-size: 9px;
+	font-weight: bold;
+	padding: 0 10px;
+	float: left;
+	cursor: pointer;
+}
+#vip-non-prod-bar.which-env span {
+	display: inline-block;
+}
+@media print {
+	div#vip-non-prod-bar {
+		display: none !important;
+	}
+}
