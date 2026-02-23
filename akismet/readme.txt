@@ -1,9 +1,9 @@
 === Akismet Anti-spam: Spam Protection ===
-Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau, kbrownkd, bluefuton, akismetantispam
-Tags: comments, spam, antispam, anti-spam, contact form, anti spam, comment moderation, comment spam, contact form spam, spam comments
+Contributors: matt, ryan, andy, mdawaffe, tellyworth, josephscott, lessbloat, eoigal, cfinke, automattic, jgs, procifer, stephdau, kbrownkd, bluefuton, derekspringer, lschuyler, andyperdomo, akismetantispam
+Tags: comments, spam, antispam, anti-spam, contact form
 Requires at least: 5.8
-Tested up to: 6.4
-Stable tag: 5.3.1
+Tested up to: 6.9
+Stable tag: 5.6
 License: GPLv2 or later
 
 The best anti-spam protection to block spam comments and spam in a contact form. The most trusted antispam solution for WordPress and WooCommerce.
@@ -31,6 +31,66 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 1, 2, 3: You're done!
 
 == Changelog ==
+
+= 5.6 =
+*Release Date - 12 November 2025*
+
+* Improve caching of compatible plugins.
+* Explain the key features of Akismet more clearly on the setup page.
+* Improve the configuration process to better explain errors when they occur.
+* UI cleanup and refresh
+* Improve messaging related to usage limits.
+
+= 5.5 =
+*Release Date - 15 July 2025*
+
+* Enable webhooks so that Akismet can process comments asynchronously to detect more types of spam.
+* Only include the Akismet widget CSS when the Akismet widget is present
+* Improve contrast/readability for certain UI elements
+
+= 5.4 =
+*Release Date - 7 May 2025*
+
+* The stats pages now use the user's locale instead of the site's locale if they're different.
+* Adds a 'Compatible plugins' section that will show installed and active plugins that are compatible with Akismet.
+* Akismet now requires PHP version 7.2 or above.
+
+= 5.3.7 =
+*Release Date - 14 February 2025*
+
+* Simplify the logic used during a comment-check request to compare comments.
+
+= 5.3.6 =
+*Release Date - 4 February 2025*
+
+* Improve the utility of submit-spam and submit-ham requests.
+* Modernize styles for the Akismet classic widget.
+
+= 5.3.5 =
+*Release Date - 18 November 2024*
+
+* Address compatibility issues with < PHP 7.3 in v5.3.4 release.
+
+= 5.3.4 =
+*Release Date - 18 November 2024*
+
+* Improve activation notice on Comments for users who haven't set up their API key yet.
+* Improve notice about commercial site status.
+
+= 5.3.3 =
+*Release Date - 10 July 2024*
+
+* Make setup step clearer for new users.
+* Remove the stats section from the configuration page if the site has been revoked from the key.
+* Skip the Akismet comment check when the comment matches something in the disallowed list.
+* Prompt users on legacy plans to contact Akismet support for upgrades.
+
+= 5.3.2 =
+*Release Date - 21 March 2024*
+
+* Improve the empty state shown to new users when no spam has been caught yet.
+* Update the message shown to users without a current subscription.
+* Add foundations for future webhook support.
 
 = 5.3.1 =
 *Release Date - 17 January 2024*
@@ -85,46 +145,5 @@ Upload the Akismet plugin to your blog, activate it, and then enter your Akismet
 *Release Date - 26 July 2022*
 
 * Added a new feature to catch spammers by observing how they interact with the page.
-
-= 4.2.5 =
-*Release Date - 11 July 2022*
-
-* Fixed a bug that added unnecessary comment history entries after comment rechecks.
-* Added a notice that displays when WP-Cron is disabled and might be affecting comment rechecks.
-
-= 4.2.4 =
-*Release Date - 20 May 2022*
-
-* Improved translator instructions for comment history.
-* Bumped the "Tested up to" tag to WP 6.0.
-
-= 4.2.3 =
-*Release Date - 25 April 2022*
-
-* Improved compatibility with Fluent Forms
-* Fixed missing translation domains
-* Updated stats URL.
-* Improved accessibility of elements on the config page.
-
-= 4.2.2 =
-*Release Date - 24 January 2022*
-
-* Improved compatibility with Formidable Forms
-* Fixed a bug that could cause issues when multiple contact forms appear on one page.
-* Updated delete_comment and deleted_comment actions to pass two arguments to match WordPress core since 4.9.0.
-* Added a filter that allows comment types to be excluded when counting users' approved comments.
-
-= 4.2.1 =
-*Release Date - 1 October 2021*
-
-* Fixed a bug causing AMP validation to fail on certain pages with forms.
-
-= 4.2 =
-*Release Date - 30 September 2021*
-
-* Added links to additional information on API usage notifications.
-* Reduced the number of network requests required for a comment page when running Akismet.
-* Improved compatibility with the most popular contact form plugins.
-* Improved API usage buttons for clarity on what upgrade is needed.
 
 For older changelog entries, please see the [additional changelog.txt file](https://plugins.svn.wordpress.org/akismet/trunk/changelog.txt) delivered with the plugin.
