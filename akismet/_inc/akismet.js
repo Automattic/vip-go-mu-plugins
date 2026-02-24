@@ -280,7 +280,7 @@ jQuery( function ( $ ) {
 	}
 	
 	if ( "start_recheck" in WPAkismet && WPAkismet.start_recheck ) {
-		$( '.checkforspam' ).click();
+		$( '.checkforspam:first' ).click();
 	}
 	
 	if ( typeof MutationObserver !== 'undefined' ) {
@@ -393,29 +393,5 @@ jQuery( function ( $ ) {
 		div.find( 'input[name=key]' ).focus();
 
 		$( this ).hide();
-	} );
-
-	/**
-	 * Hides the Connect with Jetpack form | Shows the Activate Akismet Account form
-	 */
-	$( 'a.toggle-ak-connect' ).on( 'click', function ( e ) {
-		e.preventDefault();
-
-		$( '.akismet-ak-connect' ).slideToggle('slow');
-		$( 'a.toggle-ak-connect' ).hide();
-		$( '.akismet-jp-connect' ).hide();
-		$( 'a.toggle-jp-connect' ).show();
-	} );
-
-	/**
-	 * Shows the Connect with Jetpack form | Hides the Activate Akismet Account form
-	 */
-	$( 'a.toggle-jp-connect' ).on( 'click', function ( e ) {
-		e.preventDefault();
-
-		$( '.akismet-jp-connect' ).slideToggle('slow');
-		$( 'a.toggle-jp-connect' ).hide();
-		$( '.akismet-ak-connect' ).hide();
-		$( 'a.toggle-ak-connect' ).show();
 	} );
 });

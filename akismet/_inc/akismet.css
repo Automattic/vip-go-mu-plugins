@@ -63,9 +63,7 @@ table.comments td.comment p a:after {
     width: 450px;
     height: 338px;
     z-index: 20000;
-    -moz-border-radius: 6px;
     border-radius: 6px;
-    -webkit-border-radius: 6px;
 }
 .akismet-mshot {
     position: absolute;
@@ -93,13 +91,6 @@ table.comments td.comment p a:after {
 	margin: 1em 0;
 }
 
-.akismet-alert-text {
-	color: #dd3d36;
-	font-weight: bold;
-	font-size: 120%;
-	margin-top: .5rem;
-}
-
 .akismet-new-snapshot {
 	margin-top: 1em;
 	text-align: center;
@@ -118,17 +109,8 @@ table.comments td.comment p a:after {
     font-size: 11px;
     text-transform: uppercase;
 	box-sizing: border-box;
-	-moz-box-sizing: border-box;
-	-webkit-box-sizing: border-box;
-	-ms-box-sizing: border-box;
 }
 
-.akismet-new-snapshot__number {
-	display: block;
-	font-size: 32px;
-	font-weight: lighter;
-	line-height: 1.5em;
-}
 
 .akismet-settings th:first-child {
 	vertical-align: top;
@@ -140,142 +122,11 @@ table.comments td.comment p a:after {
 	padding-top: 0;
 }
 
-.akismet-settings span.akismet-note{
+.akismet-settings span.akismet-note {
 	float: left;
 	padding-left: 23px;
 	font-size: 75%;
 	margin-top: -10px;
-}
-
-/**
- * For the activation notice on the plugins page.
- */
-
-#akismet_setup_prompt {
-	background: none;
-	border: none;
-	margin: 0;
-	padding: 0;
-	width: 100%;
-}
-
-.akismet_activate {
-	border: 1px solid #4F800D;
-	padding: 5px;
-	margin: 15px 0;
-	background: #83AF24;
-	background-image: -webkit-gradient(linear, 0% 0, 80% 100%, from(#83AF24), to(#4F800D));
-	background-image: -moz-linear-gradient(80% 100% 120deg, #4F800D, #83AF24);
-	-moz-border-radius: 3px;
-	border-radius: 3px;
-	-webkit-border-radius: 3px;
-	position: relative;
-	overflow: hidden;
-}
-
-.akismet_activate .aa_a {
-	position: absolute;
-	top: -5px;
-	right: 10px;
-	font-size: 140px;
-	color: #769F33;
-	font-family: Georgia, "Times New Roman", Times, serif;
-}
-
-.akismet_activate .aa_button {
-	font-weight: bold;
-	border: 1px solid #029DD6;
-	border-top: 1px solid #06B9FD;
-	font-size: 15px;
-	text-align: center;
-	padding: 9px 0 8px 0;
-	color: #FFF;
-	background: #029DD6;
-	background-image: -webkit-gradient(linear, 0% 0, 0% 100%, from(#029DD6), to(#0079B1));
-	background-image: -moz-linear-gradient(0% 100% 90deg, #0079B1, #029DD6);
-	-moz-border-radius: 2px;
-	border-radius: 2px;
-	-webkit-border-radius: 2px;
-	width: 100%;
-	cursor: pointer;
-	margin: 0;
-}
-
-.akismet_activate .aa_button:hover {
-	text-decoration: none !important;
-	border: 1px solid #029DD6;
-	border-bottom: 1px solid #00A8EF;
-	font-size: 15px;
-	text-align: center;
-	padding: 9px 0 8px 0;
-	color: #F0F8FB;
-	background: #0079B1;
-	background-image: -webkit-gradient(linear, 0% 0, 0% 100%, from(#0079B1), to(#0092BF));
-	background-image: -moz-linear-gradient(0% 100% 90deg, #0092BF, #0079B1);
-	-moz-border-radius: 2px;
-	border-radius: 2px;
-	-webkit-border-radius: 2px;
-}
-
-.akismet_activate .aa_button_border {
-	border: 1px solid #006699;
-	-moz-border-radius: 2px;
-	border-radius: 2px;
-	-webkit-border-radius: 2px;
-	background: #029DD6;
-	background-image: -webkit-gradient(linear, 0% 0, 0% 100%, from(#029DD6), to(#0079B1));
-	background-image: -moz-linear-gradient(0% 100% 90deg, #0079B1, #029DD6);
-}
-
-.akismet_activate .aa_button_container {
-	box-sizing: border-box;
-	display: inline-block;
-	background: #DEF1B8;
-	padding: 5px;
-	-moz-border-radius: 2px;
-	border-radius: 2px;
-	-webkit-border-radius: 2px;
-	width: 266px;
-}
-
-.akismet_activate .aa_description {
-	position: absolute;
-	top: 22px;
-	left: 285px;
-	margin-left: 25px;
-	color: #E5F2B1;
-	font-size: 15px;
-}
-
-.akismet_activate .aa_description strong {
-	color: #FFF;
-	font-weight: normal;
-}
-
-@media (max-width: 550px) {
-	.akismet_activate .aa_a {
-		display: none;
-	}
-
-	.akismet_activate .aa_button_container {
-		width: 100%;
-	}
-}
-
-@media (max-width: 782px) {
-	.akismet_activate {
-		min-width: 0;
-	}
-}
-
-@media (max-width: 850px) {
-	#akismet_setup_prompt .aa_description {
-		display: none;
-	}
-
-	.akismet_activate {
-		min-width: 0;
-	}
 }
 
 .jetpack_page_akismet-key-config #wpcontent, .settings_page_akismet-key-config #wpcontent {
@@ -287,6 +138,7 @@ table.comments td.comment p a:after {
 	text-align:center;
 	box-shadow:0 1px 0 rgba(200,215,225,0.5),0 1px 2px #e9eff3
 }
+
 @media (max-width: 45rem) {
 	.akismet-masthead {
 		padding:0 1.25rem
@@ -320,13 +172,9 @@ table.comments td.comment p a:after {
 	color:#647a88
 }
 .akismet-masthead__links {
-	display:-ms-flexbox;
 	display:flex;
-	-ms-flex-flow:row wrap;
 	flex-flow:row wrap;
-	-ms-flex:2 50%;
 	flex:2 50%;
-	-ms-flex-pack:end;
 	justify-content:flex-end;
 	margin:0
 }
@@ -434,18 +282,6 @@ table.comments td.comment p a:after {
 	margin: 0;
 }
 
-.akismet-jetpack-email {
-	font-style: oblique;
-}
-
-.akismet-jetpack-gravatar {
-	padding: 0 0 0 1.5rem;
-	float: left;
-	margin-right: 1rem;
-	width: 54px;
-	height: 54px;
-}
-
 .akismet-box p:after {
 	content: ".";
 	display: block;
@@ -472,29 +308,8 @@ table.comments td.comment p a:after {
 	margin-top: 1.5rem;
 }
 
-.akismet-box-header {
-	max-width: 700px;
-	margin: 0 auto 40px auto;
-	line-height: 1.5;
-}
-
-.akismet-box-header h2 {
-	margin: 1.5rem 10% 0;
-	font-size: 1.375rem;
-	font-weight: 700;
-	color: #000;
-}
-
 .akismet-box .centered {
 	text-align: center;
-}
-
-.akismet-box .akismet-toggles {
-	margin: 3rem 0;
-}
-
-.akismet-box .akismet-ak-connect, .akismet-box .toggle-jp-connect {
-	display: none;
 }
 
 .akismet-button, .akismet-button:hover, .akismet-button:visited {
@@ -514,7 +329,6 @@ table.comments td.comment p a:after {
 	text-decoration: none;
 	vertical-align: top;
 	box-sizing: border-box;
-	font-size: 14px;
 	line-height: 21px;
 	border-radius: 4px;
 	padding: 7px 14px 9px;
@@ -559,11 +373,8 @@ table.comments td.comment p a:after {
 }
 
 .akismet-section-header__label {
-	display: -ms-flexbox;
 	display: flex;
-	-ms-flex-align: center;
 	align-items: center;
-	-ms-flex-positive: 1;
 	flex-grow: 1;
 	line-height: 1.75rem;
 	position: relative;
@@ -575,12 +386,13 @@ table.comments td.comment p a:after {
 	line-height: 1.75rem;
 }
 
-.akismet-setup-instructions {
-	text-align: center;
-}
-
 .akismet-setup-instructions form {
 	padding-bottom: 1.5rem;
+}
+
+.akismet-setup-instructions > a.akismet-button {
+	display: inline-block;
+	margin-bottom: 1.5rem;
 }
 
 div.error.akismet-usage-limit-alert {
@@ -620,6 +432,7 @@ div.error.akismet-usage-limit-alert {
 }
 
 .akismet-usage-limit-alert h3 {
+	line-height: 1.3;
 	margin: 0;
 }
 
@@ -630,6 +443,7 @@ div.error.akismet-usage-limit-alert {
 
 #akismet-plugin-container .akismet-usage-limit-cta a {
 	color: #d63638;
+	background: #fafafa;
 }
 
 @media (max-width: 550px) {
