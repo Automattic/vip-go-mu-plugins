@@ -4,24 +4,8 @@ require_once __DIR__ . '/include-wpcom-vip-get-user-profile.php';
 
 class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 
-	private ?Closure $http_filter = null;
-
-	public function setUp(): void {
-		parent::setUp();
-		VIP_Test_Deserialization_Class::$wakeup_called = false;
-		wp_cache_flush();
-	}
-
-	public function tearDown(): void {
-		if ( null !== $this->http_filter ) {
-			remove_filter( 'pre_http_request', $this->http_filter );
-			$this->http_filter = null;
-		}
-		parent::tearDown();
-	}
-
 	private function mock_profile_response( string $body ): void {
-		$this->http_filter = function () use ( $body ) {
+		add_filter( 'pre_http_request', function () use ( $body ) {
 			return [
 				'headers'  => [],
 				'body'     => $body,
@@ -32,8 +16,7 @@ class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 				'cookies'  => [],
 				'filename' => null,
 			];
-		};
-		add_filter( 'pre_http_request', $this->http_filter );
+		} );
 	}
 
 	/**
@@ -46,8 +29,8 @@ class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 
 		$result = wpcom_vip_get_user_profile( 'test@example.com' );
 
-		$this->assertFalse( VIP_Test_Deserialization_Class::$wakeup_called, '__wakeup() must not be called during deserialization' );
-		$this->assertFalse( $result, 'Profile should be false when deserialized data is not a valid profile array' );
+		self::assertFalse( VIP_Test_Deserialization_Class::$wakeup_called, '__wakeup() must not be called during deserialization' );
+		self::assertFalse( $result, 'Profile should be false when deserialized data is not a valid profile array' );
 	}
 
 	/**
@@ -60,7 +43,7 @@ class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 
 		wpcom_vip_get_user_profile( 'nested@example.com' );
 
-		$this->assertFalse( VIP_Test_Deserialization_Class::$wakeup_called, '__wakeup() must not be called during deserialization' );
+		self::assertFalse( VIP_Test_Deserialization_Class::$wakeup_called, '__wakeup() must not be called during deserialization' );
 	}
 
 	/**
@@ -76,6 +59,6 @@ class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 
 		$result = wpcom_vip_get_user_profile( 'valid@example.com' );
 
-		$this->assertEquals( $entry, $result );
+		self::assertEquals( $entry, $result );
 	}
 }
