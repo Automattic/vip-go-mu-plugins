@@ -9,7 +9,7 @@ Development repository for WordPress VIP Go MU plugins.
 - `tests/`: PHPUnit test suite for root MU code.
 - `__tests__/e2e/`: Playwright e2e suite.
 - `ci/`, `.github/workflows/`: automation, CI, release/deploy workflows.
-- `advanced-post-cache/`, `http-concat/`, `jetpack/`, `lightweight-term-count-update/`, `rewrite-rules-inspector/`, `search/elasticpress/`, `wp-parsely/`: external submodules/upstream code.
+- `advanced-post-cache/`, `http-concat/`, `jetpack/`, `lightweight-term-count-update/`, `rewrite-rules-inspector/`, `search/elasticpress/`, `wp-parsely/`, `gutenberg-ramp/`, `drop-ins/hyperdb/`: external submodules/upstream code.
 
 ## Quickstart
 
