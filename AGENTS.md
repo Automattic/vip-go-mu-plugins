@@ -28,6 +28,8 @@ Avoid direct edits in external/upstream directories unless the task is explicitl
 - `rewrite-rules-inspector/`
 - `search/elasticpress/`
 - `wp-parsely/`
+- `gutenberg-ramp/`
+- `drop-ins/hyperdb/`
 
 ## Security rules
 
