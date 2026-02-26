@@ -4,10 +4,13 @@
   "version": "1.0.0",
   "description": "E2E Tests for mu-plugins",
   "scripts": {
+    "setup-env": "./bin/setup-env.sh",
+    "destroy-env": "vip dev-env destroy --slug=e2e-test-site",
     "lint": "eslint .",
-    "pretest": "./bin/setup-env.sh",
+    "typecheck": "tsc --noEmit",
+    "pretest": "npm run setup-env",
     "test": "playwright test -c playwright.config.ts",
-    "posttest": "vip dev-env destroy --slug=e2e-test-site"
+    "posttest": "npm run destroy-env"
   },
   "author": "Automattic",
   "devDependencies": {
