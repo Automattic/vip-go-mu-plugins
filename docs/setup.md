@@ -32,7 +32,7 @@ npm run test:smoke
 - `bin/test.sh` starts temporary Docker network + MySQL 8 + `ghcr.io/automattic/vip-container-images/wp-test-runner`.
 - `.devcontainer/docker-compose.yml` uses:
   - `mysql:8.4`
-  - `memcached:1.6`
+  - `memcached:1.6-alpine`
 - e2e environment (`__tests__/e2e/bin/setup-env.sh`) uses VIP CLI and enables Elasticsearch in the dev env.
 
 ## Important config and secrets
