@@ -37,11 +37,17 @@ From repository root:
 
 ```bash
 npm --prefix __tests__/e2e ci
-npm run setup-e2e-env
 npm run lint:e2e
 npm run typecheck:e2e
+
+# Runs __tests__/e2e tests; this will set up and tear down the e2e env
+# via the package's pretest/posttest hooks.
 npm run test-e2e
-npm run destroy-e2e-env
+
+# Optional: to manage the env lifecycle manually instead of using hooks:
+# npm run setup-e2e-env
+# npm run test-e2e
+# npm run destroy-e2e-env
 ```
 
 Equivalent package-local commands are in `__tests__/e2e/package.json`.
