@@ -195,23 +195,20 @@ The global functions provide the same functionality with a cleaner API and autom
 
 ## Security Considerations
 
-<SECURITY_REVIEW>
-
-Local file handling has several security implications:
-
-1. **No Persistence**: Files stored locally are ephemeral and will be lost on server restart or deployment
-2. **No Replication**: Local files exist only on a single application server and are not replicated
-3. **Access Control**: Local files bypass VIP Files Service access controls
-4. **Temporary Directory**: Files are stored in the system temporary directory which may have different permissions
-
-**Recommendations:**
-- Only use local handling for truly temporary data
-- Never use it for user-uploaded content that needs to persist
-- Be cautious with sensitive data in temporary files
-- Ensure proper cleanup of sensitive data when no longer needed
-
-</SECURITY_REVIEW>
-
+> [!IMPORTANT] Security review
+>
+> Local file handling has several security implications:
+>
+> 1. **No Persistence**: Files stored locally are ephemeral and will be lost on server restart or deployment
+> 2. **No Replication**: Local files exist only on a single application server and are not replicated
+> 3. **Access Control**: Local files bypass VIP Files Service access controls
+> 4. **Temporary Directory**: Files are stored in the system temporary directory which may have different permissions
+>
+> **Recommendations:**
+> - Only use local handling for truly temporary data
+> - Never use it for user-uploaded content that needs to persist
+> - Be cautious with sensitive data in temporary files
+> - Ensure proper cleanup of sensitive data when no longer needed
 ## Troubleshooting
 
 ### "_doing_it_wrong" Notice
