@@ -11,11 +11,9 @@ Playwright-based e2e tests for this repository.
 
 ```bash
 npm --prefix __tests__/e2e ci
-npm run setup-e2e-env
 npm run lint:e2e
 npm run typecheck:e2e
 npm run test-e2e
-npm run destroy-e2e-env
 ```
 
 ## Run from this directory
