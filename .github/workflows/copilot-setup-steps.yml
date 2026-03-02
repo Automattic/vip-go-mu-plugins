@@ -31,9 +31,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Prepare source code
-        uses: ./.github/actions/prepare-source
-
       - name: Install svn
         run: sudo apt-get update && sudo apt-get install -y subversion
 
