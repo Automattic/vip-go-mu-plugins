@@ -24,7 +24,7 @@
 
 	function updateUrlVisibility() {
 		const isUrl = select.value === cfg.urlKey;
-		urlWrap.style.display = isUrl ? '' : 'none';
+		urlWrap.style.display = isUrl ? 'block' : 'none';
 		urlInput.required = isUrl;
 		if ( ! isUrl ) {
 			urlInput.value = '';
@@ -59,7 +59,7 @@
 		if ( ! isUrlAction ) {
 			const title = selectedOption ? ( selectedOption.text || select.value ) : select.value;
 			const desc = selectedOption && selectedOption.dataset ? ( selectedOption.dataset.description || '' ) : '';
-			const message = desc ? `Please confirm you want to ${ desc.toLowerCase() }\n\nProceed?` : `${ title }\n\nProceed?`;
+			const message = desc ? `Confirm that you want to ${ desc.toLowerCase() }\n\nProceed?` : `${ title }\n\nProceed?`;
 
 			if ( ! window.confirm( message ) ) {
 				return;
