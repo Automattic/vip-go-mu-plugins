@@ -127,7 +127,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		self::assertTrue( LogTrackingRequestBlock::$log_called );
 	}
 
-	public function test__invalid_ip_logging_is_throttled(): void {
+	public function test_invalid_ip_logging_is_throttled(): void {
 		$value = 'not-an-ip-address';
 		$key   = 'vip_request_block_t_' . md5( $value );
 
