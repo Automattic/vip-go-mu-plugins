@@ -33,3 +33,36 @@ jobs:
 
       - name: Prepare source code
         uses: ./.github/actions/prepare-source
+
+      - name: Install svn
+        run: sudo apt-get update && sudo apt-get install -y subversion
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # 2.36.0
+        with:
+          coverage: none
+          ini-values: apc.enable_cli=1, opcache.enable_cli=1
+          php-version: 8.4
+        env:
+          fail-fast: 'true'
+
+      - name: Install PHP Dependencies
+        uses: ramsey/composer-install@3cf229dc2919194e9e36783941438d17239e8520 # 3.1.1
+
+      - name: Set up WordPress and WordPress Test Library
+        uses: sjinks/setup-wordpress-test-library@v3.0.0
+        with:
+          version: latest
+
+      - name: Verify MariaDB connection
+        run: |
+          echo Waiting for MySQL to come online...
+          second=0
+          while ! mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent && [ "${second}" -lt 60 ]; do
+            sleep 1
+            second=$((second+1))
+          done
+          mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent
+        env:
+          MYSQL_HOST: '127.0.0.1'
+          MYSQL_PORT: 3306
