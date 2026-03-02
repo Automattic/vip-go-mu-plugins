@@ -37,7 +37,7 @@ class VIP_Request_Block {
 		$ip    = inet_pton( $value );
 		// Don't try to block if the passed value is not a valid IP.
 		if ( ! filter_var( $value, FILTER_VALIDATE_IP ) ) {
-			if ( ! defined( 'WP_TESTS_DOMAIN' ) && ( ! function_exists( 'wp_cache_add' ) || wp_cache_add( 'vip_request_block_t_' . md5( $value ), true, 'vip-request-block', 300 ) ) ) {
+			if ( ! defined( 'WP_TESTS_DOMAIN' ) && wp_cache_add( 'vip_request_block_t_' . md5( $value ), true, 'vip-request-block', 300 ) ) {
 				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 				error_log( 'VIP Request Block: The value passed is not a correct IP address: ' . $value );
 			}
