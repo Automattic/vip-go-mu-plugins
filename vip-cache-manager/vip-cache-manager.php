@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin name: Cache Manager
-Description: Automatically clears the Varnish cache when necessary
+Description: Automatically clears the edge cache when necessary
 Author: Automattic
 Author URI: http://automattic.com/
 Version: 1.1
@@ -29,6 +29,12 @@ class WPCOM_VIP_Cache_Manager {
 	const MAX_PURGE_BATCH_URLS   = 4000;
 	const MAX_BAN_URLS           = 10;
 	const CACHE_PURGE_BATCH_SIZE = 2000;
+	const SPECIAL_PURGE_PATHS    = [
+		'origin'        => '/.vip/purge-all-origin',
+		'uploads'       => '/.vip/purge-all-uploads',
+		'static'        => '/.vip/purge-all-static-files',
+		'private_files' => '/.vip/purge-all-private-files',
+	];
 
 	private $ban_urls          = array();
 	private $purge_urls        = array();
@@ -52,26 +58,19 @@ class WPCOM_VIP_Cache_Manager {
 			return;
 		}
 
-		if ( $this->can_purge_cache() && isset( $_GET['cm_purge_all'] ) && check_admin_referer( 'manual_purge' ) ) {
-			$this->purge_site_cache();
-			\Automattic\VIP\Stats\send_pixel( [
-				'vip-cache-action'            => 'dashboard-site-purge',
-				'vip-cache-url-purge-by-site' => VIP_GO_APP_ID,
-			] );
-			add_action( 'admin_notices', array( $this, 'manual_purge_message' ) );
-		}
-
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
 
-		add_action( 'activity_box_end', array( $this, 'get_manual_purge_link' ), 100 );
+		add_action( 'wp_dashboard_setup', array( $this, 'register_dashboard_widget' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_widget_assets' ) );
 
 		add_action( 'shutdown', array( $this, 'execute_purges' ) );
 		add_action( 'admin_bar_menu', [ $this, 'admin_bar_callback' ], 100, 1 );
 		add_action( 'wp_enqueue_scripts', [ $this, 'button_enqueue_scripts' ] );
 		add_action( 'wp_ajax_vip_purge_page_cache', [ $this, 'ajax_vip_purge_page_cache' ] );
+		add_action( 'wp_ajax_vip_cache_manager_dashboard_purge', array( $this, 'ajax_dashboard_widget_purge' ) );
 	}
 
 	public function get_queued_purge_urls() {
@@ -118,6 +117,113 @@ class WPCOM_VIP_Cache_Manager {
 			] );
 		}
 	}
+
+	private function run_purge_action( string $action, array $context = array() ): array {
+		$actions = $this->get_manual_purge_actions_config();
+
+		if ( ! isset( $actions[ $action ] ) ) {
+			return array(
+				'success' => false,
+				'message' => __( 'Unknown purge action.', 'vip-cache-manager' ),
+				'stat'    => 'dashboard-unknown',
+			);
+		}
+
+		$callback = array( $this, $actions[ $action ]['callback'] );
+		$result   = null;
+		$success  = true;
+		$message  = '';
+
+		if ( isset( $context['url'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Set internally for callback consumption.
+			$_REQUEST['vip_cache_manager_url'] = $context['url'];
+		}
+
+		if ( is_callable( $callback ) ) {
+			$result = call_user_func( $callback );
+		}
+
+		if ( is_wp_error( $result ) ) {
+			$success = false;
+			$message = $result->get_error_message();
+		} elseif ( false === $result ) {
+			$success = false;
+		}
+
+		if ( $success && empty( $message ) ) {
+			$message = $actions[ $action ]['message'];
+		} elseif ( ! $success && empty( $message ) ) {
+			$message = __( 'Unable to queue cache purge.', 'vip-cache-manager' );
+		}
+
+		$pixel_data = array(
+			'vip-cache-action'           => $actions[ $action ]['stat'],
+			'vip-cache-url-purge-status' => $success ? 'success' : 'error',
+		);
+
+		if ( defined( 'VIP_GO_APP_ID' ) ) {
+			$pixel_data['vip-cache-url-purge-by-site'] = VIP_GO_APP_ID;
+		}
+
+		\Automattic\VIP\Stats\send_pixel( $pixel_data );
+
+		return array(
+			'success' => $success,
+			'message' => $message,
+			'stat'    => $actions[ $action ]['stat'],
+		);
+	}
+
+	private function get_manual_purge_actions_config(): array {
+		return [
+			'site'    => [
+				'label'       => __( 'Purge entire site cache', 'vip-cache-manager' ),
+				'description' => __( 'Clear all origin responses, static files, uploads, and private file visibility metadata.', 'vip-cache-manager' ),
+				'callback'    => 'purge_site_cache',
+				'message'     => __( 'Site cache purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-site-purge',
+			],
+			'url'     => [
+				'type'        => 'url',
+				'label'       => __( 'Purge specific URL', 'vip-cache-manager' ),
+				'description' => __( 'Enter the full URL (including scheme) to purge a single page without affecting other cache content.', 'vip-cache-manager' ),
+				'placeholder' => home_url( '/' ),
+				'button'      => __( 'Purge URL', 'vip-cache-manager' ),
+				'callback'    => 'purge_single_url',
+				'message'     => __( 'URL purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-url-purge',
+			],
+			'origin'  => [
+				'label'       => __( 'Purge WordPress responses', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached WordPress responses without touching uploads or static files.', 'vip-cache-manager' ),
+				'callback'    => 'purge_origin_cache',
+				'message'     => __( 'WordPress responses purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-origin-purge',
+			],
+			'uploads' => [
+				'label'       => __( 'Purge uploads', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached VIP File Service uploads.', 'vip-cache-manager' ),
+				'callback'    => 'purge_uploads_cache',
+				'message'     => __( 'Uploads purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-uploads-purge',
+			],
+			'static'  => [
+				'label'       => __( 'Purge static files', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached static assets such as theme and core CSS, JS, and images.', 'vip-cache-manager' ),
+				'callback'    => 'purge_static_files_cache',
+				'message'     => __( 'Static files purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-static-purge',
+			],
+			'private' => [
+				'label'       => __( 'Reset private file visibility', 'vip-cache-manager' ),
+				'description' => __( 'Clear cached visibility information for private files.', 'vip-cache-manager' ),
+				'callback'    => 'purge_private_files_cache',
+				'message'     => __( 'Private file visibility cache purge queued.', 'vip-cache-manager' ),
+				'stat'        => 'dashboard-private-files-purge',
+			],
+		];
+	}
+
 
 	/**
 	 * AJAX callback that performs basic security checks and payload validation and queues urls for the purge.
@@ -180,34 +286,231 @@ class WPCOM_VIP_Cache_Manager {
 		);
 	}
 
-	public function get_manual_purge_link() {
+	public function register_dashboard_widget() {
 		if ( ! $this->can_purge_cache() ) {
 			return;
 		}
 
-		echo '<hr>';
-
-		$url = wp_nonce_url( admin_url( '?cm_purge_all' ), 'manual_purge' );
-
-		$button_html  = esc_html__( 'Press the button below to force a purge of the entire page cache. If you are sandboxed, it will purge the sandbox cache by default. ' );
-		$button_html .= '<strong>' . esc_html__( 'This button is visible to Automatticans only.' ) . '</strong>';
-		$button_html .= '</p><p><span class="button"><a href="' . esc_url( $url ) . '"><strong>';
-		$button_html .= esc_html__( 'Purge Page Cache' );
-		$button_html .= '</strong></a></span>';
-
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- esc_html() and esc_url() were used above
-		echo "<p>{$button_html}</p>\n";
+		wp_add_dashboard_widget(
+			'vip_cache_manager_purge',
+			__( 'Edge Cache Controls', 'vip-cache-manager' ),
+			array( $this, 'render_dashboard_widget' )
+		);
 	}
 
-	public function manual_purge_message() {
-		echo "<div id='message' class='updated fade'><p><strong>" . esc_html__( 'Varnish cache purged!', 'varnish-http-purge' ) . '</strong></p></div>';
+	public function render_dashboard_widget() {
+		if ( ! $this->can_purge_cache() ) {
+			echo '<p>' . esc_html__( 'You do not have permission to manage page cache.', 'vip-cache-manager' ) . '</p>';
+		} else {
+			$this->render_dashboard_widget_form();
+		}
+	}
+
+	private function render_dashboard_widget_form() {
+		$actions = $this->get_manual_purge_actions_config();
+
+		if ( empty( $actions ) ) {
+			return;
+		}
+
+		printf(
+			'<form id="vip-cache-manager-dashboard-form" class="vip-cache-manager-dashboard-form" action="%s" method="post">',
+			esc_url( admin_url( 'admin-ajax.php' ) )
+		);
+
+		printf(
+			'<input type="hidden" name="nonce" value="%s" />',
+			esc_attr( wp_create_nonce( 'vip_cache_manager_dashboard_purge' ) )
+		);
+
+		echo '<p><strong><label for="vip-cache-manager-dashboard-action">' . esc_html__( 'Purge action', 'vip-cache-manager' ) . '</label></strong></p>';
+		echo '<p><select id="vip-cache-manager-dashboard-action" name="purge_action" class="widefat">';
+
+		foreach ( $actions as $key => $config ) {
+			printf(
+				'<option value="%s" data-label="%s" data-description="%s">%s</option>',
+				esc_attr( $key ),
+				esc_attr( $config['label'] ?? '' ),
+				esc_attr( $config['description'] ?? '' ),
+				esc_html( $config['label'] )
+			);
+		}
+
+		echo '</select></p>';
+
+		$url_placeholder = isset( $actions['url']['placeholder'] ) ? $actions['url']['placeholder'] : home_url( '/' );
+
+		echo '<div id="vip-cache-manager-dashboard-url-wrap">';
+		printf(
+			'<p><input type="url" id="vip-cache-manager-dashboard-url" name="url" class="large-text" placeholder="%s" /></p>',
+			esc_attr( $url_placeholder )
+		);
+		echo '</div>';
+
+		echo '<p id="vip-cache-manager-dashboard-description" class="description"></p>';
+
+		printf(
+			'<p><button type="submit" class="button button-primary">%s</button></p>',
+			esc_html__( 'Purge cache', 'vip-cache-manager' )
+		);
+
+		echo '<p class="vip-cache-manager-dashboard-result" aria-live="polite"></p>';
+		echo '</form>';
+
+		echo '<p>Read more about <a href="https://docs.wpvip.com/caching/page-cache/purging/" target="_blank">WordPress VIP cache architecture<span class="dashicons dashicons-external" style="text-decoration: none;"></span></a> in our documentation.</p>';
+	}
+
+
+	public function enqueue_dashboard_widget_assets( $hook_suffix ) {
+		if ( 'index.php' !== $hook_suffix || ! $this->can_purge_cache() ) {
+			return;
+		}
+
+		wp_enqueue_script(
+			'vip-cache-manager-dashboard-widget',
+			plugins_url( '/js/dashboard-widget.js', __FILE__ ),
+			array(),
+			'1.0',
+			true
+		);
+
+		wp_localize_script(
+			'vip-cache-manager-dashboard-widget',
+			'VIPCacheManagerDashboard',
+			array(
+				'ajaxurl' => admin_url( 'admin-ajax.php' ),
+				'action'  => 'vip_cache_manager_dashboard_purge',
+				'urlKey'  => 'url',
+			)
+		);
+	}
+
+	public function ajax_dashboard_widget_purge() {
+		// phpcs:disable WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile -- OK to read php://input
+		$req = json_decode( file_get_contents( 'php://input' ) );
+
+		if ( json_last_error() ) {
+			wp_send_json_error( array( 'message' => __( 'Malformed payload.', 'vip-cache-manager' ) ), 400 );
+		}
+
+		if ( ! $this->current_user_can_purge_cache() ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'vip-cache-manager' ) ), 403 );
+		}
+
+		if ( ! ( isset( $req->nonce ) && wp_verify_nonce( $req->nonce, 'vip_cache_manager_dashboard_purge' ) ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'vip-cache-manager' ) ), 403 );
+		}
+
+		$action = isset( $req->purge_action ) ? sanitize_key( $req->purge_action ) : '';
+		$url    = isset( $req->url ) ? esc_url_raw( $req->url ) : '';
+
+		$actions = $this->get_manual_purge_actions_config();
+		if ( ! isset( $actions[ $action ] ) ) {
+			wp_send_json_error( array( 'message' => __( 'Unknown purge action.', 'vip-cache-manager' ) ), 400 );
+		}
+
+		$context = array();
+		if ( isset( $actions[ $action ]['type'] ) && 'url' === $actions[ $action ]['type'] ) {
+			if ( empty( $url ) ) {
+				wp_send_json_error( array( 'message' => __( 'Please enter a URL to purge.', 'vip-cache-manager' ) ), 400 );
+			}
+			$context['url'] = $url;
+		}
+
+		$result = $this->run_purge_action( $action, $context );
+
+		if ( $result['success'] ) {
+			wp_send_json_success( array( 'message' => $result['message'] ) );
+		}
+
+		wp_send_json_error( array( 'message' => $result['message'] ), 400 );
 	}
 
 	public function curl_multi( $requests ) {
 		$curl_multi = curl_multi_init();
 
-		if ( defined( 'PURGE_BATCH_SERVER_URL' ) && defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
-			$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
+		if ( $this->is_batch_mangle_mode() ) {
+			$this->add_batch_mangle_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		if ( $this->is_edge_api_mode() ) {
+			$this->add_edge_api_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		if ( $this->is_mangle_mode() ) {
+			$this->add_mangle_handles( $curl_multi, $requests );
+			$this->run_curl_multi( $curl_multi );
+			return;
+		}
+
+		curl_multi_close( $curl_multi );
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( 'vip-cache-manager: Unsupported PURGE_SERVER_TYPE configuration.' );
+	}
+
+	private function is_batch_mangle_mode(): bool {
+		return $this->is_mangle_mode() && defined( 'PURGE_BATCH_SERVER_URL' );
+	}
+
+	private function is_edge_api_mode(): bool {
+		return defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE;
+	}
+
+	private function is_mangle_mode(): bool {
+		return defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE;
+	}
+
+	private function add_batch_mangle_handles( $curl_multi, $requests ): void {
+		$req_chunks = array_chunk( $requests, self::CACHE_PURGE_BATCH_SIZE, true );
+
+		foreach ( $req_chunks as $req_chunk ) {
+			$req_array = array();
+			foreach ( $req_chunk as $req ) {
+				$req_array[] = array(
+					'group' => 'vip-go',
+					'scope' => 'global',
+					'type'  => $req['method'],
+					'uri'   => $req['host'] . $req['uri'],
+				);
+			}
+
+			$data = wp_json_encode( $req_array );
+			$curl = curl_init( constant( 'PURGE_BATCH_SERVER_URL' ) );
+
+			curl_setopt( $curl, CURLOPT_HEADER, false );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_setopt( $curl, CURLOPT_POST, true );
+
+			if ( 500 < strlen( $data ) ) {
+				$compressed_data = gzencode( $data );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
+				curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
+			} else {
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
+				curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
+			}
+
+			curl_multi_add_handle( $curl_multi, $curl );
+		}
+	}
+
+	private function add_edge_api_handles( $curl_multi, $requests ): void {
+		$requests_by_host = array();
+		foreach ( $requests as $req ) {
+			$host = $req['host'];
+			if ( ! isset( $requests_by_host[ $host ] ) ) {
+				$requests_by_host[ $host ] = array();
+			}
+			$requests_by_host[ $host ][] = $req;
+		}
+
+		foreach ( $requests_by_host as $host => $host_requests ) {
+			$req_chunks = array_chunk( $host_requests, self::CACHE_PURGE_BATCH_SIZE, true );
 			foreach ( $req_chunks as $req_chunk ) {
 				$req_array = array();
 				foreach ( $req_chunk as $req ) {
@@ -215,129 +518,63 @@ class WPCOM_VIP_Cache_Manager {
 						'group' => 'vip-go',
 						'scope' => 'global',
 						'type'  => $req['method'],
-						'uri'   => $req['host'] . $req['uri'],
+						'uri'   => $req['uri'],
 					);
 				}
-				$data = wp_json_encode( $req_array );
 
-				$curl = curl_init( constant( 'PURGE_BATCH_SERVER_URL' ) );
+				$data = wp_json_encode( $req_array );
+				$curl = curl_init( 'https://go-vip.net/.vip/edge-cache-purge' );
 
 				curl_setopt( $curl, CURLOPT_HEADER, false );
 				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
 				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
 				curl_setopt( $curl, CURLOPT_POST, true );
 
+				$headers = [
+					sprintf( 'Host: %s', $host ),
+					'Content-Type: application/json',
+					sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
+				];
+
 				if ( 500 < strlen( $data ) ) {
 					$compressed_data = gzencode( $data );
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json', 'Content-Encoding: gzip' ) );
+					$headers[]       = 'Content-Encoding: gzip';
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
 				} else {
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, array( 'Content-Type: application/json' ) );
 					curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
 				}
 
-				curl_multi_add_handle( $curl_multi, $curl );
-			}
-		} elseif ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
-			// Group requests by host first
-			$requests_by_host = array();
-			foreach ( $requests as $req ) {
-				$host = $req['host'];
-				if ( ! isset( $requests_by_host[ $host ] ) ) {
-					$requests_by_host[ $host ] = array();
-				}
-				$requests_by_host[ $host ][] = $req;
-			}
-
-			// Process each host group separately
-			foreach ( $requests_by_host as $host => $host_requests ) {
-				$req_chunks = array_chunk( $host_requests, self::CACHE_PURGE_BATCH_SIZE, true );
-				foreach ( $req_chunks as $req_chunk ) {
-					$req_array = array();
-					foreach ( $req_chunk as $req ) {
-						$req_array[] = array(
-							'group' => 'vip-go',
-							'scope' => 'global',
-							'type'  => $req['method'],
-							'uri'   => $req['uri'],
-						);
-					}
-					$data = wp_json_encode( $req_array );
-
-					$curl = curl_init( 'https://go-vip.net/.vip/edge-cache-purge' );
-
-					curl_setopt( $curl, CURLOPT_HEADER, false );
-					curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-					curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-					curl_setopt( $curl, CURLOPT_POST, true );
-
-					$headers = [
-						sprintf( 'Host: %s', $host ),
-						'Content-Type: application/json',
-						sprintf( 'Authorization: bearer %s', EDGE_CACHE_PURGE_CLIENT_TOKEN ),
-					];
-					if ( 500 < strlen( $data ) ) {
-						$compressed_data = gzencode( $data );
-						$headers[]       = 'Content-Encoding: gzip';
-						curl_setopt( $curl, CURLOPT_POSTFIELDS, $compressed_data );
-					} else {
-						curl_setopt( $curl, CURLOPT_POSTFIELDS, $data );
-					}
-
-					curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
-
-					curl_multi_add_handle( $curl_multi, $curl );
-				}
-			}
-		} elseif ( defined( 'PURGE_SERVER_TYPE' ) && 'mangle' === PURGE_SERVER_TYPE ) {
-			foreach ( $requests as $req ) {
-				$data = array(
-					'group' => 'vip-go',
-					'scope' => 'global',
-					'type'  => $req['method'],
-					'uri'   => $req['host'] . $req['uri'],
-					'cb'    => 'nil',
-				);
-				$json = wp_json_encode( $data );
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
-				curl_setopt( $curl, CURLOPT_POST, true );
-				curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
-					'Content-Type: application/json',
-					'Content-Length: ' . strlen( $json ),
-				) );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_multi_add_handle( $curl_multi, $curl );
-			}
-		} else {
-			foreach ( $requests as $req ) {
-				// Purge HTTP
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: http' ) );
-				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_setopt( $curl, CURLOPT_NOBODY, true );
-				curl_setopt( $curl, CURLOPT_HEADER, true );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
-				curl_multi_add_handle( $curl_multi, $curl );
-				// Purge HTTPS
-				$curl = curl_init();
-				curl_setopt( $curl, CURLOPT_URL, "http://{$req['ip']}{$req['uri']}" );
-				curl_setopt( $curl, CURLOPT_PORT, $req['port'] );
-				curl_setopt( $curl, CURLOPT_HTTPHEADER, array( "Host: {$req['host']}", 'X-Forwarded-Proto: https' ) );
-				curl_setopt( $curl, CURLOPT_CUSTOMREQUEST, $req['method'] );
-				curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
-				curl_setopt( $curl, CURLOPT_NOBODY, true );
-				curl_setopt( $curl, CURLOPT_HEADER, true );
-				curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+				curl_setopt( $curl, CURLOPT_HTTPHEADER, $headers );
 				curl_multi_add_handle( $curl_multi, $curl );
 			}
 		}
+	}
 
+	private function add_mangle_handles( $curl_multi, $requests ): void {
+		foreach ( $requests as $req ) {
+			$data = array(
+				'group' => 'vip-go',
+				'scope' => 'global',
+				'type'  => $req['method'],
+				'uri'   => $req['host'] . $req['uri'],
+				'cb'    => 'nil',
+			);
+			$json = wp_json_encode( $data );
+			$curl = curl_init();
+			curl_setopt( $curl, CURLOPT_URL, constant( 'PURGE_SERVER_URL' ) );
+			curl_setopt( $curl, CURLOPT_POST, true );
+			curl_setopt( $curl, CURLOPT_POSTFIELDS, $json );
+			curl_setopt( $curl, CURLOPT_HTTPHEADER, array(
+				'Content-Type: application/json',
+				'Content-Length: ' . strlen( $json ),
+			) );
+			curl_setopt( $curl, CURLOPT_TIMEOUT, 5 );
+			curl_setopt( $curl, CURLOPT_RETURNTRANSFER, true );
+			curl_multi_add_handle( $curl_multi, $curl );
+		}
+	}
+
+	private function run_curl_multi( $curl_multi ): void {
 		$running = true;
 
 		while ( $running ) {
@@ -346,8 +583,8 @@ class WPCOM_VIP_Cache_Manager {
 			} while ( CURLM_CALL_MULTI_PERFORM === $result );
 
 			if ( CURLM_OK !== $result ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'curl_multi_exec() returned something different than CURLM_OK' );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( 'curl_multi_exec() returned something different than CURLM_OK' );
 			}
 
 			curl_multi_select( $curl_multi, 0.2 );
@@ -358,13 +595,13 @@ class WPCOM_VIP_Cache_Manager {
 			$info = curl_getinfo( $completed['handle'] );
 
 			if ( ! $info['http_code'] && curl_error( $completed['handle'] ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Error on: ' . $info['url'] . ' error: ' . curl_error( $completed['handle'] ) );
 			}
 
 			if ( '200' != $info['http_code'] ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] );
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped
+				trigger_error( 'Request to ' . $info['url'] . ' returned HTTP code ' . $info['http_code'] );
 			}
 
 			curl_multi_remove_handle( $curl_multi, $completed['handle'] );
@@ -391,8 +628,12 @@ class WPCOM_VIP_Cache_Manager {
 			return $requests;
 		}
 
-		if ( 'BAN' == $method ) {
-			$uri = $parsed['path'] . '?' . $parsed['query'];
+		if ( 'BAN' === $method ) {
+			$path = isset( $parsed['path'] ) ? $parsed['path'] : '/';
+			$uri  = $path;
+			if ( isset( $parsed['query'] ) ) {
+				$uri .= '?' . $parsed['query'];
+			}
 		} else {
 			$uri = '/';
 			if ( isset( $parsed['path'] ) ) {
@@ -403,41 +644,11 @@ class WPCOM_VIP_Cache_Manager {
 			}
 		}
 
-		if ( defined( 'EDGE_CACHE_PURGE_CLIENT_TOKEN' ) && defined( 'PURGE_SERVER_TYPE' ) && 'edge-api' === PURGE_SERVER_TYPE ) {
-			return array(
-				array(
-					'host'   => $parsed['host'],
-					'uri'    => $uri,
-					'method' => $method,
-				),
-			);
-		}
-
-		if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' === PURGE_SERVER_TYPE ) {
-			global $varnish_servers;
-		} else {
-			$varnish_servers = array( constant( 'PURGE_SERVER_URL' ) );
-		}
-
-		if ( empty( $varnish_servers ) ) {
-			return $requests;
-		}
-
-		foreach ( $varnish_servers as $server ) {
-			$request = array(
-				'host'   => $parsed['host'],
-				'uri'    => $uri,
-				'method' => $method,
-			);
-
-			if ( ! defined( 'PURGE_SERVER_TYPE' ) || 'varnish' == PURGE_SERVER_TYPE ) {
-				$srv             = explode( ':', $server[0] );
-				$request['ip']   = $srv[0];
-				$request['port'] = $srv[1];
-			}
-
-			$requests[] = $request;
-		}
+		$requests[] = array(
+			'host'   => $parsed['host'],
+			'uri'    => $uri,
+			'method' => $method,
+		);
 
 		return $requests;
 	}
@@ -511,13 +722,54 @@ class WPCOM_VIP_Cache_Manager {
 		$this->curl_multi( $requests );
 	}
 
-	public function purge_site_cache() {
+	public function purge_site_cache(): bool {
 		if ( $this->site_cache_purged ) {
-			return;
+			return false;
 		}
 
-		$this->ban_urls[]        = untrailingslashit( home_url() ) . '/(?!wp\-content\/uploads\/).*';
+		$this->ban_urls[]        = trailingslashit( home_url() );
 		$this->site_cache_purged = true;
+
+		return true;
+	}
+
+	/**
+	 * Queue a purge for cached origin responses only.
+	 */
+	public function purge_origin_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['origin'] );
+	}
+
+	/**
+	 * Queue a purge for cached uploads only.
+	 */
+	public function purge_uploads_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['uploads'] );
+	}
+
+	/**
+	 * Queue a purge for cached static assets only.
+	 */
+	public function purge_static_files_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['static'] );
+	}
+
+	/**
+	 * Queue a purge for cached private file visibility metadata.
+	 */
+	public function purge_private_files_cache(): bool {
+		return $this->queue_special_purge_url( self::SPECIAL_PURGE_PATHS['private_files'] );
+	}
+
+	private function queue_special_purge_url( string $path ): bool {
+		if ( empty( $path ) ) {
+			return false;
+		}
+
+		$base = trailingslashit( home_url() );
+		$url  = $base . ltrim( $path, '/' );
+
+		return $this->queue_purge_url( $url );
 	}
 
 	public function queue_post_purge( $post_id ) {
@@ -844,6 +1096,18 @@ class WPCOM_VIP_Cache_Manager {
 		return true;
 	}
 
+	private function purge_single_url() {
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- Nonce verified in ajax_dashboard_widget_purge().
+		$url = isset( $_REQUEST['vip_cache_manager_url'] ) ? esc_url_raw( wp_unslash( $_REQUEST['vip_cache_manager_url'] ) ) : '';
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) ) {
+			return new \WP_Error( 'invalid_url', __( 'Please enter a valid URL to purge.', 'vip-cache-manager' ) );
+		}
+
+		return $this->queue_purge_url( $url );
+	}
+
 	/**
 	 * Schedule purge of old permalink in case it was changed during post update
 	 * and only if the post's status was publish before the update
@@ -884,16 +1148,11 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function can_purge_cache() {
-		if ( ! function_exists( 'is_proxied_automattician' ) ) {
-			// Local environment; no purging necessary here
-			return false;
-		}
-
-		return is_proxied_automattician();
+		return ( function_exists( 'is_proxied_automattician' ) && is_proxied_automattician() ) || $this->current_user_can_purge_cache();
 	}
 
 	private function current_user_can_purge_cache(): bool {
-		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'manage_options' ), wp_get_current_user() );
+		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'edit_others_posts' ), wp_get_current_user() );
 	}
 }
 

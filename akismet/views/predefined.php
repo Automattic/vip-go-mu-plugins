@@ -4,7 +4,7 @@
 		<?php
 
 		/* translators: %s is the wp-config.php file */
-		echo sprintf( esc_html__( 'An Akismet API key has been defined in the %s file for this site.', 'akismet' ), '<code>wp-config.php</code>' );
+		printf( esc_html__( 'An Akismet API key has been defined in the %s file for this site.', 'akismet' ), '<code>wp-config.php</code>' );
 
 		?>
 	</p>

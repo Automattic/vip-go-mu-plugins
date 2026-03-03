@@ -15,6 +15,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
 		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
+		$this->reset_cache_manager_state();
 
 		$this->original_error_reporting = error_reporting();
 		set_error_handler( static function ( int $errno, string $errstr ) {
@@ -28,6 +29,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		$this->reset_cache_manager_state();
 		restore_error_handler();
 		error_reporting( $this->original_error_reporting );
 		parent::tearDown();
@@ -123,5 +125,45 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls variable is an array' );
 
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
+	}
+
+	public function get_data_for_special_purge_actions() {
+		return [
+			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
+			'uploads' => [ 'purge_uploads_cache', '/.vip/purge-all-uploads' ],
+			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-files' ],
+			'private' => [ 'purge_private_files_cache', '/.vip/purge-all-private-files' ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_special_purge_actions
+	 */
+	public function test_special_purge_actions_queue_expected_urls( $method, $path ) {
+		$result = $this->cache_manager->{$method}();
+		$this->assertTrue( $result, 'Special purge method should return true.' );
+
+		$expected_url = trailingslashit( home_url() ) . ltrim( $path, '/' );
+		$this->assertContains( $expected_url, $this->cache_manager->get_queued_purge_urls(), 'Expected purge URL missing.' );
+
+		$this->cache_manager->clear_queued_purge_urls();
+	}
+
+	public function test_purge_site_cache_returns_false_after_first_call() {
+		$this->assertTrue( $this->cache_manager->purge_site_cache(), 'First site purge should return true.' );
+		$this->assertFalse( $this->cache_manager->purge_site_cache(), 'Subsequent site purge should return false for same request.' );
+	}
+
+	private function reset_cache_manager_state(): void {
+		$properties = [
+			'ban_urls'          => array(),
+			'purge_urls'        => array(),
+			'site_cache_purged' => false,
+		];
+
+		foreach ( $properties as $property => $value ) {
+			$reflection = new \ReflectionProperty( WPCOM_VIP_Cache_Manager::class, $property );
+			$reflection->setValue( $this->cache_manager, $value );
+		}
 	}
 }

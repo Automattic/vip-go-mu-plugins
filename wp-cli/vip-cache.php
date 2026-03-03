@@ -8,7 +8,19 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 	 *
 	 * ## OPTIONS
 	 *
-	 * [--skip-confirm] force purge without confirmation.
+	 * [--scope=<scope>]
+	 * : Limit the purge to a specific cache scope. Defaults to site.
+	 * ---
+	 * default: site
+	 * options:
+	 *   - site
+	 *   - origin
+	 *   - uploads
+	 *   - static
+	 *   - private
+	 * ---
+	 *
+	 * [--skip-confirm] force purge without confirmation (site scope only).
 	 */
 	public function purge( $args, $assoc_args ) {
 		if ( isset( $args[0] ) && wp_http_validate_url( $args[0] ) ) {
@@ -16,14 +28,25 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 			return;
 		}
 
-		if ( ! isset( $assoc_args['skip-confirm'] ) ) {
-			WP_CLI::confirm( "⚠️ You're about to invalidate Page Cache for the whole site, this can severely impact performance and stability for large sites. Are you sure?" );
+		$scope  = isset( $assoc_args['scope'] ) ? $assoc_args['scope'] : 'site';
+		$scopes = $this->get_scope_actions();
+
+		if ( ! isset( $scopes[ $scope ] ) ) {
+			WP_CLI::error( sprintf( 'Invalid scope "%s". Allowed scopes: %s', $scope, implode( ', ', array_keys( $scopes ) ) ) );
 		}
 
-		// This sets up the URL/regex to be banned.  There's no need to manually
-		// execute a purge since it is handled automatically on the `shutdown` hook.
-		WPCOM_VIP_Cache_Manager::instance()->purge_site_cache();
-		WP_CLI::success( 'VIP Page Cache purged!' );
+		if ( 'site' === $scope && ! isset( $assoc_args['skip-confirm'] ) ) {
+			WP_CLI::confirm(
+				sprintf(
+					"⚠️ You're about to invalidate Page Cache for (%s). This can impact performance and stability for large sites. Are you sure?",
+					trailingslashit( home_url() )
+				)
+			);
+		}
+
+		call_user_func( $scopes[ $scope ]['callback'] );
+
+		WP_CLI::success( sprintf( 'Queued %s purge.', $scopes[ $scope ]['label'] ) );
 	}
 
 	/**
@@ -46,9 +69,34 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 		}
 
 		// Queue a specific URL purge.
-		wpcom_vip_purge_edge_cache_for_url( $args[0] );
+		wpvip_purge_edge_cache_for_url( $args[0] );
 
-		WP_CLI::success( 'URL purged from the VIP page cache.' );
+		WP_CLI::success( sprintf( 'Queued purge for URL: %s', $args[0] ) );
+	}
+
+	private function get_scope_actions(): array {
+		return [
+			'site'    => [
+				'label'    => 'entire site cache',
+				'callback' => [ WPCOM_VIP_Cache_Manager::instance(), 'purge_site_cache' ],
+			],
+			'origin'  => [
+				'label'    => 'origin content cache',
+				'callback' => 'wpvip_purge_edge_cache_for_origin_content',
+			],
+			'uploads' => [
+				'label'    => 'uploads cache',
+				'callback' => 'wpvip_purge_edge_cache_for_uploads',
+			],
+			'static'  => [
+				'label'    => 'static files cache',
+				'callback' => 'wpvip_purge_edge_cache_for_static_files',
+			],
+			'private' => [
+				'label'    => 'private file visibility cache',
+				'callback' => 'wpvip_purge_edge_cache_for_private_files',
+			],
+		];
 	}
 }
 
