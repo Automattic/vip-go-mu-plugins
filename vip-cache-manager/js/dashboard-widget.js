@@ -24,7 +24,7 @@
 
 	function updateUrlVisibility() {
 		const isUrl = select.value === cfg.urlKey;
-		urlWrap.style.display = isUrl ? 'block' : 'none';
+		urlWrap.style.display = isUrl ? '' : 'none';
 		urlInput.required = isUrl;
 		if ( ! isUrl ) {
 			urlInput.value = '';

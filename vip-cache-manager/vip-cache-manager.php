@@ -96,7 +96,7 @@ class WPCOM_VIP_Cache_Manager {
 					'title'  => 'Purge Page Cache',
 					'href'   => '#',
 					'meta'   => [
-						'title' => 'Purge Page cache for this page and its assets',
+						'title' => 'Purge page cache for this page and its assets',
 					],
 				]
 			);
@@ -215,8 +215,8 @@ class WPCOM_VIP_Cache_Manager {
 				'stat'        => 'dashboard-static-purge',
 			],
 			'private' => [
-				'label'       => __( 'Purge files that are protected by Access-controlled files', 'vip-cache-manager' ),
-				'description' => __( 'Purge the cache to reset the availability of files that are protected by Access-controlled files.', 'vip-cache-manager' ),
+				'label'       => __( 'Purge files that are protected by Access-Controlled Files', 'vip-cache-manager' ),
+				'description' => __( 'Purge the cache to reset the availability of files that are protected by Access-Controlled Files.', 'vip-cache-manager' ),
 				'callback'    => 'purge_private_files_cache',
 				'message'     => __( 'Purge queued for Access-controlled files.', 'vip-cache-manager' ),
 				'stat'        => 'dashboard-private-files-purge',
