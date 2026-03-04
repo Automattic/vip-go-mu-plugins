@@ -87,7 +87,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function admin_bar_callback( WP_Admin_Bar $admin_bar ) {
-		if ( ! is_admin() && $this->current_user_can_purge_cache() ) {
+		if ( ! is_admin() && $this->current_user_can_purge_cache( 'url' ) ) {
 			$admin_bar->add_menu(
 				[
 					'id'     => 'vip-purge-page',
@@ -109,7 +109,7 @@ class WPCOM_VIP_Cache_Manager {
 	 * @return void
 	 */
 	public function button_enqueue_scripts() {
-		if ( $this->current_user_can_purge_cache() ) {
+		if ( $this->current_user_can_purge_cache( 'url' ) ) {
 			wp_enqueue_script( 'purge-page-cache-btn', plugins_url( '/js/admin-bar.js', __FILE__ ), [], '1.2', true );
 			wp_localize_script( 'purge-page-cache-btn', 'VIPPagePurge', [
 				'nonce'   => wp_create_nonce( 'purge-page' ),
@@ -224,6 +224,18 @@ class WPCOM_VIP_Cache_Manager {
 		];
 	}
 
+	private function get_available_manual_purge_actions_config(): array {
+		$actions = $this->get_manual_purge_actions_config();
+
+		return array_filter(
+			$actions,
+			function ( $_config, $scope ) {
+				return $this->can_purge_cache( $scope );
+			},
+			ARRAY_FILTER_USE_BOTH
+		);
+	}
+
 
 	/**
 	 * AJAX callback that performs basic security checks and payload validation and queues urls for the purge.
@@ -241,7 +253,7 @@ class WPCOM_VIP_Cache_Manager {
 			wp_send_json_error( [ 'error' => 'Malformed payload' ], 400 );
 		}
 
-		if ( ! $this->current_user_can_purge_cache() ) {
+		if ( ! $this->current_user_can_purge_cache( 'url' ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
 				'vip-cache-url-purge-status' => 'deny-permissions',
 			] );
@@ -287,7 +299,7 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function vip_purge_cache_page() {
-		if ( ! $this->can_purge_cache() ) {
+		if ( empty( $this->get_available_manual_purge_actions_config() ) ) {
 			return;
 		}
 		add_submenu_page(
@@ -301,16 +313,16 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	public function render_dashboard_widget() {
-		if ( ! $this->can_purge_cache() ) {
+		$actions = $this->get_available_manual_purge_actions_config();
+
+		if ( empty( $actions ) ) {
 			echo '<p>' . esc_html__( 'You do not have permission to manage the page cache.', 'vip-cache-manager' ) . '</p>';
 		} else {
-			$this->render_dashboard_widget_form();
+			$this->render_dashboard_widget_form( $actions );
 		}
 	}
 
-	private function render_dashboard_widget_form() {
-		$actions = $this->get_manual_purge_actions_config();
-
+	private function render_dashboard_widget_form( array $actions ) {
 		if ( empty( $actions ) ) {
 			return;
 		}
@@ -364,7 +376,7 @@ class WPCOM_VIP_Cache_Manager {
 
 
 	public function enqueue_dashboard_widget_assets( $hook_suffix ) {
-		if ( 'vip_page_vip-purge-cache' !== $hook_suffix || ! $this->can_purge_cache() ) {
+		if ( 'vip_page_vip-purge-cache' !== $hook_suffix || empty( $this->get_available_manual_purge_actions_config() ) ) {
 			return;
 		}
 
@@ -395,7 +407,10 @@ class WPCOM_VIP_Cache_Manager {
 			wp_send_json_error( array( 'message' => __( 'Malformed payload.', 'vip-cache-manager' ) ), 400 );
 		}
 
-		if ( ! $this->current_user_can_purge_cache() ) {
+		$action = isset( $req->purge_action ) ? sanitize_key( $req->purge_action ) : '';
+		$scope  = empty( $action ) ? 'dashboard' : $action;
+
+		if ( ! $this->current_user_can_purge_cache( $scope ) ) {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'vip-cache-manager' ) ), 403 );
 		}
 
@@ -403,8 +418,7 @@ class WPCOM_VIP_Cache_Manager {
 			wp_send_json_error( array( 'message' => __( 'Unauthorized.', 'vip-cache-manager' ) ), 403 );
 		}
 
-		$action = isset( $req->purge_action ) ? sanitize_key( $req->purge_action ) : '';
-		$url    = isset( $req->url ) ? esc_url_raw( $req->url ) : '';
+		$url = isset( $req->url ) ? esc_url_raw( $req->url ) : '';
 
 		$actions = $this->get_manual_purge_actions_config();
 		if ( ! isset( $actions[ $action ] ) ) {
@@ -1149,12 +1163,12 @@ class WPCOM_VIP_Cache_Manager {
 		return wp_http_validate_url( $url );
 	}
 
-	private function can_purge_cache() {
-		return ( function_exists( 'is_proxied_automattician' ) && is_proxied_automattician() ) || $this->current_user_can_purge_cache();
+	private function can_purge_cache( ?string $scope = null ): bool {
+		return ( function_exists( 'is_proxied_automattician' ) && is_proxied_automattician() ) || $this->current_user_can_purge_cache( $scope );
 	}
 
-	private function current_user_can_purge_cache(): bool {
-		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'edit_others_posts' ), wp_get_current_user() );
+	private function current_user_can_purge_cache( ?string $scope = null ): bool {
+		return apply_filters( 'vip_cache_manager_can_purge_cache', current_user_can( 'edit_others_posts' ), wp_get_current_user(), $scope );
 	}
 }
 
