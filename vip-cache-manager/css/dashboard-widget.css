@@ -18,3 +18,7 @@
 .vip-cache-manager-confirmation-modal .components-notice {
 	margin-top: 8px;
 }
+
+.vip-cache-manager-dashboard-form {
+	max-width: 450px;
+}
