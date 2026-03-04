@@ -259,6 +259,28 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'value="private"', $widget_html, 'Private files action should be hidden when private scope is denied.' );
 	}
 
+	public function test_enqueue_dashboard_widget_assets_localizes_confirmation_guardrail_data() {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$this->cache_manager->enqueue_dashboard_widget_assets( 'vip_page_vip-purge-cache' );
+
+		$this->assertTrue( wp_script_is( 'vip-cache-manager-dashboard-widget', 'enqueued' ), 'Dashboard widget script should be enqueued.' );
+		$this->assertTrue( wp_style_is( 'wp-components', 'enqueued' ), 'WordPress component styles should be enqueued for modal rendering.' );
+		$this->assertTrue( wp_style_is( 'vip-cache-manager-dashboard-widget-style', 'enqueued' ), 'Dashboard widget modal styles should be enqueued.' );
+
+		global $wp_scripts;
+		$localized_data = $wp_scripts->get_data( 'vip-cache-manager-dashboard-widget', 'data' );
+
+		$this->assertIsString( $localized_data, 'Dashboard widget localized data should be available.' );
+		$this->assertSame( 1, preg_match( '/var VIPCacheManagerDashboard = (\{.*\});/s', $localized_data, $matches ), 'Dashboard localized data should be present.' );
+
+		$dashboard_data = json_decode( $matches[1], true );
+		$this->assertIsArray( $dashboard_data, 'Dashboard localized data should decode to an array.' );
+		$this->assertSame( home_url( '/' ), $dashboard_data['siteUrl'], 'Dashboard localized data should include the current site URL for confirmation matching.' );
+		$this->assertArrayHasKey( 'confirmationMismatchMessage', $dashboard_data, 'Dashboard localized data should include mismatch copy for the confirmation guardrail.' );
+	}
+
 	private function reset_cache_manager_state(): void {
 		$properties = [
 			'ban_urls'          => array(),

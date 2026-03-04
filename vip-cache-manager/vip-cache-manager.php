@@ -383,18 +383,32 @@ class WPCOM_VIP_Cache_Manager {
 		wp_enqueue_script(
 			'vip-cache-manager-dashboard-widget',
 			plugins_url( '/js/dashboard-widget.js', __FILE__ ),
-			array(),
-			'1.0',
+			array( 'wp-components', 'wp-element' ),
+			'1.1',
 			true
+		);
+		wp_enqueue_style( 'wp-components' );
+		wp_enqueue_style(
+			'vip-cache-manager-dashboard-widget-style',
+			plugins_url( '/css/dashboard-widget.css', __FILE__ ),
+			array( 'wp-components' ),
+			'1.0'
 		);
 
 		wp_localize_script(
 			'vip-cache-manager-dashboard-widget',
 			'VIPCacheManagerDashboard',
 			array(
-				'ajaxurl' => admin_url( 'admin-ajax.php' ),
-				'action'  => 'vip_cache_manager_dashboard_purge',
-				'urlKey'  => 'url',
+				'ajaxurl'                     => admin_url( 'admin-ajax.php' ),
+				'action'                      => 'vip_cache_manager_dashboard_purge',
+				'urlKey'                      => 'url',
+				'siteUrl'                     => home_url( '/' ),
+				'confirmationTitle'           => __( 'Confirm cache purge', 'vip-cache-manager' ),
+				'confirmationPrompt'          => __( 'Type the current site URL to confirm this cache purge action.', 'vip-cache-manager' ),
+				'confirmationInputLabel'      => __( 'Site URL', 'vip-cache-manager' ),
+				'confirmationMismatchMessage' => __( 'The entered URL does not match this site URL.', 'vip-cache-manager' ),
+				'confirmationCancelLabel'     => __( 'Cancel', 'vip-cache-manager' ),
+				'confirmationSubmitLabel'     => __( 'Confirm purge', 'vip-cache-manager' ),
 			)
 		);
 	}
