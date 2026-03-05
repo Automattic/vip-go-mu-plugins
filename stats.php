@@ -174,7 +174,7 @@ function send_pixel( $stats ) {
 		'blocking' => false,
 		'timeout'  => 1,
 		'headers'  => array(
-			'User-Agent' => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; WPVIP; +https://wpvip.com/)',
+			'user-agent' => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; WPVIP; +https://wpvip.com/)',
 		),
 	) );
 }
