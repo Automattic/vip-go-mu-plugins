@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin name: VIP Cache Manager
-Description: Automatically clears the Varnish cache when necessary
+Description: Selectively purge the page cache for a VIP Platform site
 Author: Automattic
 Author URI: http://automattic.com/
 Version: 1.1
