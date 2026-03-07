@@ -21,7 +21,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 		$instance = self::get_instance();
 
 		WP_CLI::add_command(
-			'security unban ip',
+			'vip security unban ip',
 			[ $instance, 'unban_ip' ],
 			[
 				'shortdesc' => 'Unban an IP address.',
@@ -30,7 +30,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 						'type'        => 'positional',
 						'name'        => 'ip',
 						'description' => 'The IP address(es) to unban.',
-						'required'    => true,
+						'optional'    => false,
 						'repeating'   => true,
 					],
 				],
@@ -38,7 +38,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 		);
 
 		WP_CLI::add_command(
-			'security unban user',
+			'vip security unban user',
 			[ $instance, 'unban_user' ],
 			[
 				'shortdesc' => 'Unban a user.',
@@ -47,14 +47,14 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 						'type'        => 'positional',
 						'name'        => 'user',
 						'description' => 'The user to unban (ID, login, or email).',
-						'required'    => true,
+						'optional'    => false,
 						'repeating'   => false,
 					],
 					[
 						'type'        => 'positional',
 						'name'        => 'ip',
 						'description' => 'The IP address(es) to unban.',
-						'required'    => false,
+						'optional'    => true,
 						'repeating'   => true,
 					],
 				],
@@ -62,7 +62,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 		);
 	}
 
-	public function unban_ip( array $args ): void {
+	public function unban_ip( array $args, array $_assoc ): void {
 		foreach ( $args as $ip ) {
 			if ( ! filter_var( $ip, FILTER_VALIDATE_IP ) ) {
 				WP_CLI::warning( sprintf( 'Invalid IP address: %s', $ip ) );
@@ -78,7 +78,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 		}
 	}
 
-	public function unban_user( array $args ): void {
+	public function unban_user( array $args, array $_assoc ): void {
 		$user_arg = $args[0];
 		$user     = null;
 
