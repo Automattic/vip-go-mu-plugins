@@ -26,10 +26,14 @@ abstract class IP_Forward_Test_Base extends TestCase {
 	public function tearDown(): void {
 		if ( $this->original_remote_addr ) {
 			$_SERVER['REMOTE_ADDR'] = $this->original_remote_addr;
+		} else {
+			unset( $_SERVER['REMOTE_ADDR'] );
 		}
 
 		if ( $this->original_x_forwarded_for ) {
 			$_SERVER['HTTP_X_FORWARDED_FOR'] = $this->original_x_forwarded_for;
+		} else {
+			unset( $_SERVER['HTTP_X_FORWARDED_FOR'] );
 		}
 	}
 }
