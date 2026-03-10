@@ -24,7 +24,7 @@ class VIP_Request_Block {
 	protected static $should_log = true;
 
 	/**
-	 * Block a specific IP based either on true-client-ip, falling back to x-forwarded-for
+	 * Block a specific IP based either on true-client-ip (or HTTP_CF_CONNECTING_IP for non-enterprise Cloudflare accounts), falling back to x-forwarded-for
 	 *
 	 * 🛑 BE CAREFUL: blocking a reverse proxy IP instead of the client's IP will result in legitimate traffic being blocked!!!
 	 * 🛑 ALWAYS: use `whois {IP}` to look up the IP before making the changes.
@@ -51,10 +51,15 @@ class VIP_Request_Block {
 		}
 
 		// phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-
-		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		$true_ip = '';
 		if ( ! empty( $_SERVER['HTTP_TRUE_CLIENT_IP'] ) ) {
-			$hdr = strtolower( $_SERVER['HTTP_TRUE_CLIENT_IP'] );
+			$true_ip = $_SERVER['HTTP_TRUE_CLIENT_IP'];
+		} elseif ( ! empty( $_SERVER['HTTP_CF_CONNECTING_IP'] ) ) {
+			$true_ip = $_SERVER['HTTP_CF_CONNECTING_IP'];
+		} 
+		// This is explicit because we only want to try x-forwarded-for if the true-client-ip is not set.
+		if ( ! empty( $true_ip ) ) {
+			$hdr = strtolower( $true_ip );
 			$bin = inet_pton( $hdr );
 			if ( $bin === $ip || $hdr === $value ) {
 				return static::block_and_log( $value, 'true-client-ip' );

@@ -958,7 +958,7 @@ function wpcom_vip_get_user_profile( $email_or_id ) {
 	$profile = wpcom_vip_file_get_contents( $profile_url, 1, 900 );
 	if ( $profile ) {
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_unserialize
-		$profile = unserialize( $profile );
+		$profile = unserialize( $profile, [ 'allowed_classes' => false ] );
 
 		if ( is_array( $profile ) && ! empty( $profile['entry'] ) && is_array( $profile['entry'] ) ) {
 			$profile = $profile['entry'][0];
