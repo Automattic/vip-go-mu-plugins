@@ -133,7 +133,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 
 	private static function log( string $message ): void {
 		WP_CLI::success( $message );
-		if ( function_exists( 'log2logstash' ) ) {
+		if ( function_exists( '\\Automattic\\VIP\\Logstash\\log2logstash' ) ) {
 			log2logstash( [
 				'severity' => 'notice',
 				'message'  => $message,
