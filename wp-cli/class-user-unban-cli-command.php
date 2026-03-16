@@ -5,6 +5,8 @@ namespace Automattic\VIP\CLI;
 use WP_CLI;
 use WPCOM_VIP_CLI_Command;
 
+use function Automattic\VIP\Logstash\log2logstash;
+
 final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 
 	public static function get_instance(): self {
@@ -74,7 +76,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 			wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $ip, CACHE_GROUP_LOGIN_LIMIT );
 			wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $ip, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
-			WP_CLI::success( sprintf( 'Unbanned IP %s', $ip ) );
+			self::log( sprintf( 'Unbanned IP %s', $ip ) );
 		}
 	}
 
@@ -123,10 +125,21 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 				}
 			}
 
-			WP_CLI::success( sprintf( 'Unbanned user %s for IP %s', $login, $ip ) );
+			self::log( sprintf( 'Unbanned user %s for IP %s', $login, $ip ) );
 		}
 
-		WP_CLI::success( sprintf( 'Unbanned user %s', $login ) );
+		self::log( sprintf( 'Unbanned user %s', $login ) );
+	}
+
+	private static function log( string $message ): void {
+		WP_CLI::success( $message );
+		if ( function_exists( '\\Automattic\\VIP\\Logstash\\log2logstash' ) ) {
+			log2logstash( [
+				'severity' => 'notice',
+				'message'  => $message,
+				'feature'  => 'security',
+			] );
+		}
 	}
 }
 
