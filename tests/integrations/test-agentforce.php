@@ -8,6 +8,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+use Env_Integration_Status;
+use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 
@@ -54,6 +56,61 @@ class Agentforce_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( defined( 'VIP_AGENTFORCE_CONFIGS' ) );
 		$this->assertEquals( [], constant( 'VIP_AGENTFORCE_CONFIGS' ) );
+	}
+
+	public function test_configure_uses_network_site_config_for_multisite(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'agentforce-test.site/2' ] );
+		switch_to_blog( $blog_2_id );
+
+		try {
+			/** @var IntegrationVipConfig&MockObject $config_mock */
+			$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
+				->disableOriginalConstructor()
+				->onlyMethods( [ 'get_vip_config_from_file' ] )
+				->getMock();
+
+			$config_mock->method( 'get_vip_config_from_file' )->willReturn(
+				[
+					'env'           => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => [ 'version' => '1.0' ],
+					],
+					'network_sites' => [
+						1          => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [ 'version' => '1.5' ],
+						],
+						$blog_2_id => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [
+								'version' => '2.0',
+								'api_key' => 'site-2-key',
+							],
+						],
+					],
+				]
+			);
+			$config_mock->__construct( $this->slug );
+
+			$agentforce_integration = new AgentforceIntegration( $this->slug );
+			$agentforce_integration->set_vip_config( $config_mock );
+			$agentforce_integration->configure();
+
+			$this->assertSame( '2.0', $agentforce_integration->version );
+			$this->assertEquals(
+				[
+					'version' => '2.0',
+					'api_key' => 'site-2-key',
+				],
+				constant( 'VIP_AGENTFORCE_CONFIGS' )
+			);
+		} finally {
+			restore_current_blog();
+		}
 	}
 
 	public function test_configure_does_not_redefine_constant(): void {
