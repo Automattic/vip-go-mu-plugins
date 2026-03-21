@@ -185,6 +185,10 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 					esc_html( $row['args']['method'] )
 				);
 
+				if ( $is_error && 'GET' === $row['args']['method'] ) {
+					$url .= sprintf( ' <a href="%s">%s</a>', esc_url( $row['url'] ), QueryMonitor::icon( 'external' ) );
+				}
+
 				if ( $row['intercepted'] ) {
 					$url = sprintf(
 						'<span class="qm-warn">%1$s%2$s</span><br>',
@@ -251,7 +255,9 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 					echo esc_html( $response );
 
 					if ( $show_toggle ) {
-						echo self::build_toggler(); // WPCS: XSS ok;
+						/* translators: 1: HTTP request method, 2: Request URL, 3: HTTP response status */
+						$status_context = sprintf( __( '%1$s to %2$s with status %3$s', 'query-monitor' ), $row['args']['method'], $row['url'], $response );
+						echo self::build_toggler( $status_context ); // WPCS: XSS ok;
 						echo '<ul class="qm-toggled">' . "\n";
 					}
 
@@ -300,7 +306,7 @@ class QM_Output_Html_HTTP extends QM_Output_Html {
 				echo '<td class="qm-has-toggle qm-nowrap qm-ltr">';
 
 				if ( ! empty( $stack ) ) {
-					echo self::build_toggler(); // WPCS: XSS ok;
+					echo self::build_toggler( $caller ); // WPCS: XSS ok;
 				}
 
 				echo '<ol>' . "\n";

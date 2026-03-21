@@ -3,7 +3,7 @@
 Contributors: johnbillion
 Tags: debug, debug-bar, development, performance, query monitor
 Tested up to: 6.9
-Stable tag: 3.20.2
+Stable tag: 3.20.4
 License: GPL v2 or later
 Donate link: https://github.com/sponsors/johnbillion
 
@@ -126,70 +126,12 @@ Yes. You can enable this on the Settings panel.
 
 ### How can I report a security bug?
 
-[You can report security bugs through the official Query Monitor Vulnerability Disclosure Program on Patchstack](https://patchstack.com/database/vdp/query-monitor). The Patchstack team helps validate, triage, and handle any security vulnerabilities.
+You can submit a private security vulnerability report to Query Monitor via [the Security tab on the GitHub repo](https://github.com/johnbillion/query-monitor/security). The GitHub Security Advisory process facilitates private collaboration on security issues. You'll receive credit for a valid report and a CVE if necessary.
+
+Do not report security issues on the WordPress.org support forums or via email. Thank you.
 
 ### Do you accept donations?
 
 [I am accepting sponsorships via the GitHub Sponsors program](https://github.com/sponsors/johnbillion). If you work at an agency that develops with WordPress, ask your company to provide sponsorship in order to invest in its supply chain. The tools that I maintain probably save your company time and money, and GitHub sponsorship can now be done at the organisation level.
 
 In addition, if you like the plugin then I'd love for you to [leave a review](https://wordpress.org/support/view/plugin-reviews/query-monitor). Tell all your friends about it too!
-## Changelog ##
-
-### 3.20.2 (11 December 2025) ###
-
-- Prevents a PHP error being triggered under certain conditions and when no database queries are performed.
-
-### 3.20.1 (8 December 2025) ###
-
-* Confirms support for WordPress 6.9.
-* Removes calls to deprecated `jQuery.focus()` method.
-* Add line breaks to HTML output to keep your browser happy when viewing the page source.
-
-### 3.20.0 (7 September 2025) ###
-
-* Defers loading of translation files as late as possible to minimise the chance of triggering the `Translation loading for the query-monitor domain was triggered too early` error
-* Implements some initial compatibility tweaks for the upcoming PHP 8.5
-
-### 3.19.0 (23 July 2025) ###
-
-* Adds Guzzle middleware support for logging HTTP client requests.
-* Fixes plugin conflicts caused by the global `qm` JavaScript variable by renaming it to `QueryMonitorData`.
-* Corrects invalid HTML markup where `<th>` elements were closed with `</td>` tags.
-
-### 3.18.0 (16 June 2025) ###
-
-* Adds more comprehensive handling of HTTP API requests which were overridden by the `pre_http_request` filter.
-* Corrects the handling of suppressed PHP errors on both PHP 7 and PHP 8.
-* Confirms support for WordPress 6.8.
-
-### 3.17.2 (4 February 2025) ###
-
-* Reinstates the "Blocks" panel
-
-### 3.17.1 (2 February 2025) ###
-
-* Prevents use of the deprecated `E_STRICT` constant in PHP 8.4.
-* Avoids use of the deprecated `setted_transient` and `setted_site_transient` actions in WordPress 6.8.
-* Skips showing the `_load_textdomain_just_in_time` notices when they're caused by Query Monitor itself.
-* Uses more appropriate formatting for a fatal error in REST API and Ajax contexts.
-
-
-### 3.17.0 (27 November 2024) ###
-
-* Support for WordPress 6.7.
-* Support for PHP 8.4.
-* Inline scripts are now output using `wp_print_inline_script_tag()` so a Content Security Policy can be fully implemented.
-* Various improvements and fixes.
-
-### 3.16.4 (25 July 2024) ###
-
-* Confirms support for WordPress 6.6.
-
-### 3.16.3 (22 May 2024) ###
-
-* Prevents an infinite loop when logging doing it wrong calls and deprecated calls.
-* Removes a global from query-monitor.php
-
-### Earlier versions ###
-
-For the changelog of earlier versions, <a href="https://github.com/johnbillion/query-monitor/releases">refer to the releases page on GitHub</a>.
