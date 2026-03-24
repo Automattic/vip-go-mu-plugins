@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a28249dbca64e0f1c082fe7c33a3661d",
+    "content-hash": "e9a3e343d1ab4755822faa71d44981c7",
     "packages": [],
     "packages-dev": [
         {
@@ -311,16 +311,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "6.9.1",
+            "version": "6.9.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "840ffab74cb3d19cc0076363358f783041b5f3cf"
+                "reference": "13e02e0047ca5c8ec8dc837c2de8a5bd3583b879"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/840ffab74cb3d19cc0076363358f783041b5f3cf",
-                "reference": "840ffab74cb3d19cc0076363358f783041b5f3cf",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/13e02e0047ca5c8ec8dc837c2de8a5bd3583b879",
+                "reference": "13e02e0047ca5c8ec8dc837c2de8a5bd3583b879",
                 "shasum": ""
             },
             "require": {
@@ -328,7 +328,7 @@
                 "php": ">=7.2.24"
             },
             "provide": {
-                "wordpress/core-implementation": "6.9.1"
+                "wordpress/core-implementation": "6.9.4"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -355,7 +355,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2026-02-03T18:03:48+00:00"
+            "time": "2026-03-11T15:27:36+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -3118,7 +3118,7 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "6.9.1",
+            "version": "6.9.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
@@ -3238,5 +3238,5 @@
     "platform-overrides": {
         "php": "8.0"
     },
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
