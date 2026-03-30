@@ -137,7 +137,7 @@ runs:
         COVERAGE: ${{ steps.coverage.outputs.coverage }}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v5.5.2
+      uses: codecov/codecov-action@v6.0.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
