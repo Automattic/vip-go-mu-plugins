@@ -25,7 +25,7 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Empty string means load from the unversioned 'gutenberg' folder.
 	 * A version number (e.g., '1.0') loads from 'gutenberg-1.0' folder.
 	 */
-	const VIP_RTC_GUTENBERG_VERSION = '0.2-20260323';
+	const VIP_RTC_GUTENBERG_VERSION = '0.2';
 
 	/**
 	 * Enable Pendo tracking for this integration.
