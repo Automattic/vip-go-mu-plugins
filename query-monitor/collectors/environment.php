@@ -77,7 +77,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 	 * @return void
 	 */
 	public function process() {
-
+		/** @var string $wp_version */
 		global $wp_version;
 
 		$mysql_vars = array(
@@ -90,20 +90,18 @@ class QM_Collector_Environment extends QM_DataCollector {
 			'innodb_buffer_pool_size' => false, # The amount of memory allocated to the InnoDB buffer pool
 		);
 
-		/** @var QM_Collector_DB_Queries|null */
+		/** @var QM_Collector_DB_Queries|null $dbq */
 		$dbq = QM_Collectors::get( 'db_queries' );
 
 		if ( $dbq ) {
-			if ( method_exists( $dbq->wpdb, 'db_version' ) ) {
-				$server = $dbq->wpdb->db_version();
-				// query_cache_* deprecated since MySQL 5.7.20
-				if ( version_compare( $server, '5.7.20', '>=' ) ) {
-					unset( $mysql_vars['query_cache_limit'], $mysql_vars['query_cache_size'], $mysql_vars['query_cache_type'] );
-				}
+			$server = $dbq->wpdb->db_version();
+			// query_cache_* deprecated since MySQL 5.7.20
+			if ( version_compare( $server, '5.7.20', '>=' ) ) {
+				unset( $mysql_vars['query_cache_limit'], $mysql_vars['query_cache_size'], $mysql_vars['query_cache_type'] );
 			}
 
 			// phpcs:disable
-			/** @var array<int, stdClass>|null */
+			/** @var array<int, stdClass>|null $variables */
 			$variables = $dbq->wpdb->get_results( "
 				SHOW VARIABLES
 				WHERE Variable_name IN ( '" . implode( "', '", array_keys( $mysql_vars ) ) . "' )
@@ -144,8 +142,7 @@ class QM_Collector_Environment extends QM_DataCollector {
 
 			$this->data->db = array(
 				'info' => $info,
-				'vars' => $mysql_vars,
-				'variables' => is_array( $variables ) ? $variables : array(),
+				'variables' => $variables ?: array(),
 			);
 		}
 
