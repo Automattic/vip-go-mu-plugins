@@ -8,7 +8,7 @@ This file defines safe working rules for AI coding agents in this repository.
 - Root feature entry files (for example `security.php`, `vip-mail.php`, `vip-rest-api.php`) wire feature modules.
 - Shared code lives in `lib/`.
 - Automated tests:
-  - PHPUnit: `tests/` via `bin/test.sh`
+  - PHPUnit: `tests/` via `bin/test.sh` (use `CI=1 ./bin/test.sh --filter <test>` for running specific tests).
   - e2e: `__tests__/e2e/`
 
 See [docs/architecture.md](docs/architecture.md) for full map.
