@@ -14,7 +14,7 @@ namespace Automattic\WP\Cron_Control\CLI;
  */
 class Orchestrate_Sites extends \WP_CLI_Command {
 	const RUNNER_HOST_HEARTBEAT_KEY = 'a8c_cron_control_host_heartbeats';
-	const MAX_SITES = 11000;
+	const MAX_SITES = 12000;
 
 	/**
 	 * Record a heartbeat
