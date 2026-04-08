@@ -1,0 +1,24 @@
+.vip-cache-manager-dashboard-form #vip-cache-manager-dashboard-url-wrap {
+	display: none;
+}
+
+.components-modal__frame.vip-cache-manager-confirmation-modal {
+	max-width: 400px;
+	width: calc( 100% - 32px );
+}
+
+.vip-cache-manager-confirmation-modal .vip-cache-manager-confirmation-modal__actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 16px;
+	padding-top: 8px;
+}
+
+.vip-cache-manager-confirmation-modal .components-notice {
+	margin-top: 8px;
+}
+
+.vip-cache-manager-dashboard-form {
+	max-width: 450px;
+}

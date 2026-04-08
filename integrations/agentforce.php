@@ -26,7 +26,7 @@ class AgentforceIntegration extends Integration {
 	}
 
 	public function configure(): void {
-		$configs = $this->get_env_config();
+		$configs = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
 
 		if ( ! defined( 'VIP_AGENTFORCE_CONFIGS' ) ) {
 			define( 'VIP_AGENTFORCE_CONFIGS', $configs );

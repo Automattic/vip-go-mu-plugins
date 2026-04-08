@@ -173,6 +173,9 @@ function send_pixel( $stats ) {
 	wp_remote_get( $pixel, array(
 		'blocking' => false,
 		'timeout'  => 1,
+		'headers'  => array(
+			'user-agent' => 'Mozilla/5.0 AppleWebKit/537.36 (KHTML, like Gecko; compatible; WPVIP; +https://wpvip.com/)',
+		),
 	) );
 }
 

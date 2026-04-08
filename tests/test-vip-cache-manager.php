@@ -154,6 +154,133 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertFalse( $this->cache_manager->purge_site_cache(), 'Subsequent site purge should return false for same request.' );
 	}
 
+	public function test_current_user_can_purge_cache_filter_receives_scope_and_user() {
+		$user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
+		wp_set_current_user( $user_id );
+
+		$captured_scope = null;
+		$captured_user  = null;
+
+		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope, &$captured_user ) {
+			$captured_scope = $scope;
+			$captured_user  = $user;
+
+			return $can_purge_cache;
+		};
+
+		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+
+		try {
+			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
+			$method->invoke( $this->cache_manager, 'url' );
+		} finally {
+			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
+		}
+
+		$this->assertSame( 'url', $captured_scope, 'Scope should be passed to the permission filter.' );
+		$this->assertInstanceOf( WP_User::class, $captured_user, 'Current user should be passed to the permission filter.' );
+		$this->assertSame( $user_id, $captured_user->ID, 'Permission filter should receive the current user ID.' );
+	}
+
+	public function test_current_user_can_purge_cache_filter_scope_defaults_to_null() {
+		$captured_scope = 'not-set';
+
+		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope ) {
+			$captured_scope = $scope;
+
+			return $can_purge_cache;
+		};
+
+		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+
+		try {
+			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
+			$method->invoke( $this->cache_manager );
+		} finally {
+			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
+		}
+
+		$this->assertNull( $captured_scope, 'Scope should default to null when no specific purge context is provided.' );
+	}
+
+	public function test_current_user_can_purge_cache_allows_scope_specific_permissions() {
+		$callback = static function ( $can_purge_cache, $user, $scope ) {
+			return 'url' === $scope;
+		};
+
+		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+
+		try {
+			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
+			$this->assertTrue( $method->invoke( $this->cache_manager, 'url' ), 'URL scope should be allowed by the filter callback.' );
+			$this->assertFalse( $method->invoke( $this->cache_manager, 'site' ), 'Non-URL scope should be denied by the filter callback.' );
+		} finally {
+			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
+		}
+	}
+
+	public function test_available_manual_purge_actions_are_filtered_by_scope_permissions() {
+		$callback = static function ( $can_purge_cache, $user, $scope ) {
+			return in_array( $scope, [ 'url', 'origin' ], true );
+		};
+
+		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+
+		try {
+			$method          = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'get_available_manual_purge_actions_config' );
+			$visible_actions = $method->invoke( $this->cache_manager );
+		} finally {
+			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
+		}
+
+		$this->assertSame( [ 'url', 'origin' ], array_keys( $visible_actions ), 'Only allowed purge scopes should be returned for rendering.' );
+	}
+
+	public function test_render_dashboard_widget_dropdown_only_shows_allowed_scopes() {
+		$callback = static function ( $can_purge_cache, $user, $scope ) {
+			return in_array( $scope, [ 'url', 'origin' ], true );
+		};
+
+		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+
+		try {
+			ob_start();
+			$this->cache_manager->render_dashboard_widget();
+			$widget_html = (string) ob_get_clean();
+		} finally {
+			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
+		}
+
+		$this->assertStringContainsString( 'value="url"', $widget_html, 'URL action should be visible when URL scope is allowed.' );
+		$this->assertStringContainsString( 'value="origin"', $widget_html, 'Origin action should be visible when origin scope is allowed.' );
+		$this->assertStringNotContainsString( 'value="site"', $widget_html, 'Site action should be hidden when site scope is denied.' );
+		$this->assertStringNotContainsString( 'value="uploads"', $widget_html, 'Uploads action should be hidden when uploads scope is denied.' );
+		$this->assertStringNotContainsString( 'value="static"', $widget_html, 'Static action should be hidden when static scope is denied.' );
+		$this->assertStringNotContainsString( 'value="private"', $widget_html, 'Private files action should be hidden when private scope is denied.' );
+	}
+
+	public function test_enqueue_dashboard_widget_assets_localizes_confirmation_guardrail_data() {
+		$user_id = self::factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		$this->cache_manager->enqueue_dashboard_widget_assets( 'vip_page_vip-purge-cache' );
+
+		$this->assertTrue( wp_script_is( 'vip-cache-manager-dashboard-widget', 'enqueued' ), 'Dashboard widget script should be enqueued.' );
+		$this->assertTrue( wp_style_is( 'wp-components', 'enqueued' ), 'WordPress component styles should be enqueued for modal rendering.' );
+		$this->assertTrue( wp_style_is( 'vip-cache-manager-dashboard-widget-style', 'enqueued' ), 'Dashboard widget modal styles should be enqueued.' );
+
+		global $wp_scripts;
+		$localized_data = $wp_scripts->get_data( 'vip-cache-manager-dashboard-widget', 'data' );
+
+		$this->assertIsString( $localized_data, 'Dashboard widget localized data should be available.' );
+		$this->assertSame( 1, preg_match( '/var VIPCacheManagerDashboard = (\{.*\});/s', $localized_data, $matches ), 'Dashboard localized data should be present.' );
+
+		$dashboard_data = json_decode( $matches[1], true );
+		$this->assertIsArray( $dashboard_data, 'Dashboard localized data should decode to an array.' );
+		$this->assertSame( home_url( '/' ), $dashboard_data['siteUrl'], 'Dashboard localized data should include the current site URL for confirmation matching.' );
+		$this->assertArrayHasKey( 'confirmationMismatchMessage', $dashboard_data, 'Dashboard localized data should include mismatch copy for the confirmation guardrail.' );
+	}
+
 	private function reset_cache_manager_state(): void {
 		$properties = [
 			'ban_urls'          => array(),
