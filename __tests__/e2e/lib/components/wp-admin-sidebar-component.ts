@@ -26,7 +26,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be hovered over
 	 */
 	public hoverMenuItem( itemName: string ): Promise<void> {
-		return this.page.hover( selectors.menuItem( itemName ) );
+		return this.page.locator( selectors.menuItem( itemName ) ).hover();
 	}
 
 	/**
@@ -35,7 +35,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be clicked
 	 */
 	public clickMenuItem( itemName: string ): Promise<void> {
-		return this.page.click( selectors.menuItem( itemName ) );
+		return this.page.locator( selectors.menuItem( itemName ) ).click();
 	}
 
 	/**
@@ -44,7 +44,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be hovered over
 	 */
 	public hoverSubMenuItem( itemName: string ): Promise<void> {
-		return this.page.hover( selectors.submenuItem( itemName ) );
+		return this.page.locator( selectors.submenuItem( itemName ) ).hover();
 	}
 
 	/**
@@ -53,6 +53,6 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be clicked
 	 */
 	public clickSubMenuItem( itemName: string ): Promise<void> {
-		return this.page.click( selectors.submenuItem( itemName ) );
+		return this.page.locator( selectors.submenuItem( itemName ) ).click();
 	}
 }

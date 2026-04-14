@@ -39,8 +39,8 @@ export class SettingsWritingPage {
 	 * Select settings to allow either block or classic editor
 	 */
 	public async allowBothEditors(): Promise<void> {
-		await this.page.click( selectors.classicEditorBlock );
-		await this.page.click( selectors.classicEditorAllow );
-		await this.page.click( selectors.saveButton );
+		await this.page.locator( selectors.classicEditorBlock ).click();
+		await this.page.locator( selectors.classicEditorAllow ).click();
+		await this.page.locator( selectors.saveButton ).click();
 	}
 }

@@ -94,7 +94,7 @@ export class EditorPage {
 	public async enterText( text: string ): Promise<void> {
 		const lines = text.split( '\n' );
 		let locator: Locator;
-		if ( await this.page.isVisible( selectors.blockAppender ) ) {
+		if ( await this.page.locator( selectors.blockAppender ).isVisible() ) {
 			locator = this.page.locator( selectors.blockAppender );
 		} else {
 			locator = this.page.locator( selectors.paragraphBlocks ).last();
@@ -149,8 +149,8 @@ export class EditorPage {
 	 * @param {string} fileName Name of image file to add
 	 */
 	public async addImage( fileName: string ): Promise<void> {
-		if ( await this.page.isVisible( selectors.blockAppender ) ) {
-			await this.page.click( selectors.blockAppender );
+		if ( await this.page.locator( selectors.blockAppender ).isVisible() ) {
+			await this.page.locator( selectors.blockAppender ).click();
 		} else {
 			const lastBlock = this.page.locator( selectors.paragraphBlocks ).last();
 			await lastBlock.click();
@@ -162,14 +162,14 @@ export class EditorPage {
 			}
 			await this.page.getByLabel( 'Add block' ).click();
 		}
-		await this.page.click( selectors.imageBlocks );
+		await this.page.locator( selectors.imageBlocks ).click();
 
 		const [ fileChooser ] = await Promise.all( [
 			// It is important to call waitForEvent before click to set up waiting.
 			this.page.waitForEvent( 'filechooser' ),
 			// This has to click twice, the first focuses in the block, the second opens the upload
-			this.page.click( selectors.uploadImageButton ),
-			this.page.click( selectors.uploadImageButton ),
+			this.page.locator( selectors.uploadImageButton ).click(),
+			this.page.locator( selectors.uploadImageButton ).click(),
 		] );
 		await fileChooser.setFiles( fileName );
 		await this.page.locator( selectors.spinner ).waitFor( { state: 'detached' } );
@@ -182,8 +182,8 @@ export class EditorPage {
 	 * @return {string} Url of published post or page
 	 */
 	public async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
-		await this.page.click( selectors.publishButton( selectors.postToolbar ) );
-		await this.page.click( selectors.publishButton( selectors.publishPanel ) );
+		await this.page.locator( selectors.publishButton( selectors.postToolbar ) ).click();
+		await this.page.locator( selectors.publishButton( selectors.publishPanel ) ).click();
 		const publishedURL = ( await this.page.locator( selectors.viewButton ).getAttribute( 'href' ) )!;
 
 		if ( visit ) {
@@ -196,7 +196,7 @@ export class EditorPage {
 	 * Updates the post or page.
 	 */
 	public update(): Promise<void> {
-		return this.page.click( selectors.updateButton );
+		return this.page.locator( selectors.updateButton ).click();
 	}
 
 	/**

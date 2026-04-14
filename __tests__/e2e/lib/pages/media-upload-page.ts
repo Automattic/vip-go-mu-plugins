@@ -27,7 +27,7 @@ export class MediaUploadPage {
 		const [ fileChooser ] = await Promise.all( [
 			// It is important to call waitForEvent before click to set up waiting.
 			this.page.waitForEvent( 'filechooser' ),
-			this.page.click( selectors.selectFilesButton ),
+			this.page.locator( selectors.selectFilesButton ).click(),
 		] );
 
 		return fileChooser.setFiles( mediaFile );
