@@ -104,7 +104,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-if [ -z "${CI}" ]; then
+if [ -z "${CI}" ] && [ -t 0 ] && [ -t 1 ]; then
     interactive="-it"
 else
     interactive=""
