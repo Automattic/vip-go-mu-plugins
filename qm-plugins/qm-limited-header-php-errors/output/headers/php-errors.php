@@ -34,33 +34,24 @@ class QM_Output_Headers_Limited_PHP_Errors extends QM_Output_Headers {
 
 		$count = 0;
 
-		foreach ( $data->errors as $type => $errors ) {
+		foreach ( $data->errors as $error ) {
+			++$count;
 
-			foreach ( $errors as $error_key => $error ) {
+			$stack     = isset( $error->trace ) ? $error->trace->get_stack() : array();
+			$component = isset( $error->trace ) ? $error->trace->get_component()->name : '';
+			$callsite  = isset( $error->trace ) ? $error->trace->get_callsite() : null;
 
-				// phpcs:ignore Universal.Operators.DisallowStandalonePostIncrementDecrement.PostIncrementFound
-				$count++;
+			$output_error = array(
+				'level'     => $error->level,
+				'message'   => $error->message,
+				'file'      => $callsite ? QM_Util::standard_dir( $callsite->file, '' ) : '',
+				'line'      => $callsite->line ?? null,
+				'stack'     => $stack,
+				'component' => $component,
+			);
 
-				$stack = array();
-
-				if ( ! empty( $error['filtered_trace'] ) ) {
-					$stack = array_column( $error['filtered_trace'], 'display' );
-				}
-
-				$output_error = array(
-					'key'       => $error_key,
-					'type'      => $error['type'],
-					'message'   => $error['message'],
-					'file'      => QM_Util::standard_dir( $error['file'], '' ),
-					'line'      => $error['line'],
-					'stack'     => $stack,
-					'component' => $error['component']->name,
-				);
-
-				$key             = sprintf( 'error-%d', $count );
-				$headers[ $key ] = json_encode( $output_error ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
-
-			}
+			$key             = sprintf( 'error-%d', $count );
+			$headers[ $key ] = json_encode( $output_error ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
 		}
 
 		// VIP: hack to avoid failed requests due to headers being too large
@@ -94,7 +85,7 @@ class QM_Output_Headers_Limited_PHP_Errors extends QM_Output_Headers {
 
 		return array_merge(
 			array(
-				'error-count' => $count,
+				'count' => $count,
 			),
 			$headers
 		);
