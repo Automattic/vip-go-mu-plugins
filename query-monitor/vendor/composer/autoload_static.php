@@ -11,6 +11,7 @@ class ComposerStaticInitbf686e2da57abafb4cdcd93464255242
         'Debug_Bar_Panel' => __DIR__ . '/../..' . '/classes/debug_bar_panel.php',
         'QM' => __DIR__ . '/../..' . '/classes/QM.php',
         'QM_Activation' => __DIR__ . '/../..' . '/classes/Activation.php',
+        'QM_ArrayAccess' => __DIR__ . '/../..' . '/classes/ArrayAccess.php',
         'QM_Backtrace' => __DIR__ . '/../..' . '/classes/Backtrace.php',
         'QM_Backtrace_Frame' => __DIR__ . '/../..' . '/classes/Backtrace_Frame.php',
         'QM_CLI' => __DIR__ . '/../..' . '/classes/CLI.php',
