@@ -231,10 +231,15 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 		$this->before_output();
 
-		// Output non-client-side rendered panels outside the React container
+		// Output server-side rendered panels outside the React container.
+		// All outputters get a fallback container so that third-party plugins
+		// which extend a client-side rendered base class (e.g. QM_Output_Html_Logger)
+		// still have their PHP output available for the PhpPanelFallback component.
 		echo '<div id="query-monitor-fallbacks">';
 		foreach ( $this->outputters as $id => $output ) {
-			if ( ! $output::$client_side_rendered ) {
+			$html = $output->get_output();
+
+			if ( '' !== $html ) {
 				printf(
 					"\n" . '<!-- Begin %1$s output -->' . "\n",
 					esc_html( $id )
@@ -244,7 +249,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 					"\n" . '<div class="qm-panel-container" id="qm-%1$s-container">' . "\n",
 					esc_html( $id )
 				);
-				$output->output();
+				echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 				echo "\n" . '</div>' . "\n";
 
 				printf(
@@ -328,11 +333,11 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 				);
 			}
 
-			if ( ( ! empty( $collector->concerned_filters ) || ! empty( $collector->concerned_actions ) ) && isset( $this->panel_menu[ $output_id ] ) ) {
+			if ( ( ! empty( $collector->concerned_filters ) || ! empty( $collector->concerned_actions ) ) && isset( $this->panel_menu[ $collector->id() ] ) ) {
 				$count = count( $collector->concerned_filters ) + count( $collector->concerned_actions );
-				$this->panel_menu[ $output_id ]['children'][ $output_id . '-concerned_hooks' ] = array(
-					'id' => $collector->id() . '-concerned_hooks',
-					'panel' => $collector->id() . '-concerned_hooks',
+				$this->panel_menu[ $collector->id() ]['children'][ $collector->id . '-concerned_hooks' ] = array(
+					'id' => $collector->id . '-concerned_hooks',
+					'panel' => $collector->id . '-concerned_hooks',
 					'title' => __( 'Hooks in Use', 'query-monitor' ),
 					'count' => $count,
 				);
@@ -403,16 +408,21 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 				'abspath' => QM_Util::normalize_path( ABSPATH ),
 				'contentpath' => QM_Util::normalize_path( dirname( WP_CONTENT_DIR ) . '/' ),
 			],
-			'number_format' => $wp_locale->number_format,
+			'number_format' => array(
+				'thousands_sep' => html_entity_decode( $wp_locale->number_format['thousands_sep'] ),
+				'decimal_point' => html_entity_decode( $wp_locale->number_format['decimal_point'] ),
+			),
 			'locale_data' => self::get_script_locale_data(),
 		);
 
 		$this->output_assets();
 
+		$encoded = wp_json_encode( $json, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG );
+
 		wp_print_inline_script_tag(
 			sprintf(
 				'var QueryMonitorData = %s;',
-				json_encode( $json, JSON_UNESCAPED_SLASHES )
+				false !== $encoded ? $encoded : 'false'
 			),
 			array(
 				'id' => 'query-monitor-inline-data',
@@ -642,7 +652,7 @@ class QM_Dispatcher_Html extends QM_Dispatcher {
 
 				printf(
 					'<li>%s</li>',
-					QM_Output_Html::output_filename( $name, $frame['file'], $frame['line'] )
+					QM_Output_Html::output_filename( $name, $frame['file'] ?? '', $frame['line'] ?? 0 )
 				); // WPCS: XSS ok.
 			}
 			echo '</ol>';
