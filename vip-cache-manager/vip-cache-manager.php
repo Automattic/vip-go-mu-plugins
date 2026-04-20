@@ -513,7 +513,7 @@ class WPCOM_VIP_Cache_Manager {
 		 *     An array of URLs that were to be PURGEd
 		 * }
 		 */
-		do_action( 'wpcom_vip_cache_after_execute_purges', $this->purge_urls );
+		do_action( 'wpvip_cache_after_execute_purges', $this->purge_urls );
 
 		/**
 		 * After BAN requests executed.
@@ -522,7 +522,7 @@ class WPCOM_VIP_Cache_Manager {
 		 *     An array of BAN requests
 		 * }
 		 */
-		do_action( 'wpcom_vip_cache_after_execute_bans', $this->ban_urls );
+		do_action( 'wpvip_cache_after_execute_bans', $this->ban_urls );
 
 		$this->ban_urls   = [];
 		$this->purge_urls = [];
