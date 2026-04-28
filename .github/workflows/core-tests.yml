@@ -64,7 +64,7 @@ jobs:
           echo "GITHUB_EVENT_NAME=pull_request" >> "wordpress/.env"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6.3.0
+        uses: actions/setup-node@v6.4.0
         with:
           node-version-file: 'wordpress/.nvmrc'
           cache: npm
@@ -111,16 +111,20 @@ jobs:
           --verbose -c phpunit.xml.dist
           --filter "^\(?!.*test_wp_generate_attachment_metadata_png_thumbnail_smaller_than_original\).*\$"
         working-directory: wordpress
+        timeout-minutes: 15
 
       - name: Run AJAX tests
         run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group ajax
         working-directory: wordpress
+        timeout-minutes: 15
 
       - name: Run ms-files tests as a multisite install
         run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c tests/phpunit/multisite.xml --group ms-files
         working-directory: wordpress
+        timeout-minutes: 15
 
       - name: Run external HTTP tests
         run: |
           node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
         working-directory: wordpress
+        timeout-minutes: 15
