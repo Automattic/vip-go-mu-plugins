@@ -1184,7 +1184,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	/**
 	 * Get the list of files that should be handled locally
 	 *
-	 * @return array List of file paths and patterns
+	 * @return array List of file paths, patterns and file names
 	 */
 	public static function get_local_files() {
 		return array_merge( static::$local_files_map, static::$local_file_patterns, static::$local_file_names );
