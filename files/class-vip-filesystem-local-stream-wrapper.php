@@ -1202,9 +1202,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			return true;
 		}
 
-		// Check if any filename substring is present in the path.
+		// Check if any filename substring is present in the filename.
+		$file_name = \wp_basename( $file_path );
 		foreach ( static::$local_file_names as $name => $value ) {
-			if ( false !== strpos( $file_path, $name ) ) {
+			if ( false !== strpos( $file_name, $name ) ) {
 				return true;
 			}
 		}
