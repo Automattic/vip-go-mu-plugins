@@ -130,6 +130,13 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	private static $local_file_patterns = array();
 
 	/**
+	 * HashMap of filename substrings for local files
+	 *
+	 * @var array
+	 */
+	private static $local_file_names = array();
+
+	/**
 	 * File handle for local files
 	 *
 	 * @var resource|null
@@ -1152,6 +1159,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 
 		if ( $is_pattern ) {
 			static::$local_file_patterns[ $file_path ] = true;
+		} elseif ( false === strpos( $file_path, '/' ) ) {
+			static::$local_file_names[ $file_path ] = true;
 		} else {
 			static::$local_files_map[ $file_path ] = true;
 		}
@@ -1168,16 +1177,17 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public static function remove_local_file( $file_path ) {
 		unset( static::$local_file_patterns[ $file_path ] );
 		unset( static::$local_files_map[ $file_path ] );
+		unset( static::$local_file_names[ $file_path ] );
 		return true;
 	}
 
 	/**
 	 * Get the list of files that should be handled locally
 	 *
-	 * @return array List of file paths and patterns
+	 * @return array List of file paths, patterns and file names
 	 */
 	public static function get_local_files() {
-		return array_merge( static::$local_files_map, static::$local_file_patterns );
+		return array_merge( static::$local_files_map, static::$local_file_patterns, static::$local_file_names );
 	}
 
 	/**
@@ -1190,6 +1200,14 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		// O(1) check for exact matches
 		if ( isset( static::$local_files_map[ $file_path ] ) ) {
 			return true;
+		}
+
+		// Check if any filename substring is present in the filename.
+		$file_name = \wp_basename( $file_path );
+		foreach ( static::$local_file_names as $name => $value ) {
+			if ( false !== strpos( $file_name, $name ) ) {
+				return true;
+			}
 		}
 
 		// Check against wildcard patterns

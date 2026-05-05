@@ -478,6 +478,18 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_filename_substring_matching() {
+		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/.htaccess' ) );
+
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( '.htaccess' );
+		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/.htaccess' ) );
+		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/.htaccess.backup' ) );
+		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/htaccess.txt' ) );
+
+		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( '.htaccess' );
+		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/.htaccess' ) );
+	}
+
 	public function test__global_helpers__add() {
 		// Add files using the global helper
 		$result = wpvip_fs_local_file_add( 'vip://wp-content/uploads/direct.txt' );
