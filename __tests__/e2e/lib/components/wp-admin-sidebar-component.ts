@@ -1,11 +1,8 @@
-/**
- * External dependencies
- */
 import { Page } from '@playwright/test';
 
 const selectors = {
-	menuItem: ( target: string ) => `#adminmenu li :text( '${ target }' )`,
-	submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu :text( '${ target }' )`,
+	menuItem: ( target: string ) => `#adminmenu li :text-is( '${ target }' )`,
+	submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu :text-is( '${ target }' )`,
 };
 
 export class WPAdminSidebarComponent {
