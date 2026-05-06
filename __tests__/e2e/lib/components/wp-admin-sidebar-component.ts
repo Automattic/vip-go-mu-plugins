@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
 
 const selectors = {
-	menuItem: ( target: string ) => `#adminmenu li a:text-is( '${ target }' )`,
+	menuItem: ( target: string ) => `#adminmenu li a :text-is( '${ target }' )`,
 	submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu a:text-is( '${ target }' )`,
 };
 
