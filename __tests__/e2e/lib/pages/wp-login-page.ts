@@ -35,9 +35,9 @@ export class LoginPage {
 	 * @param {string} password Password for account
 	 */
 	public async login( username: string, password: string ): Promise<unknown> {
-		await this.page.fill( selectors.userField, username );
-		await this.page.fill( selectors.passwordField, password );
-		return Promise.all( [ this.page.waitForURL( '**/wp-admin/**' ), this.page.click( selectors.submitButton ) ] );
+		await this.page.locator( selectors.userField ).fill( username );
+		await this.page.locator( selectors.passwordField ).fill( password );
+		return Promise.all( [ this.page.waitForURL( '**/wp-admin/**' ), this.page.locator( selectors.submitButton ).click() ] );
 	}
 
 	public async loginEx( login: string, password: string, rememberMe: boolean ): Promise<unknown> {
@@ -49,7 +49,7 @@ export class LoginPage {
 			await this.page.locator( selectors.rememberMeField ).uncheck();
 		}
 
-		await this.page.click( selectors.submitButton );
+		await this.page.locator( selectors.submitButton ).click();
 		return this.page.waitForLoadState( 'load' );
 	}
 

@@ -29,6 +29,6 @@ export class PageListPage {
 	 * @param { string } pageID ID of the page to be edited
 	 */
 	public editPageByID( pageID: string ): Promise<void> {
-		return this.page.click( selectors.pageLink( pageID ) );
+		return this.page.locator( selectors.pageLink( pageID ) ).click();
 	}
 }

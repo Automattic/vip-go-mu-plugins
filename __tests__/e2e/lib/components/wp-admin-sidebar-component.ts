@@ -1,11 +1,8 @@
-/**
- * External dependencies
- */
 import { Page } from '@playwright/test';
 
 const selectors = {
-	menuItem: ( target: string ) => `#adminmenu li :text( '${ target }' )`,
-	submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu :text( '${ target }' )`,
+	menuItem: ( target: string ) => `#adminmenu li a :text-is( '${ target }' )`,
+	submenuItem: ( target: string ) => `.wp-menu-open .wp-submenu a:text-is( '${ target }' )`,
 };
 
 export class WPAdminSidebarComponent {
@@ -26,7 +23,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be hovered over
 	 */
 	public hoverMenuItem( itemName: string ): Promise<void> {
-		return this.page.hover( selectors.menuItem( itemName ) );
+		return this.page.locator( selectors.menuItem( itemName ) ).hover();
 	}
 
 	/**
@@ -35,7 +32,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be clicked
 	 */
 	public clickMenuItem( itemName: string ): Promise<void> {
-		return this.page.click( selectors.menuItem( itemName ) );
+		return this.page.locator( selectors.menuItem( itemName ) ).click();
 	}
 
 	/**
@@ -44,7 +41,7 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be hovered over
 	 */
 	public hoverSubMenuItem( itemName: string ): Promise<void> {
-		return this.page.hover( selectors.submenuItem( itemName ) );
+		return this.page.locator( selectors.submenuItem( itemName ) ).hover();
 	}
 
 	/**
@@ -53,6 +50,6 @@ export class WPAdminSidebarComponent {
 	 * @param {string} itemName Name of the item to be clicked
 	 */
 	public clickSubMenuItem( itemName: string ): Promise<void> {
-		return this.page.click( selectors.submenuItem( itemName ) );
+		return this.page.locator( selectors.submenuItem( itemName ) ).click();
 	}
 }
