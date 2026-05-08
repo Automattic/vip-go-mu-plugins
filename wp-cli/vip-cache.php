@@ -20,7 +20,8 @@ class VIP_Cache_CLI extends WPCOM_VIP_CLI_Command {
 	 *   - private
 	 * ---
 	 *
-	 * [--skip-confirm] force purge without confirmation (site scope only).
+	 * [--skip-confirm]
+	 * : Force purge without confirmation (site scope only).
 	 */
 	public function purge( $args, $assoc_args ) {
 		if ( isset( $args[0] ) && wp_http_validate_url( $args[0] ) ) {
