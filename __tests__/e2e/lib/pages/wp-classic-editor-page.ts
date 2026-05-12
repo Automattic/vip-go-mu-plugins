@@ -34,8 +34,8 @@ export class ClassicEditorPage {
 	 * @param {string} title Page/Post Title
 	 */
 	public async enterTitle( title: string ): Promise<void> {
-		await this.page.click( selectors.editorTitle );
-		await this.page.fill( selectors.editorTitle, title );
+		await this.page.locator( selectors.editorTitle ).click();
+		await this.page.locator( selectors.editorTitle ).fill( title );
 	}
 
 	/**
@@ -44,7 +44,7 @@ export class ClassicEditorPage {
 	 * @param {string} text Text to enter
 	 */
 	public async enterText( text: string ): Promise<void> {
-		await this.page.click( selectors.editorFrame );
+		await this.page.locator( selectors.editorFrame ).click();
 		await this.page.keyboard.type( text );
 	}
 
@@ -54,16 +54,16 @@ export class ClassicEditorPage {
 	 * @param {string} fileName Name of image file
 	 */
 	public async addImage( fileName: string ): Promise<void> {
-		await this.page.click( selectors.insertMediaButton );
-		await this.page.click( selectors.uploadTab );
+		await this.page.locator( selectors.insertMediaButton ).click();
+		await this.page.locator( selectors.uploadTab ).click();
 
 		const [ fileChooser ] = await Promise.all( [
 			// It is important to call waitForEvent before click to set up waiting.
 			this.page.waitForEvent( 'filechooser' ),
-			this.page.click( selectors.mediaUploadButton ),
+			this.page.locator( selectors.mediaUploadButton ).click(),
 		] );
 		await fileChooser.setFiles( fileName );
-		await this.page.click( selectors.addMediaButton );
+		await this.page.locator( selectors.addMediaButton ).click();
 		await this.page.waitForLoadState( 'load' );
 	}
 
@@ -75,7 +75,7 @@ export class ClassicEditorPage {
 	 */
 	public async publish( { visit = false }: { visit?: boolean } = {} ): Promise<string> {
 		const publishedURL = ( await this.page.locator( selectors.permalink ).textContent() )!;
-		await this.page.click( selectors.publishButton );
+		await this.page.locator( selectors.publishButton ).click();
 
 		if ( visit ) {
 			await this.visitPublishedPost( publishedURL );
@@ -91,7 +91,7 @@ export class ClassicEditorPage {
 	private visitPublishedPost( url: string ): Promise<unknown> {
 		return Promise.all( [
 			this.page.waitForURL( url, { waitUntil: 'load' } ),
-			this.page.click( selectors.viewButton ),
+			this.page.locator( selectors.viewButton ).click(),
 		] );
 	}
 }

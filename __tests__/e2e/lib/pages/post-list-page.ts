@@ -29,6 +29,6 @@ export class PostListPage {
 	 * @param {string} postID ID of the post to be edited
 	 */
 	public editPostByID( postID: string ): Promise<void> {
-		return this.page.click( selectors.postLink( postID ) );
+		return this.page.locator( selectors.postLink( postID ) ).click();
 	}
 }
