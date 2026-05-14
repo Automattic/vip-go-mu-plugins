@@ -60,10 +60,10 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_large_image_logs_to_logstash(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
-			return null;
-		} );
+			return true; // non-null short-circuits the real Logstash call
+		}, 10, 2 );
 
 		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
 
@@ -86,10 +86,10 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_small_image_does_not_log(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
-			return null;
-		} );
+			return true; // non-null short-circuits the real Logstash call
+		}, 10, 2 );
 
 		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 10000 );
 
@@ -109,10 +109,10 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_non_image_mime_does_not_log(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
-			return null;
-		} );
+			return true; // non-null short-circuits the real Logstash call
+		}, 10, 2 );
 		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
 
 		$file_in = [
