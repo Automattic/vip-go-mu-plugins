@@ -115,7 +115,6 @@ test.describe( 'Large media upload warning', () => {
 		] );
 
 		await probe( page, 'gutenberg after-upload-attempt' );
-
 	} );
 
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
