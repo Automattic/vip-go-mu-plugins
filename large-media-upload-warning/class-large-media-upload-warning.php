@@ -98,4 +98,48 @@ class Large_Media_Upload_Warning {
 
 		return $file;
 	}
+
+	private const HANDLE_SHARED = 'vip-large-media-warning-shared';
+
+	/**
+	 * Enqueue assets on admin screens that can upload media.
+	 */
+	public function enqueue_assets( string $hook ): void {
+		if ( ! $this->is_admin_upload_screen( $hook ) ) {
+			return;
+		}
+
+		$base_url = plugins_url( 'js/', __FILE__ );
+		$ver      = $this->asset_version();
+
+		wp_enqueue_script(
+			self::HANDLE_SHARED,
+			$base_url . 'shared-confirm.js',
+			[ 'wp-i18n' ],
+			$ver,
+			true
+		);
+
+		wp_add_inline_script(
+			self::HANDLE_SHARED,
+			sprintf(
+				'window.vipLargeMediaWarningConfig = %s;',
+				wp_json_encode( [
+					'thresholdBytes' => $this->get_threshold_bytes(),
+					'mimeTypes'      => $this->get_allowed_mime_types(),
+				] )
+			),
+			'before'
+		);
+	}
+
+	private function is_admin_upload_screen( string $hook ): bool {
+		$allowed = [ 'upload.php', 'media-new.php', 'post.php', 'post-new.php' ];
+		return in_array( $hook, $allowed, true );
+	}
+
+	private function asset_version(): string {
+		$file = __DIR__ . '/js/shared-confirm.js';
+		return file_exists( $file ) ? (string) filemtime( $file ) : '1';
+	}
 }

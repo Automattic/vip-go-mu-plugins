@@ -22,4 +22,5 @@ add_action( 'plugins_loaded', static function () {
 
 	add_filter( 'wp_handle_upload_prefilter', [ $module, 'maybe_log_large_upload' ], 5 );
 	add_filter( 'wp_handle_sideload_prefilter', [ $module, 'maybe_log_large_upload' ], 5 );
+	add_action( 'admin_enqueue_scripts', [ $module, 'enqueue_assets' ] );
 } );
