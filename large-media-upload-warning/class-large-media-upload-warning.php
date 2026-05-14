@@ -103,6 +103,15 @@ class Large_Media_Upload_Warning {
 
 	/**
 	 * Enqueue assets on admin screens that can upload media.
+	 *
+	 * The interceptor wraps (plupload-warning.js, gutenberg-warning.js) are attached
+	 * as INLINE 'after' scripts on their underlying library handles, not enqueued as
+	 * standalone files. The reason: in the standalone Media Library page, inline
+	 * scripts on the page construct a plupload.Uploader and call .init() before any
+	 * footer-loaded script can wrap the prototype. By piggy-backing on
+	 * wp_add_inline_script(..., 'after'), our wrap runs IMMEDIATELY after wp-plupload
+	 * (or wp-media-utils) finishes loading, before any page-level inline init can
+	 * capture the originals.
 	 */
 	public function enqueue_assets( string $hook ): void {
 		if ( ! $this->is_admin_upload_screen( $hook ) ) {
@@ -111,12 +120,14 @@ class Large_Media_Upload_Warning {
 
 		$base_url = plugins_url( 'js/', __FILE__ );
 
+		// Shared dialog helper. Loads in the head (in_footer=false) so it's available
+		// before the interceptor inline scripts run, whether those run in head or footer.
 		wp_enqueue_script(
 			self::HANDLE_SHARED,
 			$base_url . 'shared-confirm.js',
 			[ 'wp-i18n' ],
 			$this->asset_version( 'shared-confirm.js' ),
-			true
+			false
 		);
 
 		wp_add_inline_script(
@@ -131,23 +142,37 @@ class Large_Media_Upload_Warning {
 			'before'
 		);
 
-		wp_enqueue_script(
-			'vip-large-media-warning-plupload',
-			$base_url . 'plupload-warning.js',
-			[ self::HANDLE_SHARED, 'wp-plupload' ],
-			$this->asset_version( 'plupload-warning.js' ),
-			true
-		);
+		// plupload wrap. Inline after wp-plupload so it runs before page-level
+		// inline scripts that construct plupload.Uploader instances.
+		wp_enqueue_script( 'wp-plupload' );
+		$plupload_js = $this->get_asset_contents( 'plupload-warning.js' );
+		if ( '' !== $plupload_js ) {
+			wp_add_inline_script( 'wp-plupload', $plupload_js, 'after' );
+		}
 
 		if ( $this->is_block_editor_screen() ) {
-			wp_enqueue_script(
-				'vip-large-media-warning-gutenberg',
-				$base_url . 'gutenberg-warning.js',
-				[ self::HANDLE_SHARED, 'wp-media-utils' ],
-				$this->asset_version( 'gutenberg-warning.js' ),
-				true
-			);
+			// Gutenberg wrap. Inline after wp-media-utils so it runs before the block
+			// editor packages capture wp.mediaUtils.uploadMedia by reference.
+			wp_enqueue_script( 'wp-media-utils' );
+			$gutenberg_js = $this->get_asset_contents( 'gutenberg-warning.js' );
+			if ( '' !== $gutenberg_js ) {
+				wp_add_inline_script( 'wp-media-utils', $gutenberg_js, 'after' );
+			}
 		}
+	}
+
+	/**
+	 * Read a JS asset file's contents. Returns an empty string if the file is
+	 * missing — defensive against partial deploys.
+	 */
+	private function get_asset_contents( string $relative_path ): string {
+		$file = __DIR__ . '/js/' . $relative_path;
+		if ( ! file_exists( $file ) ) {
+			return '';
+		}
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local file read.
+		$contents = file_get_contents( $file );
+		return false === $contents ? '' : $contents;
 	}
 
 	/**
