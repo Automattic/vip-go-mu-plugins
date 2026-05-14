@@ -50,11 +50,13 @@
 				if ( cancelled.length && typeof settings.onError === 'function' ) {
 					cancelled.forEach( function ( f ) {
 						try {
-							settings.onError( {
-								code: 'large_media_cancelled',
-								message: 'Upload cancelled by user (file too large).',
-								file: f,
-							} );
+							var msg = ( window.wp && window.wp.i18n && typeof window.wp.i18n.__ === 'function' )
+								? window.wp.i18n.__( 'Upload cancelled by user (file too large).', 'vip' )
+								: 'Upload cancelled by user (file too large).';
+							var err = new Error( msg );
+							err.code = 'large_media_cancelled';
+							err.file = f;
+							settings.onError( err );
 						} catch ( _ ) { /* ignore */ }
 					} );
 				}
