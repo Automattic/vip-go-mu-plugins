@@ -1,6 +1,11 @@
 ( function () {
 	'use strict';
 
+	// Diagnostic sentinel — survives wp.mediaUtils object replacement, lets us tell
+	// "inline never ran" from "inline ran but wp.mediaUtils was replaced afterward".
+	globalThis.__vipGutenbergInlineRan = ( globalThis.__vipGutenbergInlineRan || 0 ) + 1;
+	globalThis.__vipGutenbergMediaUtilsAtInlineTime = typeof globalThis.wp?.mediaUtils?.uploadMedia;
+
 	// Helper — decide whether a file needs the warning.
 	const needsConfirmation = ( file, threshold, mimes ) => {
 		const size = typeof file?.size === 'number' ? file.size : 0;

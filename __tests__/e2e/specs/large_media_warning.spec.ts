@@ -35,6 +35,8 @@ test.describe( 'Large media upload warning', () => {
 				hasMediaUtils: typeof wp?.mediaUtils !== 'undefined',
 				hasMediaUtilsUpload: typeof wp?.mediaUtils?.uploadMedia === 'function',
 				mediaUtilsWrapped: wp?.mediaUtils?.__vipLargeMediaWrapped === true,
+				gutenbergInlineRan: win.__vipGutenbergInlineRan ?? 0,
+				gutenbergInlineSawMediaUtils: win.__vipGutenbergMediaUtilsAtInlineTime ?? 'never-ran',
 				hasWarning: typeof win.vipLargeMediaWarning !== 'undefined',
 				hasConfig: typeof win.vipLargeMediaWarningConfig !== 'undefined',
 				config: win.vipLargeMediaWarningConfig ?? null,
