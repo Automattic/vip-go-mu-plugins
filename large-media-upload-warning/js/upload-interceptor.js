@@ -18,11 +18,13 @@
  * that map and skips the dialog when a match is found.
  *
  * On cancel from the XHR path, we also walk WP's media-frame collections
- * (`wp.media.frame.state().get('library')`, `wp.media.model.Attachments.all`)
- * and destroy/remove the orphan `wp.media.model.Attachment` that backs the
- * visible "uploading…" tile in the Media Library / Classic Editor modal —
- * `xhr.abort()` alone leaves that tile behind because the tile is rendered
- * by a Backbone view bound to the model, not by plupload directly.
+ * (`wp.Uploader.queue`, `state.get('library')`, `state.get('selection')`,
+ * `wp.media.model.Attachments.all`) and remove the orphan
+ * `wp.media.model.Attachment` that backs the visible "uploading…" UI in
+ * the Media Library / Classic Editor modal. `xhr.abort()` alone leaves
+ * that UI behind: the status bar above the grid is bound to
+ * `wp.Uploader.queue` and the grid tile is bound to a library that
+ * `.observe()`s the queue, so we have to clean both.
  *
  * No persistent fingerprint cache: the previous version cached confirmations
  * for the lifetime of the page, which broke re-picking the same file.
@@ -147,26 +149,46 @@
 	}
 
 	/**
-	 * Clean up the orphan "uploading…" tile that WP's media modal leaves
+	 * Clean up the orphan "uploading…" UI that WP's media modal leaves
 	 * behind when we abort an in-flight upload.
 	 *
-	 * The tile is rendered by a Backbone view bound to a
-	 * `wp.media.model.Attachment` that lives in the media frame's library
-	 * state — and is mirrored in `wp.media.model.Attachments.all`. Removing
-	 * the model from those collections is what makes Backbone unmount the
-	 * view. We call both `attachment.destroy({wait:false})` (model-level)
-	 * and `collection.remove(attachment)` (collection-level) because either
-	 * alone has been observed to no-op depending on the WP build.
+	 * Two collections render UI for a file being uploaded:
+	 *   - `wp.Uploader.queue` drives `wp.media.view.UploaderStatus` (the
+	 *     status bar with progress + filename above the grid).
+	 *   - `state.get('library')` drives the visible tile in the
+	 *     Attachments grid. Library `.observe()`s the Uploader queue, so
+	 *     anything still in the queue is auto-re-added to library on the
+	 *     next `validateAll()` (which fires on state activate, modal
+	 *     transitions, etc.). That's why removing from library alone is
+	 *     not sticky.
 	 *
-	 * Returns the count of attachments cleaned. Returns 0 (no-op) cleanly
-	 * when `wp.media` isn't loaded — e.g. the standalone media-new.php page,
-	 * which has its own UI and isn't affected by this orphan.
+	 * The fix is twofold:
+	 *   1. Remove the attachment from `wp.Uploader.queue` so the status
+	 *      bar's `visibility()` listener clears it.
+	 *   2. Set `attachment.destroyed = true` so the library's `validator`
+	 *      returns false and won't re-add the model on re-sync.
+	 *
+	 * We do not call `attachment.destroy()` because it has historically
+	 * been observed to wedge wp.Uploader's state machine. Manual
+	 * collection-level removal + the `destroyed` flag gives us the same
+	 * end state without disturbing the upload pipeline.
+	 *
+	 * Returns the count of `(collection, attachment)` removals performed.
+	 * Returns 0 (no-op) cleanly when `wp.media` isn't loaded — e.g. the
+	 * standalone media-new.php page, which has its own UI.
 	 */
 	function destroyUploadingAttachment( fileName ) {
 		let touched = 0;
 		debug( 'destroyUploadingAttachment; fileName:', fileName );
 
 		const candidates = [];
+		try {
+			const queue = globalThis.wp?.Uploader?.queue;
+			if ( queue ) {
+				candidates.push( [ 'Uploader.queue', queue ] );
+			}
+		} catch ( e ) { debug( 'Uploader.queue probe threw', e ); }
+
 		try {
 			const frame = globalThis.wp?.media?.frame;
 			const state = frame && typeof frame.state === 'function' ? frame.state() : null;
@@ -191,6 +213,10 @@
 
 		debug( 'candidates:', candidates.map( ( [ n ] ) => n ) );
 
+		// First pass: identify unique attachments across all candidates.
+		// Must run before we set `uploading: false`, otherwise the filter
+		// (which keys on `uploading`) would miss them on subsequent passes.
+		const targets = new Map(); // cid -> attachment
 		for ( const [ name, collection ] of candidates ) {
 			try {
 				if ( typeof collection.filter !== 'function' ) {
@@ -203,20 +229,35 @@
 				);
 				debug( name, 'matched', matches.length );
 				for ( const attachment of matches ) {
-					debug( name, 'cleaning', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
-					// Use collection-level removal only. `attachment.destroy()`
-					// fires a Backbone `destroy` event that wp.Uploader /
-					// wp.media listen to and apparently react to by wedging
-					// the modal's upload pipeline — observed: after the first
-					// cancel, neither Select Files nor drag-drop on the modal
-					// triggers any event reaching our handlers. `remove` on
-					// the collection fires `remove`, which the visible-tile
-					// Backbone view listens to and unmounts cleanly without
-					// touching the upload pipeline.
-					try { collection.remove( attachment ); } catch ( _ ) { /* ignore */ }
-					touched += 1;
+					if ( ! targets.has( attachment.cid ) ) {
+						targets.set( attachment.cid, attachment );
+					}
 				}
-			} catch ( e ) { debug( name, 'error', e ); }
+			} catch ( e ) { debug( name, 'filter error', e ); }
+		}
+
+		// Mark each unique attachment as destroyed + not-uploading. The
+		// `destroyed` flag is what the library's `validator` checks to
+		// decide whether to re-add this model on re-sync. `uploading:
+		// false` is set silently so we don't trigger an extra round of
+		// `change:uploading` listeners in the UploaderStatus view.
+		for ( const attachment of targets.values() ) {
+			debug( 'marking destroyed', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
+			try { attachment.destroyed = true; } catch ( _ ) { /* ignore */ }
+			try { attachment.set( 'uploading', false, { silent: true } ); } catch ( _ ) { /* ignore */ }
+		}
+
+		// Second pass: remove from every candidate collection. Removing
+		// from `Uploader.queue` is what unmounts the status-bar UI;
+		// removing from `library`/`selection`/`Attachments.all` covers
+		// the grid tile and any cached references.
+		for ( const [ name, collection ] of candidates ) {
+			for ( const attachment of targets.values() ) {
+				try {
+					collection.remove( attachment );
+					touched += 1;
+				} catch ( e ) { debug( name, 'remove threw', e ); }
+			}
 		}
 
 		debug( 'destroyUploadingAttachment returning', touched );
