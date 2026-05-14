@@ -138,6 +138,33 @@ class Large_Media_Upload_Warning {
 			$this->asset_version( 'plupload-warning.js' ),
 			true
 		);
+
+		if ( $this->is_block_editor_screen() ) {
+			wp_enqueue_script(
+				'vip-large-media-warning-gutenberg',
+				$base_url . 'gutenberg-warning.js',
+				[ self::HANDLE_SHARED, 'wp-dom-ready' ],
+				$this->asset_version( 'gutenberg-warning.js' ),
+				true
+			);
+		}
+	}
+
+	/**
+	 * Whether the current admin screen is the block editor.
+	 *
+	 * Uses get_current_screen() — only available after admin_init, which is the
+	 * case during admin_enqueue_scripts.
+	 */
+	private function is_block_editor_screen(): bool {
+		if ( ! function_exists( 'get_current_screen' ) ) {
+			return false;
+		}
+		$screen = get_current_screen();
+		if ( ! $screen ) {
+			return false;
+		}
+		return method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
 	}
 
 	private function is_admin_upload_screen( string $hook ): bool {
