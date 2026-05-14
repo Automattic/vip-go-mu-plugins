@@ -239,9 +239,32 @@
 						if ( needsReview ) {
 							const allOk = await reviewFiles( remaining );
 							if ( ! allOk ) {
-								// 499 is nginx's "client closed request" — a reasonable
-								// non-success status for "user cancelled".
-								return new Response( null, { status: 499, statusText: 'Upload cancelled by user' } );
+								// Return a WP-error-shaped JSON body so the calling
+								// uploader (Gutenberg's mediaUpload, apiFetch, etc.)
+								// can parse it and surface a sensible message rather
+								// than the generic "The response is not a valid JSON
+								// response" banner. Shape is a hybrid of REST
+								// (top-level `code`/`message`) and async-upload.php
+								// (`success`/`data.message`) so both endpoints behave.
+								const message = ( globalThis.wp && globalThis.wp.i18n && typeof globalThis.wp.i18n.__ === 'function' )
+									? globalThis.wp.i18n.__( 'Upload cancelled.', 'vip' )
+									: 'Upload cancelled.';
+								return new Response(
+									JSON.stringify( {
+										success: false,
+										code: 'large_media_upload_cancelled',
+										message,
+										data: {
+											status: 400,
+											message,
+										},
+									} ),
+									{
+										status: 400,
+										statusText: 'Upload cancelled',
+										headers: { 'Content-Type': 'application/json' },
+									}
+								);
 							}
 						}
 					}
