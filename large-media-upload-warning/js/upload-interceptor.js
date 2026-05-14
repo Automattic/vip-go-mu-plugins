@@ -208,8 +208,8 @@
 							const xhr = this;
 							const args = arguments;
 							// Snapshot the cancelled file's name now while plupload's
-							// tracker globals are still set, so the DOM-cleanup fallback
-							// below has something to match on.
+							// tracker globals are still set; we use it below to match
+							// the orphan attachment / DOM tile by filename.
 							const cancelledName = globalThis.__vipCurrentPluploadFile && globalThis.__vipCurrentPluploadFile.name;
 							reviewFiles( remaining ).then( ( allOk ) => {
 								if ( allOk ) {
@@ -221,29 +221,41 @@
 									}
 									// 2. Abort the XHR.
 									try { xhr.abort(); } catch ( _ ) { /* ignore */ }
-									// 3. DOM-clean any orphan "uploading…" tile. WP's
-									//    wp-plupload.js doesn't unbind the wp.media.model
-									//    .Attachment in self.queue when plupload's Error
-									//    event fires, so the tile lingers. Remove it
-									//    directly. Match by filename when available,
-									//    fall back to the most recent uploading tile.
-									setTimeout( () => {
+									// 3. Destroy the orphan wp.media.model.Attachment.
+									//    plupload.removeFile cleans plupload's queue but
+									//    not WP's `wp.Uploader.queue` Backbone collection —
+									//    the Attachment model that backs the visible
+									//    `.attachment.uploading` tile lives there and the
+									//    Backbone view re-renders the tile until the model
+									//    is destroyed.
+									let destroyed = 0;
+									if ( typeof globalThis.__vipDestroyUploadingAttachment === 'function' ) {
 										try {
-											const tiles = globalThis.document.querySelectorAll( '.attachment.uploading' );
-											if ( tiles.length === 0 ) {
-												return;
-											}
-											if ( cancelledName ) {
-												for ( const tile of tiles ) {
-													if ( ( tile.textContent || '' ).indexOf( cancelledName ) !== -1 ) {
-														tile.remove();
-														return;
+											destroyed = globalThis.__vipDestroyUploadingAttachment( cancelledName );
+										} catch ( _ ) { /* ignore */ }
+									}
+									// 4. DOM strike as a final fallback if no Backbone
+									//    attachment was destroyed (e.g. wp.Uploader wasn't
+									//    used for this upload path).
+									if ( destroyed === 0 ) {
+										setTimeout( () => {
+											try {
+												const tiles = globalThis.document.querySelectorAll( '.attachment.uploading' );
+												if ( tiles.length === 0 ) {
+													return;
+												}
+												if ( cancelledName ) {
+													for ( const tile of tiles ) {
+														if ( ( tile.textContent || '' ).indexOf( cancelledName ) !== -1 ) {
+															tile.remove();
+															return;
+														}
 													}
 												}
-											}
-											tiles[ tiles.length - 1 ].remove();
-										} catch ( _ ) { /* ignore */ }
-									}, 100 );
+												tiles[ tiles.length - 1 ].remove();
+											} catch ( _ ) { /* ignore */ }
+										}, 100 );
+									}
 								}
 							} );
 							return;
