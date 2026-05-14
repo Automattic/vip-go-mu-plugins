@@ -20,5 +20,6 @@ add_action( 'plugins_loaded', static function () {
 		return;
 	}
 
-	// Wiring of telemetry filter and asset enqueue is added in later tasks.
+	add_filter( 'wp_handle_upload_prefilter', [ $module, 'maybe_log_large_upload' ], 5 );
+	add_filter( 'wp_handle_sideload_prefilter', [ $module, 'maybe_log_large_upload' ], 5 );
 } );

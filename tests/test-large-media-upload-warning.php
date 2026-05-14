@@ -57,4 +57,92 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		add_filter( 'vip_large_media_warning_mime_types', fn() => [ 'image/avif' ] );
 		$this->assertSame( [ 'image/avif' ], $this->instance->get_allowed_mime_types() );
 	}
+
+	public function test_filter_large_image_logs_to_logstash(): void {
+		$captured = [];
+		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+			$captured[] = $data;
+			return null;
+		} );
+
+		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
+
+		$file_in = [
+			'name'     => 'big.jpg',
+			'type'     => 'image/jpeg',
+			'tmp_name' => '/tmp/whatever',
+			'error'    => 0,
+			'size'     => 2048,
+		];
+
+		$file_out = $this->instance->maybe_log_large_upload( $file_in );
+
+		$this->assertSame( $file_in, $file_out, 'Filter must never mutate the file array.' );
+		$this->assertCount( 1, $captured );
+		$this->assertSame( 'large_media_upload_attempted', $captured[0]['feature'] );
+		$this->assertSame( 2048, $captured[0]['extra']['size'] );
+		$this->assertSame( 'image/jpeg', $captured[0]['extra']['mime'] );
+	}
+
+	public function test_filter_small_image_does_not_log(): void {
+		$captured = [];
+		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+			$captured[] = $data;
+			return null;
+		} );
+
+		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 10000 );
+
+		$file_in = [
+			'name'     => 'small.jpg',
+			'type'     => 'image/jpeg',
+			'tmp_name' => '/tmp/small',
+			'error'    => 0,
+			'size'     => 1234,
+		];
+
+		$file_out = $this->instance->maybe_log_large_upload( $file_in );
+
+		$this->assertSame( $file_in, $file_out );
+		$this->assertCount( 0, $captured );
+	}
+
+	public function test_filter_non_image_mime_does_not_log(): void {
+		$captured = [];
+		add_filter( 'vip_large_media_warning_log_handler', function ( $data ) use ( &$captured ) {
+			$captured[] = $data;
+			return null;
+		} );
+		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
+
+		$file_in = [
+			'name'     => 'big.pdf',
+			'type'     => 'application/pdf',
+			'tmp_name' => '/tmp/x',
+			'error'    => 0,
+			'size'     => 9999,
+		];
+
+		$file_out = $this->instance->maybe_log_large_upload( $file_in );
+
+		$this->assertSame( $file_in, $file_out );
+		$this->assertCount( 0, $captured );
+	}
+
+	public function test_filter_never_sets_error_even_for_oversized(): void {
+		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1 );
+
+		$file_in = [
+			'name'     => 'huge.jpg',
+			'type'     => 'image/jpeg',
+			'tmp_name' => '/tmp/huge',
+			'error'    => 0,
+			'size'     => 100 * 1024 * 1024,
+		];
+
+		$file_out = $this->instance->maybe_log_large_upload( $file_in );
+
+		$this->assertArrayHasKey( 'error', $file_out );
+		$this->assertSame( 0, $file_out['error'] );
+	}
 }
