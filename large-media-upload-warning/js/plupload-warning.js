@@ -1,6 +1,8 @@
 ( function () {
 	'use strict';
 
+	globalThis.__vipPluploadInlineRan = ( globalThis.__vipPluploadInlineRan || 0 ) + 1;
+
 	// Wrap plupload.Uploader.prototype.init rather than wp.Uploader.prototype.init.
 	// wp.Uploader is one consumer of plupload (used inside the post-edit Media modal),
 	// but the standalone Media Library upload page (media-new.php) constructs a
@@ -34,6 +36,13 @@
 			const confirmedIds = new Set();
 
 			self.bind( 'BeforeUpload', function ( up, file ) {
+				globalThis.__vipPluploadBeforeUploadFired = ( globalThis.__vipPluploadBeforeUploadFired || 0 ) + 1;
+				globalThis.__vipPluploadLastBeforeUpload = {
+					hasFile: !! file,
+					size: file?.size ?? null,
+					type: file?.type ?? null,
+					confirmedAlready: file?.id ? confirmedIds.has( file.id ) : false,
+				};
 				try {
 					if ( ! file || typeof file.size !== 'number' ) {
 						return;
@@ -48,6 +57,7 @@
 						return;
 					}
 
+					globalThis.__vipPluploadDialogTriggered = ( globalThis.__vipPluploadDialogTriggered || 0 ) + 1;
 					up.stop();
 
 					globalThis.vipLargeMediaWarning

@@ -38,6 +38,10 @@ test.describe( 'Large media upload warning', () => {
 				gutenbergInlineRan: win.__vipGutenbergInlineRan ?? 0,
 				gutenbergInlineSawMediaUtils: win.__vipGutenbergMediaUtilsAtInlineTime ?? 'never-ran',
 				gutenbergSettingsPatched: win.__vipGutenbergSettingsPatched === true,
+				pluploadInlineRan: win.__vipPluploadInlineRan ?? 0,
+				pluploadBeforeUploadFired: win.__vipPluploadBeforeUploadFired ?? 0,
+				pluploadDialogTriggered: win.__vipPluploadDialogTriggered ?? 0,
+				pluploadLastBeforeUpload: win.__vipPluploadLastBeforeUpload ?? null,
 				hasWarning: typeof win.vipLargeMediaWarning !== 'undefined',
 				hasConfig: typeof win.vipLargeMediaWarningConfig !== 'undefined',
 				config: win.vipLargeMediaWarningConfig ?? null,
@@ -64,6 +68,21 @@ test.describe( 'Large media upload warning', () => {
 		await page.goto( '/wp-admin/post-new.php' );
 		await page.waitForLoadState( 'domcontentloaded' );
 		await probe( page, 'post-new.php (Gutenberg)' );
+	} );
+
+	test( 'DIAGNOSTIC: upload flow probe (no dialog assertion)', async ( { page } ) => {
+		await new WPAdminPage( page ).visit();
+		await page.goto( '/wp-admin/media-new.php' );
+		await page.waitForLoadState( 'domcontentloaded' );
+
+		// Try to upload large file. We don't await modal — just look at sentinels
+		// after the attempt so we can see whether BeforeUpload fired.
+		const upload = new MediaUploadPage( page );
+		await upload.uploadFile( LARGE ).catch( () => undefined );
+		// Give plupload a moment to process.
+		await page.waitForTimeout( 2000 );
+
+		await probe( page, 'after-upload-attempt' );
 	} );
 
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
