@@ -2,6 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Post-implementation notes** (the body below is unchanged from the original plan; these reflect the as-built state):
+> - The Logstash short-circuit filter was renamed from `vip_large_media_warning_log_handler` to `pre_vip_large_media_warning_log` to follow WordPress's `pre_*` convention. The README and code are authoritative; references to the old name in the task bodies below are historical.
+> - The dev-env threshold override moved from `dev-env-plugin.php` (gitignored) to `__tests__/e2e/bin/setup-env.sh` via `wp config set` — see Task 6 for the corrected approach.
+> - The Logstash `extra` payload omits the spec's `screen` field; see the README's "How it works" section for the reasoning.
+
 **Goal:** Warn editors at file-pick time when they upload large images, in both Gutenberg and Classic Editor, without changing the upload pipeline.
 
 **Architecture:** Two browser interception points — `wp.Uploader.prototype.init` for plupload (Classic + Media Library) and `wp.mediaUtils.uploadMedia` for Gutenberg — share a single `<dialog>`-based confirm helper. Observe-only PHP filter on `wp_handle_upload_prefilter` emits Logstash telemetry. Single killswitch via constant + filter.
