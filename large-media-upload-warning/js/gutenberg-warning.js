@@ -143,6 +143,14 @@
 		const mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
 
 		const wrapped = async function ( opts ) {
+			globalThis.__vipWrappedMediaUploadCalled = ( globalThis.__vipWrappedMediaUploadCalled || 0 ) + 1;
+			globalThis.__vipWrappedMediaUploadLast = {
+				hasOpts: !! opts,
+				hasFilesList: !! opts?.filesList,
+				fileCount: opts?.filesList?.length ?? 0,
+				firstSize: opts?.filesList?.[ 0 ]?.size ?? null,
+				firstType: opts?.filesList?.[ 0 ]?.type ?? null,
+			};
 			try {
 				if ( ! opts || ! opts.filesList ) {
 					return originalMediaUpload.call( this, opts );

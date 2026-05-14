@@ -39,6 +39,8 @@ test.describe( 'Large media upload warning', () => {
 				gutenbergInlineSawMediaUtils: win.__vipGutenbergMediaUtilsAtInlineTime ?? 'never-ran',
 				gutenbergSettingsPatched: win.__vipGutenbergSettingsPatched === true,
 				gutenbergPatchAttempts: win.__vipGutenbergPatchAttempts ?? 0,
+				wrappedMediaUploadCalled: win.__vipWrappedMediaUploadCalled ?? 0,
+				wrappedMediaUploadLast: win.__vipWrappedMediaUploadLast ?? null,
 				pluploadInlineRan: win.__vipPluploadInlineRan ?? 0,
 				pluploadFilesAddedFired: win.__vipPluploadFilesAddedFired ?? 0,
 				pluploadDialogTriggered: win.__vipPluploadDialogTriggered ?? 0,
@@ -95,6 +97,19 @@ test.describe( 'Large media upload warning', () => {
 		await page.waitForTimeout( 1000 );
 
 		await probe( page, 'post-new.php after-editor-mount' );
+	} );
+
+	test( 'DIAGNOSTIC: Gutenberg upload flow probe (no dialog assertion)', async ( { page } ) => {
+		await new WPAdminPage( page ).visit();
+		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
+		await page.goto( '/wp-admin/post-new.php' );
+		const editor = new EditorPage( page );
+		await editor.enterTitle( 'Gutenberg upload probe' );
+		// Trigger upload but don't await dialog — just see if our wrap is called.
+		await editor.addImage( LARGE ).catch( () => undefined );
+		await page.waitForTimeout( 2000 );
+
+		await probe( page, 'gutenberg after-upload-attempt' );
 	} );
 
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
