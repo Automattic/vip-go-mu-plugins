@@ -17,14 +17,22 @@
  * approved files in a transient "pending" map; the network wrap consumes from
  * that map and skips the dialog when a match is found.
  *
- * On cancel from the XHR path, we also walk WP's media-frame collections
- * (`wp.Uploader.queue`, `state.get('library')`, `state.get('selection')`,
- * `wp.media.model.Attachments.all`) and remove the orphan
- * `wp.media.model.Attachment` that backs the visible "uploading…" UI in
- * the Media Library / Classic Editor modal. `xhr.abort()` alone leaves
- * that UI behind: the status bar above the grid is bound to
- * `wp.Uploader.queue` and the grid tile is bound to a library that
- * `.observe()`s the queue, so we have to clean both.
+ * On cancel from the XHR path, two cleanup branches run side by side:
+ *
+ *   - Backbone collection cleanup for wp.media-based uploaders (Media
+ *     Library modal, Classic Editor "Add Media", Gutenberg). Removes
+ *     the orphan `wp.media.model.Attachment` from `wp.Uploader.queue`,
+ *     `state.get('library')`, `state.get('selection')`, and
+ *     `wp.media.model.Attachments.all`. Both the queue (status bar
+ *     above the grid) and library (grid tile) have to be cleaned —
+ *     library `.observe()`s the queue, so leaving the queue dirty
+ *     re-adds the attachment to library on the next `validateAll()`.
+ *
+ *   - DOM cleanup for raw-plupload + handlers.js uploaders
+ *     (media-new.php's multi-file uploader). Removes the
+ *     `#media-item-<plupload-id>` element appended by
+ *     `wp-includes/js/plupload/handlers.js` — WP intentionally leaves
+ *     it behind on cancel.
  *
  * No persistent fingerprint cache: the previous version cached confirmations
  * for the lifetime of the page, which broke re-picking the same file.
@@ -146,6 +154,34 @@
 			// eslint-disable-next-line no-console
 			console.log.apply( console, [ '[VIP-LMW]' ].concat( Array.from( arguments ) ) );
 		}
+	}
+
+	/**
+	 * Remove the `#media-item-<plupload-file-id>` DOM node that
+	 * `wp-includes/js/plupload/handlers.js` appends in `fileQueued()`.
+	 *
+	 * This is the "uploading block" on media-new.php's multi-file
+	 * uploader (and any other surface that uses raw plupload + the
+	 * handlers.js helpers — those don't go through wp.media/wp.Uploader
+	 * at all, so `destroyUploadingAttachment` finds nothing to clean
+	 * there). WP intentionally leaves the tile in place on cancel; see
+	 * the commented-out `UPLOAD_STOPPED` / `FILE_CANCELLED` branch at
+	 * handlers.js:332-335. We do the cleanup ourselves.
+	 *
+	 * No-op when the element doesn't exist, so safe to call on every
+	 * cancel regardless of which uploader is in use.
+	 */
+	function removeHandlersMediaItem( pluploadFileId ) {
+		if ( ! pluploadFileId ) {
+			return;
+		}
+		try {
+			const el = globalThis.document.getElementById( 'media-item-' + pluploadFileId );
+			debug( 'handlers.js media-item', pluploadFileId, el ? 'found, removing' : 'not present' );
+			if ( el && el.parentNode ) {
+				el.parentNode.removeChild( el );
+			}
+		} catch ( e ) { debug( 'removeHandlersMediaItem threw', e ); }
 	}
 
 	/**
@@ -364,16 +400,28 @@
 								//     with a FAILED entry that wedges the modal's
 								//     Select Files button and drop zone for any
 								//     subsequent uploads.
-								//  2. Abort the XHR (network).
-								//  3. Remove the orphan wp.media.model.Attachment from
-								//     the modal's library collection (visible tile).
+								//  2. Remove the `#media-item-<plupload-id>` DOM node
+								//     used by `wp-includes/js/plupload/handlers.js`
+								//     (the multi-file uploader on media-new.php).
+								//     WP intentionally leaves this tile behind on
+								//     cancel — see the commented-out FILE_CANCELLED
+								//     case in handlers.js:332-335. Selector matches
+								//     nothing on modal-based pages, so this is a
+								//     safe no-op there.
+								//  3. Abort the XHR (network).
+								//  4. Remove the orphan wp.media.model.Attachment
+								//     from wp.Uploader.queue / state.library / etc.
+								//     (the modal-based pages).
+								let pluploadFileId = null;
 								try {
 									const current = globalThis.__vipPluploadCurrent;
 									if ( current && current.up && current.file && typeof current.up.removeFile === 'function' ) {
-										debug( 'plupload.removeFile for', current.file.name );
+										pluploadFileId = current.file.id;
+										debug( 'plupload.removeFile for', current.file.name, 'id:', pluploadFileId );
 										current.up.removeFile( current.file );
 									}
 								} catch ( e ) { debug( 'plupload.removeFile threw', e ); }
+								removeHandlersMediaItem( pluploadFileId );
 								try { xhr.abort(); } catch ( _ ) { /* ignore */ }
 								destroyUploadingAttachment( cancelledName );
 							} );
