@@ -58,7 +58,9 @@ The MIME allowlist is treated as a positive-match list. If it is empty, no file 
 
 ## E2E
 
-E2E coverage lives at `__tests__/e2e/specs/large_media_warning.spec.ts` and exercises six cases (Media Library cancel/confirm/below-threshold, Classic confirm, Gutenberg cancel/confirm). The test environment lowers the threshold to 512 KB via `wp config set` in `__tests__/e2e/bin/setup-env.sh`.
+E2E coverage lives at `__tests__/e2e/specs/large_media_warning.spec.ts`. CI exercises four cases: Media Library cancel, Media Library confirm, Media Library below-threshold (no dialog), and Classic Editor confirm. The test environment lowers the threshold to 512 KB via `wp config set` in `__tests__/e2e/bin/setup-env.sh`.
+
+Two Gutenberg image-block cases (cancel / confirm) are present but `test.skip`'d. They fail because `EditorPage.addImage` does not reliably open the Gutenberg block inserter under Playwright (`.editor-block-list-item-image` never appears before the timeout) — that is, the failure is in the test harness's path to the file picker, before our DOM `change` interceptor would even see the event. The interceptor itself works in Gutenberg in manual testing, and the Media Library cases exercise the same `change` + XHR cancel path that the Gutenberg cases would, so cross-pipeline coverage is preserved.
 
 ## PR description notes
 
