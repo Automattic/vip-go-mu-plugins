@@ -207,20 +207,43 @@
 						if ( needsReview ) {
 							const xhr = this;
 							const args = arguments;
+							// Snapshot the cancelled file's name now while plupload's
+							// tracker globals are still set, so the DOM-cleanup fallback
+							// below has something to match on.
+							const cancelledName = globalThis.__vipCurrentPluploadFile && globalThis.__vipCurrentPluploadFile.name;
 							reviewFiles( remaining ).then( ( allOk ) => {
 								if ( allOk ) {
 									originalSend.apply( xhr, args );
 								} else {
-									// Tell plupload to drop the file from its queue
-									// BEFORE we abort. plupload's `Error` event handler
-									// (which fires on abort) clears the tracker, so we
-									// need to act on it while the reference is still
-									// live. The helper itself snapshots locally to be
-									// safe.
+									// 1. Tell plupload to drop the file from its queue.
 									if ( typeof globalThis.__vipRemoveCurrentPluploadFile === 'function' ) {
 										try { globalThis.__vipRemoveCurrentPluploadFile(); } catch ( _ ) { /* ignore */ }
 									}
+									// 2. Abort the XHR.
 									try { xhr.abort(); } catch ( _ ) { /* ignore */ }
+									// 3. DOM-clean any orphan "uploading…" tile. WP's
+									//    wp-plupload.js doesn't unbind the wp.media.model
+									//    .Attachment in self.queue when plupload's Error
+									//    event fires, so the tile lingers. Remove it
+									//    directly. Match by filename when available,
+									//    fall back to the most recent uploading tile.
+									setTimeout( () => {
+										try {
+											const tiles = globalThis.document.querySelectorAll( '.attachment.uploading' );
+											if ( tiles.length === 0 ) {
+												return;
+											}
+											if ( cancelledName ) {
+												for ( const tile of tiles ) {
+													if ( ( tile.textContent || '' ).indexOf( cancelledName ) !== -1 ) {
+														tile.remove();
+														return;
+													}
+												}
+											}
+											tiles[ tiles.length - 1 ].remove();
+										} catch ( _ ) { /* ignore */ }
+									}, 100 );
 								}
 							} );
 							return;
