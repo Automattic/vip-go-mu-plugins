@@ -105,11 +105,43 @@ test.describe( 'Large media upload warning', () => {
 		await page.goto( '/wp-admin/post-new.php' );
 		const editor = new EditorPage( page );
 		await editor.enterTitle( 'Gutenberg upload probe' );
-		// Trigger upload but don't await dialog — just see if our wrap is called.
-		await editor.addImage( LARGE ).catch( () => undefined );
-		await page.waitForTimeout( 2000 );
+		// Don't await addImage; it waits for spinner-detach which never happens if
+		// our wrap successfully blocked the upload. Run it in the background and
+		// probe sentinels after a short wait.
+		const addImagePromise = editor.addImage( LARGE ).catch( () => undefined );
+		await Promise.race( [
+			addImagePromise,
+			page.waitForTimeout( 8000 ),
+		] );
 
 		await probe( page, 'gutenberg after-upload-attempt' );
+
+		// Also probe any iframes — Gutenberg's editor canvas lives in an iframe in
+		// modern WP, and the wrap might be patched there separately.
+		const frames = page.frames();
+		// eslint-disable-next-line no-console
+		console.log( `DIAGNOSTIC: page has ${ frames.length } frame(s)` );
+		for ( const frame of frames ) {
+			if ( frame === page.mainFrame() ) {
+				continue;
+			}
+			const url = frame.url();
+			const frameState = await frame.evaluate( () => {
+				const win = globalThis as unknown as Record<string, unknown>;
+				const wp = win.wp as { mediaUtils?: { uploadMedia?: unknown } } | undefined;
+				return {
+					hasWp: typeof wp !== 'undefined',
+					hasMediaUtils: typeof wp?.mediaUtils !== 'undefined',
+					hasMediaUtilsUpload: typeof wp?.mediaUtils?.uploadMedia === 'function',
+					wrappedMediaUploadCalled: win.__vipWrappedMediaUploadCalled ?? 0,
+					gutenbergSettingsPatched: win.__vipGutenbergSettingsPatched === true,
+					gutenbergInlineRan: win.__vipGutenbergInlineRan ?? 0,
+					hasDialog: document.querySelectorAll( 'dialog.vip-large-media-warning-dialog' ).length,
+				};
+			} ).catch( ( e ) => ( { error: String( e ) } ) );
+			// eslint-disable-next-line no-console
+			console.log( `DIAGNOSTIC frame[${ url }]:`, JSON.stringify( frameState, null, 2 ) );
+		}
 	} );
 
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
