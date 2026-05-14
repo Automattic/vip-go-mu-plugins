@@ -92,7 +92,7 @@
 	function confirmLargeUpload( file, threshold ) {
 		return new Promise( function ( resolve ) {
 			try {
-				if ( globalThis.sessionStorage && globalThis.sessionStorage.getItem( SESSION_KEY ) === '1' ) {
+				if ( globalThis.sessionStorage?.getItem( SESSION_KEY ) === '1' ) {
 					return resolve( true );
 				}
 			} catch ( e ) { /* sessionStorage unavailable; fall through */ }
@@ -103,7 +103,7 @@
 			function cleanup( result ) {
 				try {
 					const dismiss = dialog.querySelector( '#vip-lmw-dismiss' );
-					if ( result && dismiss && dismiss.checked && globalThis.sessionStorage ) {
+					if ( result && dismiss?.checked && globalThis.sessionStorage ) {
 						globalThis.sessionStorage.setItem( SESSION_KEY, '1' );
 					}
 				} catch ( e ) { /* ignore */ }

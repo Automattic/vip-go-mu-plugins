@@ -48,7 +48,7 @@
 
 		bag.uploadMedia = async function ( settings ) {
 			try {
-				if ( ! settings || ! settings.filesList ) {
+				if ( ! settings?.filesList ) {
 					return original.call( this, settings );
 				}
 
@@ -77,7 +77,7 @@
 					return;
 				}
 
-				const nextSettings = Object.assign( {}, settings, { filesList: kept } );
+				const nextSettings = { ...settings, filesList: kept };
 				return original.call( this, nextSettings );
 			} catch ( e ) {
 				return original.call( this, settings );
@@ -152,7 +152,7 @@
 				firstType: opts?.filesList?.[ 0 ]?.type ?? null,
 			};
 			try {
-				if ( ! opts || ! opts.filesList ) {
+				if ( ! opts?.filesList ) {
 					return originalMediaUpload.call( this, opts );
 				}
 				const incoming = Array.from( opts.filesList );
@@ -175,7 +175,7 @@
 				if ( ! kept.length ) {
 					return;
 				}
-				const nextOpts = Object.assign( {}, opts, { filesList: kept } );
+				const nextOpts = { ...opts, filesList: kept };
 				return originalMediaUpload.call( this, nextOpts );
 			} catch ( e ) {
 				return originalMediaUpload.call( this, opts );

@@ -44,53 +44,52 @@
 		return true;
 	}
 
-	function WrappedUploader( settings ) {
-		OriginalUploader.call( this, settings );
+	function reviewFile( file ) {
+		return globalThis.vipLargeMediaWarning
+			.confirmLargeUpload( file, threshold )
+			.then( ( ok ) => ( { file, ok } ) )
+			.catch( () => ( { file, ok: true } ) ); // fail open
+	}
 
-		const self = this;
-
+	function applyResults( up, results ) {
 		try {
-			if ( typeof self.bind !== 'function' ) {
+			results.forEach( ( r ) => {
+				if ( ! r.ok ) {
+					up.removeFile( r.file );
+				}
+			} );
+		} catch ( _ ) { /* ignore */ }
+		try { up.start(); } catch ( _ ) { /* ignore */ }
+	}
+
+	function handleFilesAdded( up, files ) {
+		globalThis.__vipPluploadFilesAddedFired = ( globalThis.__vipPluploadFilesAddedFired || 0 ) + 1;
+		try {
+			const list = Array.isArray( files ) ? files : Array.from( files || [] );
+			const oversized = list.filter( needsConfirmation );
+			if ( oversized.length === 0 ) {
 				return;
 			}
 
-			self.bind( 'FilesAdded', function ( up, files ) {
-				globalThis.__vipPluploadFilesAddedFired = ( globalThis.__vipPluploadFilesAddedFired || 0 ) + 1;
-				try {
-					const list = Array.isArray( files ) ? files : Array.from( files || [] );
-					const oversized = list.filter( needsConfirmation );
-					if ( oversized.length === 0 ) {
-						return;
-					}
+			globalThis.__vipPluploadDialogTriggered = ( globalThis.__vipPluploadDialogTriggered || 0 ) + 1;
 
-					globalThis.__vipPluploadDialogTriggered = ( globalThis.__vipPluploadDialogTriggered || 0 ) + 1;
+			// Pause the queue while we ask the user. Auto-start would otherwise
+			// begin uploading before our async dialog resolves.
+			up.stop();
 
-					// Pause the queue while we ask the user. Auto-start would
-					// otherwise begin uploading before our async dialog resolves.
-					up.stop();
+			Promise.all( oversized.map( reviewFile ) ).then( ( results ) => applyResults( up, results ) );
+		} catch ( _ ) {
+			try { up.start(); } catch ( __ ) { /* ignore */ }
+		}
+	}
 
-					Promise.all( oversized.map( function ( file ) {
-						return globalThis.vipLargeMediaWarning
-							.confirmLargeUpload( file, threshold )
-							.then( function ( ok ) { return { file: file, ok: ok }; } )
-							.catch( function () { return { file: file, ok: true }; } ); // fail open
-					} ) ).then( function ( results ) {
-						try {
-							results.forEach( function ( r ) {
-								if ( ! r.ok ) {
-									up.removeFile( r.file );
-								}
-							} );
-						} catch ( _ ) { /* ignore */ }
-						try {
-							up.start();
-						} catch ( _ ) { /* ignore */ }
-					} );
-				} catch ( e ) {
-					try { up.start(); } catch ( _ ) { /* ignore */ }
-				}
-			} );
-		} catch ( e ) { /* swallow; do not disrupt plupload */ }
+	function WrappedUploader( settings ) {
+		OriginalUploader.call( this, settings );
+		try {
+			if ( typeof this.bind === 'function' ) {
+				this.bind( 'FilesAdded', handleFilesAdded );
+			}
+		} catch ( _ ) { /* swallow; do not disrupt plupload */ }
 	}
 
 	// Preserve the prototype chain so any `instanceof plupload.Uploader` checks
