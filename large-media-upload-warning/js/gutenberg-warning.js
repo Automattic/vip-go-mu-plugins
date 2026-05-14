@@ -104,8 +104,96 @@
 
 	// Wrap eagerly at script load. We declare `wp-media-utils` as a dependency on the
 	// PHP side, so by the time this IIFE runs `wp.mediaUtils.uploadMedia` is already
-	// defined. Waiting for `wp.domReady` is too late: by then, the block editor has
-	// already captured a reference to the original `uploadMedia` in its settings, and
-	// monkey-patching the global no longer affects consumers.
+	// defined. This catches consumers that read `wp.mediaUtils.uploadMedia` live.
 	tryWrap();
+
+	// Belt-and-suspenders: the modern block editor reads `mediaUpload` from its own
+	// data store, not from `wp.mediaUtils` directly. (Some Gutenberg bundles inline
+	// `@wordpress/media-utils` rather than resolving it to the global, so wrapping
+	// the global is insufficient.) On `wp.domReady`, replace the editor's
+	// `mediaUpload` setting with a wrapper that calls back through whatever the
+	// editor was going to use.
+	function patchBlockEditorSettings() {
+		const data = globalThis.wp?.data;
+		if ( ! data || typeof data.select !== 'function' || typeof data.dispatch !== 'function' ) {
+			return false;
+		}
+		const select = data.select( 'core/block-editor' );
+		const dispatch = data.dispatch( 'core/block-editor' );
+		if ( ! select || ! dispatch || typeof dispatch.updateSettings !== 'function' ) {
+			return false;
+		}
+
+		const settings = select.getSettings?.();
+		const originalMediaUpload = settings?.mediaUpload;
+		if ( typeof originalMediaUpload !== 'function' ) {
+			return false;
+		}
+		if ( originalMediaUpload.__vipLargeMediaWrapped ) {
+			return true;
+		}
+
+		const config = globalThis.vipLargeMediaWarningConfig || {};
+		const threshold = Number.parseInt( config.thresholdBytes, 10 ) || ( 8 * 1024 * 1024 );
+		const mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
+
+		const wrapped = async function ( opts ) {
+			try {
+				if ( ! opts || ! opts.filesList ) {
+					return originalMediaUpload.call( this, opts );
+				}
+				const incoming = Array.from( opts.filesList );
+				const kept = [];
+				const cancelled = [];
+				for ( const file of incoming ) {
+					if ( ! needsConfirmation( file, threshold, mimes ) ) {
+						kept.push( file );
+						continue;
+					}
+					// eslint-disable-next-line no-await-in-loop
+					const ok = await globalThis.vipLargeMediaWarning.confirmLargeUpload( file, threshold );
+					if ( ok ) {
+						kept.push( file );
+					} else {
+						cancelled.push( file );
+					}
+				}
+				notifyCancelled( cancelled, opts.onError );
+				if ( ! kept.length ) {
+					return;
+				}
+				const nextOpts = Object.assign( {}, opts, { filesList: kept } );
+				return originalMediaUpload.call( this, nextOpts );
+			} catch ( e ) {
+				return originalMediaUpload.call( this, opts );
+			}
+		};
+		wrapped.__vipLargeMediaWrapped = true;
+
+		dispatch.updateSettings( { mediaUpload: wrapped } );
+		globalThis.__vipGutenbergSettingsPatched = true;
+		return true;
+	}
+
+	function retryPatch() {
+		if ( patchBlockEditorSettings() ) {
+			return;
+		}
+		// Editor data store not ready yet; poll briefly.
+		let attempts = 0;
+		const interval = globalThis.setInterval( () => {
+			attempts += 1;
+			if ( patchBlockEditorSettings() || attempts >= 30 ) {
+				globalThis.clearInterval( interval );
+			}
+		}, 200 );
+	}
+
+	if ( typeof globalThis.wp?.domReady === 'function' ) {
+		globalThis.wp.domReady( retryPatch );
+	} else if ( globalThis.document.readyState === 'loading' ) {
+		globalThis.document.addEventListener( 'DOMContentLoaded', retryPatch );
+	} else {
+		retryPatch();
+	}
 }() );
