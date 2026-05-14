@@ -176,14 +176,18 @@
 	}
 
 	function retryPatch() {
+		globalThis.__vipGutenbergPatchAttempts = ( globalThis.__vipGutenbergPatchAttempts || 0 ) + 1;
 		if ( patchBlockEditorSettings() ) {
 			return;
 		}
-		// Editor data store not ready yet; poll briefly.
+		// Editor data store not ready yet; poll. Some Gutenberg builds take >10s on
+		// CI to mount the block-editor data store with a populated `mediaUpload`
+		// setting, so we poll for ~30 seconds total before giving up.
 		let attempts = 0;
 		const interval = globalThis.setInterval( () => {
 			attempts += 1;
-			if ( patchBlockEditorSettings() || attempts >= 30 ) {
+			globalThis.__vipGutenbergPatchAttempts = ( globalThis.__vipGutenbergPatchAttempts || 0 ) + 1;
+			if ( patchBlockEditorSettings() || attempts >= 150 ) {
 				globalThis.clearInterval( interval );
 			}
 		}, 200 );

@@ -25,19 +25,20 @@ test.describe( 'Large media upload warning', () => {
 				mediaUtils?: { uploadMedia?: unknown; __vipLargeMediaWrapped?: unknown };
 			} | undefined;
 			const plupload = win.plupload as {
-				Uploader?: { prototype?: { __vipLargeMediaWrapped?: unknown } };
+				Uploader?: { __vipLargeMediaWrapped?: unknown };
 			} | undefined;
 			return {
 				hasWp: typeof wp !== 'undefined',
 				hasWpUploader: typeof wp?.Uploader !== 'undefined',
 				hasPlupload: typeof plupload?.Uploader !== 'undefined',
-				pluploadWrapped: plupload?.Uploader?.prototype?.__vipLargeMediaWrapped === true,
+				pluploadWrapped: plupload?.Uploader?.__vipLargeMediaWrapped === true,
 				hasMediaUtils: typeof wp?.mediaUtils !== 'undefined',
 				hasMediaUtilsUpload: typeof wp?.mediaUtils?.uploadMedia === 'function',
 				mediaUtilsWrapped: wp?.mediaUtils?.__vipLargeMediaWrapped === true,
 				gutenbergInlineRan: win.__vipGutenbergInlineRan ?? 0,
 				gutenbergInlineSawMediaUtils: win.__vipGutenbergMediaUtilsAtInlineTime ?? 'never-ran',
 				gutenbergSettingsPatched: win.__vipGutenbergSettingsPatched === true,
+				gutenbergPatchAttempts: win.__vipGutenbergPatchAttempts ?? 0,
 				pluploadInlineRan: win.__vipPluploadInlineRan ?? 0,
 				pluploadBeforeUploadFired: win.__vipPluploadBeforeUploadFired ?? 0,
 				pluploadDialogTriggered: win.__vipPluploadDialogTriggered ?? 0,
@@ -83,6 +84,18 @@ test.describe( 'Large media upload warning', () => {
 		await page.waitForTimeout( 2000 );
 
 		await probe( page, 'after-upload-attempt' );
+	} );
+
+	test( 'DIAGNOSTIC: Gutenberg editor mount + settings patch', async ( { page } ) => {
+		await new WPAdminPage( page ).visit();
+		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
+		await page.goto( '/wp-admin/post-new.php' );
+		// Wait for the block editor to actually mount.
+		await page.locator( '.block-editor-default-block-appender, .wp-block' ).first().waitFor( { state: 'visible', timeout: 30000 } );
+		// Give the settings patch poll a moment after mount.
+		await page.waitForTimeout( 1000 );
+
+		await probe( page, 'post-new.php after-editor-mount' );
 	} );
 
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {

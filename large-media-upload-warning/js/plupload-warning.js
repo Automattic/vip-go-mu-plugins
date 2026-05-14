@@ -3,17 +3,19 @@
 
 	globalThis.__vipPluploadInlineRan = ( globalThis.__vipPluploadInlineRan || 0 ) + 1;
 
-	// Wrap plupload.Uploader.prototype.init rather than wp.Uploader.prototype.init.
-	// wp.Uploader is one consumer of plupload (used inside the post-edit Media modal),
-	// but the standalone Media Library upload page (media-new.php) constructs a
-	// plupload.Uploader directly without going through wp.Uploader. Wrapping at the
-	// plupload layer catches both cases.
+	// IMPORTANT: plupload.Uploader assigns `init`, `bind`, `start`, `stop`, etc. as
+	// OWN methods on the instance inside its constructor — not on the prototype.
+	// Wrapping `plupload.Uploader.prototype.init` therefore does nothing useful:
+	// `instance.init()` looks up `init` on the instance first and never reaches the
+	// prototype. We instead wrap the constructor: after the original constructor
+	// runs (which attaches the per-instance methods), we bind our `BeforeUpload`
+	// listener directly on the new instance using `this.bind(...)`.
 	const plupload = globalThis.plupload;
 
 	if ( ! plupload?.Uploader || ! globalThis.vipLargeMediaWarning ) {
 		return;
 	}
-	if ( plupload.Uploader.prototype.__vipLargeMediaWrapped ) {
+	if ( plupload.Uploader.__vipLargeMediaWrapped ) {
 		return;
 	}
 
@@ -21,19 +23,18 @@
 	const threshold = Number.parseInt( config.thresholdBytes, 10 ) || ( 8 * 1024 * 1024 );
 	const mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
 
-	const originalInit = plupload.Uploader.prototype.init;
+	const OriginalUploader = plupload.Uploader;
 
-	plupload.Uploader.prototype.init = function () {
-		originalInit.apply( this, arguments );
+	function WrappedUploader( settings ) {
+		OriginalUploader.call( this, settings );
 
 		const self = this;
+		const confirmedIds = new Set();
 
 		try {
 			if ( typeof self.bind !== 'function' ) {
 				return;
 			}
-
-			const confirmedIds = new Set();
 
 			self.bind( 'BeforeUpload', function ( up, file ) {
 				globalThis.__vipPluploadBeforeUploadFired = ( globalThis.__vipPluploadBeforeUploadFired || 0 ) + 1;
@@ -81,7 +82,12 @@
 				}
 			} );
 		} catch ( e ) { /* swallow; do not disrupt plupload */ }
-	};
+	}
 
-	plupload.Uploader.prototype.__vipLargeMediaWrapped = true;
+	// Preserve the prototype chain so any `instanceof plupload.Uploader` checks
+	// elsewhere in plupload or in WordPress's wp.Uploader keep working.
+	WrappedUploader.prototype = OriginalUploader.prototype;
+	WrappedUploader.__vipLargeMediaWrapped = true;
+
+	plupload.Uploader = WrappedUploader;
 }() );
