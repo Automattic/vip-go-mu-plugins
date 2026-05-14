@@ -1,10 +1,11 @@
 <?php
-/**
- * Plugin Name: VIP Large Media Upload Warning
- * Description: Warns editors at file-pick time when uploading large images, before bytes reach the file service.
- * Author: Automattic
- * License: GPL version 2 or later
- */
+/*
+Plugin Name: VIP Large Media Upload Warning
+Description: Warns editors at file-pick time when uploading large images, before bytes reach the file service.
+Author: Automattic
+Version: 1.0
+License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
+*/
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;

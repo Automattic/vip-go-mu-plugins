@@ -20,7 +20,7 @@ class Large_Media_Upload_Warning {
 	 */
 	public function is_enabled(): bool {
 		$default = defined( 'VIP_LARGE_MEDIA_WARNING_ENABLED' )
-			? (bool) VIP_LARGE_MEDIA_WARNING_ENABLED
+			? (bool) constant( 'VIP_LARGE_MEDIA_WARNING_ENABLED' )
 			: false;
 
 		return (bool) apply_filters( 'vip_large_media_warning_enabled', $default );
@@ -33,7 +33,7 @@ class Large_Media_Upload_Warning {
 	 */
 	public function get_threshold_bytes(): int {
 		$default = defined( 'VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES' )
-			? (int) VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES
+			? (int) constant( 'VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES' )
 			: self::DEFAULT_THRESHOLD_BYTES;
 
 		$filtered = apply_filters( 'vip_large_media_warning_threshold_bytes', $default );
