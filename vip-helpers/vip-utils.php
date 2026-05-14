@@ -323,7 +323,7 @@ function wpcom_vip_remove_livechat() {
  *
  * @return string|null One of 'desktop', 'smart', 'dumb', 'tablet', or null if the header is not set or contains unrecognized value.
  */
-function vip_get_mobile(): ?string {
+function vip_get_device_class(): ?string {
 	if ( ! isset( $_SERVER['HTTP_X_MOBILE_CLASS'] ) ) {
 		return null;
 	}
