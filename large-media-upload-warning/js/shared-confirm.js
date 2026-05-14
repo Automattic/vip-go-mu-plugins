@@ -7,6 +7,10 @@
 
 	var SESSION_KEY = 'vip_large_media_warning_dismissed';
 
+	// i18n is wired through wp.i18n.__ so strings are translation-ready, but the
+	// 'vip' text-domain is not yet loaded via wp_set_script_translations() — that's
+	// a follow-up once the broader translation strategy for this module is decided.
+	// Until then, __() falls through to English literals.
 	function translate( text ) {
 		if ( window.wp && window.wp.i18n && typeof window.wp.i18n.__ === 'function' ) {
 			return window.wp.i18n.__( text, 'vip' );
@@ -18,34 +22,70 @@
 		return ( bytes / ( 1024 * 1024 ) ).toFixed( 1 );
 	}
 
-	function buildDialog( file, threshold ) {
-		var dialog = document.createElement( 'dialog' );
-		dialog.className = 'vip-large-media-warning-dialog';
-		dialog.setAttribute( 'role', 'alertdialog' );
-		dialog.setAttribute( 'aria-labelledby', 'vip-lmw-title' );
-		dialog.style.cssText = 'max-width:480px;padding:1.5em;border:1px solid #ccd0d4;border-radius:4px;';
+	function sprintfTwo( fmt, a, b ) {
+		if ( window.wp && window.wp.i18n && typeof window.wp.i18n.sprintf === 'function' ) {
+			return window.wp.i18n.sprintf( fmt, a, b );
+		}
+		return fmt.replace( /%1\$s/g, String( a ) ).replace( /%2\$s/g, String( b ) );
+	}
 
-		dialog.innerHTML =
-			'<h2 id="vip-lmw-title" style="margin-top:0">' +
-				translate( 'Large image upload' ) +
-			'</h2>' +
-			'<p>' +
-				translate( 'This image is large (' ) + formatMb( file.size ) + ' MB). ' +
-				translate( 'Large images make uploads slow and can cause errors on your site. We recommend resizing the image to under ' ) +
-				formatMb( threshold ) + ' MB ' +
-				translate( 'before uploading.' ) +
-			'</p>' +
-			'<p><label><input type="checkbox" id="vip-lmw-dismiss"> ' +
-				translate( "Don't ask again this session" ) +
-			'</label></p>' +
-			'<div style="display:flex;justify-content:flex-end;gap:0.5em">' +
-				'<button type="button" class="button" data-action="cancel" autofocus>' +
-					translate( 'Cancel upload' ) +
-				'</button>' +
-				'<button type="button" class="button button-primary" data-action="confirm">' +
-					translate( 'Upload anyway' ) +
-				'</button>' +
-			'</div>';
+	function el( tag, attrs, text ) {
+		var node = document.createElement( tag );
+		if ( attrs ) {
+			for ( var key in attrs ) {
+				if ( Object.prototype.hasOwnProperty.call( attrs, key ) ) {
+					if ( key === 'style' ) {
+						node.style.cssText = attrs[ key ];
+					} else if ( key === 'className' ) {
+						node.className = attrs[ key ];
+					} else {
+						node.setAttribute( key, attrs[ key ] );
+					}
+				}
+			}
+		}
+		if ( typeof text === 'string' ) {
+			node.textContent = text;
+		}
+		return node;
+	}
+
+	function buildDialog( file, threshold ) {
+		var sizeMb = formatMb( file.size );
+		var thresholdMb = formatMb( threshold );
+
+		var dialog = el( 'dialog', {
+			className: 'vip-large-media-warning-dialog',
+			role: 'alertdialog',
+			'aria-labelledby': 'vip-lmw-title',
+			style: 'max-width:480px;padding:1.5em;border:1px solid #ccd0d4;border-radius:4px;',
+		} );
+
+		var title = el( 'h2', { id: 'vip-lmw-title', style: 'margin-top:0' }, translate( 'Large image upload' ) );
+		dialog.appendChild( title );
+
+		var body = el( 'p', null, sprintfTwo(
+			translate( 'This image is large (%1$s MB). Large images make uploads slow and can cause errors on your site. We recommend resizing the image to under %2$s MB before uploading. Do you want to continue anyway?' ),
+			sizeMb,
+			thresholdMb
+		) );
+		dialog.appendChild( body );
+
+		var dismissWrapper = el( 'p' );
+		var dismissLabel = el( 'label' );
+		var dismissInput = el( 'input', { type: 'checkbox', id: 'vip-lmw-dismiss' } );
+		dismissLabel.appendChild( dismissInput );
+		dismissLabel.appendChild( document.createTextNode( ' ' + translate( "Don't ask again this session" ) ) );
+		dismissWrapper.appendChild( dismissLabel );
+		dialog.appendChild( dismissWrapper );
+
+		var buttonRow = el( 'div', { style: 'display:flex;justify-content:flex-end;gap:0.5em' } );
+		var cancelBtn = el( 'button', { type: 'button', class: 'button', 'data-action': 'cancel', autofocus: 'autofocus' }, translate( 'Cancel upload' ) );
+		var confirmBtn = el( 'button', { type: 'button', class: 'button button-primary', 'data-action': 'confirm' }, translate( 'Upload anyway' ) );
+		buttonRow.appendChild( cancelBtn );
+		buttonRow.appendChild( confirmBtn );
+		dialog.appendChild( buttonRow );
+
 		return dialog;
 	}
 

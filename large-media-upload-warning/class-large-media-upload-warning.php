@@ -13,6 +13,8 @@ class Large_Media_Upload_Warning {
 		'image/heic',
 	];
 
+	private const HANDLE_SHARED = 'vip-large-media-warning-shared';
+
 	/**
 	 * Whether the module is active.
 	 *
@@ -99,8 +101,6 @@ class Large_Media_Upload_Warning {
 		return $file;
 	}
 
-	private const HANDLE_SHARED = 'vip-large-media-warning-shared';
-
 	/**
 	 * Enqueue assets on admin screens that can upload media.
 	 */
@@ -134,7 +134,7 @@ class Large_Media_Upload_Warning {
 	}
 
 	private function is_admin_upload_screen( string $hook ): bool {
-		$allowed = [ 'upload.php', 'media-new.php', 'post.php', 'post-new.php' ];
+		$allowed = [ 'upload.php', 'media-new.php', 'post.php', 'post-new.php', 'site-editor.php', 'widgets.php' ];
 		return in_array( $hook, $allowed, true );
 	}
 
