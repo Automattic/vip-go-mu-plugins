@@ -11,7 +11,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-require_once __DIR__ . '/large-media-upload-warning/class-large-media-upload-warning.php';
+$vip_lmw_class_file = __DIR__ . '/large-media-upload-warning/class-large-media-upload-warning.php';
+
+if ( ! file_exists( $vip_lmw_class_file ) ) {
+	// Defensive: on non-atomic deploys this root file may load before the module directory
+	// finishes syncing. Fail open to "module disabled" rather than fatal.
+	return;
+}
+
+require_once $vip_lmw_class_file;
+unset( $vip_lmw_class_file );
 
 add_action( 'plugins_loaded', static function () {
 	$module = new \Automattic\VIP\LargeMediaUploadWarning\Large_Media_Upload_Warning();

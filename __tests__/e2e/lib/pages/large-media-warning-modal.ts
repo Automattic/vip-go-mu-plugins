@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Locator, Page } from '@playwright/test';
 
 const selectors = {
 	dialog: 'dialog.vip-large-media-warning-dialog',
@@ -12,6 +12,10 @@ export class LargeMediaWarningModal {
 
 	constructor( page: Page ) {
 		this.page = page;
+	}
+
+	public get dialog(): Locator {
+		return this.page.locator( selectors.dialog );
 	}
 
 	public waitForVisible( timeout = 5000 ): Promise<void> {

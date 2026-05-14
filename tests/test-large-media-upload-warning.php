@@ -163,5 +163,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		$file_out = $this->instance->maybe_log_large_upload( $file_in );
 
 		$this->assertSame( $file_in, $file_out );
+
+		remove_all_filters( 'vip_large_media_warning_threshold_bytes' );
 	}
 }

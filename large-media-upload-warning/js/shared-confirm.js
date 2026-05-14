@@ -1,19 +1,19 @@
 ( function () {
 	'use strict';
 
-	if ( window.vipLargeMediaWarning ) {
+	if ( globalThis.vipLargeMediaWarning ) {
 		return;
 	}
 
-	var SESSION_KEY = 'vip_large_media_warning_dismissed';
+	const SESSION_KEY = 'vip_large_media_warning_dismissed';
 
 	// i18n is wired through wp.i18n.__ so strings are translation-ready, but the
 	// 'vip' text-domain is not yet loaded via wp_set_script_translations() — that's
 	// a follow-up once the broader translation strategy for this module is decided.
 	// Until then, __() falls through to English literals.
 	function translate( text ) {
-		if ( window.wp && window.wp.i18n && typeof window.wp.i18n.__ === 'function' ) {
-			return window.wp.i18n.__( text, 'vip' );
+		if ( typeof globalThis.wp?.i18n?.__ === 'function' ) {
+			return globalThis.wp.i18n.__( text, 'vip' );
 		}
 		return text;
 	}
@@ -23,16 +23,16 @@
 	}
 
 	function sprintfTwo( fmt, a, b ) {
-		if ( window.wp && window.wp.i18n && typeof window.wp.i18n.sprintf === 'function' ) {
-			return window.wp.i18n.sprintf( fmt, a, b );
+		if ( typeof globalThis.wp?.i18n?.sprintf === 'function' ) {
+			return globalThis.wp.i18n.sprintf( fmt, a, b );
 		}
 		return fmt.replace( /%1\$s/g, String( a ) ).replace( /%2\$s/g, String( b ) );
 	}
 
 	function el( tag, attrs, text ) {
-		var node = document.createElement( tag );
+		const node = globalThis.document.createElement( tag );
 		if ( attrs ) {
-			for ( var key in attrs ) {
+			for ( const key in attrs ) {
 				if ( Object.prototype.hasOwnProperty.call( attrs, key ) ) {
 					if ( key === 'style' ) {
 						node.style.cssText = attrs[ key ];
@@ -51,37 +51,37 @@
 	}
 
 	function buildDialog( file, threshold ) {
-		var sizeMb = formatMb( file.size );
-		var thresholdMb = formatMb( threshold );
+		const sizeMb = formatMb( file.size );
+		const thresholdMb = formatMb( threshold );
 
-		var dialog = el( 'dialog', {
+		const dialog = el( 'dialog', {
 			className: 'vip-large-media-warning-dialog',
 			role: 'alertdialog',
 			'aria-labelledby': 'vip-lmw-title',
 			style: 'max-width:480px;padding:1.5em;border:1px solid #ccd0d4;border-radius:4px;',
 		} );
 
-		var title = el( 'h2', { id: 'vip-lmw-title', style: 'margin-top:0' }, translate( 'Large image upload' ) );
+		const title = el( 'h2', { id: 'vip-lmw-title', style: 'margin-top:0' }, translate( 'Large image upload' ) );
 		dialog.appendChild( title );
 
-		var body = el( 'p', null, sprintfTwo(
+		const body = el( 'p', null, sprintfTwo(
 			translate( 'This image is large (%1$s MB). Large images make uploads slow and can cause errors on your site. We recommend resizing the image to under %2$s MB before uploading. Do you want to continue anyway?' ),
 			sizeMb,
 			thresholdMb
 		) );
 		dialog.appendChild( body );
 
-		var dismissWrapper = el( 'p' );
-		var dismissLabel = el( 'label' );
-		var dismissInput = el( 'input', { type: 'checkbox', id: 'vip-lmw-dismiss' } );
+		const dismissWrapper = el( 'p' );
+		const dismissLabel = el( 'label' );
+		const dismissInput = el( 'input', { type: 'checkbox', id: 'vip-lmw-dismiss' } );
 		dismissLabel.appendChild( dismissInput );
-		dismissLabel.appendChild( document.createTextNode( ' ' + translate( "Don't ask again this session" ) ) );
+		dismissLabel.appendChild( globalThis.document.createTextNode( ' ' + translate( "Don't ask again this session" ) ) );
 		dismissWrapper.appendChild( dismissLabel );
 		dialog.appendChild( dismissWrapper );
 
-		var buttonRow = el( 'div', { style: 'display:flex;justify-content:flex-end;gap:0.5em' } );
-		var cancelBtn = el( 'button', { type: 'button', class: 'button', 'data-action': 'cancel', autofocus: 'autofocus' }, translate( 'Cancel upload' ) );
-		var confirmBtn = el( 'button', { type: 'button', class: 'button button-primary', 'data-action': 'confirm' }, translate( 'Upload anyway' ) );
+		const buttonRow = el( 'div', { style: 'display:flex;justify-content:flex-end;gap:0.5em' } );
+		const cancelBtn = el( 'button', { type: 'button', class: 'button', 'data-action': 'cancel', autofocus: 'autofocus' }, translate( 'Cancel upload' ) );
+		const confirmBtn = el( 'button', { type: 'button', class: 'button button-primary', 'data-action': 'confirm' }, translate( 'Upload anyway' ) );
 		buttonRow.appendChild( cancelBtn );
 		buttonRow.appendChild( confirmBtn );
 		dialog.appendChild( buttonRow );
@@ -92,19 +92,19 @@
 	function confirmLargeUpload( file, threshold ) {
 		return new Promise( function ( resolve ) {
 			try {
-				if ( window.sessionStorage && window.sessionStorage.getItem( SESSION_KEY ) === '1' ) {
+				if ( globalThis.sessionStorage && globalThis.sessionStorage.getItem( SESSION_KEY ) === '1' ) {
 					return resolve( true );
 				}
 			} catch ( e ) { /* sessionStorage unavailable; fall through */ }
 
-			var dialog = buildDialog( file, threshold );
-			document.body.appendChild( dialog );
+			const dialog = buildDialog( file, threshold );
+			globalThis.document.body.appendChild( dialog );
 
 			function cleanup( result ) {
 				try {
-					var dismiss = dialog.querySelector( '#vip-lmw-dismiss' );
-					if ( result && dismiss && dismiss.checked && window.sessionStorage ) {
-						window.sessionStorage.setItem( SESSION_KEY, '1' );
+					const dismiss = dialog.querySelector( '#vip-lmw-dismiss' );
+					if ( result && dismiss && dismiss.checked && globalThis.sessionStorage ) {
+						globalThis.sessionStorage.setItem( SESSION_KEY, '1' );
 					}
 				} catch ( e ) { /* ignore */ }
 
@@ -134,7 +134,7 @@
 		} );
 	}
 
-	window.vipLargeMediaWarning = {
+	globalThis.vipLargeMediaWarning = {
 		confirmLargeUpload: confirmLargeUpload,
 		SESSION_KEY: SESSION_KEY,
 	};

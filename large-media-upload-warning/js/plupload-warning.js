@@ -1,30 +1,30 @@
 ( function () {
 	'use strict';
 
-	if ( ! window.wp || ! window.wp.Uploader || ! window.vipLargeMediaWarning ) {
+	if ( ! globalThis.wp?.Uploader || ! globalThis.vipLargeMediaWarning ) {
 		return;
 	}
-	if ( window.wp.Uploader.prototype.__vipLargeMediaWrapped ) {
+	if ( globalThis.wp.Uploader.prototype.__vipLargeMediaWrapped ) {
 		return;
 	}
 
-	var config = window.vipLargeMediaWarningConfig || {};
-	var threshold = parseInt( config.thresholdBytes, 10 ) || ( 8 * 1024 * 1024 );
-	var mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
+	const config = globalThis.vipLargeMediaWarningConfig || {};
+	const threshold = Number.parseInt( config.thresholdBytes, 10 ) || ( 8 * 1024 * 1024 );
+	const mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
 
-	var originalInit = window.wp.Uploader.prototype.init;
+	const originalInit = globalThis.wp.Uploader.prototype.init;
 
-	window.wp.Uploader.prototype.init = function () {
+	globalThis.wp.Uploader.prototype.init = function () {
 		originalInit.apply( this, arguments );
 
-		var self = this;
+		const self = this;
 
 		try {
 			if ( ! self.uploader || typeof self.uploader.bind !== 'function' ) {
 				return;
 			}
 
-			var confirmedIds = new Set();
+			const confirmedIds = new Set();
 
 			self.uploader.bind( 'BeforeUpload', function ( up, file ) {
 				try {
@@ -37,13 +37,13 @@
 					if ( file.size <= threshold ) {
 						return;
 					}
-					if ( ! mimes.length || mimes.indexOf( file.type ) === -1 ) {
+					if ( ! mimes.length || ! mimes.includes( file.type ) ) {
 						return;
 					}
 
 					up.stop();
 
-					window.vipLargeMediaWarning
+					globalThis.vipLargeMediaWarning
 						.confirmLargeUpload( file, threshold )
 						.then( function ( ok ) {
 							if ( ok ) {
@@ -66,5 +66,5 @@
 		} catch ( e ) { /* swallow; do not disrupt plupload */ }
 	};
 
-	window.wp.Uploader.prototype.__vipLargeMediaWrapped = true;
+	globalThis.wp.Uploader.prototype.__vipLargeMediaWrapped = true;
 }() );

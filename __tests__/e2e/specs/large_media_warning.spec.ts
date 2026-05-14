@@ -13,11 +13,10 @@ import { WPAdminPage } from '../lib/pages/wp-admin-page';
 import { ClassicEditorPage } from '../lib/pages/wp-classic-editor-page';
 import { EditorPage } from '../lib/pages/wp-editor-page';
 
-const LARGE = 'test_media/image_01.jpg';   // 1.9 MB — above 512 KB test threshold
+const LARGE = 'test_media/image_01.jpg'; // 1.9 MB — above 512 KB test threshold
 const SMALL = 'test_media/image_small.jpg'; // ~22 KB — below threshold
 
 test.describe( 'Large media upload warning', () => {
-
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
 		await new WPAdminPage( page ).visit();
 		const sidebar = new WPAdminSidebarComponent( page );
@@ -68,7 +67,7 @@ test.describe( 'Large media upload warning', () => {
 
 		await upload.uploadFile( SMALL );
 		await expect( upload.getMediaUrl() ).resolves.toContain( 'image_small' );
-		expect( await modal.isVisible() ).toBe( false );
+		await expect( modal.dialog ).toBeHidden();
 	} );
 
 	test( 'Classic Editor: confirm inserts image', async ( { page } ) => {
