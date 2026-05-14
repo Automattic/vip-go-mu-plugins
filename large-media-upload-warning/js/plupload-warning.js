@@ -15,11 +15,7 @@
 	var originalInit = window.wp.Uploader.prototype.init;
 
 	window.wp.Uploader.prototype.init = function () {
-		try {
-			originalInit.apply( this, arguments );
-		} catch ( e ) {
-			throw e;
-		}
+		originalInit.apply( this, arguments );
 
 		var self = this;
 
@@ -59,6 +55,8 @@
 							}
 						} )
 						.catch( function () {
+							// Fail open: if our confirm dialog fails, never block the upload.
+							confirmedIds.add( file.id );
 							up.start();
 						} );
 				} catch ( e ) {
