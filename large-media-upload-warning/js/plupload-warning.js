@@ -8,8 +8,14 @@
 	// Wrapping `plupload.Uploader.prototype.init` therefore does nothing useful:
 	// `instance.init()` looks up `init` on the instance first and never reaches the
 	// prototype. We instead wrap the constructor: after the original constructor
-	// runs (which attaches the per-instance methods), we bind our `BeforeUpload`
-	// listener directly on the new instance using `this.bind(...)`.
+	// runs (which attaches the per-instance methods), we bind our event listener
+	// directly on the new instance using `this.bind(...)`.
+	//
+	// We hook `FilesAdded` rather than `BeforeUpload`. Both fire before the actual
+	// upload, but `stop()` inside `BeforeUpload` followed by `start()` after the
+	// async dialog is unreliable — plupload doesn't always re-queue the "current
+	// file" after a stop-during-BeforeUpload. `FilesAdded` fires before plupload
+	// has begun processing the queue, so stop/start works cleanly there.
 	const plupload = globalThis.plupload;
 
 	if ( ! plupload?.Uploader || ! globalThis.vipLargeMediaWarning ) {
@@ -25,58 +31,61 @@
 
 	const OriginalUploader = plupload.Uploader;
 
+	function needsConfirmation( file ) {
+		if ( ! file || typeof file.size !== 'number' ) {
+			return false;
+		}
+		if ( file.size <= threshold ) {
+			return false;
+		}
+		if ( ! mimes.length || ! mimes.includes( file.type ) ) {
+			return false;
+		}
+		return true;
+	}
+
 	function WrappedUploader( settings ) {
 		OriginalUploader.call( this, settings );
 
 		const self = this;
-		const confirmedIds = new Set();
 
 		try {
 			if ( typeof self.bind !== 'function' ) {
 				return;
 			}
 
-			self.bind( 'BeforeUpload', function ( up, file ) {
-				globalThis.__vipPluploadBeforeUploadFired = ( globalThis.__vipPluploadBeforeUploadFired || 0 ) + 1;
-				globalThis.__vipPluploadLastBeforeUpload = {
-					hasFile: !! file,
-					size: file?.size ?? null,
-					type: file?.type ?? null,
-					confirmedAlready: file?.id ? confirmedIds.has( file.id ) : false,
-				};
+			self.bind( 'FilesAdded', function ( up, files ) {
+				globalThis.__vipPluploadFilesAddedFired = ( globalThis.__vipPluploadFilesAddedFired || 0 ) + 1;
 				try {
-					if ( ! file || typeof file.size !== 'number' ) {
-						return;
-					}
-					if ( confirmedIds.has( file.id ) ) {
-						return;
-					}
-					if ( file.size <= threshold ) {
-						return;
-					}
-					if ( ! mimes.length || ! mimes.includes( file.type ) ) {
+					const list = Array.isArray( files ) ? files : Array.from( files || [] );
+					const oversized = list.filter( needsConfirmation );
+					if ( oversized.length === 0 ) {
 						return;
 					}
 
 					globalThis.__vipPluploadDialogTriggered = ( globalThis.__vipPluploadDialogTriggered || 0 ) + 1;
+
+					// Pause the queue while we ask the user. Auto-start would
+					// otherwise begin uploading before our async dialog resolves.
 					up.stop();
 
-					globalThis.vipLargeMediaWarning
-						.confirmLargeUpload( file, threshold )
-						.then( function ( ok ) {
-							if ( ok ) {
-								confirmedIds.add( file.id );
-								up.start();
-							} else {
-								up.removeFile( file );
-								up.start();
-							}
-						} )
-						.catch( function () {
-							// Fail open: if our confirm dialog fails, never block the upload.
-							confirmedIds.add( file.id );
+					Promise.all( oversized.map( function ( file ) {
+						return globalThis.vipLargeMediaWarning
+							.confirmLargeUpload( file, threshold )
+							.then( function ( ok ) { return { file: file, ok: ok }; } )
+							.catch( function () { return { file: file, ok: true }; } ); // fail open
+					} ) ).then( function ( results ) {
+						try {
+							results.forEach( function ( r ) {
+								if ( ! r.ok ) {
+									up.removeFile( r.file );
+								}
+							} );
+						} catch ( _ ) { /* ignore */ }
+						try {
 							up.start();
-						} );
+						} catch ( _ ) { /* ignore */ }
+					} );
 				} catch ( e ) {
 					try { up.start(); } catch ( _ ) { /* ignore */ }
 				}

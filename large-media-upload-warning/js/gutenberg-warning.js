@@ -105,7 +105,12 @@
 	// Wrap eagerly at script load. We declare `wp-media-utils` as a dependency on the
 	// PHP side, so by the time this IIFE runs `wp.mediaUtils.uploadMedia` is already
 	// defined. This catches consumers that read `wp.mediaUtils.uploadMedia` live.
-	tryWrap();
+	// Wrap in try/catch — if wp.mediaUtils.uploadMedia is defined as a read-only
+	// property, our assignment will throw in strict mode, and we don't want that
+	// to prevent the polling-based block-editor-settings patch below from running.
+	try {
+		tryWrap();
+	} catch ( _ ) { /* swallow; polling below is the real fallback */ }
 
 	// Belt-and-suspenders: the modern block editor reads `mediaUpload` from its own
 	// data store, not from `wp.mediaUtils` directly. (Some Gutenberg bundles inline
