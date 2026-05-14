@@ -211,6 +211,15 @@
 								if ( allOk ) {
 									originalSend.apply( xhr, args );
 								} else {
+									// Tell plupload to drop the file from its queue
+									// BEFORE we abort. plupload's `Error` event handler
+									// (which fires on abort) clears the tracker, so we
+									// need to act on it while the reference is still
+									// live. The helper itself snapshots locally to be
+									// safe.
+									if ( typeof globalThis.__vipRemoveCurrentPluploadFile === 'function' ) {
+										try { globalThis.__vipRemoveCurrentPluploadFile(); } catch ( _ ) { /* ignore */ }
+									}
 									try { xhr.abort(); } catch ( _ ) { /* ignore */ }
 								}
 							} );
