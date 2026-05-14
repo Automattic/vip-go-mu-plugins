@@ -60,5 +60,6 @@ The v1 implementation **does not cover** REST media uploads (`POST /wp/v2/media`
 
 Other v1 deferrals:
 
+- **Gutenberg image-block direct file-pick uploads are NOT intercepted in some WordPress builds.** The image block's `MediaPlaceholder` uses an upload function that is bundled into `wp-block-editor` rather than externalised to `wp.mediaUtils`. Neither wrapping `wp.mediaUtils.uploadMedia` nor patching `dispatch('core/block-editor').updateSettings({ mediaUpload })` reaches this consumer in those builds. Other Gutenberg upload paths that go through the Media Library modal (Add Media button, Replace, Featured Image) still see our wrap. To cover the image-block direct path in v2, we'd need either to swap `MediaPlaceholder` via Gutenberg's component filters or intercept the `change` event on the file input at the DOM level with manual re-dispatch. The two Gutenberg image-block e2e tests are marked `test.skip` with a TODO until v2.
 - `wp_set_script_translations()` is not yet wired; user-facing strings are translation-ready (called through `wp.i18n.__`) but no `.po`/`.json` translations are loaded.
 - HEIC and TIFF are in the allowlist even though they are not in WordPress core's default upload-allowed MIME list. The warning fires at file-pick time, independent of core's upload-validation pass.
