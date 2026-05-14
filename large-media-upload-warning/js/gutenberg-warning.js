@@ -97,11 +97,10 @@
 		return done;
 	}
 
-	if ( typeof globalThis.wp?.domReady === 'function' ) {
-		globalThis.wp.domReady( tryWrap );
-	} else if ( globalThis.document.readyState === 'loading' ) {
-		globalThis.document.addEventListener( 'DOMContentLoaded', tryWrap );
-	} else {
-		tryWrap();
-	}
+	// Wrap eagerly at script load. We declare `wp-media-utils` as a dependency on the
+	// PHP side, so by the time this IIFE runs `wp.mediaUtils.uploadMedia` is already
+	// defined. Waiting for `wp.domReady` is too late: by then, the block editor has
+	// already captured a reference to the original `uploadMedia` in its settings, and
+	// monkey-patching the global no longer affects consumers.
+	tryWrap();
 }() );

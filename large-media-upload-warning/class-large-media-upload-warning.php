@@ -143,7 +143,7 @@ class Large_Media_Upload_Warning {
 			wp_enqueue_script(
 				'vip-large-media-warning-gutenberg',
 				$base_url . 'gutenberg-warning.js',
-				[ self::HANDLE_SHARED, 'wp-dom-ready' ],
+				[ self::HANDLE_SHARED, 'wp-media-utils' ],
 				$this->asset_version( 'gutenberg-warning.js' ),
 				true
 			);

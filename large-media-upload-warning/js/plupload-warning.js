@@ -1,10 +1,17 @@
 ( function () {
 	'use strict';
 
-	if ( ! globalThis.wp?.Uploader || ! globalThis.vipLargeMediaWarning ) {
+	// Wrap plupload.Uploader.prototype.init rather than wp.Uploader.prototype.init.
+	// wp.Uploader is one consumer of plupload (used inside the post-edit Media modal),
+	// but the standalone Media Library upload page (media-new.php) constructs a
+	// plupload.Uploader directly without going through wp.Uploader. Wrapping at the
+	// plupload layer catches both cases.
+	const plupload = globalThis.plupload;
+
+	if ( ! plupload?.Uploader || ! globalThis.vipLargeMediaWarning ) {
 		return;
 	}
-	if ( globalThis.wp.Uploader.prototype.__vipLargeMediaWrapped ) {
+	if ( plupload.Uploader.prototype.__vipLargeMediaWrapped ) {
 		return;
 	}
 
@@ -12,21 +19,21 @@
 	const threshold = Number.parseInt( config.thresholdBytes, 10 ) || ( 8 * 1024 * 1024 );
 	const mimes = Array.isArray( config.mimeTypes ) ? config.mimeTypes : [];
 
-	const originalInit = globalThis.wp.Uploader.prototype.init;
+	const originalInit = plupload.Uploader.prototype.init;
 
-	globalThis.wp.Uploader.prototype.init = function () {
+	plupload.Uploader.prototype.init = function () {
 		originalInit.apply( this, arguments );
 
 		const self = this;
 
 		try {
-			if ( ! self.uploader || typeof self.uploader.bind !== 'function' ) {
+			if ( typeof self.bind !== 'function' ) {
 				return;
 			}
 
 			const confirmedIds = new Set();
 
-			self.uploader.bind( 'BeforeUpload', function ( up, file ) {
+			self.bind( 'BeforeUpload', function ( up, file ) {
 				try {
 					if ( ! file || typeof file.size !== 'number' ) {
 						return;
@@ -66,5 +73,5 @@
 		} catch ( e ) { /* swallow; do not disrupt plupload */ }
 	};
 
-	globalThis.wp.Uploader.prototype.__vipLargeMediaWrapped = true;
+	plupload.Uploader.prototype.__vipLargeMediaWrapped = true;
 }() );
