@@ -17,106 +17,6 @@ const LARGE = 'test_media/image_01.jpg'; // 1.9 MB — above 512 KB test thresho
 const SMALL = 'test_media/image_small.jpg'; // ~22 KB — below threshold
 
 test.describe( 'Large media upload warning', () => {
-	async function probe( page: import( '@playwright/test' ).Page, label: string ): Promise<void> {
-		const state = await page.evaluate( () => {
-			const win = globalThis as unknown as Record<string, unknown>;
-			const wp = win.wp as {
-				Uploader?: unknown;
-				mediaUtils?: { uploadMedia?: unknown; __vipLargeMediaWrapped?: unknown };
-			} | undefined;
-			const plupload = win.plupload as {
-				Uploader?: { __vipLargeMediaWrapped?: unknown };
-			} | undefined;
-			return {
-				hasWp: typeof wp !== 'undefined',
-				hasWpUploader: typeof wp?.Uploader !== 'undefined',
-				hasPlupload: typeof plupload?.Uploader !== 'undefined',
-				pluploadWrapped: plupload?.Uploader?.__vipLargeMediaWrapped === true,
-				hasMediaUtils: typeof wp?.mediaUtils !== 'undefined',
-				hasMediaUtilsUpload: typeof wp?.mediaUtils?.uploadMedia === 'function',
-				mediaUtilsWrapped: wp?.mediaUtils?.__vipLargeMediaWrapped === true,
-				gutenbergInlineRan: win.__vipGutenbergInlineRan ?? 0,
-				gutenbergInlineSawMediaUtils: win.__vipGutenbergMediaUtilsAtInlineTime ?? 'never-ran',
-				gutenbergSettingsPatched: win.__vipGutenbergSettingsPatched === true,
-				gutenbergPatchAttempts: win.__vipGutenbergPatchAttempts ?? 0,
-				wrappedMediaUploadCalled: win.__vipWrappedMediaUploadCalled ?? 0,
-				wrappedMediaUploadLast: win.__vipWrappedMediaUploadLast ?? null,
-				pluploadInlineRan: win.__vipPluploadInlineRan ?? 0,
-				pluploadFilesAddedFired: win.__vipPluploadFilesAddedFired ?? 0,
-				pluploadDialogTriggered: win.__vipPluploadDialogTriggered ?? 0,
-				hasWarning: typeof win.vipLargeMediaWarning !== 'undefined',
-				hasConfig: typeof win.vipLargeMediaWarningConfig !== 'undefined',
-				config: win.vipLargeMediaWarningConfig ?? null,
-				scriptCount: document.querySelectorAll(
-					'script[src*="large-media-upload-warning"]',
-				).length,
-			};
-		} );
-		// eslint-disable-next-line no-console
-		console.log( `DIAGNOSTIC[${ label }]:`, JSON.stringify( state, null, 2 ) );
-	}
-
-	test( 'DIAGNOSTIC: globals on Media Library + post edit', async ( { page } ) => {
-		await new WPAdminPage( page ).visit();
-
-		await page.goto( '/wp-admin/upload.php' );
-		await page.waitForLoadState( 'domcontentloaded' );
-		await probe( page, 'upload.php' );
-
-		await page.goto( '/wp-admin/media-new.php' );
-		await page.waitForLoadState( 'domcontentloaded' );
-		await probe( page, 'media-new.php' );
-
-		await page.goto( '/wp-admin/post-new.php' );
-		await page.waitForLoadState( 'domcontentloaded' );
-		await probe( page, 'post-new.php (Gutenberg)' );
-	} );
-
-	test( 'DIAGNOSTIC: upload flow probe (no dialog assertion)', async ( { page } ) => {
-		await new WPAdminPage( page ).visit();
-		await page.goto( '/wp-admin/media-new.php' );
-		await page.waitForLoadState( 'domcontentloaded' );
-
-		// Try to upload large file. We don't await modal — just look at sentinels
-		// after the attempt so we can see whether BeforeUpload fired.
-		const upload = new MediaUploadPage( page );
-		await upload.uploadFile( LARGE ).catch( () => undefined );
-		// Give plupload a moment to process.
-		await page.waitForTimeout( 2000 );
-
-		await probe( page, 'after-upload-attempt' );
-	} );
-
-	test( 'DIAGNOSTIC: Gutenberg editor mount + settings patch', async ( { page } ) => {
-		await new WPAdminPage( page ).visit();
-		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
-		await page.goto( '/wp-admin/post-new.php' );
-		// Wait for the block editor to actually mount.
-		await page.locator( '.block-editor-default-block-appender, .wp-block' ).first().waitFor( { state: 'visible', timeout: 30000 } );
-		// Give the settings patch poll a moment after mount.
-		await page.waitForTimeout( 1000 );
-
-		await probe( page, 'post-new.php after-editor-mount' );
-	} );
-
-	test( 'DIAGNOSTIC: Gutenberg upload flow probe (no dialog assertion)', async ( { page } ) => {
-		await new WPAdminPage( page ).visit();
-		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
-		await page.goto( '/wp-admin/post-new.php' );
-		const editor = new EditorPage( page );
-		await editor.enterTitle( 'Gutenberg upload probe' );
-		// Don't await addImage; it waits for spinner-detach which never happens if
-		// our wrap successfully blocked the upload. Run it in the background and
-		// probe sentinels after a short wait.
-		const addImagePromise = editor.addImage( LARGE ).catch( () => undefined );
-		await Promise.race( [
-			addImagePromise,
-			page.waitForTimeout( 8000 ),
-		] );
-
-		await probe( page, 'gutenberg after-upload-attempt' );
-	} );
-
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
 		await new WPAdminPage( page ).visit();
 		const sidebar = new WPAdminSidebarComponent( page );
@@ -191,18 +91,7 @@ test.describe( 'Large media upload warning', () => {
 		await expect( page.frameLocator( '#content_ifr' ).locator( '#tinymce img' ) ).toBeVisible();
 	} );
 
-	// v1 known limitation: in WordPress builds that bundle `@wordpress/media-utils`
-	// inside `wp-block-editor` (rather than externalising it to `wp.mediaUtils`),
-	// the image block uses its own bundled `uploadMedia` and never consults the
-	// block-editor settings store. Neither monkey-patching `wp.mediaUtils.uploadMedia`
-	// nor `dispatch('core/block-editor').updateSettings({ mediaUpload })` reaches
-	// this consumer. Confirmed via diagnostic probes: our wrap installs cleanly
-	// and our updated settings ARE picked up by other surfaces — but the image
-	// block's direct file-pick upload bypasses both. Intercepting it requires
-	// either (a) replacing `MediaPlaceholder` via Gutenberg's component filters,
-	// or (b) DOM `change`-event interception with manual re-dispatch. Both are
-	// out of v1 scope; tracked as a follow-up.
-	test.skip( 'Gutenberg: cancel leaves block empty', async ( { page } ) => {
+	test( 'Gutenberg: cancel leaves block empty', async ( { page } ) => {
 		await new WPAdminPage( page ).visit();
 		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
 		await page.goto( '/wp-admin/post-new.php' );
@@ -221,8 +110,7 @@ test.describe( 'Large media upload warning', () => {
 		await expect( page.locator( '.block-editor-media-placeholder__upload-button' ) ).toBeVisible();
 	} );
 
-	// v1 known limitation — see comment on the cancel test above.
-	test.skip( 'Gutenberg: confirm populates image block', async ( { page } ) => {
+	test( 'Gutenberg: confirm populates image block', async ( { page } ) => {
 		await new WPAdminPage( page ).visit();
 		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
 		await page.goto( '/wp-admin/post-new.php' );

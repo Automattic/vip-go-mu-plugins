@@ -104,14 +104,15 @@ class Large_Media_Upload_Warning {
 	/**
 	 * Enqueue assets on admin screens that can upload media.
 	 *
-	 * The interceptor wraps (plupload-warning.js, gutenberg-warning.js) are attached
-	 * as INLINE 'after' scripts on their underlying library handles, not enqueued as
-	 * standalone files. The reason: in the standalone Media Library page, inline
-	 * scripts on the page construct a plupload.Uploader and call .init() before any
-	 * footer-loaded script can wrap the prototype. By piggy-backing on
-	 * wp_add_inline_script(..., 'after'), our wrap runs IMMEDIATELY after wp-plupload
-	 * (or wp-media-utils) finishes loading, before any page-level inline init can
-	 * capture the originals.
+	 * Two head-loaded scripts:
+	 *   - shared-confirm.js (the dialog helper)
+	 *   - upload-interceptor.js (capture-phase `change` + `drop` interceptor)
+	 *
+	 * Loading both in the head guarantees our document-level capture-phase listeners
+	 * are registered before any plupload init or React-tree mount runs in the body.
+	 * That gives us first dibs on every `change`/`drop` event in the page, which is
+	 * what makes the warning reliable across Media Library, Classic Editor's Add
+	 * Media, Gutenberg's image-block placeholder, and Gutenberg drag-drop.
 	 */
 	public function enqueue_assets( string $hook ): void {
 		if ( ! $this->is_admin_upload_screen( $hook ) ) {
@@ -120,8 +121,6 @@ class Large_Media_Upload_Warning {
 
 		$base_url = plugins_url( 'js/', __FILE__ );
 
-		// Shared dialog helper. Loads in the head (in_footer=false) so it's available
-		// before the interceptor inline scripts run, whether those run in head or footer.
 		wp_enqueue_script(
 			self::HANDLE_SHARED,
 			$base_url . 'shared-confirm.js',
@@ -142,54 +141,13 @@ class Large_Media_Upload_Warning {
 			'before'
 		);
 
-		// plupload wrap. Inline after wp-plupload so it runs before page-level
-		// inline scripts that construct plupload.Uploader instances.
-		wp_enqueue_script( 'wp-plupload' );
-		$plupload_js = $this->get_asset_contents( 'plupload-warning.js' );
-		if ( '' !== $plupload_js ) {
-			wp_add_inline_script( 'wp-plupload', $plupload_js, 'after' );
-		}
-
-		if ( $this->is_block_editor_screen() ) {
-			// Gutenberg wrap. Inline after wp-media-utils so it runs before the block
-			// editor packages capture wp.mediaUtils.uploadMedia by reference.
-			wp_enqueue_script( 'wp-media-utils' );
-			$gutenberg_js = $this->get_asset_contents( 'gutenberg-warning.js' );
-			if ( '' !== $gutenberg_js ) {
-				wp_add_inline_script( 'wp-media-utils', $gutenberg_js, 'after' );
-			}
-		}
-	}
-
-	/**
-	 * Read a JS asset file's contents. Returns an empty string if the file is
-	 * missing — defensive against partial deploys.
-	 */
-	private function get_asset_contents( string $relative_path ): string {
-		$file = __DIR__ . '/js/' . $relative_path;
-		if ( ! file_exists( $file ) ) {
-			return '';
-		}
-		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local file read.
-		$contents = file_get_contents( $file );
-		return false === $contents ? '' : $contents;
-	}
-
-	/**
-	 * Whether the current admin screen is the block editor.
-	 *
-	 * Uses get_current_screen() — only available after admin_init, which is the
-	 * case during admin_enqueue_scripts.
-	 */
-	private function is_block_editor_screen(): bool {
-		if ( ! function_exists( 'get_current_screen' ) ) {
-			return false;
-		}
-		$screen = get_current_screen();
-		if ( ! $screen ) {
-			return false;
-		}
-		return method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
+		wp_enqueue_script(
+			'vip-large-media-warning-interceptor',
+			$base_url . 'upload-interceptor.js',
+			[ self::HANDLE_SHARED ],
+			$this->asset_version( 'upload-interceptor.js' ),
+			false
+		);
 	}
 
 	private function is_admin_upload_screen( string $hook ): bool {

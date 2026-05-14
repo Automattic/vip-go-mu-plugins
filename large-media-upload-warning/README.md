@@ -23,12 +23,18 @@ Two related observability seams (used primarily by tests):
 
 ## How it works
 
-Two browser interception points:
+Single DOM-level interception point: capture-phase listeners on `document` for `change` (file inputs) and `drop` (drag-drop) events. Because the listeners are registered in the head and run in the capture phase, they see every file-selection event before plupload, the Classic Editor, the Gutenberg block editor, or `wp.mediaUtils.uploadMedia` can.
 
-1. `wp.Uploader.prototype.init` is wrapped to bind plupload's `BeforeUpload` event. This covers the Media Library modal and Classic Editor "Add Media".
-2. `wp.mediaUtils.uploadMedia` is wrapped at runtime to gate uploads triggered from inside Gutenberg blocks (drag-drop, paste, file-pick).
+Flow:
 
-Both surfaces share a single `<dialog>` confirm helper rendered without React or Backbone so it works regardless of editor context.
+1. User picks a file (via plupload "Select Files", Classic "Add Media", Gutenberg image-block placeholder, or drag-drop onto the editor canvas).
+2. Our capture-phase listener fires on the resulting `change` or `drop` event.
+3. If any file is oversized and matches the MIME allowlist, we call `stopImmediatePropagation` — plupload / block editor never sees the event.
+4. The shared `<dialog>` confirm prompt opens for each oversized file in sequence.
+5. **On confirm:** we re-attach the files to the input via a fresh `DataTransfer` and dispatch a new `change` (or `drop`) event so the original upload pipeline picks up the now-confirmed files. A fingerprint cache (`name|size|lastModified|type`) prevents our handler from re-prompting on the re-dispatch.
+6. **On cancel:** we clear the input or discard the drop. The original pipeline never sees the file.
+
+The dialog is rendered without React or Backbone so it works in every editor context.
 
 Server-side, a priority-5 filter on `wp_handle_upload_prefilter` (and the matching `wp_handle_sideload_prefilter`) emits a Logstash event when an oversized image reaches PHP. The filter **never sets `$file['error']`** — it is observe-only.
 
@@ -60,6 +66,5 @@ The v1 implementation **does not cover** REST media uploads (`POST /wp/v2/media`
 
 Other v1 deferrals:
 
-- **Gutenberg image-block direct file-pick uploads are NOT intercepted in some WordPress builds.** The image block's `MediaPlaceholder` uses an upload function that is bundled into `wp-block-editor` rather than externalised to `wp.mediaUtils`. Neither wrapping `wp.mediaUtils.uploadMedia` nor patching `dispatch('core/block-editor').updateSettings({ mediaUpload })` reaches this consumer in those builds. Other Gutenberg upload paths that go through the Media Library modal (Add Media button, Replace, Featured Image) still see our wrap. To cover the image-block direct path in v2, we'd need either to swap `MediaPlaceholder` via Gutenberg's component filters or intercept the `change` event on the file input at the DOM level with manual re-dispatch. The two Gutenberg image-block e2e tests are marked `test.skip` with a TODO until v2.
 - `wp_set_script_translations()` is not yet wired; user-facing strings are translation-ready (called through `wp.i18n.__`) but no `.po`/`.json` translations are loaded.
 - HEIC and TIFF are in the allowlist even though they are not in WordPress core's default upload-allowed MIME list. The warning fires at file-pick time, independent of core's upload-validation pass.
