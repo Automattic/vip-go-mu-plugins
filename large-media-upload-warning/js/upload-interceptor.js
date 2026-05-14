@@ -234,26 +234,34 @@
 
 	function onChangeCapture( e ) {
 		try {
+			const target = e.target;
+			const isFileInput = target instanceof HTMLInputElement && target.type === 'file';
+			debug( 'change captured; target:', target?.tagName, 'isFileInput:', isFileInput, 'skipMarker:', !! e[ SKIP_MARKER ], 'pendingApprovalsSize:', pendingApprovals.size );
+
 			if ( e[ SKIP_MARKER ] ) {
 				return; // our own re-dispatched event; let it through
 			}
-			const input = e.target;
-			if ( ! ( input instanceof HTMLInputElement ) || input.type !== 'file' ) {
+			if ( ! isFileInput ) {
 				return;
 			}
+			const input = target;
 			const files = Array.from( input.files || [] );
+			debug( 'file input change; files:', files.map( ( f ) => ( { name: f.name, size: f.size, type: f.type } ) ) );
 			if ( files.length === 0 ) {
 				return;
 			}
 			const cfg = getConfig();
 			const needsReview = files.some( ( f ) => needsConfirmation( f, cfg ) );
+			debug( 'needsReview:', needsReview, 'threshold:', cfg.threshold );
 			if ( ! needsReview ) {
 				return;
 			}
 
 			e.stopImmediatePropagation();
+			debug( 'showing dialog' );
 
 			reviewFiles( files, { registerApprovals: true } ).then( ( allOk ) => {
+				debug( 'dialog result; allOk:', allOk );
 				if ( allOk ) {
 					try {
 						const dt = new DataTransfer();
@@ -266,7 +274,8 @@
 				} else {
 					try {
 						input.value = '';
-					} catch ( _ ) { /* ignore */ }
+						debug( 'cleared input.value; new value:', input.value, 'new files length:', input.files?.length );
+					} catch ( err ) { debug( 'clearing input.value threw', err ); }
 					// Drain anything we registered as pending for these files —
 					// we never let them reach the network layer.
 					for ( const f of files ) {
@@ -274,7 +283,7 @@
 					}
 				}
 			} );
-		} catch ( _ ) { /* fail open */ }
+		} catch ( e2 ) { debug( 'onChangeCapture threw', e2 ); }
 	}
 
 	// ---- XHR.send interception (network boundary, catches drag-drop) ----
