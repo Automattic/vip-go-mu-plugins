@@ -1,30 +1,27 @@
 /**
- * Large media upload warning — DOM-level interceptor.
+ * Large media upload warning — DOM + network interceptor.
  *
- * We intercept `change` events on file inputs and `drop` events for drag-drop, both
- * in the capture phase on the document. This is the single chokepoint that catches
- * every upload UI we care about — Media Library, Classic Editor's Add Media,
- * Gutenberg's image-block placeholder, and Gutenberg drag-drop onto the editor —
- * BEFORE plupload, the block editor, or `wp.mediaUtils.uploadMedia` ever sees the
- * file. This is the only approach that reliably stops the upload from starting
- * while we ask the user; trying to pause plupload (`up.stop()`) from inside
- * `FilesAdded` or `BeforeUpload` races with plupload's auto-start, and Gutenberg's
- * `MediaPlaceholder` inlines `@wordpress/media-utils` so neither
- * `wp.mediaUtils.uploadMedia` nor `dispatch('core/block-editor').updateSettings`
- * reaches its bundled `uploadMedia`.
+ * Two chokepoints, both registered as early as possible:
  *
- * Flow:
- *   1. Capture-phase listener fires before plupload / block editor handlers.
- *   2. If any oversized image is in the file list, stopImmediatePropagation.
- *   3. Show the shared confirm dialog for each oversized file.
- *   4. On confirm: re-attach the files to the input (via DataTransfer) and dispatch
- *      a fresh `change` (or `drop`) event so plupload / Gutenberg pick up the
- *      already-confirmed files. The confirmed-file fingerprint cache prevents a
- *      re-prompt on the re-dispatch.
- *   5. On cancel: clear the input / discard the drop.
+ *   1. Capture-phase `change` listener on `document` for file inputs. Covers
+ *      Media Library "Select Files", Classic Editor "Add Media", Gutenberg
+ *      image-block placeholder "Upload" button. Blocks BEFORE upload starts.
  *
- * Failure mode: every handler is wrapped in try/catch and falls open. The original
- * upload path runs unchanged if anything in this file throws.
+ *   2. `XMLHttpRequest.prototype.send` + `globalThis.fetch` wraps. Covers
+ *      drag-drop onto the editor canvas, plupload drag-drop on media-new.php,
+ *      and anything else that bypasses file inputs. Catches the upload at the
+ *      network boundary, before bytes leave the browser.
+ *
+ * The XHR/fetch wrap is a safety net — it sees uploads our DOM intercept
+ * already approved. To avoid double-prompting, the DOM intercept registers
+ * approved files in a transient "pending" map; the network wrap consumes from
+ * that map and skips the dialog when a match is found.
+ *
+ * No persistent fingerprint cache: the previous version cached confirmations
+ * for the lifetime of the page, which broke re-picking the same file.
+ *
+ * Failure mode: every handler is wrapped in try/catch and falls open. The
+ * original upload path runs unchanged if anything in this file throws.
  */
 ( function () {
 	'use strict';
@@ -33,6 +30,10 @@
 		return;
 	}
 	globalThis.__vipLargeMediaInterceptorInstalled = true;
+
+	// Symbol marker on re-dispatched events. Lets our `change` listener
+	// recognise events it itself synthesised and pass them through.
+	const SKIP_MARKER = Symbol( 'vipLargeMediaApproved' );
 
 	function getConfig() {
 		const c = globalThis.vipLargeMediaWarningConfig || {};
@@ -49,34 +50,50 @@
 			&& cfg.mimes.includes( file.type );
 	}
 
-	// Cache confirmed files by fingerprint. We can't rely on object identity once
-	// we re-attach files via DataTransfer (some browsers re-wrap them).
-	const confirmedFingerprints = new Set();
-
 	function fingerprint( file ) {
 		return `${ file.name }|${ file.size }|${ file.lastModified || 0 }|${ file.type }`;
 	}
 
-	function isConfirmed( file ) {
-		return confirmedFingerprints.has( fingerprint( file ) );
+	// Transient registry of files the user has approved that haven't been
+	// network-uploaded yet. The XHR/fetch wrap consumes from this on each
+	// `send`/`fetch` to avoid double-prompting after the DOM intercept.
+	const pendingApprovals = new Map(); // fingerprint -> count
+
+	function addPending( file ) {
+		const key = fingerprint( file );
+		pendingApprovals.set( key, ( pendingApprovals.get( key ) || 0 ) + 1 );
 	}
 
-	function markConfirmed( file ) {
-		confirmedFingerprints.add( fingerprint( file ) );
+	function consumePending( file ) {
+		const key = fingerprint( file );
+		const count = pendingApprovals.get( key ) || 0;
+		if ( count <= 0 ) {
+			return false;
+		}
+		if ( count === 1 ) {
+			pendingApprovals.delete( key );
+		} else {
+			pendingApprovals.set( key, count - 1 );
+		}
+		return true;
 	}
 
-	function reviewFiles( files ) {
+	/**
+	 * Ask the user about each oversized file in order. Resolves to true if all
+	 * files are approved (none cancelled), false otherwise. Fail-open on any
+	 * dialog error.
+	 */
+	function reviewFiles( files, options ) {
 		const cfg = getConfig();
 		const helper = globalThis.vipLargeMediaWarning;
 		if ( ! helper || typeof helper.confirmLargeUpload !== 'function' ) {
 			return Promise.resolve( true );
 		}
-		const oversized = files.filter( ( f ) => needsConfirmation( f, cfg ) && ! isConfirmed( f ) );
+		const oversized = files.filter( ( f ) => needsConfirmation( f, cfg ) );
 		if ( oversized.length === 0 ) {
 			return Promise.resolve( true );
 		}
 
-		// Review sequentially — multiple dialogs at once would be confusing UX.
 		return oversized.reduce( ( chain, file ) => chain.then( ( aborted ) => {
 			if ( aborted ) {
 				return true;
@@ -84,20 +101,56 @@
 			return helper.confirmLargeUpload( file, cfg.threshold )
 				.then( ( ok ) => {
 					if ( ok ) {
-						markConfirmed( file );
+						if ( options && options.registerApprovals ) {
+							addPending( file );
+						}
 						return false;
 					}
 					return true; // user cancelled — abort the whole upload
 				} )
 				.catch( () => {
-					markConfirmed( file ); // fail open on dialog error
+					if ( options && options.registerApprovals ) {
+						addPending( file ); // fail open
+					}
 					return false;
 				} );
 		} ), Promise.resolve( false ) ).then( ( aborted ) => ! aborted );
 	}
 
+	function filesFromFormData( body ) {
+		const files = [];
+		try {
+			body.forEach( ( value ) => {
+				if ( value instanceof File ) {
+					files.push( value );
+				}
+			} );
+		} catch ( _ ) { /* ignore */ }
+		return files;
+	}
+
+	/**
+	 * Filter the input files through the pending approvals — any matches are
+	 * treated as already-confirmed and need no dialog. Returns the files that
+	 * still require review.
+	 */
+	function filterAgainstPending( files ) {
+		const stillNeed = [];
+		for ( const file of files ) {
+			if ( ! consumePending( file ) ) {
+				stillNeed.push( file );
+			}
+		}
+		return stillNeed;
+	}
+
+	// ---- File input change interception (pre-upload) ----
+
 	function onChangeCapture( e ) {
 		try {
+			if ( e[ SKIP_MARKER ] ) {
+				return; // our own re-dispatched event; let it through
+			}
 			const input = e.target;
 			if ( ! ( input instanceof HTMLInputElement ) || input.type !== 'file' ) {
 				return;
@@ -107,73 +160,96 @@
 				return;
 			}
 			const cfg = getConfig();
-			const needsReview = files.some( ( f ) => needsConfirmation( f, cfg ) && ! isConfirmed( f ) );
+			const needsReview = files.some( ( f ) => needsConfirmation( f, cfg ) );
 			if ( ! needsReview ) {
 				return;
 			}
 
 			e.stopImmediatePropagation();
 
-			reviewFiles( files ).then( ( allOk ) => {
+			reviewFiles( files, { registerApprovals: true } ).then( ( allOk ) => {
 				if ( allOk ) {
 					try {
 						const dt = new DataTransfer();
 						files.forEach( ( f ) => dt.items.add( f ) );
 						input.files = dt.files;
-					} catch ( _ ) { /* Safari occasionally refuses; the original input.files survives */ }
-					input.dispatchEvent( new Event( 'change', { bubbles: true, cancelable: true } ) );
+					} catch ( _ ) { /* Safari may refuse — fall back to the original input.files */ }
+					const newEvent = new Event( 'change', { bubbles: true, cancelable: true } );
+					newEvent[ SKIP_MARKER ] = true;
+					input.dispatchEvent( newEvent );
 				} else {
 					try {
 						input.value = '';
 					} catch ( _ ) { /* ignore */ }
+					// Drain anything we registered as pending for these files —
+					// we never let them reach the network layer.
+					for ( const f of files ) {
+						consumePending( f );
+					}
 				}
 			} );
 		} catch ( _ ) { /* fail open */ }
 	}
 
-	function onDropCapture( e ) {
-		try {
-			const dt = e.dataTransfer;
-			if ( ! dt ) {
-				return;
-			}
-			const files = Array.from( dt.files || [] );
-			if ( files.length === 0 ) {
-				return;
-			}
-			const cfg = getConfig();
-			const needsReview = files.some( ( f ) => needsConfirmation( f, cfg ) && ! isConfirmed( f ) );
-			if ( ! needsReview ) {
-				return;
-			}
+	// ---- XHR.send interception (network boundary, catches drag-drop) ----
 
-			e.stopImmediatePropagation();
-			e.preventDefault();
-
-			const target = e.target;
-			const clientX = e.clientX;
-			const clientY = e.clientY;
-
-			reviewFiles( files ).then( ( allOk ) => {
-				if ( ! allOk ) {
-					return;
+	const NativeXHR = globalThis.XMLHttpRequest;
+	if ( NativeXHR && NativeXHR.prototype && typeof NativeXHR.prototype.send === 'function' ) {
+		const originalSend = NativeXHR.prototype.send;
+		NativeXHR.prototype.send = function ( body ) {
+			try {
+				if ( body instanceof FormData ) {
+					const files = filesFromFormData( body );
+					if ( files.length > 0 ) {
+						const remaining = filterAgainstPending( files );
+						const cfg = getConfig();
+						const needsReview = remaining.some( ( f ) => needsConfirmation( f, cfg ) );
+						if ( needsReview ) {
+							const xhr = this;
+							const args = arguments;
+							reviewFiles( remaining ).then( ( allOk ) => {
+								if ( allOk ) {
+									originalSend.apply( xhr, args );
+								} else {
+									try { xhr.abort(); } catch ( _ ) { /* ignore */ }
+								}
+							} );
+							return;
+						}
+					}
 				}
-				try {
-					const newDt = new DataTransfer();
-					files.forEach( ( f ) => newDt.items.add( f ) );
-					const newEvent = new DragEvent( 'drop', {
-						bubbles: true,
-						cancelable: true,
-						dataTransfer: newDt,
-						clientX,
-						clientY,
-					} );
-					target.dispatchEvent( newEvent );
-				} catch ( _ ) { /* ignore — some browsers restrict synthetic DragEvent.dataTransfer */ }
-			} );
-		} catch ( _ ) { /* fail open */ }
+			} catch ( _ ) { /* fail open */ }
+			return originalSend.apply( this, arguments );
+		};
+	}
+
+	// ---- fetch interception (modern uploads, e.g. Gutenberg via wp/v2/media) ----
+
+	const nativeFetch = globalThis.fetch;
+	if ( typeof nativeFetch === 'function' ) {
+		globalThis.fetch = async function ( input, init ) {
+			try {
+				const body = init && init.body;
+				if ( body instanceof FormData ) {
+					const files = filesFromFormData( body );
+					if ( files.length > 0 ) {
+						const remaining = filterAgainstPending( files );
+						const cfg = getConfig();
+						const needsReview = remaining.some( ( f ) => needsConfirmation( f, cfg ) );
+						if ( needsReview ) {
+							const allOk = await reviewFiles( remaining );
+							if ( ! allOk ) {
+								// 499 is nginx's "client closed request" — a reasonable
+								// non-success status for "user cancelled".
+								return new Response( null, { status: 499, statusText: 'Upload cancelled by user' } );
+							}
+						}
+					}
+				}
+			} catch ( _ ) { /* fail open */ }
+			return nativeFetch.call( this, input, init );
+		};
 	}
 
 	globalThis.document.addEventListener( 'change', onChangeCapture, true );
-	globalThis.document.addEventListener( 'drop', onDropCapture, true );
 }() );
