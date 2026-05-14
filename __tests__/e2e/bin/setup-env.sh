@@ -46,9 +46,16 @@ if [ "${WPVER}" = 'trunk' ]; then
 fi
 vip dev-env exec --slug e2e-test-site --quiet -- wp rewrite structure '/%postname%/'
 
-# Enable the large media upload warning module and lower its threshold for e2e tests
-vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw
-vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw
+# Enable the large media upload warning module and lower its threshold for e2e tests.
+# --add is required for constants that don't yet exist in wp-config.php; without it,
+# `wp config set` silently no-ops (especially when --quiet is set) and the constants
+# never get defined, leaving the module disabled in tests.
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw --add --type=constant
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw --add --type=constant
+
+# Diagnostic: print resolved constants so a future failure is obvious in CI logs.
+vip dev-env exec --slug e2e-test-site --quiet -- wp eval 'echo "VIP_LARGE_MEDIA_WARNING_ENABLED=" . ( defined( "VIP_LARGE_MEDIA_WARNING_ENABLED" ) ? var_export( VIP_LARGE_MEDIA_WARNING_ENABLED, true ) : "UNDEFINED" ) . PHP_EOL;'
+vip dev-env exec --slug e2e-test-site --quiet -- wp eval 'echo "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES=" . ( defined( "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES" ) ? VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES : "UNDEFINED" ) . PHP_EOL;'
 
 # Change admin password to "password"
 vip dev-env exec --slug e2e-test-site --quiet -- wp user update vipgo --user_pass=password
