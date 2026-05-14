@@ -211,10 +211,18 @@
 							// tracker globals are still set; we use it below to match
 							// the orphan attachment / DOM tile by filename.
 							const cancelledName = globalThis.__vipCurrentPluploadFile && globalThis.__vipCurrentPluploadFile.name;
+							if ( globalThis.__vipDebug ) {
+								// eslint-disable-next-line no-console
+								console.log( '[VIP-LMW xhr] intercepted; files:', files.map( ( f ) => ( { name: f.name, size: f.size } ) ), 'cancelledName:', cancelledName );
+							}
 							reviewFiles( remaining ).then( ( allOk ) => {
 								if ( allOk ) {
 									originalSend.apply( xhr, args );
 								} else {
+									if ( globalThis.__vipDebug ) {
+										// eslint-disable-next-line no-console
+										console.log( '[VIP-LMW xhr] cancel path entered' );
+									}
 									// 1. Tell plupload to drop the file from its queue.
 									if ( typeof globalThis.__vipRemoveCurrentPluploadFile === 'function' ) {
 										try { globalThis.__vipRemoveCurrentPluploadFile(); } catch ( _ ) { /* ignore */ }
@@ -233,6 +241,10 @@
 										try {
 											destroyed = globalThis.__vipDestroyUploadingAttachment( cancelledName );
 										} catch ( _ ) { /* ignore */ }
+									}
+									if ( globalThis.__vipDebug ) {
+										// eslint-disable-next-line no-console
+										console.log( '[VIP-LMW xhr] destroyed:', destroyed, 'will DOM-strike if zero' );
 									}
 									// 4. DOM strike as a final fallback if no Backbone
 									//    attachment was destroyed (e.g. wp.Uploader wasn't
