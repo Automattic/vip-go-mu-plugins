@@ -204,7 +204,15 @@
 				debug( name, 'matched', matches.length );
 				for ( const attachment of matches ) {
 					debug( name, 'cleaning', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
-					try { attachment.destroy( { wait: false } ); } catch ( _ ) { /* ignore */ }
+					// Use collection-level removal only. `attachment.destroy()`
+					// fires a Backbone `destroy` event that wp.Uploader /
+					// wp.media listen to and apparently react to by wedging
+					// the modal's upload pipeline — observed: after the first
+					// cancel, neither Select Files nor drag-drop on the modal
+					// triggers any event reaching our handlers. `remove` on
+					// the collection fires `remove`, which the visible-tile
+					// Backbone view listens to and unmounts cleanly without
+					// touching the upload pipeline.
 					try { collection.remove( attachment ); } catch ( _ ) { /* ignore */ }
 					touched += 1;
 				}
