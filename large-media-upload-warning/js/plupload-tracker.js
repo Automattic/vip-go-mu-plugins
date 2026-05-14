@@ -113,65 +113,124 @@
 	}
 
 	/**
-	 * Walk every tracked wp.Uploader's queue and clean up the orphan
-	 * attachment that backs the visible "uploading…" tile.
+	 * Match predicate for the orphan "uploading…" attachment.
+	 */
+	function matchesOrphan( attachment, fileName ) {
+		if ( ! attachment || typeof attachment.get !== 'function' ) {
+			return false;
+		}
+		if ( ! attachment.get( 'uploading' ) ) {
+			return false;
+		}
+		if ( fileName && attachment.get( 'filename' ) !== fileName ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Try to remove an attachment from a Backbone Collection. Tries both
+	 * `attachment.destroy({wait:false})` (model-level) and
+	 * `collection.remove(attachment)` (collection-level) — either alone has
+	 * been observed to no-op in different WP setups.
+	 */
+	function cleanAttachmentFromCollection( collection, attachment ) {
+		let ok = false;
+		try {
+			attachment.destroy( { wait: false } );
+			ok = true;
+			debug( 'attachment.destroy() called' );
+		} catch ( e ) { debug( 'destroy() threw', e ); }
+		try {
+			collection.remove( attachment );
+			ok = true;
+			debug( 'collection.remove() called; new length:', collection.length );
+		} catch ( e ) { debug( 'collection.remove() threw', e ); }
+		return ok;
+	}
+
+	/**
+	 * Walk every plausible Backbone Attachments collection in WP's media stack
+	 * and clean up the orphan attachment that backs the visible
+	 * "uploading…" tile.
 	 *
-	 * Tries both Backbone strategies in order:
-	 *   1. `attachment.destroy({ wait: false })` — fires `destroy` event,
-	 *      collection removes the model, view unmounts.
-	 *   2. `queue.remove(attachment)` — collection-level remove as a fallback
-	 *      in case destroy() didn't propagate (e.g. attachment had an ID and
-	 *      Backbone wanted to wait for a DELETE response).
+	 * In modern WP, the tile is rendered from `wp.media.frame.state().get('library')`
+	 * (the modal's library) and/or `wp.media.model.Attachments.all` (the global
+	 * cache). The wp.Uploader instance does NOT carry a queue collection of its
+	 * own in current builds, so the earlier approach missed.
 	 *
 	 * Returns the count of attachments touched.
 	 */
 	globalThis.__vipDestroyUploadingAttachment = function ( fileName ) {
 		let touched = 0;
-		try {
-			const instances = globalThis.__vipWpUploaderInstances;
-			debug( 'destroyUploadingAttachment called; fileName:', fileName, 'instances:', instances?.size );
-			if ( ! instances || instances.size === 0 ) {
-				return 0;
+		debug( 'destroyUploadingAttachment called; fileName:', fileName );
+
+		// Dump the keys of every tracked wp.Uploader so we know exactly what
+		// the instance carries on this WP build. Useful for debugging future
+		// regressions if the property layout changes again.
+		const instances = globalThis.__vipWpUploaderInstances;
+		if ( instances ) {
+			for ( const u of instances ) {
+				debug( 'wp.Uploader instance keys:', Object.keys( u || {} ) );
 			}
-			for ( const wpUploader of instances ) {
-				const queue = wpUploader && wpUploader.queue;
-				if ( ! queue || typeof queue.filter !== 'function' ) {
-					debug( 'uploader has no usable queue', wpUploader );
+		}
+
+		// Candidate collections to scan. Order matters: most-specific first.
+		const candidates = [];
+
+		try {
+			const frame = globalThis.wp?.media?.frame;
+			if ( frame && typeof frame.state === 'function' ) {
+				const state = frame.state();
+				const library = state && typeof state.get === 'function' && state.get( 'library' );
+				if ( library ) {
+					candidates.push( [ 'frame.state().library', library ] );
+				}
+				const selection = state && typeof state.get === 'function' && state.get( 'selection' );
+				if ( selection ) {
+					candidates.push( [ 'frame.state().selection', selection ] );
+				}
+			}
+		} catch ( e ) { debug( 'frame.state() probe threw', e ); }
+
+		try {
+			const all = globalThis.wp?.media?.model?.Attachments?.all;
+			if ( all ) {
+				candidates.push( [ 'Attachments.all', all ] );
+			}
+		} catch ( e ) { debug( 'Attachments.all probe threw', e ); }
+
+		// Also include any `queue` that DOES happen to live on a wp.Uploader
+		// instance (older WP builds did this).
+		if ( instances ) {
+			for ( const u of instances ) {
+				if ( u && u.queue && typeof u.queue.filter === 'function' ) {
+					candidates.push( [ 'wpUploader.queue', u.queue ] );
+				}
+			}
+		}
+
+		debug( 'collection candidates:', candidates.map( ( [ n ] ) => n ) );
+
+		for ( const [ name, collection ] of candidates ) {
+			try {
+				if ( typeof collection.filter !== 'function' ) {
+					debug( name, 'is not a Backbone Collection, skipping' );
 					continue;
 				}
-				debug( 'queue length:', queue.length, 'models:', queue.length > 0 ? queue.map( ( m ) => ( {
-					filename: m.get && m.get( 'filename' ),
-					uploading: m.get && m.get( 'uploading' ),
-					id: m.id,
-					cid: m.cid,
-				} ) ) : [] );
-				const matches = queue.filter( function ( attachment ) {
-					if ( ! attachment || typeof attachment.get !== 'function' ) {
-						return false;
-					}
-					if ( ! attachment.get( 'uploading' ) ) {
-						return false;
-					}
-					if ( fileName && attachment.get( 'filename' ) !== fileName ) {
-						return false;
-					}
-					return true;
-				} );
-				debug( 'matched', matches.length, 'attachments' );
+				const length = typeof collection.length === 'number' ? collection.length : '?';
+				debug( name, 'length:', length );
+				const matches = collection.filter( ( a ) => matchesOrphan( a, fileName ) );
+				debug( name, 'matched', matches.length, 'attachments' );
 				for ( const attachment of matches ) {
-					debug( 'cleaning attachment', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
-					try {
-						attachment.destroy( { wait: false } );
-						debug( 'destroy() called' );
-					} catch ( e ) { debug( 'destroy threw', e ); }
-					try {
-						queue.remove( attachment );
-						debug( 'queue.remove() called; new queue length:', queue.length );
-					} catch ( e ) { debug( 'queue.remove threw', e ); }
-					touched += 1;
+					debug( name, 'cleaning', { cid: attachment.cid, filename: attachment.get( 'filename' ), uploading: attachment.get( 'uploading' ) } );
+					if ( cleanAttachmentFromCollection( collection, attachment ) ) {
+						touched += 1;
+					}
 				}
-			}
-		} catch ( e ) { debug( 'destroyUploadingAttachment outer error', e ); }
+			} catch ( e ) { debug( name, 'outer error', e ); }
+		}
+
 		debug( 'destroyUploadingAttachment returning', touched );
 		return touched;
 	};
