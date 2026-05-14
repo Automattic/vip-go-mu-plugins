@@ -32,6 +32,8 @@ Both surfaces share a single `<dialog>` confirm helper rendered without React or
 
 Server-side, a priority-5 filter on `wp_handle_upload_prefilter` (and the matching `wp_handle_sideload_prefilter`) emits a Logstash event when an oversized image reaches PHP. The filter **never sets `$file['error']`** — it is observe-only.
 
+The Logstash payload includes `feature`, `severity`, `message`, and an `extra` block with `size`, `mime`, `user_id`, `blog_id`. The spec also listed a `screen` field; that was intentionally dropped in v1 because the upload prefilter hook fires in contexts (async-upload, REST, sideloads) where `get_current_screen()` is not reliably populated, so including the field would surface spurious nulls and make analytics noisier. Add it back if a more reliable source of context (e.g. REFERER parsing) is wired in a later pass.
+
 ## Screens covered
 
 The JS interceptors enqueue on these admin screens:
