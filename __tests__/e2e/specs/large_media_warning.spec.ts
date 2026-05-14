@@ -17,6 +17,34 @@ const LARGE = 'test_media/image_01.jpg'; // 1.9 MB — above 512 KB test thresho
 const SMALL = 'test_media/image_small.jpg'; // ~22 KB — below threshold
 
 test.describe( 'Large media upload warning', () => {
+	test( 'DIAGNOSTIC: globals are present on upload.php', async ( { page } ) => {
+		await new WPAdminPage( page ).visit();
+		await page.goto( '/wp-admin/upload.php' );
+		await page.waitForLoadState( 'domcontentloaded' );
+
+		const state = await page.evaluate( () => {
+			const win = globalThis as unknown as Record<string, unknown>;
+			const wp = win.wp as { Uploader?: unknown; mediaUtils?: unknown } | undefined;
+			return {
+				hasWp: typeof wp !== 'undefined',
+				hasUploader: typeof wp?.Uploader !== 'undefined',
+				hasMediaUtils: typeof wp?.mediaUtils !== 'undefined',
+				hasWarning: typeof win.vipLargeMediaWarning !== 'undefined',
+				hasConfig: typeof win.vipLargeMediaWarningConfig !== 'undefined',
+				config: win.vipLargeMediaWarningConfig ?? null,
+				scriptCount: document.querySelectorAll(
+					'script[src*="large-media-upload-warning"]',
+				).length,
+			};
+		} );
+
+		// eslint-disable-next-line no-console
+		console.log( 'DIAGNOSTIC state:', JSON.stringify( state, null, 2 ) );
+		expect( state.scriptCount ).toBeGreaterThan( 0 );
+		expect( state.hasWarning ).toBe( true );
+		expect( state.hasConfig ).toBe( true );
+	} );
+
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
 		await new WPAdminPage( page ).visit();
 		const sidebar = new WPAdminSidebarComponent( page );
