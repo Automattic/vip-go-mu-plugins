@@ -8,20 +8,30 @@
  *      image-block placeholder "Upload" button. Blocks BEFORE upload starts.
  *
  *   2. `XMLHttpRequest.prototype.send` + `globalThis.fetch` wraps. Covers
- *      drag-drop onto the editor canvas, plupload drag-drop on media-new.php,
- *      and anything else that bypasses file inputs. Catches the upload at the
- *      network boundary, before bytes leave the browser.
+ *      drag-drop onto the editor canvas, plupload drag-drop on the Media
+ *      Library modal, and anything else that bypasses file inputs. Catches
+ *      the upload at the network boundary, before bytes leave the browser.
  *
  * The XHR/fetch wrap is a safety net — it sees uploads our DOM intercept
  * already approved. To avoid double-prompting, the DOM intercept registers
  * approved files in a transient "pending" map; the network wrap consumes from
  * that map and skips the dialog when a match is found.
  *
+ * On cancel from the XHR path, we also walk WP's media-frame collections
+ * (`wp.media.frame.state().get('library')`, `wp.media.model.Attachments.all`)
+ * and destroy/remove the orphan `wp.media.model.Attachment` that backs the
+ * visible "uploading…" tile in the Media Library / Classic Editor modal —
+ * `xhr.abort()` alone leaves that tile behind because the tile is rendered
+ * by a Backbone view bound to the model, not by plupload directly.
+ *
  * No persistent fingerprint cache: the previous version cached confirmations
  * for the lifetime of the page, which broke re-picking the same file.
  *
  * Failure mode: every handler is wrapped in try/catch and falls open. The
  * original upload path runs unchanged if anything in this file throws.
+ *
+ * Diagnostic logging: set `globalThis.__vipDebug = true` in the console to
+ * see `[VIP-LMW]`-prefixed traces of each step.
  */
 ( function () {
 	'use strict';
@@ -129,6 +139,82 @@
 		return files;
 	}
 
+	function debug() {
+		if ( globalThis.__vipDebug ) {
+			// eslint-disable-next-line no-console
+			console.log.apply( console, [ '[VIP-LMW]' ].concat( Array.from( arguments ) ) );
+		}
+	}
+
+	/**
+	 * Clean up the orphan "uploading…" tile that WP's media modal leaves
+	 * behind when we abort an in-flight upload.
+	 *
+	 * The tile is rendered by a Backbone view bound to a
+	 * `wp.media.model.Attachment` that lives in the media frame's library
+	 * state — and is mirrored in `wp.media.model.Attachments.all`. Removing
+	 * the model from those collections is what makes Backbone unmount the
+	 * view. We call both `attachment.destroy({wait:false})` (model-level)
+	 * and `collection.remove(attachment)` (collection-level) because either
+	 * alone has been observed to no-op depending on the WP build.
+	 *
+	 * Returns the count of attachments cleaned. Returns 0 (no-op) cleanly
+	 * when `wp.media` isn't loaded — e.g. the standalone media-new.php page,
+	 * which has its own UI and isn't affected by this orphan.
+	 */
+	function destroyUploadingAttachment( fileName ) {
+		let touched = 0;
+		debug( 'destroyUploadingAttachment; fileName:', fileName );
+
+		const candidates = [];
+		try {
+			const frame = globalThis.wp?.media?.frame;
+			const state = frame && typeof frame.state === 'function' ? frame.state() : null;
+			if ( state && typeof state.get === 'function' ) {
+				const library = state.get( 'library' );
+				if ( library ) {
+					candidates.push( [ 'frame.state.library', library ] );
+				}
+				const selection = state.get( 'selection' );
+				if ( selection ) {
+					candidates.push( [ 'frame.state.selection', selection ] );
+				}
+			}
+		} catch ( e ) { debug( 'frame probe threw', e ); }
+
+		try {
+			const all = globalThis.wp?.media?.model?.Attachments?.all;
+			if ( all ) {
+				candidates.push( [ 'Attachments.all', all ] );
+			}
+		} catch ( e ) { debug( 'Attachments.all probe threw', e ); }
+
+		debug( 'candidates:', candidates.map( ( [ n ] ) => n ) );
+
+		for ( const [ name, collection ] of candidates ) {
+			try {
+				if ( typeof collection.filter !== 'function' ) {
+					continue;
+				}
+				const matches = collection.filter( ( a ) =>
+					a && typeof a.get === 'function'
+					&& a.get( 'uploading' )
+					&& ( ! fileName || a.get( 'filename' ) === fileName )
+				);
+				debug( name, 'matched', matches.length );
+				for ( const attachment of matches ) {
+					debug( name, 'cleaning', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
+					try { attachment.destroy( { wait: false } ); } catch ( _ ) { /* ignore */ }
+					try { collection.remove( attachment ); } catch ( _ ) { /* ignore */ }
+					touched += 1;
+				}
+			} catch ( e ) { debug( name, 'error', e ); }
+		}
+
+		debug( 'destroyUploadingAttachment returning', touched );
+		return touched;
+	}
+
 	/**
 	 * Filter the input files through the pending approvals — any matches are
 	 * treated as already-confirmed and need no dialog. Returns the files that
@@ -207,68 +293,18 @@
 						if ( needsReview ) {
 							const xhr = this;
 							const args = arguments;
-							// Snapshot the cancelled file's name now while plupload's
-							// tracker globals are still set; we use it below to match
-							// the orphan attachment / DOM tile by filename.
-							const cancelledName = globalThis.__vipCurrentPluploadFile && globalThis.__vipCurrentPluploadFile.name;
-							if ( globalThis.__vipDebug ) {
-								// eslint-disable-next-line no-console
-								console.log( '[VIP-LMW xhr] intercepted; files:', files.map( ( f ) => ( { name: f.name, size: f.size } ) ), 'cancelledName:', cancelledName );
-							}
+							const cancelledName = files[ 0 ] && files[ 0 ].name;
+							debug( 'xhr intercepted; cancelledName:', cancelledName );
 							reviewFiles( remaining ).then( ( allOk ) => {
 								if ( allOk ) {
 									originalSend.apply( xhr, args );
-								} else {
-									if ( globalThis.__vipDebug ) {
-										// eslint-disable-next-line no-console
-										console.log( '[VIP-LMW xhr] cancel path entered' );
-									}
-									// 1. Tell plupload to drop the file from its queue.
-									if ( typeof globalThis.__vipRemoveCurrentPluploadFile === 'function' ) {
-										try { globalThis.__vipRemoveCurrentPluploadFile(); } catch ( _ ) { /* ignore */ }
-									}
-									// 2. Abort the XHR.
-									try { xhr.abort(); } catch ( _ ) { /* ignore */ }
-									// 3. Destroy the orphan wp.media.model.Attachment.
-									//    plupload.removeFile cleans plupload's queue but
-									//    not WP's `wp.Uploader.queue` Backbone collection —
-									//    the Attachment model that backs the visible
-									//    `.attachment.uploading` tile lives there and the
-									//    Backbone view re-renders the tile until the model
-									//    is destroyed.
-									let destroyed = 0;
-									if ( typeof globalThis.__vipDestroyUploadingAttachment === 'function' ) {
-										try {
-											destroyed = globalThis.__vipDestroyUploadingAttachment( cancelledName );
-										} catch ( _ ) { /* ignore */ }
-									}
-									if ( globalThis.__vipDebug ) {
-										// eslint-disable-next-line no-console
-										console.log( '[VIP-LMW xhr] destroyed:', destroyed, 'will DOM-strike if zero' );
-									}
-									// 4. DOM strike as a final fallback if no Backbone
-									//    attachment was destroyed (e.g. wp.Uploader wasn't
-									//    used for this upload path).
-									if ( destroyed === 0 ) {
-										setTimeout( () => {
-											try {
-												const tiles = globalThis.document.querySelectorAll( '.attachment.uploading' );
-												if ( tiles.length === 0 ) {
-													return;
-												}
-												if ( cancelledName ) {
-													for ( const tile of tiles ) {
-														if ( ( tile.textContent || '' ).indexOf( cancelledName ) !== -1 ) {
-															tile.remove();
-															return;
-														}
-													}
-												}
-												tiles[ tiles.length - 1 ].remove();
-											} catch ( _ ) { /* ignore */ }
-										}, 100 );
-									}
+									return;
 								}
+								// Cancel: stop the network request, then clean up the
+								// orphan wp.media attachment that backs the visible
+								// "uploading…" tile.
+								try { xhr.abort(); } catch ( _ ) { /* ignore */ }
+								destroyUploadingAttachment( cancelledName );
 							} );
 							return;
 						}
