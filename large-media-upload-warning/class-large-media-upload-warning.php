@@ -110,13 +110,12 @@ class Large_Media_Upload_Warning {
 		}
 
 		$base_url = plugins_url( 'js/', __FILE__ );
-		$ver      = $this->asset_version();
 
 		wp_enqueue_script(
 			self::HANDLE_SHARED,
 			$base_url . 'shared-confirm.js',
 			[ 'wp-i18n' ],
-			$ver,
+			$this->asset_version( 'shared-confirm.js' ),
 			true
 		);
 
@@ -131,6 +130,14 @@ class Large_Media_Upload_Warning {
 			),
 			'before'
 		);
+
+		wp_enqueue_script(
+			'vip-large-media-warning-plupload',
+			$base_url . 'plupload-warning.js',
+			[ self::HANDLE_SHARED, 'wp-plupload' ],
+			$this->asset_version( 'plupload-warning.js' ),
+			true
+		);
 	}
 
 	private function is_admin_upload_screen( string $hook ): bool {
@@ -138,8 +145,8 @@ class Large_Media_Upload_Warning {
 		return in_array( $hook, $allowed, true );
 	}
 
-	private function asset_version(): string {
-		$file = __DIR__ . '/js/shared-confirm.js';
+	private function asset_version( string $relative_path = 'shared-confirm.js' ): string {
+		$file = __DIR__ . '/js/' . $relative_path;
 		return file_exists( $file ) ? (string) filemtime( $file ) : '1';
 	}
 }
