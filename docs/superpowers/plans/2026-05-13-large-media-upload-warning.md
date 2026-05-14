@@ -27,7 +27,7 @@
 | `__tests__/e2e/lib/pages/large-media-warning-modal.ts` | Page object for the warning dialog. |
 | `__tests__/e2e/test_media/image_small.jpg` | New ~100 KB fixture for "below threshold" sanity case. |
 | `tests/bootstrap.php` (modify) | Add `require_once __DIR__ . '/../large-media-upload-warning.php';`. |
-| `dev-env-plugin.php` (modify) | Add filter lowering threshold to 512 KB for dev-env / e2e. |
+| `__tests__/e2e/bin/setup-env.sh` (modify) | `wp config set` to enable the module and lower its threshold to 512 KB on the e2e site. |
 | `__tests__/e2e/specs/*` (modify, Task 8) | Swap incidental `image_01.jpg` / `image_02.jpg` usages to `image_small.jpg`. |
 
 ---
@@ -916,7 +916,7 @@ git commit -m "feat(large-media-warning): Gutenberg uploadMedia interceptor"
 **Files:**
 - Create: `__tests__/e2e/test_media/image_small.jpg` (~100 KB)
 - Create: `__tests__/e2e/lib/pages/large-media-warning-modal.ts`
-- Modify: `dev-env-plugin.php`
+- Modify: `__tests__/e2e/bin/setup-env.sh`
 
 - [ ] **Step 1: Generate the small fixture locally and commit the binary**
 
@@ -935,21 +935,19 @@ If `sips` isn't available (non-macOS), use ImageMagick: `convert image_01.jpg -r
 Run: `stat -f%z __tests__/e2e/test_media/image_small.jpg 2>/dev/null || stat -c%s __tests__/e2e/test_media/image_small.jpg`
 Expected: number well below `524288`.
 
-- [ ] **Step 3: Lower threshold + enable module in dev-env**
+- [ ] **Step 3: Lower threshold + enable module in dev-env via setup-env.sh**
 
-In `dev-env-plugin.php`, after the existing `DISABLE_JETPACK_WAF` define block (around line 8), add:
+`dev-env-plugin.php` is gitignored (per-developer scratch file), so it can't be used for shared config. Instead, inject the constants into the e2e site via `wp config set` in the e2e setup script.
 
-```php
-if ( ! defined( 'VIP_LARGE_MEDIA_WARNING_ENABLED' ) ) {
-	define( 'VIP_LARGE_MEDIA_WARNING_ENABLED', true );
-}
+In `__tests__/e2e/bin/setup-env.sh`, after the `wp rewrite structure` line, add:
 
-add_filter( 'vip_large_media_warning_threshold_bytes', static function () {
-	return 524288; // 512 KB — enough that image_01.jpg (1.9 MB) triggers, image_small.jpg (~100 KB) doesn't.
-} );
+```sh
+# Enable the large media upload warning module and lower its threshold for e2e tests
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw
 ```
 
-This applies to *every* dev-env, including but not limited to the e2e site. That's intentional — lowering the threshold during local development surfaces the warning to developers, which is desirable. If a future dev-env needs to opt out, they can override the filter at a higher priority.
+This is scoped to the e2e site only, is tracked in version control, and matches the existing pattern in the setup script.
 
 - [ ] **Step 4: Create the page object**
 
@@ -1002,8 +1000,8 @@ Expected: clean.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add __tests__/e2e/test_media/image_small.jpg __tests__/e2e/lib/pages/large-media-warning-modal.ts dev-env-plugin.php
-git commit -m "test(large-media-warning): fixture, page object, dev-env threshold"
+git add __tests__/e2e/test_media/image_small.jpg __tests__/e2e/lib/pages/large-media-warning-modal.ts __tests__/e2e/bin/setup-env.sh
+git commit -m "test(large-media-warning): fixture, page object, e2e setup-env threshold"
 ```
 
 ---
@@ -1283,22 +1281,19 @@ git commit -m "docs(large-media-warning): operator README and PR notes"
 
 - [ ] **Step 1: Verify the killswitch turns everything off**
 
-Temporarily edit `dev-env-plugin.php` to set `VIP_LARGE_MEDIA_WARNING_ENABLED` to `false`:
+Manually flip the killswitch off on the e2e site via wp-cli, re-run the spec, and confirm the modal-dependent tests fail (positive proof of killswitch). Then revert.
 
-```php
-if ( ! defined( 'VIP_LARGE_MEDIA_WARNING_ENABLED' ) ) {
-	define( 'VIP_LARGE_MEDIA_WARNING_ENABLED', false );
-}
+```bash
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED false --raw
+cd __tests__/e2e && npx playwright test specs/large_media_warning.spec.ts
 ```
-
-Run: `cd __tests__/e2e && npx playwright test specs/large_media_warning.spec.ts`
 
 Expected: tests that rely on the modal appearing should fail (the modal is correctly not enqueued). This is the *positive proof* that the killswitch works — the dialog only exists when the module is on.
 
-**Revert the change.** Set the constant back to `true`.
+**Revert the change** to restore the canonical config:
 
 ```bash
-git diff dev-env-plugin.php   # confirm it's back to the original
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw
 ```
 
 This step is a manual verification only; no commit needed.
