@@ -148,6 +148,27 @@ class Large_Media_Upload_Warning {
 			$this->asset_version( 'upload-interceptor.js' ),
 			false
 		);
+
+		// plupload-tracker: inlined immediately after wp-plupload so we wrap
+		// `plupload.Uploader` before WP's inline media JS instantiates one. The
+		// XHR cancel path needs the current `{ up, file }` to call
+		// `up.removeFile(file)`; without that, plupload's queue is left holding
+		// a FAILED file and the modal's upload UI wedges.
+		wp_enqueue_script( 'wp-plupload' );
+		$tracker_js = $this->get_asset_contents( 'plupload-tracker.js' );
+		if ( '' !== $tracker_js ) {
+			wp_add_inline_script( 'wp-plupload', $tracker_js, 'after' );
+		}
+	}
+
+	private function get_asset_contents( string $relative_path ): string {
+		$file = __DIR__ . '/js/' . $relative_path;
+		if ( ! file_exists( $file ) ) {
+			return '';
+		}
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local file read.
+		$contents = file_get_contents( $file );
+		return false === $contents ? '' : $contents;
 	}
 
 	private function is_admin_upload_screen( string $hook ): bool {

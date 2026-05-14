@@ -317,9 +317,22 @@
 									originalSend.apply( xhr, args );
 									return;
 								}
-								// Cancel: stop the network request, then clean up the
-								// orphan wp.media attachment that backs the visible
-								// "uploading…" tile.
+								// Cancel order matters:
+								//  1. Tell plupload to drop the file from its internal
+								//     queue. Without this, plupload's queue is stuck
+								//     with a FAILED entry that wedges the modal's
+								//     Select Files button and drop zone for any
+								//     subsequent uploads.
+								//  2. Abort the XHR (network).
+								//  3. Remove the orphan wp.media.model.Attachment from
+								//     the modal's library collection (visible tile).
+								try {
+									const current = globalThis.__vipPluploadCurrent;
+									if ( current && current.up && current.file && typeof current.up.removeFile === 'function' ) {
+										debug( 'plupload.removeFile for', current.file.name );
+										current.up.removeFile( current.file );
+									}
+								} catch ( e ) { debug( 'plupload.removeFile threw', e ); }
 								try { xhr.abort(); } catch ( _ ) { /* ignore */ }
 								destroyUploadingAttachment( cancelledName );
 							} );
