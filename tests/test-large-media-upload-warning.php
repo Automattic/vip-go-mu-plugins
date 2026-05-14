@@ -60,7 +60,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_large_image_logs_to_logstash(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
+		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
 			return true; // non-null short-circuits the real Logstash call
 		}, 10, 2 );
@@ -86,7 +86,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_small_image_does_not_log(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
+		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
 			return true; // non-null short-circuits the real Logstash call
 		}, 10, 2 );
@@ -109,7 +109,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 	public function test_filter_non_image_mime_does_not_log(): void {
 		$captured = [];
-		add_filter( 'vip_large_media_warning_log_handler', function ( $value, $data ) use ( &$captured ) {
+		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
 			$captured[] = $data;
 			return true; // non-null short-circuits the real Logstash call
 		}, 10, 2 );
@@ -144,5 +144,24 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'error', $file_out );
 		$this->assertSame( 0, $file_out['error'] );
+	}
+
+	public function test_filter_swallows_exceptions_and_returns_unmodified_file(): void {
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement -- Deliberate throw inside the filter is the test seam for the try/catch path.
+		add_filter( 'vip_large_media_warning_threshold_bytes', function () {
+			throw new \RuntimeException( 'simulated failure inside try block' );
+		} );
+
+		$file_in = [
+			'name'     => 'oops.jpg',
+			'type'     => 'image/jpeg',
+			'tmp_name' => '/tmp/oops',
+			'error'    => 0,
+			'size'     => 5 * 1024 * 1024,
+		];
+
+		$file_out = $this->instance->maybe_log_large_upload( $file_in );
+
+		$this->assertSame( $file_in, $file_out );
 	}
 }

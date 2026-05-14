@@ -87,7 +87,7 @@ class Large_Media_Upload_Warning {
 				],
 			];
 
-			$handled = apply_filters( 'vip_large_media_warning_log_handler', null, $payload );
+			$handled = apply_filters( 'pre_vip_large_media_warning_log', null, $payload );
 			if ( null === $handled && function_exists( '\\Automattic\\VIP\\Logstash\\log2logstash' ) ) {
 				\Automattic\VIP\Logstash\log2logstash( $payload );
 			}
