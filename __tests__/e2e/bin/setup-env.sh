@@ -46,5 +46,9 @@ if [ "${WPVER}" = 'trunk' ]; then
 fi
 vip dev-env exec --slug e2e-test-site --quiet -- wp rewrite structure '/%postname%/'
 
+# Enable the large media upload warning module and lower its threshold for e2e tests
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw
+vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw
+
 # Change admin password to "password"
 vip dev-env exec --slug e2e-test-site --quiet -- wp user update vipgo --user_pass=password
