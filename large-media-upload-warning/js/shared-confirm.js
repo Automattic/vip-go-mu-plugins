@@ -65,7 +65,7 @@
 		dialog.appendChild( title );
 
 		const body = el( 'p', null, sprintfTwo(
-			translate( 'This image is large (%1$s MB). Large images make uploads slow and can cause errors on your site. We recommend resizing the image to under %2$s MB before uploading. Do you want to continue anyway?' ),
+			translate( 'This image is large (%1$s MB). Using large images on the site may negatively affect visitor experience and, in certain cases, cause your application to become slow. We recommend resizing the image to under %2$s MB before uploading. Do you want to continue anyway?' ),
 			sizeMb,
 			thresholdMb
 		) );
