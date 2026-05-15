@@ -99,6 +99,34 @@
 	}
 
 	/**
+	 * Prompt the user about a single oversized file. Resolves to `true` if
+	 * the user cancelled (caller should abort the whole upload), `false`
+	 * otherwise. Fail-open: a dialog error counts as a confirm.
+	 *
+	 * Extracted from `reviewFiles` to keep nesting under Sonar's S2004
+	 * threshold and to make the per-file flow easier to read in isolation.
+	 */
+	function confirmOne( file, threshold, registerApprovals ) {
+		const helper = globalThis.vipLargeMediaWarning;
+		return helper.confirmLargeUpload( file, threshold )
+			.then( ( ok ) => {
+				if ( ! ok ) {
+					return true; // user cancelled
+				}
+				if ( registerApprovals ) {
+					addPending( file );
+				}
+				return false;
+			} )
+			.catch( () => {
+				if ( registerApprovals ) {
+					addPending( file ); // fail open
+				}
+				return false;
+			} );
+	}
+
+	/**
 	 * Ask the user about each oversized file in order. Resolves to true if all
 	 * files are approved (none cancelled), false otherwise. Fail-open on any
 	 * dialog error.
@@ -106,7 +134,7 @@
 	function reviewFiles( files, options ) {
 		const cfg = getConfig();
 		const helper = globalThis.vipLargeMediaWarning;
-		if ( ! helper || typeof helper.confirmLargeUpload !== 'function' ) {
+		if ( typeof helper?.confirmLargeUpload !== 'function' ) {
 			return Promise.resolve( true );
 		}
 		const oversized = files.filter( ( f ) => needsConfirmation( f, cfg ) );
@@ -114,27 +142,16 @@
 			return Promise.resolve( true );
 		}
 
-		return oversized.reduce( ( chain, file ) => chain.then( ( aborted ) => {
-			if ( aborted ) {
-				return true;
-			}
-			return helper.confirmLargeUpload( file, cfg.threshold )
-				.then( ( ok ) => {
-					if ( ok ) {
-						if ( options && options.registerApprovals ) {
-							addPending( file );
-						}
-						return false;
-					}
-					return true; // user cancelled — abort the whole upload
-				} )
-				.catch( () => {
-					if ( options && options.registerApprovals ) {
-						addPending( file ); // fail open
-					}
-					return false;
-				} );
-		} ), Promise.resolve( false ) ).then( ( aborted ) => ! aborted );
+		const registerApprovals = !! options?.registerApprovals;
+		return oversized.reduce(
+			( chain, file ) => chain.then( ( aborted ) => {
+				if ( aborted ) {
+					return true;
+				}
+				return confirmOne( file, cfg.threshold, registerApprovals );
+			} ),
+			Promise.resolve( false )
+		).then( ( aborted ) => ! aborted );
 	}
 
 	function filesFromFormData( body ) {
@@ -145,14 +162,14 @@
 					files.push( value );
 				}
 			} );
-		} catch ( _ ) { /* ignore */ }
+		} catch ( error ) { debug( 'filesFromFormData iterate threw', error ); }
 		return files;
 	}
 
-	function debug() {
+	function debug( ...args ) {
 		if ( globalThis.__vipDebug ) {
 			// eslint-disable-next-line no-console
-			console.log.apply( console, [ '[VIP-LMW]' ].concat( Array.from( arguments ) ) );
+			console.log( '[VIP-LMW]', ...args );
 		}
 	}
 
@@ -178,10 +195,8 @@
 		try {
 			const el = globalThis.document.getElementById( 'media-item-' + pluploadFileId );
 			debug( 'handlers.js media-item', pluploadFileId, el ? 'found, removing' : 'not present' );
-			if ( el && el.parentNode ) {
-				el.parentNode.removeChild( el );
-			}
-		} catch ( e ) { debug( 'removeHandlersMediaItem threw', e ); }
+			el?.remove();
+		} catch ( error ) { debug( 'removeHandlersMediaItem threw', error ); }
 	}
 
 	/**
@@ -213,45 +228,42 @@
 	 * Returns 0 (no-op) cleanly when `wp.media` isn't loaded — e.g. the
 	 * standalone media-new.php page, which has its own UI.
 	 */
-	function destroyUploadingAttachment( fileName ) {
-		let touched = 0;
-		debug( 'destroyUploadingAttachment; fileName:', fileName );
+	// Helpers for `destroyUploadingAttachment` — split out to keep its
+	// cognitive complexity under Sonar's S3776 threshold.
 
-		const candidates = [];
+	function pushCandidate( arr, name, getter ) {
 		try {
-			const queue = globalThis.wp?.Uploader?.queue;
-			if ( queue ) {
-				candidates.push( [ 'Uploader.queue', queue ] );
+			const collection = getter();
+			if ( collection ) {
+				arr.push( [ name, collection ] );
 			}
-		} catch ( e ) { debug( 'Uploader.queue probe threw', e ); }
+		} catch ( error ) { debug( name, 'probe threw', error ); }
+	}
 
+	function getMediaFrameState() {
 		try {
 			const frame = globalThis.wp?.media?.frame;
-			const state = frame && typeof frame.state === 'function' ? frame.state() : null;
-			if ( state && typeof state.get === 'function' ) {
-				const library = state.get( 'library' );
-				if ( library ) {
-					candidates.push( [ 'frame.state.library', library ] );
-				}
-				const selection = state.get( 'selection' );
-				if ( selection ) {
-					candidates.push( [ 'frame.state.selection', selection ] );
-				}
+			if ( typeof frame?.state === 'function' ) {
+				const state = frame.state();
+				return typeof state?.get === 'function' ? state : null;
 			}
-		} catch ( e ) { debug( 'frame probe threw', e ); }
+		} catch ( error ) { debug( 'frame probe threw', error ); }
+		return null;
+	}
 
-		try {
-			const all = globalThis.wp?.media?.model?.Attachments?.all;
-			if ( all ) {
-				candidates.push( [ 'Attachments.all', all ] );
-			}
-		} catch ( e ) { debug( 'Attachments.all probe threw', e ); }
+	function collectAttachmentCandidates() {
+		const candidates = [];
+		pushCandidate( candidates, 'Uploader.queue', () => globalThis.wp?.Uploader?.queue );
+		const state = getMediaFrameState();
+		if ( state ) {
+			pushCandidate( candidates, 'frame.state.library', () => state.get( 'library' ) );
+			pushCandidate( candidates, 'frame.state.selection', () => state.get( 'selection' ) );
+		}
+		pushCandidate( candidates, 'Attachments.all', () => globalThis.wp?.media?.model?.Attachments?.all );
+		return candidates;
+	}
 
-		debug( 'candidates:', candidates.map( ( [ n ] ) => n ) );
-
-		// First pass: identify unique attachments across all candidates.
-		// Must run before we set `uploading: false`, otherwise the filter
-		// (which keys on `uploading`) would miss them on subsequent passes.
+	function findUploadingTargets( candidates, fileName ) {
 		const targets = new Map(); // cid -> attachment
 		for ( const [ name, collection ] of candidates ) {
 			try {
@@ -269,8 +281,31 @@
 						targets.set( attachment.cid, attachment );
 					}
 				}
-			} catch ( e ) { debug( name, 'filter error', e ); }
+			} catch ( error ) { debug( name, 'filter error', error ); }
 		}
+		return targets;
+	}
+
+	function markAttachmentDestroyed( attachment ) {
+		debug( 'marking destroyed', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
+		try {
+			attachment.destroyed = true;
+		} catch ( error ) { debug( 'attachment.destroyed set threw', error ); }
+		try {
+			attachment.set( 'uploading', false, { silent: true } );
+		} catch ( error ) { debug( 'attachment.set(uploading,false) threw', error ); }
+	}
+
+	function destroyUploadingAttachment( fileName ) {
+		debug( 'destroyUploadingAttachment; fileName:', fileName );
+
+		const candidates = collectAttachmentCandidates();
+		debug( 'candidates:', candidates.map( ( [ n ] ) => n ) );
+
+		// First pass: identify unique attachments across all candidates.
+		// Must run before we set `uploading: false`, otherwise the filter
+		// (which keys on `uploading`) would miss them on subsequent passes.
+		const targets = findUploadingTargets( candidates, fileName );
 
 		// Mark each unique attachment as destroyed + not-uploading. The
 		// `destroyed` flag is what the library's `validator` checks to
@@ -278,21 +313,20 @@
 		// false` is set silently so we don't trigger an extra round of
 		// `change:uploading` listeners in the UploaderStatus view.
 		for ( const attachment of targets.values() ) {
-			debug( 'marking destroyed', { cid: attachment.cid, filename: attachment.get( 'filename' ) } );
-			try { attachment.destroyed = true; } catch ( _ ) { /* ignore */ }
-			try { attachment.set( 'uploading', false, { silent: true } ); } catch ( _ ) { /* ignore */ }
+			markAttachmentDestroyed( attachment );
 		}
 
 		// Second pass: remove from every candidate collection. Removing
 		// from `Uploader.queue` is what unmounts the status-bar UI;
 		// removing from `library`/`selection`/`Attachments.all` covers
 		// the grid tile and any cached references.
+		let touched = 0;
 		for ( const [ name, collection ] of candidates ) {
 			for ( const attachment of targets.values() ) {
 				try {
 					collection.remove( attachment );
 					touched += 1;
-				} catch ( e ) { debug( name, 'remove threw', e ); }
+				} catch ( error ) { debug( name, 'remove threw', error ); }
 			}
 		}
 
@@ -352,7 +386,10 @@
 						const dt = new DataTransfer();
 						files.forEach( ( f ) => dt.items.add( f ) );
 						input.files = dt.files;
-					} catch ( _ ) { /* Safari may refuse — fall back to the original input.files */ }
+					} catch ( error ) {
+						// Safari may refuse — fall back to the original input.files.
+						debug( 'DataTransfer rebuild threw (Safari?)', error );
+					}
 					const newEvent = new Event( 'change', { bubbles: true, cancelable: true } );
 					newEvent[ SKIP_MARKER ] = true;
 					input.dispatchEvent( newEvent );
@@ -360,7 +397,7 @@
 					try {
 						input.value = '';
 						debug( 'cleared input.value; new value:', input.value, 'new files length:', input.files?.length );
-					} catch ( err ) { debug( 'clearing input.value threw', err ); }
+					} catch ( error ) { debug( 'clearing input.value threw', error ); }
 					// Drain anything we registered as pending for these files —
 					// we never let them reach the network layer.
 					for ( const f of files ) {
@@ -368,16 +405,20 @@
 					}
 				}
 			} );
-		} catch ( e2 ) { debug( 'onChangeCapture threw', e2 ); }
+		} catch ( error ) { debug( 'onChangeCapture threw', error ); }
 	}
 
 	// ---- XHR.send interception (network boundary, catches drag-drop) ----
 
 	const NativeXHR = globalThis.XMLHttpRequest;
-	if ( NativeXHR && NativeXHR.prototype && typeof NativeXHR.prototype.send === 'function' ) {
+	if ( typeof NativeXHR?.prototype?.send === 'function' ) {
 		const originalSend = NativeXHR.prototype.send;
-		NativeXHR.prototype.send = function ( body ) {
+		// Regular `function` (not arrow) so `this` binds to the XHR
+		// instance when called as `xhr.send(body)`. The inner `.then`
+		// callback is an arrow so it inherits the same `this`.
+		NativeXHR.prototype.send = function ( ...args ) {
 			try {
+				const body = args[ 0 ];
 				if ( body instanceof FormData ) {
 					const files = filesFromFormData( body );
 					if ( files.length > 0 ) {
@@ -385,102 +426,120 @@
 						const cfg = getConfig();
 						const needsReview = remaining.some( ( f ) => needsConfirmation( f, cfg ) );
 						if ( needsReview ) {
-							const xhr = this;
-							const args = arguments;
-							const cancelledName = files[ 0 ] && files[ 0 ].name;
+							const cancelledName = files[ 0 ]?.name;
 							debug( 'xhr intercepted; cancelledName:', cancelledName );
 							reviewFiles( remaining ).then( ( allOk ) => {
 								if ( allOk ) {
-									originalSend.apply( xhr, args );
+									originalSend.apply( this, args );
 									return;
 								}
-								// Cancel order matters:
-								//  1. Tell plupload to drop the file from its internal
-								//     queue. Without this, plupload's queue is stuck
-								//     with a FAILED entry that wedges the modal's
-								//     Select Files button and drop zone for any
-								//     subsequent uploads.
-								//  2. Remove the `#media-item-<plupload-id>` DOM node
-								//     used by `wp-includes/js/plupload/handlers.js`
-								//     (the multi-file uploader on media-new.php).
-								//     WP intentionally leaves this tile behind on
-								//     cancel — see the commented-out FILE_CANCELLED
-								//     case in handlers.js:332-335. Selector matches
-								//     nothing on modal-based pages, so this is a
-								//     safe no-op there.
-								//  3. Abort the XHR (network).
-								//  4. Remove the orphan wp.media.model.Attachment
-								//     from wp.Uploader.queue / state.library / etc.
-								//     (the modal-based pages).
-								let pluploadFileId = null;
-								try {
-									const current = globalThis.__vipPluploadCurrent;
-									if ( current && current.up && current.file && typeof current.up.removeFile === 'function' ) {
-										pluploadFileId = current.file.id;
-										debug( 'plupload.removeFile for', current.file.name, 'id:', pluploadFileId );
-										current.up.removeFile( current.file );
-									}
-								} catch ( e ) { debug( 'plupload.removeFile threw', e ); }
-								removeHandlersMediaItem( pluploadFileId );
-								try { xhr.abort(); } catch ( _ ) { /* ignore */ }
-								destroyUploadingAttachment( cancelledName );
+								handleXhrCancel( this, cancelledName );
 							} );
 							return;
 						}
 					}
 				}
-			} catch ( _ ) { /* fail open */ }
-			return originalSend.apply( this, arguments );
+			} catch ( error ) { debug( 'xhr wrap threw', error ); }
+			return originalSend.apply( this, args );
 		};
 	}
 
+	/**
+	 * Cancel cleanup for an XHR-driven upload. Order matters:
+	 *
+	 *   1. `up.removeFile(file)` on plupload's tracked uploader — without
+	 *      this, plupload's queue is stuck with a FAILED entry that wedges
+	 *      the modal's Select Files button and drop zone for any
+	 *      subsequent uploads.
+	 *   2. Remove the `#media-item-<plupload-id>` DOM node used by
+	 *      `wp-includes/js/plupload/handlers.js` (the multi-file uploader
+	 *      on media-new.php). WP intentionally leaves this tile behind on
+	 *      cancel — see the commented-out FILE_CANCELLED case in
+	 *      handlers.js:332-335. Selector matches nothing on modal-based
+	 *      pages, so this is a safe no-op there.
+	 *   3. Abort the XHR (network).
+	 *   4. Remove the orphan `wp.media.model.Attachment` from
+	 *      `wp.Uploader.queue` / `state.library` / etc. (modal pages).
+	 */
+	function handleXhrCancel( xhr, cancelledName ) {
+		let pluploadFileId = null;
+		try {
+			const current = globalThis.__vipPluploadCurrent;
+			if ( typeof current?.up?.removeFile === 'function' && current.file ) {
+				pluploadFileId = current.file.id;
+				debug( 'plupload.removeFile for', current.file.name, 'id:', pluploadFileId );
+				current.up.removeFile( current.file );
+			}
+		} catch ( error ) { debug( 'plupload.removeFile threw', error ); }
+		removeHandlersMediaItem( pluploadFileId );
+		try {
+			xhr.abort();
+		} catch ( error ) { debug( 'xhr.abort threw', error ); }
+		destroyUploadingAttachment( cancelledName );
+	}
+
 	// ---- fetch interception (modern uploads, e.g. Gutenberg via wp/v2/media) ----
+
+	/**
+	 * If the fetch body is a FormData with one or more oversized Files,
+	 * await the dialog and return `false` when the user cancelled. Returns
+	 * `true` for "nothing to review / approved" — caller should pass
+	 * through to the native fetch.
+	 */
+	async function maybeReviewFetch( init ) {
+		const body = init?.body;
+		if ( ! ( body instanceof FormData ) ) {
+			return true;
+		}
+		const files = filesFromFormData( body );
+		if ( files.length === 0 ) {
+			return true;
+		}
+		const remaining = filterAgainstPending( files );
+		const cfg = getConfig();
+		if ( ! remaining.some( ( f ) => needsConfirmation( f, cfg ) ) ) {
+			return true;
+		}
+		return reviewFiles( remaining );
+	}
+
+	/**
+	 * WP-error-shaped JSON 400 response. Returned from the fetch cancel
+	 * path so the calling uploader (Gutenberg's `mediaUpload`, `apiFetch`,
+	 * etc.) can parse it and surface "Upload cancelled." rather than the
+	 * generic "The response is not a valid JSON response" banner. Shape
+	 * is a hybrid of REST (top-level `code`/`message`) and
+	 * `async-upload.php` (`success`/`data.message`) so both endpoints
+	 * behave.
+	 */
+	function cancelledResponse() {
+		const message = ( typeof globalThis.wp?.i18n?.__ === 'function' )
+			? globalThis.wp.i18n.__( 'Upload cancelled.', 'vip' )
+			: 'Upload cancelled.';
+		return new Response(
+			JSON.stringify( {
+				success: false,
+				code: 'large_media_upload_cancelled',
+				message,
+				data: { status: 400, message },
+			} ),
+			{
+				status: 400,
+				statusText: 'Upload cancelled',
+				headers: { 'Content-Type': 'application/json' },
+			}
+		);
+	}
 
 	const nativeFetch = globalThis.fetch;
 	if ( typeof nativeFetch === 'function' ) {
 		globalThis.fetch = async function ( input, init ) {
 			try {
-				const body = init && init.body;
-				if ( body instanceof FormData ) {
-					const files = filesFromFormData( body );
-					if ( files.length > 0 ) {
-						const remaining = filterAgainstPending( files );
-						const cfg = getConfig();
-						const needsReview = remaining.some( ( f ) => needsConfirmation( f, cfg ) );
-						if ( needsReview ) {
-							const allOk = await reviewFiles( remaining );
-							if ( ! allOk ) {
-								// Return a WP-error-shaped JSON body so the calling
-								// uploader (Gutenberg's mediaUpload, apiFetch, etc.)
-								// can parse it and surface a sensible message rather
-								// than the generic "The response is not a valid JSON
-								// response" banner. Shape is a hybrid of REST
-								// (top-level `code`/`message`) and async-upload.php
-								// (`success`/`data.message`) so both endpoints behave.
-								const message = ( globalThis.wp && globalThis.wp.i18n && typeof globalThis.wp.i18n.__ === 'function' )
-									? globalThis.wp.i18n.__( 'Upload cancelled.', 'vip' )
-									: 'Upload cancelled.';
-								return new Response(
-									JSON.stringify( {
-										success: false,
-										code: 'large_media_upload_cancelled',
-										message,
-										data: {
-											status: 400,
-											message,
-										},
-									} ),
-									{
-										status: 400,
-										statusText: 'Upload cancelled',
-										headers: { 'Content-Type': 'application/json' },
-									}
-								);
-							}
-						}
-					}
+				const allOk = await maybeReviewFetch( init );
+				if ( ! allOk ) {
+					return cancelledResponse();
 				}
-			} catch ( _ ) { /* fail open */ }
+			} catch ( error ) { debug( 'fetch wrap threw', error ); }
 			return nativeFetch.call( this, input, init );
 		};
 	}

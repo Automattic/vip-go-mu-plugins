@@ -17,7 +17,7 @@
 	'use strict';
 
 	const plupload = globalThis.plupload;
-	if ( ! plupload || ! plupload.Uploader || plupload.Uploader.__vipTracked ) {
+	if ( ! plupload?.Uploader || plupload.Uploader.__vipTracked ) {
 		return;
 	}
 
@@ -25,21 +25,26 @@
 
 	function Tracked( settings ) {
 		Original.call( this, settings );
-		const self = this;
 		try {
-			if ( typeof self.bind !== 'function' ) {
+			if ( typeof this.bind !== 'function' ) {
 				return;
 			}
-			self.bind( 'BeforeUpload', function ( up, file ) {
+			this.bind( 'BeforeUpload', function ( up, file ) {
 				globalThis.__vipPluploadCurrent = { up, file };
 			} );
 			const clear = function () {
 				globalThis.__vipPluploadCurrent = null;
 			};
-			self.bind( 'FileUploaded', clear );
-			self.bind( 'UploadComplete', clear );
-			self.bind( 'Error', clear );
-		} catch ( _ ) { /* swallow; do not disrupt plupload */ }
+			this.bind( 'FileUploaded', clear );
+			this.bind( 'UploadComplete', clear );
+			this.bind( 'Error', clear );
+		} catch ( error ) {
+			// Tracker is best-effort; never disrupt plupload's normal init.
+			if ( globalThis.__vipDebug ) {
+				// eslint-disable-next-line no-console
+				console.warn( '[VIP-LMW] plupload-tracker swallowed', error );
+			}
+		}
 	}
 	Tracked.prototype = Original.prototype;
 	Tracked.__vipTracked = true;
