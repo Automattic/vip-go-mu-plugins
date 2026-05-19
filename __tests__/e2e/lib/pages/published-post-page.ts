@@ -47,6 +47,6 @@ export class PublishedPostPage {
 	 * @return {Promise<boolean>} True if image is found, otherwise false
 	 */
 	public isImageDisplayed(): Promise<boolean> {
-		return this.page.isVisible( selectors.postImage );
+		return this.page.locator( selectors.postImage ).isVisible();
 	}
 }
