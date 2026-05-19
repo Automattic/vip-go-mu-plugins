@@ -189,7 +189,12 @@ function vip_only_https_origins( $origins ) {
 add_filter(
 	'debug_information',
 	function ( $debug_info ) {
+		if ( version_compare( wp_get_wp_version(), '7.0-RC1', '<' ) ) {
+			return $debug_info;
+		}
+
 		if ( isset( $debug_info['wp-server']['fields']['opcode_cache'] ) ) {
+
 			$debug_info['wp-server']['fields']['opcode_cache'] = [
 				'label' => __( 'Opcode cache' ),
 				'value' => __( 'The opcode cache is managed by VIP for optimal performance.' ),
