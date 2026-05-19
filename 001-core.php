@@ -177,3 +177,31 @@ function vip_only_https_origins( $origins ) {
 		return str_starts_with( $origin, 'https://' );
 	} );
 }
+
+/**
+ * Override the OPCache information in Site Health.
+ *
+ * WordPress 7.0 introduced OPCache info to Site Health > Info > Server.
+ * However, for VIP, OPCache is managed by VIP, so instead of showing that
+ * OPCache is disabled (which is incorrect), this filter replaces that with
+ * a message indicating it's managed by VIP.
+ */
+add_filter(
+	'debug_information',
+	function ( $debug_info ) {
+		if ( version_compare( wp_get_wp_version(), '7.0-RC1', '<' ) ) {
+			return $debug_info;
+		}
+
+		if ( isset( $debug_info['wp-server']['fields']['opcode_cache'] ) ) {
+
+			$debug_info['wp-server']['fields']['opcode_cache'] = [
+				'label' => __( 'Opcode cache' ),
+				'value' => __( 'The opcode cache is managed by VIP for optimal performance.' ),
+				'debug' => __( 'Managed by VIP' ),
+			];
+		}
+
+		return $debug_info;
+	}
+);
