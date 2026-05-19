@@ -134,17 +134,17 @@ class Search_Test extends WP_UnitTestCase {
 				// Active index number
 				1,
 				// Blog id
-				2,
+				1,
 				// Expected index name
-				'vip-123-post-2',
+				'vip-123-post-1',
 			),
 			array(
 				// Active index number
 				2,
 				// Blog id
-				2,
+				1,
 				// Expected index name
-				'vip-123-post-2-v2',
+				'vip-123-post-1-v2',
 			),
 			array(
 				// Active index number
@@ -293,6 +293,73 @@ class Search_Test extends WP_UnitTestCase {
 		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
 
 		$this->assertEquals( $expected_index_name, $index_name );
+	}
+
+	/**
+	 * Test that index name version is resolved using the target blog's version data,
+	 * not the calling site's — i.e. cross-site searches use the correct index.
+	 *
+	 * Scenario (mirrors the real bug):
+	 *   - site A has active index version 2  → should produce vip-123-post-{A}-v2
+	 *   - site B has active index version 1  → should produce vip-123-post-{B}  (no suffix)
+	 * Before the fix, calling the filter from site A's context for site B produced
+	 * vip-123-post-{B}-v2 because get_option() ran against site A's DB row.
+	 *
+	 * @group ms-required
+	 */
+	public function test__vip_search_filter_ep_index_name_uses_target_blog_version() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Blog switching only applies on multisite.' );
+		}
+
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$blog_id_a = self::factory()->blog->create();
+		$blog_id_b = self::factory()->blog->create();
+
+		$v2_versions = [
+			'post' => [
+				1 => [
+					'number'         => 1,
+					'active'         => false,
+					'created_time'   => null,
+					'activated_time' => null,
+				],
+				2 => [
+					'number'         => 2,
+					'active'         => true, 
+					'created_time'   => time(),
+					'activated_time' => time(),
+				],
+			],
+		];
+		switch_to_blog( $blog_id_a );
+		update_option( Versioning::INDEX_VERSIONS_OPTION, $v2_versions );
+		restore_current_blog();
+
+		switch_to_blog( $blog_id_a );
+		$index_name_b = apply_filters( 'ep_index_name', 'index-name', $blog_id_b, $indexable );
+		restore_current_blog();
+
+		$this->assertSame(
+			"vip-123-post-{$blog_id_b}",
+			$index_name_b,
+			'Cross-site query should use the target site\'s version (v1), not the calling site\'s (v2)'
+		);
+
+		switch_to_blog( $blog_id_a );
+		$index_name_a = apply_filters( 'ep_index_name', 'index-name', $blog_id_a, $indexable );
+		restore_current_blog();
+
+		$this->assertSame(
+			"vip-123-post-{$blog_id_a}-v2",
+			$index_name_a,
+			'Querying the site that has v2 active should still produce the -v2 suffix'
+		);
 	}
 
 	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
