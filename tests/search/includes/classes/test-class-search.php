@@ -331,7 +331,7 @@ class Search_Test extends WP_UnitTestCase {
 				],
 				2 => [
 					'number'         => 2,
-					'active'         => true, 
+					'active'         => true,
 					'created_time'   => time(),
 					'activated_time' => time(),
 				],
