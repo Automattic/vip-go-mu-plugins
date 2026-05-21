@@ -19,6 +19,8 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
+		update_option( 'active_plugins', [] );
+		update_site_option( 'active_sitewide_plugins', [] );
 
 		parent::tearDown();
 	}
@@ -244,6 +246,48 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
 		Constant_Mocker::define( 'IS_GUTENBERG_PLUGIN', true );
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_load_sets_inactive_when_gutenberg_plugin_activated(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
+		update_option( 'active_plugins', [ 'gutenberg/gutenberg.php' ] );
+
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'is_loaded' ] )
+			->getMock();
+
+		$integration_mock->method( 'is_loaded' )->willReturn( false );
+
+		$integration_mock->load();
+
+		// Trigger the plugins_loaded action to execute the closure
+		do_action( 'plugins_loaded' );
+
+		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_load_sets_inactive_when_gutenberg_plugin_network_activated(): void {
+		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
+		update_site_option( 'active_sitewide_plugins', [ 'gutenberg/gutenberg.php' => time() ] );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
