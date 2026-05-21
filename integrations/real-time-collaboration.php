@@ -47,13 +47,11 @@ class RealTimeCollaborationIntegration extends Integration {
 			return true;
 		}
 
-		$active_plugins = (array) get_option( 'active_plugins', [] );
-		if ( in_array( 'gutenberg/gutenberg.php', $active_plugins, true ) ) {
-			return true;
+		if ( ! function_exists( 'is_plugin_active' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 		}
 
-		$network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', [] );
-		return isset( $network_active_plugins['gutenberg/gutenberg.php'] );
+		return \is_plugin_active( 'gutenberg/gutenberg.php' );
 	}
 
 	/**
