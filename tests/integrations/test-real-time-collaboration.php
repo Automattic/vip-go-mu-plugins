@@ -16,11 +16,23 @@ use Automattic\Test\Constant_Mocker;
 
 class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'real-time-collaboration';
+	private array $previous_active_plugins = [];
+	private array $previous_active_sitewide_plugins = [];
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->previous_active_plugins = get_option( 'active_plugins', [] );
+		$this->previous_active_sitewide_plugins = get_site_option( 'active_sitewide_plugins', [] );
+
+		update_option( 'active_plugins', [] );
+		update_site_option( 'active_sitewide_plugins', [] );
+	}
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
-		update_option( 'active_plugins', [] );
-		update_site_option( 'active_sitewide_plugins', [] );
+		update_option( 'active_plugins', $this->previous_active_plugins );
+		update_site_option( 'active_sitewide_plugins', $this->previous_active_sitewide_plugins );
 
 		parent::tearDown();
 	}
