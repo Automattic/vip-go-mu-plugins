@@ -28,8 +28,6 @@ jobs:
       matrix:
         config:
         # PHP 8.2
-          - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
-          - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
           - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
           - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.2', phpunit: '' }
           - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.2', phpunit: '' }
@@ -46,8 +44,6 @@ jobs:
           - { wp: latest,  ms: 'no',  jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
           - { wp: latest,  ms: 'yes', jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
         # PHP 8.3
-          - { wp: 6.4.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.4.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
