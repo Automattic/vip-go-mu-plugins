@@ -180,7 +180,7 @@ export class EditorPage {
 	 * @param {string} title Page/Post Title
 	 */
 	public async enterTitle( title: string ): Promise<void> {
-		await ( await this.editorLocator( selectors.editorTitle ) ).fill( title );
+		await ( await this.editorOrPageLocator( selectors.editorTitle ) ).fill( title );
 	}
 
 	/**
@@ -221,7 +221,7 @@ export class EditorPage {
 	 * Clear Title of page or post
 	 */
 	public async clearTitle(): Promise<void> {
-		await ( await this.editorLocator( selectors.editorTitle ) ).fill( '' );
+		await ( await this.editorOrPageLocator( selectors.editorTitle ) ).fill( '' );
 	}
 
 	/**
