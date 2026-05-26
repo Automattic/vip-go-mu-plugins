@@ -1,0 +1,91 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Weekly Release PRs
+
+on:
+  schedule:
+    # Every Tuesday at 09:00 UTC
+    - cron: "0 9 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  create-release-prs:
+    name: Create Release PRs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@a5ad31d6a139d249332a2605b85202e8c0b78450 # v2.19.1
+        with:
+          egress-policy: audit
+
+      - name: Check out source code
+        uses: actions/checkout@v6.0.2
+
+      - name: Determine version numbers
+        id: versions
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current_date=$(date '+%Y%m%d')
+
+          # Find the highest minor version already used in PR titles for today.
+          # Titles follow the pattern YYYYMMDD.N
+          highest=$(gh pr list --repo "${{ github.repository }}" --state all \
+            --search "${current_date}." --json title \
+            --jq "[.[].title | capture(\"${current_date}\\.(?<n>[0-9]+)\") | .n | tonumber] | max // -1")
+
+          next_minor=$(( highest + 1 ))
+
+          echo "prod_title=${current_date}.${next_minor}" >> "$GITHUB_OUTPUT"
+          echo "staging_title=${current_date}.$(( next_minor + 1 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR — staging → production
+        id: pr-prod
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          url=$(gh pr create \
+            --repo "${{ github.repository }}" \
+            --base production \
+            --head staging \
+            --title "${{ steps.versions.outputs.prod_title }}" \
+            --body "Automated weekly release: staging → production")
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+
+      - name: Create PR — develop → staging
+        id: pr-staging
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          url=$(gh pr create \
+            --repo "${{ github.repository }}" \
+            --base staging \
+            --head develop \
+            --title "${{ steps.versions.outputs.staging_title }}" \
+            --body "Automated weekly release: develop → staging")
+          echo "url=${url}" >> "$GITHUB_OUTPUT"
+
+      - name: Notify Slack
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -fsSL -X POST "${SLACK_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "channel": "#bots-vipcantina",
+              "text": "<!subteam^S01SYE0V8TA> Weekly MU plugins release PRs are ready :rocket:",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!subteam^S01SYE0V8TA> Weekly MU plugins release PRs are ready :rocket:\n• <${{ steps.pr-prod.outputs.url }}|${{ steps.versions.outputs.prod_title }}> — staging → production\n• <${{ steps.pr-staging.outputs.url }}|${{ steps.versions.outputs.staging_title }}> — develop → staging"
+                  }
+                }
+              ]
+            }'
