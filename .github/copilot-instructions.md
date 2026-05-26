@@ -101,10 +101,10 @@ npm run lint  # Runs both phplint and phpcs
 All PRs to `develop` branch trigger these workflows:
 
 1. **CI Workflow** (`.github/workflows/ci.yml`):
-   - Runs PHPUnit tests across matrix of WP versions (6.4.x-nightly), PHP versions (8.1-8.4), multisite yes/no, Jetpack yes/no
+   - Runs PHPUnit tests across matrix of WP versions (6.5.x-nightly), PHP versions (8.2-8.5), multisite yes/no, Jetpack yes/no
    - Uses MySQL 8 service container
    - Takes about 10 minutes for full matrix
-   - Generates code coverage for latest WP + PHP 8.1
+   - Generates code coverage for latest WP + PHP 8.2
 
 2. **Lint Workflow** (`.github/workflows/lint.yml`):
    - Runs `npm run lint` (phplint + phpcs)
