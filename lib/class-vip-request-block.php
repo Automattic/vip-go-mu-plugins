@@ -38,8 +38,11 @@ class VIP_Request_Block {
 		// Don't try to block if the passed value is not a valid IP.
 		if ( ! filter_var( $value, FILTER_VALIDATE_IP ) ) {
 			if ( ! defined( 'WP_TESTS_DOMAIN' ) ) {
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-				error_log( 'VIP Request Block: The value passed is not a correct IP address: ' . $value );
+				$rate_key = 'vip_req_block_invalid_ip_' . md5( $value );
+				if ( ! function_exists( 'apcu_add' ) || apcu_add( $rate_key, 1, 300 ) ) {
+					// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+					error_log( 'VIP Request Block: The value passed is not a correct IP address: ' . $value );
+				}
 			}
 
 			return false;
