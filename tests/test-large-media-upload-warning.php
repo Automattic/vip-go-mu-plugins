@@ -14,6 +14,17 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		// Explicitly clear every filter this module exposes. `WP_UnitTestCase`
+		// already restores hooks via its own mechanism, but tests that add
+		// throwing or otherwise-disruptive callbacks (see
+		// test_filter_swallows_exceptions_and_returns_unmodified_file) must
+		// not leak even if an assertion failure short-circuits the test body
+		// before any inline cleanup runs.
+		remove_all_filters( 'vip_large_media_warning_enabled' );
+		remove_all_filters( 'vip_large_media_warning_threshold_bytes' );
+		remove_all_filters( 'vip_large_media_warning_mime_types' );
+		remove_all_filters( 'pre_vip_large_media_warning_log' );
+
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -163,7 +174,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		$file_out = $this->instance->maybe_log_large_upload( $file_in );
 
 		$this->assertSame( $file_in, $file_out );
-
-		remove_all_filters( 'vip_large_media_warning_threshold_bytes' );
+		// Cleanup of the throwing filter is handled in tearDown() — see the
+		// comment there for why this is in tearDown rather than inline.
 	}
 }
