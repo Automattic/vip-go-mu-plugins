@@ -42,6 +42,10 @@ if ( file_exists( __DIR__ . '/integrations/real-time-collaboration.php' ) ) {
 	require_once __DIR__ . '/integrations/real-time-collaboration.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/safe-publish.php' ) ) {
+	require_once __DIR__ . '/integrations/safe-publish.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -63,6 +67,10 @@ if ( class_exists( __NAMESPACE__ . '\\JetpackIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\RealTimeCollaborationIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new RealTimeCollaborationIntegration( 'real-time-collaboration' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\SafePublishIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new SafePublishIntegration( 'safe-publish' ) );
 }
 
 // @codeCoverageIgnoreEnd
