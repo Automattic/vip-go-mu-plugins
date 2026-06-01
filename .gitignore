@@ -32,3 +32,6 @@ cypress/results/
 e2eStorageState.json
 /unique-index-name.php
 .claude/
+
+#superpowers
+/docs/superpowers/
