@@ -319,6 +319,25 @@ function wpcom_vip_remove_livechat() {
 }
 
 /**
+ * Get the mobile device type from the X-Mobile-Class header set in the request.
+ *
+ * @return string|null One of 'desktop', 'smart', 'dumb', 'tablet', or null if the header is not set or contains unrecognized value.
+ */
+function vip_get_device_class(): ?string {
+	if ( ! isset( $_SERVER['HTTP_X_MOBILE_CLASS'] ) ) {
+		return null;
+	}
+
+	$type    = $_SERVER['HTTP_X_MOBILE_CLASS']; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	$allowed = [ 'desktop', 'smart', 'dumb', 'tablet' ];
+	if ( ! in_array( $type, $allowed, true ) ) {
+		return null;
+	}
+
+	return $type;
+}
+
+/**
 * Eliminates widows in strings by replace the breaking space that appears before the last word with a non-breaking space.
 *
 * This function is defined on WordPress.com and can be a common source of frustration for VIP devs.

@@ -1,11 +1,44 @@
-import type { Locator, Page } from '@playwright/test';
+import type { FrameLocator, Locator, Page } from '@playwright/test';
+
+type WPBlock = {
+	attributes?: {
+		content?: string;
+	};
+	clientId?: string;
+	innerBlocks?: WPBlock[];
+	name?: string;
+};
+
+type WPBlockEditorSelect = {
+	getBlocks?: () => WPBlock[];
+};
+
+type WPBlockEditorDispatch = {
+	resetBlocks?: ( blocks: WPBlock[] ) => void;
+};
+
+type WPData = {
+	select?: ( storeName: string ) => WPBlockEditorSelect;
+	dispatch?: ( storeName: string ) => WPBlockEditorDispatch;
+};
+
+type WPWindow = Window & typeof globalThis & {
+	wp?: {
+		blocks?: {
+			parse?: ( html: string ) => WPBlock[];
+		};
+		data?: WPData;
+	};
+};
 
 const selectors = {
 	// Editor
+	editorCanvas: 'iframe[name="editor-canvas"]',
+	editorRoot: '.editor-styles-wrapper',
 	editorTitle: '.editor-post-title__input',
-	editorTitleContainer: '.edit-post-visual-editor__post-title-wrapper h1',
 
 	// Block inserter
+	addBlockButton: 'button[aria-label="Add block"]',
 	blockInserterToggle: 'button.edit-post-header-toolbar__inserter-toggle',
 	blockInserterPanel: '.block-editor-inserter__content',
 	blockSearch: '.block-editor-inserter__search input[type="search"]',
@@ -52,6 +85,7 @@ const selectors = {
 
 export class EditorPage {
 	private page: Page;
+	private hasDismissedNuisances = false;
 
 	/**
 	 * Constructs an instance of the component.
@@ -62,18 +96,82 @@ export class EditorPage {
 		this.page = page;
 	}
 
-	public static automaticallyDismissAnnoyingNuisances( page: Page ): Promise<unknown[]> {
-		const clickLocatorHandler = ( locator: Locator ): Promise<void> => locator.click();
-		return Promise.all( [
-			page.addLocatorHandler(
-				page.locator( selectors.welcomeTourCloseButton ),
-				clickLocatorHandler,
-			),
-			page.addLocatorHandler(
-				page.locator( selectors.choosePatternCloseButton ),
-				clickLocatorHandler,
-			),
+	private async editorContent(): Promise<Page | FrameLocator> {
+		const nuisanceTimeout = this.hasDismissedNuisances ? 0 : 1000;
+		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
+
+		const editorCanvas = this.page.locator( selectors.editorCanvas );
+		const editorRoot = this.page.locator( selectors.editorRoot );
+		const visibleEditor = await Promise.race( [
+			editorCanvas.waitFor( { state: 'visible' } ).then( () => 'iframe' as const ).catch( () => undefined ),
+			editorRoot.waitFor( { state: 'visible' } ).then( () => 'page' as const ).catch( () => undefined ),
 		] );
+
+		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
+		this.hasDismissedNuisances = true;
+
+		if ( 'iframe' === visibleEditor || await editorCanvas.isVisible() ) {
+			return this.page.frameLocator( selectors.editorCanvas );
+		}
+
+		return this.page;
+	}
+
+	private async editorLocator( selector: string ): Promise<Locator> {
+		return ( await this.editorContent() ).locator( selector );
+	}
+
+	private async waitForBlockEditor(): Promise<void> {
+		await this.page.waitForFunction( () => {
+			const wp = ( window as WPWindow ).wp;
+			const data = wp?.data;
+			const blockEditorSelect = data?.select?.( 'core/block-editor' );
+			const blockEditorDispatch = data?.dispatch?.( 'core/block-editor' );
+
+			return Boolean( wp?.blocks?.parse && blockEditorSelect?.getBlocks && blockEditorDispatch?.resetBlocks );
+		} );
+	}
+
+	private async editorOrPageLocator( selector: string ): Promise<Locator> {
+		const editorContent = await this.editorContent();
+		const pageLocator = this.page.locator( selector );
+
+		if ( ! await this.page.locator( selectors.editorCanvas ).isVisible() ) {
+			return pageLocator;
+		}
+
+		const editorLocator = editorContent.locator( selector );
+		const visibleLocator = await Promise.race( [
+			editorLocator.first().waitFor( { state: 'visible' } ).then( () => editorLocator ).catch( () => undefined ),
+			pageLocator.first().waitFor( { state: 'visible' } ).then( () => pageLocator ).catch( () => undefined ),
+		] );
+
+		return visibleLocator ?? pageLocator;
+	}
+
+	private static async clickIfVisible( page: Page, selector: string, timeout: number ): Promise<void> {
+		const locator = page.locator( `${ selector }:visible` ).first();
+		const isVisible = 0 < timeout
+			? await locator.waitFor( { state: 'visible', timeout } )
+				.then( () => true )
+				.catch( () => false )
+			: await locator.isVisible();
+
+		if ( ! isVisible ) {
+			return;
+		}
+
+		await locator.evaluate( ( button: HTMLButtonElement ) => button.click() );
+		await locator.waitFor( { state: 'hidden', timeout: 3000 } ).catch( () => undefined );
+	}
+
+	private static async dismissAnnoyingNuisances( page: Page, timeout = 0 ): Promise<void> {
+		await EditorPage.clickIfVisible( page, selectors.welcomeTourCloseButton, timeout );
+		await EditorPage.clickIfVisible( page, selectors.choosePatternCloseButton, timeout );
+	}
+
+	public static automaticallyDismissAnnoyingNuisances( page: Page ): Promise<void> {
+		return EditorPage.dismissAnnoyingNuisances( page, 1000 );
 	}
 
 	/**
@@ -82,8 +180,7 @@ export class EditorPage {
 	 * @param {string} title Page/Post Title
 	 */
 	public async enterTitle( title: string ): Promise<void> {
-		await this.page.locator( selectors.editorTitleContainer ).click();
-		await this.page.locator( selectors.editorTitle ).fill( title );
+		await ( await this.editorOrPageLocator( selectors.editorTitle ) ).fill( title );
 	}
 
 	/**
@@ -94,10 +191,12 @@ export class EditorPage {
 	public async enterText( text: string ): Promise<void> {
 		const lines = text.split( '\n' );
 		let locator: Locator;
-		if ( await this.page.locator( selectors.blockAppender ).isVisible() ) {
-			locator = this.page.locator( selectors.blockAppender );
+		const blockAppender = await this.editorLocator( selectors.blockAppender );
+		const paragraphBlocks = await this.editorLocator( selectors.paragraphBlocks );
+		if ( await blockAppender.isVisible() ) {
+			locator = blockAppender;
 		} else {
-			locator = this.page.locator( selectors.paragraphBlocks ).last();
+			locator = paragraphBlocks.last();
 		}
 
 		await locator.click();
@@ -111,7 +210,7 @@ export class EditorPage {
 		for ( let idx = 0; idx < lines.length; ++idx ) {
 			// eslint-disable-next-line security/detect-object-injection
 			const line = lines[ idx ];
-			const lineLocator = this.page.locator( `${ selectors.paragraphBlocks }:nth-of-type(${ idx + 1 })` );
+			const lineLocator = paragraphBlocks.nth( idx );
 			await lineLocator.fill( line );
 			await lineLocator.press( 'Enter' );
 		}
@@ -122,25 +221,30 @@ export class EditorPage {
 	 * Clear Title of page or post
 	 */
 	public async clearTitle(): Promise<void> {
-		const locator = this.page.locator( selectors.editorTitle );
-		await locator.click();
-		await locator.selectText();
-		await locator.press( 'Backspace' );
+		await ( await this.editorOrPageLocator( selectors.editorTitle ) ).fill( '' );
 	}
 
 	/**
 	 * Clear text of page or post
 	 */
 	public async clearText(): Promise<void> {
-		/* eslint-disable no-await-in-loop */
-		const locator = this.page.locator( selectors.block );
-		while ( await locator.isVisible() ) {
-			await locator.click();
-			await locator.selectText();
-			await locator.press( 'Backspace' ); // Kill the text
-			await locator.press( 'Backspace' ); // Kill the block
-		}
-		/* eslint-enable no-await-in-loop */
+		await this.editorContent();
+		await this.waitForBlockEditor();
+		await this.page.evaluate( () => {
+			const wp = ( window as WPWindow ).wp;
+			const data = wp?.data;
+			const blockEditorDispatch = data?.dispatch?.( 'core/block-editor' );
+			const blocks = wp?.blocks?.parse?.( '' ) ?? [];
+
+			blockEditorDispatch?.resetBlocks?.( blocks );
+		} );
+		await this.page.waitForFunction( () => {
+			const blocks = ( window as WPWindow ).wp?.data?.select?.( 'core/block-editor' )?.getBlocks?.();
+
+			return Array.isArray( blocks ) && blocks.every( ( block ) => {
+				return ! block.attributes?.content && 0 === ( block.innerBlocks?.length ?? 0 );
+			} );
+		} );
 	}
 
 	/**
@@ -149,10 +253,11 @@ export class EditorPage {
 	 * @param {string} fileName Name of image file to add
 	 */
 	public async addImage( fileName: string ): Promise<void> {
-		if ( await this.page.locator( selectors.blockAppender ).isVisible() ) {
-			await this.page.locator( selectors.blockAppender ).click();
+		const blockAppender = await this.editorLocator( selectors.blockAppender );
+		if ( await blockAppender.isVisible() ) {
+			await blockAppender.click();
 		} else {
-			const lastBlock = this.page.locator( selectors.paragraphBlocks ).last();
+			const lastBlock = ( await this.editorLocator( selectors.paragraphBlocks ) ).last();
 			await lastBlock.click();
 			const box = await lastBlock.boundingBox();
 			if ( box ) {
@@ -160,19 +265,19 @@ export class EditorPage {
 				const offsetY = box.y + ( box.height / 2 );
 				await this.page.mouse.move( offsetX, offsetY );
 			}
-			await this.page.getByLabel( 'Add block' ).click();
+			await ( await this.editorOrPageLocator( selectors.addBlockButton ) ).click();
 		}
-		await this.page.locator( selectors.imageBlocks ).click();
+		await ( await this.editorOrPageLocator( selectors.imageBlocks ) ).click();
 
 		const [ fileChooser ] = await Promise.all( [
 			// It is important to call waitForEvent before click to set up waiting.
 			this.page.waitForEvent( 'filechooser' ),
 			// This has to click twice, the first focuses in the block, the second opens the upload
-			this.page.locator( selectors.uploadImageButton ).click(),
-			this.page.locator( selectors.uploadImageButton ).click(),
+			( await this.editorLocator( selectors.uploadImageButton ) ).click(),
+			( await this.editorLocator( selectors.uploadImageButton ) ).click(),
 		] );
 		await fileChooser.setFiles( fileName );
-		await this.page.locator( selectors.spinner ).waitFor( { state: 'detached' } );
+		await ( await this.editorLocator( selectors.spinner ) ).waitFor( { state: 'detached' } );
 	}
 
 	/**
