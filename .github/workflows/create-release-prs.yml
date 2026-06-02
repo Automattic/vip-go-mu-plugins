@@ -121,7 +121,7 @@ jobs:
             local title
             local version
 
-            existing_pr="$(gh pr list --state open --head "${head_branch}" --base "${base_branch}" --json url --jq '.[0].url // ""')"
+            existing_pr="$(gh pr list --state open --head "${GH_REPO%%/*}:${head_branch}" --base "${base_branch}" --json url --jq '.[0].url // ""')"
             if [ -n "${existing_pr}" ]; then
               echo "- Skipped ${head_branch} -> ${base_branch}; an open PR already exists: ${existing_pr}" >> "${GITHUB_STEP_SUMMARY}"
               return
