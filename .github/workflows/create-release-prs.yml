@@ -137,14 +137,14 @@ jobs:
 
             body_file="$(mktemp)"
             cat > "${body_file}" << EOF
-          Automated release PR.
+Automated release PR.
 
-          Release version: \`v${version}\`
-          Source branch: \`${head_branch}\`
-          Target branch: \`${base_branch}\`
+Release version: \`v${version}\`
+Source branch: \`${head_branch}\`
+Target branch: \`${base_branch}\`
 
-          Merge this PR after required checks pass.
-          EOF
+Merge this PR after required checks pass.
+EOF
 
             pr_url="$(gh pr create \
               --base "${base_branch}" \
