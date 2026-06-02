@@ -44,8 +44,8 @@ jobs:
           should_create=true
 
           # Manual workflow_dispatch runs are not date/time gated.
-          # Scheduled runs already use a Tuesday 11:00 MST cron; keep only a day guard in case the schedule is edited.
-          if [ "${EVENT_NAME}" = "schedule" ] && [ "${local_day}" != "2" ]; then
+          # Scheduled runs already use a Tuesday 11:00 MST cron; keep day/hour guards in case the schedule is edited.
+          if [ "${EVENT_NAME}" = "schedule" ] && ( [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ] ); then
             should_create=false
           fi
 
