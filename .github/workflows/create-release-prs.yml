@@ -77,7 +77,7 @@ jobs:
       - name: Create selected release PRs
         if: steps.release.outputs.should_create == 'true'
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || github.token }}
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_DATE: ${{ steps.release.outputs.date }}
           RELEASE_PR_TARGET: ${{ github.event.inputs.release_pr || 'scheduled' }}
