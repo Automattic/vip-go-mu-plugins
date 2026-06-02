@@ -17,7 +17,9 @@ Release version format: `vYYYYMMDD.N`.
 
 The `N` suffix increments from existing same-day release PRs and tags. When no `vYYYYMMDD.N` release exists yet for the day, the scheduled production PR uses `.0` and the scheduled staging PR uses `.1`.
 
-The workflow can also be run manually with `workflow_dispatch`. Select `staging-to-production` or `develop-to-staging` to choose which release PR to create.
+The workflow can also be run manually with `workflow_dispatch`. Select `both`, `production-release`, or `staging-release` to choose which release PRs to create.
+
+Manual runs are not limited to Tuesday at 11:00 MST. They use the current MST date for the release version and still skip PR creation when a matching open PR already exists or when there are no commits to promote.
 
 The workflow skips PR creation when a matching open release PR already exists or when there are no commits to promote between the selected branches.
 

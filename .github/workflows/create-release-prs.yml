@@ -10,11 +10,12 @@ on:
       release_pr:
         description: 'Release PR to create'
         required: true
-        default: 'staging-to-production'
+        default: 'both'
         type: choice
         options:
-          - staging-to-production
-          - develop-to-staging
+          - both
+          - production-release
+          - staging-release
 
 permissions:
   contents: read
@@ -39,6 +40,7 @@ jobs:
           release_date="$(TZ="${RELEASE_TIMEZONE}" date '+%Y%m%d')"
           should_create=true
 
+          # Manual workflow_dispatch runs are not date/time gated.
           if [ "${EVENT_NAME}" = "schedule" ] && { [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ]; }; then
             should_create=false
           fi
@@ -93,7 +95,7 @@ jobs:
                 gh api -X GET search/issues \
                   -f q="repo:${GH_REPO} is:pr in:title v${RELEASE_DATE}." \
                   -f per_page=100 \
-                  --jq '.items[].title' | sed -nE "s/.*: v${RELEASE_DATE}\.([0-9]+).*/\1/p"
+                  --jq '.items[].title' | sed -nE "s/.*v${RELEASE_DATE}\.([0-9]+).*/\1/p"
               } | sort -n | uniq
             )
 
@@ -151,14 +153,18 @@ jobs:
           }
 
           case "${RELEASE_PR_TARGET}" in
+            both)
+              create_release_pr "staging" "production" "Production release"
+              create_release_pr "develop" "staging" "Staging release"
+              ;;
             scheduled)
               create_release_pr "staging" "production" "Production release"
               create_release_pr "develop" "staging" "Staging release"
               ;;
-            staging-to-production)
+            production-release|staging-to-production)
               create_release_pr "staging" "production" "Production release"
               ;;
-            develop-to-staging)
+            staging-release|develop-to-staging)
               create_release_pr "develop" "staging" "Staging release"
               ;;
             *)
