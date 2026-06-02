@@ -153,6 +153,8 @@ EOF
               --title "${title}" \
               --body-file "${body_file}")"
 
+            rm -f "${body_file}"
+
             echo "- Created [${title}](${pr_url}) from ${head_branch} -> ${base_branch} with ${commit_count} commit(s)." >> "${GITHUB_STEP_SUMMARY}"
           }
 
