@@ -46,7 +46,7 @@ jobs:
 
           # Manual workflow_dispatch runs are not date/time gated.
           # Scheduled runs already use a Tuesday 11:00 MST cron; keep day/hour guards in case the schedule is edited.
-          if [ "${EVENT_NAME}" = "schedule" ] && ( [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ] ); then
+          if [ "${EVENT_NAME}" = "schedule" ] && { [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ]; }; then
             should_create=false
           fi
 
@@ -146,14 +146,14 @@ jobs:
 
             body_file="$(mktemp)"
             cat > "${body_file}" << EOF
-Automated release PR.
+          Automated release PR.
 
-Release version: \`v${version}\`
-Source branch: \`${head_branch}\`
-Target branch: \`${base_branch}\`
+          Release version: \`v${version}\`
+          Source branch: \`${head_branch}\`
+          Target branch: \`${base_branch}\`
 
-Merge this PR after required checks pass.
-EOF
+          Merge this PR after required checks pass.
+          EOF
 
             pr_url="$(gh pr create \
               --base "${base_branch}" \
