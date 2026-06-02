@@ -23,7 +23,7 @@ Manual runs are not limited to Tuesday at 11:00 MST. They use the current MST da
 
 The workflow skips PR creation when a matching open release PR already exists or when there are no commits to promote between the selected branches.
 
-If the `RELEASE_PR_TOKEN` secret is configured, the workflow uses it to create PRs. Otherwise it falls back to `GITHUB_TOKEN`.
+Scheduled runs require the `RELEASE_PR_TOKEN` secret so that created PRs trigger CI workflows. Manual runs fall back to `GITHUB_TOKEN` when `RELEASE_PR_TOKEN` is not set.
 
 ## Preflight checks
 
