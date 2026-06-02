@@ -1,0 +1,168 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Create Release PRs
+
+on:
+  schedule:
+    # GitHub cron is UTC. 18:00 UTC is 11:00 MST.
+    - cron: '0 18 * * 2'
+  workflow_dispatch:
+    inputs:
+      release_pr:
+        description: 'Release PR to create'
+        required: true
+        default: 'staging-to-production'
+        type: choice
+        options:
+          - staging-to-production
+          - develop-to-staging
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-release-prs:
+    name: Create Release PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve release date
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TIMEZONE: MST7
+          RELEASE_TIMEZONE_LABEL: MST
+        run: |
+          set -euo pipefail
+
+          local_hour="$(TZ="${RELEASE_TIMEZONE}" date '+%H')"
+          local_day="$(TZ="${RELEASE_TIMEZONE}" date '+%u')"
+          release_date="$(TZ="${RELEASE_TIMEZONE}" date '+%Y%m%d')"
+          should_create=true
+
+          if [ "${EVENT_NAME}" = "schedule" ] && { [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ]; }; then
+            should_create=false
+          fi
+
+          {
+            echo "date=${release_date}"
+            echo "should_create=${should_create}"
+          } >> "${GITHUB_OUTPUT}"
+
+          if [ "${should_create}" = "false" ]; then
+            echo "Skipping release PR creation because this scheduled run is outside the Tuesday 11:00 ${RELEASE_TIMEZONE_LABEL} window." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+      - name: Check out source code
+        if: steps.release.outputs.should_create == 'true'
+        uses: actions/checkout@v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Fetch release branches and tags
+        if: steps.release.outputs.should_create == 'true'
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags --prune origin \
+            +refs/heads/develop:refs/remotes/origin/develop \
+            +refs/heads/staging:refs/remotes/origin/staging \
+            +refs/heads/production:refs/remotes/origin/production
+          git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+
+      - name: Create selected release PRs
+        if: steps.release.outputs.should_create == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_DATE: ${{ steps.release.outputs.date }}
+          RELEASE_PR_TARGET: ${{ github.event.inputs.release_pr || 'scheduled' }}
+        run: |
+          set -euo pipefail
+
+          get_highest_existing_release_suffix() {
+            local highest=-1
+            local suffix
+
+            while IFS= read -r suffix; do
+              if [ -n "${suffix}" ] && [ "${suffix}" -gt "${highest}" ]; then
+                highest="${suffix}"
+              fi
+            done < <(
+              {
+                git tag -l "v${RELEASE_DATE}.*" | sed -nE "s/^v${RELEASE_DATE}\.([0-9]+)$/\1/p"
+                gh api -X GET search/issues \
+                  -f q="repo:${GH_REPO} is:pr in:title v${RELEASE_DATE}." \
+                  -f per_page=100 \
+                  --jq '.items[].title' | sed -nE "s/.*: v${RELEASE_DATE}\.([0-9]+).*/\1/p"
+              } | sort -n | uniq
+            )
+
+            echo "${highest}"
+          }
+
+          highest_suffix="$(get_highest_existing_release_suffix)"
+          next_release_suffix=$((highest_suffix + 1))
+
+          create_release_pr() {
+            local head_branch="$1"
+            local base_branch="$2"
+            local title_prefix="$3"
+            local commit_count
+            local existing_pr
+            local body_file
+            local pr_url
+            local title
+            local version
+
+            existing_pr="$(gh pr list --state open --head "${head_branch}" --base "${base_branch}" --json url --jq '.[0].url // ""')"
+            if [ -n "${existing_pr}" ]; then
+              echo "- Skipped ${head_branch} -> ${base_branch}; an open PR already exists: ${existing_pr}" >> "${GITHUB_STEP_SUMMARY}"
+              return
+            fi
+
+            commit_count="$(git rev-list --count "origin/${base_branch}..origin/${head_branch}")"
+            if [ "${commit_count}" -eq 0 ]; then
+              echo "- Skipped ${head_branch} -> ${base_branch}; there are no commits in ${head_branch} that are missing from ${base_branch}." >> "${GITHUB_STEP_SUMMARY}"
+              return
+            fi
+
+            version="${RELEASE_DATE}.${next_release_suffix}"
+            next_release_suffix=$((next_release_suffix + 1))
+            title="${title_prefix}: v${version}"
+
+            body_file="$(mktemp)"
+            cat > "${body_file}" << EOF
+          Automated release PR.
+
+          Release version: \`v${version}\`
+          Source branch: \`${head_branch}\`
+          Target branch: \`${base_branch}\`
+
+          Merge this PR after required checks pass.
+          EOF
+
+            pr_url="$(gh pr create \
+              --base "${base_branch}" \
+              --head "${head_branch}" \
+              --title "${title}" \
+              --body-file "${body_file}")"
+
+            echo "- Created [${title}](${pr_url}) from ${head_branch} -> ${base_branch} with ${commit_count} commit(s)." >> "${GITHUB_STEP_SUMMARY}"
+          }
+
+          case "${RELEASE_PR_TARGET}" in
+            scheduled)
+              create_release_pr "staging" "production" "Production release"
+              create_release_pr "develop" "staging" "Staging release"
+              ;;
+            staging-to-production)
+              create_release_pr "staging" "production" "Production release"
+              ;;
+            develop-to-staging)
+              create_release_pr "develop" "staging" "Staging release"
+              ;;
+            *)
+              echo "Unknown release_pr input: ${RELEASE_PR_TARGET}" >&2
+              exit 1
+              ;;
+          esac

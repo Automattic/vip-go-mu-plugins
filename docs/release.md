@@ -8,6 +8,21 @@
 
 Release version format: `vYYYYMMDD.N`.
 
+## Scheduled release PRs
+
+`.github/workflows/create-release-prs.yml` creates weekly release PRs on Tuesdays at 11:00 MST:
+
+- `Production release: vYYYYMMDD.N` from `staging` into `production`.
+- `Staging release: vYYYYMMDD.N` from `develop` into `staging`.
+
+The `N` suffix increments from existing same-day release PRs and tags. When no `vYYYYMMDD.N` release exists yet for the day, the scheduled production PR uses `.0` and the scheduled staging PR uses `.1`.
+
+The workflow can also be run manually with `workflow_dispatch`. Select `staging-to-production` or `develop-to-staging` to choose which release PR to create.
+
+The workflow skips PR creation when a matching open release PR already exists or when there are no commits to promote between the selected branches.
+
+If the `RELEASE_PR_TOKEN` secret is configured, the workflow uses it to create PRs. Otherwise it falls back to `GITHUB_TOKEN`.
+
 ## Preflight checks
 
 Before merging release PRs:
