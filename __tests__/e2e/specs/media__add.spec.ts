@@ -27,11 +27,11 @@ test( 'Add Media', async ( { page } ) => {
 
 	await test.step( 'Upload Image', () => {
 		mediaUploadPage = new MediaUploadPage( page );
-		return mediaUploadPage.uploadFile( 'test_media/image_02.jpg' );
+		return mediaUploadPage.uploadFile( 'test_media/image_small.jpg' );
 	} );
 
 	await test.step( 'Verify image url', () => {
 		const imageURL = mediaUploadPage.getMediaUrl();
-		return expect( imageURL ).resolves.toContain( 'image_02' );
+		return expect( imageURL ).resolves.toContain( 'image_small' );
 	} );
 } );
