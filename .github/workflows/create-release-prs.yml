@@ -96,6 +96,11 @@ jobs:
           get_highest_existing_release_suffix() {
             local highest=-1
             local suffix
+
+            while IFS= read -r suffix; do
+              if [ -n "${suffix}" ] && [ "${suffix}" -ge 0 ] 2>/dev/null && [ "${suffix}" -gt "${highest}" ]; then
+                highest="${suffix}"
+              fi
             done < <(
               {
                 git tag -l "v${RELEASE_DATE}.*" | sed -nE "s/^v${RELEASE_DATE}\.([0-9]+)$/\1/p"
