@@ -165,10 +165,10 @@ EOF
               create_release_pr "staging" "production" "Production release"
               create_release_pr "develop" "staging" "Staging release"
               ;;
-            production-release|staging-to-production)
+            production-release)
               create_release_pr "staging" "production" "Production release"
               ;;
-            staging-release|develop-to-staging)
+            staging-release)
               create_release_pr "develop" "staging" "Staging release"
               ;;
             *)
