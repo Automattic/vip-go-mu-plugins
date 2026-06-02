@@ -50,6 +50,8 @@ function _manually_load_plugin() {
 
 	require_once __DIR__ . '/../security.php';
 
+	require_once __DIR__ . '/../large-media-upload-warning.php';
+
 	require_once __DIR__ . '/../schema.php';
 
 	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';

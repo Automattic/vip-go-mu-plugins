@@ -47,7 +47,7 @@ jobs:
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
       - name: Set up WordPress and WordPress Test Library
-        uses: sjinks/setup-wordpress-test-library@v3.0.0
+        uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
         with:
           version: latest
 
