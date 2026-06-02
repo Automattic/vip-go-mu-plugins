@@ -150,7 +150,7 @@ EOF
 
             pr_url="$(gh pr create \
               --base "${base_branch}" \
-              --head "${head_branch}" \
+              --head "${GH_REPO%%/*}:${head_branch}" \
               --title "${title}" \
               --body-file "${body_file}")"
 
