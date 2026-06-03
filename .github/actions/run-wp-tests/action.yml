@@ -57,7 +57,7 @@ runs:
           echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
           echo "coverage=none" >> $GITHUB_OUTPUT
-          echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
+          echo "ini=apc.enable_cli=1, opcache.enable_cli=0" >> $GITHUB_OUTPUT
         fi
       env:
         COVERAGE: ${{ inputs.coverage }}
