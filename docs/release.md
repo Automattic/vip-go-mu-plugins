@@ -23,7 +23,7 @@ Manual runs are not limited to Tuesday at 11:00 MST. They use the current MST da
 
 The workflow skips PR creation when a matching open release PR already exists or when there are no commits to promote between the selected branches.
 
-The workflow uses `GITHUB_TOKEN` to create release PRs. Repository Actions settings must allow GitHub Actions to create pull requests, and CI workflows for the created PRs may need manual approval or reruns.
+The workflow uses `GITHUB_TOKEN` to create release PRs. Repository Actions settings must allow GitHub Actions to create pull requests, and workflows will not auto-run for PRs opened by `GITHUB_TOKEN` (trigger via `workflow_dispatch` if needed).
 
 ## Preflight checks
 
