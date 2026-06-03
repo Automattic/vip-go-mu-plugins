@@ -79,19 +79,12 @@ jobs:
       - name: Create selected release PRs
         if: steps.release.outputs.should_create == 'true'
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
-          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_DATE: ${{ steps.release.outputs.date }}
           RELEASE_PR_TARGET: ${{ github.event.inputs.release_pr || 'scheduled' }}
         run: |
           set -euo pipefail
-
-          if [ "${EVENT_NAME}" = "schedule" ] && [ -z "${RELEASE_PR_TOKEN}" ]; then
-            echo "RELEASE_PR_TOKEN secret is required for scheduled runs so that the created PR will trigger CI workflows. Configure RELEASE_PR_TOKEN (PAT or GitHub App token) and rerun." >&2
-            exit 1
-          fi
 
           get_highest_existing_release_suffix() {
             local highest=-1
