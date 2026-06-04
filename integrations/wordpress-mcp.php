@@ -255,7 +255,6 @@ class WordPressMcpIntegration extends Integration {
 	private function trigger_auth_warning( string $message ): void {
 		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 	}
-	}
 
 	/**
 	 * Get the available versions of WordPress MCP in descending order.
