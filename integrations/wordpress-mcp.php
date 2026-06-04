@@ -253,7 +253,8 @@ class WordPressMcpIntegration extends Integration {
 	 * Emit an authentication warning without exposing raw user identity.
 	 */
 	private function trigger_auth_warning( string $message ): void {
-		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING );
+		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	}
 	}
 
 	/**
