@@ -14,13 +14,6 @@ namespace Automattic\VIP\Integrations;
  */
 class SafePublishIntegration extends Integration {
 	/**
-	 * The version of Safe Publish to load, defaults to the latest version.
-	 *
-	 * @var string
-	 */
-	public string $version = 'latest';
-
-	/**
 	 * Enable Pendo tracking for this integration.
 	 *
 	 * @var bool
@@ -39,10 +32,6 @@ class SafePublishIntegration extends Integration {
 		$this->define_config_constant( 'SAFE_PUBLISH_SHARED_SECRET', $configs['shared_secret'] ?? null );
 		$this->define_config_constant( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME', $configs['basic_auth_username'] ?? null );
 		$this->define_config_constant( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD', $configs['basic_auth_password'] ?? null );
-
-		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) && '' !== $configs['version'] ) {
-			$this->version = $configs['version'];
-		}
 	}
 
 	public function load(): void {
@@ -79,22 +68,12 @@ class SafePublishIntegration extends Integration {
 	}
 
 	/**
-	 * Get the folder name for the selected version of the integration.
+	 * Get the folder name for the latest version of the integration.
 	 *
 	 * @param array<string,string> $versions Available versions.
-	 * @return string The selected folder name.
+	 * @return string The latest version folder name.
 	 */
 	public function get_selected_version_folder( array $versions ): string {
-		if ( 'latest' === $this->version ) {
-			return array_key_first( $versions );
-		}
-
-		$desired_version = array_search( $this->version, $versions, true );
-
-		if ( false !== $desired_version ) {
-			return $desired_version;
-		}
-
 		return array_key_first( $versions );
 	}
 
