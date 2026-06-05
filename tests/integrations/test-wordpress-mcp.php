@@ -113,9 +113,14 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			PHP_INT_MAX,
 			has_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ] )
 		);
+		$this->assertSame(
+			10,
+			has_filter( 'mcp_adapter_target_ability_permission_denied_message', [ $wordpress_mcp_integration, 'filter_target_ability_permission_denied_message' ] )
+		);
 
 		remove_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'mcp_adapter_target_ability_permission_denied_message', [ $wordpress_mcp_integration, 'filter_target_ability_permission_denied_message' ], 10 );
 	}
 
 	public function test_load_does_not_register_default_server_config_filter_without_server_config(): void {
@@ -128,6 +133,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'mcp_adapter_target_ability_permission_denied_message', [ $wordpress_mcp_integration, 'filter_target_ability_permission_denied_message' ], 10 );
 	}
 
 	public function test_load_sets_inactive_if_no_versions_found(): void {
@@ -145,8 +151,39 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		do_action( 'plugins_loaded' );
 		remove_filter( 'mcp_adapter_default_server_config', [ $integration_mock, 'filter_default_server_config' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $integration_mock, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'mcp_adapter_target_ability_permission_denied_message', [ $integration_mock, 'filter_target_ability_permission_denied_message' ], 10 );
 
 		$this->assertFalse( $integration_mock->is_active() );
+	}
+
+	public function test_filter_target_ability_permission_denied_message_keeps_default_without_two_factor_block(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+
+		$this->assertSame(
+			'Default permission denied.',
+			$wordpress_mcp_integration->filter_target_ability_permission_denied_message(
+				'Default permission denied.',
+				'core/get-environment-info',
+				[]
+			)
+		);
+	}
+
+	public function test_filter_target_ability_permission_denied_message_adds_two_factor_context(): void {
+		$wordpress_mcp_integration = new class( $this->slug ) extends WordPressMcpIntegration {
+			protected function is_current_user_blocked_by_required_two_factor(): bool {
+				return true;
+			}
+		};
+
+		$this->assertSame(
+			'Unable to run ability "core/get-environment-info" because two-factor authentication is not enabled for the current user.',
+			$wordpress_mcp_integration->filter_target_ability_permission_denied_message(
+				'Default permission denied.',
+				'core/get-environment-info',
+				[]
+			)
+		);
 	}
 
 	public function test_is_mcp_adapter_rest_request_returns_true_for_pretty_rest_url(): void {

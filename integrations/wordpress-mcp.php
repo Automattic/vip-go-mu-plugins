@@ -37,6 +37,7 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
+		add_filter( 'mcp_adapter_target_ability_permission_denied_message', [ $this, 'filter_target_ability_permission_denied_message' ], 10, 3 );
 
 		add_action( 'plugins_loaded', function () {
 			if ( $this->is_loaded() ) {
@@ -83,6 +84,25 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		return $config;
+	}
+
+	/**
+	 * Add VIP 2FA context to MCP target ability permission message.
+	 *
+	 * @param string $message Existing permission denied message.
+	 * @param string $ability_name Target ability name.
+	 * @param mixed  $_parameters Parameters passed to the target ability.
+	 * @return string Filtered permission denied message.
+	 */
+	public function filter_target_ability_permission_denied_message( string $message, string $ability_name, $_parameters = null ): string {
+		if ( ! $this->is_current_user_blocked_by_required_two_factor() ) {
+			return $message;
+		}
+
+		return sprintf(
+			'Unable to run ability "%s" because two-factor authentication is not enabled for the current user.',
+			$ability_name
+		);
 	}
 
 	/**
@@ -254,6 +274,27 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	private function trigger_auth_warning( string $message ): void {
 		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	}
+
+	/**
+	 * Check whether VIP two-factor enforcement downgraded the current user's capabilities.
+	 */
+	protected function is_current_user_blocked_by_required_two_factor(): bool {
+		$user_id = get_current_user_id();
+
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		if ( ! function_exists( 'wpcom_vip_is_two_factor_forced' ) || ! \wpcom_vip_is_two_factor_forced() ) {
+			return false;
+		}
+
+		if ( ! is_callable( [ 'Two_Factor_Core', 'is_user_using_two_factor' ] ) ) {
+			return false;
+		}
+
+		return ! \Two_Factor_Core::is_user_using_two_factor( $user_id );
 	}
 
 	/**
