@@ -53,7 +53,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 					'shared_secret'       => 'test-shared-secret',
 					'basic_auth_username' => 'publisher',
 					'basic_auth_password' => 'password',
-					'version'             => '1.0',
 				],
 			]
 		);
@@ -64,7 +63,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'test-shared-secret', constant( 'SAFE_PUBLISH_SHARED_SECRET' ) );
 		$this->assertSame( 'publisher', constant( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME' ) );
 		$this->assertSame( 'password', constant( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' ) );
-		$this->assertSame( '1.0', $safe_publish_integration->version );
 	}
 
 	public function test_configure_does_not_redefine_existing_constants(): void {
@@ -108,7 +106,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 							'shared_secret'       => 'env-shared-secret',
 							'basic_auth_username' => 'env-publisher',
 							'basic_auth_password' => 'env-password',
-							'version'             => '1.0',
 						],
 					],
 					'network_sites' => [
@@ -116,7 +113,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 							'status' => Env_Integration_Status::ENABLED,
 							'config' => [
 								'connected_site_url' => 'https://site-one.example.com',
-								'version'            => '1.5',
 							],
 						],
 						$blog_2_id => [
@@ -127,7 +123,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 								'shared_secret'       => 'site-two-shared-secret',
 								'basic_auth_username' => 'site-two-publisher',
 								'basic_auth_password' => 'site-two-password',
-								'version'             => '2.0',
 							],
 						],
 					],
@@ -144,7 +139,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 			$this->assertSame( 'site-two-shared-secret', constant( 'SAFE_PUBLISH_SHARED_SECRET' ) );
 			$this->assertSame( 'site-two-publisher', constant( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME' ) );
 			$this->assertSame( 'site-two-password', constant( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' ) );
-			$this->assertSame( '2.0', $safe_publish_integration->version );
 		} finally {
 			restore_current_blog();
 		}
@@ -184,10 +178,9 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $integration_mock->is_active() );
 	}
 
-	public function test_get_selected_version_folder_returns_latest_version_when_version_is_latest(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = 'latest';
-		$versions                          = [
+	public function test_get_selected_version_folder_returns_latest_version(): void {
+		$safe_publish_integration = new SafePublishIntegration( $this->slug );
+		$versions                 = [
 			'safe-publish-2.5'  => '2.5',
 			'safe-publish-1.11' => '1.11',
 			'safe-publish-1.2'  => '1.2',
@@ -196,22 +189,17 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'safe-publish-2.5', $safe_publish_integration->get_selected_version_folder( $versions ) );
 	}
 
-	public function test_get_selected_version_folder_returns_desired_version_when_version_is_specified(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = '1.2';
-		$versions                          = [
-			'safe-publish-2.5'  => '2.5',
-			'safe-publish-1.11' => '1.11',
-			'safe-publish-1.2'  => '1.2',
-		];
-
-		$this->assertSame( 'safe-publish-1.2', $safe_publish_integration->get_selected_version_folder( $versions ) );
-	}
-
-	public function test_get_selected_version_folder_returns_latest_version_when_version_not_found(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = '9.9';
-		$versions                          = [
+	public function test_get_selected_version_folder_ignores_version_config(): void {
+		$safe_publish_integration = new SafePublishIntegration( $this->slug );
+		$safe_publish_integration->activate(
+			[
+				'config' => [
+					'version' => '1.2',
+				],
+			]
+		);
+		$safe_publish_integration->configure();
+		$versions = [
 			'safe-publish-2.5'  => '2.5',
 			'safe-publish-1.11' => '1.11',
 			'safe-publish-1.2'  => '1.2',
