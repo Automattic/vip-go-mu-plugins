@@ -286,15 +286,25 @@ class WordPressMcpIntegration extends Integration {
 			return false;
 		}
 
-		if ( ! function_exists( 'wpcom_vip_is_two_factor_forced' ) || ! \wpcom_vip_is_two_factor_forced() ) {
+		if ( ! $this->is_two_factor_forced_for_current_user() ) {
 			return false;
 		}
 
-		if ( ! is_callable( [ 'Two_Factor_Core', 'is_user_using_two_factor' ] ) ) {
-			return false;
-		}
+		return ! $this->is_user_using_two_factor( $user_id );
+	}
 
-		return ! \Two_Factor_Core::is_user_using_two_factor( $user_id );
+	/**
+	 * Check whether VIP two-factor enforcement applies to the current user.
+	 */
+	protected function is_two_factor_forced_for_current_user(): bool {
+		return function_exists( 'wpcom_vip_is_two_factor_forced' ) && \wpcom_vip_is_two_factor_forced();
+	}
+
+	/**
+	 * Check whether the user has two-factor authentication enabled.
+	 */
+	protected function is_user_using_two_factor( int $user_id ): bool {
+		return is_callable( [ 'Two_Factor_Core', 'is_user_using_two_factor' ] ) && \Two_Factor_Core::is_user_using_two_factor( $user_id );
 	}
 
 	/**

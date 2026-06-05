@@ -186,6 +186,56 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_filter_target_ability_permission_denied_message_detects_current_user_without_two_factor(): void {
+		$user_id = $this->factory()->user->create( [ 'role' => 'administrator' ] );
+		wp_set_current_user( $user_id );
+
+		try {
+			$wordpress_mcp_integration = $this->get_integration_with_two_factor_state(
+				static function (): bool {
+					return current_user_can( apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' ) );
+				},
+				false
+			);
+
+			$this->assertSame(
+				'Unable to run ability "core/get-environment-info" because two-factor authentication is not enabled for the current user.',
+				$wordpress_mcp_integration->filter_target_ability_permission_denied_message(
+					'Default permission denied.',
+					'core/get-environment-info',
+					[]
+				)
+			);
+		} finally {
+			wp_set_current_user( 0 );
+		}
+	}
+
+	public function test_filter_target_ability_permission_denied_message_keeps_default_for_non_admin_without_two_factor(): void {
+		$user_id = $this->factory()->user->create( [ 'role' => 'subscriber' ] );
+		wp_set_current_user( $user_id );
+
+		try {
+			$wordpress_mcp_integration = $this->get_integration_with_two_factor_state(
+				static function (): bool {
+					return current_user_can( apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' ) );
+				},
+				false
+			);
+
+			$this->assertSame(
+				'Default permission denied.',
+				$wordpress_mcp_integration->filter_target_ability_permission_denied_message(
+					'Default permission denied.',
+					'core/get-environment-info',
+					[]
+				)
+			);
+		} finally {
+			wp_set_current_user( 0 );
+		}
+	}
+
 	public function test_is_mcp_adapter_rest_request_returns_true_for_pretty_rest_url(): void {
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
@@ -305,5 +355,27 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
 		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+	}
+
+	private function get_integration_with_two_factor_state( callable $is_two_factor_forced, bool $is_user_using_two_factor ): WordPressMcpIntegration {
+		return new class( $this->slug, $is_two_factor_forced, $is_user_using_two_factor ) extends WordPressMcpIntegration {
+			private $is_two_factor_forced;
+			private bool $is_user_using_two_factor;
+
+			public function __construct( string $slug, callable $is_two_factor_forced, bool $is_user_using_two_factor ) {
+				parent::__construct( $slug );
+
+				$this->is_two_factor_forced     = $is_two_factor_forced;
+				$this->is_user_using_two_factor = $is_user_using_two_factor;
+			}
+
+			protected function is_two_factor_forced_for_current_user(): bool {
+				return (bool) call_user_func( $this->is_two_factor_forced );
+			}
+
+			protected function is_user_using_two_factor( int $user_id ): bool {
+				return $this->is_user_using_two_factor;
+			}
+		};
 	}
 }
