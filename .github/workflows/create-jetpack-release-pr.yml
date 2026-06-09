@@ -82,6 +82,7 @@ jobs:
 
       - name: Create pull request
         if: steps.jetpack.outputs.should_create == 'true'
+        id: create_pr
         env:
           BRANCH: ${{ steps.jetpack.outputs.branch }}
           NEW_VERSION: ${{ steps.jetpack.outputs.new_version }}
@@ -134,4 +135,27 @@ jobs:
 
           rm -f "${body_file}"
 
+          echo "pr_url=${pr_url}" >> "${GITHUB_OUTPUT}"
           echo "Created Jetpack ${NEW_VERSION} PR: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Jetpack Release PR
+        if: steps.create_pr.outputs.pr_url != ''
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          token: ${{ secrets.SLACK_TOKEN }}
+          method: chat.postMessage
+          payload: |
+            {
+              "channel": "C0248MZA1T6",
+              "text": "<!subteam^S01SYE0V8TA> Jetpack ${{ steps.jetpack.outputs.new_version }} release PR ready for review: ${{ steps.create_pr.outputs.pr_url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!subteam^S01SYE0V8TA> Jetpack `${{ steps.jetpack.outputs.new_version }}` release PR ready for review: <${{ steps.create_pr.outputs.pr_url }}|Update Jetpack to ${{ steps.jetpack.outputs.new_version }}>"
+                  }
+                }
+              ],
+              "unfurl_links": false
+            }
