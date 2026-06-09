@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Create Jetpack Release PR
+name: Jetpack Release PR
 
 on:
   schedule:
@@ -18,7 +18,7 @@ permissions:
 
 jobs:
   create-jetpack-release-pr:
-    name: Create Jetpack Release PR
+    name: Jetpack Release PR
     runs-on: ubuntu-latest
     env:
       GH_REPO: ${{ github.repository }}
@@ -142,11 +142,11 @@ jobs:
         if: steps.create_pr.outputs.pr_url != ''
         uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
         with:
-          token: ${{ secrets.SLACK_TOKEN }}
-          method: chat.postMessage
+          errors: true
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
           payload: |
             {
-              "channel": "C0248MZA1T6",
               "text": "<!subteam^S01SYE0V8TA> Jetpack ${{ steps.jetpack.outputs.new_version }} release PR ready for review: ${{ steps.create_pr.outputs.pr_url }}",
               "blocks": [
                 {
@@ -156,6 +156,5 @@ jobs:
                     "text": "<!subteam^S01SYE0V8TA> Jetpack `${{ steps.jetpack.outputs.new_version }}` release PR ready for review: <${{ steps.create_pr.outputs.pr_url }}|Update Jetpack to ${{ steps.jetpack.outputs.new_version }}>"
                   }
                 }
-              ],
-              "unfurl_links": false
+              ]
             }

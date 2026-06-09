@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Create Release PRs
+name: Release PRs
 
 on:
   schedule:
@@ -27,7 +27,7 @@ permissions:
   pull-requests: write
 jobs:
   create-release-prs:
-    name: Create Release PRs
+    name: Release PRs
     runs-on: ubuntu-latest
     steps:
       - name: Resolve release date
@@ -78,6 +78,7 @@ jobs:
 
       - name: Create selected release PRs
         if: steps.release.outputs.should_create == 'true'
+        id: create_prs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -85,6 +86,8 @@ jobs:
           RELEASE_PR_TARGET: ${{ github.event.inputs.release_pr || 'scheduled' }}
         run: |
           set -euo pipefail
+
+          created_pr_links=()
 
           get_highest_existing_release_suffix() {
             local highest=-1
@@ -156,6 +159,7 @@ jobs:
 
             rm -f "${body_file}"
 
+            created_pr_links+=( "<${pr_url}|${title}>" )
             echo "- Created [${title}](${pr_url}) from ${head_branch} -> ${base_branch} with ${commit_count} commit(s)." >> "${GITHUB_STEP_SUMMARY}"
           }
 
@@ -179,3 +183,117 @@ jobs:
               exit 1
               ;;
           esac
+
+          pr_links=''
+          for link in "${created_pr_links[@]}"; do
+            if [ -z "${pr_links}" ]; then
+              pr_links="${link}"
+            else
+              pr_links="${pr_links} | ${link}"
+            fi
+          done
+
+          echo "pr_links=${pr_links}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve PagerDuty on-call
+        if: steps.create_prs.outputs.pr_links != ''
+        id: oncall
+        env:
+          FALLBACK_MENTION: '<!subteam^S01SYE0V8TA>'
+          PAGERDUTY_API_TOKEN: ${{ secrets.PAGERDUTY_API_TOKEN }}
+          PAGERDUTY_SCHEDULE_ID: PIE84TQ
+        run: |
+          set -euo pipefail
+
+          map_pagerduty_user_to_slack_mention() {
+            case "$1" in
+              # Luiz
+              P1Q0BNB)
+                echo '<@U02CW43K05P>'
+                ;;
+              # Luis
+              PGZLAIV)
+                echo '<@U026Z6XNRUY>'
+                ;;
+              # Rinat
+              P07608W)
+                echo '<@U9X53GDA5>'
+                ;;
+              # Rebecca
+              PE4D62Q)
+                echo '<@U5G7VSQLQ>'
+                ;;
+              # Vlod
+              PAEPLXJ)
+                echo '<@U0281LAHEDP>'
+                ;;
+              # Roberson
+              PP7KDRE)
+                echo '<@U01GHDXUEBT>'
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          mention="${FALLBACK_MENTION}"
+
+          if [ -z "${PAGERDUTY_API_TOKEN}" ]; then
+            echo "::warning::PagerDuty on-call lookup skipped because PAGERDUTY_API_TOKEN is not set."
+            echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          since="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          until="$(date -u -d '+1 minute' '+%Y-%m-%dT%H:%M:%SZ')"
+
+          if ! oncalls_json="$(curl -fsS --get 'https://api.pagerduty.com/oncalls' \
+            --header "Authorization: Token token=${PAGERDUTY_API_TOKEN}" \
+            --header 'Accept: application/vnd.pagerduty+json;version=2' \
+            --data-urlencode "schedule_ids[]=${PAGERDUTY_SCHEDULE_ID}" \
+            --data-urlencode "since=${since}" \
+            --data-urlencode "until=${until}" \
+            --data-urlencode 'limit=100')"; then
+            echo "::warning::PagerDuty on-call lookup failed for schedule ${PAGERDUTY_SCHEDULE_ID}."
+            echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t pagerduty_user_ids < <(jq -r '.oncalls[]?.user.id // empty' <<< "${oncalls_json}" | sort -u)
+          slack_mentions=()
+
+          for pagerduty_user_id in "${pagerduty_user_ids[@]}"; do
+            if slack_mention="$(map_pagerduty_user_to_slack_mention "${pagerduty_user_id}")"; then
+              slack_mentions+=( "${slack_mention}" )
+            else
+              echo "::warning::No Slack user mapping for PagerDuty user ${pagerduty_user_id}."
+            fi
+          done
+
+          if [ "${#slack_mentions[@]}" -gt 0 ]; then
+            mention="${slack_mentions[*]}"
+          fi
+
+          echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+
+      - name: Release PRs
+        if: steps.create_prs.outputs.pr_links != ''
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          errors: true
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ steps.oncall.outputs.mention }} :moo: VIP MU plugins release PRs ready for review: ${{ steps.create_prs.outputs.pr_links }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.oncall.outputs.mention }} :moo: VIP MU plugins release PRs ready for review: ${{ steps.create_prs.outputs.pr_links }}"
+                  }
+                }
+              ]
+            }
