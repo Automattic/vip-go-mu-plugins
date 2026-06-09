@@ -3,8 +3,8 @@ name: Jetpack Release PR
 
 on:
   schedule:
-    # GitHub cron is UTC. 16:00 UTC is 9:00 MST.
-    - cron: '0 16 * * *'
+    # GitHub cron is UTC. 16:20 UTC is 9:20 MST.
+    - cron: '20 16 * * *'
   workflow_dispatch:
 
 concurrency:

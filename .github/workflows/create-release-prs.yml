@@ -3,8 +3,8 @@ name: Release PRs
 
 on:
   schedule:
-    # GitHub cron is UTC. 18:00 UTC is 11:00 MST.
-    - cron: '0 18 * * 2'
+    # GitHub cron is UTC. 16:20 UTC is 10:20 MDT.
+    - cron: '20 16 * * 2'
   workflow_dispatch:
     inputs:
       release_pr:
@@ -45,9 +45,15 @@ jobs:
           should_create=true
 
           # Manual workflow_dispatch runs are not date/time gated.
-          # Scheduled runs already use a Tuesday 11:00 MST cron; keep day/hour guards in case the schedule is edited.
-          if [ "${EVENT_NAME}" = "schedule" ] && { [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ]; }; then
-            should_create=false
+          # Scheduled runs use Tuesday off-hour cron entries. 10:20 MDT resolves to 09:20 MST7.
+          if [ "${EVENT_NAME}" = "schedule" ]; then
+            case "${local_day}-${local_hour}" in
+              2-09)
+                ;;
+              *)
+                should_create=false
+                ;;
+            esac
           fi
 
           {
@@ -56,7 +62,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
           if [ "${should_create}" = "false" ]; then
-            echo "Skipping release PR creation because this scheduled run is outside the Tuesday 11:00 ${RELEASE_TIMEZONE_LABEL} window." >> "${GITHUB_STEP_SUMMARY}"
+            echo "Skipping release PR creation because this scheduled run is outside the configured Tuesday ${RELEASE_TIMEZONE_LABEL} window." >> "${GITHUB_STEP_SUMMARY}"
           fi
 
       - name: Check out source code
