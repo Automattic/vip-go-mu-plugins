@@ -19,6 +19,7 @@ concurrency:
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
 jobs:
@@ -141,6 +142,7 @@ jobs:
             --base develop \
             --head "${GH_REPO%%/*}:${BRANCH}" \
             --title "Update Jetpack to ${NEW_VERSION}" \
+            --label "[Status] Needs Review" \
             --body-file "${body_file}")"
 
           rm -f "${body_file}"
