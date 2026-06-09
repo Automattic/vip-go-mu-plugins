@@ -6,12 +6,6 @@ on:
     # GitHub cron is UTC. 16:00 UTC is 9:00 MST.
     - cron: '0 16 * * *'
   workflow_dispatch:
-    inputs:
-      jetpack_version:
-        description: 'Jetpack release tag to use. Leave blank for latest stable release.'
-        required: false
-        default: ''
-        type: string
 
 concurrency:
   group: ${{ github.workflow }}
@@ -38,8 +32,6 @@ jobs:
 
       - name: Resolve Jetpack release
         id: jetpack
-        env:
-          REQUESTED_VERSION: ${{ github.event.inputs.jetpack_version || '' }}
         run: |
           set -euo pipefail
 
@@ -49,15 +41,10 @@ jobs:
             exit 1
           fi
 
-          if [ -n "${REQUESTED_VERSION}" ]; then
-            new_version="${REQUESTED_VERSION#v}"
-            release_url="https://github.com/Automattic/jetpack-production/releases/tag/${new_version}"
-          else
-            latest_release="$(gh api repos/Automattic/jetpack-production/releases/latest)"
-            new_version="$(jq -r '.tag_name' <<< "${latest_release}")"
-            release_url="$(jq -r '.html_url' <<< "${latest_release}")"
-            new_version="${new_version#v}"
-          fi
+          latest_release="$(gh api repos/Automattic/jetpack-production/releases/latest)"
+          new_version="$(jq -r '.tag_name' <<< "${latest_release}")"
+          release_url="$(jq -r '.html_url' <<< "${latest_release}")"
+          new_version="${new_version#v}"
 
           if ! [[ "${new_version}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
             echo "Jetpack release tag '${new_version}' is not a stable release tag." >&2
