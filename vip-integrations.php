@@ -26,6 +26,10 @@ require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 require_once __DIR__ . '/integrations/security-boost.php';
 
+if ( file_exists( __DIR__ . '/integrations/wordpress-mcp.php' ) ) {
+	require_once __DIR__ . '/integrations/wordpress-mcp.php';
+}
+
 if ( file_exists( __DIR__ . '/integrations/agentforce.php' ) ) {
 	require_once __DIR__ . '/integrations/agentforce.php';
 }
@@ -52,6 +56,10 @@ IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' )
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
 IntegrationsSingleton::instance()->register( new SecurityBoostIntegration( 'security-boost' ) );
+
+if ( class_exists( __NAMESPACE__ . '\\WordPressMcpIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new WordPressMcpIntegration( 'wordpress-mcp' ) );
+}
 
 if ( class_exists( __NAMESPACE__ . '\\AgentforceIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new AgentforceIntegration( 'agentforce' ) );

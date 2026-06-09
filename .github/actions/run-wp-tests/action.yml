@@ -57,7 +57,7 @@ runs:
           echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
           echo "coverage=none" >> $GITHUB_OUTPUT
-          echo "ini=apc.enable_cli=1, opcache.enable_cli=1" >> $GITHUB_OUTPUT
+          echo "ini=apc.enable_cli=1, opcache.enable_cli=0" >> $GITHUB_OUTPUT
         fi
       env:
         COVERAGE: ${{ inputs.coverage }}
@@ -68,7 +68,7 @@ runs:
       shell: bash
 
     - name: Set up PHP
-      uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
+      uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
       with:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
@@ -89,7 +89,7 @@ runs:
       uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
     - name: Set up WordPress and WordPress Test Library
-      uses: sjinks/setup-wordpress-test-library@v3.0.0
+      uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
       with:
         version: ${{ inputs.wordpress }}
 
@@ -137,7 +137,7 @@ runs:
         COVERAGE: ${{ steps.coverage.outputs.coverage }}
 
     - name: Upload coverage report
-      uses: codecov/codecov-action@v6.0.1
+      uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
       with:
         files: ${{ inputs.coverage-file }}
         flags: ${{ inputs.coverage-flags }}
