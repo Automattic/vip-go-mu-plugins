@@ -67,6 +67,15 @@ class Integrations {
 
 			$vip_config = $this->get_integration_vip_config( $slug );
 
+			if ( 'wordpress-mcp' === $slug ) {
+				$parent_vip_config = $this->get_integration_vip_config( 'secure-mcp' );
+				$child_config      = $parent_vip_config->get_child_config( $slug );
+
+				if ( null !== $child_config ) {
+					$vip_config = new IntegrationVipConfig( $slug, $parent_vip_config->is_active_via_vip() ? $child_config : [] );
+				}
+			}
+
 			if ( $vip_config->is_active_via_vip() ) {
 				$this->activate( $slug );
 

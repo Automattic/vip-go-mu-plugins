@@ -335,6 +335,25 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( $children_config, $mock->get_child_configs() );
 	}
 
+	public function test__get_child_config_returns_single_child_config_when_defined(): void {
+		$child_config = [
+			'type' => 'wordpress-mcp',
+			'env'  => [
+				'status' => 'enabled',
+			],
+		];
+
+		$mock = $this->get_mock( [ 'children' => [ 'wordpress-mcp' => $child_config ] ] );
+
+		$this->assertEquals( $child_config, $mock->get_child_config( 'wordpress-mcp' ) );
+	}
+
+	public function test__get_child_config_returns_null_when_child_is_missing(): void {
+		$mock = $this->get_mock( [ 'children' => [] ] );
+
+		$this->assertNull( $mock->get_child_config( 'wordpress-mcp' ) );
+	}
+
 	public function test__get_child_env_configs_returns_empty_array_when_no_children_defined(): void {
 		$mock = $this->get_mock( [] );
 
