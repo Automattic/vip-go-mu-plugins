@@ -952,7 +952,10 @@ class WP_Object_Cache {
 			$key
 		);
 
-		return preg_replace( '/\\s+/', '', $result );
+		// Spaces in cache keys are expected in the user bucket, but Memcache doesn't like them.
+		// Escape literal percent signs first so user keys cannot collide with the %SP% marker.
+		$result = str_replace( '%', '%25', $result );
+		return preg_replace( '/\\s/', '%SP%', $result );
 	}
 
 	/**
@@ -1035,7 +1038,7 @@ class WP_Object_Cache {
 	 */
 	public function salt_keys( $key_salt, $add_mc_prefix = false ) {
 		$key_salt = is_string( $key_salt ) && strlen( $key_salt ) ? $key_salt : '';
-		$key_salt = $add_mc_prefix ? $key_salt . '_mc' : '';
+		$key_salt = $add_mc_prefix ? $key_salt . '_mc' : $key_salt;
 
 		$this->key_salt = empty( $key_salt ) ? '' : $key_salt . ':';
 	}
