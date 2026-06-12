@@ -128,6 +128,13 @@ class IntegrationVipConfig {
 	}
 
 	/**
+	 * Returns `true` if the integration is enabled for the org.
+	 */
+	public function is_enabled_for_org(): bool {
+		return Org_Integration_Status::ENABLED === $this->get_value_from_config( 'org', 'status' );
+	}
+
+	/**
 	 * Get integration status for site.
 	 *
 	 * For single sites simply return global status.

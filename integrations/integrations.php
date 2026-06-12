@@ -65,14 +65,21 @@ class Integrations {
 				continue;
 			}
 
-			$vip_config = $this->get_integration_vip_config( $slug );
+			$vip_config  = $this->get_integration_vip_config( $slug );
+			$parent_slug = $integration->get_parent_integration_slug();
 
-			if ( 'wordpress-mcp' === $slug ) {
-				$parent_vip_config = $this->get_integration_vip_config( 'secure-mcp' );
+			if ( null !== $parent_slug ) {
+				$parent_vip_config = $this->get_integration_vip_config( $parent_slug );
 				$child_config      = $parent_vip_config->get_child_config( $slug );
 
 				if ( null !== $child_config ) {
-					$vip_config = new IntegrationVipConfig( $slug, $parent_vip_config->is_active_via_vip() ? $child_config : [] );
+					$is_parent_active = $parent_vip_config->is_active_via_vip();
+
+					if ( $integration->parent_integration_requires_org_enabled() ) {
+						$is_parent_active = $is_parent_active && $parent_vip_config->is_enabled_for_org();
+					}
+
+					$vip_config = new IntegrationVipConfig( $slug, $is_parent_active ? $child_config : [] );
 				}
 			}
 

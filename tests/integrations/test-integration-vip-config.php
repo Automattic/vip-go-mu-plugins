@@ -170,6 +170,18 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		], false );
 	}
 
+	public function test__is_enabled_for_org_returns_true_if_org_status_is_enabled(): void {
+		$mock = $this->get_mock( [ 'org' => [ 'status' => Org_Integration_Status::ENABLED ] ] );
+
+		$this->assertTrue( $mock->is_enabled_for_org() );
+	}
+
+	public function test__is_enabled_for_org_returns_false_if_org_status_is_disabled(): void {
+		$mock = $this->get_mock( [ 'org' => [ 'status' => Org_Integration_Status::DISABLED ] ] );
+
+		$this->assertFalse( $mock->is_enabled_for_org() );
+	}
+
 	/**
 	 * Helper function for testing `is_active_via_vip`.
 	 *

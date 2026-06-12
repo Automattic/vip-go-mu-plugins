@@ -27,6 +27,20 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	protected bool $enable_pendo_tracking = true;
 
+	/**
+	 * Parent integration slug for child config lookup.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $parent_integration_slug = 'secure-mcp';
+
+	/**
+	 * Require parent org status to be enabled before loading this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $parent_integration_requires_org_enabled = true;
+
 	public function is_loaded(): bool {
 		return class_exists( '\WP\MCP\Plugin', false );
 	}

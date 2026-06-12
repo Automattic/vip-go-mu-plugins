@@ -10,6 +10,7 @@ namespace Automattic\VIP\Integrations;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
+use Org_Integration_Status;
 use Env_Integration_Status;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
@@ -173,6 +174,9 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->set_vip_config_map(
 			[
 				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::ENABLED,
+					],
 					'env'      => [
 						'status' => Env_Integration_Status::ENABLED,
 					],
@@ -205,7 +209,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			[
 				'secure-mcp' => [
 					'org'      => [
-						'status' => Env_Integration_Status::ENABLED,
+						'status' => Org_Integration_Status::ENABLED,
 					],
 					'env'      => [
 						'status' => Env_Integration_Status::DISABLED,
@@ -235,10 +239,40 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			[
 				'secure-mcp' => [
 					'org'      => [
-						'status' => Env_Integration_Status::DISABLED,
+						'status' => Org_Integration_Status::DISABLED,
 					],
 					'env'      => [
 						'status' => Env_Integration_Status::DISABLED,
+					],
+					'children' => [
+						'wordpress-mcp' => [
+							'env' => [
+								'status' => Env_Integration_Status::ENABLED,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$integrations = new Integrations();
+		$integration  = new WordPressMcpIntegration( $this->slug );
+
+		$integrations->register( $integration );
+		$integrations->activate_platform_integrations();
+
+		$this->assertFalse( $integration->is_active() );
+	}
+
+	public function test_secure_mcp_org_disabled_gates_wordpress_mcp_child_config(): void {
+		$this->set_vip_config_map(
+			[
+				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::DISABLED,
+					],
+					'env'      => [
+						'status' => Env_Integration_Status::ENABLED,
 					],
 					'children' => [
 						'wordpress-mcp' => [
