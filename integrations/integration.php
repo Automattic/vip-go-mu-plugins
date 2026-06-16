@@ -55,6 +55,20 @@ abstract class Integration {
 	protected bool $enable_pendo_tracking = false;
 
 	/**
+	 * Parent integration slug for integrations stored as child config.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $parent_integration_slug = null;
+
+	/**
+	 * Whether org status on the parent integration should gate this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $parent_integration_requires_org_enabled = false;
+
+	/**
 	 * Instance of VipIntegrationConfig. It's useful to have full configuration info
 	 * available inside each integration, we can use it for cases like multisite,
 	 * tracking etc.
@@ -164,6 +178,20 @@ abstract class Integration {
 	 */
 	public function get_slug(): string {
 		return $this->slug;
+	}
+
+	/**
+	 * Get parent integration slug for child config lookup.
+	 */
+	public function get_parent_integration_slug(): ?string {
+		return $this->parent_integration_slug;
+	}
+
+	/**
+	 * Whether parent org status should gate this integration.
+	 */
+	public function parent_integration_requires_org_enabled(): bool {
+		return $this->parent_integration_requires_org_enabled;
 	}
 
 	/**

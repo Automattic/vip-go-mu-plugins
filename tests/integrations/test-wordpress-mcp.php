@@ -10,13 +10,16 @@ namespace Automattic\VIP\Integrations;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
+use Org_Integration_Status;
+use Env_Integration_Status;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
-	private string $slug         = 'wordpress-mcp';
-	private array $server_backup = [];
-	private array $get_backup    = [];
+	private string $slug          = 'wordpress-mcp';
+	private array $server_backup  = [];
+	private array $get_backup     = [];
+	private array $vip_config_map = [];
 
 	public function setUp(): void {
 		parent::setUp();
@@ -27,12 +30,30 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		$_SERVER = $this->server_backup;
-		$_GET    = $this->get_backup;
+		remove_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10 );
+
+		$_SERVER              = $this->server_backup;
+		$_GET                 = $this->get_backup;
+		$this->vip_config_map = [];
 
 		parent::tearDown();
 
 		Constant_Mocker::clear();
+	}
+
+	public function filter_vip_config( $config, $path, $slug ) {
+		if ( array_key_exists( $slug, $this->vip_config_map ) ) {
+			return $this->vip_config_map[ $slug ];
+		}
+
+		return $config;
+	}
+
+	private function set_vip_config_map( array $vip_config_map ): void {
+		$this->vip_config_map = $vip_config_map;
+
+		remove_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10 );
+		add_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10, 3 );
 	}
 
 	public function test_is_loaded_returns_false_when_not_loaded(): void {
@@ -149,6 +170,130 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $integration_mock->is_active() );
 	}
 
+	public function test_platform_activation_uses_secure_mcp_child_config(): void {
+		$this->set_vip_config_map(
+			[
+				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::ENABLED,
+					],
+					'env'      => [
+						'status' => Env_Integration_Status::ENABLED,
+					],
+					'children' => [
+						'wordpress-mcp' => [
+							'env' => [
+								'status' => Env_Integration_Status::ENABLED,
+								'config' => [
+									'server_route' => 'vip-mcp-server',
+								],
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$integrations = new Integrations();
+		$integration  = new WordPressMcpIntegration( $this->slug );
+
+		$integrations->register( $integration );
+		$integrations->activate_platform_integrations();
+
+		$this->assertTrue( $integration->is_active() );
+		$this->assertSame( [ 'server_route' => 'vip-mcp-server' ], $integration->get_env_config() );
+	}
+
+	public function test_secure_mcp_parent_gates_wordpress_mcp_child_config(): void {
+		$this->set_vip_config_map(
+			[
+				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::ENABLED,
+					],
+					'env'      => [
+						'status' => Env_Integration_Status::DISABLED,
+					],
+					'children' => [
+						'wordpress-mcp' => [
+							'env' => [
+								'status' => Env_Integration_Status::ENABLED,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$integrations = new Integrations();
+		$integration  = new WordPressMcpIntegration( $this->slug );
+
+		$integrations->register( $integration );
+		$integrations->activate_platform_integrations();
+
+		$this->assertFalse( $integration->is_active() );
+	}
+
+	public function test_secure_mcp_disabled_parent_gates_wordpress_mcp_child_config(): void {
+		$this->set_vip_config_map(
+			[
+				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::DISABLED,
+					],
+					'env'      => [
+						'status' => Env_Integration_Status::DISABLED,
+					],
+					'children' => [
+						'wordpress-mcp' => [
+							'env' => [
+								'status' => Env_Integration_Status::ENABLED,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$integrations = new Integrations();
+		$integration  = new WordPressMcpIntegration( $this->slug );
+
+		$integrations->register( $integration );
+		$integrations->activate_platform_integrations();
+
+		$this->assertFalse( $integration->is_active() );
+	}
+
+	public function test_secure_mcp_org_disabled_gates_wordpress_mcp_child_config(): void {
+		$this->set_vip_config_map(
+			[
+				'secure-mcp' => [
+					'org'      => [
+						'status' => Org_Integration_Status::DISABLED,
+					],
+					'env'      => [
+						'status' => Env_Integration_Status::ENABLED,
+					],
+					'children' => [
+						'wordpress-mcp' => [
+							'env' => [
+								'status' => Env_Integration_Status::ENABLED,
+							],
+						],
+					],
+				],
+			]
+		);
+
+		$integrations = new Integrations();
+		$integration  = new WordPressMcpIntegration( $this->slug );
+
+		$integrations->register( $integration );
+		$integrations->activate_platform_integrations();
+
+		$this->assertFalse( $integration->is_active() );
+	}
+
 	public function test_is_mcp_adapter_rest_request_returns_true_for_pretty_rest_url(): void {
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
@@ -241,7 +386,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$timestamp = (string) time();
 		$user_id   = $this->factory()->user->create( [ 'user_email' => $email ] );
 
-		Constant_Mocker::define( 'AUTH_KEY', $auth_key );
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -254,12 +398,12 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
 
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
 	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
-		Constant_Mocker::define( 'AUTH_KEY', 'test-auth-key' );
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
