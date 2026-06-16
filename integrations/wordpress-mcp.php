@@ -20,6 +20,8 @@ class WordPressMcpIntegration extends Integration {
 	private const DEFAULT_SERVER_NAMESPACE = 'mcp';
 	private const DEFAULT_SERVER_ROUTE     = 'mcp-adapter-default-server';
 
+	private const AUTH_KEY_CONFIG_KEY = 'auth_key';
+
 	/**
 	 * Enable Pendo tracking for this integration.
 	 *
@@ -114,10 +116,6 @@ class WordPressMcpIntegration extends Integration {
 			return $input_user;
 		}
 
-		if ( ! defined( 'AUTH_KEY' ) || '' === constant( 'AUTH_KEY' ) ) {
-			return $input_user;
-		}
-
 		$email         = $this->get_server_value( 'PHP_AUTH_USER' );
 		$provided_hash = $this->get_server_value( 'PHP_AUTH_PW' );
 		$auth_header   = $this->get_server_value( self::AUTH_HEADER_SERVER_KEY );
@@ -128,6 +126,13 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		if ( 'true' !== strtolower( $auth_header ) ) {
+			return $input_user;
+		}
+
+		$auth_key = $this->get_server_config_value( self::AUTH_KEY_CONFIG_KEY );
+		if ( ! $auth_key ) {
+			$this->trigger_auth_warning( 'Missing auth key' );
+
 			return $input_user;
 		}
 
@@ -155,7 +160,7 @@ class WordPressMcpIntegration extends Integration {
 			return $input_user;
 		}
 
-		$expected = hash_hmac( 'sha256', $email . $timestamp, constant( 'AUTH_KEY' ) );
+		$expected = hash_hmac( 'sha256', $email . $timestamp, $auth_key );
 
 		if ( ! hash_equals( $expected, $provided_hash ) ) {
 			$this->trigger_auth_warning( 'Authentication failed' );
@@ -267,7 +272,7 @@ class WordPressMcpIntegration extends Integration {
 	 * Emit an authentication warning without exposing raw user identity.
 	 */
 	private function trigger_auth_warning( string $message ): void {
-		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		error_log( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/**

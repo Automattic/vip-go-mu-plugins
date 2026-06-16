@@ -386,7 +386,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$timestamp = (string) time();
 		$user_id   = $this->factory()->user->create( [ 'user_email' => $email ] );
 
-		Constant_Mocker::define( 'AUTH_KEY', $auth_key );
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
@@ -399,12 +398,12 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
 
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
 	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
-		Constant_Mocker::define( 'AUTH_KEY', 'test-auth-key' );
 		Constant_Mocker::define( 'REST_REQUEST', true );
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
