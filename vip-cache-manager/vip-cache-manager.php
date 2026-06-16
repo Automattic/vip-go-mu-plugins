@@ -305,7 +305,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_submenu_page(
 			'vip-dashboard',
 			__( 'Purge the VIP Platform page cache', 'textdomain' ),
-			__( 'Purge Cache', 'textdomain' ),
+			__( 'Purge Page Cache', 'textdomain' ),
 			'manage_options',
 			'vip-purge-cache',
 			array( $this, 'render_dashboard_widget' )
@@ -315,11 +315,16 @@ class WPCOM_VIP_Cache_Manager {
 	public function render_dashboard_widget() {
 		$actions = $this->get_available_manual_purge_actions_config();
 
+		echo '<div class="wrap">';
+		echo '<h1>' . esc_html__( 'Purge Page Cache', 'vip-cache-manager' ) . '</h1>';
+
 		if ( empty( $actions ) ) {
 			echo '<p>' . esc_html__( 'You do not have permission to manage the page cache.', 'vip-cache-manager' ) . '</p>';
 		} else {
 			$this->render_dashboard_widget_form( $actions );
 		}
+
+		echo '</div>';
 	}
 
 	private function render_dashboard_widget_form( array $actions ) {
@@ -365,7 +370,7 @@ class WPCOM_VIP_Cache_Manager {
 
 		printf(
 			'<p><button type="submit" class="button button-primary">%s</button></p>',
-			esc_html__( 'Purge Cache', 'vip-cache-manager' )
+			esc_html__( 'Purge Page Cache', 'vip-cache-manager' )
 		);
 
 		echo '<p class="vip-cache-manager-dashboard-result" aria-live="polite"></p>';

@@ -1,0 +1,160 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Jetpack Release PR
+
+on:
+  schedule:
+    # GitHub cron is UTC. 16:20 UTC is 9:20 MST.
+    - cron: '20 16 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  create-jetpack-release-pr:
+    name: Jetpack Release PR
+    runs-on: ubuntu-latest
+    env:
+      GH_REPO: ${{ github.repository }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v6.0.3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Resolve Jetpack release
+        id: jetpack
+        run: |
+          set -euo pipefail
+
+          current_version="$(awk -F': ' '/^ \* Version: / { print $2; exit }' jetpack.php)"
+          if [ -z "${current_version}" ]; then
+            echo "Could not read current Jetpack version from jetpack.php." >&2
+            exit 1
+          fi
+
+          latest_release="$(gh api repos/Automattic/jetpack-production/releases/latest)"
+          new_version="$(jq -r '.tag_name' <<< "${latest_release}")"
+          release_url="$(jq -r '.html_url' <<< "${latest_release}")"
+          new_version="${new_version#v}"
+
+          if ! [[ "${new_version}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
+            echo "Jetpack release tag '${new_version}' is not a stable release tag." >&2
+            exit 1
+          fi
+
+          should_create=true
+          highest_version="$(printf '%s\n%s\n' "${current_version}" "${new_version}" | sort -V | tail -n 1)"
+          if [ "${current_version}" = "${new_version}" ] || [ "${highest_version}" != "${new_version}" ]; then
+            should_create=false
+            echo "Jetpack ${current_version} is already at or ahead of ${new_version}." >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+          branch="update/jetpack-${new_version}"
+          existing_pr="$(gh pr list --state open --head "${GH_REPO%%/*}:${branch}" --base develop --json url --jq '.[0].url // ""')"
+          if [ -n "${existing_pr}" ]; then
+            should_create=false
+            echo "An open Jetpack ${new_version} PR already exists: ${existing_pr}" >> "${GITHUB_STEP_SUMMARY}"
+          fi
+
+          {
+            echo "current_version=${current_version}"
+            echo "new_version=${new_version}"
+            echo "release_url=${release_url}"
+            echo "branch=${branch}"
+            echo "should_create=${should_create}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Update Jetpack release files
+        if: steps.jetpack.outputs.should_create == 'true'
+        id: update
+        run: .github/scripts/update-jetpack-release.sh "${NEW_VERSION}"
+        env:
+          NEW_VERSION: ${{ steps.jetpack.outputs.new_version }}
+
+      - name: Create pull request
+        if: steps.jetpack.outputs.should_create == 'true'
+        id: create_pr
+        env:
+          BRANCH: ${{ steps.jetpack.outputs.branch }}
+          NEW_VERSION: ${{ steps.jetpack.outputs.new_version }}
+          RELEASE_URL: ${{ steps.jetpack.outputs.release_url }}
+          JETPACK_SHA: ${{ steps.update.outputs.jetpack_sha }}
+          REQUIRES_AT_LEAST: ${{ steps.update.outputs.requires_at_least }}
+          REQUIRES_PHP: ${{ steps.update.outputs.requires_php }}
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- jetpack jetpack.php tests/test-jetpack.php; then
+            echo "No Jetpack changes detected after update." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          git config user.name "WordPress VIP Bot"
+          git config user.email no-reply@automattic.com
+          git switch -c "${BRANCH}"
+          git add jetpack jetpack.php tests/test-jetpack.php
+          git commit -m "Update Jetpack to ${NEW_VERSION}"
+          git push --force-with-lease origin "HEAD:${BRANCH}"
+
+          body_file="$(mktemp)"
+          cat > "${body_file}" << EOF
+          Automated Jetpack release PR.
+
+          Jetpack release: [${NEW_VERSION}](${RELEASE_URL})
+          Jetpack production commit: \`${JETPACK_SHA}\`
+
+          Changes:
+          - Updates the \`jetpack\` submodule to the \`${NEW_VERSION}\` production tag.
+          - Updates \`jetpack.php\` plugin header metadata from upstream.
+          - Updates the default latest Jetpack version and test fixture.
+          - Preserves older WordPress compatibility mappings.
+
+          Note: this PR was created with GitHub's built-in token, so CI may need to be started manually.
+
+          Review checklist:
+          - Confirm whether \`vip_default_jetpack_version()\` needs any new compatibility branch.
+          - Check upstream requirements: WordPress \`${REQUIRES_AT_LEAST}\`, PHP \`${REQUIRES_PHP}\`.
+          - Let required CI pass before merge.
+          EOF
+
+          pr_url="$(gh pr create \
+            --base develop \
+            --head "${GH_REPO%%/*}:${BRANCH}" \
+            --title "Update Jetpack to ${NEW_VERSION}" \
+            --label "[Status] Needs Review" \
+            --body-file "${body_file}")"
+
+          rm -f "${body_file}"
+
+          echo "pr_url=${pr_url}" >> "${GITHUB_OUTPUT}"
+          echo "Created Jetpack ${NEW_VERSION} PR: ${pr_url}" >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Jetpack Release PR
+        if: steps.create_pr.outputs.pr_url != ''
+        uses: slackapi/slack-github-action@45a88b9581bfab2566dc881e2cd66d334e621e2c # v3.0.3
+        with:
+          errors: true
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "<!subteam^S01SYE0V8TA> Jetpack ${{ steps.jetpack.outputs.new_version }} release PR ready for review: ${{ steps.create_pr.outputs.pr_url }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "<!subteam^S01SYE0V8TA> Jetpack `${{ steps.jetpack.outputs.new_version }}` release PR ready for review: <${{ steps.create_pr.outputs.pr_url }}|Update Jetpack to ${{ steps.jetpack.outputs.new_version }}>"
+                  }
+                }
+              ]
+            }
