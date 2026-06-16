@@ -3,8 +3,8 @@ name: Release PRs
 
 on:
   schedule:
-    # GitHub cron is UTC. 16:20 UTC is 10:20 MDT.
-    - cron: '20 16 * * 2'
+    # GitHub cron is UTC. 15:20 UTC is 9:20 MDT.
+    - cron: '20 15 * * 2'
   workflow_dispatch:
     inputs:
       release_pr:
