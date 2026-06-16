@@ -155,7 +155,13 @@ class WordPressMcpIntegration extends Integration {
 			return $input_user;
 		}
 
-		$expected = hash_hmac( 'sha256', $email . $timestamp, constant( 'AUTH_KEY' ) );
+		$key              = constant( 'AUTH_KEY' ); // Deprecated in favor of integrations_key.
+		$integrations_key = $this->get_server_config_value( 'auth_key' );
+		if ( null !== $integrations_key ) {
+			$key = $integrations_key;
+		}
+
+		$expected = hash_hmac( 'sha256', $email . $timestamp, $key );
 
 		if ( ! hash_equals( $expected, $provided_hash ) ) {
 			$this->trigger_auth_warning( 'Authentication failed' );
@@ -267,7 +273,7 @@ class WordPressMcpIntegration extends Integration {
 	 * Emit an authentication warning without exposing raw user identity.
 	 */
 	private function trigger_auth_warning( string $message ): void {
-		trigger_error( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		error_log( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 	}
 
 	/**

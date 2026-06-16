@@ -403,6 +403,66 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
+	public function test_authenticate_mcp_request_uses_integrations_key_when_configured(): void {
+		$auth_key         = 'legacy-auth-key';
+		$integrations_key = 'integrations-auth-key';
+		$email            = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
+		$timestamp        = (string) time();
+		$user_id          = $this->factory()->user->create( [ 'user_email' => $email ] );
+
+		Constant_Mocker::define( 'AUTH_KEY', $auth_key );
+		Constant_Mocker::define( 'REST_REQUEST', true );
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_USER'] = $email;
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_PW']                   = hash_hmac( 'sha256', $email . $timestamp, $integrations_key );
+		$_SERVER['HTTP_X_VIP_MCP_AUTH']           = 'true';
+		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $integrations_key ] ] );
+		$wordpress_mcp_integration->configure();
+		$wordpress_mcp_integration->load();
+
+		$result = apply_filters( 'determine_current_user', false );
+		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+
+		$this->assertSame( $user_id, $result );
+	}
+
+	public function test_authenticate_mcp_request_ignores_auth_key_constant_when_integrations_key_configured(): void {
+		$auth_key         = 'legacy-auth-key';
+		$integrations_key = 'integrations-auth-key';
+		$email            = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
+		$timestamp        = (string) time();
+		$this->factory()->user->create( [ 'user_email' => $email ] );
+
+		Constant_Mocker::define( 'AUTH_KEY', $auth_key );
+		Constant_Mocker::define( 'REST_REQUEST', true );
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_USER'] = $email;
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_PW']                   = hash_hmac( 'sha256', $email . $timestamp, $auth_key );
+		$_SERVER['HTTP_X_VIP_MCP_AUTH']           = 'true';
+		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $integrations_key ] ] );
+		$wordpress_mcp_integration->configure();
+		$wordpress_mcp_integration->load();
+
+		$result = apply_filters( 'determine_current_user', false );
+		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+
+		$this->assertFalse( $result );
+	}
+
 	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
 		Constant_Mocker::define( 'AUTH_KEY', 'test-auth-key' );
 		Constant_Mocker::define( 'REST_REQUEST', true );
