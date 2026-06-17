@@ -139,6 +139,22 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 	}
 
+	public function test_load_registers_exposed_ability_args_filter_when_configured(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$wordpress_mcp_integration->load();
+
+		$this->assertSame(
+			10,
+			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ] )
+		);
+
+		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ], 10 );
+		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+	}
+
 	public function test_load_does_not_register_default_server_config_filter_without_server_config(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
@@ -149,6 +165,79 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+	}
+
+	public function test_load_does_not_register_exposed_ability_args_filter_without_config(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+
+		$wordpress_mcp_integration->load();
+
+		$this->assertFalse(
+			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ] )
+		);
+
+		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+	}
+
+	public function test_filter_exposed_ability_args_marks_configured_ability_public(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+			[
+				'meta' => [
+					'mcp'  => [
+						'description' => 'Existing MCP metadata',
+					],
+					'data' => 'preserved',
+				],
+			],
+			'core/get-site-info'
+		);
+
+		$this->assertTrue( $args['meta']['mcp']['public'] );
+		$this->assertSame( 'Existing MCP metadata', $args['meta']['mcp']['description'] );
+		$this->assertSame( 'preserved', $args['meta']['data'] );
+	}
+
+	public function test_filter_exposed_ability_args_handles_invalid_meta_shape(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+			[ 'meta' => 'invalid' ],
+			'core/get-site-info'
+		);
+
+		$this->assertTrue( $args['meta']['mcp']['public'] );
+
+		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+			[ 'meta' => [ 'mcp' => 'invalid' ] ],
+			'core/get-site-info'
+		);
+
+		$this->assertTrue( $args['meta']['mcp']['public'] );
+	}
+
+	public function test_filter_exposed_ability_args_preserves_unconfigured_ability(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$args = [
+			'meta' => [
+				'mcp' => [
+					'public' => false,
+				],
+			],
+		];
+
+		$this->assertSame(
+			$args,
+			$wordpress_mcp_integration->filter_exposed_ability_args( $args, 'core/update-site' )
+		);
 	}
 
 	public function test_load_sets_inactive_if_no_versions_found(): void {
