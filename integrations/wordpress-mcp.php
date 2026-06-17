@@ -53,7 +53,7 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		if ( ! empty( $this->get_exposed_abilities_config() ) ) {
-			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_ability_args' ], 10, 2 );
+			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
 		}
 
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
@@ -112,7 +112,7 @@ class WordPressMcpIntegration extends Integration {
 	 * @param string $ability_name Ability name.
 	 * @return array Filtered ability registration args.
 	 */
-	public function filter_exposed_ability_args( array $args, string $ability_name ): array {
+	public function filter_exposed_abilities_args( array $args, string $ability_name ): array {
 		if ( in_array( $ability_name, $this->get_exposed_abilities_config(), true ) ) {
 			if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) ) {
 				$args['meta'] = [];

@@ -139,7 +139,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 	}
 
-	public function test_load_registers_exposed_ability_args_filter_when_configured(): void {
+	public function test_load_registers_exposed_abilities_args_filter_when_configured(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
 		$wordpress_mcp_integration->configure();
@@ -147,11 +147,11 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$wordpress_mcp_integration->load();
 
 		$this->assertSame(
-			10,
-			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ] )
+			PHP_INT_MAX,
+			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
 		);
 
-		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ], 10 );
+		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 	}
 
@@ -167,24 +167,24 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 	}
 
-	public function test_load_does_not_register_exposed_ability_args_filter_without_config(): void {
+	public function test_load_does_not_register_exposed_abilities_args_filter_without_config(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
 		$wordpress_mcp_integration->load();
 
 		$this->assertFalse(
-			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_ability_args' ] )
+			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
 		);
 
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 	}
 
-	public function test_filter_exposed_ability_args_marks_configured_ability_public(): void {
+	public function test_filter_exposed_abilities_args_marks_configured_ability_public(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
 		$wordpress_mcp_integration->configure();
 
-		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+		$args = $wordpress_mcp_integration->filter_exposed_abilities_args(
 			[
 				'meta' => [
 					'mcp'  => [
@@ -201,19 +201,19 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'preserved', $args['meta']['data'] );
 	}
 
-	public function test_filter_exposed_ability_args_handles_invalid_meta_shape(): void {
+	public function test_filter_exposed_abilities_args_handles_invalid_meta_shape(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
 		$wordpress_mcp_integration->configure();
 
-		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+		$args = $wordpress_mcp_integration->filter_exposed_abilities_args(
 			[ 'meta' => 'invalid' ],
 			'core/get-site-info'
 		);
 
 		$this->assertTrue( $args['meta']['mcp']['public'] );
 
-		$args = $wordpress_mcp_integration->filter_exposed_ability_args(
+		$args = $wordpress_mcp_integration->filter_exposed_abilities_args(
 			[ 'meta' => [ 'mcp' => 'invalid' ] ],
 			'core/get-site-info'
 		);
@@ -221,7 +221,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $args['meta']['mcp']['public'] );
 	}
 
-	public function test_filter_exposed_ability_args_preserves_unconfigured_ability(): void {
+	public function test_filter_exposed_abilities_args_preserves_unconfigured_ability(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
 		$wordpress_mcp_integration->configure();
@@ -236,7 +236,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertSame(
 			$args,
-			$wordpress_mcp_integration->filter_exposed_ability_args( $args, 'core/update-site' )
+			$wordpress_mcp_integration->filter_exposed_abilities_args( $args, 'core/update-site' )
 		);
 	}
 
