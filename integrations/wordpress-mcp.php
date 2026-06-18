@@ -52,6 +52,10 @@ class WordPressMcpIntegration extends Integration {
 			add_filter( 'mcp_adapter_default_server_config', [ $this, 'filter_default_server_config' ], PHP_INT_MAX );
 		}
 
+		if ( ! empty( $this->get_exposed_abilities_config() ) ) {
+			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
+		}
+
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
 
 		add_action( 'plugins_loaded', function () {
@@ -99,6 +103,60 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		return $config;
+	}
+
+	/**
+	 * Mark configured abilities as public MCP tools.
+	 *
+	 * @param array  $args         Ability registration args.
+	 * @param string $ability_name Ability name.
+	 * @return array Filtered ability registration args.
+	 */
+	public function filter_exposed_abilities_args( array $args, string $ability_name ): array {
+		if ( $this->is_exposed_ability( $ability_name ) ) {
+			if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) ) {
+				$args['meta'] = [];
+			}
+
+			if ( ! isset( $args['meta']['mcp'] ) || ! is_array( $args['meta']['mcp'] ) ) {
+				$args['meta']['mcp'] = [];
+			}
+
+			$args['meta']['mcp']['public'] = true;
+		}
+
+		return $args;
+	}
+
+	/**
+	 * Whether the ability matches the exposed abilities config.
+	 */
+	private function is_exposed_ability( string $ability_name ): bool {
+		foreach ( $this->get_exposed_abilities_config() as $exposed_ability ) {
+			if ( $ability_name === $exposed_ability || $this->matches_exposed_ability_pattern( $exposed_ability, $ability_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match an ability name against a glob-style exposed ability pattern.
+	 */
+	private function matches_exposed_ability_pattern( string $pattern, string $ability_name ): bool {
+		if ( ! str_contains( $pattern, '*' ) || ! str_contains( $pattern, '/' ) ) {
+			return false;
+		}
+
+		[ $namespace ] = explode( '/', $pattern, 2 );
+		if ( str_contains( $namespace, '*' ) ) {
+			return false;
+		}
+
+		$regex = '/^' . str_replace( '\*', '.*', preg_quote( $pattern, '/' ) ) . '$/';
+
+		return 1 === preg_match( $regex, $ability_name );
 	}
 
 	/**
@@ -228,6 +286,17 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	private function has_server_config(): bool {
 		return null !== $this->get_server_config_value( 'server_namespace' ) || null !== $this->get_server_config_value( 'server_route' );
+	}
+
+	/**
+	 * Get configured ability names to expose through MCP.
+	 *
+	 * @return string[]
+	 */
+	private function get_exposed_abilities_config(): array {
+		$exposed_abilities = $this->get_env_config()['exposed_abilities'] ?? [];
+
+		return is_array( $exposed_abilities ) ? array_values( array_filter( $exposed_abilities, 'is_string' ) ) : [];
 	}
 
 	/**
