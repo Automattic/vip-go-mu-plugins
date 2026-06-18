@@ -32,7 +32,7 @@ class SafePublishIntegration extends Integration {
 	}
 
 	public function configure(): void {
-		$configs = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
+		$configs = $this->get_safe_publish_config();
 
 		$this->define_config_constant( 'SAFE_PUBLISH_CONNECTED_SITE_URL', $configs['connected_site_url'] ?? null );
 		$this->define_config_constant( 'SAFE_PUBLISH_SYNC_MODE', $configs['sync_mode'] ?? null );
@@ -96,6 +96,25 @@ class SafePublishIntegration extends Integration {
 		}
 
 		return array_key_first( $versions );
+	}
+
+	/**
+	 * Get Safe Publish configuration for the current site context.
+	 *
+	 * On multisite, Safe Publish config is split across levels. Site-level
+	 * config holds shared values like Basic Auth and version, while
+	 * network-site config holds connection values like the connected site URL,
+	 * sync mode, and shared secret. Merge both levels so the current network
+	 * site gets a complete runtime config.
+	 *
+	 * @return array<string,mixed>
+	 */
+	private function get_safe_publish_config(): array {
+		if ( ! is_multisite() ) {
+			return $this->get_env_config();
+		}
+
+		return array_merge( $this->get_env_config(), $this->get_network_site_config() );
 	}
 
 	/**
