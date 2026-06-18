@@ -113,7 +113,7 @@ class WordPressMcpIntegration extends Integration {
 	 * @return array Filtered ability registration args.
 	 */
 	public function filter_exposed_abilities_args( array $args, string $ability_name ): array {
-		if ( in_array( $ability_name, $this->get_exposed_abilities_config(), true ) ) {
+		if ( $this->is_exposed_ability( $ability_name ) ) {
 			if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) ) {
 				$args['meta'] = [];
 			}
@@ -126,6 +126,37 @@ class WordPressMcpIntegration extends Integration {
 		}
 
 		return $args;
+	}
+
+	/**
+	 * Whether the ability matches the exposed abilities config.
+	 */
+	private function is_exposed_ability( string $ability_name ): bool {
+		foreach ( $this->get_exposed_abilities_config() as $exposed_ability ) {
+			if ( $ability_name === $exposed_ability || $this->matches_exposed_ability_pattern( $exposed_ability, $ability_name ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Match an ability name against a glob-style exposed ability pattern.
+	 */
+	private function matches_exposed_ability_pattern( string $pattern, string $ability_name ): bool {
+		if ( ! str_contains( $pattern, '*' ) || ! str_contains( $pattern, '/' ) ) {
+			return false;
+		}
+
+		[ $namespace ] = explode( '/', $pattern, 2 );
+		if ( str_contains( $namespace, '*' ) ) {
+			return false;
+		}
+
+		$regex = '/^' . str_replace( '\*', '.*', preg_quote( $pattern, '/' ) ) . '$/';
+
+		return 1 === preg_match( $regex, $ability_name );
 	}
 
 	/**

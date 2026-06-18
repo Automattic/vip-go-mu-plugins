@@ -221,6 +221,23 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $args['meta']['mcp']['public'] );
 	}
 
+	public function test_filter_exposed_abilities_args_matches_wildcards(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get*', 'core/*-info', 'vip/*' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$this->assertTrue( $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'core/get-site-info' )['meta']['mcp']['public'] );
+		$this->assertTrue( $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'core/site-info' )['meta']['mcp']['public'] );
+		$this->assertTrue( $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'vip/update-site' )['meta']['mcp']['public'] );
+		$this->assertSame( [], $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'other/delete-site' ) );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ '*', '*/*', '*/delete-site' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$this->assertSame( [], $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'vip/delete-site' ) );
+	}
+
 	public function test_filter_exposed_abilities_args_preserves_unconfigured_ability(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
