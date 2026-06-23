@@ -170,6 +170,18 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		], false );
 	}
 
+	public function test__is_enabled_for_org_returns_true_if_org_status_is_enabled(): void {
+		$mock = $this->get_mock( [ 'org' => [ 'status' => Org_Integration_Status::ENABLED ] ] );
+
+		$this->assertTrue( $mock->is_enabled_for_org() );
+	}
+
+	public function test__is_enabled_for_org_returns_false_if_org_status_is_disabled(): void {
+		$mock = $this->get_mock( [ 'org' => [ 'status' => Org_Integration_Status::DISABLED ] ] );
+
+		$this->assertFalse( $mock->is_enabled_for_org() );
+	}
+
 	/**
 	 * Helper function for testing `is_active_via_vip`.
 	 *
@@ -333,6 +345,25 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$mock = $this->get_mock( [ 'children' => $children_config ] );
 
 		$this->assertEquals( $children_config, $mock->get_child_configs() );
+	}
+
+	public function test__get_child_config_returns_single_child_config_when_defined(): void {
+		$child_config = [
+			'type' => 'wordpress-mcp',
+			'env'  => [
+				'status' => 'enabled',
+			],
+		];
+
+		$mock = $this->get_mock( [ 'children' => [ 'wordpress-mcp' => $child_config ] ] );
+
+		$this->assertEquals( $child_config, $mock->get_child_config( 'wordpress-mcp' ) );
+	}
+
+	public function test__get_child_config_returns_null_when_child_is_missing(): void {
+		$mock = $this->get_mock( [ 'children' => [] ] );
+
+		$this->assertNull( $mock->get_child_config( 'wordpress-mcp' ) );
 	}
 
 	public function test__get_child_env_configs_returns_empty_array_when_no_children_defined(): void {

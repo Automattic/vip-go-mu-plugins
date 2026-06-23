@@ -3,8 +3,8 @@ name: Release PRs
 
 on:
   schedule:
-    # GitHub cron is UTC. 16:20 UTC is 10:20 MDT.
-    - cron: '20 16 * * 2'
+    # GitHub cron is UTC. 15:20 UTC is 9:20 MDT.
+    - cron: '20 15 * * 2'
   workflow_dispatch:
     inputs:
       release_pr:
@@ -33,46 +33,22 @@ jobs:
       - name: Resolve release date
         id: release
         env:
-          EVENT_NAME: ${{ github.event_name }}
           RELEASE_TIMEZONE: MST7
-          RELEASE_TIMEZONE_LABEL: MST
         run: |
           set -euo pipefail
 
-          local_hour="$(TZ="${RELEASE_TIMEZONE}" date '+%H')"
-          local_day="$(TZ="${RELEASE_TIMEZONE}" date '+%u')"
           release_date="$(TZ="${RELEASE_TIMEZONE}" date '+%Y%m%d')"
-          should_create=true
-
-          # Manual workflow_dispatch runs are not date/time gated.
-          # Scheduled runs use Tuesday off-hour cron entries. 10:20 MDT resolves to 09:20 MST7.
-          if [ "${EVENT_NAME}" = "schedule" ]; then
-            case "${local_day}-${local_hour}" in
-              2-09)
-                ;;
-              *)
-                should_create=false
-                ;;
-            esac
-          fi
 
           {
             echo "date=${release_date}"
-            echo "should_create=${should_create}"
           } >> "${GITHUB_OUTPUT}"
 
-          if [ "${should_create}" = "false" ]; then
-            echo "Skipping release PR creation because this scheduled run is outside the configured Tuesday ${RELEASE_TIMEZONE_LABEL} window." >> "${GITHUB_STEP_SUMMARY}"
-          fi
-
       - name: Check out source code
-        if: steps.release.outputs.should_create == 'true'
         uses: actions/checkout@v6.0.3
         with:
           fetch-depth: 0
 
       - name: Fetch release branches and tags
-        if: steps.release.outputs.should_create == 'true'
         run: |
           set -euo pipefail
 
@@ -83,7 +59,6 @@ jobs:
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: Create selected release PRs
-        if: steps.release.outputs.should_create == 'true'
         id: create_prs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
