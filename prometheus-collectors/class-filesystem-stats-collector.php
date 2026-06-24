@@ -61,6 +61,22 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 			self::UPLOAD_SIZE_BUCKETS
 		);
 
+		self::$request_read_bytes = $registry->getOrRegisterHistogram(
+			'filesystem',
+			'request_read_bytes',
+			'Total bytes fetched from the VIP File Service per request.',
+			[],
+			self::READ_BYTES_BUCKETS
+		);
+
+		self::$request_read_files = $registry->getOrRegisterHistogram(
+			'filesystem',
+			'request_read_files',
+			'Number of VIP File Service fetches per request.',
+			[],
+			self::READ_FILES_BUCKETS
+		);
+
 		// Start each request with fresh per-request read accumulators.
 		self::$read_bytes_acc = 0;
 		self::$read_files_acc = 0;
@@ -82,8 +98,35 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 		}
 	}
 
+	/**
+	 * Accumulate a remote fetch from the File Service. Called from the stream
+	 * wrapper. Per-request totals are drained in collect_metrics(). Must never throw.
+	 */
+	public static function record_read( int $size ): void {
+		if ( $size < 0 ) {
+			return;
+		}
+
+		self::$read_bytes_acc += $size;
+		++self::$read_files_acc;
+	}
+
 	public function collect_metrics(): void {
-		/* Read drain implemented in Task 2. */
+		if ( self::$read_files_acc < 1 ) {
+			return;
+		}
+
+		if ( null !== self::$request_read_bytes ) {
+			self::$request_read_bytes->observe( self::$read_bytes_acc, [] );
+		}
+
+		if ( null !== self::$request_read_files ) {
+			self::$request_read_files->observe( self::$read_files_acc, [] );
+		}
+
+		// Reset so a second collect_metrics() in the same request does not double-count.
+		self::$read_bytes_acc = 0;
+		self::$read_files_acc = 0;
 	}
 
 	public function process_metrics(): void {
