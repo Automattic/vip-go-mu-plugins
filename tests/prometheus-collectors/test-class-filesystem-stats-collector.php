@@ -161,4 +161,11 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		$collector->collect_metrics();
 		$collector->collect_metrics();
 	}
+
+	public function test_collector_is_registered_via_filter(): void {
+		$collectors = apply_filters( 'vip_prometheus_collectors', [] );
+
+		$this->assertArrayHasKey( 'filesystem', $collectors );
+		$this->assertInstanceOf( Filesystem_Stats_Collector::class, $collectors['filesystem'] );
+	}
 }
