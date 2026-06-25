@@ -440,8 +440,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 					$stats = fstat( $this->file );
 					if ( is_array( $stats ) && isset( $stats['size'] ) ) {
 						\Automattic\VIP\Prometheus\Filesystem_Stats_Collector::record_write( (int) $stats['size'], (string) $this->path );
+						$this->upload_recorded = true;
 					}
-					$this->upload_recorded = true;
 				} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Telemetry must never break a flush.
 				}
 			}

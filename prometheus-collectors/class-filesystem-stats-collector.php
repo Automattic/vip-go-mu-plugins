@@ -48,7 +48,7 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 	private static ?Histogram $request_read_bytes = null;
 	private static ?Histogram $request_read_files = null;
 
-	/** Per-request read accumulators. Reset each request by initialize(). */
+	/** Per-request read accumulators. Drained and reset in collect_metrics(); PHP clears static state between requests. */
 	private static int $read_bytes_acc = 0;
 	private static int $read_files_acc = 0;
 
@@ -76,10 +76,6 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 			[],
 			self::READ_FILES_BUCKETS
 		);
-
-		// Start each request with fresh per-request read accumulators.
-		self::$read_bytes_acc = 0;
-		self::$read_files_acc = 0;
 	}
 
 	/**

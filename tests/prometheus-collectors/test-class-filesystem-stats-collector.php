@@ -15,17 +15,14 @@ require_once __DIR__ . '/../../files/class-vip-filesystem-local-stream-wrapper.p
 class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 
 	public function tearDown(): void {
-		// Reset the collector's static state so tests are isolated.
+		// Reset the collector's static state so tests are isolated. No setAccessible():
+		// reflection has unrestricted access since PHP 8.1 and the call is deprecated in 8.5.
 		$ref = new \ReflectionClass( Filesystem_Stats_Collector::class );
 		foreach ( [ 'upload_bytes', 'request_read_bytes', 'request_read_files' ] as $prop ) {
-			$p = $ref->getProperty( $prop );
-			$p->setAccessible( true );
-			$p->setValue( null, null );
+			$ref->getProperty( $prop )->setValue( null, null );
 		}
 		foreach ( [ 'read_bytes_acc', 'read_files_acc' ] as $prop ) {
-			$p = $ref->getProperty( $prop );
-			$p->setAccessible( true );
-			$p->setValue( null, 0 );
+			$ref->getProperty( $prop )->setValue( null, 0 );
 		}
 
 		VIP_Filesystem_Local_Stream_Wrapper::$default_client = null;
