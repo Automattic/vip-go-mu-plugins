@@ -6,8 +6,11 @@ use PHPUnit\Framework\MockObject\MockObject;
 use Prometheus\Histogram;
 use Prometheus\RegistryInterface;
 use WP_UnitTestCase;
+use Automattic\VIP\Files\API_Client;
+use Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper;
 
 require_once __DIR__ . '/../../prometheus-collectors/class-filesystem-stats-collector.php';
+require_once __DIR__ . '/../../files/class-vip-filesystem-local-stream-wrapper.php';
 
 class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 
@@ -24,6 +27,8 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 			$p->setAccessible( true );
 			$p->setValue( null, 0 );
 		}
+
+		VIP_Filesystem_Local_Stream_Wrapper::$default_client = null;
 
 		parent::tearDown();
 	}
@@ -167,5 +172,58 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 
 		$this->assertArrayHasKey( 'filesystem', $collectors );
 		$this->assertInstanceOf( Filesystem_Stats_Collector::class, $collectors['filesystem'] );
+	}
+
+	private function register_wrapper_with_client( API_Client $client ): void {
+		VIP_Filesystem_Local_Stream_Wrapper::$default_client = $client;
+
+		if ( ! in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true ) ) {
+			( new VIP_Filesystem_Local_Stream_Wrapper( $client ) )->register();
+		}
+	}
+
+	public function test_stream_flush_records_upload(): void {
+		[ , $histogram ] = $this->init_with_histogram_spy();
+
+		$histogram->expects( $this->once() )
+			->method( 'observe' )
+			->with( 4, [ 'image', 'image/jpeg' ] );
+
+		/** @var MockObject&API_Client $client */
+		$client = $this->createMock( API_Client::class );
+		// New file: open fetches, gets file-not-found, creates empty resource.
+		$client->method( 'get_file' )->willReturn( new \WP_Error( 'file-not-found', 'nope' ) );
+		// Close flushes: upload succeeds (returns a truthy filename, not WP_Error).
+		$client->expects( $this->once() )->method( 'upload_file' )->willReturn( '/wp-content/uploads/x.jpg' );
+
+		$this->register_wrapper_with_client( $client );
+
+		// 4 bytes, written through the vip:// wrapper to exercise stream_flush().
+		file_put_contents( 'vip://wp-content/uploads/x.jpg', 'data' ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+	}
+
+	public function test_stream_open_read_accumulates_and_drains(): void {
+		[ $collector, $spies ] = $this->init_with_named_spies();
+
+		// A real temp file with 100 bytes to be "fetched" from the service.
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
+		$tmp = tempnam( sys_get_temp_dir(), 'vipfs' );
+		file_put_contents( $tmp, str_repeat( 'x', 100 ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+
+		/** @var MockObject&API_Client $client */
+		$client = $this->createMock( API_Client::class );
+		$client->method( 'get_file' )->willReturn( $tmp );
+
+		$this->register_wrapper_with_client( $client );
+
+		$contents = file_get_contents( 'vip://wp-content/uploads/y.jpg' ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile
+		$this->assertSame( 100, strlen( $contents ) );
+
+		$spies['read_bytes']->expects( $this->once() )->method( 'observe' )->with( 100, [] );
+		$spies['read_files']->expects( $this->once() )->method( 'observe' )->with( 1, [] );
+
+		$collector->collect_metrics();
+
+		unlink( $tmp ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 	}
 }
