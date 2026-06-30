@@ -173,6 +173,11 @@ class Search {
 	private const POST_SHARD_THRESHOLD = 1000000;
 	private const USER_SHARD_THRESHOLD = 2000000;
 
+	// Cap on the request body size copied into failed-request log entries. Bulk index
+	// payloads can be tens of MB, which is worthless to log in full and blows past the
+	// logstash `extra` size limit (262144 bytes), causing the whole entry to be dropped.
+	private const MAX_LOGGED_QUERY_BODY_BYTES = 2048;
+
 	public $healthcheck;
 	public $settings_healthcheck;
 	public $versioning_cleanup;
@@ -522,6 +527,13 @@ class Search {
 
 		// Override default per page value set in elasticpress/includes/classes/Indexable.php
 		add_filter( 'ep_bulk_items_per_page', [ $this, 'filter__ep_bulk_items_per_page' ], PHP_INT_MAX );
+
+		// Constrain dynamic bulk request sizes so each _bulk completes within the upstream
+		// 30s request timeout (throughput ~3 MB/s, degrades on large batches; ~40 MB lands
+		// around 13-15s, ~2x margin before the timeout/data loss).
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 20 * MB_IN_BYTES );
+		add_filter( 'ep_dynamic_bulk_incremental_step', fn() => 10 * MB_IN_BYTES );
+		add_filter( 'ep_dynamic_bulk_max_buffer_size', fn() => 40 * MB_IN_BYTES );
 
 		// Network layer replacement to use VIP helpers (that handle slow/down upstream server)
 		add_filter( 'ep_intercept_remote_request', '__return_true', 9999 );
@@ -1279,9 +1291,23 @@ class Search {
 		}
 
 		// Try to parse the body if possible to make it better readable in the log entry.
-		if ( isset( $query['args']['body'] ) ) {
-			$decoded_body          = json_decode( $query['args']['body'] );
-			$query['args']['body'] = ! json_last_error() ? $decoded_body : $query['args']['body'];
+		if ( isset( $query['args']['body'] ) && is_string( $query['args']['body'] ) ) {
+			$body        = $query['args']['body'];
+			$body_length = strlen( $body );
+
+			if ( $body_length > self::MAX_LOGGED_QUERY_BODY_BYTES ) {
+				// Large bodies (e.g. _bulk index payloads) are worthless to log in full
+				// and would exceed the logstash `extra` size limit. Keep a small preview
+				// plus the real byte size so failures remain diagnosable.
+				$query['args']['body'] = [
+					'truncated'  => true,
+					'body_bytes' => $body_length,
+					'preview'    => substr( $body, 0, self::MAX_LOGGED_QUERY_BODY_BYTES ),
+				];
+			} else {
+				$decoded_body          = json_decode( $body );
+				$query['args']['body'] = ! json_last_error() ? $decoded_body : $body;
+			}
 		}
 
 		return $query;
