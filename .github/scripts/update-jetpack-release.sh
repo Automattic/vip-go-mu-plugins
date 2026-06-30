@@ -14,6 +14,11 @@ if ! [[ "${new_version}" =~ ^[0-9]+(\.[0-9]+){1,2}$ ]]; then
 	exit 1
 fi
 
+default_version="${new_version}"
+if [[ "${new_version}" =~ ^([0-9]+\.[0-9]+)\.[0-9]+$ ]]; then
+	default_version="${BASH_REMATCH[1]}"
+fi
+
 if ! git -C jetpack rev-parse -q --verify "refs/tags/${new_version}" >/dev/null; then
 	git -C jetpack fetch --depth=1 origin "refs/tags/${new_version}:refs/tags/${new_version}"
 fi
@@ -30,6 +35,7 @@ if [ -z "${requires_at_least}" ] || [ -z "${requires_php}" ]; then
 fi
 
 export NEW_VERSION="${new_version}"
+export NEW_DEFAULT_VERSION="${default_version}"
 export REQUIRES_AT_LEAST="${requires_at_least}"
 export REQUIRES_PHP="${requires_php}"
 
@@ -43,8 +49,8 @@ perl <<'PERL'
 use strict;
 use warnings;
 
-my $new_version       = $ENV{NEW_VERSION};
-my $requires_at_least = $ENV{REQUIRES_AT_LEAST};
+my $new_default_version = $ENV{NEW_DEFAULT_VERSION};
+my $requires_at_least   = $ENV{REQUIRES_AT_LEAST};
 
 sub version_minor {
 	my ( $version ) = @_;
@@ -115,20 +121,20 @@ if ( compare_versions( $minimum_wordpress, $latest_wordpress ) > 0 ) {
 		$previous_comment,
 		$previous_latest_version,
 		$minimum_wordpress,
-		$new_version
+		$new_default_version
 	);
 
 	$jetpack_php =~ s{\t\} else \{\n\t\t// WordPress \Q$latest_wordpress\E and newer\.\n\t\treturn '\Q$previous_latest_version\E';\n\t\}}{$replacement}
 		or die "Could not split latest Jetpack compatibility branch.\n";
 } else {
-	$jetpack_php =~ s{(// WordPress [^\n]+ and newer\.\n\s*return ')[0-9]+(?:\.[0-9]+){1,2}(';)}{$1$new_version$2}s
+	$jetpack_php =~ s{(// WordPress [^\n]+ and newer\.\n\s*return ')[0-9]+(?:\.[0-9]+){1,2}(';)}{$1$new_default_version$2}s
 		or die "Could not update latest Jetpack compatibility branch.\n";
 }
 
 write_file( 'jetpack.php', $jetpack_php );
 
 my $test_php = read_file( 'tests/test-jetpack.php' );
-$test_php =~ s/(\$latest = ')[0-9]+(?:\.[0-9]+){1,2}(';)/$1$new_version$2/s
+$test_php =~ s/(\$latest = ')[0-9]+(?:\.[0-9]+){1,2}(';)/$1$new_default_version$2/s
 	or die "Could not update latest Jetpack test version.\n";
 
 if ( compare_versions( $minimum_wordpress, $latest_wordpress ) > 0 ) {
@@ -150,17 +156,19 @@ PERL
 grep -Fq " * Version: ${new_version}" jetpack.php
 grep -Fq " * Requires at least: ${requires_at_least}" jetpack.php
 grep -Fq " * Requires PHP: ${requires_php}" jetpack.php
-grep -Fq "return '${new_version}';" jetpack.php
-grep -Fq "\$latest = '${new_version}';" tests/test-jetpack.php
+grep -Fq "return '${default_version}';" jetpack.php
+grep -Fq "\$latest = '${default_version}';" tests/test-jetpack.php
 
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
 	{
 		echo "jetpack_sha=${jetpack_sha}"
+		echo "default_version=${default_version}"
 		echo "requires_at_least=${requires_at_least}"
 		echo "requires_php=${requires_php}"
 	} >> "${GITHUB_OUTPUT}"
 else
 	echo "Updated Jetpack to ${new_version} (${jetpack_sha})."
+	echo "Default version: ${default_version}"
 	echo "Requires at least: ${requires_at_least}"
 	echo "Requires PHP: ${requires_php}"
 fi
