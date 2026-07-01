@@ -519,4 +519,126 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
+
+	/**
+	 * Populate $_SERVER with a valid, HMAC-signed MCP request for the given email.
+	 */
+	private function sign_mcp_request( string $email, string $auth_key ): void {
+		$timestamp = (string) time();
+
+		Constant_Mocker::define( 'REST_REQUEST', true );
+
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_USER'] = $email;
+		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
+		$_SERVER['PHP_AUTH_PW']                   = hash_hmac( 'sha256', $email . $timestamp, $auth_key );
+		$_SERVER['HTTP_X_VIP_MCP_AUTH']           = 'true';
+		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
+	}
+
+	public function test_authenticate_mcp_request_declines_when_user_not_found(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		// A valid signature for an unknown user must not resolve to a user ID; the input is preserved.
+		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+
+		$callback = $this->get_registered_rest_auth_error_closure();
+		if ( $callback instanceof \Closure ) {
+			remove_filter( 'rest_authentication_errors', $callback, 10 );
+		}
+	}
+
+	/**
+	 * Return the one-shot closure the integration registers on rest_authentication_errors, if any.
+	 *
+	 * The closure is isolated from the environment's own rest_authentication_errors callbacks so it
+	 * can be asserted on directly, rather than running the whole (contaminated) filter chain.
+	 */
+	private function get_registered_rest_auth_error_closure(): ?\Closure {
+		$hook = $GLOBALS['wp_filter']['rest_authentication_errors'] ?? null;
+		if ( null === $hook ) {
+			return null;
+		}
+
+		$found = null;
+		foreach ( ( $hook->callbacks[10] ?? [] ) as $callback ) {
+			if ( $callback['function'] instanceof \Closure ) {
+				$found = $callback['function'];
+			}
+		}
+
+		return $found;
+	}
+
+	public function test_authenticate_mcp_request_surfaces_rest_auth_error_when_user_not_found(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		$wordpress_mcp_integration->authenticate_mcp_request( false );
+
+		$callback = $this->get_registered_rest_auth_error_closure();
+		$this->assertNotNull( $callback, 'A rest_authentication_errors closure should be registered.' );
+
+		$error = $callback( null );
+
+		$this->assertInstanceOf( \WP_Error::class, $error );
+		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+		$this->assertStringContainsString( $email, $error->get_error_message() );
+		$this->assertSame( rest_authorization_required_code(), $error->get_error_data()['status'] );
+
+		remove_filter( 'rest_authentication_errors', $callback, 10 );
+	}
+
+	public function test_user_not_found_rest_auth_error_preserves_existing_result(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		$wordpress_mcp_integration->authenticate_mcp_request( false );
+
+		$callback = $this->get_registered_rest_auth_error_closure();
+		$this->assertNotNull( $callback, 'A rest_authentication_errors closure should be registered.' );
+
+		// A prior successful authentication (true) must pass through untouched.
+		$this->assertTrue( $callback( true ) );
+
+		// An error set by another handler must not be overridden.
+		$existing = new \WP_Error( 'existing_error', 'Existing error' );
+		$this->assertSame( $existing, $callback( $existing ) );
+
+		remove_filter( 'rest_authentication_errors', $callback, 10 );
+	}
+
+	public function test_authenticate_mcp_request_does_not_register_rest_auth_error_for_valid_user(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
+		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+
+		// A successful auth must not register a hard error for the REST layer.
+		$this->assertNull( $this->get_registered_rest_auth_error_closure() );
+	}
 }

@@ -235,6 +235,25 @@ class WordPressMcpIntegration extends Integration {
 		if ( ! $user ) {
 			$this->trigger_auth_warning( 'User not found for email hash ' . hash( 'sha256', strtolower( $email ) ) );
 
+			// Surface a hard 401 for the REST request instead of silently declining auth.
+			$rest_auth_error_callback = null;
+			$rest_auth_error_callback = function ( $errors ) use ( $email, &$rest_auth_error_callback ) {
+				// Ensure the filter is one-shot for this request.
+				remove_filter( 'rest_authentication_errors', $rest_auth_error_callback, 10 );
+
+				// Don't override an existing error or a successful authentication.
+				if ( null !== $errors ) {
+					return $errors;
+				}
+
+				return new \WP_Error(
+					'vip_mcp_user_not_found',
+					sprintf( 'No user was found with the email %s.', $email ),
+					[ 'status' => rest_authorization_required_code() ]
+				);
+			};
+			add_filter( 'rest_authentication_errors', $rest_auth_error_callback, 10, 1 );
+
 			return $input_user;
 		}
 
