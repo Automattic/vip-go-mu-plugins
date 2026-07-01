@@ -48,6 +48,11 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	public function load(): void {
+		$vip_abilities_plugin = WPVIP_MU_PLUGIN_DIR . '/vip-wordpress-abilities/vip-wordpress-abilities.php';
+		if ( file_exists( $vip_abilities_plugin ) ) {
+			require_once $vip_abilities_plugin;
+		}
+
 		if ( $this->has_server_config() ) {
 			add_filter( 'mcp_adapter_default_server_config', [ $this, 'filter_default_server_config' ], PHP_INT_MAX );
 		}
