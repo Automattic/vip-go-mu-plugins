@@ -554,6 +554,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		if ( $callback instanceof \Closure ) {
 			remove_filter( 'rest_authentication_errors', $callback, 10 );
 		}
+	}
 
 	/**
 	 * Return the one-shot closure the integration registers on rest_authentication_errors, if any.
@@ -599,6 +600,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( rest_authorization_required_code(), $error->get_error_data()['status'] );
 
 		remove_filter( 'rest_authentication_errors', $callback, 10 );
+	}
 
 	public function test_user_not_found_rest_auth_error_preserves_existing_result(): void {
 		$auth_key = 'test-auth-key';
@@ -622,6 +624,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $existing, $callback( $existing ) );
 
 		remove_filter( 'rest_authentication_errors', $callback, 10 );
+	}
 
 	public function test_authenticate_mcp_request_does_not_register_rest_auth_error_for_valid_user(): void {
 		$auth_key = 'test-auth-key';
