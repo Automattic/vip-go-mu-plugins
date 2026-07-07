@@ -17,7 +17,6 @@
     "@automattic/eslint-plugin-wpvip": "^1.1.1",
     "@babel/core": "^8.0.1",
     "@babel/plugin-transform-class-properties": "^8.0.1",
-    "@babel/plugin-transform-object-assign": "^7.27.1",
     "@babel/plugin-transform-object-rest-spread": "^8.0.1",
     "@babel/plugin-transform-private-property-in-object": "^8.0.1",
     "@babel/plugin-transform-react-jsx": "^8.0.1",
