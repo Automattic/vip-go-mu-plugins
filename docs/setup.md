@@ -3,7 +3,7 @@
 ## Prerequisites
 
 - Git (with submodule support)
-- PHP (8.0+ compatible; local CI images use newer versions)
+- PHP (8.2+ compatible; local CI images use newer versions)
 - Composer
 - Node.js + npm
 - Docker (required for `bin/test.sh`)
