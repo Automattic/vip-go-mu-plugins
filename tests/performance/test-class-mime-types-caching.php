@@ -11,17 +11,7 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$this->check_wp_version();
 		$this->mock_attachments_data();
-	}
-
-	protected function check_wp_version() {
-		global $wp_version;
-
-		// Skip tests if WordPress version is lower than MINIMUM_WORDPRESS_VERSION.
-		if ( version_compare( $wp_version, Mime_Types_Caching::MINIMUM_WORDPRESS_VERSION, '<' ) ) {
-			$this->markTestSkipped( 'This test does not run for WordPress versions below ' . Mime_Types_Caching::MINIMUM_WORDPRESS_VERSION );
-		}
 	}
 
 	protected function mock_attachments_data() {
