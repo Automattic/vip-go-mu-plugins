@@ -1,9 +1,15 @@
 <?php
 
 class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
+	private const MISSING_OPTION = '__vip_go_missing_option__';
+
 	private $original_content_width;
+	private $original_large_size_h;
+	private $original_large_size_w;
 	private $original_stylesheet;
+	private $original_template;
 	private $attachment_id;
+	private $theme_directory;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -15,9 +21,14 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 		$this->original_content_width = $GLOBALS['content_width'] ?? null;
 		unset( $GLOBALS['content_width'] );
 
-		$this->original_stylesheet = get_stylesheet();
+		$this->original_large_size_w = get_option( 'large_size_w', self::MISSING_OPTION );
+		$this->original_large_size_h = get_option( 'large_size_h', self::MISSING_OPTION );
 
-		register_theme_directory( VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/themes' );
+		$this->original_stylesheet = get_stylesheet();
+		$this->original_template   = get_template();
+		$this->theme_directory     = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/themes';
+
+		register_theme_directory( $this->theme_directory );
 		wp_clean_themes_cache();
 		switch_theme( 'vip-theme-json-layout' );
 		$this->clean_theme_json_cache();
@@ -45,15 +56,20 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		if ( $this->original_stylesheet ) {
-			switch_theme( $this->original_stylesheet );
+			switch_theme( $this->original_template, $this->original_stylesheet );
 			$this->clean_theme_json_cache();
 		}
+
+		$this->unregister_theme_directory();
 
 		if ( null === $this->original_content_width ) {
 			unset( $GLOBALS['content_width'] );
 		} else {
 			$GLOBALS['content_width'] = $this->original_content_width;
 		}
+
+		$this->restore_option( 'large_size_w', $this->original_large_size_w );
+		$this->restore_option( 'large_size_h', $this->original_large_size_h );
 
 		parent::tearDown();
 	}
@@ -102,6 +118,22 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	private function clean_theme_json_cache() {
 		if ( class_exists( 'WP_Theme_JSON_Resolver' ) ) {
 			WP_Theme_JSON_Resolver::clean_cached_data();
+		}
+	}
+
+	private function restore_option( $option, $value ) {
+		if ( self::MISSING_OPTION === $value ) {
+			delete_option( $option );
+			return;
+		}
+
+		update_option( $option, $value );
+	}
+
+	private function unregister_theme_directory() {
+		if ( $this->theme_directory && function_exists( 'unregister_theme_directory' ) ) {
+			unregister_theme_directory( $this->theme_directory );
+			wp_clean_themes_cache();
 		}
 	}
 }
