@@ -14,6 +14,9 @@ const config: PlaywrightTestConfig = {
 		headless: process.env.DEBUG_TESTS !== 'true',
 		viewport: { width: 1280, height: 1000 },
 		ignoreHTTPSErrors: true,
+		contextOptions: {
+			reducedMotion: 'reduce',
+		},
 		video: 'retain-on-failure',
 		trace: 'retain-on-failure',
 		storageState: 'e2eStorageState.json',
