@@ -205,6 +205,32 @@ class A8C_Files {
 		return false;
 	}
 
+	/**
+	 * Gets a numeric pixel width from theme.json layout settings.
+	 *
+	 * @param string[] $layout_settings Ordered layout settings to check.
+	 * @return int Width in pixels, or 0 when unavailable.
+	 */
+	private function get_theme_json_layout_width( $layout_settings ) {
+		if ( ! function_exists( 'wp_get_global_settings' ) || ! function_exists( 'wp_theme_has_theme_json' ) || ! wp_theme_has_theme_json() ) {
+			return 0;
+		}
+
+		foreach ( $layout_settings as $layout_setting ) {
+			$value = wp_get_global_settings( array( 'layout', $layout_setting ) );
+
+			if ( is_numeric( $value ) ) {
+				return max( 0, (int) $value );
+			}
+
+			if ( is_string( $value ) && preg_match( '/^(\d+(?:\.\d+)?)px$/i', trim( $value ), $matches ) ) {
+				return max( 0, (int) round( (float) $matches[1] ) );
+			}
+		}
+
+		return 0;
+	}
+
 	public function upload_url_path( $upload_url_path ) {
 		// No modifications needed outside multisite
 		if ( false !== is_multisite() ) {
@@ -235,9 +261,11 @@ class A8C_Files {
 			return false;
 		}
 
-		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
-		$crop          = false;
-		$args          = array();
+		$content_width                = isset( $GLOBALS['content_width'] ) ? max( 0, (int) $GLOBALS['content_width'] ) : 0;
+		$content_width_for_constraint = $content_width ?: $this->get_theme_json_layout_width( array( 'contentSize' ) );
+		$max_image_width              = $content_width ?: $this->get_theme_json_layout_width( array( 'wideSize', 'contentSize' ) );
+		$crop                         = false;
+		$args                         = array();
 
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
@@ -285,8 +313,8 @@ class A8C_Files {
 			$w      = $_max_w;
 			$h      = $_max_h;
 			$crop   = $_wp_additional_image_sizes[ $size ]['crop'];
-		} elseif ( $content_width > 0 ) {
-			$_max_w = $content_width;
+		} elseif ( $max_image_width > 0 ) {
+			$_max_w = $max_image_width;
 			$_max_h = 0;
 		} else {
 			$_max_w = 1024;
@@ -294,8 +322,8 @@ class A8C_Files {
 		}
 
 		// Constrain default image sizes to the theme's content width, if available.
-		if ( $content_width > 0 && in_array( $size, array( 'thumbnail', 'medium', 'large' ) ) ) {
-			$_max_w = min( $_max_w, $content_width );
+		if ( $content_width_for_constraint > 0 && in_array( $size, array( 'thumbnail', 'medium', 'medium_large', 'large' ) ) ) {
+			$_max_w = min( $_max_w, $content_width_for_constraint );
 		}
 
 		$resized = false;
