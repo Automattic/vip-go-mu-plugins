@@ -139,7 +139,7 @@ jobs:
               --head "${GH_REPO%%/*}:${head_branch}" \
               --title "${title}" \
               --body-file "${body_file}" 2> "${create_error_file}")"; then
-              if grep -q 'No commits between' "${create_error_file}"; then
+              if grep -qi 'no commits between' "${create_error_file}"; then
                 echo "- Skipped ${head_branch} -> ${base_branch}; GitHub reported no commits between the branches." >> "${GITHUB_STEP_SUMMARY}"
                 rm -f "${body_file}" "${create_error_file}"
                 return
