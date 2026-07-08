@@ -15,7 +15,6 @@
   "author": "Automattic",
   "devDependencies": {
     "@automattic/eslint-plugin-wpvip": "^1.2.1",
-    "@babel/plugin-syntax-decorators": "^7.28.6",
     "@playwright/test": "^1.59.1",
     "@types/node": "^26.0.1",
     "asana-phrase": "^0.0.8",

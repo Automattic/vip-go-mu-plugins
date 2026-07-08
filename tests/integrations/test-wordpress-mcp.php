@@ -137,6 +137,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 		remove_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_registers_exposed_abilities_args_filter_when_configured(): void {
@@ -153,6 +154,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_does_not_register_default_server_config_filter_without_server_config(): void {
@@ -165,6 +167,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_does_not_register_exposed_abilities_args_filter_without_config(): void {
@@ -177,6 +180,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
+		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_filter_exposed_abilities_args_marks_configured_ability_public(): void {
@@ -401,8 +405,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_returns_true_for_pretty_rest_url(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
 
@@ -412,8 +414,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_returns_true_for_configured_rest_url(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/vip-mcp/v1/vip-mcp-server';
 
@@ -432,8 +432,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_uses_default_namespace_with_configured_server_route(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/vip-mcp-server';
 
@@ -445,8 +443,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_uses_default_route_with_configured_namespace(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/vip-mcp/v1/mcp-adapter-default-server';
 
@@ -458,8 +454,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_returns_true_for_rest_route_query_arg(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/index.php?rest_route=/mcp/mcp-adapter-default-server';
 		$_GET['rest_route']        = '/mcp/mcp-adapter-default-server';
@@ -470,8 +464,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_is_mcp_adapter_rest_request_returns_false_for_other_rest_url(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
-
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/wp/v2/posts';
 
@@ -486,13 +478,20 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 123, $wordpress_mcp_integration->authenticate_mcp_request( 123 ) );
 	}
 
-	public function test_authenticate_mcp_request_maps_valid_hmac_to_user(): void {
-		$auth_key  = 'test-auth-key';
-		$email     = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
-		$timestamp = (string) time();
-		$user_id   = $this->factory()->user->create( [ 'user_email' => $email ] );
+	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
+		$_SERVER['REQUEST_METHOD'] = 'POST';
+		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
 
-		Constant_Mocker::define( 'REST_REQUEST', true );
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+
+		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+	}
+
+	/**
+	 * Populate $_SERVER with a valid, HMAC-signed MCP request for the given email.
+	 */
+	private function sign_mcp_request( string $email, string $auth_key ): void {
+		$timestamp = (string) time();
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
 		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
@@ -503,20 +502,81 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$_SERVER['HTTP_X_VIP_MCP_AUTH']           = 'true';
 		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
 
+		wp_set_current_user( 0 );
+	}
+
+	public function test_authenticate_mcp_request_maps_valid_hmac_to_user(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
+		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
+
+		$this->sign_mcp_request( $email, $auth_key );
+
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
 
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
-	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
-		Constant_Mocker::define( 'REST_REQUEST', true );
+	public function test_report_auth_error_surfaces_rest_error_when_user_not_found(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
 
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		$this->sign_mcp_request( $email, $auth_key );
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
 
+		// A valid signature for an unknown user must not resolve to a user ID; the
+		// input is preserved and the hard failure is recorded for the REST layer.
 		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+
+		$error = $wordpress_mcp_integration->report_auth_error( null );
+
+		$this->assertInstanceOf( \WP_Error::class, $error );
+		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+		$this->assertStringContainsString( $email, $error->get_error_message() );
+		$this->assertSame( 401, $error->get_error_data()['status'] );
+	}
+
+	public function test_report_auth_error_preserves_existing_result(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		$wordpress_mcp_integration->authenticate_mcp_request( false );
+
+		// A prior successful authentication (true) must pass through untouched.
+		$this->assertTrue( $wordpress_mcp_integration->report_auth_error( true ) );
+
+		// An error set by another handler must not be overridden.
+		$existing = new \WP_Error( 'existing_error', 'Existing error' );
+		$this->assertSame( $existing, $wordpress_mcp_integration->report_auth_error( $existing ) );
+	}
+
+	public function test_report_auth_error_returns_null_for_valid_user(): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
+		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
+
+		$this->sign_mcp_request( $email, $auth_key );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+
+		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
+
+		// A successful auth must not surface a hard error for the REST layer.
+		$this->assertNull( $wordpress_mcp_integration->report_auth_error( null ) );
+	}
+
+	public function test_report_auth_error_returns_null_without_recorded_error(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+
+		$this->assertNull( $wordpress_mcp_integration->report_auth_error( null ) );
 	}
 }
