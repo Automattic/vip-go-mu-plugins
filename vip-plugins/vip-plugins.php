@@ -88,7 +88,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
 					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
 				</a>
-				<a class="fp-overlay" href="<?php echo esc_url( $plugin_url ); ?>" target="_blank">
+				<a class="fp-overlay" href="<?php echo esc_url( $plugin_url ); ?>" target="_blank" rel="noopener noreferrer">
 					<div class="fp-overlay-inner">
 						<div class="fp-overlay-cell">
 							<span>
