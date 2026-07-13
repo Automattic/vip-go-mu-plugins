@@ -69,6 +69,9 @@ function wpcom_vip_render_vip_featured_plugins() {
 		<div class="plugins-grid">
 		<?php
 		foreach ( $plugins as $plugin ) {
+			if ( ! property_exists( $plugin, 'meta' ) ) {
+				continue;
+			}
 			?>
 			<div class="plugin">
 				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
