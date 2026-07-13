@@ -69,17 +69,26 @@ function wpcom_vip_render_vip_featured_plugins() {
 		<div class="plugins-grid">
 		<?php
 		foreach ( $plugins as $plugin ) {
-			if ( ! property_exists( $plugin, 'meta' ) ) {
+			// Make sure all the required data exists before proceeding.
+			if (
+				empty( $plugin->meta ) ||
+				( empty( $plugin->permalink ) && empty( $plugin->meta->plugin_url ) ) ||
+				empty( $plugin->meta->listing_logo ) ||
+				empty( $plugin->post_title ) ||
+				empty( $plugin->meta->listing_description )
+			) {
 				continue;
 			}
+
+			$plugin_url = $plugin->permalink ?? $plugin->meta->plugin_url;
 			?>
 			<div class="plugin">
-				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-content" href="<?php echo esc_url( $plugin_url ); ?>" target="_blank">
 					<img src="<?php echo esc_url( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
 					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
 					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
 				</a>
-				<a class="fp-overlay" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
+				<a class="fp-overlay" href="<?php echo esc_url( $plugin_url ); ?>" target="_blank">
 					<div class="fp-overlay-inner">
 						<div class="fp-overlay-cell">
 							<span>
