@@ -53,6 +53,16 @@ function wpcom_vip_render_vip_featured_plugins() {
 	}
 
 	$plugins = wpcom_vip_fetch_vip_featured_plugins();
+	$plugins = is_array( $plugins ) ? array_filter(
+		$plugins,
+		static function ( $plugin ) {
+			return ! empty( $plugin->meta ) &&
+				( ! empty( $plugin->permalink ) || ! empty( $plugin->meta->plugin_url ) ) &&
+				! empty( $plugin->meta->listing_logo ) &&
+				! empty( $plugin->post_title ) &&
+				! empty( $plugin->meta->listing_description );
+		}
+	) : array();
 
 	if ( empty( $plugins ) ) {
 		?>
@@ -69,18 +79,7 @@ function wpcom_vip_render_vip_featured_plugins() {
 		<div class="plugins-grid">
 		<?php
 		foreach ( $plugins as $plugin ) {
-			// Make sure all the required data exists before proceeding.
-			if (
-				empty( $plugin->meta ) ||
-				( empty( $plugin->permalink ) && empty( $plugin->meta->plugin_url ) ) ||
-				empty( $plugin->meta->listing_logo ) ||
-				empty( $plugin->post_title ) ||
-				empty( $plugin->meta->listing_description )
-			) {
-				continue;
-			}
-
-			$plugin_url = $plugin->permalink ?? $plugin->meta->plugin_url;
+			$plugin_url = ! empty( $plugin->permalink ) ? $plugin->permalink : $plugin->meta->plugin_url;
 			?>
 			<div class="plugin">
 				<a class="fp-content" href="<?php echo esc_url( $plugin_url ); ?>" target="_blank">
