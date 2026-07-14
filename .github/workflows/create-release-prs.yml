@@ -99,6 +99,7 @@ jobs:
             local base_branch="$2"
             local title_prefix="$3"
             local commit_count
+            local create_error_file
             local existing_pr
             local body_file
             local pr_url
@@ -111,7 +112,7 @@ jobs:
               return
             fi
 
-            commit_count="$(git rev-list --count "origin/${base_branch}..origin/${head_branch}")"
+            commit_count="$(gh api -X GET "repos/${GH_REPO}/compare/${base_branch}...${head_branch}" --jq '.ahead_by // 0')"
             if [ "${commit_count}" -eq 0 ]; then
               echo "- Skipped ${head_branch} -> ${base_branch}; there are no commits in ${head_branch} that are missing from ${base_branch}." >> "${GITHUB_STEP_SUMMARY}"
               return
@@ -132,13 +133,24 @@ jobs:
           Merge this PR after required checks pass.
           EOF
 
-            pr_url="$(gh pr create \
+            create_error_file="$(mktemp)"
+            if ! pr_url="$(gh pr create \
               --base "${base_branch}" \
               --head "${GH_REPO%%/*}:${head_branch}" \
               --title "${title}" \
-              --body-file "${body_file}")"
+              --body-file "${body_file}" 2> "${create_error_file}")"; then
+              if grep -qi 'no commits between' "${create_error_file}"; then
+                echo "- Skipped ${head_branch} -> ${base_branch}; GitHub reported no commits between the branches." >> "${GITHUB_STEP_SUMMARY}"
+                rm -f "${body_file}" "${create_error_file}"
+                return
+              fi
 
-            rm -f "${body_file}"
+              cat "${create_error_file}" >&2
+              rm -f "${body_file}" "${create_error_file}"
+              exit 1
+            fi
+
+            rm -f "${body_file}" "${create_error_file}"
 
             created_pr_links+=( "<${pr_url}|${title}>" )
             echo "- Created [${title}](${pr_url}) from ${head_branch} -> ${base_branch} with ${commit_count} commit(s)." >> "${GITHUB_STEP_SUMMARY}"
