@@ -199,6 +199,39 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 		$this->assertNotSame( $date_then_title['structure'], $ascending_date['structure'] );
 	}
 
+	public function test_nested_sort_filter_values_remain_volatile(): void {
+		$first  = $this->classifier->classify( [
+			'query' => [ 'match_all' => [] ],
+			'sort'  => [
+				[
+					'offer.price' => [
+						'order'  => 'asc',
+						'nested' => [
+							'path'   => 'offer',
+							'filter' => [ 'term' => [ 'offer.color' => 'blue' ] ],
+						],
+					],
+				],
+			],
+		] );
+		$second = $this->classifier->classify( [
+			'query' => [ 'match_all' => [] ],
+			'sort'  => [
+				[
+					'offer.price' => [
+						'order'  => 'asc',
+						'nested' => [
+							'path'   => 'offer',
+							'filter' => [ 'term' => [ 'offer.color' => 'red' ] ],
+						],
+					],
+				],
+			],
+		] );
+
+		$this->assertSame( $first['structure'], $second['structure'] );
+	}
+
 	public function test_order_insensitive_bool_clauses_are_canonicalized(): void {
 		$first  = $this->classifier->classify( [
 			'query' => [

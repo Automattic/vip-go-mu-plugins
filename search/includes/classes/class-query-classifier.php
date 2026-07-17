@@ -36,6 +36,22 @@ final class Query_Classifier {
 		'should',
 	];
 
+	private const SORT_STRUCTURAL_VALUE_KEYS = [
+		'distance_type',
+		'format',
+		'ignore_unmapped',
+		'max_children',
+		'missing',
+		'mode',
+		'numeric_type',
+		'order',
+		'path',
+		'type',
+		'unit',
+		'unmapped_type',
+		'validation_method',
+	];
+
 	private const STRUCTURAL_OPTIONS_BY_OPERATOR = [
 		'bool'                => [ 'minimum_should_match' ],
 		'dis_max'             => [ 'tie_breaker' ],
@@ -286,7 +302,15 @@ final class Query_Classifier {
 			return true;
 		}
 
-		return isset( $path[0] ) && 'sort' === $path[0];
+		if ( ! isset( $path[0] ) || 'sort' !== $path[0] ) {
+			return false;
+		}
+
+		if ( 'sort' === $parent_key || in_array( $parent_key, self::SORT_STRUCTURAL_VALUE_KEYS, true ) ) {
+			return true;
+		}
+
+		return 2 === count( $path ) || ( 3 === count( $path ) && '[]' === $path[1] );
 	}
 
 	private function count_bucket( int $count ): string {
