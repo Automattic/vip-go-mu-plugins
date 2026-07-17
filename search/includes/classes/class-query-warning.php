@@ -57,9 +57,10 @@ class Query_Warning {
 			 *
 			 * @param int $budget Maximum logical pairs.
 			 */
-			$budget = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
-			$scope  = $this->classifier->scope( $request_body );
-			$types  = [];
+			$budget  = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
+			$decoded = $this->decode_body( $request_body );
+			$scope   = null === $decoded ? Query_Classifier::SCOPE_UNKNOWN : $this->classifier->scope( $decoded );
+			$types   = [];
 
 			if ( $request_ms > $threshold ) {
 				$types[] = 'slow_query';
@@ -78,8 +79,12 @@ class Query_Warning {
 			}
 
 			sort( $types, SORT_STRING );
-			$classified = $this->classifier->classify( $request_body );
-			$decoded    = $this->decode_body( $request_body );
+			$classified = null === $decoded
+				? [
+					'scope'     => Query_Classifier::SCOPE_UNKNOWN,
+					'structure' => [ '_body' => 'invalid' ],
+				]
+				: $this->classifier->classify( $decoded );
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Arguments are excluded and only customer-relative paths are retained.
 			$origin      = $this->origin( $backtrace ?? debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
 			$source      = $this->request_source();
@@ -128,14 +133,14 @@ class Query_Warning {
 	}
 
 	/** @param array|string $request_body Elasticsearch request body. */
-	private function decode_body( $request_body ): array {
+	private function decode_body( $request_body ): ?array {
 		if ( is_array( $request_body ) ) {
 			return $request_body;
 		}
 
 		$decoded = is_string( $request_body ) ? json_decode( $request_body, true ) : null;
 
-		return is_array( $decoded ) ? $decoded : [];
+		return is_array( $decoded ) ? $decoded : null;
 	}
 
 	private function total_hits( array $response_body ): ?int {

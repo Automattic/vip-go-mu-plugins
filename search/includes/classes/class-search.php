@@ -314,10 +314,6 @@ class Search {
 			$this->concurrency_limiter = new Concurrency_Limiter();
 		}
 
-		if ( ! $this->query_warning ) {
-			$this->query_warning = new Query_Warning();
-		}
-
 		/**
 		 * Load CLI commands
 		 */

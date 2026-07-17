@@ -11,8 +11,12 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	/** @var string[] */
 	private $warnings = [];
 
+	/** @var array */
+	private $original_server = [];
+
 	public function setUp(): void {
 		parent::setUp();
+		$this->original_server  = $_SERVER;
 		$this->warnings         = [];
 		$_SERVER['HTTPS']       = 'on';
 		$_SERVER['HTTP_HOST']   = 'example.com';
@@ -42,8 +46,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		restore_error_handler();
-		unset( $_SERVER['HTTPS'], $_SERVER['HTTP_HOST'] );
-		$_SERVER['REQUEST_URI'] = '/';
+		$_SERVER = $this->original_server;
 		parent::tearDown();
 	}
 

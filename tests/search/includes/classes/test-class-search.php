@@ -2979,6 +2979,12 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertSame( $response, $result );
 	}
 
+	public function test__vip_search_query_warning_is_not_initialized_during_search_setup(): void {
+		$this->init_es();
+
+		$this->assertNull( $this->search_instance->query_warning );
+	}
+
 	public function test__vip_search_query_warning_is_not_called_for_failed_search_response(): void {
 		wp_cache_flush();
 		$this->init_es();
