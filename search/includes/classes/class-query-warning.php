@@ -21,9 +21,13 @@ class Query_Warning {
 	/** @var callable */
 	private $clock;
 
-	public function __construct( ?Query_Classifier $classifier = null, ?callable $clock = null ) {
-		$this->classifier = $classifier ?? new Query_Classifier();
-		$this->clock      = $clock ?? 'time';
+	/** @var callable */
+	private $persistent_cache;
+
+	public function __construct( ?Query_Classifier $classifier = null, ?callable $clock = null, ?callable $persistent_cache = null ) {
+		$this->classifier       = $classifier ?? new Query_Classifier();
+		$this->clock            = $clock ?? 'time';
+		$this->persistent_cache = $persistent_cache ?? 'wp_using_ext_object_cache';
 	}
 
 	/**
@@ -53,15 +57,15 @@ class Query_Warning {
 			 *
 			 * @param int $budget Maximum logical pairs.
 			 */
-			$budget     = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
-			$classified = $this->classifier->classify( $request_body );
-			$types      = [];
+			$budget = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
+			$scope  = $this->classifier->scope( $request_body );
+			$types  = [];
 
 			if ( $request_ms > $threshold ) {
 				$types[] = 'slow_query';
 			}
 
-			if ( Query_Classifier::SCOPE_UNBOUNDED === $classified['scope'] ) {
+			if ( Query_Classifier::SCOPE_UNBOUNDED === $scope ) {
 				$types[] = 'unbounded_query';
 			}
 
@@ -69,13 +73,18 @@ class Query_Warning {
 				return false;
 			}
 
+			if ( true !== call_user_func( $this->persistent_cache ) ) {
+				return false;
+			}
+
 			sort( $types, SORT_STRING );
-			$decoded = $this->decode_body( $request_body );
+			$classified = $this->classifier->classify( $request_body );
+			$decoded    = $this->decode_body( $request_body );
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Arguments are excluded and only customer-relative paths are retained.
-			$origin     = $this->origin( $backtrace ?? debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
-			$source     = $this->request_source();
-			$context    = [
-				'request_ms'       => (int) round( $request_ms ),
+			$origin      = $this->origin( $backtrace ?? debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
+			$source      = $this->request_source();
+			$context     = [
+				'request_ms'       => (int) ceil( $request_ms ),
 				'request_limit_ms' => $threshold,
 				'engine_ms'        => isset( $response_body['took'] ) && is_numeric( $response_body['took'] ) ? (int) round( $response_body['took'] ) : null,
 				'requested'        => isset( $decoded['size'] ) && is_numeric( $decoded['size'] ) ? (int) $decoded['size'] : null,
@@ -86,9 +95,10 @@ class Query_Warning {
 				'source'           => $source['source'],
 				'origin'           => $origin['display'],
 			];
-			$warning_id = $this->warning_id( $classified, $origin['key'] );
+			$family_hash = $this->family_hash( $classified, $origin['key'] );
+			$warning_id  = 'VSQ-' . strtoupper( substr( $family_hash, 0, 8 ) );
 
-			if ( ! $this->should_emit( $warning_id, $types, $window, $budget ) ) {
+			if ( ! $this->should_emit( $family_hash, $types, $window, $budget ) ) {
 				return false;
 			}
 
@@ -140,6 +150,20 @@ class Query_Warning {
 
 	/** @return array{url:?string,source:?string} */
 	private function request_source(): array {
+		if ( defined( 'WP_CLI' ) && true === constant( 'WP_CLI' ) ) {
+			return [
+				'url'    => null,
+				'source' => 'wp_cli',
+			];
+		}
+
+		if ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
+			return [
+				'url'    => null,
+				'source' => 'wp_cron',
+			];
+		}
+
 		if ( isset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Both values are constrained immediately below.
 			$host = preg_replace( '/[^A-Za-z0-9.\-:\[\]]/', '', wp_unslash( (string) $_SERVER['HTTP_HOST'] ) );
@@ -153,20 +177,6 @@ class Query_Warning {
 					'source' => null,
 				];
 			}
-		}
-
-		if ( defined( 'WP_CLI' ) && true === constant( 'WP_CLI' ) ) {
-			return [
-				'url'    => null,
-				'source' => 'wp_cli',
-			];
-		}
-
-		if ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
-			return [
-				'url'    => null,
-				'source' => 'wp_cron',
-			];
 		}
 
 		return [
@@ -207,7 +217,7 @@ class Query_Warning {
 		];
 	}
 
-	private function warning_id( array $classified, string $origin_key ): string {
+	protected function family_hash( array $classified, string $origin_key ): string {
 		$identity = [
 			'application_id' => defined( 'FILES_CLIENT_SITE_ID' ) ? (string) constant( 'FILES_CLIENT_SITE_ID' ) : 'unknown',
 			'blog_id'        => (string) get_current_blog_id(),
@@ -216,11 +226,11 @@ class Query_Warning {
 			'structure'      => $classified['structure'],
 		];
 
-		return 'VSQ-' . strtoupper( substr( hash( 'sha256', wp_json_encode( $identity ) ), 0, 8 ) );
+		return hash( 'sha256', wp_json_encode( $identity ) );
 	}
 
-	private function should_emit( string $warning_id, array $types, int $window, int $budget ): bool {
-		$signature  = hash( 'sha256', $warning_id . '|' . implode( ',', $types ) );
+	private function should_emit( string $family_hash, array $types, int $window, int $budget ): bool {
+		$signature  = hash( 'sha256', $family_hash . '|' . implode( ',', $types ) );
 		$dedupe_key = 'query_warning_dedupe:' . $signature;
 
 		if ( true !== $this->cache_add( $dedupe_key, 1, $window ) ) {

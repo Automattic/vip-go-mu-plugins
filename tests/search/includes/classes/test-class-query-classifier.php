@@ -78,6 +78,12 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 		$this->assertSame( [ '_body' => 'invalid' ], $result['structure'] );
 	}
 
+	public function test_scope_can_be_classified_without_building_a_family_structure(): void {
+		$this->assertSame( Query_Classifier::SCOPE_UNKNOWN, $this->classifier->scope( '{not-json' ) );
+		$this->assertSame( Query_Classifier::SCOPE_UNBOUNDED, $this->classifier->scope( [ 'size' => 10 ] ) );
+		$this->assertSame( Query_Classifier::SCOPE_BOUNDED, $this->classifier->scope( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] ) );
+	}
+
 	public function test_volatile_values_and_pagination_produce_the_same_structure(): void {
 		$first  = $this->classifier->classify( [
 			'from'  => 0,
@@ -123,6 +129,94 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 				'multi_match' => [
 					'query'  => 'a different term',
 					'fields' => [ 'post_content', 'post_title' ],
+				],
+			],
+		] );
+
+		$this->assertSame( $first['structure'], $second['structure'] );
+	}
+
+	public function test_reserved_looking_document_field_values_remain_volatile(): void {
+		foreach ( [ 'field', 'fields', 'path' ] as $document_field ) {
+			$first  = $this->classifier->classify( [ 'query' => [ 'term' => [ $document_field => 'first runtime value' ] ] ] );
+			$second = $this->classifier->classify( [ 'query' => [ 'term' => [ $document_field => 'second runtime value' ] ] ] );
+
+			$this->assertSame( $first['structure'], $second['structure'], 'Runtime values for document field ' . $document_field . ' must not change the family.' );
+		}
+	}
+
+	public function test_structural_query_options_change_the_structure(): void {
+		$one_required = $this->classifier->classify( [
+			'query' => [
+				'bool' => [
+					'minimum_should_match' => 1,
+					'should'               => [
+						[ 'term' => [ 'post_type' => 'post' ] ],
+						[ 'term' => [ 'post_status' => 'publish' ] ],
+					],
+				],
+			],
+		] );
+		$two_required = $this->classifier->classify( [
+			'query' => [
+				'bool' => [
+					'minimum_should_match' => 2,
+					'should'               => [
+						[ 'term' => [ 'post_type' => 'post' ] ],
+						[ 'term' => [ 'post_status' => 'publish' ] ],
+					],
+				],
+			],
+		] );
+
+		$this->assertNotSame( $one_required['structure'], $two_required['structure'] );
+	}
+
+	public function test_sort_order_and_direction_change_the_structure(): void {
+		$date_then_title = $this->classifier->classify( [
+			'query' => [ 'match_all' => [] ],
+			'sort'  => [
+				[ 'post_date' => [ 'order' => 'desc' ] ],
+				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
+			],
+		] );
+		$title_then_date = $this->classifier->classify( [
+			'query' => [ 'match_all' => [] ],
+			'sort'  => [
+				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
+				[ 'post_date' => [ 'order' => 'desc' ] ],
+			],
+		] );
+		$ascending_date  = $this->classifier->classify( [
+			'query' => [ 'match_all' => [] ],
+			'sort'  => [
+				[ 'post_date' => [ 'order' => 'asc' ] ],
+				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
+			],
+		] );
+
+		$this->assertNotSame( $date_then_title['structure'], $title_then_date['structure'] );
+		$this->assertNotSame( $date_then_title['structure'], $ascending_date['structure'] );
+	}
+
+	public function test_order_insensitive_bool_clauses_are_canonicalized(): void {
+		$first  = $this->classifier->classify( [
+			'query' => [
+				'bool' => [
+					'filter' => [
+						[ 'term' => [ 'post_type' => 'post' ] ],
+						[ 'term' => [ 'post_status' => 'publish' ] ],
+					],
+				],
+			],
+		] );
+		$second = $this->classifier->classify( [
+			'query' => [
+				'bool' => [
+					'filter' => [
+						[ 'term' => [ 'post_status' => 'private' ] ],
+						[ 'term' => [ 'post_type' => 'page' ] ],
+					],
 				],
 			],
 		] );
