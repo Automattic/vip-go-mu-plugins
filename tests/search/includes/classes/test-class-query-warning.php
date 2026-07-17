@@ -66,12 +66,13 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	public function test_invalid_filter_values_fall_back_and_valid_threshold_is_used(): void {
 		add_filter( 'vip_search_slow_query_threshold_ms', static fn() => 'invalid' );
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
 
-		$this->assertFalse( $warning->maybe_emit( [ 'query' => [ 'match_all' => [] ] ], $this->response( 1, 0, 0 ), 200.0, $this->customer_backtrace() ) );
+		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 1, 0, 0 ), 200.0, $this->customer_backtrace() ) );
 
 		remove_all_filters( 'vip_search_slow_query_threshold_ms' );
 		add_filter( 'vip_search_slow_query_threshold_ms', static fn(): int => 50 );
-		$this->assertTrue( $warning->maybe_emit( [ 'query' => [ 'match_all' => [] ] ], $this->response( 1, 0, 0 ), 51.0, $this->customer_backtrace() ) );
+		$this->assertTrue( $warning->maybe_emit( $body, $this->response( 1, 0, 0 ), 51.0, $this->customer_backtrace() ) );
 	}
 
 	public function test_tuned_dedupe_window_is_exposed_in_both_messages(): void {
@@ -104,7 +105,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_slow_only_and_unbounded_only_select_different_human_copy(): void {
 		$slow = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$slow->maybe_emit( [ 'query' => [ 'match_all' => [] ] ], $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() );
+		$slow->maybe_emit( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ], $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() );
 		$this->assertStringContainsString( 'triggered a slow VIP Search query', $this->warnings[1] );
 		$this->assertStringNotContainsString( 'unbounded', strtolower( $this->warnings[1] ) );
 

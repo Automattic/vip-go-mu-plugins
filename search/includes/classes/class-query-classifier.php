@@ -148,8 +148,12 @@ final class Query_Classifier {
 		}
 
 		foreach ( $clause as $operator => $definition ) {
-			if ( in_array( $operator, [ 'match_all', 'match_none' ], true ) ) {
+			if ( 'match_none' === $operator ) {
 				return true;
+			}
+
+			if ( 'match_all' === $operator ) {
+				continue;
 			}
 
 			if ( 'bool' === $operator ) {

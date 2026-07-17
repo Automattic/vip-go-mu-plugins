@@ -15,10 +15,11 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 		$this->classifier = new Query_Classifier();
 	}
 
-	public function empty_query_data(): array {
+	public function unbounded_query_data(): array {
 		return [
 			'missing query'        => [ wp_json_encode( [ 'size' => 10 ] ) ],
 			'empty query'          => [ wp_json_encode( [ 'query' => [] ] ) ],
+			'explicit match all'   => [ wp_json_encode( [ 'query' => [ 'match_all' => [] ] ] ) ],
 			'empty bool'           => [ wp_json_encode( [ 'query' => [ 'bool' => [] ] ] ) ],
 			'empty bool arrays'    => [
 				wp_json_encode( [
@@ -45,9 +46,9 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider empty_query_data
+	 * @dataProvider unbounded_query_data
 	 */
-	public function test_classifies_missing_and_empty_query_clauses_as_unbounded( string $body ): void {
+	public function test_classifies_queries_without_a_limiting_clause_as_unbounded( string $body ): void {
 		$result = $this->classifier->classify( $body );
 
 		$this->assertSame( Query_Classifier::SCOPE_UNBOUNDED, $result['scope'] );
@@ -55,10 +56,10 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 
 	public function bounded_query_data(): array {
 		return [
-			'explicit match all' => [ [ 'query' => [ 'match_all' => [] ] ] ],
-			'term query'         => [ [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] ],
-			'bool filter'        => [ [ 'query' => [ 'bool' => [ 'filter' => [ [ 'term' => [ 'post_type' => 'post' ] ] ] ] ] ] ],
-			'function score'     => [ [ 'query' => [ 'function_score' => [ 'query' => [ 'match' => [ 'post_title' => 'events' ] ] ] ] ] ],
+			'match none'     => [ [ 'query' => [ 'match_none' => [] ] ] ],
+			'term query'     => [ [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] ],
+			'bool filter'    => [ [ 'query' => [ 'bool' => [ 'filter' => [ [ 'term' => [ 'post_type' => 'post' ] ] ] ] ] ] ],
+			'function score' => [ [ 'query' => [ 'function_score' => [ 'query' => [ 'match' => [ 'post_title' => 'events' ] ] ] ] ] ],
 		];
 	}
 
