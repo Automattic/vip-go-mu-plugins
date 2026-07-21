@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e07a345cdd33ba9da781fe57ce42a7e3",
+    "content-hash": "32a452376bb75e5c5224b20a0d2e70d8",
     "packages": [],
     "packages-dev": [
         {
@@ -311,16 +311,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "7.0.1",
+            "version": "7.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "0c01203eef6b96b4d99a1418833d5b0a6740e594"
+                "reference": "7c0153862c16407dce737ccc87a64a25953b687b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/0c01203eef6b96b4d99a1418833d5b0a6740e594",
-                "reference": "0c01203eef6b96b4d99a1418833d5b0a6740e594",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/7c0153862c16407dce737ccc87a64a25953b687b",
+                "reference": "7c0153862c16407dce737ccc87a64a25953b687b",
                 "shasum": ""
             },
             "require": {
@@ -328,7 +328,7 @@
                 "php": ">=7.4"
             },
             "provide": {
-                "wordpress/core-implementation": "7.0.1"
+                "wordpress/core-implementation": "7.0.2"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -355,7 +355,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2026-07-09T17:30:46+00:00"
+            "time": "2026-07-17T18:48:27+00:00"
         },
         {
             "name": "myclabs/deep-copy",
@@ -3118,7 +3118,7 @@
         },
         {
             "name": "wp-phpunit/wp-phpunit",
-            "version": "7.0.1",
+            "version": "7.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/wp-phpunit/wp-phpunit.git",
