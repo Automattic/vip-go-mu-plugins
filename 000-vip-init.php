@@ -212,9 +212,6 @@ require_once __DIR__ . '/logstash/logstash.php';
 require_once __DIR__ . '/000-debug/0-load.php';
 require_once __DIR__ . '/lib/utils/class-alerts.php';
 
-// Polyfills
-require_once __DIR__ . '/lib/helpers/php-compat.php';
-
 // Load our development and environment helpers
 require_once __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php';
 require_once __DIR__ . '/vip-helpers/vip-utils.php';
