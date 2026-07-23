@@ -115,7 +115,7 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 		$this->assertUrlQueryArgSame( '1024', 'w', $result[0] );
 	}
 
-	public function count_theme_json_layout_width_filter_calls( $enabled ) {
+	public function count_theme_json_layout_width_filter_calls( $enabled, $attachment_id, $size ) {
 		++$this->theme_json_layout_width_filter_calls;
 
 		return $enabled;
