@@ -56,6 +56,7 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_true' );
 		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
 		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', array( $this, 'count_theme_json_layout_width_filter_calls' ) );
 
@@ -79,6 +80,8 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	}
 
 	public function test__image_resize__uses_theme_json_wide_size_for_unknown_size_when_content_width_missing() {
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_true' );
+
 		$result = $this->resize_image( 'vip_unknown_size' );
 
 		$this->assertSame( 1600, $result[1] );
@@ -86,6 +89,8 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	}
 
 	public function test__image_resize__uses_theme_json_content_size_to_constrain_default_sizes() {
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_true' );
+
 		update_option( 'large_size_w', 2000 );
 		update_option( 'large_size_h', 2000 );
 
@@ -106,13 +111,20 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, $this->theme_json_layout_width_filter_calls );
 	}
 
-	public function test__image_resize__allows_theme_json_layout_widths_to_be_disabled() {
-		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
-
+	public function test__image_resize__does_not_use_theme_json_layout_widths_by_default() {
 		$result = $this->resize_image( 'vip_unknown_size' );
 
 		$this->assertSame( 1024, $result[1] );
 		$this->assertUrlQueryArgSame( '1024', 'w', $result[0] );
+	}
+
+	public function test__image_resize__allows_theme_json_layout_widths_to_be_enabled() {
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_true' );
+
+		$result = $this->resize_image( 'vip_unknown_size' );
+
+		$this->assertSame( 1600, $result[1] );
+		$this->assertUrlQueryArgSame( '1600', 'w', $result[0] );
 	}
 
 	public function count_theme_json_layout_width_filter_calls( $enabled, $attachment_id, $size ) {

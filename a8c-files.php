@@ -269,11 +269,14 @@ class A8C_Files {
 			/**
 			 * Filters whether theme.json layout widths are used when $content_width is unavailable.
 			 *
+			 * Defaults to false to preserve core's default full-size image behaviour. Set to true
+			 * to constrain default image sizes to the theme.json layout widths.
+			 *
 			 * @param bool         $use_theme_json_layout_widths Whether to use theme.json layout widths.
 			 * @param int          $id                           Attachment ID.
 			 * @param array|string $size                         Requested image size.
 			 */
-			$use_theme_json_layout_widths = (bool) apply_filters( 'vip_image_resize_use_theme_json_layout_widths', true, $id, $size );
+			$use_theme_json_layout_widths = (bool) apply_filters( 'vip_image_resize_use_theme_json_layout_widths', false, $id, $size );
 
 			if ( $use_theme_json_layout_widths ) {
 				$content_width_for_constraint = $this->get_theme_json_layout_width( array( 'contentSize' ) );
