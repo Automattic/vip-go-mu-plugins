@@ -261,6 +261,12 @@ class A8C_Files {
 			return false;
 		}
 
+		// The full size is the original attachment, not an intermediate image size.
+		// Fall through to core so it can return the original URL and dimensions.
+		if ( 'full' === $size ) {
+			return false;
+		}
+
 		$content_width = isset( $GLOBALS['content_width'] ) ? max( 0, (int) $GLOBALS['content_width'] ) : 0;
 
 		$content_width_for_constraint = $content_width;
