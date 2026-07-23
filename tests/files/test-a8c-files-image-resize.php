@@ -55,6 +55,8 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
+
 		if ( $this->original_stylesheet ) {
 			switch_theme( $this->original_template, $this->original_stylesheet );
 			$this->clean_theme_json_cache();
@@ -98,6 +100,15 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 900, $result[1] );
 		$this->assertUrlQueryArgSame( '900', 'w', $result[0] );
+	}
+
+	public function test__image_resize__allows_theme_json_layout_widths_to_be_disabled() {
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
+
+		$result = $this->resize_image( 'vip_unknown_size' );
+
+		$this->assertSame( 1024, $result[1] );
+		$this->assertUrlQueryArgSame( '1024', 'w', $result[0] );
 	}
 
 	private function resize_image( $size ) {
