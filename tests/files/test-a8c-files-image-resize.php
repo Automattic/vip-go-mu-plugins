@@ -10,6 +10,7 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	private $original_template;
 	private $attachment_id;
 	private $theme_directory;
+	private $theme_json_layout_width_filter_calls = 0;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -55,6 +56,9 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
+		remove_filter( 'vip_image_resize_use_theme_json_layout_widths', array( $this, 'count_theme_json_layout_width_filter_calls' ) );
+
 		if ( $this->original_stylesheet ) {
 			switch_theme( $this->original_template, $this->original_stylesheet );
 			$this->clean_theme_json_cache();
@@ -93,11 +97,28 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 
 	public function test__image_resize__prefers_global_content_width_over_theme_json_layout_widths() {
 		$GLOBALS['content_width'] = 900;
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', array( $this, 'count_theme_json_layout_width_filter_calls' ), 10, 3 );
 
 		$result = $this->resize_image( 'vip_unknown_size' );
 
 		$this->assertSame( 900, $result[1] );
 		$this->assertUrlQueryArgSame( '900', 'w', $result[0] );
+		$this->assertSame( 0, $this->theme_json_layout_width_filter_calls );
+	}
+
+	public function test__image_resize__allows_theme_json_layout_widths_to_be_disabled() {
+		add_filter( 'vip_image_resize_use_theme_json_layout_widths', '__return_false' );
+
+		$result = $this->resize_image( 'vip_unknown_size' );
+
+		$this->assertSame( 1024, $result[1] );
+		$this->assertUrlQueryArgSame( '1024', 'w', $result[0] );
+	}
+
+	public function count_theme_json_layout_width_filter_calls( $enabled, $attachment_id, $size ) {
+		++$this->theme_json_layout_width_filter_calls;
+
+		return $enabled;
 	}
 
 	private function resize_image( $size ) {
