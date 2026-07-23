@@ -126,11 +126,12 @@ function rest_endpoint_url_validate_callback( $value, $request, $param ) {
 		return $error;
 	}
 
-	$index_part = strtok( $path, '/' );
+	$index_part   = strtok( $path, '/' );
+	$index_prefix = 'vip-' . FILES_CLIENT_SITE_ID . '-';
 
 	// Check for the allowed index names.
 	foreach ( explode( ',', $index_part ) as $idx ) {
-		if ( ! str_starts_with( $idx, 'vip-' . FILES_CLIENT_SITE_ID ) ) {
+		if ( ! str_starts_with( $idx, $index_prefix ) ) {
 			return $error;
 		}
 	}
