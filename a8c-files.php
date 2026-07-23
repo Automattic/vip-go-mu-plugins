@@ -261,11 +261,28 @@ class A8C_Files {
 			return false;
 		}
 
-		$content_width                = isset( $GLOBALS['content_width'] ) ? max( 0, (int) $GLOBALS['content_width'] ) : 0;
-		$content_width_for_constraint = $content_width ?: $this->get_theme_json_layout_width( array( 'contentSize' ) );
-		$max_image_width              = $content_width ?: $this->get_theme_json_layout_width( array( 'wideSize', 'contentSize' ) );
-		$crop                         = false;
-		$args                         = array();
+		$content_width = isset( $GLOBALS['content_width'] ) ? max( 0, (int) $GLOBALS['content_width'] ) : 0;
+
+		$content_width_for_constraint = $content_width;
+		$max_image_width              = $content_width;
+		if ( 0 === $content_width ) {
+			/**
+			 * Filters whether theme.json layout widths are used when $content_width is unavailable.
+			 *
+			 * @param bool         $use_theme_json_layout_widths Whether to use theme.json layout widths.
+			 * @param int          $id                           Attachment ID.
+			 * @param array|string $size                         Requested image size.
+			 */
+			$use_theme_json_layout_widths = (bool) apply_filters( 'vip_image_resize_use_theme_json_layout_widths', true, $id, $size );
+
+			if ( $use_theme_json_layout_widths ) {
+				$content_width_for_constraint = $this->get_theme_json_layout_width( array( 'contentSize' ) );
+				$max_image_width              = $this->get_theme_json_layout_width( array( 'wideSize', 'contentSize' ) );
+			}
+		}
+
+		$crop = false;
+		$args = array();
 
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
