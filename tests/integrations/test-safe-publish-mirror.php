@@ -100,6 +100,7 @@ class Safe_Publish_Mirror_Integration_Test extends WP_UnitTestCase {
 			[
 				'config' => [
 					'connected_site_url' => 'https://new.example.com',
+					'version'            => '1.0',
 				],
 			]
 		);
@@ -109,6 +110,9 @@ class Safe_Publish_Mirror_Integration_Test extends WP_UnitTestCase {
 			[ 'connected_site_url' => 'https://existing.example.com' ],
 			constant( 'VIP_SAFE_PUBLISH_MIRROR_CONFIG' )
 		);
+		// Version selection is independent of the config constant, so a pinned
+		// version must still be applied even when the constant is pre-defined.
+		$this->assertSame( '1.0', $integration->version );
 	}
 
 	public function test_configure_merges_site_and_network_site_config_for_multisite(): void {

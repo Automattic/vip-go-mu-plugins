@@ -32,14 +32,17 @@ class SafePublishMirrorIntegration extends Integration {
 	}
 
 	public function configure(): void {
-		if ( defined( 'VIP_SAFE_PUBLISH_MIRROR_CONFIG' ) ) {
-			return;
-		}
-
 		$configs = $this->get_mirror_config();
 
+		// Resolve the version before the constant guard below: version selection is
+		// independent of the config constant, so a site that pre-defines the config
+		// (e.g. a local override) must still honor a pinned version.
 		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) && '' !== $configs['version'] ) {
 			$this->version = $configs['version'];
+		}
+
+		if ( defined( 'VIP_SAFE_PUBLISH_MIRROR_CONFIG' ) ) {
+			return;
 		}
 
 		// Always define the constant so the plugin's config reader can detect and
