@@ -58,21 +58,19 @@ class SafePublishMirrorIntegration extends Integration {
 				return;
 			}
 
-			$versions = $this->get_versions();
-
-			if ( empty( $versions ) ) {
+			$version_folder = $this->get_selected_version_folder( $this->get_versions() );
+			if ( '' === $version_folder ) {
 				$this->is_active = false;
 				return;
 			}
 
-			$selected_version_folder = $this->get_selected_version_folder( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/safe-publish-mirror.php';
-
-			if ( file_exists( $load_path ) ) {
-				require_once $load_path;
-			} else {
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $version_folder . '/safe-publish-mirror.php';
+			if ( ! file_exists( $load_path ) ) {
 				$this->is_active = false;
+				return;
 			}
+
+			require_once $load_path;
 		}, 1 );
 	}
 
@@ -89,20 +87,10 @@ class SafePublishMirrorIntegration extends Integration {
 	 * Get the folder name for the selected version of the integration.
 	 *
 	 * @param array<string,string> $versions Available versions.
-	 * @return string The selected folder name.
+	 * @return string The selected folder name, or an empty string when none are available.
 	 */
 	public function get_selected_version_folder( array $versions ): string {
-		if ( 'latest' === $this->version ) {
-			return array_key_first( $versions );
-		}
-
-		$desired_version = array_search( $this->version, $versions, true );
-
-		if ( false !== $desired_version ) {
-			return $desired_version;
-		}
-
-		return array_key_first( $versions );
+		return get_version_folder_to_load( $versions, $this->version );
 	}
 
 	/**

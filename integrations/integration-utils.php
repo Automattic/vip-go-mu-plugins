@@ -60,3 +60,29 @@ function get_latest_version( string $dir, string $folder_prefix, string $entry_f
 	// Return the latest version.
 	return array_key_first( $versions );
 }
+
+/**
+ * Resolve which version folder to load for an integration.
+ *
+ * Returns the folder for the requested version, falling back to the latest
+ * available when the request is 'latest' or the requested version is not
+ * present. Returns an empty string when no versions are available.
+ *
+ * @param array<string,string> $versions Available version folders (folder => version), in descending order.
+ * @param string               $version  The requested version, or 'latest'.
+ * @return string The folder to load, or an empty string when none are available.
+ */
+function get_version_folder_to_load( array $versions, string $version ): string {
+	if ( empty( $versions ) ) {
+		return '';
+	}
+
+	if ( 'latest' !== $version ) {
+		$requested_folder = array_search( $version, $versions, true );
+		if ( false !== $requested_folder ) {
+			return (string) $requested_folder;
+		}
+	}
+
+	return (string) array_key_first( $versions );
+}
