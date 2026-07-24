@@ -47,12 +47,31 @@ class SafePublishMirrorIntegration extends Integration {
 
 		// Always define the constant so the plugin's config reader can detect and
 		// report missing required fields rather than fataling on an undefined
-		// constant. Absent values are passed through as null.
+		// constant. Non-string or absent values are normalized to null so the
+		// constant matches the manifest's string contract.
 		define( 'VIP_SAFE_PUBLISH_MIRROR_CONFIG', [
-			'connected_site_url' => $configs['connected_site_url'] ?? null,
-			'sync_mode'          => $configs['sync_mode'] ?? null,
-			'shared_secret'      => $configs['shared_secret'] ?? null,
+			'connected_site_url' => $this->normalize_config_value( $configs['connected_site_url'] ?? null ),
+			'sync_mode'          => $this->normalize_config_value( $configs['sync_mode'] ?? null ),
+			'shared_secret'      => $this->normalize_config_value( $configs['shared_secret'] ?? null ),
 		] );
+	}
+
+	/**
+	 * Normalize a manifest config value to a non-empty string, or null.
+	 *
+	 * Manifest values are expected to be strings; anything else (an array from a
+	 * malformed manifest, an int, an empty string) is treated as absent so the
+	 * config constant stays aligned with the manifest's string|null contract.
+	 *
+	 * @param mixed $value Raw config value.
+	 * @return string|null
+	 */
+	private function normalize_config_value( mixed $value ): ?string {
+		if ( ! is_string( $value ) || '' === $value ) {
+			return null;
+		}
+
+		return $value;
 	}
 
 	public function load(): void {

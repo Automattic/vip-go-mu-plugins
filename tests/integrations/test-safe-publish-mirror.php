@@ -115,6 +115,31 @@ class Safe_Publish_Mirror_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( '1.0', $integration->version );
 	}
 
+	public function test_configure_normalizes_non_string_config_values_to_null(): void {
+		$integration = new SafePublishMirrorIntegration( $this->slug );
+		$integration->activate(
+			[
+				'config' => [
+					'connected_site_url' => 'https://source.example.com',
+					'sync_mode'          => [ 'unexpected', 'array' ],
+					'shared_secret'      => 12345,
+				],
+			]
+		);
+		$integration->configure();
+
+		// Non-string manifest values are treated as absent so the constant stays
+		// aligned with the manifest's string|null contract.
+		$this->assertSame(
+			[
+				'connected_site_url' => 'https://source.example.com',
+				'sync_mode'          => null,
+				'shared_secret'      => null,
+			],
+			constant( 'VIP_SAFE_PUBLISH_MIRROR_CONFIG' )
+		);
+	}
+
 	public function test_configure_merges_site_and_network_site_config_for_multisite(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite.' );
