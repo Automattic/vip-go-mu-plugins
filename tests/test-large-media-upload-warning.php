@@ -158,7 +158,7 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_filter_swallows_exceptions_and_returns_unmodified_file(): void {
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement -- Deliberate throw inside the filter is the test seam for the try/catch path.
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- Deliberate throw inside the filter is the test seam for the try/catch path.
 		add_filter( 'vip_large_media_warning_threshold_bytes', function () {
 			throw new \RuntimeException( 'simulated failure inside try block' );
 		} );

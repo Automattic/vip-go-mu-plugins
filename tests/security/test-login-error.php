@@ -49,7 +49,7 @@ class Login_Error_Test extends WP_UnitTestCase {
 			return $dest;
 		} );
 
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn
 		add_filter( 'wp_redirect_status', function () use ( &$redirect_caled ) {
 			$redirect_caled = true;
 			throw new WPDieException( 'Redirect called' );

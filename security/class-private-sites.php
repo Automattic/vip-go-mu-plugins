@@ -15,6 +15,7 @@
 namespace Automattic\VIP\Security;
 
 class Private_Sites {
+	/** @var static|null */
 	private static $instance;
 
 	const FEEDBOT_USER_AGENT = 'wp.com feedbot';
@@ -91,7 +92,8 @@ class Private_Sites {
 
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
-		$js_code       = <<<JS
+
+		$js_code = <<<'JS'
 		function onContentLoaded(callback) {
 			if (document.readyState !== 'loading') {
 				callback();
@@ -117,6 +119,7 @@ class Private_Sites {
 			updateProperty('tr.option-site-visibility p.description', 'textContent', '%s');
 		});
 		JS;
+
 		$description   = esc_html__( 'This option is disabled when the constant VIP_JETPACK_IS_PRIVATE is enabled.', 'vip' );
 		$final_js_code = sprintf( $js_code, $description );
 		wp_add_inline_script( 'vip-disable-blog-public-option-ui', $final_js_code );
@@ -146,6 +149,10 @@ class Private_Sites {
 		}
 	}
 
+	/**
+	 * @param array $modules
+	 * @return array
+	 */
 	public function filter_jetpack_active_modules( $modules ) {
 		if ( ! is_array( $modules ) || empty( $modules ) ) {
 			return $modules;
@@ -158,6 +165,10 @@ class Private_Sites {
 		] ) );
 	}
 
+	/**
+	 * @param array $modules
+	 * @return array
+	 */
 	public function filter_jetpack_get_available_modules( $modules ) {
 		if ( ! is_array( $modules ) || empty( $modules ) ) {
 			return $modules;
@@ -169,10 +180,15 @@ class Private_Sites {
 		return $modules;
 	}
 
+	/**
+	 * @param string $current_value
+	 * @return string
+	 */
 	public function filter_restrict_blog_public( $current_value ) {
 		if ( '1' === $current_value || '0' === $current_value ) {
 			return '-1';
 		}
+
 		return $current_value;
 	}
 }
