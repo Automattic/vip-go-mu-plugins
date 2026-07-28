@@ -584,7 +584,7 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 	}
 
 	// Flush cache for all old slugs.
-	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug' );
+	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug', false );
 
 	foreach ( $old_slugs as $old_slug ) {
 		wp_cache_delete( 'old_slug' . $old_slug, 'default' );

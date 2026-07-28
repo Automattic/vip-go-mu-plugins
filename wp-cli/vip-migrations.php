@@ -19,7 +19,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * [--skip-confirm]
 	 * : Skip the confirmation prompt
 	 */
-	public function cleanup( $args, $assoc_args ) {
+	public function cleanup( array $args, array $assoc_args ) {
 		global $wpdb;
 
 		$dry_run      = Utils\get_flag_value( $assoc_args, 'dry-run' );
@@ -107,7 +107,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *   - ms_global
 	 *   - ""
 	 */
-	public function dbdelta( $args, $assoc_args ) {
+	public function dbdelta( array $args, array $assoc_args ) {
 		global $wpdb;
 
 		$tables = isset( $args[1] ) ? $args[1] : '';
@@ -204,7 +204,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand validate-attachments
 	 */
-	public function validate_attachments( $args, $assoc_args ) {
+	public function validate_attachments( array $args, array $assoc_args ) {
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_setopt
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle
@@ -263,6 +263,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
 			$cache = [];
 		} else {
+			// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- fetching local data
 			$cache = json_decode( file_get_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ), ARRAY_N );
 		}
 
@@ -437,7 +438,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand import-user-meta
 	 */
-	public function import_user_meta( $args, $assoc_args ) {
+	public function import_user_meta( array $args, array $assoc_args ) {
 		$filename = $args[0];
 		$user_key = $assoc_args['user_key'] ?? 'user_login';
 		$dry_run  = Utils\get_flag_value( $assoc_args, 'dry-run', true );
@@ -474,6 +475,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					break;
 				default:
 					WP_CLI::warning( 'Error getting user ' . $user_value );
+					continue 2;
 			}
 
 			if ( ! $dry_run ) {
