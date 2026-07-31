@@ -7,6 +7,19 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/../../security/wp-graphql.php';
 
 class WP_GraphQL_Security_Test extends WP_UnitTestCase {
+	/**
+	 * Load a stub of WPGraphQL's main class so the plugin looks active.
+	 *
+	 * Classes cannot be unloaded, so this leaks for the rest of the process. The test
+	 * covering the inactive path is declared first and skips itself if the stub is
+	 * already present.
+	 */
+	private function pretend_wp_graphql_is_active(): void {
+		if ( ! class_exists( 'WPGraphQL', false ) ) {
+			require_once __DIR__ . '/../fixtures/security/mock-wp-graphql-class.php';
+		}
+	}
+
 	public function test__hooks_are_registered(): void {
 		self::assertSame( 10, has_action( 'plugins_loaded', __NAMESPACE__ . '\maybe_disable_password_reset_mutation' ) );
 		self::assertSame( 0, has_action( 'init', __NAMESPACE__ . '\maybe_disable_password_reset_mutation' ) );
@@ -27,10 +40,7 @@ class WP_GraphQL_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__disables_mutation_when_wp_graphql_is_active(): void {
-		// Stand in for the plugin's main class, which is what we detect.
-		if ( ! class_exists( 'WPGraphQL', false ) ) {
-			class_alias( \stdClass::class, 'WPGraphQL' );
-		}
+		$this->pretend_wp_graphql_is_active();
 
 		self::assertTrue( is_wp_graphql_active() );
 
@@ -45,9 +55,7 @@ class WP_GraphQL_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__can_be_disabled_via_filter(): void {
-		if ( ! class_exists( 'WPGraphQL', false ) ) {
-			class_alias( \stdClass::class, 'WPGraphQL' );
-		}
+		$this->pretend_wp_graphql_is_active();
 
 		add_filter( 'vip_disable_wp_graphql_password_reset_mutation', '__return_false' );
 
