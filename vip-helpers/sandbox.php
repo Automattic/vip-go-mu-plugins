@@ -70,13 +70,13 @@ add_action( 'admin_footer', 'wpcom_do_sandbox_bar', 100 );
 add_filter( 'wpcom_show_sandbox_bar', '__return_true' );
 
 /**
- * Filters plugin URLs to use sandboxed hostnames.
+ * Filters URLs to use sandboxed hostnames.
  *
- * @param string $url The complete URL to the plugins directory including scheme and path.
+ * @param string $url The complete URL including scheme and path.
  *
  * @return string Filtered URL using sandboxed hostname.
  */
-function wpvip_filter_sandbox_plugins_url( $url ) {
+function wpvip_filter_sandbox_url( $url ) {
 	/** @var array<string,string> */
 	global $sandbox_vhosts;
 	$host = $_SERVER['HTTP_HOST'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -101,4 +101,5 @@ function wpvip_filter_sandbox_plugins_url( $url ) {
 
 	return $url;
 }
-add_filter( 'plugins_url', 'wpvip_filter_sandbox_plugins_url', 1000 );
+add_filter( 'plugins_url', 'wpvip_filter_sandbox_url', 1000 );
+add_filter( 'admin_url', 'wpvip_filter_sandbox_url', 1000 );

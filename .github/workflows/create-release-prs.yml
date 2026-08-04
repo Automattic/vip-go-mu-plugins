@@ -44,7 +44,7 @@ jobs:
           } >> "${GITHUB_OUTPUT}"
 
       - name: Check out source code
-        uses: actions/checkout@v7.0.0
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
@@ -272,7 +272,7 @@ jobs:
 
       - name: Release PRs
         if: steps.create_prs.outputs.pr_links != ''
-        uses: slackapi/slack-github-action@0d95c9a7becc1e6e297d76df9bc735c44f4cbcbc # v3.0.5
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
         with:
           errors: true
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
