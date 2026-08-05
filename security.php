@@ -15,7 +15,6 @@ require_once __DIR__ . '/security/machine-user.php';
 require_once __DIR__ . '/security/class-private-sites.php';
 require_once __DIR__ . '/security/login-error.php';
 require_once __DIR__ . '/security/password.php';
-require_once __DIR__ . '/security/wp-graphql.php';
 
 use Automattic\VIP\Utils\Context;
 
