@@ -160,5 +160,10 @@ class RealTimeCollaborationIntegration extends Integration {
 		if ( isset( $env_config['web_socket_url'] ) && ! defined( 'VIP_RTC_WS_URL' ) ) {
 			define( 'VIP_RTC_WS_URL', $env_config['web_socket_url'] );
 		}
+
+		// Set up WebSocket multiplexing constant
+		if ( isset( $env_config['web_socket_multiplexing_enabled'] ) && ! defined( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) ) {
+			define( 'VIP_RTC_WS_MULTIPLEXING_ENABLED', $env_config['web_socket_multiplexing_enabled'] );
+		}
 	}
 }
