@@ -32,6 +32,13 @@ if [ -z "${WPVER}" ]; then
     WPVER=trunk
 fi
 
+# Install the Parse.ly consent enabling mu-plugin. The repo root is bind-mounted as
+# WPMU_PLUGIN_DIR (--mu-plugins below), so a root-level PHP file is auto-loaded by WordPress.
+# A dedicated, gitignored filename is used so this can never clobber dev-env-plugin.php, which
+# `vip dev-env create` generates and owns. The fixture points the tracker at a same-origin stub
+# URL, so no spec ever reaches cdn.parsely.com or beacons production p1.parsely.com.
+cp "${basedir}/fixtures/e2e-parsely-consent.php" "${pluginPath}/e2e-parsely-consent.php"
+
 # Destroy existing test site
 vip dev-env destroy --slug=e2e-test-site || true
 
@@ -56,6 +63,11 @@ vip dev-env exec --slug e2e-test-site --quiet -- wp config set VIP_LARGE_MEDIA_W
 # Diagnostic: print resolved constants so a future failure is obvious in CI logs.
 vip dev-env exec --slug e2e-test-site --quiet -- wp eval 'echo "VIP_LARGE_MEDIA_WARNING_ENABLED=" . ( defined( "VIP_LARGE_MEDIA_WARNING_ENABLED" ) ? var_export( VIP_LARGE_MEDIA_WARNING_ENABLED, true ) : "UNDEFINED" ) . PHP_EOL;'
 vip dev-env exec --slug e2e-test-site --quiet -- wp eval 'echo "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES=" . ( defined( "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES" ) ? VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES : "UNDEFINED" ) . PHP_EOL;'
+
+# Diagnostic: the Parse.ly consent module is enabled by the mu-plugin copied in above (not by
+# `wp config set`), so prove it resolved. If this prints UNDEFINED, parsely-consent.spec.ts will
+# fail with "tracker not enqueued" rather than anything useful.
+vip dev-env exec --slug e2e-test-site --quiet -- wp eval 'echo "VIP_PARSELY_CONSENT_TRACKING_ENABLED=" . ( defined( "VIP_PARSELY_CONSENT_TRACKING_ENABLED" ) ? var_export( VIP_PARSELY_CONSENT_TRACKING_ENABLED, true ) : "UNDEFINED" ) . PHP_EOL;'
 
 # Change admin password to "password"
 vip dev-env exec --slug e2e-test-site --quiet -- wp user update vipgo --user_pass=password

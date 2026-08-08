@@ -10,6 +10,10 @@ jetpack-private.php
 # dev-env related files
 /dev-env-plugin.php
 
+# Parse.ly consent: local-only mu-plugins auto-loaded from the mu-plugins root.
+# e2e-parsely-consent.php  -> copied in by __tests__/e2e/bin/setup-env.sh from its fixture
+/e2e-parsely-consent.php
+
 # Local PHPDoc configuration file
 # overrides phpdoc.dist.xml
 phpdoc.xml

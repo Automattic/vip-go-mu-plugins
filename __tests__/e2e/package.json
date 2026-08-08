@@ -5,7 +5,7 @@
   "description": "E2E Tests for mu-plugins",
   "scripts": {
     "setup-env": "./bin/setup-env.sh",
-    "destroy-env": "vip dev-env destroy --slug=e2e-test-site",
+    "destroy-env": "rm -f ../../e2e-parsely-consent.php && vip dev-env destroy --slug=e2e-test-site",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "pretest": "npm run setup-env",
