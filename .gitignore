@@ -11,7 +11,11 @@ jetpack-private.php
 /dev-env-plugin.php
 
 # Parse.ly consent: local-only mu-plugins auto-loaded from the mu-plugins root.
+# parsely-consent-dev.php      -> a developer's local manual-test harness (kept out of version control)
+# parsely-consent-adapter.php  -> a site-supplied CMP adapter for local testing (kept out of version control)
 # e2e-parsely-consent.php  -> copied in by __tests__/e2e/bin/setup-env.sh from its fixture
+/parsely-consent-dev.php
+/parsely-consent-adapter.php
 /e2e-parsely-consent.php
 
 # Local PHPDoc configuration file
