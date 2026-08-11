@@ -127,7 +127,7 @@ function vip_remove_enhanced_feed_images() {
  *
  * @author nickmomrik
  * @deprecated Not applicable since VIP 2.0.0
- * @param array $colours Key/value array of colours to override
+ * @param array $colors Key/value array of colours to override
  */
 function wpcom_vip_audio_player_colors( $colors ) {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
@@ -471,7 +471,7 @@ function update_user_attribute( $user_id, $meta_key, $meta_value ) {
 function get_user_attribute( $user_id, $meta_key ) {
 	_deprecated_function( __FUNCTION__, '2.0.0', 'get_user_meta' );
 
-	$usermeta = get_user_meta( $user_id, $meta_key );
+	$usermeta = get_user_meta( $user_id, $meta_key, false );
 	if ( ! $usermeta ) {
 		return false;
 	}
@@ -814,7 +814,7 @@ function wpcom_vip_stats_roles( array $roles ) {
  * @author tott
  * @deprecated No longer supported since 2.0.0
  * @param string $table Optional. Table for stats can be views, postviews, referrers, searchterms, clicks. Default is views.
- * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param string $end_date Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
  * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
  * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
  * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
@@ -849,7 +849,7 @@ function wpcom_vip_get_most_shared_posts( $limit = 5, $cache_duration = 3600 ) {
  * @author tott
  * @deprecated No longer supported since 2.0.0
  * @param string $table Optional. Table for stats can be views, postviews, referrers, searchterms, clicks. Default is views.
- * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param string $end_date Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
  * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
  * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
  * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
@@ -1254,7 +1254,7 @@ function wpcom_vip_plugins_ui_disable_activation() {
  * @deprecated No longer supported since 2.0.0
  * @author tott
  * @param string $table Optional. Table for stats can be views, postviews, authorviews, referrers, searchterms, clicks. Default is views.
- * @param string $end_data Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
+ * @param string $end_date Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is UTC date.
  * @param int $num_days Optional. The length of the desired time frame. Default is 1. Maximum 90 days
  * @param string $and Optional. Possibility to refine the query with additional AND condition. Usually unused.
  * @param int $limit Optional. The maximum number of records to return. Default is 5. Maximum 100.
@@ -1349,7 +1349,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 	/**
 	 * Use `WP_Query` to get a page by title.
 	 *
-	 * @param string $page_title Page title
+	 * @param string $title Page title
 	 * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
 	 * @param string $post_type Optional. Post type; default is 'page'.
 	 * @return WP_Post|null WP_Post on success or null on failure
