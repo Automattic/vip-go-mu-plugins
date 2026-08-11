@@ -51,6 +51,10 @@ jobs:
           path: wordpress
           ref: ${{ steps.version.outputs.latest }}
 
+      - name: Fix WPCS version
+        run: |
+          sed -i 's!"wp-coding-standards/wpcs": "~3.3.0"!"wp-coding-standards/wpcs": "~3.4.1"!' wordpress/composer.json
+
       - name: Check out source code
         uses: actions/checkout@v7.0.1
         with:
