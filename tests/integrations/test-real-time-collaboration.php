@@ -114,9 +114,37 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'wss://test.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
 	}
 
+	/**
+	 * @dataProvider websocket_multiplexing_enabled_provider
+	 */
+	public function test_configure_defines_websocket_multiplexing_enabled_constant( bool $enabled ): void {
+		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
+		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
+			->setConstructorArgs( [ $this->slug ] )
+			->onlyMethods( [ 'get_env_config' ] )
+			->getMock();
+
+		$integration_mock->method( 'get_env_config' )->willReturn( [
+			'web_socket_multiplexing_enabled' => $enabled,
+		] );
+
+		$integration_mock->configure();
+
+		$this->assertTrue( defined( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
+		$this->assertSame( $enabled, constant( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
+	}
+
+	public static function websocket_multiplexing_enabled_provider(): array {
+		return [
+			'enabled'  => [ true ],
+			'disabled' => [ false ],
+		];
+	}
+
 	public function test_configure_does_not_redefine_existing_constants(): void {
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'existing-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://existing.example.com/_ws' );
+		Constant_Mocker::define( 'VIP_RTC_WS_MULTIPLEXING_ENABLED', false );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
@@ -125,14 +153,16 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->getMock();
 
 		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_auth_secret' => 'new-secret',
-			'web_socket_url'         => 'wss://new.example.com/_ws',
+			'web_socket_auth_secret'          => 'new-secret',
+			'web_socket_url'                  => 'wss://new.example.com/_ws',
+			'web_socket_multiplexing_enabled' => true,
 		] );
 
 		$integration_mock->configure();
 
 		$this->assertEquals( 'existing-secret', constant( 'VIP_RTC_WS_AUTH_SECRET' ) );
 		$this->assertEquals( 'wss://existing.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
+		$this->assertFalse( constant( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
 	}
 
 	public function test_configure_handles_missing_config_values(): void {
@@ -148,6 +178,7 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( defined( 'VIP_RTC_WS_AUTH_SECRET' ) );
 		$this->assertFalse( defined( 'VIP_RTC_WS_URL' ) );
+		$this->assertFalse( defined( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
 	}
 
 	public function test_load_sets_inactive_when_ws_auth_secret_missing(): void {
