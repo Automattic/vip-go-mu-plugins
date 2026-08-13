@@ -126,8 +126,12 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	/**
-	 * Apply MCP 0.6 ability exposure semantics to every adapter version.
+	 * Expose configured abilities and inherit `meta.public` when MCP-specific exposure is not set.
 	 *
+	 * MCP Adapter 0.6.0 inherits `meta.public` automatically. Copy the inherited value to
+	 * `meta.mcp.public` so MCP Adapter 0.5 exposes the same abilities.
+	 *
+	 * @see https://github.com/WordPress/mcp-adapter/releases/tag/v0.6.0
 	 * @param array  $args         Ability registration args.
 	 * @param string $ability_name Ability name.
 	 * @return array Filtered ability registration args.
