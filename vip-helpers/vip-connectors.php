@@ -13,7 +13,7 @@ function update_ai_connectors(): void {
 	$registry   = AiClient::defaultRegistry();
 	$connectors = array_filter(
 		wp_get_connectors(),
-		fn ( $connector ) => 
+		fn ( $connector ) =>
 			isset( $connector['authentication']['method'] )
 			&& 'api_key' === $connector['authentication']['method']
 			&& ! empty( $connector['authentication']['env_var_name'] )
