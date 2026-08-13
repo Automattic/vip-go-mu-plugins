@@ -146,7 +146,9 @@ class WordPressMcpIntegration extends Integration {
 				$args['meta']['mcp'] = [];
 			}
 
-			$args['meta']['mcp']['public'] = true;
+			if ( ! array_key_exists( 'public', $args['meta']['mcp'] ) ) {
+				$args['meta']['mcp']['public'] = true;
+			}
 
 			return $args;
 		}

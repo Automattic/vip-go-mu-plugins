@@ -269,6 +269,25 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_filter_exposed_abilities_args_preserves_configured_ability_mcp_opt_out(): void {
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
+		$wordpress_mcp_integration->configure();
+
+		$args = [
+			'meta' => [
+				'mcp' => [
+					'public' => false,
+				],
+			],
+		];
+
+		$this->assertSame(
+			$args,
+			$wordpress_mcp_integration->filter_exposed_abilities_args( $args, 'core/get-site-info' )
+		);
+	}
+
 	public function test_load_sets_inactive_if_no_versions_found(): void {
 		/** @var MockObject&WordPressMcpIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( WordPressMcpIntegration::class )
