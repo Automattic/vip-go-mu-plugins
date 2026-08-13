@@ -13,9 +13,11 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class WordPressMcpIntegration extends Integration {
-	private const AUTH_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH';
-	private const TIMESTAMP_HEADER_SERVER_KEY = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
-	private const DEFAULT_TIMESTAMP_MAX_AGE   = 120;
+	private const LATEST_MINIMUM_WORDPRESS_VERSION = '6.9';
+	private const OLDEST_COMPATIBLE_VERSION        = '0.5';
+	private const AUTH_HEADER_SERVER_KEY           = 'HTTP_X_VIP_MCP_AUTH';
+	private const TIMESTAMP_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
+	private const DEFAULT_TIMESTAMP_MAX_AGE        = 120;
 	// Mirrors mcp-adapter defaults for auth route detection before the config filter runs.
 	private const DEFAULT_SERVER_NAMESPACE = 'mcp';
 	private const DEFAULT_SERVER_ROUTE     = 'mcp-adapter-default-server';
@@ -85,8 +87,13 @@ class WordPressMcpIntegration extends Integration {
 				return;
 			}
 
-			$selected_version_folder = array_key_first( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
+			$selected_version_folder = $this->get_selected_version_folder( $versions );
+			if ( null === $selected_version_folder ) {
+				$this->is_active = false;
+				return;
+			}
+
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
 
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
@@ -391,5 +398,22 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	public function get_versions(): array {
 		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'wordpress-mcp', 'mcp-adapter.php' );
+	}
+
+	/**
+	 * Get the adapter folder compatible with the current WordPress version.
+	 *
+	 * @param array<string,string> $versions Available versions in descending order.
+	 */
+	public function get_selected_version_folder( array $versions ): ?string {
+		global $wp_version;
+
+		if ( version_compare( $wp_version, self::LATEST_MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
+			return array_key_first( $versions );
+		}
+
+		$legacy_version_folder = array_search( self::OLDEST_COMPATIBLE_VERSION, $versions, true );
+
+		return false === $legacy_version_folder ? null : $legacy_version_folder;
 	}
 }
