@@ -170,15 +170,17 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
-	public function test_load_does_not_register_exposed_abilities_args_filter_without_config(): void {
+	public function test_load_registers_exposed_abilities_args_filter_without_config(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
 		$wordpress_mcp_integration->load();
 
-		$this->assertFalse(
+		$this->assertSame(
+			PHP_INT_MAX,
 			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
 		);
 
+		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ], PHP_INT_MAX );
 		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
 		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
@@ -242,7 +244,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( [], $wordpress_mcp_integration->filter_exposed_abilities_args( [], 'vip/delete-site' ) );
 	}
 
-	public function test_filter_exposed_abilities_args_preserves_unconfigured_ability(): void {
+	public function test_filter_exposed_abilities_args_inherits_public_and_preserves_explicit_mcp_opt_out(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
 		$wordpress_mcp_integration->configure();
@@ -258,6 +260,12 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame(
 			$args,
 			$wordpress_mcp_integration->filter_exposed_abilities_args( $args, 'core/update-site' )
+		);
+
+		$args = [ 'meta' => [ 'public' => true ] ];
+
+		$this->assertTrue(
+			$wordpress_mcp_integration->filter_exposed_abilities_args( $args, 'jetpack/get-stats' )['meta']['mcp']['public']
 		);
 	}
 

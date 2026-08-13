@@ -66,9 +66,7 @@ class WordPressMcpIntegration extends Integration {
 			add_filter( 'mcp_adapter_default_server_config', [ $this, 'filter_default_server_config' ], PHP_INT_MAX );
 		}
 
-		if ( ! empty( $this->get_exposed_abilities_config() ) ) {
-			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
-		}
+		add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
 
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
 		// Surfaces MCP auth errors; must run before core's app-password (90) and cookie (100)
@@ -128,7 +126,7 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	/**
-	 * Mark configured abilities as public MCP tools.
+	 * Apply MCP 0.6 ability exposure semantics to every adapter version.
 	 *
 	 * @param array  $args         Ability registration args.
 	 * @param string $ability_name Ability name.
@@ -144,6 +142,22 @@ class WordPressMcpIntegration extends Integration {
 				$args['meta']['mcp'] = [];
 			}
 
+			$args['meta']['mcp']['public'] = true;
+
+			return $args;
+		}
+
+		if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) || true !== ( $args['meta']['public'] ?? false ) ) {
+			return $args;
+		}
+
+		$mcp_meta = $args['meta']['mcp'] ?? [];
+		if ( ! is_array( $mcp_meta ) ) {
+			return $args;
+		}
+
+		if ( ! isset( $mcp_meta['public'] ) ) {
+			$args['meta']['mcp']           = $mcp_meta;
 			$args['meta']['mcp']['public'] = true;
 		}
 
