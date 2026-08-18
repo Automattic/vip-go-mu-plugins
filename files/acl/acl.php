@@ -85,7 +85,7 @@ function is_valid_path_for_site( $file_path ) {
 			$is_valid = ! str_starts_with( $file_path, 'sites/' );
 		} else {
 			// Check if the file path matches the current site ID's directory.
-			$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+			$base_path = sprintf( 'sites/%d/', get_current_blog_id() );
 			$is_valid  = str_starts_with( $file_path, $base_path );
 		}
 	}

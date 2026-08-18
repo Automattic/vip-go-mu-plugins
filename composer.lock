@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "047517f9878672a3b619628144582d82",
+    "content-hash": "96915c1741021422f331f56fa2b554c5",
     "packages": [],
     "packages-dev": [
         {
@@ -329,16 +329,16 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "7.0.3",
+            "version": "7.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "5dc4ed94f44dc69aa03c55eccae6b88fd8cdfb38"
+                "reference": "ebd597e2d4c6cf362028c6d5dc6b257884b5f7cb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/5dc4ed94f44dc69aa03c55eccae6b88fd8cdfb38",
-                "reference": "5dc4ed94f44dc69aa03c55eccae6b88fd8cdfb38",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/ebd597e2d4c6cf362028c6d5dc6b257884b5f7cb",
+                "reference": "ebd597e2d4c6cf362028c6d5dc6b257884b5f7cb",
                 "shasum": ""
             },
             "require": {
@@ -346,7 +346,7 @@
                 "php": ">=7.4"
             },
             "provide": {
-                "wordpress/core-implementation": "7.0.3"
+                "wordpress/core-implementation": "7.0.4"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -373,7 +373,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2026-08-07T00:36:10+00:00"
+            "time": "2026-08-12T22:40:36+00:00"
         },
         {
             "name": "myclabs/deep-copy",
