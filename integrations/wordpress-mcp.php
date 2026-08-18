@@ -13,9 +13,11 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class WordPressMcpIntegration extends Integration {
-	private const AUTH_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH';
-	private const TIMESTAMP_HEADER_SERVER_KEY = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
-	private const DEFAULT_TIMESTAMP_MAX_AGE   = 120;
+	private const LATEST_MINIMUM_WORDPRESS_VERSION = '6.9';
+	private const OLDEST_COMPATIBLE_VERSION        = '0.5';
+	private const AUTH_HEADER_SERVER_KEY           = 'HTTP_X_VIP_MCP_AUTH';
+	private const TIMESTAMP_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
+	private const DEFAULT_TIMESTAMP_MAX_AGE        = 120;
 	// Mirrors mcp-adapter defaults for auth route detection before the config filter runs.
 	private const DEFAULT_SERVER_NAMESPACE = 'mcp';
 	private const DEFAULT_SERVER_ROUTE     = 'mcp-adapter-default-server';
@@ -64,9 +66,7 @@ class WordPressMcpIntegration extends Integration {
 			add_filter( 'mcp_adapter_default_server_config', [ $this, 'filter_default_server_config' ], PHP_INT_MAX );
 		}
 
-		if ( ! empty( $this->get_exposed_abilities_config() ) ) {
-			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
-		}
+		add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
 
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
 		// Surfaces MCP auth errors; must run before core's app-password (90) and cookie (100)
@@ -85,8 +85,13 @@ class WordPressMcpIntegration extends Integration {
 				return;
 			}
 
-			$selected_version_folder = array_key_first( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
+			$selected_version_folder = $this->get_selected_version_folder( $versions );
+			if ( null === $selected_version_folder ) {
+				$this->is_active = false;
+				return;
+			}
+
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
 
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
@@ -121,8 +126,12 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	/**
-	 * Mark configured abilities as public MCP tools.
+	 * Expose configured abilities and inherit `meta.public` when MCP-specific exposure is not set.
 	 *
+	 * MCP Adapter 0.6.0 inherits `meta.public` automatically. Copy the inherited value to
+	 * `meta.mcp.public` so MCP Adapter 0.5 exposes the same abilities.
+	 *
+	 * @see https://github.com/WordPress/mcp-adapter/releases/tag/v0.6.0
 	 * @param array  $args         Ability registration args.
 	 * @param string $ability_name Ability name.
 	 * @return array Filtered ability registration args.
@@ -137,6 +146,24 @@ class WordPressMcpIntegration extends Integration {
 				$args['meta']['mcp'] = [];
 			}
 
+			if ( ! array_key_exists( 'public', $args['meta']['mcp'] ) ) {
+				$args['meta']['mcp']['public'] = true;
+			}
+
+			return $args;
+		}
+
+		if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) || true !== ( $args['meta']['public'] ?? false ) ) {
+			return $args;
+		}
+
+		$mcp_meta = $args['meta']['mcp'] ?? [];
+		if ( ! is_array( $mcp_meta ) ) {
+			return $args;
+		}
+
+		if ( ! isset( $mcp_meta['public'] ) ) {
+			$args['meta']['mcp']           = $mcp_meta;
 			$args['meta']['mcp']['public'] = true;
 		}
 
@@ -391,5 +418,22 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	public function get_versions(): array {
 		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'wordpress-mcp', 'mcp-adapter.php' );
+	}
+
+	/**
+	 * Get the adapter folder compatible with the current WordPress version.
+	 *
+	 * @param array<string,string> $versions Available versions in descending order.
+	 */
+	public function get_selected_version_folder( array $versions ): ?string {
+		global $wp_version;
+
+		if ( version_compare( $wp_version, self::LATEST_MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
+			return array_key_first( $versions );
+		}
+
+		$legacy_version_folder = array_search( self::OLDEST_COMPATIBLE_VERSION, $versions, true );
+
+		return false === $legacy_version_folder ? null : $legacy_version_folder;
 	}
 }
