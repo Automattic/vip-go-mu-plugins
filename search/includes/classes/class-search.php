@@ -196,6 +196,8 @@ class Search {
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	/** @var Cache */
 	public $cache;
+	/** @var Query_Warning|null */
+	public $query_warning;
 
 	/**
 	 * Maximum number of queries before rate-limiting kicks in.
@@ -1016,6 +1018,22 @@ class Search {
 			// Record engine time (have to parse JSON to get it)
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
+
+			if ( 'query' === $type && isset( $query['url'] ) && is_string( $query['url'] ) && preg_match( '#/_search(?:[/?]|$)#', $query['url'] ) ) {
+				try {
+					if ( ! $this->query_warning ) {
+						$this->query_warning = new Query_Warning();
+					}
+
+					$this->query_warning->maybe_emit(
+						$args['body'] ?? '',
+						is_array( $response_body ) ? $response_body : [],
+						(float) $duration
+					);
+				} catch ( \Throwable $throwable ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Query diagnostics must never affect the Elasticsearch response.
+					// Query diagnostics must never affect the Elasticsearch response.
+				}
+			}
 
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				if ( class_exists( Prometheus_Collector::class ) ) {
