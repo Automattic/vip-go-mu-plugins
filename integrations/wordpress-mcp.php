@@ -53,7 +53,7 @@ class WordPressMcpIntegration extends Integration {
 	private ?\WP_Error $auth_error = null;
 
 	public function is_loaded(): bool {
-		return class_exists( '\WP\MCP\Plugin', false );
+		return function_exists( 'WP\MCP\constants' ) || class_exists( '\WP\MCP\Plugin', false );
 	}
 
 	public function load(): void {
