@@ -96,7 +96,7 @@ class Query_Warning {
 				'returned'         => isset( $response_body['hits']['hits'] ) && is_array( $response_body['hits']['hits'] ) ? count( $response_body['hits']['hits'] ) : null,
 				'total_hits'       => $this->total_hits( $response_body ),
 				'query_scope'      => $classified['scope'],
-				'url'              => $source['url'],
+				'url'              => substr( $source['url'], 0, 500 ),
 				'source'           => $source['source'],
 				'origin'           => $origin['display'],
 			];
