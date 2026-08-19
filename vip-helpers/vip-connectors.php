@@ -13,11 +13,13 @@ function update_ai_connectors(): void {
 	$registry   = AiClient::defaultRegistry();
 	$connectors = array_filter(
 		wp_get_connectors(),
-		fn ( $connector ) =>
-			isset( $connector['authentication']['method'] )
+		fn ( $connector, $id ) =>
+			$registry->hasProvider( $id )
+			&& isset( $connector['authentication']['method'] )
 			&& 'api_key' === $connector['authentication']['method']
 			&& ! empty( $connector['authentication']['env_var_name'] )
-			&& false === getenv( $connector['authentication']['env_var_name'] )
+			&& false === getenv( $connector['authentication']['env_var_name'] ),
+		ARRAY_FILTER_USE_BOTH
 	);
 
 	foreach ( $connectors as $id => $connector ) {
