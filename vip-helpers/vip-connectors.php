@@ -21,6 +21,9 @@ function update_ai_connectors(): void {
 	);
 
 	foreach ( $connectors as $id => $connector ) {
+		if ( ! $registry->hasProvider( $id ) ) {
+			continue;
+		}
 		$env_var_name = $connector['authentication']['env_var_name'];
 		$value        = vip_get_env_var( $env_var_name );
 		if ( is_string( $value ) && ! empty( $value ) ) {
