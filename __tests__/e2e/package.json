@@ -19,6 +19,6 @@
     "@types/node": "^26.0.1",
     "asana-phrase": "^0.0.8",
     "eslint-plugin-playwright": "^2.10.2",
-    "typescript": "^6.0.3"
+    "typescript": "^7.0.2"
   }
 }
