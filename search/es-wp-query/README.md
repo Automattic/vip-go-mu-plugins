@@ -58,7 +58,7 @@ Regardless of which way you use the library, everything else about the object sh
 
 Since this library removes MySQL from most of the equation, the typical WP_Query filters (`posts_where`, `posts_join`, etc.) become irrelevant or -- in some extreme situations -- conflicting.
 
-The gist of what happens when you use `WP_Query( 'es=true' )` is that on `pre_get_posts`, the query vars are sent to a new instance of `ES_WP_Query`. The query vars are then replaced with a simple `post__in` query using the IDs which Elasticsearch found. Because the generated SQL query is far simpler than the query vars would suggest, a plugin or theme might try to manipulate the SQL and break it.
+The gist of what happens whn you use `WP_Query( 'es=true' )` is that on `pre_get_posts`, the query vars are sent to a new instance of `ES_WP_Query`. The query vars are then replaced with a simple `post__in` query using the IDs which Elasticsearch found. Because the generated SQL query is far simpler than the query vars would suggest, a plugin or theme might try to manipualte the SQL and break it.
 
 | Action/Filter              | Using `ES_WP_Query` | `ES_WP_Query` Equivalent                            | Using `WP_Query` with `'es' => true` |
 | -------------------------- | ------------------- | --------------------------------------------------- | ------------------------------------ |

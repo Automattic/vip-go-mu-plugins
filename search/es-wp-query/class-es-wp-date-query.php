@@ -134,7 +134,7 @@ class ES_WP_Date_Query extends WP_Date_Query {
 			// We encourage you to store the day_of_week according to ISO-8601 standards.
 			$day_of_week = 1 === $query['dayofweek'] ? 7 : $query['dayofweek'] - 1;
 
-			// This is, of course, optional. Use this filter to manipulate the value however you'd like.
+			// This is, of course, optional. Use this filter to manipualte the value however you'd like.
 			$query['day_of_week'] = apply_filters( 'es_date_query_dayofweek', $day_of_week, $query['dayofweek'] );
 		}
 
