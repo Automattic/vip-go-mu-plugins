@@ -497,7 +497,7 @@ class Memcached  {
 	 */
 	const RES_SERVER_MEMORY_ALLOCATION_FAILURE = 48;
 	/**
-	 * <p>MEMCACHED_AUTH_PROBLEM: An unknown issue has occurred during authentication.</p>
+	 * <p>MEMCACHED_AUTH_PROBLEM: An unknown issue has occured during authentication.</p>
 	 */
 	const RES_AUTH_PROBLEM = 40;
 	/**
@@ -509,7 +509,7 @@ class Memcached  {
 	 */
 	const RES_AUTH_CONTINUE = 42;
 	/**
-	 * <p>MEMCACHED_CONNECTION_FAILURE: A unknown error has occurred while trying to connect to a server.</p>
+	 * <p>MEMCACHED_CONNECTION_FAILURE: A unknown error has occured while trying to connect to a server.</p>
 	 */
 	const RES_CONNECTION_FAILURE = 3;
 	/**
@@ -554,7 +554,7 @@ class Memcached  {
 	 * <p>MEMCACHED_DEPRECATED: The method that was requested has been deprecated.</p>
 	 */
 	const RES_DEPRECATED = 45;
-	//unknown
+	//unknow
 	const RES_IN_PROGRESS = 46;
 	/**
 	 * <p>MEMCACHED_MAXIMUM_RETURN: This in an internal only state.</p>
@@ -1392,7 +1392,7 @@ class Memcached  {
 	 * Invalidate all items in the cache
 	 * @link https://php.net/manual/en/memcached.flush.php
 	 * @param int $delay [optional] <p>
-	 * Number of seconds to wait before invalidating the items.
+	 * Numer of seconds to wait before invalidating the items.
 	 * </p>
 	 * @return bool <b>TRUE</b> on success or <b>FALSE</b> on failure.
 	 * Use <b>Memcached::getResultCode</b> if necessary.
@@ -1449,7 +1449,7 @@ class Memcached  {
 
 	/**
 	 * (PECL memcached &gt;= 2.0.0)<br/>
-	 * Check if a persistent connection to memcache is being used
+	 * Check if a persitent connection to memcache is being used
 	 * @link https://php.net/manual/en/memcached.ispersistent.php
 	 * @return bool true if Memcache instance uses a persistent connection, false otherwise.
 	 */

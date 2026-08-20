@@ -98,14 +98,14 @@ class WP_Object_Cache {
 
 		$this->salt_keys( WP_CACHE_KEY_SALT, $use_memcached );
 
-		// Backwards compatibility as these have been public properties. Ideally we deprecate and remove in the future.
+		// Backwards compatability as these have been public properties. Ideally we deprecate and remove in the future.
 		$this->mc                = $this->adapter->get_connections();
 		$this->default_mcs       = $this->adapter->get_default_connections();
 		$this->connection_errors =& $this->adapter->get_connection_errors();
 
 		$this->stats_helper = new Stats( $this->key_salt );
 
-		// Also for backwards compatibility since these have been public properties.
+		// Also for backwards compatability since these have been public properties.
 		$this->stats                =& $this->stats_helper->stats;
 		$this->group_ops            =& $this->stats_helper->group_ops;
 		$this->time_total           =& $this->stats_helper->time_total;
@@ -281,7 +281,7 @@ class WP_Object_Cache {
 	 * @param int|string $key    What to call the contents in the cache.
 	 * @param mixed      $data   The contents to store in the cache.
 	 * @param string     $group  Optional. Where to group the cache contents. Default 'default'.
-	 * @param int        $expire Optional. How long until the cache contents will expire (in seconds).
+	 * @param int        $expire Optional. How long until the cahce contents will expire (in seconds).
 	 *
 	 * @return bool True if contents were set, false if failed.
 	 */
@@ -370,7 +370,7 @@ class WP_Object_Cache {
 			return $value;
 		}
 
-		// For a non-persistent group, if it's not in local cache then it just doesn't exist.
+		// For a non-persistant group, if it's not in local cache then it just doesn't exist.
 		if ( $this->is_non_persistent_group( $group ) ) {
 			$found = false;
 			$this->group_ops_stats( 'get_local', $key, $group, null, null, 'not_in_local' );
@@ -1088,7 +1088,7 @@ class WP_Object_Cache {
 	 * @param string $op The operation taking place, such as "set" or "get".
 	 * @param string|string[] $keys The memcached key/keys involved in the operation.
 	 * @param string $group The group the keys are in.
-	 * @param ?int $size The size of the data involved in the operation.
+	 * @param ?int $size The size of the data invovled in the operation.
 	 * @param ?float $time The time the operation took.
 	 * @param string $comment Extra notes about the operation.
 	 *

@@ -278,11 +278,11 @@ class MemcachePool {
      * (PECL memcache &gt;= 2.0.0)<br/>
      * Enable automatic compression of large values
      * @link https://php.net/manual/en/memcache.setcompressthreshold.php
-     * @param int $threshold <p>Controls the minimum value length before attempting to compress automatically.</p>
+     * @param int $thresold <p>Controls the minimum value length before attempting to compress automatically.</p>
      * @param float $min_saving [optional] <p>Specifies the minimum amount of savings to actually store the value compressed. The supplied value must be between 0 and 1. Default value is 0.2 giving a minimum 20% compression savings.</p>
      * @return bool Returns <b>TRUE</b> on success or <b>FALSE</b> on failure.
      */
-    public function setCompressThreshold($threshold, $min_saving = 0.2) {}
+    public function setCompressThreshold($thresold, $min_saving = 0.2) {}
 
     /**
      * (PECL memcache &gt;= 0.2.0)<br/>
