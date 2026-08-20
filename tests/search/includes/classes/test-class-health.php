@@ -511,7 +511,7 @@ class Health_Test extends WP_UnitTestCase {
 	public function test_simplified_diff_document_and_prepared_document( $prepared_document, $document, $expected_diff ) {
 		$diff = Health::simplified_diff_document_and_prepared_document( $document, $prepared_document );
 
-		// Should be false since there are no inconsitencies in the test data
+		// Should be false since there are no inconsistencies in the test data
 		$this->assertEquals( $diff, $expected_diff );
 	}
 
@@ -829,7 +829,7 @@ class Health_Test extends WP_UnitTestCase {
 		$patrtially_mocked_health->validate_index_posts_content( [ 'start_post_id' => 25 ] );
 	}
 
-	public function test_validate_index_posts_content__pick_up_after_interuption() {
+	public function test_validate_index_posts_content__pick_up_after_interruption() {
 		$interrupted_post_id = 5;
 		$start_post_id       = 1;
 
@@ -860,7 +860,7 @@ class Health_Test extends WP_UnitTestCase {
 		$patrtially_mocked_health->validate_index_posts_content( $start_post_id, null, null, null, false, false, false );
 	}
 
-	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_running_in_parallel() {
+	public function test_validate_index_posts_content__do_not_pick_up_after_interruption_when_running_in_parallel() {
 		$interrupted_post_id = 5;
 		$start_post_id       = 1;
 
@@ -893,7 +893,7 @@ class Health_Test extends WP_UnitTestCase {
 		] );
 	}
 
-	public function test_validate_index_posts_content__do_not_pick_up_after_interuption_when_non_default_start_post_id() {
+	public function test_validate_index_posts_content__do_not_pick_up_after_interruption_when_non_default_start_post_id() {
 		$interrupted_post_id = 5;
 		$start_post_id       = 2;
 

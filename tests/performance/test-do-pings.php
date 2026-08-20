@@ -56,7 +56,7 @@ class Do_Pings_Test extends WP_UnitTestCase {
 		// Result should be a meta ID
 		$result = \add_post_meta( $object_id, $meta_key, $meta_value, $unique );
 
-		$this->assertTrue( is_numeric( $result ), 'result of add_post_meta should be numberic' );
+		$this->assertTrue( is_numeric( $result ), 'result of add_post_meta should be numeric' );
 
 		$meta_key = '_encloseme';
 

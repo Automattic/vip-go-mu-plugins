@@ -68,7 +68,7 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
 		if ( 'datasync' === $operation ) {
 			/**
-			 * Runs on a child environment after recieving a data sync from production.
+			 * Runs on a child environment after receiving a data sync from production.
 			 */
 			do_action( 'vip_datasync_cleanup' );
 
@@ -87,7 +87,7 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
 		$this->delete_db_transients();
 
-		// Flush cache again. After DB transient removal, and prevents the need for flushing on the individiual hooks above.
+		// Flush cache again. After DB transient removal, and prevents the need for flushing on the individual hooks above.
 		wp_cache_flush();
 
 		if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {

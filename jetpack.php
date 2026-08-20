@@ -4,7 +4,7 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 16.1.1
+ * Version: 16.1.2
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
@@ -69,7 +69,7 @@ function vip_toggle_jetpack_staging_mode() {
 	$is_maintenance_mode = defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE;
 	$is_production_site  = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
 	if ( $is_maintenance_mode && ! $is_production_site ) {
-		// Specifically targetting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
+		// Specifically targeting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
 		add_filter( 'jetpack_is_staging_site', '__return_true' );
 		return;
 	}

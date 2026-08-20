@@ -44,7 +44,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 		$this->assertTrue( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
 
-	public function test_event_queued_with_global_properies() {
+	public function test_event_queued_with_global_properties() {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 

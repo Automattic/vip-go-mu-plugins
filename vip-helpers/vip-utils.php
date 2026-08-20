@@ -846,7 +846,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	$threshold = abs( $threshold );
 
 	// Default max timeout is 5s.
-	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests through WP-CLI, this needs to be even higher to make things like VIP Search commands work more consistently without tinkering.
 	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things.
 	$timeout         = (int) $timeout;
 	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
@@ -1066,7 +1066,7 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  * places, such as sidebars.
  *
  * @param string $url The URL that should be embedded
- * @param array $args Addtional arguments and parameters the embed
+ * @param array $args Additional arguments and parameters the embed
  * @param int $ttl How long to cache for in seconds; minimum 18000 (5 Hours)
  * @return string
  */

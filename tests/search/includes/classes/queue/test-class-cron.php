@@ -214,7 +214,7 @@ class Cron_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider schedule_batch_job__scheduling_limits_data
 	 */
-	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_shedule_count ) {
+	public function test_schedule_batch_job__scheduling_limits( $job_counts, $expected_schedule_count ) {
 		/** @var Cron&MockObject */
 		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
 			->onlyMethods( [ 'get_processor_job_count', 'schedule_batch_job', 'get_max_concurrent_processor_job_count' ] )
@@ -222,7 +222,7 @@ class Cron_Test extends WP_UnitTestCase {
 
 		$partially_mocked_cron->queue = $this->createMock( \Automattic\VIP\Search\Queue::class );
 
-		$partially_mocked_cron->expects( $this->exactly( $expected_shedule_count ) )
+		$partially_mocked_cron->expects( $this->exactly( $expected_schedule_count ) )
 			->method( 'schedule_batch_job' )
 			->willReturn( true );
 
