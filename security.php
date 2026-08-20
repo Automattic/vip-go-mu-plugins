@@ -189,7 +189,7 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
 
 		$default_lockout = $defaults[ "{$lock_reason}_lockout" ];
 		/**
-		 * Filters the lenght of locked out time.
+		 * Filters the length of locked out time.
 		 * vip_<login|password_reset>_<ip|ip_username|username>_lockout
 		 *
 		 * @param int    $lock_interval Seconds count of the lockout.

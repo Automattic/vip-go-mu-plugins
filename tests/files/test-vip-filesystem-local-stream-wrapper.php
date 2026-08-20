@@ -101,7 +101,7 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertTrue( $actual_result, 'Return value from rename() was not true' );
 	}
 
-	public function test__rename__sucess() {
+	public function test__rename__success() {
 		$path_from = 'vip://wp-content/uploads/old.txt';
 		$path_to   = 'vip://wp-content/uploads/new.txt';
 

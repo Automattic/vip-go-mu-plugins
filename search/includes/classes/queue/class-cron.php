@@ -101,7 +101,7 @@ class Cron {
 	 * Make job processing = indexing of documents run concurrently. This should help with handling spikes
 	 * of bulk reindexing as well as keep cron's option used for queued jobs small, by processing them faster.
 	 *
-	 * Also, we want to make sure to only take up to 25% of avaiable cron concurrency capacity, so that other
+	 * Also, we want to make sure to only take up to 25% of available cron concurrency capacity, so that other
 	 * cron jobs can still be processed without a big impact.
 	 */
 	public function configure_concurrency( $whitelist ) {

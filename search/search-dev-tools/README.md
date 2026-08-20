@@ -6,7 +6,7 @@ Search Dev Tools is aiming to be a one-stop shop for developers integrating Sear
 
 - See general debug information like which post types and post statuses are indexable, what meta keys are allowed, and is the site being rate-limited right now.
 - See the list of the queries that were executed during this request:
-	* Tweak a query in an editor with syntax higlighting and see the updated result.
+	* Tweak a query in an editor with syntax highlighting and see the updated result.
 	* See the stack trace for a query.
 	* See WP_Query arguments for a query
 

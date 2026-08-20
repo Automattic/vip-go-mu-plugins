@@ -90,7 +90,7 @@ class Role {
 	 * Rather than explicitly adding all the capabilities to the admin role, and possibly
 	 * missing some custom ones, or copying a role, and possibly being tripped up when
 	 * that role doesn't exist, we filter all user capability checks and wave past our
-	 * VIP Support users as automattically having the capability being checked.
+	 * VIP Support users as automatically having the capability being checked.
 	 *
 	 * @param array   $user_caps An array of all the user's capabilities.
 	 * @param array   $caps      Actual capabilities for meta capability.

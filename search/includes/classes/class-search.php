@@ -1644,7 +1644,7 @@ class Search {
 	/**
 	 * Filter for ep_pre_request_host
 	 *
-	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
+	 * Return the next host in our endpoint list if it's defined. Otherwise, return the last host.
 	 */
 	public function filter__ep_pre_request_host( $host, $failures ) {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
@@ -1965,7 +1965,7 @@ class Search {
 			$current_taxonomies = array();
 		}
 
-		// The ep_sync_taxonomies filter is a plain array of taxonomy objects...we implement this filter for convienence to prevent
+		// The ep_sync_taxonomies filter is a plain array of taxonomy objects...we implement this filter for convenience to prevent
 		// needing to traverse the array to see if taxonomies need added or removed
 		$taxonomy_names = array_unique( wp_list_pluck( $current_taxonomies, 'name' ) );
 
@@ -2400,7 +2400,7 @@ class Search {
 	}
 
 	/**
-	 * When query rate limting first begins, log this information and surface as a PHP warning
+	 * When query rate limiting first begins, log this information and surface as a PHP warning
 	 */
 	public function maybe_log_query_ratelimiting_start() {
 		if ( false === static::get_query_rate_limit_start() ) {

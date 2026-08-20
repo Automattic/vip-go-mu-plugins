@@ -300,7 +300,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 
 			$attachments        = array_unique( $attachments ); // Just in case, let's clear out any dupes.
-			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maxiumum 10 elements.
+			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maximum 10 elements.
 			$mh                 = curl_multi_init();
 
 			// Loop through each block of 10 attachments.

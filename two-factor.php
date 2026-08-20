@@ -146,7 +146,7 @@ function wpcom_vip_enforce_two_factor_plugin() {
 			return $limited;
 		}, 9 );
 
-		// Calcuate two factor authentication support outside map_meta_cap to avoid callback loop
+		// Calculate two factor authentication support outside map_meta_cap to avoid callback loop
 		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
 		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
 

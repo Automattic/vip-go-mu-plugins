@@ -11,7 +11,7 @@ Author URI: http://automattic.com/
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
 /* Requires at least: 3.9.0
- * due to the dependancy on the filter 'wp_insert_attachment_data'
+ * due to the dependency on the filter 'wp_insert_attachment_data'
  * used to catch imports and push the files to the VIP MogileFS service
  */
 
@@ -140,7 +140,7 @@ class A8C_Files {
 
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
-		// Externally hosted files continue to use the remot Photon service.
+		// Externally hosted files continue to use the remote Photon service.
 		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
 
 		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
@@ -692,7 +692,7 @@ function wpcom_intermediate_sizes() {
  * Figure out whether srcset is enabled or not. Should be run on init action
  * earliest in order to allow clients to override this via theme's functions.php
  *
- * @return bool True if VIP Go File Service compatibile srcset solution is enabled.
+ * @return bool True if VIP Go File Service compatible srcset solution is enabled.
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing
