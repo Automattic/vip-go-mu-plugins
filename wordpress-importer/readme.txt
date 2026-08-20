@@ -21,7 +21,7 @@ The WordPress Importer will import the following content from a WordPress export
 * Categories, tags and terms from custom taxonomies and term meta
 * Authors
 
-For further information and instructions please see the [documentation on Importing Content](https://wordpress.org/support/article/importing-content/#wordpress).
+For further information and instructions please see the [documention on Importing Content](https://wordpress.org/support/article/importing-content/#wordpress).
 
 == Installation ==
 
