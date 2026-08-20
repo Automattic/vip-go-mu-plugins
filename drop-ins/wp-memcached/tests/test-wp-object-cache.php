@@ -23,7 +23,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$GLOBALS['memcached_servers'] = [ $host1, $host2 ];
 		$GLOBALS['wp_object_cache']   = $this->object_cache = new WP_Object_Cache(); // phpcs:ignore
 
-		if ( defined( 'AUTOMATIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) && AUTOMATIC_MEMCACHED_USE_MEMCACHED_EXTENSION ) {
+		if ( defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) && AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION ) {
 			$this->is_using_memcached_ext = true;
 		}
 	}

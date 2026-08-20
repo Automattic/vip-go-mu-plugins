@@ -18,7 +18,7 @@ This plugin aims to have full compatibility with the wp-memcached plugin, and yo
 To additionally start using the Memcached php extension instead:
 
 1. Ensure the Memcached extension is installed, along with the libmemcached library.
-2. Add `define( 'AUTOMATIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );` to your wp-config.php file.
+2. Add `define( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION', true );` to your wp-config.php file.
 
 This will result in effectively a cache flush, after which behavior will resume per usual (though hopefully with better performance and consistency).
 

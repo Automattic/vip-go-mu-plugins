@@ -85,7 +85,7 @@ class WP_Object_Cache {
 
 		$is_ms = function_exists( 'is_multisite' ) && is_multisite();
 
- 		$this->global_prefix = $is_ms || ( defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
+		$this->global_prefix = $is_ms || ( defined( 'CUSTOM_USER_TABLE' ) && defined( 'CUSTOM_USER_META_TABLE' ) ) ? '' : $table_prefix;
 		$this->blog_prefix   = (string) ( $is_ms ? $blog_id : $table_prefix );
 
 		$use_memcached = defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) && AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION;
