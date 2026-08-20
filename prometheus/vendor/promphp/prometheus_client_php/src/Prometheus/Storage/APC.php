@@ -219,7 +219,7 @@ class APC implements Adapter
      */
     public function wipeStorage(): void
     {
-        //                   /      / | PCRE expression boundary
+        //                   /      / | PCRE expresion boundary
         //                    ^       | match from first character only
         //                     %s:    | common prefix substitute with colon suffix
         //                        .+  | at least one additional character
