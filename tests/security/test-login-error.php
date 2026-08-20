@@ -41,7 +41,7 @@ class Login_Error_Test extends WP_UnitTestCase {
 	}
 
 	public function test_ambiguous_reset(): void {
-		$location       = null;
+		$location        = null;
 		$redirect_called = false;
 
 		add_filter( 'wp_redirect', function ( $dest ) use ( &$location ) {
