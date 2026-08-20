@@ -13,7 +13,7 @@ $renderer = new RenderTextFormat();
 $result = $renderer->render($registry->getMetricFamilySamples());
 ```
 
-## Performance comparions vs the original APC engine
+## Performance comparisons vs the original APC engine
 The difference between `APC` and `APCng` is that `APCng` is re-designed for servers which have millions of entries in their APCu cache and/or receive hundreds to thousands of requests per second. Several key data structures in the original `APC` engine require repeated scans of the entire keyspace, which is far too slow and CPU-intensive for a busy server when APCu contains more than a few thousand keys. `APCng` avoids these scans for the most part, the trade-off being creation of new metrics is slightly slower than it is with the `APC` engine, while other operations are approximately the same speed, and collecting metrics to report is 1-2 orders of magnitude faster when APCu contains 10,000+ keys.
 In general, if your APCu cache contains over 1000 keys, consider using the `APCng` engine.
 In my testing, on a system with 100,000 keys in APCu and 500 Prometheus metrics being tracked, rendering all metrics took 35.7 seconds with the `APC` engine, but only 0.6 seconds with the `APCng` engine. Even with a tiny cache (50 metrics / 1000 APC keys), `APCng` is over 2.5x faster generating reports. As the number of APCu keys and/or number of tracked metrics increases, `APCng`'s speed advantage grows.
@@ -47,7 +47,7 @@ The following table compares `APC` and `APCng` processing time for a series of o
 | APCng 100k keys / 2500 metrics |       274.7 |           84.0 |             34.6 |       4092.4 |                    52.9x |
 | APCng 1M keys   / 2500 metrics |       187.8 |           87.7 |             40.7 |       5396.4 |                    50.1x |
 
-The suite of engine-performance tests can be automatically executed by running `docker-compose run phpunit vendor/bin/phpunit tests/Test --group Performance`. This set of tests in not part of the default unit tests which get run, since they take quite a while to complete. Any significant change to the APC or APCng code should be followed by a performance-test run to quantify the before/after impact of the change. Currently this is triggered manually, but it could be automated as part of a Github workflow.
+The suite of engine-performance tests can be automatically executed by running `docker-compose run phpunit vendor/bin/phpunit tests/Test --group Performance`. This set of tests in not part of the default unit tests which get run, since they take quite a while to complete. Any significant change to the APC or APCng code should be followed by a performance-test run to quantify the before/after impact of the change. Currently this is triggered manually, but it could be automated as part of a GitHub workflow.
 
 ## Known limitations
 One thing to note, the current implementation of the `Summary` observer should be avoided on busy servers. This is true for both the `APC` and `APCng` storage engines. The reason is simple: each observation (call to increment, set, etc) results in a new item being written to APCu. The default TTL for these items is 600 seconds.  On a busy server that might be getting 1000 requests/second, that results in 600,000 APC cache items continually churning in and out of existence.  This can put some interesting pressure on APCu, which could lead to rapid fragmentation of APCu memory. Definitely test before deploying in production.

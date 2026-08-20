@@ -8,9 +8,9 @@ $options = getopt( null, [
     "debug", // Show debug information
     'force', // Force script through validations
     'merge-pr:', // Merge PR number
-    'github-project-username:', // Github project username
-    'github-project-reponame:', // Github project reponame
-    'github-token:', // Github token
+    'github-project-username:', // GitHub project username
+    'github-project-reponame:', // GitHub project reponame
+    'github-token:', // GitHub token
 ] );
 
 $force = array_key_exists( 'force', $options );

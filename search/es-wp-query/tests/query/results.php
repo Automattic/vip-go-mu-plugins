@@ -354,7 +354,7 @@ class Tests_Query_Results extends WP_UnitTestCase {
 		$this->assertEquals( array(), wp_list_pluck( $posts, 'post_title' ) );
 	}
 
-	function test_exlude_from_search_empty() {
+	function test_exclude_from_search_empty() {
 		global $wp_post_types;
 		foreach ( array_keys( $wp_post_types ) as $slug )
 			$wp_post_types[$slug]->exclude_from_search = true;

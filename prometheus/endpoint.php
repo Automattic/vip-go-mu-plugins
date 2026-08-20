@@ -9,7 +9,7 @@ use Prometheus\Storage\Adapter;
 use Prometheus\Storage\APCng;
 use Prometheus\Storage\InMemory;
 
-// @codeCoverageIgnoreStart -- this is a standalone endpoint which doens't run in the context of the WP tests
+// @codeCoverageIgnoreStart -- this is a standalone endpoint which doesn't run in the context of the WP tests
 if ( extension_loaded( 'newrelic' ) ) { // Ensure PHP agent is available
 	newrelic_ignore_transaction();
 }

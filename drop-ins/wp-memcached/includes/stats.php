@@ -52,7 +52,7 @@ class Stats {
 	 * @param string $op The operation taking place, such as "set" or "get".
 	 * @param string|string[] $keys The memcached key/keys involved in the operation.
 	 * @param string $group The group the keys are in.
-	 * @param ?int $size The size of the data invovled in the operation.
+	 * @param ?int $size The size of the data involved in the operation.
 	 * @param ?float $time The time the operation took.
 	 * @param string $comment Extra notes about the operation.
 	 *

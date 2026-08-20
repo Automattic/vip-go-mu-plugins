@@ -23,7 +23,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$GLOBALS['memcached_servers'] = [ $host1, $host2 ];
 		$GLOBALS['wp_object_cache']   = $this->object_cache = new WP_Object_Cache(); // phpcs:ignore
 
-		if ( defined( 'AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) && AUTOMATTIC_MEMCACHED_USE_MEMCACHED_EXTENSION ) {
+		if ( defined( 'AUTOMATIC_MEMCACHED_USE_MEMCACHED_EXTENSION' ) && AUTOMATIC_MEMCACHED_USE_MEMCACHED_EXTENSION ) {
 			$this->is_using_memcached_ext = true;
 		}
 	}
@@ -253,7 +253,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 	public function test_get( $value ) {
 		$cache_key = $this->object_cache->key( 'key', 'default' );
 
-		// Not found intially.
+		// Not found initially.
 		$found = null;
 		self::assertFalse( $this->object_cache->get( 'key', 'default', false, $found ) );
 		self::assertFalse( $found );
@@ -330,7 +330,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 			$expected_second[ $key ] = $input_array[0];
 		}
 
-		// Each is not found intially.
+		// Each is not found initially.
 		self::assertEquals( $this->object_cache->get_multiple( $keys ), $expected_first );
 
 		// Will return from local cache if present.
@@ -350,8 +350,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		// Set values in remote memcached now, but clear out local cache before fetching.
 		$this->object_cache->set_multiple( $values );
 		$this->object_cache->flush_runtime();
-		$fetch_keys                          = array_merge( $keys, [ 'non-existant-key' ] );
-		$expected_second['non-existant-key'] = false;
+		$fetch_keys                          = array_merge( $keys, [ 'non-existent-key' ] );
+		$expected_second['non-existent-key'] = false;
 
 		self::assertEquals( $this->object_cache->get_multiple( $fetch_keys ), $expected_second );
 
@@ -364,17 +364,17 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 			] );
 		}
 
-		// As well as saved for the non-existant key.
-		$non_existant_cache_key = $this->object_cache->key( 'non-existant-key', 'default' );
-		self::assertEquals( $this->object_cache->cache[ $non_existant_cache_key ], [
+		// As well as saved for the non-existent key.
+		$non_existent_cache_key = $this->object_cache->key( 'non-existent-key', 'default' );
+		self::assertEquals( $this->object_cache->cache[ $non_existent_cache_key ], [
 			'value' => false,
 			'found' => false,
 		] );
 
 		// Ensure we still get an array if no keys are found.
-		self::assertEquals( $this->object_cache->get_multiple( [ 'non-existant-key2', 'non-existant-key3' ] ), [
-			'non-existant-key2' => false,
-			'non-existant-key3' => false,
+		self::assertEquals( $this->object_cache->get_multiple( [ 'non-existent-key2', 'non-existent-key3' ] ), [
+			'non-existent-key2' => false,
+			'non-existent-key3' => false,
 		] );
 
 		// Test super large multiGets that should be broken up into multiple batches.
@@ -447,9 +447,9 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 			$expected[ $cache_key ] = $input_array[0];
 		}
 
-		$non_existant_cache_key              = $this->object_cache->key( 'non-existant-key', 'default' );
-		$keys                                = array_merge( $keys, [ 'non-existant-key' ] );
-		$expected[ $non_existant_cache_key ] = false;
+		$non_existent_cache_key              = $this->object_cache->key( 'non-existent-key', 'default' );
+		$keys                                = array_merge( $keys, [ 'non-existent-key' ] );
+		$expected[ $non_existent_cache_key ] = false;
 
 		// Populate in memcached but flush local cache after.
 		$this->object_cache->set_multiple( $values );
@@ -517,8 +517,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertEquals( $this->object_cache->delete_multiple( $keys ), $expected_first );
 
 		// Now it can delete.
-		$keys                                = array_merge( $keys, [ 'non-existant-key' ] );
-		$expected_second['non-existant-key'] = false;
+		$keys                                = array_merge( $keys, [ 'non-existent-key' ] );
+		$expected_second['non-existent-key'] = false;
 		$this->object_cache->set_multiple( $values );
 		self::assertEquals( $this->object_cache->delete_multiple( $keys ), $expected_second );
 
@@ -554,8 +554,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertEquals( $this->object_cache->delete_multiple( $keys, $group ), $expected_first );
 
 		// Now it can delete.
-		$keys                                = array_merge( $keys, [ 'non-existant-key' ] );
-		$expected_second['non-existant-key'] = false;
+		$keys                                = array_merge( $keys, [ 'non-existent-key' ] );
+		$expected_second['non-existent-key'] = false;
 		$this->object_cache->set_multiple( $values, $group );
 		self::assertEquals( $this->object_cache->delete_multiple( $keys, $group ), $expected_second );
 

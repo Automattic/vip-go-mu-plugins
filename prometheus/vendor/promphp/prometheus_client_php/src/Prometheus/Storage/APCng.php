@@ -289,7 +289,7 @@ class APCng implements Adapter
      */
     public function wipeStorage(): void
     {
-        //                   /      / | PCRE expresion boundary
+        //                   /      / | PCRE expression boundary
         //                    ^       | match from first character only
         //                     %s:    | common prefix substitute with colon suffix
         //                        .+  | at least one additional character

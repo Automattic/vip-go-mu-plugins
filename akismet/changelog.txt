@@ -439,7 +439,7 @@ For the latest changes, please see the "Changelog" section of the [readme.txt fi
 * Purge old Akismet comment meta data, default of 15 days
 
 = 2.5.3 =
-*Release Date - 8th Febuary, 2011*
+*Release Date - 8th February, 2011*
 
 * Specify the license is GPL v2 or later
 * Fix a bug that could result in orphaned commentmeta entries

@@ -66,7 +66,7 @@ function wpcom_vip_available_post_listing_months( $months, $post_type ) {
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 	if ( isset( $_GET['post_status'] ) ) {
-		// Avoid interferring if user filtered by a particular post status.
+		// Avoid interfering if user filtered by a particular post status.
 		return false;
 	}
 

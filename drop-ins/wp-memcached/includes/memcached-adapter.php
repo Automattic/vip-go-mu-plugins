@@ -390,7 +390,7 @@ class Memcached_Adapter implements Adapter_Interface {
 		$default_port = 11211;
 
 		if ( 'unix://' == substr( $address, 0, 7 ) ) {
-			// Note: This slighly differs from the memcache adapater, as memcached wants unix:// stripped off.
+			// Note: This slightly differs from the memcache adapter, as memcached wants unix:// stripped off.
 			$host = substr( $address, 7 );
 			$port = 0;
 		} else {
@@ -475,7 +475,7 @@ class Memcached_Adapter implements Adapter_Interface {
 	}
 
 	/**
-	 * Reduce key lenths while providing a map of new_key => original_key.
+	 * Reduce key lengths while providing a map of new_key => original_key.
 	 *
 	 * @param string[] $keys
 	 * @psalm-return array<string, string>

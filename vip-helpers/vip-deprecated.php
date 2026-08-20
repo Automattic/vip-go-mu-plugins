@@ -65,7 +65,7 @@ function wpcom_vip_flaptor_related_posts( $max_num = 5, $additional_stopwords = 
  * Don't use for new projects, just use WPCOM_RelatedPosts directly, since it has hooks
  * like jetpack_relatedposts_filter_args, jetpack_relatedposts_filter_filters
  *
- * For backwards compatability, this function finds related posts on the current blog
+ * For backwards compatibility, this function finds related posts on the current blog
  * using Elasticsearch, then converts the results to match the original sphere results format.
  *
  * @deprecated No longer supported since VIP 2.0.0 - Use Jetpack Related Posts
@@ -779,7 +779,7 @@ function wpcom_vip_home_template_uri( $path ) {
  *
  * Internal wpcom function that's used by the wpcom-sitemap plugin
  *
- * Note: Not overrideable in production - this function exists solely for dev environment
+ * Note: Not overridable in production - this function exists solely for dev environment
  * compatibility. To set blog language, use the Dashboard UI.
  *
  * @deprecated Deprecated since 2.0.0
@@ -921,7 +921,7 @@ function wpcom_print_xml_tag( $array ) {
  * Convert an array to a SimpleXML child of the passed tree.
  *
  * @deprecated No longer supported since 2.0.0
- * @param array $data array containing element value pairs, including other arrays, for XML contruction
+ * @param array $data array containing element value pairs, including other arrays, for XML construction
  * @param SimpleXMLElement $tree A SimpleXMLElement class object used to attach new children
  * @return SimpleXMLElement full tree with new children mapped from array
  */
@@ -1302,7 +1302,7 @@ function wpcom_vip_load_geolocation_styles_only_when_needed() {
 }
 
 /**
- * Diables Instapost functionality
+ * Disables Instapost functionality
  *
  * @deprecated Not applicable since VIP 2.0.0
  */

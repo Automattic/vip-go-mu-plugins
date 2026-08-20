@@ -96,7 +96,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$integration->activate( [ 'config' => [ 'activate_config' ] ] );
 		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'integration-test.site/2' ] );
 		/**
-		 * Intgration Config Mock.
+		 * Integration Config Mock.
 		 *
 		 * @var IntegrationVipConfig|MockObject
 		 */

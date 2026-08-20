@@ -934,7 +934,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 		$user_id = get_current_user_id();
 
 		if ( ! empty( $q['post_status'] ) ) {
-			$status_ands = array();
+			$status_and = array();
 			$q_status    = $q['post_status'];
 			if ( ! is_array( $q_status ) ) {
 				$q_status = explode( ',', $q_status );
@@ -963,7 +963,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 			}
 
 			if ( ! empty( $e_status ) ) {
-				$status_ands[] = array(
+				$status_and[] = array(
 					'bool' => array(
 						'must_not' => $this->dsl_terms( $this->es_map( 'post_status' ), $e_status ),
 					),
@@ -971,7 +971,7 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 			}
 			if ( ! empty( $r_status ) ) {
 				if ( ! empty( $q['perm'] ) && 'editable' === $q['perm'] && ! current_user_can( $edit_others_cap ) ) {
-					$status_ands[] = array(
+					$status_and[] = array(
 						'bool' => array(
 							'filter' => array(
 								$this->dsl_terms( $this->es_map( 'post_author' ), $user_id ),
@@ -980,12 +980,12 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						),
 					);
 				} else {
-					$status_ands[] = $this->dsl_terms( $this->es_map( 'post_status' ), $r_status );
+					$status_and[] = $this->dsl_terms( $this->es_map( 'post_status' ), $r_status );
 				}
 			}
 			if ( ! empty( $p_status ) ) {
 				if ( ! empty( $q['perm'] ) && 'readable' === $q['perm'] && ! current_user_can( $read_private_cap ) ) {
-					$status_ands[] = array(
+					$status_and[] = array(
 						'bool' => array(
 							'filter' => array(
 								$this->dsl_terms( $this->es_map( 'post_author' ), $user_id ),
@@ -994,10 +994,10 @@ abstract class ES_WP_Query_Wrapper extends WP_Query {
 						),
 					);
 				} else {
-					$status_ands[] = $this->dsl_terms( $this->es_map( 'post_status' ), $p_status );
+					$status_and[] = $this->dsl_terms( $this->es_map( 'post_status' ), $p_status );
 				}
 			}
-			$filter = array_merge( $filter, $status_ands );
+			$filter = array_merge( $filter, $status_and );
 		} elseif ( ! $this->is_singular ) {
 			$singular_states = array( 'publish' );
 

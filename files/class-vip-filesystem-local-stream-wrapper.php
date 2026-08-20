@@ -498,7 +498,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * Write to a file
 	 *
 	 * @since   1.0.0
-	 * @accesss public
+	 * @access public
 	 *
 	 * @param   string      $data   The data to be written
 	 *

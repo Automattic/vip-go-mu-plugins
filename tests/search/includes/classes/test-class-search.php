@@ -1566,7 +1566,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * This tests the correct implementaton of the ep_$indexable_mapping filters, but note that these filters
+	 * This tests the correct implementation of the ep_$indexable_mapping filters, but note that these filters
 	 * operate on the mapping and settings together - EP doesn't yet distinguish between them
 	 */
 	public function test__filter__ep_indexable_mapping() {
@@ -2515,13 +2515,13 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function test__are_es_constants_defined__no_constatns() {
+	public function test__are_es_constants_defined__no_constants() {
 		$result = Search::are_es_constants_defined();
 
 		$this->assertFalse( $result );
 	}
 
-	public function test__are_es_constants_defined__all_constatns() {
+	public function test__are_es_constants_defined__all_constants() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );

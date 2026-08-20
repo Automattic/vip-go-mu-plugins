@@ -40,7 +40,7 @@ class Cache_Collector implements CollectorInterface {
 		if ( property_exists( $wp_object_cache, 'stats' ) && is_array( $wp_object_cache->stats ) ) {
 			$registry->getOrRegisterCounter(
 				'object_cache',
-				'oprations_total',
+				'operations_total',
 				'Number of operations',
 				[ 'site_id', 'operation' ]
 			);
