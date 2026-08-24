@@ -43,7 +43,18 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Check if the Gutenberg plugin is active.
 	 */
 	private function is_gutenberg_plugin_active(): bool {
-		return defined( 'IS_GUTENBERG_PLUGIN' ) && constant( 'IS_GUTENBERG_PLUGIN' );
+		if ( defined( 'IS_GUTENBERG_PLUGIN' ) && constant( 'IS_GUTENBERG_PLUGIN' ) ) {
+			return true;
+		}
+
+		$plugin_file = 'gutenberg/gutenberg.php';
+		$is_active   = in_array( $plugin_file, (array) get_option( 'active_plugins', [] ), true );
+		if ( ! $is_active && is_multisite() ) {
+			$network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', [] );
+			$is_active              = isset( $network_active_plugins[ $plugin_file ] );
+		}
+
+		return $is_active;
 	}
 
 	/**
