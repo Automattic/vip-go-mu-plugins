@@ -18,7 +18,7 @@ class Plugin {
 
 	const MAX_NETWORK_SITES = 50;
 
-	public static function get_instance(): static {
+	final public static function get_instance(): static {
 		if ( ! self::$instance ) {
 			self::$instance = new static();
 		}
