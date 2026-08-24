@@ -14,6 +14,7 @@ use Automattic\VIP\Prometheus\Filesystem_Stats_Collector;
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
 	require_once __DIR__ . '/prometheus/index.php';
+	require_once __DIR__ . '/lib/feature/class-feature.php';
 
 	$files = [
 		'/prometheus-collectors/class-cache-collector.php',
