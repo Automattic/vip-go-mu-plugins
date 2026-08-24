@@ -1,6 +1,0 @@
-{
-    "*.php": [
-        "phplint",
-        "vendor/bin/phpcs"
-    ]
-}

@@ -1,22 +1,38 @@
 {
-    "require-dev": {
-        "phpunit/phpunit": "9.6.33",
-        "automattic/vipwpcs": "3.0.1",
-        "phpcompatibility/phpcompatibility-wp": "2.1.8",
-        "erusev/parsedown": "1.8.0",
-        "dms/phpunit-arraysubset-asserts": "0.5.0",
-        "yoast/phpunit-polyfills": "4.0.0",
-        "johnpbloch/wordpress-core": "7.0.0",
-        "wp-phpunit/wp-phpunit": "7.0.0",
-        "wp-cli/wp-cli": "2.12.0"
+    "name": "automattic/wp-cache-memcached",
+    "description": "Memcached Object Cache for WordPress",
+    "type": "wordpress-dropin",
+    "require": {
+        "php": ">= 7.4"
     },
+    "require-dev": {
+        "automattic/vipwpcs": "^3.1",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.2",
+        "phpcompatibility/phpcompatibility-wp": "^2.1",
+        "phpunit/phpunit": "^9.5",
+        "vimeo/psalm": "^5.0",
+        "wp-phpunit/wp-phpunit": "^6.1",
+        "yoast/phpunit-polyfills": "^1.1"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Volodymyr Kolesnykov",
+            "email": "volodymyr@wildwolf.name"
+        }
+    ],
     "config": {
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        },
         "sort-packages": true,
         "platform": {
-            "php": "8.0"
+            "php": "7.4"
+        },
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
+    },
+    "scripts": {
+        "phpcs": "phpcs",
+        "phpcs:fix": "phpcbf",
+        "psalm": "psalm"
     }
 }

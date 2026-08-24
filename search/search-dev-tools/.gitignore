@@ -1,6 +1,0 @@
-node_modules
-/build/*.json
-/build/*.map
-/build/*.html
-/*.log
-size-plugin.json

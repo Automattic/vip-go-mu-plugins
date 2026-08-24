@@ -70,6 +70,8 @@ echo "Will test with WP_VERSION=${WP_VERSION} and WP_MULTISITE=${WP_MULTISITE}"
 echo "--------------"
 echo
 
+MARIADB_VERSION="10.3"
+
 UUID=$(date +%s000)
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
@@ -85,16 +87,29 @@ export MYSQL_DATABASE=wordpress_test
 db=""
 if [ -z "${MYSQL_HOST_OVERRIDE}" ]; then
     MYSQL_HOST="db-${UUID}"
-    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MYSQL_INITDB_SKIP_TZINFO=1 -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mysql:8")
+    db=$(docker run --rm --network "${NETWORK_NAME}" --name "${MYSQL_HOST}" -e MYSQL_ROOT_PASSWORD="wordpress" -e MARIADB_INITDB_SKIP_TZINFO=1 -e MYSQL_USER -e MYSQL_PASSWORD -e MYSQL_DATABASE -d "mariadb:${MARIADB_VERSION}")
 else
     MYSQL_HOST="${MYSQL_HOST_OVERRIDE}"
 fi
 
 export MYSQL_HOST
 
+export MEMCACHED_HOST_1="mc1-${UUID}"
+export MEMCACHED_HOST_2="mc2-${UUID}"
+mc1=$(docker run --rm --network "${NETWORK_NAME}" --name "${MEMCACHED_HOST_1}" -d memcached:latest)
+mc2=$(docker run --rm --network "${NETWORK_NAME}" --name "${MEMCACHED_HOST_2}" -d memcached:latest)
+
 cleanup() {
     if [ -n "${db}" ]; then
         docker rm -f "${db}"
+    fi
+
+    if [ -n "${mc1}" ]; then
+        docker rm -f "${mc1}"
+    fi
+
+    if [ -n "${mc2}" ]; then
+        docker rm -f "${mc2}"
     fi
 
     if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
@@ -104,7 +119,7 @@ cleanup() {
 
 trap cleanup EXIT
 
-if [ -z "${CI}" ] && [ -t 0 ] && [ -t 1 ]; then
+if [ -z "${CI}" ]; then
     interactive="-it"
 else
     interactive=""
@@ -124,9 +139,9 @@ docker run \
     -e MYSQL_PASSWORD \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
-    -e DISABLE_XDEBUG=1 \
-    -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
-    -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
+    -e XDEBUG_MODE=coverage \
+    -e MEMCACHED_HOST_1="${MEMCACHED_HOST_1}:11211" \
+    -e MEMCACHED_HOST_2="${MEMCACHED_HOST_2}:11211" \
     ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
