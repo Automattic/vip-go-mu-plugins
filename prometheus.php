@@ -1,15 +1,16 @@
 <?php
+
 use Automattic\VIP\Feature;
 use Automattic\VIP\Prometheus\APCu_Collector;
 use Automattic\VIP\Prometheus\Cache_Collector;
 use Automattic\VIP\Prometheus\Login_Stats_Collector;
 use Automattic\VIP\Prometheus\OpCache_Collector;
-use Automattic\VIP\Prometheus\Post_Stats_Collector;
 use Automattic\VIP\Prometheus\User_Stats_Collector;
 use Automattic\VIP\Prometheus\Error_Stats_Collector;
 use Automattic\VIP\Prometheus\Potential_Multi_Dataset_Queries_Collector;
 use Automattic\VIP\Prometheus\Multisite_Stats_Collector;
 use Automattic\VIP\Prometheus\Filesystem_Stats_Collector;
+
 // @codeCoverageIgnoreStart -- this file is loaded before tests start
 if ( defined( 'ABSPATH' ) ) {
 	require_once __DIR__ . '/prometheus/index.php';
