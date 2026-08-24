@@ -93,6 +93,12 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_c
 	}
 }
 
+// Enable the Potential Multi Dataset Queries Prometheus Collector
+// This is a temporary measure to help us identify sites that are using multi dataset queries
+if ( ! defined( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) && defined( 'VIP_ENV_VAR_VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) && constant( 'VIP_ENV_VAR_VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED' ) === 'true' ) {
+	define( 'VIP_POTENTIAL_MULTI_DATASET_QUERIES_COLLECTOR_ENABLED', true );
+}
+
 // Stats collection
 require_once __DIR__ . '/prometheus.php';
 
