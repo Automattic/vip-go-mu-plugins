@@ -10,7 +10,7 @@ use Automattic\Memcached\Stats;
 class WP_Object_Cache {
 	public string $flush_group        = 'WP_Object_Cache';
 	public string $global_flush_group = 'WP_Object_Cache_global';
-	public string $flush_key          = 'flush_number_v5';
+	public string $flush_key          = 'flush_number_v4';
 
 	/**
 	 * Keep track of flush numbers.
@@ -132,8 +132,7 @@ class WP_Object_Cache {
 	 * @return bool True on success, false on failure or if cache key and group already exist.
 	 */
 	public function add( $key, $data, $group = 'default', $expire = 0 ) {
-		$is_alloptions = 'alloptions' === $key && 'options' === $group;
-		$key           = $this->key( $key, $group );
+		$key = $this->key( $key, $group );
 
 		if ( is_object( $data ) ) {
 			$data = clone $data;
@@ -173,21 +172,6 @@ class WP_Object_Cache {
 		}
 
 		$this->group_ops_stats( 'add', $key, $group, $size, $elapsed, $comment );
-
-		// Special handling for alloptions on WP < 6.2 (before pre_wp_load_alloptions filter).
-		// A) If the add() fails,
-		if ( false === $result && $is_alloptions && version_compare( $GLOBALS['wp_version'], '6.2', '<' ) ) {
-			// B) And there is still nothing retrieved with a remote get(),
-			if ( false === $this->get( 'alloptions', 'options', true ) ) {
-				// C) Then we'll keep the fresh value in the runtime cache to help keep performance stable.
-				$this->cache[ $key ] = [
-					'value' => $data,
-					'found' => false,
-				];
-			}
-
-			return $result;
-		}
 
 		if ( $result ) {
 			$this->cache[ $key ] = [
@@ -662,6 +646,7 @@ class WP_Object_Cache {
 	 * @param string $_group Name of group to remove from cache.
 	 * @return bool Returns false, as there is no support for group flushes.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by the WordPress object cache API.
 	public function flush_group( $_group ) {
 		return false;
 	}
@@ -953,9 +938,8 @@ class WP_Object_Cache {
 		);
 
 		// Spaces in cache keys are expected in the user bucket, but Memcache doesn't like them.
-		// Escape literal percent signs first so user keys cannot collide with the %SP% marker.
-		$result = str_replace( '%', '%25', $result );
-		return preg_replace( '/\\s/', '%SP%', $result );
+		// Use %SP% as a placeholder so two user caches do not collide.
+		return preg_replace( '/\\s+/', '%SP%', $result );
 	}
 
 	/**

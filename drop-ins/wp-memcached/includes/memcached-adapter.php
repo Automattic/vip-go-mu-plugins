@@ -192,7 +192,7 @@ class Memcached_Adapter implements Adapter_Interface {
 			// So instead we'll chunk up and send multiple reasonably-sized requests.
 			$chunked_keys = array_chunk( $mapped_keys, 1000, true );
 
-			foreach( $chunked_keys as $chunk_of_keys ) {
+			foreach ( $chunked_keys as $chunk_of_keys ) {
 				/** @psalm-var array<string, mixed>|false $partial_results */
 				$partial_results = $mc->getMulti( array_keys( $chunk_of_keys ) );
 
