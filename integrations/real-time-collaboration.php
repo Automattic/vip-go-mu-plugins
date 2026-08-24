@@ -18,7 +18,7 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Version of the vip-real-time-collaboration plugin to load.
 	 * Used to control staged rollouts (e.g., staging gets new version first).
 	 */
-	const VIP_RTC_PLUGIN_VERSION = '0.4';
+	const VIP_RTC_PLUGIN_VERSION = '0.5';
 
 	/**
 	 * Version of the Gutenberg plugin to load.
