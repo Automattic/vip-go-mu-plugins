@@ -12,6 +12,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
@@ -275,46 +277,30 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $integration_mock->is_active() );
 	}
 
-	public function test_load_sets_inactive_when_gutenberg_plugin_activated(): void {
+	public function test_can_load_returns_false_when_gutenberg_plugin_activated(): void {
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
 		update_option( 'active_plugins', [ 'gutenberg/gutenberg.php' ] );
 
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
-			->getMock();
+		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
+		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
 
-		$integration_mock->method( 'is_loaded' )->willReturn( false );
-
-		$integration_mock->load();
-
-		// Trigger the plugins_loaded action to execute the closure
-		do_action( 'plugins_loaded' );
-
-		$this->assertFalse( $integration_mock->is_active() );
+		$this->assertFalse( $can_load->invoke( $rtc_integration ) );
 	}
 
-	public function test_load_sets_inactive_when_gutenberg_plugin_network_activated(): void {
+	public function test_can_load_returns_false_when_gutenberg_plugin_network_activated(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Network activation is only available in multisite.' );
+		}
+
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		update_site_option( 'active_sitewide_plugins', [ 'gutenberg/gutenberg.php' => time() ] );
+		update_site_option( 'active_sitewide_plugins', [ 'gutenberg/gutenberg.php' => 1 ] );
 
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
-			->getMock();
+		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
+		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
 
-		$integration_mock->method( 'is_loaded' )->willReturn( false );
-
-		$integration_mock->load();
-
-		// Trigger the plugins_loaded action to execute the closure
-		do_action( 'plugins_loaded' );
-
-		$this->assertFalse( $integration_mock->is_active() );
+		$this->assertFalse( $can_load->invoke( $rtc_integration ) );
 	}
 
 	public function test_load_sets_inactive_when_gutenberg_file_missing(): void {
