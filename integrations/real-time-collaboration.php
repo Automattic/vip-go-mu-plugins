@@ -48,16 +48,13 @@ class RealTimeCollaborationIntegration extends Integration {
 		}
 
 		$plugin_file = 'gutenberg/gutenberg.php';
-		if ( in_array( $plugin_file, (array) get_option( 'active_plugins', [] ), true ) ) {
-			return true;
+		$is_active   = in_array( $plugin_file, (array) get_option( 'active_plugins', [] ), true );
+		if ( ! $is_active && is_multisite() ) {
+			$network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', [] );
+			$is_active              = isset( $network_active_plugins[ $plugin_file ] );
 		}
 
-		if ( ! is_multisite() ) {
-			return false;
-		}
-
-		$network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', [] );
-		return isset( $network_active_plugins[ $plugin_file ] );
+		return $is_active;
 	}
 
 	/**
