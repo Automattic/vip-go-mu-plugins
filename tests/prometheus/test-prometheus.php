@@ -67,6 +67,12 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertNull( $first );
 		self::assertInstanceOf( RegistryInterface::class, $second );
 		self::assertSame( $second, $third );
+
+		$plugin->clear_instance();
+		$plugin->init_registry();
+		$fourth = $plugin->get_registry();
+
+		self::assertNotSame( $second, $fourth );
 	}
 
 	public function test_collectors_filter_wrong_return_type(): void {
