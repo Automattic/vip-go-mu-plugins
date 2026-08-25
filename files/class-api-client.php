@@ -21,6 +21,14 @@ function new_api_client() {
 class API_Client {
 	const DEFAULT_REQUEST_TIMEOUT = 10;
 
+	/**
+	 * A download moving slower than this for DOWNLOAD_STALL_TIMEOUT seconds is
+	 * treated as stalled and aborted, so a dead connection does not hold the
+	 * request open for the whole download timeout.
+	 */
+	const DOWNLOAD_MIN_BYTES_PER_SECOND = 1024;
+	const DOWNLOAD_STALL_TIMEOUT        = 30;
+
 	private $user_agent;
 	private $api_base;
 	private $files_site_id;
@@ -100,6 +108,40 @@ class API_Client {
 		return $response;
 	}
 
+	/**
+	 * Make a request with extra cURL options applied to that request only.
+	 *
+	 * WordPress exposes no argument for arbitrary cURL options, so they have to be
+	 * attached through the global `http_api_curl` hook. That hook stays registered
+	 * until it is removed, so the removal must survive an exception; otherwise the
+	 * options would leak onto every later outbound request in this PHP request.
+	 *
+	 * @param string $path         Files Service path.
+	 * @param string $method       HTTP method.
+	 * @param array  $request_args Arguments for wp_remote_request().
+	 * @param array  $curl_options CURLOPT_* constant => value. An empty array skips the hook.
+	 * @return array|\WP_Error
+	 */
+	private function call_api_with_curl_options( $path, $method, $request_args, array $curl_options ) {
+		if ( empty( $curl_options ) ) {
+			return $this->call_api( $path, $method, $request_args );
+		}
+
+		$apply_options = function ( $curl_handle ) use ( $curl_options ) {
+			foreach ( $curl_options as $option => $value ) {
+				// phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_setopt -- WordPress has no argument for these.
+				curl_setopt( $curl_handle, $option, $value );
+			}
+		};
+
+		add_action( 'http_api_curl', $apply_options );
+		try {
+			return $this->call_api( $path, $method, $request_args );
+		} finally {
+			remove_action( 'http_api_curl', $apply_options );
+		}
+	}
+
 	public function upload_file( $local_path, $upload_path ) {
 		if ( ! file_exists( $local_path ) ) {
 			/* translators: 1: local file path 2: remote upload path */
@@ -114,21 +156,26 @@ class API_Client {
 		$file_size = filesize( $local_path );
 		$file_mime = self::detect_mime_type( $local_path );
 
-		$request_timeout = $this->calculate_upload_timeout( $file_size );
+		$request_timeout = $this->calculate_transfer_timeout( $file_size );
 
 		$curl_streamer = new Curl_Streamer( $local_path );  // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_streamer
 		$curl_streamer->init();
-
-		$response = $this->call_api( $upload_path, 'PUT', [
-			'headers' => [
-				'Content-Type'   => $file_mime,
-				'Content-Length' => $file_size,
-				'Connection'     => 'Keep-Alive',
-			],
-			'timeout' => $request_timeout,
-		] );
-
-		$curl_streamer->deinit();
+		try {
+			// `init()` registers a global `http_api_curl` callback that attaches this
+			// file as the request body. If an exception escaped before `deinit()`, that
+			// callback would stay registered and stream this file into every later
+			// outbound request in the same PHP request.
+			$response = $this->call_api( $upload_path, 'PUT', [
+				'headers' => [
+					'Content-Type'   => $file_mime,
+					'Content-Length' => $file_size,
+					'Connection'     => 'Keep-Alive',
+				],
+				'timeout' => $request_timeout,
+			] );
+		} finally {
+			$curl_streamer->deinit();
+		}
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -156,17 +203,43 @@ class API_Client {
 		// save to cache
 		$this->cache->copy_to_cache( $response_data->filename, $local_path );
 
-		// Reset file stats cache, if any.
-		// Note: the ltrim is because we store the path without the leading slash but the API returns the path with it.
-		$this->cache->remove_stats( ltrim( $response_data->filename, '/' ) );
+		if ( isset( $response_data->mtime, $response_data->size ) ) {
+			$this->cache->cache_file_stats( $response_data->filename, [
+				'mtime' => (int) $response_data->mtime,
+				'size'  => (int) $response_data->size,
+			] );
+		} else {
+			// Older Files Service versions do not return metadata after an upload.
+			$this->cache->remove_stats( $response_data->filename );
+		}
 
 		return $response_data->filename;
 	}
 
-	private function calculate_upload_timeout( $file_size ) {
-		// Uploads take longer so we need a custom timeout.
+	private function calculate_transfer_timeout( $file_size ) {
+		// Transfers take longer than metadata calls so we need a custom timeout.
 		// Use default timeout plus 1 second per 500kb.
 		return self::DEFAULT_REQUEST_TIMEOUT + intval( $file_size / ( 500 * KB_IN_BYTES ) );
+	}
+
+	/**
+	 * Size the download timeout from what we already know about the file.
+	 *
+	 * A download reports its size only once the response arrives, so there is
+	 * nothing to scale from on a cold read. Reuse a cached size when a previous
+	 * stat or read supplied one, and otherwise allow what the largest permitted
+	 * upload would get. The stall guard aborts a dead connection in seconds, so
+	 * this ceiling only ever applies to a transfer that is still making progress.
+	 */
+	private function calculate_download_timeout( $file_path ) {
+		$stats_found = false;
+		$stats       = $this->cache->get_file_stats( $file_path, $stats_found );
+
+		if ( $stats_found && is_array( $stats ) && isset( $stats['size'] ) ) {
+			return $this->calculate_transfer_timeout( (int) $stats['size'] );
+		}
+
+		return $this->calculate_transfer_timeout( (int) wp_max_upload_size() );
 	}
 
 	private static function detect_mime_type( string $filename ): string {
@@ -201,26 +274,16 @@ class API_Client {
 			return $file;
 		}
 
-		// calculate timeout
-		$info     = array();
-		$response = $this->is_file( $file_path, $info );
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		if ( false === $response ) {
-			/* translators: 1: file path */
-			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
-		}
-
-		$request_timeout = $this->calculate_upload_timeout( $info['size'] ?? 0 );
-		$tmp_file        = $this->cache->create_tmp_file();
+		$tmp_file = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
+		// A separate `file_exists` request used to run first, both to detect a missing
+		// file and to size the timeout. The download reports both by itself, so asking
+		// twice only added a round trip to every cold read.
 		$request_args = [
 			'stream'   => true,
 			'filename' => $tmp_file,
-			'timeout'  => $request_timeout,
+			'timeout'  => $this->calculate_download_timeout( $file_path ),
 		];
 
 		// Prevent webp => jpg transform from running
@@ -230,8 +293,17 @@ class API_Client {
 			];
 		}
 
+		// The timeout above is a ceiling sized for the largest uploads. On its own it
+		// would also keep a stalled download open for that whole ceiling, so pair it
+		// with a minimum transfer rate that aborts a dead connection in seconds.
+		$curl_options = [];
+		if ( defined( 'CURLOPT_LOW_SPEED_LIMIT' ) && defined( 'CURLOPT_LOW_SPEED_TIME' ) ) {
+			$curl_options[ CURLOPT_LOW_SPEED_LIMIT ] = self::DOWNLOAD_MIN_BYTES_PER_SECOND;
+			$curl_options[ CURLOPT_LOW_SPEED_TIME ]  = self::DOWNLOAD_STALL_TIMEOUT;
+		}
+
 		// not in cache so get from API
-		$response = $this->call_api( $file_path, 'GET', $request_args );
+		$response = $this->call_api_with_curl_options( $file_path, 'GET', $request_args, $curl_options );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -239,12 +311,25 @@ class API_Client {
 
 		$response_code = wp_remote_retrieve_response_code( $response );
 		if ( 404 === $response_code ) {
+			// Remember the absence so a later existence check costs nothing.
+			$this->cache->cache_file_stats( $file_path, false );
 			/* translators: 1: file path */
 			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
 		} elseif ( 200 !== $response_code ) {
 			/* translators: 1: file path 2: HTTP status code */
 			return new WP_Error( 'get_file-failed', sprintf( __( 'Failed to get file `%1$s` (response code: %2$d)' ), $file_path, $response_code ) );
 		}
+
+		// Derive the metadata from the download instead of asking for it separately.
+		// The downloaded file is authoritative for size: Content-Length can describe
+		// the encoded transfer rather than the bytes written to disk.
+		clearstatcache( false, $tmp_file );
+		$last_modified = wp_remote_retrieve_header( $response, 'last-modified' );
+		$mtime         = $last_modified ? strtotime( $last_modified ) : false;
+		$this->cache->cache_file_stats( $file_path, [
+			'size'  => (int) filesize( $tmp_file ),
+			'mtime' => false !== $mtime ? $mtime : (int) filemtime( $tmp_file ),
+		] );
 
 		// save to cache
 		$this->cache->cache_file( $file_path, $tmp_file );
@@ -254,6 +339,9 @@ class API_Client {
 
 	public function get_file_content( $file_path ) {
 		$file = $this->get_file( $file_path );
+		if ( is_wp_error( $file ) ) {
+			return $file;
+		}
 
 		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- the file is local
 		return file_get_contents( $file );
@@ -275,6 +363,7 @@ class API_Client {
 		}
 
 		$this->cache->remove_file( $file_path );
+		$this->cache->cache_file_stats( $file_path, false );
 
 		return true;
 	}
@@ -286,8 +375,13 @@ class API_Client {
 	 */
 	public function is_file( $file_path, &$info = null ) {
 		// check in cache first
-		$stats = $this->cache->get_file_stats( $file_path );
-		if ( $stats ) {
+		$stats_found = false;
+		$stats       = $this->cache->get_file_stats( $file_path, $stats_found );
+		if ( $stats_found && false === $stats ) {
+			return false;
+		}
+
+		if ( $stats_found && ! empty( $stats ) ) {
 			$info = $stats;
 			return true;
 		}
@@ -314,6 +408,7 @@ class API_Client {
 
 			return true;
 		} elseif ( 404 === $response_code ) {
+			$this->cache->cache_file_stats( $file_path, false );
 			return false;
 		}
 

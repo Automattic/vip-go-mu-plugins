@@ -59,60 +59,79 @@ class API_Cache {
 	}
 
 	public function get_file( $filepath ) {
-		if ( isset( $this->files[ $filepath ] ) ) {
-			return $this->files[ $filepath ];
+		$cache_key = $this->normalize_path( $filepath );
+
+		if ( isset( $this->files[ $cache_key ] ) ) {
+			return $this->files[ $cache_key ];
 		}
 
 		return false;
 	}
 
-	public function get_file_stats( $filepath ) {
-		if ( isset( $this->file_stats[ $filepath ] ) ) {
-			return $this->file_stats[ $filepath ];
+	/**
+	 * @param string    $filepath File Service path.
+	 * @param bool|null $found    Set to true when the cache contains a positive or negative entry.
+	 * @return array|false Cached stats, or false for a missing file/cache entry.
+	 */
+	public function get_file_stats( $filepath, &$found = null ) {
+		$cache_key = $this->normalize_path( $filepath );
+
+		if ( array_key_exists( $cache_key, $this->file_stats ) ) {
+			$found = true;
+			return $this->file_stats[ $cache_key ];
 		}
 
+		$found = false;
 		return false;
 	}
 
 	public function cache_file( $filepath, $local_file ) {
-		$this->files[ $filepath ] = $local_file;
+		$this->files[ $this->normalize_path( $filepath ) ] = $local_file;
 	}
 
 	public function cache_file_stats( $filepath, $info ) {
 		// This will overwrite existing stats if any
-		$this->file_stats[ $filepath ] = $info;
+		$this->file_stats[ $this->normalize_path( $filepath ) ] = $info;
 	}
 
 	public function copy_to_cache( $dst, $src ) {
-		if ( ! isset( $this->files[ $dst ] ) ) {
+		$cache_key = $this->normalize_path( $dst );
+
+		if ( ! isset( $this->files[ $cache_key ] ) ) {
 			// create file with unique filename
 			$tmp_file = $this->create_tmp_file();
 
-			$this->files[ $dst ] = $tmp_file;
+			$this->files[ $cache_key ] = $tmp_file;
 		}
 
 		// This will overwrite existing file if any
-		copy( $src, $this->files[ $dst ] );
+		copy( $src, $this->files[ $cache_key ] );
 	}
 
 	public function remove_file( $filepath ) {
-		if ( isset( $this->files[ $filepath ] ) ) {
+		$cache_key = $this->normalize_path( $filepath );
+
+		if ( isset( $this->files[ $cache_key ] ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
-			unlink( $this->files[ $filepath ] );
-			unset( $this->files[ $filepath ] );
+			unlink( $this->files[ $cache_key ] );
+			unset( $this->files[ $cache_key ] );
 		}
 
 		// Remove cached stats too if any
-		unset( $this->file_stats[ $filepath ] );
+		unset( $this->file_stats[ $cache_key ] );
 	}
 
 	public function remove_stats( $filepath ) {
 		// Remove cached stats if any
-		unset( $this->file_stats[ $filepath ] );
+		unset( $this->file_stats[ $this->normalize_path( $filepath ) ] );
 	}
 
 	public function create_tmp_file() {
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
 		return tempnam( $this->tmp_dir, 'vip' );
+	}
+
+	private function normalize_path( $filepath ) {
+		return '/' . ltrim( $filepath, '/\\' );
 	}
 }

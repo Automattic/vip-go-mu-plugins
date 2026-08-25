@@ -180,6 +180,69 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$this->assertFalse( $tmp_file_exists, 'Temp file was not deleted' );
 	}
 
+	public function test__size_uses_file_stats_without_downloading_contents() {
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( '/wp-content/uploads/large-file.zip', $this->anything() )
+			->willReturnCallback( function ( $path, &$info ) {
+				$info = [
+					'mtime' => 1234567890,
+					'size'  => 1073741824,
+				];
+
+				return true;
+			} );
+
+		$this->api_client_mock
+			->expects( self::never() )
+			->method( 'get_file_content' );
+
+		$this->assertSame( 1073741824, $this->filesystem->size( '/tmp/uploads/large-file.zip' ) );
+	}
+
+	public function test__mtime_uses_file_stats_without_downloading_contents() {
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( '/wp-content/uploads/file.jpg', $this->anything() )
+			->willReturnCallback( function ( $path, &$info ) {
+				$info = [
+					'mtime' => 1234567890,
+					'size'  => 123,
+				];
+
+				return true;
+			} );
+
+		$this->api_client_mock
+			->expects( self::never() )
+			->method( 'get_file_content' );
+
+		$this->assertSame( 1234567890, $this->filesystem->mtime( '/tmp/uploads/file.jpg' ) );
+	}
+
+	public function test__exists_returns_false_and_preserves_api_error() {
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( '/wp-content/uploads/file.jpg', $this->anything() )
+			->willReturn( new WP_Error( 'files-api-unavailable', 'Files API unavailable' ) );
+
+		$this->assertFalse( $this->filesystem->exists( '/tmp/uploads/file.jpg' ) );
+		$this->assertSame( 'files-api-unavailable', $this->filesystem->errors->get_error_code() );
+	}
+
+	public function test__is_file_checks_extensionless_files_with_the_api() {
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'is_file' )
+			->with( '/wp-content/uploads/README', $this->anything() )
+			->willReturn( false );
+
+		$this->assertFalse( $this->filesystem->is_file( '/tmp/uploads/README' ) );
+	}
+
 	public function get_test_data__is_dir() {
 		return [
 			'file'                          => [

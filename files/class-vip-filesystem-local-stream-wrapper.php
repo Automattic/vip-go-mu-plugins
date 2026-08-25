@@ -227,6 +227,9 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				return false;
 			}
 
+			$this->mode               = $mode;
+			$this->should_flush_empty = false;
+
 			return true;
 		}
 
@@ -240,23 +243,29 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		try {
-			$result = $this->client->get_file( $path );
-
-			if ( is_wp_error( $result ) ) {
-				if ( 'file-not-found' !== $result->get_error_code() || 'r' === $mode ) {
-					trigger_error(
-						sprintf( 'stream_open/get_file failed for %s with error: %s #vip-go-streams', esc_html( $path ), esc_html( $result->get_error_message() ) ),
-						E_USER_WARNING
-					);
-
-					return false;
-				}
-
-				// File doesn't exist on File service so create new file
+			// Write mode truncates the file, so fetching its previous contents only adds
+			// network latency and memory/disk I/O without affecting the result.
+			if ( 'w' === $mode ) {
 				$file = $this->string_to_resource( '', $mode );
 			} else {
-				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-				$file = fopen( $result, $mode );
+				$result = $this->client->get_file( $path );
+
+				if ( is_wp_error( $result ) ) {
+					if ( 'file-not-found' !== $result->get_error_code() || 'r' === $mode ) {
+						trigger_error(
+							sprintf( 'stream_open/get_file failed for %s with error: %s #vip-go-streams', esc_html( $path ), esc_html( $result->get_error_message() ) ),
+							E_USER_WARNING
+						);
+
+						return false;
+					}
+
+					// File doesn't exist on File service so create new file
+					$file = $this->string_to_resource( '', $mode );
+				} else {
+					// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
+					$file = fopen( $result, $mode );
+				}
 			}
 
 			// Get meta data
@@ -301,6 +310,11 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		if ( static::is_local_file( $this->uri ) && $this->handle ) {
 			$result       = fclose( $this->handle );
 			$this->handle = null;
+			$this->path   = null;
+			$this->uri    = null;
+			$this->mode   = null;
+
+			return $result;
 		}
 
 		// Don't attempt to flush new file when in read mode
@@ -381,6 +395,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public function stream_flush() {
 		$this->debug( sprintf( 'stream_flush =>  %s + %s', $this->path, $this->uri ) );
 
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
+			return fflush( $this->handle );
+		}
+
 		if ( ! $this->file ) {
 			return false;
 		}
@@ -440,6 +458,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 */
 	public function stream_seek( $offset, $whence ) {
 		$this->debug( sprintf( 'stream_seek =>  %s + %s + %s + %s', $offset, $whence, $this->path, $this->uri ) );
+
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
+			return 0 === fseek( $this->handle, $offset, $whence );
+		}
 
 		if ( ! $this->seekable ) {
 			// File not seekable
@@ -715,6 +737,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public function stream_tell() {
 		$this->debug( sprintf( 'stream_tell =>  %s + %s', $this->path, $this->uri ) );
 
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
+			return ftell( $this->handle );
+		}
+
 		return $this->file ? ftell( $this->file ) : false;
 	}
 
@@ -763,39 +789,27 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				return false;
 			}
 
-			// Read content from local file
-			$content = file_get_contents( $local_from );
-			if ( false === $content ) {
-				return false;
-			}
-
 			// Trim the destination path
 			$path_to = $this->trim_path( $path_to );
 
-			// Create a temporary file with the content
-			$tmp_file = tmpfile();
-			fwrite( $tmp_file, $content );
-			rewind( $tmp_file );
-
-			// Write content to remote file
-			$result = $this->client->upload_file( $tmp_file, $path_to );
-
-			// Close the temporary file
-			fclose( $tmp_file );
-
-			// If successful, delete the local file
-			if ( $result ) {
-				unlink( $local_from );
+			// Upload the local file directly. Creating another in-memory copy is both
+			// unnecessary and invalid because API_Client expects a filename.
+			$result = $this->client->upload_file( $local_from, $path_to );
+			if ( is_wp_error( $result ) || false === $result ) {
+				return false;
 			}
 
-			return $result;
+			// If successful, delete the local file
+			unlink( $local_from );
+
+			return true;
 		} elseif ( ! $from_is_local && $to_is_local ) { // Source is not local but destination.
 			// Trim the source path
 			$path_from = $this->trim_path( $path_from );
 
-			// Get content from remote file
-			$content = $this->client->get_file( $path_from );
-			if ( false === $content ) {
+			// Download to the API client's local cache file.
+			$local_source = $this->client->get_file( $path_from );
+			if ( is_wp_error( $local_source ) || false === $local_source ) {
 				return false;
 			}
 
@@ -808,11 +822,15 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				\wp_mkdir_p( $dir );
 			}
 
-			$result = file_put_contents( $local_to, $content ) !== false;
+			$result = copy( $local_source, $local_to );
 
 			// If successful, delete the remote file
 			if ( $result ) {
-				$this->client->delete_file( $path_from );
+				$deleted = $this->client->delete_file( $path_from );
+				if ( is_wp_error( $deleted ) || false === $deleted ) {
+					unlink( $local_to );
+					return false;
+				}
 			}
 
 			return $result;
@@ -953,6 +971,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 */
 	public function stream_cast( $cast_as ) {
 		$this->debug( sprintf( 'stream_cast =>  %s + %s + %s', $cast_as, $this->path, $this->uri ) );
+
+		if ( static::is_local_file( $this->uri ) && $this->handle ) {
+			return $this->handle;
+		}
 
 		if ( ! is_null( $this->file ) ) {
 			return $this->file;
