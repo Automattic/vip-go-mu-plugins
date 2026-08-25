@@ -55,6 +55,20 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertIsArray( $plugin->get_collectors() );
 	}
 
+	public function test_double_init(): void {
+		$plugin = Plugin_Helper::get_instance();
+
+		$first = $plugin->get_registry();
+		$plugin->init_registry();
+		$second = $plugin->get_registry();
+		$plugin->init_registry();
+		$third = $plugin->get_registry();
+
+		self::assertNull( $first );
+		self::assertInstanceOf( RegistryInterface::class, $second );
+		self::assertSame( $second, $third );
+	}
+
 	public function test_collectors_filter_wrong_return_type(): void {
 		$plugin = Plugin_Helper::get_instance();
 
