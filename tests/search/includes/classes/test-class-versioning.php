@@ -1711,7 +1711,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		/** @var MockObject&Versioning */
 		$partially_mocked_versioning = $this->getMockBuilder( Versioning::class )
-			->onlyMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accesible_indicies' ] )
+			->onlyMethods( [ 'get_versions', 'reconstruct_versions_for_indexable', 'get_all_accessible_indices' ] )
 			->getMock();
 
 		$partially_mocked_versioning
@@ -1729,7 +1729,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$partially_mocked_versioning->maybe_self_heal();
 	}
 
-	public function get_all_accesible_indicies_data() {
+	public function get_all_accessible_indices_data() {
 		return [
 			[
 				new WP_Error( 'Test Error' ),
@@ -1737,7 +1737,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			],
 			[
 				[ 'response' => [ 'code' => 500 ] ],
-				new WP_Error( 'failed-to-fetch-indicies', 'Request failed to fetch indicies with status 500' ),
+				new WP_Error( 'failed-to-fetch-indices', 'Request failed to fetch indices with status 500' ),
 			],
 			[
 				[
@@ -1764,9 +1764,9 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider get_all_accesible_indicies_data
+	 * @dataProvider get_all_accessible_indices_data
 	 */
-	public function test__get_all_accesible_indicies( $response, $expected ) {
+	public function test__get_all_accessible_indices( $response, $expected ) {
 		$es_mock = $this->getMockBuilder( Elasticsearch::class )
 			->onlyMethods( [ 'remote_request' ] )
 			->getMock();
@@ -1777,7 +1777,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		$instance                          = new Versioning();
 		$instance->elastic_search_instance = $es_mock;
 
-		$result = $instance->get_all_accesible_indicies();
+		$result = $instance->get_all_accessible_indices();
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1902,12 +1902,12 @@ class Versioning_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider reconstruct_versions_for_indexable_data
 	 */
-	public function test__reconstruct_versions_for_indexable( $indicies, $indexable_data, $expected ) {
+	public function test__reconstruct_versions_for_indexable( $indices, $indexable_data, $expected ) {
 		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
 		$indexable_mock->slug   = $indexable_data['slug'];
 		$indexable_mock->global = $indexable_data['global'];
 
-		$result = self::$version_instance->reconstruct_versions_for_indexable( $indicies, $indexable_mock );
+		$result = self::$version_instance->reconstruct_versions_for_indexable( $indices, $indexable_mock );
 
 		$this->assertEquals( $expected, $result );
 	}

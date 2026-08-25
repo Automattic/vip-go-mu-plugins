@@ -154,7 +154,7 @@ class Sync {
 
 	public function maybe_sync_jetpack_privacy_settings() {
 		if ( ! class_exists( '\\Automattic\\Jetpack\\Sync\\Actions' ) ) {
-			$this->log( 'error', '\\Automattic\\Jetpack\\Sync\\Actions class not found when syncing settings - unabled to sync' );
+			$this->log( 'error', '\\Automattic\\Jetpack\\Sync\\Actions class not found when syncing settings - unable to sync' );
 
 			return false;
 		}

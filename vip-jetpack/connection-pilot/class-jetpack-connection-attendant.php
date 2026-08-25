@@ -22,7 +22,7 @@ class Attendant {
 		// Security Enhancements
 		add_filter( 'authenticate', [ $this, 'prevent_login' ], 30, 2 );
 		add_filter( 'wp_is_application_passwords_available_for_user', [ $this, 'disable_application_passwords' ], 15, 2 );
-		add_filter( 'map_meta_cap', [ $this, 'modify_user_capabilties' ], PHP_INT_MAX, 4 );
+		add_filter( 'map_meta_cap', [ $this, 'modify_user_capabilities' ], PHP_INT_MAX, 4 );
 		// using the internal filter for 2FA.
 		add_filter( 'wpcom_vip_internal_is_two_factor_forced', [ $this, 'bypass_two_factor_auth' ], PHP_INT_MAX );
 		add_action( 'plugins_loaded', [ $this, 'remove_my_jetpack_page' ], 30 );
@@ -247,7 +247,7 @@ class Attendant {
 	 *
 	 * @return string[] The capabilities required of the given user to satisfy the capability being checked.
 	 */
-	public function modify_user_capabilties( $caps, $requested_cap, $user_id, $args ) {
+	public function modify_user_capabilities( $caps, $requested_cap, $user_id, $args ) {
 		$caps_to_prevent = [ 'edit_user', 'delete_user', 'remove_user', 'promote_user' ];
 		if ( in_array( $requested_cap, $caps_to_prevent, true ) ) {
 			$user_being_edited = get_userdata( $args[0] );

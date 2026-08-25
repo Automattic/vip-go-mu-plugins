@@ -196,6 +196,8 @@ class Search {
 	public static $stat_sampling_drop_value = 5; // Value to compare >= against rand( 1, 10 ). 5 should result in roughly half being true.
 	/** @var Cache */
 	public $cache;
+	/** @var Query_Warning|null */
+	public $query_warning;
 
 	/**
 	 * Maximum number of queries before rate-limiting kicks in.
@@ -1017,6 +1019,22 @@ class Search {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
 
+			if ( 'query' === $type && isset( $query['url'] ) && is_string( $query['url'] ) && preg_match( '#/_search(?:[/?]|$)#', $query['url'] ) ) {
+				try {
+					if ( ! $this->query_warning ) {
+						$this->query_warning = new Query_Warning();
+					}
+
+					$this->query_warning->maybe_emit(
+						$args['body'] ?? '',
+						is_array( $response_body ) ? $response_body : [],
+						(float) $duration
+					);
+				} catch ( \Throwable $throwable ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Query diagnostics must never affect the Elasticsearch response.
+					// Query diagnostics must never affect the Elasticsearch response.
+				}
+			}
+
 			if ( $response_body && isset( $response_body['took'] ) && is_int( $response_body['took'] ) ) {
 				if ( class_exists( Prometheus_Collector::class ) ) {
 					Prometheus_Collector::observe_request_time( $args['method'] ?? 'post', $query['url'], Prometheus_Collector::OBSERVATION_TYPE_ENGINE, (float) $response_body['took'] );
@@ -1626,7 +1644,7 @@ class Search {
 	/**
 	 * Filter for ep_pre_request_host
 	 *
-	 * Return the next host in our enpoint list if it's defined. Otherwise, return the last host.
+	 * Return the next host in our endpoint list if it's defined. Otherwise, return the last host.
 	 */
 	public function filter__ep_pre_request_host( $host, $failures ) {
 		if ( ! defined( 'VIP_ELASTICSEARCH_ENDPOINTS' ) ) {
@@ -1947,7 +1965,7 @@ class Search {
 			$current_taxonomies = array();
 		}
 
-		// The ep_sync_taxonomies filter is a plain array of taxonomy objects...we implement this filter for convienence to prevent
+		// The ep_sync_taxonomies filter is a plain array of taxonomy objects...we implement this filter for convenience to prevent
 		// needing to traverse the array to see if taxonomies need added or removed
 		$taxonomy_names = array_unique( wp_list_pluck( $current_taxonomies, 'name' ) );
 
@@ -2382,7 +2400,7 @@ class Search {
 	}
 
 	/**
-	 * When query rate limting first begins, log this information and surface as a PHP warning
+	 * When query rate limiting first begins, log this information and surface as a PHP warning
 	 */
 	public function maybe_log_query_ratelimiting_start() {
 		if ( false === static::get_query_rate_limit_start() ) {

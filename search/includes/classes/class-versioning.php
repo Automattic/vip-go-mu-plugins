@@ -128,7 +128,7 @@ class Versioning {
 	 * Get the current index version number
 	 *
 	 * The current index number is the index that should be used for requests. It is different than the active index, which is the index
-	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indexs, such as
+	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indices, such as
 	 * for indexing content on them while they are still inactive
 	 *
 	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
@@ -958,15 +958,15 @@ class Versioning {
 			return;
 		}
 
-		$indicies = $this->get_all_accesible_indicies();
-		if ( is_wp_error( $indicies ) ) {
+		$indices = $this->get_all_accessible_indices();
+		if ( is_wp_error( $indices ) ) {
 			return;
 		}
 
 		foreach ( $indexables_to_heal as $indexable ) {
 			$this->alert_for_index_self_healing( $indexable->slug );
 
-			$versions = $this->reconstruct_versions_for_indexable( $indicies, $indexable );
+			$versions = $this->reconstruct_versions_for_indexable( $indices, $indexable );
 
 			if ( empty( $versions ) ) {
 				$this->mark_self_heal_ongoing( true );
@@ -1020,7 +1020,7 @@ class Versioning {
 		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
 	}
 
-	public function get_all_accesible_indicies() {
+	public function get_all_accessible_indices() {
 		$response = $this->elastic_search_instance->remote_request( '_cat/indices?format=json' );
 
 		if ( is_wp_error( $response ) ) {
@@ -1031,8 +1031,8 @@ class Versioning {
 
 		if ( $response_code >= 400 ) {
 			return new \WP_Error(
-				'failed-to-fetch-indicies',
-				sprintf( 'Request failed to fetch indicies with status %s', $response_code )
+				'failed-to-fetch-indices',
+				sprintf( 'Request failed to fetch indices with status %s', $response_code )
 			);
 		}
 
@@ -1053,14 +1053,14 @@ class Versioning {
 		return $found_indices;
 	}
 
-	public function reconstruct_versions_for_indexable( $indicies, $indexable ) {
-		if ( ! is_array( $indicies ) ) {
+	public function reconstruct_versions_for_indexable( $indices, $indexable ) {
+		if ( ! is_array( $indices ) ) {
 			return [];
 		}
 
 		$versions = [];
 
-		foreach ( $indicies as $index ) {
+		foreach ( $indices as $index ) {
 			$index_info = $this->parse_index_name( $index );
 
 			if ( is_wp_error( $index_info ) ) {

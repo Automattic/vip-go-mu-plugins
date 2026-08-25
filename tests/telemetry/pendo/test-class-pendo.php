@@ -150,7 +150,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$this->assertTrue( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 	}
 
-	public function test_event_queued_with_global_properies() {
+	public function test_event_queued_with_global_properties() {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
 
@@ -190,7 +190,7 @@ class Pendo_Test extends WP_UnitTestCase {
 		$queue = new Telemetry_Event_Queue( new Pendo_Track_Client() );
 		$pendo = new Pendo( 'test_', [], $queue );
 
-		// Valid events are always accepted for asyncronous recording.
+		// Valid events are always accepted for asynchronous recording.
 		$this->assertTrue( $pendo->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
 
 		// Directly call record_events. Normally this is called on shutdown hook.

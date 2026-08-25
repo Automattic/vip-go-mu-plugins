@@ -47,7 +47,7 @@ class Pendo_Track_Client extends Telemetry_Client {
 	 * Record a batch of Track events using the Pendo API
 	 *
 	 * @param Pendo_Track_Event[] $events Array of Pendo_Track_Event objects to record
-	 * @return bool|WP_Error True on success or WP_Error if any error occured.
+	 * @return bool|WP_Error True on success or WP_Error if any error occurred.
 	 */
 	public function batch_record_events( array $events, array $common_props = [] ): bool|WP_Error {
 		if ( empty( $this->api_key ) ) {

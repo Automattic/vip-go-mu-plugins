@@ -133,7 +133,7 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 }
 
 /**
- * Improve perfomance of the `_WP_Editors::wp_link_query` method
+ * Improve performance of the `_WP_Editors::wp_link_query` method
  *
  * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
  * See https://core.trac.wordpress.org/ticket/38784
@@ -154,7 +154,7 @@ function wpcom_vip_wp_link_query_args( $query ) {
 add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
 
 /**
- * Stop Woocommerce from trying to create files on read-only filesystem
+ * Stop WooCommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
 

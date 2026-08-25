@@ -15,6 +15,8 @@ use WP_Error;
 use WP_Post;
 
 require_once __DIR__ . '/mock-header.php';
+require_once __DIR__ . '/../../../../search/includes/classes/class-query-classifier.php';
+require_once __DIR__ . '/../../../../search/includes/classes/class-query-warning.php';
 require_once __DIR__ . '/../../../../search/search.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-versioning.php';
 require_once __DIR__ . '/../../../../search/elasticpress/elasticpress.php';
@@ -1564,7 +1566,7 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * This tests the correct implementaton of the ep_$indexable_mapping filters, but note that these filters
+	 * This tests the correct implementation of the ep_$indexable_mapping filters, but note that these filters
 	 * operate on the mapping and settings together - EP doesn't yet distinguish between them
 	 */
 	public function test__filter__ep_indexable_mapping() {
@@ -2513,13 +2515,13 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function test__are_es_constants_defined__no_constatns() {
+	public function test__are_es_constants_defined__no_constants() {
 		$result = Search::are_es_constants_defined();
 
 		$this->assertFalse( $result );
 	}
 
-	public function test__are_es_constants_defined__all_constatns() {
+	public function test__are_es_constants_defined__all_constants() {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
@@ -2926,6 +2928,195 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->assertArrayNotHasKey( 'my_custom_analyzer', $filtered['settings']['analysis']['analyzer'], 'Custom analyzer referencing removed ngram filter should be removed' );
 		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
+	}
+
+	public function test__vip_search_query_warning_observes_successful_search_response(): void {
+		wp_cache_flush();
+		$this->init_es();
+		$body          = wp_json_encode( [
+			'query' => [ 'match_all' => [] ],
+			'size'  => 10,
+		] );
+		$response_body = [
+			'took' => 21,
+			'hits' => [
+				'total' => [ 'value' => 2 ],
+				'hits'  => [ [ '_id' => '1' ], [ '_id' => '2' ] ],
+			],
+		];
+		$response      = [
+			'response' => [ 'code' => 200 ],
+			'headers'  => [],
+			'body'     => wp_json_encode( $response_body ),
+		];
+
+		self::$mock_global_functions->expects( $this->once() )
+			->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $response );
+
+		$warning = $this->createMock( Query_Warning::class );
+		$warning->expects( $this->once() )
+			->method( 'maybe_emit' )
+			->with(
+				$body,
+				$response_body,
+				$this->callback( static fn( $duration ): bool => is_float( $duration ) && $duration >= 0.0 )
+			)
+			->willReturn( true );
+		$this->search_instance->query_warning = $warning;
+
+		$result = $this->search_instance->filter__ep_do_intercept_request(
+			[],
+			[ 'url' => '/vip-123-post-1/_search' ],
+			[
+				'method' => 'POST',
+				'body'   => $body,
+			],
+			0,
+			'query'
+		);
+
+		$this->assertSame( $response, $result );
+	}
+
+	public function test__vip_search_query_warning_is_not_initialized_during_search_setup(): void {
+		$this->init_es();
+
+		$this->assertNull( $this->search_instance->query_warning );
+	}
+
+	public function test__vip_search_query_warning_is_not_called_for_failed_search_response(): void {
+		wp_cache_flush();
+		$this->init_es();
+		$response = [
+			'response' => [
+				'code'    => 500,
+				'message' => 'Internal Server Error',
+			],
+			'headers'  => [],
+			'body'     => '{}',
+		];
+		self::$mock_global_functions->expects( $this->once() )
+			->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $response );
+
+		$warning = $this->createMock( Query_Warning::class );
+		$warning->expects( $this->never() )->method( 'maybe_emit' );
+		$this->search_instance->query_warning = $warning;
+
+		$result = $this->search_instance->filter__ep_do_intercept_request(
+			[],
+			[ 'url' => '/vip-123-post-1/_search' ],
+			[
+				'method' => 'POST',
+				'body'   => '{}',
+			],
+			0,
+			'query'
+		);
+
+		$this->assertSame( $response, $result );
+	}
+
+	public function test__vip_search_query_warning_is_not_called_for_non_search_query_type(): void {
+		wp_cache_flush();
+		$this->init_es();
+		$response = [
+			'response' => [ 'code' => 200 ],
+			'headers'  => [],
+			'body'     => '{}',
+		];
+		self::$mock_global_functions->expects( $this->once() )
+			->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $response );
+
+		$warning = $this->createMock( Query_Warning::class );
+		$warning->expects( $this->never() )->method( 'maybe_emit' );
+		$this->search_instance->query_warning = $warning;
+
+		$result = $this->search_instance->filter__ep_do_intercept_request(
+			[],
+			[ 'url' => '/vip-123-post-1/_mget' ],
+			[
+				'method' => 'POST',
+				'body'   => '{}',
+			],
+			0,
+			'query'
+		);
+
+		$this->assertSame( $response, $result );
+	}
+
+	public function test__vip_search_query_warning_is_not_called_for_cache_hit(): void {
+		wp_cache_flush();
+		$this->init_es();
+		$query     = [ 'url' => '/vip-123-post-1/_search' ];
+		$body      = wp_json_encode( [ 'query' => [ 'match_all' => [] ] ] );
+		$response  = [
+			'response' => [ 'code' => 200 ],
+			'headers'  => [],
+			'body'     => '{}',
+		];
+		$cache_key = 'es_query_cache:' . md5( $query['url'] . $body ) . ':' . wp_cache_get_last_changed( Search::SEARCH_CACHE_GROUP );
+		wp_cache_set( $cache_key, $response, Search::SEARCH_CACHE_GROUP, 300 );
+
+		self::$mock_global_functions->expects( $this->never() )->method( 'mock_vip_safe_wp_remote_request' );
+		$warning = $this->createMock( Query_Warning::class );
+		$warning->expects( $this->never() )->method( 'maybe_emit' );
+		$this->search_instance->query_warning = $warning;
+
+		$result = $this->search_instance->filter__ep_do_intercept_request(
+			[],
+			$query,
+			[
+				'method' => 'POST',
+				'body'   => $body,
+			],
+			0,
+			'query'
+		);
+
+		$this->assertSame( $response, $result );
+	}
+
+	public function test__vip_search_query_warning_failure_does_not_change_response(): void {
+		wp_cache_flush();
+		$this->init_es();
+		$response_body = [
+			'took' => 21,
+			'hits' => [
+				'total' => [ 'value' => 0 ],
+				'hits'  => [],
+			],
+		];
+		$response      = [
+			'response' => [ 'code' => 200 ],
+			'headers'  => [],
+			'body'     => wp_json_encode( $response_body ),
+		];
+		self::$mock_global_functions->expects( $this->once() )
+			->method( 'mock_vip_safe_wp_remote_request' )
+			->willReturn( $response );
+
+		$warning = $this->createMock( Query_Warning::class );
+		$warning->expects( $this->once() )
+			->method( 'maybe_emit' )
+			->willThrowException( new \RuntimeException( 'diagnostic failure' ) );
+		$this->search_instance->query_warning = $warning;
+
+		$result = $this->search_instance->filter__ep_do_intercept_request(
+			[],
+			[ 'url' => '/vip-123-post-1/_search' ],
+			[
+				'method' => 'POST',
+				'body'   => '{}',
+			],
+			0,
+			'query'
+		);
+
+		$this->assertSame( $response, $result );
 	}
 
 	/**

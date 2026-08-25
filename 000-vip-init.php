@@ -228,6 +228,9 @@ require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
 require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
+if ( file_exists( __DIR__ . '/vip-helpers/vip-connectors.php' ) ) {
+	require_once __DIR__ . '/vip-helpers/vip-connectors.php';
+}
 
 // Load the Telemetry files
 require_once __DIR__ . '/telemetry/class-telemetry-system.php';

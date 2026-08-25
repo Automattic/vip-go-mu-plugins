@@ -88,7 +88,7 @@ class Pendo_JavaScript_Library {
 	 * use `Pendo::enable_javascript_library()`.
 	 *
 	 * @param string $api_key The Pendo snippet API key.
-	 * @return self|WP_Error Instance on success or WP_Error if any error occured.
+	 * @return self|WP_Error Instance on success or WP_Error if any error occurred.
 	 */
 	public static function init( string|null $api_key = null ): self|WP_Error {
 		// Already initialized? Return instance.
