@@ -66,6 +66,9 @@ Avoid direct edits in external/upstream directories unless the task is explicitl
 - Validate no secret values were introduced in diffs.
 - Update impacted docs in `docs/` and root `README.md`.
 
+## Opening a PR
+When opening a PR make sure to follow [PR TEMPLATE](.github/PULL_REQUEST_TEMPLATE.md)
+
 ## Related docs
 
 - [README](README.md)
