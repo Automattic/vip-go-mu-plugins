@@ -15,7 +15,8 @@ namespace Automattic\VIP\Integrations;
  */
 class RealTimeCollaborationIntegration extends Integration {
 	/**
-	 * Version of the vip-real-time-collaboration plugin to load.
+	 * Minor-version artifact of the vip-real-time-collaboration plugin to load.
+	 * The 0.5 artifact currently contains upstream release v0.5.1.
 	 * Used to control staged rollouts (e.g., staging gets new version first).
 	 */
 	const VIP_RTC_PLUGIN_VERSION = '0.5';
