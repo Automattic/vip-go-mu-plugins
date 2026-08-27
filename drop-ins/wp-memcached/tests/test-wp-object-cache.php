@@ -379,9 +379,9 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 		// Test super large multiGets that should be broken up into multiple batches.
 		$large_mget_values = [
-			'mget_1' => '1',
-			'mget_500' => '500',
-			'mget_999' => '999',
+			'mget_1'    => '1',
+			'mget_500'  => '500',
+			'mget_999'  => '999',
 			'mget_1001' => '1001',
 			'mget_1500' => '1500',
 			'mget_1999' => '1999',
@@ -397,7 +397,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 		$expected_large_mget_values = [];
 		for ( $i = 0; $i < 4000; $i++ ) {
-			$key = 'mget_' . $i;
+			$key                                = 'mget_' . $i;
 			$expected_large_mget_values[ $key ] = isset( $large_mget_values[ $key ] ) ? $large_mget_values[ $key ] : false;
 		}
 
@@ -860,19 +860,19 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 	}
 
 	public function test_non_persistent_themes_group() {
-		$key = 'theme-test-key';
-		$group = 'themes';
-		$data = [
-			'block_theme' => true,
+		$key        = 'theme-test-key';
+		$group      = 'themes';
+		$data       = [
+			'block_theme'            => true,
 			'block_template_folders' => [
-				'wp_template' => 'templates',
-				'wp_template_part' => 'parts'
+				'wp_template'      => 'templates',
+				'wp_template_part' => 'parts',
 			],
-			'headers' => [
+			'headers'                => [
 				'Name' => 'Test Theme',
 			],
-			'stylesheet' => 'test-theme',
-			'template' => 'test-theme'
+			'stylesheet'             => 'test-theme',
+			'template'               => 'test-theme',
 		];
 		$expiration = 300;
 
@@ -933,10 +933,10 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->object_cache->add_non_persistent_groups( $group );
 
 		// Test 1: Verify get_multiple behavior
-		$keys = ['key1', 'key2', 'key3'];
+		$keys    = [ 'key1', 'key2', 'key3' ];
 		$results = $this->object_cache->get_multiple( $keys, $group );
 		foreach ( $keys as $key ) {
-			$this->assertFalse( $results[$key] );
+			$this->assertFalse( $results[ $key ] );
 		}
 
 		// Test 2: Verify an add() and a following get() still work
@@ -945,19 +945,25 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->assertEquals( 'value', $get_result, 'Data should be retrieved immediately after adding to non-persistent group' );
 
 		// Test 3: Verify set_multiple and get_multiple
-		$data = ['key1' => 'value1', 'key2' => 'value2'];
+		$data = [
+			'key1' => 'value1',
+			'key2' => 'value2',
+		];
 		$this->assertEquals( $data, $this->object_cache->set_multiple( $data, $group ) );
 		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
 		$this->assertEquals( $data, $results );
 
 		// Test 4: Verify delete_multiple
 		$this->assertEquals(
-			['key1' => true, 'key2' => true],
+			[
+				'key1' => true,
+				'key2' => true,
+			],
 			$this->object_cache->delete_multiple( array_keys( $data ), $group )
-		 );
+		);
 		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
 		foreach ( array_keys( $data ) as $key ) {
-			$this->assertFalse( $results[$key] );
+			$this->assertFalse( $results[ $key ] );
 		}
 	}
 
