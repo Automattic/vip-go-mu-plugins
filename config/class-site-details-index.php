@@ -119,6 +119,7 @@ class Site_Details_Index {
 				'path'          => $plugin_path,
 				'name'          => $plugin_data['Name'],
 				'version'       => $plugin_data['Version'],
+				'update_uri'    => $plugin_data['UpdateURI'] ?? null,
 				'active'        => null !== $activated_by,
 				'activated_by'  => $activated_by,
 				'wporg_slug'    => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['slug'] : null, // legacy, can be later removed.
