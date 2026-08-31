@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0301f4c67b58ad06ed5dafedc1c48083",
+    "content-hash": "2c0a644ca3de2304e2de9ba3224f1d1d",
     "packages": [],
     "packages-dev": [
         {
@@ -270,62 +270,6 @@
                 }
             ],
             "time": "2022-12-30T00:15:36+00:00"
-        },
-        {
-            "name": "erusev/parsedown",
-            "version": "1.8.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/erusev/parsedown.git",
-                "reference": "96baaad00f71ba04d76e45b4620f54d3beabd6f7"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/erusev/parsedown/zipball/96baaad00f71ba04d76e45b4620f54d3beabd6f7",
-                "reference": "96baaad00f71ba04d76e45b4620f54d3beabd6f7",
-                "shasum": ""
-            },
-            "require": {
-                "ext-mbstring": "*",
-                "php": ">=7.1"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "^7.5|^8.5|^9.6"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Parsedown": ""
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Emanuil Rusev",
-                    "email": "hello@erusev.com",
-                    "homepage": "http://erusev.com"
-                }
-            ],
-            "description": "Parser for Markdown.",
-            "homepage": "http://parsedown.org",
-            "keywords": [
-                "markdown",
-                "parser"
-            ],
-            "support": {
-                "issues": "https://github.com/erusev/parsedown/issues",
-                "source": "https://github.com/erusev/parsedown/tree/1.8.0"
-            },
-            "funding": [
-                {
-                    "url": "https://github.com/erusev",
-                    "type": "github"
-                }
-            ],
-            "time": "2026-02-16T11:41:01+00:00"
         },
         {
             "name": "johnpbloch/wordpress-core",
