@@ -662,6 +662,7 @@ class WP_Object_Cache {
 	 * @param string $_group Name of group to remove from cache.
 	 * @return bool Returns false, as there is no support for group flushes.
 	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found -- Required by the WordPress object cache API.
 	public function flush_group( $_group ) {
 		return false;
 	}

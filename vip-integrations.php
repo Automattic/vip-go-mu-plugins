@@ -50,6 +50,10 @@ if ( file_exists( __DIR__ . '/integrations/safe-publish.php' ) ) {
 	require_once __DIR__ . '/integrations/safe-publish.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/vip-workflows.php' ) ) {
+	require_once __DIR__ . '/integrations/vip-workflows.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -79,6 +83,10 @@ if ( class_exists( __NAMESPACE__ . '\\RealTimeCollaborationIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\SafePublishIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new SafePublishIntegration( 'safe-publish' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\VipWorkflowsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new VipWorkflowsIntegration( 'vip-workflows' ) );
 }
 
 // @codeCoverageIgnoreEnd
