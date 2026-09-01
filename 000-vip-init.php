@@ -93,6 +93,9 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_c
 	}
 }
 
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
@@ -201,9 +204,6 @@ if ( WPCOM_SANDBOXED ) {
 
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
-
-// Stats collection
-require_once __DIR__ . '/prometheus.php';
 
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';

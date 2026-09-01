@@ -17,15 +17,13 @@ class Plugin {
 	protected string $site_label = '';
 
 	const MAX_NETWORK_SITES = 50;
-	/**
-	 * @return static
-	 */
-	public static function get_instance(): self {
-		if ( ! self::$instance ) {
-			self::$instance = new static();
+
+	final public static function get_instance(): static {
+		if ( ! static::$instance ) {
+			static::$instance = new static();
 		}
 
-		return self::$instance;
+		return static::$instance;
 	}
 
 	/**
@@ -54,7 +52,13 @@ class Plugin {
 	}
 
 	public function init_registry() {
-		$this->registry = self::create_registry();
+		if ( null === $this->registry ) {
+			$this->registry = self::create_registry();
+		}
+	}
+
+	public function get_registry(): ?RegistryInterface {
+		return $this->registry;
 	}
 
 	public function load_collectors(): void {
