@@ -12,7 +12,7 @@ use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
-// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class VIP_Workflows_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'vip-workflows';
