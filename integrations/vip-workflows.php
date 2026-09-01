@@ -32,27 +32,34 @@ class VipWorkflowsIntegration extends Integration {
 	}
 
 	public function load(): void {
-		add_action( 'plugins_loaded', function () {
-			if ( $this->is_loaded() ) {
-				return;
-			}
-
-			$versions = $this->get_versions();
-
-			if ( empty( $versions ) ) {
-				$this->is_active = false;
-				return;
-			}
-
-			$selected_version_folder = $this->get_selected_version_folder( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/vip-workflows.php';
-
-			if ( file_exists( $load_path ) ) {
-				require_once $load_path;
-			} else {
-				$this->is_active = false;
-			}
+		add_action( 'plugins_loaded', function (): void {
+			$this->load_plugin();
 		}, 1 );
+	}
+
+	/**
+	 * Load the selected bundled plugin file when it is available.
+	 */
+	private function load_plugin(): void {
+		if ( $this->is_loaded() ) {
+			return;
+		}
+
+		$versions = $this->get_versions();
+		if ( [] === $versions ) {
+			$this->is_active = false;
+			return;
+		}
+
+		$folder    = $this->get_selected_version_folder( $versions );
+		$main_file = sprintf( '%s/vip-integrations/%s/vip-workflows.php', WPVIP_MU_PLUGIN_DIR, $folder );
+
+		if ( ! file_exists( $main_file ) ) {
+			$this->is_active = false;
+			return;
+		}
+
+		require_once $main_file;
 	}
 
 	/**
@@ -71,16 +78,10 @@ class VipWorkflowsIntegration extends Integration {
 	 * @return string The selected folder name.
 	 */
 	public function get_selected_version_folder( array $versions ): string {
-		if ( 'latest' === $this->version ) {
-			return array_key_first( $versions );
-		}
+		$desired_folder = 'latest' === $this->version
+			? false
+			: array_search( $this->version, $versions, true );
 
-		$desired_version = array_search( $this->version, $versions, true );
-
-		if ( false !== $desired_version ) {
-			return $desired_version;
-		}
-
-		return array_key_first( $versions );
+		return false !== $desired_folder ? $desired_folder : array_key_first( $versions );
 	}
 }
