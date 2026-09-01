@@ -50,9 +50,8 @@ if ( file_exists( __DIR__ . '/integrations/safe-publish.php' ) ) {
 	require_once __DIR__ . '/integrations/safe-publish.php';
 }
 
-$vip_workflows_wrapper = __DIR__ . '/integrations/vip-workflows.php';
-if ( file_exists( $vip_workflows_wrapper ) ) {
-	require_once $vip_workflows_wrapper;
+if ( file_exists( __DIR__ . '/integrations/vip-workflows.php' ) ) {
+	require_once __DIR__ . '/integrations/vip-workflows.php';
 }
 
 // Register VIP integrations here.
@@ -87,8 +86,7 @@ if ( class_exists( __NAMESPACE__ . '\\SafePublishIntegration' ) ) {
 }
 
 if ( class_exists( __NAMESPACE__ . '\\VipWorkflowsIntegration' ) ) {
-	$vip_workflows_integration = new VipWorkflowsIntegration( 'vip-workflows' );
-	IntegrationsSingleton::instance()->register( $vip_workflows_integration );
+	IntegrationsSingleton::instance()->register( new VipWorkflowsIntegration( 'vip-workflows' ) );
 }
 
 // @codeCoverageIgnoreEnd
