@@ -27,7 +27,7 @@ class VipWorkflowsIntegration extends Integration {
 	 */
 	protected bool $enable_pendo_tracking = true;
 
-public function configure(): void {
+	public function configure(): void {
 		$configs = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
 
 		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) && '' !== $configs['version'] ) {
