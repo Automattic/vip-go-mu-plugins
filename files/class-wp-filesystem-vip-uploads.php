@@ -174,7 +174,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 			return true;
 		}
 
-		return $this->is_file( $uploads_path );
+		return false !== $this->get_uploads_path_stats( $uploads_path );
 	}
 
 	/**
@@ -185,7 +185,8 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return bool Whether $file is a file.
 	 */
 	public function is_file( $file ) {
-		return false !== $this->get_file_stats( $file );
+		// The API only deals with files, so we can just check for existence.
+		return $this->exists( $file );
 	}
 
 	/**
@@ -480,9 +481,16 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	}
 
 	private function get_file_stats( $file ) {
-		$uploads_path = $this->sanitize_uploads_path( $file );
-		$info         = [];
-		$response     = $this->api->is_file( $uploads_path, $info );
+		return $this->get_uploads_path_stats( $this->sanitize_uploads_path( $file ) );
+	}
+
+	/**
+	 * @param string $uploads_path Path already run through sanitize_uploads_path().
+	 * @return array|false Stats from the API, or false when missing or on error (recorded in $this->errors).
+	 */
+	private function get_uploads_path_stats( $uploads_path ) {
+		$info     = [];
+		$response = $this->api->is_file( $uploads_path, $info );
 
 		if ( is_wp_error( $response ) ) {
 			$this->errors = $response;

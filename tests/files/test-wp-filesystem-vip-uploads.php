@@ -233,14 +233,12 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$this->assertSame( 'files-api-unavailable', $this->filesystem->errors->get_error_code() );
 	}
 
-	public function test__is_file_checks_extensionless_files_with_the_api() {
+	public function test__is_file_treats_extensionless_paths_as_existing_directories() {
 		$this->api_client_mock
-			->expects( self::once() )
-			->method( 'is_file' )
-			->with( '/wp-content/uploads/README', $this->anything() )
-			->willReturn( false );
+			->expects( self::never() )
+			->method( 'is_file' );
 
-		$this->assertFalse( $this->filesystem->is_file( '/tmp/uploads/README' ) );
+		$this->assertTrue( $this->filesystem->is_file( '/tmp/uploads/README' ) );
 	}
 
 	public function get_test_data__is_dir() {

@@ -326,8 +326,10 @@ class API_Client {
 		// The timeout above is a ceiling. On its own it would keep a stalled or
 		// crawling download open for that whole ceiling, so pair it with a minimum
 		// transfer rate that aborts such a connection within the stall window.
+		// Fully qualified on purpose: the test suite shadows defined() in this
+		// namespace to mock WordPress constants, and these are PHP extension constants.
 		$curl_options = [];
-		if ( defined( 'CURLOPT_LOW_SPEED_LIMIT' ) && defined( 'CURLOPT_LOW_SPEED_TIME' ) ) {
+		if ( \defined( 'CURLOPT_LOW_SPEED_LIMIT' ) && \defined( 'CURLOPT_LOW_SPEED_TIME' ) ) {
 			$curl_options[ CURLOPT_LOW_SPEED_LIMIT ] = self::DOWNLOAD_MIN_BYTES_PER_SECOND;
 			$curl_options[ CURLOPT_LOW_SPEED_TIME ]  = self::DOWNLOAD_STALL_TIMEOUT;
 		}

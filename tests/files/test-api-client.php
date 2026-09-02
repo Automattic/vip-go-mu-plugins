@@ -847,7 +847,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 		file_put_contents( $local_path, 'payload' );
 
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement -- throwing is the condition under test.
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement, WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- throwing is the condition under test.
 		add_filter( 'pre_http_request', function () {
 			throw new \RuntimeException( 'transport exploded' );
 		}, 10, 3 );
@@ -870,17 +870,35 @@ class API_Client_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_file__applies_a_stall_guard_and_releases_it() {
-		$applied = [];
-		add_action( 'http_api_curl', function () use ( &$applied ) {
-			$applied[] = true;
-		} );
+		// pre_http_request short-circuits before the transport runs, so http_api_curl
+		// never fires here. Fire it ourselves from inside the request, exactly as
+		// WP_Http would, against a real handle, and read back what the guard set.
+		$guarded = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$guarded ) {
+			$handle = curl_init( 'https://files.go-vip.co/' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+			do_action_ref_array( 'http_api_curl', [ &$handle, $args, 'https://files.go-vip.co/' ] );
 
-		$this->mock_http_response( [
-			'response' => [ 'code' => 200 ],
-			'body'     => 'payload',
-		] );
+			// PHP has no curl_getopt(); the applied closure is the only record of what was set.
+			$guarded = $this->registered_curl_options_from_api_client();
+
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			file_put_contents( $args['filename'], 'payload' );
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}, 10, 2 );
 
 		$this->api_client->get_file( '/wp-content/uploads/guarded.txt' );
+
+		self::assertSame(
+			[
+				CURLOPT_LOW_SPEED_LIMIT => API_Client::DOWNLOAD_MIN_BYTES_PER_SECOND,
+				CURLOPT_LOW_SPEED_TIME  => API_Client::DOWNLOAD_STALL_TIMEOUT,
+			],
+			$guarded,
+			'The download must carry the minimum-rate stall guard while the request is in flight.'
+		);
 
 		// The stall guard is attached for this request only.
 		self::assertFalse(
@@ -889,8 +907,35 @@ class API_Client_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * The cURL options captured by the API_Client closure currently hooked to http_api_curl.
+	 *
+	 * @return array CURLOPT_* => value, or an empty array when no such closure is registered.
+	 */
+	private function registered_curl_options_from_api_client() {
+		global $wp_filter;
+
+		if ( empty( $wp_filter['http_api_curl'] ) ) {
+			return [];
+		}
+
+		foreach ( $wp_filter['http_api_curl']->callbacks as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( ! ( $callback['function'] instanceof \Closure ) ) {
+					continue;
+				}
+				$reflection = new \ReflectionFunction( $callback['function'] );
+				if ( $reflection->getClosureThis() instanceof API_Client ) {
+					return $reflection->getStaticVariables()['curl_options'] ?? [];
+				}
+			}
+		}
+
+		return [];
+	}
+
 	public function test__get_file__releases_the_stall_guard_when_the_transport_throws() {
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement -- throwing is the condition under test.
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement, WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- throwing is the condition under test.
 		add_filter( 'pre_http_request', function () {
 			throw new \RuntimeException( 'transport exploded' );
 		}, 10, 3 );
