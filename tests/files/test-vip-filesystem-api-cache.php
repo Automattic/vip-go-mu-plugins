@@ -74,7 +74,7 @@ class API_Cache_Test extends WP_UnitTestCase {
 		file_put_contents( $test_file, $expected );
 
 		$prop = self::get_property( $this->cache, 'files' );
-		$prop->setValue( $this->cache, [ 'test.jpg' => $test_file ] );
+		$prop->setValue( $this->cache, [ '/test.jpg' => $test_file ] );
 
 		$actual = $this->cache->get_file( 'test.jpg' );
 
@@ -102,6 +102,14 @@ class API_Cache_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
+	public function test__get_file__normalizes_leading_slash() {
+		$test_file = tempnam( sys_get_temp_dir(), 'test' );
+
+		$this->cache->cache_file( '/wp-content/uploads/test.jpg', $test_file );
+
+		$this->assertSame( $test_file, $this->cache->get_file( 'wp-content/uploads/test.jpg' ) );
+	}
+
 	public function test__get_file_stats() {
 		$expected = [
 			'size'  => '123',
@@ -109,7 +117,7 @@ class API_Cache_Test extends WP_UnitTestCase {
 		];
 
 		$prop = self::get_property( $this->cache, 'file_stats' );
-		$prop->setValue( $this->cache, [ 'test.jpg' => $expected ] );
+		$prop->setValue( $this->cache, [ '/test.jpg' => $expected ] );
 
 		$actual = $this->cache->get_file_stats( 'test.jpg' );
 
@@ -134,6 +142,17 @@ class API_Cache_Test extends WP_UnitTestCase {
 		$result = $this->cache->get_file_stats( '/tmp/test.jpg' );
 
 		$this->assertFalse( $result );
+	}
+
+	public function test__get_file_stats__normalizes_leading_slash() {
+		$expected = [
+			'size'  => '123',
+			'mtime' => '123456779',
+		];
+
+		$this->cache->cache_file_stats( '/wp-content/uploads/test.jpg', $expected );
+
+		$this->assertSame( $expected, $this->cache->get_file_stats( 'wp-content/uploads/test.jpg' ) );
 	}
 
 	public function test__cache_file() {
