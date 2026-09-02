@@ -2,7 +2,7 @@
 
 ## Repository Overview
 
-This is the development repository for mu-plugins (must-use plugins) that power the WordPress VIP platform. It's a large WordPress plugin collection (~60+ top-level directories) written primarily in PHP, supporting 8.1, 8.2, 8.3, and 8.4.
+This is the development repository for mu-plugins (must-use plugins) that power the WordPress VIP platform. It's a large WordPress plugin collection (~60+ top-level directories) written primarily in PHP, supporting 8.2, 8.3, and 8.4.
 
 **Key Characteristics:**
 - Type: WordPress mu-plugins collection
@@ -45,7 +45,7 @@ npm run phpcs
 - Uses WordPress VIP coding standards (see `phpcs.xml.dist`)
 - Scans incrementally via lint-staged on pre-commit (see `.husky/pre-commit` and `.lintstagedrc`)
 - Full scan takes 30-60 seconds
-- Configuration: PHP 8.1+ compatibility, WordPress 6.2+ support
+- Configuration: PHP 8.2+ compatibility, WordPress 6.5+ support
 - Excludes: vendor/, submodules (advanced-post-cache, cron-control, http-concat, jetpack, etc.), __tests__/, bin/
 
 To fix auto-fixable issues:
@@ -190,9 +190,9 @@ Submodules and third-party code are excluded (see `phpcs.xml.dist` lines 14-41).
 
 ## Important Constraints
 
-1. **PHP Version Support:** Code must work on PHP 8.1+. Avoid syntax/features for older PHP versions.
+1. **PHP Version Support:** Code must work on PHP 8.2+. Avoid syntax/features for older PHP versions.
 
-2. **WordPress Compatibility:** Minimum WordPress 6.2 (`phpcs.xml.dist` line 65).
+2. **WordPress Compatibility:** Minimum WordPress 6.5.
 
 3. **No Breaking Changes to Public APIs:** This code runs on thousands of WordPress sites. Breaking changes to public functions/filters/actions require careful consideration, and if not possible to avoid, deprecation period and graceful fallbacks need to be implemented.
 

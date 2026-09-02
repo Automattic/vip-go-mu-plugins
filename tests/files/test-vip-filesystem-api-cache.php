@@ -186,6 +186,7 @@ class API_Cache_Test extends WP_UnitTestCase {
 		$files = $prop->getValue( $this->cache );
 
 		$this->assertTrue( isset( $files['/test/path/test.jpg'] ) );
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- local file
 		$this->assertEquals( $expected, file_get_contents( $files['/test/path/test.jpg'] ) );
 	}
 
@@ -256,6 +257,7 @@ class API_Cache_Test extends WP_UnitTestCase {
 		$files = $prop->getValue( $this->cache );
 
 		$this->assertTrue( isset( $files['/test/path/test.jpg'] ) );
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- local file
 		$this->assertEquals( $expected, file_get_contents( $files['/test/path/test.jpg'] ) );
 	}
 

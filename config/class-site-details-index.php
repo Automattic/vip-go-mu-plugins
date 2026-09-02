@@ -119,6 +119,7 @@ class Site_Details_Index {
 				'path'          => $plugin_path,
 				'name'          => $plugin_data['Name'],
 				'version'       => $plugin_data['Version'],
+				'update_uri'    => $plugin_data['UpdateURI'] ?? null,
 				'active'        => null !== $activated_by,
 				'activated_by'  => $activated_by,
 				'wporg_slug'    => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['slug'] : null, // legacy, can be later removed.
@@ -135,7 +136,7 @@ class Site_Details_Index {
 	/**
 	 * Get plugin information related to updates, such as their proper slug / marketplace / and download package url.
 	 *
-	 * Offical WP.org plugin slugs require a pretty technical process to properly find.
+	 * Official WP.org plugin slugs require a pretty technical process to properly find.
 	 * WP core does this by querying a WPorg endpoint that checks for a valid plugin
 	 * based on various factors like name, author, path, and plugin header values.
 	 * So here we just piggyback off of the above process to locate the proper slugs.

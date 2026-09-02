@@ -40,7 +40,7 @@ class Tracks_Client extends Telemetry_Client {
 	 *
 	 * @param Tracks_Event[] $events Array of Tracks_Event objects to record
 	 * @return bool|WP_Error True if batch recording succeeded.
-	 *                       WP_Error is any error occured.
+	 *                       WP_Error is any error occurred.
 	 */
 	public function batch_record_events( array $events, array $common_props = [] ): bool|WP_Error {
 		// filter out invalid events

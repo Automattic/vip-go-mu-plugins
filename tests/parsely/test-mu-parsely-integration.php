@@ -76,7 +76,7 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( is_queued_for_activation() );
 	}
 
-	public function test_parsely_class_existance() {
+	public function test_parsely_class_existence() {
 		$this->assertFalse( class_exists( 'Parsely' ) );
 		$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
 

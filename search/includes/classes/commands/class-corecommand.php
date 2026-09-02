@@ -281,7 +281,7 @@ class CoreCommand {
 		 * EP's `--network-wide` mode uses switch_to_blog to index the content,
 		 * that may not be reliable if the codebase differs between subsites.
 		 *
-		 * Side-step the issue by spawning child proccesses for each subsite.
+		 * Side-step the issue by spawning child processes for each subsite.
 		 */
 		if ( is_multisite() && ( $network_mode || $batch_mode ) ) {
 			if ( $network_mode ) {
@@ -551,7 +551,7 @@ class CoreCommand {
 	}
 
 	/**
-	 * Dectivate a feature.
+	 * Deactivate a feature.
 	 *
 	 * ## OPTIONS
 	 *

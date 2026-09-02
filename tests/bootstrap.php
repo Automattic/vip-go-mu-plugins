@@ -11,24 +11,6 @@ if ( '1' === getenv( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 	define( 'VIP_JETPACK_SKIP_LOAD', true );
 }
 
-// TODO: Remove this once we drop WP 5.8 support
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\AssertFileDirectory::class ) ) {
-	require_once __DIR__ . '/trait-assertfiledirectory.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\NumericType::class ) ) {
-	require_once __DIR__ . '/trait-assertnumerictype.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectException::class ) ) {
-	require_once __DIR__ . '/trait-expectexception.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException::class ) ) {
-	require_once __DIR__ . '/trait-expectphpexception.php';
-}
-// ---
-
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
@@ -41,7 +23,6 @@ define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
 define( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING', true );
 
 function _manually_load_plugin() {
-	require_once __DIR__ . '/../lib/helpers/php-compat.php';
 	require_once __DIR__ . '/../000-vip-init.php';
 	require_once __DIR__ . '/../001-core.php';
 	require_once __DIR__ . '/../a8c-files.php';

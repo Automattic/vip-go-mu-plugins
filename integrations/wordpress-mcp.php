@@ -13,9 +13,11 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class WordPressMcpIntegration extends Integration {
-	private const AUTH_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH';
-	private const TIMESTAMP_HEADER_SERVER_KEY = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
-	private const DEFAULT_TIMESTAMP_MAX_AGE   = 120;
+	private const LATEST_MINIMUM_WORDPRESS_VERSION = '6.9';
+	private const OLDEST_COMPATIBLE_VERSION        = '0.5';
+	private const AUTH_HEADER_SERVER_KEY           = 'HTTP_X_VIP_MCP_AUTH';
+	private const TIMESTAMP_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
+	private const DEFAULT_TIMESTAMP_MAX_AGE        = 120;
 	// Mirrors mcp-adapter defaults for auth route detection before the config filter runs.
 	private const DEFAULT_SERVER_NAMESPACE = 'mcp';
 	private const DEFAULT_SERVER_ROUTE     = 'mcp-adapter-default-server';
@@ -43,8 +45,15 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	protected bool $parent_integration_requires_org_enabled = true;
 
+	/**
+	 * MCP authentication error to surface on the REST response.
+	 *
+	 * @var \WP_Error|null
+	 */
+	private ?\WP_Error $auth_error = null;
+
 	public function is_loaded(): bool {
-		return class_exists( '\WP\MCP\Plugin', false );
+		return function_exists( 'WP\MCP\constants' ) || class_exists( '\WP\MCP\Plugin', false );
 	}
 
 	public function load(): void {
@@ -57,11 +66,12 @@ class WordPressMcpIntegration extends Integration {
 			add_filter( 'mcp_adapter_default_server_config', [ $this, 'filter_default_server_config' ], PHP_INT_MAX );
 		}
 
-		if ( ! empty( $this->get_exposed_abilities_config() ) ) {
-			add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
-		}
+		add_filter( 'wp_register_ability_args', [ $this, 'filter_exposed_abilities_args' ], PHP_INT_MAX, 2 );
 
 		add_filter( 'determine_current_user', [ $this, 'authenticate_mcp_request' ], 19 );
+		// Surfaces MCP auth errors; must run before core's app-password (90) and cookie (100)
+		// checks, which would otherwise settle the authentication result for the request.
+		add_filter( 'rest_authentication_errors', [ $this, 'report_auth_error' ] );
 
 		add_action( 'plugins_loaded', function () {
 			if ( $this->is_loaded() ) {
@@ -75,8 +85,13 @@ class WordPressMcpIntegration extends Integration {
 				return;
 			}
 
-			$selected_version_folder = array_key_first( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
+			$selected_version_folder = $this->get_selected_version_folder( $versions );
+			if ( null === $selected_version_folder ) {
+				$this->is_active = false;
+				return;
+			}
+
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/mcp-adapter.php';
 
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
@@ -111,8 +126,12 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	/**
-	 * Mark configured abilities as public MCP tools.
+	 * Expose configured abilities and inherit `meta.public` when MCP-specific exposure is not set.
 	 *
+	 * MCP Adapter 0.6.0 inherits `meta.public` automatically. Copy the inherited value to
+	 * `meta.mcp.public` so MCP Adapter 0.5 exposes the same abilities.
+	 *
+	 * @see https://github.com/WordPress/mcp-adapter/releases/tag/v0.6.0
 	 * @param array  $args         Ability registration args.
 	 * @param string $ability_name Ability name.
 	 * @return array Filtered ability registration args.
@@ -127,6 +146,24 @@ class WordPressMcpIntegration extends Integration {
 				$args['meta']['mcp'] = [];
 			}
 
+			if ( ! array_key_exists( 'public', $args['meta']['mcp'] ) ) {
+				$args['meta']['mcp']['public'] = true;
+			}
+
+			return $args;
+		}
+
+		if ( ! isset( $args['meta'] ) || ! is_array( $args['meta'] ) || true !== ( $args['meta']['public'] ?? false ) ) {
+			return $args;
+		}
+
+		$mcp_meta = $args['meta']['mcp'] ?? [];
+		if ( ! is_array( $mcp_meta ) ) {
+			return $args;
+		}
+
+		if ( ! isset( $mcp_meta['public'] ) ) {
+			$args['meta']['mcp']           = $mcp_meta;
 			$args['meta']['mcp']['public'] = true;
 		}
 
@@ -166,6 +203,12 @@ class WordPressMcpIntegration extends Integration {
 
 	/**
 	 * Authenticate MCP requests.
+	 *
+	 * Runs on determine_current_user, which cannot return errors — hard failures are
+	 * recorded in $this->auth_error and surfaced to the client by report_auth_error().
+	 * No user-resolving function (is_user_logged_in, rest_authorization_required_code,
+	 * current_user_can, ...) may be called in here: each one re-fires this filter and
+	 * recurses infinitely.
 	 *
 	 * @param int|false|null $input_user Existing authenticated user ID.
 	 * @return int|false|null Authenticated user ID, or the original input.
@@ -233,26 +276,16 @@ class WordPressMcpIntegration extends Integration {
 
 		$user = get_user_by( 'email', $email );
 		if ( ! $user ) {
-			$this->trigger_auth_warning( 'User not found for email hash ' . hash( 'sha256', strtolower( $email ) ) );
+			$this->trigger_auth_warning( sprintf( 'No user was found with the email %s.', $email ) );
 
-			// Surface a hard 401 for the REST request instead of silently declining auth.
-			$rest_auth_error_callback = null;
-			$rest_auth_error_callback = function ( $errors ) use ( $email, &$rest_auth_error_callback ) {
-				// Ensure the filter is one-shot for this request.
-				remove_filter( 'rest_authentication_errors', $rest_auth_error_callback, 10 );
-
-				// Don't override an existing error or a successful authentication.
-				if ( null !== $errors ) {
-					return $errors;
-				}
-
-				return new \WP_Error(
-					'vip_mcp_user_not_found',
-					sprintf( 'No user was found with the email %s.', $email ),
-					[ 'status' => rest_authorization_required_code() ]
-				);
-			};
-			add_filter( 'rest_authentication_errors', $rest_auth_error_callback, 10, 1 );
+			// Hardcoded 401: rest_authorization_required_code() is a user-resolving
+			// function (see the method docblock), and 401 is what it returns for
+			// unauthenticated requests anyway.
+			$this->auth_error = new \WP_Error(
+				'vip_mcp_user_not_found',
+				sprintf( 'No user was found with the email %s.', $email ),
+				[ 'status' => 401 ]
+			);
 
 			return $input_user;
 		}
@@ -261,13 +294,23 @@ class WordPressMcpIntegration extends Integration {
 	}
 
 	/**
+	 * Surface a deferred MCP authentication error on the REST response.
+	 *
+	 * @param \WP_Error|null|true $errors Result of any previous REST authentication checks.
+	 * @return \WP_Error|null|true A WP_Error for failed MCP authentication, or the original value.
+	 */
+	public function report_auth_error( $errors ) {
+		return $errors ?? $this->auth_error;
+	}
+
+	/**
 	 * Check whether the current request targets the MCP adapter REST endpoint.
+	 *
+	 * Deliberately does not require REST_REQUEST: authentication runs on the
+	 * determine_current_user pass at $wp->init(), before the REST server defines
+	 * the constant, so the endpoint is matched on method and URL alone.
 	 */
 	public function is_mcp_adapter_rest_request(): bool {
-		if ( ! defined( 'REST_REQUEST' ) || ! constant( 'REST_REQUEST' ) ) {
-			return false;
-		}
-
 		if ( 'POST' !== $this->get_server_value( 'REQUEST_METHOD' ) ) {
 			return false;
 		}
@@ -365,7 +408,7 @@ class WordPressMcpIntegration extends Integration {
 	 * Emit an authentication warning without exposing raw user identity.
 	 */
 	private function trigger_auth_warning( string $message ): void {
-		error_log( esc_html( 'VIP MCP Auth: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+		error_log( esc_html( 'VIP MCP Auth Error: ' . $message ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
 	}
 
 	/**
@@ -375,5 +418,22 @@ class WordPressMcpIntegration extends Integration {
 	 */
 	public function get_versions(): array {
 		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'wordpress-mcp', 'mcp-adapter.php' );
+	}
+
+	/**
+	 * Get the adapter folder compatible with the current WordPress version.
+	 *
+	 * @param array<string,string> $versions Available versions in descending order.
+	 */
+	public function get_selected_version_folder( array $versions ): ?string {
+		global $wp_version;
+
+		if ( version_compare( $wp_version, self::LATEST_MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
+			return array_key_first( $versions );
+		}
+
+		$legacy_version_folder = array_search( self::OLDEST_COMPATIBLE_VERSION, $versions, true );
+
+		return false === $legacy_version_folder ? null : $legacy_version_folder;
 	}
 }

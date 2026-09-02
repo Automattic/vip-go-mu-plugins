@@ -3,7 +3,6 @@
 		[
 			"@babel/env",
 			{
-				"bugfixes": true,
 				"modules": false,
 				"targets": {
 					"browsers": [ "> 0.25%", "IE >= 9" ]
@@ -13,10 +12,6 @@
 		]
 	],
 	"plugins": [
-		[ "@babel/plugin-transform-react-jsx", { "pragma": "h", "pragmaFrag": "Fragment" } ],
-		[ "@babel/plugin-transform-class-properties" ],
-		[ "@babel/plugin-transform-object-rest-spread", { "loose": true } ],
-		[ "@babel/plugin-transform-object-assign" ],
-		[ "@babel/plugin-transform-private-property-in-object" ]
+		[ "@babel/plugin-transform-react-jsx", { "runtime": "classic", "pragma": "h", "pragmaFrag": "Fragment" } ]
 	]
 }

@@ -18,14 +18,14 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Version of the vip-real-time-collaboration plugin to load.
 	 * Used to control staged rollouts (e.g., staging gets new version first).
 	 */
-	const VIP_RTC_PLUGIN_VERSION = '0.3';
+	const VIP_RTC_PLUGIN_VERSION = '0.5';
 
 	/**
 	 * Version of the Gutenberg plugin to load.
 	 * Empty string means load from the unversioned 'gutenberg' folder.
 	 * A version number (e.g., '1.0') loads from 'gutenberg-1.0' folder.
 	 */
-	const VIP_RTC_GUTENBERG_VERSION = '0.2-20260617-pr79021';
+	const VIP_RTC_GUTENBERG_VERSION = '0.2-20260831';
 
 	/**
 	 * Enable Pendo tracking for this integration.
@@ -43,7 +43,18 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * Check if the Gutenberg plugin is active.
 	 */
 	private function is_gutenberg_plugin_active(): bool {
-		return defined( 'IS_GUTENBERG_PLUGIN' ) && constant( 'IS_GUTENBERG_PLUGIN' );
+		if ( defined( 'IS_GUTENBERG_PLUGIN' ) && constant( 'IS_GUTENBERG_PLUGIN' ) ) {
+			return true;
+		}
+
+		$plugin_file = 'gutenberg/gutenberg.php';
+		$is_active   = in_array( $plugin_file, (array) get_option( 'active_plugins', [] ), true );
+		if ( ! $is_active && is_multisite() ) {
+			$network_active_plugins = (array) get_site_option( 'active_sitewide_plugins', [] );
+			$is_active              = isset( $network_active_plugins[ $plugin_file ] );
+		}
+
+		return $is_active;
 	}
 
 	/**
@@ -159,6 +170,11 @@ class RealTimeCollaborationIntegration extends Integration {
 		// Set up WebSocket URL constant
 		if ( isset( $env_config['web_socket_url'] ) && ! defined( 'VIP_RTC_WS_URL' ) ) {
 			define( 'VIP_RTC_WS_URL', $env_config['web_socket_url'] );
+		}
+
+		// Set up WebSocket multiplexing constant
+		if ( isset( $env_config['web_socket_multiplexing_enabled'] ) && ! defined( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) ) {
+			define( 'VIP_RTC_WS_MULTIPLEXING_ENABLED', $env_config['web_socket_multiplexing_enabled'] );
 		}
 	}
 }

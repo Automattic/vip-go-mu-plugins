@@ -36,7 +36,7 @@ class Alerts {
 	private static $instance = null;
 
 	/**
-	 * Contructor
+	 * Constructor
 	 *
 	 * Set to protected to prevent direct instantiation.
 	 * Use Alerts::instance() to get an instance of Alerts

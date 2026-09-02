@@ -70,6 +70,7 @@ function get_base_properties_of_pendo_user(): array|null {
  */
 function get_mu_plugins_version(): string {
 	if ( defined( 'WPVIP_MU_PLUGIN_DIR' ) && file_exists( constant( 'WPVIP_MU_PLUGIN_DIR' ) . '/.version' ) ) {
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- This is a local file, not a remote URL.
 		return file_get_contents( constant( 'WPVIP_MU_PLUGIN_DIR' ) . '/.version' );
 	}
 

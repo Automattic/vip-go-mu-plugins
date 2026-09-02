@@ -885,6 +885,12 @@ class API_Client_Test extends WP_UnitTestCase {
 			];
 		}, 10, 2 );
 
+		// Pin the upload limit so the expected values do not depend on php.ini.
+		// It has to exceed the known file size below for the ordering to mean anything.
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
 		// Cold: nothing known about the file, so allow a full-size transfer.
 		$this->api_client->get_file( '/wp-content/uploads/cold.txt' );
 
@@ -894,18 +900,26 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->api_client->get_file( '/wp-content/uploads/warm.txt' );
 
 		$scale = self::get_method( 'calculate_transfer_timeout' );
+		$cold  = $scale->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+		$warm  = $scale->invokeArgs( $this->api_client, [ 10 * MB_IN_BYTES ] );
+
+		remove_all_filters( 'upload_size_limit' );
 
 		self::assertSame(
-			$scale->invokeArgs( $this->api_client, [ (int) wp_max_upload_size() ] ),
+			$cold,
 			$timeouts[0],
 			'A cold download should allow what an upload of the largest permitted file gets.'
 		);
 		self::assertSame(
-			$scale->invokeArgs( $this->api_client, [ 10 * MB_IN_BYTES ] ),
+			$warm,
 			$timeouts[1],
 			'A download with a known size should scale to that size.'
 		);
-		self::assertLessThan( $timeouts[0], $timeouts[1] );
+		self::assertLessThan(
+			$cold,
+			$warm,
+			'A known 10 MiB file should get less time than an unknown file under a 4 GiB limit.'
+		);
 	}
 
 	public function test__get_file__sizes_an_unknown_download_from_the_upload_limit() {

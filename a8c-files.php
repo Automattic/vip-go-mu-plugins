@@ -11,7 +11,7 @@ Author URI: http://automattic.com/
 // phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
 
 /* Requires at least: 3.9.0
- * due to the dependancy on the filter 'wp_insert_attachment_data'
+ * due to the dependency on the filter 'wp_insert_attachment_data'
  * used to catch imports and push the files to the VIP MogileFS service
  */
 
@@ -140,7 +140,7 @@ class A8C_Files {
 
 		// The files service has Photon capabilities, but is served from the same domain.
 		// Force Jetpack to use the files service instead of the default Photon domains (`i*.wp.com`) for internal files.
-		// Externally hosted files continue to use the remot Photon service.
+		// Externally hosted files continue to use the remote Photon service.
 		add_filter( 'jetpack_photon_domain', [ 'A8C_Files_Utils', 'filter_photon_domain' ], 10, 2 );
 
 		// If Jetpack dev mode is enabled, jetpack_photon_url is short-circuited.
@@ -205,6 +205,32 @@ class A8C_Files {
 		return false;
 	}
 
+	/**
+	 * Gets a numeric pixel width from theme.json layout settings.
+	 *
+	 * @param string[] $layout_settings Ordered layout settings to check.
+	 * @return int Width in pixels, or 0 when unavailable.
+	 */
+	private function get_theme_json_layout_width( $layout_settings ) {
+		if ( ! function_exists( 'wp_get_global_settings' ) || ! function_exists( 'wp_theme_has_theme_json' ) || ! wp_theme_has_theme_json() ) {
+			return 0;
+		}
+
+		foreach ( $layout_settings as $layout_setting ) {
+			$value = wp_get_global_settings( array( 'layout', $layout_setting ) );
+
+			if ( is_numeric( $value ) ) {
+				return max( 0, (int) $value );
+			}
+
+			if ( is_string( $value ) && preg_match( '/^(\d+(?:\.\d+)?)px$/i', trim( $value ), $matches ) ) {
+				return max( 0, (int) round( (float) $matches[1] ) );
+			}
+		}
+
+		return 0;
+	}
+
 	public function upload_url_path( $upload_url_path ) {
 		// No modifications needed outside multisite
 		if ( false !== is_multisite() ) {
@@ -235,9 +261,34 @@ class A8C_Files {
 			return false;
 		}
 
-		$content_width = isset( $GLOBALS['content_width'] ) ? $GLOBALS['content_width'] : null;
-		$crop          = false;
-		$args          = array();
+		// The full size is the original attachment, not an intermediate image size.
+		// Fall through to core so it can return the original URL and dimensions.
+		if ( 'full' === $size ) {
+			return false;
+		}
+
+		$content_width = isset( $GLOBALS['content_width'] ) ? max( 0, (int) $GLOBALS['content_width'] ) : 0;
+
+		$content_width_for_constraint = $content_width;
+		$max_image_width              = $content_width;
+		if ( 0 === $content_width ) {
+			/**
+			 * Filters whether theme.json layout widths are used when $content_width is unavailable.
+			 *
+			 * @param bool         $use_theme_json_layout_widths Whether to use theme.json layout widths.
+			 * @param int          $id                           Attachment ID.
+			 * @param array|string $size                         Requested image size.
+			 */
+			$use_theme_json_layout_widths = (bool) apply_filters( 'vip_image_resize_use_theme_json_layout_widths', true, $id, $size );
+
+			if ( $use_theme_json_layout_widths ) {
+				$content_width_for_constraint = $this->get_theme_json_layout_width( array( 'contentSize' ) );
+				$max_image_width              = $this->get_theme_json_layout_width( array( 'wideSize', 'contentSize' ) );
+			}
+		}
+
+		$crop = false;
+		$args = array();
 
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
@@ -285,8 +336,8 @@ class A8C_Files {
 			$w      = $_max_w;
 			$h      = $_max_h;
 			$crop   = $_wp_additional_image_sizes[ $size ]['crop'];
-		} elseif ( $content_width > 0 ) {
-			$_max_w = $content_width;
+		} elseif ( $max_image_width > 0 ) {
+			$_max_w = $max_image_width;
 			$_max_h = 0;
 		} else {
 			$_max_w = 1024;
@@ -294,8 +345,8 @@ class A8C_Files {
 		}
 
 		// Constrain default image sizes to the theme's content width, if available.
-		if ( $content_width > 0 && in_array( $size, array( 'thumbnail', 'medium', 'large' ) ) ) {
-			$_max_w = min( $_max_w, $content_width );
+		if ( $content_width_for_constraint > 0 && in_array( $size, array( 'thumbnail', 'medium', 'medium_large', 'large' ) ) ) {
+			$_max_w = min( $_max_w, $content_width_for_constraint );
 		}
 
 		$resized = false;
@@ -641,7 +692,7 @@ function wpcom_intermediate_sizes() {
  * Figure out whether srcset is enabled or not. Should be run on init action
  * earliest in order to allow clients to override this via theme's functions.php
  *
- * @return bool True if VIP Go File Service compatibile srcset solution is enabled.
+ * @return bool True if VIP Go File Service compatible srcset solution is enabled.
  */
 function is_vip_go_srcset_enabled() {
 	// Allow override via querystring for easy testing

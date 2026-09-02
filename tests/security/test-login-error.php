@@ -41,17 +41,17 @@ class Login_Error_Test extends WP_UnitTestCase {
 	}
 
 	public function test_ambiguous_reset(): void {
-		$location       = null;
-		$redirect_caled = false;
+		$location        = null;
+		$redirect_called = false;
 
 		add_filter( 'wp_redirect', function ( $dest ) use ( &$location ) {
 			$location = $dest;
 			return $dest;
 		} );
 
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
-		add_filter( 'wp_redirect_status', function () use ( &$redirect_caled ) {
-			$redirect_caled = true;
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn
+		add_filter( 'wp_redirect_status', function () use ( &$redirect_called ) {
+			$redirect_called = true;
 			throw new WPDieException( 'Redirect called' );
 		} );
 
@@ -65,7 +65,7 @@ class Login_Error_Test extends WP_UnitTestCase {
 			static::fail( 'Expected exception' );
 		} catch ( WPDieException $e ) {
 			static::assertEquals( 'Redirect called', $e->getMessage() );
-			static::assertTrue( $redirect_caled );
+			static::assertTrue( $redirect_called );
 			static::assertIsString( $location );
 			static::assertStringContainsString( 'wp-login.php?checkemail=confirm', $location );
 		}

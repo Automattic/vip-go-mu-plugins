@@ -93,6 +93,9 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_c
 	}
 }
 
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
+
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
 }
@@ -202,18 +205,12 @@ if ( WPCOM_SANDBOXED ) {
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
 
-// Stats collection
-require_once __DIR__ . '/prometheus.php';
-
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
 require_once __DIR__ . '/lib/utils/class-alerts.php';
-
-// Polyfills
-require_once __DIR__ . '/lib/helpers/php-compat.php';
 
 // Load our development and environment helpers
 require_once __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php';
@@ -231,6 +228,9 @@ require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
 require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
+if ( file_exists( __DIR__ . '/vip-helpers/vip-connectors.php' ) ) {
+	require_once __DIR__ . '/vip-helpers/vip-connectors.php';
+}
 
 // Load the Telemetry files
 require_once __DIR__ . '/telemetry/class-telemetry-system.php';

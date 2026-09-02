@@ -10,7 +10,7 @@ require_once __DIR__ . '/class-health.php';
 class HealthJob {
 
 	/**
-	 * The name of the scheduled cron event to run the validate contnets check
+	 * The name of the scheduled cron event to run the validate content check
 	 */
 	const CRON_EVENT_VALIDATE_CONTENT_NAME = 'vip_search_health_validate_content';
 

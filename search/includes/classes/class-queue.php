@@ -1306,7 +1306,7 @@ class Queue {
 	}
 
 	/**
-	 * When indexing rate limting first begins, log this information and surface as a PHP warning
+	 * When indexing rate limiting first begins, log this information and surface as a PHP warning
 	 */
 	public function log_index_ratelimiting_start() {
 		$message = sprintf(
