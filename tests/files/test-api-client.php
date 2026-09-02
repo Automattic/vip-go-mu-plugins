@@ -423,6 +423,57 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 	}
 
+	public function get_test_data__get_file__failed_download_leaves_no_temp_file() {
+		return [
+			'missing file'    => [
+				[
+					'response' => [ 'code' => 404 ],
+					'body'     => 'Not Found',
+				],
+			],
+			'server error'    => [
+				[
+					'response' => [ 'code' => 503 ],
+					'body'     => 'Service Unavailable',
+				],
+			],
+			'transport error' => [ new WP_Error( 'http_request_failed', 'Operation too slow' ) ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_file__failed_download_leaves_no_temp_file
+	 */
+	public function test__get_file__failed_download_leaves_no_temp_file( $mocked_response ) {
+		$this->mock_http_response( $mocked_response );
+
+		$result = $this->api_client->get_file( '/wp-content/uploads/failed.txt' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertCount( 1, $this->http_requests );
+
+		$tmp_file = $this->http_requests[0]['args']['filename'];
+		self::assertNotEmpty( $tmp_file, 'The download should have been streamed to a temp file.' );
+		clearstatcache( false, $tmp_file );
+		self::assertFileDoesNotExist( $tmp_file, 'A failed download must not leave its temp file behind.' );
+	}
+
+	public function test__get_file__invalid_path_leaves_no_temp_file() {
+		$this->mock_http_response( [
+			'response' => [ 'code' => 200 ],
+			'body'     => '',
+		] );
+
+		$before = glob( get_temp_dir() . 'vip*' );
+		$result = $this->api_client->get_file( '/etc/passwd' );
+		$after  = glob( get_temp_dir() . 'vip*' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'invalid-path', $result->get_error_code() );
+		self::assertCount( 0, $this->http_requests, 'An invalid path must not reach the transport.' );
+		self::assertSame( $before, $after, 'A rejected path must not leave a temp file behind.' );
+	}
+
 	public function test__get_file_content__returns_get_file_error() {
 		$this->mock_http_response( [
 			'response' => [
@@ -748,6 +799,27 @@ class API_Client_Test extends WP_UnitTestCase {
 		self::assertSame( [ 'download' ], $actions, 'A known-missing file should not be asked about again.' );
 	}
 
+	public function test__get_file__trusts_a_cached_missing_file() {
+		$actions = &$this->record_requests( function () {
+			return [
+				'response' => [ 'code' => 404 ],
+				'body'     => '',
+			];
+		} );
+
+		// file_exists() then fopen( ..., 'a' ) on a new file lands here.
+		self::assertFalse( $this->api_client->is_file( '/wp-content/uploads/absent.txt' ) );
+
+		$before = glob( get_temp_dir() . 'vip*' );
+		$result = $this->api_client->get_file( '/wp-content/uploads/absent.txt' );
+		$after  = glob( get_temp_dir() . 'vip*' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'file-not-found', $result->get_error_code() );
+		self::assertSame( [ 'file_exists' ], $actions, 'A read of a known-missing file should not download again.' );
+		self::assertSame( $before, $after, 'A short-circuited read must not create a temp file.' );
+	}
+
 	public function test__is_file__asks_once_for_repeated_questions() {
 		$actions = &$this->record_requests( function () {
 			return [
@@ -900,7 +972,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->api_client->get_file( '/wp-content/uploads/warm.txt' );
 
 		$scale = self::get_method( 'calculate_transfer_timeout' );
-		$cold  = $scale->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+		$cold  = min( $scale->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] ), API_Client::DOWNLOAD_COLD_TIMEOUT_WEB );
 		$warm  = $scale->invokeArgs( $this->api_client, [ 10 * MB_IN_BYTES ] );
 
 		remove_all_filters( 'upload_size_limit' );
@@ -908,7 +980,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		self::assertSame(
 			$cold,
 			$timeouts[0],
-			'A cold download should allow what an upload of the largest permitted file gets.'
+			'A cold download should allow what the largest permitted upload gets, capped for a web request.'
 		);
 		self::assertSame(
 			$warm,
@@ -919,6 +991,75 @@ class API_Client_Test extends WP_UnitTestCase {
 			$cold,
 			$warm,
 			'A known 10 MiB file should get less time than an unknown file under a 4 GiB limit.'
+		);
+	}
+
+	/**
+	 * Records the timeout of every download request and answers it with a small payload.
+	 *
+	 * @return array<int,int> Filled with each download timeout, in order.
+	 */
+	private function &record_download_timeouts() {
+		$timeouts = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$timeouts ) {
+			$timeouts[] = $args['timeout'];
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			file_put_contents( $args['filename'], 'payload' );
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}, 10, 2 );
+
+		return $timeouts;
+	}
+
+	public function test__get_file__caps_a_cold_download_in_a_web_request() {
+		$timeouts = &$this->record_download_timeouts();
+
+		// The platform limit; scaling from it would allow well over two hours.
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
+		$this->api_client->get_file( '/wp-content/uploads/cold-web.txt' );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		$uncapped = self::get_method( 'calculate_transfer_timeout' )->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+
+		self::assertGreaterThan( API_Client::DOWNLOAD_COLD_TIMEOUT_WEB, $uncapped, 'The fixture limit must exceed the cap for this test to mean anything.' );
+		self::assertSame(
+			API_Client::DOWNLOAD_COLD_TIMEOUT_WEB,
+			$timeouts[0],
+			'A web request must not wait for the full size-derived ceiling on a cold read.'
+		);
+	}
+
+	public function test__get_file__keeps_the_full_cold_timeout_outside_web_requests() {
+		$timeouts = &$this->record_download_timeouts();
+
+		// WP_CLI and DOING_CRON are process-wide constants, so stand in for them.
+		$this->api_client = new class( 'https://files.go-vip.co', 123456, 'super-sekret-token', API_Cache::get_instance() ) extends API_Client {
+			protected function is_long_running_context(): bool {
+				return true;
+			}
+		};
+
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
+		$this->api_client->get_file( '/wp-content/uploads/cold-cli.txt' );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		$uncapped = self::get_method( 'calculate_transfer_timeout' )->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+
+		self::assertSame(
+			$uncapped,
+			$timeouts[0],
+			'WP-CLI and cron may legitimately spend the full size-derived ceiling on one transfer.'
 		);
 	}
 
