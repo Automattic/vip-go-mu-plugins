@@ -247,10 +247,9 @@ class API_Client {
 	 * limit, so these ceilings only apply to a transfer still making progress.
 	 */
 	private function calculate_download_timeout( $file_path ) {
-		$stats_found = false;
-		$stats       = $this->cache->get_file_stats( $file_path, $stats_found );
+		$stats = $this->cache->get_file_stats( $file_path );
 
-		if ( $stats_found && is_array( $stats ) && isset( $stats['size'] ) ) {
+		if ( is_array( $stats ) && isset( $stats['size'] ) ) {
 			return $this->calculate_transfer_timeout( (int) $stats['size'] );
 		}
 
@@ -305,15 +304,6 @@ class API_Client {
 			return $file;
 		}
 
-		// A stat, read or delete in this request already learned the file is
-		// missing; trust that the same way is_file() does instead of asking again.
-		$stats_found = false;
-		$stats       = $this->cache->get_file_stats( $file_path, $stats_found );
-		if ( $stats_found && false === $stats ) {
-			/* translators: 1: file path */
-			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
-		}
-
 		$tmp_file = $this->cache->create_tmp_file();
 
 		// Request args for wp_remote_request()
@@ -356,8 +346,6 @@ class API_Client {
 		$response_code = wp_remote_retrieve_response_code( $response );
 		if ( 404 === $response_code ) {
 			$this->discard_tmp_file( $tmp_file );
-			// Remember the absence so a later existence check costs nothing.
-			$this->cache->cache_file_stats( $file_path, false );
 			/* translators: 1: file path */
 			return new WP_Error( 'file-not-found', sprintf( __( 'The requested file `%1$s` does not exist (response code: 404)' ), $file_path ) );
 		} elseif ( 200 !== $response_code ) {
@@ -420,7 +408,6 @@ class API_Client {
 		}
 
 		$this->cache->remove_file( $file_path );
-		$this->cache->cache_file_stats( $file_path, false );
 
 		return true;
 	}
@@ -432,13 +419,8 @@ class API_Client {
 	 */
 	public function is_file( $file_path, &$info = null ) {
 		// check in cache first
-		$stats_found = false;
-		$stats       = $this->cache->get_file_stats( $file_path, $stats_found );
-		if ( $stats_found && false === $stats ) {
-			return false;
-		}
-
-		if ( $stats_found && ! empty( $stats ) ) {
+		$stats = $this->cache->get_file_stats( $file_path );
+		if ( $stats ) {
 			$info = $stats;
 			return true;
 		}
@@ -465,7 +447,8 @@ class API_Client {
 
 			return true;
 		} elseif ( 404 === $response_code ) {
-			$this->cache->cache_file_stats( $file_path, false );
+			// Deliberately not cached: a missing file is re-checked on every call so
+			// a file created elsewhere during this process becomes visible at once.
 			return false;
 		}
 

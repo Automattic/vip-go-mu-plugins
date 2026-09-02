@@ -68,20 +68,13 @@ class API_Cache {
 		return false;
 	}
 
-	/**
-	 * @param string    $filepath File Service path.
-	 * @param bool|null $found    Set to true when the cache contains a positive or negative entry.
-	 * @return array|false Cached stats, or false for a missing file/cache entry.
-	 */
-	public function get_file_stats( $filepath, &$found = null ) {
+	public function get_file_stats( $filepath ) {
 		$cache_key = $this->normalize_path( $filepath );
 
-		if ( array_key_exists( $cache_key, $this->file_stats ) ) {
-			$found = true;
+		if ( isset( $this->file_stats[ $cache_key ] ) ) {
 			return $this->file_stats[ $cache_key ];
 		}
 
-		$found = false;
 		return false;
 	}
 

@@ -276,7 +276,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
 	}
 
-	public function test__is_file__caches_missing_file_for_the_request() {
+	public function test__is_file__does_not_cache_a_missing_file() {
 		$this->mock_http_response( [
 			'response' => [
 				'code' => 404,
@@ -287,7 +287,7 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $this->api_client->is_file( $path ) );
 		$this->assertFalse( $this->api_client->is_file( $path ) );
-		$this->assertCount( 1, $this->http_requests, 'A repeated missing-file probe should not make another HTTP request.' );
+		$this->assertCount( 2, $this->http_requests, 'Absence is deliberately re-checked so a file created elsewhere becomes visible at once.' );
 	}
 
 	public function get_test_data__delete_file() {
@@ -784,7 +784,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		self::assertSame( strtotime( 'Mon, 25 Aug 2026 12:00:00 GMT' ), $info['mtime'] );
 	}
 
-	public function test__get_file__caches_a_missing_file() {
+	public function test__get_file__does_not_cache_a_missing_file() {
 		$actions = &$this->record_requests( $this->download_responder( 404 ) );
 
 		$result = $this->api_client->get_file( '/wp-content/uploads/gone.txt' );
@@ -794,12 +794,11 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$info = [];
 		self::assertFalse( $this->api_client->is_file( '/wp-content/uploads/gone.txt', $info ) );
-		self::assertFalse( $this->api_client->is_file( '/wp-content/uploads/gone.txt', $info ) );
 
-		self::assertSame( [ 'download' ], $actions, 'A known-missing file should not be asked about again.' );
+		self::assertSame( [ 'download', 'file_exists' ], $actions, 'A 404 download must not stand in for a later existence check.' );
 	}
 
-	public function test__get_file__trusts_a_cached_missing_file() {
+	public function test__get_file__rechecks_a_missing_file_without_leaking() {
 		$actions = &$this->record_requests( function () {
 			return [
 				'response' => [ 'code' => 404 ],
@@ -816,8 +815,8 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		self::assertInstanceOf( WP_Error::class, $result );
 		self::assertSame( 'file-not-found', $result->get_error_code() );
-		self::assertSame( [ 'file_exists' ], $actions, 'A read of a known-missing file should not download again.' );
-		self::assertSame( $before, $after, 'A short-circuited read must not create a temp file.' );
+		self::assertSame( [ 'file_exists', 'download' ], $actions, 'A read after a failed stat asks the service again rather than trusting the earlier 404.' );
+		self::assertSame( $before, $after, 'A failed read must not leave a temp file behind.' );
 	}
 
 	public function test__is_file__asks_once_for_repeated_questions() {
