@@ -6,6 +6,7 @@ Development repository for WordPress VIP Go MU plugins.
 
 - `000-vip-init.php`, `001-core.php`, `z-client-mu-plugins.php`: main MU bootstrap/load path.
 - `001-core/`, `lib/`, `cache/`, `security/`, `vip-helpers/`, `wp-cli/`: platform feature modules.
+- [`config/`](config/README.md): site details metadata sent to SDS.
 - `tests/`: PHPUnit test suite for root MU code.
 - `__tests__/e2e/`: Playwright e2e suite.
 - `ci/`, `.github/workflows/`: automation, CI, release/deploy workflows.

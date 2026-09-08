@@ -53,10 +53,10 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		global $wp_version;
 
 		$test_plugins = [
-			'hello.php' => [ 'Name' => 'Hello Tests', 'Version' => '4.5', 'UpdateURI' => '' ],
+			'hello.php' => [ 'Name' => 'Hello Tests', 'Version' => '4.5', 'UpdateURI' => 'https://wordpress.org/plugins/hello-wporg-slug/' ],
 			'world.php' => [ 'Name' => 'Test Plugin', 'Version' => '1.2', 'UpdateURI' => '' ],
-			'woocommerce-subscriptions/woocommerce-subscriptions.php' => [ 'Name' => 'WooCommerce Subscriptions', 'Version' => '4.1.0', 'UpdateURI' => '' ],
-			'custom.php' => [ 'Name' => 'Custom Plugin', 'Version' => '8.6', 'UpdateURI' => '' ],
+			'woocommerce-subscriptions/woocommerce-subscriptions.php' => [ 'Name' => 'WooCommerce Subscriptions', 'Version' => '4.1.0', 'UpdateURI' => 'https://woocommerce.com/products/woocommerce-subscriptions/' ],
+			'custom.php' => [ 'Name' => 'Custom Plugin', 'Version' => '8.6', 'UpdateURI' => 'false' ],
 		];
 
 		// Mock the list of plugins, setting which are active and which have available updates.
@@ -83,6 +83,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'hello.php',
 					'name'          => 'Hello Tests',
 					'version'       => '4.5',
+					'update_uri'    => 'https://wordpress.org/plugins/hello-wporg-slug/',
 					'active'        => true,
 					'activated_by'  => 'option',
 					'wporg_slug'    => 'hello-wporg-slug',
@@ -96,6 +97,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'world.php',
 					'name'          => 'Test Plugin',
 					'version'       => '1.2',
+					'update_uri'    => '',
 					'active'        => false,
 					'activated_by'  => null,
 					'wporg_slug'    => 'test-wporg-slug',
@@ -109,6 +111,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'         => 'woocommerce-subscriptions/woocommerce-subscriptions.php',
 					'name'         => 'WooCommerce Subscriptions',
 					'version'      => '4.1.0',
+					'update_uri'    => 'https://woocommerce.com/products/woocommerce-subscriptions/',
 					'active'       => false,
 					'activated_by' => null,
 					'wporg_slug'    => 'woocommerce-com-woocommerce-subscriptions',
@@ -122,6 +125,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'custom.php',
 					'name'          => 'Custom Plugin',
 					'version'       => '8.6',
+					'update_uri'    => 'false',
 					'active'        => false,
 					'activated_by'  => null,
 					'wporg_slug'    => null,
@@ -135,6 +139,44 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		);
 
 		remove_filter( 'pre_site_transient_update_plugins', [ $this, 'mock_update_plugins_transient' ], 999 );
+	}
+
+	/**
+	 * @dataProvider plugin_update_uri_provider
+	 */
+	public function test__plugin_update_uri_is_preserved_without_update_metadata( array $headers, ?string $expected, bool $active ) {
+		$test_plugin = array_merge( [ 'Name' => 'Custom Plugin', 'Version' => '1.0' ], $headers );
+		wp_cache_set( 'plugins', [ '' => [ 'custom.php' => $test_plugin ] ], 'plugins' );
+		update_option( 'active_plugins', $active ? [ 'custom.php' ] : [] );
+		add_filter( 'pre_site_transient_update_plugins', static function () {
+			return (object) [
+				'last_checked' => time(),
+				'checked' => [ 'custom.php' => '1.0' ],
+				'response' => [],
+				'no_update' => [],
+			];
+		}, 999 );
+
+		$plugins = ( new Site_Details_Index() )->get_plugin_info();
+
+		$this->assertCount( 1, $plugins );
+		$this->assertArrayHasKey( 'update_uri', $plugins[0] );
+		$this->assertSame( $expected, $plugins[0]['update_uri'] );
+		$this->assertSame( $active, $plugins[0]['active'] );
+		$this->assertNull( $plugins[0]['slug'] );
+		$this->assertNull( $plugins[0]['download_link'] );
+		$this->assertSame( $expected, json_decode( wp_json_encode( $plugins ), true )[0]['update_uri'] );
+	}
+
+	public static function plugin_update_uri_provider() {
+		return [
+			'missing header' => [ [], null, false ],
+			'null header' => [ [ 'UpdateURI' => null ], null, false ],
+			'empty header' => [ [ 'UpdateURI' => '' ], '', false ],
+			'inactive opt-out' => [ [ 'UpdateURI' => 'false' ], 'false', false ],
+			'active opt-out' => [ [ 'UpdateURI' => 'false' ], 'false', true ],
+			'custom Unicode URI' => [ [ 'UpdateURI' => 'https://vendor.example/plugins/🔌/' ], 'https://vendor.example/plugins/🔌/', false ],
+		];
 	}
 
 	public function mock_update_plugins_transient() {
