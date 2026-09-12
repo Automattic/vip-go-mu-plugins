@@ -16,26 +16,29 @@ class ConnectorControlsIntegration extends Integration {
 	/**
 	 * Managed connector definitions.
 	 *
-	 * @var array<string,array{config_key:string,constant:string,env:string,option:string}>
+	 * @var array<string,array{config_key:string,blocked_key:string,constant:string,env:string,option:string}>
 	 */
 	private const CONNECTORS = [
 		'openai'    => [
-			'config_key' => 'openai_api_key',
-			'constant'   => 'OPENAI_API_KEY',
-			'env'        => 'OPENAI_API_KEY',
-			'option'     => 'connectors_ai_openai_api_key',
+			'config_key'  => 'openai_api_key',
+			'blocked_key' => 'openai_blocked',
+			'constant'    => 'OPENAI_API_KEY',
+			'env'         => 'OPENAI_API_KEY',
+			'option'      => 'connectors_ai_openai_api_key',
 		],
 		'anthropic' => [
-			'config_key' => 'anthropic_api_key',
-			'constant'   => 'ANTHROPIC_API_KEY',
-			'env'        => 'ANTHROPIC_API_KEY',
-			'option'     => 'connectors_ai_anthropic_api_key',
+			'config_key'  => 'anthropic_api_key',
+			'blocked_key' => 'anthropic_blocked',
+			'constant'    => 'ANTHROPIC_API_KEY',
+			'env'         => 'ANTHROPIC_API_KEY',
+			'option'      => 'connectors_ai_anthropic_api_key',
 		],
 		'google'    => [
-			'config_key' => 'google_api_key',
-			'constant'   => 'GOOGLE_API_KEY',
-			'env'        => 'GOOGLE_API_KEY',
-			'option'     => 'connectors_ai_google_api_key',
+			'config_key'  => 'google_api_key',
+			'blocked_key' => 'google_blocked',
+			'constant'    => 'GOOGLE_API_KEY',
+			'env'         => 'GOOGLE_API_KEY',
+			'option'      => 'connectors_ai_google_api_key',
 		],
 	];
 
@@ -67,16 +70,11 @@ class ConnectorControlsIntegration extends Integration {
 			return;
 		}
 
-		$config = array_replace( $this->get_org_config(), $this->get_env_config() );
-		if ( is_multisite() ) {
-			$config = array_replace( $config, $this->get_network_site_config() );
-		}
-
 		foreach ( self::CONNECTORS as $connector ) {
 			$this->make_database_credential_inert( $connector['option'] );
 
-			$credential = $config[ $connector['config_key'] ] ?? null;
-			if ( ! is_string( $credential ) || '' === trim( $credential ) ) {
+			$credential = $this->resolve_credential( $connector );
+			if ( null === $credential ) {
 				continue;
 			}
 
@@ -95,6 +93,34 @@ class ConnectorControlsIntegration extends Integration {
 		if ( ! defined( 'VIP_CONNECTOR_CONTROLS_LOADED' ) ) {
 			define( 'VIP_CONNECTOR_CONTROLS_LOADED', true );
 		}
+	}
+
+	/**
+	 * Resolve a credential while respecting explicit opt-outs at more-specific levels.
+	 *
+	 * @param array{config_key:string,blocked_key:string,constant:string,env:string,option:string} $connector Connector definition.
+	 */
+	private function resolve_credential( array $connector ): ?string {
+		$configs = [];
+		if ( is_multisite() ) {
+			$configs[] = $this->get_network_site_config();
+		}
+		$configs[] = $this->get_env_config();
+		$configs[] = $this->get_org_config();
+
+		foreach ( $configs as $config ) {
+			$blocked = $config[ $connector['blocked_key'] ] ?? false;
+			if ( in_array( $blocked, [ true, 1, '1', 'true' ], true ) ) {
+				return null;
+			}
+
+			$credential = $config[ $connector['config_key'] ] ?? null;
+			if ( is_string( $credential ) && '' !== trim( $credential ) ) {
+				return $credential;
+			}
+		}
+
+		return null;
 	}
 
 	/**

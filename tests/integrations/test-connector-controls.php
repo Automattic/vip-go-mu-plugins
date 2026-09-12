@@ -83,6 +83,28 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'environment-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
 	}
 
+	public function test_environment_can_explicitly_disable_an_organization_credential(): void {
+		$config      = new IntegrationVipConfig(
+			'connector-controls',
+			[
+				'org' => [
+					'status' => Org_Integration_Status::ENABLED,
+					'config' => [ 'openai_api_key' => 'org-secret' ],
+				],
+				'env' => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => [ 'openai_blocked' => 'true' ],
+				],
+			]
+		);
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->set_vip_config( $config );
+
+		$integration->configure();
+
+		$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
+	}
+
 	public function test_disabled_organization_does_not_configure_credentials(): void {
 		$config      = new IntegrationVipConfig(
 			'connector-controls',
@@ -137,6 +159,45 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			$integration->configure();
 
 			$this->assertSame( 'network-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		} finally {
+			restore_current_blog();
+		}
+	}
+
+	public function test_network_site_can_explicitly_disable_an_environment_credential(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$blog_id = $this->factory()->blog->create_object( [ 'domain' => 'connector-controls.test/3' ] );
+		switch_to_blog( $blog_id );
+
+		try {
+			$config      = new IntegrationVipConfig(
+				'connector-controls',
+				[
+					'org'           => [
+						'status' => Org_Integration_Status::ENABLED,
+						'config' => [ 'openai_api_key' => 'org-secret' ],
+					],
+					'env'           => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => [ 'openai_api_key' => 'environment-secret' ],
+					],
+					'network_sites' => [
+						$blog_id => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [ 'openai_blocked' => 'true' ],
+						],
+					],
+				]
+			);
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->set_vip_config( $config );
+
+			$integration->configure();
+
+			$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
 		} finally {
 			restore_current_blog();
 		}
