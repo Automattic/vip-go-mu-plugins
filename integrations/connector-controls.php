@@ -7,12 +7,23 @@
 
 namespace Automattic\VIP\Integrations;
 
+use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
+
 /**
  * Supplies centrally managed credentials to WordPress Core connectors.
  *
  * @private
  */
 class ConnectorControlsIntegration extends Integration {
+	/**
+	 * Managed credentials that cannot use their provider constant because it is
+	 * already defined with a value Core does not recognize.
+	 *
+	 * @var array<string,string>
+	 */
+	private array $runtime_credential_fallbacks = [];
+
 	/**
 	 * Managed connector definitions.
 	 *
@@ -70,7 +81,7 @@ class ConnectorControlsIntegration extends Integration {
 			return;
 		}
 
-		foreach ( self::CONNECTORS as $connector ) {
+		foreach ( self::CONNECTORS as $connector_id => $connector ) {
 			$this->make_database_credential_inert( $connector['option'] );
 
 			$credential = $this->resolve_credential( $connector );
@@ -78,14 +89,31 @@ class ConnectorControlsIntegration extends Integration {
 				continue;
 			}
 
-			// Core gives environment variables precedence over constants. Preserve either
-			// existing source rather than silently replacing customer configuration.
+			// Match Core's credential-source checks exactly. A whitespace-only
+			// environment variable is still an explicit external credential, while a
+			// constant must be a non-empty string.
 			$environment_credential = getenv( $connector['env'] );
-			if ( ( is_string( $environment_credential ) && '' !== trim( $environment_credential ) ) || defined( $connector['constant'] ) ) {
+			if ( false !== $environment_credential && '' !== $environment_credential ) {
+				continue;
+			}
+
+			if ( defined( $connector['constant'] ) ) {
+				$constant_credential = constant( $connector['constant'] );
+				if ( is_string( $constant_credential ) && '' !== $constant_credential ) {
+					continue;
+				}
+
+				// PHP constants cannot be redefined. Apply the managed credential to the
+				// AI Client registry after Core registers its providers instead.
+				$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
 				continue;
 			}
 
 			define( $connector['constant'], $credential );
+		}
+
+		if ( [] !== $this->runtime_credential_fallbacks ) {
+			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], 100 );
@@ -100,6 +128,27 @@ class ConnectorControlsIntegration extends Integration {
 	 */
 	protected function is_connectors_api_available(): bool {
 		return function_exists( '\\wp_get_connectors' );
+	}
+
+	/**
+	 * Apply managed credentials whose invalid pre-existing constants cannot be redefined.
+	 */
+	public function apply_runtime_credential_fallbacks(): void {
+		foreach ( $this->runtime_credential_fallbacks as $connector_id => $credential ) {
+			$this->set_runtime_credential( $connector_id, $credential );
+		}
+	}
+
+	/**
+	 * Configure one AI provider directly in its runtime registry.
+	 */
+	protected function set_runtime_credential( string $connector_id, string $credential ): void {
+		$registry = AiClient::defaultRegistry();
+		if ( ! $registry->hasProvider( $connector_id ) ) {
+			return;
+		}
+
+		$registry->setProviderRequestAuthentication( $connector_id, new ApiKeyRequestAuthentication( $credential ) );
 	}
 
 	/**

@@ -22,7 +22,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		if ( ! function_exists( '\\wp_get_connectors' ) ) {
+		if ( ! function_exists( '\\wp_get_connectors' ) && 'test_configure_does_not_mutate_runtime_without_the_connectors_api' !== $this->getName( false ) ) {
 			$this->markTestSkipped( 'Requires the WordPress Connectors API.' );
 		}
 	}
@@ -67,6 +67,40 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->configure();
 
 		$this->assertSame( 'customer-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+	}
+
+	/**
+	 * @dataProvider invalid_constant_provider
+	 */
+	public function test_invalid_existing_constant_uses_managed_runtime_fallback( $constant_value ): void {
+		Constant_Mocker::define( 'OPENAI_API_KEY', $constant_value );
+		$integration = new class( 'connector-controls' ) extends ConnectorControlsIntegration {
+			/** @var array<string,string> */
+			private array $applied_runtime_credentials = [];
+
+			/** @return array<string,string> */
+			public function get_applied_runtime_credentials(): array {
+				return $this->applied_runtime_credentials;
+			}
+
+			protected function set_runtime_credential( string $connector_id, string $credential ): void {
+				$this->applied_runtime_credentials[ $connector_id ] = $credential;
+			}
+		};
+		$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
+
+		$integration->configure();
+
+		$this->assertSame( 10, has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+		$integration->apply_runtime_credential_fallbacks();
+		$this->assertSame( [ 'openai' => 'platform-secret' ], $integration->get_applied_runtime_credentials() );
+		remove_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] );
+	}
+
+	public function invalid_constant_provider(): iterable {
+		yield 'empty string' => [ '' ];
+		yield 'boolean' => [ false ];
+		yield 'integer' => [ 123 ];
 	}
 
 	public function test_environment_credentials_override_organization_credentials(): void {
@@ -253,27 +287,14 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'env', $filtered['connectors']['anthropic']['authentication']['keySource'] );
 		$this->assertSame( 'database', $filtered['connectors']['custom']['authentication']['keySource'] );
 	}
-}
-
-class Connector_Controls_Without_Core_API_Integration extends ConnectorControlsIntegration {
-	protected function is_connectors_api_available(): bool {
-		return false;
-	}
-}
-
-class Connector_Controls_Unsupported_Core_Integration_Test extends WP_UnitTestCase {
-	public function tearDown(): void {
-		remove_all_filters( 'pre_option_connectors_ai_openai_api_key' );
-		remove_all_filters( 'pre_update_option_connectors_ai_openai_api_key' );
-		delete_option( 'connectors_ai_openai_api_key' );
-		Constant_Mocker::clear();
-
-		parent::tearDown();
-	}
 
 	public function test_configure_does_not_mutate_runtime_without_the_connectors_api(): void {
 		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
-		$integration = new Connector_Controls_Without_Core_API_Integration( 'connector-controls' );
+		$integration = new class( 'connector-controls' ) extends ConnectorControlsIntegration {
+			protected function is_connectors_api_available(): bool {
+				return false;
+			}
+		};
 		$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
 
 		$integration->configure();
