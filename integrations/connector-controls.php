@@ -65,7 +65,7 @@ class ConnectorControlsIntegration extends Integration {
 	 * Resolve the most-specific platform credentials and lock Core's local stores.
 	 */
 	public function configure(): void {
-		if ( ! $this->is_enabled_for_org() ) {
+		if ( ! $this->is_enabled_for_org() || ! $this->is_connectors_api_available() ) {
 			$this->is_active = false;
 			return;
 		}
@@ -93,6 +93,13 @@ class ConnectorControlsIntegration extends Integration {
 		if ( ! defined( 'VIP_CONNECTOR_CONTROLS_LOADED' ) ) {
 			define( 'VIP_CONNECTOR_CONTROLS_LOADED', true );
 		}
+	}
+
+	/**
+	 * Whether the WordPress Connectors API is available.
+	 */
+	protected function is_connectors_api_available(): bool {
+		return function_exists( '\\wp_get_connectors' );
 	}
 
 	/**

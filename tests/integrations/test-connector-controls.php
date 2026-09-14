@@ -19,6 +19,14 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		'connectors_ai_google_api_key',
 	];
 
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( ! function_exists( '\\wp_get_connectors' ) ) {
+			$this->markTestSkipped( 'Requires the WordPress Connectors API.' );
+		}
+	}
+
 	public function tearDown(): void {
 		foreach ( self::OPTIONS as $option_name ) {
 			remove_all_filters( "pre_option_{$option_name}" );
@@ -230,5 +238,36 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'constant', $filtered['connectors']['openai']['authentication']['keySource'] );
 		$this->assertSame( 'env', $filtered['connectors']['anthropic']['authentication']['keySource'] );
 		$this->assertSame( 'database', $filtered['connectors']['custom']['authentication']['keySource'] );
+	}
+}
+
+class Connector_Controls_Without_Core_API_Integration extends ConnectorControlsIntegration {
+	protected function is_connectors_api_available(): bool {
+		return false;
+	}
+}
+
+class Connector_Controls_Unsupported_Core_Integration_Test extends WP_UnitTestCase {
+	public function tearDown(): void {
+		remove_all_filters( 'pre_option_connectors_ai_openai_api_key' );
+		remove_all_filters( 'pre_update_option_connectors_ai_openai_api_key' );
+		delete_option( 'connectors_ai_openai_api_key' );
+		Constant_Mocker::clear();
+
+		parent::tearDown();
+	}
+
+	public function test_configure_does_not_mutate_runtime_without_the_connectors_api(): void {
+		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
+		$integration = new Connector_Controls_Without_Core_API_Integration( 'connector-controls' );
+		$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
+
+		$integration->configure();
+
+		$this->assertFalse( $integration->is_active() );
+		$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
+		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
+		$this->assertFalse( has_filter( 'pre_option_connectors_ai_openai_api_key' ) );
+		$this->assertFalse( has_filter( 'pre_update_option_connectors_ai_openai_api_key' ) );
 	}
 }
