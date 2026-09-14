@@ -215,6 +215,20 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
 		$integration = new ConnectorControlsIntegration( 'connector-controls' );
 		$integration->configure();
+		add_filter(
+			'pre_option_connectors_ai_openai_api_key',
+			static function () {
+				return 'leaked-secret';
+			},
+			100
+		);
+		add_filter(
+			'pre_update_option_connectors_ai_openai_api_key',
+			static function ( $new_value ) {
+				return $new_value;
+			},
+			100
+		);
 
 		$this->assertSame( '', get_option( 'connectors_ai_openai_api_key' ) );
 		$this->assertFalse( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );

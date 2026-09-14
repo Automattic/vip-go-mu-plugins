@@ -136,13 +136,13 @@ class ConnectorControlsIntegration extends Integration {
 	 * @param string $option_name WordPress option name.
 	 */
 	private function make_database_credential_inert( string $option_name ): void {
-		add_filter( "pre_option_{$option_name}", '__return_empty_string' );
+		add_filter( "pre_option_{$option_name}", '__return_empty_string', PHP_INT_MAX );
 		add_filter(
 			"pre_update_option_{$option_name}",
 			static function ( $new_value, $old_value ) {
 				return $old_value;
 			},
-			10,
+			PHP_INT_MAX,
 			2
 		);
 	}
