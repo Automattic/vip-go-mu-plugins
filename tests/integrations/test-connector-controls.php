@@ -70,6 +70,38 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * @dataProvider valid_environment_credential_provider
+	 */
+	public function test_configure_does_not_override_an_existing_environment_credential( string $environment_credential ): void {
+		$previous_environment_credential = getenv( 'OPENAI_API_KEY' );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Required to exercise Core's environment-variable credential source.
+		putenv( "OPENAI_API_KEY={$environment_credential}" );
+
+		try {
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
+
+			$integration->configure();
+
+			$this->assertSame( $environment_credential, getenv( 'OPENAI_API_KEY' ) );
+			$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
+		} finally {
+			if ( false === $previous_environment_credential ) {
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
+				putenv( 'OPENAI_API_KEY' );
+			} else {
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
+				putenv( "OPENAI_API_KEY={$previous_environment_credential}" );
+			}
+		}
+	}
+
+	public function valid_environment_credential_provider(): iterable {
+		yield 'typical credential' => [ 'customer-secret' ];
+		yield 'whitespace is non-empty to Core' => [ '   ' ];
+	}
+
+	/**
 	 * @dataProvider invalid_constant_provider
 	 */
 	public function test_invalid_existing_constant_uses_managed_runtime_fallback( $constant_value ): void {
