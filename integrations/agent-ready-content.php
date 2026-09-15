@@ -34,6 +34,14 @@ class AgentReadyContentIntegration extends Integration {
 				return;
 			}
 
+			// Agent Ready Content requires WordPress 6.8.
+			// Loading it directly bypasses WordPress's plugin requirement checks.
+			// See https://github.com/Automattic/agent-ready-content/blob/v0.3.0/agent-ready-content.php#L6
+			if ( version_compare( get_bloginfo( 'version' ), '6.8', '<' ) ) {
+				$this->is_active = false;
+				return;
+			}
+
 			$latest_directory = $this->get_latest_version();
 			if ( null === $latest_directory ) {
 				$this->is_active = false;
@@ -41,12 +49,11 @@ class AgentReadyContentIntegration extends Integration {
 			}
 
 			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/agent-ready-content.php';
-			if ( ! file_exists( $load_path ) ) {
+			if ( file_exists( $load_path ) ) {
+				require_once $load_path;
+			} else {
 				$this->is_active = false;
-				return;
 			}
-
-			require_once $load_path;
 		}, 1 );
 	}
 
