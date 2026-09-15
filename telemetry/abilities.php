@@ -47,7 +47,13 @@ function track_ability_execution( array $args, string $ability_name ): array {
 	$original_execute_callback = $args['execute_callback'];
 
 	$args['execute_callback'] = function ( ...$callback_args ) use ( $original_execute_callback, $ability_name ) {
-		$result = call_user_func_array( $original_execute_callback, $callback_args );
+		try {
+			$result = call_user_func_array( $original_execute_callback, $callback_args );
+		} catch ( \Throwable $e ) {
+			Ability_Invocation_Tracker::record( $ability_name, false );
+
+			throw $e;
+		}
 
 		Ability_Invocation_Tracker::record( $ability_name, ! is_wp_error( $result ) );
 

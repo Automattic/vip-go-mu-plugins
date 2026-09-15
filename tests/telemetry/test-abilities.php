@@ -114,4 +114,39 @@ class Test_Telemetry_Abilities extends WP_UnitTestCase {
 
 		call_user_func( $filtered['execute_callback'] );
 	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_thrown_exception_is_recorded_as_unsuccessful_and_rethrown() {
+		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();
+
+		\Automattic\VIP\Telemetry\Abilities\Ability_Invocation_Tracker::$tracks_instance = $mock_tracks;
+
+		$mock_tracks->expects( $this->once() )
+			->method( 'record_event' )
+			->with(
+				'abilities_api_invoked',
+				$this->callback( function ( $properties ) {
+					return 'test/throws' === $properties['ability_name'] &&
+						false === $properties['success'];
+				} )
+			);
+
+		$args     = [
+			'execute_callback' => function () {
+				throw new \RuntimeException( 'Something went very wrong.' );
+			},
+		];
+		$filtered = apply_filters( 'wp_register_ability_args', $args, 'test/throws' );
+
+		$this->expectException( \RuntimeException::class );
+		$this->expectExceptionMessage( 'Something went very wrong.' );
+
+		call_user_func( $filtered['execute_callback'] );
+	}
 }

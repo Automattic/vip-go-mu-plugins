@@ -248,7 +248,9 @@ require_once __DIR__ . '/telemetry/pendo/class-pendo-track-client.php';
 require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php';
 require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event.php';
 require_once __DIR__ . '/telemetry/pendo/pendo-utils.php';
-require_once __DIR__ . '/telemetry/abilities.php';
+if ( file_exists( __DIR__ . '/telemetry/abilities.php' ) ) {
+	require_once __DIR__ . '/telemetry/abilities.php';
+}
 
 // Temporary loader during rollout, remove and directly require after rollout.
 if ( file_exists( __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php' ) ) {
