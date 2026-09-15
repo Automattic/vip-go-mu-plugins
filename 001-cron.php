@@ -34,15 +34,30 @@ function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
 		return $allowed;
 	}
 
-	$base_path      = '/' . rest_get_url_prefix() . '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/';
-	$request_uri    = $_SERVER['REQUEST_URI'] ?? '';        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
-	$request_method = $_SERVER['REQUEST_METHOD'] ?? '';     // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
+	global $wp;
 
-	if ( 0 === strpos( $request_uri, $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST ) && 'POST' === $request_method ) {
+	$route = $wp->query_vars['rest_route'] ?? null;
+	if ( ! is_string( $route ) ) {
+		return $allowed;
+	}
+
+	// Match the method that WP_REST_Server will dispatch, including its supported overrides.
+	$request_method = $_GET['_method'] ?? $_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] ?? $_SERVER['REQUEST_METHOD'] ?? ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
+	if ( ! is_string( $request_method ) ) {
+		return $allowed;
+	}
+
+	$request_method = strtoupper( $request_method );
+	$route          = untrailingslashit( $route );
+
+	$events_route = '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/' . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST;
+	$event_route  = '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/' . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN;
+
+	if ( $events_route === $route && 'POST' === $request_method ) {
 		return true;
 	}
 
-	if ( 0 === strpos( $request_uri, $base_path . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN ) && 'PUT' === $request_method ) {
+	if ( $event_route === $route && 'PUT' === $request_method ) {
 		return true;
 	}
 
