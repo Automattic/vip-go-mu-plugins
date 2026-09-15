@@ -79,8 +79,18 @@ class Cron_Control_REST_Access_Test extends WP_UnitTestCase {
 		global $wp;
 
 		$_SERVER['REQUEST_METHOD']    = 'POST';
-		$_GET['_method']              = 'PUT';
+		$_GET['_method']              = 'put';
 		$wp->query_vars['rest_route'] = '/' . REST_API::API_NAMESPACE . '/' . REST_API::ENDPOINT_RUN;
+
+		$this->assertTrue( apply_filters( 'rest_authentication_errors', new WP_Error( 'rest_cookie_invalid_nonce' ) ) );
+	}
+
+	public function test__bypasses_authentication_for_the_canonical_event_route_with_a_lowercase_header_override(): void {
+		global $wp;
+
+		$_SERVER['REQUEST_METHOD']              = 'POST';
+		$_SERVER['HTTP_X_HTTP_METHOD_OVERRIDE'] = 'put';
+		$wp->query_vars['rest_route']           = '/' . REST_API::API_NAMESPACE . '/' . REST_API::ENDPOINT_RUN;
 
 		$this->assertTrue( apply_filters( 'rest_authentication_errors', new WP_Error( 'rest_cookie_invalid_nonce' ) ) );
 	}

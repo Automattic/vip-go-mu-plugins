@@ -47,7 +47,8 @@ function wpcom_vip_permit_cron_control_rest_access( $allowed ) {
 		return $allowed;
 	}
 
-	$route = untrailingslashit( $route );
+	$request_method = strtoupper( $request_method );
+	$route          = untrailingslashit( $route );
 
 	$events_route = '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/' . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_LIST;
 	$event_route  = '/' . \Automattic\WP\Cron_Control\REST_API::API_NAMESPACE . '/' . \Automattic\WP\Cron_Control\REST_API::ENDPOINT_RUN;
