@@ -11,6 +11,8 @@
  * @package Automattic\VIP\Telemetry
  */
 
+// phpcs:disable Universal.Files.SeparateFunctionsFromOO.Mixed
+
 declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry\Abilities;
@@ -48,7 +50,7 @@ function track_ability_execution( array $args, string $ability_name ): array {
 	$args['execute_callback'] = function ( ...$callback_args ) use ( $original_execute_callback, $ability_name ) {
 		$result = call_user_func_array( $original_execute_callback, $callback_args );
 
-		record_invocation( $ability_name, ! is_wp_error( $result ) );
+		Ability_Invocation_Tracker::record( $ability_name, ! is_wp_error( $result ) );
 
 		return $result;
 	};
@@ -57,19 +59,27 @@ function track_ability_execution( array $args, string $ability_name ): array {
 }
 
 /**
- * Records a single ability invocation event.
- *
- * @param string $ability_name The invoked ability's name.
- * @param bool $success Whether the execute_callback returned a non-error result.
+ * Records ability invocation events. A class (rather than a function with a static
+ * local) so tests can inject a mock via $tracks_instance, matching
+ * \Automattic\VIP\Stats\XML_RPC_Auth_Tracker's pattern in stats.php.
  */
-function record_invocation( string $ability_name, bool $success ): void {
-	static $tracks = null;
-	if ( null === $tracks ) {
-		$tracks = new Tracks();
-	}
+class Ability_Invocation_Tracker {
+	public static $tracks_instance = null;
 
-	$tracks->record_event( 'abilities_api_invoked', [
-		'ability_name' => $ability_name,
-		'success'      => $success,
-	] );
+	/**
+	 * Records a single ability invocation event.
+	 *
+	 * @param string $ability_name The invoked ability's name.
+	 * @param bool $success Whether the execute_callback returned a non-error result.
+	 */
+	public static function record( string $ability_name, bool $success ): void {
+		if ( ! static::$tracks_instance ) {
+			static::$tracks_instance = new Tracks();
+		}
+
+		static::$tracks_instance->record_event( 'abilities_api_invoked', [
+			'ability_name' => $ability_name,
+			'success'      => $success,
+		] );
+	}
 }
