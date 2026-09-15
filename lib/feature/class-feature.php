@@ -38,7 +38,7 @@ class Feature {
 	public static $feature_ids = [
 		// Internal-only telemetry: gate new/experimental events to a handful of
 		// frequently-used 000 VIP Test Org (client 915) environments before any
-		// wider rollout. See https://vipproductp2.wordpress.com/2026/07/24/should-we-start-collecting-core-usage-telemetry/
+		// wider rollout.
 		'telemetry-internal-only' => [
 			13498 => true, // smithjw1-testing (workflows testing)
 			11445 => true, // real-time-collaboration-poc (rtc testing)

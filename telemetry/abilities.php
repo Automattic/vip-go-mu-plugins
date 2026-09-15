@@ -5,8 +5,7 @@
  * Records how often registered WP Abilities are actually invoked, and whether
  * the call succeeded. Gated to a handful of environments via the
  * 'telemetry-internal-only' feature flag while we evaluate the performance
- * impact of measuring this at runtime, per
- * https://vipproductp2.wordpress.com/2026/07/24/should-we-start-collecting-core-usage-telemetry/
+ * impact of measuring this at runtime.
  *
  * @package Automattic\VIP\Telemetry
  */
