@@ -35,7 +35,17 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		// Internal-only telemetry: gate new/experimental events to a handful of
+		// frequently-used 000 VIP Test Org (client 915) environments before any
+		// wider rollout. See https://vipproductp2.wordpress.com/2026/07/24/should-we-start-collecting-core-usage-telemetry/
+		'telemetry-internal-only' => [
+			13498 => true, // smithjw1-testing (workflows testing)
+			11445 => true, // real-time-collaboration-poc (rtc testing)
+			12806 => true, // safe-publish-demo
+			11300 => true, // tmp-load-test-rdb
+		],
+	];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.
