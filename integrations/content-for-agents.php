@@ -1,6 +1,6 @@
 <?php
 /**
- * Integration: Agent Ready Content.
+ * Integration: Content for Agents.
  *
  * @package Automattic\VIP\Integrations
  */
@@ -8,21 +8,21 @@
 namespace Automattic\VIP\Integrations;
 
 /**
- * Loads the Agent Ready Content integration.
+ * Loads the Content for Agents integration.
  *
  * @private
  */
-class AgentReadyContentIntegration extends Integration {
+class ContentForAgentsIntegration extends Integration {
 	/**
-	 * Returns `true` if Agent Ready Content is already available, for example via customer code.
+	 * Returns `true` if Content for Agents is already available, for example via customer code.
 	 * This prevents the platform from loading the plugin again.
 	 */
 	public function is_loaded(): bool {
-		return defined( 'AGENT_READY_CONTENT_LOADED' );
+		return defined( 'CONTENT_FOR_AGENTS_LOADED' );
 	}
 
 	/**
-	 * Applies hooks to load the Agent Ready Content plugin.
+	 * Applies hooks to load the Content for Agents plugin.
 	 *
 	 * @private
 	 */
@@ -34,9 +34,8 @@ class AgentReadyContentIntegration extends Integration {
 				return;
 			}
 
-			// Agent Ready Content requires WordPress 6.8.
+			// Content for Agents requires WordPress 6.8.
 			// Loading it directly bypasses WordPress's plugin requirement checks.
-			// See https://github.com/Automattic/agent-ready-content/blob/v0.3.0/agent-ready-content.php#L6
 			if ( version_compare( get_bloginfo( 'version' ), '6.8', '<' ) ) {
 				$this->is_active = false;
 				return;
@@ -48,7 +47,7 @@ class AgentReadyContentIntegration extends Integration {
 				return;
 			}
 
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/agent-ready-content.php';
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/content-for-agents.php';
 			if ( file_exists( $load_path ) ) {
 				require_once $load_path;
 			} else {
@@ -58,11 +57,11 @@ class AgentReadyContentIntegration extends Integration {
 	}
 
 	/**
-	 * Get the latest version of Agent Ready Content.
+	 * Get the latest version of Content for Agents.
 	 *
 	 * @return string|null The directory for the latest version, or null if no versions are found.
 	 */
 	public function get_latest_version(): ?string {
-		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'agent-ready-content', 'agent-ready-content.php' );
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'content-for-agents', 'content-for-agents.php' );
 	}
 }

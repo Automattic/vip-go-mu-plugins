@@ -54,8 +54,8 @@ if ( file_exists( __DIR__ . '/integrations/vip-workflows.php' ) ) {
 	require_once __DIR__ . '/integrations/vip-workflows.php';
 }
 
-if ( file_exists( __DIR__ . '/integrations/agent-ready-content.php' ) ) {
-	require_once __DIR__ . '/integrations/agent-ready-content.php';
+if ( file_exists( __DIR__ . '/integrations/content-for-agents.php' ) ) {
+	require_once __DIR__ . '/integrations/content-for-agents.php';
 }
 
 // Register VIP integrations here.
@@ -93,8 +93,8 @@ if ( class_exists( __NAMESPACE__ . '\\VipWorkflowsIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new VipWorkflowsIntegration( 'vip-workflows' ) );
 }
 
-if ( class_exists( __NAMESPACE__ . '\\AgentReadyContentIntegration' ) ) {
-	IntegrationsSingleton::instance()->register( new AgentReadyContentIntegration( 'agent-ready-content' ) );
+if ( class_exists( __NAMESPACE__ . '\\ContentForAgentsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ContentForAgentsIntegration( 'content-for-agents' ) );
 }
 
 // @codeCoverageIgnoreEnd
