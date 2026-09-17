@@ -70,6 +70,19 @@ credential ownership, while the actual AI Client registry value determines what
 is reported. The normal constant path preserves explicit authentication installed
 by other code; an unrecognized registry value is reported as `unknown`.
 
+On the WordPress Connectors screen, the OpenAI, Anthropic, and Google descriptions
+also explain credential management in VIP Integration Center. The integration
+uses the supported `wp_connectors_init` unregister/modify/register pattern,
+preserving each connector's existing description and other metadata. Descriptions
+reflect the AI Client source at connector initialization, after credential fallbacks run: managed,
+environment variable, customer constant, no credential, unavailable provider, or
+unknown source. Missing connectors and custom connectors are left alone.
+Core's field help and read-only markers remain unchanged, including its constant
+label; the card description supplies the management context. Like SDS reporting,
+this does not verify provider acceptance of a key. Code that replaces authentication
+after connector initialization can change the runtime source after this metadata
+snapshot; SDS observes the registry again when collecting its report.
+
 The existing Site Details Service (SDS) report includes `connector_controls` with
 an `active` flag and per-provider `source` and `status` enums. The reporter inspects
 the actual registry authentication: integration, environment variable, PHP

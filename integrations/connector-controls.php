@@ -144,6 +144,7 @@ class ConnectorControlsIntegration extends Integration {
 			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
+		add_action( 'wp_connectors_init', [ $this, 'describe_managed_connectors' ], PHP_INT_MAX );
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
 
 		if ( ! defined( 'VIP_CONNECTOR_CONTROLS_LOADED' ) ) {
@@ -248,6 +249,51 @@ class ConnectorControlsIntegration extends Integration {
 		}
 
 		return $report;
+	}
+
+	/**
+	 * Explain management and the observed credential source on Core's cards.
+	 *
+	 * Use Core's supported metadata override after credential fallbacks have run.
+	 * Keep the provider's metadata and Core's built-in field help unchanged.
+	 *
+	 * @param \WP_Connector_Registry $registry Initialized connector registry.
+	 */
+	public function describe_managed_connectors( \WP_Connector_Registry $registry ): void {
+		$report = $this->get_runtime_status();
+		if ( empty( $report['active'] ) ) {
+			return;
+		}
+
+		foreach ( $report['providers'] as $connector_id => $provider ) {
+			if ( ! $registry->is_registered( $connector_id ) ) {
+				continue;
+			}
+
+			if ( 'provider_unavailable' === $provider['status'] ) {
+				$description = __( 'Manage credentials in VIP Integration Center. The AI provider is unavailable.', 'vip' );
+			} elseif ( 'unconfigured' === $provider['status'] ) {
+				$description = __( 'No credential is configured. Configure a credential in VIP Integration Center.', 'vip' );
+			} else {
+				switch ( $provider['source'] ) {
+					case 'integration':
+						$description = __( 'Credentials managed in VIP Integration Center.', 'vip' );
+						break;
+					case 'environment_variable':
+						$description = __( 'An environment variable supplies this credential and takes precedence over VIP Integration Center.', 'vip' );
+						break;
+					case 'php_constant':
+						$description = __( 'A customer-defined PHP constant supplies this credential and takes precedence over VIP Integration Center.', 'vip' );
+						break;
+					default:
+						$description = __( 'Manage credential assignments in VIP Integration Center. The credential source could not be determined.', 'vip' );
+				}
+			}
+
+			$connector                = $registry->unregister( $connector_id );
+			$connector['description'] = trim( $connector['description'] . ' ' . $description );
+			$registry->register( $connector_id, $connector );
+		}
 	}
 
 	/**

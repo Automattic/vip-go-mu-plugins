@@ -58,6 +58,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		remove_all_filters( 'script_module_data_options-connectors-wp-admin' );
 		foreach ( $this->recording_integrations as $integration ) {
 			remove_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] );
+			remove_action( 'wp_connectors_init', [ $integration, 'describe_managed_connectors' ], PHP_INT_MAX );
 		}
 		foreach ( $this->previous_environment_credentials as $environment_name => $credential ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
@@ -97,7 +98,11 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertSame( [], $integration->applied_runtime_credentials );
-		do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+		$connector_registry = new \WP_Connector_Registry();
+		do_action( 'wp_connectors_init', $connector_registry );
+		foreach ( [ 'openai', 'anthropic', 'google' ] as $connector_id ) {
+			$this->assertFalse( $connector_registry->is_registered( $connector_id ), 'Do not recreate connectors removed by other code.' );
+		}
 		$this->assertSame( [], $integration->applied_runtime_credentials );
 		foreach ( [
 			'OPENAI_API_KEY'    => 'openai-secret',
@@ -298,7 +303,26 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			$integration->configure();
 			$this->expose_mocked_constant_to_ai_client();
 			$registry->registerProvider( $provider_class );
+			\_wp_connectors_register_default_ai_providers( $connector_registry );
+			$original_connector = $connector_registry->get_registered( 'openai' );
+			$custom_connector   = $connector_registry->register( 'custom', [
+				'name'           => 'Custom connector',
+				'description'    => 'Customer description.',
+				'type'           => 'custom',
+				'authentication' => [ 'method' => 'none' ],
+			] );
 			do_action( 'wp_connectors_init', $connector_registry );
+			$descriptions                       = [
+				'integration'          => 'Credentials managed in VIP Integration Center.',
+				'environment_variable' => 'An environment variable supplies this credential and takes precedence over VIP Integration Center.',
+				'php_constant'         => 'A customer-defined PHP constant supplies this credential and takes precedence over VIP Integration Center.',
+				'none'                 => 'No credential is configured. Configure a credential in VIP Integration Center.',
+			];
+			$original_connector['description'] .= ' ' . $descriptions[ $expected_source ];
+			$this->assertSame( $original_connector, $connector_registry->get_registered( 'openai' ), 'Only the description changes; preserve authentication, logo, and plugin metadata.' );
+			$this->assertSame( $custom_connector, $connector_registry->get_registered( 'custom' ) );
+			$this->assertStringEndsWith( 'Manage credentials in VIP Integration Center. The AI provider is unavailable.', $connector_registry->get_registered( 'anthropic' )['description'] );
+			$this->assertStringEndsWith( 'Manage credentials in VIP Integration Center. The AI provider is unavailable.', $connector_registry->get_registered( 'google' )['description'] );
 
 			$expected = [
 				'active'    => true,
@@ -405,9 +429,11 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			$integration->configure();
 			$this->expose_mocked_constant_to_ai_client();
 			$registry->registerProvider( $provider_class );
+			\_wp_connectors_register_default_ai_providers( $connector_registry );
 			do_action( 'wp_connectors_init', $connector_registry );
 
 			$this->assertSame( $existing_authentication, $registry->getProviderRequestAuthentication( 'openai' ) );
+			$this->assertStringEndsWith( 'Manage credential assignments in VIP Integration Center. The credential source could not be determined.', $connector_registry->get_registered( 'openai' )['description'] );
 			$this->assertSame( [
 				'source' => 'unknown',
 				'status' => 'configured',
@@ -744,6 +770,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $integration->is_active() );
 		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'describe_managed_connectors' ] ) );
 		$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
 		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'pre_option_connectors_ai_openai_api_key' ) );
