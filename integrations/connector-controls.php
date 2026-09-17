@@ -17,13 +17,16 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
  */
 class ConnectorControlsIntegration extends Integration {
 	/**
-	 * Selected credentials to apply after the AI Client registers its providers.
+	 * Credentials requiring a fallback because the AI Client cannot use the constant.
 	 *
 	 * @var array<string,string>
 	 */
-	private array $runtime_credentials = [];
+	private array $runtime_credential_fallbacks = [];
 
-	/** @var array<string,string> Sources selected when the runtime credentials were resolved. */
+	/** @var array<string,string> Provider constants created from managed credentials. */
+	private array $managed_constants = [];
+
+	/** @var array<string,string> Sources selected for runtime credential fallbacks. */
 	private array $runtime_credential_sources = [];
 
 	/** @var array<string,ApiKeyRequestAuthentication> Authentication actually installed by this integration. */
@@ -76,7 +79,7 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * No bundled plugin is required; configure() sets up runtime credentials and filters.
+	 * No bundled plugin is required; configure() supplies provider constants and filters.
 	 */
 	public function load(): void {}
 
@@ -95,32 +98,50 @@ class ConnectorControlsIntegration extends Integration {
 			$this->make_database_credential_inert( $connector['option'] );
 
 			$credential = $this->resolve_credential( $connector );
-			if ( null === $credential ) {
+
+			// Non-empty environment variables take precedence in both Core and the
+			// AI Client. Leave their existing authentication path unchanged.
+			$environment_credential = getenv( $connector['env'] );
+			if ( false !== $environment_credential && '' !== $environment_credential ) {
 				continue;
 			}
 
-			// Match Core's credential-source checks exactly. A whitespace-only
-			// environment variable is still an explicit external credential, while a
-			// constant must be a non-empty string.
-			$source                 = 'integration';
-			$environment_credential = getenv( $connector['env'] );
-			if ( false !== $environment_credential && '' !== $environment_credential ) {
-				$credential = $environment_credential;
-				$source     = 'environment_variable';
-			} elseif ( defined( $connector['constant'] ) ) {
+			$source = 'integration';
+			if ( defined( $connector['constant'] ) ) {
 				$constant_credential = constant( $connector['constant'] );
 				if ( is_string( $constant_credential ) && '' !== $constant_credential ) {
 					$credential = $constant_credential;
-					$source     = 'php_constant';
+					$source     = isset( $this->managed_constants[ $connector_id ] ) && $this->managed_constants[ $connector_id ] === $credential
+						? 'integration'
+						: 'php_constant';
+				} else {
+					if ( null === $credential ) {
+						continue;
+					}
+					// An empty or invalid constant cannot be redefined. Preserve it
+					// and supply the managed credential through the runtime fallback.
+					$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
+					$this->runtime_credential_sources[ $connector_id ]   = $source;
+					continue;
 				}
+			} else {
+				if ( null === $credential ) {
+					continue;
+				}
+				define( $connector['constant'], $credential );
+				$this->managed_constants[ $connector_id ] = $credential;
 			}
 
-			$this->runtime_credentials[ $connector_id ]        = $credential;
-			$this->runtime_credential_sources[ $connector_id ] = $source;
+			// Core ignores an empty environment variable, but the AI Client lets
+			// it mask the constant. Explicitly supply the selected constant value.
+			if ( '' === $environment_credential ) {
+				$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
+				$this->runtime_credential_sources[ $connector_id ]   = $source;
+			}
 		}
 
-		if ( [] !== $this->runtime_credentials ) {
-			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credentials' ] );
+		if ( [] !== $this->runtime_credential_fallbacks ) {
+			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
@@ -138,10 +159,10 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * Apply selected credentials directly to the AI Client.
+	 * Apply credentials the AI Client could not resolve from provider constants.
 	 */
-	public function apply_runtime_credentials(): void {
-		foreach ( $this->runtime_credentials as $connector_id => $credential ) {
+	public function apply_runtime_credential_fallbacks(): void {
+		foreach ( $this->runtime_credential_fallbacks as $connector_id => $credential ) {
 			$this->set_runtime_credential( $connector_id, $credential );
 		}
 	}
@@ -209,13 +230,15 @@ class ConnectorControlsIntegration extends Integration {
 			if ( isset( $this->runtime_authentications[ $connector_id ] ) && $authentication === $this->runtime_authentications[ $connector_id ] ) {
 				$source = $this->runtime_credential_sources[ $connector_id ];
 			} elseif ( $authentication instanceof ApiKeyRequestAuthentication ) {
-				// With no managed assignment, Core/the AI Client can still use an
-				// external credential. Only identify it when the actual value matches.
+				// Identify the credential actually held by the registry. A constant
+				// we created carries an integration credential, not a customer override.
 				$credential = $authentication->getApiKey();
 				if ( getenv( $connector['env'] ) === $credential ) {
 					$source = 'environment_variable';
 				} elseif ( defined( $connector['constant'] ) && constant( $connector['constant'] ) === $credential ) {
-					$source = 'php_constant';
+					$source = isset( $this->managed_constants[ $connector_id ] ) && $this->managed_constants[ $connector_id ] === $credential
+						? 'integration'
+						: 'php_constant';
 				}
 			}
 			$report['providers'][ $connector_id ] = [
@@ -278,9 +301,9 @@ class ConnectorControlsIntegration extends Integration {
 	/**
 	 * Mark managed fields read-only even when a credential has been revoked.
 	 *
-	 * Core does not expose a source for credentials supplied directly to the AI
-	 * Client. Use its read-only constant marker for centrally managed fields,
-	 * including the active-but-unconfigured state, without exposing database values.
+	 * Core recognizes provider constants and environment variables as read-only.
+	 * Its constant marker also locks fields with no credential or a runtime
+	 * fallback, without exposing inert database values.
 	 *
 	 * @param array<string,mixed> $data Connector screen script-module data.
 	 * @return array<string,mixed>

@@ -57,7 +57,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		}
 		remove_all_filters( 'script_module_data_options-connectors-wp-admin' );
 		foreach ( $this->recording_integrations as $integration ) {
-			remove_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] );
+			remove_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] );
 		}
 		foreach ( $this->previous_environment_credentials as $environment_name => $credential ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
@@ -81,7 +81,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		return $integration;
 	}
 
-	public function test_managed_credentials_are_always_delivered_at_connector_initialization_without_defining_constants(): void {
+	public function test_managed_credentials_define_constants_without_runtime_fallbacks(): void {
 		$integration = $this->create_recording_integration();
 		$integration->activate(
 			[
@@ -95,19 +95,17 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$integration->configure();
 
-		$this->assertSame( 10, has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertSame( [], $integration->applied_runtime_credentials );
 		do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
-		$this->assertSame(
-			[
-				'openai'    => 'openai-secret',
-				'anthropic' => 'anthropic-secret',
-				'google'    => 'google-secret',
-			],
-			$integration->applied_runtime_credentials
-		);
-		foreach ( [ 'OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'GOOGLE_API_KEY' ] as $constant_name ) {
-			$this->assertFalse( Constant_Mocker::defined( $constant_name ) );
+		$this->assertSame( [], $integration->applied_runtime_credentials );
+		foreach ( [
+			'OPENAI_API_KEY'    => 'openai-secret',
+			'ANTHROPIC_API_KEY' => 'anthropic-secret',
+			'GOOGLE_API_KEY'    => 'google-secret',
+		] as $constant_name => $credential ) {
+			$this->assertTrue( Constant_Mocker::defined( $constant_name ) );
+			$this->assertSame( $credential, Constant_Mocker::constant( $constant_name ) );
 			$this->assertFalse( getenv( $constant_name ) );
 		}
 		$this->assertTrue( $integration->is_loaded() );
@@ -116,7 +114,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider runtime_credential_source_provider
 	 */
-	public function test_runtime_credential_preserves_external_source_precedence( $environment_credential, $constant_credential, string $expected_credential ): void {
+	public function test_runtime_credential_preserves_external_source_precedence( $environment_credential, $constant_credential, ?string $expected_fallback ): void {
 		if ( false !== $environment_credential ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Exercise Core's environment-variable credential source.
 			putenv( "OPENAI_API_KEY={$environment_credential}" );
@@ -128,25 +126,29 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
 
 		$integration->configure();
-		$integration->apply_runtime_credentials();
+		$integration->apply_runtime_credential_fallbacks();
 
-		$this->assertSame( [ 'openai' => $expected_credential ], $integration->applied_runtime_credentials );
+		$this->assertSame( null === $expected_fallback ? [] : [ 'openai' => $expected_fallback ], $integration->applied_runtime_credentials );
+		$this->assertSame( null === $expected_fallback ? false : 10, has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertSame( $environment_credential, getenv( 'OPENAI_API_KEY' ) );
-		$this->assertSame( null !== $constant_credential, Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
+		$should_define_constant = null === $constant_credential && ( false === $environment_credential || '' === $environment_credential );
+		$this->assertSame( null !== $constant_credential || $should_define_constant, Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
 		if ( null !== $constant_credential ) {
 			$this->assertSame( $constant_credential, Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		} elseif ( $should_define_constant ) {
+			$this->assertSame( 'platform-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
 		}
 	}
 
 	public function runtime_credential_source_provider(): iterable {
-		yield 'managed credential with no external sources' => [ false, null, 'platform-secret' ];
-		yield 'environment precedes managed credential' => [ 'environment-secret', null, 'environment-secret' ];
-		yield 'environment precedes constant' => [ 'environment-secret', 'constant-secret', 'environment-secret' ];
-		yield 'whitespace environment is non-empty to Core' => [ '   ', 'constant-secret', '   ' ];
-		yield 'zero environment is non-empty to Core' => [ '0', null, '0' ];
-		yield 'constant precedes managed credential' => [ false, 'constant-secret', 'constant-secret' ];
-		yield 'whitespace constant is non-empty to Core' => [ false, '   ', '   ' ];
-		yield 'zero constant is non-empty to Core' => [ false, '0', '0' ];
+		yield 'managed credential with no external sources' => [ false, null, null ];
+		yield 'environment precedes managed credential' => [ 'environment-secret', null, null ];
+		yield 'environment precedes constant' => [ 'environment-secret', 'constant-secret', null ];
+		yield 'whitespace environment is non-empty to Core' => [ '   ', 'constant-secret', null ];
+		yield 'zero environment is non-empty to Core' => [ '0', null, null ];
+		yield 'constant precedes managed credential' => [ false, 'constant-secret', null ];
+		yield 'whitespace constant is non-empty to Core' => [ false, '   ', null ];
+		yield 'zero constant is non-empty to Core' => [ false, '0', null ];
 		yield 'empty constant uses managed credential' => [ false, '', 'platform-secret' ];
 		yield 'boolean constant uses managed credential' => [ false, false, 'platform-secret' ];
 		yield 'integer constant uses managed credential' => [ false, 123, 'platform-secret' ];
@@ -159,7 +161,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider unconfigured_credential_provider
 	 */
-	public function test_no_managed_credential_does_not_apply_runtime_authentication( $managed_credential ): void {
+	public function test_no_managed_credential_leaves_valid_external_sources_unchanged( $managed_credential ): void {
 		Constant_Mocker::define( 'OPENAI_API_KEY', 'constant-secret' );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Ensure an external source alone does not activate runtime delivery.
 		putenv( 'OPENAI_API_KEY=environment-secret' );
@@ -167,12 +169,14 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->activate( [ 'config' => [ 'openai_api_key' => $managed_credential ] ] );
 
 		$integration->configure();
-		$integration->apply_runtime_credentials();
+		$integration->apply_runtime_credential_fallbacks();
 
-		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertSame( [], $integration->applied_runtime_credentials );
 		$this->assertSame( 'constant-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
 		$this->assertSame( 'environment-secret', getenv( 'OPENAI_API_KEY' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'ANTHROPIC_API_KEY' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'GOOGLE_API_KEY' ) );
 	}
 
 	public function unconfigured_credential_provider(): iterable {
@@ -182,7 +186,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		yield 'invalid credential' => [ false ];
 	}
 
-	private function with_test_registry( callable $test ): void {
+	private function with_test_registry( callable $test, bool $register_provider = true ): void {
 		$provider                            = new class() implements ProviderInterface {
 			public static ProviderAvailabilityInterface $availability;
 			public static ModelMetadataDirectoryInterface $model_metadata_directory;
@@ -226,15 +230,17 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$connector_registry_property->setValue( null, $connector_registry );
 
 		try {
-			$ai_registry->registerProvider( get_class( $provider ) );
-			$test( $ai_registry, $connector_registry );
+			if ( $register_provider ) {
+				$ai_registry->registerProvider( get_class( $provider ) );
+			}
+			$test( $ai_registry, $connector_registry, get_class( $provider ) );
 		} finally {
 			$registry_property->setValue( null, $previous_ai_registry );
 			$connector_registry_property->setValue( null, $previous_connector_registry );
 		}
 	}
 
-	public function test_direct_credentials_reach_the_ai_client_and_survive_cores_database_handoff(): void {
+	public function test_empty_environment_fallback_reaches_the_ai_client_and_survives_cores_database_handoff(): void {
 		$this->with_test_registry( function ( $ai_registry, $connector_registry ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Reproduce an empty variable masking the managed credential.
 			putenv( 'OPENAI_API_KEY=' );
@@ -261,14 +267,18 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 			\_wp_connectors_pass_default_keys_to_ai_client();
 			$this->assertSame( $authentication, $ai_registry->getProviderRequestAuthentication( 'openai' ) );
-			$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
-			$this->assertFalse( Constant_Mocker::defined( 'ANTHROPIC_API_KEY' ) );
+			$this->assertSame( 'platform-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+			$this->assertSame( 'unregistered-provider-secret', Constant_Mocker::constant( 'ANTHROPIC_API_KEY' ) );
 			$this->assertSame( '', getenv( 'OPENAI_API_KEY' ) );
 		} );
 	}
 
-	/** @dataProvider runtime_status_provider */
-	public function test_runtime_status_observes_authentication_without_exposing_credentials( $environment, $constant, bool $managed, string $expected_source ): void {
+	/**
+	 * @dataProvider runtime_status_provider
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_runtime_status_observes_authentication_without_exposing_credentials( $environment, $constant, bool $managed, string $expected_source, bool $blocked = false ): void {
 		if ( false !== $environment ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Isolate external credential sources.
 			putenv( "OPENAI_API_KEY={$environment}" );
@@ -277,16 +287,17 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			Constant_Mocker::define( 'OPENAI_API_KEY', $constant );
 		}
 
-		$this->with_test_registry( function ( $registry, $connector_registry ) use ( $managed, $constant, $environment, $expected_source ) {
-			// Core's external handoff when there is no managed assignment. Constants
-			// are mocked in the integration namespace rather than globally defined.
-			if ( ! $managed && 'php_constant' === $expected_source ) {
-				$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( $constant ) );
-			}
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $managed, $expected_source, $blocked ) {
 			$integration                    = new ConnectorControlsIntegration( 'connector-controls' );
 			$this->recording_integrations[] = $integration;
-			$integration->activate( [ 'config' => $managed ? [ 'openai_api_key' => 'managed-test-secret' ] : [] ] );
+			$config                         = $managed ? [ 'openai_api_key' => 'managed-test-secret' ] : [];
+			if ( $blocked ) {
+				$config['openai_blocked'] = 'true';
+			}
+			$integration->activate( [ 'config' => $config ] );
 			$integration->configure();
+			$this->expose_mocked_constant_to_ai_client();
+			$registry->registerProvider( $provider_class );
 			do_action( 'wp_connectors_init', $connector_registry );
 
 			$expected = [
@@ -320,20 +331,88 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 				'source' => 'none',
 				'status' => 'unconfigured',
 			], $integration->get_runtime_status()['providers']['openai'] );
-		} );
+		}, false );
 	}
 
 	public function runtime_status_provider(): iterable {
 		yield 'managed' => [ false, null, true, 'integration' ];
 		yield 'environment overrides managed and constant' => [ 'environment-test-secret', 'constant-test-secret', true, 'environment_variable' ];
 		yield 'constant overrides managed' => [ false, 'constant-test-secret', true, 'php_constant' ];
+		yield 'preexisting constant equal to managed remains external' => [ false, 'managed-test-secret', true, 'php_constant' ];
 		yield 'empty environment falls through to constant' => [ '', 'constant-test-secret', true, 'php_constant' ];
+		yield 'empty environment falls through to managed constant' => [ '', null, true, 'integration' ];
 		yield 'empty externals fall through to managed' => [ '', '', true, 'integration' ];
+		yield 'invalid existing constant uses managed fallback' => [ false, false, true, 'integration' ];
 		yield 'whitespace environment remains external' => [ '   ', null, true, 'environment_variable' ];
+		yield 'zero environment remains external' => [ '0', null, true, 'environment_variable' ];
+		yield 'whitespace constant remains external' => [ false, '   ', true, 'php_constant' ];
+		yield 'zero constant remains external' => [ false, '0', true, 'php_constant' ];
 		yield 'environment without assignment' => [ 'environment-test-secret', null, false, 'environment_variable' ];
 		yield 'constant without assignment' => [ false, 'constant-test-secret', false, 'php_constant' ];
+		yield 'empty environment with constant without assignment' => [ '', 'constant-test-secret', false, 'php_constant' ];
+		yield 'empty environment with constant and blocked managed assignment' => [ '', 'constant-test-secret', false, 'php_constant', true ];
 		yield 'no credential' => [ false, null, false, 'none' ];
 		yield 'empty environment without assignment' => [ '', null, false, 'none' ];
+	}
+
+	/**
+	 * The integration's namespace mocks constant functions. Mirror its selected
+	 * constant into the isolated PHP process so the unmodified AI Client performs
+	 * its real environment/constant discovery, rather than injecting test auth.
+	 */
+	private function expose_mocked_constant_to_ai_client(): void {
+		if ( Constant_Mocker::defined( 'OPENAI_API_KEY' ) ) {
+			$this->assertFalse( \defined( 'OPENAI_API_KEY' ) );
+			\define( 'OPENAI_API_KEY', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_managed_constant_is_available_to_provider_registered_after_connector_initialization(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
+			$integration->configure();
+			$integration->configure();
+			$this->expose_mocked_constant_to_ai_client();
+			$this->assertSame( 'managed-test-secret', \constant( 'OPENAI_API_KEY' ) );
+			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+			do_action( 'wp_connectors_init', $connector_registry );
+			$this->assertSame( 'provider_unavailable', $integration->get_runtime_status()['providers']['openai']['status'] );
+
+			$registry->registerProvider( $provider_class );
+			$this->assertSame( 'managed-test-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey() );
+			$this->assertSame( [
+				'source' => 'integration',
+				'status' => 'configured',
+			], $integration->get_runtime_status()['providers']['openai'] );
+		}, false );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_normal_constant_path_preserves_earlier_explicit_authentication(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$existing_authentication = new ApiKeyRequestAuthentication( 'earlier-custom-secret' );
+			$registry->setProviderRequestAuthentication( 'openai', $existing_authentication );
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
+			$integration->configure();
+			$this->expose_mocked_constant_to_ai_client();
+			$registry->registerProvider( $provider_class );
+			do_action( 'wp_connectors_init', $connector_registry );
+
+			$this->assertSame( $existing_authentication, $registry->getProviderRequestAuthentication( 'openai' ) );
+			$this->assertSame( [
+				'source' => 'unknown',
+				'status' => 'configured',
+			], $integration->get_runtime_status()['providers']['openai'] );
+		} );
 	}
 
 	public function test_inactive_runtime_report_is_explicit_and_does_not_initialize_the_ai_client(): void {
@@ -388,9 +467,10 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->set_vip_config( $config );
 
 		$integration->configure();
-		$integration->apply_runtime_credentials();
+		$integration->apply_runtime_credential_fallbacks();
 
-		$this->assertSame( [ 'openai' => 'org-secret' ], $integration->applied_runtime_credentials );
+		$this->assertSame( 'org-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		$this->assertSame( [], $integration->applied_runtime_credentials );
 	}
 
 	public function test_environment_credentials_override_organization_credentials(): void {
@@ -412,8 +492,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$integration->configure();
 
-		$integration->apply_runtime_credentials();
-		$this->assertSame( [ 'openai' => 'environment-secret' ], $integration->applied_runtime_credentials );
+		$integration->apply_runtime_credential_fallbacks();
+		$this->assertSame( 'environment-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		$this->assertSame( [], $integration->applied_runtime_credentials );
 	}
 
 	public function test_environment_can_explicitly_disable_an_organization_credential(): void {
@@ -435,9 +516,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$integration->configure();
 
-		$integration->apply_runtime_credentials();
+		$integration->apply_runtime_credential_fallbacks();
 		$this->assertSame( [], $integration->applied_runtime_credentials );
-		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 	}
 
 	public function test_disabled_organization_does_not_configure_credentials(): void {
@@ -456,9 +537,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		$integration->configure();
 
-		$integration->apply_runtime_credentials();
+		$integration->apply_runtime_credential_fallbacks();
 		$this->assertSame( [], $integration->applied_runtime_credentials );
-		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertFalse( $integration->is_active() );
 	}
 
@@ -495,8 +576,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 			$integration->configure();
 
-			$integration->apply_runtime_credentials();
-			$this->assertSame( [ 'openai' => 'network-secret' ], $integration->applied_runtime_credentials );
+			$integration->apply_runtime_credential_fallbacks();
+			$this->assertSame( 'network-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+			$this->assertSame( [], $integration->applied_runtime_credentials );
 		} finally {
 			restore_current_blog();
 		}
@@ -535,9 +617,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 			$integration->configure();
 
-			$integration->apply_runtime_credentials();
+			$integration->apply_runtime_credential_fallbacks();
 			$this->assertSame( [], $integration->applied_runtime_credentials );
-			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		} finally {
 			restore_current_blog();
 		}
@@ -661,7 +743,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->configure();
 
 		$this->assertFalse( $integration->is_active() );
-		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credentials' ] ) );
+		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 		$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
 		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'pre_option_connectors_ai_openai_api_key' ) );

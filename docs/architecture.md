@@ -52,10 +52,23 @@ If you need to update one of them, use its upstream workflow instead of ad-hoc e
 
 ## Connector Controls runtime reporting
 
-Connector Controls delivers managed credentials directly to the AI Client registry
-at `wp_connectors_init`, preserving nonempty customer environment variables and
-PHP constants. It does not define provider constants or change environment
-variables. Managed database credential options remain inert.
+Connector Controls defines the provider API-key constant from the managed
+credential during integration configuration. Existing nonempty environment
+variables and nonempty string PHP constants retain precedence; customer constants
+are never redefined. Managed database credential options remain inert.
+
+The AI Client normally discovers the constant when registering the provider.
+Direct registry injection at `wp_connectors_init` is reserved for two fallback
+cases: an empty environment variable masks the chosen constant, or an existing
+empty/non-string constant cannot be replaced. No environment variables are
+changed. With no managed assignment, no managed credential is supplied; an
+existing valid customer constant can still receive the empty-environment fix.
+
+Constants created by Connector Controls are reported as `integration`; pre-existing
+customer constants are reported as `php_constant`. This distinction describes
+credential ownership, while the actual AI Client registry value determines what
+is reported. The normal constant path preserves explicit authentication installed
+by other code; an unrecognized registry value is reported as `unknown`.
 
 The existing Site Details Service (SDS) report includes `connector_controls` with
 an `active` flag and per-provider `source` and `status` enums. The reporter inspects
