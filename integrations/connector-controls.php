@@ -17,8 +17,8 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
  */
 class ConnectorControlsIntegration extends Integration {
 	/**
-	 * Managed credentials that cannot use their provider constant because it is
-	 * already defined with a value Core does not recognize.
+	 * Credentials that need a runtime override because their provider constant is
+	 * invalid or an empty environment variable masks it in the AI Client.
 	 *
 	 * @var array<string,string>
 	 */
@@ -100,23 +100,29 @@ class ConnectorControlsIntegration extends Integration {
 			if ( defined( $connector['constant'] ) ) {
 				$constant_credential = constant( $connector['constant'] );
 				if ( is_string( $constant_credential ) && '' !== $constant_credential ) {
+					$credential = $constant_credential;
+				} else {
+					// PHP constants cannot be redefined. Apply the managed credential to the
+					// AI Client registry after Core registers its providers instead.
+					$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
 					continue;
 				}
-
-				// PHP constants cannot be redefined. Apply the managed credential to the
-				// AI Client registry after Core registers its providers instead.
-				$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
-				continue;
+			} else {
+				define( $connector['constant'], $credential );
 			}
 
-			define( $connector['constant'], $credential );
+			// Core ignores empty environment variables, but the AI Client uses them
+			// instead of the constant. Hand off the credential Core selected explicitly.
+			if ( '' === $environment_credential ) {
+				$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
+			}
 		}
 
 		if ( [] !== $this->runtime_credential_fallbacks ) {
 			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
-		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], 100 );
+		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
 
 		if ( ! defined( 'VIP_CONNECTOR_CONTROLS_LOADED' ) ) {
 			define( 'VIP_CONNECTOR_CONTROLS_LOADED', true );
@@ -131,7 +137,7 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * Apply managed credentials whose invalid pre-existing constants cannot be redefined.
+	 * Apply credentials that the AI Client cannot resolve from provider constants.
 	 */
 	public function apply_runtime_credential_fallbacks(): void {
 		foreach ( $this->runtime_credential_fallbacks as $connector_id => $credential ) {
@@ -180,12 +186,15 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * Keep managed database credentials inert and reject option writes.
+	 * Keep managed database credentials inert and prevent credential writes.
 	 *
 	 * @param string $option_name WordPress option name.
 	 */
 	private function make_database_credential_inert( string $option_name ): void {
 		add_filter( "pre_option_{$option_name}", '__return_empty_string', PHP_INT_MAX );
+		// add_option() can skip get_option() when a missing option is cached, and
+		// has no short-circuit filter. Ensure any inserted value contains no key.
+		add_filter( "sanitize_option_{$option_name}", '__return_empty_string', PHP_INT_MAX );
 		add_filter(
 			"pre_update_option_{$option_name}",
 			static function ( $new_value, $old_value ) {

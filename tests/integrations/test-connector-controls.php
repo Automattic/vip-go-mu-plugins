@@ -31,6 +31,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		foreach ( self::OPTIONS as $option_name ) {
 			remove_all_filters( "pre_option_{$option_name}" );
 			remove_all_filters( "pre_update_option_{$option_name}" );
+			remove_all_filters( "sanitize_option_{$option_name}" );
 			delete_option( $option_name );
 		}
 		remove_all_filters( 'script_module_data_options-connectors-wp-admin' );
@@ -133,6 +134,54 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		yield 'empty string' => [ '' ];
 		yield 'boolean' => [ false ];
 		yield 'integer' => [ 123 ];
+	}
+
+	/**
+	 * @dataProvider empty_environment_constant_provider
+	 */
+	public function test_empty_environment_uses_runtime_fallback( $constant_value, string $expected_credential ): void {
+		$previous_environment_credential = getenv( 'OPENAI_API_KEY' );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Exercise an empty environment variable masking the provider constant.
+		putenv( 'OPENAI_API_KEY=' );
+		$integration = new class( 'connector-controls' ) extends ConnectorControlsIntegration {
+			/** @var array<string,string> */
+			public array $applied_runtime_credentials = [];
+
+			protected function set_runtime_credential( string $connector_id, string $credential ): void {
+				$this->applied_runtime_credentials[ $connector_id ] = $credential;
+			}
+		};
+
+		try {
+			if ( null !== $constant_value ) {
+				Constant_Mocker::define( 'OPENAI_API_KEY', $constant_value );
+			}
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
+
+			$integration->configure();
+			$this->assertSame( 10, has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+			$integration->apply_runtime_credential_fallbacks();
+
+			$this->assertSame( [ 'openai' => $expected_credential ], $integration->applied_runtime_credentials );
+			$this->assertSame( $constant_value ?? 'platform-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+			$this->assertSame( '', getenv( 'OPENAI_API_KEY' ) );
+		} finally {
+			remove_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] );
+			if ( false === $previous_environment_credential ) {
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
+				putenv( 'OPENAI_API_KEY' );
+			} else {
+				// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Restore the test process environment.
+				putenv( "OPENAI_API_KEY={$previous_environment_credential}" );
+			}
+		}
+	}
+
+	public function empty_environment_constant_provider(): iterable {
+		yield 'undefined constant' => [ null, 'platform-secret' ];
+		yield 'valid external constant' => [ 'customer-secret', 'customer-secret' ];
+		yield 'empty constant' => [ '', 'platform-secret' ];
+		yield 'invalid constant' => [ false, 'platform-secret' ];
 	}
 
 	public function test_environment_credentials_override_organization_credentials(): void {
@@ -320,6 +369,69 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'database', $filtered['connectors']['custom']['authentication']['keySource'] );
 	}
 
+	/**
+	 * @dataProvider missing_database_option_provider
+	 */
+	public function test_managed_database_options_cannot_store_new_credentials( string $option_name, bool $cache_missing_option ): void {
+		global $wpdb;
+
+		if ( $cache_missing_option ) {
+			$this->assertFalse( get_option( $option_name ) );
+		} else {
+			wp_cache_delete( 'notoptions', 'options' );
+		}
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		add_filter(
+			"sanitize_option_{$option_name}",
+			static function () {
+				return 'replacement-secret';
+			},
+			100
+		);
+
+		$added = add_option( $option_name, 'database-secret' );
+
+		$this->assertSame( '', get_option( $option_name ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Verify the persisted value without option filters or caches.
+		$stored_option = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s", $option_name ) );
+		$this->assertSame( $cache_missing_option ? '' : null, $stored_option->option_value ?? null );
+		remove_all_filters( "pre_option_{$option_name}" );
+		$this->assertSame( $cache_missing_option, $added );
+		$this->assertSame( $cache_missing_option ? '' : false, get_option( $option_name ) );
+	}
+
+	public function missing_database_option_provider(): iterable {
+		foreach ( self::OPTIONS as $option_name ) {
+			yield "{$option_name}: uncached" => [ $option_name, false ];
+			yield "{$option_name}: cached missing" => [ $option_name, true ];
+		}
+	}
+
+	public function test_connector_fields_remain_locked_after_later_filters(): void {
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		add_filter(
+			'script_module_data_options-connectors-wp-admin',
+			static function ( $data ) {
+				foreach ( [ 'openai', 'anthropic', 'google' ] as $connector_id ) {
+					$data['connectors'][ $connector_id ]['authentication']['keySource'] = 'database';
+				}
+				$data['connectors']['custom'] = [ 'authentication' => [ 'keySource' => 'database' ] ];
+				return $data;
+			},
+			101
+		);
+
+		// phpcs:ignore WordPress.NamingConventions.ValidHookName.UseUnderscores -- Core's script-module data hook contains the module ID.
+		$filtered = apply_filters( 'script_module_data_options-connectors-wp-admin', [] );
+
+		foreach ( [ 'openai', 'anthropic', 'google' ] as $connector_id ) {
+			$this->assertSame( 'constant', $filtered['connectors'][ $connector_id ]['authentication']['keySource'] );
+		}
+		$this->assertSame( 'database', $filtered['connectors']['custom']['authentication']['keySource'] );
+	}
+
 	public function test_configure_does_not_mutate_runtime_without_the_connectors_api(): void {
 		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
 		$integration = new class( 'connector-controls' ) extends ConnectorControlsIntegration {
@@ -336,5 +448,6 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'pre_option_connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'pre_update_option_connectors_ai_openai_api_key' ) );
+		$this->assertFalse( has_filter( 'sanitize_option_connectors_ai_openai_api_key' ) );
 	}
 }
