@@ -58,6 +58,10 @@ if ( file_exists( __DIR__ . '/integrations/connector-controls.php' ) ) {
 	require_once __DIR__ . '/integrations/connector-controls.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/content-for-agents.php' ) ) {
+	require_once __DIR__ . '/integrations/content-for-agents.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -95,6 +99,10 @@ if ( class_exists( __NAMESPACE__ . '\\VipWorkflowsIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\ConnectorControlsIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new ConnectorControlsIntegration( 'connector-controls' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ContentForAgentsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ContentForAgentsIntegration( 'content-for-agents' ) );
 }
 
 // @codeCoverageIgnoreEnd
