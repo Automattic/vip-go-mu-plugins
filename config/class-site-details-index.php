@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\Integrations\ConnectorControlsIntegration;
+use Automattic\VIP\Integrations\IntegrationsSingleton;
 use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
 
 class Site_Details_Index {
@@ -78,14 +80,29 @@ class Site_Details_Index {
 		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
-		$site_details['plugins']    = $this->get_plugin_info();
-		$site_details['themes']     = $this->get_theme_info();
-		$site_details['user_roles'] = $this->get_user_roles();
-		$site_details['search']     = $this->get_search_info();
-		$site_details['jetpack']    = $this->get_jetpack_info();
-		$site_details['parsely']    = $this->get_parsely_info();
+		$site_details['plugins']            = $this->get_plugin_info();
+		$site_details['themes']             = $this->get_theme_info();
+		$site_details['user_roles']         = $this->get_user_roles();
+		$site_details['search']             = $this->get_search_info();
+		$site_details['jetpack']            = $this->get_jetpack_info();
+		$site_details['parsely']            = $this->get_parsely_info();
+		$site_details['connector_controls'] = $this->get_connector_controls_info();
 
 		return $site_details;
+	}
+
+	/**
+	 * Include only credential-source metadata in the existing SDS report.
+	 *
+	 * @return array|null Runtime report, or null when unavailable on this blog.
+	 */
+	public function get_connector_controls_info(): ?array {
+		if ( ! class_exists( IntegrationsSingleton::class ) ) {
+			return null;
+		}
+
+		$integration = IntegrationsSingleton::instance()->get_integration( 'connector-controls' );
+		return $integration instanceof ConnectorControlsIntegration ? $integration->get_runtime_status() : null;
 	}
 
 	/**

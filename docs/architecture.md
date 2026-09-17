@@ -49,3 +49,25 @@ If you need to update one of them, use its upstream workflow instead of ad-hoc e
 - [Testing](testing.md)
 - [Release](release.md)
 - [Agent guide](../AGENTS.md)
+
+## Connector Controls runtime reporting
+
+Connector Controls delivers managed credentials directly to the AI Client registry
+at `wp_connectors_init`, preserving nonempty customer environment variables and
+PHP constants. It does not define provider constants or change environment
+variables. Managed database credential options remain inert.
+
+The existing Site Details Service (SDS) report includes `connector_controls` with
+an `active` flag and per-provider `source` and `status` enums. The reporter inspects
+the actual registry authentication: integration, environment variable, PHP
+constant, no credential, or unknown source. Missing providers are reported
+separately. If another plugin replaces the authentication with an unrecognized
+value, the source becomes unknown. A switched blog cannot report another blog's
+registry; its report is null until a request initializes that blog normally.
+
+No key, key fragment, fingerprint, or authentication object enters this payload.
+Collection reads request-local state without an additional HTTP request or
+option write. It uses SDS's existing timestamp, change detection, scheduled
+uploads, and heartbeats. The Integration Center displays the last observed
+source, including stale or unavailable observations; this is not confirmation
+that a provider accepts the key or that a newly saved assignment has propagated.

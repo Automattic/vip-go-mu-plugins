@@ -23,6 +23,15 @@ class ConnectorControlsIntegration extends Integration {
 	 */
 	private array $runtime_credentials = [];
 
+	/** @var array<string,string> Sources selected when the runtime credentials were resolved. */
+	private array $runtime_credential_sources = [];
+
+	/** @var array<string,ApiKeyRequestAuthentication> Authentication actually installed by this integration. */
+	private array $runtime_authentications = [];
+
+	/** @var int|null Blog whose credentials were configured in this PHP request. */
+	private ?int $configured_blog_id = null;
+
 	/**
 	 * Managed connector definitions.
 	 *
@@ -80,6 +89,8 @@ class ConnectorControlsIntegration extends Integration {
 			return;
 		}
 
+		$this->configured_blog_id = get_current_blog_id();
+
 		foreach ( self::CONNECTORS as $connector_id => $connector ) {
 			$this->make_database_credential_inert( $connector['option'] );
 
@@ -91,17 +102,21 @@ class ConnectorControlsIntegration extends Integration {
 			// Match Core's credential-source checks exactly. A whitespace-only
 			// environment variable is still an explicit external credential, while a
 			// constant must be a non-empty string.
+			$source                 = 'integration';
 			$environment_credential = getenv( $connector['env'] );
 			if ( false !== $environment_credential && '' !== $environment_credential ) {
 				$credential = $environment_credential;
+				$source     = 'environment_variable';
 			} elseif ( defined( $connector['constant'] ) ) {
 				$constant_credential = constant( $connector['constant'] );
 				if ( is_string( $constant_credential ) && '' !== $constant_credential ) {
 					$credential = $constant_credential;
+					$source     = 'php_constant';
 				}
 			}
 
-			$this->runtime_credentials[ $connector_id ] = $credential;
+			$this->runtime_credentials[ $connector_id ]        = $credential;
+			$this->runtime_credential_sources[ $connector_id ] = $source;
 		}
 
 		if ( [] !== $this->runtime_credentials ) {
@@ -140,7 +155,76 @@ class ConnectorControlsIntegration extends Integration {
 			return;
 		}
 
-		$registry->setProviderRequestAuthentication( $connector_id, new ApiKeyRequestAuthentication( $credential ) );
+		$authentication = new ApiKeyRequestAuthentication( $credential );
+		$registry->setProviderRequestAuthentication( $connector_id, $authentication );
+		$this->runtime_authentications[ $connector_id ] = $authentication;
+	}
+
+	/**
+	 * Observe the AI Client's current authentication without returning credentials.
+	 *
+	 * This describes the registry in this request, not provider-side key validity.
+	 * It performs no network requests and uses SDS's existing report timestamp.
+	 * A switched blog does not have its own initialized registry in this request.
+	 *
+	 * @return array|null Safe runtime metadata, or null when the blog context changed.
+	 */
+	public function get_runtime_status(): ?array {
+		if ( ( null !== $this->configured_blog_id && get_current_blog_id() !== $this->configured_blog_id ) ||
+			( null === $this->configured_blog_id && is_multisite() && ms_is_switched() ) ) {
+			return null;
+		}
+
+		$report = [
+			'active'    => null !== $this->configured_blog_id,
+			'providers' => array_fill_keys( array_keys( self::CONNECTORS ), [
+				'source' => 'unknown',
+				'status' => 'unknown',
+			] ),
+		];
+		if ( ! $report['active'] || ! did_action( 'wp_connectors_init' ) || ! class_exists( AiClient::class ) ) {
+			return $report;
+		}
+
+		$registry = AiClient::defaultRegistry();
+		foreach ( self::CONNECTORS as $connector_id => $connector ) {
+			if ( ! $registry->hasProvider( $connector_id ) ) {
+				$report['providers'][ $connector_id ] = [
+					'source' => 'none',
+					'status' => 'provider_unavailable',
+				];
+				continue;
+			}
+
+			$authentication = $registry->getProviderRequestAuthentication( $connector_id );
+			if ( null === $authentication || ( $authentication instanceof ApiKeyRequestAuthentication && '' === $authentication->getApiKey() ) ) {
+				$report['providers'][ $connector_id ] = [
+					'source' => 'none',
+					'status' => 'unconfigured',
+				];
+				continue;
+			}
+
+			$source = 'unknown';
+			if ( isset( $this->runtime_authentications[ $connector_id ] ) && $authentication === $this->runtime_authentications[ $connector_id ] ) {
+				$source = $this->runtime_credential_sources[ $connector_id ];
+			} elseif ( $authentication instanceof ApiKeyRequestAuthentication ) {
+				// With no managed assignment, Core/the AI Client can still use an
+				// external credential. Only identify it when the actual value matches.
+				$credential = $authentication->getApiKey();
+				if ( getenv( $connector['env'] ) === $credential ) {
+					$source = 'environment_variable';
+				} elseif ( defined( $connector['constant'] ) && constant( $connector['constant'] ) === $credential ) {
+					$source = 'php_constant';
+				}
+			}
+			$report['providers'][ $connector_id ] = [
+				'source' => $source,
+				'status' => 'configured',
+			];
+		}
+
+		return $report;
 	}
 
 	/**
