@@ -17,12 +17,11 @@ use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
  */
 class ConnectorControlsIntegration extends Integration {
 	/**
-	 * Credentials that need a runtime override because their provider constant is
-	 * invalid or an empty environment variable masks it in the AI Client.
+	 * Selected credentials to apply after the AI Client registers its providers.
 	 *
 	 * @var array<string,string>
 	 */
-	private array $runtime_credential_fallbacks = [];
+	private array $runtime_credentials = [];
 
 	/**
 	 * Managed connector definitions.
@@ -68,7 +67,7 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * No bundled plugin is required; configure() supplies Core's constants and filters.
+	 * No bundled plugin is required; configure() sets up runtime credentials and filters.
 	 */
 	public function load(): void {}
 
@@ -94,32 +93,19 @@ class ConnectorControlsIntegration extends Integration {
 			// constant must be a non-empty string.
 			$environment_credential = getenv( $connector['env'] );
 			if ( false !== $environment_credential && '' !== $environment_credential ) {
-				continue;
-			}
-
-			if ( defined( $connector['constant'] ) ) {
+				$credential = $environment_credential;
+			} elseif ( defined( $connector['constant'] ) ) {
 				$constant_credential = constant( $connector['constant'] );
 				if ( is_string( $constant_credential ) && '' !== $constant_credential ) {
 					$credential = $constant_credential;
-				} else {
-					// PHP constants cannot be redefined. Apply the managed credential to the
-					// AI Client registry after Core registers its providers instead.
-					$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
-					continue;
 				}
-			} else {
-				define( $connector['constant'], $credential );
 			}
 
-			// Core ignores empty environment variables, but the AI Client uses them
-			// instead of the constant. Hand off the credential Core selected explicitly.
-			if ( '' === $environment_credential ) {
-				$this->runtime_credential_fallbacks[ $connector_id ] = $credential;
-			}
+			$this->runtime_credentials[ $connector_id ] = $credential;
 		}
 
-		if ( [] !== $this->runtime_credential_fallbacks ) {
-			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
+		if ( [] !== $this->runtime_credentials ) {
+			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credentials' ] );
 		}
 
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
@@ -137,10 +123,10 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
-	 * Apply credentials that the AI Client cannot resolve from provider constants.
+	 * Apply selected credentials directly to the AI Client.
 	 */
-	public function apply_runtime_credential_fallbacks(): void {
-		foreach ( $this->runtime_credential_fallbacks as $connector_id => $credential ) {
+	public function apply_runtime_credentials(): void {
+		foreach ( $this->runtime_credentials as $connector_id => $credential ) {
 			$this->set_runtime_credential( $connector_id, $credential );
 		}
 	}
@@ -208,9 +194,9 @@ class ConnectorControlsIntegration extends Integration {
 	/**
 	 * Mark managed fields read-only even when a credential has been revoked.
 	 *
-	 * Core already reports environment variables and constants as external sources.
-	 * The fallback below covers the active-but-unconfigured state without exposing
-	 * the inert database value.
+	 * Core does not expose a source for credentials supplied directly to the AI
+	 * Client. Use its read-only constant marker for centrally managed fields,
+	 * including the active-but-unconfigured state, without exposing database values.
 	 *
 	 * @param array<string,mixed> $data Connector screen script-module data.
 	 * @return array<string,mixed>
