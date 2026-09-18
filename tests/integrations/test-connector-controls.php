@@ -223,10 +223,8 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$provider::$model_metadata_directory = $this->createMock( ModelMetadataDirectoryInterface::class );
 
 		// Keep this test's provider and authentication out of the shared AI Client registry.
-		$registry_property = new \ReflectionProperty( AiClient::class, 'defaultRegistry' );
-		$registry_property->setAccessible( true );
+		$registry_property           = new \ReflectionProperty( AiClient::class, 'defaultRegistry' );
 		$connector_registry_property = new \ReflectionProperty( \WP_Connector_Registry::class, 'instance' );
-		$connector_registry_property->setAccessible( true );
 		$previous_ai_registry        = $registry_property->getValue();
 		$previous_connector_registry = $connector_registry_property->getValue();
 		$ai_registry                 = new ProviderRegistry();
