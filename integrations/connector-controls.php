@@ -94,6 +94,10 @@ class ConnectorControlsIntegration extends Integration {
 
 		$this->configured_blog_id = get_current_blog_id();
 
+		// Core applies these global filters after the option-specific filters.
+		add_filter( 'pre_option', [ $this, 'filter_pre_option' ], PHP_INT_MAX, 2 );
+		add_filter( 'pre_update_option', [ $this, 'filter_pre_update_option' ], PHP_INT_MAX, 3 );
+
 		foreach ( self::CONNECTORS as $connector_id => $connector ) {
 			$this->make_database_credential_inert( $connector['option'] );
 
@@ -322,6 +326,43 @@ class ConnectorControlsIntegration extends Integration {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Keep global option filters from restoring managed database credentials.
+	 *
+	 * @param mixed  $pre_value   Value from earlier option filters.
+	 * @param string $option_name WordPress option name.
+	 * @return mixed
+	 */
+	public function filter_pre_option( $pre_value, string $option_name ) {
+		return $this->is_managed_credential_option( $option_name ) ? '' : $pre_value;
+	}
+
+	/**
+	 * Prevent global option filters from changing managed database credentials.
+	 *
+	 * @param mixed  $new_value   Value from earlier update filters.
+	 * @param string $option_name WordPress option name.
+	 * @param mixed  $old_value   Current option value.
+	 * @return mixed
+	 */
+	public function filter_pre_update_option( $new_value, string $option_name, $old_value ) {
+		return $this->is_managed_credential_option( $option_name ) ? $old_value : $new_value;
+	}
+
+	/**
+	 * Whether the option stores a credential controlled by this integration.
+	 *
+	 * @param string $option_name WordPress option name.
+	 */
+	private function is_managed_credential_option( string $option_name ): bool {
+		foreach ( self::CONNECTORS as $connector ) {
+			if ( $connector['option'] === $option_name ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

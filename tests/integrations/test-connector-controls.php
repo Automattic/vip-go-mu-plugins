@@ -546,6 +546,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_disabled_organization_does_not_configure_credentials(): void {
+		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
 		$config      = new IntegrationVipConfig(
 			'connector-controls',
 			[
@@ -564,6 +565,11 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->apply_runtime_credential_fallbacks();
 		$this->assertSame( [], $integration->applied_runtime_credentials );
 		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+		$this->assertFalse( has_filter( 'pre_option', [ $integration, 'filter_pre_option' ] ) );
+		$this->assertFalse( has_filter( 'pre_update_option', [ $integration, 'filter_pre_update_option' ] ) );
+		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
+		$this->assertTrue( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );
+		$this->assertSame( 'replacement-secret', get_option( 'connectors_ai_openai_api_key' ) );
 		$this->assertFalse( $integration->is_active() );
 	}
 
@@ -672,7 +678,101 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );
 
 		remove_all_filters( 'pre_option_connectors_ai_openai_api_key' );
+		remove_filter( 'pre_option', [ $integration, 'filter_pre_option' ], PHP_INT_MAX );
 		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
+	}
+
+	/**
+	 * @dataProvider global_read_filter_provider
+	 */
+	public function test_global_read_filters_cannot_expose_managed_database_credentials( string $option_name, $filtered_value ): void {
+		update_option( $option_name, 'database-secret' );
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		$read_filter = static function ( $pre, $option ) use ( $option_name, $filtered_value ) {
+			return $option_name === $option ? $filtered_value : $pre;
+		};
+		add_filter( 'pre_option', $read_filter, 100, 2 );
+
+		try {
+			$this->assertSame( '', get_option( $option_name ) );
+		} finally {
+			remove_filter( 'pre_option', $read_filter, 100 );
+		}
+	}
+
+	public function global_read_filter_provider(): iterable {
+		foreach ( self::OPTIONS as $option_name ) {
+			yield "{$option_name}: injected credential" => [ $option_name, 'filtered-secret' ];
+			yield "{$option_name}: database fallback" => [ $option_name, false ];
+		}
+	}
+
+	/**
+	 * @dataProvider managed_database_option_provider
+	 */
+	public function test_global_write_filters_cannot_replace_managed_database_credentials( string $option_name ): void {
+		update_option( $option_name, 'database-secret' );
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		$write_filter = static function ( $value, $option ) use ( $option_name ) {
+			return $option_name === $option ? 'filtered-secret' : $value;
+		};
+		add_filter( 'pre_update_option', $write_filter, 100, 2 );
+
+		try {
+			$this->assertFalse( update_option( $option_name, 'replacement-secret' ) );
+			remove_all_filters( "pre_option_{$option_name}" );
+			remove_filter( 'pre_option', [ $integration, 'filter_pre_option' ], PHP_INT_MAX );
+			$this->assertSame( 'database-secret', get_option( $option_name ) );
+		} finally {
+			remove_filter( 'pre_update_option', $write_filter, 100 );
+		}
+	}
+
+	public function managed_database_option_provider(): iterable {
+		foreach ( self::OPTIONS as $option_name ) {
+			yield $option_name => [ $option_name ];
+		}
+	}
+
+	/**
+	 * @dataProvider unrelated_database_option_provider
+	 */
+	public function test_global_guards_preserve_unrelated_option_reads_writes_and_filters( string $option_name ): void {
+		update_option( $option_name, 'original-value' );
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		$read_filter  = static function ( $pre, $option ) use ( $option_name ) {
+			return $option_name === $option ? 'filtered-read' : $pre;
+		};
+		$write_filter = static function ( $value, $option ) use ( $option_name ) {
+			return $option_name === $option ? 'filtered-write' : $value;
+		};
+
+		try {
+			$this->assertSame( 'original-value', get_option( $option_name ) );
+			$this->assertTrue( update_option( $option_name, 'replacement-value' ) );
+			$this->assertSame( 'replacement-value', get_option( $option_name ) );
+
+			add_filter( 'pre_option', $read_filter, 100, 2 );
+			$this->assertSame( 'filtered-read', get_option( $option_name ) );
+			remove_filter( 'pre_option', $read_filter, 100 );
+
+			add_filter( 'pre_update_option', $write_filter, 100, 2 );
+			$this->assertTrue( update_option( $option_name, 'replacement-value-2' ) );
+			$this->assertSame( 'filtered-write', get_option( $option_name ) );
+		} finally {
+			remove_filter( 'pre_option', $read_filter, 100 );
+			remove_filter( 'pre_update_option', $write_filter, 100 );
+			delete_option( $option_name );
+		}
+	}
+
+	public function unrelated_database_option_provider(): iterable {
+		yield 'ordinary option' => [ 'connector_controls_unrelated_option' ];
+		yield 'unmanaged connector' => [ 'connectors_ai_custom_api_key' ];
+		yield 'managed option name prefix' => [ 'connectors_ai_openai_api_key_suffix' ];
 	}
 
 	public function test_connector_fields_are_locked_without_changing_existing_external_sources(): void {
@@ -720,6 +820,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$stored_option = $wpdb->get_row( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s", $option_name ) );
 		$this->assertSame( $cache_missing_option ? '' : null, $stored_option->option_value ?? null );
 		remove_all_filters( "pre_option_{$option_name}" );
+		remove_filter( 'pre_option', [ $integration, 'filter_pre_option' ], PHP_INT_MAX );
 		$this->assertSame( $cache_missing_option, $added );
 		$this->assertSame( $cache_missing_option ? '' : false, get_option( $option_name ) );
 	}
@@ -774,5 +875,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'pre_option_connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'pre_update_option_connectors_ai_openai_api_key' ) );
 		$this->assertFalse( has_filter( 'sanitize_option_connectors_ai_openai_api_key' ) );
+		$this->assertFalse( has_filter( 'pre_option', [ $integration, 'filter_pre_option' ] ) );
+		$this->assertFalse( has_filter( 'pre_update_option', [ $integration, 'filter_pre_update_option' ] ) );
+		$this->assertTrue( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );
+		$this->assertSame( 'replacement-secret', get_option( 'connectors_ai_openai_api_key' ) );
 	}
 }
