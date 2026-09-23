@@ -53,13 +53,9 @@ function validate_sso_assertion( $cookie_name, $purpose ) {
 	}
 
 	$token = current_auth_session_token( $user_id );
-	if ( ! $token ) {
-		return false;
-	}
-
-	$expected = generate_sso_assertion( $user_id, (int) $parts[2], $token, $purpose );
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- The complete signed value is compared here.
-	return hash_equals( $expected, $_COOKIE[ $cookie_name ] ) ? $user_id : false;
+	$is_valid = $token && hash_equals( generate_sso_assertion( $user_id, (int) $parts[2], $token, $purpose ), $_COOKIE[ $cookie_name ] );
+	return $is_valid ? $user_id : false;
 }
 
 add_action( 'jetpack_sso_handle_login', function ( $user, $user_data ) {
