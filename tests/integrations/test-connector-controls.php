@@ -481,15 +481,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		} );
 	}
 
-	public function test_inactive_runtime_report_is_explicit_and_does_not_initialize_the_ai_client(): void {
+	public function test_inactive_runtime_report_is_omitted_and_does_not_initialize_the_ai_client(): void {
 		$integration = new ConnectorControlsIntegration( 'connector-controls' );
-		$this->assertSame( [
-			'active'    => false,
-			'providers' => array_fill_keys( [ 'openai', 'anthropic', 'google' ], [
-				'source' => 'unknown',
-				'status' => 'unknown',
-			] ),
-		], $integration->get_runtime_status() );
+		$this->assertNull( $integration->get_runtime_status() );
 	}
 
 	/** @dataProvider runtime_active_provider */

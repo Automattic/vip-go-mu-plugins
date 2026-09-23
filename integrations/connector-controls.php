@@ -193,22 +193,25 @@ class ConnectorControlsIntegration extends Integration {
 	 * It performs no network requests and uses SDS's existing report timestamp.
 	 * A switched blog does not have its own initialized registry in this request.
 	 *
-	 * @return array|null Safe runtime metadata, or null when the blog context changed.
+	 * @return array|null Safe runtime metadata, or null when disabled or the blog context changed.
 	 */
 	public function get_runtime_status(): ?array {
-		if ( ( null !== $this->configured_blog_id && get_current_blog_id() !== $this->configured_blog_id ) ||
-			( null === $this->configured_blog_id && is_multisite() && ms_is_switched() ) ) {
+		if ( null === $this->configured_blog_id ) {
+			return null;
+		}
+
+		if ( get_current_blog_id() !== $this->configured_blog_id ) {
 			return null;
 		}
 
 		$report = [
-			'active'    => null !== $this->configured_blog_id,
+			'active'    => true,
 			'providers' => array_fill_keys( array_keys( self::CONNECTORS ), [
 				'source' => 'unknown',
 				'status' => 'unknown',
 			] ),
 		];
-		if ( ! $report['active'] || ! did_action( 'wp_connectors_init' ) || ! class_exists( AiClient::class ) ) {
+		if ( ! did_action( 'wp_connectors_init' ) || ! class_exists( AiClient::class ) ) {
 			return $report;
 		}
 
