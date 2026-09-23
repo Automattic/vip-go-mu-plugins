@@ -44,6 +44,10 @@ class ContentForAgentsIntegration extends Integration {
 			if ( file_exists( $load_path ) ) {
 				// Let the plugin check its requirements and show notices when they are unmet.
 				require_once $load_path;
+
+				if ( ! $this->is_loaded() ) {
+					$this->is_active = false;
+				}
 			} else {
 				$this->is_active = false;
 			}
