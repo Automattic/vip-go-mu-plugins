@@ -34,7 +34,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	private function init_api_client() {
+	protected function init_api_client() {
 		$this->api_client = new API_Client(
 			'https://files.go-vip.co',
 			123456,
@@ -276,6 +276,20 @@ class API_Client_Test extends WP_UnitTestCase {
 		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
 	}
 
+	public function test__is_file__does_not_cache_a_missing_file() {
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 404,
+			],
+		] );
+
+		$path = '/wp-content/uploads/missing-file.jpg';
+
+		$this->assertFalse( $this->api_client->is_file( $path ) );
+		$this->assertFalse( $this->api_client->is_file( $path ) );
+		$this->assertCount( 2, $this->http_requests, 'Absence is deliberately re-checked so a file created elsewhere becomes visible at once.' );
+	}
+
 	public function get_test_data__delete_file() {
 		return [
 			'WP_Error'         => [
@@ -409,6 +423,70 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
 	}
 
+	public function get_test_data__get_file__failed_download_leaves_no_temp_file() {
+		return [
+			'missing file'    => [
+				[
+					'response' => [ 'code' => 404 ],
+					'body'     => 'Not Found',
+				],
+			],
+			'server error'    => [
+				[
+					'response' => [ 'code' => 503 ],
+					'body'     => 'Service Unavailable',
+				],
+			],
+			'transport error' => [ new WP_Error( 'http_request_failed', 'Operation too slow' ) ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_file__failed_download_leaves_no_temp_file
+	 */
+	public function test__get_file__failed_download_leaves_no_temp_file( $mocked_response ) {
+		$this->mock_http_response( $mocked_response );
+
+		$result = $this->api_client->get_file( '/wp-content/uploads/failed.txt' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertCount( 1, $this->http_requests );
+
+		$tmp_file = $this->http_requests[0]['args']['filename'];
+		self::assertNotEmpty( $tmp_file, 'The download should have been streamed to a temp file.' );
+		clearstatcache( false, $tmp_file );
+		self::assertFileDoesNotExist( $tmp_file, 'A failed download must not leave its temp file behind.' );
+	}
+
+	public function test__get_file__invalid_path_leaves_no_temp_file() {
+		$this->mock_http_response( [
+			'response' => [ 'code' => 200 ],
+			'body'     => '',
+		] );
+
+		$before = glob( get_temp_dir() . 'vip*' );
+		$result = $this->api_client->get_file( '/etc/passwd' );
+		$after  = glob( get_temp_dir() . 'vip*' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'invalid-path', $result->get_error_code() );
+		self::assertCount( 0, $this->http_requests, 'An invalid path must not reach the transport.' );
+		self::assertSame( $before, $after, 'A rejected path must not leave a temp file behind.' );
+	}
+
+	public function test__get_file_content__returns_get_file_error() {
+		$this->mock_http_response( [
+			'response' => [
+				'code' => 404,
+			],
+		] );
+
+		$result = $this->api_client->get_file_content( '/wp-content/uploads/missing-file.txt' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'file-not-found', $result->get_error_code() );
+	}
+
 	public function get_test_data__upload_timeout() {
 		return [
 			'empty-file' => [
@@ -436,10 +514,10 @@ class API_Client_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__upload_timeout
 	 */
-	public function test__calculate_upload_timeout( $file_size, $expected_timeout ) {
-		$calculate_upload_timeout_method = self::get_method( 'calculate_upload_timeout' );
+	public function test__calculate_transfer_timeout( $file_size, $expected_timeout ) {
+		$calculate_transfer_timeout_method = self::get_method( 'calculate_transfer_timeout' );
 
-		$actual_timeout = $calculate_upload_timeout_method->invokeArgs( $this->api_client, [
+		$actual_timeout = $calculate_transfer_timeout_method->invokeArgs( $this->api_client, [
 			$file_size,
 		] );
 
@@ -539,7 +617,7 @@ class API_Client_Test extends WP_UnitTestCase {
 			'response' => [
 				'code' => 200,
 			],
-			'body'     => '{"filename":"/wp-content/uploads/file.txt"}',
+			'body'     => '{"filename":"/wp-content/uploads/file.txt","mtime":1234567890,"size":13}',
 		] );
 
 		$file_path   = __DIR__ . '/../fixtures/files/upload.jpg';
@@ -559,8 +637,14 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$cached_stats = $cache->get_file_stats( 'wp-content/uploads/file.txt' );
 
-		// Should be cleared out of stats cache
-		$this->assertFalse( $cached_stats, 'Expected false from the file stat cache after upload' );
+		$this->assertSame( [
+			'mtime' => 1234567890,
+			'size'  => 13,
+		], $cached_stats, 'Expected the upload response metadata in the file stat cache.' );
+
+		$cached_file = $cache->get_file( 'wp-content/uploads/file.txt' );
+		$this->assertNotFalse( $cached_file, 'Expected paths with and without a leading slash to share one cache entry.' );
+		$this->assertSame( 13, filesize( $cached_file ) );
 	}
 
 	public function get_test_data__get_unique_filename() {
@@ -644,5 +728,410 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$result = $this->api_client->upload_file( $file_path, $upload_path );
 		self::assertNotInstanceOf( WP_Error::class, $result );
+	}
+
+	/**
+	 * Records every outbound request so a test can assert how many were made.
+	 *
+	 * @return array<int,string> Filled with the X-Action of each request, in order.
+	 */
+	private function &record_requests( $responder ) {
+		$actions = [];
+		add_filter( 'pre_http_request', function ( $response, $args, $url ) use ( &$actions, $responder ) {
+			$action    = $args['headers']['X-Action'] ?? 'download';
+			$actions[] = $action;
+			return $responder( $action, $args, $url );
+		}, 10, 3 );
+
+		return $actions;
+	}
+
+	private function download_responder( $code = 200, $body = 'payload', $last_modified = 'Mon, 25 Aug 2026 12:00:00 GMT' ) {
+		return function ( $action, $args ) use ( $code, $body, $last_modified ) {
+			if ( 200 === $code && ! empty( $args['stream'] ) ) {
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+				file_put_contents( $args['filename'], $body );
+			}
+
+			return [
+				'response' => [ 'code' => $code ],
+				'headers'  => [ 'last-modified' => $last_modified ],
+				'body'     => 200 === $code ? '' : '',
+			];
+		};
+	}
+
+	public function test__get_file__uses_a_single_request() {
+		$actions = &$this->record_requests( $this->download_responder() );
+
+		$file = $this->api_client->get_file( '/wp-content/uploads/single.txt' );
+
+		self::assertNotInstanceOf( WP_Error::class, $file );
+		self::assertSame( [ 'download' ], $actions, 'A cold read should download once and ask nothing else.' );
+	}
+
+	public function test__get_file__caches_metadata_from_the_download() {
+		$actions = &$this->record_requests( $this->download_responder( 200, 'payload' ) );
+
+		$this->api_client->get_file( '/wp-content/uploads/meta.txt' );
+
+		$info   = [];
+		$exists = $this->api_client->is_file( '/wp-content/uploads/meta.txt', $info );
+
+		self::assertTrue( $exists );
+		self::assertSame( [ 'download' ], $actions, 'Metadata should come from the download, not a second request.' );
+		self::assertSame( strlen( 'payload' ), $info['size'] );
+		self::assertSame( strtotime( 'Mon, 25 Aug 2026 12:00:00 GMT' ), $info['mtime'] );
+	}
+
+	public function test__get_file__does_not_cache_a_missing_file() {
+		$actions = &$this->record_requests( $this->download_responder( 404 ) );
+
+		$result = $this->api_client->get_file( '/wp-content/uploads/gone.txt' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'file-not-found', $result->get_error_code() );
+
+		$info = [];
+		self::assertFalse( $this->api_client->is_file( '/wp-content/uploads/gone.txt', $info ) );
+
+		self::assertSame( [ 'download', 'file_exists' ], $actions, 'A 404 download must not stand in for a later existence check.' );
+	}
+
+	public function test__get_file__rechecks_a_missing_file_without_leaking() {
+		$actions = &$this->record_requests( function () {
+			return [
+				'response' => [ 'code' => 404 ],
+				'body'     => '',
+			];
+		} );
+
+		// file_exists() then fopen( ..., 'a' ) on a new file lands here.
+		self::assertFalse( $this->api_client->is_file( '/wp-content/uploads/absent.txt' ) );
+
+		$before = glob( get_temp_dir() . 'vip*' );
+		$result = $this->api_client->get_file( '/wp-content/uploads/absent.txt' );
+		$after  = glob( get_temp_dir() . 'vip*' );
+
+		self::assertInstanceOf( WP_Error::class, $result );
+		self::assertSame( 'file-not-found', $result->get_error_code() );
+		self::assertSame( [ 'file_exists', 'download' ], $actions, 'A read after a failed stat asks the service again rather than trusting the earlier 404.' );
+		self::assertSame( $before, $after, 'A failed read must not leave a temp file behind.' );
+	}
+
+	public function test__is_file__asks_once_for_repeated_questions() {
+		$actions = &$this->record_requests( function () {
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => wp_json_encode( [
+					'size'  => 19,
+					'mtime' => 1700000000,
+				] ),
+			];
+		} );
+
+		// Every one of the four PHP stat functions lands on this method.
+		$info = [];
+		for ( $i = 0; $i < 4; $i++ ) {
+			self::assertTrue( $this->api_client->is_file( '/wp-content/uploads/four.txt', $info ) );
+		}
+
+		self::assertSame( [ 'file_exists' ], $actions, 'Four questions about one file should cost one request.' );
+		self::assertSame( 19, $info['size'] );
+		self::assertSame( 1700000000, $info['mtime'] );
+	}
+
+	public function test__upload_file__releases_the_upload_body_callback_when_the_transport_throws() {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam -- already scoped to get_temp_dir().
+		$local_path = tempnam( get_temp_dir(), 'vip-upload-' );
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+		file_put_contents( $local_path, 'payload' );
+
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement, WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- throwing is the condition under test.
+		add_filter( 'pre_http_request', function () {
+			throw new \RuntimeException( 'transport exploded' );
+		}, 10, 3 );
+
+		$threw = false;
+		try {
+			$this->api_client->upload_file( $local_path, '/wp-content/uploads/boom.txt' );
+		} catch ( \RuntimeException $e ) {
+			$threw = true;
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
+		unlink( $local_path );
+
+		self::assertTrue( $threw, 'The transport exception should propagate.' );
+		self::assertFalse(
+			has_action( 'http_api_curl' ),
+			'Curl_Streamer must not outlive the request; a leaked callback would stream this file into later outbound requests.'
+		);
+	}
+
+	public function test__get_file__applies_a_stall_guard_and_releases_it() {
+		// pre_http_request short-circuits before the transport runs, so http_api_curl
+		// never fires here. Fire it ourselves from inside the request, exactly as
+		// WP_Http would, against a real handle, and read back what the guard set.
+		$guarded = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$guarded ) {
+			$handle = curl_init( 'https://files.go-vip.co/' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.curl_curl_init
+			do_action_ref_array( 'http_api_curl', [ &$handle, $args, 'https://files.go-vip.co/' ] );
+
+			// PHP has no curl_getopt(); the applied closure is the only record of what was set.
+			$guarded = $this->registered_curl_options_from_api_client();
+
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			file_put_contents( $args['filename'], 'payload' );
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}, 10, 2 );
+
+		$this->api_client->get_file( '/wp-content/uploads/guarded.txt' );
+
+		self::assertSame(
+			[
+				CURLOPT_LOW_SPEED_LIMIT => API_Client::DOWNLOAD_MIN_BYTES_PER_SECOND,
+				CURLOPT_LOW_SPEED_TIME  => API_Client::DOWNLOAD_STALL_TIMEOUT,
+			],
+			$guarded,
+			'The download must carry the minimum-rate stall guard while the request is in flight.'
+		);
+
+		// The stall guard is attached for this request only.
+		self::assertFalse(
+			$this->has_non_test_curl_action(),
+			'The download stall guard must not stay registered after the request.'
+		);
+	}
+
+	/**
+	 * The cURL options captured by the API_Client closure currently hooked to http_api_curl.
+	 *
+	 * @return array CURLOPT_* => value, or an empty array when no such closure is registered.
+	 */
+	private function registered_curl_options_from_api_client() {
+		global $wp_filter;
+
+		if ( empty( $wp_filter['http_api_curl'] ) ) {
+			return [];
+		}
+
+		foreach ( $wp_filter['http_api_curl']->callbacks as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( ! ( $callback['function'] instanceof \Closure ) ) {
+					continue;
+				}
+				$reflection = new \ReflectionFunction( $callback['function'] );
+				if ( $reflection->getClosureThis() instanceof API_Client ) {
+					return $reflection->getStaticVariables()['curl_options'] ?? [];
+				}
+			}
+		}
+
+		return [];
+	}
+
+	public function test__get_file__releases_the_stall_guard_when_the_transport_throws() {
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement, WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- throwing is the condition under test.
+		add_filter( 'pre_http_request', function () {
+			throw new \RuntimeException( 'transport exploded' );
+		}, 10, 3 );
+
+		$threw = false;
+		try {
+			$this->api_client->get_file( '/wp-content/uploads/boom.txt' );
+		} catch ( \RuntimeException $e ) {
+			$threw = true;
+		}
+
+		self::assertTrue( $threw, 'The transport exception should propagate.' );
+		self::assertFalse(
+			$this->has_non_test_curl_action(),
+			'A thrown request must not leave the stall guard applying to later requests.'
+		);
+	}
+
+	/**
+	 * True when something other than this test class is hooked to http_api_curl.
+	 */
+	private function has_non_test_curl_action() {
+		global $wp_filter;
+
+		if ( empty( $wp_filter['http_api_curl'] ) ) {
+			return false;
+		}
+
+		foreach ( $wp_filter['http_api_curl']->callbacks as $callbacks ) {
+			foreach ( $callbacks as $callback ) {
+				if ( $callback['function'] instanceof \Closure ) {
+					$bound = ( new \ReflectionFunction( $callback['function'] ) )->getClosureThis();
+					if ( $bound instanceof self ) {
+						continue; // Registered by the test itself.
+					}
+				}
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public function test__get_file__scales_the_timeout_from_a_known_size() {
+		$timeouts = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$timeouts ) {
+			if ( empty( $args['headers']['X-Action'] ) ) {
+				$timeouts[] = $args['timeout'];
+				// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+				file_put_contents( $args['filename'], 'payload' );
+				return [
+					'response' => [ 'code' => 200 ],
+					'body'     => '',
+				];
+			}
+
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => wp_json_encode( [
+					'size'  => 10 * MB_IN_BYTES,
+					'mtime' => 1700000000,
+				] ),
+			];
+		}, 10, 2 );
+
+		// Pin the upload limit so the expected values do not depend on php.ini.
+		// It has to exceed the known file size below for the ordering to mean anything.
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
+		// Cold: nothing known about the file, so allow a full-size transfer.
+		$this->api_client->get_file( '/wp-content/uploads/cold.txt' );
+
+		// Warm: a stat supplied the size, so the timeout scales to it.
+		$info = [];
+		$this->api_client->is_file( '/wp-content/uploads/warm.txt', $info );
+		$this->api_client->get_file( '/wp-content/uploads/warm.txt' );
+
+		$scale = self::get_method( 'calculate_transfer_timeout' );
+		$cold  = min( $scale->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] ), API_Client::DOWNLOAD_COLD_TIMEOUT_WEB );
+		$warm  = $scale->invokeArgs( $this->api_client, [ 10 * MB_IN_BYTES ] );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		self::assertSame(
+			$cold,
+			$timeouts[0],
+			'A cold download should allow what the largest permitted upload gets, capped for a web request.'
+		);
+		self::assertSame(
+			$warm,
+			$timeouts[1],
+			'A download with a known size should scale to that size.'
+		);
+		self::assertLessThan(
+			$cold,
+			$warm,
+			'A known 10 MiB file should get less time than an unknown file under a 4 GiB limit.'
+		);
+	}
+
+	/**
+	 * Records the timeout of every download request and answers it with a small payload.
+	 *
+	 * @return array<int,int> Filled with each download timeout, in order.
+	 */
+	private function &record_download_timeouts() {
+		$timeouts = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$timeouts ) {
+			$timeouts[] = $args['timeout'];
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			file_put_contents( $args['filename'], 'payload' );
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}, 10, 2 );
+
+		return $timeouts;
+	}
+
+	public function test__get_file__caps_a_cold_download_in_a_web_request() {
+		$timeouts = &$this->record_download_timeouts();
+
+		// The platform limit; scaling from it would allow well over two hours.
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
+		$this->api_client->get_file( '/wp-content/uploads/cold-web.txt' );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		$uncapped = self::get_method( 'calculate_transfer_timeout' )->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+
+		self::assertGreaterThan( API_Client::DOWNLOAD_COLD_TIMEOUT_WEB, $uncapped, 'The fixture limit must exceed the cap for this test to mean anything.' );
+		self::assertSame(
+			API_Client::DOWNLOAD_COLD_TIMEOUT_WEB,
+			$timeouts[0],
+			'A web request must not wait for the full size-derived ceiling on a cold read.'
+		);
+	}
+
+	public function test__get_file__keeps_the_full_cold_timeout_outside_web_requests() {
+		$timeouts = &$this->record_download_timeouts();
+
+		// WP_CLI and DOING_CRON are process-wide constants, so stand in for them.
+		$this->api_client = new class( 'https://files.go-vip.co', 123456, 'super-sekret-token', API_Cache::get_instance() ) extends API_Client {
+			protected function is_long_running_context(): bool {
+				return true;
+			}
+		};
+
+		add_filter( 'upload_size_limit', function () {
+			return 4 * GB_IN_BYTES;
+		} );
+
+		$this->api_client->get_file( '/wp-content/uploads/cold-cli.txt' );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		$uncapped = self::get_method( 'calculate_transfer_timeout' )->invokeArgs( $this->api_client, [ 4 * GB_IN_BYTES ] );
+
+		self::assertSame(
+			$uncapped,
+			$timeouts[0],
+			'WP-CLI and cron may legitimately spend the full size-derived ceiling on one transfer.'
+		);
+	}
+
+	public function test__get_file__sizes_an_unknown_download_from_the_upload_limit() {
+		$timeouts = [];
+		add_filter( 'pre_http_request', function ( $response, $args ) use ( &$timeouts ) {
+			$timeouts[] = $args['timeout'];
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+			file_put_contents( $args['filename'], 'payload' );
+			return [
+				'response' => [ 'code' => 200 ],
+				'body'     => '',
+			];
+		}, 10, 2 );
+
+		add_filter( 'upload_size_limit', function () {
+			return 64 * MB_IN_BYTES;
+		} );
+
+		$this->api_client->get_file( '/wp-content/uploads/unknown.txt' );
+
+		remove_all_filters( 'upload_size_limit' );
+
+		$scale = self::get_method( 'calculate_transfer_timeout' );
+		self::assertSame(
+			$scale->invokeArgs( $this->api_client, [ 64 * MB_IN_BYTES ] ),
+			$timeouts[0],
+			'An unknown-size download should follow the upload_size_limit filter.'
+		);
 	}
 }

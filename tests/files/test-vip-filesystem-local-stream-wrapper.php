@@ -131,6 +131,64 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertTrue( $actual_result );
 	}
 
+	public function test__rename__local_to_remote_uploads_the_local_file_directly() {
+		$path_from = 'vip://wp-content/uploads/chunks/upload.part';
+		$path_to   = 'vip://wp-content/uploads/upload.zip';
+		$content   = 'assembled chunk content';
+
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $path_from );
+		file_put_contents( $path_from, $content );
+
+		$this->api_client_mock
+			->expects( self::never() )
+			->method( 'get_file' );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'upload_file' )
+			->with(
+				$this->callback( function ( $local_path ) use ( $content ) {
+					return is_string( $local_path ) && file_get_contents( $local_path ) === $content;
+				} ),
+				'wp-content/uploads/upload.zip'
+			)
+			->willReturn( '/wp-content/uploads/upload.zip' );
+
+		$this->assertTrue( $this->stream_wrapper->rename( $path_from, $path_to ) );
+		$this->assertFalse( file_exists( $path_from ) );
+
+		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $path_from );
+	}
+
+	public function test__rename__remote_to_local_copies_the_downloaded_file() {
+		$path_from = 'vip://wp-content/uploads/remote.txt';
+		$path_to   = 'vip://wp-content/uploads/cache/remote.tmp';
+		$content   = 'remote file content';
+		$tmp_file  = tempnam( sys_get_temp_dir(), 'phpunit' ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
+		file_put_contents( $tmp_file, $content );
+
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $path_to );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'get_file' )
+			->with( 'wp-content/uploads/remote.txt' )
+			->willReturn( $tmp_file );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'delete_file' )
+			->with( 'wp-content/uploads/remote.txt' )
+			->willReturn( true );
+
+		$this->assertTrue( $this->stream_wrapper->rename( $path_from, $path_to ) );
+		$this->assertSame( $content, file_get_contents( $path_to ) );
+
+		unlink( $path_to );
+		unlink( $tmp_file );
+		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $path_to );
+	}
+
 	public function get_test_data__validate_valid_mode() {
 		return [
 			'read mode'   => [ 'r' ],
@@ -210,6 +268,59 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		self::assertFalse( $actual );
 	}
 
+	public function test_open_write_mode_does_not_fetch_existing_file(): void {
+		$path = 'wp-content/uploads/overwrite.txt';
+
+		$this->api_client_mock
+			->expects( self::never() )
+			->method( 'get_file' );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'cache_file_stats' )
+			->with(
+				$path,
+				$this->callback( function ( $stats ) {
+					return 0 === $stats['size'] && is_int( $stats['mtime'] );
+				} )
+			);
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'upload_file' )
+			->with( $this->anything(), $path )
+			->willReturn( '/wp-content/uploads/overwrite.txt' );
+
+		self::assertTrue( $this->stream_wrapper->stream_open( 'vip://' . $path, 'w', 0 ) );
+		self::assertTrue( $this->stream_wrapper->stream_close() );
+	}
+
+	public function test_file_put_contents_overwrites_without_a_remote_read(): void {
+		$path    = 'wp-content/uploads/overwrite.txt';
+		$content = 'replacement content';
+
+		$this->api_client_mock
+			->expects( self::never() )
+			->method( 'get_file' );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'cache_file_stats' );
+
+		$this->api_client_mock
+			->expects( self::once() )
+			->method( 'upload_file' )
+			->with(
+				$this->callback( function ( $local_path ) use ( $content ) {
+					return file_get_contents( $local_path ) === $content;
+				} ),
+				$path
+			)
+			->willReturn( '/wp-content/uploads/overwrite.txt' );
+
+		self::assertSame( strlen( $content ), file_put_contents( 'vip://' . $path, $content ) );
+	}
+
 	/**
 	 * @ticket CANTINA-911
 	 */
@@ -224,12 +335,10 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 			->with( $path, $this->anything() )
 			->willReturn( false );
 
-		// fopen() - create empty file
+		// fopen() in write mode creates an empty local buffer without a remote read.
 		$this->api_client_mock
-			->expects( self::once() )
-			->method( 'get_file' )
-			->with( $path )
-			->willReturn( new WP_Error( 'file-not-found', 'error' ) );
+			->expects( self::never() )
+			->method( 'get_file' );
 
 		// flush() when closing the file
 		$this->api_client_mock
@@ -281,12 +390,10 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 			->with( $path, $this->anything() )
 			->willReturn( false );
 
-		// fopen() - create empty file
+		// fopen() in write mode creates an empty local buffer without a remote read.
 		$this->api_client_mock
-			->expects( self::once() )
-			->method( 'get_file' )
-			->with( $path )
-			->willReturn( new WP_Error( 'file-not-found', 'error' ) );
+			->expects( self::never() )
+			->method( 'get_file' );
 
 		// flush() when closing the file
 		$this->api_client_mock
@@ -332,6 +439,9 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertNotFalse( $fp );
 		$bytes_written = fwrite( $fp, $content );
 		$this->assertEquals( strlen( $content ), $bytes_written );
+		$this->assertTrue( fflush( $fp ) );
+		$this->assertSame( 0, fseek( $fp, 0 ) );
+		$this->assertSame( 0, ftell( $fp ) );
 		fclose( $fp );
 
 		// Test reading from a local file
