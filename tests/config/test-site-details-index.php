@@ -76,6 +76,11 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertSame( get_site_url(), $site_details['core']['site_url'], 'site_url should be equal to get_site_url()' );
 		$this->assertSame( get_home_url(), $site_details['core']['home_url'], 'home_url should be equal to get_home_url()' );
 		$this->assertSame( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
+		$this->assertSame(
+			\Automattic\VIP\Integrations\IntegrationsSingleton::instance()->get_integration( 'connector-controls' )->get_runtime_status(),
+			$site_details['connector_controls'],
+			'SDS should carry only the dedicated, secret-free runtime report.'
+		);
 		$this->assertEquals(
 			[
 				[

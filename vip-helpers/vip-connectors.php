@@ -37,5 +37,7 @@ function update_ai_connectors(): void {
 }
 
 if ( defined( 'ABSPATH' ) ) {
-	add_action( 'init', __NAMESPACE__ . '\\update_ai_connectors', 16 );
+	// Run after connector and provider registration, but before integrations that
+	// inspect the final runtime credential source for UI and reporting metadata.
+	add_action( 'wp_connectors_init', __NAMESPACE__ . '\\update_ai_connectors', PHP_INT_MAX - 1 );
 }
