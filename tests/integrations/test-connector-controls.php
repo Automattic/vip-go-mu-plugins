@@ -277,6 +277,48 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_vip_config_environment_credential_is_applied_before_connector_metadata_is_described(): void {
+		require_once __DIR__ . '/../../lib/helpers/environment.php';
+		Constant_Mocker::define( 'VIP_ENV_VAR_OPENAI_API_KEY', 'customer-environment-secret' );
+
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$integration                    = new ConnectorControlsIntegration( 'connector-controls' );
+			$this->recording_integrations[] = $integration;
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
+			$integration->configure();
+			$this->expose_mocked_constant_to_ai_client();
+			$registry->registerProvider( $provider_class );
+			\_wp_connectors_register_default_ai_providers( $connector_registry );
+			$original_connector = $connector_registry->get_registered( 'openai' );
+
+			$this->assertSame( PHP_INT_MAX - 1, has_action( 'wp_connectors_init', 'Automattic\\VIP\\Helpers\\update_ai_connectors' ) );
+			$this->assertFalse( has_action( 'init', 'Automattic\\VIP\\Helpers\\update_ai_connectors' ) );
+			$this->assertSame( 'customer-environment-secret', \vip_get_env_var( 'OPENAI_API_KEY' ) );
+			$this->assertSame( 'managed-test-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey() );
+
+			do_action( 'wp_connectors_init', $connector_registry );
+
+			$authentication = $registry->getProviderRequestAuthentication( 'openai' );
+			$this->assertInstanceOf( ApiKeyRequestAuthentication::class, $authentication );
+			$this->assertSame( 'customer-environment-secret', $authentication->getApiKey() );
+			$this->assertSame( 'customer-environment-secret', getenv( 'OPENAI_API_KEY' ) );
+			$this->assertStringEndsWith(
+				'An environment variable supplies this credential and takes precedence over VIP Integration Center.',
+				$connector_registry->get_registered( 'openai' )['description']
+			);
+			$this->assertSame( [
+				'source' => 'environment_variable',
+				'status' => 'configured',
+			], $integration->get_runtime_status()['providers']['openai'] );
+			$this->assertStringNotContainsString( 'customer-environment-secret', $connector_registry->get_registered( 'openai' )['description'] );
+			$this->assertStringStartsWith( $original_connector['description'], $connector_registry->get_registered( 'openai' )['description'] );
+		} );
+	}
+
+	/**
 	 * @dataProvider runtime_status_provider
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
