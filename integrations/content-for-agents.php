@@ -34,13 +34,6 @@ class ContentForAgentsIntegration extends Integration {
 				return;
 			}
 
-			// Content for Agents requires WordPress 6.8.
-			// Loading it directly bypasses WordPress's plugin requirement checks.
-			if ( version_compare( get_bloginfo( 'version' ), '6.8', '<' ) ) {
-				$this->is_active = false;
-				return;
-			}
-
 			$latest_directory = $this->get_latest_version();
 			if ( null === $latest_directory ) {
 				$this->is_active = false;
@@ -49,7 +42,12 @@ class ContentForAgentsIntegration extends Integration {
 
 			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/content-for-agents.php';
 			if ( file_exists( $load_path ) ) {
+				// Let the plugin check its requirements and show notices when they are unmet.
 				require_once $load_path;
+
+				if ( ! $this->is_loaded() ) {
+					$this->is_active = false;
+				}
 			} else {
 				$this->is_active = false;
 			}
