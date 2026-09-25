@@ -31,19 +31,19 @@ jQuery(document).ready(function ($) {
             url: contact_form.prop('action'),
             data: data,
             dataType: 'json',
-            success: function (data, textStatus) {
-                if (textStatus === 'success') {
-                    var result = data;
-                    renderVIPContactFormMessage(result.status, result.message);
+            success: function (result) {
+                renderVIPContactFormMessage(result.status, result.message);
 
-                    if ( result.status === 'success' ) {
-                        contact_form[0].reset();
-                    }
-                } else {
-                    renderVIPContactFormMessage('error', 'Your message could not be sent, please try again.');
+                if ( result.status === 'success' ) {
+                    contact_form[0].reset();
                 }
+            },
+            error: function () {
+                renderVIPContactFormMessage('error', 'Your message could not be sent, please try again.');
+            },
+            complete: function () {
                 contact_form_submit.prop('disabled', false);
-            }.bind(this)
+            }
         });
     });
 });
