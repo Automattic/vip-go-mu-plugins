@@ -23,11 +23,17 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__admin_username_restricted() {
-		$this->factory()->user->create( [
-			'user_login' => 'admin',
-			'user_email' => 'admin@example.com',
-			'user_pass'  => 'secret1',
-		] );
+		// WordPress test bootstraps may already provide an admin account.
+		$admin = get_user_by( 'login', 'admin' );
+		if ( $admin ) {
+			wp_set_password( 'secret1', $admin->ID );
+		} else {
+			$this->factory()->user->create( [
+				'user_login' => 'admin',
+				'user_email' => 'admin@example.com',
+				'user_pass'  => 'secret1',
+			] );
+		}
 
 		$result = wp_authenticate( 'admin', 'secret1' );
 

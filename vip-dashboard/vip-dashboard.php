@@ -217,7 +217,7 @@ function vip_contact_form_handler() {
 				return preg_replace( array(
 					'/[a-z0-9.!#$%&\'*+\/=?^_`{|}~-]+@[a-z0-9.-]+/i',
 					'/\b(Bearer|Basic)\s+\S+/i',
-'/(?:\b(password|api[_ -]?key|access[_ -]?token|client[_ -]?secret|token|credential|secret))\s*[:=]\s*("[^"]*"|\'[^\']*\'|\S+)/i',
+					'/(?:\b(password|api[_ -]?key|access[_ -]?token|client[_ -]?secret|token|credential|secret))\s*[:=]\s*("[^"]*"|\'[^\']*\'|\S+)/i',
 				), array( '[redacted email]', '$1 [redacted]', '$1=[redacted]' ), $message );
 			}, $mail_errors );
 
