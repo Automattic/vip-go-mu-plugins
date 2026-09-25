@@ -25,17 +25,16 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function test__admin_username_restricted() {
 		// WordPress test bootstraps may already provide an admin account.
 		$admin = get_user_by( 'login', 'admin' );
-		if ( $admin ) {
-			wp_set_password( 'secret1', $admin->ID );
-		} else {
-			$this->factory()->user->create( [
+		if ( ! $admin ) {
+			$admin = $this->factory()->user->create_and_get( [
 				'user_login' => 'admin',
 				'user_email' => 'admin@example.com',
 				'user_pass'  => 'secret1',
 			] );
 		}
 
-		$result = wp_authenticate( 'admin', 'secret1' );
+		// Exercise the restriction after authentication without changing shared credentials.
+		$result = apply_filters( 'authenticate', $admin, 'admin', 'secret1' );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'restricted-login', $result->get_error_code() );
