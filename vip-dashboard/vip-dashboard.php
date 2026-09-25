@@ -176,27 +176,32 @@ function vip_contact_form_handler() {
 	// phpcs:ignore WordPress.DateTime.RestrictedFunctions.date_date -- ISO 8601 date includes the TZ info
 	$content .= sprintf( "\n\nSent from %s on %s", home_url(), date( 'c', time() ) );
 
-	// Filter from name/email. NOTE - not un-hooking the filter because we die() immediately after wp_mail()
-	add_filter( 'wp_mail_from', function () use ( $email ) {
-		return VIP_SUPPORT_EMAIL;
-	}, PHP_INT_MAX );
-
-	add_filter( 'wp_mail_from_name', function () use ( $name ) {
+	$from_name          = function () use ( $name ) {
 		return $name;
-	}, PHP_INT_MAX );
+	};
+	$mail_errors        = array();
+	$capture_mail_error = function ( $error ) use ( &$mail_errors ) {
+		$mail_errors = array_merge( $mail_errors, $error->get_error_messages() );
+	};
 
-	$headers  = "From: \"$name\" <" . VIP_SUPPORT_EMAIL . ">\r\n";
-	$headers .= "Reply-To: $email\r\n"; // Add the Reply-To header so ZD can map correct email
+	// Use the site's configured sender. Third-party mailers may require a verified sender identity.
+	$headers = "Reply-To: $email\r\n"; // Add the Reply-To header so ZD can map correct email.
 
-	// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
-	if ( wp_mail( VIP_SUPPORT_EMAIL, $subject, $content, $headers . $cc_headers_to_kayako ) ) {
+	add_filter( 'wp_mail_from_name', $from_name, PHP_INT_MAX );
+	add_action( 'wp_mail_failed', $capture_mail_error );
+	try {
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail
+		$sent = wp_mail( VIP_SUPPORT_EMAIL, $subject, $content, $headers . $cc_headers_to_kayako );
+	} finally {
+		remove_filter( 'wp_mail_from_name', $from_name, PHP_INT_MAX );
+		remove_action( 'wp_mail_failed', $capture_mail_error );
+	}
+
+	if ( $sent ) {
 		$return = array(
 			'status'  => 'success',
 			'message' => __( 'Your support request is on its way, we will be in touch soon.', 'vip-dashboard' ),
 		);
-
-		echo wp_json_encode( $return );
-		die();
 
 	} else {
 		$manual_link = vip_echo_mailto_vip_hosting( __( 'Please send in a request manually.', 'vip-dashboard' ), false );
@@ -206,9 +211,26 @@ function vip_contact_form_handler() {
 			'message' => sprintf( __( 'There was an error sending the support request. %1$s', 'vip-dashboard' ), $manual_link ),
 		);
 
-		echo wp_json_encode( $return );
-		die();
+		if ( $mail_errors ) {
+			// Keep diagnostics out of the response and omit WP_Error data (mail content and headers).
+			$messages = array_map( static function ( $message ) {
+				return preg_replace( array(
+					'/[a-z0-9.!#$%&\'*+\/=?^_`{|}~-]+@[a-z0-9.-]+/i',
+					'/\b(Bearer|Basic)\s+\S+/i',
+					'/(?:\b(password|api[_ -]?key|access[_ -]?token|client[_ -]?secret|token|credential|secret))\s*[:=]\s*("[^"]*"|\'[^\']*\'|\S+)/i',
+				), array( '[redacted email]', '$1 [redacted]', '$1=[redacted]' ), $message );
+			}, $mail_errors );
+
+			// JSON encoding keeps provider-supplied newlines inside a single log entry.
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			error_log( 'VIP Dashboard support request failed: ' . wp_json_encode( array(
+				'blog_id' => get_current_blog_id(),
+				'errors'  => $messages,
+			) ) );
+		}
 	}
+
+	wp_send_json( $return );
 }
 add_action( 'wp_ajax_vip_contact', 'vip_contact_form_handler' );
 
