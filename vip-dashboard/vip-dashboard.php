@@ -230,8 +230,7 @@ function vip_contact_form_handler() {
 		}
 	}
 
-	echo wp_json_encode( $return );
-	wp_die();
+	wp_send_json( $return );
 }
 add_action( 'wp_ajax_vip_contact', 'vip_contact_form_handler' );
 

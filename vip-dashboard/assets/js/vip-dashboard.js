@@ -30,9 +30,10 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             url: contact_form.prop('action'),
             data: data,
+            dataType: 'json',
             success: function (data, textStatus) {
                 if (textStatus === 'success') {
-                    var result = jQuery.parseJSON(data);
+                    var result = data;
                     renderVIPContactFormMessage(result.status, result.message);
 
                     if ( result.status === 'success' ) {

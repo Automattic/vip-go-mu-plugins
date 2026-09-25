@@ -26,6 +26,8 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 	}
 
 	private function submit_contact_form(): array {
+		add_filter( 'wp_doing_ajax', '__return_true' );
+		add_filter( 'wp_die_ajax_handler', array( $this, 'get_wp_die_handler' ) );
 		ob_start();
 		try {
 			vip_contact_form_handler();
@@ -33,6 +35,8 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 			self::assertSame( '', $exception->getMessage() );
 		} finally {
 			$response = ob_get_clean();
+			remove_filter( 'wp_die_ajax_handler', array( $this, 'get_wp_die_handler' ) );
+			remove_filter( 'wp_doing_ajax', '__return_true' );
 		}
 
 		return json_decode( $response, true );
