@@ -36,7 +36,7 @@ jQuery(document).ready(function ($) {
                     renderVIPContactFormMessage(result.status, result.message);
 
                     if ( result.status === 'success' ) {
-                        contact_form.reset();
+                        contact_form[0].reset();
                     }
                 } else {
                     renderVIPContactFormMessage('error', 'Your message could not be sent, please try again.');
