@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1d5dedf0411a136afda1e9bc1d34ad48",
+    "content-hash": "3167b903d33dbf012dea3c9456c9a0e7",
     "packages": [],
     "packages-dev": [
         {
@@ -273,24 +273,24 @@
         },
         {
             "name": "johnpbloch/wordpress-core",
-            "version": "7.1.1",
+            "version": "7.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/johnpbloch/wordpress-core.git",
-                "reference": "89385660aa42babf958426dfdd2af28fd899e323"
+                "reference": "74f26ca0fc3fef436d29bdc50a4def940969fa85"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/89385660aa42babf958426dfdd2af28fd899e323",
-                "reference": "89385660aa42babf958426dfdd2af28fd899e323",
+                "url": "https://api.github.com/repos/johnpbloch/wordpress-core/zipball/74f26ca0fc3fef436d29bdc50a4def940969fa85",
+                "reference": "74f26ca0fc3fef436d29bdc50a4def940969fa85",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
-                "php": ">=5.3.2"
+                "php": ">=7.4"
             },
             "provide": {
-                "wordpress/core-implementation": "7.1.1"
+                "wordpress/core-implementation": "7.1.2"
             },
             "type": "wordpress-core",
             "notification-url": "https://packagist.org/downloads/",
@@ -317,7 +317,7 @@
                 "source": "https://core.trac.wordpress.org/browser",
                 "wiki": "https://codex.wordpress.org/"
             },
-            "time": "2026-09-17T22:35:50+00:00"
+            "time": "2026-09-22T16:56:31+00:00"
         },
         {
             "name": "myclabs/deep-copy",
