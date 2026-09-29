@@ -73,7 +73,7 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		add_filter( 'pre_wp_mail', function () {
 			do_action( 'wp_mail_failed', new WP_Error(
 				'wp_mail_failed',
-				"Unverified sender private@example.org; api_key=private-key; password=\"private password\"; Bearer private-token; secret='private secret'; client_secret=private-client-secret; token=private-bare-token; credential=private-credential\nInternal diagnostic marker",
+				"Unverified sender private@example.org; api_key=private-key; password=\"private password\"; Bearer private-token; secret='private secret'; client_secret=private-client-secret; token=private-bare-token; credential=private-credential; {\"api_key\":\"private-json-key\",\"client_secret\":\"private-json-secret\"}\nInternal diagnostic marker",
 				array( 'message' => 'Private mail data' )
 			) );
 			return false;
@@ -109,6 +109,8 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'private-client-secret', $log );
 		self::assertStringNotContainsString( 'private-bare-token', $log );
 		self::assertStringNotContainsString( 'private-credential', $log );
+		self::assertStringNotContainsString( 'private-json-key', $log );
+		self::assertStringNotContainsString( 'private-json-secret', $log );
 		self::assertStringNotContainsString( 'Private mail data', $log );
 		self::assertStringContainsString( '\\nInternal diagnostic marker', $log );
 		self::assertSame( $existing_failure_hook, has_action( 'wp_mail_failed' ) );
