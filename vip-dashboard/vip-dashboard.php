@@ -221,12 +221,14 @@ function vip_contact_form_handler() {
 				), array( '[redacted email]', '$1 [redacted]', '$1=[redacted]' ), $message );
 			}, $mail_errors );
 
-			// JSON encoding keeps provider-supplied newlines inside a single log entry.
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( 'VIP Dashboard support request failed: ' . wp_json_encode( array(
-				'blog_id' => get_current_blog_id(),
-				'errors'  => $messages,
-			) ) );
+			// Escape provider-supplied newlines to keep the warning in a single log entry.
+			$messages = str_replace( array( "\r", "\n" ), array( '\r', '\n' ), $messages );
+
+			trigger_error( esc_html( sprintf(
+				'VIP Dashboard support request failed (blog_id %d): %s',
+				get_current_blog_id(),
+				implode( ' | ', $messages )
+			) ), E_USER_WARNING );
 		}
 	}
 

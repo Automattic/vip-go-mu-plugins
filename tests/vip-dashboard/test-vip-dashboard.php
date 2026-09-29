@@ -79,19 +79,17 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 			return false;
 		} );
 
-		$log_file     = wp_tempnam( 'vip-contact-error' );
-		$previous_log = ini_get( 'error_log' );
-		// phpcs:ignore WordPress.PHP.IniSet.Risky -- Capture logs for this test and restore below.
-		ini_set( 'error_log', $log_file );
+		// Capture the warning instead of letting PHPUnit convert it to an exception.
+		$log = '';
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Restored below.
+		set_error_handler( function ( $errno, $errstr ) use ( &$log ) {
+			$log .= $errstr;
+			return true;
+		}, E_USER_WARNING );
 		try {
 			$response = $this->submit_contact_form();
-			// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local temporary log file.
-			$log = file_get_contents( $log_file );
 		} finally {
-			// phpcs:ignore WordPress.PHP.IniSet.Risky -- Restore the original log destination.
-			ini_set( 'error_log', $previous_log );
-			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Created by wp_tempnam above.
-			unlink( $log_file );
+			restore_error_handler();
 		}
 
 		self::assertSame( 'error', $response['status'] );
@@ -100,7 +98,7 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		self::assertStringNotContainsString( 'Private mail data', $response['message'] );
 		self::assertStringContainsString( 'There was an error sending the support request.', $response['message'] );
 		self::assertStringContainsString( 'mailto:' . VIP_SUPPORT_EMAIL, $response['message'] );
-		self::assertStringContainsString( 'VIP Dashboard support request failed:', $log );
+		self::assertStringContainsString( 'VIP Dashboard support request failed (blog_id ' . get_current_blog_id() . '):', $log );
 		self::assertStringContainsString( 'Unverified sender [redacted email]', $log );
 		self::assertStringContainsString( 'Internal diagnostic marker', $log );
 		self::assertStringNotContainsString( 'private@example.org', $log );
