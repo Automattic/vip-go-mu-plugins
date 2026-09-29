@@ -423,6 +423,19 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $mock->get_child_env_configs() );
 	}
 
+	public function test__get_org_config_returns_org_config(): void {
+		$mock = $this->get_mock(
+			[
+				'org' => [
+					'status' => Org_Integration_Status::ENABLED,
+					'config' => [ 'openai_api_key' => 'secret' ],
+				],
+			]
+		);
+
+		$this->assertSame( [ 'openai_api_key' => 'secret' ], $mock->get_org_config() );
+	}
+
 	/**
 	 * Get mock.
 	 *
