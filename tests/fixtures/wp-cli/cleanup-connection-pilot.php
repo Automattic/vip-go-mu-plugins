@@ -1,7 +1,7 @@
 <?php
 
 // Standalone process: emulate external WordPress/CLI/Pilot boundaries without loading them.
-// phpcs:disable Universal.Namespaces, Generic.Files.OneObjectStructurePerFile, Generic.CodeAnalysis.UnusedFunctionParameter, WordPress.NamingConventions.ValidFunctionName, WordPress.WP.GlobalVariablesOverride, WordPress.WP.AlternativeFunctions.json_encode_json_encode
+// phpcs:disable Universal.Namespaces, Generic.Files.OneObjectStructurePerFile, Generic.Classes.DuplicateClassName, Generic.CodeAnalysis.UnusedFunctionParameter, WordPress.NamingConventions.ValidFunctionName, WordPress.WP.GlobalVariablesOverride, WordPress.WP.AlternativeFunctions.json_encode_json_encode
 
 namespace Automattic\VIP\Jetpack {
 	if ( 'missing' !== $argv[2] ) {

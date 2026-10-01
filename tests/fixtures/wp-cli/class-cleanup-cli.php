@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable Generic.Classes.DuplicateClassName -- Isolated subprocess CLI fixture.
+
 // The cleanup command only needs registration and completion output from WP-CLI.
 class WP_CLI {
 	public static function add_command( $name, $command ): void {}
