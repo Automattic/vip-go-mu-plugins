@@ -61,3 +61,6 @@ npm run destroy-e2e-env
 - [Testing](docs/testing.md)
 - [Release](docs/release.md)
 - [Agent guide](AGENTS.md)
+
+Local SQL import cleanup removes imported service connection credentials even
+when Jetpack is unavailable. See [local import testing](docs/testing.md#local-sql-import-credentials).

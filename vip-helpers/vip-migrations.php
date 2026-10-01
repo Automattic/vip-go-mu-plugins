@@ -6,6 +6,26 @@ use Automattic\VIP\Jetpack\Connection_Pilot;
 
 add_action( 'vip_after_data_migration', 'Automattic\VIP\Migration\after_data_migration' );
 
+/**
+ * Whether imported credentials must be removed from this local environment.
+ */
+function is_local_cleanup_environment(): bool {
+	return ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'local' === constant( 'VIP_GO_APP_ENVIRONMENT' ) ) || \is_local_env();
+}
+
+/**
+ * Remove imported connection credentials without loading or contacting Jetpack.
+ */
+function cleanup_local_imported_credentials(): void {
+	if ( ! is_local_cleanup_environment() ) {
+		return;
+	}
+
+	foreach ( [ 'jetpack_options', 'jetpack_private_options', 'jetpack_secrets', 'vaultpress', 'wordpress_api_key', 'vip_jetpack_connection_pilot_heartbeat' ] as $name ) {
+		delete_option( $name );
+	}
+}
+
 function after_data_migration() {
 	if ( is_multisite() ) {
 		$sites = get_sites();

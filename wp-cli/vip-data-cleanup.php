@@ -2,6 +2,9 @@
 
 use Automattic\VIP\Jetpack\Connection_Pilot;
 
+use function Automattic\VIP\Migration\cleanup_local_imported_credentials;
+use function Automattic\VIP\Migration\is_local_cleanup_environment;
+
 class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
 	/**
@@ -33,6 +36,10 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 	}
 
 	private function cleanup_all_sites( $operation ) {
+		if ( 'sqlimport' === $operation && is_local_cleanup_environment() ) {
+			$this->cleanup_local_credentials();
+		}
+
 		$this->ensure_correct_global_schema();
 
 		if ( ! is_multisite() ) {
@@ -55,6 +62,38 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
 				$this->cleanup_site( $operation );
 
+				restore_current_blog();
+			}
+		}
+	}
+
+	/**
+	 * Sanitize every existing options table, including inactive subsites.
+	 * Keep schema updates and customer hooks restricted to the usual active sites.
+	 */
+	private function cleanup_local_credentials(): void {
+		wp_cache_flush();
+		if ( ! is_multisite() ) {
+			cleanup_local_imported_credentials();
+			return;
+		}
+
+		global $wpdb;
+		$sites = new \WP_CLI\Iterators\Table( [
+			'table'  => $wpdb->blogs,
+			'fields' => [ 'blog_id' ],
+		] );
+		foreach ( $sites as $site ) {
+			$options_table = $wpdb->get_blog_prefix( $site->blog_id ) . 'options';
+			// Deleted subsites may no longer have tables. Do not recreate them.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- CLI import cleanup.
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $options_table ) ) ) !== $options_table ) {
+				continue;
+			}
+			switch_to_blog( $site->blog_id );
+			try {
+				cleanup_local_imported_credentials();
+			} finally {
 				restore_current_blog();
 			}
 		}
