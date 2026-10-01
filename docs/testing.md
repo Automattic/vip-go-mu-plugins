@@ -90,3 +90,8 @@ Run the local import regression tests with:
 ```sh
 CI=1 ./bin/test.sh --filter Local_Import_Cleanup_Test
 ```
+
+Cleanup skips Connection Pilot on local environments. Hosted environments still
+run it when available, respect `VIP_JETPACK_SKIP_LOAD`, and warn when the class is
+unexpectedly unavailable. Test both cleanup entrypoints with
+`CI=1 ./bin/test.sh --filter Cleanup_Connection_Pilot_Test`.

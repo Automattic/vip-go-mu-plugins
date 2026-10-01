@@ -1,9 +1,8 @@
 <?php
 
-use Automattic\VIP\Jetpack\Connection_Pilot;
-
 use function Automattic\VIP\Migration\cleanup_local_imported_credentials;
 use function Automattic\VIP\Migration\is_local_cleanup_environment;
+use function Automattic\VIP\Migration\run_connection_pilot_after_cleanup;
 
 class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 
@@ -129,10 +128,7 @@ class VIP_Data_Cleanup_Command extends WPCOM_VIP_CLI_Command {
 		// Flush cache again. After DB transient removal, and prevents the need for flushing on the individual hooks above.
 		wp_cache_flush();
 
-		if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
-			$connection_pilot = Connection_Pilot::instance();
-			$connection_pilot->run_connection_pilot();
-		}
+		run_connection_pilot_after_cleanup();
 	}
 
 	/**

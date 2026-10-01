@@ -26,6 +26,31 @@ function cleanup_local_imported_credentials(): void {
 	}
 }
 
+/** Run hosted connection maintenance only when its integration is available. */
+function run_connection_pilot_after_cleanup(): void {
+	if ( is_local_cleanup_environment() || ( defined( 'VIP_JETPACK_SKIP_LOAD' ) && constant( 'VIP_JETPACK_SKIP_LOAD' ) ) ) {
+		return;
+	}
+
+	if ( ! class_exists( Connection_Pilot::class ) ) {
+		static $warned = false;
+		if ( $warned ) {
+			return;
+		}
+		$warned  = true;
+		$message = 'Connection Pilot is unavailable; skipped connection maintenance after data cleanup. Check Jetpack compatibility and availability.';
+		if ( defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ) {
+			\WP_CLI::warning( $message );
+		} else {
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Diagnostic, not HTML.
+			trigger_error( $message, E_USER_WARNING );
+		}
+		return;
+	}
+
+	Connection_Pilot::instance()->run_connection_pilot();
+}
+
 function after_data_migration() {
 	if ( is_multisite() ) {
 		$sites = get_sites();
@@ -71,10 +96,7 @@ function run_after_data_migration_cleanup() {
 
 	wp_cache_flush();
 
-	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
-		$connection_pilot = Connection_Pilot::instance();
-		$connection_pilot->run_connection_pilot();
-	}
+	run_connection_pilot_after_cleanup();
 }
 
 function delete_db_transients() {
