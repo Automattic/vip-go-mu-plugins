@@ -566,7 +566,8 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
-			$compatibility_error = vip_jetpack_compatibility_error( $path );
+			// Hosted sites use the platform compatibility mapping; local checkouts may lack its pinned versions.
+			$compatibility_error = is_local_env() ? vip_jetpack_compatibility_error( $path ) : '';
 			if ( $compatibility_error ) {
 				$incompatible[] = $path . ' ' . $compatibility_error;
 				continue;

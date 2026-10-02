@@ -18,6 +18,7 @@ if ( 'skip' === $argv[3] ) {
 }
 function add_action( ...$args ) {}
 function add_filter( ...$args ) {}
+function is_local_env() { return 'local' === $GLOBALS['argv'][4]; }
 function is_multisite() { return false; }
 function wp_in( $needle, $haystack ) { return str_contains( $haystack, $needle ); }
 function get_file_data( $path, $headers ) {

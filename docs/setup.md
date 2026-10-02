@@ -80,8 +80,9 @@ npm run destroy-e2e-env
 
 ## Local Jetpack compatibility
 
-The Jetpack loader checks each candidate's WordPress and PHP requirements before
-including it. Candidate priority remains client override, pinned version,
+In local environments, the Jetpack loader checks each candidate's WordPress and
+PHP requirements before including it. Hosted environments retain the platform
+compatibility mapping. Candidate priority remains client override, pinned version,
 default version, then the unversioned plugin. If all installed candidates are
 incompatible, Jetpack and its VIP integration remain unloaded and a warning
 identifies the requirements. Install a compatible version or use a supported

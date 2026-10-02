@@ -50,12 +50,14 @@ class Jetpack_Loader_Test extends TestCase {
 				false,
 			],
 			'incompatible PHP'                         => [ '6.8', '', [ 'jetpack-default' => '6.8|99.0' ], null, true ],
+			'hosted default keeps existing selection'  => [ '6.8', '', [ 'jetpack-default' => '7.0' ], 'default', false, 'production' ],
+			'hosted pin keeps existing selection'      => [ '6.8', 'pinned', [ 'jetpack-pinned' => '7.0' ], 'pinned', false, 'staging' ],
 			'explicit skip'                            => [ '6.8', 'skip', [ 'jetpack' => '7.0' ], 'none', false ],
 		];
 	}
 
 	/** @dataProvider scenarios */
-	public function test_loader_preflights_candidates( $wp_version, $mode, $plugins, $loaded, $warns ): void {
+	public function test_loader_preflights_candidates( $wp_version, $mode, $plugins, $loaded, $warns, $environment = 'local' ): void {
 		$directory = sys_get_temp_dir() . '/vip-jetpack-test-' . uniqid();
 		mkdir( $directory );
 		mkdir( $directory . '/vip-jetpack' );
@@ -73,7 +75,7 @@ class Jetpack_Loader_Test extends TestCase {
 				file_put_contents( $plugin_dir . '/jetpack.php', "<?php\n/**\n * Requires at least: {$parts[0]}\n * Requires PHP: " . ( $parts[1] ?? '7.4' ) . "\n */\ndefine('JETPACK__VERSION', '$path');\nclass Jetpack {}\n" );
 			}
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Loader isolation.
-			$process = proc_open( [ PHP_BINARY, __DIR__ . '/fixtures/jetpack/load.php', $directory, $wp_version, $mode ], [
+			$process = proc_open( [ PHP_BINARY, __DIR__ . '/fixtures/jetpack/load.php', $directory, $wp_version, $mode, $environment ], [
 				1 => [ 'pipe', 'w' ],
 				2 => [ 'pipe', 'w' ],
 			], $pipes );
