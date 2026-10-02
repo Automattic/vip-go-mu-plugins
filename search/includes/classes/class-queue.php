@@ -933,27 +933,28 @@ class Queue {
 				 * @param int $chunk_size Number of objects per bulk request
 				 * @param string $type The Indexable slug
 				 */
-				$chunk_size = (int) apply_filters( 'vip_search_queue_process_jobs_chunk_size', 'term' === $type ? 1 : count( $jobs ), $type );
+				$chunk_size = max( (int) apply_filters( 'vip_search_queue_process_jobs_chunk_size', 'term' === $type ? 1 : count( $jobs ), $type ), 1 );
 
-				foreach ( array_chunk( $jobs, max( $chunk_size, 1 ) ) as $jobs_chunk ) {
+				\Automattic\VIP\Logstash\log2logstash(
+					[
+						'severity' => 'info',
+						'feature'  => 'search_queue',
+						'message'  => 'Indexing content',
+						'blog_id'  => get_current_blog_id(),
+						'extra'    => [
+							'homeurl'    => home_url(),
+							'index_name' => $indexable->get_index_name(),
+							'count'      => count( $jobs ),
+							'chunk_size' => $chunk_size,
+						],
+					]
+				);
+
+				foreach ( array_chunk( $jobs, $chunk_size ) as $jobs_chunk ) {
 					$ids = wp_list_pluck( $jobs_chunk, 'object_id' );
 
 					// Increment first to prevent overrunning ratelimiting
 					static::index_count_incr( count( $ids ) );
-
-					\Automattic\VIP\Logstash\log2logstash(
-						[
-							'severity' => 'info',
-							'feature'  => 'search_queue',
-							'message'  => 'Indexing content',
-							'blog_id'  => get_current_blog_id(),
-							'extra'    => [
-								'homeurl'    => home_url(),
-								'index_name' => $indexable->get_index_name(),
-								'count'      => count( $ids ),
-							],
-						]
-					);
 
 					$indexable->bulk_index( $ids );
 
@@ -1075,14 +1076,21 @@ class Queue {
 	 * @param bool $bail Whether to skip the syncing process
 	 * @param SyncManager $sync_manager SyncManager instance for Indexable
 	 * @param string $indexable_slug The Indexable slug
-	 * @return bool Whether to intercept the sync process
+	 * @return bool The unchanged $bail. Returning true would stop EP before it syncs the other blogs in its queue
+	 *              and restores the current blog, so the emptied sync queue is what skips inline indexing.
 	 */
 	public function offload_term_sync_queue( $bail, $sync_manager, $indexable_slug ) {
 		if ( 'term' !== $indexable_slug ) {
 			return $bail;
 		}
 
-		return $this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+		if ( true === $bail ) {
+			return $bail;
+		}
+
+		$this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
+
+		return $bail;
 	}
 
 	/**
