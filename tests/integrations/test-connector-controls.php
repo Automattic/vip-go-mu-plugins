@@ -581,14 +581,21 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
 	}
 
-	public function test_disabled_organization_does_not_configure_credentials(): void {
+	public function test_disabled_organization_allows_environment_credentials_without_inheriting_organization_credentials(): void {
 		update_option( 'connectors_ai_openai_api_key', 'database-secret' );
 		$config      = new IntegrationVipConfig(
 			'connector-controls',
 			[
 				'org' => [
 					'status' => Org_Integration_Status::DISABLED,
-					'config' => [ 'openai_api_key' => 'org-secret' ],
+					'config' => [
+						'openai_api_key'    => 'org-secret',
+						'anthropic_api_key' => 'org-anthropic-secret',
+					],
+				],
+				'env' => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => [ 'openai_api_key' => 'environment-secret' ],
 				],
 			]
 		);
@@ -599,14 +606,17 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$integration->configure();
 
 		$integration->apply_runtime_credential_fallbacks();
+		$this->assertSame( 'environment-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'ANTHROPIC_API_KEY' ) );
 		$this->assertSame( [], $integration->applied_runtime_credentials );
 		$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
-		$this->assertFalse( has_filter( 'pre_option', [ $integration, 'filter_pre_option' ] ) );
-		$this->assertFalse( has_filter( 'pre_update_option', [ $integration, 'filter_pre_update_option' ] ) );
-		$this->assertSame( 'database-secret', get_option( 'connectors_ai_openai_api_key' ) );
-		$this->assertTrue( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );
-		$this->assertSame( 'replacement-secret', get_option( 'connectors_ai_openai_api_key' ) );
-		$this->assertFalse( $integration->is_active() );
+		$this->assertSame( PHP_INT_MAX, has_filter( 'pre_option', [ $integration, 'filter_pre_option' ] ) );
+		$this->assertSame( PHP_INT_MAX, has_filter( 'pre_update_option', [ $integration, 'filter_pre_update_option' ] ) );
+		$this->assertSame( '', get_option( 'connectors_ai_openai_api_key' ) );
+		$this->assertFalse( update_option( 'connectors_ai_openai_api_key', 'replacement-secret' ) );
+		$this->assertSame( '', get_option( 'connectors_ai_openai_api_key' ) );
+		$this->assertTrue( $integration->is_active() );
+		$this->assertTrue( $integration->is_loaded() );
 	}
 
 	public function test_network_site_credentials_override_environment_credentials(): void {
