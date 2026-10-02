@@ -93,5 +93,8 @@ CI=1 ./bin/test.sh --filter Local_Import_Cleanup_Test
 
 Cleanup skips Connection Pilot on local environments. Hosted environments still
 run it when available, respect `VIP_JETPACK_SKIP_LOAD`, and warn when the class is
-unexpectedly unavailable. Test both cleanup entrypoints with
+unexpectedly unavailable. Test the shared guard with
 `CI=1 ./bin/test.sh --filter Cleanup_Connection_Pilot_Test`.
+
+Jetpack compatibility checks use the real WordPress header parser in the existing
+Jetpack tests: `CI=1 ./bin/test.sh --filter test_jetpack_compatibility_requirements`.

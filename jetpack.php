@@ -505,6 +505,10 @@ add_filter( 'default_option_jetpack_active_plan', function ( $default_value ) {
 
 /** Return an incompatibility reason before any plugin code is included. */
 function vip_jetpack_compatibility_error( $path ): string {
+	// Hosted sites use the platform mapping; local checkouts may lack its pinned versions.
+	if ( ! is_local_env() ) {
+		return '';
+	}
 	global $wp_version;
 
 	$requirements = get_file_data( $path, [
@@ -566,8 +570,7 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
-			// Hosted sites use the platform compatibility mapping; local checkouts may lack its pinned versions.
-			$compatibility_error = is_local_env() ? vip_jetpack_compatibility_error( $path ) : '';
+			$compatibility_error = vip_jetpack_compatibility_error( $path );
 			if ( $compatibility_error ) {
 				$incompatible[] = $path . ' ' . $compatibility_error;
 				continue;
