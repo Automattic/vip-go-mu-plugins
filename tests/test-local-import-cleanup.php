@@ -6,7 +6,26 @@ use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
 class Local_Import_Cleanup_Test extends WP_UnitTestCase {
+	private bool $had_postmeta_index;
+
+	public function setUp(): void {
+		parent::setUp();
+		$this->had_postmeta_index = $this->has_postmeta_index();
+	}
+
+	private function has_postmeta_index(): bool {
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Inspect schema changed by the real import command.
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SHOW INDEX FROM %i WHERE Key_name = %s', $wpdb->postmeta, 'vip_meta_key_value' ) );
+	}
+
 	public function tearDown(): void {
+		// DDL commits survive the test transaction and separate PHP processes.
+		if ( ! $this->had_postmeta_index && $this->has_postmeta_index() ) {
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Restore the pre-import schema for subsequent tests.
+			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP INDEX vip_meta_key_value', $wpdb->postmeta ) );
+		}
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -14,16 +33,19 @@ class Local_Import_Cleanup_Test extends WP_UnitTestCase {
 	public function test_removes_imported_credentials_without_jetpack(): void {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
 		Constant_Mocker::define( 'VIP_JETPACK_SKIP_LOAD', true );
+		global $wpdb;
 		$names = [ 'jetpack_options', 'jetpack_private_options', 'jetpack_secrets', 'vaultpress', 'wordpress_api_key', 'vip_jetpack_connection_pilot_heartbeat' ];
 		foreach ( $names as $name ) {
-			update_option( $name, [ 'imported' => 'test-credential' ] );
+			$this->assertTrue( update_option( $name, [ 'imported' => 'test-credential' ] ), $name );
 		}
 		update_option( 'unrelated_customer_option', 'keep' );
 
 		cleanup_local_imported_credentials();
 
 		foreach ( $names as $name ) {
-			$this->assertFalse( get_option( $name ), $name );
+			// Registered defaults can make get_option() return an empty string after deletion.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- Verify removal of the stored credential, independent of plugin defaults.
+			$this->assertNull( $wpdb->get_var( $wpdb->prepare( "SELECT option_id FROM $wpdb->options WHERE option_name = %s", $name ) ), $name );
 		}
 		$this->assertSame( 'keep', get_option( 'unrelated_customer_option' ) );
 	}
