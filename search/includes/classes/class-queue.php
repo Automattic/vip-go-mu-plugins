@@ -272,6 +272,7 @@ class Queue {
 		add_action( 'ep_after_bulk_index', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 		add_action( 'ep_after_bulk_index_dynamically', [ $this, 'action__ep_after_bulk_index' ], 10, 3 );
 
+		add_filter( 'pre_ep_index_sync_queue', [ $this, 'offload_term_sync_queue' ], 10, 3 );
 		add_filter( 'pre_ep_index_sync_queue', [ $this, 'ratelimit_indexing' ], PHP_INT_MAX, 3 );
 	}
 
@@ -924,31 +925,43 @@ class Queue {
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
 
-				$ids = wp_list_pluck( $jobs, 'object_id' );
+				/**
+				 * Filter the number of objects of one type sent to Elasticsearch in each bulk request while processing jobs
+				 *
+				 * Term documents hold the ids of every post in the term, so terms are indexed one at a time by default.
+				 *
+				 * @param int $chunk_size Number of objects per bulk request
+				 * @param string $type The Indexable slug
+				 */
+				$chunk_size = (int) apply_filters( 'vip_search_queue_process_jobs_chunk_size', 'term' === $type ? 1 : count( $jobs ), $type );
 
-				// Increment first to prevent overrunning ratelimiting
-				static::index_count_incr( count( $ids ) );
+				foreach ( array_chunk( $jobs, max( $chunk_size, 1 ) ) as $jobs_chunk ) {
+					$ids = wp_list_pluck( $jobs_chunk, 'object_id' );
 
-				\Automattic\VIP\Logstash\log2logstash(
-					[
-						'severity' => 'info',
-						'feature'  => 'search_queue',
-						'message'  => 'Indexing content',
-						'blog_id'  => get_current_blog_id(),
-						'extra'    => [
-							'homeurl'    => home_url(),
-							'index_name' => $indexable->get_index_name(),
-							'count'      => count( $ids ),
-						],
-					]
-				);
+					// Increment first to prevent overrunning ratelimiting
+					static::index_count_incr( count( $ids ) );
 
-				$indexable->bulk_index( $ids );
+					\Automattic\VIP\Logstash\log2logstash(
+						[
+							'severity' => 'info',
+							'feature'  => 'search_queue',
+							'message'  => 'Indexing content',
+							'blog_id'  => get_current_blog_id(),
+							'extra'    => [
+								'homeurl'    => home_url(),
+								'index_name' => $indexable->get_index_name(),
+								'count'      => count( $ids ),
+							],
+						]
+					);
 
-				// TODO handle errors
+					$indexable->bulk_index( $ids );
 
-				// Mark them as done in queue
-				$this->delete_jobs( $jobs );
+					// TODO handle errors
+
+					// Mark them as done in queue
+					$this->delete_jobs( $jobs_chunk );
+				}
 
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
 			}
@@ -1028,8 +1041,8 @@ class Queue {
 	 * @return bool Whether to intercept the sync process
 	 */
 	public function intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug ) {
-		// Only posts supported right now
-		if ( 'post' !== $indexable_slug ) {
+		// Only posts and terms supported right now
+		if ( 'post' !== $indexable_slug && 'term' !== $indexable_slug ) {
 			return $bail;
 		}
 
@@ -1048,6 +1061,28 @@ class Queue {
 		$sync_manager->reset_sync_queue();
 
 		return true;
+	}
+
+	/**
+	 * Always send the term sync queue to the queue processor cron job
+	 *
+	 * Each term document holds the ids of every post in the term, so indexing large terms inline
+	 * at shutdown can exhaust memory and stop later shutdown callbacks (like cache purges) from running.
+	 *
+	 * Runs before Versioning's pre_ep_index_sync_queue hook, so replication to other index versions
+	 * happens through the queue.
+	 *
+	 * @param bool $bail Whether to skip the syncing process
+	 * @param SyncManager $sync_manager SyncManager instance for Indexable
+	 * @param string $indexable_slug The Indexable slug
+	 * @return bool Whether to intercept the sync process
+	 */
+	public function offload_term_sync_queue( $bail, $sync_manager, $indexable_slug ) {
+		if ( 'term' !== $indexable_slug ) {
+			return $bail;
+		}
+
+		return $this->intercept_ep_sync_manager_indexing( $bail, $sync_manager, $indexable_slug );
 	}
 
 	/**
