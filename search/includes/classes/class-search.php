@@ -1028,7 +1028,9 @@ class Search {
 					$this->query_warning->maybe_emit(
 						$args['body'] ?? '',
 						is_array( $response_body ) ? $response_body : [],
-						(float) $duration
+						(float) $duration,
+						null,
+						strlen( $response_body_json )
 					);
 				} catch ( \Throwable $throwable ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Query diagnostics must never affect the Elasticsearch response.
 					// Query diagnostics must never affect the Elasticsearch response.
