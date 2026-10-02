@@ -23,11 +23,16 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__admin_username_restricted() {
-		$this->factory()->user->create( [
-			'user_login' => 'admin',
-			'user_email' => 'admin@example.com',
-			'user_pass'  => 'secret1',
-		] );
+		$user_id = username_exists( 'admin' );
+		if ( ! $user_id ) {
+			$user_id = $this->factory()->user->create( [
+				'user_login' => 'admin',
+				'user_email' => 'admin@example.com',
+				'user_pass'  => 'secret1',
+			] );
+		} else {
+			wp_set_password( 'secret1', $user_id );
+		}
 
 		$result = wp_authenticate( 'admin', 'secret1' );
 

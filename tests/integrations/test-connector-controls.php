@@ -660,6 +660,49 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_disabled_organization_allows_network_site_credentials_without_inheriting_organization_credentials(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only valid for multisite.' );
+		}
+
+		$blog_id = $this->factory()->blog->create_object( [ 'domain' => 'connector-controls-disabled-org.test/2' ] );
+		switch_to_blog( $blog_id );
+
+		try {
+			$config      = new IntegrationVipConfig(
+				'connector-controls',
+				[
+					'org'           => [
+						'status' => Org_Integration_Status::DISABLED,
+						'config' => [ 'openai_api_key' => 'org-secret' ],
+					],
+					'env'           => [
+						'status' => Env_Integration_Status::ENABLED,
+						'config' => [ 'network_wide_enable' => 'false' ],
+					],
+					'network_sites' => [
+						$blog_id => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [ 'anthropic_api_key' => 'network-secret' ],
+						],
+					],
+				]
+			);
+			$integration = $this->create_recording_integration();
+			$integration->set_vip_config( $config );
+			$integration->activate();
+
+			$integration->configure();
+
+			$this->assertSame( 'network-secret', Constant_Mocker::constant( 'ANTHROPIC_API_KEY' ) );
+			$this->assertFalse( Constant_Mocker::defined( 'OPENAI_API_KEY' ) );
+			$this->assertTrue( $integration->is_active() );
+			$this->assertTrue( $integration->is_loaded() );
+		} finally {
+			restore_current_blog();
+		}
+	}
+
 	public function test_network_site_can_explicitly_disable_an_environment_credential(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite.' );
