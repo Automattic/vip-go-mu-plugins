@@ -15,6 +15,7 @@ namespace Automattic\VIP\Integrations;
 class WordPressMcpIntegration extends Integration {
 	private const LATEST_MINIMUM_WORDPRESS_VERSION = '6.9';
 	private const OLDEST_COMPATIBLE_VERSION        = '0.5';
+	private const PINNED_VERSION                   = '0.6';
 	private const AUTH_HEADER_SERVER_KEY           = 'HTTP_X_VIP_MCP_AUTH';
 	private const TIMESTAMP_HEADER_SERVER_KEY      = 'HTTP_X_VIP_MCP_AUTH_TIMESTAMP';
 	private const DEFAULT_TIMESTAMP_MAX_AGE        = 120;
@@ -429,7 +430,10 @@ class WordPressMcpIntegration extends Integration {
 		global $wp_version;
 
 		if ( version_compare( $wp_version, self::LATEST_MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
-			return array_key_first( $versions );
+			// Pinned until 0.7 stops deferring to plugin-bundled WP\MCP copies (https://github.com/WordPress/mcp-adapter/issues/365).
+			$pinned_version_folder = array_search( self::PINNED_VERSION, $versions, true );
+
+			return false === $pinned_version_folder ? array_key_first( $versions ) : $pinned_version_folder;
 		}
 
 		$legacy_version_folder = array_search( self::OLDEST_COMPATIBLE_VERSION, $versions, true );
