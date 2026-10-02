@@ -4,6 +4,7 @@ namespace Automattic\VIP\Search;
 
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Logstash\Logger;
+use ElasticPress\Indexable\Term\Term;
 use ElasticPress\Indexable\User\User;
 use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -521,6 +522,83 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
 
+	public function test_process_jobs_indexes_term_jobs_one_at_a_time_by_default() {
+		$this->get_term_sync_manager();
+		$term_ids = self::factory()->category->create_many( 3 );
+		$post_ids = self::factory()->post->create_many( 2 );
+
+		$this->queue->queue_objects( $term_ids, 'term' );
+		$this->queue->queue_objects( $post_ids, 'post' );
+
+		$bulk_index_calls = $this->process_all_queued_jobs_and_record_bulk_index_calls();
+
+		$this->assertEquals( [ [ 'term', 1 ], [ 'term', 1 ], [ 'term', 1 ], [ 'post', 2 ] ], $bulk_index_calls );
+	}
+
+	public function test_process_jobs_term_chunk_size_can_be_filtered() {
+		$this->get_term_sync_manager();
+		$term_ids = self::factory()->category->create_many( 3 );
+
+		$this->queue->queue_objects( $term_ids, 'term' );
+
+		add_filter( 'vip_search_queue_process_jobs_chunk_size', function ( $chunk_size, $indexable_slug ) {
+			return 'term' === $indexable_slug ? 2 : $chunk_size;
+		}, 10, 2 );
+
+		$bulk_index_calls = $this->process_all_queued_jobs_and_record_bulk_index_calls();
+
+		$this->assertEquals( [ [ 'term', 2 ], [ 'term', 1 ] ], $bulk_index_calls );
+	}
+
+	public function test_process_jobs_chunk_size_is_at_least_one() {
+		$post_ids = self::factory()->post->create_many( 2 );
+
+		$this->queue->queue_objects( $post_ids, 'post' );
+
+		add_filter( 'vip_search_queue_process_jobs_chunk_size', '__return_zero' );
+
+		$bulk_index_calls = $this->process_all_queued_jobs_and_record_bulk_index_calls();
+
+		$this->assertEquals( [ [ 'post', 1 ], [ 'post', 1 ] ], $bulk_index_calls );
+	}
+
+	public function test_process_jobs_logs_once_for_each_type() {
+		$this->get_term_sync_manager();
+		$term_ids = self::factory()->category->create_many( 3 );
+
+		$this->queue->queue_objects( $term_ids, 'term' );
+
+		$entries = new \ReflectionProperty( Logger::class, 'entries' );
+		$entries->setAccessible( true );
+		$count_before = count( $entries->getValue() );
+
+		$this->process_all_queued_jobs_and_record_bulk_index_calls();
+
+		$new_entries = array_slice( $entries->getValue(), $count_before );
+		$this->assertCount( 1, $new_entries, 'processing should write one log entry for the term jobs' );
+		$extra = json_decode( $new_entries[0]['extra'], true );
+		$this->assertEquals( 3, $extra['count'] );
+		$this->assertEquals( 1, $extra['chunk_size'] );
+	}
+
+	public function test_process_jobs_deletes_term_jobs_after_each_chunk() {
+		$this->get_term_sync_manager();
+		$term_ids = self::factory()->category->create_many( 2 );
+
+		$this->queue->queue_objects( $term_ids, 'term' );
+
+		$remaining_jobs_at_each_call = [];
+		add_action( 'ep_after_bulk_index', function () use ( &$remaining_jobs_at_each_call ) {
+			$remaining_jobs_at_each_call[] = $this->queue->count_jobs( 'all', 'term' );
+		} );
+
+		$this->process_all_queued_jobs_and_record_bulk_index_calls();
+
+		// Jobs of earlier chunks are already deleted, so a fatal error in a later chunk does not re-run them
+		$this->assertEquals( [ 2, 1 ], $remaining_jobs_at_each_call );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all', 'term' ) );
+	}
+
 	public function test_intercept_ep_sync_manager_indexing() {
 		$this->add_posts_to_queue( [ 1, 2, 1000 ] );
 
@@ -528,6 +606,89 @@ class Queue_Test extends WP_UnitTestCase {
 
 		// And the SyncManager's queue should have been emptied
 		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
+	}
+
+	public function test_term_sync_queue_is_always_offloaded_to_queue() {
+		global $wpdb;
+
+		$term_sync_manager = $this->get_term_sync_manager();
+		$term_ids          = [ 11, 22, 33 ];
+		foreach ( $term_ids as $term_id ) {
+			$term_sync_manager->add_to_queue( $term_id );
+		}
+
+		$bail = apply_filters( 'pre_ep_index_sync_queue', false, $term_sync_manager, 'term' );
+
+		// Returning true would make EP return from its loop over blogs, so the bail value is passed through
+		$this->assertFalse( $bail );
+		$this->assertEmpty( $term_sync_manager->get_sync_queue(), 'term sync queue should be emptied, so EP has nothing to index inline' );
+
+		$table_name      = $this->queue->schema->get_table_name();
+		$queued_term_ids = $wpdb->get_col( "SELECT `object_id` FROM `{$table_name}` WHERE `object_type` = 'term' ORDER BY `object_id`" );
+
+		$this->assertEquals( $term_ids, array_map( 'intval', $queued_term_ids ) );
+		$this->assertEquals( count( $term_ids ), $this->queue->count_jobs( 'scheduled', 'term' ), 'term jobs should be checked out for a processor cron event' );
+	}
+
+	public function test_term_sync_queue_offload_does_not_count_towards_ratelimit() {
+		$term_sync_manager = $this->get_term_sync_manager();
+		$term_sync_manager->add_to_queue( 11 );
+
+		apply_filters( 'pre_ep_index_sync_queue', false, $term_sync_manager, 'term' );
+
+		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ) );
+	}
+
+	public function test_term_sync_queue_offload_passes_bail_if_sync_queue_empty() {
+		$term_sync_manager = $this->get_term_sync_manager();
+
+		$this->assertFalse( $this->queue->offload_term_sync_queue( false, $term_sync_manager, 'term' ) );
+		$this->assertTrue( $this->queue->offload_term_sync_queue( true, $term_sync_manager, 'term' ) );
+	}
+
+	public function test_term_sync_queue_offload_ignores_other_indexables() {
+		$this->add_posts_to_queue( [ 1, 2 ] );
+
+		$this->assertFalse( $this->queue->offload_term_sync_queue( false, $this->sync_manager, 'post' ) );
+		$this->assertCount( 2, $this->sync_manager->get_sync_queue(), 'post sync queue should be untouched' );
+	}
+
+	public function test_term_sync_queue_offload_honors_incoming_bail() {
+		$term_sync_manager = $this->get_term_sync_manager();
+		$term_sync_manager->add_to_queue( 11 );
+
+		$this->assertTrue( $this->queue->offload_term_sync_queue( true, $term_sync_manager, 'term' ) );
+		$this->assertCount( 1, $term_sync_manager->get_sync_queue(), 'term sync queue should be untouched' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all', 'term' ), 'no term jobs should be queued' );
+	}
+
+	public function test_term_sync_queue_offload_queues_terms_of_every_blog() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Test specific to multisite installations.' );
+		}
+
+		$term_sync_manager = $this->get_term_sync_manager();
+		$main_blog_id      = get_current_blog_id();
+		$other_blog_ids    = self::factory()->blog->create_many( 2 );
+
+		// EP loops over blogs in the order they were added to the sync queue
+		foreach ( array_merge( $other_blog_ids, [ $main_blog_id ] ) as $blog_id ) {
+			switch_to_blog( $blog_id );
+			$this->queue->schema->prepare_table();
+			$term_sync_manager->add_to_queue( 11 );
+			restore_current_blog();
+		}
+
+		$term_sync_manager->index_sync_queue();
+
+		$this->assertEquals( $main_blog_id, get_current_blog_id(), 'EP should end on the original blog' );
+
+		foreach ( array_merge( $other_blog_ids, [ $main_blog_id ] ) as $blog_id ) {
+			switch_to_blog( $blog_id );
+			$this->assertEquals( 1, $this->queue->count_jobs( 'all', 'term' ), "term should be queued on blog $blog_id" );
+			$this->assertEmpty( $term_sync_manager->get_sync_queue(), "term sync queue should be emptied on blog $blog_id" );
+			restore_current_blog();
+		}
 	}
 
 	public function test_get_jobs_by_range() {
@@ -1371,6 +1532,35 @@ class Queue_Test extends WP_UnitTestCase {
 		foreach ( $post_ids as $post_id ) {
 			$this->sync_manager->add_to_queue( $post_id );
 		}
+	}
+
+	/**
+	 * Checks out every queued job, processes it, and returns [ slug, number of ids ] for each bulk_index() call.
+	 */
+	protected function process_all_queued_jobs_and_record_bulk_index_calls() {
+		$bulk_index_calls = [];
+		$recorder         = function ( $object_ids, $slug ) use ( &$bulk_index_calls ) {
+			$bulk_index_calls[] = [ $slug, count( $object_ids ) ];
+		};
+		add_action( 'ep_after_bulk_index', $recorder, 10, 2 );
+
+		$this->queue->process_jobs( $this->queue->checkout_jobs( 500 ) );
+
+		remove_action( 'ep_after_bulk_index', $recorder, 10 );
+
+		return $bulk_index_calls;
+	}
+
+	protected function get_term_sync_manager() {
+		if ( ! Indexables::factory()->get( 'term' ) ) {
+			Indexables::factory()->register( new Term() );
+		}
+
+		// The Term indexable outlives each test, so start from an empty sync queue
+		$term_sync_manager             = Indexables::factory()->get( 'term' )->sync_manager;
+		$term_sync_manager->sync_queue = [];
+
+		return $term_sync_manager;
 	}
 
 	/**
