@@ -36,7 +36,8 @@ class Local_Import_Cleanup_Test extends WP_UnitTestCase {
 		global $wpdb;
 		$names = [ 'jetpack_options', 'jetpack_private_options', 'jetpack_secrets', 'vaultpress', 'wordpress_api_key', 'vip_jetpack_connection_pilot_heartbeat' ];
 		foreach ( $names as $name ) {
-			$this->assertTrue( update_option( $name, [ 'imported' => 'test-credential' ] ), $name );
+			$value = 'wordpress_api_key' === $name ? 'testcredential' : [ 'imported' => 'test-credential' ];
+			$this->assertTrue( update_option( $name, $value ), $name );
 		}
 		update_option( 'unrelated_customer_option', 'keep' );
 
