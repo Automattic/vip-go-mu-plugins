@@ -74,3 +74,30 @@ Current workflows cover:
 - [Release](release.md)
 - [Architecture](architecture.md)
 - [Agent guide](../AGENTS.md)
+
+### Local SQL import credentials
+
+`wp vip data-cleanup sql-import` removes imported Jetpack, VaultPress and
+Akismet connection options on local environments before customer cleanup hooks.
+It also removes Jetpack handshake secrets and the imported Connection Pilot
+heartbeat. This runs independently of Jetpack availability and covers inactive
+subsites whose options tables still exist. Other environments retain their
+connection options. Removing `jetpack_options` also resets settings stored in
+that container, matching the existing migration cleanup command.
+
+Run the local import regression tests with:
+
+```sh
+CI=1 ./bin/test.sh --filter Local_Import_Cleanup_Test
+```
+
+Cleanup skips Connection Pilot on local environments. Hosted environments still
+run it when available, respect `VIP_JETPACK_SKIP_LOAD`, and warn when the class is
+unexpectedly unavailable. Test the missing-class fallback with
+`CI=1 ./bin/test.sh --filter Cleanup_Connection_Pilot_Test`.
+
+Jetpack compatibility checks use the real WordPress header parser in the existing
+Jetpack tests: `CI=1 ./bin/test.sh --filter test_jetpack_compatibility_requirements`.
+
+The e2e setup also runs the real import command with Jetpack disabled and verifies
+that credentials are removed before customer hooks while unrelated options remain.
