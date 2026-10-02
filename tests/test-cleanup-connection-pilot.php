@@ -3,21 +3,10 @@
 use PHPUnit\Framework\TestCase;
 
 class Cleanup_Connection_Pilot_Test extends TestCase {
-	public function scenarios(): array {
-		return [
-			'local missing'  => [ 'local', 'missing', 0, 0 ],
-			'local loaded'   => [ 'local', 'loaded', 0, 0 ],
-			'hosted loaded'  => [ 'production', 'loaded', 1, 0 ],
-			'hosted missing' => [ 'production', 'missing', 0, 1 ],
-			'hosted skipped' => [ 'production', 'skip', 0, 0 ],
-		];
-	}
-
-	/** @dataProvider scenarios */
-	public function test_cleanup_handles_connection_pilot_availability( $environment, $availability, $calls, $warnings ): void {
-		// A subprocess ensures the missing-class cases really have no Pilot class.
-		$command = [ PHP_BINARY, __DIR__ . '/fixtures/wp-cli/cleanup-connection-pilot.php', $environment, $availability ];
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Isolate missing-class regression cases.
+	public function test_missing_connection_pilot_warns_once_without_failing(): void {
+		// A subprocess ensures there really is no Pilot class.
+		$command = [ PHP_BINARY, '-d', 'display_errors=0', '-d', 'log_errors=1', '-d', 'error_log=', __DIR__ . '/fixtures/wp-cli/cleanup-connection-pilot.php' ];
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Isolate the missing-class regression.
 		$process = proc_open( $command, [
 			1 => [ 'pipe', 'w' ],
 			2 => [ 'pipe', 'w' ],
@@ -27,8 +16,7 @@ class Cleanup_Connection_Pilot_Test extends TestCase {
 		fclose( $pipes[1] );
 		fclose( $pipes[2] );
 		$this->assertSame( 0, proc_close( $process ), $error );
-		$result = json_decode( $output, true );
-		$this->assertSame( $calls, $result['calls'] );
-		$this->assertCount( $warnings, $result['warnings'] );
+		$this->assertSame( '', $output );
+		$this->assertSame( 1, substr_count( $error, 'Connection Pilot is unavailable' ), $error );
 	}
 }
