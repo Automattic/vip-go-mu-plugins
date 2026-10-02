@@ -85,17 +85,22 @@ class Local_Import_Cleanup_Test extends WP_UnitTestCase {
 		}
 		require_once __DIR__ . '/fixtures/wp-cli/class-cleanup-cli.php';
 		require_once __DIR__ . '/../wp-cli/vip-data-cleanup.php';
+		// Create only site records; the retained options tables below must be physical, without temporary shadows.
+		remove_action( 'wp_initialize_site', 'wp_initialize_site', 10 );
 		$archived = $this->factory()->blog->create();
 		$spam     = $this->factory()->blog->create();
 		$deleted  = $this->factory()->blog->create();
+		add_action( 'wp_initialize_site', 'wp_initialize_site', 10, 2 );
 		global $wpdb;
 		remove_filter( 'query', [ $this, '_create_temporary_tables' ] );
 		remove_filter( 'query', [ $this, '_drop_temporary_tables' ] );
 		foreach ( [ $archived, $spam, $deleted ] as $id ) {
-			// Site factories do not install tables in this runner. Model retained import tables.
+			// Model a retained import table with the normal options needed by switch_to_blog().
 			$table = $wpdb->get_blog_prefix( $id ) . 'options';
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Retained table fixture on WP 6.2+.
 			$wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table, $wpdb->options ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Populate the retained table with real WordPress options.
+			$wpdb->query( $wpdb->prepare( 'INSERT INTO %i SELECT * FROM %i', $table, $wpdb->options ) );
 			update_blog_option( $id, 'jetpack_private_options', [ 'blog_token' => 'test-credential' ] );
 		}
 		wp_update_site( $archived, [ 'archived' => 1 ] );
@@ -110,9 +115,7 @@ class Local_Import_Cleanup_Test extends WP_UnitTestCase {
 		foreach ( [ $archived, $spam, $deleted ] as $id ) {
 			$this->assertFalse( get_blog_option( $id, 'jetpack_private_options' ), 'Subsite ' . $id );
 			$this->assertNotContains( $id, $cleaned );
-			$table = $wpdb->get_blog_prefix( $id ) . 'options';
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Retained table fixture on WP 6.2+.
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE %i', $table ) );
+			wp_delete_site( $id );
 		}
 		$this->assertSame( $original_blog, get_current_blog_id() );
 	}
