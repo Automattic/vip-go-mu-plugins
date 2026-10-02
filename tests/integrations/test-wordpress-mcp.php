@@ -307,6 +307,43 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse( $integration_mock->is_active() );
 	}
 
+	/**
+	 * @dataProvider data_provider_selected_version_folder
+	 */
+	public function test_get_selected_version_folder( string $current_wp_version, array $versions, ?string $expected ): void {
+		global $wp_version;
+		$original_wp_version = $wp_version;
+		$wp_version          = $current_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+		$selected = ( new WordPressMcpIntegration( $this->slug ) )->get_selected_version_folder( $versions );
+
+		$wp_version = $original_wp_version; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+
+		$this->assertSame( $expected, $selected );
+	}
+
+	public static function data_provider_selected_version_folder(): array {
+		$versions = [
+			'wordpress-mcp-0.7' => '0.7',
+			'wordpress-mcp-0.6' => '0.6',
+			'wordpress-mcp-0.5' => '0.5',
+		];
+
+		return [
+			'pinned version on supported WordPress'     => [ '6.9', $versions, 'wordpress-mcp-0.6' ],
+			'latest version when pinned one is missing' => [
+				'6.9',
+				[
+					'wordpress-mcp-0.7' => '0.7',
+					'wordpress-mcp-0.5' => '0.5',
+				],
+				'wordpress-mcp-0.7',
+			],
+			'legacy version on older WordPress'         => [ '6.8', $versions, 'wordpress-mcp-0.5' ],
+			'no legacy version on older WordPress'      => [ '6.8', [ 'wordpress-mcp-0.6' => '0.6' ], null ],
+		];
+	}
+
 	public function test_platform_activation_uses_secure_mcp_child_config(): void {
 		$this->set_vip_config_map(
 			[
