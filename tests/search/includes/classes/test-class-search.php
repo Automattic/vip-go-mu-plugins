@@ -2960,7 +2960,9 @@ class Search_Test extends WP_UnitTestCase {
 			->with(
 				$body,
 				$response_body,
-				$this->callback( static fn( $duration ): bool => is_float( $duration ) && $duration >= 0.0 )
+				$this->callback( static fn( $duration ): bool => is_float( $duration ) && $duration >= 0.0 ),
+				null,
+				strlen( $response['body'] )
 			)
 			->willReturn( true );
 		$this->search_instance->query_warning = $warning;
