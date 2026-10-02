@@ -77,3 +77,13 @@ npm run destroy-e2e-env
 - [Testing](testing.md)
 - [Release](release.md)
 - [Agent guide](../AGENTS.md)
+
+## Local Jetpack compatibility
+
+In local environments, the Jetpack loader checks each candidate's WordPress and
+PHP requirements before including it. Hosted environments retain the platform
+compatibility mapping. Candidate priority remains client override, pinned version,
+default version, then the unversioned plugin. If all installed candidates are
+incompatible, Jetpack and its VIP integration remain unloaded and a warning
+identifies the requirements. Install a compatible version or use a supported
+WordPress version. This does not add historical versions to dev-env images.
