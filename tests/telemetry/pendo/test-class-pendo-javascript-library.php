@@ -19,6 +19,9 @@ require_once __DIR__ . '/../../../vip-integrations.php';
 require_once __DIR__ . '/../../integrations/fake-integration.php';
 
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
+	/** @var \Automattic\VIP\Integrations\Integrations|null */
+	private $original_integrations;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -27,7 +30,8 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$integrations_property       = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$this->original_integrations = $integrations_property->getValue();
 		$integrations_property->setValue( null, null );
 	}
 
@@ -36,9 +40,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		// Reset IntegrationsSingleton to ensure clean state between tests
+		// Restore the original IntegrationsSingleton so the integrations registered at bootstrap aren't lost for other tests
 		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
-		$integrations_property->setValue( null, null );
+		$integrations_property->setValue( null, $this->original_integrations );
 
 		wp_deregister_script( 'vip-pendo-agent-script' );
 		Constant_Mocker::clear();
@@ -254,6 +258,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_disabled_for_disallowed_screens() {
+		// With a tracked integration, only the screen check can prevent loading.
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
 
@@ -264,6 +271,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_disabled_for_disallowed_admin_screen() {
+		// With a tracked integration, only the screen check can prevent loading.
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
 

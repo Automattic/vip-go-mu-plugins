@@ -159,12 +159,15 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$test_content = 'Howdy';
 		$test_file    = '/tmp/uploads/file.txt';
 
-		$tmp_file = false;
+		$tmp_file = null;
 
 		$this->api_client_mock
+			->expects( $this->once() )
 			->method( 'upload_file' )
 			->with(
-				$this->callback( function ( $local_path ) use ( $test_content ) {
+				$this->callback( function ( $local_path ) use ( $test_content, &$tmp_file ) {
+					$tmp_file = $local_path;
+
 					// Verify contents of the file
 					// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
 					$tmp_file_contents = file_get_contents( $local_path );

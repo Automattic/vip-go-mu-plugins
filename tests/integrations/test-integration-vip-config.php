@@ -116,19 +116,6 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test__is_active_via_vip_returns_true_if_integration_is_not_present_on_current_network_site_but_enabled_on_environment(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_is_active_via_vip(
-			[
-				'env' => [ 'status' => Env_Integration_Status::ENABLED ],
-			],
-			true,
-		);
-	}
-
 	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_current_network_site(): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite.' );

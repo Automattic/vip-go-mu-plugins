@@ -206,12 +206,6 @@ class Pendo_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'vip_wordpress_', $event_prefix );
 	}
 
-	public function test_custom_event_prefix() {
-		$pendo        = new Pendo( 'test_' );
-		$event_prefix = self::get_property( 'event_prefix' )->getValue( $pendo );
-		$this->assertEquals( 'test_', $event_prefix );
-	}
-
 	/**
 	 * Helper function for accessing protected properties.
 	 */

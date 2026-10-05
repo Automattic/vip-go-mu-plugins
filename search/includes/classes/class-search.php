@@ -2317,15 +2317,11 @@ class Search {
 			return $mapping;
 		}
 
-		$fields =& $mapping['mappings']['properties']['post_content']['fields'];
-
-		if ( isset( $fields['ngram'] ) ) {
-			unset( $fields['ngram'] );
-		}
+		unset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] );
 
 		// To ensure mapping is valid, remove unnecessary key if no fields are left
-		if ( empty( $fields ) ) {
-			unset( $fields );
+		if ( empty( $mapping['mappings']['properties']['post_content']['fields'] ) ) {
+			unset( $mapping['mappings']['properties']['post_content']['fields'] );
 		}
 
 		return $mapping;

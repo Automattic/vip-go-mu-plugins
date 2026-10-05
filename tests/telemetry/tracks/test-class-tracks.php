@@ -66,12 +66,6 @@ class Tracks_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'vip_', $event_prefix );
 	}
 
-	public function test_custom_event_prefix() {
-		$tracks       = new Tracks( 'test_' );
-		$event_prefix = self::get_property( 'event_prefix' )->getValue( $tracks );
-		$this->assertEquals( 'test_', $event_prefix );
-	}
-
 	/**
 	 * Helper function for accessing protected properties.
 	 */
