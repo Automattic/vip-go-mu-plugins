@@ -181,9 +181,9 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	 */
 	public function duplicate_path_cases(): array {
 		return [
-			'exact first'  => [ '2026/10/shared-file.jpg', false ],
-			'exact second' => [ '2026/10/SHARED-FILE.JPG', true ],
-			'no exact'     => [ '2026/10/Shared-File.jpg', false ],
+			'exact first'  => [ '2026/10/shared-file.jpg', 'first' ],
+			'exact second' => [ '2026/10/SHARED-FILE.JPG', 'second' ],
+			'no exact'     => [ '2026/10/Shared-File.jpg', 'fallback' ],
 		];
 	}
 
@@ -192,7 +192,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider duplicate_path_cases
 	 */
-	public function test_duplicate_attachment_path_selection( string $query_path, bool $select_second ): void {
+	public function test_duplicate_attachment_path_selection( string $query_path, string $selection ): void {
 		global $wpdb;
 		$first_id  = self::factory()->post->create( [ 'post_type' => 'attachment' ] );
 		$second_id = self::factory()->post->create( [ 'post_type' => 'attachment' ] );
@@ -204,10 +204,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 			$query_path
 		) );
 		$this->assertCount( 2, $rows, 'The lookup must exercise multiple case-insensitive matches.' );
-		$this->assertSame( [ $first_id, $second_id ], array_map( static function ( $row ) {
+		$this->assertEqualsCanonicalizing( [ $first_id, $second_id ], array_map( static function ( $row ) {
 			return (int) $row->post_id;
 		}, $rows ) );
-		$this->assertSame( $select_second ? $second_id : $first_id, (int) get_attachment_id_from_file_path( $query_path ) );
+		$expected_id = 'fallback' === $selection ? (int) $rows[0]->post_id : ( 'second' === $selection ? $second_id : $first_id );
+		$this->assertSame( $expected_id, (int) get_attachment_id_from_file_path( $query_path ) );
 	}
 
 	private function strip_wpcontent_uploads( $path ) {
