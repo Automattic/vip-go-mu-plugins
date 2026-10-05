@@ -65,6 +65,18 @@ namespace Automattic\VIP\Security {
 	}
 }
 
+namespace Automattic\VIP\Proxy {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
 namespace Automattic\VIP\Support_User {
 	use Automattic\Test\Constant_Mocker;
 
@@ -310,6 +322,18 @@ namespace Automattic\VIP\LargeMediaUploadWarning {
 }
 
 namespace Automattic\VIP\Migration {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Stats {
 	use Automattic\Test\Constant_Mocker;
 
 	function defined( $constant ) {

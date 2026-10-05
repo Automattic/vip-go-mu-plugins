@@ -11,16 +11,20 @@ namespace Automattic\VIP\Config;
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_property_as_public;
+use function Automattic\Test\Utils\get_static_property_as_public;
+
 require_once __DIR__ . '/../../config/class-site-details-index.php';
 require_once __DIR__ . '/../../config/class-sync.php';
 
-/**
- * @preserveGlobalState disabled
- */
 class Sync_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 		Constant_Mocker::clear();
+
+		// Sync is a singleton created on `init` during bootstrap; clear the queue other tests may have filled.
+		get_class_property_as_public( Sync::class, 'blogs_to_sync' )->setValue( Sync::instance(), [] );
+		$this->reset_site_details_index();
 
 		add_filter( 'pre_http_request', function ( $result ) {
 			if ( false === $result ) {
@@ -41,26 +45,24 @@ class Sync_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
+		$this->reset_site_details_index();
 		parent::tearDown();
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 */
+	private function reset_site_details_index(): void {
+		get_static_property_as_public( Site_Details_Index::class, 'instance' )->setValue( null, null );
+	}
+
 	public function test__vip_site_details_siteurl_update_hook() {
 		$this->check_sync_site_details_update_hook( 'siteurl', 'site_url', 'http://change-site-url.com' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 */
 	public function test__vip_site_details_home_update_hook() {
 		$this->check_sync_site_details_update_hook( 'home', 'home_url', 'http://change-home-url.com' );
 	}
 
 	/**
 	 * Won't queue the change if we are not in the CLI/Admin
-	 * @runInSeparateProcess
 	 */
 	public function test__vip_site_details_not_queuing_on_frontend() {
 		$sync_instance = Sync::instance();

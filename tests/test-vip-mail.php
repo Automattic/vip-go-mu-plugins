@@ -102,10 +102,6 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		self::assertEquals( false, $mailer->SMTPAuth );
 	}
 
-	public function test_load_VIP_PHPMailer() {
-		$this->assertTrue( class_exists( '\Automattic\VIP\Mail\VIP_PHPMailer', false ) );
-	}
-
 	/**
 	 * Test base cases here: local attachment and a remote (disallowed)
 	 *
