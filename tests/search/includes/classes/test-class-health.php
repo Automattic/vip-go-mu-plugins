@@ -1074,6 +1074,11 @@ class Health_Test extends WP_UnitTestCase {
 			->getMock();
 
 		$mocked_indexable->slug = 'post';
+		if ( isset( $options['index_version'] ) ) {
+			$mock_search->versioning->expects( $this->once() )
+				->method( 'set_current_version_number' )
+				->with( $mocked_indexable, $options['index_version'] );
+		}
 		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
 
