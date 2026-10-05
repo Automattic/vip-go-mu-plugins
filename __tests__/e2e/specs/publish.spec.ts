@@ -59,6 +59,8 @@ for ( const editor of editors ) {
 				await test.step( `Validate published ${ postType }`, async () => {
 					const publishedPostPage = new PublishedPostPage( page );
 					await expect( publishedPostPage.heading( titleText ) ).toBeVisible();
+					await expect( publishedPostPage.content ).toContainText( 'Be who you are and say what you feel' );
+					await expect( publishedPostPage.content ).toContainText( 'those who mind don’t matter and those who matter don’t mind.' );
 					await expect( publishedPostPage.image ).toBeVisible();
 				} );
 			} );
