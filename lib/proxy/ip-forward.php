@@ -144,19 +144,17 @@ function set_remote_address( $ip ) {
 	$_SERVER['REMOTE_ADDR'] = $ip;
 }
 
-if ( ! function_exists( __NAMESPACE__ . '\\_get_wpcom_vip_proxy_verification' ) ) {
-	/**
-	 * @access private
-	 * @internal
-	 * @return null|string 
-	 */
-	function _get_wpcom_vip_proxy_verification(): ?string {
-		if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( WPCOM_VIP_PROXY_VERIFICATION ) ) {
-			return (string) WPCOM_VIP_PROXY_VERIFICATION;
-		}
-
-		return null;
+/**
+ * @access private
+ * @internal
+ * @return null|string
+ */
+function _get_wpcom_vip_proxy_verification(): ?string {
+	if ( defined( 'WPCOM_VIP_PROXY_VERIFICATION' ) && ! empty( constant( 'WPCOM_VIP_PROXY_VERIFICATION' ) ) ) {
+		return (string) constant( 'WPCOM_VIP_PROXY_VERIFICATION' );
 	}
+
+	return null;
 }
 
 /**

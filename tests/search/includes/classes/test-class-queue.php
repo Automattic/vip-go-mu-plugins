@@ -335,12 +335,16 @@ class Queue_Test extends WP_UnitTestCase {
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertNotEquals( '2020-01-01 00:00:00', $job->start_time );
 
-		$this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+		$updated = $this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+
+		$this->assertSame( 1, $updated );
 
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertEquals( '2020-01-01 00:00:00', $job->start_time );
 	}
 
 	public function test_update_jobs() {
@@ -1267,7 +1271,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( "{$filter} should be an integer.", $messages );
 	}
 
 	/**
@@ -1282,7 +1288,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_low_message, $messages );
 	}
 
 	/**
@@ -1301,7 +1309,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_high_message, $messages );
 	}
 
 	public function test__log_index_ratelimiting_start() {
@@ -1367,6 +1377,22 @@ class Queue_Test extends WP_UnitTestCase {
 			];
 		}
 		return $request;
+	}
+
+	/**
+	 * Collects the messages passed to _doing_it_wrong() while running the callback.
+	 */
+	private function get_doing_it_wrong_messages( callable $callback ): array {
+		$messages = [];
+		$listener = function ( $function_name, $message ) use ( &$messages ) {
+			$messages[] = $message;
+		};
+
+		add_action( 'doing_it_wrong_run', $listener, 10, 2 );
+		$callback();
+		remove_action( 'doing_it_wrong_run', $listener, 10 );
+
+		return $messages;
 	}
 
 	/**
