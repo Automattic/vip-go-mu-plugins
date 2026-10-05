@@ -2,6 +2,10 @@
  * External dependencies
  */
 import { expect, test } from '@playwright/test';
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import type { APIRequestContext } from '@playwright/test';
 
 /**
  * Internal dependencies
@@ -13,10 +17,35 @@ import { ClassicEditorPage } from '../lib/pages/wp-classic-editor-page';
 const LARGE = 'test_media/image_01.jpg'; // 1.9 MB — above 512 KB test threshold
 const SMALL = 'test_media/image_small.jpg'; // ~22 KB — below threshold
 
+/**
+ * Fetches an uploaded fixture and verifies the server returned the original JPEG bytes.
+ *
+ * @param {APIRequestContext} request The authenticated Playwright API request context
+ * @param {string}            url     Public URL returned by the media library
+ * @param {string}            file    Fixture path relative to the e2e package
+ */
+async function expectUploadedBytes( request: APIRequestContext, url: string, file: string ): Promise<void> {
+	const expectedBytes = await readFile( resolve( __dirname, '..', file ) );
+	const response = await request.get( url );
+	expect( response.status() ).toBe( 200 );
+	expect( response.headers()[ 'content-type' ] ).toMatch( /^image\/jpeg(?:;|$)/ );
+
+	const expectedHash = createHash( 'sha256' ).update( expectedBytes ).digest( 'hex' );
+	const actualHash = createHash( 'sha256' ).update( await response.body() ).digest( 'hex' );
+	expect( actualHash ).toBe( expectedHash );
+}
+
 test.describe( 'Large media upload warning', () => {
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
 		const upload = new MediaUploadPage( page );
 		const modal = new LargeMediaWarningModal( page );
+		const uploadRequests: string[] = [];
+		page.on( 'request', ( request ) => {
+			const pathname = new URL( request.url() ).pathname;
+			if ( /(?:async-upload\.php|\/wp-json\/wp\/v2\/media(?:\/|$))/.test( pathname ) ) {
+				uploadRequests.push( request.url() );
+			}
+		} );
 		await upload.visit();
 
 		await Promise.all( [
@@ -26,11 +55,15 @@ test.describe( 'Large media upload warning', () => {
 
 		await modal.cancel();
 
+		await expect( modal.dialog ).toBeHidden();
+		await page.waitForLoadState( 'networkidle' );
+		// Cancellation must prevent the server upload request, not just hide the attachment details.
+		expect( uploadRequests ).toHaveLength( 0 );
 		// No attachment should appear. data-clipboard-text on copy button is the post-upload marker.
 		await expect( page.locator( '.copy-attachment-url' ) ).toHaveCount( 0 );
 	} );
 
-	test( 'Media Library: confirm completes upload', async ( { page } ) => {
+	test( 'Media Library: confirm completes upload', async ( { page, request } ) => {
 		const upload = new MediaUploadPage( page );
 		const modal = new LargeMediaWarningModal( page );
 		await upload.visit();
@@ -42,20 +75,24 @@ test.describe( 'Large media upload warning', () => {
 
 		await modal.confirm();
 
-		await expect( upload.getMediaUrl() ).resolves.toContain( 'image_01' );
+		const url = await upload.getMediaUrl();
+		expect( url ).toContain( 'image_01' );
+		await expectUploadedBytes( request, url!, LARGE );
 	} );
 
-	test( 'Media Library: below threshold shows no warning', async ( { page } ) => {
+	test( 'Media Library: below threshold shows no warning', async ( { page, request } ) => {
 		const upload = new MediaUploadPage( page );
 		const modal = new LargeMediaWarningModal( page );
 		await upload.visit();
 
 		await upload.uploadFile( SMALL );
-		await expect( upload.getMediaUrl() ).resolves.toContain( 'image_small' );
+		const url = await upload.getMediaUrl();
+		expect( url ).toContain( 'image_small' );
+		await expectUploadedBytes( request, url!, SMALL );
 		await expect( modal.dialog ).toBeHidden();
 	} );
 
-	test( 'Classic Editor: confirm inserts image', async ( { page } ) => {
+	test( 'Classic Editor: confirm inserts image', async ( { page, request } ) => {
 		// eslint-disable-next-line playwright/no-skipped-test
 		test.skip( process.env.E2E_CLASSIC_TESTS === 'false', 'Classic Tests skipped' );
 
@@ -72,9 +109,11 @@ test.describe( 'Large media upload warning', () => {
 		await addImagePromise;
 
 		// addImage waits for the insert button; we then assert the image actually landed in the editor.
-		await expect( page.frameLocator( '#content_ifr' ).locator( '#tinymce img' ) ).toBeVisible();
+		const image = page.frameLocator( '#content_ifr' ).locator( '#tinymce img' );
+		await expect( image ).toBeVisible();
+		await expectUploadedBytes( request, ( await image.getAttribute( 'src' ) )!, LARGE );
 	} );
 
-	// The block editor image upload (DOM `change` capture plus the `fetch` wrap) has no e2e coverage yet:
-	// `EditorPage.addImage` cannot open the image block from an empty post, so those cases never ran.
+	// Supported upload coverage is Media Library and Classic Editor. Gutenberg upload coverage is
+	// explicitly out of scope until the block inserter can be opened reliably in Playwright.
 } );
