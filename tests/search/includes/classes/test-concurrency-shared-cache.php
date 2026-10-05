@@ -22,37 +22,7 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 		$salt    = 'vip-concurrency-' . bin2hex( random_bytes( 16 ) );
 		$workers = [];
 		try {
-			// Seed the production cache namespace before racing the counter operations.
-			// This also proves that the shared service is reachable, rather than failing open.
-			$workers[] = $this->start_worker( $salt, 'seed' );
-			self::assertSame( [ true, 0 ], json_decode( $this->read_worker( $workers[0] ), true ) );
-			$this->finish_worker( $workers[0] );
-			$workers   = [];
-			$workers[] = $this->start_worker( $salt, 'increment' );
-			$workers[] = $this->start_worker( $salt, 'increment' );
-			foreach ( [ 'ready', 'counter' ] as $phase ) {
-				foreach ( $workers as $worker ) {
-					self::assertSame( $phase, $this->read_worker( $worker ) );
-				}
-				foreach ( $workers as $worker ) {
-					fwrite( $worker['pipes'][0], "continue\n" );
-				}
-			}
-			$results = array_map( [ $this, 'read_worker' ], $workers );
-			foreach ( $workers as $worker ) {
-				fwrite( $worker['pipes'][0], "continue\n" );
-			}
-			foreach ( $workers as &$worker ) {
-				$this->finish_worker( $worker );
-			}
-			unset( $worker );
-
-			$workers[] = $this->start_worker( $salt, 'count' );
-			$count     = $this->read_worker( $workers[2] );
-			$this->finish_worker( $workers[2] );
-			sort( $results );
-			self::assertSame( [ 'admitted', 'rejected' ], $results, 'Exactly one worker must be admitted at limit one.' );
-			self::assertSame( [ true, 0 ], json_decode( $count, true ), 'The shared counter must exist and return to zero.' );
+			$this->exercise_workers( $salt, $workers );
 		} finally {
 			foreach ( $workers as $worker ) {
 				if ( is_resource( $worker['process'] ) ) {
@@ -66,6 +36,46 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Exercise worker admission and counter cleanup within the process cleanup guard.
+	 *
+	 * @param string $salt Unique shared cache namespace.
+	 * @param array $workers Worker processes retained for cleanup after any assertion.
+	 */
+	private function exercise_workers( string $salt, array &$workers ): void {
+		// Seed the production cache namespace before racing the counter operations.
+		// This also proves that the shared service is reachable, rather than failing open.
+		$workers[] = $this->start_worker( $salt, 'seed' );
+		self::assertSame( [ true, 0 ], json_decode( $this->read_worker( $workers[0] ), true ) );
+		$this->finish_worker( $workers[0] );
+		$workers   = [];
+		$workers[] = $this->start_worker( $salt, 'increment' );
+		$workers[] = $this->start_worker( $salt, 'increment' );
+		foreach ( [ 'ready', 'counter' ] as $phase ) {
+			foreach ( $workers as $worker ) {
+				self::assertSame( $phase, $this->read_worker( $worker ) );
+			}
+			foreach ( $workers as $worker ) {
+				fwrite( $worker['pipes'][0], "continue\n" );
+			}
+		}
+		$results = array_map( [ $this, 'read_worker' ], $workers );
+		foreach ( $workers as $worker ) {
+			fwrite( $worker['pipes'][0], "continue\n" );
+		}
+		foreach ( $workers as &$worker ) {
+			$this->finish_worker( $worker );
+		}
+		unset( $worker );
+
+		$workers[] = $this->start_worker( $salt, 'count' );
+		$count     = $this->read_worker( $workers[2] );
+		$this->finish_worker( $workers[2] );
+		sort( $results );
+		self::assertSame( [ 'admitted', 'rejected' ], $results, 'Exactly one worker must be admitted at limit one.' );
+		self::assertSame( [ true, 0 ], json_decode( $count, true ), 'The shared counter must exist and return to zero.' );
 	}
 
 	/**
