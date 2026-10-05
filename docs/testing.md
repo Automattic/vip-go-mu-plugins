@@ -34,6 +34,22 @@ CI=1 ./bin/test.sh --wp 6.8.x --php 8.2
 CI=1 ./bin/test.sh --filter test__administrator_should_not_have_update_core_cap
 ```
 
+The Search shared-counter integration test uses two independent PHP workers and
+the production `drop-ins/wp-memcached` cache implementation. Start an isolated
+Memcached service with:
+
+```bash
+CI=1 ./bin/test.sh --memcached --filter 'Test_Concurrency_(Limiter|Shared_Cache)'
+```
+
+`--memcached` starts and removes a `memcached:1.6-alpine` container on the test
+network. The runner must provide the PHP `memcached` extension and `proc_open`.
+Without these or `VIP_TEST_MEMCACHED_SERVER`, the shared-cache test explicitly
+skips; the deterministic hook tests still run. Barriers hold both workers at the
+counter operation and retain their increments until both admission results are
+reported. The test requires exactly one admitted request at limit one, then
+reads the shared counter from a fresh process and requires zero.
+
 `CI=1` is recommended in non-interactive shells.
 
 ## e2e tests
