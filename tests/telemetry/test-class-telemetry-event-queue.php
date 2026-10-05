@@ -22,7 +22,6 @@ class Telemetry_Event_Queue_Test extends WP_UnitTestCase {
 		try {
 			$this->assertSame( $error, $queue->record_event_asynchronously( $event ) );
 			$property = new \ReflectionProperty( $queue, 'events' );
-			$property->setAccessible( true );
 			$this->assertSame( array(), $property->getValue( $queue ) );
 			$this->assertTrue( $queue->record_events() );
 		} finally {
