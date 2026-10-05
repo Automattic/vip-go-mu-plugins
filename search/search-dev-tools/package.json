@@ -14,7 +14,7 @@
     "build/*"
   ],
   "devDependencies": {
-    "@automattic/eslint-plugin-wpvip": "^1.1.1",
+    "@automattic/eslint-plugin-wpvip": "^2.0.0",
     "@babel/core": "^8.0.1",
     "@babel/plugin-transform-react-jsx": "^8.0.1",
     "@babel/preset-env": "^8.0.2",
