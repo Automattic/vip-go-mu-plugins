@@ -229,8 +229,6 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 			->willReturn( true );
 		$integration_mock->expects( $this->never() )->method( 'get_versions' );
 
-		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
-		$integration_mock->expects( $this->never() )->method( 'get_versions' );
 		$integration_mock->expects( $this->never() )->method( 'get_selected_version_folder' );
 		$integration_mock->load();
 

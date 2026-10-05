@@ -57,8 +57,6 @@ class VIP_Workflows_Integration_Test extends WP_UnitTestCase {
 			->willReturn( true );
 		$integration->expects( $this->never() )->method( 'get_versions' );
 
-		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration, true );
-		$integration->expects( $this->never() )->method( 'get_versions' );
 		$integration->expects( $this->never() )->method( 'get_selected_version_folder' );
 		$integration->load();
 		do_action( 'plugins_loaded' );
