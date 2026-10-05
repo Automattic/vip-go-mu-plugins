@@ -711,31 +711,45 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_lock() {
-		/** @var Health&MockObject */
-		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->onlyMethods( [ 'set_validate_content_lock', 'remove_validate_content_lock', 'validate_index_posts_content_batch' ] )
-			->disableOriginalConstructor()
-			->getMock();
-		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
 
-		/** @var Indexables&MockObject */
-		$mocked_indexables = $this->getMockBuilder( Indexables::class )
-			->onlyMethods( [ 'get' ] )
-			->getMock();
-
-		$patrtially_mocked_health->indexables = $mocked_indexables;
-
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
-
-		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
-
-		$patrtially_mocked_health->expects( $this->once() )->method( 'set_validate_content_lock' );
-		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_lock' );
-
-		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+		$health      = new Health( $this->search_instance );
+		$second      = new Health( $this->search_instance );
+		$batch_calls = 0;
+		$options     = array(
+			'start_post_id' => 999000,
+			'last_post_id'  => 999000,
+		);
+		$http        = function ( $preempt, $args, $url ) use ( $second, $options, &$batch_calls ) {
+			if ( false !== strpos( $url, '/_mget' ) ) {
+				++$batch_calls;
+				$this->assertTrue( (bool) get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+				$result = $second->validate_index_posts_content( $options );
+				$this->assertInstanceOf( WP_Error::class, $result );
+				$this->assertSame( 'es_content_validation_already_ongoing', $result->get_error_code() );
+			}
+			return array(
+				'headers'  => array(),
+				'body'     => '{"docs":[]}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			$this->assertSame( array(), $health->validate_index_posts_content( $options ) );
+			$this->assertGreaterThan( 0, $batch_calls );
+			$this->assertFalse( get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+		}
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
