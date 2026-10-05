@@ -89,9 +89,9 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		// Retry only when the clock crosses a tick during dispatch.
 		try {
 			for ( $attempt = 0; $attempt < 3; ++$attempt ) {
-				$tick = ceil( time() / 120 );
+				$tick                          = ceil( time() / 120 );
 				$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, NONCE_SALT );
-				$response = $this->server->dispatch( $request );
+				$response                      = $this->server->dispatch( $request );
 				if ( ceil( time() / 120 ) === $tick ) {
 					break;
 				}
