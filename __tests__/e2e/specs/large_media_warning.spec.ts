@@ -1,11 +1,10 @@
 /**
  * External dependencies
  */
-import { expect, test } from '@playwright/test';
+import { expect, test, type APIRequestContext } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import type { APIRequestContext } from '@playwright/test';
 
 /**
  * Internal dependencies
@@ -69,7 +68,7 @@ test.describe( 'Large media upload warning', () => {
 		const uploadRequestAfterCancel = page
 			.waitForRequest(
 				( request ) => /(?:async-upload\.php|\/wp-json\/wp\/v2\/media(?:\/|$))/.test( new URL( request.url() ).pathname ),
-				{ timeout: 1000 }
+				{ timeout: 1000 },
 			)
 			.catch( () => null );
 		await modal.cancel();
