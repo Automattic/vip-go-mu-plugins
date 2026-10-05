@@ -31,6 +31,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$this->search->init();
 
 		Constant_Mocker::clear();
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint1',
 			'https://es-endpoint2',
@@ -45,6 +46,28 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		$this->search->load_collector();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
+
+		add_filter( 'pre_http_request', [ $this, 'filter_pre_http_request_ok' ], PHP_INT_MAX );
+	}
+
+	/**
+	 * Fake an OK response from the ES server so that no real HTTP request is made.
+	 */
+	public function filter_pre_http_request_ok( $preempt ) {
+		if ( false !== $preempt ) {
+			return $preempt;
+		}
+
+		return [
+			'headers'  => [],
+			'body'     => '{}',
+			'response' => [
+				'code'    => 200,
+				'message' => 'OK',
+			],
+			'cookies'  => [],
+			'filename' => null,
+		];
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {

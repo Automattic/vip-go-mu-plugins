@@ -65,6 +65,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		add_filter( 'pre_http_request', [ $this, 'filter_pre_http_request_ok' ], PHP_INT_MAX );
 	}
 
 	public function tearDown(): void {
@@ -2073,6 +2074,29 @@ class Versioning_Test extends WP_UnitTestCase {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX );
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_get_mapping_request_ok' ], PHP_INT_MAX );
+	}
+
+	/**
+	 * Fake an OK response from the ES server so that no real HTTP request is made.
+	 *
+	 * Search::filter__ep_do_intercept_request() sends the request before any `ep_do_intercept_request`
+	 * fakes at PHP_INT_MAX replace its result, so those alone don't prevent real HTTP requests.
+	 */
+	public function filter_pre_http_request_ok( $preempt ) {
+		if ( false !== $preempt ) {
+			return $preempt;
+		}
+
+		return [
+			'headers'  => [],
+			'body'     => '{}',
+			'response' => [
+				'code'    => 200,
+				'message' => 'OK',
+			],
+			'cookies'  => [],
+			'filename' => null,
+		];
 	}
 
 	/**
