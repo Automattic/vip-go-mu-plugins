@@ -78,7 +78,7 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 		$url      = 'https://localhost';
 		$response = 'mock_response';
 
-		$this->mock_http_response( $response, 1.1 ); // 1.1 seconds, over the default 1 second threshold
+		$this->mock_http_response( $response, 1.02 ); // Just over the default 1 second threshold; usleep() never sleeps less
 
 		// We can call it 3 times and it always returns the expected response (no failure / fallback)
 		for ( $i = 0; $i < 3; $i++ ) {
