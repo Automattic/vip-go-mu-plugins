@@ -61,7 +61,7 @@ class Tracks_Client_Test extends WP_UnitTestCase {
 	 */
 	public function test_http_status_controls_queue_acknowledgement(): void {
 		wp_set_current_user( self::factory()->user->create() );
-		foreach ( array( 200, 204, 401, 429, 500 ) as $status ) {
+		foreach ( array( 199, 200, 204, 299, 300, 401, 429, 500 ) as $status ) {
 			$http = $this->createMock( WP_Http::class );
 			$http->expects( $this->once() )->method( 'post' )->willReturn( array(
 				'headers'  => array(),
@@ -79,8 +79,7 @@ class Tracks_Client_Test extends WP_UnitTestCase {
 				$this->assertTrue( $queue->record_event_asynchronously( $event ) );
 				$result   = $queue->record_events();
 				$property = new \ReflectionProperty( $queue, 'events' );
-				$property->setAccessible( true );
-				if ( $status < 300 ) {
+				if ( $status >= 200 && $status < 300 ) {
 					$this->assertTrue( $result );
 					$this->assertSame( array(), $property->getValue( $queue ) );
 				} else {
