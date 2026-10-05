@@ -146,7 +146,7 @@ class Alerts {
 		$required_keys = [ 'severity', 'source' ];
 		$optional_keys = [ 'group', 'class', 'custom_details' ];
 
-		if ( ! is_array( $details ) ) {
+		if ( ! is_array( $details ) || array_diff( $required_keys, array_keys( $details ) ) ) {
 			return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
 		}
 
@@ -182,7 +182,7 @@ class Alerts {
 	protected function validate_opsgenie_details( $details ) {
 		$required_keys = [ 'alias', 'description', 'entity', 'priority', 'source' ];
 
-		if ( ! is_array( $details ) ) {
+		if ( ! is_array( $details ) || array_diff( $required_keys, array_keys( $details ) ) ) {
 			return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 		}
 

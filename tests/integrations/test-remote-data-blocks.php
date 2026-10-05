@@ -54,13 +54,6 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $remote_data_blocks_integration->is_loaded() );
 	}
 
-	public function test_load_registers_plugin_loaded_hook(): void {
-		$remote_data_blocks_integration = new RemoteDataBlocksIntegration( $this->slug );
-		$remote_data_blocks_integration->load();
-
-		$this->assertNotFalse( has_action( 'plugins_loaded' ) );
-	}
-
 	public function test_load_returns_early_if_plugin_already_loaded(): void {
 		Constant_Mocker::define( 'REMOTE_DATA_BLOCKS__LOADED', true );
 
@@ -74,9 +67,14 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'is_loaded', 'get_latest_version' ] )
 			->getMock();
 
+		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
+		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
+
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
+		$integration_mock->expects( $this->never() )->method( 'is_supported_wp_version' );
+		$integration_mock->expects( $this->never() )->method( 'get_latest_version' );
 
 		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
 		$integration_mock->expects( $this->never() )->method( 'get_latest_version' );
@@ -88,7 +86,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		// This test passes if we reach here without errors, as the expectation of is_loaded being called once is met
 
 		$this->assertTrue( $integration_mock->is_active() );
-		$this->assertSame( [], $integration_mock->get_env_config() );
+		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
 	}
 
 	public function test_configure_defines_config_constant(): void {

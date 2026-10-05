@@ -49,9 +49,13 @@ class VIP_Workflows_Integration_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'is_loaded', 'get_versions', 'get_selected_version_folder' ] )
 			->getMock();
 
+		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
+		$integration->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
+
 		$integration->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
+		$integration->expects( $this->never() )->method( 'get_versions' );
 
 		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration, true );
 		$integration->expects( $this->never() )->method( 'get_versions' );
@@ -59,7 +63,7 @@ class VIP_Workflows_Integration_Test extends WP_UnitTestCase {
 		$integration->load();
 		do_action( 'plugins_loaded' );
 		$this->assertTrue( $integration->is_active() );
-		$this->assertSame( [], $integration->get_env_config() );
+		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration->get_env_config() );
 	}
 
 	public function test_load_sets_inactive_when_no_versions_are_available(): void {

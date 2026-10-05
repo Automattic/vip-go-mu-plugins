@@ -34,6 +34,16 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	/** @var ConnectorControlsIntegration[] */
 	private array $recording_integrations = [];
 
+	public function __construct( ?string $name = null, array $data = [], $data_name = '' ) {
+		parent::__construct( $name, $data, $data_name );
+
+		// Without the Connectors API, setUp() skips these tests. Opt out of process isolation before
+		// PHPUnit applies `@runInSeparateProcess`, so it doesn't boot WordPress again only to skip.
+		if ( ! function_exists( '\\wp_get_connectors' ) ) {
+			$this->setRunTestInSeparateProcess( false );
+		}
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -324,6 +334,19 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	 * @preserveGlobalState disabled
 	 */
 	public function test_runtime_status_observes_authentication_without_exposing_credentials( $environment, $constant, bool $managed, string $expected_source, bool $blocked = false ): void {
+		$this->assert_runtime_status( $environment, $constant, $managed, $expected_source, $blocked, true );
+	}
+
+	/**
+	 * Same as above, for cases that never define a real OPENAI_API_KEY constant, so they can share the test process.
+	 *
+	 * @dataProvider runtime_status_without_constant_provider
+	 */
+	public function test_runtime_status_observes_authentication_without_a_constant( $environment, $constant, bool $managed, string $expected_source, bool $blocked = false ): void {
+		$this->assert_runtime_status( $environment, $constant, $managed, $expected_source, $blocked, false );
+	}
+
+	private function assert_runtime_status( $environment, $constant, bool $managed, string $expected_source, bool $blocked, bool $isolated ): void {
 		if ( false !== $environment ) {
 			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Isolate external credential sources.
 			putenv( "OPENAI_API_KEY={$environment}" );
@@ -332,7 +355,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			Constant_Mocker::define( 'OPENAI_API_KEY', $constant );
 		}
 
-		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $managed, $expected_source, $blocked ) {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $managed, $expected_source, $blocked, $isolated ) {
 			$integration                    = new ConnectorControlsIntegration( 'connector-controls' );
 			$this->recording_integrations[] = $integration;
 			$config                         = $managed ? [ 'openai_api_key' => 'managed-test-secret' ] : [];
@@ -341,7 +364,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			}
 			$integration->activate( [ 'config' => $config ] );
 			$integration->configure();
-			$this->expose_mocked_constant_to_ai_client();
+			$this->expose_mocked_constant_to_ai_client( $isolated );
 			$registry->registerProvider( $provider_class );
 			\_wp_connectors_register_default_ai_providers( $connector_registry );
 			$original_connector = $connector_registry->get_registered( 'openai' );
@@ -407,14 +430,20 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		yield 'empty environment falls through to managed constant' => [ '', null, true, 'integration' ];
 		yield 'empty externals fall through to managed' => [ '', '', true, 'integration' ];
 		yield 'invalid existing constant uses managed fallback' => [ false, false, true, 'integration' ];
-		yield 'whitespace environment remains external' => [ '   ', null, true, 'environment_variable' ];
-		yield 'zero environment remains external' => [ '0', null, true, 'environment_variable' ];
 		yield 'whitespace constant remains external' => [ false, '   ', true, 'php_constant' ];
 		yield 'zero constant remains external' => [ false, '0', true, 'php_constant' ];
-		yield 'environment without assignment' => [ 'environment-test-secret', null, false, 'environment_variable' ];
 		yield 'constant without assignment' => [ false, 'constant-test-secret', false, 'php_constant' ];
 		yield 'empty environment with constant without assignment' => [ '', 'constant-test-secret', false, 'php_constant' ];
 		yield 'empty environment with constant and blocked managed assignment' => [ '', 'constant-test-secret', false, 'php_constant', true ];
+	}
+
+	/**
+	 * A non-empty environment variable wins, or there is no credential, so configure() defines no constant.
+	 */
+	public function runtime_status_without_constant_provider(): iterable {
+		yield 'whitespace environment remains external' => [ '   ', null, true, 'environment_variable' ];
+		yield 'zero environment remains external' => [ '0', null, true, 'environment_variable' ];
+		yield 'environment without assignment' => [ 'environment-test-secret', null, false, 'environment_variable' ];
 		yield 'no credential' => [ false, null, false, 'none' ];
 		yield 'empty environment without assignment' => [ '', null, false, 'none' ];
 	}
@@ -424,8 +453,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	 * constant into the isolated PHP process so the unmodified AI Client performs
 	 * its real environment/constant discovery, rather than injecting test auth.
 	 */
-	private function expose_mocked_constant_to_ai_client(): void {
+	private function expose_mocked_constant_to_ai_client( bool $isolated = true ): void {
 		if ( Constant_Mocker::defined( 'OPENAI_API_KEY' ) ) {
+			$this->assertTrue( $isolated, 'Cases that define OPENAI_API_KEY must run in a separate process.' );
 			$this->assertFalse( \defined( 'OPENAI_API_KEY' ) );
 			\define( 'OPENAI_API_KEY', Constant_Mocker::constant( 'OPENAI_API_KEY' ) );
 		}

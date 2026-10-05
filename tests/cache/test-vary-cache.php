@@ -428,29 +428,49 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function test__enable_encryption_invalid() {
-		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
-		$this->expectError();
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		$this->assert_enable_encryption_triggers_error();
 	}
 
 	public function test__enable_encryption_invalid_empty_constants() {
-		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
-		$this->expectError();
-
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		$this->assert_enable_encryption_triggers_error();
+	}
+
+	private function assert_enable_encryption_triggers_error(): void {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+		set_error_handler( static function ( int $errno, string $errstr ) {
+			if ( E_USER_ERROR === $errno ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
+				throw new ErrorException( $errstr, 0, $errno );
+			}
+
+			// PHP 8.4+ also emits a deprecation for passing E_USER_ERROR to trigger_error().
+			return true;
+		}, E_USER_ERROR | E_DEPRECATED );
+
+		try {
+			Vary_Cache::enable_encryption();
+			$this->fail( 'Expected enable_encryption() to trigger an E_USER_ERROR' );
+		} catch ( ErrorException $e ) {
+			$this->assertSame( E_USER_ERROR, $e->getSeverity() );
+			$this->assertStringContainsString( 'Cannot enable encryption', $e->getMessage() );
+		} finally {
+			restore_error_handler();
+		}
+
+		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
 	}
 
 	public function test__enable_encryption_true_valid() {
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
+		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
 
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		Vary_Cache::enable_encryption();
+
+		$this->assertTrue( Vary_Cache::is_encryption_enabled() );
 	}
 
 	public function get_test_data__validate_cookie_value_invalid() {
