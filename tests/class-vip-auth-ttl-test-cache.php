@@ -13,7 +13,7 @@ class VIP_Auth_TTL_Test_Cache extends WP_Object_Cache {
 	public function add( $key, $data, $group = 'default', $expire = 0 ) {
 		$result = parent::add( $key, $data, $group, $expire );
 		if ( $result && CACHE_GROUP_LOGIN_LIMIT === $group ) {
-			$this->expirations[ $key ] = $this->now + $expire;
+			$this->expirations[ $key ] = $expire ? $this->now + $expire : PHP_INT_MAX;
 		}
 		return $result;
 	}
