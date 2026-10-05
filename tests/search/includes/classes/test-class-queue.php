@@ -725,6 +725,7 @@ class Queue_Test extends WP_UnitTestCase {
 				array( 3000, 'post', 1, 'running' ),
 			);
 			$expected            = array();
+			$duplicate_ids       = array();
 			foreach ( $fixtures as $offset => $fixture ) {
 				list( $object_id, $object_type, $version, $status ) = $fixture;
 				$options = array( 'index_version' => $version );
@@ -736,10 +737,13 @@ class Queue_Test extends WP_UnitTestCase {
 						'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
 					) );
 				}
+				if ( 3000 === $object_id ) {
+					$duplicate_ids[] = (int) $job->job_id;
+				}
 				// Only the same-object/type/version duplicates should be removed.
 				if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
 					$expected[] = array(
-						'job_id'        => (int) $job->job_id,
+						'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
 						'object_id'     => $object_id,
 						'object_type'   => $object_type,
 						'index_version' => $version,
@@ -754,6 +758,10 @@ class Queue_Test extends WP_UnitTestCase {
 				$job['job_id']        = (int) $job['job_id'];
 				$job['object_id']     = (int) $job['object_id'];
 				$job['index_version'] = (int) $job['index_version'];
+				if ( 3000 === $job['object_id'] ) {
+					$this->assertContains( $job['job_id'], $duplicate_ids );
+					$job['job_id'] = 0;
+				}
 			}
 			unset( $job );
 			$this->assertSame( $expected, $actual );
