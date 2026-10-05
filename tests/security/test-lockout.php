@@ -108,7 +108,17 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
 
-		$this->assertEqualSets( $expected_cap, $actual_cap );
+		$this->assertSameSetsWithIndex( $expected_cap, $actual_cap );
+
+		// Exercise WordPress capability resolution with the real lockout callback.
+		add_filter( 'user_has_cap', [ $this->lockout, 'filter_user_has_cap' ], PHP_INT_MAX, 4 );
+		try {
+			$this->assertTrue( user_can( $user, 'read' ) );
+			$this->assertFalse( user_can( $user, 'edit_posts' ) );
+			$this->assertFalse( user_can( $user, 'delete_posts' ) );
+		} finally {
+			remove_filter( 'user_has_cap', [ $this->lockout, 'filter_user_has_cap' ], PHP_INT_MAX );
+		}
 	}
 
 	public function test__filter_user_has_cap__warning() {
@@ -122,7 +132,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
 
-		$this->assertEqualSets( $user_cap, $actual_cap );
+		$this->assertSameSetsWithIndex( $user_cap, $actual_cap );
 	}
 
 	public function test__filter_user_has_cap__no_state() {
@@ -134,7 +144,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
 
-		$this->assertEqualSets( $user_cap, $actual_cap );
+		$this->assertSameSetsWithIndex( $user_cap, $actual_cap );
 	}
 
 	public function test__filter_user_has_cap__locked_vip_support() {
@@ -152,7 +162,7 @@ class Lockout_Test extends WP_UnitTestCase {
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
 
-		$this->assertEqualSets( $user_cap, $actual_cap );
+		$this->assertSameSetsWithIndex( $user_cap, $actual_cap );
 	}
 
 	public function test__filter_site_admin_option__locked() {
