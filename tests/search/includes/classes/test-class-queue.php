@@ -660,6 +660,72 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_deadlocked_job_ids, $deadlocked_job_ids );
 	}
 
+	/**
+	 * Interleave two real database connections between selection and claiming.
+	 */
+	public function test_checkout_jobs_returns_only_owned_rows_across_connections() {
+		global $wpdb;
+		$primary   = $wpdb;
+		$secondary = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+		$secondary->set_prefix( $wpdb->prefix );
+		$original_schema = $this->queue->schema;
+		$table_name      = $wpdb->prefix . 'vip_queue_claim_' . wp_generate_password( 12, false );
+		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
+		$schema->method( 'get_table_name' )->willReturn( $table_name );
+		$other_queue         = new Queue();
+		$other_queue->schema = $schema;
+		$other_jobs          = array();
+		$interleaved         = false;
+		$barrier             = static function ( $query ) use ( &$interleaved, &$other_jobs, $table_name, $primary, $secondary, $other_queue ) {
+			if ( ! $interleaved && 0 === strpos( $query, "UPDATE {$table_name} SET" ) && false !== strpos( $query, "'scheduled'" ) ) {
+				$interleaved = true;
+				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Switch actual database connections at the barrier.
+				$GLOBALS['wpdb'] = $secondary;
+				try {
+					$other_jobs = $other_queue->checkout_jobs( 2 );
+				} finally {
+					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the original connection.
+					$GLOBALS['wpdb'] = $primary;
+				}
+			}
+			return $query;
+		};
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		try {
+			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $original_schema->get_table_name() ) ) );
+			$this->queue->schema = $schema;
+			// Publish fixture rows from the autocommit connection, outside the test transaction.
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Use the second real connection for fixture setup.
+			$GLOBALS['wpdb'] = $secondary;
+			try {
+				$this->queue->queue_object( 900001, 'post', array( 'index_version' => 1 ) );
+				$this->queue->queue_object( 900002, 'post', array( 'index_version' => 1 ) );
+			} finally {
+				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the original connection.
+				$GLOBALS['wpdb'] = $primary;
+			}
+
+			$expected_ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT job_id FROM %i ORDER BY job_id', $table_name ) ) );
+			$this->assertCount( 2, $expected_ids );
+			add_filter( 'query', $barrier );
+			$first_jobs = $this->queue->checkout_jobs( 2 );
+			remove_filter( 'query', $barrier );
+			$this->assertTrue( $interleaved );
+			$this->assertSame( $expected_ids, array_map( 'intval', wp_list_pluck( $other_jobs, 'job_id' ) ) );
+			$this->assertSame( array(), $first_jobs );
+			$this->assertSame( array(), array_intersect( wp_list_pluck( $first_jobs, 'job_id' ), wp_list_pluck( $other_jobs, 'job_id' ) ) );
+			$this->assertSame( array( 'scheduled', 'scheduled' ), $secondary->get_col( $secondary->prepare( 'SELECT status FROM %i ORDER BY job_id', $table_name ) ) );
+		} finally {
+			remove_filter( 'query', $barrier );
+			$this->queue->schema = $original_schema;
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
+			$secondary->close();
+			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		}
+	}
+
 	public function test_free_deadlocked_jobs_handle_duplicates() {
 		$first_job                 = (object) [
 			'job_id'        => 1,

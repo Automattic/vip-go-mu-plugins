@@ -7,7 +7,7 @@ use WP_Site;
 class Schema {
 	const TABLE_SUFFIX = 'vip_search_index_queue';
 
-	const DB_VERSION               = 3;
+	const DB_VERSION               = 4;
 	const DB_VERSION_TRANSIENT     = 'vip_search_queue_db_version';
 	const DB_VERSION_TRANSIENT_TTL = \DAY_IN_SECONDS; // Long, but not permanent, so the db table will get created _eventually_ if missing
 	const TABLE_CREATE_LOCK        = 'vip_search_queue_creating_table';
@@ -131,6 +131,7 @@ class Schema {
 			`index_version` int(11) NOT NULL DEFAULT 1,
 			`queued_time` datetime DEFAULT CURRENT_TIMESTAMP,
 			`scheduled_time` datetime DEFAULT NULL,
+			`claim_token` varchar(36) DEFAULT NULL,
 			PRIMARY KEY (`job_id`),
 			UNIQUE KEY `unique_object_status_version` (`object_id`,`object_type`,`status`,`index_version`)
 		) ENGINE=InnoDB";

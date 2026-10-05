@@ -97,3 +97,11 @@ option write. It uses SDS's existing timestamp, change detection, scheduled
 uploads, and heartbeats. The Integration Center displays the last observed
 source, including stale or unavailable observations; this is not confirmation
 that a provider accepts the key or that a newly saved assignment has propagated.
+
+## Search queue checkout ownership
+
+Queue schema version 4 adds a nullable `claim_token` column. Checkout prepares
+the schema, updates queued rows with one UUID per batch, and returns only rows
+carrying that UUID. Competing workers that selected the same rows cannot return
+another worker's claimed jobs. Deadlock recovery remains responsible for
+requeueing abandoned scheduled jobs; a later checkout replaces the claim token.

@@ -726,9 +726,11 @@ class Queue {
 
 		global $wpdb;
 
+		// Apply the ownership-column migration before checkout uses it.
+		$this->schema->prepare_table();
+
 		$table_name = $this->schema->get_table_name();
 
-		// TODO transaction
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
@@ -745,13 +747,23 @@ class Queue {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
+		$claim_token    = wp_generate_uuid4();
 
 		$this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
+			'claim_token'    => $claim_token,
 		), 'queued' );
 
-		// Set right status on the already queried jobs objects
+		// Another worker may have claimed the selected rows first. Return only rows
+		// that our guarded update marked with this checkout's unique ownership token.
+		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( $wpdb->prepare(
+			"SELECT * FROM {$table_name} WHERE job_id IN ({$escaped_ids}) AND claim_token = %s AND status = 'scheduled' ORDER BY priority, job_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$claim_token
+		) );
+
 		foreach ( $jobs as &$job ) {
 			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
