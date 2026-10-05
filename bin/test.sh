@@ -110,6 +110,11 @@ else
     interactive=""
 fi
 
+# The runner image's home directory has changed over time (/home/ubuntu, now /home/debian),
+# but every version symlinks /home/circleci to it. Mount there and point the runner's
+# APP_HOME and working directory at the same path so vendor/ is found on any image version.
+PROJECT_DIR=/home/circleci/project
+
 # shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
 docker run \
     ${interactive} \
@@ -125,9 +130,11 @@ docker run \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
+    -e APP_HOME="${PROJECT_DIR}" \
     -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
     -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
     ${DOCKER_OPTIONS} \
-    -v "$(pwd):/home/circleci/project" \
+    -v "$(pwd):${PROJECT_DIR}" \
+    -w "${PROJECT_DIR}" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
     ${ARGS}

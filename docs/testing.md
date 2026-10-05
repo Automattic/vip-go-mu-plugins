@@ -21,6 +21,11 @@ npm run test            # full PHPUnit suite in Docker
 - runs tests in `ghcr.io/automattic/vip-container-images/wp-test-runner`
 - uses `tests/bootstrap.php` to load MU plugin stack
 
+The repository is mounted into the container, so run `composer install` and
+`git submodule update --init --recursive` first (including in fresh worktrees).
+Without `vendor/yoast/phpunit-polyfills`, the runner fails before any test runs with
+`Failed opening required '.../vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php'`.
+
 Useful variants:
 
 ```bash
