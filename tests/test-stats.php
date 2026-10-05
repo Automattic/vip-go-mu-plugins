@@ -24,6 +24,66 @@ class Test_Stats extends WP_UnitTestCase {
 		parent::tear_down();
 	}
 
+
+	/**
+	 * Verify the production stats bootstrap registers the XML-RPC telemetry hook.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_production_bootstrap_registers_xmlrpc_telemetry_hook() {
+		$script = <<<'PHP'
+<?php
+namespace {
+	define( 'WPCOM_IS_VIP_ENV', true );
+	define( 'WPCOM_SANDBOXED', false );
+	define( 'XMLRPC_REQUEST', true );
+	function add_action( $hook, $callback, $priority = 10, $accepted_args = 1 ) { $GLOBALS['hooks'][ $hook ] = $callback; }
+	function add_filter( $hook, $callback, $priority = 10, $accepted_args = 1 ) { $GLOBALS['hooks'][ $hook ] = $callback; }
+	function is_user_logged_in() { return true; }
+	function vip_is_jetpack_request() { return false; }
+	function do_action( $hook, ...$args ) { call_user_func_array( $GLOBALS['hooks'][ $hook ], $args ); }
+}
+namespace Automattic\VIP\Telemetry {
+	class Tracks {
+		public function record_event( $name, $properties ) { $GLOBALS['events'][] = [ $name, $properties ]; }
+	}
+}
+namespace {
+	require __STATS_PATH__;
+	do_action( 'xmlrpc_call', 'wp.getUsersBlogs' );
+	echo json_encode( $GLOBALS['events'] ?? [] );
+}
+PHP;
+		$script = str_replace( '__STATS_PATH__', wp_json_encode( dirname( __DIR__ ) . '/stats.php', JSON_THROW_ON_ERROR ), $script );
+		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- The test writes only a disposable subprocess fixture in the system temp directory.
+		$path = tempnam( get_temp_dir(), 'vip-stats-bootstrap-' );
+		file_put_contents( $path, $script );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- A subprocess isolates constants and exercises production bootstrap registration.
+		$process = proc_open(
+			[ PHP_BINARY, $path ],
+			[
+				0 => [ 'pipe', 'r' ],
+				1 => [ 'pipe', 'w' ],
+				2 => [ 'pipe', 'w' ],
+			],
+			$pipes
+		);
+		fclose( $pipes[0] );
+		$output = stream_get_contents( $pipes[1] );
+		$error  = stream_get_contents( $pipes[2] );
+		fclose( $pipes[1] );
+		fclose( $pipes[2] );
+		$exit_code = proc_close( $process );
+		unlink( $path );
+		// phpcs:enable
+
+		$this->assertSame( 0, $exit_code, $error );
+		$events = json_decode( $output, true );
+		$this->assertSame( 'xmlrpc_authentication', $events[0][0] ?? null );
+		$this->assertSame( 'wp.getUsersBlogs', $events[0][1]['method'] ?? null );
+	}
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
