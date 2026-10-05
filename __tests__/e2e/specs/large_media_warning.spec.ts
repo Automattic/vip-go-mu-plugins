@@ -128,7 +128,7 @@ test.describe( 'Large media upload warning', () => {
 		await modal.confirm();
 		await addImagePromise;
 
-		// addImage waits for the insert button; we then assert the image actually landed in the editor.
+		// addImage resolves after insertion; assert the image actually landed in the editor.
 		const image = page.frameLocator( '#content_ifr' ).locator( '#tinymce img' );
 		await expect( image ).toBeVisible();
 		const renderedUrl = ( await image.getAttribute( 'src' ) )!;

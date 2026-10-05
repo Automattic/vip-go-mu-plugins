@@ -114,7 +114,7 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	 * Test that cron callback is registered properly
 	 */
 	public function test_cron_cleanup_has_callback(): void {
-		$this->assertEquals( 10, has_action( User::CRON_ACTION ) );
+		$this->assertSame( 10, has_action( User::CRON_ACTION, [ User::class, 'do_cron_cleanup' ] ) );
 	}
 
 	public function test__has_vip_support_meta__yep(): void {
