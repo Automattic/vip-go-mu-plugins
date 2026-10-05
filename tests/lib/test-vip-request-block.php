@@ -91,8 +91,10 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 			$this->assertContains( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT', $http_response_header );
 			$this->assertStringNotContainsString( 'BLOCK_DID_NOT_EXIT', $response );
 		} finally {
-			proc_terminate( $server );
-			proc_close( $server );
+			if ( is_resource( $server ) ) {
+				proc_terminate( $server );
+				proc_close( $server );
+			}
 			unlink( $script_path );
 			unlink( $server_log );
 		}
