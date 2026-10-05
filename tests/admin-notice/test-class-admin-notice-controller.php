@@ -99,7 +99,7 @@ class Admin_Notice_Controller_Test extends WP_UnitTestCase {
 			$controller->add( new Admin_Notice( 'hi', [], $identifier ) );
 		}
 
-		
+
 		$deleted = [];
 		self::$mock_global_functions->expects( $this->exactly( count( $expected_deletion ) ) )
 			->method( 'delete_user_meta' )
