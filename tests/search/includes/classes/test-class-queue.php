@@ -499,12 +499,20 @@ class Queue_Test extends WP_UnitTestCase {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 
-		$object_ids = array(
-			'12',
-			'45',
-			'89',
-			'246',
-		);
+		$object_ids = self::factory()->post->create_many( 3, array(
+			'post_status'  => 'publish',
+			'post_title'   => 'Queue indexing title',
+			'post_content' => 'Queue indexing content',
+		) );
+
+		$bulk_requests = array();
+		$capture_bulk  = static function ( $preempt, $args, $url ) use ( &$bulk_requests ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$bulk_requests[] = array( 'url' => $url, 'args' => $args );
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $capture_bulk, 10, 3 );
 
 		// Add some jobs to the queue
 		$this->queue->queue_objects( $object_ids );
@@ -523,7 +531,28 @@ class Queue_Test extends WP_UnitTestCase {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 		$this->queue->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
-		$this->queue->process_jobs( $jobs );
+		try {
+			$this->queue->process_jobs( $jobs );
+		} finally {
+			remove_filter( 'pre_http_request', $capture_bulk, 10 );
+		}
+
+		$this->assertNotEmpty( $bulk_requests, 'Processing must send the documents to Elasticsearch.' );
+		foreach ( $bulk_requests as $request ) {
+			$this->assertSame( $bulk_requests[0]['args']['body'], $request['args']['body'], 'Mirrored requests must index the same documents.' );
+		}
+		$this->assertSame( 'POST', $bulk_requests[0]['args']['method'] );
+		$lines      = preg_split( '/\n+/', trim( $bulk_requests[0]['args']['body'] ) );
+		$index_name = Indexables::factory()->get( 'post' )->get_index_name();
+		$this->assertCount( 2 * count( $object_ids ), $lines );
+		foreach ( $object_ids as $offset => $object_id ) {
+			$action   = json_decode( $lines[ 2 * $offset ], true );
+			$document = json_decode( $lines[ 2 * $offset + 1 ], true );
+			$this->assertSame( $object_id, (int) $action['index']['_id'] );
+			$this->assertStringContainsString( '/' . $index_name . '/', $bulk_requests[0]['url'] );
+			$this->assertSame( 'Queue indexing title', $document['post_title'] );
+			$this->assertSame( 'Queue indexing content', $document['post_content'] );
+		}
 
 		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
