@@ -97,9 +97,6 @@ export class EditorPage {
 	}
 
 	private async editorContent(): Promise<Page | FrameLocator> {
-		const nuisanceTimeout = this.hasDismissedNuisances ? 0 : 1000;
-		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
-
 		const editorCanvas = this.page.locator( selectors.editorCanvas );
 		const editorRoot = this.page.locator( selectors.editorRoot );
 		const visibleEditor = await Promise.race( [
@@ -107,7 +104,8 @@ export class EditorPage {
 			editorRoot.waitFor( { state: 'visible' } ).then( () => 'page' as const ).catch( () => undefined ),
 		] );
 
-		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
+		// The welcome guide and pattern modal open once the editor has rendered, so only wait for them on first use.
+		await EditorPage.dismissAnnoyingNuisances( this.page, this.hasDismissedNuisances ? 0 : 1000 );
 		this.hasDismissedNuisances = true;
 
 		if ( 'iframe' === visibleEditor || await editorCanvas.isVisible() ) {
@@ -168,10 +166,6 @@ export class EditorPage {
 	private static async dismissAnnoyingNuisances( page: Page, timeout = 0 ): Promise<void> {
 		await EditorPage.clickIfVisible( page, selectors.welcomeTourCloseButton, timeout );
 		await EditorPage.clickIfVisible( page, selectors.choosePatternCloseButton, timeout );
-	}
-
-	public static automaticallyDismissAnnoyingNuisances( page: Page ): Promise<void> {
-		return EditorPage.dismissAnnoyingNuisances( page, 1000 );
 	}
 
 	/**
@@ -298,10 +292,21 @@ export class EditorPage {
 	}
 
 	/**
-	 * Updates the post or page.
+	 * Updates the post or page and waits until the changes are saved.
 	 */
-	public update(): Promise<void> {
-		return this.page.locator( selectors.updateButton ).click();
+	public async update(): Promise<void> {
+		const saveResponse = this.page.waitForResponse( ( response ) => {
+			const { pathname, searchParams } = new URL( response.url() );
+			const route = searchParams.get( 'rest_route' ) ?? pathname;
+			return [ 'POST', 'PUT' ].includes( response.request().method() ) && /\/wp\/v2\/(?:posts|pages)\/\d+$/.test( route );
+		} );
+
+		await this.page.locator( selectors.updateButton ).click();
+
+		const response = await saveResponse;
+		if ( ! response.ok() ) {
+			throw new Error( `Failed to save changes. HTTP error: ${ response.status() }` );
+		}
 	}
 
 	/**

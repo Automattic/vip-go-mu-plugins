@@ -36,11 +36,14 @@ export class SettingsWritingPage {
 	}
 
 	/**
-	 * Select settings to allow either block or classic editor
+	 * Select settings to allow either block or classic editor, and wait until they are saved
 	 */
 	public async allowBothEditors(): Promise<void> {
 		await this.page.locator( selectors.classicEditorBlock ).click();
 		await this.page.locator( selectors.classicEditorAllow ).click();
-		await this.page.locator( selectors.saveButton ).click();
+		await Promise.all( [
+			this.page.waitForURL( /[?&]settings-updated=true/ ),
+			this.page.locator( selectors.saveButton ).click(),
+		] );
 	}
 }
