@@ -620,7 +620,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			unset( $GLOBALS['current_user'] );
 			$this->assertSame( $user_id, get_current_user_id() );
 			$server = new \WP_REST_Server();
-			$this->assertNull( $server->check_authentication() );
+			$this->assertContains( $server->check_authentication(), [ null, true ], 'WordPress accepts either null or true for successful REST authentication.' );
 
 			$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
 			unset( $GLOBALS['current_user'] );
