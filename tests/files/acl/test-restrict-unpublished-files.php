@@ -176,46 +176,38 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
 	}
 
-	public function test__get_attachment_id_from_file_path__attachment_multiple_results_first_in_list() {
-		// Set up the first attachment.
-		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-
-		// Create a second attachment with the same file path.
-		$duplicate_attachment_id   = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
-		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', $duplicate_attachment_file );
-
-		// Look up the first one in the list.
-		$expected_attachment_id = $attachment_id;
-		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path        = wp_parse_url( $attachment_src, PHP_URL_PATH );
-		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
-
-		// Run the test.
-		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
-
-		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	/**
+	 * Cover exact case matches and the first-candidate fallback.
+	 */
+	public function duplicate_path_cases(): array {
+		return [
+			'exact first'  => [ '2026/10/shared-file.jpg', false ],
+			'exact second' => [ '2026/10/SHARED-FILE.JPG', true ],
+			'no exact'     => [ '2026/10/Shared-File.jpg', false ],
+		];
 	}
 
-	public function test__get_attachment_id_from_file_path__attachment_multiple_results_exact_match_first() {
-		// Set up the first attachment.
-		$this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-
-		// Create a second attachment with the same file path.
-		$duplicate_attachment_id   = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
-		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', strtoupper( $duplicate_attachment_file ) );
-
-		// Look up the second one in the list.
-		$expected_attachment_id = $duplicate_attachment_id;
-		list( $attachment_src ) = wp_get_attachment_image_src( $expected_attachment_id, 'full' );
-		$attachment_path        = wp_parse_url( $attachment_src, PHP_URL_PATH );
-		$attachment_path        = $this->strip_wpcontent_uploads( $attachment_path );
-
-		// Run the test.
-		$actual_attachment_id = get_attachment_id_from_file_path( $attachment_path );
-
-		$this->assertEquals( $expected_attachment_id, $actual_attachment_id );
+	/**
+	 * Verify the real case-insensitive SQL returns both attachment candidates.
+	 *
+	 * @dataProvider duplicate_path_cases
+	 */
+	public function test_duplicate_attachment_path_selection( string $query_path, bool $select_second ): void {
+		global $wpdb;
+		$first_id  = self::factory()->post->create( [ 'post_type' => 'attachment' ] );
+		$second_id = self::factory()->post->create( [ 'post_type' => 'attachment' ] );
+		update_post_meta( $first_id, '_wp_attached_file', '2026/10/shared-file.jpg' );
+		update_post_meta( $second_id, '_wp_attached_file', '2026/10/SHARED-FILE.JPG' );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Confirm the production SQL fixture shape.
+		$rows = $wpdb->get_results( $wpdb->prepare(
+			"SELECT post_id, meta_value FROM $wpdb->postmeta WHERE meta_key = '_wp_attached_file' AND meta_value = %s",
+			$query_path
+		) );
+		$this->assertCount( 2, $rows, 'The lookup must exercise multiple case-insensitive matches.' );
+		$this->assertSame( [ $first_id, $second_id ], array_map( static function ( $row ) {
+			return (int) $row->post_id;
+		}, $rows ) );
+		$this->assertSame( $select_second ? $second_id : $first_id, (int) get_attachment_id_from_file_path( $query_path ) );
 	}
 
 	private function strip_wpcontent_uploads( $path ) {
