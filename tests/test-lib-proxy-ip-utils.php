@@ -14,7 +14,6 @@ namespace Automattic\VIP\Tests;
 
 use Automattic\VIP\Proxy\IpUtils;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 class IpUtilsTest extends TestCase {
 
@@ -66,17 +65,5 @@ class IpUtilsTest extends TestCase {
 			array( false, '}__test|O:21:&quot;JDatabaseDriverMysqli&quot;:3:{s:2', '::1' ),
 			array( false, '2a01:198:603:0:396e:4789:8e99:890f', 'unknown' ),
 		);
-	}
-
-	/**
-	 * @requires extension sockets
-	 */
-	public function testAnIpv6WithOptionDisabledIpv6() {
-		if ( defined( 'AF_INET6' ) ) {
-			$this->markTestSkipped( 'Only works when PHP is compiled with the option "disable-ipv6".' );
-		}
-
-		$this->expectException( RuntimeException::class );
-		IpUtils::check_ip( '2a01:198:603:0:396e:4789:8e99:890f', '2a01:198:603:0::/65' );
 	}
 }

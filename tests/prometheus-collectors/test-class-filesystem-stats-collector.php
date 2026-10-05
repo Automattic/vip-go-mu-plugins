@@ -80,17 +80,19 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 
 	public function test_record_write_without_initialize_is_noop(): void {
 		// No initialize() this test; tearDown nulled the static handle.
+		$this->expectNotToPerformAssertions(); // Reaching the end means no error/exception.
+
 		Filesystem_Stats_Collector::record_write( 1024, 'wp-content/uploads/a.jpg' );
-		$this->assertTrue( true ); // Reaching here means no error/exception.
 	}
 
 	public function test_record_write_swallows_observe_exception(): void {
 		[ , $histogram ] = $this->init_with_histogram_spy();
-		$histogram->method( 'observe' )->willThrowException( new \RuntimeException( 'boom' ) );
+		$histogram->expects( $this->once() )
+			->method( 'observe' )
+			->willThrowException( new \RuntimeException( 'boom' ) );
 
 		// Must not throw.
 		Filesystem_Stats_Collector::record_write( 1024, 'wp-content/uploads/a.jpg' );
-		$this->assertTrue( true );
 	}
 
 	/**

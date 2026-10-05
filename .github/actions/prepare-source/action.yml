@@ -8,6 +8,7 @@ runs:
       with:
         repository: 'Automattic/vip-go-mu-plugins-ext'
         path: 'vip-go-mu-plugins-ext'
+        persist-credentials: false
 
     - name: Copy plugins into the source tree
       shell: bash
@@ -15,5 +16,6 @@ runs:
 
     - name: Clean up
       shell: bash
-      run: rm -rf vip-go-mu-plugins-ext
+      # Moving the checkout out of the workspace is a rename on the same disk; `rm -rf` took 10-14s.
+      run: mv vip-go-mu-plugins-ext "${RUNNER_TEMP}/"
 
