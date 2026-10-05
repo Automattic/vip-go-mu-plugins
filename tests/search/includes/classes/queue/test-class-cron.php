@@ -14,6 +14,7 @@ require_once __DIR__ . '/../trait-es-http-mock.php';
 
 class Cron_Test extends WP_UnitTestCase {
 	use \Automattic\VIP\Search\ES_HTTP_Mock;
+
 	/** @var Search */
 	private $es;
 
