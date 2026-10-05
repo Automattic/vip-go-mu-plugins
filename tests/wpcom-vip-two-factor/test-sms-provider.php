@@ -300,16 +300,20 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 	}
 
 	public function test_twilio_verify_generate_and_send_token_failure_invalid_phone(): void {
-		$user = $this->setup_user_with_phone( 'invalid-phone' );
-		$this->add_http_response_mock( $this->create_failed_twilio_sms_response( 400, 21211, 'Invalid phone number format' ) );
+		// Only well-formed Qatar numbers reach the Verify strategy, so Twilio Verify is the one rejecting the number.
+		$user = $this->setup_user_with_phone( '+97470000000' );
+		$this->add_http_response_mock( $this->create_failed_twilio_sms_response( 400, 60200, 'Invalid parameter `To`: +97470000000' ) );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
+		$this->assertInstanceOf( Two_Factor_Twilio_Verify_API::class, $strategy );
 		$this->assertFalse( $strategy->has_pending_metadata(), 'Should have no pending metadata initially' );
 
 		$result = Two_Factor_SMS::get_instance()->generate_and_send_token( $user );
 
 		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertEquals( 'verification_failed', $result->get_error_code() );
+		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/VAf7cfbffb441b4ac785b76646020688c0/Verifications' );
 
 		// Verify API doesn't store on failure
 		$this->assertEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ), 'Verification SID should not be stored in user meta after failed operation' );

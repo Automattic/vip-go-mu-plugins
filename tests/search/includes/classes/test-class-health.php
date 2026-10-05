@@ -1040,7 +1040,7 @@ class Health_Test extends WP_UnitTestCase {
 				),
 				// Options
 				array(
-					'version_number' => 2,
+					'index_version' => 2,
 				),
 				// Expected diff
 				array(
@@ -1055,7 +1055,6 @@ class Health_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_index_settings_diff_for_indexable_data
-	 * @processIsolation true
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
 		$index_name = 'vip-123-post-1';
@@ -1078,6 +1077,10 @@ class Health_Test extends WP_UnitTestCase {
 		$mocked_indexable->method( 'index_exists' )->willReturn( true );
 		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
 
+		$mock_search->versioning->expects( isset( $options['index_version'] ) ? $this->once() : $this->never() )
+			->method( 'set_current_version_number' )
+			->with( $mocked_indexable, $options['index_version'] ?? null );
+
 		/** @var Elasticsearch&MockObject */
 		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
 			->onlyMethods( [ 'get_index_settings' ] )
@@ -1086,29 +1089,27 @@ class Health_Test extends WP_UnitTestCase {
 		$health->elasticsearch->method( 'get_index_settings' )
 			->willReturn( [
 				'vip-123-post-1' => [
-					'settings' => [
-						$actual,
-					],
+					'settings' => $actual,
 				],
 			] );
 
 		$mocked_indexable->method( 'generate_mapping' )
 			->willReturn( [
-				'settings' => [ $desired ],
+				'settings' => $desired,
 			] );
 
 		$actual_result = $health->get_index_settings_diff_for_indexable( $mocked_indexable, $options );
 
 		$expected_result = [];
-		if ( ! empty( $actual_result ) ) {
+		if ( ! empty( $expected_diff ) ) {
 			$expected_result = [
 				'diff'          => $expected_diff,
-				'index_version' => 1,
+				'index_version' => $options['index_version'] ?? 1,
 				'index_name'    => $index_name,
 			];
 		}
 
-		$this->assertEquals( $actual_result, $expected_result );
+		$this->assertEquals( $expected_result, $actual_result );
 	}
 
 	public function test_get_index_settings_diff_for_indexable_without_index() {
@@ -1333,7 +1334,6 @@ class Health_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider heal_index_settings_for_indexable_data
-	 * @processIsolation true
 	 */
 	public function test_heal_index_settings_for_indexable( $desired_settings, $options ) {
 		$index_name = 'foo-index-name';

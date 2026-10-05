@@ -141,15 +141,19 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 
 	public function get_test_data__clean_file_path() {
 		return [
-			'dirty path' => [
+			'dirty path'                  => [
 				'vip://wp-content/uploads/vip://wp-content/uploads/2019/01/IMG_4115.jpg?resize=768,768',
 				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+			],
+			'clean path'                  => [
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+			],
+			'relative path with query'    => [
 				'wp-content/uploads/2019/01/foo.jpg?resize=100,100',
 				'wp-content/uploads/2019/01/foo.jpg',
 			],
-			'clean path' => [
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
-				'vip://wp-content/uploads/2019/01/IMG_4115.jpg',
+			'relative path without query' => [
 				'wp-content/uploads/2019/01/foo.jpg',
 				'wp-content/uploads/2019/01/foo.jpg',
 			],
@@ -251,6 +255,9 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		// We don't have a test-specific wrapper that we can fall back to.
 		$remove_filters = self::get_method( 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
+
+		// Only the original file's size matters here; skip slow intermediate size generation.
+		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
 
 		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
