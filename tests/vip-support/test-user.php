@@ -111,6 +111,73 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Allowed company addresses require current ownership verification.
+	 */
+	public function test_unverified_and_changed_company_email_are_not_trusted(): void {
+		$user     = $this->factory()->user->create_and_get( [ 'user_email' => 'owner@automattic.com' ] );
+		$instance = User::init();
+		$this->assertFalse( $instance->is_verified_automattician( $user->ID ) );
+		$instance->mark_user_email_verified( $user->ID, $user->user_email );
+		$this->assertTrue( $instance->is_verified_automattician( $user->ID ) );
+		wp_update_user( [
+			'ID'         => $user->ID,
+			'user_email' => 'changed@automattic.com',
+		] );
+		$this->assertFalse( $instance->is_verified_automattician( $user->ID ) );
+	}
+
+	/**
+	 * A verification link requires its owner, a proxy request and the correct signature.
+	 *
+	 * @dataProvider data_verification_link
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_real_verification_link_denials_and_promotion( string $variant ): void {
+		Role::init()->maybe_upgrade_version();
+		$user     = $this->factory()->user->create_and_get( [
+			'user_email' => 'link-owner@automattic.com',
+			'role'       => Role::VIP_SUPPORT_INACTIVE_ROLE,
+		] );
+		$instance = User::init();
+		// Seed a pending challenge as the email sender does, independently sign its link.
+		$code = 'test-pending-email-code';
+		update_user_meta( $user->ID, User::META_VERIFICATION_DATA, [
+			'email' => $user->user_email,
+			'code'  => $code,
+			'touch' => time(),
+		] );
+		$hash = wp_hash( $user->ID . $code . $user->user_email );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Preserve request fixture state.
+		$original_get = $_GET;
+		try {
+				$_GET[ User::GET_EMAIL_USER_LOGIN ] = $user->user_login;
+				$_GET[ User::GET_EMAIL_VERIFY ]     = 'wrong signature' === $variant ? 'wrong-hash' : $hash;
+				wp_set_current_user( 'wrong owner' === $variant ? 0 : $user->ID );
+				Constant_Mocker::clear();
+				\define( __NAMESPACE__ . '\\A8C_PROXIED_REQUEST', 'unproxied' !== $variant );
+			try {
+				$instance->action_parse_request();
+				$this->fail( 'Expected verification response.' );
+			} catch ( \WPDieException $error ) {
+				$this->assertStringContainsString( 'valid' === $variant ? 'Your email has been verified' : ( 'unproxied' === $variant ? 'please proxy' : 'This email verification link' ), $error->getMessage() );
+			}
+				$this->assertSame( 'valid' === $variant, $instance->is_verified_automattician( $user->ID ) );
+				$this->assertSame( 'valid' === $variant, User::user_has_vip_support_role( $user->ID ) );
+		} finally {
+			$_GET = $original_get;
+			wp_set_current_user( 0 );
+		}
+	}
+
+	/**
+	 * Supply a valid link plus each independent ownership boundary denial.
+	 */
+	public function data_verification_link(): array {
+		return [ [ 'wrong owner' ], [ 'unproxied' ], [ 'wrong signature' ], [ 'valid' ] ];
+	}
+
+	/**
 	 * Test that cron callback is registered properly
 	 */
 	public function test_cron_cleanup_has_callback(): void {
