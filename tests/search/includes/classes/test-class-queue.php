@@ -8,6 +8,7 @@ use ElasticPress\Indexable\User\User;
 use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
+use WP_Error;
 use WP_UnitTestCase;
 use wpdb;
 
@@ -24,8 +25,14 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var SyncManager */
 	private $sync_manager;
 
+	/** @var int HTTP status the mocked Elasticsearch returns for index_exists requests */
+	private $index_exists_status = 200;
+
 	public function setUp(): void {
 		parent::setUp();
+
+		// Answer Elasticsearch requests locally so VIP's ep_do_intercept_request handler never hits the network
+		add_filter( 'pre_http_request', [ $this, 'mock_elasticsearch_http_request' ], 10, 3 );
 
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
@@ -45,7 +52,8 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->schema->prepare_table();
 		$this->queue->empty_queue();
 
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		// When test-class-search.php is loaded, its wp_remote_request() shim in this namespace bypasses pre_http_request, so pin the final response too
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request' ], PHP_INT_MAX, 5 );
 
 		$indexable          = Indexables::factory()->get( 'post' );
 		$this->sync_manager = $indexable->sync_manager;
@@ -330,12 +338,16 @@ class Queue_Test extends WP_UnitTestCase {
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertNotEquals( '2020-01-01 00:00:00', $job->start_time );
 
-		$this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+		$updated = $this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+
+		$this->assertSame( 1, $updated );
 
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertEquals( '2020-01-01 00:00:00', $job->start_time );
 	}
 
 	public function test_update_jobs() {
@@ -1262,7 +1274,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( "{$filter} should be an integer.", $messages );
 	}
 
 	/**
@@ -1277,7 +1291,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_low_message, $messages );
 	}
 
 	/**
@@ -1296,7 +1312,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_high_message, $messages );
 	}
 
 	public function test__log_index_ratelimiting_start() {
@@ -1320,8 +1338,7 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__no_index_queueing() {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX, 5 );
+		$this->index_exists_status = 404;
 
 		$result = $this->queue->queue_object( 1000, 'post' );
 		$this->assertWPError( $result );
@@ -1334,17 +1351,39 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 		$result     = $this->queue->queue_objects( $object_ids );
 		$this->assertNull( $result );
-
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX );
 	}
 
 	/**
-	 * We need to fake the OK response from the ES server to avoid the actual request.
+	 * Fake Elasticsearch at the HTTP layer: index_exists (HEAD) requests get $index_exists_status, anything else fails without network I/O.
 	 */
-	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
+	public function mock_elasticsearch_http_request( $preempt, $args, $url ) {
+		if ( ! str_starts_with( $url, 'https://elasticsearch:9200/' ) ) {
+			return $preempt;
+		}
+
+		if ( 'HEAD' === ( $args['method'] ?? '' ) ) {
+			return [
+				'headers'  => [],
+				'body'     => '',
+				'response' => [
+					'code'    => $this->index_exists_status,
+					'message' => get_status_header_desc( $this->index_exists_status ),
+				],
+				'cookies'  => [],
+				'filename' => null,
+			];
+		}
+
+		return new WP_Error( 'http_request_failed', 'Unexpected Elasticsearch request in tests: ' . $url );
+	}
+
+	/**
+	 * Force the final index_exists response to $index_exists_status.
+	 */
+	public function filter_index_exists_request( $request, $query, $args, $failures, $type ) {
 		if ( 'index_exists' === $type ) {
 			return [
-				'response' => [ 'code' => 200 ],
+				'response' => [ 'code' => $this->index_exists_status ],
 				'body'     => [],
 			];
 		}
@@ -1352,16 +1391,19 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * We need to fake the bad response from the ES server to avoid the actual request.
+	 * Collects the messages passed to _doing_it_wrong() while running the callback.
 	 */
-	public function filter_index_exists_request_bad( $request, $query, $args, $failures, $type ) {
-		if ( 'index_exists' === $type ) {
-			return [
-				'response' => [ 'code' => 404 ],
-				'body'     => [],
-			];
-		}
-		return $request;
+	private function get_doing_it_wrong_messages( callable $callback ): array {
+		$messages = [];
+		$listener = function ( $function_name, $message ) use ( &$messages ) {
+			$messages[] = $message;
+		};
+
+		add_action( 'doing_it_wrong_run', $listener, 10, 2 );
+		$callback();
+		remove_action( 'doing_it_wrong_run', $listener, 10 );
+
+		return $messages;
 	}
 
 	/**

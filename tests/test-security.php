@@ -274,6 +274,18 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test_create_admin_user() {
+		global $wpdb;
+
+		// The installer's admin account would make core reject the login as a duplicate, masking the VIP restriction.
+		$installer_admin = get_user_by( 'login', 'admin' );
+		if ( $installer_admin ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
+			$wpdb->update( $wpdb->users, [ 'user_login' => 'installer-admin' ], [ 'ID' => $installer_admin->ID ] );
+			clean_user_cache( $installer_admin );
+		}
+
+		$this->assertFalse( username_exists( 'admin' ) );
+
 		$result = wp_insert_user( [
 			'user_login' => 'admin',
 			'user_email' => 'admin@example.com',
@@ -281,6 +293,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		] );
 
 		$this->assertWPError( $result );
+		$this->assertSame( 'invalid_username', $result->get_error_code() );
 	}
 
 	/**
