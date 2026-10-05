@@ -119,7 +119,7 @@ class Query_Warning {
 			}
 
 			$technical = $this->technical_message( $warning_id, $types, $context, $window );
-			$human     = $this->human_message( $warning_id, $types, $context, $window );
+			$human     = 'VIP_SEARCH_QUERY_WARNING: ' . $this->human_message( $warning_id, $types, $context, $window );
 
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional customer-visible plain-text warning; dynamic values are sanitized during formatting.
 			trigger_error( $technical, E_USER_WARNING );

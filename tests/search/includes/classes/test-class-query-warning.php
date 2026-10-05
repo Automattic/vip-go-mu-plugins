@@ -154,7 +154,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 			str_replace( $id, 'VSQ-TEST000', $this->warnings[0] )
 		);
 		$this->assertSame(
-			'A request to https://example.com/search/?category=events triggered a potentially expensive VIP Search query originating from wp-content/plugins/acme/search.php:81. Elasticsearch took 493 ms to execute the query, above the configured warning threshold of 200 ms. The query also did not contain a limiting search condition. An unbounded query may search the entire index and become more expensive as the site grows. Review the query and add an appropriate search term or filter. Similar occurrences are deduplicated for five minutes, so this warning may represent repeated requests. Warning ID: VSQ-TEST000.',
+			'VIP_SEARCH_QUERY_WARNING: A request to https://example.com/search/?category=events triggered a potentially expensive VIP Search query originating from wp-content/plugins/acme/search.php:81. Elasticsearch took 493 ms to execute the query, above the configured warning threshold of 200 ms. The query also did not contain a limiting search condition. An unbounded query may search the entire index and become more expensive as the site grows. Review the query and add an appropriate search term or filter. Similar occurrences are deduplicated for five minutes, so this warning may represent repeated requests. Warning ID: VSQ-TEST000.',
 			str_replace( $id, 'VSQ-TEST000', $this->warnings[1] )
 		);
 	}
@@ -169,6 +169,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 		wp_cache_flush();
 		$unbounded = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
 		$unbounded->maybe_emit( [], $this->response( 10, 2, 2 ), 50.0, $this->customer_backtrace() );
+		$this->assertStringStartsWith( 'VIP_SEARCH_QUERY_WARNING: ', $this->warnings[1] );
 		$this->assertStringContainsString( 'triggered an unbounded VIP Search query', $this->warnings[1] );
 		$this->assertStringNotContainsString( 'above the configured warning threshold', $this->warnings[1] );
 	}
