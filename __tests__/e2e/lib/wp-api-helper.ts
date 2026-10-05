@@ -5,9 +5,9 @@ import { APIRequestContext, APIResponse } from '@playwright/test';
 
 type PostType = 'post' | 'page';
 interface PostData {
-    postType: PostType;
-    title: string;
-    body: string;
+	postType: PostType;
+	title: string;
+	body: string;
 }
 
 /**

@@ -15,9 +15,9 @@ test( 'publish a Page', async ( { page } ) => {
 	let classicEditorPage: ClassicEditorPage;
 	const titleText = DataHelper.getRandomPhrase();
 	const bodyText =
-        '"Be who you are and say what you feel, because \n' +
-        'those who mind don’t matter and those who matter don’t mind." \n' +
-        '– Bernard M. Baruch';
+		'"Be who you are and say what you feel, because \n' +
+		'those who mind don’t matter and those who matter don’t mind." \n' +
+		'– Bernard M. Baruch';
 
 	// eslint-disable-next-line playwright/no-skipped-test
 	test.skip( process.env.E2E_CLASSIC_TESTS === 'false', 'Classic Tests skipped, plugin not installed' );
