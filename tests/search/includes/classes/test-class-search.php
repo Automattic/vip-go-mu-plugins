@@ -2807,6 +2807,34 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertArrayHasKey( 'raw', $filtered['mappings']['properties']['post_content']['fields'], 'post_content.raw field should be kept' );
 	}
 
+	public function test__filter__ep_post_mapping_removes_fields_key_when_only_ngram_field_exists() {
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(),
+			'mappings' => array(
+				'properties' => array(
+					'post_content' => array(
+						'type'   => 'text',
+						'fields' => array(
+							'ngram' => array(
+								'type'            => 'text',
+								'analyzer'        => 'ep_ngram',
+								'search_analyzer' => 'ep_ngram_search',
+							),
+						),
+					),
+				),
+			),
+		);
+
+		$filtered = apply_filters( 'ep_post_mapping', $mapping );
+
+		$this->assertSame( array( 'type' => 'text' ), $filtered['mappings']['properties']['post_content'], 'post_content.fields should be removed when no fields are left' );
+	}
+
 	public function test__filter__ep_post_mapping_strips_ngram_field_when_no_fields_exist() {
 		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
 		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
