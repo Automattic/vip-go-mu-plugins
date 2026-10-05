@@ -43,7 +43,7 @@ class Get_Proxy_Verification_Key_Test extends TestCase {
 
 		$actual_key = get_proxy_verification_key();
 
-		$this->assertTrue( is_string( $actual_key ) );
+		$this->assertSame( '1234', $actual_key );
 	}
 
 	public function test__defined() {
