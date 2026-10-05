@@ -114,7 +114,13 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_active_loads_the_activated_integration(): void {
 		$integrations = new Integrations();
 
-		$integration = new FakeIntegration( 'fake' );
+		/** @var MockObject&FakeIntegration */
+		$integration = $this->getMockBuilder( FakeIntegration::class )
+			->setConstructorArgs( [ 'fake' ] )
+			->onlyMethods( [ 'load' ] )
+			->getMock();
+		$integration->expects( $this->once() )->method( 'load' );
+
 		$integrations->register( $integration );
 		$integrations->activate( 'fake' );
 		$integrations->load_active();
@@ -124,7 +130,13 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__load_active_does_not_loads_the_non_activated_integration(): void {
 		$integrations = new Integrations();
-		$integration  = new FakeIntegration( 'fake' );
+
+		/** @var MockObject&FakeIntegration */
+		$integration = $this->getMockBuilder( FakeIntegration::class )
+			->setConstructorArgs( [ 'fake' ] )
+			->onlyMethods( [ 'load' ] )
+			->getMock();
+		$integration->expects( $this->never() )->method( 'load' );
 
 		$integrations->register( $integration );
 		$integrations->load_active();

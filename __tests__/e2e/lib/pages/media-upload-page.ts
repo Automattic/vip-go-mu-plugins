@@ -2,7 +2,6 @@ import type { Page } from '@playwright/test';
 
 const selectors = {
 	selectFilesButton: '#plupload-browse-button',
-	attachedMediaDetails: '.attachment-details',
 	copyURLButton: '.copy-attachment-url',
 };
 

@@ -2,10 +2,6 @@
 
 use PHPUnit\Framework\TestCase;
 
-/**
- * @runInSeparateProcess
- * @preserveGlobalState disabled
- */
 class PluginFixesPatchTest extends TestCase {
 
 	public function setUp(): void {

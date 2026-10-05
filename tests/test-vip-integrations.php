@@ -15,6 +15,22 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 class VIP_Integrations_Plugin_Test extends WP_UnitTestCase {
+	/** @var Integrations|null */
+	private $original_integrations;
+
+	public function setUp(): void {
+		parent::setUp();
+
+		$this->original_integrations = get_class_property_as_public( IntegrationsSingleton::class, 'instance' )->getValue();
+	}
+
+	public function tearDown(): void {
+		// Don't leak the mocked singleton into other tests.
+		get_class_property_as_public( IntegrationsSingleton::class, 'instance' )->setValue( null, $this->original_integrations );
+
+		parent::tearDown();
+	}
+
 	public function test_activate_function_is_calling_the_activate_method_from_integrations_class(): void {
 		$integrations_mock = $this->getMockBuilder( Integrations::class )->onlyMethods( [ 'activate' ] )->getMock();
 		$integrations_mock->expects( $this->once() )->method( 'activate' )->with( $this->equalTo( 'test-slug' ), $this->equalTo( [ 'test-key' => 'test-value' ] ) );

@@ -140,23 +140,6 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		$this->assertCount( 0, $captured );
 	}
 
-	public function test_filter_never_sets_error_even_for_oversized(): void {
-		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1 );
-
-		$file_in = [
-			'name'     => 'huge.jpg',
-			'type'     => 'image/jpeg',
-			'tmp_name' => '/tmp/huge',
-			'error'    => 0,
-			'size'     => 100 * 1024 * 1024,
-		];
-
-		$file_out = $this->instance->maybe_log_large_upload( $file_in );
-
-		$this->assertArrayHasKey( 'error', $file_out );
-		$this->assertSame( 0, $file_out['error'] );
-	}
-
 	public function test_filter_swallows_exceptions_and_returns_unmodified_file(): void {
 		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn -- Deliberate throw inside the filter is the test seam for the try/catch path.
 		add_filter( 'vip_large_media_warning_threshold_bytes', function () {

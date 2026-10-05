@@ -413,7 +413,9 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 			2
 		);
 
-		$this->factory()->blog->create();
+		// On a subsite, paths outside `sites/<id>/` are only valid because of the filter.
+		$subsite_id = $this->factory()->blog->create();
+		switch_to_blog( $subsite_id );
 
 		$file_path = 'custom-uploads/parakeets.gif';
 

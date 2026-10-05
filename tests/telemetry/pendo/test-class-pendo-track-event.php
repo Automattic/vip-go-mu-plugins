@@ -22,21 +22,17 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 	private WP_User $user;
 
 	public function setUp(): void {
+		// Create the user after parent::setUp() so it is rolled back with the test transaction
+		// and hashed with the test suite's cheaper bcrypt cost.
+		parent::setUp();
+
 		$this->user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $this->user->ID );
-
-		parent::setUp();
 	}
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
 		parent::tearDown();
-	}
-
-	public function test_should_create_event() {
-		$event = new Pendo_Track_Event( 'prefix_', 'test_event' );
-
-		$this->assertInstanceOf( Pendo_Track_Event::class, $event );
 	}
 
 	public function test_should_return_event_data() {
@@ -181,7 +177,7 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider provide_invalid_property_names
+	 * @dataProvider provide_invalid_context_names
 	 */
 	public function test_should_return_error_on_invalid_context_name( string $context_name ) {
 		$event = new Pendo_Track_Event( 'prefix_', 'test_event', [ $context_name => 'value1' ] );

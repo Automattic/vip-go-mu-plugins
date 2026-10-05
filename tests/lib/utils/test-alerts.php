@@ -150,6 +150,7 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_details() {
 		return [
 			'invalid-type' => [ 'string' ],
+			'empty-array'  => [ [] ],
 			'missing-keys' => [
 				[
 					'alias'       => 'test/alert',
@@ -234,7 +235,18 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_pagerduty_details() {
 		return [
 			'invalid-type'             => [ 'string' ],
-			'missing-keys'             => [ [ 'source' => 'test' ] ],
+			'empty-array'              => [ [] ],
+			'missing-keys'              => [ [ 'source' => 'test' ] ],
+			'missing-severity'          => [
+				[
+					'source' => 'test',
+				],
+			],
+			'missing-source'            => [
+				[
+					'severity' => 'critical',
+				],
+			],
 			'empty-keys'               => [
 				[
 					'severity' => '',
@@ -273,6 +285,20 @@ class Alerts_Test extends WP_UnitTestCase {
 		$result = $alerts->validate_pagerduty_details( $details );
 
 		$this->assertWPError( $result );
+		$this->assertEquals( 'invalid-pagerduty-details', $result->get_error_code(), 'Wrong error code' );
+	}
+
+	public function test__validate_pagerduty_details__required_keys_only() {
+		$details = [
+			'severity' => 'warning',
+			'source'   => 'test',
+		];
+
+		$alerts = Testable_Alerts::instance();
+
+		$result = $alerts->validate_pagerduty_details( $details );
+
+		$this->assertEquals( $details, $result );
 	}
 
 	public function test__validate_pagerduty_details() {

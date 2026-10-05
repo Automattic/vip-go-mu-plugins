@@ -72,7 +72,7 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 		$data = [
 			'post_title'   => 'Test Attachment',
 			'post_content' => 'No strings attached',
-			'post_author'  => 1,
+			'post_author'  => self::$user_id,
 		];
 
 		$att_id = wp_insert_attachment( $data, false, 0 );

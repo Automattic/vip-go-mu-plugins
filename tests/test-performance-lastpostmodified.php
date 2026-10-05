@@ -38,10 +38,10 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 	public function test__transition_post_status__ignore_non_public_post_type() {
 		$before                = did_action( 'wpcom_vip_bump_lastpostmodified' );
 		$this->post->post_type = 'book';
-		$after                 = did_action( 'wpcom_vip_bump_lastpostmodified' );
 
 		\wp_transition_post_status( 'publish', 'publish', $this->post );
 
+		$after = did_action( 'wpcom_vip_bump_lastpostmodified' );
 		$this->assertEquals( 0, $after - $before );
 	}
 
