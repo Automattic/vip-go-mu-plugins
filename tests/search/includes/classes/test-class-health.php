@@ -1325,7 +1325,7 @@ class Health_Test extends WP_UnitTestCase {
 				),
 				// Options
 				array(
-					'version_number' => 2,
+					'index_version' => 2,
 				),
 			),
 		);
@@ -1336,71 +1336,47 @@ class Health_Test extends WP_UnitTestCase {
 	 * @processIsolation true
 	 */
 	public function test_heal_index_settings_for_indexable( $desired_settings, $options ) {
-		$index_name = 'foo-index-name';
-		// Mock search and the versioning instance
-		/** @var Search&MockObject */
-		$mock_search = $this->createMock( Search::class );
-
-		/** @var Versioning&MockObject */
-		$versioning = $this->getMockBuilder( Versioning::class )
-			->enableProxyingToOriginalMethods()
-			->onlyMethods( [ 'get_current_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
-			->getMock();
-
-		/** @var Versioning&MockObject */
-		$mock_search->versioning = $versioning;
-
-		// If we're healing a specific version, make sure we actually switch
-		if ( isset( $options['index_version'] ) ) {
-			$mock_search->versioning->expects( $this->once() )
-				->method( 'set_current_version_number' )
-				->with( $options['index_version'] );
-
-			$mock_search->versioning->expects( $this->once() )
-				->method( 'reset_current_version_number' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
+		$indexable = $this->getMockBuilder( \ElasticPress\Indexable\Post\Post::class )
+			->onlyMethods( array( 'generate_mapping' ) )->getMock();
+		$indexable->method( 'generate_mapping' )->willReturn( array( 'settings' => $desired_settings ) );
+		$versioning = $this->search_instance->versioning;
+		$versioning->update_versions( $indexable, array(
+			1 => array(
+				'number' => 1,
+				'active' => true,
+			),
+			2 => array(
+				'number' => 2,
+				'active' => false,
+			),
+		) );
+		$prior_name     = $indexable->get_index_name();
+		$target_version = $options['index_version'] ?? 1;
+		$versioning->set_current_version_number( $indexable, $target_version );
+		$target_name = $indexable->get_index_name();
+		$versioning->reset_current_version_number( $indexable );
+		if ( 2 === $target_version ) {
+			$this->assertNotSame( $prior_name, $target_name );
 		}
 
-		$versioning->method( 'get_current_version_number' )->willReturn( $options['index_version'] ?? 1 );
-
-		$health = new Health( $mock_search );
-
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
-
-		$mocked_indexable->slug = 'post';
-
-		$mocked_indexable->method( 'get_index_name' )
-			->willReturn( $index_name );
-
-		$mocked_indexable->method( 'generate_mapping' )
-			->willReturn( [ 'settings' => $desired_settings ] );
-
-		/** @var Elasticsearch&MockObject */
-		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
-			->onlyMethods( [ 'update_index_settings' ] )
-			->getMock();
-
-		$health->elasticsearch->method( 'update_index_settings' )
-			->willReturn( true );
-
-		// Expected updated settings
+		$health                    = new Health( $this->search_instance );
+		$health->elasticsearch     = $this->getMockBuilder( Elasticsearch::class )
+			->onlyMethods( array( 'update_index_settings' ) )->getMock();
 		$expected_updated_settings = Health::limit_index_settings_to_keys( $desired_settings, Health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+		$health->elasticsearch->expects( $this->once() )->method( 'update_index_settings' )
+			->with( $target_name, $expected_updated_settings, false )->willReturn( true );
 
-		$health->elasticsearch->expects( $this->once() )
-			->method( 'update_index_settings' )
-			->with( $index_name, $expected_updated_settings, false );
-
-		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
-
-		$expected_result = array(
-			'index_name'    => $index_name,
-			'index_version' => $options['index_version'] ?? 1,
+		$result = $health->heal_index_settings_for_indexable( $indexable, $options );
+		$this->assertSame( array(
+			'index_name'    => $target_name,
+			'index_version' => $target_version,
 			'result'        => true,
-		);
-
-		$this->assertEquals( $expected_result, $result );
+		), $result );
+		$this->assertSame( 1, $versioning->get_current_version_number( $indexable ) );
+		$this->assertSame( $prior_name, $indexable->get_index_name() );
 	}
 
 	public function limit_index_settings_to_keys_data() {
