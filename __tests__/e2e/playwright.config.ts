@@ -24,7 +24,7 @@ const config: PlaywrightTestConfig = {
 		video: 'on-first-retry',
 		trace: 'on-first-retry',
 		storageState: 'e2eStorageState.json',
-		baseURL: process.env.E2E_BASE_URL ? process.env.E2E_BASE_URL : 'http://e2e-test-site.vipdev.lndo.site',
+		baseURL: process.env.E2E_BASE_URL || `http://${ process.env.E2E_SITE_SLUG || 'e2e-test-site' }.vipdev.lndo.site`,
 	},
 };
 
