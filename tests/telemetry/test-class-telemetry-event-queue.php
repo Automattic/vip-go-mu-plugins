@@ -26,7 +26,6 @@ class Telemetry_Event_Queue_Test extends WP_UnitTestCase {
 			do_action( 'shutdown' );
 			do_action( 'shutdown' );
 			$property = new \ReflectionProperty( $queue, 'events' );
-			$property->setAccessible( true );
 			$this->assertSame( array(), $property->getValue( $queue ) );
 		} finally {
 			remove_action( 'shutdown', array( $queue, 'record_events' ) );
