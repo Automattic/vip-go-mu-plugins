@@ -92,7 +92,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 				$tick = ceil( time() / 120 );
 				$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, NONCE_SALT );
 				$response = $this->server->dispatch( $request );
-				if ( $tick === ceil( time() / 120 ) ) {
+				if ( ceil( time() / 120 ) === $tick ) {
 					break;
 				}
 			}
@@ -247,7 +247,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 			$expected = hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, 'first-salt' );
 			$actual   = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'first-salt' );
 			$other    = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'second-salt' );
-			if ( $tick === ceil( time() / 120 ) ) {
+			if ( ceil( time() / 120 ) === $tick ) {
 				break;
 			}
 		}
