@@ -3,20 +3,18 @@
 namespace Automattic\VIP\Search;
 
 class Query_Warning {
-	public const DEFAULT_SLOW_THRESHOLD_MS       = 200;
-	public const DEFAULT_PAYLOAD_THRESHOLD_BYTES = 1024 * 1024;
-	public const DEFAULT_DEDUPE_WINDOW_S         = 300;
-	public const DEFAULT_BUDGET                  = 5;
+	public const DEFAULT_SLOW_THRESHOLD_MS = 200;
+	public const DEFAULT_DEDUPE_WINDOW_S   = 300;
+	public const DEFAULT_BUDGET            = 5;
 
-	private const MIN_SLOW_THRESHOLD_MS       = 1;
-	private const MAX_SLOW_THRESHOLD_MS       = 5000;
-	private const MIN_PAYLOAD_THRESHOLD_BYTES = 1024;
-	private const MAX_PAYLOAD_THRESHOLD_BYTES = 100 * 1024 * 1024;
-	private const MIN_DEDUPE_WINDOW_S         = 60;
-	private const MAX_DEDUPE_WINDOW_S         = 3600;
-	private const MIN_BUDGET                  = 1;
-	private const MAX_BUDGET                  = 100;
-	private const CACHE_GROUP                 = 'vip_search';
+	private const MIN_SLOW_THRESHOLD_MS   = 1;
+	private const MAX_SLOW_THRESHOLD_MS   = 5000;
+	private const PAYLOAD_THRESHOLD_BYTES = 1024 * 1024;
+	private const MIN_DEDUPE_WINDOW_S     = 60;
+	private const MAX_DEDUPE_WINDOW_S     = 3600;
+	private const MIN_BUDGET              = 1;
+	private const MAX_BUDGET              = 100;
+	private const CACHE_GROUP             = 'vip_search';
 
 	/** @var Query_Classifier */
 	private $classifier;
@@ -38,31 +36,20 @@ class Query_Warning {
 	 * @param array        $response_body Decoded Elasticsearch response.
 	 * @param float        $request_ms Total Elasticsearch HTTP duration.
 	 * @param array|null   $backtrace Optional backtrace for deterministic tests.
-	 * @param int|null     $response_bytes Uncompressed response body size. Derived from $response_body when omitted.
+	 * @param int|null     $response_bytes Raw response body length, used to attribute slow requests to large payloads.
 	 */
 	public function maybe_emit( $request_body, array $response_body, float $request_ms, ?array $backtrace = null, ?int $response_bytes = null ): bool {
 		try {
 			/**
 			 * Filters the Elasticsearch execution time (the response's `took`) that triggers a slow-query warning.
 			 *
-			 * Network and connection overhead outside Elasticsearch is not attributed to the query,
-			 * unless the request carries a large payload. When the response has no `took`, the
-			 * total HTTP duration is compared instead.
+			 * A request whose total HTTP duration exceeds the threshold also warns when it transfers
+			 * at least 1 MiB of request and response data, since large payloads add serialization
+			 * and transfer time outside Elasticsearch.
 			 *
 			 * @param int $threshold Duration in milliseconds.
 			 */
 			$threshold = $this->bounded_int( apply_filters( 'vip_search_slow_query_threshold_ms', self::DEFAULT_SLOW_THRESHOLD_MS ), self::DEFAULT_SLOW_THRESHOLD_MS, self::MIN_SLOW_THRESHOLD_MS, self::MAX_SLOW_THRESHOLD_MS );
-
-			/**
-			 * Filters the combined request and response size at which a slow HTTP duration is
-			 * attributed to the query even though Elasticsearch executed it within the threshold.
-			 *
-			 * Large payloads add serialization and transfer time outside Elasticsearch that the
-			 * customer can reduce by requesting fewer results or fields.
-			 *
-			 * @param int $payload_threshold Uncompressed size in bytes.
-			 */
-			$payload_threshold = $this->bounded_int( apply_filters( 'vip_search_slow_query_payload_threshold_bytes', self::DEFAULT_PAYLOAD_THRESHOLD_BYTES ), self::DEFAULT_PAYLOAD_THRESHOLD_BYTES, self::MIN_PAYLOAD_THRESHOLD_BYTES, self::MAX_PAYLOAD_THRESHOLD_BYTES );
 
 			/**
 			 * Filters how long identical query-family violations are deduplicated.
@@ -79,9 +66,9 @@ class Query_Warning {
 			$budget        = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
 			$decoded       = $this->decode_body( $request_body );
 			$scope         = null === $decoded ? Query_Classifier::SCOPE_UNKNOWN : $this->classifier->scope( $decoded );
-			$engine_ms     = isset( $response_body['took'] ) && is_numeric( $response_body['took'] ) ? (float) $response_body['took'] : null;
-			$payload_bytes = $this->payload_bytes( $request_body, $response_body, $response_bytes );
-			$slow_basis    = $this->slow_basis( $request_ms, $engine_ms, $payload_bytes, $threshold, $payload_threshold );
+			$engine_ms     = isset( $response_body['took'] ) && is_numeric( $response_body['took'] ) ? (int) round( $response_body['took'] ) : null;
+			$payload_bytes = is_string( $request_body ) && null !== $response_bytes ? strlen( $request_body ) + $response_bytes : null;
+			$slow_basis    = $this->slow_basis( $request_ms, $engine_ms, $payload_bytes, $threshold );
 			$types         = [];
 
 			if ( null !== $slow_basis ) {
@@ -113,7 +100,7 @@ class Query_Warning {
 			$context     = [
 				'request_ms'       => (int) ceil( $request_ms ),
 				'request_limit_ms' => $threshold,
-				'engine_ms'        => null === $engine_ms ? null : (int) round( $engine_ms ),
+				'engine_ms'        => $engine_ms,
 				'slow_basis'       => $slow_basis,
 				'payload_bytes'    => $payload_bytes,
 				'requested'        => isset( $decoded['size'] ) && is_numeric( $decoded['size'] ) ? (int) $decoded['size'] : null,
@@ -167,30 +154,22 @@ class Query_Warning {
 		return is_array( $decoded ) ? $decoded : null;
 	}
 
-	/** @param array|string $request_body Elasticsearch request body. */
-	private function payload_bytes( $request_body, array $response_body, ?int $response_bytes ): int {
-		$request_bytes = is_string( $request_body ) ? strlen( $request_body ) : strlen( (string) wp_json_encode( $request_body ) );
-
-		return $request_bytes + ( $response_bytes ?? strlen( (string) wp_json_encode( $response_body ) ) );
-	}
-
 	/**
 	 * Determine why a request counts as slow, or null when it does not.
 	 *
 	 * - engine:  Elasticsearch execution (`took`) exceeded the threshold.
-	 * - payload: the HTTP request exceeded the threshold while moving a large payload.
-	 * - request: no `took` was available, so the HTTP duration exceeded the threshold.
+	 * - payload: the HTTP request exceeded the threshold while transferring a large payload.
 	 */
-	private function slow_basis( float $request_ms, ?float $engine_ms, int $payload_bytes, int $threshold, int $payload_threshold ): ?string {
+	private function slow_basis( float $request_ms, ?int $engine_ms, ?int $payload_bytes, int $threshold ): ?string {
 		if ( null === $engine_ms ) {
-			return $request_ms > $threshold ? 'request' : null;
+			return null;
 		}
 
 		if ( $engine_ms > $threshold ) {
 			return 'engine';
 		}
 
-		if ( $request_ms > $threshold && $payload_bytes >= $payload_threshold ) {
+		if ( $request_ms > $threshold && null !== $payload_bytes && $payload_bytes >= self::PAYLOAD_THRESHOLD_BYTES ) {
 			return 'payload';
 		}
 
@@ -325,7 +304,7 @@ class Query_Warning {
 			: 'source="' . $this->quoted_value( $context['source'] ) . '"';
 
 		return sprintf(
-			'VIP_SEARCH_QUERY_WARNING v=1 warning_id=%s types=%s request_ms=%s request_limit_ms=%s engine_ms=%s requested=%s returned=%s total_hits=%s query_scope=%s %s deduplicated=true dedupe_window_s=%d payload_bytes=%d',
+			'VIP_SEARCH_QUERY_WARNING v=1 warning_id=%s types=%s request_ms=%s request_limit_ms=%s engine_ms=%s requested=%s returned=%s total_hits=%s query_scope=%s %s deduplicated=true dedupe_window_s=%d',
 			$warning_id,
 			implode( ',', $types ),
 			$this->numeric_value( $context['request_ms'] ),
@@ -336,8 +315,7 @@ class Query_Warning {
 			$this->numeric_value( $context['total_hits'] ),
 			$context['query_scope'],
 			$location,
-			$window,
-			$context['payload_bytes']
+			$window
 		);
 	}
 
@@ -389,14 +367,6 @@ class Query_Warning {
 	}
 
 	private function slow_clause( array $context ): string {
-		if ( 'engine' === $context['slow_basis'] ) {
-			return sprintf(
-				'Elasticsearch took %d ms to execute the query, above the configured warning threshold of %d ms',
-				$context['engine_ms'],
-				$context['request_limit_ms']
-			);
-		}
-
 		if ( 'payload' === $context['slow_basis'] ) {
 			return sprintf(
 				'The request took %d ms, above the configured warning threshold of %d ms, while transferring %s of request and response data. Elasticsearch executed the query in %d ms',
@@ -408,8 +378,8 @@ class Query_Warning {
 		}
 
 		return sprintf(
-			'The query took %d ms, above the configured warning threshold of %d ms',
-			$context['request_ms'],
+			'Elasticsearch took %d ms to execute the query, above the configured warning threshold of %d ms',
+			$context['engine_ms'],
 			$context['request_limit_ms']
 		);
 	}

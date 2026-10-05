@@ -26,7 +26,6 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 		foreach ( [
 			'vip_search_slow_query_threshold_ms',
-			'vip_search_slow_query_payload_threshold_bytes',
 			'vip_search_query_warning_dedupe_window_s',
 			'vip_search_query_warning_budget',
 			'wp_doing_cron',
@@ -67,7 +66,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_slow_request_with_fast_engine_and_small_payload_does_not_warn(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = [ 'query' => [ 'term' => [ 'post_name' => 'example' ] ] ];
+		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_name' => 'example' ] ] ] );
 
 		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 3, 1, 1 ), 260.0, $this->customer_backtrace(), 2048 ) );
 		$this->assertSame( [], $this->warnings );
@@ -75,47 +74,49 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_slow_request_with_fast_engine_and_large_payload_warns(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = [
+		$body    = wp_json_encode( [
 			'query' => [ 'term' => [ 'post_status' => 'publish' ] ],
 			'size'  => 500,
-		];
+		] );
 
 		$this->assertTrue( $warning->maybe_emit( $body, $this->response( 12, 500, 900 ), 450.0, $this->customer_backtrace(), 2 * MB_IN_BYTES ) );
 		$this->assertCount( 2, $this->warnings );
-		$this->assertStringContainsString( 'types=slow_query request_ms=450 request_limit_ms=200 engine_ms=12', $this->warnings[0] );
-		$this->assertStringContainsString( 'payload_bytes=' . ( 2 * MB_IN_BYTES + strlen( wp_json_encode( $body ) ) ), $this->warnings[0] );
+		$this->assertStringContainsString( 'types=slow_query request_ms=450 request_limit_ms=200 engine_ms=12 requested=500', $this->warnings[0] );
+		$this->assertStringEndsWith( 'dedupe_window_s=300', $this->warnings[0] );
 		$this->assertStringContainsString( 'The request took 450 ms, above the configured warning threshold of 200 ms, while transferring 2.0 MB of request and response data. Elasticsearch executed the query in 12 ms.', $this->warnings[1] );
 		$this->assertStringContainsString( 'request fewer results or only the fields you need.', $this->warnings[1] );
 		$this->assertStringNotContainsString( 'Review how this query is constructed', $this->warnings[1] );
 	}
 
-	public function test_payload_threshold_is_filterable_and_invalid_values_fall_back(): void {
+	public function test_payload_rule_starts_at_one_mebibyte_of_request_and_response_data(): void {
+		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
+
+		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), MB_IN_BYTES - strlen( $body ) - 1 ) );
+		$this->assertTrue( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), MB_IN_BYTES - strlen( $body ) ) );
+	}
+
+	public function test_payload_rule_requires_known_payload_size(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
 		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
 
-		add_filter( 'vip_search_slow_query_payload_threshold_bytes', static fn() => 'invalid' );
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), 64 * KB_IN_BYTES ) );
-
-		remove_all_filters( 'vip_search_slow_query_payload_threshold_bytes' );
-		add_filter( 'vip_search_slow_query_payload_threshold_bytes', static fn(): int => 32 * KB_IN_BYTES );
-		$this->assertTrue( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), 64 * KB_IN_BYTES ) );
+		$this->assertFalse( $warning->maybe_emit( wp_json_encode( $body ), $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace() ) );
+		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
 	}
 
 	public function test_large_payload_with_fast_request_does_not_warn(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
+		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
 
 		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 12, 500, 900 ), 150.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
 	}
 
-	public function test_missing_engine_time_falls_back_to_request_duration(): void {
+	public function test_missing_engine_time_does_not_slow_warn(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
+		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
 
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( null, 1, 1 ), 200.0, $this->customer_backtrace() ) );
-		$this->assertTrue( $warning->maybe_emit( $body, $this->response( null, 1, 1 ), 201.0, $this->customer_backtrace() ) );
-		$this->assertStringContainsString( 'engine_ms=unknown', $this->warnings[0] );
-		$this->assertStringContainsString( 'The query took 201 ms, above the configured warning threshold of 200 ms.', $this->warnings[1] );
+		$this->assertFalse( $warning->maybe_emit( $body, $this->response( null, 1, 1 ), 900.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
+		$this->assertSame( [], $this->warnings );
 	}
 
 	public function test_invalid_filter_values_fall_back_and_valid_threshold_is_used(): void {
@@ -149,7 +150,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 		$id = $matches[1];
 
 		$this->assertSame(
-			'VIP_SEARCH_QUERY_WARNING v=1 warning_id=VSQ-TEST000 types=slow_query,unbounded_query request_ms=527 request_limit_ms=200 engine_ms=493 requested=10 returned=0 total_hits=0 query_scope=unbounded url="https://example.com/search/?category=events" deduplicated=true dedupe_window_s=300 payload_bytes=62',
+			'VIP_SEARCH_QUERY_WARNING v=1 warning_id=VSQ-TEST000 types=slow_query,unbounded_query request_ms=527 request_limit_ms=200 engine_ms=493 requested=10 returned=0 total_hits=0 query_scope=unbounded url="https://example.com/search/?category=events" deduplicated=true dedupe_window_s=300',
 			str_replace( $id, 'VSQ-TEST000', $this->warnings[0] )
 		);
 		$this->assertSame(
@@ -291,10 +292,10 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_fractional_slow_duration_is_reported_above_the_threshold(): void {
 		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$warning->maybe_emit( [ 'query' => [ 'match_all' => [] ] ], $this->response( null, 0, 0 ), 200.1, $this->customer_backtrace() );
+		$warning->maybe_emit( wp_json_encode( [ 'query' => [ 'match_all' => [] ] ] ), $this->response( 5, 0, 0 ), 200.1, $this->customer_backtrace(), MB_IN_BYTES );
 
-		$this->assertStringContainsString( 'request_ms=201 request_limit_ms=200', $this->warnings[0] );
-		$this->assertStringContainsString( 'took 201 ms, above the configured warning threshold of 200 ms', $this->warnings[1] );
+		$this->assertStringContainsString( 'types=slow_query,unbounded_query request_ms=201 request_limit_ms=200', $this->warnings[0] );
+		$this->assertStringContainsString( 'The request took 201 ms, above the configured warning threshold of 200 ms', $this->warnings[1] );
 	}
 
 	public function test_non_persistent_cache_suppresses_warning(): void {
