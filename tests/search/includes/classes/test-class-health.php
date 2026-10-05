@@ -738,6 +738,68 @@ class Health_Test extends WP_UnitTestCase {
 		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
 	}
 
+	public function test_validate_index_posts_content__resumes_persisted_checkpoint() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
+
+		$options   = array(
+			'last_post_id' => 4,
+			'batch_size'   => 2,
+			'do_not_heal'  => true,
+		);
+		$batches   = array();
+		$interrupt = true;
+		$http      = static function ( $preempt, $args, $url ) use ( &$batches, &$interrupt ) {
+			if ( false !== strpos( $url, '/_mget' ) ) {
+				$ids       = json_decode( $args['body'], true )['ids'];
+				$batches[] = $ids;
+				if ( $interrupt && 3 === $ids[0] ) {
+					throw new \RuntimeException( 'Controlled interruption' );
+				}
+			}
+			return array(
+				'headers'  => array(),
+				'body'     => '{"docs":[]}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			try {
+				( new Health( $this->search_instance ) )->validate_index_posts_content( $options );
+				$this->fail( 'The controlled second-batch interruption must execute.' );
+			} catch ( \RuntimeException $error ) {
+				$this->assertSame( 'Controlled interruption', $error->getMessage() );
+			}
+			$this->assertSame( 3, get_option( Health::CONTENT_VALIDATION_PROCESS_OPTION ) );
+			$this->assertContains( array( 1, 2 ), $batches );
+			$this->assertContains( array( 3, 4 ), $batches );
+
+			// Model the stale transient expiring after the interrupted process exits.
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+			$interrupt = false;
+			$batches   = array();
+			$result    = ( new Health( $this->search_instance ) )->validate_index_posts_content( $options );
+			$this->assertIsArray( $result );
+			$this->assertNotEmpty( $batches );
+			foreach ( $batches as $ids ) {
+				$this->assertSame( array( 3, 4 ), $ids );
+			}
+			$this->assertFalse( get_option( Health::CONTENT_VALIDATION_PROCESS_OPTION ) );
+			$this->assertFalse( get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+			delete_option( Health::CONTENT_VALIDATION_PROCESS_OPTION );
+		}
+	}
+
 	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
 		$options = [
 			'start_post_id' => 1,
