@@ -37,6 +37,68 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+
+	/**
+	 * Exercise the native HTTP denial path in a separate PHP server process.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_native_block_sends_forbidden_no_cache_and_exits() {
+		$socket = stream_socket_server( 'tcp://127.0.0.1:0', $error_code, $error_message );
+		$this->assertNotFalse( $socket, $error_message );
+		$address = stream_socket_get_name( $socket, false );
+		fclose( $socket );
+		$port = (int) substr( strrchr( $address, ':' ), 1 );
+
+		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Temporary files isolate the real response path.
+		$script_path = tempnam( get_temp_dir(), 'vip-request-block-' );
+		$server_log  = tempnam( get_temp_dir(), 'vip-request-block-log-' );
+		$source      = sprintf(
+			"<?php\nrequire %s;\nVIP_Request_Block::toggle_logging( false );\n\$_SERVER['HTTP_TRUE_CLIENT_IP'] = '203.0.113.9';\nVIP_Request_Block::ip( '203.0.113.9' );\necho 'BLOCK_DID_NOT_EXIT';\n",
+			wp_json_encode( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', JSON_THROW_ON_ERROR )
+		);
+		file_put_contents( $script_path, $source );
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Spawn the isolated native HTTP request.
+		$server = proc_open(
+			[ PHP_BINARY, '-S', '127.0.0.1:' . $port, $script_path ],
+			// phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- Descriptor tuples are short and fixed.
+			[
+				0 => [ 'pipe', 'r' ],
+				1 => [ 'file', $server_log, 'a' ],
+				2 => [ 'file', $server_log, 'a' ],
+			],
+			$pipes
+		);
+		if ( is_resource( $server ) ) {
+			fclose( $pipes[0] );
+		}
+
+		try {
+			$this->assertIsResource( $server );
+			$response = false;
+			for ( $attempt = 0; $attempt < 40 && false === $response; $attempt++ ) {
+					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile -- Connection attempts wait for the temporary local test server.
+				$response = @file_get_contents( 'http://127.0.0.1:' . $port . '/', false, stream_context_create( [ 'http' => [ 'ignore_errors' => true ] ] ) );
+				if ( false === $response ) {
+					usleep( 25000 );
+				}
+			}
+
+			$this->assertSame( '', $response );
+			$this->assertSame( 403, isset( $http_response_header[0] ) ? (int) substr( $http_response_header[0], 9, 3 ) : 0 );
+			$this->assertContains( 'Cache-Control: no-cache, must-revalidate, max-age=0', $http_response_header );
+			$this->assertContains( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT', $http_response_header );
+			$this->assertStringNotContainsString( 'BLOCK_DID_NOT_EXIT', $response );
+		} finally {
+			proc_terminate( $server );
+			proc_close( $server );
+			unlink( $script_path );
+			unlink( $server_log );
+		}
+		// phpcs:enable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
+	}
+
 	public function test__no_error_raised_when_ip_is_not_present() {
 		$_SERVER['HTTP_TRUE_CLIENT_IP']  = '4.4.4.4';
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
