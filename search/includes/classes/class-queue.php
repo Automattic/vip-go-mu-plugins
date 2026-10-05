@@ -730,6 +730,14 @@ class Queue {
 		$this->schema->prepare_table();
 
 		$table_name = $this->schema->get_table_name();
+		if ( ! $this->schema->is_installed() ) {
+			// Another request may own the migration lock. Abort until the column exists.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$claim_column = $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'claim_token' ) );
+			if ( null === $claim_column ) {
+				return array();
+			}
+		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(

@@ -495,6 +495,38 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 2, $job->index_version );
 	}
 
+	/**
+	 * Checkout must wait when another request owns an unfinished schema migration.
+	 */
+	public function test_checkout_jobs_waits_for_claim_column(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+		$db_version = get_transient( Queue\Schema::DB_VERSION_TRANSIENT );
+		$lock       = wp_cache_get( Queue\Schema::TABLE_CREATE_LOCK, null );
+		delete_transient( Queue\Schema::DB_VERSION_TRANSIENT );
+		wp_cache_set( Queue\Schema::TABLE_CREATE_LOCK, 1, null, MINUTE_IN_SECONDS );
+		try {
+			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP COLUMN claim_token', $table_name ) ) );
+			$this->queue->queue_object( 1000 );
+			$this->assertSame( array(), $this->queue->checkout_jobs() );
+			$this->assertSame( '', $wpdb->last_error );
+			$this->assertSame( 1, $this->queue->count_jobs( 'queued' ) );
+		} finally {
+			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i ADD COLUMN claim_token varchar(36) DEFAULT NULL', $table_name ) );
+			if ( false === $db_version ) {
+				delete_transient( Queue\Schema::DB_VERSION_TRANSIENT );
+			} else {
+				set_transient( Queue\Schema::DB_VERSION_TRANSIENT, $db_version );
+			}
+			if ( false === $lock ) {
+				wp_cache_delete( Queue\Schema::TABLE_CREATE_LOCK, null );
+			} else {
+				wp_cache_set( Queue\Schema::TABLE_CREATE_LOCK, $lock, null, MINUTE_IN_SECONDS );
+			}
+		}
+	}
+
 	public function test_process_jobs() {
 		/** @var wpdb $wpdb */
 		global $wpdb;
