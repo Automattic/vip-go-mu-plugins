@@ -35,6 +35,19 @@ async function expectUploadedBytes( request: APIRequestContext, url: string, fil
 	expect( actualHash ).toBe( expectedHash );
 }
 
+/**
+ * Verifies a rendered attachment URL returns image bytes with the expected MIME type.
+ *
+ * @param {APIRequestContext} request The authenticated Playwright API request context
+ * @param {string}            url     The rendered image URL
+ */
+async function expectRenderedImage( request: APIRequestContext, url: string ): Promise<void> {
+	const response = await request.get( url );
+	expect( response.status() ).toBe( 200 );
+	expect( response.headers()[ 'content-type' ] ).toMatch( /^image\/(?:jpeg|webp|png)(?:;|$)/ );
+	expect( ( await response.body() ).byteLength ).toBeGreaterThan( 0 );
+}
+
 test.describe( 'Large media upload warning', () => {
 	test( 'Media Library: cancel aborts upload', async ( { page } ) => {
 		const upload = new MediaUploadPage( page );
@@ -53,10 +66,17 @@ test.describe( 'Large media upload warning', () => {
 			upload.uploadFile( LARGE ),
 		] );
 
+		const uploadRequestAfterCancel = page
+			.waitForRequest(
+				( request ) => /(?:async-upload\.php|\/wp-json\/wp\/v2\/media(?:\/|$))/.test( new URL( request.url() ).pathname ),
+				{ timeout: 1000 }
+			)
+			.catch( () => null );
 		await modal.cancel();
 
 		await expect( modal.dialog ).toBeHidden();
-		await page.waitForLoadState( 'networkidle' );
+		// Observe a bounded quiet period after cancel; networkidle may already have happened on navigation.
+		expect( await uploadRequestAfterCancel ).toBeNull();
 		// Cancellation must prevent the server upload request, not just hide the attachment details.
 		expect( uploadRequests ).toHaveLength( 0 );
 		// No attachment should appear. data-clipboard-text on copy button is the post-upload marker.
@@ -111,7 +131,17 @@ test.describe( 'Large media upload warning', () => {
 		// addImage waits for the insert button; we then assert the image actually landed in the editor.
 		const image = page.frameLocator( '#content_ifr' ).locator( '#tinymce img' );
 		await expect( image ).toBeVisible();
-		await expectUploadedBytes( request, ( await image.getAttribute( 'src' ) )!, LARGE );
+		const renderedUrl = ( await image.getAttribute( 'src' ) )!;
+		await expectRenderedImage( request, renderedUrl );
+
+		// The editor may insert a resized rendition; verify original bytes through the attachment REST record.
+		const imageClass = await image.getAttribute( 'class' );
+		const attachmentId = imageClass?.match( /(?:^|\s)wp-image-(\d+)(?:\s|$)/ )?.[ 1 ];
+		expect( attachmentId ).toBeDefined();
+		const attachmentResponse = await request.get( `./wp-json/wp/v2/media/${ attachmentId }` );
+		expect( attachmentResponse.status() ).toBe( 200 );
+		const attachment = await attachmentResponse.json() as { source_url: string };
+		await expectUploadedBytes( request, attachment.source_url, LARGE );
 	} );
 
 	// Supported upload coverage is Media Library and Classic Editor. Gutenberg upload coverage is
