@@ -69,6 +69,11 @@ class Tracks_Client extends Telemetry_Client {
 			)
 		);
 
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( ! is_wp_error( $response ) && ( $status_code < 200 || $status_code >= 300 ) ) {
+			$response = new WP_Error( 'tracks_http_rejected', 'Telemetry endpoint rejected the event.', array( 'status' => $status_code ) );
+		}
+
 		if ( is_wp_error( $response ) ) {
 			log2logstash( [
 				'severity' => 'error',

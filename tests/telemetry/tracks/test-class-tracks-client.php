@@ -41,10 +41,57 @@ class Tracks_Client_Test extends WP_UnitTestCase {
 				),
 
 			] )
-			->willReturn( true );
+			->willReturn( array(
+				'headers'  => array(),
+				'body'     => '{}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			) );
 
 		$client = new Tracks_Client( $http );
 		$this->assertTrue( $client->batch_record_events( [ $event, $bad_event ], [ 'foo' => 'bar' ] ) );
+	}
+
+	/**
+	 * Verify successful responses and rejected HTTP statuses through a real queue.
+	 */
+	public function test_http_status_controls_queue_acknowledgement(): void {
+		wp_set_current_user( self::factory()->user->create() );
+		foreach ( array( 200, 204, 401, 429, 500 ) as $status ) {
+			$http = $this->createMock( WP_Http::class );
+			$http->expects( $this->once() )->method( 'post' )->willReturn( array(
+				'headers'  => array(),
+				'body'     => '{}',
+				'response' => array(
+					'code'    => $status,
+					'message' => 'Test response',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			) );
+			$event = new Tracks_Event( 'test_', 'queue_event' );
+			$queue = new \Automattic\VIP\Telemetry\Telemetry_Event_Queue( new Tracks_Client( $http ) );
+			try {
+				$this->assertTrue( $queue->record_event_asynchronously( $event ) );
+				$result   = $queue->record_events();
+				$property = new \ReflectionProperty( $queue, 'events' );
+				$property->setAccessible( true );
+				if ( $status < 300 ) {
+					$this->assertTrue( $result );
+					$this->assertSame( array(), $property->getValue( $queue ) );
+				} else {
+					$this->assertInstanceOf( WP_Error::class, $result );
+					$this->assertSame( array( 'status' => $status ), $result->get_error_data() );
+					$this->assertSame( array( $event ), $property->getValue( $queue ) );
+				}
+			} finally {
+				remove_action( 'shutdown', array( $queue, 'record_events' ) );
+			}
+		}
 	}
 
 	public function test_should_handle_failed_requests() {
