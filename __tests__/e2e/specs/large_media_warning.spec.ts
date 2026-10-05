@@ -138,10 +138,10 @@ test.describe( 'Large media upload warning', () => {
 		const attachmentId = imageClass?.match( /(?:^|\s)wp-image-(\d+)(?:\s|$)/ )?.[ 1 ];
 		expect( attachmentId ).toBeDefined();
 		const attachmentResponse = await request.get( `./wp-json/wp/v2/media/${ attachmentId }`, {
-			headers: {
-			'X-WP-Nonce': `${ process.env.WP_E2E_NONCE! }`,
-		},
-	} );
+				headers: {
+				'X-WP-Nonce': `${ process.env.WP_E2E_NONCE! }`,
+			},
+		} );
 		expect( attachmentResponse.status() ).toBe( 200 );
 		const attachment = await attachmentResponse.json() as { source_url: string };
 		await expectUploadedBytes( request, attachment.source_url, LARGE );
