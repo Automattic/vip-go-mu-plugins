@@ -151,19 +151,19 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Preserve request fixture state.
 		$original_get = $_GET;
 		try {
-				$_GET[ User::GET_EMAIL_USER_LOGIN ] = $user->user_login;
-				$_GET[ User::GET_EMAIL_VERIFY ]     = 'wrong signature' === $variant ? 'wrong-hash' : $hash;
-				wp_set_current_user( 'wrong owner' === $variant ? 0 : $user->ID );
-				Constant_Mocker::clear();
-				\define( __NAMESPACE__ . '\\A8C_PROXIED_REQUEST', 'unproxied' !== $variant );
+			$_GET[ User::GET_EMAIL_USER_LOGIN ] = $user->user_login;
+			$_GET[ User::GET_EMAIL_VERIFY ]     = 'wrong signature' === $variant ? 'wrong-hash' : $hash;
+			wp_set_current_user( 'wrong owner' === $variant ? 0 : $user->ID );
+			Constant_Mocker::clear();
+			\define( __NAMESPACE__ . '\\A8C_PROXIED_REQUEST', 'unproxied' !== $variant );
 			try {
 				$instance->action_parse_request();
 				$this->fail( 'Expected verification response.' );
 			} catch ( \WPDieException $error ) {
 				$this->assertStringContainsString( 'valid' === $variant ? 'Your email has been verified' : ( 'unproxied' === $variant ? 'please proxy' : 'This email verification link' ), $error->getMessage() );
 			}
-				$this->assertSame( 'valid' === $variant, $instance->is_verified_automattician( $user->ID ) );
-				$this->assertSame( 'valid' === $variant, User::user_has_vip_support_role( $user->ID ) );
+			$this->assertSame( 'valid' === $variant, $instance->is_verified_automattician( $user->ID ) );
+			$this->assertSame( 'valid' === $variant, User::user_has_vip_support_role( $user->ID ) );
 		} finally {
 			$_GET = $original_get;
 			wp_set_current_user( 0 );
