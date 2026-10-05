@@ -612,10 +612,10 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$user_id     = $this->factory()->user->create( [ 'user_email' => $email ] );
 		$integration = new WordPressMcpIntegration( $this->slug );
 		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
-		$integration->load();
-		$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
-		$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
 		try {
+			$integration->load();
+			$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
+			$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
 			$this->sign_mcp_request( $email, $auth_key );
 			unset( $GLOBALS['current_user'] );
 			$this->assertSame( $user_id, get_current_user_id() );
@@ -630,8 +630,16 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
 			$this->assertSame( 401, $error->get_error_data()['status'] );
 		} finally {
-			remove_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ], 19 );
-			remove_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] );
+			foreach ( [
+				'determine_current_user'      => 'authenticate_mcp_request',
+				'rest_authentication_errors' => 'report_auth_error',
+				'wp_register_ability_args'   => 'filter_exposed_abilities_args',
+			] as $hook => $method ) {
+				$callback = [ $integration, $method ];
+				while ( false !== ( $priority = has_filter( $hook, $callback ) ) ) {
+					remove_filter( $hook, $callback, $priority );
+				}
+			}
 			wp_set_current_user( 0 );
 		}
 	}
