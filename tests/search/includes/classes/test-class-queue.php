@@ -508,7 +508,10 @@ class Queue_Test extends WP_UnitTestCase {
 		$bulk_requests = array();
 		$capture_bulk  = static function ( $preempt, $args, $url ) use ( &$bulk_requests ) {
 			if ( false !== strpos( $url, '/_bulk' ) ) {
-				$bulk_requests[] = array( 'url' => $url, 'args' => $args );
+				$bulk_requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
 			}
 			return $preempt;
 		};
