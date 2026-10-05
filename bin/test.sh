@@ -110,10 +110,9 @@ else
     interactive=""
 fi
 
-# The runner image's home directory has changed over time (/home/ubuntu, now /home/debian),
-# but every version symlinks /home/circleci to it. Mount there and point the runner's
-# APP_HOME and working directory at the same path so vendor/ is found on any image version.
-PROJECT_DIR=/home/circleci/project
+# Mount at the runner image's project path, and set APP_HOME and the working directory
+# explicitly so vendor/ is found even on older images with a different default home.
+PROJECT_DIR=/home/debian/project
 
 # shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
 docker run \
