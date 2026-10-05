@@ -39,45 +39,25 @@ const selectors = {
 
 	// Block inserter
 	addBlockButton: 'button[aria-label="Add block"]',
-	blockInserterToggle: 'button.edit-post-header-toolbar__inserter-toggle',
-	blockInserterPanel: '.block-editor-inserter__content',
-	blockSearch: '.block-editor-inserter__search input[type="search"]',
-	blockInserterResultItem: '.block-editor-block-types-list__list-item',
 
 	// Within the editor body.
 	blockAppender: '.block-editor-default-block-appender',
-	blockInserter: '.block-editor-inserter__toggle',
 	paragraphBlocks: 'p.wp-block-paragraph',
-	block: '.wp-block[id*="block-"][data-empty="false"]',
-	blockWarning: '.block-editor-warning',
 	imageBlocks: '.editor-block-list-item-image',
 	uploadImageButton: '.block-editor-media-placeholder__upload-button',
-	firstEmptyBlock: '.wp-block-paragraph[data-empty="true"]',
 	spinner: '.components-spinner',
 
 	// Top bar selectors.
 	postToolbar: '.edit-post-header',
-	settingsToggle: '.edit-post-header__settings .interface-pinned-items button:first-child',
-	saveDraftButton: '.editor-post-save-draft',
-	previewButton: ':is(button:text("Preview"), a:text("Preview"))',
 	publishButton: ( parentSelector: string ) => `${ parentSelector } button:text("Publish")[aria-disabled=false]`,
 	updateButton: '.editor-post-publish-button',
-	// Settings panel.
-	settingsPanel: '.interface-complementary-area',
 
 	// Publish panel (including post-publish)
 	publishPanel: '.editor-post-publish-panel',
 	viewButton: '.editor-post-publish-panel a:has-text("View")',
-	addNewButton: '.editor-post-publish-panel a:text-matches("Add a New P(ost|age)")',
-	closePublishPanel: 'button[aria-label="Close panel"]',
 
 	// Welcome tour
 	welcomeTourCloseButton: '.edit-post-welcome-guide .components-modal__header button',
-
-	// Block editor sidebar
-	desktopEditorSidebarButton: 'button[aria-label="Block editor sidebar"]:visible',
-	desktopDashboardLink: 'a[aria-description="Returns to the dashboard"]:visible',
-	mobileDashboardLink: 'a[aria-current="page"]:visible',
 
 	// Choose a pattern
 	choosePatternCloseButton: '.components-modal__screen-overlay .components-modal__header button',

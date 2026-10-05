@@ -17,6 +17,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
+
+		// These tests only need the attachment posts and their `_wp_attached_file` meta.
+		// Skip generating intermediate sizes for the large fixture image, which is slow
+		// (VIP generates them on the fly in production anyway).
+		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
 	}
 
 	public function tearDown(): void {
