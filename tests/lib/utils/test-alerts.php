@@ -242,7 +242,7 @@ class Alerts_Test extends WP_UnitTestCase {
 					'source' => 'test',
 				],
 			],
-			'missing-source'            => [
+			'missing-source'           => [
 				[
 					'severity' => 'critical',
 				],
