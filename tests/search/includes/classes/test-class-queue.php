@@ -11,9 +11,12 @@ use stdClass;
 use WP_UnitTestCase;
 use wpdb;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 class Queue_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
 
 	/** @var Search */
 	private $es;
@@ -46,12 +49,14 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		$this->add_es_http_mock();
 
 		$indexable          = Indexables::factory()->get( 'post' );
 		$this->sync_manager = $indexable->sync_manager;
 	}
 
 	public function tearDown(): void {
+		$this->remove_es_http_mock();
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
