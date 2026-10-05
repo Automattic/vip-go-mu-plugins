@@ -16,9 +16,9 @@ test( 'publish a Post', async ( { page } ) => {
 	let editorPage: EditorPage;
 	const titleText = DataHelper.getRandomPhrase();
 	const bodyText =
-        '"Be who you are and say what you feel, because \n' +
-        'those who mind don’t matter and those who matter don’t mind." \n' +
-        '– Bernard M. Baruch';
+		'"Be who you are and say what you feel, because \n' +
+		'those who mind don’t matter and those who matter don’t mind." \n' +
+		'– Bernard M. Baruch';
 
 	await test.step( 'Go to WP-admin', async () => {
 		const wpAdminPage = new WPAdminPage( page );
