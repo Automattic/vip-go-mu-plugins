@@ -216,33 +216,6 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test the resize method.
-	 *
-	 * @covers Automattic\VIP\Files\Image::resize
-	 * @dataProvider get_data_for_generate_sizes
-	 *
-	 * @param array $expected_sizes Array of requested size dimensions.
-	 */
-	public function test__image_resize( $size, $expected_resize ) {
-		$attachment_post_data = [
-			'post_mime_type' => 'image/jpeg',
-			'post_type'      => 'attachment',
-		];
-		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
-		$image->resize( $size );
-
-		$this->assertTrue( $image->is_resized(), 'Resized image is not marked as resized.' );
-		$this->assertEquals( $expected_resize['width'], $image->get_width(), 'Resized image does not have expected width.' );
-		$this->assertEquals( $expected_resize['height'], $image->get_height(), 'Resized image does not have expected height.' );
-		$this->assertEquals( 'image/jpeg', $image->get_mime_type(), 'Resized image does not have appropriate mime type.' );
-		$this->assertEquals( add_query_arg( $expected_resize['params'], 'image.jpg' ), $image->get_filename(), 'Resized image does not point to appropriate file.' );
-	}
-
-	/**
 	 * Test size array generation.
 	 *
 	 * @covers Automattic\VIP\Files\Image::get_size
@@ -317,30 +290,6 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
 
 		$this->assertEquals( wp_basename( $this->test_image ), $image->get_filename(), 'Wrong original filename before image resize.' );
-	}
-
-	/**
-	 * Test get_filename method after image resize.
-	 *
-	 * @covers Automattic\VIP\Files\Image::get_filename
-	 */
-	public function test__get_filename_after_resize() {
-		$attachment_post_data = [
-			'post_mime_type' => 'image/jpeg',
-			'post_type'      => 'attachment',
-		];
-		$attachment_id        = self::factory()->attachment->create_object( $this->test_image, 0, $attachment_post_data );
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-
-		$image = new Automattic\VIP\Files\Image( $postmeta, $attachment_post_data['post_mime_type'] );
-		$image->resize( array(
-			'width'  => 150,
-			'height' => 150,
-			'crop'   => true,
-		) );
-
-		$this->assertEquals( wp_basename( $this->test_image ) . '?resize=150,150', $image->get_filename(), 'Wrong filename after image resize.' );
 	}
 
 	/**

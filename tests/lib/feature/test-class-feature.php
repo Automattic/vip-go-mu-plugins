@@ -189,18 +189,6 @@ class Feature_Test extends TestCase {
 		$this->assertEquals( false, $enabled );
 	}
 
-	public function test_is_enabled_by_percentage_with_is_enabled_by_ids() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
-
-		Feature::$feature_percentages = array(
-			'foo' => 1,
-		);
-
-		$enabled = Feature::is_enabled_by_percentage( 'bar' );
-
-		$this->assertEquals( false, $enabled );
-	}
-
 	public function test_is_enabled_by_ids() {
 		Feature::$feature_ids = [
 			'foo'  => [

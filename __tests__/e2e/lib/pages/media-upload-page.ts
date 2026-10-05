@@ -2,7 +2,6 @@ import type { Page } from '@playwright/test';
 
 const selectors = {
 	selectFilesButton: '#plupload-browse-button',
-	attachedMediaDetails: '.attachment-details',
 	copyURLButton: '.copy-attachment-url',
 };
 
@@ -16,6 +15,13 @@ export class MediaUploadPage {
 	 */
 	constructor( page: Page ) {
 		this.page = page;
+	}
+
+	/**
+	 * Navigate to the Add Media File page
+	 */
+	public visit(): Promise<unknown> {
+		return this.page.goto( '/wp-admin/media-new.php' );
 	}
 
 	/**

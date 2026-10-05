@@ -87,7 +87,7 @@ class ConnectorControlsIntegration extends Integration {
 	 * Resolve the most-specific platform credentials and lock Core's local stores.
 	 */
 	public function configure(): void {
-		if ( ! $this->is_enabled_for_org() || ! $this->is_connectors_api_available() ) {
+		if ( ! $this->is_connectors_api_available() ) {
 			$this->is_active = false;
 			return;
 		}
@@ -314,7 +314,9 @@ class ConnectorControlsIntegration extends Integration {
 			$configs[] = $this->get_network_site_config();
 		}
 		$configs[] = $this->get_env_config();
-		$configs[] = $this->get_org_config();
+		if ( $this->is_enabled_for_org() ) {
+			$configs[] = $this->get_org_config();
+		}
 
 		foreach ( $configs as $config ) {
 			$blocked = $config[ $connector['blocked_key'] ] ?? false;
