@@ -93,7 +93,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_http_timeout_handling(): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
-		$this->add_http_response_mock( new WP_Error( 'http_request_failed', 'Operation timed out after 30000 milliseconds' ) );
+		$this->add_http_response_mock( 'https://api.twilio.com/2010-04-01/Accounts/ACe16d3eaebadd491f285297e03b4d3234/Messages.json', new WP_Error( 'http_request_failed', 'Operation timed out after 30000 milliseconds' ) );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -111,7 +111,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_twilio_sms_api_generate_and_send_token_success(): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
-		$this->add_http_response_mock( $this->create_successful_sms_response() );
+		$this->add_http_response_mock( 'https://api.twilio.com/2010-04-01/Accounts/ACe16d3eaebadd491f285297e03b4d3234/Messages.json', $this->create_successful_sms_response() );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -140,7 +140,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_twilio_sms_api_generate_and_send_token_failure_malformed_phone(): void {
 		$user = $this->setup_user_with_phone( 'not-a-phone-number' );
-		$this->add_http_response_mock( $this->create_failed_twilio_sms_response( 400, 21211, 'Invalid phone number format' ) );
+		$this->add_http_response_mock( 'https://api.twilio.com/2010-04-01/Accounts/ACe16d3eaebadd491f285297e03b4d3234/Messages.json', $this->create_failed_twilio_sms_response( 400, 21211, 'Invalid phone number format' ) );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -209,7 +209,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_twilio_verify_generate_and_send_token_success(): void {
 		$user = $this->setup_user_with_phone( '+97476543210' );
-		$this->add_http_response_mock( $this->create_successful_verification_response() );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/Verifications', $this->create_successful_verification_response() );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -239,7 +239,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_twilio_verify_generate_and_send_token_failure_api_error(): void {
 		$user = $this->setup_user_with_phone( '+97476543210' );
-		$this->add_http_response_mock( $this->create_failed_twilio_sms_response( 400, 21211, 'Invalid phone number' ) );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/Verifications', $this->create_failed_twilio_sms_response( 400, 21211, 'Invalid phone number' ) );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -270,7 +270,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function test_twilio_verify_generate_and_send_token_failure_network_error(): void {
 		$user = $this->setup_user_with_phone( '+97476543210' );
-		$this->add_http_response_mock( $this->create_network_error_response() );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/Verifications', $this->create_network_error_response() );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -302,7 +302,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 	public function test_twilio_verify_generate_and_send_token_failure_invalid_phone(): void {
 		// Only well-formed Qatar numbers reach the Verify strategy, so Twilio Verify is the one rejecting the number.
 		$user = $this->setup_user_with_phone( '+97470000000' );
-		$this->add_http_response_mock( $this->create_failed_twilio_sms_response( 400, 60200, 'Invalid parameter `To`: +97470000000' ) );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/Verifications', $this->create_failed_twilio_sms_response( 400, 60200, 'Invalid parameter `To`: +97470000000' ) );
 
 		$strategy = Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID );
 
@@ -328,7 +328,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertFalse( $strategy->has_pending_metadata(), 'Should have no pending metadata initially' );
 
 		// Set up malformed response (missing SID)
-		$this->add_http_response_mock( [
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/Verifications', [
 			'response' => [ 'code' => 200 ],
 			'body'     => wp_json_encode( [
 				'status'  => 'pending',
@@ -361,7 +361,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Verify has pending metadata initially (verification SID is stored)
 		$this->assertTrue( $strategy->has_pending_metadata(), 'Should have pending metadata initially (verification SID stored)' );
 
-		$this->add_http_response_mock( $this->create_successful_verification_check_response() );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', $this->create_successful_verification_check_response() );
 
 		$result = Two_Factor_SMS::get_instance()->validate_authentication( $user );
 
@@ -389,7 +389,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$_REQUEST['two-factor-sms-code'] = '123456';
 
 		// Set up HTTP error response (status >= 300) WITH valid Twilio error body
-		$this->add_http_response_mock( [
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', [
 			'response' => [ 'code' => 400 ],
 			'body'     => wp_json_encode( [
 				'code'      => 21211,
@@ -431,7 +431,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$_REQUEST['two-factor-sms-code'] = '123456';
 
 		// Set up HTTP error response (status >= 300) WITHOUT valid error body (missing 'message' property)
-		$this->add_http_response_mock( [
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', [
 			'response' => [ 'code' => 500 ],
 			'body'     => wp_json_encode( [
 				'code'   => 20001,
@@ -472,7 +472,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$_REQUEST['two-factor-sms-code'] = '000000';
 
 		// Set up failed verification check response (code not approved)
-		$this->add_http_response_mock( [
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', [
 			'response' => [ 'code' => 200 ],
 			'body'     => wp_json_encode( [
 				'sid'    => 'VEe51adf654c854930939ea57199faa362',
@@ -527,7 +527,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Set up $_REQUEST with valid code
 		$_REQUEST['two-factor-sms-code'] = '123456';
 
-		$this->add_http_response_mock( $this->create_network_error_response() );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', $this->create_network_error_response() );
 
 		$result = Two_Factor_SMS::get_instance()->validate_authentication( $user );
 
@@ -550,7 +550,11 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		];
 
 		if ( ! empty( $this->http_response_mocks ) ) {
-			return array_shift( $this->http_response_mocks );
+			$fixture = array_shift( $this->http_response_mocks );
+			$this->assertSame( $fixture['url'], $url );
+			$this->assertSame( 'POST', $args['method'] );
+			$this->assertSame( 'Basic ' . base64_encode( TWILIO_SID . ':' . TWILIO_SECRET ), $args['headers']['Authorization'] ?? null );
+			return $fixture['response'];
 		}
 
 		$this->fail( 'Unexpected HTTP request: ' . $url );
@@ -612,8 +616,14 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		return new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out after 30000 milliseconds' );
 	}
 
-	private function add_http_response_mock( array|WP_Error $response ): void {
-		$this->http_response_mocks[] = $response;
+	/**
+	 * Bind the queued provider response to its expected endpoint.
+	 */
+	private function add_http_response_mock( string $url, array|WP_Error $response ): void {
+		$this->http_response_mocks[] = [
+			'url'      => $url,
+			'response' => $response,
+		];
 	}
 
 	private function setup_user_with_phone( string $phone_number ): WP_User {
@@ -633,6 +643,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		foreach ( $requests as $request ) {
 			$body = $request['args']['body'] ?? null;
 			if ( $request['args']['method'] === $method && $request['url'] === $url ) {
+				$this->assertSame( 'Basic ' . base64_encode( TWILIO_SID . ':' . TWILIO_SECRET ), $request['args']['headers']['Authorization'] ?? null );
 				if ( null === $expected_body ) {
 					return $body;
 				}
