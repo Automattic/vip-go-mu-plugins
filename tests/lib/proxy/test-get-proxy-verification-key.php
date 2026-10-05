@@ -63,7 +63,9 @@ class Get_Proxy_Verification_Key_Test extends TestCase {
 	 * @dataProvider absent_configuration
 	 */
 	public function test__fallback_cannot_be_reused( ?string $configured_key ): void {
-		Proxy_Verification_Helper::set_proxy_verification_key( $configured_key );
+		if ( null !== $configured_key ) {
+			Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', $configured_key );
+		}
 		$captured = get_proxy_verification_key();
 		$this->assertNotSame( $captured, get_proxy_verification_key() );
 		$this->assertFalse( is_valid_proxy_verification_key( $captured ) );
@@ -75,7 +77,7 @@ class Get_Proxy_Verification_Key_Test extends TestCase {
 			$this->assertSame( '192.0.2.1', $_SERVER['REMOTE_ADDR'] );
 		} finally {
 			$_SERVER = $original_server;
-			Proxy_Verification_Helper::set_proxy_verification_key( null );
+			Constant_Mocker::clear();
 		}
 		// phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 	}
