@@ -34,6 +34,9 @@ fi
 
 # Create and run test site
 vip --slug="${E2E_SITE_SLUG}" dev-env create --title="E2E Testing site" --mu-plugins="${pluginPath}" --mailpit false --wordpress="${WPVER}" --multisite=false --app-code="${clientCodePath}" --php 8.2 --xdebug false --phpmyadmin false --elasticsearch true < /dev/null
+if [ -n "${E2E_SITE_CREATED_MARKER:-}" ]; then
+    : > "${E2E_SITE_CREATED_MARKER}"
+fi
 vip dev-env start --slug "${E2E_SITE_SLUG}" --skip-wp-versions-check
 vip dev-env shell --root --slug "${E2E_SITE_SLUG}" -- chown -R www-data:www-data /wp/wp-content/plugins
 vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp plugin install --activate classic-editor

@@ -8,6 +8,13 @@ mkdir -p "$tmp/bin"
 cat > "$tmp/bin/vip" <<'STUB'
 #!/bin/sh
 printf 'vip %s\n' "$*" >> "$E2E_TEST_LOG"
+case "$*" in
+    *'dev-env create'*)
+        if [ "${E2E_TEST_FAIL_CREATE:-false}" = 'true' ]; then
+            exit 1
+        fi
+        ;;
+esac
 STUB
 cat > "$tmp/bin/wget" <<'STUB'
 #!/bin/sh
@@ -49,4 +56,12 @@ if E2E_TEST_NPX_STATUS=7 E2E_PRESERVE_ON_FAILURE=true "$script_dir/run-e2e.sh"; 
     exit 1
 fi
 ! rg -q '^vip dev-env destroy ' "$E2E_TEST_LOG"
+
+# A failed create for a caller-selected existing slug is never cleaned up.
+: > "$E2E_TEST_LOG"
+if E2E_TEST_FAIL_CREATE=true E2E_SITE_SLUG=e2e-existing "$script_dir/run-e2e.sh"; then
+    echo 'expected the stubbed VIP create to fail' >&2
+    exit 1
+fi
+! rg -q '^vip dev-env destroy --slug=e2e-existing$' "$E2E_TEST_LOG"
 echo 'E2E lifecycle wrapper checks passed'
