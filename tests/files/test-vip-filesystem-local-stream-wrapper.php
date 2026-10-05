@@ -23,6 +23,15 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 	private $original_default_client;
 	private $wrapper_was_registered;
 	private $generated_files = [];
+	private static $expected_cache_route;
+
+	/**
+	 * Preserve the ambient route expected by the ordered isolation check.
+	 */
+	public static function wpSetUpBeforeClass(): void {
+		require_once WPMU_PLUGIN_DIR . '/files/class-vip-filesystem-local-stream-wrapper.php';
+		self::$expected_cache_route = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' );
+	}
 
 	public function setUp(): void {
 		parent::setUp();
@@ -596,5 +605,14 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		// Test that a non-matching file is not recognized
 		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.txt' );
 		$this->assertFalse( $is_local );
+	}
+	/**
+	 * Check actual teardown after the preceding test adds its cache wildcard.
+	 *
+	 * @depends test__global_helpers__pattern_matching
+	 */
+	public function test_cache_route_is_restored_after_pattern_test( $previous_result ): void {
+		$this->assertNull( $previous_result );
+		$this->assertSame( self::$expected_cache_route, VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' ) );
 	}
 }
