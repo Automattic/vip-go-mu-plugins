@@ -631,7 +631,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			$this->assertSame( 401, $error->get_error_data()['status'] );
 		} finally {
 			foreach ( [
-				'determine_current_user'      => 'authenticate_mcp_request',
+				'determine_current_user'     => 'authenticate_mcp_request',
 				'rest_authentication_errors' => 'report_auth_error',
 				'wp_register_ability_args'   => 'filter_exposed_abilities_args',
 			] as $hook => $method ) {
