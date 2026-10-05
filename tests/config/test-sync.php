@@ -40,9 +40,7 @@ class Sync_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Cross the real runtime sync path in a process without WP_TESTS_DOMAIN.
-	 *
-	 * @runInSeparateProcess
+	 * Cross the real runtime sync path in a subprocess without WP_TESTS_DOMAIN.
 	 */
 	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Isolated test-runtime database and process setup.
 	public function test_runtime_sync_payload_persistence_and_secondary_schedule() {
