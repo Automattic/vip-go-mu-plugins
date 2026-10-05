@@ -34,6 +34,16 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	/** @var ConnectorControlsIntegration[] */
 	private array $recording_integrations = [];
 
+	public function __construct( ?string $name = null, array $data = [], $data_name = '' ) {
+		parent::__construct( $name, $data, $data_name );
+
+		// Without the Connectors API, setUp() skips these tests. Opt out of process isolation before
+		// PHPUnit applies `@runInSeparateProcess`, so it doesn't boot WordPress again only to skip.
+		if ( ! function_exists( '\\wp_get_connectors' ) ) {
+			$this->setRunTestInSeparateProcess( false );
+		}
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 

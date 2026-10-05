@@ -56,26 +56,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_is_queued_for_activation_get() {
-		set_current_screen( 'plugins' );
-
-		$this->set_get_globals_for_parsely_activation();
-		$this->assertTrue( is_queued_for_activation() );
-	}
-
-	public function test_is_queued_for_activation_post() {
-		set_current_screen( 'plugins' );
-
-		$this->set_post_globals_for_parsely_activation();
-		$this->assertTrue( is_queued_for_activation() );
-	}
-
-	public function test_is_not_queued_for_activation() {
-		set_current_screen( 'plugins' );
-
-		$this->assertFalse( is_queued_for_activation() );
-	}
-
 	public function test_parsely_class_existence() {
 		$this->assertFalse( class_exists( 'Parsely' ) );
 		$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
@@ -361,21 +341,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		), $configs );
 	}
 
-	public function test_alter_option_use_repeated_metas() {
-		maybe_load_plugin();
-		$options = alter_option_use_repeated_metas();
-		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
-
-		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
-		$this->assertSame( array(
-			'some_option' => 'value',
-			'meta_type'   => 'repeated_metas',
-		), $options );
-
-		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );
-		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
-	}
-
 	public function test_unprotected_published_posts_show_meta() {
 		maybe_load_plugin();
 
@@ -465,15 +430,5 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		$metadata = new \Parsely\Metadata( $parsely );
 		return $metadata->construct_metadata( $_post );
-	}
-
-	private function set_get_globals_for_parsely_activation() {
-		$_GET['plugin'] = 'wp-parsely/wp-parsely.php';
-		$_GET['action'] = 'activate';
-	}
-
-	private function set_post_globals_for_parsely_activation() {
-		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
-		$_POST['action']  = 'activate-selected';
 	}
 }

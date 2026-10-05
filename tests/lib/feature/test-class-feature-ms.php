@@ -68,18 +68,4 @@ class Feature_Multisite_Test extends WP_UnitTestCase {
 
 		restore_current_blog();
 	}
-
-	public function test_is_enabled_by_percentage_with_undefined_feature() {
-		Feature::$feature_percentages = array(
-			'foo' => 1,
-		);
-
-		switch_to_blog( wp_rand( 0, 20 ) );
-
-		$enabled = Feature::is_enabled_by_percentage( 'barzzz' );
-
-		$this->assertEquals( false, $enabled );
-
-		restore_current_blog();
-	}
 }

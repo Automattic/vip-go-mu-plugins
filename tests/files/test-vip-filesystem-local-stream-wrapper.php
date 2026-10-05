@@ -318,7 +318,7 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		// Test getting the local files list
 		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
 
-		$this->arrayHasKey( $test_file, $local_files );
+		$this->assertArrayHasKey( $test_file, $local_files );
 
 		// Test checking if a file is in the local files list
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $test_file ) );
