@@ -82,7 +82,7 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 			$pipes
 		);
 		self::assertIsResource( $process );
-		stream_set_timeout( $pipes[1], 15 );
+		stream_set_blocking( $pipes[1], false );
 		return [
 			'process' => $process,
 			'pipes'   => $pipes,
@@ -96,12 +96,23 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 	 * @return string
 	 */
 	private function read_worker( array $worker ): string {
-		$line = fgets( $worker['pipes'][1] );
-		if ( false === $line ) {
-			stream_set_blocking( $worker['pipes'][2], false );
-			self::fail( 'Worker failed or timed out: ' . stream_get_contents( $worker['pipes'][2] ) );
-		}
-		return trim( $line );
+		$line     = '';
+		$deadline = microtime( true ) + 15;
+		do {
+			$chunk = fgets( $worker['pipes'][1] );
+			if ( false !== $chunk ) {
+				$line .= $chunk;
+				if ( str_ends_with( $line, "\n" ) ) {
+					return trim( $line );
+				}
+			}
+			if ( feof( $worker['pipes'][1] ) ) {
+				break;
+			}
+			usleep( 10000 );
+		} while ( microtime( true ) < $deadline );
+		stream_set_blocking( $worker['pipes'][2], false );
+		self::fail( 'Worker failed or timed out: ' . stream_get_contents( $worker['pipes'][2] ) );
 	}
 
 	/**

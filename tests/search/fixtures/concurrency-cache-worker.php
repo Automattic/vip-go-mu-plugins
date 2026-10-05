@@ -74,10 +74,26 @@ class Barrier_Object_Cache extends \WP_Object_Cache {
 function worker_barrier( string $phase ): void {
 	fwrite( STDOUT, $phase . "\n" );
 	fflush( STDOUT );
-	stream_set_timeout( STDIN, 10 );
-	if ( "continue\n" !== fgets( STDIN ) ) {
-		throw new \RuntimeException( 'Worker barrier timed out: ' . $phase );
-	}
+	stream_set_blocking( STDIN, false );
+	$command  = '';
+	$deadline = microtime( true ) + 10;
+	do {
+		$chunk = fgets( STDIN );
+		if ( false !== $chunk ) {
+			$command .= $chunk;
+			if ( "continue\n" === $command ) {
+				return;
+			}
+			if ( str_contains( $command, "\n" ) ) {
+				break;
+			}
+		}
+		if ( feof( STDIN ) ) {
+			break;
+		}
+		usleep( 10000 );
+	} while ( microtime( true ) < $deadline );
+	throw new \RuntimeException( 'Worker barrier timed out: ' . $phase );
 }
 
 // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
