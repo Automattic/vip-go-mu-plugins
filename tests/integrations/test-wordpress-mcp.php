@@ -582,6 +582,48 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
+	/**
+	 * Only a current, correctly signed request scoped to the bridge resolves a user.
+	 *
+	 * @dataProvider mcp_authentication_cases
+	 */
+	public function test_mcp_authentication_rejects_invalid_requests( string $variant ): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'request-user@example.com';
+		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
+		$this->sign_mcp_request( $email, $auth_key );
+		if ( 'wrong signature' === $variant ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Deliberate invalid bridge credential fixture.
+			$_SERVER['PHP_AUTH_PW'] = str_repeat( '0', 64 );
+		} elseif ( 'wrong key' === $variant ) {
+			$this->sign_mcp_request( $email, 'different-key' );
+		} elseif ( 'old timestamp' === $variant || 'future timestamp' === $variant ) {
+			$timestamp                                = (string) ( time() + ( 'old timestamp' === $variant ? -3600 : 3600 ) );
+			$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Deliberate invalid bridge credential fixture.
+			$_SERVER['PHP_AUTH_PW'] = hash_hmac( 'sha256', $email . $timestamp, $auth_key );
+		} elseif ( 'missing timestamp' === $variant ) {
+			unset( $_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] );
+		} elseif ( 'malformed timestamp' === $variant ) {
+			$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = 'not-a-timestamp';
+		} elseif ( 'disabled bridge' === $variant ) {
+			$_SERVER['HTTP_X_VIP_MCP_AUTH'] = 'false';
+		} elseif ( 'other route' === $variant ) {
+			$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
+		}
+		$integration = new WordPressMcpIntegration( $this->slug );
+		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+		$this->assertSame( 'valid' === $variant ? $user_id : false, $integration->authenticate_mcp_request( false ) );
+	}
+
+	/**
+	 * Authentication cases change one request property from a valid signed control.
+	 */
+	public function mcp_authentication_cases(): array {
+		$variants = [ 'valid', 'wrong signature', 'wrong key', 'old timestamp', 'future timestamp', 'missing timestamp', 'malformed timestamp', 'disabled bridge', 'other route' ];
+		return array_combine( $variants, array_map( static fn( $variant ) => [ $variant ], $variants ) );
+	}
+
 	public function test_report_auth_error_surfaces_rest_error_when_user_not_found(): void {
 		$auth_key = 'test-auth-key';
 		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
