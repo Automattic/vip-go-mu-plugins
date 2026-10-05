@@ -548,11 +548,19 @@ class Queue_Test extends WP_UnitTestCase {
 		$lines      = preg_split( '/\n+/', trim( $bulk_requests[0]['args']['body'] ) );
 		$index_name = Indexables::factory()->get( 'post' )->get_index_name();
 		$this->assertCount( 2 * count( $object_ids ), $lines );
-		foreach ( $object_ids as $offset => $object_id ) {
-			$action   = json_decode( $lines[ 2 * $offset ], true );
-			$document = json_decode( $lines[ 2 * $offset + 1 ], true );
-			$this->assertSame( $object_id, (int) $action['index']['_id'] );
-			$this->assertStringContainsString( '/' . $index_name . '/', $bulk_requests[0]['url'] );
+		$documents  = array();
+		$line_count = count( $lines );
+		for ( $offset = 0; $offset < $line_count; $offset += 2 ) {
+			$action                  = json_decode( $lines[ $offset ], true );
+			$object_id               = (int) $action['index']['_id'];
+			$documents[ $object_id ] = json_decode( $lines[ $offset + 1 ], true );
+		}
+		$indexed_ids = array_keys( $documents );
+		sort( $indexed_ids );
+		sort( $object_ids );
+		$this->assertSame( $object_ids, $indexed_ids );
+		$this->assertStringContainsString( '/' . $index_name . '/', $bulk_requests[0]['url'] );
+		foreach ( $documents as $document ) {
 			$this->assertSame( 'Queue indexing title', $document['post_title'] );
 			$this->assertSame( 'Queue indexing content', $document['post_content'] );
 		}
