@@ -56,7 +56,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		$server_log  = tempnam( get_temp_dir(), 'vip-request-block-log-' );
 		$source      = sprintf(
 			"<?php\nrequire %s;\nVIP_Request_Block::toggle_logging( false );\n\$_SERVER['HTTP_TRUE_CLIENT_IP'] = '203.0.113.9';\nVIP_Request_Block::ip( '203.0.113.9' );\necho 'BLOCK_DID_NOT_EXIT';\n",
-			wp_json_encode( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', JSON_THROW_ON_ERROR )
+			var_export( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', true )
 		);
 		file_put_contents( $script_path, $source );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Spawn the isolated native HTTP request.
