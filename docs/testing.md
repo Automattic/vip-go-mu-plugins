@@ -106,3 +106,19 @@ Jetpack tests: `CI=1 ./bin/test.sh --filter test_jetpack_compatibility_requireme
 
 The e2e setup also runs the real import command with Jetpack disabled and verifies
 that credentials are removed before customer hooks while unrelated options remain.
+
+### Configuration sync runtime
+
+Run the isolated multisite sync regression with:
+
+```sh
+CI=1 ./bin/test.sh --multisite 1 --filter test_runtime_sync_payload_persistence_and_secondary_schedule
+```
+
+The test copies WordPress tables into a temporary prefix and boots a separate PHP
+process without `WP_TESTS_DOMAIN`. It exercises real option hooks, full and
+heartbeat sends, persisted sync state, rate limiting and secondary-blog cron
+scheduling. Only HTTP and FastCGI completion are substituted; no sync service is
+contacted. The test removes its copied tables afterward and skips explicitly in
+single-site runs. The runner must allow PHP subprocesses and temporary database
+table creation.
