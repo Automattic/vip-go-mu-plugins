@@ -1,8 +1,12 @@
 <?php
 
+use Automattic\Test\Constant_Mocker;
+
 class Test_Stats extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
+
+		Constant_Mocker::clear();
 
 		// Add the hooks we want to test
 		add_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\maybe_set_xml_rpc_auth_tracker_type', 30, 1 );
@@ -21,36 +25,27 @@ class Test_Stats extends WP_UnitTestCase {
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
 
+		Constant_Mocker::clear();
 		parent::tear_down();
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_application_password_did_authenticate_non_xmlrpc_request() {
 		// Ensure XMLRPC_REQUEST is not defined or false
-		define( 'XMLRPC_REQUEST', false );
+		Constant_Mocker::define( 'XMLRPC_REQUEST', false );
 
 		// Create a test user
 		$user = self::factory()->user->create_and_get();
 
-		// Trigger the filter
-		apply_filters( 'application_password_did_authenticate', $user );
+		// Trigger the action
+		do_action( 'application_password_did_authenticate', $user, null );
 
 		// Assert state was NOT changed from initial 'user_pass'
 		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_application_password_did_authenticate_xmlrpc_success() {
 		// Define XMLRPC_REQUEST before any other code runs
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', true );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		$username = 'testuser_app';
 		$user_id  = self::factory()->user->create( [
@@ -65,34 +60,25 @@ class Test_Stats extends WP_UnitTestCase {
 		$this->assertEquals( 'app_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_application_password_did_authenticate_failure() {
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', true );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		// Trigger the filter with a failed authentication result (WP_Error)
 		$error = new \WP_Error( 'authentication_failed', 'Authentication failed.' );
 
-		apply_filters( 'application_password_did_authenticate', $error );
+		do_action( 'application_password_did_authenticate', $error, null );
 		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 
 		// Test with null result
-		apply_filters( 'application_password_did_authenticate', null );
+		do_action( 'application_password_did_authenticate', null, null );
 		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_record_xmlrpc_auth_telemetry_not_xmlrpc_request() {
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', false );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', false );
+
+		// Log in, so only the XML-RPC check can prevent tracking
+		wp_set_current_user( self::factory()->user->create() );
 
 		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
 			->disableOriginalConstructor()
@@ -107,14 +93,8 @@ class Test_Stats extends WP_UnitTestCase {
 		do_action( 'xmlrpc_call', 'test.method' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_record_xmlrpc_auth_telemetry_authenticated() {
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', true );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		// Create and log in a test user
 		$user_id = self::factory()->user->create();
@@ -145,14 +125,8 @@ class Test_Stats extends WP_UnitTestCase {
 		do_action( 'xmlrpc_call', 'test.method' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_record_xmlrpc_auth_telemetry_unauthenticated() {
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', true );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		// Ensure no user is logged in
 		wp_set_current_user( 0 );
@@ -171,14 +145,8 @@ class Test_Stats extends WP_UnitTestCase {
 		do_action( 'xmlrpc_call', 'test.method' );
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
 	public function test_record_xmlrpc_auth_telemetry_different_methods() {
-		if ( ! defined( 'XMLRPC_REQUEST' ) ) {
-			define( 'XMLRPC_REQUEST', true );
-		}
+		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		// Create and log in a test user
 		$user_id = self::factory()->user->create();

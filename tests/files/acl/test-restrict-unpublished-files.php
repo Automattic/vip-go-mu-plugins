@@ -17,6 +17,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
+
+		// These tests only need the attachment posts and their `_wp_attached_file` meta.
+		// Skip generating intermediate sizes for the large fixture image, which is slow
+		// (VIP generates them on the fly in production anyway).
+		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
 	}
 
 	public function tearDown(): void {
@@ -180,10 +185,9 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		// Set up the first attachment.
 		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
-		// Create a second attachment with the same file path.
-		$duplicate_attachment_id   = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
-		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', $duplicate_attachment_file );
+		// Create a second attachment with the same file path (uploads get a unique file name, so point it at the first file).
+		$duplicate_attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', get_post_meta( $attachment_id, '_wp_attached_file', true ) );
 
 		// Look up the first one in the list.
 		$expected_attachment_id = $attachment_id;
@@ -199,12 +203,11 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 	public function test__get_attachment_id_from_file_path__attachment_multiple_results_exact_match_first() {
 		// Set up the first attachment.
-		$this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
 
-		// Create a second attachment with the same file path.
-		$duplicate_attachment_id   = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
-		$duplicate_attachment_file = get_post_meta( $duplicate_attachment_id, '_wp_attached_file', true );
-		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', strtoupper( $duplicate_attachment_file ) );
+		// Create a second attachment whose file path only differs from the first one by case.
+		$duplicate_attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		update_post_meta( $duplicate_attachment_id, '_wp_attached_file', strtoupper( get_post_meta( $attachment_id, '_wp_attached_file', true ) ) );
 
 		// Look up the second one in the list.
 		$expected_attachment_id = $duplicate_attachment_id;

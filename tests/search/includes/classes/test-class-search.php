@@ -622,14 +622,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that the default bulk index chunk size limit is not defined if we're not using VIP Search
-	 */
-	public function test__vip_search_bulk_chunk_size_not_defined_when_not_using_vip_search() {
-		$this->markTestSkipped( 'Revisit this test' );
-		$this->assertEquals( defined( 'EP_SYNC_CHUNK_LIMIT' ), false );
-	}
-
-	/**
 	 * Test that the ES config constants are set automatically when not already defined and VIP-provided configs are present
 	 */
 	public function test__vip_search_connection_constants() {

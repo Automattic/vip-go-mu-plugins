@@ -1055,7 +1055,6 @@ class Health_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider get_index_settings_diff_for_indexable_data
-	 * @processIsolation true
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
 		$index_name = 'vip-123-post-1';
@@ -1335,7 +1334,6 @@ class Health_Test extends WP_UnitTestCase {
 
 	/**
 	 * @dataProvider heal_index_settings_for_indexable_data
-	 * @processIsolation true
 	 */
 	public function test_heal_index_settings_for_indexable( $desired_settings, $options ) {
 		$index_name = 'foo-index-name';

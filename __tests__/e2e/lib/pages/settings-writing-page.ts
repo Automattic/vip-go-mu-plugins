@@ -19,13 +19,6 @@ export class SettingsWritingPage {
 	}
 
 	/**
-	 * Navigate to Writing Settings page
-	 */
-	public visit(): Promise<unknown> {
-		return this.page.goto( '/wp-admin/options-writing.php' );
-	}
-
-	/**
 	 * Checks to see if Classic Editor Settings are available
 	 *
 	 * @return { Promise<boolean> } Whether classic editor settings are visible

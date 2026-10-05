@@ -5,9 +5,6 @@ import type { Page } from '@playwright/test';
 const selectors = {
 	editorTitle: '#title',
 	editorFrame: '#content_ifr',
-	editorBody: '#tinymce p',
-	saveDraftButton: '#save-post',
-	previewButton: '#post-preview',
 	publishButton: '#publish',
 	viewButton: '#message p a',
 	permalink: '#sample-permalink a',

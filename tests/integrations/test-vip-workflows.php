@@ -46,15 +46,21 @@ class VIP_Workflows_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|VipWorkflowsIntegration $integration */
 		$integration = $this->getMockBuilder( VipWorkflowsIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
+			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
 			->getMock();
+
+		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
+		$integration->activate();
 
 		$integration->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
+		$integration->expects( $this->never() )->method( 'get_versions' );
 
 		$integration->load();
 		do_action( 'plugins_loaded' );
+
+		$this->assertTrue( $integration->is_active() );
 	}
 
 	public function test_load_sets_inactive_when_no_versions_are_available(): void {
