@@ -71,20 +71,24 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		 */
 		$integration_mock = $this->getMockBuilder( RemoteDataBlocksIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
+			->onlyMethods( [ 'is_loaded', 'get_latest_version' ] )
 			->getMock();
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
 
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
+		$integration_mock->expects( $this->never() )->method( 'get_latest_version' );
 		$integration_mock->load();
 
 		// Manually trigger the plugins_loaded action
 		do_action( 'plugins_loaded' );
 
 		// This test passes if we reach here without errors, as the expectation of is_loaded being called once is met
-		$this->assertTrue( true );
+
+		$this->assertTrue( $integration_mock->is_active() );
+		$this->assertSame( [], $integration_mock->get_env_config() );
 	}
 
 	public function test_configure_defines_config_constant(): void {

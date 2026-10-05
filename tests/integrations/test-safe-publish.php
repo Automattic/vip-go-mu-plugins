@@ -218,16 +218,21 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 		/** @var MockObject|SafePublishIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( SafePublishIntegration::class )
 			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
+			->onlyMethods( [ 'is_loaded', 'get_versions', 'get_selected_version_folder' ] )
 			->getMock();
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
 
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
+		$integration_mock->expects( $this->never() )->method( 'get_versions' );
+		$integration_mock->expects( $this->never() )->method( 'get_selected_version_folder' );
 		$integration_mock->load();
 
 		do_action( 'plugins_loaded' );
+		$this->assertTrue( $integration_mock->is_active() );
+		$this->assertSame( [], $integration_mock->get_env_config() );
 	}
 
 	public function test_load_sets_inactive_when_no_versions_are_available(): void {
