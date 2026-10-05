@@ -298,6 +298,7 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 				if ( null === $hooks ) {
 					unset( $GLOBALS['wp_filter']['plugins_loaded'] );
 				} else {
+					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the cloned hook after the fixture.
 					$GLOBALS['wp_filter']['plugins_loaded'] = $hooks;
 				}
 				unset( $GLOBALS['vip_rtc_fixture_loads'] );
