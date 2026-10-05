@@ -151,25 +151,31 @@ class Alerts_Test extends WP_UnitTestCase {
 		return [
 			'invalid-type' => [ 'string' ],
 			'missing-keys' => [
-				'alias'       => 'test/alert',
-				'description' => 'Test alert',
-				'entity'      => 'test',
-				'source'      => 'test',
+				[
+					'alias'       => 'test/alert',
+					'description' => 'Test alert',
+					'entity'      => 'test',
+					'source'      => 'test',
+				],
 			],
 			'extra-keys'   => [
-				'alias'       => 'test/alert',
-				'description' => 'Test alert',
-				'entity'      => 'test',
-				'priority'    => 'P4',
-				'source'      => 'test',
-				'extra'       => 'invalid',
+				[
+					'alias'       => 'test/alert',
+					'description' => 'Test alert',
+					'entity'      => 'test',
+					'priority'    => 'P4',
+					'source'      => 'test',
+					'extra'       => 'invalid',
+				],
 			],
 			'empty-keys'   => [
-				'alias'       => 'test/alert',
-				'description' => '',
-				'entity'      => 'test',
-				'priority'    => 'P4',
-				'source'      => 'test',
+				[
+					'alias'       => 'test/alert',
+					'description' => '',
+					'entity'      => 'test',
+					'priority'    => 'P4',
+					'source'      => 'test',
+				],
 			],
 		];
 	}
@@ -228,26 +234,32 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_pagerduty_details() {
 		return [
 			'invalid-type'             => [ 'string' ],
-			'missing-keys'             => [
-				'source' => 'test',
-			],
+			'missing-keys'             => [ [ 'source' => 'test' ] ],
 			'empty-keys'               => [
-				'severity' => '',
-				'source'   => 'test',
+				[
+					'severity' => '',
+					'source'   => 'test',
+				],
 			],
 			'extra-keys'               => [
-				'severity' => '',
-				'source'   => 'test',
-				'invalid'  => 'invalid',
+				[
+					'severity' => 'critical',
+					'source'   => 'test',
+					'invalid'  => 'invalid',
+				],
 			],
 			'invalid-severity'         => [
-				'severity' => 'invalid',
-				'source'   => 'test',
+				[
+					'severity' => 'invalid',
+					'source'   => 'test',
+				],
 			],
 			'non-array-custom-details' => [
-				'severity'       => 'critical',
-				'source'         => 'test',
-				'custom_details' => 'invalid',
+				[
+					'severity'       => 'critical',
+					'source'         => 'test',
+					'custom_details' => 'invalid',
+				],
 			],
 		];
 	}
