@@ -7,13 +7,14 @@ class Query_Warning {
 	public const DEFAULT_DEDUPE_WINDOW_S   = 300;
 	public const DEFAULT_BUDGET            = 5;
 
-	private const MIN_SLOW_THRESHOLD_MS = 1;
-	private const MAX_SLOW_THRESHOLD_MS = 5000;
-	private const MIN_DEDUPE_WINDOW_S   = 60;
-	private const MAX_DEDUPE_WINDOW_S   = 3600;
-	private const MIN_BUDGET            = 1;
-	private const MAX_BUDGET            = 100;
-	private const CACHE_GROUP           = 'vip_search';
+	private const MIN_SLOW_THRESHOLD_MS   = 1;
+	private const MAX_SLOW_THRESHOLD_MS   = 5000;
+	private const PAYLOAD_THRESHOLD_BYTES = 1024 * 1024;
+	private const MIN_DEDUPE_WINDOW_S     = 60;
+	private const MAX_DEDUPE_WINDOW_S     = 3600;
+	private const MIN_BUDGET              = 1;
+	private const MAX_BUDGET              = 100;
+	private const CACHE_GROUP             = 'vip_search';
 
 	/** @var Query_Classifier */
 	private $classifier;
@@ -35,11 +36,16 @@ class Query_Warning {
 	 * @param array        $response_body Decoded Elasticsearch response.
 	 * @param float        $request_ms Total Elasticsearch HTTP duration.
 	 * @param array|null   $backtrace Optional backtrace for deterministic tests.
+	 * @param int|null     $response_bytes Raw response body length, used to attribute slow requests to large payloads.
 	 */
-	public function maybe_emit( $request_body, array $response_body, float $request_ms, ?array $backtrace = null ): bool {
+	public function maybe_emit( $request_body, array $response_body, float $request_ms, ?array $backtrace = null, ?int $response_bytes = null ): bool {
 		try {
 			/**
-			 * Filters the total Elasticsearch HTTP duration that triggers a slow-query warning.
+			 * Filters the Elasticsearch execution time (the response's `took`) that triggers a slow-query warning.
+			 *
+			 * A request whose total HTTP duration exceeds the threshold also warns when it transfers
+			 * at least 1 MiB of request and response data, since large payloads add serialization
+			 * and transfer time outside Elasticsearch.
 			 *
 			 * @param int $threshold Duration in milliseconds.
 			 */
@@ -57,12 +63,15 @@ class Query_Warning {
 			 *
 			 * @param int $budget Maximum logical pairs.
 			 */
-			$budget  = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
-			$decoded = $this->decode_body( $request_body );
-			$scope   = null === $decoded ? Query_Classifier::SCOPE_UNKNOWN : $this->classifier->scope( $decoded );
-			$types   = [];
+			$budget        = $this->bounded_int( apply_filters( 'vip_search_query_warning_budget', self::DEFAULT_BUDGET ), self::DEFAULT_BUDGET, self::MIN_BUDGET, self::MAX_BUDGET );
+			$decoded       = $this->decode_body( $request_body );
+			$scope         = null === $decoded ? Query_Classifier::SCOPE_UNKNOWN : $this->classifier->scope( $decoded );
+			$engine_ms     = isset( $response_body['took'] ) && is_numeric( $response_body['took'] ) ? (int) round( $response_body['took'] ) : null;
+			$payload_bytes = is_string( $request_body ) && null !== $response_bytes ? strlen( $request_body ) + $response_bytes : null;
+			$slow_basis    = $this->slow_basis( $request_ms, $engine_ms, $payload_bytes, $threshold );
+			$types         = [];
 
-			if ( $request_ms > $threshold ) {
+			if ( null !== $slow_basis ) {
 				$types[] = 'slow_query';
 			}
 
@@ -91,7 +100,9 @@ class Query_Warning {
 			$context     = [
 				'request_ms'       => (int) ceil( $request_ms ),
 				'request_limit_ms' => $threshold,
-				'engine_ms'        => isset( $response_body['took'] ) && is_numeric( $response_body['took'] ) ? (int) round( $response_body['took'] ) : null,
+				'engine_ms'        => $engine_ms,
+				'slow_basis'       => $slow_basis,
+				'payload_bytes'    => $payload_bytes,
 				'requested'        => isset( $decoded['size'] ) && is_numeric( $decoded['size'] ) ? (int) $decoded['size'] : null,
 				'returned'         => isset( $response_body['hits']['hits'] ) && is_array( $response_body['hits']['hits'] ) ? count( $response_body['hits']['hits'] ) : null,
 				'total_hits'       => $this->total_hits( $response_body ),
@@ -108,7 +119,7 @@ class Query_Warning {
 			}
 
 			$technical = $this->technical_message( $warning_id, $types, $context, $window );
-			$human     = $this->human_message( $warning_id, $types, $context, $window );
+			$human     = 'VIP_SEARCH_QUERY_WARNING: ' . $this->human_message( $warning_id, $types, $context, $window );
 
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.Security.EscapeOutput.OutputNotEscaped -- Intentional customer-visible plain-text warning; dynamic values are sanitized during formatting.
 			trigger_error( $technical, E_USER_WARNING );
@@ -141,6 +152,28 @@ class Query_Warning {
 		$decoded = is_string( $request_body ) ? json_decode( $request_body, true ) : null;
 
 		return is_array( $decoded ) ? $decoded : null;
+	}
+
+	/**
+	 * Determine why a request counts as slow, or null when it does not.
+	 *
+	 * - engine:  Elasticsearch execution (`took`) exceeded the threshold.
+	 * - payload: the HTTP request exceeded the threshold while transferring a large payload.
+	 */
+	private function slow_basis( float $request_ms, ?int $engine_ms, ?int $payload_bytes, int $threshold ): ?string {
+		if ( null === $engine_ms ) {
+			return null;
+		}
+
+		if ( $engine_ms > $threshold ) {
+			return 'engine';
+		}
+
+		if ( $request_ms > $threshold && null !== $payload_bytes && $payload_bytes >= self::PAYLOAD_THRESHOLD_BYTES ) {
+			return 'payload';
+		}
+
+		return null;
 	}
 
 	private function total_hits( array $response_body ): ?int {
@@ -299,24 +332,28 @@ class Query_Warning {
 			$warning_id
 		);
 
+		$payload_advice = 'payload' === $context['slow_basis']
+			? 'Large payloads add serialization and transfer time outside Elasticsearch, so request fewer results or only the fields you need.'
+			: null;
+
 		if ( [ 'slow_query', 'unbounded_query' ] === $types ) {
 			return sprintf(
-				'%s triggered a potentially expensive VIP Search query%s The query took %d ms, above the configured warning threshold of %d ms, and did not contain a limiting search condition. An unbounded query may search the entire index and become more expensive as the site grows. Review the query and add an appropriate search term or filter. %s',
+				'%s triggered a potentially expensive VIP Search query%s %s. The query also did not contain a limiting search condition. An unbounded query may search the entire index and become more expensive as the site grows. %sReview the query and add an appropriate search term or filter. %s',
 				$subject,
 				$origin,
-				$context['request_ms'],
-				$context['request_limit_ms'],
+				$this->slow_clause( $context ),
+				null !== $payload_advice ? $payload_advice . ' ' : '',
 				$repeat
 			);
 		}
 
 		if ( [ 'slow_query' ] === $types ) {
 			return sprintf(
-				'%s triggered a slow VIP Search query%s The query took %d ms, above the configured warning threshold of %d ms. Review how this query is constructed and whether it runs more often than necessary. %s',
+				'%s triggered a slow VIP Search query%s %s. %s %s',
 				$subject,
 				$origin,
-				$context['request_ms'],
-				$context['request_limit_ms'],
+				$this->slow_clause( $context ),
+				$payload_advice ?? 'Review how this query is constructed and whether it runs more often than necessary.',
 				$repeat
 			);
 		}
@@ -326,6 +363,24 @@ class Query_Warning {
 			$subject,
 			$origin,
 			$repeat
+		);
+	}
+
+	private function slow_clause( array $context ): string {
+		if ( 'payload' === $context['slow_basis'] ) {
+			return sprintf(
+				'The request took %d ms, above the configured warning threshold of %d ms, while transferring %s of request and response data. Elasticsearch executed the query in %d ms',
+				$context['request_ms'],
+				$context['request_limit_ms'],
+				size_format( $context['payload_bytes'], 1 ),
+				$context['engine_ms']
+			);
+		}
+
+		return sprintf(
+			'Elasticsearch took %d ms to execute the query, above the configured warning threshold of %d ms',
+			$context['engine_ms'],
+			$context['request_limit_ms']
 		);
 	}
 
