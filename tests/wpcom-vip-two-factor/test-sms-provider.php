@@ -8,6 +8,8 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	private array $http_requests;
 	private mixed $original_error_handler;
+	private string $original_display_errors;
+	private string $original_error_log;
 	private array $http_response_mocks;
 
 	public static function setUpBeforeClass(): void {
@@ -27,6 +29,9 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Set up HTTP request mocking
 		add_filter( 'pre_http_request', [ $this, 'mock_http_request' ], 10, 3 );
 
+		$this->original_display_errors = (string) ini_get( 'display_errors' );
+		$this->original_error_log      = (string) ini_get( 'error_log' );
+
 		// Set up error handler to the same used in production
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 		$this->original_error_handler = set_error_handler( 'wpcom_error_handler' );
@@ -40,10 +45,16 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		if ( $this->original_error_handler ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-			set_error_handler( $this->original_error_handler );
-		}
+		// Pop exactly the handler installed in setUp, including when its predecessor was null.
+		restore_error_handler();
+		// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed -- Restore the saved diagnostic configuration.
+		ini_set( 'display_errors', $this->original_display_errors );
+		// phpcs:ignore WordPress.PHP.IniSet.Risky -- Restore the saved diagnostic configuration.
+		ini_set( 'error_log', $this->original_error_log );
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Observe and immediately restore the current handler.
+		$restored_handler = set_error_handler( static fn() => false );
+		restore_error_handler();
 
 		// Remove HTTP request filter
 		remove_filter( 'pre_http_request', [ $this, 'mock_http_request' ] );
@@ -52,6 +63,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$_REQUEST = [];
 
 		parent::tearDown();
+
+		$this->assertSame( $this->original_display_errors, ini_get( 'display_errors' ) );
+		$this->assertSame( $this->original_error_log, ini_get( 'error_log' ) );
+		$this->assertSame( $this->original_error_handler, $restored_handler );
 	}
 
 	public function test_strategy_selection_phone_formats(): void {
