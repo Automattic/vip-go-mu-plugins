@@ -3,10 +3,17 @@
 use Automattic\Test\Constant_Mocker;
 
 class Test_Stats extends WP_UnitTestCase {
+	private $server_backup;
+
 	public function set_up() {
 		parent::set_up();
 
 		Constant_Mocker::clear();
+
+		// Tracking is skipped for Jetpack requests, so don't depend on what earlier tests left in $_SERVER
+		$this->server_backup = $_SERVER;
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
+		unset( $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
 
 		// Add the hooks we want to test
 		add_action( 'application_password_did_authenticate', 'Automattic\\VIP\\Stats\\maybe_set_xml_rpc_auth_tracker_type', 30, 1 );
@@ -24,6 +31,8 @@ class Test_Stats extends WP_UnitTestCase {
 		// Reset state again just in case
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
+
+		$_SERVER = $this->server_backup;
 
 		Constant_Mocker::clear();
 		parent::tear_down();

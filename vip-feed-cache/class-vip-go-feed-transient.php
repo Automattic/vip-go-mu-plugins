@@ -15,43 +15,43 @@ class VIP_Go_Feed_Cache_Transient extends WP_Feed_Cache_Transient implements Sim
 	 * by the filemtime() of the SimplePie source files, and file modified dates
 	 * can differ between web containers.
 	 *
+	 * The transient is read by the parent class so that it always comes from
+	 * the same storage core saves it to (`*_site_transient()` since WP 6.9).
+	 *
 	 * @access public
 	 *
 	 * @return mixed Transient value.
 	 */
 	public function load() {
-		$transient = get_transient( $this->name );
+		$transient = parent::load();
 
 		// If we don't have the required data, bail.
-		if ( ! defined( 'SIMPLEPIE_BUILD' ) || ! isset( $transient['build'] ) ) {
+		if ( ! isset( $transient['build'] ) ) {
 			return $transient;
 		}
-		$transient['build'] = SIMPLEPIE_BUILD;
+
+		$build = self::get_simplepie_build();
+		if ( null !== $build ) {
+			$transient['build'] = $build;
+		}
+
 		return $transient;
 	}
 
 	/**
-	 * Gets mod transient.
+	 * Gets the build number SimplePie validates cached data against.
 	 *
-	 * This also normalizes the SimplePie Build number.  If the returned build
-	 * number differs from what is expected, the cache is considered invalid.
-	 * The number can differ if one web container sets the cache and a different
-	 * web container reads the cache.  This is because the build number is set
-	 * by the filemtime() of the SimplePie source files, and file modified dates
-	 * can differ between web containers.
+	 * SimplePie 1.8+ (WP 6.7+) strictly compares against the integer returned by
+	 * SimplePie\Misc::get_build(). Older versions compare against the SIMPLEPIE_BUILD
+	 * constant, which is a date string.
 	 *
-	 * @access public
-	 *
-	 * @return mixed Transient value.
+	 * @return int|string|null Build number, or null if it can't be determined.
 	 */
-	public function mtime() {
-		$transient = get_transient( $this->mod_name );
-
-		// If we don't have the required data, bail.
-		if ( ! defined( 'SIMPLEPIE_BUILD' ) || ! isset( $transient['build'] ) ) {
-			return $transient;
+	private static function get_simplepie_build() {
+		if ( class_exists( 'SimplePie\Misc' ) ) {
+			return \SimplePie\Misc::get_build();
 		}
-		$transient['build'] = SIMPLEPIE_BUILD;
-		return $transient;
+
+		return defined( 'SIMPLEPIE_BUILD' ) ? SIMPLEPIE_BUILD : null;
 	}
 }
