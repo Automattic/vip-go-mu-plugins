@@ -74,24 +74,33 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 			fclose( $pipes[0] );
 		}
 
+		$response_stream  = false;
+		$response_context = stream_context_create( [ 'http' => [ 'ignore_errors' => true ] ] );
 		try {
 			$this->assertIsResource( $server );
-			$response = false;
-			for ( $attempt = 0; $attempt < 40 && false === $response; $attempt++ ) {
-					// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile -- Connection attempts wait for the temporary local test server.
-				$response = @file_get_contents( 'http://127.0.0.1:' . $port . '/', false, stream_context_create( [ 'http' => [ 'ignore_errors' => true ] ] ) );
-				if ( false === $response ) {
+			for ( $attempt = 0; $attempt < 40 && false === $response_stream; $attempt++ ) {
+				// phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- Connection attempts wait for the temporary local test server.
+				$response_stream = @fopen( 'http://127.0.0.1:' . $port . '/', 'rb', false, $response_context );
+				if ( false === $response_stream ) {
 					usleep( 25000 );
 				}
 			}
 
-			$response_headers = function_exists( 'http_get_last_response_headers' ) ? http_get_last_response_headers() : $http_response_header;
+			$this->assertIsResource( $response_stream );
+			$stream_metadata  = stream_get_meta_data( $response_stream );
+			$response_headers = $stream_metadata['wrapper_data'] ?? [];
+			$response         = stream_get_contents( $response_stream );
+			fclose( $response_stream );
+			$response_stream = false;
 			$this->assertSame( '', $response );
 			$this->assertSame( 403, isset( $response_headers[0] ) ? (int) substr( $response_headers[0], 9, 3 ) : 0 );
 			$this->assertContains( 'Cache-Control: no-cache, must-revalidate, max-age=0', $response_headers );
 			$this->assertContains( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT', $response_headers );
 			$this->assertStringNotContainsString( 'BLOCK_DID_NOT_EXIT', $response );
 		} finally {
+			if ( is_resource( $response_stream ) ) {
+				fclose( $response_stream );
+			}
 			if ( is_resource( $server ) ) {
 				proc_terminate( $server );
 				proc_close( $server );
