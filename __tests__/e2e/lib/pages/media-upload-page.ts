@@ -19,6 +19,13 @@ export class MediaUploadPage {
 	}
 
 	/**
+	 * Navigate to the Add Media File page
+	 */
+	public visit(): Promise<unknown> {
+		return this.page.goto( '/wp-admin/media-new.php' );
+	}
+
+	/**
 	 * Upload File
 	 *
 	 * @param { string } mediaFile Media file name
