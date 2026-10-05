@@ -28,6 +28,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->original_server = $_SERVER;
 
 		header_remove();
+		Cookie_Recorder::$calls = [];
 
 		Vary_Cache::load();
 		Constant_Mocker::clear();
@@ -47,6 +48,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
+		Cookie_Recorder::$calls = [];
 		restore_error_handler();
 
 		Constant_Mocker::clear();
@@ -364,6 +366,96 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 			],
 
 		];
+	}
+
+	/**
+	 * Verify real group emission, raw encryption and custom cookie scope.
+	 *
+	 * @dataProvider get_cookie_encoding_cases
+	 */
+	public function test_group_cookie_parameters( bool $encrypted ): void {
+		$path_filter   = static function () {
+			return '/segmentation/';
+		};
+		$domain_filter = static function () {
+			return 'cookies.example.org';
+		};
+		add_filter( 'vip_vary_cache_cookie_path', $path_filter );
+		add_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+		Vary_Cache::set_cookie_expiry( HOUR_IN_SECONDS );
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+		$before = time();
+		try {
+			do_action( 'send_headers' );
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
+			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		}
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertTrue( $raw );
+		$this->assertSame( $encrypted ? Vary_Cache::COOKIE_AUTH : Vary_Cache::COOKIE_SEGMENT, $name );
+		$this->assertGreaterThanOrEqual( $before + HOUR_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() + HOUR_IN_SECONDS, $expiry );
+		$this->assertSame( '/segmentation/', $path );
+		$this->assertSame( 'cookies.example.org', $domain );
+		if ( $encrypted ) {
+			$this->assertStringStartsWith( '123.', $value );
+			$payload = substr( $value, 4 );
+			$this->assertSame( $payload, base64_encode( base64_decode( $payload, true ) ) );
+			$value = self::get_vary_cache_method( 'decrypt_cookie_value' )->invoke( null, $payload );
+		}
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
+	}
+
+	/**
+	 * Cover both plaintext and encrypted group cookies.
+	 */
+	public function get_cookie_encoding_cases(): array {
+		return [
+			'plain'     => [ false ],
+			'encrypted' => [ true ],
+		];
+	}
+
+	/**
+	 * Verify no-cache creation and deletion reach their respective writers.
+	 */
+	public function test_nocache_cookie_parameters(): void {
+		Vary_Cache::set_nocache_for_user();
+		$before = time();
+		do_action( 'send_headers' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertTrue( $raw );
+		$this->assertSame( Vary_Cache::COOKIE_NOCACHE, $name );
+		$this->assertSame( 1, $value );
+		$this->assertGreaterThanOrEqual( $before + MONTH_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() + MONTH_IN_SECONDS, $expiry );
+		$this->assertSame( COOKIEPATH, $path );
+		$this->assertSame( (string) COOKIE_DOMAIN, $domain );
+
+		Vary_Cache::unload();
+		Vary_Cache::load();
+		Cookie_Recorder::$calls = [];
+		Vary_Cache::remove_nocache_for_user();
+		$before = time();
+		do_action( 'send_headers' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertFalse( $raw );
+		$this->assertSame( Vary_Cache::COOKIE_NOCACHE, $name );
+		$this->assertSame( '', $value );
+		$this->assertGreaterThanOrEqual( $before - HOUR_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
+		$this->assertSame( '', $path );
+		$this->assertSame( '', $domain );
 	}
 
 	public function test__set_group_for_user__valid() {
