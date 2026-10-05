@@ -11,9 +11,13 @@ use ElasticPress\Elasticsearch;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+
 // phpcs:disable Squiz.PHP.CommentedOutCode.Found -- false positives
 
 class Versioning_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
+
 	/** @var Versioning */
 	public static $version_instance;
 	/** @var Search */
@@ -65,9 +69,11 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		$this->add_es_http_mock();
 	}
 
 	public function tearDown(): void {
+		$this->remove_es_http_mock();
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}

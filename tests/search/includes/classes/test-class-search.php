@@ -55,6 +55,8 @@ class Search_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		restore_error_handler();
 
+		self::$mock_global_functions = null;
+
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -3269,15 +3271,19 @@ class Search_Test extends WP_UnitTestCase {
 }
 
 /**
- * Overwriting global function so that no real remote request is called
+ * Overrides the global function so that Search_Test can mock remote requests.
+ *
+ * These shims apply to the whole Automattic\VIP\Search namespace once this file is loaded,
+ * so outside of Search_Test (where the mock is null) they defer to the real function.
+ * Other test classes must mock HTTP via `pre_http_request`.
  */
 function vip_safe_wp_remote_request( ...$args ) {
-	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request( ...$args );
+	return is_null( Search_Test::$mock_global_functions ) ? \vip_safe_wp_remote_request( ...$args ) : Search_Test::$mock_global_functions->mock_vip_safe_wp_remote_request( ...$args );
 }
 
 /**
- * Overwriting global function so that no real remote request is called
+ * @see vip_safe_wp_remote_request()
  */
 function wp_remote_request( ...$args ) {
-	return is_null( Search_Test::$mock_global_functions ) ? null : Search_Test::$mock_global_functions->mock_wp_remote_request( ...$args );
+	return is_null( Search_Test::$mock_global_functions ) ? \wp_remote_request( ...$args ) : Search_Test::$mock_global_functions->mock_wp_remote_request( ...$args );
 }

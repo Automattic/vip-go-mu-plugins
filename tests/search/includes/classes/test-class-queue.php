@@ -8,13 +8,15 @@ use ElasticPress\Indexable\User\User;
 use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
-use WP_Error;
 use WP_UnitTestCase;
 use wpdb;
+
+require_once __DIR__ . '/trait-es-http-mock.php';
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 class Queue_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
 
 	/** @var Search */
 	private $es;
@@ -25,14 +27,8 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var SyncManager */
 	private $sync_manager;
 
-	/** @var int HTTP status the mocked Elasticsearch returns for index_exists requests */
-	private $index_exists_status = 200;
-
 	public function setUp(): void {
 		parent::setUp();
-
-		// Answer Elasticsearch requests locally so VIP's ep_do_intercept_request handler never hits the network
-		add_filter( 'pre_http_request', [ $this, 'mock_elasticsearch_http_request' ], 10, 3 );
 
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
@@ -52,14 +48,15 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->schema->prepare_table();
 		$this->queue->empty_queue();
 
-		// When test-class-search.php is loaded, its wp_remote_request() shim in this namespace bypasses pre_http_request, so pin the final response too
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request' ], PHP_INT_MAX, 5 );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		$this->add_es_http_mock();
 
 		$indexable          = Indexables::factory()->get( 'post' );
 		$this->sync_manager = $indexable->sync_manager;
 	}
 
 	public function tearDown(): void {
+		$this->remove_es_http_mock();
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -1338,7 +1335,8 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test__no_index_queueing() {
-		$this->index_exists_status = 404;
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX, 5 );
 
 		$result = $this->queue->queue_object( 1000, 'post' );
 		$this->assertWPError( $result );
@@ -1351,39 +1349,30 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 		$result     = $this->queue->queue_objects( $object_ids );
 		$this->assertNull( $result );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX );
 	}
 
 	/**
-	 * Fake Elasticsearch at the HTTP layer: index_exists (HEAD) requests get $index_exists_status, anything else fails without network I/O.
+	 * We need to fake the OK response from the ES server to avoid the actual request.
 	 */
-	public function mock_elasticsearch_http_request( $preempt, $args, $url ) {
-		if ( ! str_starts_with( $url, 'https://elasticsearch:9200/' ) ) {
-			return $preempt;
-		}
-
-		if ( 'HEAD' === ( $args['method'] ?? '' ) ) {
-			return [
-				'headers'  => [],
-				'body'     => '',
-				'response' => [
-					'code'    => $this->index_exists_status,
-					'message' => get_status_header_desc( $this->index_exists_status ),
-				],
-				'cookies'  => [],
-				'filename' => null,
-			];
-		}
-
-		return new WP_Error( 'http_request_failed', 'Unexpected Elasticsearch request in tests: ' . $url );
-	}
-
-	/**
-	 * Force the final index_exists response to $index_exists_status.
-	 */
-	public function filter_index_exists_request( $request, $query, $args, $failures, $type ) {
+	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
 		if ( 'index_exists' === $type ) {
 			return [
-				'response' => [ 'code' => $this->index_exists_status ],
+				'response' => [ 'code' => 200 ],
+				'body'     => [],
+			];
+		}
+		return $request;
+	}
+
+	/**
+	 * We need to fake the bad response from the ES server to avoid the actual request.
+	 */
+	public function filter_index_exists_request_bad( $request, $query, $args, $failures, $type ) {
+		if ( 'index_exists' === $type ) {
+			return [
+				'response' => [ 'code' => 404 ],
 				'body'     => [],
 			];
 		}
