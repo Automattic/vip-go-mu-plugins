@@ -69,7 +69,7 @@ namespace {
 	echo json_encode( $GLOBALS['events'] ?? [] );
 }
 PHP;
-		$script = str_replace( '__STATS_PATH__', var_export( dirname( __DIR__ ) . '/stats.php', true ), $script );
+		$script = str_replace( '__STATS_PATH__', wp_json_encode( dirname( __DIR__ ) . '/stats.php', JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR ), $script );
 		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- The test writes only a disposable subprocess fixture in the system temp directory.
 		$path = tempnam( get_temp_dir(), 'vip-stats-bootstrap-' );
 		file_put_contents( $path, $script );
