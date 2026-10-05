@@ -87,7 +87,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
 
 		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
+		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', ceil( time() / 120 ) . '|' . self::VALID_NAMESPACE, NONCE_SALT );
 
 		$response = $this->server->dispatch( $request );
 
@@ -228,6 +228,18 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		} finally {
 			unset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] );
 		}
+	}
+
+	/**
+	 * Tokens must independently bind the current tick, namespace and secret salt.
+	 */
+	public function test__independent_token_signing_contract() {
+		$tick     = ceil( time() / 120 );
+		$expected = hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, 'first-salt' );
+		$this->assertSame( $expected, \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'first-salt' ) );
+		$this->assertNotSame( $expected, \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'second-salt' ) );
+		$stale = hash_hmac( 'sha256', ( $tick - 2 ) . '|' . self::VALID_NAMESPACE, NONCE_SALT );
+		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, self::VALID_AUTH_MECHANISM . ' ' . $stale ) );
 	}
 
 	// Helper function to generate random username and password
