@@ -77,11 +77,17 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( $integration_mock->is_active() );
 	}
 
+	/**
+	 * Use a native namespace constant so installed extension files cannot satisfy this fixture.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_load_sets_inactive_if_plugin_file_not_found(): void {
 		// Set up required constants
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		Constant_Mocker::define( 'WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
+		\define( __NAMESPACE__ . '\\WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
