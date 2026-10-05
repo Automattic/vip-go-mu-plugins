@@ -10,7 +10,10 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use wpdb;
 
+require_once __DIR__ . '/../trait-es-http-mock.php';
+
 class Cron_Test extends WP_UnitTestCase {
+	use \Automattic\VIP\Search\ES_HTTP_Mock;
 	/** @var Search */
 	private $es;
 
@@ -126,6 +129,64 @@ class Cron_Test extends WP_UnitTestCase {
 
 		// Restore original Queue to not affect other tests
 		$this->cron->queue = $original_queue;
+	}
+
+	public function test_process_scheduled_option_batch() {
+		global $wpdb;
+
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->es->init();
+		$this->add_es_http_mock();
+		do_action( 'plugins_loaded' );
+		$post_ids = self::factory()->post->create_many( 3, array( 'post_status' => 'publish' ) );
+		$this->queue->empty_queue();
+		$this->queue->queue_objects( array_slice( $post_ids, 0, 2 ) );
+		$job_ids = array();
+		foreach ( array_slice( $post_ids, 0, 2 ) as $post_id ) {
+			$job_ids[] = $this->queue->get_next_job_for_object( $post_id, 'post' )->job_id;
+		}
+		$this->assertTrue( $this->cron->schedule_batch_job() );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$option = $wpdb->get_var( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'vip:esqp\_%'" );
+		$this->assertSame( $job_ids, get_option( $option ) );
+		$event = wp_get_scheduled_event( Cron::PROCESSOR_CRON_EVENT_NAME, array( array( 'option' => $option ) ) );
+		$this->assertNotFalse( $event );
+
+		// This extra job must remain queued after the stored batch is consumed.
+		$this->queue->queue_object( $post_ids[2] );
+		$indexed_ids = array();
+		$http        = static function ( $preempt, $args, $url ) use ( &$indexed_ids ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$lines      = preg_split( '/\n+/', trim( $args['body'] ) );
+				$line_count = count( $lines );
+				for ( $offset = 0; $offset < $line_count; $offset += 2 ) {
+					$indexed_ids[] = json_decode( $lines[ $offset ], true )['index']['_id'];
+				}
+			}
+			return array(
+				'headers'  => array(),
+				'body'     => '{}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			do_action_ref_array( $event->hook, $event->args );
+			$this->assertSame( array_slice( $post_ids, 0, 2 ), array_values( array_unique( $indexed_ids ) ) );
+			$this->assertSame( array(), $this->queue->get_jobs_by_ids( $job_ids ) );
+			$this->assertNotNull( $this->queue->get_next_job_for_object( $post_ids[2], 'post' ) );
+			$this->assertFalse( get_option( $option ) );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+			$this->remove_es_http_mock();
+			delete_option( $option );
+			wp_unschedule_event( $event->timestamp, $event->hook, $event->args );
+		}
 	}
 
 	public function test_schedule_batch_job() {
