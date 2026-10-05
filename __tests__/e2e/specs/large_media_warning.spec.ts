@@ -137,7 +137,8 @@ test.describe( 'Large media upload warning', () => {
 		const imageClass = await image.getAttribute( 'class' );
 		const attachmentId = imageClass?.match( /(?:^|\s)wp-image-(\d+)(?:\s|$)/ )?.[ 1 ];
 		expect( attachmentId ).toBeDefined();
-		const attachmentResponse = await request.get( `./wp-json/wp/v2/media/${ attachmentId }` );
+		const attachmentUrl = new URL( `/wp-json/wp/v2/media/${ attachmentId }`, page.url() ).toString();
+		const attachmentResponse = await page.context().request.get( attachmentUrl );
 		expect( attachmentResponse.status() ).toBe( 200 );
 		const attachment = await attachmentResponse.json() as { source_url: string };
 		await expectUploadedBytes( request, attachment.source_url, LARGE );
