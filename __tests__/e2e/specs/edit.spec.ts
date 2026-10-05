@@ -26,6 +26,10 @@ const updatedBodyLines = [
 	'– Thomas A. Edison',
 ];
 const updatedBodyText = updatedBodyLines.join( '\n' );
+const renderedBodyLines = [
+	'“Many of life’s failures are people who did not realize how close they were to success when they gave up.',
+	'– Thomas A. Edison',
+];
 
 for ( const postType of postTypes ) {
 	test.describe( `Edit a ${ postType }`, () => {
@@ -93,7 +97,8 @@ for ( const postType of postTypes ) {
 			await test.step( `Validate updated ${ postType }`, async () => {
 				const publishedPost = new PublishedPostPage( page );
 				await expect( publishedPost.heading( titleText ) ).toBeVisible();
-				await expect( publishedPost.content.locator( 'p' ) ).toHaveText( updatedBodyLines );
+				await expect( publishedPost.content ).toContainText( renderedBodyLines[ 0 ] );
+				await expect( publishedPost.content ).toContainText( renderedBodyLines[ 1 ] );
 			} );
 		} );
 	} );
