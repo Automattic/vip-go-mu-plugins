@@ -56,7 +56,7 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		$server_log  = tempnam( get_temp_dir(), 'vip-request-block-log-' );
 		$source      = sprintf(
 			"<?php\nrequire %s;\nVIP_Request_Block::toggle_logging( false );\n\$_SERVER['HTTP_TRUE_CLIENT_IP'] = '203.0.113.9';\nVIP_Request_Block::ip( '203.0.113.9' );\necho 'BLOCK_DID_NOT_EXIT';\n",
-			var_export( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', true )
+			wp_json_encode( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR )
 		);
 		file_put_contents( $script_path, $source );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Spawn the isolated native HTTP request.
@@ -85,10 +85,11 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 				}
 			}
 
+			$response_headers = function_exists( 'http_get_last_response_headers' ) ? http_get_last_response_headers() : $http_response_header;
 			$this->assertSame( '', $response );
-			$this->assertSame( 403, isset( $http_response_header[0] ) ? (int) substr( $http_response_header[0], 9, 3 ) : 0 );
-			$this->assertContains( 'Cache-Control: no-cache, must-revalidate, max-age=0', $http_response_header );
-			$this->assertContains( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT', $http_response_header );
+			$this->assertSame( 403, isset( $response_headers[0] ) ? (int) substr( $response_headers[0], 9, 3 ) : 0 );
+			$this->assertContains( 'Cache-Control: no-cache, must-revalidate, max-age=0', $response_headers );
+			$this->assertContains( 'Expires: Wed, 11 Jan 1984 05:00:00 GMT', $response_headers );
 			$this->assertStringNotContainsString( 'BLOCK_DID_NOT_EXIT', $response );
 		} finally {
 			if ( is_resource( $server ) ) {
