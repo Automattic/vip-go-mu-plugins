@@ -218,20 +218,20 @@ export class SearchPage {
 	}
 
 	/**
-	 * Runs the query from the header button and returns the REST response JSON.
+	 * Runs the query from the header button.
 	 *
-	 * @return {Promise<*>} Result of the query
+	 * @return {Promise<void>} Resolves once the run's REST response arrives
 	 */
-	public runQuery(): Promise<unknown> {
+	public runQuery(): Promise<void> {
 		return this.runWith( () => this.panel.getByRole( 'button', { name: 'Run query' } ).click() );
 	}
 
 	/**
 	 * Runs the query with the Cmd/Ctrl+Enter shortcut from inside the editor.
 	 *
-	 * @return {Promise<*>} Result of the query
+	 * @return {Promise<void>} Resolves once the run's REST response arrives
 	 */
-	public runQueryWithShortcut(): Promise<unknown> {
+	public runQueryWithShortcut(): Promise<void> {
 		return this.runWith( () => this.panel.locator( selectors.requestEditor() ).press( 'ControlOrMeta+Enter' ) );
 	}
 
@@ -470,15 +470,6 @@ export class SearchPage {
 	}
 
 	/**
-	 * Count of syntax-highlighted keys in the request editor.
-	 *
-	 * @return {Promise<number>} Highlighted key tokens
-	 */
-	public highlightedRequestKeys(): Promise<number> {
-		return this.panel.locator( selectors.highlightedKey() ).count();
-	}
-
-	/**
 	 * Notice shown when an expanded response is too large for the tree.
 	 *
 	 * @return {Locator} Notice
@@ -511,12 +502,10 @@ export class SearchPage {
 		return this.panel.locator( selectors.tabPanel() ).innerText();
 	}
 
-	private async runWith( trigger: () => Promise<unknown> ): Promise<unknown> {
-		const [ response ] = await Promise.all( [
+	private async runWith( trigger: () => Promise<unknown> ): Promise<void> {
+		await Promise.all( [
 			this.page.waitForResponse( ( resp ) => resp.url().endsWith( DEV_TOOLS_ENDPOINT ) && resp.request().method() === 'POST' && resp.status() === 200 ),
 			trigger(),
 		] );
-
-		return response.json();
 	}
 }

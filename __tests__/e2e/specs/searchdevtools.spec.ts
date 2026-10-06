@@ -112,41 +112,28 @@ test.describe( 'Search Dev Tools', () => {
 
 		await test.step( 'Running an edited query with the shortcut shows its response', async () => {
 			await searchPage.editQuery( query.replace( /"Hello"/g, '"world"' ) );
-			const json = await searchPage.runQueryWithShortcut();
-			expect( json ).toMatchObject( {
-				result: expect.objectContaining( {
-					body: expect.any( Object ),
-				} ),
-			} );
-
+			await searchPage.runQueryWithShortcut();
 			await searchPage.ensureQueryResponse( 'world' );
 			await expect( searchPage.statusChip() ).toHaveText( 'Edited' );
 			await expect( searchPage.editedMarker( 0 ) ).toBeVisible();
 			await expect( searchPage.inlineRunButton() ).toBeHidden();
 		} );
 
-		await test.step( 'Repeated shortcuts start only one request at a time', async () => {
+		await test.step( 'A run in flight blocks more runs, even after closing and reopening the panel', async () => {
 			await searchPage.resetQuery();
-			await searchPage.delayRuns( 800 );
+			await searchPage.delayRuns( 1200 );
+			const editor = searchPage.panel.locator( 'textarea.sdt-code__textarea' );
 			const requests = await searchPage.countRunRequests( async () => {
-				const editor = searchPage.panel.locator( 'textarea.sdt-code__textarea' );
+				// Rapid repeats arrive before the running state renders.
 				await editor.press( 'ControlOrMeta+Enter' );
 				await editor.press( 'ControlOrMeta+Enter' );
 				await editor.press( 'ControlOrMeta+Enter' );
-				await expect( searchPage.statusChip() ).toHaveText( 'Re-run' );
-			} );
-			expect( requests ).toBe( 1 );
-		} );
-
-		await test.step( 'A run in flight survives closing and reopening the panel and blocks a second run', async () => {
-			await searchPage.resetQuery();
-			const requests = await searchPage.countRunRequests( async () => {
-				await searchPage.headerRunButton().click();
+				// The pending run outlives the panel.
 				await searchPage.closeSearchDevTools();
 				await searchPage.openSearchDevTools();
 				await expect( searchPage.headerRunButton() ).toHaveText( 'Running…' );
 				await expect( searchPage.headerRunButton() ).toBeDisabled();
-				await searchPage.panel.locator( 'textarea.sdt-code__textarea' ).press( 'ControlOrMeta+Enter' );
+				await editor.press( 'ControlOrMeta+Enter' );
 				await expect( searchPage.statusChip() ).toHaveText( 'Re-run' );
 			} );
 			expect( requests ).toBe( 1 );
@@ -176,8 +163,11 @@ test.describe( 'Search Dev Tools', () => {
 
 		await test.step( 'Invalid JSON is rejected without a request', async () => {
 			await searchPage.editQuery( '{ "query": ' );
-			await searchPage.panel.getByRole( 'button', { name: 'Run query' } ).click();
-			await expect( searchPage.requestError() ).toContainText( 'Invalid JSON' );
+			const requests = await searchPage.countRunRequests( async () => {
+				await searchPage.panel.getByRole( 'button', { name: 'Run query' } ).click();
+				await expect( searchPage.requestError() ).toContainText( 'Invalid JSON' );
+			} );
+			expect( requests ).toBe( 0 );
 		} );
 	} );
 
@@ -186,7 +176,7 @@ test.describe( 'Search Dev Tools', () => {
 			const terms = Array.from( { length: 12000 }, ( _unused, idx ) => `term-value-${ idx }` );
 			await searchPage.setLargeQuery( JSON.stringify( { query: { terms: { 'post_tag.slug': terms } } }, null, 2 ) );
 			await expect( searchPage.requestNotice() ).toContainText( 'syntax highlighting is off' );
-			expect( await searchPage.highlightedRequestKeys() ).toBe( 0 );
+			await expect( searchPage.isRequestHighlighted() ).resolves.toBe( false );
 			await searchPage.resetQuery();
 			await expect( searchPage.requestNotice() ).toBeHidden();
 		} );

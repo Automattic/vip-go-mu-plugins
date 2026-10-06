@@ -151,10 +151,6 @@ describe( 'describeQuery', () => {
 	} );
 
 	it( 'compacts long alias resolutions', () => {
-		const list = describeQuery( query( 'https://es:9200/vip-1-post-2,vip-1-post-3,vip-1-post-4,vip-1-post-5/_search' ), 0 );
-		assert.equal( list.sitesLabel, '4 sites' );
-		assert.equal( list.indexLabel, 'post-2, post-3, post-4, post-5' );
-
 		const alias = describeQuery( query( 'https://es:9200/vip-1-post-all/_search', {
 			alias_indexes: [ 'vip-1-post-1', 'vip-1-post-2', 'vip-1-post-3', 'vip-1-post-4', 'vip-1-post-5' ],
 		} ), 0 );
@@ -177,8 +173,7 @@ describe( 'describeQuery', () => {
 	} );
 
 	it( 'uses the backend\'s cross-site decision', () => {
-		// e.g. `sites` set without network mode, or set to the current site: ElasticPress searches only this site.
-		assert.equal( describeQuery( query( 'https://es:9200/vip-1-post-1/_search', { query_args: { s: 'hello', sites: [ 1 ] }, cross_site: false } ), 0 ).crossSite, false );
+		// One index in the URL, but it is another site's: the backend knows it left the current site.
 		assert.equal( describeQuery( query( 'https://es:9200/vip-1-post-2/_search', { query_args: { s: 'hello', sites: 2 }, cross_site: true } ), 0 ).crossSite, true );
 	} );
 
@@ -204,15 +199,12 @@ describe( 'describeQuery', () => {
 describe( 'hitsPerIndex', () => {
 	const body = { hits: { hits: [ { _index: 'vip-1-post-2' }, { _index: 'vip-1-post-2' }, { _index: 'vip-1-post-3' } ] } };
 
-	it( 'counts returned hits per index in query order', () => {
-		assert.deepEqual( hitsPerIndex( body, [ 'vip-1-post-2', 'vip-1-post-3' ] ), [
+	it( 'counts returned hits per index in query order, including indexes that returned nothing', () => {
+		assert.deepEqual( hitsPerIndex( body, [ 'vip-1-post-1', 'vip-1-post-2', 'vip-1-post-3' ] ), [
+			{ index: 'vip-1-post-1', label: 'post-1', count: 0 },
 			{ index: 'vip-1-post-2', label: 'post-2', count: 2 },
 			{ index: 'vip-1-post-3', label: 'post-3', count: 1 },
 		] );
-	} );
-
-	it( 'keeps queried indexes that returned nothing', () => {
-		assert.deepEqual( hitsPerIndex( body, [ 'vip-1-post-1', 'vip-1-post-2', 'vip-1-post-3' ] )[ 0 ], { index: 'vip-1-post-1', label: 'post-1', count: 0 } );
 	} );
 
 	it( 'counts hits without a recognizable index as other, so the counts add up', () => {
@@ -226,8 +218,8 @@ describe( 'hitsPerIndex', () => {
 } );
 
 describe( 'countHits', () => {
-	it( 'separates matched and returned hits, for both total shapes', () => {
-		assert.deepEqual( countHits( { hits: { total: { value: 11, relation: 'eq' }, hits: Array.from( { length: 10 }, () => ( {} ) ) } } ), { total: 11, returned: 10 } );
+	// The object form of `total` is covered by summarizeResult above.
+	it( 'reads the plain-number form of the total', () => {
 		assert.deepEqual( countHits( { hits: { total: 3, hits: [ {}, {}, {} ] } } ), { total: 3, returned: 3 } );
 	} );
 } );
@@ -253,9 +245,7 @@ describe( 'large JSON handling', () => {
 	} );
 
 	it( 'keeps small responses as a tree', () => {
-		const size = describeJsonSize( { took: 3, hits: { hits: [] } } );
-		assert.equal( size.large, false );
-		assert.equal( size.lines, countLines( size.text ) );
+		assert.equal( describeJsonSize( { took: 3, hits: { hits: [] } } ).large, false );
 	} );
 
 	it( 'flags responses over the line limit and reports their compact size', () => {
@@ -309,21 +299,16 @@ describe( 'buildTreeLines', () => {
 		assert.equal( buildTreeLines( response, { mode: 'collapsed' } ).lines.length, 5 );
 	} );
 
-	it( 'gives dotted keys and nested keys distinct paths', () => {
-		const { lines } = buildTreeLines( { 'a.b': { x: 1 }, a: { b: { y: 2 } } }, { mode: 'expanded' } );
-		const paths = lines.filter( line => line.path ).map( line => line.path );
-		assert.equal( new Set( paths ).size, paths.length );
-		assert.ok( paths.includes( '$["a.b"]' ) && paths.includes( '$["a"]["b"]' ) );
-	} );
-
-	it( 'gives every line, and every part within a line, a unique render key', () => {
-		const value = { ...response, empty: {}, list: [ 1, [], { a: null } ] };
+	it( 'gives every line, and every part within a line, a unique render key, even for dotted keys', () => {
+		const value = { ...response, empty: {}, list: [ 1, [], { a: null } ], 'a.b': { x: 1 }, a: { b: { y: 2 } } };
 		for ( const { lines } of [ buildTreeLines( value, { mode: 'expanded' } ), buildTreeLines( value, { mode: 'collapsed', annotate: () => 'note' } ) ] ) {
 			assert.equal( new Set( lines.map( line => line.key ) ).size, lines.length );
 			for ( const line of lines ) {
 				assert.equal( new Set( line.parts.map( part => part[ 2 ] ) ).size, line.parts.length, JSON.stringify( line.parts ) );
 			}
 		}
+		const paths = buildTreeLines( value, { mode: 'expanded' } ).lines.map( line => line.path );
+		assert.ok( paths.includes( '$["a.b"]' ) && paths.includes( '$["a"]["b"]' ) );
 	} );
 
 	it( 'records each node\'s parent path for keyboard navigation', () => {

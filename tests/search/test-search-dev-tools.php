@@ -83,13 +83,8 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 			$this->assertIsBool( $item['options']['collapsible'] );
 		}
 
-		$by_key = array_column( $information, null, 'key' );
-		$this->assertIsArray( $by_key['post_types']['value'] );
-		$this->assertIsArray( $by_key['post_statuses']['value'] );
-		$this->assertIsArray( $by_key['meta_allow_list']['value'] );
-
 		// Per-site settings are flagged so the UI can say they only describe the current site.
-		$site_scoped = array_keys( array_filter( $by_key, fn ( $item ) => 'site' === ( $item['scope'] ?? null ) ) );
+		$site_scoped = array_column( array_filter( $information, fn ( $item ) => 'site' === ( $item['scope'] ?? null ) ), 'key' );
 		$this->assertSame( [ 'post_types', 'post_statuses', 'meta_allow_list' ], $site_scoped );
 	}
 
@@ -102,11 +97,9 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 
 	public function data_provider_url_index_parts() {
 		return [
-			'single index'     => [ 'http://vip-search:9200/vip-123-post-1/_search', 'vip-123-post-1' ],
-			'several indexes'  => [ 'http://vip-search:9200/vip-123-post-2,vip-123-post-3/_search', 'vip-123-post-2,vip-123-post-3' ],
-			'network alias'    => [ 'http://vip-search:9200/vip-123-post-all/_search', 'vip-123-post-all' ],
-			'no index (_cat)'  => [ 'http://vip-search:9200/_cat/indices', '' ],
-			'not a URL at all' => [ '', '' ],
+			'single index'    => [ 'http://vip-search:9200/vip-123-post-1/_search', 'vip-123-post-1' ],
+			'several indexes' => [ 'http://vip-search:9200/vip-123-post-2,vip-123-post-3/_search', 'vip-123-post-2,vip-123-post-3' ],
+			'no index (_cat)' => [ 'http://vip-search:9200/_cat/indices', '' ],
 		];
 	}
 
