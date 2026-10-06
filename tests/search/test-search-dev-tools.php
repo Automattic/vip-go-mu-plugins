@@ -131,6 +131,15 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'vip-123-post-all/_alias', $requests[0] );
 	}
 
+	public function test__get_alias_details_flags_failed_lookups() {
+		$this->init_search();
+		add_filter( 'pre_http_request', fn () => new \WP_Error( 'http_request_failed', 'Timed out' ) );
+
+		// A unique alias name: get_alias_indexes() caches per request, and other tests resolve their own alias.
+		$this->assertSame( [ 'alias_unresolved' => true ], \Automattic\VIP\Search\Dev_Tools\get_alias_details( 'vip-456-post-all' ) );
+		$this->assertSame( [], \Automattic\VIP\Search\Dev_Tools\get_alias_details( 'vip-456-post-1' ) );
+	}
+
 	public function test__get_alias_indexes_skips_regular_indexes() {
 		$requests = 0;
 		add_filter(

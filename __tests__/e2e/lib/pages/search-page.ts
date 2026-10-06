@@ -277,12 +277,21 @@ export class SearchPage {
 	 * Force the execCommand copy fallback used on http sites. Records what each copy would take, and whether the
 	 * Copy button ever reads "Copied" (it reverts after a moment, so a later check could miss it).
 	 *
-	 * @param {boolean} accept Whether the browser accepts the copy (execCommand's return value)
+	 * @param {boolean} accept    Whether the browser accepts the copy (execCommand's return value)
+	 * @param {string}  clipboard Clipboard API: missing (as on http sites) or present but refusing writes
 	 * @return {Promise<void>} Resolves once installed
 	 */
-	public useCopyFallback( accept: boolean ): Promise<void> {
-		return this.page.evaluate( ( acceptCopy ) => {
-			Object.defineProperty( navigator, 'clipboard', { value: undefined, configurable: true } );
+	public useCopyFallback( accept: boolean, clipboard: 'missing' | 'refuses' = 'missing' ): Promise<void> {
+		return this.page.evaluate( ( [ acceptCopy, clipboardMode ] ) => {
+			if ( clipboardMode === 'refuses' ) {
+				Object.defineProperty( window, 'isSecureContext', { value: true, configurable: true } );
+				Object.defineProperty( navigator, 'clipboard', {
+					value: { writeText: () => Promise.reject( new DOMException( 'Write permission denied.', 'NotAllowedError' ) ) },
+					configurable: true,
+				} );
+			} else {
+				Object.defineProperty( navigator, 'clipboard', { value: undefined, configurable: true } );
+			}
 			const copies: string[] = [];
 			const state = { copies, copiedShown: false };
 			( window as unknown as { sdtCopy: typeof state } ).sdtCopy = state;
@@ -301,7 +310,7 @@ export class SearchPage {
 					return acceptCopy;
 				},
 			} );
-		}, accept );
+		}, [ accept, clipboard ] as const );
 	}
 
 	/**

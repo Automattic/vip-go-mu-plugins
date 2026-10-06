@@ -220,12 +220,8 @@ function print_data() {
 					return is_bool( $v ) || ( ! is_bool( $v ) && $v );
 				}
 			);
-			// Cross-site queries against the network alias: list the indexes it actually reached.
-			$alias_indexes = get_alias_indexes( (string) Search::instance()->get_index_name_for_url( $query['url'] ) );
-			if ( $alias_indexes ) {
-				$query['alias_indexes'] = $alias_indexes;
-			}
-			return $query;
+			// Network alias queries: the indexes the alias reached, or a flag when they couldn't be looked up.
+			return array_merge( $query, get_alias_details( (string) Search::instance()->get_index_name_for_url( $query['url'] ) ) );
 		},
 		$queries
 	);
@@ -350,6 +346,31 @@ function is_cross_site_query( array $query_args ): bool {
 }
 
 /**
+ * Whether an index part names a network alias (`vip-123-post-all`), which `'sites' => 'all'` queries search.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return bool Network alias.
+ */
+function is_network_alias( string $index_part ): bool {
+	return '' !== $index_part && ! str_contains( $index_part, ',' ) && str_ends_with( $index_part, '-all' );
+}
+
+/**
+ * What to report about a query's network alias, so the UI never presents the alias itself as an index.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return array `alias_indexes` with the indexes behind the alias, `alias_unresolved` when they couldn't be looked
+ *               up, or nothing when the query didn't use a network alias.
+ */
+function get_alias_details( string $index_part ): array {
+	if ( ! is_network_alias( $index_part ) ) {
+		return [];
+	}
+	$indexes = get_alias_indexes( $index_part );
+	return $indexes ? [ 'alias_indexes' => $indexes ] : [ 'alias_unresolved' => true ];
+}
+
+/**
  * Concrete indexes behind a network alias index (`vip-123-post-all`, used for `'sites' => 'all'`).
  * Only alias names trigger a lookup, once per request, and it is capped at VIP's global ES timeout (2s on web).
  * Not cached across requests on purpose: a dev tool should show the alias as it is right now, e.g. right after
@@ -361,7 +382,7 @@ function is_cross_site_query( array $query_args ): bool {
 function get_alias_indexes( string $index_part ): array {
 	static $cache = [];
 
-	if ( '' === $index_part || str_contains( $index_part, ',' ) || ! str_ends_with( $index_part, '-all' ) ) {
+	if ( ! is_network_alias( $index_part ) ) {
 		return [];
 	}
 

@@ -226,16 +226,12 @@ export function queryLabel( query, index ) {
 const formatCaller = ( { file, line } ) => ( line ? `${ displayPath( file ) }:${ line }` : displayPath( file ) );
 
 /**
- * Normalize a query log entry into what the UI needs.
+ * Which indexes and sites a query reached, from its URL and the backend's cross-site and alias data.
  *
  * @param {Object} query Query log entry.
- * @param {number} index Position in the list.
- * @return {Object} View model.
+ * @return {Object} indexName, queriedIndexes, indexLabel, indexTitle, crossSite and sitesLabel.
  */
-export function describeQuery( query, index ) {
-	const backtrace = query.backtrace || [];
-	const callerIndex = findCallerIndex( backtrace );
-	const caller = callerIndex >= 0 ? parseFrame( backtrace[ callerIndex ] ) : null;
+function describeIndexScope( query ) {
 	const path = ( () => {
 		try {
 			return new URL( query.url ).pathname;
@@ -246,12 +242,48 @@ export function describeQuery( query, index ) {
 	const indexName = path.split( '/' ).find( Boolean ) || '';
 	const indexNames = indexName ? indexName.split( ',' ) : [];
 	const aliasIndexes = Array.isArray( query.alias_indexes ) ? query.alias_indexes : [];
+	// The backend flags a network alias whose indexes couldn't be looked up; the alias itself is not an index.
+	const aliasUnresolved = query.alias_unresolved === true;
 
 	// Indexes the query actually reached: the alias members for `'sites' => 'all'`, else the URL's index list.
-	const queriedIndexes = aliasIndexes.length ? aliasIndexes : indexNames;
+	// Unknown for an unresolved alias (the per-index breakdown then falls back to the hits' own indexes).
+	let queriedIndexes = indexNames;
+	if ( aliasIndexes.length ) {
+		queriedIndexes = aliasIndexes;
+	} else if ( aliasUnresolved ) {
+		queriedIndexes = [];
+	}
 	// ElasticPress's own decision, computed server-side (network mode, `sites` vs the current blog). Falls back
 	// to the request URL for data without it (e.g. the standalone mock template).
-	const crossSite = typeof query.cross_site === 'boolean' ? query.cross_site : indexNames.length > 1 || aliasIndexes.length > 0;
+	const crossSite = typeof query.cross_site === 'boolean' ? query.cross_site : indexNames.length > 1 || aliasIndexes.length > 0 || aliasUnresolved;
+	// Shown after the hit count in the sidebar, e.g. `4 hits · 2 sites`; empty for single-site queries.
+	let sitesLabel = '';
+	if ( crossSite ) {
+		sitesLabel = aliasUnresolved ? 'all sites' : countLabel( queriedIndexes.length, 'site' );
+	}
+
+	return {
+		indexName,
+		queriedIndexes,
+		indexLabel: indexScopeLabel( indexNames, aliasIndexes, aliasUnresolved ),
+		indexTitle: indexScopeTitle( indexName, aliasIndexes, aliasUnresolved ),
+		crossSite,
+		sitesLabel,
+	};
+}
+
+/**
+ * Normalize a query log entry into what the UI needs.
+ *
+ * @param {Object} query Query log entry.
+ * @param {number} index Position in the list.
+ * @return {Object} View model.
+ */
+export function describeQuery( query, index ) {
+	const backtrace = query.backtrace || [];
+	const callerIndex = findCallerIndex( backtrace );
+	const caller = callerIndex >= 0 ? parseFrame( backtrace[ callerIndex ] ) : null;
+	const scope = describeIndexScope( query );
 
 	const summary = summarizeResult( query.request?.body, query.request?.response );
 	// Failed requests may have no `took`; fall back to wall-clock time.
@@ -266,13 +298,7 @@ export function describeQuery( query, index ) {
 		requestText: JSON.stringify( query.args?.body ?? {}, null, 2 ),
 		caller: caller ? formatCaller( caller ) : '',
 		callerIndex,
-		indexName,
-		queriedIndexes,
-		indexLabel: indexScopeLabel( indexNames, aliasIndexes ),
-		indexTitle: indexScopeTitle( indexName, aliasIndexes ),
-		crossSite,
-		// Shown after the hit count in the sidebar, e.g. `4 hits · 2 sites`; empty for single-site queries.
-		sitesLabel: crossSite ? countLabel( queriedIndexes.length, 'site' ) : '',
+		...scope,
 		summary,
 	};
 }
@@ -306,10 +332,14 @@ export const shortIndexName = name => name.replace( /^vip-\d+-/, '' );
  *
  * @param {string[]} indexNames   Indexes (or the alias) in the request URL.
  * @param {string[]} aliasIndexes Indexes behind a network alias, if any.
+ * @param {boolean}  unresolved   Whether the alias's indexes couldn't be looked up.
  * @return {string} Label.
  */
-function indexScopeLabel( indexNames, aliasIndexes ) {
+function indexScopeLabel( indexNames, aliasIndexes, unresolved = false ) {
 	const label = indexNames.map( shortIndexName ).join( ', ' );
+	if ( unresolved ) {
+		return `all sites via ${ label }`;
+	}
 	if ( ! aliasIndexes.length ) {
 		return label;
 	}
@@ -323,13 +353,17 @@ function indexScopeLabel( indexNames, aliasIndexes ) {
  *
  * @param {string}   indexName    Index part of the request URL.
  * @param {string[]} aliasIndexes Indexes behind a network alias, if any.
+ * @param {boolean}  unresolved   Whether the alias's indexes couldn't be looked up.
  * @return {string} Title.
  */
-function indexScopeTitle( indexName, aliasIndexes ) {
+function indexScopeTitle( indexName, aliasIndexes, unresolved = false ) {
 	if ( ! indexName ) {
 		return '';
 	}
 	const names = indexName.replaceAll( ',', ', ' );
+	if ( unresolved ) {
+		return `Alias ${ names }; its indexes couldn't be looked up`;
+	}
 	return aliasIndexes.length ? `Alias ${ names } → indexes ${ aliasIndexes.join( ', ' ) }` : `Index: ${ names }`;
 }
 

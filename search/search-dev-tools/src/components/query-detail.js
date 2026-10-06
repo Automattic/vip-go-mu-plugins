@@ -16,7 +16,12 @@ import { RUN_SHORTCUT, countHits, describeJsonSize, displayPath, formatDuration,
  */
 async function copyText( text ) {
 	if ( navigator.clipboard && window.isSecureContext ) {
-		return navigator.clipboard.writeText( text );
+		try {
+			await navigator.clipboard.writeText( text );
+			return;
+		} catch {
+			// Refused, e.g. by a permissions policy: the legacy path below may still work.
+		}
 	}
 	const previous = document.activeElement;
 	const textarea = document.createElement( 'textarea' );
@@ -103,12 +108,14 @@ const withoutPendingRun = ( { pendingRun, ...rest } ) => rest;
  * @param {boolean} hasRerun   Whether the result comes from a re-run.
  * @param {boolean} ranEdited  Whether the re-run request differed from the original.
  * @param {Object}  response   HTTP response meta of the original request.
+ * @param {boolean} failed     Whether the shown result failed.
  * @return {string} Chip text.
  */
-function statusLabel( hasRerun, ranEdited, response = {} ) {
+function statusLabel( hasRerun, ranEdited, response = {}, failed = false ) {
 	if ( hasRerun ) {
-		// Chip color still shows whether the re-run failed.
-		return ranEdited ? 'Edited' : 'Re-run';
+		// Say "failed" in words too, not only with the chip's color.
+		const label = ranEdited ? 'Edited' : 'Re-run';
+		return failed ? `${ label } · failed` : label;
 	}
 	return [ response.code, response.message ].filter( Boolean ).join( ' ' ) || 'unknown';
 }
@@ -491,7 +498,7 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 			<DetailHeader
 				meta={ meta }
 				summary={ summary }
-				status={ statusLabel( hasRerun, draft?.ranText !== originalText, query.request?.response ) }
+				status={ statusLabel( hasRerun, draft?.ranText !== originalText, query.request?.response, summary.failed ) }
 				isDirty={ text !== originalText || hasRerun }
 				running={ running }
 				onReset={ reset }

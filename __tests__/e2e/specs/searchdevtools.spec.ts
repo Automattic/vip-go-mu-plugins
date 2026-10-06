@@ -64,7 +64,8 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.clickResponseAction( 'Copy' );
 			await expect.poll( () => searchPage.copyAttempts() ).toEqual( { copies: [ expect.any( String ) ], copiedShown: false, leftovers: 0 } );
 
-			await searchPage.useCopyFallback( true );
+			// The Clipboard API is there but refuses (e.g. a permissions policy): the fallback still copies.
+			await searchPage.useCopyFallback( true, 'refuses' );
 			await searchPage.clickResponseAction( 'Copy' );
 			await expect( searchPage.copyButton() ).toHaveText( 'Copied' );
 			// The whole response was selected when copied, and focus stays on the button.
@@ -156,7 +157,7 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.editQuery( JSON.stringify( failing, null, 2 ) );
 			await searchPage.runQuery();
 
-			await expect( searchPage.statusChip() ).toHaveText( 'Edited' );
+			await expect( searchPage.statusChip() ).toHaveText( 'Edited · failed' );
 			await expect( searchPage.statusChip() ).toHaveClass( /sdt-chip--bad/ );
 			await searchPage.ensureQueryResponse( 'No mapping found' );
 		} );

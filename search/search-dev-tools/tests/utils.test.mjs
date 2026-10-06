@@ -172,6 +172,14 @@ describe( 'describeQuery', () => {
 		assert.deepEqual( meta.queriedIndexes, [ 'vip-200508-post-1', 'vip-200508-post-2', 'vip-200508-post-3-v2' ] );
 	} );
 
+	it( 'does not present an unresolved network alias as an index', () => {
+		const meta = describeQuery( query( 'https://es:9200/vip-1-post-all/_search', { query_args: { s: 'hello', sites: 'all' }, cross_site: true, alias_unresolved: true } ), 0 );
+		assert.deepEqual( meta.queriedIndexes, [] );
+		assert.equal( meta.sitesLabel, 'all sites' );
+		assert.equal( meta.indexLabel, 'all sites via post-all' );
+		assert.equal( meta.indexTitle, 'Alias vip-1-post-all; its indexes couldn\'t be looked up' );
+	} );
+
 	it( 'uses the backend\'s cross-site decision', () => {
 		// One index in the URL, but it is another site's: the backend knows it left the current site.
 		assert.equal( describeQuery( query( 'https://es:9200/vip-1-post-2/_search', { query_args: { s: 'hello', sites: 2 }, cross_site: true } ), 0 ).crossSite, true );
@@ -205,6 +213,10 @@ describe( 'hitsPerIndex', () => {
 			{ index: 'vip-1-post-2', label: 'post-2', count: 2 },
 			{ index: 'vip-1-post-3', label: 'post-3', count: 1 },
 		] );
+	} );
+
+	it( 'groups by the hits\' own indexes when the queried indexes are unknown', () => {
+		assert.deepEqual( hitsPerIndex( body ).map( row => [ row.label, row.count ] ), [ [ 'post-2', 2 ], [ 'post-3', 1 ] ] );
 	} );
 
 	it( 'counts hits without a recognizable index as other, so the counts add up', () => {
