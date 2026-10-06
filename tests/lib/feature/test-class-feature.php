@@ -359,6 +359,34 @@ class Feature_Test extends TestCase {
 		$this->assertFalse( $result );
 	}
 
+
+	public function test_is_enabled__disabled_id_overrides_percentage_rollout() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Feature::$feature_ids['disabled-rollout']         = [ 123 => false ];
+		Feature::$feature_percentages['disabled-rollout'] = 1;
+
+		$this->assertFalse( Feature::is_enabled( 'disabled-rollout' ) );
+	}
+
+	public function test_is_enabled__disabled_id_overrides_environment_grant() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
+		Feature::$feature_ids['disabled-environment']  = [ 123 => false ];
+		Feature::$feature_envs['disabled-environment'] = [ 'local' => true ];
+
+		$this->assertFalse( Feature::is_enabled( 'disabled-environment' ) );
+	}
+
+	public function test_is_enabled__explicit_enable_with_overlapping_grants() {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
+		Feature::$feature_ids['overlapping-grants']         = [ 123 => true ];
+		Feature::$feature_percentages['overlapping-grants'] = 1;
+		Feature::$feature_envs['overlapping-grants']        = [ 'local' => true ];
+
+		$this->assertTrue( Feature::is_enabled( 'overlapping-grants' ) );
+	}
+
 	public function test_get_features() {
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );

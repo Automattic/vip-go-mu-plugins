@@ -150,8 +150,12 @@ class Alerts {
 			return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
 		}
 
+		if ( array_diff( $required_keys, array_keys( $details ) ) ) {
+			return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
+		}
+
 		foreach ( $details as $key => $value ) {
-			if ( ! in_array( $key, array_merge( $required_keys, $optional_keys ) ) ) {
+			if ( ! in_array( $key, array_merge( $required_keys, $optional_keys ), true ) ) {
 				return new WP_Error( 'invalid-pagerduty-details', 'Invalid $details: Alerts\:\:pagerduty( ' . print_r( $details, true ) . ' );' );
 			}
 
@@ -186,8 +190,12 @@ class Alerts {
 			return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 		}
 
+		if ( array_diff( $required_keys, array_keys( $details ) ) ) {
+			return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
+		}
+
 		foreach ( $details as $key => $value ) {
-			if ( ! in_array( $key, $required_keys ) ) {
+			if ( ! in_array( $key, $required_keys, true ) ) {
 				return new WP_Error( 'invalid-opsgenie-details', 'Invalid $details: Alerts\:\:opsgenie( ' . print_r( $details, true ) . ' );' );
 			}
 

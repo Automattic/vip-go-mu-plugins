@@ -711,31 +711,107 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_lock() {
-		/** @var Health&MockObject */
-		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->onlyMethods( [ 'set_validate_content_lock', 'remove_validate_content_lock', 'validate_index_posts_content_batch' ] )
-			->disableOriginalConstructor()
-			->getMock();
-		$patrtially_mocked_health->method( 'validate_index_posts_content_batch' )->willReturn( [] );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
 
-		/** @var Indexables&MockObject */
-		$mocked_indexables = $this->getMockBuilder( Indexables::class )
-			->onlyMethods( [ 'get' ] )
-			->getMock();
+		$health      = new Health( $this->search_instance );
+		$second      = new Health( $this->search_instance );
+		$batch_calls = 0;
+		$options     = array(
+			'start_post_id' => 999000,
+			'last_post_id'  => 999000,
+		);
+		$http        = function ( $preempt, $args, $url ) use ( $second, $options, &$batch_calls ) {
+			if ( false !== strpos( $url, '/_mget' ) ) {
+				++$batch_calls;
+				$this->assertTrue( (bool) get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+				$result = $second->validate_index_posts_content( $options );
+				$this->assertInstanceOf( WP_Error::class, $result );
+				$this->assertSame( 'es_content_validation_already_ongoing', $result->get_error_code() );
+			}
+			return array(
+				'headers'  => array(),
+				'body'     => '{"docs":[]}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			$this->assertSame( array(), $health->validate_index_posts_content( $options ) );
+			$this->assertGreaterThan( 0, $batch_calls );
+			$this->assertFalse( get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+		}
+	}
 
-		$patrtially_mocked_health->indexables = $mocked_indexables;
+	public function test_validate_index_posts_content__resumes_persisted_checkpoint() {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
 
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
+		$options   = array(
+			'last_post_id' => 4,
+			'batch_size'   => 2,
+			'do_not_heal'  => true,
+		);
+		$batches   = array();
+		$interrupt = true;
+		$http      = static function ( $preempt, $args, $url ) use ( &$batches, &$interrupt ) {
+			if ( false !== strpos( $url, '/_mget' ) ) {
+				$ids       = json_decode( $args['body'], true )['ids'];
+				$batches[] = $ids;
+				if ( $interrupt && 3 === $ids[0] ) {
+					throw new \RuntimeException( 'Controlled interruption' );
+				}
+			}
+			return array(
+				'headers'  => array(),
+				'body'     => '{"docs":[]}',
+				'response' => array(
+					'code'    => 200,
+					'message' => 'OK',
+				),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			try {
+				( new Health( $this->search_instance ) )->validate_index_posts_content( $options );
+				$this->fail( 'The controlled second-batch interruption must execute.' );
+			} catch ( \RuntimeException $error ) {
+				$this->assertSame( 'Controlled interruption', $error->getMessage() );
+			}
+			$this->assertSame( 3, get_option( Health::CONTENT_VALIDATION_PROCESS_OPTION ) );
+			$this->assertContains( array( 1, 2 ), $batches );
+			$this->assertContains( array( 3, 4 ), $batches );
 
-		$mocked_indexables->method( 'get' )->willReturn( $mocked_indexable );
-
-		$patrtially_mocked_health->expects( $this->once() )->method( 'set_validate_content_lock' );
-		$patrtially_mocked_health->expects( $this->once() )->method( 'remove_validate_content_lock' );
-
-		$patrtially_mocked_health->validate_index_posts_content( 1, null, null, null, false, false, false );
+			// Model the stale transient expiring after the interrupted process exits.
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+			$interrupt = false;
+			$batches   = array();
+			$result    = ( new Health( $this->search_instance ) )->validate_index_posts_content( $options );
+			$this->assertIsArray( $result );
+			$this->assertNotEmpty( $batches );
+			foreach ( $batches as $ids ) {
+				$this->assertSame( array( 3, 4 ), $ids );
+			}
+			$this->assertFalse( get_option( Health::CONTENT_VALIDATION_PROCESS_OPTION ) );
+			$this->assertFalse( get_transient( Health::CONTENT_VALIDATION_LOCK_NAME ) );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+			delete_transient( Health::CONTENT_VALIDATION_LOCK_NAME );
+			delete_option( Health::CONTENT_VALIDATION_PROCESS_OPTION );
+		}
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_last_processed() {
@@ -1057,7 +1133,7 @@ class Health_Test extends WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_for_indexable_data
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
-		$index_name = 'vip-123-post-1';
+		$index_name = isset( $options['index_version'] ) ? 'vip-123-post-1-v2' : 'vip-123-post-1';
 		// Mock search and the versioning instance
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
@@ -1088,7 +1164,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		$health->elasticsearch->method( 'get_index_settings' )
 			->willReturn( [
-				'vip-123-post-1' => [
+				$index_name => [
 					'settings' => $actual,
 				],
 			] );
@@ -1326,7 +1402,7 @@ class Health_Test extends WP_UnitTestCase {
 				),
 				// Options
 				array(
-					'version_number' => 2,
+					'index_version' => 2,
 				),
 			),
 		);
@@ -1336,71 +1412,47 @@ class Health_Test extends WP_UnitTestCase {
 	 * @dataProvider heal_index_settings_for_indexable_data
 	 */
 	public function test_heal_index_settings_for_indexable( $desired_settings, $options ) {
-		$index_name = 'foo-index-name';
-		// Mock search and the versioning instance
-		/** @var Search&MockObject */
-		$mock_search = $this->createMock( Search::class );
-
-		/** @var Versioning&MockObject */
-		$versioning = $this->getMockBuilder( Versioning::class )
-			->enableProxyingToOriginalMethods()
-			->onlyMethods( [ 'get_current_version_number', 'set_current_version_number', 'reset_current_version_number' ] )
-			->getMock();
-
-		/** @var Versioning&MockObject */
-		$mock_search->versioning = $versioning;
-
-		// If we're healing a specific version, make sure we actually switch
-		if ( isset( $options['index_version'] ) ) {
-			$mock_search->versioning->expects( $this->once() )
-				->method( 'set_current_version_number' )
-				->with( $options['index_version'] );
-
-			$mock_search->versioning->expects( $this->once() )
-				->method( 'reset_current_version_number' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
+		$this->search_instance->init();
+		do_action( 'plugins_loaded' );
+		$indexable = $this->getMockBuilder( \ElasticPress\Indexable\Post\Post::class )
+			->onlyMethods( array( 'generate_mapping' ) )->getMock();
+		$indexable->method( 'generate_mapping' )->willReturn( array( 'settings' => $desired_settings ) );
+		$versioning = $this->search_instance->versioning;
+		$versioning->update_versions( $indexable, array(
+			1 => array(
+				'number' => 1,
+				'active' => true,
+			),
+			2 => array(
+				'number' => 2,
+				'active' => false,
+			),
+		) );
+		$prior_name     = $indexable->get_index_name();
+		$target_version = $options['index_version'] ?? 1;
+		$versioning->set_current_version_number( $indexable, $target_version );
+		$target_name = $indexable->get_index_name();
+		$versioning->reset_current_version_number( $indexable );
+		if ( 2 === $target_version ) {
+			$this->assertNotSame( $prior_name, $target_name );
 		}
 
-		$versioning->method( 'get_current_version_number' )->willReturn( $options['index_version'] ?? 1 );
-
-		$health = new Health( $mock_search );
-
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
-
-		$mocked_indexable->slug = 'post';
-
-		$mocked_indexable->method( 'get_index_name' )
-			->willReturn( $index_name );
-
-		$mocked_indexable->method( 'generate_mapping' )
-			->willReturn( [ 'settings' => $desired_settings ] );
-
-		/** @var Elasticsearch&MockObject */
-		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
-			->onlyMethods( [ 'update_index_settings' ] )
-			->getMock();
-
-		$health->elasticsearch->method( 'update_index_settings' )
-			->willReturn( true );
-
-		// Expected updated settings
+		$health                    = new Health( $this->search_instance );
+		$health->elasticsearch     = $this->getMockBuilder( Elasticsearch::class )
+			->onlyMethods( array( 'update_index_settings' ) )->getMock();
 		$expected_updated_settings = Health::limit_index_settings_to_keys( $desired_settings, Health::INDEX_SETTINGS_HEALTH_AUTO_HEAL_KEYS );
+		$health->elasticsearch->expects( $this->once() )->method( 'update_index_settings' )
+			->with( $target_name, $expected_updated_settings, false )->willReturn( true );
 
-		$health->elasticsearch->expects( $this->once() )
-			->method( 'update_index_settings' )
-			->with( $index_name, $expected_updated_settings, false );
-
-		$result = $health->heal_index_settings_for_indexable( $mocked_indexable, $options );
-
-		$expected_result = array(
-			'index_name'    => $index_name,
-			'index_version' => $options['index_version'] ?? 1,
+		$result = $health->heal_index_settings_for_indexable( $indexable, $options );
+		$this->assertSame( array(
+			'index_name'    => $target_name,
+			'index_version' => $target_version,
 			'result'        => true,
-		);
-
-		$this->assertEquals( $expected_result, $result );
+		), $result );
+		$this->assertSame( 1, $versioning->get_current_version_number( $indexable ) );
+		$this->assertSame( $prior_name, $indexable->get_index_name() );
 	}
 
 	public function limit_index_settings_to_keys_data() {

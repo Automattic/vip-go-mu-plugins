@@ -62,26 +62,33 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->getMock();
 
 		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
-		$integration_mock->activate();
+		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
 
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'options' )->setValue( $integration_mock, [ 'config' => [ 'preserved' => 'sentinel' ] ] );
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
 		$integration_mock->load();
 
 		// Trigger the plugins_loaded action to execute the closure
 		do_action( 'plugins_loaded' );
-
-		// Without the early return, the missing VIP_RTC_WS_* constants would deactivate it.
 		$this->assertTrue( $integration_mock->is_active() );
+		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
 	}
 
+	/**
+	 * Use a native namespace constant so installed extension files cannot satisfy this fixture.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_load_sets_inactive_if_plugin_file_not_found(): void {
 		// Set up required constants
 		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		Constant_Mocker::define( 'WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
+		\define( __NAMESPACE__ . '\\WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
 
 		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
 		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
@@ -256,5 +263,60 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
 
 		$this->assertFalse( $can_load->invoke( $rtc_integration ) );
+	}
+
+	/**
+	 * Available plugin fixtures must load only when both required settings are present.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_required_configuration_guards_real_available_plugins(): void {
+		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.directory_mkdir, WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Temporary plugin fixtures.
+		$root = get_temp_dir() . 'vip-rtc-' . wp_generate_password( 12, false );
+		\define( __NAMESPACE__ . '\\WPVIP_MU_PLUGIN_DIR', $root );
+		foreach ( [ 'missing secret', 'missing url', 'valid' ] as $variant ) {
+			Constant_Mocker::clear();
+			$gutenberg = $root . '/vip-integrations/gutenberg-' . RealTimeCollaborationIntegration::VIP_RTC_GUTENBERG_VERSION;
+			$rtc       = $root . '/vip-integrations/vip-real-time-collaboration-' . RealTimeCollaborationIntegration::VIP_RTC_PLUGIN_VERSION;
+			mkdir( $gutenberg, 0700, true );
+			mkdir( $rtc, 0700, true );
+			file_put_contents( $gutenberg . '/gutenberg.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "gutenberg";' );
+			file_put_contents( $rtc . '/vip-real-time-collaboration.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "rtc";' );
+			if ( 'missing secret' !== $variant ) {
+				Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
+			}
+			if ( 'missing url' !== $variant ) {
+				Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://example.com' );
+			}
+			$GLOBALS['vip_rtc_fixture_loads'] = [];
+			$integration                      = new RealTimeCollaborationIntegration( $this->slug );
+			$integration->activate();
+			$this->assertTrue( $integration->is_active() );
+			$hooks = isset( $GLOBALS['wp_filter']['plugins_loaded'] ) ? clone $GLOBALS['wp_filter']['plugins_loaded'] : null;
+			try {
+				$this->assertSame( 'valid' === $variant, get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' )->invoke( $integration ), $variant );
+				$integration->load();
+				do_action( 'plugins_loaded' );
+				$this->assertSame( 'valid' === $variant ? [ 'gutenberg', 'rtc' ] : [], $GLOBALS['vip_rtc_fixture_loads'], $variant );
+				$this->assertSame( 'valid' === $variant, $integration->is_active() );
+			} finally {
+				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore exact hook state between fixture variants.
+				if ( null === $hooks ) {
+					unset( $GLOBALS['wp_filter']['plugins_loaded'] );
+				} else {
+					// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the cloned hook after the fixture.
+					$GLOBALS['wp_filter']['plugins_loaded'] = $hooks;
+				}
+				unset( $GLOBALS['vip_rtc_fixture_loads'] );
+				wp_delete_file( $gutenberg . '/gutenberg.php' );
+				wp_delete_file( $rtc . '/vip-real-time-collaboration.php' );
+				rmdir( $gutenberg );
+				rmdir( $rtc );
+				rmdir( $root . '/vip-integrations' );
+				rmdir( $root );
+			}
+		}
+		// phpcs:enable WordPressVIPMinimum.Functions.RestrictedFunctions.directory_mkdir, WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 	}
 }

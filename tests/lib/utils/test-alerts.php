@@ -236,6 +236,7 @@ class Alerts_Test extends WP_UnitTestCase {
 		return [
 			'invalid-type'             => [ 'string' ],
 			'empty-array'              => [ [] ],
+			'missing-keys'             => [ [ 'source' => 'test' ] ],
 			'missing-severity'         => [
 				[
 					'source' => 'test',

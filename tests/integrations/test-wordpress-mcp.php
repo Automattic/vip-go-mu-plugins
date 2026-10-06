@@ -582,6 +582,48 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
+	/**
+	 * Only a current, correctly signed request scoped to the bridge resolves a user.
+	 *
+	 * @dataProvider mcp_authentication_cases
+	 */
+	public function test_mcp_authentication_rejects_invalid_requests( string $variant ): void {
+		$auth_key = 'test-auth-key';
+		$email    = 'request-user@example.com';
+		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
+		$this->sign_mcp_request( $email, $auth_key );
+		if ( 'wrong signature' === $variant ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Deliberate invalid bridge credential fixture.
+			$_SERVER['PHP_AUTH_PW'] = str_repeat( '0', 64 );
+		} elseif ( 'wrong key' === $variant ) {
+			$this->sign_mcp_request( $email, 'different-key' );
+		} elseif ( 'old timestamp' === $variant || 'future timestamp' === $variant ) {
+			$timestamp                                = (string) ( time() + ( 'old timestamp' === $variant ? -3600 : 3600 ) );
+			$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
+			// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Deliberate invalid bridge credential fixture.
+			$_SERVER['PHP_AUTH_PW'] = hash_hmac( 'sha256', $email . $timestamp, $auth_key );
+		} elseif ( 'missing timestamp' === $variant ) {
+			unset( $_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] );
+		} elseif ( 'malformed timestamp' === $variant ) {
+			$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = 'not-a-timestamp';
+		} elseif ( 'disabled bridge' === $variant ) {
+			$_SERVER['HTTP_X_VIP_MCP_AUTH'] = 'false';
+		} elseif ( 'other route' === $variant ) {
+			$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
+		}
+		$integration = new WordPressMcpIntegration( $this->slug );
+		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+		$this->assertSame( 'valid' === $variant ? $user_id : false, $integration->authenticate_mcp_request( false ) );
+	}
+
+	/**
+	 * Authentication cases change one request property from a valid signed control.
+	 */
+	public function mcp_authentication_cases(): array {
+		$variants = [ 'valid', 'wrong signature', 'wrong key', 'old timestamp', 'future timestamp', 'missing timestamp', 'malformed timestamp', 'disabled bridge', 'other route' ];
+		return array_combine( $variants, array_map( static fn( $variant ) => [ $variant ], $variants ) );
+	}
+
 	public function test_report_auth_error_surfaces_rest_error_when_user_not_found(): void {
 		$auth_key = 'test-auth-key';
 		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
@@ -601,6 +643,47 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
 		$this->assertStringContainsString( $email, $error->get_error_message() );
 		$this->assertSame( 401, $error->get_error_data()['status'] );
+	}
+
+	/**
+	 * Registered callbacks must resolve signed users and propagate unknown-user errors.
+	 */
+	public function test_registered_authentication_resolves_users_and_rest_errors(): void {
+		$auth_key    = 'hook-test-key';
+		$email       = 'hook-user@example.com';
+		$user_id     = $this->factory()->user->create( [ 'user_email' => $email ] );
+		$integration = new WordPressMcpIntegration( $this->slug );
+		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+		try {
+			$integration->load();
+			$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
+			$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
+			$this->sign_mcp_request( $email, $auth_key );
+			unset( $GLOBALS['current_user'] );
+			$this->assertSame( $user_id, get_current_user_id() );
+			$server = new \WP_REST_Server();
+			$this->assertContains( $server->check_authentication(), [ null, true ], 'WordPress accepts either null or true for successful REST authentication.' );
+
+			$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
+			unset( $GLOBALS['current_user'] );
+			$this->assertSame( 0, get_current_user_id() );
+			$error = $server->check_authentication();
+			$this->assertInstanceOf( \WP_Error::class, $error );
+			$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+			$this->assertSame( 401, $error->get_error_data()['status'] );
+		} finally {
+			foreach ( [
+				'determine_current_user'     => 'authenticate_mcp_request',
+				'rest_authentication_errors' => 'report_auth_error',
+				'wp_register_ability_args'   => 'filter_exposed_abilities_args',
+			] as $hook => $method ) {
+				$callback = [ $integration, $method ];
+				while ( false !== ( $priority = has_filter( $hook, $callback ) ) ) {
+					remove_filter( $hook, $callback, $priority );
+				}
+			}
+			wp_set_current_user( 0 );
+		}
 	}
 
 	public function test_report_auth_error_preserves_existing_result(): void {

@@ -34,6 +34,10 @@ npm run lint
 npm run test
 ```
 
+Search's shared-counter integration test starts two PHP workers against an
+isolated Memcached service: `CI=1 ./bin/test.sh --memcached --filter Test_Concurrency_Shared_Cache`.
+See [testing](docs/testing.md) for runtime requirements and test scope.
+
 ## Local development
 
 VIP local dev environment (recommended):
@@ -64,3 +68,6 @@ npm run destroy-e2e-env
 
 Local SQL import cleanup removes imported service connection credentials even
 when Jetpack is unavailable. See [local import testing](docs/testing.md#local-sql-import-credentials).
+
+For the isolated configuration sync runtime regression, see
+[configuration sync testing](docs/testing.md#configuration-sync-runtime).
