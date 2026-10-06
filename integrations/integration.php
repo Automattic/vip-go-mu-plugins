@@ -130,6 +130,29 @@ abstract class Integration {
 	}
 
 	/**
+	 * Return the organization-level configuration for this integration.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function get_org_config(): array {
+		if ( ! isset( $this->vip_config ) ) {
+			return [];
+		}
+
+		return $this->vip_config->get_org_config();
+	}
+
+	/**
+	 * Return whether the integration is enabled at the organization level.
+	 *
+	 * Manually activated integrations do not have platform configuration and are
+	 * treated as enabled for backward compatibility.
+	 */
+	public function is_enabled_for_org(): bool {
+		return ! isset( $this->vip_config ) || $this->vip_config->is_enabled_for_org();
+	}
+
+	/**
 	 * Get child integration configurations.
 	 *
 	 * @return array Associative array of child configurations keyed by integration slug

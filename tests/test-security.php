@@ -23,11 +23,17 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function test__admin_username_restricted() {
-		$this->factory()->user->create( [
-			'user_login' => 'admin',
-			'user_email' => 'admin@example.com',
-			'user_pass'  => 'secret1',
-		] );
+		// Nightly WordPress can retain the installer's admin account.
+		$admin_id = username_exists( 'admin' );
+		if ( $admin_id ) {
+			wp_set_password( 'secret1', $admin_id );
+		} else {
+			$this->factory()->user->create( [
+				'user_login' => 'admin',
+				'user_email' => 'admin@example.com',
+				'user_pass'  => 'secret1',
+			] );
+		}
 
 		$result = wp_authenticate( 'admin', 'secret1' );
 

@@ -503,6 +503,27 @@ add_filter( 'default_option_jetpack_active_plan', function ( $default_value ) {
 	return $default_value;
 } );
 
+/** Return an incompatibility reason before any plugin code is included. */
+function vip_jetpack_compatibility_error( $path ): string {
+	// Hosted sites use the platform mapping; local checkouts may lack its pinned versions.
+	if ( ! is_local_env() ) {
+		return '';
+	}
+	global $wp_version;
+
+	$requirements = get_file_data( $path, [
+		'wp'  => 'Requires at least',
+		'php' => 'Requires PHP',
+	] );
+	if ( $requirements['wp'] && version_compare( $wp_version, $requirements['wp'], '<' ) ) {
+		return 'requires WordPress ' . $requirements['wp'] . ' or newer';
+	}
+	if ( $requirements['php'] && version_compare( PHP_VERSION, $requirements['php'], '<' ) ) {
+		return 'requires PHP ' . $requirements['php'] . ' or newer';
+	}
+	return '';
+}
+
 /**
  * Load the jetpack plugin according to several defines:
  * - If VIP_JETPACK_SKIP_LOAD is true, Jetpack will not be loaded
@@ -536,7 +557,9 @@ function vip_jetpack_load() {
 	// to have a backup to unversioned "jetpack" folder
 	$jetpack_to_test[] = '';
 
-	// Walk through all versions to test, and load the first one that exists
+	$incompatible = [];
+
+	// Walk through all candidates and load the first compatible one.
 	foreach ( $jetpack_to_test as $version ) {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
@@ -547,6 +570,11 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
+			$compatibility_error = vip_jetpack_compatibility_error( $path );
+			if ( $compatibility_error ) {
+				$incompatible[] = $path . ' ' . $compatibility_error;
+				continue;
+			}
 			// In a rare edge case, the plugin could be present in `active_plugins` option,
 			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
 			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
@@ -598,6 +626,11 @@ function vip_jetpack_load() {
 				trigger_error( 'Jetpack loading error: ' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
 			}
 		}
+	}
+
+	if ( ! defined( 'VIP_JETPACK_LOADED_VERSION' ) && $incompatible ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Runtime diagnostic, not HTML.
+		trigger_error( 'Jetpack was not loaded: ' . implode( '; ', $incompatible ) . '. Install a compatible Jetpack version or use a supported WordPress version.', E_USER_WARNING );
 	}
 
 	/**
