@@ -45,3 +45,19 @@ export function createPost( request: APIRequestContext, postData: PostData ): Pr
 		},
 	} );
 }
+
+/**
+ * Fetches the persisted editable post data from the WordPress REST API.
+ *
+ * @param {APIRequestContext} request The Playwright API Request context
+ * @param {string}            id      Id of the post or page to fetch
+ * @param {PostType}          postType Type of the post or page to fetch
+ * @return {Promise<APIResponse>} The response of the API call
+ */
+export function getPost( request: APIRequestContext, id: string, postType: PostType ): Promise<APIResponse> {
+	return request.get( `/wp-json/wp/v2/${ postType }s/${ id }?context=edit`, {
+		headers: {
+			'X-WP-Nonce': `${ process.env.WP_E2E_NONCE! }`,
+		},
+	} );
+}

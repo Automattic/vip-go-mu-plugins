@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 
 const selectors = {
 	postImage: '.entry-content img',
+	postContent: '.entry-content',
 };
 
 /**
@@ -10,6 +11,7 @@ const selectors = {
 export class PublishedPostPage {
 	private readonly page: Page;
 	public readonly image: Locator;
+	public readonly content: Locator;
 
 	/**
 	 * Constructs an instance of the component.
@@ -19,6 +21,7 @@ export class PublishedPostPage {
 	constructor( page: Page ) {
 		this.page = page;
 		this.image = page.locator( selectors.postImage );
+		this.content = page.locator( selectors.postContent );
 	}
 
 	/**
