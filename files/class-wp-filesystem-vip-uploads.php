@@ -150,15 +150,12 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 * @return int|bool Size of the file in bytes.
 	 */
 	public function size( $file ) {
-		$uploads_path = $this->sanitize_uploads_path( $file );
-
-		$contents = $this->get_contents( $uploads_path );
-		if ( false === $contents ) {
-			return false; // We don't need to set the errors as that's already done by `get_contents`
+		$info = $this->get_file_stats( $file );
+		if ( false === $info || ! isset( $info['size'] ) ) {
+			return false;
 		}
 
-		// TODO: switch to HEAD request and check the Content-Length header
-		return mb_strlen( $contents );
+		return (int) $info['size'];
 	}
 
 	/**
@@ -177,7 +174,7 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 			return true;
 		}
 
-		return $this->api->is_file( $uploads_path );
+		return false !== $this->get_uploads_path_stats( $uploads_path );
 	}
 
 	/**
@@ -304,25 +301,30 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	}
 
 	/**
-	 * Unimplemented - Gets the file's last access time.
+	 * Gets the file's last access time.
 	 *
 	 * @param string $file Path to file.
 	 *
 	 * @return int|bool Unix timestamp representing last access time.
 	 */
 	public function atime( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		return $this->mtime( $file );
 	}
 
 	/**
-	 * Unimplemented - Gets the file modification time.
+	 * Gets the file modification time.
 	 *
 	 * @param string $file Path to file.
 	 *
 	 * @return int|bool Unix timestamp representing modification time.
 	 */
 	public function mtime( $file ) {
-		return $this->handle_unimplemented_method( __METHOD__ );
+		$info = $this->get_file_stats( $file );
+		if ( false === $info || ! isset( $info['mtime'] ) ) {
+			return false;
+		}
+
+		return (int) $info['mtime'];
 	}
 
 	/**
@@ -476,6 +478,30 @@ class WP_Filesystem_VIP_Uploads extends \WP_Filesystem_Base {
 	 */
 	public function group( $file ) {
 		return $this->handle_unimplemented_method( __METHOD__ );
+	}
+
+	private function get_file_stats( $file ) {
+		return $this->get_uploads_path_stats( $this->sanitize_uploads_path( $file ) );
+	}
+
+	/**
+	 * @param string $uploads_path Path already run through sanitize_uploads_path().
+	 * @return array|false Stats from the API, or false when missing or on error (recorded in $this->errors).
+	 */
+	private function get_uploads_path_stats( $uploads_path ) {
+		$info     = [];
+		$response = $this->api->is_file( $uploads_path, $info );
+
+		if ( is_wp_error( $response ) ) {
+			$this->errors = $response;
+			return false;
+		}
+
+		if ( ! $response ) {
+			return false;
+		}
+
+		return $info;
 	}
 
 	protected function handle_unimplemented_method( $method, $return_value = false ) {
