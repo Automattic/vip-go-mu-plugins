@@ -221,7 +221,7 @@ function print_data() {
 				}
 			);
 			// Cross-site queries against the network alias: list the indexes it actually reached.
-			$alias_indexes = get_alias_indexes( get_url_index_part( $query['url'] ) );
+			$alias_indexes = get_alias_indexes( (string) Search::instance()->get_index_name_for_url( $query['url'] ) );
 			if ( $alias_indexes ) {
 				$query['alias_indexes'] = $alias_indexes;
 			}
@@ -347,18 +347,6 @@ function is_cross_site_query( array $query_args ): bool {
 	// Any other scope ('current', unknown strings) stays on this site.
 	$sites = is_numeric( $scope ) || is_array( $scope ) ? array_map( 'intval', (array) $scope ) : [];
 	return (bool) array_diff( $sites, [ get_current_blog_id() ] );
-}
-
-/**
- * Index part of an Elasticsearch request URL, e.g. `vip-123-post-2,vip-123-post-3` for `.../vip-123-post-2,vip-123-post-3/_search`.
- *
- * @param string $url Request URL.
- * @return string Index part, or '' when there is none.
- */
-function get_url_index_part( string $url ): string {
-	$path = trim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
-	$part = (string) strtok( $path, '/' );
-	return str_starts_with( $part, '_' ) ? '' : $part;
 }
 
 /**

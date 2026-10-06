@@ -95,21 +95,6 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		$this->assertFalse( \Automattic\VIP\Search\Dev_Tools\is_cross_site_query( [] ) );
 	}
 
-	public function data_provider_url_index_parts() {
-		return [
-			'single index'    => [ 'http://vip-search:9200/vip-123-post-1/_search', 'vip-123-post-1' ],
-			'several indexes' => [ 'http://vip-search:9200/vip-123-post-2,vip-123-post-3/_search', 'vip-123-post-2,vip-123-post-3' ],
-			'no index (_cat)' => [ 'http://vip-search:9200/_cat/indices', '' ],
-		];
-	}
-
-	/**
-	 * @dataProvider data_provider_url_index_parts
-	 */
-	public function test__get_url_index_part( $url, $expected ) {
-		$this->assertSame( $expected, \Automattic\VIP\Search\Dev_Tools\get_url_index_part( $url ) );
-	}
-
 	public function test__get_alias_indexes_resolves_network_alias_once() {
 		$this->init_search();
 
