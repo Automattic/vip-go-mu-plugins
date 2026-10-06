@@ -80,7 +80,9 @@ class Tracks_Client extends Telemetry_Client {
 				'feature'  => 'telemetry',
 				'message'  => 'error batch recording events to Tracks',
 				'extra'    => [
-					'error' => $response->get_error_messages(),
+					'error'       => $response->get_error_messages(),
+					'error_codes' => $response->get_error_codes(),
+					'http_status' => $status_code ?: null,
 				],
 			] );
 			return $response;

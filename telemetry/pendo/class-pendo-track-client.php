@@ -96,7 +96,9 @@ class Pendo_Track_Client extends Telemetry_Client {
 					'feature'  => 'telemetry',
 					'message'  => 'Error recording events to Pendo',
 					'extra'    => [
-						'error' => $response->get_error_messages(),
+						'error'       => $response->get_error_messages(),
+						'error_codes' => $response->get_error_codes(),
+						'http_status' => $status_code ?: null,
 					],
 				] );
 
