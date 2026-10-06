@@ -337,8 +337,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_search_sends_http_requests_via_helper_functions() {
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint1:9235',
 		) );
@@ -374,8 +372,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_search_sends_double_writes_when_upgrading() {
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9235',
 		) );
@@ -414,8 +410,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_search_sends_double_writes_after_upgrade_and_migration_in_progress() {
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9245',
 		) );

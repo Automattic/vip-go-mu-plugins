@@ -508,7 +508,13 @@ class Queue_Test extends WP_UnitTestCase {
 		wp_cache_set( Queue\Schema::TABLE_CREATE_LOCK, 1, null, MINUTE_IN_SECONDS );
 		try {
 			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP COLUMN claim_token', $table_name ) ) );
-			$this->queue->queue_object( 1000 );
+			// Seed only the queue: ALTER TABLE can commit unrelated index-exists option writes.
+			$this->assertSame( 1, $wpdb->insert( $table_name, array(
+				'object_id'     => 1000,
+				'object_type'   => 'post',
+				'status'        => 'queued',
+				'index_version' => 1,
+			) ) );
 			$this->assertSame( array(), $this->queue->checkout_jobs() );
 			$this->assertSame( '', $wpdb->last_error );
 			$this->assertSame( 1, $this->queue->count_jobs( 'queued' ) );
@@ -562,7 +568,13 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertStringContainsString( 'missing claim_token after dbDelta()', $warnings[0] );
 			$this->assertSame( 3, (int) get_transient( Queue\Schema::DB_VERSION_TRANSIENT ) );
 			$this->assertFalse( $this->queue->schema->is_installed() );
-			$this->queue->queue_object( 1000 );
+			// Seed only the queue: ALTER TABLE can commit unrelated index-exists option writes.
+			$this->assertSame( 1, $wpdb->insert( $table_name, array(
+				'object_id'     => 1000,
+				'object_type'   => 'post',
+				'status'        => 'queued',
+				'index_version' => 1,
+			) ) );
 			$this->assertSame( array(), $this->queue->checkout_jobs() );
 			$this->assertSame( '', $wpdb->last_error );
 			$this->assertSame( 1, $this->queue->count_jobs( 'queued' ) );
@@ -762,9 +774,11 @@ class Queue_Test extends WP_UnitTestCase {
 	 */
 	public function test_checkout_jobs_returns_only_owned_rows_across_connections() {
 		global $wpdb;
-		$primary   = $wpdb;
-		$secondary = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
-		$secondary->set_prefix( $wpdb->prefix );
+		$original_db = $wpdb;
+		$primary     = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+		$secondary   = new wpdb( DB_USER, DB_PASSWORD, DB_NAME, DB_HOST );
+		$primary->set_prefix( $original_db->prefix );
+		$secondary->set_prefix( $original_db->prefix );
 		$original_schema = $this->queue->schema;
 		$table_name      = $wpdb->prefix . 'vip_queue_claim_' . wp_generate_password( 12, false );
 		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
@@ -790,21 +804,26 @@ class Queue_Test extends WP_UnitTestCase {
 		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
 		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		try {
-			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $original_schema->get_table_name() ) ) );
+			// Read the temporary table's schema on its owning connection, then create the
+			// shared fixture on the secondary connection so DDL cannot commit the test transaction.
+			$table_definition = $original_db->get_var( $original_db->prepare( 'SHOW CREATE TABLE %i', $original_schema->get_table_name() ), 1 );
+			$this->assertIsString( $table_definition );
+			$table_definition = preg_replace( '/^CREATE(?: TEMPORARY)? TABLE `[^`]+`/', "CREATE TABLE `{$table_name}`", $table_definition, 1, $replacements );
+			$this->assertSame( 1, $replacements );
+			// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- The database provides the schema; the generated fixture name contains only letters, digits, and underscores.
+			$this->assertNotFalse( $secondary->query( $table_definition ) );
 			$this->queue->schema = $schema;
-			// Publish fixture rows from the autocommit connection, outside the test transaction.
-			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Use the second real connection for fixture setup.
-			$GLOBALS['wpdb'] = $secondary;
-			try {
-				$this->queue->queue_object( 900001, 'post', array( 'index_version' => 1 ) );
-				$this->queue->queue_object( 900002, 'post', array( 'index_version' => 1 ) );
-			} finally {
-				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the original connection.
-				$GLOBALS['wpdb'] = $primary;
-			}
+			// Seed only the private table. queue_object() would persist an index-exists site option.
+			$this->assertSame( 2, $secondary->query( $secondary->prepare(
+				'INSERT INTO %i (object_id, object_type, status, index_version, priority) VALUES (%d, %s, %s, %d, %d), (%d, %s, %s, %d, %d)',
+				$table_name, 900001, 'post', 'queued', 1, Queue::INDEX_DEFAULT_PRIORITY,
+				900002, 'post', 'queued', 1, Queue::INDEX_DEFAULT_PRIORITY
+			) ) );
 
-			$expected_ids = array_map( 'intval', $wpdb->get_col( $wpdb->prepare( 'SELECT job_id FROM %i ORDER BY job_id', $table_name ) ) );
+			$expected_ids = array_map( 'intval', $primary->get_col( $primary->prepare( 'SELECT job_id FROM %i ORDER BY job_id', $table_name ) ) );
 			$this->assertCount( 2, $expected_ids );
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Both workers use connections outside the WordPress test transaction.
+			$GLOBALS['wpdb'] = $primary;
 			add_filter( 'query', $barrier );
 			$first_jobs = $this->queue->checkout_jobs( 2 );
 			remove_filter( 'query', $barrier );
@@ -815,8 +834,11 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertSame( array( 'scheduled', 'scheduled' ), $secondary->get_col( $secondary->prepare( 'SELECT status FROM %i ORDER BY job_id', $table_name ) ) );
 		} finally {
 			remove_filter( 'query', $barrier );
+			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the original test transaction before closing worker connections.
+			$GLOBALS['wpdb']     = $original_db;
 			$this->queue->schema = $original_schema;
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
+			$secondary->query( $secondary->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
+			$primary->close();
 			$secondary->close();
 			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
 			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
