@@ -307,8 +307,8 @@ describe( 'buildTreeLines', () => {
 				assert.equal( new Set( line.parts.map( part => part[ 2 ] ) ).size, line.parts.length, JSON.stringify( line.parts ) );
 			}
 		}
-		const paths = buildTreeLines( value, { mode: 'expanded' } ).lines.map( line => line.path );
-		assert.ok( paths.includes( '$["a.b"]' ) && paths.includes( '$["a"]["b"]' ) );
+		const paths = new Set( buildTreeLines( value, { mode: 'expanded' } ).lines.map( line => line.path ) );
+		assert.ok( paths.has( '$["a.b"]' ) && paths.has( '$["a"]["b"]' ) );
 	} );
 
 	it( 'records each node\'s parent path for keyboard navigation', () => {
