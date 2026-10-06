@@ -1057,7 +1057,7 @@ class Health_Test extends WP_UnitTestCase {
 	 * @dataProvider get_index_settings_diff_for_indexable_data
 	 */
 	public function test_get_index_settings_diff_for_indexable( $actual, $desired, $options, $expected_diff ) {
-		$index_name = 'vip-123-post-1';
+		$index_name = isset( $options['index_version'] ) ? 'vip-123-post-1-v2' : 'vip-123-post-1';
 		// Mock search and the versioning instance
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
@@ -1088,7 +1088,7 @@ class Health_Test extends WP_UnitTestCase {
 
 		$health->elasticsearch->method( 'get_index_settings' )
 			->willReturn( [
-				'vip-123-post-1' => [
+				$index_name => [
 					'settings' => $actual,
 				],
 			] );
