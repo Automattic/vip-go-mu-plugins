@@ -146,11 +146,17 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_cached_mime_types() {
+		global $wpdb;
+
+		$cold_query_count         = $wpdb->num_queries;
 		$returned_post_mime_types = get_available_post_mime_types();
 		$cached_post_mime_types   = $this->get_cached_mime_types();
 
-		// Perform a second call to get_available_post_mime_types() to ensure the cached results are returned.
+		// A cold lookup queries the real database; a warm lookup must not query it again.
+		$this->assertGreaterThan( $cold_query_count, $wpdb->num_queries );
+		$warm_query_count           = $wpdb->num_queries;
 		$returned_post_mime_types_2 = get_available_post_mime_types();
+		$this->assertSame( $warm_query_count, $wpdb->num_queries, 'Warm MIME lookup queried the database.' );
 
 		$this->assertIsArray( $cached_post_mime_types );
 		$this->assertEquals( $cached_post_mime_types, $returned_post_mime_types );
