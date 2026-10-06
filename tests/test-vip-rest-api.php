@@ -86,12 +86,20 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	public function test__request_with_valid_header() {
 		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
 
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['HTTP_AUTHORIZATION'] );
+		// Retry only when the clock crosses a tick during dispatch.
+		try {
+			for ( $attempt = 0; $attempt < 3; ++$attempt ) {
+				$tick                          = ceil( time() / 120 );
+				$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, NONCE_SALT );
+				$response                      = $this->server->dispatch( $request );
+				if ( ceil( time() / 120 ) === $tick ) {
+					break;
+				}
+			}
+			$this->assertSame( $tick, ceil( time() / 120 ), 'Dispatch must finish within a stable token tick.' );
+		} finally {
+			unset( $_SERVER['HTTP_AUTHORIZATION'] );
+		}
 
 		$this->assertEquals( 200, $response->get_status() );
 	}
@@ -210,6 +218,44 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		unset( $_SERVER['PHP_AUTH_PW'] );
 
 		$this->assertEquals( 200, $response->get_status() );
+	}
+
+	/**
+	 * Privileged logins must authenticate the password before authorizing the route.
+	 */
+	public function test__privileged_basic_auth_requires_correct_password() {
+		$user = $this->factory()->user->create_and_get( [ 'user_pass' => 'correct-password' ] );
+		$user->add_cap( 'vip_support' );
+		$request                  = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+		$_SERVER['PHP_AUTH_USER'] = $user->user_login;
+		try {
+			$_SERVER['PHP_AUTH_PW'] = 'wrong-nonempty-password';
+			$this->assertSame( 401, $this->server->dispatch( $request )->get_status() );
+			$_SERVER['PHP_AUTH_PW'] = 'correct-password';
+			$this->assertSame( 200, $this->server->dispatch( $request )->get_status() );
+		} finally {
+			unset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] );
+		}
+	}
+
+	/**
+	 * Tokens must independently bind the current tick, namespace and secret salt.
+	 */
+	public function test__independent_token_signing_contract() {
+		for ( $attempt = 0; $attempt < 3; ++$attempt ) {
+			$tick     = ceil( time() / 120 );
+			$expected = hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, 'first-salt' );
+			$actual   = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'first-salt' );
+			$other    = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE, 'second-salt' );
+			if ( ceil( time() / 120 ) === $tick ) {
+				break;
+			}
+		}
+		$this->assertSame( $tick, ceil( time() / 120 ), 'Token generation must finish within a stable tick.' );
+		$this->assertSame( $expected, $actual );
+		$this->assertNotSame( $expected, $other );
+		$stale = hash_hmac( 'sha256', ( $tick - 2 ) . '|' . self::VALID_NAMESPACE, NONCE_SALT );
+		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, self::VALID_AUTH_MECHANISM . ' ' . $stale ) );
 	}
 
 	// Helper function to generate random username and password

@@ -131,6 +131,31 @@ class Lockout_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * Lockout registration must restrict ordinary actors while preserving support access.
+	 */
+	public function test__locked_authorization_through_wordpress() {
+		$editor     = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
+		$support_id = \Automattic\VIP\Support_User\User::add( [
+			'user_email' => 'hook-support@automattic.com',
+			'user_login' => 'hook-support',
+			'user_pass'  => 'password',
+		] );
+		$support    = get_user_by( 'id', $support_id );
+		$support->add_cap( 'edit_posts' );
+		$this->assertTrue( is_automattician( $support_id ) );
+		$this->assertTrue( user_can( $editor, 'edit_posts' ) );
+		$this->assertTrue( user_can( $support_id, 'edit_posts' ) );
+
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
+		$this->lockout = new Lockout();
+
+		$this->assertTrue( $editor->has_cap( 'read' ) );
+		$this->assertFalse( $editor->has_cap( 'edit_posts' ) );
+		$this->assertFalse( user_can( $editor, 'delete_posts' ) );
+		$this->assertTrue( user_can( $support_id, 'edit_posts' ) );
+	}
+
 	public function test__filter_user_has_cap__warning() {
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', Lockout::ACCOUNT_STATUS_WARNING );
 

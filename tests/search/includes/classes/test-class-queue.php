@@ -608,12 +608,23 @@ class Queue_Test extends WP_UnitTestCase {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 
-		$object_ids = array(
-			'12',
-			'45',
-			'89',
-			'246',
-		);
+		$object_ids = self::factory()->post->create_many( 3, array(
+			'post_status'  => 'publish',
+			'post_title'   => 'Queue indexing title',
+			'post_content' => 'Queue indexing content',
+		) );
+
+		$bulk_requests = array();
+		$capture_bulk  = static function ( $preempt, $args, $url ) use ( &$bulk_requests ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$bulk_requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $capture_bulk, 10, 3 );
 
 		// Add some jobs to the queue
 		$this->queue->queue_objects( $object_ids );
@@ -632,7 +643,36 @@ class Queue_Test extends WP_UnitTestCase {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 		$this->queue->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
-		$this->queue->process_jobs( $jobs );
+		try {
+			$this->queue->process_jobs( $jobs );
+		} finally {
+			remove_filter( 'pre_http_request', $capture_bulk, 10 );
+		}
+
+		$this->assertNotEmpty( $bulk_requests, 'Processing must send the documents to Elasticsearch.' );
+		foreach ( $bulk_requests as $request ) {
+			$this->assertSame( $bulk_requests[0]['args']['body'], $request['args']['body'], 'Mirrored requests must index the same documents.' );
+		}
+		$this->assertSame( 'POST', $bulk_requests[0]['args']['method'] );
+		$lines      = preg_split( '/\n+/', trim( $bulk_requests[0]['args']['body'] ) );
+		$index_name = Indexables::factory()->get( 'post' )->get_index_name();
+		$this->assertCount( 2 * count( $object_ids ), $lines );
+		$documents  = array();
+		$line_count = count( $lines );
+		for ( $offset = 0; $offset < $line_count; $offset += 2 ) {
+			$action                  = json_decode( $lines[ $offset ], true );
+			$object_id               = (int) $action['index']['_id'];
+			$documents[ $object_id ] = json_decode( $lines[ $offset + 1 ], true );
+		}
+		$indexed_ids = array_keys( $documents );
+		sort( $indexed_ids );
+		sort( $object_ids );
+		$this->assertSame( $object_ids, $indexed_ids );
+		$this->assertStringContainsString( '/' . $index_name . '/', $bulk_requests[0]['url'] );
+		foreach ( $documents as $document ) {
+			$this->assertSame( 'Queue indexing title', $document['post_title'] );
+			$this->assertSame( 'Queue indexing content', $document['post_content'] );
+		}
 
 		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
@@ -840,6 +880,79 @@ class Queue_Test extends WP_UnitTestCase {
 			$secondary->query( $secondary->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
 			$primary->close();
 			$secondary->close();
+			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		}
+	}
+
+	public function test_free_deadlocked_jobs() {
+		global $wpdb;
+
+		$original_schema = $this->queue->schema;
+		$table_name      = $wpdb->prefix . 'vip_queue_recovery_' . wp_generate_password( 12, false );
+		$source_table    = $original_schema->get_table_name();
+		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
+		$schema->method( 'get_table_name' )->willReturn( $table_name );
+
+		// The ordinary copy preserves production indexes and permits the recovery self-join.
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		try {
+			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $source_table ) ) );
+			$this->queue->schema = $schema;
+			$fixtures            = array(
+				array( 1000, 'post', 1, 'running' ),
+				array( 1000, 'post', 1, 'queued' ),
+				array( 1000, 'post', 2, 'scheduled' ),
+				array( 2000, 'post', 1, 'queued' ),
+				array( 2000, 'user', 1, 'running' ),
+				array( 3000, 'post', 1, 'scheduled' ),
+				array( 3000, 'post', 1, 'running' ),
+			);
+			$expected            = array();
+			$duplicate_ids       = array();
+			foreach ( $fixtures as $offset => $fixture ) {
+				list( $object_id, $object_type, $version, $status ) = $fixture;
+				$options = array( 'index_version' => $version );
+				$this->queue->queue_object( $object_id, $object_type, $options );
+				$job = $this->queue->get_next_job_for_object( $object_id, $object_type, $options );
+				if ( 'queued' !== $status ) {
+					$this->queue->update_job( $job->job_id, array(
+						'status'         => $status,
+						'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
+					) );
+				}
+				if ( 3000 === $object_id ) {
+					$duplicate_ids[] = (int) $job->job_id;
+				}
+				// Only the same-object/type/version duplicates should be removed.
+				if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
+					$expected[] = array(
+						'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
+						'object_id'     => $object_id,
+						'object_type'   => $object_type,
+						'index_version' => $version,
+						'status'        => 'queued',
+					);
+				}
+			}
+
+			$this->queue->free_deadlocked_jobs();
+			$actual = $wpdb->get_results( $wpdb->prepare( 'SELECT job_id, object_id, object_type, index_version, status FROM %i ORDER BY job_id', $table_name ), ARRAY_A );
+			foreach ( $actual as &$job ) {
+				$job['job_id']        = (int) $job['job_id'];
+				$job['object_id']     = (int) $job['object_id'];
+				$job['index_version'] = (int) $job['index_version'];
+				if ( 3000 === $job['object_id'] ) {
+					$this->assertContains( $job['job_id'], $duplicate_ids );
+					$job['job_id'] = 0;
+				}
+			}
+			unset( $job );
+			$this->assertSame( $expected, $actual );
+		} finally {
+			$this->queue->schema = $original_schema;
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
 			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
 			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		}

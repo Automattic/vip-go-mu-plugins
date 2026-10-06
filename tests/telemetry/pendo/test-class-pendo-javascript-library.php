@@ -248,13 +248,24 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_disabled_for_users_without_edit_post_cap() {
-		$user = $this->factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
+		$this->enable_fake_integration_with_pendo_tracking();
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
+		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
+
+		$user->set_role( 'subscriber' );
+		wp_set_current_user( 0 );
+		wp_set_current_user( $user->ID );
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_disabled_for_disallowed_screens() {
@@ -263,24 +274,41 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
+		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
+
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'non-allowed-screen.php' ) );
+		$instance->enqueue_scripts( 'non-allowed-screen.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_disabled_for_disallowed_admin_screen() {
+		global $wp_query;
+
 		// With a tracked integration, only the screen check can prevent loading.
 		$this->enable_fake_integration_with_pendo_tracking();
 
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'vip-block-governance';
+		$instance                     = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'admin.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
 
+		$wp_query->query_vars['page'] = 'disallowed-admin-page';
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		$instance->enqueue_scripts( 'admin.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_should_return_singleton_instance() {

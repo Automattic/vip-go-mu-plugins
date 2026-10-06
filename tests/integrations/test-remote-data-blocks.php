@@ -68,7 +68,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 			->getMock();
 
 		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
-		$integration_mock->activate();
+		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
@@ -82,6 +82,7 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		do_action( 'plugins_loaded' );
 
 		$this->assertTrue( $integration_mock->is_active() );
+		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
 	}
 
 	public function test_configure_defines_config_constant(): void {

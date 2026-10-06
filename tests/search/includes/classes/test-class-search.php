@@ -8,6 +8,7 @@ use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Utils\Alerts;
 use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
+use ElasticPress\Feature\SearchOrdering\SearchOrdering;
 use ElasticPress\Features;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
@@ -337,6 +338,8 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__vip_search_sends_http_requests_via_helper_functions() {
+		// These transport expectations include an uncached index-exists request.
+		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint1:9235',
 		) );
@@ -371,7 +374,35 @@ class Search_Test extends WP_UnitTestCase {
 		$indexable->bulk_index( [ $post_id ] );
 	}
 
+	/**
+	 * Assert exact destinations and the common authenticated bulk write payload.
+	 *
+	 * @param array $requests Captured external HTTP request tuples.
+	 * @param array $expected_urls One index-exists request and one bulk request per cluster.
+	 */
+	private function assert_migration_request_tuples( array $requests, array $expected_urls ): void {
+		$urls = array_column( $requests, 'url' );
+		sort( $urls );
+		sort( $expected_urls );
+		$this->assertSame( $expected_urls, $urls );
+		$bulk = array_values( array_filter( $requests, static fn( $request ) => str_ends_with( $request['url'], '/_bulk' ) ) );
+		$this->assertCount( 2, $bulk );
+		$this->assertSame( $bulk[0]['args']['body'], $bulk[1]['args']['body'] );
+		$this->assertStringContainsString( 'Test Post', $bulk[0]['args']['body'] );
+		foreach ( $bulk as $request ) {
+			$this->assertSame( 'POST', $request['args']['method'] );
+			$this->assertSame( 'Basic ' . base64_encode( 'foo:bar' ), $request['args']['headers']['Authorization'] );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__vip_search_sends_double_writes_when_upgrading() {
+		\define( 'ES_SHIELD', 'foo:bar' );
+		// These transport expectations include an uncached index-exists request.
+		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9235',
 		) );
@@ -384,19 +415,19 @@ class Search_Test extends WP_UnitTestCase {
 		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $test_user_id );
 
+		$requests = array();
 		self::$mock_global_functions->expects( $this->exactly( 3 ) )
 			->method( 'mock_wp_remote_request' )
-			->with( $this->callback( function ( $url ) {
-				return in_array( $url, [
-					'https://es-endpoint:9235/vip-123-post-1',
-					'https://es-endpoint:9235/vip-123-post-1/_bulk',
-					'https://es-endpoint:9245/vip-123-post-1/_bulk',
-				] );
-			} ) )
-			->willReturn([
-				'response' => [ 'code' => 200 ],
-				'body'     => '',
-			]);
+			->willReturnCallback( static function ( $url, $args ) use ( &$requests ) {
+				$requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '',
+				);
+			} );
 
 		$this->init_es();
 		$indexable = Indexables::factory()->get( 'post' );
@@ -407,9 +438,17 @@ class Search_Test extends WP_UnitTestCase {
 		) );
 
 		$indexable->bulk_index( [ $post_id ] );
+		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9235/vip-123-post-1', 'https://es-endpoint:9235/vip-123-post-1/_bulk', 'https://es-endpoint:9245/vip-123-post-1/_bulk' ) );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__vip_search_sends_double_writes_after_upgrade_and_migration_in_progress() {
+		\define( 'ES_SHIELD', 'foo:bar' );
+		// These transport expectations include an uncached index-exists request.
+		delete_site_option( 'es_index_exists_vip-123-post-1' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9245',
 		) );
@@ -423,19 +462,19 @@ class Search_Test extends WP_UnitTestCase {
 		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $test_user_id );
 
+		$requests = array();
 		self::$mock_global_functions->expects( $this->exactly( 3 ) )
 			->method( 'mock_wp_remote_request' )
-			->with( $this->callback( function ( $url ) {
-				return in_array( $url, [
-					'https://es-endpoint:9245/vip-123-post-1',       // Next version host
-					'https://es-endpoint:9245/vip-123-post-1/_bulk', // Next version host
-					'https://es-endpoint:9235/vip-123-post-1/_bulk', // Mirror to old version host
-				] );
-			} ) )
-			->willReturn([
-				'response' => [ 'code' => 200 ],
-				'body'     => '',
-			]);
+			->willReturnCallback( static function ( $url, $args ) use ( &$requests ) {
+				$requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '',
+				);
+			} );
 
 		$this->init_es();
 		$indexable = Indexables::factory()->get( 'post' );
@@ -446,9 +485,15 @@ class Search_Test extends WP_UnitTestCase {
 		) );
 
 		$indexable->bulk_index( [ $post_id ] );
+		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9245/vip-123-post-1', 'https://es-endpoint:9245/vip-123-post-1/_bulk', 'https://es-endpoint:9235/vip-123-post-1/_bulk' ) );
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
+		\define( 'ES_SHIELD', 'foo:bar' );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint:9235/weirdpath9235',
 		) );
@@ -462,19 +507,19 @@ class Search_Test extends WP_UnitTestCase {
 		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
 		wp_set_current_user( $test_user_id );
 
+		$requests = array();
 		self::$mock_global_functions->expects( $this->exactly( 3 ) )
 			->method( 'mock_wp_remote_request' )
-			->with( $this->callback( function ( $url ) {
-				return in_array( $url, [
-					'https://es-endpoint:9245/weirdpath9235/vip-123-post-1',       // Next version host
-					'https://es-endpoint:9245/weirdpath9235/vip-123-post-1/_bulk', // Next version host
-					'https://es-endpoint:9235/weirdpath9235/vip-123-post-1/_bulk', // Mirror to the current host
-				] );
-			} ) )
-			->willReturn([
-				'response' => [ 'code' => 200 ],
-				'body'     => '',
-			]);
+			->willReturnCallback( static function ( $url, $args ) use ( &$requests ) {
+				$requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+				return array(
+					'response' => array( 'code' => 200 ),
+					'body'     => '',
+				);
+			} );
 
 		$this->init_es();
 		$indexable = Indexables::factory()->get( 'post' );
@@ -485,6 +530,7 @@ class Search_Test extends WP_UnitTestCase {
 		) );
 
 		$indexable->bulk_index( [ $post_id ] );
+		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1', 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1/_bulk', 'https://es-endpoint:9235/weirdpath9235/vip-123-post-1/_bulk' ) );
 	}
 
 	public function test__vip_search_filter__ep_global_alias() {
@@ -2648,32 +2694,41 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->init();
 
 		Features::factory()->activate_feature( 'searchordering' );
+		// Activation updates settings; post type registration normally runs on init.
+		Features::factory()->get_registered_feature( 'searchordering' )->register_post_type();
 
-		$post = wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR',
-		] );
+		try {
+			$post = wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR',
+			] );
 
-		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+			$this->assertGreaterThan( 0, $post );
+			$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
 
-		wp_trash_post( $post );
+			wp_trash_post( $post );
 
-		$this->assertEquals( '0', get_option( 'vip_custom_results_existence' ) );
+			$this->assertEquals( '0', get_option( 'vip_custom_results_existence' ) );
 
-		wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR 2',
-		] );
-		$post3 = wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR 3',
-		] );
-		wp_trash_post( $post3 );
+			wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR 2',
+			] );
+			$post3 = wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR 3',
+			] );
+			wp_trash_post( $post3 );
 
-		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+			$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+		} finally {
+			// Post types and taxonomies are not reset between tests.
+			unregister_taxonomy( SearchOrdering::TAXONOMY_NAME );
+			unregister_post_type( SearchOrdering::POST_TYPE_NAME );
+		}
 	}
 
 	public function test__filter__ep_config_mapping_strips_ngram_filter() {

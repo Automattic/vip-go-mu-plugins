@@ -43,6 +43,83 @@ class Sync_Test extends WP_UnitTestCase {
 		}, 10 );
 	}
 
+	/**
+	 * Cross the real runtime sync path in a subprocess without WP_TESTS_DOMAIN.
+	 */
+	// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite -- Isolated test-runtime database and process setup.
+	public function test_runtime_sync_payload_persistence_and_secondary_schedule() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'The isolated runtime requires multisite for secondary-blog scheduling.' );
+		}
+		global $wpdb;
+		$prefix = 'sync_runtime_' . strtolower( wp_generate_password( 8, false ) ) . '_';
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		try {
+			foreach ( $wpdb->tables( 'all', true ) as $source ) {
+				$target = $prefix . substr( $source, strlen( $wpdb->base_prefix ) );
+				$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $target, $source ) ) );
+				$wpdb->query( $wpdb->prepare( 'INSERT INTO %i SELECT * FROM %i', $target, $source ) );
+			}
+			$config  = array(
+				'prefix' => $prefix,
+				'constants' => array(
+					'ABSPATH' => ABSPATH,
+					'DB_HOST' => DB_HOST,
+					'DB_NAME' => DB_NAME,
+					'DB_USER' => DB_USER,
+					'DB_PASSWORD' => DB_PASSWORD,
+					'DB_CHARSET' => 'utf8',
+					'DB_COLLATE' => '',
+					'MULTISITE' => true,
+					'SUBDOMAIN_INSTALL' => false,
+					'DOMAIN_CURRENT_SITE' => get_network()->domain,
+					'PATH_CURRENT_SITE' => '/',
+					'SITE_ID_CURRENT_SITE' => 1,
+					'BLOG_ID_CURRENT_SITE' => 1,
+					'WP_ADMIN' => true,
+					'WPMU_PLUGIN_DIR' => sys_get_temp_dir() . '/no-sync-mu-plugins',
+					'VIP_SERVICES_AUTH_TOKENS' => base64_encode( wp_json_encode( array( 'site' => array( 'vip-site-details' => array( 'url' => 'https://sync.example.test', 'token' => 'fake-token' ) ) ) ) ),
+				),
+			);
+			$process = proc_open( array( PHP_BINARY, __DIR__ . '/fixtures/sync-runtime.php' ), array( array( 'pipe', 'r' ), array( 'pipe', 'w' ), array( 'pipe', 'w' ) ), $pipes );
+			$this->assertIsResource( $process );
+			fwrite( $pipes[0], wp_json_encode( $config ) );
+			fclose( $pipes[0] );
+			$output = stream_get_contents( $pipes[1] );
+			$error  = stream_get_contents( $pipes[2] );
+			fclose( $pipes[1] );
+			fclose( $pipes[2] );
+			$this->assertSame( 0, proc_close( $process ), $error . $output );
+			$result = json_decode( $output, true );
+			$this->assertIsArray( $result, $error . $output );
+			$this->assertFalse( $result['guard'] );
+			$this->assertCount( 2, $result['requests'] );
+			$this->assertSame( 'https://sync.example.test/sites', $result['requests'][0]['url'] );
+			$this->assertSame( 'PUT', $result['requests'][0]['args']['method'] );
+			$full_body = json_decode( $result['requests'][0]['args']['body'], true );
+			$this->assertSame( 'https://sync-runtime.example.test', $full_body['core']['home_url'] );
+			$this->assertSame( $result['now'], $result['full']['last_full_synced'] );
+			$this->assertNotEmpty( $result['full']['last_sync_hash'] );
+			$this->assertSame( 'https://sync.example.test/sites/heartbeat', $result['requests'][1]['url'] );
+			$this->assertSame( array( 'client_site_id' => 0, 'blog_id' => 1, 'timestamp' => $result['heartbeat']['last_synced'] ), json_decode( $result['requests'][1]['args']['body'], true ) );
+			$this->assertGreaterThan( 0, $result['scheduled'] );
+			$this->assertSame( 2, $result['fastcgi'] );
+			$this->assertSame( array(), $result['queued'] );
+			$this->assertSame( 2, $result['rate_count'] );
+			$this->assertSame( $result['full']['last_full_synced'], $result['heartbeat']['last_full_synced'] );
+		} finally {
+			$tables = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $prefix ) . '%' ) );
+			foreach ( $tables as $table ) {
+				$wpdb->query( $wpdb->prepare( 'DROP TABLE %i', $table ) );
+			}
+			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		}
+	}
+
+	// phpcs:enable WordPress.DB.DirectDatabaseQuery, WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
+
 	public function tearDown(): void {
 		Constant_Mocker::clear();
 		$this->reset_site_details_index();

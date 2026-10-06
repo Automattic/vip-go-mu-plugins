@@ -1072,6 +1072,59 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'invalid-version-number', $result->get_error_code() );
 	}
 
+	/**
+	 * Verify deletion targets the inactive index and removes only its queued jobs.
+	 */
+	public function test_delete_version_preserves_active_index_and_jobs(): void {
+		$indexable = Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, array(
+			1 => array(
+				'number' => 1,
+				'active' => true,
+			),
+			2 => array(
+				'number' => 2,
+				'active' => false,
+			),
+		) );
+		self::$search->queue->empty_queue();
+		self::$search->queue->queue_object( 1000, 'post', array( 'index_version' => 1 ) );
+		self::$search->queue->queue_object( 1000, 'post', array( 'index_version' => 2 ) );
+		$active_job   = self::$search->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 1 ) );
+		$inactive_job = self::$search->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 2 ) );
+		// Ensure this test's versioning instance controls the final index name.
+		remove_filter( 'ep_index_name', array( self::$search, 'filter__ep_index_name' ), PHP_INT_MAX );
+		add_filter( 'ep_index_name', array( self::$search, 'filter__ep_index_name' ), PHP_INT_MAX, 3 );
+		$active_name = $indexable->get_index_name();
+		$this->assertTrue( self::$version_instance->set_current_version_number( $indexable, 2 ) );
+		$this->assertSame( 2, self::$version_instance->get_current_version_number( $indexable ) );
+		$inactive_name = $indexable->get_index_name();
+		self::$version_instance->reset_current_version_number( $indexable );
+		$this->assertNotSame( $active_name, $inactive_name );
+		$deletes = array();
+		$http    = static function ( $preempt, $args, $url ) use ( &$deletes ) {
+			if ( 'DELETE' === $args['method'] ) {
+				$deletes[] = $url;
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			$this->assertTrue( self::$version_instance->delete_version( $indexable, 2 ) );
+			$this->assertNotEmpty( $deletes );
+			foreach ( $deletes as $url ) {
+				$this->assertSame( '/' . $inactive_name, wp_parse_url( $url, PHP_URL_PATH ) );
+			}
+			$this->assertSame( array(), self::$search->queue->get_jobs_by_ids( array( $inactive_job->job_id ) ) );
+			$this->assertCount( 1, self::$search->queue->get_jobs_by_ids( array( $active_job->job_id ) ) );
+			$this->assertSame( array( 1 ), array_keys( self::$version_instance->get_versions( $indexable ) ) );
+			$this->assertSame( 1, self::$version_instance->get_current_version_number( $indexable ) );
+			$this->assertSame( $active_name, $indexable->get_index_name() );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+		}
+	}
+
 	public function test_delete_version_while_active() {
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -1170,29 +1223,28 @@ class Versioning_Test extends WP_UnitTestCase {
 				'object_id'     => 1,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 			array(
 				'object_id'     => 2,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 		);
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
+		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
 
-		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
-
-		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
-		foreach ( $expected_jobs as $index => $job ) {
-			$keys = array_keys( $job );
-
-			foreach ( $keys as $key ) {
-				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
-			}
+		foreach ( $jobs as &$job ) {
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
 		}
+		unset( $job );
+
+		$this->assertSame( $expected_jobs, $jobs );
 	}
 
 	public function replicate_queued_objects_to_other_versions_data() {
@@ -1233,11 +1285,13 @@ class Versioning_Test extends WP_UnitTestCase {
 						'object_id'     => 1,
 						'object_type'   => 'post',
 						'index_version' => 2,
+						'status'        => 'queued',
 					),
 					array(
 						'object_id'     => 9000,
 						'object_type'   => 'post',
 						'index_version' => 2,
+						'status'        => 'queued',
 					),
 				),
 			),
@@ -1295,18 +1349,15 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
+		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
 
-		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
-
-		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
-		foreach ( $expected_jobs as $index => $job ) {
-			$keys = array_keys( $job );
-
-			foreach ( $keys as $key ) {
-				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
-			}
+		foreach ( $jobs as &$job ) {
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
 		}
+		unset( $job );
+
+		$this->assertSame( $expected_jobs, $jobs );
 	}
 
 	public function test_replicate_indexed_objects_to_other_versions() {

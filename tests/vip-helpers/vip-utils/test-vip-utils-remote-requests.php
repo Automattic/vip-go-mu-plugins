@@ -125,4 +125,22 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $response, $res, 'Third call (with a different method) response was incorrect' );
 	}
+
+	/**
+	 * The GET convenience function forwards its arguments to the shared request implementation.
+	 */
+	public function test__vip_safe_wp_remote_get_forwards_arguments_and_returns_response() {
+		$response      = 'mock_response';
+		$observed_args = null;
+		add_filter( 'pre_http_request', function ( $preempt, $args ) use ( $response, &$observed_args ) {
+			$observed_args = $args;
+			return $response;
+		}, 10, 2 );
+
+		$result = vip_safe_wp_remote_get( 'https://localhost', 'fallback', 2, 1, 20, [ 'headers' => [ 'X-Test' => 'yes' ] ] );
+
+		$this->assertSame( $response, $result );
+		$this->assertSame( 'GET', $observed_args['method'] );
+		$this->assertSame( 'yes', $observed_args['headers']['X-Test'] );
+	}
 }

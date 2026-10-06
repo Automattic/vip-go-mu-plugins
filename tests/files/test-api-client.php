@@ -313,6 +313,39 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
+	/**
+	 * Successful deletion must invalidate cached contents and stat data.
+	 */
+	public function test_delete_invalidates_cache_and_refetches(): void {
+		$path       = '/wp-content/uploads/deleted.txt';
+		$cache      = API_Cache::get_instance();
+		$local_path = $cache->create_tmp_file();
+		file_put_contents( $local_path, 'cached content' ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Local fixture.
+		$cache->cache_file( $path, $local_path );
+		$cache->cache_file_stats( $path, [
+			'size'  => 14,
+			'mtime' => 12345,
+		] );
+		$this->assertSame( $local_path, $this->api_client->get_file( $path ) );
+		$this->assertSame( [], $this->http_requests );
+
+		add_filter( 'pre_http_request', function ( $response, $args, $url ) use ( $path ) {
+			$this->assertSame( 'https://files.go-vip.co' . $path, $url );
+			$this->http_requests[] = $args;
+			return [ 'response' => [ 'code' => 'DELETE' === $args['method'] ? 200 : 404 ] ];
+		}, 10, 3 );
+
+		$this->assertTrue( $this->api_client->delete_file( $path ) );
+		$this->assertFalse( $cache->get_file( $path ) );
+		$this->assertFalse( $cache->get_file_stats( $path ) );
+		$this->assertFileDoesNotExist( $local_path );
+		$result = $this->api_client->get_file( $path );
+		$this->assertWPError( $result );
+		$this->assertSame( 'file-not-found', $result->get_error_code() );
+		$this->assertSame( [ 'DELETE', 'GET' ], array_column( $this->http_requests, 'method' ) );
+		$this->assertSame( 'file_exists', $this->http_requests[1]['headers']['X-Action'] );
+	}
+
 	public function test__delete_file__validate_request() {
 		$this->mock_http_response( [] ); // don't care about the response
 

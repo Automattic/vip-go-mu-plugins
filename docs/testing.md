@@ -34,6 +34,22 @@ CI=1 ./bin/test.sh --wp 6.8.x --php 8.2
 CI=1 ./bin/test.sh --filter test__administrator_should_not_have_update_core_cap
 ```
 
+The Search shared-counter integration test uses two independent PHP workers and
+the production `drop-ins/wp-memcached` cache implementation. Start an isolated
+Memcached service with:
+
+```bash
+CI=1 ./bin/test.sh --memcached --filter 'Test_Concurrency_(Limiter|Shared_Cache)'
+```
+
+`--memcached` starts and removes a `memcached:1.6-alpine` container on the test
+network. The runner must provide the PHP `memcached` extension and `proc_open`.
+Without these or `VIP_TEST_MEMCACHED_SERVER`, the shared-cache test explicitly
+skips; the deterministic hook tests still run. Barriers hold both workers at the
+counter operation and retain their increments until both admission results are
+reported. The test requires exactly one admitted request at limit one, then
+reads the shared counter from a fresh process and requires zero.
+
 `CI=1` is recommended in non-interactive shells.
 
 ## e2e tests
@@ -106,3 +122,19 @@ Jetpack tests: `CI=1 ./bin/test.sh --filter test_jetpack_compatibility_requireme
 
 The e2e setup also runs the real import command with Jetpack disabled and verifies
 that credentials are removed before customer hooks while unrelated options remain.
+
+### Configuration sync runtime
+
+Run the isolated multisite sync regression with:
+
+```sh
+CI=1 ./bin/test.sh --multisite 1 --filter test_runtime_sync_payload_persistence_and_secondary_schedule
+```
+
+The test copies WordPress tables into a temporary prefix and boots a separate PHP
+process without `WP_TESTS_DOMAIN`. It exercises real option hooks, full and
+heartbeat sends, persisted sync state, rate limiting and secondary-blog cron
+scheduling. Only HTTP and FastCGI completion are substituted; no sync service is
+contacted. The test removes its copied tables afterward and skips explicitly in
+single-site runs. The runner must allow PHP subprocesses and temporary database
+table creation.

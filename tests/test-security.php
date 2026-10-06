@@ -1,6 +1,8 @@
 <?php
 
 use Automattic\Test\Constant_Mocker;
+require_once __DIR__ . '/class-vip-auth-ttl-test-cache.php';
+
 class VIP_Go_Security_Test extends WP_UnitTestCase {
 	private $original_post;
 	private $test_username = 'iamgroot';
@@ -141,6 +143,25 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertEquals( $errors->get_error_code(), 'lost_password_limit_exceeded' );
 	}
 
+	/**
+	 * Failed authentication must accumulate counters and deny correct credentials at the threshold.
+	 */
+	public function test__failed_authentications_activate_login_limiter() {
+		$user = $this->factory()->user->create_and_get( [
+			'user_login' => $this->test_username,
+			'user_pass'  => 'correct-password',
+		] );
+		$this->assertInstanceOf( WP_User::class, wp_authenticate( $user->user_login, 'correct-password' ) );
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			$error = wp_authenticate( $user->user_login, 'wrong-password' );
+			$this->assertWPError( $error );
+			$this->assertSame( $attempt, wp_cache_get( $this->test_ip . '|' . $user->user_login, CACHE_GROUP_LOGIN_LIMIT ) );
+		}
+		$error = wp_authenticate( $user->user_login, 'correct-password' );
+		$this->assertWPError( $error );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
 	public function test__wpcom_vip_track_auth_attempt__defaults() {
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
@@ -265,6 +286,37 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		}, 10, 1 );
 
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+	}
+
+	/**
+	 * Filtered windows and lockouts must reach the cache and expire at that boundary.
+	 */
+	public function test__filtered_auth_windows_expire_at_cache_boundary() {
+		global $wp_object_cache;
+		$original_cache  = $wp_object_cache;
+		$cache           = new VIP_Auth_TTL_Test_Cache();
+		$wp_object_cache = $cache;
+		add_filter( 'vip_login_ip_window', static fn() => 7 );
+		add_filter( 'vip_login_ip_username_window', static fn() => 11 );
+		add_filter( 'vip_login_username_window', static fn() => 13 );
+		add_filter( 'vip_login_ip_username_lockout', static fn() => 17 );
+		try {
+			wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+			$this->assertSame( 7, $cache->expirations[ $this->test_ip ] );
+			$this->assertSame( 11, $cache->expirations[ $this->test_ip . '|' . $this->test_username ] );
+			$this->assertSame( 13, $cache->expirations[ $this->test_username ] );
+			for ( $attempt = 1; $attempt < 5; $attempt++ ) {
+				wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+			}
+			$this->assertSame( 17, $cache->expirations[ CACHE_KEY_LOCK_PREFIX . $this->test_ip . '|' . $this->test_username ] );
+			$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
+			$cache->now = 16;
+			$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
+			$cache->now = 17;
+			$this->assertFalse( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
+		} finally {
+			$wp_object_cache = $original_cache;
+		}
 	}
 
 	private function clean_event_window_cache() {

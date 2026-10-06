@@ -1,183 +1,101 @@
 <?php
 /**
- * Test: Integration Utils
+ * Test integration version discovery against real temporary filesystem fixtures.
  *
  * @package Automattic\VIP\Integrations
  */
 
 namespace Automattic\VIP\Integrations;
 
-// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-
-use ErrorException;
 use WP_UnitTestCase;
 
-// Define mocks for PHP built-in functions in the same namespace
-function is_dir( $dir ) {
-	// Mock implementation for different test cases
-	global $mock_filesystem_state;
-	if ( isset( $mock_filesystem_state ) && 'empty' === $mock_filesystem_state ) {
-		return false; // Directory doesn't exist
-	}
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.directory_mkdir, WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Temporary fixtures under get_temp_dir().
 
-	if ( isset( $mock_filesystem_state ) && 'non_matching' === $mock_filesystem_state ) {
-		return true; // All directories exist
-	}
-
-	// Default behavior - base dir exists, subdirs depending on naming
-	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' === $dir ) {
-		return true;
-	}
-	
-	// Valid version directories
-	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.2' === $dir ||
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.11' === $dir ||
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-2.5' === $dir ) {
-		return true;
-	}
-	
-	return false;
-}
-
-function scandir( $dir ) {
-	// Mock implementation for different test cases
-	global $mock_filesystem_state;
-
-	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' !== $dir ) {
-		return [ '.', '..' ];
-	}
-
-	if ( isset( $mock_filesystem_state ) && 'empty' === $mock_filesystem_state ) {
-		return [ '.', '..' ]; // Empty directory
-	}
-
-	if ( isset( $mock_filesystem_state ) && 'non_matching' === $mock_filesystem_state ) {
-		return [
-			'.',
-			'..',
-			'some-other-directory',
-			'not-fake-1.0',
-			'fake-abc', // Invalid version format
-		];
-	}
-
-	// Default behavior - return valid directories
-	return [
-		'.',
-		'..',
-		'fake-1.2',
-		'fake-1.11',
-		'fake-2.5',
-		'some-other-directory',
-	];
-}
-
-function file_exists( $file ) {
-	// Valid RDB plugin files
-	return (
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.2/fake.php' === $file ||
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.11/fake.php' === $file ||
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-2.5/fake.php' === $file
-	);
-}
-
-require_once __DIR__ . '/fake-integration.php';
+// phpcs:disable WordPress.WP.AlternativeFunctions.file_system_operations_mkdir, WordPress.WP.AlternativeFunctions.file_system_operations_rmdir, WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Temporary test fixtures.
 
 class VIP_Integration_Utils_Test extends WP_UnitTestCase {
-	private $original_error_reporting;
+	private string $directory;
 
+	/**
+	 * Allocate real version directories without replacing namespace functions.
+	 */
 	public function setUp(): void {
 		parent::setUp();
-
-		$this->original_error_reporting = error_reporting();
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno ); // NOSONAR
-			}
-
-			return false;
-		}, E_USER_WARNING );
+		$this->directory = get_temp_dir() . 'vip-integration-' . wp_generate_password( 12, false ) . '/';
+		mkdir( $this->directory );
+		foreach ( [ 'fake-1.2', 'fake-1.11', 'fake-2.5', 'other-1.0' ] as $name ) {
+			mkdir( $this->directory . $name );
+			file_put_contents( $this->directory . $name . '/fake.php', '<?php' );
+		}
 	}
 
+	/**
+	 * Remove every fixture after each case, including a failing assertion.
+	 */
 	public function tearDown(): void {
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
+		foreach ( glob( $this->directory . '*' ) as $directory ) {
+			wp_delete_file( $directory . '/fake.php' );
+			rmdir( $directory );
+		}
+		rmdir( $this->directory );
 		parent::tearDown();
 	}
 
 	/**
-	 * Test that get_versions correctly parses directory names and returns correct versions.
+	 * Discover, order and select only directories matching the requested integration.
 	 */
 	public function test_get_versions_parses_and_returns_correct_ordered_versions(): void {
-		global $mock_filesystem_state;
-		$mock_filesystem_state = 'full';
-
-		$versions = get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
-		
-		// Verify the returned versions
-		$this->assertIsArray( $versions );
-		$this->assertCount( 3, $versions );
-		$this->assertEquals( '1.2', $versions['fake-1.2'] );
-		$this->assertEquals( '1.11', $versions['fake-1.11'] );
-		$this->assertEquals( '2.5', $versions['fake-2.5'] );
-
-		// Check that the versions are correctly ordered by semantic version (2.5 > 1.11 > 1.2)
-		$keys = array_keys( $versions );
-		$this->assertEquals( 'fake-2.5', $keys[0] );
-		$this->assertEquals( 'fake-1.11', $keys[1] );
-		$this->assertEquals( 'fake-1.2', $keys[2] );
+		$this->assertSame( [
+			'fake-2.5'  => '2.5',
+			'fake-1.11' => '1.11',
+			'fake-1.2'  => '1.2',
+		], get_available_versions( $this->directory, 'fake', 'fake.php' ) );
+		$this->assertSame( 'fake-2.5', get_latest_version( $this->directory, 'fake', 'fake.php' ) );
 	}
 
 	/**
-	 * Test that get_versions returns an empty array when the directory doesn't exist.
+	 * An absent base directory must produce no versions.
 	 */
 	public function test_get_versions_returns_empty_array_when_dir_does_not_exist(): void {
-		global $mock_filesystem_state;
-		$mock_filesystem_state = 'empty';
-		
-		$versions = get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
-		
-		$this->assertIsArray( $versions );
-		$this->assertEmpty( $versions );
+		$this->assertSame( [], get_available_versions( $this->directory . 'missing/', 'fake', 'fake.php' ) );
+		$this->assertNull( get_latest_version( $this->directory . 'missing/', 'fake', 'fake.php' ) );
 	}
 
 	/**
-	 * Test that get_versions ignores directories that don't match the pattern.
+	 * Matching names without the required entry file must remain unavailable.
 	 */
-	public function test_get_versions_ignores_non_matching_directories(): void {
-		global $mock_filesystem_state;
-		$mock_filesystem_state = 'non_matching';
-		
-		$versions = get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
-		
-		$this->assertIsArray( $versions );
-		$this->assertEmpty( $versions );
+	public function test_get_versions_requires_entry_file(): void {
+		$this->assertSame( [], get_available_versions( $this->directory, 'fake', 'missing.php' ) );
 	}
 
 	/**
-	 * Test that get_latest_version returns the latest version.
+	 * Real files outside the fixture remain visible to all integration classes.
 	 */
-	public function test_get_latest_version_returns_latest_version(): void {
-		global $mock_filesystem_state;
-		$mock_filesystem_state = 'full';
-
-		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
-
-		$this->assertEquals( 'fake-2.5', $latest_version );
+	public function test_native_filesystem_functions_remain_available(): void {
+		$this->assertTrue( is_dir( __DIR__ ) );
+		$this->assertTrue( file_exists( __FILE__ ) );
+		$this->assertContains( basename( __FILE__ ), scandir( __DIR__ ) );
 	}
 
 	/**
-	 * Test that get_latest_version returns null when no versions are found.
+	 * A real entry file must not make a directory with no matching name eligible.
 	 */
-	public function test_get_latest_version_returns_null_when_no_versions_are_found(): void {
-		global $mock_filesystem_state;
-		$mock_filesystem_state = 'empty';
-
-		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
-
-		$this->assertNull( $latest_version );
+	public function test_get_versions_rejects_real_nonmatching_directory(): void {
+		$directory = get_temp_dir() . 'vip-version-' . wp_generate_password( 12, false ) . '/';
+		mkdir( $directory );
+		mkdir( $directory . 'other-1.0' );
+		mkdir( $directory . 'fake-2.0' );
+		file_put_contents( $directory . 'other-1.0/fake.php', '<?php' );
+		file_put_contents( $directory . 'fake-2.0/fake.php', '<?php' );
+		try {
+			$this->assertFileExists( $directory . 'other-1.0/fake.php' );
+			$this->assertSame( [ 'fake-2.0' => '2.0' ], get_available_versions( $directory, 'fake', 'fake.php' ) );
+		} finally {
+			unlink( $directory . 'other-1.0/fake.php' );
+			unlink( $directory . 'fake-2.0/fake.php' );
+			rmdir( $directory . 'other-1.0' );
+			rmdir( $directory . 'fake-2.0' );
+			rmdir( $directory );
+		}
 	}
 }
