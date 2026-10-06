@@ -91,16 +91,7 @@ class Pendo_Track_Client extends Telemetry_Client {
 			}
 
 			if ( is_wp_error( $response ) ) {
-				log2logstash( [
-					'severity' => 'error',
-					'feature'  => 'telemetry',
-					'message'  => 'Error recording events to Pendo',
-					'extra'    => [
-						'error'       => $response->get_error_messages(),
-						'error_codes' => $response->get_error_codes(),
-						'http_status' => $status_code ?: null,
-					],
-				] );
+				$this->log_recording_error( $response, $status_code, 'Error recording events to Pendo' );
 
 				return $response;
 			}
