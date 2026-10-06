@@ -1223,29 +1223,28 @@ class Versioning_Test extends WP_UnitTestCase {
 				'object_id'     => 1,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 			array(
 				'object_id'     => 2,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 		);
 
 		$queue_table_name = self::$search->queue->schema->get_table_name();
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
+		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
 
-		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
-
-		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
-		foreach ( $expected_jobs as $index => $job ) {
-			$keys = array_keys( $job );
-
-			foreach ( $keys as $key ) {
-				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
-			}
+		foreach ( $jobs as &$job ) {
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
 		}
+		unset( $job );
+
+		$this->assertSame( $expected_jobs, $jobs );
 	}
 
 	public function replicate_queued_objects_to_other_versions_data() {
@@ -1286,11 +1285,13 @@ class Versioning_Test extends WP_UnitTestCase {
 						'object_id'     => 1,
 						'object_type'   => 'post',
 						'index_version' => 2,
+						'status'        => 'queued',
 					),
 					array(
 						'object_id'     => 9000,
 						'object_type'   => 'post',
 						'index_version' => 2,
+						'status'        => 'queued',
 					),
 				),
 			),
@@ -1348,18 +1349,15 @@ class Versioning_Test extends WP_UnitTestCase {
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
 		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
+		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
 
-		$this->assertEquals( count( $expected_jobs ), count( $jobs ) );
-
-		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
-		foreach ( $expected_jobs as $index => $job ) {
-			$keys = array_keys( $job );
-
-			foreach ( $keys as $key ) {
-				$this->assertEquals( $expected_jobs[ $index ][ $key ], $job[ $key ], "The job at index {$index} has the wrong value for key {$key}" );
-			}
+		foreach ( $jobs as &$job ) {
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
 		}
+		unset( $job );
+
+		$this->assertSame( $expected_jobs, $jobs );
 	}
 
 	public function test_replicate_indexed_objects_to_other_versions() {
