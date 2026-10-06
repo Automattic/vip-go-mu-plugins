@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
 </head>
 
 <body style="background-color: var(--vip-grey-80);">
@@ -86,7 +85,7 @@
                     },
                     "method": "POST",
                     "headers": {
-                        "Content-Type": "application\/json"
+                        "Content-Type": "application/json"
                     }
                 },
                 "blocking": true,
@@ -123,9 +122,10 @@
                         "status": null
                     }
                 },
-                "host": "http:\/\/vip-search:9200",
+                "host": "https://vip-search:9200",
                 "query_args": [],
-                "url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search",
+                "cross_site": false,
+                "url": "https://vip-search:9200/vip-200508-post-1/_search",
                 "backtrace": [
                     "ElasticPress\\Elasticsearch->remote_request",
                     "ElasticPress\\Elasticsearch->query",
@@ -153,49 +153,47 @@
                 ]
             }],
             "information": [{
-                    "label": "Rate limited?",
+                    "key": "es_version",
+                    "label": "Elasticsearch",
+                    "value": "8.18.2",
+                    "options": { "collapsible": false }
+                },
+                {
+                    "key": "rate_limited",
+                    "label": "Rate limited",
                     "value": "no",
-                    "options": {
-                        "collapsible": false
-                    }
+                    "options": { "collapsible": false }
                 },
                 {
-                    "label": "Indexable post types",
-                    "value": [
-                        "post",
-                        "page",
-                        "test",
-                        "cpt",
-                        "what",
-                        "another",
-                        "one-more"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "concurrent_requests",
+                    "label": "Concurrent",
+                    "value": 0,
+                    "options": { "collapsible": false }
                 },
                 {
-                    "label": "Indexable post status",
-                    "value": [
-                        "publish"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "post_types",
+                    "scope": "site",
+                    "label": "Post types",
+                    "value": ["post", "page", "test", "cpt", "what", "another", "one-more"],
+                    "options": { "collapsible": true }
                 },
                 {
-                    "label": "Meta Key Allow List",
-                    "value": [
-                        "x-custom-key"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "post_statuses",
+                    "scope": "site",
+                    "label": "Statuses",
+                    "value": ["publish"],
+                    "options": { "collapsible": true }
+                },
+                {
+                    "key": "meta_allow_list",
+                    "scope": "site",
+                    "label": "Meta",
+                    "value": ["x-custom-key"],
+                    "options": { "collapsible": true }
                 }
             ],
             "nonce": "5ba91ee23f",
-            "ajaxurl": "https:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/dev-tools",
-            "__webpack_public_path__": "http:\/\/vip-go-dev.lndo.site\/wp-content\/mu-plugins\/search\/search-dev-tools\/build"
+            "ajaxurl": "https://vip-go-dev.lndo.site/index.php?rest_route=/vip/v1/search/dev-tools"
         };
     </script>
     <div data-widget-host="vip-search-dev-tools"></div>

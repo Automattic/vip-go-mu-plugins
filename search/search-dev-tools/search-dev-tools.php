@@ -207,6 +207,9 @@ function print_data() {
 				];
 			}
 
+			// ElasticPress's own cross-site decision, from the unfiltered args (before falsy values are dropped below).
+			$query['cross_site'] = is_cross_site_query( (array) ( $query['query_args'] ?? [] ) );
+
 			$query['args']['body'] = json_decode( $query['args']['body'], true );
 			$query['args']['body'] = array_merge( [ 'profile' => false ], $query['args']['body'] );
 			// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
@@ -217,12 +220,42 @@ function print_data() {
 					return is_bool( $v ) || ( ! is_bool( $v ) && $v );
 				}
 			);
+			// Cross-site queries against the network alias: list the indexes it actually reached.
+			$alias_indexes = get_alias_indexes( get_url_index_part( $query['url'] ) );
+			if ( $alias_indexes ) {
+				$query['alias_indexes'] = $alias_indexes;
+			}
 			return $query;
 		},
 		$queries
 	);
 
-	$search_instance = Search::instance();
+	$data = [
+		'status'      => 'enabled',
+		'queries'     => $mapped_queries,
+		'information' => get_information(),
+		'nonce'       => wp_create_nonce( 'wp_rest' ),
+		'ajaxurl'     => rest_url( 'vip/v1/search/dev-tools' ),
+	];
+
+	// Compact, not pretty-printed: this holds every query's full request and response on each page view, and
+	// indentation made it ~3x larger (189 KB vs 60 KB on a search page). Slashes stay unescaped for size;
+	// JSON_HEX_TAG encodes `<` and `>` instead, so content like `</script>` in a post title can't close the tag.
+	wp_print_inline_script_tag( sprintf( 'var VIPSearchDevTools = %s;', wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG ) ) );
+	?>
+<div id="search-dev-tools-portal"></div>
+	<?php
+}
+
+/**
+ * General Search information shown in the Dev Tools info strip.
+ * Each item has a stable `key` the frontend can rely on, a display `label` and a `value`.
+ *
+ * @param Search|null $search_instance Search instance; defaults to the global one (injectable for tests).
+ * @return array[] Information items.
+ */
+function get_information( ?Search $search_instance = null ): array {
+	$search_instance = $search_instance ?? Search::instance();
 	$is_rate_limited = Search::is_rate_limited() || $search_instance->queue->is_indexing_ratelimited();
 	if ( $is_rate_limited ) {
 		$rate_limit   = [ 'search: ' . ( Search::is_rate_limited() ? sprintf( 'yes (%d of %d)', Search::get_query_count(), Search::$max_query_count ) : 'no' ) ];
@@ -236,63 +269,130 @@ function print_data() {
 		$concurrent_requests = $search_instance->concurrency_limiter->get_backend()->get_value();
 	}
 
-	$data = [
-		'status'                  => 'enabled',
-		'queries'                 => $mapped_queries,
-		'information'             => [
-			[
-				'label'   => 'Rate limited?',
-				'value'   => $rate_limit,
-				'options' => [
-					'collapsible' => false,
-				],
+	return [
+		[
+			'key'     => 'es_version',
+			'label'   => 'Elasticsearch',
+			'value'   => get_current_elasticsearch_version(),
+			'options' => [
+				'collapsible' => false,
 			],
-			[
-				'label'   => 'Concurrent requests',
-				'value'   => $concurrent_requests,
-				'options' => [
-					'collapsible' => false,
-				],
-			],
-			[
-				'label'   => 'Indexable post types',
-				'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Indexable post status',
-				'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Meta Key Allow List',
-				'value'   => get_meta_for_all_indexable_post_types(),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Elasticsearch Version',
-				'value'   => get_current_elasticsearch_version(),
-				'options' => [
-					'collapsible' => false,
-				],
-			],
-
 		],
-		'nonce'                   => wp_create_nonce( 'wp_rest' ),
-		'ajaxurl'                 => rest_url( 'vip/v1/search/dev-tools' ),
-		'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
+		[
+			'key'     => 'rate_limited',
+			'label'   => 'Rate limited',
+			'value'   => $rate_limit,
+			'options' => [
+				'collapsible' => false,
+			],
+		],
+		[
+			'key'     => 'concurrent_requests',
+			'label'   => 'Concurrent',
+			'value'   => $concurrent_requests,
+			'options' => [
+				'collapsible' => false,
+			],
+		],
+		[
+			'key'     => 'post_types',
+			'scope'   => 'site',
+			'label'   => 'Post types',
+			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
+		[
+			'key'     => 'post_statuses',
+			'scope'   => 'site',
+			'label'   => 'Statuses',
+			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
+		[
+			'key'     => 'meta_allow_list',
+			'scope'   => 'site',
+			'label'   => 'Meta',
+			'value'   => get_meta_for_all_indexable_post_types(),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
 	];
+}
 
-	wp_print_inline_script_tag( sprintf( 'var VIPSearchDevTools = %s;', wp_json_encode( $data, JSON_PRETTY_PRINT ) ) );
-	?>
-<div id="search-dev-tools-portal"></div>
-	<?php
+/**
+ * Whether a query searched beyond the current site, decided the way ElasticPress does in
+ * QueryIntegration::get_es_posts(): the `sites` arg (filtered by `ep_search_scope`) only applies in network
+ * mode, and numeric/array scopes are compared with the current blog ID.
+ *
+ * @param array $query_args WP_Query arguments.
+ * @return bool Cross-site query.
+ */
+function is_cross_site_query( array $query_args ): bool {
+	if ( ! is_multisite() || ! defined( 'EP_IS_NETWORK' ) || ! constant( 'EP_IS_NETWORK' ) ) {
+		return false;
+	}
+
+	$scope = empty( $query_args['sites'] ) ? 'current' : $query_args['sites'];
+	$scope = apply_filters( 'ep_search_scope', $scope ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- ElasticPress hook.
+
+	if ( 'all' === $scope ) {
+		return true;
+	}
+
+	// Any other scope ('current', unknown strings) stays on this site.
+	$sites = is_numeric( $scope ) || is_array( $scope ) ? array_map( 'intval', (array) $scope ) : [];
+	return (bool) array_diff( $sites, [ get_current_blog_id() ] );
+}
+
+/**
+ * Index part of an Elasticsearch request URL, e.g. `vip-123-post-2,vip-123-post-3` for `.../vip-123-post-2,vip-123-post-3/_search`.
+ *
+ * @param string $url Request URL.
+ * @return string Index part, or '' when there is none.
+ */
+function get_url_index_part( string $url ): string {
+	$path = trim( (string) wp_parse_url( $url, PHP_URL_PATH ), '/' );
+	$part = (string) strtok( $path, '/' );
+	return str_starts_with( $part, '_' ) ? '' : $part;
+}
+
+/**
+ * Concrete indexes behind a network alias index (`vip-123-post-all`, used for `'sites' => 'all'`).
+ * Only alias names trigger a lookup, once per request, and it is capped at VIP's global ES timeout (2s on web).
+ * Not cached across requests on purpose: a dev tool should show the alias as it is right now, e.g. right after
+ * `wp vip-search recreate-network-alias`.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return string[] Sorted index names, or [] when this is not a network alias or the lookup fails.
+ */
+function get_alias_indexes( string $index_part ): array {
+	static $cache = [];
+
+	if ( '' === $index_part || str_contains( $index_part, ',' ) || ! str_ends_with( $index_part, '-all' ) ) {
+		return [];
+	}
+
+	if ( isset( $cache[ $index_part ] ) ) {
+		return $cache[ $index_part ];
+	}
+
+	$indexes  = [];
+	$response = \ElasticPress\Elasticsearch::factory()->remote_request( $index_part . '/_alias', [ 'method' => 'GET' ], [], 'get_alias' );
+	if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( is_array( $body ) ) {
+			$indexes = array_map( 'strval', array_keys( $body ) );
+			sort( $indexes );
+		}
+	}
+
+	$cache[ $index_part ] = $indexes;
+	return $indexes;
 }
 
 /**
