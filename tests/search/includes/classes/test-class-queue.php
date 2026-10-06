@@ -700,6 +700,79 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_deadlocked_job_ids, $deadlocked_job_ids );
 	}
 
+	public function test_free_deadlocked_jobs() {
+		global $wpdb;
+
+		$original_schema = $this->queue->schema;
+		$table_name      = $wpdb->prefix . 'vip_queue_recovery_' . wp_generate_password( 12, false );
+		$source_table    = $original_schema->get_table_name();
+		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
+		$schema->method( 'get_table_name' )->willReturn( $table_name );
+
+		// The ordinary copy preserves production indexes and permits the recovery self-join.
+		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
+		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		try {
+			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $source_table ) ) );
+			$this->queue->schema = $schema;
+			$fixtures            = array(
+				array( 1000, 'post', 1, 'running' ),
+				array( 1000, 'post', 1, 'queued' ),
+				array( 1000, 'post', 2, 'scheduled' ),
+				array( 2000, 'post', 1, 'queued' ),
+				array( 2000, 'user', 1, 'running' ),
+				array( 3000, 'post', 1, 'scheduled' ),
+				array( 3000, 'post', 1, 'running' ),
+			);
+			$expected            = array();
+			$duplicate_ids       = array();
+			foreach ( $fixtures as $offset => $fixture ) {
+				list( $object_id, $object_type, $version, $status ) = $fixture;
+				$options = array( 'index_version' => $version );
+				$this->queue->queue_object( $object_id, $object_type, $options );
+				$job = $this->queue->get_next_job_for_object( $object_id, $object_type, $options );
+				if ( 'queued' !== $status ) {
+					$this->queue->update_job( $job->job_id, array(
+						'status'         => $status,
+						'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
+					) );
+				}
+				if ( 3000 === $object_id ) {
+					$duplicate_ids[] = (int) $job->job_id;
+				}
+				// Only the same-object/type/version duplicates should be removed.
+				if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
+					$expected[] = array(
+						'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
+						'object_id'     => $object_id,
+						'object_type'   => $object_type,
+						'index_version' => $version,
+						'status'        => 'queued',
+					);
+				}
+			}
+
+			$this->queue->free_deadlocked_jobs();
+			$actual = $wpdb->get_results( $wpdb->prepare( 'SELECT job_id, object_id, object_type, index_version, status FROM %i ORDER BY job_id', $table_name ), ARRAY_A );
+			foreach ( $actual as &$job ) {
+				$job['job_id']        = (int) $job['job_id'];
+				$job['object_id']     = (int) $job['object_id'];
+				$job['index_version'] = (int) $job['index_version'];
+				if ( 3000 === $job['object_id'] ) {
+					$this->assertContains( $job['job_id'], $duplicate_ids );
+					$job['job_id'] = 0;
+				}
+			}
+			unset( $job );
+			$this->assertSame( $expected, $actual );
+		} finally {
+			$this->queue->schema = $original_schema;
+			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
+			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
+			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
+		}
+	}
+
 	public function test_free_deadlocked_jobs_handle_duplicates() {
 		$first_job                 = (object) [
 			'job_id'        => 1,
