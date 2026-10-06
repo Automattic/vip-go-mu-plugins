@@ -1072,6 +1072,59 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'invalid-version-number', $result->get_error_code() );
 	}
 
+	/**
+	 * Verify deletion targets the inactive index and removes only its queued jobs.
+	 */
+	public function test_delete_version_preserves_active_index_and_jobs(): void {
+		$indexable = Indexables::factory()->get( 'post' );
+		self::$version_instance->update_versions( $indexable, array(
+			1 => array(
+				'number' => 1,
+				'active' => true,
+			),
+			2 => array(
+				'number' => 2,
+				'active' => false,
+			),
+		) );
+		self::$search->queue->empty_queue();
+		self::$search->queue->queue_object( 1000, 'post', array( 'index_version' => 1 ) );
+		self::$search->queue->queue_object( 1000, 'post', array( 'index_version' => 2 ) );
+		$active_job   = self::$search->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 1 ) );
+		$inactive_job = self::$search->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 2 ) );
+		// Ensure this test's versioning instance controls the final index name.
+		remove_filter( 'ep_index_name', array( self::$search, 'filter__ep_index_name' ), PHP_INT_MAX );
+		add_filter( 'ep_index_name', array( self::$search, 'filter__ep_index_name' ), PHP_INT_MAX, 3 );
+		$active_name = $indexable->get_index_name();
+		$this->assertTrue( self::$version_instance->set_current_version_number( $indexable, 2 ) );
+		$this->assertSame( 2, self::$version_instance->get_current_version_number( $indexable ) );
+		$inactive_name = $indexable->get_index_name();
+		self::$version_instance->reset_current_version_number( $indexable );
+		$this->assertNotSame( $active_name, $inactive_name );
+		$deletes = array();
+		$http    = static function ( $preempt, $args, $url ) use ( &$deletes ) {
+			if ( 'DELETE' === $args['method'] ) {
+				$deletes[] = $url;
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
+		try {
+			$this->assertTrue( self::$version_instance->delete_version( $indexable, 2 ) );
+			$this->assertNotEmpty( $deletes );
+			foreach ( $deletes as $url ) {
+				$this->assertSame( '/' . $inactive_name, wp_parse_url( $url, PHP_URL_PATH ) );
+			}
+			$this->assertSame( array(), self::$search->queue->get_jobs_by_ids( array( $inactive_job->job_id ) ) );
+			$this->assertCount( 1, self::$search->queue->get_jobs_by_ids( array( $active_job->job_id ) ) );
+			$this->assertSame( array( 1 ), array_keys( self::$version_instance->get_versions( $indexable ) ) );
+			$this->assertSame( 1, self::$version_instance->get_current_version_number( $indexable ) );
+			$this->assertSame( $active_name, $indexable->get_index_name() );
+		} finally {
+			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
+		}
+	}
+
 	public function test_delete_version_while_active() {
 		$indexable = Indexables::factory()->get( 'post' );
 
