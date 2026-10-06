@@ -256,7 +256,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertSame( 'VEe51adf654c854930939ea57199faa362', get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ) );
 		$this->assertTrue( $strategy->has_pending_metadata() );
 		$_REQUEST['two-factor-sms-code'] = '123456';
-		$this->add_http_response_mock( $this->create_successful_verification_check_response() );
+		$this->add_http_response_mock( 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', $this->create_successful_verification_check_response() );
 		$this->assertTrue( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
 		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', [
 			'VerificationSid' => 'VEe51adf654c854930939ea57199faa362',
