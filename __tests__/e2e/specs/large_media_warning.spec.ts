@@ -5,6 +5,7 @@ import { expect, test, type APIRequestContext } from '@playwright/test';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 
 /**
  * Internal dependencies
@@ -68,14 +69,14 @@ test.describe( 'Large media upload warning', () => {
 		const uploadRequestAfterCancel = page
 			.waitForRequest(
 				( request ) => /(?:async-upload\.php|\/wp-json\/wp\/v2\/media(?:\/|$))/.test( new URL( request.url() ).pathname ),
-				{ timeout: 1000 },
+				{ timeout: 0 },
 			)
 			.catch( () => null );
 		await modal.cancel();
 
 		await expect( modal.dialog ).toBeHidden();
 		// Observe a bounded quiet period after cancel; networkidle may already have happened on navigation.
-		expect( await uploadRequestAfterCancel ).toBeNull();
+		expect( await Promise.race( [ uploadRequestAfterCancel, setTimeout( 1000, null ) ] ) ).toBeNull();
 		// Cancellation must prevent the server upload request, not just hide the attachment details.
 		expect( uploadRequests ).toHaveLength( 0 );
 		// No attachment should appear. data-clipboard-text on copy button is the post-upload marker.
