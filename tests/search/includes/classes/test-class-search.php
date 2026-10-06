@@ -2694,9 +2694,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->init();
 
 		Features::factory()->activate_feature( 'searchordering' );
-
-		// WordPress only fires `{$new_status}_{$post_type}` for registered post types, so register
-		// ep-pointer the same way the Custom Search Results feature does on `init`.
+		// Activation updates settings; post type registration normally runs on init.
 		Features::factory()->get_registered_feature( 'searchordering' )->register_post_type();
 
 		try {
@@ -2706,6 +2704,7 @@ class Search_Test extends WP_UnitTestCase {
 				'post_title'  => 'Test CSR',
 			] );
 
+			$this->assertGreaterThan( 0, $post );
 			$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
 
 			wp_trash_post( $post );
