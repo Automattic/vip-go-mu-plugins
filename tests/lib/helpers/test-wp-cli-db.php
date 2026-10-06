@@ -59,6 +59,19 @@ class WP_Cli_Db_Test extends TestCase {
 		$wp_cli_db_mock->before_run_command( [ 'notdb', 'something', '--something="else"' ] );
 	}
 
+
+	public function test_before_run_command_uses_real_entry_to_select_database_server() {
+		$GLOBALS['db_servers'] = [ SERVERS['rw'] ];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		$config  = new Config();
+		$command = new Wp_Cli_Db( $config );
+
+		$command->before_run_command( [ 'db', 'query', 'SELECT 1' ] );
+
+		$this->assertSame( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
+		$this->assertSame( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
+	}
+
 	public function test_get_database_server_db_not_enabled() {
 		$this->expectException( Exception::class );
 		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
