@@ -527,6 +527,70 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 	}
 
+	/**
+	 * A failed column migration must leave checkout disabled until a later retry succeeds.
+	 */
+	public function test_checkout_jobs_waits_after_failed_claim_column_migration(): void {
+		global $wpdb;
+
+		$table_name     = $this->queue->schema->get_table_name();
+		$db_version     = get_transient( Queue\Schema::DB_VERSION_TRANSIENT );
+		$lock           = wp_cache_get( Queue\Schema::TABLE_CREATE_LOCK, null );
+		$warnings       = array();
+		$fail_migration = static function ( $query ) {
+			if ( str_starts_with( $query, 'ALTER TABLE' ) && str_contains( $query, 'claim_token' ) ) {
+				return 'SELECT 1';
+			}
+			return $query;
+		};
+		try {
+			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP COLUMN claim_token', $table_name ) ) );
+			set_transient( Queue\Schema::DB_VERSION_TRANSIENT, 3 );
+			wp_cache_delete( Queue\Schema::TABLE_CREATE_LOCK, null );
+			add_filter( 'query', $fail_migration );
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Capture the expected migration warning.
+			set_error_handler( static function ( $severity, $message ) use ( &$warnings ) {
+				$warnings[] = $message;
+				return true;
+			}, E_USER_WARNING );
+			try {
+				$this->queue->schema->prepare_table();
+			} finally {
+				restore_error_handler();
+			}
+			$this->assertCount( 1, $warnings );
+			$this->assertStringContainsString( 'missing claim_token after dbDelta()', $warnings[0] );
+			$this->assertSame( 3, get_transient( Queue\Schema::DB_VERSION_TRANSIENT ) );
+			$this->assertFalse( $this->queue->schema->is_installed() );
+			$this->queue->queue_object( 1000 );
+			$this->assertSame( array(), $this->queue->checkout_jobs() );
+			$this->assertSame( '', $wpdb->last_error );
+			$this->assertSame( 1, $this->queue->count_jobs( 'queued' ) );
+
+			remove_filter( 'query', $fail_migration );
+			wp_cache_delete( Queue\Schema::TABLE_CREATE_LOCK, null );
+			$this->queue->schema->prepare_table();
+			$this->assertTrue( $this->queue->schema->is_installed() );
+			$this->assertCount( 1, $this->queue->checkout_jobs() );
+		} finally {
+			remove_filter( 'query', $fail_migration );
+			// Restore the original schema even when an assertion interrupts the retry.
+			if ( null === $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'claim_token' ) ) ) {
+				$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i ADD COLUMN claim_token varchar(36) DEFAULT NULL', $table_name ) );
+			}
+			if ( false === $db_version ) {
+				delete_transient( Queue\Schema::DB_VERSION_TRANSIENT );
+			} else {
+				set_transient( Queue\Schema::DB_VERSION_TRANSIENT, $db_version );
+			}
+			if ( false === $lock ) {
+				wp_cache_delete( Queue\Schema::TABLE_CREATE_LOCK, null );
+			} else {
+				wp_cache_set( Queue\Schema::TABLE_CREATE_LOCK, $lock, null, MINUTE_IN_SECONDS );
+			}
+		}
+	}
+
 	public function test_process_jobs() {
 		/** @var wpdb $wpdb */
 		global $wpdb;
