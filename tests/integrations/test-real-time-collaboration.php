@@ -62,19 +62,20 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			->getMock();
 
 		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
-		$integration_mock->activate();
+		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
 
 		$integration_mock->expects( $this->once() )
 			->method( 'is_loaded' )
 			->willReturn( true );
 
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'options' )->setValue( $integration_mock, [ 'config' => [ 'preserved' => 'sentinel' ] ] );
+		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
 		$integration_mock->load();
 
 		// Trigger the plugins_loaded action to execute the closure
 		do_action( 'plugins_loaded' );
-
-		// Without the early return, the missing VIP_RTC_WS_* constants would deactivate it.
 		$this->assertTrue( $integration_mock->is_active() );
+		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
 	}
 
 	public function test_load_sets_inactive_if_plugin_file_not_found(): void {
