@@ -2693,6 +2693,8 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->init();
 
 		Features::factory()->activate_feature( 'searchordering' );
+		// Activation updates settings; post type registration normally runs on init.
+		Features::factory()->get_registered_feature( 'searchordering' )->register_post_type();
 
 		$post = wp_insert_post( [
 			'post_type'   => 'ep-pointer',
@@ -2700,6 +2702,7 @@ class Search_Test extends WP_UnitTestCase {
 			'post_title'  => 'Test CSR',
 		] );
 
+		$this->assertGreaterThan( 0, $post );
 		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
 
 		wp_trash_post( $post );
