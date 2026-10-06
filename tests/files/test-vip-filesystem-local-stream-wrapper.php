@@ -296,12 +296,16 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->api_client_mock
 			->expects( self::once() )
 			->method( 'upload_file' )
-			->with( $this->anything(), $path )
-			->willReturn( true );
+			->willReturnCallback( function ( $source, $destination ) use ( $path ) {
+				$this->assertSame( $path, $destination );
+				$this->assertFileExists( $source );
+				$this->assertSame( '', file_get_contents( $source ) );
+				return true;
+			} );
 
 		$this->api_client_mock->expects( self::never() )->method( 'get_file_content' );
 
-		$actual = $this->stream_wrapper->stream_metadata( $vip_path, STREAM_META_TOUCH, [ $vip_path, null ] );
+		$actual = touch( $vip_path ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_touch -- Exercise the native remote wrapper.
 		self::assertTrue( $actual );
 	}
 
