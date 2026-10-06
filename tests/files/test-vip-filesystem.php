@@ -269,6 +269,93 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_metadata, $actual_metadata );
 	}
 
+	/**
+	 * Remote outcomes for the real filesystem/helper/client validation path.
+	 */
+	public function remote_validation_cases(): array {
+		return [
+			'unchanged' => [
+				[
+					'response' => [ 'code' => 200 ],
+					'body'     => '{"filename":"original.jpg"}',
+				],
+				'original.jpg',
+				null,
+				false,
+			],
+			'renamed'   => [
+				[
+					'response' => [ 'code' => 200 ],
+					'body'     => '{"filename":"unique.jpg"}',
+				],
+				'unique.jpg',
+				null,
+				false,
+			],
+			'type'      => [ [ 'response' => [ 'code' => 406 ] ], 'original.jpg', 'response code: 406', false ],
+			'readonly'  => [ [ 'response' => [ 'code' => 503 ] ], 'original.jpg', 'Uploads are temporarily disabled', true ],
+			'transport' => [ new WP_Error( 'remote-offline', 'Remote unavailable' ), 'original.jpg', 'Remote unavailable', true ],
+		];
+	}
+
+	/**
+	 * Replace only the remote HTTP boundary, preserving actual filter composition.
+	 *
+	 * @dataProvider remote_validation_cases
+	 */
+	public function test_real_remote_upload_validation( $response, string $expected_name, ?string $expected_error, bool $expects_warning ): void {
+		// Match the real WordPress upload directory for this integration fixture.
+		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
+		Constant_Mocker::define( 'WP_CONTENT_DIR', \WP_CONTENT_DIR );
+		$client   = new API_Client( 'https://files.go-vip.co', 123, 'test-token', API_Cache::get_instance() );
+		$wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $client );
+		$property = new \ReflectionProperty( VIP_Filesystem::class, 'stream_wrapper' );
+		$property->setValue( $this->vip_filesystem, $wrapper );
+		$path          = trailingslashit( self::get_method( 'get_upload_path' )->invoke( $this->vip_filesystem ) ) . 'original.jpg';
+		$requests      = 0;
+		$http_boundary = function ( $preempt, $args, $url ) use ( $response, $client, $path, &$requests ) {
+			++$requests;
+			$this->assertSame( $client->get_api_url( $path ), $url );
+			$this->assertSame( 'GET', $args['method'] );
+			$this->assertSame( 'unique_filename', $args['headers']['X-Action'] );
+			return $response;
+		};
+		add_filter( 'pre_http_request', $http_boundary, 10, 3 );
+		$warnings         = [];
+		$previous_handler = null;
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Capture the helper's documented service-error warning.
+		$previous_handler = set_error_handler( static function ( $level, $message ) use ( &$warnings, &$previous_handler ) {
+			if ( E_USER_WARNING === $level ) {
+				$warnings[] = $message;
+				return true;
+			}
+			return $previous_handler ? $previous_handler( $level, $message ) : false;
+		} );
+		$file             = [
+			'name'     => 'original.jpg',
+			'tmp_name' => '/tmp/upload-fixture',
+			'error'    => 0,
+		];
+		try {
+			$result = apply_filters( 'wp_handle_upload_prefilter', $file );
+		} finally {
+			restore_error_handler();
+			remove_filter( 'pre_http_request', $http_boundary, 10 );
+		}
+		$this->assertSame( 1, $requests );
+		$this->assertSame( $expected_name, $result['name'] );
+		$this->assertSame( $file['tmp_name'], $result['tmp_name'] );
+		if ( null === $expected_error ) {
+			$this->assertSame( 0, $result['error'] );
+		} else {
+			$this->assertStringContainsString( $expected_error, $result['error'] );
+		}
+		$this->assertCount( $expects_warning ? 1 : 0, $warnings );
+		if ( $expects_warning ) {
+			$this->assertStringContainsString( $expected_error, $warnings[0] );
+		}
+	}
+
 	public function test__filter_validate_file__valid_file() {
 		$file     = [
 			'name' => 'testfile.txt',
