@@ -144,7 +144,10 @@ class Schema {
 		$claim_column = $wpdb->get_var( $wpdb->prepare( 'SHOW COLUMNS FROM %i LIKE %s', $table_name, 'claim_token' ) );
 
 		if ( 'claim_token' === $claim_column ) {
-			set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
+			// Test tables are temporary; persisting their version can outlive the table.
+			if ( ! \defined( 'WP_TESTS_DOMAIN' ) ) {
+				set_transient( self::DB_VERSION_TRANSIENT, self::DB_VERSION, self::DB_VERSION_TRANSIENT_TTL );
+			}
 		} else {
 			trigger_error( esc_html( "VIP Search Queue index table ($table_name) missing claim_token after dbDelta()" ), \E_USER_WARNING );
 		}

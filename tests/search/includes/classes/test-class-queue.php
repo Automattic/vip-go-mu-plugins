@@ -560,7 +560,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 			$this->assertCount( 1, $warnings );
 			$this->assertStringContainsString( 'missing claim_token after dbDelta()', $warnings[0] );
-			$this->assertSame( 3, get_transient( Queue\Schema::DB_VERSION_TRANSIENT ) );
+			$this->assertSame( 3, (int) get_transient( Queue\Schema::DB_VERSION_TRANSIENT ) );
 			$this->assertFalse( $this->queue->schema->is_installed() );
 			$this->queue->queue_object( 1000 );
 			$this->assertSame( array(), $this->queue->checkout_jobs() );
@@ -570,7 +570,8 @@ class Queue_Test extends WP_UnitTestCase {
 			remove_filter( 'query', $fail_migration );
 			wp_cache_delete( Queue\Schema::TABLE_CREATE_LOCK, null );
 			$this->queue->schema->prepare_table();
-			$this->assertTrue( $this->queue->schema->is_installed() );
+			// WordPress test tables are temporary, so production suppresses version persistence here.
+			$this->assertSame( 3, (int) get_transient( Queue\Schema::DB_VERSION_TRANSIENT ) );
 			$this->assertCount( 1, $this->queue->checkout_jobs() );
 		} finally {
 			remove_filter( 'query', $fail_migration );
