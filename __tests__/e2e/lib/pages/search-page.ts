@@ -1,7 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 
-import { getClassList } from '../playwright-helpers';
-
 const selectors = {
 	devToolsMenu: () => '#wp-admin-bar-vip-search-dev-tools',
 	devToolsContainer: () => '#search-dev-tools-portal > .search-dev-tools__overlay',
@@ -109,16 +107,15 @@ export class SearchPage {
 	public async expandFirstResults(): Promise<boolean> {
 		const queryHandleLocator = this.queryHandleLocator.first();
 
-		let classes = await getClassList( this.queryWrapLocator );
-		const isCollapsed = classes.some( ( className ) => className.startsWith( 'query_collapsed' ) );
+		const isCollapsed = await this.queryWrapLocator.evaluate( ( element ) => {
+			return Array.from( element.classList ).some( ( className ) => className.startsWith( 'query_collapsed' ) );
+		} );
 		if ( isCollapsed ) {
 			await queryHandleLocator.click();
-
-			classes = await getClassList( this.queryWrapLocator );
-			return ! classes.every( ( className ) => className.startsWith( 'query_collapsed' ) );
 		}
 
-		return false;
+		await expect( this.queryWrapLocator ).not.toHaveClass( /\bquery_collapsed/ );
+		return true;
 	}
 
 	/**

@@ -19,6 +19,9 @@ require_once __DIR__ . '/../../../vip-integrations.php';
 require_once __DIR__ . '/../../integrations/fake-integration.php';
 
 class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
+	/** @var \Automattic\VIP\Integrations\Integrations|null */
+	private $original_integrations;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -27,7 +30,8 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$integrations_property       = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
+		$this->original_integrations = $integrations_property->getValue();
 		$integrations_property->setValue( null, null );
 	}
 
@@ -36,9 +40,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 		$pendo_property = get_class_property_as_public( Pendo_JavaScript_Library::class, 'instance' );
 		$pendo_property->setValue( null, null );
 
-		// Reset IntegrationsSingleton to ensure clean state between tests
+		// Restore the original IntegrationsSingleton so the integrations registered at bootstrap aren't lost for other tests
 		$integrations_property = get_class_property_as_public( IntegrationsSingleton::class, 'instance' );
-		$integrations_property->setValue( null, null );
+		$integrations_property->setValue( null, $this->original_integrations );
 
 		wp_deregister_script( 'vip-pendo-agent-script' );
 		Constant_Mocker::clear();
@@ -244,33 +248,67 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 	}
 
 	public function test_disabled_for_users_without_edit_post_cap() {
-		$user = $this->factory()->user->create_and_get( [ 'role' => 'subscriber' ] );
+		$this->enable_fake_integration_with_pendo_tracking();
+		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
+		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
+
+		$user->set_role( 'subscriber' );
+		wp_set_current_user( 0 );
+		wp_set_current_user( $user->ID );
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'index.php' ) );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_disabled_for_disallowed_screens() {
+		// With a tracked integration, only the screen check can prevent loading.
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 
+		$instance = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'index.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
+
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'non-allowed-screen.php' ) );
+		$instance->enqueue_scripts( 'non-allowed-screen.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_disabled_for_disallowed_admin_screen() {
+		global $wp_query;
+
+		// With a tracked integration, only the screen check can prevent loading.
+		$this->enable_fake_integration_with_pendo_tracking();
+
 		$user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
 		wp_set_current_user( $user->ID );
-
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$wp_query->query_vars['page'] = 'vip-block-governance';
+		$instance                     = Pendo_JavaScript_Library::init( 'test_api_key' );
+		$instance->enqueue_scripts( 'admin.php' );
+		$this->assertTrue( wp_script_is( 'vip-pendo-agent-script', 'enqueued' ) );
+		wp_dequeue_script( 'vip-pendo-agent-script' );
+		wp_deregister_script( 'vip-pendo-agent-script' );
 
+		$wp_query->query_vars['page'] = 'disallowed-admin-page';
 		$this->assertFalse( Pendo_JavaScript_Library::should_enqueue_script( 'admin.php' ) );
+		$instance->enqueue_scripts( 'admin.php' );
+		$this->assertFalse( wp_script_is( 'vip-pendo-agent-script', 'registered' ) );
 	}
 
 	public function test_should_return_singleton_instance() {

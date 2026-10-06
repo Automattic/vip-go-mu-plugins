@@ -114,22 +114,24 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_active_loads_the_activated_integration(): void {
 		$integrations = new Integrations();
 
-		$integration = new FakeIntegration( 'fake' );
+		$integration = new RecordingFakeIntegration( 'fake' );
 		$integrations->register( $integration );
 		$integrations->activate( 'fake' );
 		$integrations->load_active();
 
 		$this->assertTrue( $integration->is_active() );
+		$this->assertSame( 1, $integration->load_count );
 	}
 
 	public function test__load_active_does_not_loads_the_non_activated_integration(): void {
 		$integrations = new Integrations();
-		$integration  = new FakeIntegration( 'fake' );
+		$integration  = new RecordingFakeIntegration( 'fake' );
 
 		$integrations->register( $integration );
 		$integrations->load_active();
 
 		$this->assertFalse( $integration->is_active() );
+		$this->assertSame( 0, $integration->load_count );
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {

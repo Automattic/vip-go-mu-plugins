@@ -1028,7 +1028,9 @@ class Search {
 					$this->query_warning->maybe_emit(
 						$args['body'] ?? '',
 						is_array( $response_body ) ? $response_body : [],
-						(float) $duration
+						(float) $duration,
+						null,
+						strlen( $response_body_json )
 					);
 				} catch ( \Throwable $throwable ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Query diagnostics must never affect the Elasticsearch response.
 					// Query diagnostics must never affect the Elasticsearch response.
@@ -2315,15 +2317,11 @@ class Search {
 			return $mapping;
 		}
 
-		$fields =& $mapping['mappings']['properties']['post_content']['fields'];
-
-		if ( isset( $fields['ngram'] ) ) {
-			unset( $fields['ngram'] );
-		}
+		unset( $mapping['mappings']['properties']['post_content']['fields']['ngram'] );
 
 		// To ensure mapping is valid, remove unnecessary key if no fields are left
-		if ( empty( $fields ) ) {
-			unset( $fields );
+		if ( empty( $mapping['mappings']['properties']['post_content']['fields'] ) ) {
+			unset( $mapping['mappings']['properties']['post_content']['fields'] );
 		}
 
 		return $mapping;

@@ -119,7 +119,7 @@ function track_file_delete() {
 
 function track_xml_rpc_password_type( $xmlrpc_method ) {
 	// Skip tracking for non-XML-RPC requests.
-	if ( ! defined( 'XMLRPC_REQUEST' ) || ! XMLRPC_REQUEST ) {
+	if ( ! defined( 'XMLRPC_REQUEST' ) || ! constant( 'XMLRPC_REQUEST' ) ) {
 		return;
 	}
 
@@ -138,7 +138,7 @@ function track_xml_rpc_password_type( $xmlrpc_method ) {
 
 function maybe_set_xml_rpc_auth_tracker_type( $user ) {
 	// Only proceed if it's an XML-RPC request
-	if ( ! ( defined( 'XMLRPC_REQUEST' ) && XMLRPC_REQUEST ) ) {
+	if ( ! ( defined( 'XMLRPC_REQUEST' ) && constant( 'XMLRPC_REQUEST' ) ) ) {
 		return;
 	}
 

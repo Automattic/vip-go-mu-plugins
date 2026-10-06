@@ -19,6 +19,22 @@ class Login_Error_Test extends WP_UnitTestCase {
 		self::assertEquals( 99, has_filter( 'wp_login_errors', __NAMESPACE__ . '\use_ambiguous_confirmation' ) );
 	}
 
+	/**
+	 * Protected login errors must have the same generic message through the real filter.
+	 */
+	public function test_protected_login_errors_have_identical_generic_output(): void {
+		global $errors;
+		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Real wp-login.php error state fixture.
+		$expected = '<strong>Error</strong>: The username/email address or password is incorrect. Please try again.';
+		foreach ( [ 'invalid_username', 'invalid_email', 'incorrect_password', 'invalidcombo' ] as $code ) {
+			$errors = new WP_Error( $code, 'Specific account information' );
+			$this->assertSame( $expected, apply_filters( 'login_errors', 'Specific account information' ), $code );
+		}
+		$errors = new WP_Error( 'unrelated_error', 'An unrelated failure' );
+		$this->assertSame( 'An unrelated failure', apply_filters( 'login_errors', 'An unrelated failure' ) );
+		// phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
+	}
+
 	public function test_use_ambiguous_confirmation(): void {
 		$errors = new WP_Error();
 		$errors->add(

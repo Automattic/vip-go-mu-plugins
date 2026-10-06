@@ -8,7 +8,6 @@ import fs from 'fs';
  * Internal dependencies
  */
 import { SettingsWritingPage } from './pages/settings-writing-page';
-import { EditorPage } from './pages/wp-editor-page';
 import { LoginPage } from './pages/wp-login-page';
 import { goToPage } from './playwright-helpers';
 
@@ -45,9 +44,6 @@ async function globalSetup( config: FullConfig ) {
 		} else {
 			process.env.E2E_CLASSIC_TESTS = 'false';
 		}
-
-		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
-		await goToPage( page, baseURL! + '/wp-admin/post-new.php' );
 	} catch ( error ) {
 		// eslint-disable-next-line no-console
 		console.log( error );

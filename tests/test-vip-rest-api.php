@@ -212,6 +212,24 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$this->assertEquals( 200, $response->get_status() );
 	}
 
+	/**
+	 * Privileged logins must authenticate the password before authorizing the route.
+	 */
+	public function test__privileged_basic_auth_requires_correct_password() {
+		$user = $this->factory()->user->create_and_get( [ 'user_pass' => 'correct-password' ] );
+		$user->add_cap( 'vip_support' );
+		$request                  = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+		$_SERVER['PHP_AUTH_USER'] = $user->user_login;
+		try {
+			$_SERVER['PHP_AUTH_PW'] = 'wrong-nonempty-password';
+			$this->assertSame( 401, $this->server->dispatch( $request )->get_status() );
+			$_SERVER['PHP_AUTH_PW'] = 'correct-password';
+			$this->assertSame( 200, $this->server->dispatch( $request )->get_status() );
+		} finally {
+			unset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] );
+		}
+	}
+
 	// Helper function to generate random username and password
 	public static function get_test_username_password() {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand

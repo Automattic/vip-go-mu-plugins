@@ -97,7 +97,7 @@ class Pendo extends Telemetry_System {
 		return [
 			// Provide the URL path without the origin.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passing value to Pendo via request body.
-			'url'       => wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH ) || '/',
+			'url'       => wp_parse_url( $_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH ) ?: '/',
 
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Passing value to Pendo via request body.
 			'userAgent' => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',

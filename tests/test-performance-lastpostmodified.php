@@ -35,14 +35,37 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $after - $before );
 	}
 
-	public function test__transition_post_status__ignore_non_public_post_type() {
-		$before                = did_action( 'wpcom_vip_bump_lastpostmodified' );
-		$this->post->post_type = 'book';
-		$after                 = did_action( 'wpcom_vip_bump_lastpostmodified' );
-
-		\wp_transition_post_status( 'publish', 'publish', $this->post );
-
-		$this->assertEquals( 0, $after - $before );
+	/**
+	 * Publishing a registered private post type must preserve persisted timestamps.
+	 */
+	public function test__transition_post_status__ignore_non_public_post_type(): void {
+		register_post_type( 'private_book', [ 'public' => false ] );
+		try {
+			$post_id  = self::factory()->post->create( [
+				'post_type'   => 'private_book',
+				'post_status' => 'draft',
+			] );
+			$previous = '2000-01-02 03:04:05';
+			foreach ( [ 'any', 'private_book' ] as $post_type ) {
+				foreach ( [ 'gmt', 'server', 'blog' ] as $timezone ) {
+					Last_Post_Modified::update_lastpostmodified( $previous, $timezone, $post_type );
+				}
+			}
+			$before = did_action( 'wpcom_vip_bump_lastpostmodified' );
+			$this->assertSame( $post_id, wp_update_post( [
+				'ID'          => $post_id,
+				'post_status' => 'publish',
+			] ) );
+			$after = did_action( 'wpcom_vip_bump_lastpostmodified' );
+			$this->assertSame( 0, $after - $before );
+			foreach ( [ 'any', 'private_book' ] as $post_type ) {
+				foreach ( [ 'gmt', 'server', 'blog' ] as $timezone ) {
+					$this->assertSame( $previous, get_option( Last_Post_Modified::OPTION_PREFIX . '_' . $timezone . '_' . $post_type ) );
+				}
+			}
+		} finally {
+			unregister_post_type( 'private_book' );
+		}
 	}
 
 	public function test__transition_post_status__ignore_when_locked() {
