@@ -603,6 +603,47 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 401, $error->get_error_data()['status'] );
 	}
 
+	/**
+	 * Registered callbacks must resolve signed users and propagate unknown-user errors.
+	 */
+	public function test_registered_authentication_resolves_users_and_rest_errors(): void {
+		$auth_key    = 'hook-test-key';
+		$email       = 'hook-user@example.com';
+		$user_id     = $this->factory()->user->create( [ 'user_email' => $email ] );
+		$integration = new WordPressMcpIntegration( $this->slug );
+		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
+		try {
+			$integration->load();
+			$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
+			$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
+			$this->sign_mcp_request( $email, $auth_key );
+			unset( $GLOBALS['current_user'] );
+			$this->assertSame( $user_id, get_current_user_id() );
+			$server = new \WP_REST_Server();
+			$this->assertContains( $server->check_authentication(), [ null, true ], 'WordPress accepts either null or true for successful REST authentication.' );
+
+			$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
+			unset( $GLOBALS['current_user'] );
+			$this->assertSame( 0, get_current_user_id() );
+			$error = $server->check_authentication();
+			$this->assertInstanceOf( \WP_Error::class, $error );
+			$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+			$this->assertSame( 401, $error->get_error_data()['status'] );
+		} finally {
+			foreach ( [
+				'determine_current_user'     => 'authenticate_mcp_request',
+				'rest_authentication_errors' => 'report_auth_error',
+				'wp_register_ability_args'   => 'filter_exposed_abilities_args',
+			] as $hook => $method ) {
+				$callback = [ $integration, $method ];
+				while ( false !== ( $priority = has_filter( $hook, $callback ) ) ) {
+					remove_filter( $hook, $callback, $priority );
+				}
+			}
+			wp_set_current_user( 0 );
+		}
+	}
+
 	public function test_report_auth_error_preserves_existing_result(): void {
 		$auth_key = 'test-auth-key';
 		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
