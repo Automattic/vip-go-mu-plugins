@@ -8,6 +8,7 @@ use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Utils\Alerts;
 use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
+use ElasticPress\Feature\SearchOrdering\SearchOrdering;
 use ElasticPress\Features;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
@@ -2694,31 +2695,41 @@ class Search_Test extends WP_UnitTestCase {
 
 		Features::factory()->activate_feature( 'searchordering' );
 
-		$post = wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR',
-		] );
+		// WordPress only fires `{$new_status}_{$post_type}` for registered post types, so register
+		// ep-pointer the same way the Custom Search Results feature does on `init`.
+		Features::factory()->get_registered_feature( 'searchordering' )->register_post_type();
 
-		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+		try {
+			$post = wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR',
+			] );
 
-		wp_trash_post( $post );
+			$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
 
-		$this->assertEquals( '0', get_option( 'vip_custom_results_existence' ) );
+			wp_trash_post( $post );
 
-		wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR 2',
-		] );
-		$post3 = wp_insert_post( [
-			'post_type'   => 'ep-pointer',
-			'post_status' => 'publish',
-			'post_title'  => 'Test CSR 3',
-		] );
-		wp_trash_post( $post3 );
+			$this->assertEquals( '0', get_option( 'vip_custom_results_existence' ) );
 
-		$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+			wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR 2',
+			] );
+			$post3 = wp_insert_post( [
+				'post_type'   => 'ep-pointer',
+				'post_status' => 'publish',
+				'post_title'  => 'Test CSR 3',
+			] );
+			wp_trash_post( $post3 );
+
+			$this->assertEquals( '1', get_option( 'vip_custom_results_existence' ) );
+		} finally {
+			// Post types and taxonomies are not reset between tests.
+			unregister_taxonomy( SearchOrdering::TAXONOMY_NAME );
+			unregister_post_type( SearchOrdering::POST_TYPE_NAME );
+		}
 	}
 
 	public function test__filter__ep_config_mapping_strips_ngram_filter() {
