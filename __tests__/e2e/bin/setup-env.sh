@@ -21,7 +21,6 @@ do
     esac
 done
 
-
 if [ "${version}" = "latest" ]; then
     WPVER="$(wget https://github.com/Automattic/vip-container-images/raw/refs/heads/master/wordpress/versions.json -O - | jq -r '[.[] | select(.prerelease == false)] | max_by(.tag) | .tag')"
 else
@@ -31,6 +30,8 @@ fi
 if [ -z "${WPVER}" ]; then
     WPVER=trunk
 fi
+
+echo "Creating E2E site with WordPress version ${WPVER} (requested: ${version})"
 
 # Create and run test site
 vip --slug="${E2E_SITE_SLUG}" dev-env create --title="E2E Testing site" --mu-plugins="${pluginPath}" --mailpit false --wordpress="${WPVER}" --multisite=false --app-code="${clientCodePath}" --php 8.2 --xdebug false --phpmyadmin false --elasticsearch true < /dev/null
