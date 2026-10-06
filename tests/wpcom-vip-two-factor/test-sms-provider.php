@@ -151,6 +151,11 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// The stored token should be a hash, not the plain text
 		$this->assertEquals( 32, strlen( $stored_token ) );
 		$this->assertTrue( $strategy->has_pending_metadata() );
+		preg_match( '/^(\d{8}) is your/', $request_body['Body'], $matches );
+		$this->assertSame( wp_hash( $matches[1] ), $stored_token );
+		$_REQUEST['two-factor-sms-code'] = $matches[1];
+		$this->assertTrue( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
+		$this->assertFalse( $strategy->has_pending_metadata() );
 	}
 
 	public function test_twilio_sms_api_generate_and_send_token_failure_malformed_phone(): void {
@@ -248,8 +253,16 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		] );
 
 		// Verify that verification SID was stored in user meta
-		$this->assertNotEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ), 'Verification SID should be stored in user meta' );
+		$this->assertSame( 'VEe51adf654c854930939ea57199faa362', get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ) );
 		$this->assertTrue( $strategy->has_pending_metadata() );
+		$_REQUEST['two-factor-sms-code'] = '123456';
+		$this->add_http_response_mock( $this->create_successful_verification_check_response() );
+		$this->assertTrue( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
+		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', 'https://verify.twilio.com/v2/Services/' . VIP_TWILIO_VERIFY_SERVICE_SID . '/VerificationCheck', [
+			'VerificationSid' => 'VEe51adf654c854930939ea57199faa362',
+			'Code'            => '123456',
+		] );
+		$this->assertFalse( $strategy->has_pending_metadata() );
 	}
 
 	public function test_twilio_verify_generate_and_send_token_failure_api_error(): void {
