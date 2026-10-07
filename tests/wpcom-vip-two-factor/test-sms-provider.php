@@ -302,6 +302,22 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertFalse( $strategy->has_pending_metadata() );
 	}
 
+	public function test_twilio_verify_send_failure_masks_number_without_float_deprecation(): void {
+		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		$this->add_http_response_mock( self::VERIFICATIONS_URL, self::twilio_error_response( 400, 21211, 'Invalid phone number' ) );
+
+		// wpcom_error_handler swallows deprecations, so record what it handles. Masking an 11-character number truncates 11 / 1.5 and must not raise a float-to-int deprecation.
+		$errors = [];
+		add_action( 'php_error_handler', function ( string $type, string $message ) use ( &$errors ): void {
+			$errors[] = "$type: $message";
+		}, 10, 2 );
+
+		$result = ( new Two_Factor_Twilio_Verify_API( $user->ID, '+1234567890' ) )->send_code( '123456' );
+
+		$this->assertInstanceOf( WP_Error::class, $result );
+		$this->assertSame( [ 'Warning: Failed to send SMS to +123456xxx: Twilio Verify API responded with error (21211): Invalid phone number #vip-go-sms-error' ], $errors );
+	}
+
 	public function data_verify_check_failures(): array {
 		return [
 			'HTTP error with body'    => [
