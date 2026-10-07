@@ -8,7 +8,6 @@ import { describe, it } from 'node:test';
 import { buildTreeLines, childPath, hitIndex } from '../src/tree-lines.js';
 import {
 	countHits,
-	describeNotReturned,
 	countLines,
 	describeJsonSize,
 	escapeHtml,
@@ -248,16 +247,6 @@ describe( 'countHits', () => {
 
 	it( 'reads the plain-number form of the total', () => {
 		assert.deepEqual( countHits( { hits: { total: 3, hits: [ {}, {}, {} ] } } ), { total: 3, relation: 'eq', returned: 3 } );
-	} );
-} );
-
-describe( 'describeNotReturned', () => {
-	it( 'counts matches beyond the page exactly, or as a lower bound when the total is', () => {
-		assert.equal( describeNotReturned( { total: 25, returned: 10, relation: 'eq' }, 10 ).label, '+15 not returned' );
-		const capped = describeNotReturned( { total: 10000, returned: 10, relation: 'gte' }, 10 );
-		assert.equal( capped.label, 'at least 9,990 not returned' );
-		assert.match( capped.title, /^At least 10,000 matched; / );
-		assert.equal( describeNotReturned( { total: 10, returned: 10, relation: 'eq' }, 10 ), null );
 	} );
 } );
 

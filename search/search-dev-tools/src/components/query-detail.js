@@ -7,7 +7,7 @@ import { JsonTree } from './json-tree';
 import { AnnounceContext } from '../context';
 import { deepActiveElement } from '../dom';
 import { hitIndex } from '../tree-lines';
-import { RUN_SHORTCUT, backtraceFrames, countHits, describeJsonSize, describeNotReturned, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, postData, shortIndexName, summarizeResult } from '../utils';
+import { RUN_SHORTCUT, backtraceFrames, describeJsonSize, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, postData, shortIndexName, summarizeResult } from '../utils';
 
 
 /**
@@ -242,37 +242,15 @@ const RunControl = ( { pending, running, onRun } ) => {
  * @param {string[]} props.queried Indexes the query targeted.
  * @return {import('preact').VNode} Breakdown.
  */
-const IndexBreakdown = ( { result, queried, pageSize } ) => {
-	// Matched hits beyond the page size: the header counts them, the per-index counts can't.
-	const notReturned = describeNotReturned( countHits( result ), pageSize );
-	return (
-		<span className="sdt-breakdown" title="Returned hits per index">
-			{ hitsPerIndex( result, queried ).map( ( { index, label, count } ) => (
-				<span key={ index || 'other' } className={ cx( 'sdt-breakdown__item', { 'is-empty': ! count } ) }>
-					{ label } <strong>{ count }</strong>
-				</span>
-			) ) }
-			{ notReturned
-				? <span className="sdt-breakdown__item is-more" title={ notReturned.title }>{ notReturned.label }</span>
-				: null }
-		</span>
-	);
-};
-
-/**
- * `size` of a request body, if set.
- *
- * @param {string} text Request JSON.
- * @return {number|undefined} Page size.
- */
-const requestSize = text => {
-	try {
-		const size = JSON.parse( text )?.size;
-		return typeof size === 'number' ? size : undefined;
-	} catch {
-		return undefined;
-	}
-};
+const IndexBreakdown = ( { result, queried } ) => (
+	<span className="sdt-breakdown" title="Returned hits per index">
+		{ hitsPerIndex( result, queried ).map( ( { index, label, count } ) => (
+			<span key={ index || 'other' } className={ cx( 'sdt-breakdown__item', { 'is-empty': ! count } ) }>
+				{ label } <strong>{ count }</strong>
+			</span>
+		) ) }
+	</span>
+);
 
 // Tag each hit's opening line with the short name of the index it came from.
 const annotateHit = ( path, value ) => ( hitIndex( path ) >= 0 && typeof value?._index === 'string' ? shortIndexName( value._index ) : '' );
@@ -311,7 +289,7 @@ const PlainResponse = ( { size, onShowTree } ) => (
 );
 
 // Memoized: its props don't change while the request is edited, so typing doesn't re-render a large tree.
-const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes, pageSize } ) {
+const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes } ) {
 	const announce = useContext( AnnounceContext );
 	const [ copied, setCopied ] = useState( false );
 	// `version` remounts the tree so manual toggles reset when a fold-all button is used.
@@ -361,7 +339,7 @@ const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite
 				? (
 					<div className="sdt-pane__subhead">
 						<span className="sdt-muted">Returned per index:</span>
-						<IndexBreakdown result={ result } queried={ queriedIndexes } pageSize={ pageSize } />
+						<IndexBreakdown result={ result } queried={ queriedIndexes } />
 					</div>
 				)
 				: null }
@@ -398,7 +376,6 @@ function draftState( draft, originalText, query ) {
 	const hasRerun = draft?.result !== undefined;
 	return {
 		text,
-		ranText,
 		hasRerun,
 		// Edited since the last run (or since page load, if never re-run).
 		hasPendingEdits: text !== ranText,
@@ -430,14 +407,12 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 	const inFlightRef = useRef( false );
 
 	const originalText = meta.requestText;
-	const { text, ranText, hasRerun, hasPendingEdits, running, result, response, resultKey, error } = draftState( draft, originalText, query );
+	const { text, hasRerun, hasPendingEdits, running, result, response, resultKey, error } = draftState( draft, originalText, query );
 	const summary = useMemo(
 		() => ( hasRerun ? summarizeResult( result, response ) : meta.summary ),
 		[ hasRerun, result, response, meta.summary ],
 	);
 	const frames = backtraceFrames( query );
-	// Parsed once per request text, not on every keystroke render.
-	const pageSize = useMemo( () => requestSize( ranText ), [ ranText ] );
 
 	const run = useCallback( async () => {
 		// One request per query at a time: `pendingRun` (App state) persists across remounts, and the ref guards
@@ -538,7 +513,6 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 					resultKey={ resultKey }
 					crossSite={ meta.crossSite }
 					queriedIndexes={ meta.queriedIndexes }
-					pageSize={ pageSize }
 				/>
 			</div>
 		</section>

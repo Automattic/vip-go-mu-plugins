@@ -183,26 +183,6 @@ export function countHits( body ) {
 }
 
 /**
- * Matched hits the response didn't return (beyond the request size), for the per-index breakdown.
- *
- * @param {Object}  counts   countHits() result.
- * @param {?number} pageSize Request size, if known.
- * @return {?{label: string, title: string}} Label and hover text, or null when every match was returned.
- */
-export function describeNotReturned( { total, returned, relation }, pageSize ) {
-	const notReturned = typeof total === 'number' ? total - returned : 0;
-	if ( notReturned <= 0 ) {
-		return null;
-	}
-	const lowerBound = relation === 'gte';
-	const matched = lowerBound ? `At least ${ formatCount( total ) }` : formatCount( total );
-	return {
-		label: lowerBound ? `at least ${ formatCount( notReturned ) } not returned` : `+${ formatCount( notReturned ) } not returned`,
-		title: `${ matched } matched; the request returns at most ${ pageSize ?? returned } (size), so per-index counts cover ${ returned }.`,
-	};
-}
-
-/**
  * Speed bucket for a request time.
  *
  * @param {number}  took   Time in ms.
