@@ -23,6 +23,7 @@ add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_filter( 'js_do_concat', __NAMESPACE__ . '\skip_js_do_concat', 10, 2 );
 add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 ); // Must be below 20 (`wp_print_footer_scripts`)
 add_action( 'admin_footer', __NAMESPACE__ . '\print_data', 5 );
+add_action( 'ep_add_query_log', __NAMESPACE__ . '\record_cross_site' );
 
 /**
  * Register Dev Tools Endpoint.
@@ -78,8 +79,17 @@ function rest_callback( \WP_REST_Request $request ) {
 	);
 
 	if ( ! is_wp_error( $result ) ) {
-		$result = [
-			'body' => sanitize_query_response( json_decode( $result['body'] ) ),
+		$body    = json_decode( wp_remote_retrieve_body( $result ) );
+		$code    = wp_remote_retrieve_response_code( $result );
+		$message = wp_remote_retrieve_response_message( $result );
+		$result  = [
+			'body'     => rest_response_body( $body, $code ),
+			// Like the page's query log: the status marks a failure even when the body is JSON without an
+			// `error` field (e.g. a gateway's `{"message":"Bad Gateway"}`).
+			'response' => [
+				'code'    => $code,
+				'message' => $message,
+			],
 		];
 	} else {
 		$result = [
@@ -207,6 +217,11 @@ function print_data() {
 				];
 			}
 
+			// Whether the search left its site, as noted while it ran (judged now only for anything logged before
+			// Dev Tools was listening).
+			$index_part          = (string) Search::instance()->get_index_name_for_url( $query['url'] );
+			$query['cross_site'] = cross_site_decisions()[ query_log_key( $query ) ] ?? is_cross_site_request( $index_part );
+
 			$query['args']['body'] = json_decode( $query['args']['body'], true );
 			$query['args']['body'] = array_merge( [ 'profile' => false ], $query['args']['body'] );
 			// We only want to show booleans (either true or false) or other values that would cast to boolean true (non-empty strings, arrays and non-0 ints),
@@ -217,12 +232,38 @@ function print_data() {
 					return is_bool( $v ) || ( ! is_bool( $v ) && $v );
 				}
 			);
-			return $query;
+			// Network alias queries: the indexes the alias reached, or a flag when they couldn't be looked up.
+			return array_merge( $query, get_alias_details( $index_part ) );
 		},
 		$queries
 	);
 
-	$search_instance = Search::instance();
+	$data = [
+		'status'      => 'enabled',
+		'queries'     => $mapped_queries,
+		'information' => get_information(),
+		'nonce'       => wp_create_nonce( 'wp_rest' ),
+		'ajaxurl'     => rest_url( 'vip/v1/search/dev-tools' ),
+	];
+
+	// Compact, not pretty-printed: this holds every query's full request and response on each page view, and
+	// indentation made it ~3x larger (189 KB vs 60 KB on a search page). Slashes stay unescaped for size;
+	// JSON_HEX_TAG encodes `<` and `>` instead, so content like `</script>` in a post title can't close the tag.
+	wp_print_inline_script_tag( sprintf( 'var VIPSearchDevTools = %s;', wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG ) ) );
+	?>
+<div id="search-dev-tools-portal"></div>
+	<?php
+}
+
+/**
+ * General Search information shown in the Dev Tools info strip.
+ * Each item has a stable `key` the frontend can rely on, a display `label` and a `value`.
+ *
+ * @param Search|null $search_instance Search instance; defaults to the global one (injectable for tests).
+ * @return array[] Information items.
+ */
+function get_information( ?Search $search_instance = null ): array {
+	$search_instance = $search_instance ?? Search::instance();
 	$is_rate_limited = Search::is_rate_limited() || $search_instance->queue->is_indexing_ratelimited();
 	if ( $is_rate_limited ) {
 		$rate_limit   = [ 'search: ' . ( Search::is_rate_limited() ? sprintf( 'yes (%d of %d)', Search::get_query_count(), Search::$max_query_count ) : 'no' ) ];
@@ -236,63 +277,172 @@ function print_data() {
 		$concurrent_requests = $search_instance->concurrency_limiter->get_backend()->get_value();
 	}
 
-	$data = [
-		'status'                  => 'enabled',
-		'queries'                 => $mapped_queries,
-		'information'             => [
-			[
-				'label'   => 'Rate limited?',
-				'value'   => $rate_limit,
-				'options' => [
-					'collapsible' => false,
-				],
+	return [
+		[
+			'key'     => 'es_version',
+			'label'   => 'Elasticsearch',
+			'value'   => get_current_elasticsearch_version(),
+			'options' => [
+				'collapsible' => false,
 			],
-			[
-				'label'   => 'Concurrent requests',
-				'value'   => $concurrent_requests,
-				'options' => [
-					'collapsible' => false,
-				],
-			],
-			[
-				'label'   => 'Indexable post types',
-				'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Indexable post status',
-				'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Meta Key Allow List',
-				'value'   => get_meta_for_all_indexable_post_types(),
-				'options' => [
-					'collapsible' => true,
-				],
-			],
-			[
-				'label'   => 'Elasticsearch Version',
-				'value'   => get_current_elasticsearch_version(),
-				'options' => [
-					'collapsible' => false,
-				],
-			],
-
 		],
-		'nonce'                   => wp_create_nonce( 'wp_rest' ),
-		'ajaxurl'                 => rest_url( 'vip/v1/search/dev-tools' ),
-		'__webpack_public_path__' => plugin_dir_url( __FILE__ ) . 'build',
+		[
+			'key'     => 'rate_limited',
+			'label'   => 'Rate limited',
+			'value'   => $rate_limit,
+			'options' => [
+				'collapsible' => false,
+			],
+		],
+		[
+			'key'     => 'concurrent_requests',
+			'label'   => 'Concurrent',
+			'value'   => $concurrent_requests,
+			'options' => [
+				'collapsible' => false,
+			],
+		],
+		[
+			'key'     => 'post_types',
+			'label'   => 'Post types',
+			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
+		[
+			'key'     => 'post_statuses',
+			'label'   => 'Statuses',
+			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
+		[
+			'key'     => 'meta_allow_list',
+			'label'   => 'Meta',
+			'value'   => get_meta_for_all_indexable_post_types(),
+			'options' => [
+				'collapsible' => true,
+			],
+		],
 	];
+}
 
-	wp_print_inline_script_tag( sprintf( 'var VIPSearchDevTools = %s;', wp_json_encode( $data, JSON_PRETTY_PRINT ) ) );
-	?>
-<div id="search-dev-tools-portal"></div>
-	<?php
+/**
+ * Whether a search request left the current site: it named an index that isn't one of this site's own (the
+ * network alias for `'sites' => 'all'`, or other sites' indexes). This reads the index ElasticPress actually
+ * chose, so its scope rules (`sites`, `ep_search_scope`, network mode) aren't repeated here.
+ *
+ * @param string $index_part Index part of the request URL (see Search::get_index_name_for_url()).
+ * @return bool Cross-site request.
+ */
+function is_cross_site_request( string $index_part ): bool {
+	if ( '' === $index_part || ! is_multisite() ) {
+		return false;
+	}
+	$own = array_map( fn ( $indexable ) => $indexable->get_index_name(), \ElasticPress\Indexables::factory()->get_all() );
+	return (bool) array_diff( explode( ',', $index_part ), $own );
+}
+
+/**
+ * Key tying a query log entry to the decision record_cross_site() noted for it.
+ *
+ * @param array $query Query log entry.
+ * @return string Key.
+ */
+function query_log_key( array $query ): string {
+	return ( $query['url'] ?? '' ) . '|' . ( $query['time_start'] ?? '' );
+}
+
+/**
+ * Cross-site decisions noted while requests ran, keyed by query_log_key().
+ *
+ * @param array|null $query    Query log entry to note a decision for, or null to only read.
+ * @param bool       $decision Decision for `$query`.
+ * @return bool[] Decisions so far.
+ */
+function cross_site_decisions( ?array $query = null, bool $decision = false ): array {
+	static $decisions = [];
+	if ( null !== $query ) {
+		$decisions[ query_log_key( $query ) ] = $decision;
+	}
+	return $decisions;
+}
+
+/**
+ * On `ep_add_query_log`: note whether a search left its site while that site is still current. print_data()
+ * runs in the footer, where a query made inside switch_to_blog() would be judged against the wrong site.
+ *
+ * @param array $query Query log entry.
+ * @return void
+ */
+function record_cross_site( $query ): void {
+	// Same condition as ElasticPress's query log: without the log there's nothing to show.
+	$logging = ( defined( 'WP_DEBUG' ) && constant( 'WP_DEBUG' ) ) || ( defined( 'WP_EP_DEBUG' ) && constant( 'WP_EP_DEBUG' ) );
+	if ( ! $logging || ! is_multisite() || ! is_array( $query ) || false === stripos( (string) ( $query['url'] ?? '' ), '_search' ) ) {
+		return;
+	}
+	cross_site_decisions( $query, is_cross_site_request( (string) Search::instance()->get_index_name_for_url( $query['url'] ) ) );
+}
+
+/**
+ * Whether an index part names a network alias (`vip-123-post-all`), which `'sites' => 'all'` queries search.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return bool Network alias.
+ */
+function is_network_alias( string $index_part ): bool {
+	return '' !== $index_part && ! str_contains( $index_part, ',' ) && str_ends_with( $index_part, '-all' );
+}
+
+/**
+ * What to report about a query's network alias, so the UI never presents the alias itself as an index.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return array `alias_indexes` with the indexes behind the alias, `alias_unresolved` when they couldn't be looked
+ *               up, or nothing when the query didn't use a network alias.
+ */
+function get_alias_details( string $index_part ): array {
+	if ( ! is_network_alias( $index_part ) ) {
+		return [];
+	}
+	$indexes = get_alias_indexes( $index_part );
+	return $indexes ? [ 'alias_indexes' => $indexes ] : [ 'alias_unresolved' => true ];
+}
+
+/**
+ * Concrete indexes behind a network alias index (`vip-123-post-all`, used for `'sites' => 'all'`).
+ * Only alias names trigger a lookup, once per request, and it is capped at VIP's global ES timeout (2s on web).
+ * Not cached across requests on purpose: a dev tool should show the alias as it is right now, e.g. right after
+ * `wp vip-search recreate-network-alias`.
+ *
+ * @param string $index_part Index part of a request URL.
+ * @return string[] Sorted index names, or [] when this is not a network alias or the lookup fails.
+ */
+function get_alias_indexes( string $index_part ): array {
+	static $cache = [];
+
+	if ( ! is_network_alias( $index_part ) ) {
+		return [];
+	}
+
+	if ( isset( $cache[ $index_part ] ) ) {
+		return $cache[ $index_part ];
+	}
+
+	$indexes  = [];
+	$response = \ElasticPress\Elasticsearch::factory()->remote_request( $index_part . '/_alias', [ 'method' => 'GET' ], [], 'get' );
+	if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+		if ( is_array( $body ) ) {
+			$indexes = array_map( 'strval', array_keys( $body ) );
+			sort( $indexes );
+		}
+	}
+
+	$cache[ $index_part ] = $indexes;
+	return $indexes;
 }
 
 /**
@@ -334,6 +484,24 @@ function skip_js_do_concat( bool $do_concat, string $handle ): bool {
 		$do_concat = false;
 	}
 	return $do_concat;
+}
+
+/**
+ * Run response body for the frontend. A proxy or gateway error page may not be JSON at all; report that
+ * instead of failing on the decode, and pass any other JSON (a string or array message) through as is.
+ *
+ * @param mixed      $body Decoded Elasticsearch response body (null when it wasn't JSON).
+ * @param int|string $code HTTP status.
+ * @return mixed Body.
+ */
+function rest_response_body( $body, $code ) {
+	if ( is_object( $body ) ) {
+		return sanitize_query_response( $body );
+	}
+	if ( null === $body ) {
+		return [ 'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', $code ) ];
+	}
+	return $body;
 }
 
 /**

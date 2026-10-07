@@ -7,7 +7,6 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <link rel="apple-touch-icon" href="/assets/icons/apple-touch-icon.png">
 </head>
 
 <body style="background-color: var(--vip-grey-80);">
@@ -86,7 +85,7 @@
                     },
                     "method": "POST",
                     "headers": {
-                        "Content-Type": "application\/json"
+                        "Content-Type": "application/json"
                     }
                 },
                 "blocking": true,
@@ -123,79 +122,64 @@
                         "status": null
                     }
                 },
-                "host": "http:\/\/vip-search:9200",
+                "host": "https://vip-search:9200",
                 "query_args": [],
-                "url": "http:\/\/vip-search:9200\/vip-200508-post-1\/_search",
+                "cross_site": false,
+                "url": "https://vip-search:9200/vip-200508-post-1/_search",
                 "backtrace": [
-                    "ElasticPress\\Elasticsearch->remote_request",
-                    "ElasticPress\\Elasticsearch->query",
-                    "ElasticPress\\Indexable->query_es",
-                    "Automattic\\VIP\\Search\\Search->query_es",
-                    "ES_WP_Query->query_es",
-                    "ES_WP_Query_Wrapper->get_posts",
-                    "WP_Query->query",
-                    "WP_Query->__construct",
-                    "es_wp_query_shoehorn",
-                    "WP_Hook->apply_filters",
-                    "WP_Hook->do_action",
-                    "do_action_ref_array('pre_get_posts')",
-                    "WP_Query->get_posts",
-                    "WP_Query->query",
-                    "WP_Query->__construct",
-                    "{closure}",
-                    "WP_Hook->apply_filters",
-                    "WP_Hook->do_action",
-                    "do_action('init')",
-                    "require_once('wp-settings.php')",
-                    "require_once('wp-config.php')",
-                    "require_once('wp-load.php')",
-                    "require('wp-blog-header.php')"
+                    { "file": "wp-content/mu-plugins/search/elasticpress/includes/classes/Elasticsearch.php", "line": 372, "call": "ElasticPress\\Elasticsearch->remote_request()" },
+                    { "file": "wp-content/mu-plugins/search/elasticpress/includes/classes/Indexable.php", "line": 658, "call": "ElasticPress\\Elasticsearch->query()" },
+                    { "file": "wp-content/mu-plugins/search/elasticpress/includes/classes/Indexable/Post/QueryIntegration.php", "line": 342, "call": "ElasticPress\\Indexable->query_es()" },
+                    { "file": "wp-includes/class-wp-hook.php", "line": 341, "call": "ElasticPress\\Indexable\\Post\\QueryIntegration->get_es_posts()" },
+                    { "file": "wp-includes/plugin.php", "line": 256, "call": "WP_Hook->apply_filters()" },
+                    { "file": "wp-includes/class-wp-query.php", "line": 3226, "call": "apply_filters_ref_array('posts_pre_query')" },
+                    { "file": "wp-includes/class-wp-query.php", "line": 3958, "call": "WP_Query->get_posts()" },
+                    { "file": "wp-includes/class-wp.php", "line": 704, "call": "WP_Query->query()" },
+                    { "file": "wp-includes/class-wp.php", "line": 824, "call": "WP->query_posts()" },
+                    { "file": "wp-includes/functions.php", "line": 1343, "call": "WP->main()" },
+                    { "file": "wp-blog-header.php", "line": 16, "call": "wp()" },
+                    { "file": "index.php", "line": 17, "call": "require('wp-blog-header.php')" }
                 ]
             }],
             "information": [{
-                    "label": "Rate limited?",
+                    "key": "es_version",
+                    "label": "Elasticsearch",
+                    "value": "8.18.2",
+                    "options": { "collapsible": false }
+                },
+                {
+                    "key": "rate_limited",
+                    "label": "Rate limited",
                     "value": "no",
-                    "options": {
-                        "collapsible": false
-                    }
+                    "options": { "collapsible": false }
                 },
                 {
-                    "label": "Indexable post types",
-                    "value": [
-                        "post",
-                        "page",
-                        "test",
-                        "cpt",
-                        "what",
-                        "another",
-                        "one-more"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "concurrent_requests",
+                    "label": "Concurrent",
+                    "value": 0,
+                    "options": { "collapsible": false }
                 },
                 {
-                    "label": "Indexable post status",
-                    "value": [
-                        "publish"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "post_types",
+                    "label": "Post types",
+                    "value": ["post", "page", "test", "cpt", "what", "another", "one-more"],
+                    "options": { "collapsible": true }
                 },
                 {
-                    "label": "Meta Key Allow List",
-                    "value": [
-                        "x-custom-key"
-                    ],
-                    "options": {
-                        "collapsible": true
-                    }
+                    "key": "post_statuses",
+                    "label": "Statuses",
+                    "value": ["publish"],
+                    "options": { "collapsible": true }
+                },
+                {
+                    "key": "meta_allow_list",
+                    "label": "Meta",
+                    "value": ["x-custom-key"],
+                    "options": { "collapsible": true }
                 }
             ],
             "nonce": "5ba91ee23f",
-            "ajaxurl": "https:\/\/vip-go-dev.lndo.site\/index.php?rest_route=\/vip\/v1\/search\/dev-tools",
-            "__webpack_public_path__": "http:\/\/vip-go-dev.lndo.site\/wp-content\/mu-plugins\/search\/search-dev-tools\/build"
+            "ajaxurl": "https://vip-go-dev.lndo.site/index.php?rest_route=/vip/v1/search/dev-tools"
         };
     </script>
     <div data-widget-host="vip-search-dev-tools"></div>

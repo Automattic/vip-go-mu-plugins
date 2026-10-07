@@ -1,32 +1,1186 @@
-@use './vars.scss' as *;
+// Search Dev Tools panel styles. They load inside the panel's shadow root (see app.js), so theme and plugin CSS
+// can't reach the panel and these rules can't leak out. The Admin Bar button's styles are in admin-bar.scss.
 
-.vip-h2 {
-	@include text-h2();
-}
-.vip-h3 {
-	@include text-h3();
-}
-.vip-h4 {
-	@include text-h4();
-}
-.vip-h5 {
-	@include text-h5();
-}
+$sidebar-width: 336px;
 
-.search-dev-tools {
-	&__wrapper {
-		margin-top: 40px;
+/* Panel */
+
+.sdt {
+	// Reset everything inherited through the shadow host first; custom properties (the tokens below) are kept.
+	all: initial;
+
+	// Light theme tokens.
+	--sdt-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+	--sdt-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+	--sdt-bg: #ffffff;
+	--sdt-bg-subtle: #faf8f6;
+	--sdt-bg-raised: #ffffff;
+	--sdt-bg-hover: #f7f3ee;
+	--sdt-bg-selected: #f5ece1;
+	--sdt-border: #ebe6e0;
+	--sdt-border-strong: #d8d0c7;
+	--sdt-text: #1d1b19;
+	--sdt-text-muted: #6f6861;
+	// Faint and accent tuned for WCAG AA (≥4.5:1): faint on white/subtle, white text on the accent fill.
+	--sdt-text-faint: #79716a;
+	--sdt-accent: #8f6022;
+	--sdt-accent-hover: #7a5119;
+	--sdt-accent-text: #8a5a1c;
+	--sdt-accent-contrast: #ffffff;
+	--sdt-accent-soft: #f6ebdc;
+	--sdt-good: #00794a;
+	--sdt-good-soft: #e3f4ea;
+	--sdt-warn: #b25a00;
+	--sdt-bad: #c72316;
+	--sdt-bad-soft: #ffe9e7;
+	--sdt-shadow: 0 12px 32px rgba(29, 27, 25, 0.12), 0 2px 6px rgba(29, 27, 25, 0.08);
+	--sdt-syn-key: #8f3a12;
+	--sdt-syn-string: #0b6a8c;
+	--sdt-syn-number: #b8400f;
+	--sdt-syn-bool: #5a44d4;
+	--sdt-syn-punct: #716962;
+	--sdt-code-size: 13px;
+	--sdt-code-line: 20px;
+
+
+	position: fixed;
+	top: var(--wp-admin--admin-bar--height, 32px);
+	right: 0;
+	bottom: 0;
+	left: 0;
+	// Below #wpadminbar (99999), above most theme headers.
+	z-index: 99998;
+	display: flex;
+	flex-direction: column;
+	background: var(--sdt-bg);
+	color: var(--sdt-text);
+	font-family: var(--sdt-font);
+	font-size: 13px;
+	font-weight: 400;
+	line-height: 1.5;
+	text-align: left;
+	-webkit-font-smoothing: antialiased;
+	color-scheme: light;
+	// The panel is a <dialog>; undo its default box so the fixed insets size it.
+	width: auto;
+	height: auto;
+	max-width: none;
+	max-height: none;
+	margin: 0;
+	padding: 0;
+	border: 0;
+
+	&:focus {
+		outline: none;
+	}
+
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	// Undo browser default styles.
+	h1,
+	h2,
+	h3,
+	p,
+	ul,
+	ol,
+	li,
+	table,
+	th,
+	td,
+	fieldset,
+	dialog {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		font: inherit;
+		color: inherit;
+		background: none;
+	}
+
+	ul,
+	ol {
+		list-style: none;
+	}
+
+	fieldset {
+		min-width: 0;
+	}
+
+	button {
+		appearance: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		line-height: inherit;
+		cursor: pointer;
+
+		&:focus-visible {
+			outline: 2px solid var(--sdt-accent);
+			outline-offset: 1px;
+		}
+
+		&:disabled {
+			cursor: default;
+		}
+	}
+
+	.sdt-mono {
+		font-family: var(--sdt-mono);
+		font-size: 12.5px;
+	}
+
+	.sdt-muted {
+		color: var(--sdt-text-muted);
+	}
+
+	.sdt-accent {
+		color: var(--sdt-accent-text);
+	}
+
+	.sdt-visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect(0 0 0 0);
+		white-space: nowrap;
+	}
+
+	.sdt-empty {
+		padding: 20px 24px;
+		color: var(--sdt-text-muted);
+	}
+
+	/* Header */
+
+	.sdt-header {
 		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 16px;
+		min-height: 48px;
+		padding: 6px 16px;
+		border-bottom: 1px solid var(--sdt-border);
+
+		&__title {
+			display: flex;
+			flex: 1;
+			align-items: baseline;
+			gap: 16px;
+			min-width: 0;
+
+			h1 {
+				min-width: 0;
+				overflow: hidden;
+				font-size: 15px;
+				font-weight: 600;
+				white-space: nowrap;
+				text-overflow: ellipsis;
+			}
+
+			> * {
+				max-width: 100%;
+			}
+		}
+
+		&__actions {
+			display: flex;
+			align-items: center;
+			gap: 20px;
+
+			// Divider between the theme toggle and the close button.
+			.sdt-icon-btn {
+				position: relative;
+
+				&::before {
+					content: '';
+					position: absolute;
+					top: 6px;
+					bottom: 6px;
+					left: -11px;
+					width: 1px;
+					background: var(--sdt-border-strong);
+				}
+			}
+		}
+	}
+
+	.sdt-segmented {
+		display: inline-flex;
+		padding: 2px;
+		border: 1px solid var(--sdt-border);
+		border-radius: 7px;
+		background: var(--sdt-bg-subtle);
+
+		button {
+			padding: 4px 12px;
+			border-radius: 5px;
+			color: var(--sdt-text-muted);
+			font-size: 12.5px;
+
+			&.is-active {
+				background: var(--sdt-bg-raised);
+				color: var(--sdt-text);
+				box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+			}
+		}
+	}
+
+	.sdt-icon-btn {
+		display: inline-flex;
+		align-items: center;
 		justify-content: center;
+		width: 32px;
+		height: 32px;
+		border-radius: 6px;
+		color: var(--sdt-text);
+
+		&:hover {
+			background: var(--sdt-bg-hover);
+		}
+	}
+
+	/* Info strip */
+
+	.sdt-info {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 6px 28px;
+		padding: 9px 16px;
+		border-bottom: 1px solid var(--sdt-border);
+		background: var(--sdt-bg-subtle);
+
+		&__item {
+			position: relative;
+			display: flex;
+			align-items: baseline;
+			gap: 7px;
+			white-space: nowrap;
+
+			strong {
+				font-weight: 500;
+
+				&.is-bad {
+					color: var(--sdt-bad);
+				}
+
+				// Values in their normal state (not rate limited, no concurrent requests).
+				&.is-quiet {
+					color: var(--sdt-text-muted);
+					font-weight: 400;
+				}
+			}
+		}
+
+		&__label {
+			color: var(--sdt-text-muted);
+		}
+
+		&__toggle {
+			display: inline-flex;
+			align-items: baseline;
+			gap: 7px;
+			border-radius: 4px;
+
+			&:hover .sdt-info__label {
+				color: var(--sdt-text);
+			}
+		}
+	}
+
+	.sdt-caret {
+		color: var(--sdt-accent-text);
+		font-size: 10px;
+		margin-left: -3px;
+	}
+
+	.sdt-popover {
+		position: absolute;
+		top: calc(100% + 8px);
+		left: 0;
+		z-index: 5;
+		width: max-content;
+		min-width: 220px;
+		max-width: min(520px, 90vw);
+		max-height: 50vh;
+		overflow: auto;
+		padding: 10px;
+		border: 1px solid var(--sdt-border);
+		border-radius: 8px;
+		background: var(--sdt-bg-raised);
+		box-shadow: var(--sdt-shadow);
+		white-space: normal;
+	}
+
+	.sdt-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 6px;
+
+		li {
+			padding: 2px 8px;
+			border-radius: 4px;
+			background: var(--sdt-bg-subtle);
+			border: 1px solid var(--sdt-border);
+			font-size: 12px;
+		}
+	}
+
+	/* Body layout */
+
+	.sdt-body {
+		flex: 1;
+		min-height: 0;
+		display: grid;
+		grid-template-columns: $sidebar-width minmax(0, 1fr);
+
+		&--empty {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--sdt-text-muted);
+			font-size: 14px;
+		}
+	}
+
+	/* Query list */
+
+	.sdt-list {
+		min-height: 0;
+		overflow-y: auto;
+		border-right: 1px solid var(--sdt-border);
+
+		&__item {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+			width: 100%;
+			padding: 13px 18px 14px 16px;
+			border-bottom: 1px solid var(--sdt-border);
+			text-align: left;
+
+			&:hover {
+				background: var(--sdt-bg-hover);
+			}
+
+			&.is-selected {
+				background: var(--sdt-bg-selected);
+				box-shadow: inset 3px 0 0 var(--sdt-accent);
+			}
+
+			&:focus-visible {
+				outline-offset: -2px;
+			}
+		}
+
+		&__row {
+			display: flex;
+			align-items: baseline;
+			justify-content: space-between;
+			gap: 12px;
+			min-width: 0;
+
+			&--sub {
+				color: var(--sdt-text-muted);
+				font-size: 12.5px;
+			}
+		}
+
+		&__label {
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
+			font-size: 14px;
+			font-weight: 500;
+			white-space: nowrap;
+		}
+
+		// Long query names truncate; the edited dot stays visible.
+		&__name {
+			flex: 0 1 auto;
+			min-width: 0;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		&__caller {
+			min-width: 0;
+			overflow: hidden;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
+
+		&__hits {
+			flex: none;
+			white-space: nowrap;
+
+			&.is-bad {
+				color: var(--sdt-bad);
+			}
+		}
+	}
+
+	// Path that truncates from the left: the directory shrinks with a leading ellipsis, the file name never does.
+	.sdt-path {
+		display: flex;
+		// Inline `min-width` (in ch, monospace) keeps the file name and line; only the directory collapses.
+		min-width: 0;
+
+		&__dir {
+			flex: 0 1 auto;
+			min-width: 0;
+			overflow: hidden;
+			direction: rtl;
+			text-align: left;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		&__file {
+			flex: none;
+			white-space: nowrap;
+		}
+	}
+
+	.sdt-time {
+		flex: none;
+		font-weight: 600;
+
+		&.is-good {
+			color: var(--sdt-good);
+		}
+
+		&.is-warn {
+			color: var(--sdt-warn);
+		}
+
+		&.is-bad {
+			color: var(--sdt-bad);
+		}
+
+		&.is-neutral {
+			color: var(--sdt-text-muted);
+			font-weight: 400;
+		}
+	}
+
+	.sdt-dot {
+		flex: none;
+		width: 6px;
+		height: 6px;
+		border-radius: 50%;
+		background: var(--sdt-accent);
+	}
+
+	/* Detail */
+
+	.sdt-detail {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		min-height: 0;
+
+		&__head {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 16px;
+			padding: 18px 24px 16px;
+			border-bottom: 1px solid var(--sdt-border);
+		}
+
+		&__titles {
+			min-width: 0;
+		}
+
+		&__title-row {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 6px 12px;
+		}
+
+		&__title {
+			font-size: 20px;
+			font-weight: 600;
+			line-height: 1.3;
+		}
+
+		&__stats {
+			display: flex;
+			gap: 6px;
+			min-width: 0;
+			max-width: 100%;
+			color: var(--sdt-text-muted);
+			font-size: 14px;
+			white-space: nowrap;
+		}
+
+		&__index {
+			font-family: var(--sdt-mono);
+			font-size: 12.5px;
+			line-height: 21px;
+		}
+
+
+		&__sub {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px 16px;
+			margin-top: 6px;
+		}
+
+		&__actions {
+			display: flex;
+			flex: none;
+			gap: 8px;
+		}
+	}
+
+	.sdt-chip {
+		display: inline-flex;
+		align-items: center;
+		padding: 1px 8px;
+		border-radius: 4px;
+		font-family: var(--sdt-mono);
+		font-size: 12.5px;
+		font-weight: 500;
+		line-height: 20px;
+		white-space: nowrap;
+
+		&--good {
+			background: var(--sdt-good-soft);
+			color: var(--sdt-good);
+		}
+
+		&--bad {
+			background: var(--sdt-bad-soft);
+			color: var(--sdt-bad);
+		}
+
+		&--accent {
+			background: var(--sdt-accent-soft);
+			color: var(--sdt-accent-text);
+			font-size: 11px;
+			line-height: 18px;
+		}
+	}
+
+	.sdt-btn {
+		display: inline-flex;
+		align-items: center;
+		height: 36px;
+		padding: 0 16px;
+		border: 1px solid var(--sdt-border-strong);
+		border-radius: 6px;
+		background: var(--sdt-bg-raised);
+		color: var(--sdt-text);
+		font-size: 13.5px;
+		font-weight: 500;
+		white-space: nowrap;
+
+		&:hover:not(:disabled) {
+			background: var(--sdt-bg-hover);
+		}
+
+		&:disabled {
+			color: var(--sdt-text-faint);
+			border-color: var(--sdt-border);
+		}
+
+		&--primary {
+			border-color: var(--sdt-accent);
+			background: var(--sdt-accent);
+			color: var(--sdt-accent-contrast);
+			font-weight: 600;
+
+			&:hover:not(:disabled) {
+				border-color: var(--sdt-accent-hover);
+				background: var(--sdt-accent-hover);
+			}
+
+			&:disabled {
+				color: var(--sdt-accent-contrast);
+				opacity: 0.6;
+			}
+		}
+
+		&--small {
+			height: 30px;
+			padding: 0 12px;
+			font-size: 12.5px;
+		}
+
+		&--ghost {
+			border-color: transparent;
+			background: transparent;
+			color: var(--sdt-text-muted);
+
+			&:hover:not(:disabled) {
+				color: var(--sdt-text);
+			}
+		}
+	}
+
+	/* Panes */
+
+	.sdt-panes {
+		flex: 1;
+		min-height: 0;
+		display: grid;
+		// Response gets more room: it has the long lines.
+		grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+	}
+
+	.sdt-pane {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		min-height: 0;
+		border-right: 1px solid var(--sdt-border);
+
+		&--response {
+			border-right: 0;
+			background: var(--sdt-bg-subtle);
+		}
+
+		&__head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 12px;
+			height: 46px;
+			flex: none;
+			padding: 0 24px;
+			border-bottom: 1px solid var(--sdt-border);
+		}
+
+		&__title {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 14px;
+			font-weight: 600;
+		}
+
+		&__actions {
+			display: flex;
+			align-items: center;
+			gap: 2px;
+		}
+
+		&__body {
+			flex: 1;
+			min-height: 0;
+			overflow: auto;
+		}
+
+		// Editor keyboard hint in the Request tab bar: only while the editor has focus, and not when the
+		// Run button needs the space. Kept out of the code area so it never covers request text.
+		&__hint {
+			display: none;
+			min-width: 0;
+			margin-left: auto;
+			overflow: hidden;
+			color: var(--sdt-text-muted);
+			font-size: 12px;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
+
+		&:has(.sdt-code__textarea:focus) .sdt-pane__hint {
+			display: block;
+		}
+
+		&__head:has(.sdt-btn--primary) .sdt-pane__hint {
+			display: none;
+		}
+
+		// Focus indicator for the request editor (its textarea has no outline of its own).
+		&:not(.sdt-pane--response) .sdt-pane__body:focus-within {
+			box-shadow: inset 0 0 0 2px var(--sdt-accent);
+		}
+
+		// Thin row under the Response header (cross-site hit breakdown).
+		&__subhead {
+			display: flex;
+			flex: none;
+			flex-wrap: wrap;
+			align-items: baseline;
+			gap: 4px 10px;
+			padding: 6px 24px;
+			border-bottom: 1px solid var(--sdt-border);
+			font-size: 12px;
+		}
+	}
+
+	.sdt-tabs {
+		display: flex;
+		align-self: stretch;
+		gap: 22px;
+	}
+
+	.sdt-tab {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		margin-bottom: -1px;
+		border-bottom: 2px solid transparent;
+		color: var(--sdt-text-muted);
+		font-size: 14px;
+		font-weight: 500;
+
+		&:hover {
+			color: var(--sdt-text);
+		}
+
+		&.is-active {
+			border-bottom-color: var(--sdt-text);
+			color: var(--sdt-text);
+			font-weight: 600;
+		}
+
+		&__count {
+			color: var(--sdt-text-faint);
+			font-weight: 400;
+		}
+	}
+
+	// Returned hits per index, in the Response header of cross-site queries.
+	.sdt-breakdown {
+		display: inline-flex;
+		flex-wrap: wrap;
+		gap: 2px 12px;
+		color: var(--sdt-text-muted);
+		font-family: var(--sdt-mono);
+		font-size: 12px;
+		font-weight: 400;
+
+		strong {
+			color: var(--sdt-text);
+			font-weight: 600;
+		}
+
+		.is-empty,
+		.is-empty strong {
+			color: var(--sdt-warn);
+		}
+	}
+
+	.sdt-kbd {
+		margin-left: 8px;
+		padding: 0;
+		border: 0;
+		background: none;
+		box-shadow: none;
+		color: inherit;
+		font-family: var(--sdt-font);
+		font-size: 11.5px;
+		font-weight: 500;
+		opacity: 0.75;
+	}
+
+
+	.sdt-error {
+		flex: none;
+		padding: 8px 18px;
+		border-bottom: 1px solid var(--sdt-border);
+		background: var(--sdt-bad-soft);
+		color: var(--sdt-bad);
+		font-family: var(--sdt-mono);
+		font-size: 12.5px;
+	}
+
+	/* Code: shared gutter + syntax */
+
+	.sdt-gutter-num {
+		display: block;
+		flex: none;
+		width: 44px;
+		padding-right: 14px;
+		color: var(--sdt-text-faint);
+		text-align: right;
+		user-select: none;
+	}
+
+	.sdt-code,
+	.sdt-json {
+		font-family: var(--sdt-mono);
+		font-size: var(--sdt-code-size);
+		line-height: var(--sdt-code-line);
+	}
+
+	.sdt-code {
+		min-height: 100%;
+		padding: 14px 0 24px;
+
+		&__inner {
+			display: flex;
+			width: max-content;
+			min-width: 100%;
+			min-height: 100%;
+		}
+
+		// Line numbers as one pre-formatted text node (matches .sdt-gutter-num, used by the response tree).
+		&__gutter {
+			flex: none;
+			width: 44px;
+			padding-right: 14px;
+			color: var(--sdt-text-faint);
+			text-align: right;
+			white-space: pre;
+			user-select: none;
+		}
+
+		&__editor {
+			flex: 1 0 auto;
+			min-width: 0;
+			overflow: visible !important;
+			padding-right: 24px !important;
+		}
+
+		// react-simple-code-editor styles these inline; wrapping would desync the gutter.
+		&__pre,
+		&__textarea {
+			white-space: pre !important;
+			overflow-wrap: normal !important;
+			word-break: normal !important;
+			font-family: inherit !important;
+			font-size: inherit !important;
+			line-height: inherit !important;
+		}
+
+		&__textarea {
+			outline: none !important;
+			caret-color: var(--sdt-text);
+
+			// The editor's own `.npm__react-simple-code-editor__textarea:empty` rule makes the text opaque. Preact
+			// never gives the textarea child text, so it always matches and would hide the highlighted layer.
+			// Matching `:empty` too outranks it, whatever order the two style sheets load in.
+			&,
+			&:empty {
+				-webkit-text-fill-color: transparent !important;
+			}
+		}
+
+		&__pre {
+			margin: 0 !important;
+			border: 0 !important;
+			background: none !important;
+			color: var(--sdt-syn-punct);
+		}
+
+		&__notice {
+			display: block;
+			margin: -6px 24px 10px;
+			color: var(--sdt-text-muted);
+			font-family: var(--sdt-font);
+			font-size: 12px;
+			line-height: 1.5;
+		}
+
+		&:focus-within .sdt-code__gutter {
+			color: var(--sdt-text-muted);
+		}
+	}
+
+	.token.property {
+		color: var(--sdt-syn-key);
+	}
+
+	.token.string {
+		color: var(--sdt-syn-string);
+	}
+
+	.token.number {
+		color: var(--sdt-syn-number);
+	}
+
+	.token.boolean,
+	.token.null,
+	.token.keyword {
+		color: var(--sdt-syn-bool);
+	}
+
+	.token.punctuation,
+	.token.operator {
+		color: var(--sdt-syn-punct);
+	}
+
+	/* JSON tree */
+
+	.sdt-json {
+		width: max-content;
+		min-width: 100%;
+		padding: 14px 24px 24px 0;
+
+		&__line {
+			display: flex;
+			white-space: pre;
+		}
+
+		&__toggle {
+			flex: none;
+			width: 18px;
+			margin-left: -6px;
+
+			button {
+				display: block;
+				width: 18px;
+				height: var(--sdt-code-line);
+				overflow: hidden;
+				color: var(--sdt-text-muted);
+				font-size: 11px;
+				line-height: var(--sdt-code-line);
+
+				&:hover {
+					color: var(--sdt-text);
+				}
+			}
+		}
+
+		&__code {
+			padding-left: 0;
+			margin-left: 6px;
+		}
+	}
+
+	.sdt-tok-key {
+		color: var(--sdt-syn-key);
+	}
+
+	.sdt-tok-string {
+		color: var(--sdt-syn-string);
+	}
+
+	.sdt-tok-number {
+		color: var(--sdt-syn-number);
+	}
+
+	.sdt-tok-boolean,
+	.sdt-tok-null {
+		color: var(--sdt-syn-bool);
+	}
+
+	.sdt-tok-punct {
+		color: var(--sdt-syn-punct);
+	}
+
+	// Plain-text fallback for large expanded responses: one text node, so it renders fast and ⌘F works.
+	.sdt-plain {
+		margin: 0;
+		padding: 14px 24px 24px;
+		border: 0;
+		background: none;
+		color: var(--sdt-text);
+		font-family: var(--sdt-mono);
+		font-size: var(--sdt-code-size);
+		line-height: var(--sdt-code-line);
+		white-space: pre;
+	}
+
+	.sdt-notice {
+		color: var(--sdt-text-muted);
+
+		// Notice at the top of the response body, above the plain text.
+		&--inline {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px 10px;
+			padding: 10px 24px 0;
+			font-size: 12px;
+		}
+	}
+
+	.sdt-link-btn {
+		color: var(--sdt-accent-text);
+		text-decoration: underline;
+
+		&:hover {
+			color: var(--sdt-text);
+		}
+	}
+
+	.sdt-tok-note {
+		margin-left: 1.5ch;
+		padding: 0 5px;
+		border-radius: 4px;
+		background: var(--sdt-accent-soft);
+		color: var(--sdt-accent-text);
+		font-size: 11.5px;
+	}
+
+	.sdt-tok-summary {
+		color: var(--sdt-text-faint);
+		font-style: italic;
+
+		&:hover {
+			color: var(--sdt-text-muted);
+			text-decoration: underline;
+		}
+	}
+
+	/* WP_Query args */
+
+	.sdt-kv {
+		width: 100%;
+		border-collapse: collapse;
+		font-family: var(--sdt-mono);
+		font-size: 12.5px;
+
+		th,
+		td {
+			padding: 7px 18px;
+			border-bottom: 1px solid var(--sdt-border);
+			text-align: left;
+			vertical-align: top;
+		}
+
+		th {
+			width: 34%;
+			color: var(--sdt-syn-key);
+			font-weight: 400;
+			white-space: nowrap;
+		}
+
+		td {
+			overflow-wrap: anywhere;
+		}
+	}
+
+	/* Trace */
+
+	.sdt-trace {
+		padding: 10px 0 24px;
+		font-size: 12.5px;
+
+		li {
+			display: flex;
+			align-items: flex-start;
+			gap: 0;
+			padding: 6px 18px 6px 0;
+
+			&.is-caller {
+				background: var(--sdt-accent-soft);
+			}
+
+			.sdt-gutter-num {
+				font-family: var(--sdt-mono);
+			}
+
+			.sdt-chip {
+				margin-left: auto;
+			}
+		}
+
+		&__frame {
+			display: flex;
+			flex-direction: column;
+			min-width: 0;
+			padding-right: 12px;
+		}
+
+		&__call {
+			font-family: var(--sdt-mono);
+			overflow-wrap: anywhere;
+		}
+
+		&__file {
+			color: var(--sdt-text-muted);
+			font-family: var(--sdt-mono);
+			overflow-wrap: anywhere;
+		}
+	}
+
+	/* Responsive */
+
+	@media (max-width: 1180px) {
+		.sdt-panes {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		.sdt-pane {
+			border-right: 0;
+			border-bottom: 1px solid var(--sdt-border);
+		}
+	}
+
+	@media (max-width: 782px) {
+		.sdt-header__title {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0;
+		}
+
+		.sdt-body {
+			display: flex;
+			flex-direction: column;
+			overflow-y: auto;
+		}
+
+		.sdt-list {
+			flex: none;
+			max-height: 32vh;
+			border-right: 0;
+			border-bottom: 1px solid var(--sdt-border);
+		}
+
+		.sdt-detail {
+			flex: none;
+		}
+
+		.sdt-detail__head {
+			flex-direction: column;
+			padding-left: 16px;
+		}
+
+		.sdt-panes {
+			grid-template-rows: auto auto;
+		}
+
+		.sdt-pane__body {
+			max-height: 60vh;
+		}
 	}
 }
 
-.vip-search-dev-tools-ab {
-	.ab-item {
-		display: none !important;
-	}
-}
-
-.main_caption {
-	margin-bottom: 4px;
+.sdt[data-theme='dark'] {
+	--sdt-bg: #1b1917;
+	--sdt-bg-subtle: #211f1c;
+	--sdt-bg-raised: #2a2724;
+	--sdt-bg-hover: #26231f;
+	--sdt-bg-selected: #362b1f;
+	--sdt-border: #34302b;
+	--sdt-border-strong: #4a443d;
+	--sdt-text: #eeeae5;
+	--sdt-text-muted: #aaa29a;
+	--sdt-text-faint: #9a918a;
+	--sdt-accent: #d8a45f;
+	--sdt-accent-hover: #e6b876;
+	--sdt-accent-text: #e2b373;
+	--sdt-accent-contrast: #1b1917;
+	--sdt-accent-soft: #3d3020;
+	--sdt-good: #5fcf92;
+	--sdt-good-soft: rgba(62, 185, 116, 0.16);
+	--sdt-warn: #f0b25a;
+	--sdt-bad: #ff7d72;
+	--sdt-bad-soft: rgba(242, 64, 51, 0.18);
+	--sdt-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.4);
+	--sdt-syn-key: #eba77a;
+	--sdt-syn-string: #7cc4e2;
+	--sdt-syn-number: #f38d5f;
+	--sdt-syn-bool: #b6a8ff;
+	--sdt-syn-punct: #8f877f;
+	color-scheme: dark;
 }

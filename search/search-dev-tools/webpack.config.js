@@ -6,6 +6,16 @@ const CssMinimizerPlugin = require( 'css-minimizer-webpack-plugin' );
 const HtmlWebpackPlugin = require( 'html-webpack-plugin' );
 const { CleanWebpackPlugin } = require( 'clean-webpack-plugin' );
 
+const postcssLoader = {
+	loader: 'postcss-loader',
+	options: {
+		sourceMap: true,
+		postcssOptions: {
+			config: resolve( __dirname ),
+		},
+	},
+};
+
 module.exports = function( env ) {
 	const dev = ( env.WEBPACK_WATCH || env.WEBPACK_SERVE ) && ! env.production;
 
@@ -66,60 +76,34 @@ module.exports = function( env ) {
 						{
 							loader: 'sass-loader',
 							options: {
-								sourceMap: true,
-								additionalData: `@use "${resolve(__dirname, 'src/style/mixins.scss')}" as *;`,
+								sourceMap: dev,
+								// The panel's CSS ships as a string inside bundle.js, which the CSS minimizer doesn't see.
+								sassOptions: { style: dev ? 'expanded' : 'compressed' },
 							},
 						},
 					],
 				},
 				{
 					test: /\.s[ac]ss$/,
-					include: resolve( join( __dirname, 'src', 'components' ) ),
-					use: [
-						dev ? 'style-loader' : MiniCssExtractPlugin.loader,
+					oneOf: [
 						{
-							loader: 'css-loader',
-							options: {
-								modules: {
-									localIdentName: '[local]__[hash:base64:5]',
-								},
-								importLoaders: 1,
-								sourceMap: true,
-							},
+							// `?shadow`: the panel's styles as a string, injected into its shadow root (see app.js).
+							resourceQuery: /shadow/,
+							use: [
+								{ loader: 'css-loader', options: { exportType: 'string', importLoaders: 1 } },
+								postcssLoader,
+							],
 						},
 						{
-							loader: 'postcss-loader',
-							options: {
-								sourceMap: true,
-								postcssOptions: {
-									config: resolve( __dirname ),
-								},
-							},
+							// Global styles (the Admin Bar button), extracted to bundle.css.
+							use: [
+								dev ? 'style-loader' : MiniCssExtractPlugin.loader,
+								{ loader: 'css-loader', options: { sourceMap: true } },
+								postcssLoader,
+							],
+							sideEffects: true,
 						},
 					],
-				},
-				{
-					test: /\.s[ac]ss$/,
-					exclude: resolve( join( __dirname, 'src', 'components' ) ),
-					use: [
-						dev ? 'style-loader' : MiniCssExtractPlugin.loader,
-						{
-							loader: 'css-loader',
-							options: {
-								sourceMap: true,
-							},
-						},
-						{
-							loader: 'postcss-loader',
-							options: {
-								sourceMap: true,
-								postcssOptions: {
-									config: resolve( __dirname ),
-								},
-							},
-						},
-					],
-					sideEffects: true,
 				},
 				{
 					test: /\.svg(\?.*)?$/iu, // eslint-disable-line security/detect-unsafe-regex
