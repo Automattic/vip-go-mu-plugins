@@ -11,7 +11,7 @@ require_once __DIR__ . '/../../../../search/search.php';
 /**
  * Boots a fresh, non-singleton Search instance for a test.
  *
- * The caller still clears Constant_Mocker in tearDown().
+ * Constant_Mocker is cleared after every test by VIP_Test_Listener.
  */
 trait Search_Test_Bootstrap {
 	/**
