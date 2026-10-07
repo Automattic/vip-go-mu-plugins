@@ -1,11 +1,9 @@
 <?php
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-
 namespace Automattic\VIP\Files\Acl;
 
 use Automattic\Test\Constant_Mocker;
-use ErrorException;
+use Automattic\Test\Utils\Captures_Errors;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 
@@ -16,33 +14,28 @@ require_once __DIR__ . '/../../../files/acl/acl.php';
  * @property WP_UnitTest_Factory $factory
  */
 class VIP_Files_Acl_Test extends WP_UnitTestCase {
-	private $original_error_reporting;
+	use Captures_Errors;
+
+	/** @var int[] Subsites shared by the multisite path tests. */
+	private static $subsite_ids = [];
+
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {
+		if ( is_multisite() ) {
+			self::$subsite_ids = $factory->blog->create_many( 2 );
+		}
+	}
+
+	public static function wpTearDownAfterClass() {
+		foreach ( self::$subsite_ids as $subsite_id ) {
+			wp_delete_site( $subsite_id );
+		}
+
+		self::$subsite_ids = [];
+	}
 
 	public function setUp(): void {
 		parent::setUp();
 		header_remove();
-
-		Constant_Mocker::clear();
-
-		$this->original_error_reporting = error_reporting();
-
-		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
-			}
-
-			return false;
-		}, E_USER_WARNING );
-	}
-
-	public function tearDown(): void {
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
-		Constant_Mocker::clear();
-		parent::tearDown();
 	}
 
 	public function test__maybe_load_restrictions__no_constant_and_no_options() {
@@ -53,21 +46,12 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
-	public function test__maybe_load_restrictions__no_constant_and_with_one_option__warning() {
-		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
-
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionMessage( 'File ACL restrictions are enabled without server configs' );
-		$this->expectExceptionCode( E_USER_WARNING );
-
-		maybe_load_restrictions();
-	}
-
 	public function test__maybe_load_restrictions__no_constant_and_with_one_option() {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
 		update_option( 'vip_files_acl_restrict_all_enabled', 1 );
 
-		maybe_load_restrictions();
+		[ , $warnings ] = $this->capture_errors( __NAMESPACE__ . '\maybe_load_restrictions' );
+
+		self::assertSame( [ 'File ACL restrictions are enabled without server configs (missing `VIP_FILES_ACL_ENABLED` constant).' ], $warnings );
 		self::assertFalse( has_filter( 'vip_files_acl_file_visibility' ) );
 	}
 
@@ -92,18 +76,19 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
 	}
 
-	public function test__maybe_load_restrictions__constant_and_restrict_all_option_false() {
-		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
-		update_option( 'vip_files_acl_restrict_all_enabled', false );
-
-		maybe_load_restrictions();
-
-		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+	public function data_provider__maybe_load_restrictions__option_false() {
+		return [
+			'restrict all'         => [ 'vip_files_acl_restrict_all_enabled' ],
+			'restrict unpublished' => [ 'vip_files_acl_restrict_unpublished_enabled' ],
+		];
 	}
 
-	public function test__maybe_load_restrictions__constant_and_restrict_unpublished_option_false() {
+	/**
+	 * @dataProvider data_provider__maybe_load_restrictions__option_false
+	 */
+	public function test__maybe_load_restrictions__constant_and_option_false( $option_name ) {
 		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
-		update_option( 'vip_files_acl_restrict_unpublished_enabled', false );
+		update_option( $option_name, false );
 
 		maybe_load_restrictions();
 
@@ -208,17 +193,10 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertContains( sprintf( 'X-Private: %s', $private_header_value ), $headers, 'Sent headers do not include X-Private header or its value is unexpected', true );
 	}
 
-	public function test__send_visibility_headers__invalid_visibility__warning() {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionMessage( 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' );
-
-		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
-	}
-
 	public function test__send_visibility_headers__invalid_visibility() {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
-		send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' );
+		[ , $warnings ] = $this->capture_errors( fn() => send_visibility_headers( 'NOT_A_VISIBILITY', '/wp-content/uploads/invalid.jpg' ) );
 
+		self::assertSame( [ 'Invalid file visibility (NOT_A_VISIBILITY) ACL set for /wp-content/uploads/invalid.jpg' ], $warnings );
 		self::assertEquals( 500, http_response_code(), 'Status code does not match expected' );
 
 		$headers = headers_list();
@@ -240,67 +218,22 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
 	}
 
-	public function test__is_valid_path_for_site__multisite_main_site_can_access_self_path_with_vip_protocol() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		$expected_is_allowed = true;
-
-		add_filter( 'upload_dir', function ( $params ) {
-			$params['path']    = 'vip:/' . $params['path'];
-			$params['basedir'] = 'vip:/' . $params['basedir'];
-			return $params;
-		} );
-
-		$file_path = '2021/01/kittens.jpg';
-
-		$actual_is_allowed = is_valid_path_for_site( $file_path );
-
-		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+	public function data_provider__is_valid_path_for_site__multisite_main_site() {
+		return [
+			'self path'    => [ '2021/01/kittens.jpg', true ],
+			// Can access other paths from basedir, as long as they don't start with `sites/`.
+			'basedir path' => [ 'cache/css/cats.css', true ],
+			'subsite path' => [ 'sites/2/2021/01/dogs.gif', false ],
+		];
 	}
 
-	public function test__is_valid_path_for_site__multisite_main_site_can_access_self_path() {
+	/**
+	 * @dataProvider data_provider__is_valid_path_for_site__multisite_main_site
+	 */
+	public function test__is_valid_path_for_site__multisite_main_site( $file_path, $expected_is_allowed ) {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();
 		}
-
-		$expected_is_allowed = true;
-
-		$file_path = '2021/01/kittens.jpg';
-
-		$actual_is_allowed = is_valid_path_for_site( $file_path );
-
-		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
-	}
-
-	public function test__is_valid_path_for_site__multisite_main_site_can_access_basedir_path() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		// Can access other paths from basedir, as long as they don't contain `/sites/
-		$expected_is_allowed = true;
-
-		$file_path = 'cache/css/cats.css';
-
-		$actual_is_allowed = is_valid_path_for_site( $file_path );
-
-		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
-	}
-
-	public function test__is_valid_path_for_site__multisite_main_site_cannot_access_subsite_path() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		$expected_is_allowed = false;
-
-		// Get file path for a subsite
-		$subsite_id = $this->factory()->blog->create();
-		$file_path  = sprintf( 'sites/%d/2021/01/dogs.gif', $subsite_id );
-
-		// Stay in main site context
 
 		$actual_is_allowed = is_valid_path_for_site( $file_path );
 
@@ -315,7 +248,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$expected_is_allowed = true;
 
 		// Get file path for a subsite
-		$subsite_id = $this->factory()->blog->create();
+		$subsite_id = self::$subsite_ids[0];
 		$file_path  = sprintf( 'sites/%d/2021/01/hamster.gif', $subsite_id );
 
 		// Run test in subsite context
@@ -337,58 +270,31 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$file_path = '2021/01/parakeets.gif';
 
 		// Run test in a subsite context
-		$subsite_id = $this->factory()->blog->create();
-		switch_to_blog( $subsite_id );
+		switch_to_blog( self::$subsite_ids[0] );
 
 		$actual_is_allowed = is_valid_path_for_site( $file_path );
 
 		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
 	}
 
-	public function test__is_valid_path_for_site__multisite_subsite_cannot_access_another_subsite_path() {
+	public function test__is_valid_path_for_site__multisite_subsite_another_subsite_path() {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped();
 		}
 
-		$expected_is_allowed = false;
-
-		// Create two subsites
-		$first_subsite_id  = $this->factory()->blog->create();
-		$second_subsite_id = $this->factory()->blog->create();
+		[ $first_subsite_id, $second_subsite_id ] = self::$subsite_ids;
 
 		// Get file path from second
 		$file_path = sprintf( 'sites/%d/2021/01/parakeets.gif', $second_subsite_id );
 
-		// Restore first subsite
+		// Run test in the first subsite context
 		switch_to_blog( $first_subsite_id );
 
-		$actual_is_allowed = is_valid_path_for_site( $file_path );
-
-		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
-	}
-
-	public function test__is_valid_path_for_site__multisite_subsite_can_access_other_subsite_with_filter() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
-
-		$expected_is_allowed = true;
+		$this->assertFalse( is_valid_path_for_site( $file_path ), 'Subsite must not access another subsite path' );
 
 		add_filter( 'vip_files_acl_is_valid_path_for_site', '__return_true' );
 
-		// Create two subsites
-		$first_subsite_id  = $this->factory()->blog->create();
-		$second_subsite_id = $this->factory()->blog->create();
-
-		// Get file path from second
-		$file_path = sprintf( 'sites/%d/2021/01/parakeets.gif', $second_subsite_id );
-
-		// Restore first subsite
-		switch_to_blog( $first_subsite_id );
-
-		$actual_is_allowed = is_valid_path_for_site( $file_path );
-
-		$this->assertEquals( $expected_is_allowed, $actual_is_allowed );
+		$this->assertTrue( is_valid_path_for_site( $file_path ), 'The filter must be able to allow another subsite path' );
 	}
 
 	public function test__is_valid_path_for_site__multisite_subsite_can_access_other_paths_with_filter() {
@@ -414,8 +320,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		);
 
 		// On a subsite, paths outside `sites/<id>/` are only valid because of the filter.
-		$subsite_id = $this->factory()->blog->create();
-		switch_to_blog( $subsite_id );
+		switch_to_blog( self::$subsite_ids[0] );
 
 		$file_path = 'custom-uploads/parakeets.gif';
 

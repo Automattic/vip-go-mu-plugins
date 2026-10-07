@@ -28,18 +28,12 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_concurrency_limiting
+	 * @dataProvider data_concurrent_requests
 	 * @param string $backend
 	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
 	 */
-	public function test_concurrency_limiting( $backend ): void {
-		if ( ! $backend::is_supported() ) {
-			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
-		}
-
-		add_filter( 'vip_search_concurrency_limit_backend', function () use ( $backend ) {
-			return $backend;
-		} );
+	public function test_concurrent_requests( $backend, string $path, bool $limited ): void {
+		$this->use_backend( $backend );
 
 		add_filter( 'ep_intercept_remote_request', '__return_true' );
 		add_filter( 'vip_search_max_concurrent_requests', function () {
@@ -58,23 +52,27 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 		// This is how we simulate a concurrent request
 		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
 		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
-		$send_request = function () use ( $es, &$response2, &$send_request, $backend ) {
+		$send_request = function () use ( $es, $path, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );
 			$client2   = new Concurrency_Limiter();
-			$response2 = $es->remote_request( '/_search' );
+			$response2 = $es->remote_request( $path );
 			self::assertInstanceOf( $backend, $client2->get_backend() );
 			$client2->cleanup();
 		};
 
 		add_action( 'ep_remote_request', $send_request, 0 );
 
-		$response1 = $es->remote_request( '/_search' );
+		$response1 = $es->remote_request( $path );
 		$client1->cleanup();
 
 		self::assertIsArray( $response1 );
-		self::assertInstanceOf( WP_Error::class, $response2 );
-		/** @var WP_Error $response2 */
-		self::assertSame( 429, $response2->get_error_code() );
+		if ( $limited ) {
+			self::assertInstanceOf( WP_Error::class, $response2 );
+			/** @var WP_Error $response2 */
+			self::assertSame( 429, $response2->get_error_code() );
+		} else {
+			self::assertIsArray( $response2 );
+		}
 	}
 
 	/**
@@ -83,60 +81,12 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
 	 */
 	public function test__get_value( $backend ) {
-		if ( ! $backend::is_supported() ) {
-			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
-		}
+		$this->use_backend( $backend );
 
-		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 		$client1 = new Concurrency_Limiter();
 		$backend = $client1->get_backend();
 		$backend->inc_value();
 		self::assertSame( 1, $backend->get_value() );
-	}
-
-	/**
-	 * @dataProvider data_concurrency_limiting
-	 * @param string $backend
-	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
-	 */
-	public function test__index_is_not_limited( $backend ): void {
-		if ( ! $backend::is_supported() ) {
-			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
-		}
-
-		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
-		add_filter( 'ep_intercept_remote_request', '__return_true' );
-		add_filter( 'vip_search_max_concurrent_requests', function () {
-			return 1;
-		} );
-
-		add_filter( 'ep_do_intercept_request', [ __CLASS__, 'request_interceptor' ], 50 );
-
-		$es      = new Elasticsearch();
-		$client1 = new Concurrency_Limiter();
-
-		self::assertInstanceOf( $backend, $client1->get_backend() );
-
-		$response2 = null;
-
-		// This is how we simulate a concurrent request
-		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
-		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
-		$send_request = function () use ( $es, &$response2, &$send_request, $backend ) {
-			remove_action( 'ep_remote_request', $send_request, 0 );
-			$client2   = new Concurrency_Limiter();
-			$response2 = $es->remote_request( '/_index' );
-			self::assertInstanceOf( $backend, $client2->get_backend() );
-			$client2->cleanup();
-		};
-
-		add_action( 'ep_remote_request', $send_request, 0 );
-
-		$response1 = $es->remote_request( '/_index' );
-		$client1->cleanup();
-
-		self::assertIsArray( $response1 );
-		self::assertIsArray( $response2 );
 	}
 
 	/**
@@ -148,6 +98,29 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 			'APCu'        => [ APCu_Backend::class ],
 			'ObjectCache' => [ Object_Cache_Backend::class ],
 		];
+	}
+
+	/**
+	 * Search requests are limited, indexing requests are not.
+	 *
+	 * @return iterable
+	 */
+	public function data_concurrent_requests(): iterable {
+		foreach ( $this->data_concurrency_limiting() as $name => list( $backend ) ) {
+			yield "{$name} search" => [ $backend, '/_search', true ];
+			yield "{$name} index"  => [ $backend, '/_index', false ];
+		}
+	}
+
+	/**
+	 * @psalm-param class-string<\Automattic\VIP\Search\ConcurrencyLimiter\BackendInterface> $backend
+	 */
+	private function use_backend( string $backend ): void {
+		if ( ! $backend::is_supported() ) {
+			self::markTestSkipped( sprintf( 'Backend "%s" is not supported', $backend ) );
+		}
+
+		add_filter( 'vip_search_concurrency_limit_backend', fn() => $backend );
 	}
 
 	/**

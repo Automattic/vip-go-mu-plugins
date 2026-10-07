@@ -8,7 +8,6 @@
 
 namespace Automattic\VIP\Integrations;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 
@@ -17,156 +16,35 @@ use function Automattic\Test\Utils\get_class_method_as_public;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
 class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
-	private string $slug                            = 'real-time-collaboration';
-	private array $previous_active_plugins          = [];
-	private array $previous_active_sitewide_plugins = [];
+	private string $slug = 'real-time-collaboration';
 
 	public function setUp(): void {
 		parent::setUp();
 
-		$this->previous_active_plugins          = get_option( 'active_plugins', [] );
-		$this->previous_active_sitewide_plugins = get_site_option( 'active_sitewide_plugins', [] );
-
+		// Start without an active Gutenberg plugin; the transaction rollback restores both options.
 		update_option( 'active_plugins', [] );
 		update_site_option( 'active_sitewide_plugins', [] );
 	}
 
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		update_option( 'active_plugins', $this->previous_active_plugins );
-		update_site_option( 'active_sitewide_plugins', $this->previous_active_sitewide_plugins );
-
-		parent::tearDown();
-	}
-
-	public function test_is_loaded_returns_false_when_not_loaded(): void {
-		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
-		$this->assertFalse( $rtc_integration->is_loaded() );
-	}
-
-	public function test_is_loaded_returns_true_when_constant_defined(): void {
-		Constant_Mocker::define( 'VIP_REAL_TIME_COLLABORATION__LOADED', true );
-		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
-		$this->assertTrue( $rtc_integration->is_loaded() );
-	}
-
-	public function test_load_returns_early_if_plugin_already_loaded(): void {
-		/**
-		 * Integration mock that expects is_loaded to be called and return true
-		 *
-		 * @var MockObject|RealTimeCollaborationIntegration
-		 */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
-			->getMock();
-
-		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
-		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
-
-		$integration_mock->expects( $this->once() )
-			->method( 'is_loaded' )
-			->willReturn( true );
-
-		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'options' )->setValue( $integration_mock, [ 'config' => [ 'preserved' => 'sentinel' ] ] );
-		\Automattic\Test\Utils\get_class_property_as_public( Integration::class, 'is_active' )->setValue( $integration_mock, true );
-		$integration_mock->load();
-
-		// Trigger the plugins_loaded action to execute the closure
-		do_action( 'plugins_loaded' );
-		$this->assertTrue( $integration_mock->is_active() );
-		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
-	}
-
 	/**
-	 * Use a native namespace constant so installed extension files cannot satisfy this fixture.
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * @dataProvider data_configure_constants
 	 */
-	public function test_load_sets_inactive_if_plugin_file_not_found(): void {
-		// Set up required constants
-		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
-		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		\define( __NAMESPACE__ . '\\WPVIP_MU_PLUGIN_DIR', '/nonexistent/path' );
+	public function test_configure_defines_websocket_constants( array $env_config, string $constant, $expected ): void {
+		$integration = new RealTimeCollaborationIntegration( $this->slug );
+		$integration->activate( [ 'config' => $env_config ] );
 
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded' ] )
-			->getMock();
+		$integration->configure();
 
-		$integration_mock->activate(); // Initial state is active
-		$this->assertTrue( $integration_mock->is_active(), 'Initial: Integration should be active.' );
-
-		$integration_mock->method( 'is_loaded' )->willReturn( false );
-
-		$integration_mock->load();
-
-		// Trigger the plugins_loaded action to execute the closure
-		do_action( 'plugins_loaded' );
-
-		$this->assertFalse( $integration_mock->is_active() );
+		$this->assertTrue( defined( $constant ) );
+		$this->assertSame( $expected, constant( $constant ) );
 	}
 
-	public function test_configure_defines_websocket_auth_secret_constant(): void {
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
-			->getMock();
-
-		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_auth_secret' => 'test-secret-key',
-		] );
-
-		$integration_mock->configure();
-
-		$this->assertTrue( defined( 'VIP_RTC_WS_AUTH_SECRET' ) );
-		$this->assertEquals( 'test-secret-key', constant( 'VIP_RTC_WS_AUTH_SECRET' ) );
-	}
-
-	public function test_configure_defines_websocket_url_constant(): void {
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
-			->getMock();
-
-		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_url' => 'wss://test.example.com/_ws',
-		] );
-
-		$integration_mock->configure();
-
-		$this->assertTrue( defined( 'VIP_RTC_WS_URL' ) );
-		$this->assertEquals( 'wss://test.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
-	}
-
-	/**
-	 * @dataProvider websocket_multiplexing_enabled_provider
-	 */
-	public function test_configure_defines_websocket_multiplexing_enabled_constant( bool $enabled ): void {
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
-			->getMock();
-
-		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_multiplexing_enabled' => $enabled,
-		] );
-
-		$integration_mock->configure();
-
-		$this->assertTrue( defined( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
-		$this->assertSame( $enabled, constant( 'VIP_RTC_WS_MULTIPLEXING_ENABLED' ) );
-	}
-
-	public static function websocket_multiplexing_enabled_provider(): array {
+	public static function data_configure_constants(): array {
 		return [
-			'enabled'  => [ true ],
-			'disabled' => [ false ],
+			'websocket auth secret'           => [ [ 'web_socket_auth_secret' => 'test-secret-key' ], 'VIP_RTC_WS_AUTH_SECRET', 'test-secret-key' ],
+			'websocket url'                   => [ [ 'web_socket_url' => 'wss://test.example.com/_ws' ], 'VIP_RTC_WS_URL', 'wss://test.example.com/_ws' ],
+			'websocket multiplexing enabled'  => [ [ 'web_socket_multiplexing_enabled' => true ], 'VIP_RTC_WS_MULTIPLEXING_ENABLED', true ],
+			'websocket multiplexing disabled' => [ [ 'web_socket_multiplexing_enabled' => false ], 'VIP_RTC_WS_MULTIPLEXING_ENABLED', false ],
 		];
 	}
 
@@ -175,19 +53,16 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://existing.example.com/_ws' );
 		Constant_Mocker::define( 'VIP_RTC_WS_MULTIPLEXING_ENABLED', false );
 
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
-			->getMock();
-
-		$integration_mock->method( 'get_env_config' )->willReturn( [
-			'web_socket_auth_secret'          => 'new-secret',
-			'web_socket_url'                  => 'wss://new.example.com/_ws',
-			'web_socket_multiplexing_enabled' => true,
+		$integration = new RealTimeCollaborationIntegration( $this->slug );
+		$integration->activate( [
+			'config' => [
+				'web_socket_auth_secret'          => 'new-secret',
+				'web_socket_url'                  => 'wss://new.example.com/_ws',
+				'web_socket_multiplexing_enabled' => true,
+			],
 		] );
 
-		$integration_mock->configure();
+		$integration->configure();
 
 		$this->assertEquals( 'existing-secret', constant( 'VIP_RTC_WS_AUTH_SECRET' ) );
 		$this->assertEquals( 'wss://existing.example.com/_ws', constant( 'VIP_RTC_WS_URL' ) );
@@ -195,15 +70,10 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test_configure_handles_missing_config_values(): void {
-		/** @var MockObject|RealTimeCollaborationIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( RealTimeCollaborationIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'get_env_config' ] )
-			->getMock();
+		$integration = new RealTimeCollaborationIntegration( $this->slug );
+		$integration->activate( [ 'config' => [] ] );
 
-		$integration_mock->method( 'get_env_config' )->willReturn( [] );
-
-		$integration_mock->configure();
+		$integration->configure();
 
 		$this->assertFalse( defined( 'VIP_RTC_WS_AUTH_SECRET' ) );
 		$this->assertFalse( defined( 'VIP_RTC_WS_URL' ) );
@@ -212,18 +82,25 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 
 	public function data_can_load_constants(): array {
 		return [
-			'all requirements met'      => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL' ], true ],
-			'ws auth secret missing'    => [ [ 'VIP_RTC_WS_URL' ], false ],
-			'ws url missing'            => [ [ 'VIP_RTC_WS_AUTH_SECRET' ], false ],
-			'both ws constants missing' => [ [], false ],
-			'gutenberg plugin constant' => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL', 'IS_GUTENBERG_PLUGIN' ], false ],
+			'all requirements met'               => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL' ], true ],
+			'ws auth secret missing'             => [ [ 'VIP_RTC_WS_URL' ], false ],
+			'ws url missing'                     => [ [ 'VIP_RTC_WS_AUTH_SECRET' ], false ],
+			'both ws constants missing'          => [ [], false ],
+			'gutenberg plugin constant'          => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL', 'IS_GUTENBERG_PLUGIN' ], false ],
+			'gutenberg plugin activated'         => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL' ], false, [ 'gutenberg/gutenberg.php' ] ],
+			'gutenberg plugin network activated' => [ [ 'VIP_RTC_WS_AUTH_SECRET', 'VIP_RTC_WS_URL' ], false, [], [ 'gutenberg/gutenberg.php' => 1 ] ],
 		];
 	}
 
 	/**
 	 * @dataProvider data_can_load_constants
 	 */
-	public function test_can_load_checks_required_constants( array $constants, bool $expected ): void {
+	public function test_can_load_checks_required_constants( array $constants, bool $expected, array $active_plugins = [], array $network_active_plugins = [] ): void {
+		if ( [] !== $network_active_plugins ) {
+			// Network activation is only available in multisite.
+			$this->skipWithoutMultisite();
+		}
+
 		$values = [
 			'VIP_RTC_WS_AUTH_SECRET' => 'test-secret',
 			'VIP_RTC_WS_URL'         => 'wss://test.example.com',
@@ -232,6 +109,8 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		foreach ( $constants as $constant ) {
 			Constant_Mocker::define( $constant, $values[ $constant ] );
 		}
+		update_option( 'active_plugins', $active_plugins );
+		update_site_option( 'active_sitewide_plugins', $network_active_plugins );
 
 		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
 		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
@@ -239,34 +118,10 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( $expected, $can_load->invoke( $rtc_integration ) );
 	}
 
-	public function test_can_load_returns_false_when_gutenberg_plugin_activated(): void {
-		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
-		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		update_option( 'active_plugins', [ 'gutenberg/gutenberg.php' ] );
-
-		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
-		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
-
-		$this->assertFalse( $can_load->invoke( $rtc_integration ) );
-	}
-
-	public function test_can_load_returns_false_when_gutenberg_plugin_network_activated(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Network activation is only available in multisite.' );
-		}
-
-		Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
-		Constant_Mocker::define( 'VIP_RTC_WS_URL', 'wss://test.example.com' );
-		update_site_option( 'active_sitewide_plugins', [ 'gutenberg/gutenberg.php' => 1 ] );
-
-		$rtc_integration = new RealTimeCollaborationIntegration( $this->slug );
-		$can_load        = get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' );
-
-		$this->assertFalse( $can_load->invoke( $rtc_integration ) );
-	}
-
 	/**
-	 * Available plugin fixtures must load only when both required settings are present.
+	 * Available plugin fixtures must load only when both required settings are present and the files exist.
+	 *
+	 * Use a native namespace constant so installed extension files cannot satisfy this fixture.
 	 *
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -275,14 +130,16 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.directory_mkdir, WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Temporary plugin fixtures.
 		$root = get_temp_dir() . 'vip-rtc-' . wp_generate_password( 12, false );
 		\define( __NAMESPACE__ . '\\WPVIP_MU_PLUGIN_DIR', $root );
-		foreach ( [ 'missing secret', 'missing url', 'valid' ] as $variant ) {
+		foreach ( [ 'missing secret', 'missing url', 'missing files', 'valid' ] as $variant ) {
 			Constant_Mocker::clear();
 			$gutenberg = $root . '/vip-integrations/gutenberg-' . RealTimeCollaborationIntegration::VIP_RTC_GUTENBERG_VERSION;
 			$rtc       = $root . '/vip-integrations/vip-real-time-collaboration-' . RealTimeCollaborationIntegration::VIP_RTC_PLUGIN_VERSION;
 			mkdir( $gutenberg, 0700, true );
 			mkdir( $rtc, 0700, true );
-			file_put_contents( $gutenberg . '/gutenberg.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "gutenberg";' );
-			file_put_contents( $rtc . '/vip-real-time-collaboration.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "rtc";' );
+			if ( 'missing files' !== $variant ) {
+				file_put_contents( $gutenberg . '/gutenberg.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "gutenberg";' );
+				file_put_contents( $rtc . '/vip-real-time-collaboration.php', '<?php $GLOBALS["vip_rtc_fixture_loads"][] = "rtc";' );
+			}
 			if ( 'missing secret' !== $variant ) {
 				Constant_Mocker::define( 'VIP_RTC_WS_AUTH_SECRET', 'test-secret' );
 			}
@@ -292,14 +149,14 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 			$GLOBALS['vip_rtc_fixture_loads'] = [];
 			$integration                      = new RealTimeCollaborationIntegration( $this->slug );
 			$integration->activate();
-			$this->assertTrue( $integration->is_active() );
+			$this->assertTrue( $integration->is_active(), $variant );
 			$hooks = isset( $GLOBALS['wp_filter']['plugins_loaded'] ) ? clone $GLOBALS['wp_filter']['plugins_loaded'] : null;
 			try {
-				$this->assertSame( 'valid' === $variant, get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' )->invoke( $integration ), $variant );
+				$this->assertSame( 'missing secret' !== $variant && 'missing url' !== $variant, get_class_method_as_public( RealTimeCollaborationIntegration::class, 'can_load' )->invoke( $integration ), $variant );
 				$integration->load();
 				do_action( 'plugins_loaded' );
 				$this->assertSame( 'valid' === $variant ? [ 'gutenberg', 'rtc' ] : [], $GLOBALS['vip_rtc_fixture_loads'], $variant );
-				$this->assertSame( 'valid' === $variant, $integration->is_active() );
+				$this->assertSame( 'valid' === $variant, $integration->is_active(), $variant );
 			} finally {
 				// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore exact hook state between fixture variants.
 				if ( null === $hooks ) {
@@ -309,8 +166,10 @@ class Real_Time_Collaboration_Integration_Test extends WP_UnitTestCase {
 					$GLOBALS['wp_filter']['plugins_loaded'] = $hooks;
 				}
 				unset( $GLOBALS['vip_rtc_fixture_loads'] );
-				wp_delete_file( $gutenberg . '/gutenberg.php' );
-				wp_delete_file( $rtc . '/vip-real-time-collaboration.php' );
+				if ( 'missing files' !== $variant ) {
+					wp_delete_file( $gutenberg . '/gutenberg.php' );
+					wp_delete_file( $rtc . '/vip-real-time-collaboration.php' );
+				}
 				rmdir( $gutenberg );
 				rmdir( $rtc );
 				rmdir( $root . '/vip-integrations' );

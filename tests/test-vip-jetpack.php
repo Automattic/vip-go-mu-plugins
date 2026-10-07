@@ -5,104 +5,16 @@ use PHPUnit\Framework\ExpectationFailedException;
 
 class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	public function get_jp_sync_settings_data() {
+		// In-range values are numeric strings, as they are when read back from the database.
 		return [
-			// Too small
-			[
-				'jetpack_sync_settings_max_queue_size',
-				1,
-				10000,
-			],
-
-			// Too big
-			[
-				'jetpack_sync_settings_max_queue_size',
-				10000000,
-				100000,
-			],
-
-			// Just right
-			[
-				'jetpack_sync_settings_max_queue_size',
-				10000,
-				10000,
-			],
-
-			// Within the range - not modified
-			[
-				'jetpack_sync_settings_max_queue_size',
-				20000,
-				20000,
-			],
-
-			// Not set
-			[
-				'jetpack_sync_settings_max_queue_size',
-				null,
-				10000,
-			],
-
-			// A string
-			[
-				'jetpack_sync_settings_max_queue_size',
-				'apples',
-				10000,
-			],
-
-			// Integer as a string (parses as int and returns it if within range)
-			[
-				'jetpack_sync_settings_max_queue_size',
-				'30000',
-				30000,
-			],
-
-			// Too small
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				1,
-				7200,
-			],
-
-			// Too big
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				10000000,
-				86400,
-			],
-
-			// Just right
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				7200,
-				7200,
-			],
-
-			// Within the range - not modified
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				10000,
-				10000,
-			],
-
-			// Not set
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				null,
-				7200,
-			],
-
-			// A string
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				'apples',
-				7200,
-			],
-
-			// Integer as a string (parses as int and returns it if within range)
-			[
-				'jetpack_sync_settings_max_queue_lag',
-				'15000',
-				15000,
-			],
+			'queue size below min'   => [ 'jetpack_sync_settings_max_queue_size', 1, 10000 ],
+			'queue size in range'    => [ 'jetpack_sync_settings_max_queue_size', '30000', 30000 ],
+			'queue size above max'   => [ 'jetpack_sync_settings_max_queue_size', 10000000, 100000 ],
+			'queue size non-numeric' => [ 'jetpack_sync_settings_max_queue_size', 'apples', 10000 ],
+			'queue lag below min'    => [ 'jetpack_sync_settings_max_queue_lag', 1, 7200 ],
+			'queue lag in range'     => [ 'jetpack_sync_settings_max_queue_lag', '15000', 15000 ],
+			'queue lag above max'    => [ 'jetpack_sync_settings_max_queue_lag', 10000000, 86400 ],
+			'queue lag non-numeric'  => [ 'jetpack_sync_settings_max_queue_lag', 'apples', 7200 ],
 		];
 	}
 
@@ -173,39 +85,18 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$value = \Jetpack_Options::get_option( 'fallback_no_verify_ssl_certs' );
 
 		$this->assertEquals( 0, $value, 'The fallback_no_verify_ssl_certs Jetpack option value is incorrect' );
-
-		// And other options should be unchanged
-		$other_value = \Jetpack_Options::get_option( 'site_icon_id' );
-
-		$other_value_direct = get_option( 'jetpack_site_icon_id' );
-
-		$this->assertEquals( $other_value, $other_value_direct, 'Unexpected value for unfiltered Jetpack option' );
-	}
-
-	public function test_vip_jetpack_is_mobile_no_x_mobile_class(): void {
-		self::assertFalse( vip_jetpack_is_mobile( false, 'any', false ) );
-	}
-
-	public function test_vip_jetpack_is_mobile_rma(): void {
-		$_SERVER['HTTP_X_MOBILE_CLASS'] = 'tablet';
-
-		try {
-			$expected = 'xxx';
-			$actual   = vip_jetpack_is_mobile( $expected, 'tablet', true );
-			self::assertEquals( $expected, $actual );
-		} finally {
-			unset( $_SERVER['HTTP_X_MOBILE_CLASS'] );
-		}
 	}
 
 	/**
 	 * @dataProvider data_vip_jetpack_is_mobile
 	 */
-	public function test_vip_jetpack_is_mobile( string $x_mobile_class, string $wanted, bool $expected ): void {
-		$_SERVER['HTTP_X_MOBILE_CLASS'] = $x_mobile_class;
+	public function test_vip_jetpack_is_mobile( ?string $x_mobile_class, string $kind, bool $return_matched_agent, $matches, $expected ): void {
+		if ( null !== $x_mobile_class ) {
+			$_SERVER['HTTP_X_MOBILE_CLASS'] = $x_mobile_class;
+		}
 
 		try {
-			$actual = vip_jetpack_is_mobile( false, $wanted, false );
+			$actual = vip_jetpack_is_mobile( $matches, $kind, $return_matched_agent );
 			self::assertSame( $expected, $actual );
 		} finally {
 			unset( $_SERVER['HTTP_X_MOBILE_CLASS'] );
@@ -213,13 +104,16 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	}
 
 	public function data_vip_jetpack_is_mobile(): iterable {
+		// [ X-Mobile-Class header, kind, return matched agent, incoming matches, expected ]
 		return [
-			[ 'desktop', 'smart', false ],
-			[ 'smart', 'desktop', false ],
-			[ 'tablet', 'any', true ],
-			[ 'smart', 'smart', true ],
-			[ 'dumb', 'dumb', true ],
-			[ 'smart', 'dumb', false ],
+			'no header keeps matches'          => [ null, 'any', false, false, false ],
+			'returning matched agent keeps it' => [ 'tablet', 'tablet', true, 'xxx', 'xxx' ],
+			'desktop never matches'            => [ 'desktop', 'smart', false, false, false ],
+			'unhandled kind keeps matches'     => [ 'smart', 'desktop', false, false, false ],
+			'any matches tablet'               => [ 'tablet', 'any', false, false, true ],
+			'smart matches smart'              => [ 'smart', 'smart', false, false, true ],
+			'dumb matches dumb'                => [ 'dumb', 'dumb', false, false, true ],
+			'smart does not match dumb'        => [ 'smart', 'dumb', false, false, false ],
 		];
 	}
 

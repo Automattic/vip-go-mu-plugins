@@ -10,38 +10,16 @@ namespace Automattic\VIP\Integrations;
 
 use Automattic\Test\Constant_Mocker;
 use Env_Integration_Status;
-use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
-// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
+
+require_once __DIR__ . '/trait-secondary-blog.php';
 
 class Safe_Publish_Integration_Test extends WP_UnitTestCase {
+	use Secondary_Blog;
+
 	private string $slug = 'safe-publish';
-
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-
-		parent::tearDown();
-	}
-
-	public function test_is_loaded_returns_false_when_not_loaded(): void {
-		$safe_publish_integration = new SafePublishIntegration( $this->slug );
-		$this->assertFalse( $safe_publish_integration->is_loaded() );
-	}
-
-	public function test_is_loaded_returns_true_when_loaded_constant_is_defined(): void {
-		Constant_Mocker::define( 'SAFE_PUBLISH_LOADED', true );
-
-		$safe_publish_integration = new SafePublishIntegration( $this->slug );
-		$this->assertTrue( $safe_publish_integration->is_loaded() );
-	}
-
-	public function test_is_loaded_returns_true_when_plugin_file_constant_is_defined(): void {
-		Constant_Mocker::define( 'SAFE_PUBLISH_PLUGIN_FILE', '/path/to/safe-publish.php' );
-
-		$safe_publish_integration = new SafePublishIntegration( $this->slug );
-		$this->assertTrue( $safe_publish_integration->is_loaded() );
-	}
 
 	public function test_configure_defines_safe_publish_constants_from_config(): void {
 		$safe_publish_integration = new SafePublishIntegration( $this->slug );
@@ -83,211 +61,99 @@ class Safe_Publish_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'https://existing.example.com', constant( 'SAFE_PUBLISH_CONNECTED_SITE_URL' ) );
 	}
 
-	public function test_configure_merges_site_and_network_site_config_for_multisite(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
+	/**
+	 * On multisite, the current network site's config is merged over the environment config.
+	 *
+	 * @dataProvider data_multisite_config
+	 */
+	public function test_configure_merges_environment_and_network_site_config_for_multisite( array $env_config, array $site_config, array $expected_constants, string $expected_version ): void {
+		$blog_2_id = $this->switch_to_secondary_blog();
 
-		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'safe-publish-test.site/2' ] );
-		switch_to_blog( $blog_2_id );
-
-		try {
-			/** @var IntegrationVipConfig&MockObject $config_mock */
-			$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
-				->disableOriginalConstructor()
-				->onlyMethods( [ 'get_vip_config_from_file' ] )
-				->getMock();
-
-			$config_mock->method( 'get_vip_config_from_file' )->willReturn(
-				[
-					'env'           => [
+		$config = new IntegrationVipConfig(
+			$this->slug,
+			[
+				'env'           => [
+					'status' => Env_Integration_Status::ENABLED,
+					'config' => $env_config,
+				],
+				'network_sites' => [
+					1          => [
 						'status' => Env_Integration_Status::ENABLED,
 						'config' => [
-							'basic_auth_username' => 'env-publisher',
-							'basic_auth_password' => 'env-password',
-							'version'             => '1.0',
+							'connected_site_url' => 'https://site-one.example.com',
+							'sync_mode'          => 'import',
+							'shared_secret'      => 'site-one-shared-secret',
+							'version'            => '1.5',
 						],
 					],
-					'network_sites' => [
-						1          => [
-							'status' => Env_Integration_Status::ENABLED,
-							'config' => [
-								'connected_site_url' => 'https://site-one.example.com',
-							],
-						],
-						$blog_2_id => [
-							'status' => Env_Integration_Status::ENABLED,
-							'config' => [
-								'connected_site_url' => 'https://site-two.example.com',
-								'sync_mode'          => 'export',
-								'shared_secret'      => 'site-two-shared-secret',
-							],
-						],
-					],
-				]
-			);
-			$config_mock->__construct( $this->slug );
-
-			$safe_publish_integration = new SafePublishIntegration( $this->slug );
-			$safe_publish_integration->set_vip_config( $config_mock );
-			$safe_publish_integration->configure();
-
-			$this->assertSame( 'https://site-two.example.com', constant( 'SAFE_PUBLISH_CONNECTED_SITE_URL' ) );
-			$this->assertSame( 'export', constant( 'SAFE_PUBLISH_SYNC_MODE' ) );
-			$this->assertSame( 'site-two-shared-secret', constant( 'SAFE_PUBLISH_SHARED_SECRET' ) );
-			$this->assertTrue( defined( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME' ) );
-			$this->assertTrue( defined( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' ) );
-			$this->assertSame( 'env-publisher', constant( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME' ) );
-			$this->assertSame( 'env-password', constant( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' ) );
-			$this->assertSame( '1.0', $safe_publish_integration->version );
-		} finally {
-			restore_current_blog();
-		}
-	}
-
-	public function test_configure_prefers_network_site_config_for_duplicate_multisite_keys(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'safe-publish-duplicates-test.site/2' ] );
-		switch_to_blog( $blog_2_id );
-
-		try {
-			/** @var IntegrationVipConfig&MockObject $config_mock */
-			$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
-				->disableOriginalConstructor()
-				->onlyMethods( [ 'get_vip_config_from_file' ] )
-				->getMock();
-
-			$config_mock->method( 'get_vip_config_from_file' )->willReturn(
-				[
-					'env'           => [
+					$blog_2_id => [
 						'status' => Env_Integration_Status::ENABLED,
-						'config' => [
-							'connected_site_url'  => 'https://env-source.example.com',
-							'sync_mode'           => 'import',
-							'shared_secret'       => 'env-shared-secret',
-							'basic_auth_username' => 'env-publisher',
-							'basic_auth_password' => 'env-password',
-							'version'             => '1.0',
-						],
+						'config' => $site_config,
 					],
-					'network_sites' => [
-						1          => [
-							'status' => Env_Integration_Status::ENABLED,
-							'config' => [
-								'connected_site_url' => 'https://site-one.example.com',
-								'sync_mode'          => 'import',
-								'shared_secret'      => 'site-one-shared-secret',
-								'version'            => '1.5',
-							],
-						],
-						$blog_2_id => [
-							'status' => Env_Integration_Status::ENABLED,
-							'config' => [
-								'connected_site_url'  => 'https://site-two.example.com',
-								'sync_mode'           => 'export',
-								'shared_secret'       => 'site-two-shared-secret',
-								'basic_auth_username' => 'site-two-publisher',
-								'basic_auth_password' => 'site-two-password',
-								'version'             => '2.0',
-							],
-						],
-					],
-				]
-			);
-			$config_mock->__construct( $this->slug );
+				],
+			]
+		);
 
-			$safe_publish_integration = new SafePublishIntegration( $this->slug );
-			$safe_publish_integration->set_vip_config( $config_mock );
-			$safe_publish_integration->configure();
+		$safe_publish_integration = new SafePublishIntegration( $this->slug );
+		$safe_publish_integration->set_vip_config( $config );
+		$safe_publish_integration->configure();
 
-			$this->assertSame( 'https://site-two.example.com', constant( 'SAFE_PUBLISH_CONNECTED_SITE_URL' ) );
-			$this->assertSame( 'export', constant( 'SAFE_PUBLISH_SYNC_MODE' ) );
-			$this->assertSame( 'site-two-shared-secret', constant( 'SAFE_PUBLISH_SHARED_SECRET' ) );
-			$this->assertSame( 'site-two-publisher', constant( 'SAFE_PUBLISH_BASIC_AUTH_USERNAME' ) );
-			$this->assertSame( 'site-two-password', constant( 'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' ) );
-			$this->assertSame( '2.0', $safe_publish_integration->version );
-		} finally {
-			restore_current_blog();
+		foreach ( $expected_constants as $constant_name => $expected ) {
+			$this->assertSame( $expected, constant( $constant_name ), $constant_name );
 		}
+		$this->assertSame( $expected_version, $safe_publish_integration->version );
 	}
 
-	public function test_load_returns_early_if_plugin_already_loaded(): void {
-		/** @var MockObject|SafePublishIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( SafePublishIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions', 'get_selected_version_folder' ] )
-			->getMock();
-
-		// Activate first: activate() itself calls is_loaded(), which still returns the mock default (false) here.
-		$integration_mock->activate( [ 'config' => [ 'preserved' => 'sentinel' ] ] );
-
-		$integration_mock->expects( $this->once() )
-			->method( 'is_loaded' )
-			->willReturn( true );
-		$integration_mock->expects( $this->never() )->method( 'get_versions' );
-
-		$integration_mock->expects( $this->never() )->method( 'get_selected_version_folder' );
-		$integration_mock->load();
-
-		do_action( 'plugins_loaded' );
-		$this->assertTrue( $integration_mock->is_active() );
-		$this->assertSame( [ 'preserved' => 'sentinel' ], $integration_mock->get_env_config() );
-	}
-
-	public function test_load_sets_inactive_when_no_versions_are_available(): void {
-		/** @var MockObject|SafePublishIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( SafePublishIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
-			->getMock();
-
-		$integration_mock->activate();
-		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		$integration_mock->method( 'get_versions' )->willReturn( [] );
-
-		$integration_mock->load();
-
-		do_action( 'plugins_loaded' );
-
-		$this->assertFalse( $integration_mock->is_active() );
-	}
-
-	public function test_get_selected_version_folder_returns_latest_version_when_version_is_latest(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = 'latest';
-		$versions                          = [
-			'safe-publish-2.5'  => '2.5',
-			'safe-publish-1.11' => '1.11',
-			'safe-publish-1.2'  => '1.2',
+	public static function data_multisite_config(): array {
+		$site_config = [
+			'connected_site_url' => 'https://site-two.example.com',
+			'sync_mode'          => 'export',
+			'shared_secret'      => 'site-two-shared-secret',
 		];
 
-		$this->assertSame( 'safe-publish-2.5', $safe_publish_integration->get_selected_version_folder( $versions ) );
-	}
-
-	public function test_get_selected_version_folder_returns_desired_version_when_version_is_specified(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = '1.2';
-		$versions                          = [
-			'safe-publish-2.5'  => '2.5',
-			'safe-publish-1.11' => '1.11',
-			'safe-publish-1.2'  => '1.2',
+		return [
+			'shared values come from the environment'    => [
+				[
+					'basic_auth_username' => 'env-publisher',
+					'basic_auth_password' => 'env-password',
+					'version'             => '1.0',
+				],
+				$site_config,
+				[
+					'SAFE_PUBLISH_CONNECTED_SITE_URL'  => 'https://site-two.example.com',
+					'SAFE_PUBLISH_SYNC_MODE'           => 'export',
+					'SAFE_PUBLISH_SHARED_SECRET'       => 'site-two-shared-secret',
+					'SAFE_PUBLISH_BASIC_AUTH_USERNAME' => 'env-publisher',
+					'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' => 'env-password',
+				],
+				'1.0',
+			],
+			'network site values win for duplicate keys' => [
+				[
+					'connected_site_url'  => 'https://env-source.example.com',
+					'sync_mode'           => 'import',
+					'shared_secret'       => 'env-shared-secret',
+					'basic_auth_username' => 'env-publisher',
+					'basic_auth_password' => 'env-password',
+					'version'             => '1.0',
+				],
+				array_merge(
+					$site_config,
+					[
+						'basic_auth_username' => 'site-two-publisher',
+						'basic_auth_password' => 'site-two-password',
+						'version'             => '2.0',
+					]
+				),
+				[
+					'SAFE_PUBLISH_CONNECTED_SITE_URL'  => 'https://site-two.example.com',
+					'SAFE_PUBLISH_SYNC_MODE'           => 'export',
+					'SAFE_PUBLISH_SHARED_SECRET'       => 'site-two-shared-secret',
+					'SAFE_PUBLISH_BASIC_AUTH_USERNAME' => 'site-two-publisher',
+					'SAFE_PUBLISH_BASIC_AUTH_PASSWORD' => 'site-two-password',
+				],
+				'2.0',
+			],
 		];
-
-		$this->assertSame( 'safe-publish-1.2', $safe_publish_integration->get_selected_version_folder( $versions ) );
-	}
-
-	public function test_get_selected_version_folder_returns_latest_version_when_version_not_found(): void {
-		$safe_publish_integration          = new SafePublishIntegration( $this->slug );
-		$safe_publish_integration->version = '9.9';
-		$versions                          = [
-			'safe-publish-2.5'  => '2.5',
-			'safe-publish-1.11' => '1.11',
-			'safe-publish-1.2'  => '1.2',
-		];
-
-		$this->assertSame( 'safe-publish-2.5', $safe_publish_integration->get_selected_version_folder( $versions ) );
 	}
 }

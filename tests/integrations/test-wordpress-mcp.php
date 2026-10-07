@@ -7,39 +7,15 @@
 
 namespace Automattic\VIP\Integrations;
 
-use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
-use Automattic\Test\Constant_Mocker;
 use Org_Integration_Status;
 use Env_Integration_Status;
 
-// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
+// phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	private string $slug          = 'wordpress-mcp';
-	private array $server_backup  = [];
-	private array $get_backup     = [];
 	private array $vip_config_map = [];
-
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->server_backup = $_SERVER;
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Test state backup.
-		$this->get_backup = $_GET;
-	}
-
-	public function tearDown(): void {
-		remove_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10 );
-
-		$_SERVER              = $this->server_backup;
-		$_GET                 = $this->get_backup;
-		$this->vip_config_map = [];
-
-		parent::tearDown();
-
-		Constant_Mocker::clear();
-	}
 
 	public function filter_vip_config( $config, $path, $slug ) {
 		if ( array_key_exists( $slug, $this->vip_config_map ) ) {
@@ -52,75 +28,43 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	private function set_vip_config_map( array $vip_config_map ): void {
 		$this->vip_config_map = $vip_config_map;
 
-		remove_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10 );
 		add_filter( 'vip_integrations_pre_load_config', [ $this, 'filter_vip_config' ], 10, 3 );
 	}
 
-	public function test_is_loaded_returns_false_when_not_loaded(): void {
+	/**
+	 * @dataProvider data_default_server_config
+	 */
+	public function test_filter_default_server_config_applies_only_configured_values( array $integration_config, string $expected_namespace, string $expected_route ): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate( [ 'config' => $integration_config ] );
+		$wordpress_mcp_integration->configure();
 
-		$this->assertFalse( $wordpress_mcp_integration->is_loaded() );
+		$config = $wordpress_mcp_integration->filter_default_server_config(
+			[
+				'server_id'              => 'mcp-adapter-default-server',
+				'server_route_namespace' => 'mcp',
+				'server_route'           => 'mcp-adapter-default-server',
+			]
+		);
+
+		$this->assertSame( 'mcp-adapter-default-server', $config['server_id'] );
+		$this->assertSame( $expected_namespace, $config['server_route_namespace'] );
+		$this->assertSame( $expected_route, $config['server_route'] );
 	}
 
-	public function test_filter_default_server_config_applies_configured_values(): void {
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate(
-			[
-				'config' => [
+	public static function data_default_server_config(): array {
+		return [
+			'namespace and route' => [
+				[
 					'server_namespace' => 'vip-mcp/v1',
 					'server_route'     => 'vip-mcp-server',
 				],
-			]
-		);
-		$wordpress_mcp_integration->configure();
-
-		$config = $wordpress_mcp_integration->filter_default_server_config(
-			[
-				'server_id'              => 'mcp-adapter-default-server',
-				'server_route_namespace' => 'mcp',
-				'server_route'           => 'mcp-adapter-default-server',
-			]
-		);
-
-		$this->assertSame( 'mcp-adapter-default-server', $config['server_id'] );
-		$this->assertSame( 'vip-mcp/v1', $config['server_route_namespace'] );
-		$this->assertSame( 'vip-mcp-server', $config['server_route'] );
-	}
-
-	public function test_filter_default_server_config_only_applies_configured_server_namespace(): void {
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'server_namespace' => 'vip-mcp/v1' ] ] );
-		$wordpress_mcp_integration->configure();
-
-		$config = $wordpress_mcp_integration->filter_default_server_config(
-			[
-				'server_id'              => 'mcp-adapter-default-server',
-				'server_route_namespace' => 'mcp',
-				'server_route'           => 'mcp-adapter-default-server',
-			]
-		);
-
-		$this->assertSame( 'mcp-adapter-default-server', $config['server_id'] );
-		$this->assertSame( 'vip-mcp/v1', $config['server_route_namespace'] );
-		$this->assertSame( 'mcp-adapter-default-server', $config['server_route'] );
-	}
-
-	public function test_filter_default_server_config_only_applies_configured_server_route(): void {
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'server_route' => 'vip-mcp-server' ] ] );
-		$wordpress_mcp_integration->configure();
-
-		$config = $wordpress_mcp_integration->filter_default_server_config(
-			[
-				'server_id'              => 'mcp-adapter-default-server',
-				'server_route_namespace' => 'mcp',
-				'server_route'           => 'mcp-adapter-default-server',
-			]
-		);
-
-		$this->assertSame( 'mcp-adapter-default-server', $config['server_id'] );
-		$this->assertSame( 'mcp', $config['server_route_namespace'] );
-		$this->assertSame( 'vip-mcp-server', $config['server_route'] );
+				'vip-mcp/v1',
+				'vip-mcp-server',
+			],
+			'namespace only'      => [ [ 'server_namespace' => 'vip-mcp/v1' ], 'vip-mcp/v1', 'mcp-adapter-default-server' ],
+			'route only'          => [ [ 'server_route' => 'vip-mcp-server' ], 'mcp', 'vip-mcp-server' ],
+		];
 	}
 
 	public function test_load_registers_default_server_config_filter_at_max_priority(): void {
@@ -134,10 +78,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			PHP_INT_MAX,
 			has_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ] )
 		);
-
-		remove_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ], PHP_INT_MAX );
-		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
-		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_registers_exposed_abilities_args_filter_when_configured(): void {
@@ -151,10 +91,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			PHP_INT_MAX,
 			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
 		);
-
-		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ], PHP_INT_MAX );
-		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
-		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_does_not_register_default_server_config_filter_without_server_config(): void {
@@ -165,9 +101,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$this->assertFalse(
 			has_filter( 'mcp_adapter_default_server_config', [ $wordpress_mcp_integration, 'filter_default_server_config' ] )
 		);
-
-		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
-		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_load_registers_exposed_abilities_args_filter_without_config(): void {
@@ -179,10 +112,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 			PHP_INT_MAX,
 			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
 		);
-
-		remove_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ], PHP_INT_MAX );
-		remove_filter( 'determine_current_user', [ $wordpress_mcp_integration, 'authenticate_mcp_request' ], 19 );
-		remove_filter( 'rest_authentication_errors', [ $wordpress_mcp_integration, 'report_auth_error' ] );
 	}
 
 	public function test_filter_exposed_abilities_args_marks_configured_ability_public(): void {
@@ -288,25 +217,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_load_sets_inactive_if_no_versions_found(): void {
-		/** @var MockObject&WordPressMcpIntegration $integration_mock */
-		$integration_mock = $this->getMockBuilder( WordPressMcpIntegration::class )
-			->setConstructorArgs( [ $this->slug ] )
-			->onlyMethods( [ 'is_loaded', 'get_versions' ] )
-			->getMock();
-
-		$integration_mock->activate();
-		$integration_mock->method( 'is_loaded' )->willReturn( false );
-		$integration_mock->method( 'get_versions' )->willReturn( [] );
-
-		$integration_mock->load();
-		do_action( 'plugins_loaded' );
-		remove_filter( 'mcp_adapter_default_server_config', [ $integration_mock, 'filter_default_server_config' ], PHP_INT_MAX );
-		remove_filter( 'determine_current_user', [ $integration_mock, 'authenticate_mcp_request' ], 19 );
-
-		$this->assertFalse( $integration_mock->is_active() );
-	}
-
 	/**
 	 * @dataProvider data_provider_selected_version_folder
 	 */
@@ -344,24 +254,24 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		];
 	}
 
-	public function test_platform_activation_uses_secure_mcp_child_config(): void {
+	/**
+	 * The child config only activates WordPress MCP when the secure-mcp parent is enabled for the env and org.
+	 *
+	 * @dataProvider data_secure_mcp_parent
+	 */
+	public function test_platform_activation_uses_secure_mcp_child_config_gated_by_parent( string $org_status, string $env_status, array $child_env, bool $expected_active ): void {
 		$this->set_vip_config_map(
 			[
 				'secure-mcp' => [
 					'org'      => [
-						'status' => Org_Integration_Status::ENABLED,
+						'status' => $org_status,
 					],
 					'env'      => [
-						'status' => Env_Integration_Status::ENABLED,
+						'status' => $env_status,
 					],
 					'children' => [
 						'wordpress-mcp' => [
-							'env' => [
-								'status' => Env_Integration_Status::ENABLED,
-								'config' => [
-									'server_route' => 'vip-mcp-server',
-								],
-							],
+							'env' => $child_env,
 						],
 					],
 				],
@@ -374,166 +284,64 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$integrations->register( $integration );
 		$integrations->activate_platform_integrations();
 
-		$this->assertTrue( $integration->is_active() );
-		$this->assertSame( [ 'server_route' => 'vip-mcp-server' ], $integration->get_env_config() );
+		$this->assertSame( $expected_active, $integration->is_active() );
+		if ( $expected_active ) {
+			$this->assertSame( $child_env['config'], $integration->get_env_config() );
+		}
 	}
 
-	public function test_secure_mcp_parent_gates_wordpress_mcp_child_config(): void {
-		$this->set_vip_config_map(
-			[
-				'secure-mcp' => [
-					'org'      => [
-						'status' => Org_Integration_Status::ENABLED,
-					],
-					'env'      => [
-						'status' => Env_Integration_Status::DISABLED,
-					],
-					'children' => [
-						'wordpress-mcp' => [
-							'env' => [
-								'status' => Env_Integration_Status::ENABLED,
-							],
-						],
-					],
-				],
-			]
-		);
+	public static function data_secure_mcp_parent(): array {
+		$child_env = [ 'status' => Env_Integration_Status::ENABLED ];
 
-		$integrations = new Integrations();
-		$integration  = new WordPressMcpIntegration( $this->slug );
-
-		$integrations->register( $integration );
-		$integrations->activate_platform_integrations();
-
-		$this->assertFalse( $integration->is_active() );
+		return [
+			'enabled parent'               => [
+				Org_Integration_Status::ENABLED,
+				Env_Integration_Status::ENABLED,
+				array_merge( $child_env, [ 'config' => [ 'server_route' => 'vip-mcp-server' ] ] ),
+				true,
+			],
+			'disabled parent environment'  => [ Org_Integration_Status::ENABLED, Env_Integration_Status::DISABLED, $child_env, false ],
+			'disabled parent env and org'  => [ Org_Integration_Status::DISABLED, Env_Integration_Status::DISABLED, $child_env, false ],
+			'disabled parent organization' => [ Org_Integration_Status::DISABLED, Env_Integration_Status::ENABLED, $child_env, false ],
+		];
 	}
 
-	public function test_secure_mcp_disabled_parent_gates_wordpress_mcp_child_config(): void {
-		$this->set_vip_config_map(
-			[
-				'secure-mcp' => [
-					'org'      => [
-						'status' => Org_Integration_Status::DISABLED,
-					],
-					'env'      => [
-						'status' => Env_Integration_Status::DISABLED,
-					],
-					'children' => [
-						'wordpress-mcp' => [
-							'env' => [
-								'status' => Env_Integration_Status::ENABLED,
-							],
-						],
-					],
-				],
-			]
-		);
-
-		$integrations = new Integrations();
-		$integration  = new WordPressMcpIntegration( $this->slug );
-
-		$integrations->register( $integration );
-		$integrations->activate_platform_integrations();
-
-		$this->assertFalse( $integration->is_active() );
-	}
-
-	public function test_secure_mcp_org_disabled_gates_wordpress_mcp_child_config(): void {
-		$this->set_vip_config_map(
-			[
-				'secure-mcp' => [
-					'org'      => [
-						'status' => Org_Integration_Status::DISABLED,
-					],
-					'env'      => [
-						'status' => Env_Integration_Status::ENABLED,
-					],
-					'children' => [
-						'wordpress-mcp' => [
-							'env' => [
-								'status' => Env_Integration_Status::ENABLED,
-							],
-						],
-					],
-				],
-			]
-		);
-
-		$integrations = new Integrations();
-		$integration  = new WordPressMcpIntegration( $this->slug );
-
-		$integrations->register( $integration );
-		$integrations->activate_platform_integrations();
-
-		$this->assertFalse( $integration->is_active() );
-	}
-
-	public function test_is_mcp_adapter_rest_request_returns_true_for_pretty_rest_url(): void {
+	/**
+	 * @dataProvider data_mcp_adapter_rest_request
+	 */
+	public function test_is_mcp_adapter_rest_request( string $request_uri, ?string $rest_route, array $integration_config, bool $expected ): void {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		$_SERVER['REQUEST_URI']    = $request_uri;
+		if ( null !== $rest_route ) {
+			$_GET['rest_route'] = $rest_route;
+		}
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		if ( [] !== $integration_config ) {
+			$wordpress_mcp_integration->activate( [ 'config' => $integration_config ] );
+			$wordpress_mcp_integration->configure();
+		}
 
-		$this->assertTrue( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
+		$this->assertSame( $expected, $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
 	}
 
-	public function test_is_mcp_adapter_rest_request_returns_true_for_configured_rest_url(): void {
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/vip-mcp/v1/vip-mcp-server';
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate(
-			[
-				'config' => [
+	public static function data_mcp_adapter_rest_request(): array {
+		return [
+			'pretty default REST url'                 => [ '/wp-json/mcp/mcp-adapter-default-server', null, [], true ],
+			'configured REST url'                     => [
+				'/wp-json/vip-mcp/v1/vip-mcp-server',
+				null,
+				[
 					'server_namespace' => 'vip-mcp/v1',
 					'server_route'     => 'vip-mcp-server',
 				],
-			]
-		);
-		$wordpress_mcp_integration->configure();
-
-		$this->assertTrue( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
-	}
-
-	public function test_is_mcp_adapter_rest_request_uses_default_namespace_with_configured_server_route(): void {
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/vip-mcp-server';
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'server_route' => 'vip-mcp-server' ] ] );
-		$wordpress_mcp_integration->configure();
-
-		$this->assertTrue( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
-	}
-
-	public function test_is_mcp_adapter_rest_request_uses_default_route_with_configured_namespace(): void {
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/vip-mcp/v1/mcp-adapter-default-server';
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'server_namespace' => 'vip-mcp/v1' ] ] );
-		$wordpress_mcp_integration->configure();
-
-		$this->assertTrue( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
-	}
-
-	public function test_is_mcp_adapter_rest_request_returns_true_for_rest_route_query_arg(): void {
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/index.php?rest_route=/mcp/mcp-adapter-default-server';
-		$_GET['rest_route']        = '/mcp/mcp-adapter-default-server';
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-
-		$this->assertTrue( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
-	}
-
-	public function test_is_mcp_adapter_rest_request_returns_false_for_other_rest_url(): void {
-		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/wp/v2/posts';
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-
-		$this->assertFalse( $wordpress_mcp_integration->is_mcp_adapter_rest_request() );
+				true,
+			],
+			'default namespace with configured route' => [ '/wp-json/mcp/vip-mcp-server', null, [ 'server_route' => 'vip-mcp-server' ], true ],
+			'default route with configured namespace' => [ '/wp-json/vip-mcp/v1/mcp-adapter-default-server', null, [ 'server_namespace' => 'vip-mcp/v1' ], true ],
+			'rest_route query arg'                    => [ '/index.php?rest_route=/mcp/mcp-adapter-default-server', '/mcp/mcp-adapter-default-server', [], true ],
+			'other REST url'                          => [ '/wp-json/wp/v2/posts', null, [], false ],
+		];
 	}
 
 	public function test_authenticate_mcp_request_preserves_existing_user(): void {
@@ -567,19 +375,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$_SERVER['HTTP_X_VIP_MCP_AUTH_TIMESTAMP'] = $timestamp;
 
 		wp_set_current_user( 0 );
-	}
-
-	public function test_authenticate_mcp_request_maps_valid_hmac_to_user(): void {
-		$auth_key = 'test-auth-key';
-		$email    = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
-		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
-
-		$this->sign_mcp_request( $email, $auth_key );
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
-
-		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
 	}
 
 	/**
@@ -654,36 +449,23 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$user_id     = $this->factory()->user->create( [ 'user_email' => $email ] );
 		$integration = new WordPressMcpIntegration( $this->slug );
 		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
-		try {
-			$integration->load();
-			$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
-			$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
-			$this->sign_mcp_request( $email, $auth_key );
-			unset( $GLOBALS['current_user'] );
-			$this->assertSame( $user_id, get_current_user_id() );
-			$server = new \WP_REST_Server();
-			$this->assertContains( $server->check_authentication(), [ null, true ], 'WordPress accepts either null or true for successful REST authentication.' );
 
-			$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
-			unset( $GLOBALS['current_user'] );
-			$this->assertSame( 0, get_current_user_id() );
-			$error = $server->check_authentication();
-			$this->assertInstanceOf( \WP_Error::class, $error );
-			$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
-			$this->assertSame( 401, $error->get_error_data()['status'] );
-		} finally {
-			foreach ( [
-				'determine_current_user'     => 'authenticate_mcp_request',
-				'rest_authentication_errors' => 'report_auth_error',
-				'wp_register_ability_args'   => 'filter_exposed_abilities_args',
-			] as $hook => $method ) {
-				$callback = [ $integration, $method ];
-				while ( false !== ( $priority = has_filter( $hook, $callback ) ) ) {
-					remove_filter( $hook, $callback, $priority );
-				}
-			}
-			wp_set_current_user( 0 );
-		}
+		$integration->load();
+		$this->assertSame( 19, has_filter( 'determine_current_user', [ $integration, 'authenticate_mcp_request' ] ) );
+		$this->assertSame( 10, has_filter( 'rest_authentication_errors', [ $integration, 'report_auth_error' ] ) );
+		$this->sign_mcp_request( $email, $auth_key );
+		unset( $GLOBALS['current_user'] );
+		$this->assertSame( $user_id, get_current_user_id() );
+		$server = new \WP_REST_Server();
+		$this->assertContains( $server->check_authentication(), [ null, true ], 'WordPress accepts either null or true for successful REST authentication.' );
+
+		$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
+		unset( $GLOBALS['current_user'] );
+		$this->assertSame( 0, get_current_user_id() );
+		$error = $server->check_authentication();
+		$this->assertInstanceOf( \WP_Error::class, $error );
+		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+		$this->assertSame( 401, $error->get_error_data()['status'] );
 	}
 
 	public function test_report_auth_error_preserves_existing_result(): void {

@@ -6,15 +6,16 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Utils\Alerts;
-use ElasticPress\Elasticsearch;
 use ElasticPress\Feature;
 use ElasticPress\Feature\SearchOrdering\SearchOrdering;
 use ElasticPress\Features;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
 use stdClass;
-use WP_Error;
 use WP_Post;
+
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\http_response;
 
 require_once __DIR__ . '/mock-header.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-query-classifier.php';
@@ -26,7 +27,6 @@ require_once __DIR__ . '/../../../../prometheus.php';
 
 class Search_Test extends WP_UnitTestCase {
 	public static $mock_global_functions;
-	public $test_index_name = 'vip-1234-post-0-v3';
 
 	/** @var Search */
 	private $search_instance;
@@ -58,116 +58,28 @@ class Search_Test extends WP_UnitTestCase {
 
 		self::$mock_global_functions = null;
 
-		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 
 	public function test_query_es_with_invalid_type() {
-		$this->init_es();
-
 		$result = $this->search_instance->query_es( 'foo' );
 
 		$this->assertTrue( is_wp_error( $result ) );
 		$this->assertEquals( 'indexable-not-found', $result->get_error_code() );
 	}
 
-	/**
-	 * Test `ep_index_name` filter for ElasticPress + VIP Search
-	 */
-	public function test__vip_search_filter_ep_index_name() {
-		$this->init_es();
-
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $indexable );
-
-		$this->assertEquals( 'vip-123-post-1', $index_name );
-	}
-
-	/**
-	 * Test `ep_index_name` filter for ElasticPress + VIP Search for global indexes
-	 *
-	 * On "global" indexes, such as users, no blog id will be present
-	 */
-	public function test__vip_search_filter_ep_index_name_global_index() {
-		$this->init_es();
-
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
-
-		$this->assertEquals( 'vip-123-post', $index_name );
-	}
-
-	/**
-	 * Test `ep_index_name` filter for ElasticPress + VIP Search
-	 *
-	 * USE_VIP_ELASTICSEARCH not defined (Elasticseach class doesn't load)
-	 *
-	 * @runInSeparateProcess -- necessary because the Elasticpress class should not be loaded
-	 * @preserveGlobalState disabled
-	 */
-	public function test__vip_search_filter_ep_index_name__no_constant() {
-		self::assertFalse( defined( 'USE_VIP_ELASTICSEARCH' ) );
-		self::assertFalse( class_exists( Elasticsearch::class, false ) );
-
-		$mock_indexable = (object) [ 'slug' => 'slug' ];
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', 1, $mock_indexable );
-
-		$this->assertEquals( 'index-name', $index_name );
-	}
-
-	public function vip_search_filter_ep_index_name_with_versions_data() {
+	public function vip_search_filter_ep_index_name_data() {
 		return array(
-			array(
-				// Active index number
-				1,
-				// Blog id
-				null,
-				// Expected index name
-				'vip-123-post',
-			),
-			array(
-				// Active index number
-				2,
-				// Blog id
-				null,
-				// Expected index name
-				'vip-123-post-v2',
-			),
-			array(
-				// Active index number
-				1,
-				// Blog id
-				2,
-				// Expected index name
-				'vip-123-post-2',
-			),
-			array(
-				// Active index number
-				2,
-				// Blog id
-				2,
-				// Expected index name
-				'vip-123-post-2-v2',
-			),
-			array(
-				// Active index number
-				null,
-				// Blog id
-				null,
-				// Expected index name
-				'vip-123-post',
-			),
-			array(
-				// Active index number
-				0,
-				// Blog id
-				null,
-				// Expected index name
-				'vip-123-post',
-			),
+			// Current version number (false uses the real Versioning, which defaults to 1), blog id, expected index name
+			'real versioning, blog id'          => array( false, 1, 'vip-123-post-1' ),
+			// On "global" indexes, such as users, no blog id will be present
+			'real versioning, global index'     => array( false, null, 'vip-123-post' ),
+			'version 1, global index'           => array( 1, null, 'vip-123-post' ),
+			'version 0, global index'           => array( 0, null, 'vip-123-post' ),
+			'version 2, global index'           => array( 2, null, 'vip-123-post-v2' ),
+			'version 1, blog id'                => array( 1, 2, 'vip-123-post-2' ),
+			'version 2, blog id'                => array( 2, 2, 'vip-123-post-2-v2' ),
+			'non-integer version, global index' => array( null, null, 'vip-123-post' ),
 		);
 	}
 
@@ -273,82 +185,38 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test `ep_index_name` filter with versioning
+	 * Test `ep_index_name` filter for ElasticPress + VIP Search, with versioning
 	 *
 	 * When current version is 1, the index name should not have a version applied to it
 	 *
-	 * @dataProvider vip_search_filter_ep_index_name_with_versions_data
+	 * @dataProvider vip_search_filter_ep_index_name_data
 	 */
-	public function test__vip_search_filter_ep_index_name_with_versions( $current_version, $blog_id, $expected_index_name ) {
+	public function test__vip_search_filter_ep_index_name( $current_version, $blog_id, $expected_index_name ) {
 		$this->init_es();
 
 		$indexable = Indexables::factory()->get( 'post' );
 
-		// Mock the Versioning class so we can control which version it returns
-		$stub = $this->getMockBuilder( Versioning::class )
-				->onlyMethods( [ 'get_current_version_number' ] )
-				->getMock();
+		if ( false !== $current_version ) {
+			// Mock the Versioning class so we can control which version it returns
+			$stub = $this->getMockBuilder( Versioning::class )
+					->onlyMethods( [ 'get_current_version_number' ] )
+					->getMock();
 
-		$stub->expects( $this->once() )
-				->method( 'get_current_version_number' )
-				->with( $indexable )
-				->will( $this->returnValue( $current_version ) );
+			$stub->expects( $this->once() )
+					->method( 'get_current_version_number' )
+					->with( $indexable )
+					->will( $this->returnValue( $current_version ) );
 
-		$this->search_instance->versioning = $stub;
+			$this->search_instance->versioning = $stub;
+		}
 
 		$index_name = apply_filters( 'ep_index_name', 'index-name', $blog_id, $indexable );
 
 		$this->assertEquals( $expected_index_name, $index_name );
 	}
 
-	public function test__vip_search_filter_ep_index_name_with_overridden_version() {
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
-		$this->init_es();
-
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-
-		$indexable = Indexables::factory()->get( 'post' );
-
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX, 5 );
-
-		$new_version = $this->search_instance->versioning->add_version( $indexable );
-
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_ok_es_requests' ], PHP_INT_MAX );
-
-		$this->assertNotFalse( $new_version, 'Failed to add new version of index' );
-		$this->assertNotInstanceOf( WP_Error::class, $new_version, 'Got WP_Error when adding new index version' );
-
-		// Override the version
-		$override_result = $this->search_instance->versioning->set_current_version_number( $indexable, 2 );
-
-		$this->assertTrue( $override_result, 'Setting current version number failed' );
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
-
-		$this->assertEquals( 'vip-123-post-v2', $index_name, 'Overridden index name is not correct' );
-
-		// Reset
-		$this->search_instance->versioning->reset_current_version_number( $indexable );
-
-		$index_name = apply_filters( 'ep_index_name', 'index-name', null, $indexable );
-
-		$this->assertEquals( 'vip-123-post', $index_name );
-
-		delete_option( Versioning::INDEX_VERSIONS_OPTION );
-	}
-
 	public function test__vip_search_sends_http_requests_via_helper_functions() {
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1:9235',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $test_user_id );
+		$this->define_es_credentials( array( 'https://es-endpoint1:9235' ) );
 
 		self::$mock_global_functions->expects( $this->exactly( 2 ) )
 			->method( 'mock_wp_remote_request' )
@@ -363,15 +231,7 @@ class Search_Test extends WP_UnitTestCase {
 				'body'     => '',
 			]);
 
-		$this->init_es();
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$post_id = $this->factory()->post->create( array(
-			'post_title'  => 'Test Post',
-			'post_status' => 'publish',
-		) );
-
-		$indexable->bulk_index( [ $post_id ] );
+		$this->bulk_index_test_post();
 	}
 
 	/**
@@ -395,72 +255,40 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__vip_search_sends_double_writes_when_upgrading() {
-		\define( 'ES_SHIELD', 'foo:bar' );
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint:9235',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $test_user_id );
-
-		$requests = array();
-		self::$mock_global_functions->expects( $this->exactly( 3 ) )
-			->method( 'mock_wp_remote_request' )
-			->willReturnCallback( static function ( $url, $args ) use ( &$requests ) {
-				$requests[] = array(
-					'url'  => $url,
-					'args' => $args,
-				);
-				return array(
-					'response' => array( 'code' => 200 ),
-					'body'     => '',
-				);
-			} );
-
-		$this->init_es();
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$post_id = $this->factory()->post->create( array(
-			'post_title'  => 'Test Post',
-			'post_status' => 'publish',
-		) );
-
-		$indexable->bulk_index( [ $post_id ] );
-		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9235/vip-123-post-1', 'https://es-endpoint:9235/vip-123-post-1/_bulk', 'https://es-endpoint:9245/vip-123-post-1/_bulk' ) );
+	public function vip_search_migration_writes_data() {
+		return array(
+			// Endpoint, extra constants, expected request urls
+			'upgrading: writes are mirrored to the next version'          => array(
+				'https://es-endpoint:9235',
+				array(),
+				array( 'https://es-endpoint:9235/vip-123-post-1', 'https://es-endpoint:9235/vip-123-post-1/_bulk', 'https://es-endpoint:9245/vip-123-post-1/_bulk' ),
+			),
+			'upgraded: writes are mirrored back to the previous version'  => array(
+				'https://es-endpoint:9245',
+				array( 'VIP_ELASTICSEARCH_VERSION' => '8' ),
+				array( 'https://es-endpoint:9245/vip-123-post-1', 'https://es-endpoint:9245/vip-123-post-1/_bulk', 'https://es-endpoint:9235/vip-123-post-1/_bulk' ),
+			),
+			'testing next version: requests go to the next version host' => array(
+				'https://es-endpoint:9235/weirdpath9235',
+				array( 'VIP_ELASTICSEARCH_TEST_ES_NEXT' => true ),
+				array( 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1', 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1/_bulk', 'https://es-endpoint:9235/weirdpath9235/vip-123-post-1/_bulk' ),
+			),
+		);
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * @dataProvider vip_search_migration_writes_data
 	 */
-	public function test__vip_search_sends_double_writes_after_upgrade_and_migration_in_progress() {
-		\define( 'ES_SHIELD', 'foo:bar' );
-		// These transport expectations include an uncached index-exists request.
-		delete_site_option( 'es_index_exists_vip-123-post-1' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint:9245',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_VERSION', '8' );
+	public function test__vip_search_sends_double_writes_during_migration( $endpoint, $constants, $expected_urls ) {
+		$this->define_es_credentials( array( $endpoint ) );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
 
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+		foreach ( $constants as $name => $value ) {
+			Constant_Mocker::define( $name, $value );
+		}
 
-		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $test_user_id );
+		// ElasticPress builds the Authorization header from a global ES_SHIELD constant, which Constant_Mocker can't provide
+		add_filter( 'ep_format_request_headers', static fn( $headers ) => array_merge( $headers, array( 'Authorization' => 'Basic ' . base64_encode( 'foo:bar' ) ) ) );
 
 		$requests = array();
 		self::$mock_global_functions->expects( $this->exactly( 3 ) )
@@ -476,61 +304,8 @@ class Search_Test extends WP_UnitTestCase {
 				);
 			} );
 
-		$this->init_es();
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$post_id = $this->factory()->post->create( array(
-			'post_title'  => 'Test Post',
-			'post_status' => 'publish',
-		) );
-
-		$indexable->bulk_index( [ $post_id ] );
-		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9245/vip-123-post-1', 'https://es-endpoint:9245/vip-123-post-1/_bulk', 'https://es-endpoint:9235/vip-123-post-1/_bulk' ) );
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test__vip_search_sends_queries_to_next_version_host_when_is_testing_next_version() {
-		\define( 'ES_SHIELD', 'foo:bar' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint:9235/weirdpath9235',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_MIGRATION_IN_PROGRESS', true );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_TEST_ES_NEXT', true );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $test_user_id );
-
-		$requests = array();
-		self::$mock_global_functions->expects( $this->exactly( 3 ) )
-			->method( 'mock_wp_remote_request' )
-			->willReturnCallback( static function ( $url, $args ) use ( &$requests ) {
-				$requests[] = array(
-					'url'  => $url,
-					'args' => $args,
-				);
-				return array(
-					'response' => array( 'code' => 200 ),
-					'body'     => '',
-				);
-			} );
-
-		$this->init_es();
-		$indexable = Indexables::factory()->get( 'post' );
-
-		$post_id = $this->factory()->post->create( array(
-			'post_title'  => 'Test Post',
-			'post_status' => 'publish',
-		) );
-
-		$indexable->bulk_index( [ $post_id ] );
-		$this->assert_migration_request_tuples( $requests, array( 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1', 'https://es-endpoint:9245/weirdpath9235/vip-123-post-1/_bulk', 'https://es-endpoint:9235/weirdpath9235/vip-123-post-1/_bulk' ) );
+		$this->bulk_index_test_post();
+		$this->assert_migration_request_tuples( $requests, $expected_urls );
 	}
 
 	public function test__vip_search_filter__ep_global_alias() {
@@ -543,12 +318,19 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'vip-123-post-all', $alias_name );
 	}
 
-	public function test__vip_search_filter_ep_default_index_number_of_shards() {
+	/**
+	 * Test the ElasticPress defaults that VIP Search overrides via simple filters
+	 */
+	public function test__vip_search_filter_defaults() {
 		$this->init_es();
 
-		$shards = apply_filters( 'ep_default_index_number_of_shards', 5 );
-
-		$this->assertEquals( 1, $shards );
+		$this->assertEquals( 1, apply_filters( 'ep_default_index_number_of_shards', 5 ), 'Wrong default number of shards' );
+		$this->assertEquals( 1, apply_filters( 'ep_default_index_number_of_replicas', 2 ), 'Wrong default number of replicas' );
+		// Querying is allowed during bulk re-index
+		$this->assertTrue( apply_filters( 'ep_enable_query_integration_during_indexing', false ), 'Query integration should be enabled during indexing' );
+		// Indexing of filtered content is disabled by default
+		$this->assertFalse( apply_filters( 'ep_allow_post_content_filtered_index', true ), 'Indexing of filtered content should be disabled' );
+		$this->assertEquals( 5, apply_filters( 'ep_facet_taxonomies_size', 10000, 'category' ), 'Wrong facet taxonomies size' );
 	}
 
 	public function test__vip_search_filter_filter__ep_post_mapping__large_site() {
@@ -567,16 +349,9 @@ class Search_Test extends WP_UnitTestCase {
 
 		add_filter( 'wp_count_posts', $return_big_count );
 
-		if ( method_exists( $indexable, 'build_settings' ) ) {
-			$settings = $indexable->build_settings();
-		} else {
-			$mapping  = $indexable->generate_mapping();
-			$settings = $mapping['settings'];
-		}
+		$settings = $this->get_index_settings( $indexable );
 
 		$this->assertEquals( 4, $settings['index.number_of_shards'] );
-
-		remove_filter( 'wp_count_posts', $return_big_count );
 	}
 
 	public function test__vip_search_filter_filter__ep_user_mapping__large_site() {
@@ -596,22 +371,9 @@ class Search_Test extends WP_UnitTestCase {
 
 		add_filter( 'pre_count_users', $return_big_count );
 
-		$indexable = Indexables::factory()->get( 'user' );
-		if ( method_exists( $indexable, 'build_settings' ) ) {
-			$settings = $indexable->build_settings();
-		} else {
-			$mapping  = $indexable->generate_mapping();
-			$settings = $mapping['settings'];
-		}
+		$settings = $this->get_index_settings( Indexables::factory()->get( 'user' ) );
+
 		$this->assertEquals( 4, $settings['index.number_of_shards'] );
-	}
-
-	public function test__vip_search_filter_ep_default_index_number_of_replicas() {
-		$this->init_es();
-
-		$replicas = apply_filters( 'ep_default_index_number_of_replicas', 2 );
-
-		$this->assertEquals( 1, $replicas );
 	}
 
 	public function vip_search_enforces_disabled_features_data() {
@@ -660,24 +422,18 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test that the default bulk index chunk size limit is not applied if constant is already defined
 	 */
 	public function test__vip_search_bulk_chunk_size_already_defined() {
-		Constant_Mocker::define( 'EP_SYNC_CHUNK_LIMIT', 500 );
+		Constant_Mocker::define( 'EP_SYNC_CHUNK_LIMIT', 200 );
 
 		$this->init_es();
 
-		$this->assertEquals( Constant_Mocker::constant( 'EP_SYNC_CHUNK_LIMIT' ), 500 );
+		$this->assertEquals( 200, Constant_Mocker::constant( 'EP_SYNC_CHUNK_LIMIT' ) );
 	}
 
 	/**
 	 * Test that the ES config constants are set automatically when not already defined and VIP-provided configs are present
 	 */
 	public function test__vip_search_connection_constants() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1',
-			'https://es-endpoint2',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+		$this->define_es_credentials( array( 'https://es-endpoint1', 'https://es-endpoint2' ) );
 
 		$this->init_es();
 
@@ -690,13 +446,7 @@ class Search_Test extends WP_UnitTestCase {
 	 *
 	 */
 	public function test__vip_search_connection_constants_with_overrides() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1',
-			'https://es-endpoint2',
-		) );
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+		$this->define_es_credentials( array( 'https://es-endpoint1', 'https://es-endpoint2' ) );
 
 		// Client over-rides - don't fatal
 		Constant_Mocker::define( 'EP_HOST', 'https://somethingelse' );
@@ -706,16 +456,6 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( Constant_Mocker::constant( 'EP_HOST' ), 'https://somethingelse' );
 		$this->assertEquals( Constant_Mocker::constant( 'ES_SHIELD' ), 'bar:baz' );
-	}
-
-	/**
-	 * Test that we are sending HTTP requests through the VIP helper functions
-	 */
-	public function test__vip_search_has_http_layer_filters() {
-		$this->init_es();
-
-		$this->assertEquals( true, has_filter( 'ep_intercept_remote_request', '__return_true' ) );
-		$this->assertEquals( true, has_filter( 'ep_do_intercept_request', [ $this->search_instance, 'filter__ep_do_intercept_request' ] ) );
 	}
 
 	public function vip_search_get_http_timeout_for_query_data() {
@@ -792,20 +532,17 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider vip_search_get_http_timeout_for_query_data()
 	 */
 	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
-		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
-
 		$timeout = $this->search_instance->get_http_timeout_for_query( $query, [ 'method' => 'POST' ] );
 
 		$this->assertEquals( $expected_timeout, $timeout );
 	}
 
 	/**
-	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked)
+	 * Test that instantiating the HealthJob works as expected (files are properly included, init is hooked), and that
+	 * the health check is not enabled when not in production
 	 */
-	public function test__vip_search_setup_healthchecks_with_enabled() {
-		// Need to filter to enable the HealthJob
-		add_filter( 'enable_vip_search_healthchecks', '__return_true' );
-
+	public function test__vip_search_setup_healthchecks() {
+		Constant_Mocker::define( 'VIP_GO_ENV', '999' );
 		$this->init_es();
 
 		$this->search_instance->setup_cron_jobs();
@@ -813,32 +550,34 @@ class Search_Test extends WP_UnitTestCase {
 
 		// Ensure it returns the priority set. Easiest way to to ensure it's not false
 		$this->assertTrue( false !== has_action( 'wp_loaded', [ $this->search_instance->healthcheck, 'init' ] ) );
+		$this->assertFalse( $this->search_instance->healthcheck->is_enabled() );
+	}
+
+	public function vip_search_filter__ep_pre_request_host_passthrough_data() {
+		return array(
+			'endpoints not defined'  => array( null ),
+			'empty endpoint list'    => array( array() ),
+			'endpoints not an array' => array( 'Random string' ),
+		);
 	}
 
 	/**
-	 * Test that instantiating the HealthJob does not happen when not in production
+	 * Test that filter__ep_pre_request_host hands the last host back when there is no usable endpoint list
+	 *
+	 * @dataProvider vip_search_filter__ep_pre_request_host_passthrough_data
 	 */
-	public function test__vip_search_setup_healthchecks_disabled_in_non_production_env() {
-		Constant_Mocker::define( 'VIP_GO_ENV', '999' );
-		$this->init_es();
+	public function test__vip_search_filter__ep_pre_request_host_passthrough( $endpoints ) {
+		if ( null !== $endpoints ) {
+			Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
+		}
 
-		$this->search_instance->setup_cron_jobs();
-
-		// Should not have fataled (class was included)
-
-		// Should not have instantiated and registered the init action to setup the health check
-		$this->assertEquals( false, $this->search_instance->healthcheck->is_enabled() );
+		$this->assertEquals( 'test', $this->search_instance->filter__ep_pre_request_host( 'test', 0 ) );
 	}
 
 	/**
 	 * Test that checks both single and multi-host retries
 	 */
 	public function test__vip_search_filter__ep_pre_request_host() {
-		$this->init_es();
-
-		// If VIP_ELASTICSEARCH_ENDPOINTS is not defined, just hand the last host back
-		$this->assertEquals( 'test', $this->search_instance->filter__ep_pre_request_host( 'test', 0 ), 'filter__ep_pre_request_host() did\'t just hand the last host back when VIP_ELASTICSEARCH_ENDPOINTS was undefined' );
-
 		Constant_Mocker::define(
 			'VIP_ELASTICSEARCH_ENDPOINTS',
 			array(
@@ -853,39 +592,6 @@ class Search_Test extends WP_UnitTestCase {
 
 		$this->assertContains( $this->search_instance->filter__ep_pre_request_host( 'endpoint1', 0 ), Constant_Mocker::constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ), 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
 		$this->assertContains( $this->search_instance->filter__ep_pre_request_host( 'endpoint1', 107 ), Constant_Mocker::constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ), 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
-	}
-
-	/*
-	 * Test for making sure filter__ep_pre_request_host handles empty endpoint lists
-	 */
-	public function test__vip_search_filter__ep_pre_request_host_empty_endpoint() {
-		$this->init_es();
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array() );
-
-		$this->assertEquals( 'test', $this->search_instance->filter__ep_pre_request_host( 'test', 0 ) );
-	}
-
-	/*
-	 * Test for making sure filter__ep_pre_request_host handles endpoint lists that aren't arrays
-	 */
-	public function test__vip_search_filter__ep_pre_request_host_endpoint_not_array() {
-		$this->init_es();
-
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', 'Random string' );
-
-		$this->assertEquals( 'test', $this->search_instance->filter__ep_pre_request_host( 'test', 0 ) );
-	}
-
-	/**
-	 * Ensure that we're allowing querying during bulk re-index, via the ep_enable_query_integration_during_indexing filter
-	 */
-	public function test__vip_search_filter__ep_enable_query_integration_during_indexing() {
-		$this->init_es();
-
-		$allowed = apply_filters( 'ep_enable_query_integration_during_indexing', false );
-
-		$this->assertTrue( $allowed );
 	}
 
 	/*
@@ -907,18 +613,24 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'test1', $this->search_instance->get_next_host( 17 ), 'get_next_host() didn\'t match expected result with 21 total failures and 4 hosts. and a starting index of 0' );
 	}
 
-	/*
-	 * Test for making sure the load balance functionality works
-	 */
-	public function test__vip_search_get_random_host() {
-		$hosts = array(
-			'test0',
-			'test1',
-			'test2',
-			'test3',
-		);
+	public function vip_search_get_random_host_data() {
+		$hosts = array( 'test0', 'test1', 'test2', 'test3' );
 
-		$this->assertContains( $this->search_instance->get_random_host( $hosts ), $hosts );
+		return array(
+			// Hosts, possible results
+			'hosts'           => array( $hosts, $hosts ),
+			'no hosts'        => array( array(), array( null ) ),
+			'hosts not array' => array( false, array( null ) ),
+		);
+	}
+
+	/**
+	 * Test for making sure the load balance functionality works
+	 *
+	 * @dataProvider vip_search_get_random_host_data
+	 */
+	public function test__vip_search_get_random_host( $hosts, $possible_results ) {
+		$this->assertContains( $this->search_instance->get_random_host( $hosts ), $possible_results );
 	}
 
 	public function test__send_vary_headers__sent_for_group() {
@@ -934,12 +646,6 @@ class Search_Test extends WP_UnitTestCase {
 
 		$headers = headers_list();
 		$this->assertContains( 'X-ElasticPress-Search-Valid-Response: true', $headers, '', true );
-	}
-
-	public function test__vip_search_filter__ep_facet_taxonomies_size() {
-		$this->init_es();
-
-		$this->assertEquals( 5, $this->search_instance->filter__ep_facet_taxonomies_size( 10000, 'category' ) );
 	}
 
 	public function vip_search_filter__jetpack_active_modules() {
@@ -1018,8 +724,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider vip_search_filter__jetpack_active_modules
 	 */
 	public function test__vip_search_filter__jetpack_active_modules( $input, $expected ) {
-		$this->init_es();
-
 		$result = $this->search_instance->filter__jetpack_active_modules( $input );
 
 		$this->assertEquals( $expected, $result );
@@ -1072,8 +776,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider vip_search_filter__jetpack_widgets_to_include_data
 	 */
 	public function test__vip_search_filter__jetpack_widgets_to_include( $input, $expected ) {
-		$this->init_es();
-
 		$result = $this->search_instance->filter__jetpack_widgets_to_include( $input );
 
 		$this->assertEquals( $expected, $result );
@@ -1083,8 +785,6 @@ class Search_Test extends WP_UnitTestCase {
 	 * Test that the track_total_hits arg exists
 	 */
 	public function test__vip_filter__ep_post_formatted_args() {
-		$this->init_es();
-
 		$result = $this->search_instance->filter__ep_post_formatted_args( array(), '', '' );
 
 		$this->assertTrue( array_key_exists( 'track_total_hits', $result ), 'track_total_hits doesn\'t exist in fortmatted args' );
@@ -1135,83 +835,62 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_index_name, $index_name );
 	}
 
-	/**
-	 * Ensure we disable indexing of filtered content by default
-	 */
-	public function test__vip_search_filter__ep_allow_post_content_filtered_index() {
-		$this->init_es();
-
-		$enabled = apply_filters( 'ep_allow_post_content_filtered_index', true );
-
-		$this->assertFalse( $enabled );
-	}
-
-	/*
-	 * Ensure that is_query_integration_enabled() is false by default with no options/constants
-	 */
-	public function test__is_query_integration_enabled_default() {
-		$this->assertFalse( Search::is_query_integration_enabled() );
-	}
-
-	/*
-	 * Ensure is_query_integration_enabled() option works properly with the vip_enable_vip_search_query_integration option
-	 */
-	public function test__is_query_integration_enabled_via_option() {
-		update_option( 'vip_enable_vip_search_query_integration', true );
-
-		self::assertFalse( defined( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' ) );
-		self::assertFalse( defined( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' ) );
-		self::assertTrue( Search::is_query_integration_enabled() );
-
-		delete_option( 'vip_enable_vip_search_query_integration' );
-	}
-
-	/*
-	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION
-	 */
-	public function test__is_query_integration_enabled_via_legacy_constant() {
-		Constant_Mocker::define( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION', true );
-
-		$this->assertTrue( Search::is_query_integration_enabled() );
-	}
-
-	/*
-	 * Ensure is_query_integration_enabled() properly considers VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION
-	 */
-	public function test__is_query_integration_enabled_via_constant() {
-		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-
-		$this->assertTrue( Search::is_query_integration_enabled() );
+	public function is_query_integration_enabled_data() {
+		return array(
+			// Constants, option enabled, `es` query param set, expected
+			'default (no options/constants)' => array( array(), false, false, false ),
+			'vip_enable_vip_search_query_integration option' => array( array(), true, false, true ),
+			'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION constant' => array( array( 'VIP_ENABLE_ELASTICSEARCH_QUERY_INTEGRATION' => true ), false, false, true ),
+			'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION constant' => array( array( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION' => true ), false, false, true ),
+			'query param'                    => array( array(), false, true, true ),
+		);
 	}
 
 	/**
-	 * Ensure query integration is enabled when the 'es' query param is set
+	 * Ensure is_query_integration_enabled() considers the option, constants and query param, and that
+	 * es-wp-query is only loaded when query integration is enabled
+	 *
+	 * @dataProvider is_query_integration_enabled_data
 	 */
-	public function test__is_query_integration_enabled_via_query_param() {
-		// Set es query string to test override
-		$_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
+	public function test__is_query_integration_enabled( $constants, $option, $query_param, $expected ) {
+		foreach ( $constants as $name => $value ) {
+			Constant_Mocker::define( $name, $value );
+		}
+
+		if ( $option ) {
+			update_option( 'vip_enable_vip_search_query_integration', true );
+		}
+
+		if ( $query_param ) {
+			$_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
+		}
 
 		try {
-			$this->assertTrue( Search::is_query_integration_enabled() );
+			$this->assertSame( $expected, Search::is_query_integration_enabled() );
+			$this->assertSame( $expected, Search::should_load_es_wp_query() );
 		} finally {
 			unset( $_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] );
 		}
 	}
 
-	public function test_is_network_mode_default() {
-		$this->assertFalse( Search::is_network_mode() );
+	public function is_network_mode_data() {
+		return array(
+			// EP_IS_NETWORK value (null to leave undefined), expected
+			'default'        => array( null, false ),
+			'constant true'  => array( true, true ),
+			'constant false' => array( false, false ),
+		);
 	}
 
-	public function test_is_network_mode_with_constant() {
-		Constant_Mocker::define( 'EP_IS_NETWORK', true );
+	/**
+	 * @dataProvider is_network_mode_data
+	 */
+	public function test_is_network_mode( $constant, $expected ) {
+		if ( null !== $constant ) {
+			Constant_Mocker::define( 'EP_IS_NETWORK', $constant );
+		}
 
-		$this->assertTrue( Search::is_network_mode() );
-	}
-
-	public function test_is_network_mode_with_constant_false() {
-		Constant_Mocker::define( 'EP_IS_NETWORK', false );
-
-		$this->assertFalse( Search::is_network_mode() );
+		$this->assertSame( $expected, Search::is_network_mode() );
 	}
 
 	/*
@@ -1240,10 +919,6 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__rate_limit_ep_query_integration__triggers() {
 		$es = new Search();
 		$es->init();
-
-		add_option( 'vip_enable_vip_search_query_integration', true );
-		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-		$_GET[ Search::QUERY_INTEGRATION_FORCE_ENABLE_KEY ] = true;
 
 		$this->assertFalse( $es->rate_limit_ep_query_integration( false ), 'the default value should be false' );
 		$this->assertTrue( $es->rate_limit_ep_query_integration( true ), 'should honor filters that skip query integrations' );
@@ -1282,15 +957,6 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure we don't load es-wp-query by default (if it's not enabled)
-	 */
-	public function test__should_load_es_wp_query_default() {
-		$should = Search::should_load_es_wp_query();
-
-		$this->assertFalse( $should );
-	}
-
-	/**
 	 * Ensure we don't load es-wp-query if it is already loaded
 	 *
 	 * @runInSeparateProcess
@@ -1307,21 +973,10 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Ensure we do load es-wp-query when query integration is enabled
-	 */
-	public function test__should_load_es_wp_query_query_integration() {
-		Constant_Mocker::define( 'VIP_ENABLE_VIP_SEARCH_QUERY_INTEGRATION', true );
-
-		$should = Search::should_load_es_wp_query();
-
-		$this->assertTrue( $should );
-	}
-
-	/**
 	 * Ensure the incrementor for tracking request counts behaves properly
 	 */
 	public function test__query_count_incr() {
-		$query_count_incr = self::get_method( 'query_count_incr' );
+		$query_count_incr = get_class_method_as_public( Search::class, 'query_count_incr' );
 
 		// Reset cache key
 		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
@@ -1369,31 +1024,27 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_search_string, $wp_query_mock->get( 's' ) );
 	}
 
-	public function test__limit_field_limit_absolute_maximum_is_20000() {
-		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
-
-		$this->assertEquals( 20000, $this->search_instance->limit_field_limit( 1000000 ) );
+	public function ep_total_field_limit_data() {
+		return array(
+			// Filtered field limit, expected limit, expect _doing_it_wrong()
+			'absolute maximum is 20000'         => array( 1000000, 20000, true ),
+			'values under the maximum are kept' => array( 777, 777, false ),
+		);
 	}
 
-	public function test__limit_field_limit_should_respect_values_under_maximum() {
-		$this->assertEquals( 777, $this->search_instance->limit_field_limit( 777 ) );
-	}
-
-	public function test__ep_total_field_limit_should_limit_total_fields() {
-		$this->setExpectedIncorrectUsage( 'limit_field_limit' );
+	/**
+	 * @dataProvider ep_total_field_limit_data
+	 */
+	public function test__ep_total_field_limit( $field_limit, $expected, $expect_doing_it_wrong ) {
+		if ( $expect_doing_it_wrong ) {
+			$this->setExpectedIncorrectUsage( 'limit_field_limit' );
+		}
 
 		$this->init_es();
 
-		add_filter( 'ep_total_field_limit', fn() => 1000000 );
-		$this->assertEquals( 20000, apply_filters( 'ep_total_field_limit', 5000 ) );
-	}
+		add_filter( 'ep_total_field_limit', fn() => $field_limit );
 
-	public function test__ep_total_field_limit_should_respect_values_under_the_limit() {
-		$this->init_es();
-
-		add_filter( 'ep_total_field_limit', fn() => 787 );
-
-		$this->assertEquals( 787, apply_filters( 'ep_total_field_limit', 5000 ) );
+		$this->assertEquals( $expected, apply_filters( 'ep_total_field_limit', 5000 ) );
 	}
 
 	public function get_filter__ep_sync_taxonomies_default_data() {
@@ -1499,119 +1150,80 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_taxonomy_names, $filtered_taxonomy_names );
 	}
 
-	public function test__is_jetpack_migration() {
-		Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
-
-		$this->assertTrue( $this->search_instance->is_jetpack_migration() );
+	public function is_jetpack_migration_data() {
+		return array(
+			// VIP_SEARCH_MIGRATION_SOURCE value (null to leave undefined), expected
+			'jetpack'         => array( 'jetpack', true ),
+			'no constant'     => array( null, false ),
+			'different value' => array( 'foo', false ),
+		);
 	}
 
-	public function test__is_jetpack_migration__no_constant() {
-		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
+	/**
+	 * @dataProvider is_jetpack_migration_data
+	 */
+	public function test__is_jetpack_migration( $source, $expected ) {
+		if ( null !== $source ) {
+			Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', $source );
+		}
+
+		$this->assertSame( $expected, $this->search_instance->is_jetpack_migration() );
 	}
 
-	public function test__is_jetpack_migration__different_value() {
-		Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'foo' );
-
-		$this->assertFalse( $this->search_instance->is_jetpack_migration() );
-	}
-
-	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default() {
-		add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
+	public function filter__ep_prepare_meta_data_allow_list_data() {
+		return array(
+			'list'              => array(
+				array(
 					'random_post_meta',
 					'another_one',
 					'third',
-				);
-			}
-		);
-
-		// Matches allow list
-		$post_meta = array(
-			'random_post_meta' => array(
-				'Random value',
+				),
 			),
-			'another_one'      => array(
-				'4656784',
-			),
-			'third'            => array(
-				'true',
-			),
-		);
-
-		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
-
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
-		$meta = $this->search_instance->filter__ep_prepare_meta_data( $post_meta, $post );
-
-		unset( $post_meta['random_thing_not_allow_listed'] ); // Remove last added value that should have been excluded by the filter
-
-		$this->assertEquals( $meta, $post_meta );
-	}
-
-	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default_assoc() {
-		$es = new Search();
-
-		add_filter(
-			'vip_search_post_meta_allow_list',
-			function () {
-				return array(
+			// Only keys set to true are allowed
+			'associative array' => array(
+				array(
 					'random_post_meta' => true,
 					'another_one'      => true,
 					'skipped'          => false,
 					'skipped_another'  => 4,
 					'skipped_string'   => 'Wooo',
 					'third'            => true,
-				);
-			}
+				),
+			),
 		);
+	}
 
-		// Matches allow list
-		$post_meta = array(
+	/**
+	 * @dataProvider filter__ep_prepare_meta_data_allow_list_data
+	 */
+	public function test__filter__ep_prepare_meta_data_allow_list_should_be_respected_by_default( $allow_list ) {
+		add_filter( 'vip_search_post_meta_allow_list', fn() => $allow_list );
+
+		$allowed_meta = array(
 			'random_post_meta' => array(
 				'Random value',
 			),
 			'another_one'      => array(
 				'4656784',
 			),
-			'skipped'          => array(
-				'Skip',
-			),
-			'skipped_another'  => array(
-				'Skip',
-			),
-			'skipped_string'   => array(
-				'Skip',
-			),
 			'third'            => array(
 				'true',
 			),
 		);
 
-		$post_meta['random_thing_not_allow_listed'] = array( 'Missing' );
-
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
-		$meta = $es->filter__ep_prepare_meta_data( $post_meta, $post );
-
-		$this->assertEquals(
-			$meta,
+		$post_meta = array_merge(
+			$allowed_meta,
 			array(
-				'random_post_meta' => array(
-					'Random value',
-				),
-				'another_one'      => array(
-					'4656784',
-				),
-				'third'            => array(
-					'true',
-				),
+				'skipped'                       => array( 'Skip' ),
+				'skipped_another'               => array( 'Skip' ),
+				'skipped_string'                => array( 'Skip' ),
+				'random_thing_not_allow_listed' => array( 'Missing' ),
 			)
 		);
+
+		$meta = $this->search_instance->filter__ep_prepare_meta_data( $post_meta, $this->stub_post() );
+
+		$this->assertEquals( $allowed_meta, $meta );
 	}
 
 	/**
@@ -1629,12 +1241,7 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
 
 		foreach ( $indexables as $indexable ) {
-			if ( method_exists( $indexable, 'build_settings' ) ) {
-				$settings = $indexable->build_settings();
-			} else {
-				$mapping  = $indexable->generate_mapping();
-				$settings = $mapping['settings'];
-			}
+			$settings = $this->get_index_settings( $indexable );
 
 			$this->assertEquals( 'dfw', $settings['index.routing.allocation.include.dc'], 'Indexable ' . $indexable->slug . ' has the wrong routing allocation' );
 		}
@@ -1651,25 +1258,11 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $indexables, 'Indexables array was empty' );
 
 		foreach ( $indexables as $indexable ) {
-			if ( method_exists( $indexable, 'build_settings' ) ) {
-				$settings = $indexable->build_settings();
-			} else {
-				$mapping  = $indexable->generate_mapping();
-				$settings = $mapping['settings'];
-			}
+			$settings = $this->get_index_settings( $indexable );
 
 			// Datacenter was invalid, so it should not have added the allocation settings
 			$this->assertArrayNotHasKey( 'index.routing.allocation.include.dc', $settings, 'Indexable ' . $indexable->slug . ' incorrectly defined the allocation settings' );
 		}
-	}
-
-	public function test__get_index_routing_allocation_include_dc_from_constant() {
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dca' );
-		$this->init_es();
-
-		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
-
-		$this->assertEquals( 'dca', $origin_dc );
 	}
 
 	public function get_index_routing_allocation_include_dc_from_endpoints_data() {
@@ -1717,8 +1310,6 @@ class Search_Test extends WP_UnitTestCase {
 	 */
 	public function test__get_index_routing_allocation_include_dc_from_endpoints( $endpoints, $expected ) {
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
-		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
-		$this->search_instance->init();
 
 		$origin_dc = $this->search_instance->get_index_routing_allocation_include_dc();
 
@@ -1750,60 +1341,41 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider get_origin_dc_from_es_endpoint_data
 	 */
 	public function test__get_origin_dc_from_es_endpoint( $host, $expected ) {
-		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
-		$this->search_instance->init();
-
 		$origin_dc = $this->search_instance->get_origin_dc_from_es_endpoint( $host );
 
 		$this->assertEquals( $expected, $origin_dc );
 	}
 
-	public function get_post_meta_allow_list__combinations_for_jetpack_migration_data() {
+	public function get_post_meta_allow_list__combinations_data() {
+		$jetpack_defaults = array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST );
+
+		// Jetpack migration, keys added by the VIP Search filter, keys added by the Jetpack filter, expected
 		return [
-			[
-				null, // VIP search
-				null, // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST ), // expected
-			],
-			[
-				[ 'foo' ], // VIP search
-				null, // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
-			],
-			[
-				// keys provided by VIP and JP filters
-				[ 'foo' ], // VIP search
-				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar', 'foo' ] ), // expected
-			],
-			[
-				// keys from empty VIP filter, JP filter
-				[], // VIP search
-				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
-			],
-			[
-				// No VIP filter, JP filter
-				null, // VIP search
-				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, Search::JETPACK_POST_META_DEFAULT_ALLOW_LIST, [ 'bar' ] ), // expected
-			],
+			'jetpack migration: no filters'             => [ true, null, null, $jetpack_defaults ],
+			'jetpack migration: VIP filter'             => [ true, [ 'foo' ], null, array_merge( $jetpack_defaults, [ 'foo' ] ) ],
+			'jetpack migration: VIP and JP filters'     => [ true, [ 'foo' ], [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar', 'foo' ] ) ],
+			'jetpack migration: empty VIP filter, JP filter' => [ true, [], [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar' ] ) ],
+			'jetpack migration: JP filter'              => [ true, null, [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar' ] ) ],
+			'not jetpack migration: no filters'         => [ false, null, null, Search::POST_META_DEFAULT_ALLOW_LIST ],
+			'not jetpack migration: VIP filter'         => [ false, [ 'foo' ], null, array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ) ],
+			'not jetpack migration: VIP and JP filters' => [ false, [ 'foo' ], [ 'bar' ], array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ) ],
+			'not jetpack migration: empty VIP filter, JP filter' => [ false, [], [ 'bar' ], Search::POST_META_DEFAULT_ALLOW_LIST ],
+			'not jetpack migration: JP filter'          => [ false, null, [ 'bar' ], Search::POST_META_DEFAULT_ALLOW_LIST ],
 		];
 	}
 
 	/**
-	 * @dataProvider get_post_meta_allow_list__combinations_for_jetpack_migration_data
+	 * @dataProvider get_post_meta_allow_list__combinations_data
 	 */
-	public function test__get_post_meta_allow_list__combinations_for_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
-		Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+	public function test__get_post_meta_allow_list__combinations( $is_jetpack_migration, $vip_search_keys, $jetpack_added, $expected ) {
+		if ( $is_jetpack_migration ) {
+			Constant_Mocker::define( 'VIP_SEARCH_MIGRATION_SOURCE', 'jetpack' );
+		}
 
 		remove_all_filters( 'vip_search_post_meta_allow_list' );
 		remove_all_filters( 'jetpack_sync_post_meta_whitelist' );
 		$this->init_es();
 
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
 		if ( is_array( $vip_search_keys ) ) {
 			add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
 				return array_merge( $post_meta, $vip_search_keys );
@@ -1816,66 +1388,7 @@ class Search_Test extends WP_UnitTestCase {
 			});
 		}
 
-		$result = $this->search_instance->get_post_meta_allow_list( $post );
-
-		$this->assertEquals( $expected, $result );
-	}
-
-	public function get_post_meta_allow_list__combinations_not_jetpack_migration_data() {
-		return [
-			[
-				null, // VIP search
-				null, // Jetpack filter added
-				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
-			],
-			[
-				[ 'foo' ], // VIP search
-				null, // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
-			],
-			[
-				// keys provided by VIP and JP filters
-				[ 'foo' ], // VIP search
-				[ 'bar' ], // Jetpack filter added
-				array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ), // expected
-			],
-			[
-				// keys from empty VIP filter, JP filter
-				[], // VIP search
-				[ 'bar' ], // Jetpack filter added
-				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
-			],
-			[
-				// No VIP filter, JP filter
-				null, // VIP search
-				[ 'bar' ], // Jetpack filter added
-				Search::POST_META_DEFAULT_ALLOW_LIST, // expected
-			],
-		];
-	}
-
-	/**
-	 * @dataProvider get_post_meta_allow_list__combinations_not_jetpack_migration_data
-	 */
-	public function test__get_post_meta_allow_list__combinations_not_jetpack_migration( $vip_search_keys, $jetpack_added, $expected ) {
-		$this->init_es();
-
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
-		if ( is_array( $vip_search_keys ) ) {
-			add_filter( 'vip_search_post_meta_allow_list', function ( $post_meta ) use ( $vip_search_keys ) {
-				return array_merge( $post_meta, $vip_search_keys );
-			});
-		}
-
-		if ( is_array( $jetpack_added ) ) {
-			add_filter( 'jetpack_sync_post_meta_whitelist', function ( $post_meta ) use ( $jetpack_added ) {
-				return array_merge( $post_meta, $jetpack_added );
-			});
-		}
-
-		$result = $this->search_instance->get_post_meta_allow_list( $post );
+		$result = $this->search_instance->get_post_meta_allow_list( $this->stub_post() );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1907,89 +1420,35 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider get_post_meta_allow_list__processing_array_data
 	 */
 	public function test__get_post_meta_allow_list__processing_array( $returned_by_filter, $expected ) {
-		$this->init_es();
-
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
-		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
-
 		add_filter( 'vip_search_post_meta_allow_list', function () use ( $returned_by_filter ) {
 			return $returned_by_filter;
 		}, 0);
 
-		$result = $this->search_instance->get_post_meta_allow_list( $post );
+		$result = $this->search_instance->get_post_meta_allow_list( $this->stub_post() );
 
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		$this->init_es();
-
-		$this->assertTrue( $this->search_instance->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
+	public function ep_skip_post_meta_sync_data() {
+		return array(
+			// Value from previous filters, filtered allow list (null for the default), expected
+			'meta not in allow list'         => array( false, null, true ),
+			'meta in allow list'             => array( false, [ 'random_key' ], false ),
+			'a previous filter skipped sync' => array( true, [ 'random_key' ], true ),
+		);
 	}
 
-	public function test__filter__ep_skip_post_meta_sync_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
-
-		$this->init_es();
-
-		$this->assertFalse( $this->search_instance->filter__ep_skip_post_meta_sync( false, $post, 40, 'random_key', 'random_value' ) );
-	}
-
-	public function test__filter__ep_skip_post_meta_sync_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
+	/**
+	 * @dataProvider ep_skip_post_meta_sync_data
+	 */
+	public function test__ep_skip_post_meta_sync_filter( $previous_skip, $allow_list, $expected ) {
+		if ( null !== $allow_list ) {
+			add_filter( 'vip_search_post_meta_allow_list', fn() => $allow_list );
+		}
 
 		$this->init_es();
 
-		$this->assertTrue( $this->search_instance->filter__ep_skip_post_meta_sync( true, $post, 40, 'random_key', 'random_value' ) );
-	}
-
-	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_meta_not_in_allow_list() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		$this->init_es();
-
-		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
-	}
-
-	public function test__ep_skip_post_meta_sync_filter_should_return_false_if_meta_is_in_allow_list() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
-
-		$this->init_es();
-
-		$this->assertFalse( apply_filters( 'ep_skip_post_meta_sync', false, $post, 40, 'random_key', 'random_value' ) );
-	}
-
-	public function test__ep_skip_post_meta_sync_filter_should_return_true_if_a_previous_filter_is_true() {
-		$post_id = $this->factory()->post->create( array( 'post_title' => 'Test Post' ) );
-
-		$post = get_post( $post_id );
-
-		add_filter( 'vip_search_post_meta_allow_list', fn() => [ 'random_key' ] );
-
-		$this->init_es();
-
-		$this->assertTrue( apply_filters( 'ep_skip_post_meta_sync', true, $post, 40, 'random_key', 'random_value' ) );
+		$this->assertSame( $expected, apply_filters( 'ep_skip_post_meta_sync', $previous_skip, $this->stub_post(), 40, 'random_key', 'random_value' ) );
 	}
 
 	public function filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list_data() {
@@ -2022,19 +1481,13 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__filter__ep_prepare_meta_allowed_protected_keys__should_use_post_meta_allow_list( $default_ep_protected_keys, $added_keys, $expected ) {
 		self::assertFalse( defined( 'VIP_SEARCH_MIGRATION_SOURCE' ) );
 
-		$post     = new WP_Post( new stdClass() );
-		$post->ID = 0;
-
-		// clearing up jetpack values as those are put by default to vip_search_post_meta_allow_list but are not the object of testing here
-		add_filter( 'jetpack_sync_post_meta_whitelist', '__return_empty_array' );
-
 		add_filter( 'vip_search_post_meta_allow_list', function ( $meta_keys ) use ( $added_keys ) {
 			return array_merge( $meta_keys, $added_keys );
 		}, 0);
 
 		$this->init_es();
 
-		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $post );
+		$result = \apply_filters( 'ep_prepare_meta_allowed_protected_keys', $default_ep_protected_keys, $this->stub_post() );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -2048,15 +1501,12 @@ class Search_Test extends WP_UnitTestCase {
 		$expected_message    = "Average index queue wait time for application {$application_id} - {$application_url} is currently {$average_queue_value} seconds. There are {$queue_count_value} items in the queue and the oldest item is {$longest_queue_value} seconds old";
 		$expected_level      = 2;
 
-		$this->search_instance->init();
-
-		$alerts_mocked   = $this->createMock( Alerts::class );
+		$alerts_mocked   = $this->mock_alerts( $this->search_instance );
 		$queue_mocked    = $this->createMock( Queue::class );
 		$indexables_mock = $this->createMock( Indexables::class );
 
 		$this->search_instance->queue      = $queue_mocked;
 		$this->search_instance->indexables = $indexables_mock;
-		$this->search_instance->alerts     = $alerts_mocked;
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( Indexable::class ) );
@@ -2096,13 +1546,11 @@ class Search_Test extends WP_UnitTestCase {
 		$partially_mocked_search = $this->getMockBuilder( Search::class )
 			->onlyMethods( [ 'get_current_field_count' ] )
 			->getMock();
-		$partially_mocked_search->init();
 
-		$alerts_mocked   = $this->createMock( Alerts::class );
+		$alerts_mocked   = $this->mock_alerts( $partially_mocked_search );
 		$indexables_mock = $this->createMock( Indexables::class );
 
 		$partially_mocked_search->indexables = $indexables_mock;
-		$partially_mocked_search->alerts     = $alerts_mocked;
 
 		$indexables_mock->method( 'get' )
 			->willReturn( $this->createMock( \ElasticPress\Indexable::class ) );
@@ -2138,12 +1586,9 @@ class Search_Test extends WP_UnitTestCase {
 			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::SEARCH_CACHE_GROUP );
 		}
 
-		$this->search_instance->init();
 		$this->search_instance->set_time( $time );
 
-		$alerts_mocked = $this->createMock( Alerts::class );
-
-		$this->search_instance->alerts = $alerts_mocked;
+		$alerts_mocked = $this->mock_alerts( $this->search_instance );
 
 		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
 			->method( 'send_to_chat' )
@@ -2164,103 +1609,31 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->reset_time();
 	}
 
-	/* Format:
-	 * [
-	 *      [
-	 *          $filter,
-	 *          $too_low_message,
-	 *          $too_high_message,
-	 *      ]
-	 * ]
-	 */
 	public function vip_search_ratelimiting_filter_data() {
 		return array(
-			[
-				'vip_search_ratelimit_period',
-				'vip_search_ratelimit_period should not be set below 60 seconds.',
-				'vip_search_ratelimit_period should not be set above 7200 seconds.',
-			],
-			[
-				'vip_search_max_query_count',
-				'vip_search_max_query_count should not be below 10 queries per second.',
-				'vip_search_max_query_count should not exceed 500 queries per second.',
-			],
-			[
-				'vip_search_query_db_fallback_value',
-				'vip_search_query_db_fallback_value should be between 1 and 10.',
-				'vip_search_query_db_fallback_value should be between 1 and 10.',
-			],
+			// Filter, filtered value, expected _doing_it_wrong() message
+			'period: not numeric'            => [ 'vip_search_ratelimit_period', '30.ffr', 'vip_search_ratelimit_period should be an integer.' ],
+			'period: too low'                => [ 'vip_search_ratelimit_period', 0, 'vip_search_ratelimit_period should not be set below 60 seconds.' ],
+			'period: too high'               => [ 'vip_search_ratelimit_period', PHP_INT_MAX, 'vip_search_ratelimit_period should not be set above 7200 seconds.' ],
+			'max query count: not numeric'   => [ 'vip_search_max_query_count', '30.ffr', 'vip_search_max_query_count should be an integer.' ],
+			'max query count: too low'       => [ 'vip_search_max_query_count', 0, 'vip_search_max_query_count should not be below 10 queries per second.' ],
+			'max query count: too high'      => [ 'vip_search_max_query_count', PHP_INT_MAX, 'vip_search_max_query_count should not exceed 500 queries per second.' ],
+			'db fallback value: not numeric' => [ 'vip_search_query_db_fallback_value', '30.ffr', 'vip_search_query_db_fallback_value should be an integer.' ],
+			'db fallback value: too low'     => [ 'vip_search_query_db_fallback_value', 0, 'vip_search_query_db_fallback_value should be between 1 and 10.' ],
+			'db fallback value: too high'    => [ 'vip_search_query_db_fallback_value', PHP_INT_MAX, 'vip_search_query_db_fallback_value should be between 1 and 10.' ],
 		);
 	}
 
 	/**
 	 * @dataProvider vip_search_ratelimiting_filter_data
 	 */
-	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
-		add_filter(
-			$filter,
-			function () {
-				return '30.ffr';
-			}
-		);
+	public function test__filter__vip_search_ratelimiting_validation( $filter, $value, $expected_message ) {
+		add_filter( $filter, fn() => $value );
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$messages = $this->get_doing_it_wrong_messages( [ $this->search_instance, 'apply_settings' ] );
 
-		$this->assertContains( "{$filter} should be an integer.", $messages );
-	}
-
-	/**
-	 * @dataProvider vip_search_ratelimiting_filter_data
-	 */
-	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
-		add_filter(
-			$filter,
-			function () {
-				return 0;
-			}
-		);
-
-		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$messages = $this->get_doing_it_wrong_messages( [ $this->search_instance, 'apply_settings' ] );
-
-		$this->assertContains( $too_low_message, $messages );
-	}
-
-	/**
-	 * @dataProvider vip_search_ratelimiting_filter_data
-	 */
-	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
-		add_filter(
-			$filter,
-			function () {
-				return PHP_INT_MAX;
-			}
-		);
-
-		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$messages = $this->get_doing_it_wrong_messages( [ $this->search_instance, 'apply_settings' ] );
-
-		$this->assertContains( $too_high_message, $messages );
-	}
-
-	public function stat_sampling_invalid_stat_param_data() {
-		return [
-			[ array() ],
-			[ null ],
-			[ new stdClass() ],
-			[ 5 ],
-			[ 8.6 ],
-		];
-	}
-
-	public function stat_sampling_invalid_value_param_data() {
-		return [
-			[ array() ],
-			[ null ],
-			[ new stdClass() ],
-			[ 'random' ],
-		];
+		$this->assertContains( $expected_message, $messages );
 	}
 
 	public function ep_handle_failed_request_data() {
@@ -2298,13 +1671,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * @dataProvider ep_handle_failed_request_data
 	 */
 	public function test__ep_handle_failed_request__log_message( $response, $expected_message ) {
-		$this->init_es();
-
-		$this->search_instance->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-			->onlyMethods( [ 'log' ] )
-			->getMock();
-
-		$this->search_instance->logger->expects( $this->once() )
+		$this->mock_logger()->expects( $this->once() )
 			->method( 'log' )
 			->with(
 				$this->equalTo( 'error' ),
@@ -2320,13 +1687,7 @@ class Search_Test extends WP_UnitTestCase {
 	 * Ensure when actions from the skiplist are called, they do not get logged as a failed request.
 	 */
 	public function test__ep_handle_failed_request__skiplist() {
-		$this->init_es();
-
-		$this->search_instance->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-			->onlyMethods( [ 'log' ] )
-			->getMock();
-
-		$this->search_instance->logger->expects( $this->never() )->method( 'log' );
+		$this->mock_logger()->expects( $this->never() )->method( 'log' );
 
 		$skiplist = [
 			'index_exists',
@@ -2391,15 +1752,9 @@ class Search_Test extends WP_UnitTestCase {
 	}
 
 	public function test__maybe_log_query_ratelimiting_start_should_do_nothing_if_ratelimiting_already_started() {
-		$this->init_es();
-
 		wp_cache_set( $this->search_instance::QUERY_RATE_LIMITED_START_CACHE_KEY, time(), $this->search_instance::SEARCH_CACHE_GROUP );
 
-		$this->search_instance->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-			->onlyMethods( [ 'log' ] )
-			->getMock();
-
-		$this->search_instance->logger->expects( $this->never() )->method( 'log' );
+		$this->mock_logger()->expects( $this->never() )->method( 'log' );
 
 		$this->search_instance->maybe_log_query_ratelimiting_start();
 	}
@@ -2407,11 +1762,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__maybe_log_query_ratelimiting_start_should_log_if_ratelimiting_not_already_started() {
 		$this->init_es();
 
-		$this->search_instance->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
-			->onlyMethods( [ 'log' ] )
-			->getMock();
-
-		$this->search_instance->logger->expects( $this->once() )
+		$this->mock_logger()->expects( $this->once() )
 			->method( 'log' )
 			->with(
 				$this->equalTo( 'warning' ),
@@ -2423,35 +1774,6 @@ class Search_Test extends WP_UnitTestCase {
 			);
 
 		$this->search_instance->maybe_log_query_ratelimiting_start();
-	}
-
-	public function test__add_attachment_to_ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
-		Constant_Mocker::define( 'EP_DASHBOARD_SYNC', 'test' );
-		$this->search_instance->init();
-
-		$this->assertEquals( 'testing', $this->search_instance->add_attachment_to_ep_indexable_post_types( 'testing' ) );
-		$this->assertEquals( 65, $this->search_instance->add_attachment_to_ep_indexable_post_types( 65 ) );
-		$this->assertEquals( null, $this->search_instance->add_attachment_to_ep_indexable_post_types( null ) );
-		$this->assertEquals( new stdClass(), $this->search_instance->add_attachment_to_ep_indexable_post_types( new stdClass() ) );
-	}
-
-	public function test__add_attachment_to_ep_indexable_post_types_should_append_attachment_to_array() {
-		$this->init_es();
-
-		$this->assertEquals( array( 'attachment' => 'attachment' ), $this->search_instance->add_attachment_to_ep_indexable_post_types( array() ) );
-		$this->assertEquals(
-			array(
-				'test'       => 'test',
-				'one'        => 'one',
-				'attachment' => 'attachment',
-			),
-			$this->search_instance->add_attachment_to_ep_indexable_post_types(
-				array(
-					'test' => 'test',
-					'one'  => 'one',
-				)
-			)
-		);
 	}
 
 	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
@@ -2510,18 +1832,6 @@ class Search_Test extends WP_UnitTestCase {
 		Features::factory()->activate_feature( 'protected_content' );
 
 		$this->assertTrue( $this->search_instance->is_protected_content_enabled() );
-	}
-
-	public function test__get_random_host_return_null_if_no_host() {
-		$this->init_es();
-
-		$this->assertSame( null, $this->search_instance->get_random_host( array() ) );
-	}
-
-	public function test__get_random_host_return_null_if_hosts_is_not_array() {
-		$this->init_es();
-
-		$this->assertSame( null, $this->search_instance->get_random_host( false ) );
 	}
 
 	public function test__maybe_enable_ep_query_logging_no_cap() {
@@ -2585,106 +1895,109 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $result );
 	}
 
-	public function test__are_es_constants_defined__no_constants() {
-		$result = Search::are_es_constants_defined();
-
-		$this->assertFalse( $result );
-	}
-
-	public function test__are_es_constants_defined__all_constants() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$result = Search::are_es_constants_defined();
-
-		$this->assertTrue( $result );
-	}
-
-	public function test__are_es_constants_defined__empty_password() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', '' );
-
-		$result = Search::are_es_constants_defined();
-
-		$this->assertFalse( $result );
-	}
-
-	public function test__are_es_constants_defined__no_username() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [ 'endpoint' ] );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$result = Search::are_es_constants_defined();
-
-		$this->assertFalse( $result );
-	}
-
-	public function test__are_es_constants_defined__no_endpoints() {
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [] );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
-
-		$result = Search::are_es_constants_defined();
-
-		$this->assertFalse( $result );
-	}
-
-	public function test__filter_ep_enable_do_weighting__default_no_weighting() {
-		$this->search_instance->init();
-
-		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
-	}
-
-	public function test__filter_ep_enable_do_weighting__anonymous_function() {
-		$this->search_instance->init();
-
-		add_filter(
-			'ep_weighting_configuration_for_search',
-			function ( $weight_config ) {
-				return $weight_config;
-			}
+	public function are_es_constants_defined_data() {
+		return array(
+			'no constants'   => array( array(), false ),
+			'all constants'  => array(
+				array(
+					'VIP_ELASTICSEARCH_ENDPOINTS' => [ 'endpoint' ],
+					'VIP_ELASTICSEARCH_USERNAME'  => 'foo',
+					'VIP_ELASTICSEARCH_PASSWORD'  => 'bar',
+				),
+				true,
+			),
+			'empty password' => array(
+				array(
+					'VIP_ELASTICSEARCH_ENDPOINTS' => [ 'endpoint' ],
+					'VIP_ELASTICSEARCH_USERNAME'  => 'foo',
+					'VIP_ELASTICSEARCH_PASSWORD'  => '',
+				),
+				false,
+			),
+			'no username'    => array(
+				array(
+					'VIP_ELASTICSEARCH_ENDPOINTS' => [ 'endpoint' ],
+					'VIP_ELASTICSEARCH_PASSWORD'  => 'bar',
+				),
+				false,
+			),
+			'no endpoints'   => array(
+				array(
+					'VIP_ELASTICSEARCH_ENDPOINTS' => [],
+					'VIP_ELASTICSEARCH_USERNAME'  => 'foo',
+					'VIP_ELASTICSEARCH_PASSWORD'  => 'bar',
+				),
+				false,
+			),
 		);
-
-		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
 	}
 
-	public function test__filter_ep_enable_do_weighting__class_function() {
+	/**
+	 * @dataProvider are_es_constants_defined_data
+	 */
+	public function test__are_es_constants_defined( $constants, $expected ) {
+		foreach ( $constants as $name => $value ) {
+			Constant_Mocker::define( $name, $value );
+		}
+
+		$this->assertSame( $expected, Search::are_es_constants_defined() );
+	}
+
+	public function filter_ep_enable_do_weighting_data() {
+		return array(
+			// Filter added to ep_weighting_configuration_for_search, weight config, expected
+			'default, no weighting'  => array( null, [], false ),
+			'anonymous function'     => array( static fn( $weight_config ) => $weight_config, [], true ),
+			'class method'           => array(
+				[
+					new class() {
+						public function filter( $weight_config ) {
+							return $weight_config;
+						}
+					},
+					'filter',
+				],
+				[],
+				true,
+			),
+			'weight config provided' => array( null, [ 'foo' => 'bar' ], true ),
+		);
+	}
+
+	/**
+	 * @dataProvider filter_ep_enable_do_weighting_data
+	 */
+	public function test__filter_ep_enable_do_weighting( $weighting_filter, $weight_config, $expected ) {
 		$this->search_instance->init();
 
-		add_filter( 'ep_weighting_configuration_for_search', [ $this, 'some_function' ] );
+		if ( $weighting_filter ) {
+			add_filter( 'ep_weighting_configuration_for_search', $weighting_filter );
+		}
 
-		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+		$this->assertSame( $expected, apply_filters( 'ep_enable_do_weighting', true, $weight_config, [], [] ) );
 	}
 
-	public function test__filter_ep_enable_do_weighting__weight_config() {
-		$this->search_instance->init();
-
-		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [ 'foo' => 'bar' ], [], [] ) );
+	public function filter_ep_enable_do_weighting_custom_search_results_data() {
+		return array(
+			// Cached custom results existence, expected
+			'no custom search results' => array( '0', false ),
+			'custom search results'    => array( '1', true ),
+		);
 	}
 
-	public function test__filter_ep_enable_do_weighting__no_custom_search_results() {
+	/**
+	 * @dataProvider filter_ep_enable_do_weighting_custom_search_results_data
+	 */
+	public function test__filter_ep_enable_do_weighting__custom_search_results( $custom_results_existence, $expected ) {
 		// Ensure ElasticPress is ready
 		do_action( 'plugins_loaded' );
 
 		$this->search_instance->init();
 
 		Features::factory()->activate_feature( 'searchordering' );
-		update_option( 'vip_custom_results_existence', '0' );
+		update_option( 'vip_custom_results_existence', $custom_results_existence );
 
-		$this->assertFalse( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
-	}
-
-	public function test__filter_ep_enable_do_weighting__custom_search_results() {
-		// Ensure ElasticPress is ready
-		do_action( 'plugins_loaded' );
-
-		$this->search_instance->init();
-
-		Features::factory()->activate_feature( 'searchordering' );
-		update_option( 'vip_custom_results_existence', '1' );
-
-		$this->assertTrue( apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
+		$this->assertSame( $expected, apply_filters( 'ep_enable_do_weighting', true, [], [], [] ) );
 	}
 
 	public function test__set_custom_results_existence_cache() {
@@ -2731,225 +2044,60 @@ class Search_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test__filter__ep_config_mapping_strips_ngram_filter() {
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
-					'filter' => array(
-						'ep_ngram_filter' => array(
-							'type'     => 'ngram',
-							'min_gram' => 3,
-							'max_gram' => 15,
-						),
-						'edge_ngram'      => array(
-							'type'     => 'edge_ngram',
-							'min_gram' => 3,
-							'max_gram' => 10,
-						),
-					),
-				),
+	public function filter__strips_ngram_analysis_data() {
+		$ngram_filters = array(
+			'ep_ngram_filter' => array(
+				'type'     => 'ngram',
+				'min_gram' => 3,
+				'max_gram' => 15,
+			),
+			'edge_ngram'      => array(
+				'type'     => 'edge_ngram',
+				'min_gram' => 3,
+				'max_gram' => 10,
 			),
 		);
 
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
-
-		$this->assertArrayNotHasKey( 'ep_ngram_filter', $filtered['settings']['analysis']['filter'], 'ep_ngram_filter should be removed' );
-		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
-	}
-
-	public function test__filter__ep_config_mapping_strips_ngram_analyzers_that_reference_removed_filters() {
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
+		return array(
+			// Hook, analysis settings, expected remaining names per analysis section
+			'config mapping: ngram filter'    => array(
+				'ep_config_mapping',
+				array( 'filter' => $ngram_filters ),
+				array( 'filter' => array( 'edge_ngram' ) ),
+			),
+			// Custom names: filters are matched by type and analyzers by the filters they reference, not by name.
+			'config mapping: analyzers referencing removed filters' => array(
+				'ep_config_mapping',
+				array(
 					'filter'   => array(
-						'ep_ngram_filter' => array(
-							'type'     => 'ngram',
-							'min_gram' => 3,
-							'max_gram' => 15,
-						),
+						'custom_ngram_filter' => $ngram_filters['ep_ngram_filter'],
 					),
 					'analyzer' => array(
-						'ep_ngram'        => array(
+						// Removed, because it references custom_ngram_filter
+						'my_custom_analyzer' => array(
 							'type'      => 'custom',
 							'tokenizer' => 'standard',
-							'filter'    => array( 'lowercase', 'asciifolding', 'ep_ngram_filter' ),
+							'filter'    => array( 'lowercase', 'asciifolding', 'custom_ngram_filter' ),
 						),
-						'ep_ngram_search' => array(
+						'ep_ngram_search'    => array(
 							'type'      => 'custom',
 							'tokenizer' => 'standard',
 							'filter'    => array( 'lowercase', 'asciifolding' ),
 						),
-						'default'         => array(
+						'default'            => array(
 							'tokenizer' => 'standard',
 							'filter'    => array( 'lowercase' ),
 						),
 					),
 				),
-			),
-		);
-
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
-
-		// ep_ngram should be removed because it references ep_ngram_filter which was removed
-		$this->assertArrayNotHasKey( 'ep_ngram', $filtered['settings']['analysis']['analyzer'], 'ep_ngram analyzer should be removed because it references removed filter' );
-		// ep_ngram_search should NOT be removed because it doesn't reference the removed filter
-		$this->assertArrayHasKey( 'ep_ngram_search', $filtered['settings']['analysis']['analyzer'], 'ep_ngram_search analyzer should be kept because it does not reference removed filter' );
-		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
-	}
-
-	public function test__filter__ep_indexable_mapping_strips_ngram_filter() {
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
-					'filter' => array(
-						'ep_ngram_filter' => array(
-							'type'     => 'ngram',
-							'min_gram' => 3,
-							'max_gram' => 15,
-						),
-						'edge_ngram'      => array(
-							'type'     => 'edge_ngram',
-							'min_gram' => 3,
-							'max_gram' => 10,
-						),
-					),
+				array(
+					'filter'   => array(),
+					'analyzer' => array( 'ep_ngram_search', 'default' ),
 				),
 			),
-		);
-
-		$filtered = apply_filters( 'ep_post_mapping', $mapping );
-
-		$this->assertArrayNotHasKey( 'ep_ngram_filter', $filtered['settings']['analysis']['filter'], 'ep_ngram_filter should be removed' );
-		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
-	}
-
-	public function test__filter__ep_post_mapping_strips_ngram_field() {
-		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(),
-			'mappings' => array(
-				'properties' => array(
-					'post_content' => array(
-						'type'   => 'text',
-						'fields' => array(
-							'ngram' => array(
-								'type'            => 'text',
-								'analyzer'        => 'ep_ngram',
-								'search_analyzer' => 'ep_ngram_search',
-							),
-							'raw'   => array(
-								'type' => 'keyword',
-							),
-						),
-					),
-				),
-			),
-		);
-
-		$filtered = apply_filters( 'ep_post_mapping', $mapping );
-
-		$this->assertArrayNotHasKey( 'ngram', $filtered['mappings']['properties']['post_content']['fields'], 'post_content.ngram field should be removed' );
-		$this->assertArrayHasKey( 'raw', $filtered['mappings']['properties']['post_content']['fields'], 'post_content.raw field should be kept' );
-	}
-
-	public function test__filter__ep_post_mapping_removes_fields_key_when_only_ngram_field_exists() {
-		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(),
-			'mappings' => array(
-				'properties' => array(
-					'post_content' => array(
-						'type'   => 'text',
-						'fields' => array(
-							'ngram' => array(
-								'type'            => 'text',
-								'analyzer'        => 'ep_ngram',
-								'search_analyzer' => 'ep_ngram_search',
-							),
-						),
-					),
-				),
-			),
-		);
-
-		$filtered = apply_filters( 'ep_post_mapping', $mapping );
-
-		$this->assertSame( array( 'type' => 'text' ), $filtered['mappings']['properties']['post_content'], 'post_content.fields should be removed when no fields are left' );
-	}
-
-	public function test__filter__ep_post_mapping_strips_ngram_field_when_no_fields_exist() {
-		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
-		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(),
-			'mappings' => array(
-				'properties' => array(
-					'post_content' => array(
-						'type' => 'text',
-					),
-				),
-			),
-		);
-
-		$indexable = Indexables::factory()->get( 'post' );
-		if ( ! $indexable ) {
-			$this->markTestSkipped( 'Post indexable not available' );
-		}
-
-		$filtered = apply_filters( 'ep_post_mapping', $mapping );
-
-		$this->assertArrayNotHasKey( 'fields', $filtered['mappings']['properties']['post_content'], 'post_content should not have fields when ngram field does not exist' );
-	}
-
-	public function test__filter__ep_config_mapping_strips_ngram_filter_by_type() {
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
-					'filter' => array(
-						'custom_ngram_filter' => array(
-							'type'     => 'ngram',
-							'min_gram' => 2,
-							'max_gram' => 10,
-						),
-						'edge_ngram'          => array(
-							'type'     => 'edge_ngram',
-							'min_gram' => 3,
-							'max_gram' => 10,
-						),
-					),
-				),
-			),
-		);
-
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
-
-		$this->assertArrayNotHasKey( 'custom_ngram_filter', $filtered['settings']['analysis']['filter'], 'Filter with type ngram should be removed' );
-		$this->assertArrayHasKey( 'edge_ngram', $filtered['settings']['analysis']['filter'], 'edge_ngram should be kept' );
-	}
-
-	public function test__filter__ep_config_mapping_strips_ngram_tokenizers() {
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
+			'config mapping: ngram tokenizer' => array(
+				'ep_config_mapping',
+				array(
 					'tokenizer' => array(
 						'custom_ngram_tokenizer' => array(
 							'type'     => 'ngram',
@@ -2961,21 +2109,11 @@ class Search_Test extends WP_UnitTestCase {
 						),
 					),
 				),
+				array( 'tokenizer' => array( 'standard' ) ),
 			),
-		);
-
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
-
-		$this->assertArrayNotHasKey( 'custom_ngram_tokenizer', $filtered['settings']['analysis']['tokenizer'], 'Tokenizer with type ngram should be removed' );
-		$this->assertArrayHasKey( 'standard', $filtered['settings']['analysis']['tokenizer'], 'standard tokenizer should be kept' );
-	}
-
-	public function test__filter__ep_config_mapping_strips_analyzers_referencing_removed_tokenizers() {
-		$this->init_es();
-
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
+			'config mapping: analyzers referencing removed tokenizers' => array(
+				'ep_config_mapping',
+				array(
 					'tokenizer' => array(
 						'my_ngram_tokenizer' => array(
 							'type'     => 'ngram',
@@ -2995,67 +2133,111 @@ class Search_Test extends WP_UnitTestCase {
 						),
 					),
 				),
+				array( 'analyzer' => array( 'default' ) ),
+			),
+			'indexable mapping: ngram filter' => array(
+				'ep_post_mapping',
+				array( 'filter' => $ngram_filters ),
+				array( 'filter' => array( 'edge_ngram' ) ),
 			),
 		);
-
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
-		$this->assertArrayNotHasKey( 'custom_analyzer', $filtered['settings']['analysis']['analyzer'], 'Analyzer referencing removed ngram tokenizer should be removed' );
-		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
 	}
 
-	public function test__filter__ep_config_mapping_strips_custom_analyzer_names_referencing_removed_filters() {
+	/**
+	 * @dataProvider filter__strips_ngram_analysis_data
+	 */
+	public function test__filter__strips_ngram_analysis( $hook, $analysis, $expected_names ) {
+		// A valid datacenter keeps filter__ep_indexable_mapping() from alerting
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
 		$this->init_es();
 
-		$mapping = array(
-			'settings' => array(
-				'analysis' => array(
-					'filter'   => array(
-						'my_custom_ngram' => array(
-							'type'     => 'ngram',
-							'min_gram' => 3,
-							'max_gram' => 15,
+		$filtered = apply_filters( $hook, array( 'settings' => array( 'analysis' => $analysis ) ), 'test-index' );
+
+		foreach ( $expected_names as $section => $names ) {
+			$this->assertSame( $names, array_keys( $filtered['settings']['analysis'][ $section ] ), "Unexpected {$section} entries left" );
+		}
+	}
+
+	public function filter__ep_post_mapping_strips_ngram_field_data() {
+		$ngram_field = array(
+			'type'            => 'text',
+			'analyzer'        => 'ep_ngram',
+			'search_analyzer' => 'ep_ngram_search',
+		);
+
+		return array(
+			// post_content mapping, expected post_content mapping
+			'ngram field is removed'                   => array(
+				array(
+					'type'   => 'text',
+					'fields' => array(
+						'ngram' => $ngram_field,
+						'raw'   => array(
+							'type' => 'keyword',
 						),
 					),
-					'analyzer' => array(
-						'my_custom_analyzer' => array(
-							'type'      => 'custom',
-							'tokenizer' => 'standard',
-							'filter'    => array( 'lowercase', 'my_custom_ngram' ),
-						),
-						'default'            => array(
-							'tokenizer' => 'standard',
-							'filter'    => array( 'lowercase' ),
+				),
+				array(
+					'type'   => 'text',
+					'fields' => array(
+						'raw' => array(
+							'type' => 'keyword',
 						),
 					),
 				),
 			),
+			'fields key removed when only ngram field' => array(
+				array(
+					'type'   => 'text',
+					'fields' => array(
+						'ngram' => $ngram_field,
+					),
+				),
+				array( 'type' => 'text' ),
+			),
+			'no fields'                                => array(
+				array( 'type' => 'text' ),
+				array( 'type' => 'text' ),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider filter__ep_post_mapping_strips_ngram_field_data
+	 */
+	public function test__filter__ep_post_mapping_strips_ngram_field( $post_content, $expected ) {
+		Constant_Mocker::define( 'VIP_GO_ENV', 'production' );
+		Constant_Mocker::define( 'VIP_ORIGIN_DATACENTER', 'dfw' );
+		$this->init_es();
+
+		$mapping = array(
+			'settings' => array(),
+			'mappings' => array(
+				'properties' => array(
+					'post_content' => $post_content,
+				),
+			),
 		);
 
-		$filtered = apply_filters( 'ep_config_mapping', $mapping, 'test-index' );
+		$filtered = apply_filters( 'ep_post_mapping', $mapping );
 
-		$this->assertArrayNotHasKey( 'my_custom_analyzer', $filtered['settings']['analysis']['analyzer'], 'Custom analyzer referencing removed ngram filter should be removed' );
-		$this->assertArrayHasKey( 'default', $filtered['settings']['analysis']['analyzer'], 'default analyzer should be kept' );
+		$this->assertSame( $expected, $filtered['mappings']['properties']['post_content'] );
 	}
 
 	public function test__vip_search_query_warning_observes_successful_search_response(): void {
 		wp_cache_flush();
 		$this->init_es();
-		$body          = wp_json_encode( [
+		$body     = wp_json_encode( [
 			'query' => [ 'match_all' => [] ],
 			'size'  => 10,
 		] );
-		$response_body = [
+		$response = $this->es_response( 200, [
 			'took' => 21,
 			'hits' => [
 				'total' => [ 'value' => 2 ],
 				'hits'  => [ [ '_id' => '1' ], [ '_id' => '2' ] ],
 			],
-		];
-		$response      = [
-			'response' => [ 'code' => 200 ],
-			'headers'  => [],
-			'body'     => wp_json_encode( $response_body ),
-		];
+		] );
 
 		self::$mock_global_functions->expects( $this->once() )
 			->method( 'mock_vip_safe_wp_remote_request' )
@@ -3066,7 +2248,7 @@ class Search_Test extends WP_UnitTestCase {
 			->method( 'maybe_emit' )
 			->with(
 				$body,
-				$response_body,
+				json_decode( $response['body'], true ),
 				$this->callback( static fn( $duration ): bool => is_float( $duration ) && $duration >= 0.0 ),
 				null,
 				strlen( $response['body'] )
@@ -3074,18 +2256,7 @@ class Search_Test extends WP_UnitTestCase {
 			->willReturn( true );
 		$this->search_instance->query_warning = $warning;
 
-		$result = $this->search_instance->filter__ep_do_intercept_request(
-			[],
-			[ 'url' => '/vip-123-post-1/_search' ],
-			[
-				'method' => 'POST',
-				'body'   => $body,
-			],
-			0,
-			'query'
-		);
-
-		$this->assertSame( $response, $result );
+		$this->assertSame( $response, $this->intercept_query( '/vip-123-post-1/_search', $body ) );
 	}
 
 	public function test__vip_search_query_warning_is_not_initialized_during_search_setup(): void {
@@ -3097,14 +2268,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__vip_search_query_warning_is_not_called_for_failed_search_response(): void {
 		wp_cache_flush();
 		$this->init_es();
-		$response = [
-			'response' => [
-				'code'    => 500,
-				'message' => 'Internal Server Error',
-			],
-			'headers'  => [],
-			'body'     => '{}',
-		];
+		$response = $this->es_response( 500, '{}' );
 		self::$mock_global_functions->expects( $this->once() )
 			->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $response );
@@ -3113,28 +2277,13 @@ class Search_Test extends WP_UnitTestCase {
 		$warning->expects( $this->never() )->method( 'maybe_emit' );
 		$this->search_instance->query_warning = $warning;
 
-		$result = $this->search_instance->filter__ep_do_intercept_request(
-			[],
-			[ 'url' => '/vip-123-post-1/_search' ],
-			[
-				'method' => 'POST',
-				'body'   => '{}',
-			],
-			0,
-			'query'
-		);
-
-		$this->assertSame( $response, $result );
+		$this->assertSame( $response, $this->intercept_query( '/vip-123-post-1/_search' ) );
 	}
 
 	public function test__vip_search_query_warning_is_not_called_for_non_search_query_type(): void {
 		wp_cache_flush();
 		$this->init_es();
-		$response = [
-			'response' => [ 'code' => 200 ],
-			'headers'  => [],
-			'body'     => '{}',
-		];
+		$response = $this->es_response( 200, '{}' );
 		self::$mock_global_functions->expects( $this->once() )
 			->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $response );
@@ -3143,31 +2292,16 @@ class Search_Test extends WP_UnitTestCase {
 		$warning->expects( $this->never() )->method( 'maybe_emit' );
 		$this->search_instance->query_warning = $warning;
 
-		$result = $this->search_instance->filter__ep_do_intercept_request(
-			[],
-			[ 'url' => '/vip-123-post-1/_mget' ],
-			[
-				'method' => 'POST',
-				'body'   => '{}',
-			],
-			0,
-			'query'
-		);
-
-		$this->assertSame( $response, $result );
+		$this->assertSame( $response, $this->intercept_query( '/vip-123-post-1/_mget' ) );
 	}
 
 	public function test__vip_search_query_warning_is_not_called_for_cache_hit(): void {
 		wp_cache_flush();
 		$this->init_es();
-		$query     = [ 'url' => '/vip-123-post-1/_search' ];
+		$url       = '/vip-123-post-1/_search';
 		$body      = wp_json_encode( [ 'query' => [ 'match_all' => [] ] ] );
-		$response  = [
-			'response' => [ 'code' => 200 ],
-			'headers'  => [],
-			'body'     => '{}',
-		];
-		$cache_key = 'es_query_cache:' . md5( $query['url'] . $body ) . ':' . wp_cache_get_last_changed( Search::SEARCH_CACHE_GROUP );
+		$response  = $this->es_response( 200, '{}' );
+		$cache_key = 'es_query_cache:' . md5( $url . $body ) . ':' . wp_cache_get_last_changed( Search::SEARCH_CACHE_GROUP );
 		wp_cache_set( $cache_key, $response, Search::SEARCH_CACHE_GROUP, 300 );
 
 		self::$mock_global_functions->expects( $this->never() )->method( 'mock_vip_safe_wp_remote_request' );
@@ -3175,35 +2309,19 @@ class Search_Test extends WP_UnitTestCase {
 		$warning->expects( $this->never() )->method( 'maybe_emit' );
 		$this->search_instance->query_warning = $warning;
 
-		$result = $this->search_instance->filter__ep_do_intercept_request(
-			[],
-			$query,
-			[
-				'method' => 'POST',
-				'body'   => $body,
-			],
-			0,
-			'query'
-		);
-
-		$this->assertSame( $response, $result );
+		$this->assertSame( $response, $this->intercept_query( $url, $body ) );
 	}
 
 	public function test__vip_search_query_warning_failure_does_not_change_response(): void {
 		wp_cache_flush();
 		$this->init_es();
-		$response_body = [
+		$response = $this->es_response( 200, [
 			'took' => 21,
 			'hits' => [
 				'total' => [ 'value' => 0 ],
 				'hits'  => [],
 			],
-		];
-		$response      = [
-			'response' => [ 'code' => 200 ],
-			'headers'  => [],
-			'body'     => wp_json_encode( $response_body ),
-		];
+		] );
 		self::$mock_global_functions->expects( $this->once() )
 			->method( 'mock_vip_safe_wp_remote_request' )
 			->willReturn( $response );
@@ -3214,38 +2332,97 @@ class Search_Test extends WP_UnitTestCase {
 			->willThrowException( new \RuntimeException( 'diagnostic failure' ) );
 		$this->search_instance->query_warning = $warning;
 
-		$result = $this->search_instance->filter__ep_do_intercept_request(
+		$this->assertSame( $response, $this->intercept_query( '/vip-123-post-1/_search' ) );
+	}
+
+	/**
+	 * Sends a `query` type request through filter__ep_do_intercept_request().
+	 */
+	private function intercept_query( string $url, string $body = '{}' ) {
+		return $this->search_instance->filter__ep_do_intercept_request(
 			[],
-			[ 'url' => '/vip-123-post-1/_search' ],
+			[ 'url' => $url ],
 			[
 				'method' => 'POST',
-				'body'   => '{}',
+				'body'   => $body,
 			],
 			0,
 			'query'
 		);
-
-		$this->assertSame( $response, $result );
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * Builds a remote request response, as returned by vip_safe_wp_remote_request().
+	 *
+	 * @param int          $code Response code.
+	 * @param array|string $body Response body, JSON-encoded if an array.
 	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\Search' );
-		$method = $class->getMethod( $name );
-		return $method;
+	private function es_response( int $code, $body ): array {
+		return http_response( $code, is_array( $body ) ? wp_json_encode( $body ) : $body );
+	}
+
+	private function stub_post(): WP_Post {
+		$post     = new WP_Post( new stdClass() );
+		$post->ID = 0;
+
+		return $post;
 	}
 
 	/**
-	 * Helper function for accessing protected properties.
+	 * Replaces the search instance's logger with a mock.
 	 */
-	protected static function get_property( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Search' );
+	private function mock_logger(): MockObject {
+		$this->search_instance->logger = $this->getMockBuilder( \Automattic\VIP\Logstash\Logger::class )
+			->onlyMethods( [ 'log' ] )
+			->getMock();
 
-		$property = $class->getProperty( $name );
+		return $this->search_instance->logger;
+	}
 
-		return $property;
+	/**
+	 * Replaces the given search instance's alerts with a mock.
+	 */
+	private function mock_alerts( Search $search ): MockObject {
+		$search->alerts = $this->createMock( Alerts::class );
+
+		return $search->alerts;
+	}
+
+	private function get_index_settings( Indexable $indexable ): array {
+		if ( method_exists( $indexable, 'build_settings' ) ) {
+			return $indexable->build_settings();
+		}
+
+		$mapping = $indexable->generate_mapping();
+
+		return $mapping['settings'];
+	}
+
+	private function define_es_credentials( array $endpoints ): void {
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', $endpoints );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_USERNAME', 'foo' );
+		Constant_Mocker::define( 'VIP_ELASTICSEARCH_PASSWORD', 'bar' );
+	}
+
+	/**
+	 * Bulk indexes a new post as an administrator, sending the requests through the mocked transport.
+	 */
+	private function bulk_index_test_post(): void {
+		// The transport expectations include an uncached index-exists request.
+		delete_site_option( 'es_index_exists_vip-123-post-1' );
+
+		$test_user_id = $this->factory()->user->create( array( 'role' => 'administrator' ) );
+		wp_set_current_user( $test_user_id );
+
+		$this->init_es();
+		$indexable = Indexables::factory()->get( 'post' );
+
+		$post_id = $this->factory()->post->create( array(
+			'post_title'  => 'Test Post',
+			'post_status' => 'publish',
+		) );
+
+		$indexable->bulk_index( [ $post_id ] );
 	}
 
 	/**
@@ -3301,47 +2478,6 @@ class Search_Test extends WP_UnitTestCase {
 		if ( $run_init ) {
 			do_action( 'init' );
 		}
-	}
-
-	/**
-	 * We need to fake the OK response from the ES server to avoid the actual failing request.
-	 */
-	public function filter_ok_es_requests( $request, $query, $args, $failures, $type ) {
-		if ( 'put_mapping' === $type ) {
-			return [
-				'response' => [ 'code' => 200 ],
-				'body'     => '',
-			];
-		}
-
-		if ( 'index_exists' === $type ) {
-			return [
-				'response' => [ 'code' => 200 ],
-				'body'     => [],
-			];
-		}
-
-		if ( 'get_mapping' === $type ) {
-			return [
-				'response' => [ 'code' => 200 ],
-				'body'     => '{"vip-123-post-1-v2":{"aliases":{},"mappings":{"_meta":{"mapping_version":"7-0.php"}}}}', // phpcs:ignore WordPressVIPMinimum.Security.Mustache.OutputNotation
-			];
-		}
-
-		return $request;
-	}
-
-	/**
-	 * We need to fake the OK response from the ES server to avoid the actual get_mapping request.
-	 */
-	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
-		if ( 'index_exists' === $type ) {
-			return [
-				'response' => [ 'code' => 200 ],
-				'body'     => [],
-			];
-		}
-		return $request;
 	}
 }
 

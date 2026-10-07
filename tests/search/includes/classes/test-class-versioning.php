@@ -23,33 +23,15 @@ class Versioning_Test extends WP_UnitTestCase {
 	/** @var Search */
 	public static $search;
 
-	/** @var array */
-	private static $indexable_methods = [
-		'query_es',
-		'query_db',
-		'get_mapping',
-		'prepare_document',
-		'put_mapping',
-		'index_exists',
-		'get_index_name',
-	];
-
-	public function mock_http_response( $mocked_response ) {
-		add_filter( 'pre_http_request', fn() => $mocked_response, 10, 3 );
-	}
-
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
 		require_once __DIR__ . '/../../../../search/search.php';
-
-		self::$indexable_methods[] = method_exists( Indexable::class, 'build_settings' ) ? 'build_settings' : 'generate_mapping';
 	}
 
 	public function setUp(): void {
 		parent::setUp();
 
-		Constant_Mocker::clear();
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 200508 );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', [
 			'https://es-endpoint1',
@@ -74,7 +56,6 @@ class Versioning_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		$this->remove_es_http_mock();
-		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 
@@ -656,12 +637,8 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		self::$version_instance->update_versions( $indexable, $versions );
 
-		$this->setup_ok_es_requests();
-
 		// Add the new version
-		$new_version = self::$version_instance->add_version( $indexable );
-
-		$this->clean_up_ok_es_requests();
+		$new_version = $this->add_version_with_ok_es_requests( $indexable );
 
 		if ( is_wp_error( $new_version ) ) {
 			$this->assertEquals( $expected_new_versions, $new_version, 'The WP_Error thrown should match the expected WP_Error' );
@@ -670,11 +647,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 			$this->assertEquals( $expected_new_version['number'], $new_version['number'], 'The returned new version does not match the expected new version' );
 
-			$new_versions = self::$version_instance->get_versions( $indexable );
-
-			// Can only compare the deterministic parts of the version info (not created_time, for example)
-			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
-			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+			$this->assert_versions_match( $expected_new_versions, self::$version_instance->get_versions( $indexable ) );
 		}
 	}
 
@@ -804,11 +777,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( $succeeded, 'Activating version failed, but it should have succeeded' );
 
-		$new_versions = self::$version_instance->get_versions( $indexable );
-
-		// Can only compare the deterministic parts of the version info (not activated_time, for example)
-		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
-		$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+		$this->assert_versions_match( $expected_new_versions, self::$version_instance->get_versions( $indexable ) );
 
 		// And make sure the now active version recorded when it was activated
 		$active_version = self::$version_instance->get_active_version( $indexable );
@@ -873,11 +842,8 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertTrue( is_wp_error( $result ), 'Expected WP_Error instance' );
 		$this->assertEquals( 'invalid-index-version', $result->get_error_code() );
 
-		$new_versions = self::$version_instance->get_versions( $indexable );
-
-		// Can only compare the deterministic parts of the version info (not activated_time, for example), but should be unchanged
-		$this->assertEquals( wp_list_pluck( $versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
-		$this->assertEquals( wp_list_pluck( $versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+		// Should be unchanged
+		$this->assert_versions_match( $versions, self::$version_instance->get_versions( $indexable ) );
 	}
 
 	public function deactivate_version_data() {
@@ -957,11 +923,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		if ( ! is_wp_error( $succeeded ) ) {
 			$this->assertTrue( $succeeded, 'Deactivating version failed, but it should have succeeded' );
 
-			$new_versions = self::$version_instance->get_versions( $indexable );
-
-			// Can only compare the deterministic parts of the version info (not activated_time, for example)
-			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'number' ), wp_list_pluck( $new_versions, 'number' ), 'New version numbers do not match expected values' );
-			$this->assertEquals( wp_list_pluck( $expected_new_versions, 'active' ), wp_list_pluck( $new_versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+			$this->assert_versions_match( $expected_new_versions, self::$version_instance->get_versions( $indexable ) );
 
 			// And make sure the now active version recorded when it was activated
 			$inactive_versions = self::$version_instance->get_inactive_versions( $indexable );
@@ -1056,11 +1018,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( true, $delete_result, 'The index version was not deleted' );
 
-		$versions = self::$version_instance->get_versions( $indexable );
-
-		// Can only compare the deterministic parts of the version info (not created_time, for example)
-		$this->assertEquals( wp_list_pluck( $expected_versions, 'number' ), wp_list_pluck( $versions, 'number' ), 'New version numbers do not match expected values' );
-		$this->assertEquals( wp_list_pluck( $expected_versions, 'active' ), wp_list_pluck( $versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+		$this->assert_versions_match( $expected_versions, self::$version_instance->get_versions( $indexable ) );
 	}
 
 	public function test_delete_version_invalid() {
@@ -1141,11 +1099,7 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$indexable = Indexables::factory()->get( 'post' );
 
-		$this->setup_ok_es_requests();
-
-		$result = self::$version_instance->add_version( $indexable );
-
-		$this->clean_up_ok_es_requests();
+		$result = $this->add_version_with_ok_es_requests( $indexable );
 
 		$this->assertNotFalse( $result, 'Failed to add new version of index' );
 		$this->assertNotInstanceOf( WP_Error::class, $result, 'Got WP_Error when adding new index version' );
@@ -1170,43 +1124,13 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, self::$version_instance->get_current_version_number( $indexable ), 'Version number is wrong after resetting to default' );
 	}
 
-	public function test_action__vip_search_indexing_object_queued() {
-		self::$version_instance->action__vip_search_indexing_object_queued( 1, 'post', array( 'foo' => 'bar' ), 1 );
-		self::$version_instance->action__vip_search_indexing_object_queued( 1, 'post', array( 'foo' => 'bar' ), 2 );
-
-		$expected_queued_objects_by_type_and_version = array(
-			'post' => array(
-				1 => array(
-					array(
-						'object_id' => 1,
-						'options'   => array( 'foo' => 'bar' ),
-					),
-				),
-				2 => array(
-					array(
-						'object_id' => 1,
-						'options'   => array( 'foo' => 'bar' ),
-					),
-				),
-			),
-		);
-
-		$current_queued_objects = $this->get_property( 'queued_objects_by_type_and_version' )->getValue( self::$version_instance );
-
-		$this->assertEquals( $expected_queued_objects_by_type_and_version, $current_queued_objects );
-	}
-
 	/**
 	 * Tests that queue jobs get properly replicated to the queue for other index versions
 	 */
 	public function test_queue_job_replication() {
-		global $wpdb;
-
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
+		$this->seed_inactive_v2( Indexables::factory()->get( 'post' ) );
 
 		do_action( 'vip_search_indexing_object_queued', 1, 'post', array( 'foo' => 'bar' ), 1 );
 		do_action( 'vip_search_indexing_object_queued', 2, 'post', array( 'foo' => 'bar' ), 1 );
@@ -1233,18 +1157,7 @@ class Versioning_Test extends WP_UnitTestCase {
 			),
 		);
 
-		$queue_table_name = self::$search->queue->schema->get_table_name();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
-
-		foreach ( $jobs as &$job ) {
-			$job['object_id']     = (int) $job['object_id'];
-			$job['index_version'] = (int) $job['index_version'];
-		}
-		unset( $job );
-
-		$this->assertSame( $expected_jobs, $jobs );
+		$this->assertSame( $expected_jobs, $this->get_queue_jobs() );
 	}
 
 	public function replicate_queued_objects_to_other_versions_data() {
@@ -1336,38 +1249,19 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider replicate_queued_objects_to_other_versions_data
 	 */
 	public function test_replicate_queued_objects_to_other_versions( $input, $expected_jobs ) {
-		global $wpdb;
-
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
-
-		$queue_table_name = self::$search->queue->schema->get_table_name();
+		$this->seed_inactive_v2( Indexables::factory()->get( 'post' ) );
 
 		self::$version_instance->replicate_queued_objects_to_other_versions( $input );
 
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
-
-		foreach ( $jobs as &$job ) {
-			$job['object_id']     = (int) $job['object_id'];
-			$job['index_version'] = (int) $job['index_version'];
-		}
-		unset( $job );
-
-		$this->assertSame( $expected_jobs, $jobs );
+		$this->assertSame( $expected_jobs, $this->get_queue_jobs() );
 	}
 
 	public function test_replicate_indexed_objects_to_other_versions() {
-		global $wpdb;
-
 		self::$search->queue->empty_queue();
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( Indexables::factory()->get( 'post' ), array() ); // Reset them
-		self::$version_instance->add_version( Indexables::factory()->get( 'post' ) );
+		$this->seed_inactive_v2( Indexables::factory()->get( 'post' ) );
 
 		$indexable = Indexables::factory()->get( 'post' );
 
@@ -1390,68 +1284,81 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 
 		// And check what's in the queue table - should be jobs for all the edited posts, on the non-active versions
-
-		$queue_table_name = self::$search->queue->schema->get_table_name();
-
-		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
-		$jobs = $wpdb->get_results( "SELECT * FROM {$queue_table_name}", ARRAY_A );
-
 		$expected_jobs = array(
 			array(
 				'object_id'     => 1,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 			array(
 				'object_id'     => 2,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 			array(
 				'object_id'     => 3,
 				'object_type'   => 'post',
 				'index_version' => 2,
+				'status'        => 'queued',
 			),
 		);
 
-		// Only comparing certain fields (the ones passed through to $expected_jobs), since some are generated at insert time
-		foreach ( $expected_jobs as $index => $job ) {
-			$keys = array_keys( $job );
-
-			foreach ( $keys as $key ) {
-				$this->assertEquals( $expected_jobs[ $index ][ $key ], $jobs[ $index ][ $key ], "The job at index {$index} has the wrong value for key {$key}" );
-			}
-		}
+		$this->assertSame( $expected_jobs, $this->get_queue_jobs() );
 	}
 
-	public function test_replicate_deletes_to_other_index_versions() {
+	public function replicate_deletes_to_other_index_versions_data() {
+		return array(
+			// Whether the inactive index has the document, expected requests (with %active% and %inactive% index names)
+			'document in inactive index'           => array(
+				true,
+				array( 'GET /%inactive%/_doc/1', 'DELETE /%inactive%/_doc/1', 'DELETE /%active%/_doc/1' ),
+			),
+			'document missing from inactive index' => array(
+				false,
+				array( 'GET /%inactive%/_doc/1', 'DELETE /%active%/_doc/1' ),
+			),
+		);
+	}
+
+	/**
+	 * @dataProvider replicate_deletes_to_other_index_versions_data
+	 */
+	public function test_replicate_deletes_to_other_index_versions( $found_in_inactive, $expected_requests ) {
 		$indexable = Indexables::factory()->get( 'post' );
 
-		// For these tests, we're just using the post type and index versions 1, 2, and 3, for simplicity
-		self::$version_instance->update_versions( $indexable, array() ); // Reset them
-		self::$version_instance->add_version( $indexable );
+		$this->seed_inactive_v2( $indexable );
 
-		// Add a filter that we can use to count how many deletes are actually sent to ES
-		$delete_count = 0;
-		$get_count    = 0;
+		$active_index = $indexable->get_index_name();
+		self::$version_instance->set_current_version_number( $indexable, 2 );
+		$inactive_index = $indexable->get_index_name();
+		self::$version_instance->reset_current_version_number( $indexable );
 
-		add_filter( 'ep_do_intercept_request', function ( $request, $query, $args ) use ( &$delete_count, &$get_count ) /* NOSONAR */ {
-			if ( 'DELETE' === $args['method'] ) {
-				$delete_count++;
+		$requests = array();
+		add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( &$requests, $found_in_inactive ) {
+			$requests[] = $args['method'] . ' ' . wp_parse_url( $url, PHP_URL_PATH );
+
+			if ( 'GET' === $args['method'] && $found_in_inactive ) {
+				return array(
+					'headers'  => array(),
+					'body'     => '{"found":true,"_source":{"post_id":1}}',
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+					'filename' => null,
+				);
 			}
 
-			if ( 'GET' === $args['method'] ) {
-				$get_count++;
-			}
-
-			// For linting, always have to return something
-			return $request;
+			return $preempt;
 		}, 10, 3 );
 
 		$indexable->delete( 1 );
 
-		$this->assertEquals( $delete_count, 1 );
-		$this->assertEquals( $get_count, 1 );
+		$expected_requests = str_replace( array( '%active%', '%inactive%' ), array( $active_index, $inactive_index ), $expected_requests );
+		$this->assertSame( $expected_requests, $requests );
 	}
 
 	public function normalize_version_data() {
@@ -1503,96 +1410,38 @@ class Versioning_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( 1, $one['number'], 'Wrong version number for returned version (expected 1)' );
 
-		$this->setup_ok_es_requests();
-
-		$new = self::$version_instance->add_version( $indexable );
-
-		$this->clean_up_ok_es_requests();
+		$new = $this->add_version_with_ok_es_requests( $indexable );
 
 		$new_retrieved = self::$version_instance->get_version( $indexable, $new['number'] );
 
 		$this->assertEquals( $new['number'], $new_retrieved['number'], 'Wrong version number for returned version on newly created version' );
 	}
 
-	private $default_versions = [
-		1 => [
-			'number'         => 1,
-			'active'         => true,
-			'created_time'   => null,
-			'activated_time' => null,
-		],
-	];
-
-	public function get_versions_default_data() {
-		return [
-			[
-				null,
-				$this->default_versions,
-			],
-			[
-				'some string',
-				$this->default_versions,
-			],
-			[
-				[],
-				$this->default_versions,
-			],
-			[
-				[
-					'post' => [
-						2 => [
-							'number' => 2,
-							'active' => true,
-						],
-					],
-				],
-				[
-					2 => [
-						'number'         => 2,
-						'active'         => true,
-						'created_time'   => null,
-						'activated_time' => null,
-					],
-				],
-			],
-			[
-				// No valid versions
-				[
-					'post' => 'invalid versions value',
-				],
-				$this->default_versions,
+	public function get_versions_data() {
+		$default_versions = [
+			1 => [
+				'number'         => 1,
+				'active'         => true,
+				'created_time'   => null,
+				'activated_time' => null,
 			],
 		];
-	}
 
-	/**
-	 * @dataProvider get_versions_default_data
-	 */
-	public function test__get_versions_default( $versioning, $expected ) {
-		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
-		$indexable = Indexables::factory()->get( 'post' );
+		$post_v2 = [
+			2 => [
+				'number'         => 2,
+				'active'         => true,
+				'created_time'   => null,
+				'activated_time' => null,
+			],
+		];
 
-
-		$result = self::$version_instance->get_versions( $indexable );
-
-		$this->assertEquals( $expected, $result );
-	}
-
-	public function get_versions_data() {
+		// Option value, expected versions (with default), expected versions (without default)
 		return [
-			[
-				null,
-				[],
-			],
-			[
-				'some string',
-				[],
-			],
-			[
-				[],
-				[],
-			],
-			[
+			'null'                   => [ null, $default_versions, [] ],
+			'string'                 => [ 'some string', $default_versions, [] ],
+			'empty array'            => [ [], $default_versions, [] ],
+			'post versions'          => [
 				[
 					'post' => [
 						2 => [
@@ -1601,36 +1450,23 @@ class Versioning_Test extends WP_UnitTestCase {
 						],
 					],
 				],
-				[
-					2 => [
-						'number'         => 2,
-						'active'         => true,
-						'created_time'   => null,
-						'activated_time' => null,
-					],
-				],
+				$post_v2,
+				$post_v2,
 			],
-			[
-				// No valid versions
-				[
-					'post' => 'invalid versions value',
-				],
-				[],
-			],
+			// No valid versions
+			'invalid versions value' => [ [ 'post' => 'invalid versions value' ], $default_versions, [] ],
 		];
 	}
 
 	/**
 	 * @dataProvider get_versions_data
 	 */
-	public function test__get_versions( $versioning, $expected ) {
+	public function test__get_versions( $versioning, $expected_with_default, $expected_without_default ) {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $versioning );
 		$indexable = Indexables::factory()->get( 'post' );
 
-
-		$result = self::$version_instance->get_versions( $indexable, false );
-
-		$this->assertEquals( $expected, $result );
+		$this->assertEquals( $expected_with_default, self::$version_instance->get_versions( $indexable ), 'Wrong versions with default' );
+		$this->assertEquals( $expected_without_default, self::$version_instance->get_versions( $indexable, false ), 'Wrong versions without default' );
 	}
 
 	private $get_versions__combine_globals_local  = [
@@ -1691,12 +1527,7 @@ class Versioning_Test extends WP_UnitTestCase {
 		update_option( Versioning::INDEX_VERSIONS_OPTION, $this->get_versions__combine_globals_local );
 		update_site_option( Versioning::INDEX_VERSIONS_OPTION_GLOBAL, $this->get_versions__combine_globals_global );
 
-		/** @var Indexable&MockObject */
-		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
-		$indexable_mock->slug   = $slug;
-		$indexable_mock->global = $global;
-
-		$result = self::$version_instance->get_versions( $indexable_mock );
+		$result = self::$version_instance->get_versions( $this->mock_indexable( $slug, $global ) );
 
 		$this->assertEquals( $expected, $result );
 	}
@@ -1738,11 +1569,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider maybe_self_heal_reconstruct_data
 	 */
 	public function test__maybe_self_heal_reconstruct( $indexables, $versioning, $expected_reconstructions ) {
-		$indexables_mocks = array_map( function ( $slug ) {
-			$indexable_mock       = $this->getMockBuilder( Indexable::class )->getMock();
-			$indexable_mock->slug = $slug;
-			return $indexable_mock;
-		}, $indexables);
+		$indexables_mocks = array_map( fn( $slug ) => $this->mock_indexable( $slug ), $indexables );
 
 		$indexables_mock = $this->getMockBuilder( Indexables::class )
 			->onlyMethods( [ 'get_all' ] )
@@ -1943,9 +1770,7 @@ class Versioning_Test extends WP_UnitTestCase {
 	 * @dataProvider reconstruct_versions_for_indexable_data
 	 */
 	public function test__reconstruct_versions_for_indexable( $indices, $indexable_data, $expected ) {
-		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
-		$indexable_mock->slug   = $indexable_data['slug'];
-		$indexable_mock->global = $indexable_data['global'];
+		$indexable_mock = $this->mock_indexable( $indexable_data['slug'], $indexable_data['global'] );
 
 		$result = self::$version_instance->reconstruct_versions_for_indexable( $indices, $indexable_mock );
 
@@ -2020,17 +1845,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		$this->assertFalse( $result );
 	}
 
-	/**
-	 * Helper function for accessing protected properties.
-	 */
-	protected static function get_property( $name ) {
-		$class = new \ReflectionClass( __NAMESPACE__ . '\Versioning' );
-
-		$property = $class->getProperty( $name );
-
-		return $property;
-	}
-
 	public function get_index_name_data__post() {
 		return [
 			[
@@ -2079,40 +1893,79 @@ class Versioning_Test extends WP_UnitTestCase {
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', $app_id );
 
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
-		if ( 'post' === $indexable ) {
-			/** @var Indexable\Post&MockObject $mocked_indexable */
-			$mocked_indexable->slug   = 'post';
-			$mocked_indexable->global = false;
-		} elseif ( 'user' === $indexable ) {
-			/** @var Indexable\User&MockObject $mocked_indexable */
-			$mocked_indexable->slug   = 'user';
-			$mocked_indexable->global = true;
-		}
+		// Users are a global indexable
+		$mocked_indexable = $this->mock_indexable( $indexable, 'user' === $indexable );
 
 		$index_name = self::$version_instance->get_index_name( $mocked_indexable, $version );
 		$this->assertEquals( $expected, $index_name );
 	}
 
 	/**
-	 * This fakes the needed ES requests for add_version() to work correctly
+	 * Adds a version, faking the ES requests (on top of the index_exists fake from setUp()) that add_version() needs to succeed
 	 */
-	private function setup_ok_es_requests() {
+	private function add_version_with_ok_es_requests( Indexable $indexable ) {
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX, 5 );
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_get_mapping_request_ok' ], PHP_INT_MAX, 5 );
+
+		$result = self::$version_instance->add_version( $indexable );
+
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX );
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_get_mapping_request_ok' ], PHP_INT_MAX );
+
+		return $result;
 	}
 
 	/**
-	 * Removes the filter from clean_up_ok_es_requests()
+	 * Tracks an inactive version 2 next to the active version 1
 	 */
-	private function clean_up_ok_es_requests() {
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX );
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_get_mapping_request_ok' ], PHP_INT_MAX );
+	private function seed_inactive_v2( Indexable $indexable ): void {
+		self::$version_instance->update_versions( $indexable, array(
+			1 => array(
+				'number' => 1,
+				'active' => true,
+			),
+			2 => array(
+				'number' => 2,
+				'active' => false,
+			),
+		) );
+	}
+
+	private function mock_indexable( string $slug, bool $global = false ): Indexable {
+		/** @var Indexable&MockObject */
+		$indexable_mock         = $this->getMockBuilder( Indexable::class )->getMock();
+		$indexable_mock->slug   = $slug;
+		$indexable_mock->global = $global;
+
+		return $indexable_mock;
+	}
+
+	/**
+	 * Can only compare the deterministic parts of the version info (not created_time or activated_time, for example)
+	 */
+	private function assert_versions_match( array $expected_versions, array $versions ): void {
+		$this->assertEquals( wp_list_pluck( $expected_versions, 'number' ), wp_list_pluck( $versions, 'number' ), 'New version numbers do not match expected values' );
+		$this->assertEquals( wp_list_pluck( $expected_versions, 'active' ), wp_list_pluck( $versions, 'active' ), 'New versions "active" statuses do not match expected values' );
+	}
+
+	/**
+	 * Returns the deterministic columns of all jobs in the queue table
+	 */
+	private function get_queue_jobs(): array {
+		global $wpdb;
+
+		$queue_table_name = self::$search->queue->schema->get_table_name();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery
+		$jobs = $wpdb->get_results( "SELECT object_id, object_type, index_version, status FROM {$queue_table_name} ORDER BY object_id, object_type, index_version", ARRAY_A );
+
+		foreach ( $jobs as &$job ) {
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
+		}
+		unset( $job );
+
+		return $jobs;
 	}
 
 	/**

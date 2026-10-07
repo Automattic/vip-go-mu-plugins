@@ -8,6 +8,9 @@ use WP_UnitTestCase;
 class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 	private Large_Media_Upload_Warning $instance;
 
+	/** @var array[] Payloads captured by capture_logs(). */
+	private array $logged = [];
+
 	public function setUp(): void {
 		parent::setUp();
 		$this->instance = new Large_Media_Upload_Warning();
@@ -25,8 +28,19 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		remove_all_filters( 'vip_large_media_warning_mime_types' );
 		remove_all_filters( 'pre_vip_large_media_warning_log' );
 
-		Constant_Mocker::clear();
 		parent::tearDown();
+	}
+
+	/**
+	 * Capture the Logstash payloads in $logged instead of sending them.
+	 */
+	private function capture_logs(): void {
+		$this->logged = [];
+
+		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) {
+			$this->logged[] = $data;
+			return true; // non-null short-circuits the real Logstash call
+		}, 10, 2 );
 	}
 
 	public function test_disabled_by_default_at_first_release(): void {
@@ -69,75 +83,64 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		$this->assertSame( [ 'image/avif' ], $this->instance->get_allowed_mime_types() );
 	}
 
-	public function test_filter_large_image_logs_to_logstash(): void {
-		$captured = [];
-		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
-			$captured[] = $data;
-			return true; // non-null short-circuits the real Logstash call
-		}, 10, 2 );
-
-		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
-
-		$file_in = [
-			'name'     => 'big.jpg',
-			'type'     => 'image/jpeg',
-			'tmp_name' => '/tmp/whatever',
-			'error'    => 0,
-			'size'     => 2048,
+	public function get_data__maybe_log_large_upload(): array {
+		return [
+			'large image logs to logstash' => [
+				[
+					'name'     => 'big.jpg',
+					'type'     => 'image/jpeg',
+					'tmp_name' => '/tmp/whatever',
+					'error'    => 0,
+					'size'     => 2048,
+				],
+				1024,
+				true,
+			],
+			'small image does not log'     => [
+				[
+					'name'     => 'small.jpg',
+					'type'     => 'image/jpeg',
+					'tmp_name' => '/tmp/small',
+					'error'    => 0,
+					'size'     => 1234,
+				],
+				10000,
+				false,
+			],
+			'non-image mime does not log'  => [
+				[
+					'name'     => 'big.pdf',
+					'type'     => 'application/pdf',
+					'tmp_name' => '/tmp/x',
+					'error'    => 0,
+					'size'     => 9999,
+				],
+				1024,
+				false,
+			],
 		];
+	}
+
+	/**
+	 * @dataProvider get_data__maybe_log_large_upload
+	 */
+	public function test_maybe_log_large_upload( array $file_in, int $threshold, bool $expect_log ): void {
+		$this->capture_logs();
+		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => $threshold );
 
 		$file_out = $this->instance->maybe_log_large_upload( $file_in );
 
 		$this->assertSame( $file_in, $file_out, 'Filter must never mutate the file array.' );
-		$this->assertCount( 1, $captured );
-		$this->assertSame( 'large_media_upload_attempted', $captured[0]['feature'] );
-		$this->assertSame( 2048, $captured[0]['extra']['size'] );
-		$this->assertSame( 'image/jpeg', $captured[0]['extra']['mime'] );
-	}
 
-	public function test_filter_small_image_does_not_log(): void {
-		$captured = [];
-		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
-			$captured[] = $data;
-			return true; // non-null short-circuits the real Logstash call
-		}, 10, 2 );
+		if ( ! $expect_log ) {
+			$this->assertCount( 0, $this->logged );
+			return;
+		}
 
-		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 10000 );
-
-		$file_in = [
-			'name'     => 'small.jpg',
-			'type'     => 'image/jpeg',
-			'tmp_name' => '/tmp/small',
-			'error'    => 0,
-			'size'     => 1234,
-		];
-
-		$file_out = $this->instance->maybe_log_large_upload( $file_in );
-
-		$this->assertSame( $file_in, $file_out );
-		$this->assertCount( 0, $captured );
-	}
-
-	public function test_filter_non_image_mime_does_not_log(): void {
-		$captured = [];
-		add_filter( 'pre_vip_large_media_warning_log', function ( $value, $data ) use ( &$captured ) {
-			$captured[] = $data;
-			return true; // non-null short-circuits the real Logstash call
-		}, 10, 2 );
-		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 1024 );
-
-		$file_in = [
-			'name'     => 'big.pdf',
-			'type'     => 'application/pdf',
-			'tmp_name' => '/tmp/x',
-			'error'    => 0,
-			'size'     => 9999,
-		];
-
-		$file_out = $this->instance->maybe_log_large_upload( $file_in );
-
-		$this->assertSame( $file_in, $file_out );
-		$this->assertCount( 0, $captured );
+		$this->assertCount( 1, $this->logged );
+		$this->assertSame( 'large_media_upload_attempted', $this->logged[0]['feature'] );
+		$this->assertSame( $file_in['size'], $this->logged[0]['extra']['size'] );
+		$this->assertSame( $file_in['type'], $this->logged[0]['extra']['mime'] );
 	}
 
 	public function test_filter_swallows_exceptions_and_returns_unmodified_file(): void {

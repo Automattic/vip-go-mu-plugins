@@ -28,10 +28,14 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 	 * @dataProvider data_provider_safe_remote_functions
 	 */
 	public function test__normal_response( callable $remote_function ) {
-		$url      = 'https://localhost';
-		$response = 'mock_response';
+		$url           = 'https://localhost';
+		$response      = 'mock_response';
+		$observed_args = null;
 
-		$this->mock_http_response( $response );
+		add_filter( 'pre_http_request', function ( $preempt, $args ) use ( $response, &$observed_args ) {
+			$observed_args = $args;
+			return $response;
+		}, 10, 2 );
 
 		// We can call it 4 times (more than the default threshold of 3) and it always returns the expected response (no failure / fallback)
 		for ( $i = 0; $i < 4; $i++ ) {
@@ -39,6 +43,9 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 
 			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
+
+		// The default 1 second timeout is sent with the request and is also the slow-response limit.
+		$this->assertSame( 1, $observed_args['timeout'] );
 	}
 
 	public function data_provider_all_args(): array {
@@ -70,25 +77,25 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 	/**
 	 * Test vip_safe_wp_remote_request() behavior with slow response - returns fallback after 3 failures
 	 *
-	 * This is the only test that waits for real: the default timeout is 1 second, so each request
-	 * has to take longer than that to count as slow. vip_safe_wp_remote_get() uses the same defaults
-	 * and code path.
+	 * A timeout of 0 seconds makes every request count as slow, so the default threshold can be
+	 * tested without waiting for the default 1 second timeout. vip_safe_wp_remote_get() uses the
+	 * same defaults and code path.
 	 */
 	public function test__vip_safe_wp_remote_request_with_slow_response() {
 		$url      = 'https://localhost';
 		$response = 'mock_response';
 
-		$this->mock_http_response( $response, 1.02 ); // Just over the default 1 second threshold; usleep() never sleeps less
+		$this->mock_http_response( $response, 0.001 );
 
 		// We can call it 3 times and it always returns the expected response (no failure / fallback)
 		for ( $i = 0; $i < 3; $i++ ) {
-			$res = vip_safe_wp_remote_request( $url );
+			$res = vip_safe_wp_remote_request( $url, timeout: 0 );
 
 			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
 		}
 
 		// But on the 4th time, it returns the error
-		$res = vip_safe_wp_remote_request( $url );
+		$res = vip_safe_wp_remote_request( $url, timeout: 0 );
 
 		$this->assertEquals( true, is_wp_error( $res ), '4th request did not return WP_Error' );
 		$this->assertEquals( 'remote_request_disabled', $res->get_error_code(), 'Error code for 4th request was incorrect' );

@@ -1,22 +1,13 @@
 <?php
 
+use function Automattic\Test\Utils\http_response;
+
 require_once __DIR__ . '/include-wpcom-vip-get-user-profile.php';
 
 class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 
 	private function mock_profile_response( string $body ): void {
-		add_filter( 'pre_http_request', function () use ( $body ) {
-			return [
-				'headers'  => [],
-				'body'     => $body,
-				'response' => [
-					'code'    => 200,
-					'message' => 'OK',
-				],
-				'cookies'  => [],
-				'filename' => null,
-			];
-		} );
+		add_filter( 'pre_http_request', fn() => http_response( 200, $body ) );
 	}
 
 	/**

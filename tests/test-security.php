@@ -18,78 +18,59 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		$_POST = $this->original_post;
 
-		Constant_Mocker::clear();
 		$this->clean_event_window_cache();
 
 		parent::tearDown();
 	}
 
-	public function test__admin_username_restricted() {
+	public function data_restricted_logins(): array {
+		return [
+			'admin username'        => [ 'admin', 'admin@example.com', 'admin' ],
+			'machine user username' => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_LOGIN ],
+			'machine user email'    => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_EMAIL ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_restricted_logins
+	 */
+	public function test__restricted_login( string $user_login, string $user_email, string $log_in_with ) {
 		// Nightly WordPress can retain the installer's admin account.
-		$admin_id = username_exists( 'admin' );
-		if ( $admin_id ) {
-			wp_set_password( 'secret1', $admin_id );
+		$user_id = username_exists( $user_login );
+		if ( $user_id ) {
+			wp_set_password( 'secret1', $user_id );
 		} else {
 			$this->factory()->user->create( [
-				'user_login' => 'admin',
-				'user_email' => 'admin@example.com',
+				'user_login' => $user_login,
+				'user_email' => $user_email,
 				'user_pass'  => 'secret1',
 			] );
 		}
 
-		$result = wp_authenticate( 'admin', 'secret1' );
+		$result = wp_authenticate( $log_in_with, 'secret1' );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'restricted-login', $result->get_error_code() );
 	}
 
-	public function test__vip_machine_user_username_restricted() {
-		$this->factory()->user->create( [
-			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
-			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'user_pass'  => 'secret2',
-		] );
-
-		$result = wp_authenticate( WPCOM_VIP_MACHINE_USER_LOGIN, 'secret2' );
-
-		$this->assertWPError( $result );
-		$this->assertEquals( 'restricted-login', $result->get_error_code() );
+	public function data_unrestricted_logins(): array {
+		return [
+			'username' => [ 'taylorswift' ],
+			'email'    => [ 'taylor@example.com' ],
+		];
 	}
 
-	public function test__vip_machine_user_email_restricted() {
-		$this->factory()->user->create( [
-			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
-			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'user_pass'  => 'secret3',
-		] );
-
-		$result = wp_authenticate( WPCOM_VIP_MACHINE_USER_EMAIL, 'secret3' );
-
-		$this->assertWPError( $result );
-		$this->assertEquals( 'restricted-login', $result->get_error_code() );
-	}
-
-	public function test__other_username_not_restricted() {
+	/**
+	 * @dataProvider data_unrestricted_logins
+	 */
+	public function test__other_login_not_restricted( string $log_in_with ) {
 		$user_id = $this->factory()->user->create( [
 			'user_login' => 'taylorswift',
 			'user_email' => 'taylor@example.com',
 			'user_pass'  => 'secret4',
 		] );
 
-		$result = wp_authenticate( 'taylorswift', 'secret4' );
-
-		$this->assertNotWPError( $result );
-		$this->assertEquals( $user_id, $result->ID );
-	}
-
-	public function test__other_email_not_restricted() {
-		$user_id = $this->factory()->user->create( [
-			'user_login' => 'taylorswift',
-			'user_email' => 'taylor@example.com',
-			'user_pass'  => 'secret5',
-		] );
-
-		$result = wp_authenticate( 'taylor@example.com', 'secret5' );
+		$result = wp_authenticate( $log_in_with, 'secret4' );
 
 		$this->assertNotWPError( $result );
 		$this->assertEquals( $user_id, $result->ID );
@@ -199,93 +180,87 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		$this->assertSame( false, $result );
 	}
-	public function test__wpcom_vip_username_is_limited__should_be_limit_after_few_tries() {
-		add_filter( 'vip_login_ip_username_lockout', function ( $lockout ) {
-			$this->assertSame( 60 * 5, $lockout );
-			return $lockout;
+	public function data_login_limit_defaults(): array {
+		return [
+			'default' => [ false, 5, 60 * 5 ],
+			'FedRAMP' => [ true, 3, 60 * 30 ],
+		];
+	}
+
+	/**
+	 * Reaching the IP + username threshold locks the username for the default lockout, and the lock
+	 * outlives the counters' event window.
+	 *
+	 * @dataProvider data_login_limit_defaults
+	 */
+	public function test__wpcom_vip_username_is_limited__after_threshold( bool $is_fedramp, int $attempts, int $expected_lockout ) {
+		if ( $is_fedramp ) {
+			Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
+		}
+
+		$lockout = null;
+		add_filter( 'vip_login_ip_username_lockout', function ( $value ) use ( &$lockout ) {
+			$lockout = $value;
+			return $value;
 		}, 10, 1 );
 		$action_triggered = 0;
 		add_action( 'login_limit_exceeded', function () use ( &$action_triggered ) {
 			$action_triggered++;
 		});
 
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		for ( $attempt = 1; $attempt <= $attempts; $attempt++ ) {
+			wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		}
 
-		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-
-		$this->assertSame( true, is_wp_error( $result ) );
+		$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
+		$this->assertSame( $expected_lockout, $lockout );
 		$this->assertSame( 1, $action_triggered );
-	}
-
-	public function test__wpcom_vip_username_is_limited__should_be_limit_even_after_the_event_window() {
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
 		$this->clean_event_window_cache();
 
-		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-
-		$this->assertSame( true, is_wp_error( $result ) );
+		$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
 	}
 
-	public function test__wpcom_vip_username_is_limited__should_be_limit_after_3_attempts_fedramp() {
-		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
-
-		add_filter( 'vip_login_ip_username_lockout', function ( $lockout ) {
-			$this->assertSame( 60 * 30, $lockout );
-			return $lockout;
-		}, 10, 1 );
-
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-
-		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-
-		$this->assertSame( true, is_wp_error( $result ) );
+	public function data_auth_window_defaults(): array {
+		return [
+			'default' => [
+				false,
+				[
+					'vip_login_ip_username_window' => 60 * 5,
+					'vip_login_ip_window'          => 60 * 60,
+					'vip_login_username_window'    => 60 * 25,
+				],
+			],
+			'FedRAMP' => [
+				true,
+				[
+					'vip_login_ip_username_window' => 60 * 15,
+					'vip_login_ip_window'          => 60 * 15,
+					'vip_login_username_window'    => 60 * 15,
+				],
+			],
+		];
 	}
 
-	public function test__wpcom_vip_track_auth_attempt__correct_defaults() {
-		add_filter( 'vip_login_ip_username_window', function ( $window ) {
-			$this->assertSame( 60 * 5, $window );
-			return $window;
-		}, 10, 1 );
-		add_filter( 'vip_login_ip_window', function ( $window ) {
-			$this->assertSame( 60 * 60, $window );
-			return $window;
-		}, 10, 1 );
-		add_filter( 'vip_login_username_window', function ( $window ) {
-			$this->assertSame( 60 * 25, $window );
-			return $window;
-		}, 10, 1 );
+	/**
+	 * @dataProvider data_auth_window_defaults
+	 */
+	public function test__wpcom_vip_track_auth_attempt__correct_defaults( bool $is_fedramp, array $expected_windows ) {
+		if ( $is_fedramp ) {
+			Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
+		}
+
+		$windows = [];
+		foreach ( array_keys( $expected_windows ) as $filter ) {
+			add_filter( $filter, function ( $window ) use ( &$windows, $filter ) {
+				$windows[ $filter ] = $window;
+				return $window;
+			}, 10, 1 );
+		}
 
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-	}
 
-	public function test__wpcom_vip_track_auth_attempt__correct_defaults_fedramp() {
-		Constant_Mocker::define( 'VIP_IS_FEDRAMP', true );
-
-		add_filter( 'vip_login_ip_username_window', function ( $window ) {
-			$this->assertSame( 60 * 15, $window );
-			return $window;
-		}, 10, 1 );
-		add_filter( 'vip_login_ip_window', function ( $window ) {
-			$this->assertSame( 60 * 15, $window );
-			return $window;
-		}, 10, 1 );
-		add_filter( 'vip_login_username_window', function ( $window ) {
-			$this->assertSame( 60 * 15, $window );
-			return $window;
-		}, 10, 1 );
-
-		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertEquals( $expected_windows, $windows );
 	}
 
 	/**

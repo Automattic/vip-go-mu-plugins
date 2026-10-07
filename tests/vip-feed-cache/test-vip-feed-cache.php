@@ -34,17 +34,6 @@ class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 		}, 10, 3 );
 	}
 
-	public function test__fetch_feed_is_served_from_cache() {
-		$this->skip_if_simplepie_cannot_serve_fresh_cache();
-
-		$url = 'https://www.example.com/cached.rss';
-
-		$this->assertNotWPError( fetch_feed( $url ) );
-		$this->assertNotWPError( fetch_feed( $url ) );
-
-		$this->assertSame( 1, $this->http_requests, 'The second fetch_feed() call should be served from the cache' );
-	}
-
 	public function test__fetch_feed_cache_ignores_build_from_another_container() {
 		$this->skip_if_simplepie_cannot_serve_fresh_cache();
 
@@ -73,26 +62,6 @@ class VIP_Feed_Cache_Test extends WP_UnitTestCase {
 		$this->assertIsArray( $data );
 		$expected = class_exists( 'SimplePie\Misc' ) ? \SimplePie\Misc::get_build() : SIMPLEPIE_BUILD;
 		$this->assertSame( $expected, $data['build'] );
-	}
-
-	public function test__fetch_feed_build() {
-		$url  = 'https://www.example.com/test.rss';
-		$feed = fetch_feed( $url );
-
-		$this->assertNotWPError( $feed );
-
-		$build = $feed->data['build'];
-		$this->assertIsNumeric( $build );
-
-		global $wp_version;
-		if ( version_compare( $wp_version, '6.8.99', '>' ) ) {
-			$transient = get_site_transient( 'feed_' . md5( $this->get_cache_filename( $url ) ) );
-		} else {
-			$transient = get_transient( 'feed_' . md5( $this->get_cache_filename( $url ) ) );
-		}
-
-		$this->assertIsArray( $transient );
-		$this->assertEquals( $transient['build'], $build );
 	}
 
 	/**

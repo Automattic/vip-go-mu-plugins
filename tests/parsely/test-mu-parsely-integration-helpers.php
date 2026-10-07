@@ -9,28 +9,37 @@ use WP_UnitTestCase;
  * MU_Parsely_Integration_Test they don't need to run in separate processes.
  */
 class MU_Parsely_Integration_Helpers_Test extends WP_UnitTestCase {
-	public function test_is_queued_for_activation_get() {
+	/**
+	 * @dataProvider data_is_queued_for_activation
+	 */
+	public function test_is_queued_for_activation( array $get, array $post, bool $expected ) {
 		set_current_screen( 'plugins' );
+		$_GET  = $get;
+		$_POST = $post;
 
-		$_GET['plugin'] = 'wp-parsely/wp-parsely.php';
-		$_GET['action'] = 'activate';
-
-		$this->assertTrue( is_queued_for_activation() );
+		$this->assertSame( $expected, is_queued_for_activation() );
 	}
 
-	public function test_is_queued_for_activation_post() {
-		set_current_screen( 'plugins' );
-
-		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
-		$_POST['action']  = 'activate-selected';
-
-		$this->assertTrue( is_queued_for_activation() );
-	}
-
-	public function test_is_not_queued_for_activation() {
-		set_current_screen( 'plugins' );
-
-		$this->assertFalse( is_queued_for_activation() );
+	public function data_is_queued_for_activation(): array {
+		return [
+			'single activation link' => [
+				[
+					'plugin' => 'wp-parsely/wp-parsely.php',
+					'action' => 'activate',
+				],
+				[],
+				true,
+			],
+			'bulk activation form'   => [
+				[],
+				[
+					'checked' => [ 'wp-parsely/wp-parsely.php' ],
+					'action'  => 'activate-selected',
+				],
+				true,
+			],
+			'no activation request'  => [ [], [], false ],
+		];
 	}
 
 	public function test_alter_option_use_repeated_metas() {

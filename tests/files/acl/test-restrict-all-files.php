@@ -23,41 +23,27 @@ class VIP_Files_Acl_Restrict_All_Files_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__check_file_visibility__not_logged_in() {
-		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
-
-		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-		$file_path       = '2021/01/kittens.jpg';
-
-		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
-
-		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	public function get_data__check_file_visibility() {
+		return [
+			'not logged in'                 => [ null, \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			// A user without any role doesn't have the `read` capability.
+			'logged in without permissions' => [ '', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			'logged in with permissions'    => [ 'editor', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED ],
+		];
 	}
 
-	public function test__check_file_visibility__logged_in_without_permissions() {
-		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
-
+	/**
+	 * @dataProvider get_data__check_file_visibility
+	 */
+	public function test__check_file_visibility( $user_role, $expected_file_visibility ) {
 		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 		$file_path       = '2021/01/kittens.jpg';
 
-		$test_user_id = $this->factory()->user->create();
-		$user         = new \WP_User( $test_user_id );
-		$user->remove_role( 'subscriber' );
-		wp_set_current_user( $test_user_id );
-
-		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
-
-		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
-	}
-
-	public function test__check_file_visibility__logged_in_with_permissions() {
-		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
-
-		$file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-		$file_path       = '2021/01/kittens.jpg';
-
-		$test_user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
-		wp_set_current_user( $test_user_id );
+		if ( null !== $user_role ) {
+			$test_user_id = $this->factory()->user->create();
+			( new \WP_User( $test_user_id ) )->set_role( $user_role );
+			wp_set_current_user( $test_user_id );
+		}
 
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 

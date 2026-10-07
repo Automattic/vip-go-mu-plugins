@@ -13,58 +13,44 @@ use function Automattic\VIP\Telemetry\Tracks\get_tracks_core_properties;
 use function Automattic\VIP\Telemetry\Tracks\is_wpvip_sandbox;
 
 class Tracks_Utils_Test extends WP_UnitTestCase {
-	public function tear_down() {
-		parent::tear_down();
-		Constant_Mocker::clear();
+	public function data_hosting(): array {
+		return [
+			'no constants'           => [ [], false, false, 'other' ],
+			'non-VIP hosting'        => [ [ 'WPCOM_IS_VIP_ENV' => false ], false, false, 'other' ],
+			'not sandboxed'          => [ [ 'WPCOM_SANDBOXED' => false ], false, false, 'other' ],
+			'VIP hosting'            => [
+				[
+					'WPCOM_IS_VIP_ENV' => true,
+					'WPCOM_SANDBOXED'  => false,
+				],
+				true,
+				false,
+				'wpvip',
+			],
+			'sandbox'                => [ [ 'WPCOM_SANDBOXED' => true ], false, true, 'wpvip_sandbox' ],
+			'VIP hosting, sandboxed' => [
+				[
+					'WPCOM_IS_VIP_ENV' => true,
+					'WPCOM_SANDBOXED'  => true,
+				],
+				false,
+				true,
+				'wpvip_sandbox',
+			],
+		];
 	}
 
-	public function test_is_wpvip_site_returns_false_on_non_VIP_hosting(): void {
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', false );
+	/**
+	 * @dataProvider data_hosting
+	 */
+	public function test_hosting_detection( array $constants, bool $is_site, bool $is_sandbox, string $hosting_provider ): void {
+		foreach ( $constants as $name => $value ) {
+			Constant_Mocker::define( $name, $value );
+		}
 
-		$this->assertEquals( false, is_wpvip_site() );
-	}
-
-	public function test_is_wpvip_site_returns_false_on_sandbox(): void {
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', true );
-
-		$this->assertEquals( false, is_wpvip_site() );
-	}
-
-	public function test_is_wpvip_site_returns_true(): void {
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', false );
-
-		$this->assertEquals( true, is_wpvip_site() );
-	}
-
-	public function test_is_wpvip_sandbox_returns_true(): void {
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', true );
-
-		$this->assertEquals( true, is_wpvip_sandbox() );
-	}
-
-	public function test_is_wpvip_sandbox_returns_false(): void {
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', false );
-
-		$this->assertEquals( false, is_wpvip_sandbox() );
-	}
-
-	public function test_get_hosting_provider_returns_wpvip_on_VIP_hosting(): void {
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', false );
-
-		$this->assertEquals( 'wpvip', get_hosting_provider() );
-	}
-
-	public function test_get_hosting_provider_returns_wpvip_sandbox_on_sandbox(): void {
-		Constant_Mocker::define( 'WPCOM_SANDBOXED', true );
-
-		$this->assertEquals( 'wpvip_sandbox', get_hosting_provider() );
-	}
-
-	public function test_get_hosting_provider_returns_other_on_non_VIP_hosting(): void {
-		$this->assertEquals( 'other', get_hosting_provider() );
+		$this->assertSame( $is_site, is_wpvip_site() );
+		$this->assertSame( $is_sandbox, is_wpvip_sandbox() );
+		$this->assertSame( $hosting_provider, get_hosting_provider() );
 	}
 
 	public function test_track_core_properties(): void {

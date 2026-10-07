@@ -26,7 +26,6 @@ class Local_Import_Cleanup_Test extends WP_UnitTestCase {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQLPlaceholders.UnsupportedIdentifierPlaceholder -- Restore the pre-import schema for subsequent tests.
 			$wpdb->query( $wpdb->prepare( 'ALTER TABLE %i DROP INDEX vip_meta_key_value', $wpdb->postmeta ) );
 		}
-		Constant_Mocker::clear();
 		parent::tearDown();
 	}
 

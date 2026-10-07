@@ -3,18 +3,23 @@
 namespace Automattic\VIP\Cache;
 
 use Automattic\Test\Constant_Mocker;
+use Automattic\Test\Utils\Captures_Errors;
 use ErrorException;
 use WP_UnitTestCase;
+
+use function Automattic\Test\Utils\get_class_method_as_public;
 
 require_once __DIR__ . '/mock-header.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
 class Vary_Cache_Test extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	private $original_cookie;
-	private $original_server;
-	private $original_error_reporting;
+
+	/** @var array[] Arguments of each `vip_vary_cache_did_send_headers` action. */
+	private $did_send_headers_calls = [];
 
 	public static function wpSetUpBeforeClass() {
 		require_once __DIR__ . '/../../cache/class-vary-cache.php';
@@ -25,59 +30,32 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_cookie = $_COOKIE;
-		$this->original_server = $_SERVER;
 
 		header_remove();
 		Cookie_Recorder::$calls = [];
 
 		Vary_Cache::load();
-		Constant_Mocker::clear();
 
-		$this->original_error_reporting = error_reporting();
-
-		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( $errno & error_reporting() ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
-			}
-
-			return false;
-		}, E_USER_WARNING );
+		$this->did_send_headers_calls = [];
 	}
 
 	public function tearDown(): void {
 		Cookie_Recorder::$calls = [];
-		restore_error_handler();
 
-		Constant_Mocker::clear();
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_cookie;
-		$_SERVER = $this->original_server;
-
-		error_reporting( $this->original_error_reporting );
 
 		parent::tearDown();
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * Record the arguments of each `vip_vary_cache_did_send_headers` action in $did_send_headers_calls.
 	 */
-	protected static function get_vary_cache_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
-	/**
-	 * Helper function for accessing protected properties.
-	 */
-	protected static function get_vary_cache_property( $name ) {
-		$class    = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
-		$property = $class->getProperty( $name );
-		return $property->getValue();
+	private function record_did_send_headers(): void {
+		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
+			$this->did_send_headers_calls[] = [ $sent_vary, $sent_cookie ];
+		}, 10, 2 );
 	}
 
 	public function get_test_data__is_user_in_group_segment() {
@@ -239,65 +217,29 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function test__register_group() {
-		$expected_groups = [
-			'dev-group' => '',
-		];
+	public function test__register_group_and_groups() {
+		$this->assertTrue( Vary_Cache::register_group( 'dev-group' ), 'register_group returned false' );
+		$this->assertEquals( [ 'dev-group' => '' ], Vary_Cache::get_groups() );
 
-		$actual_result = Vary_Cache::register_group( 'dev-group' );
-
-		$this->assertTrue( $actual_result, 'register_group returned false' );
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups() );
-	}
-
-	public function test__register_groups__valid() {
-		$expected_groups = [
+		// Later calls add to the registered groups.
+		$this->assertTrue( Vary_Cache::register_groups( [ 'design-group', 'qa-group' ] ), 'Valid register_groups call did not return true' );
+		$this->assertEquals( [
 			'dev-group'    => '',
 			'design-group' => '',
-		];
-
-		$actual_result = Vary_Cache::register_groups( [
-			'dev-group',
-			'design-group',
-		] );
-
-		$this->assertTrue( $actual_result, 'Valid register_groups call did not return true' );
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Registered groups do not match expected.' );
-	}
-
-	public function test__register_groups__multiple_calls() {
-		$expected_groups = [
-			'dev-group'    => '',
-			'design-group' => '',
-		];
-
-		Vary_Cache::register_groups( [ 'dev-group' ] );
-		Vary_Cache::register_groups( [ 'design-group' ] );
-
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Multiple register_groups did not result in expected groups' );
-	}
-
-	public function test__register_groups__did_send_headers__warning() {
-		do_action( 'send_headers' );
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-
-		Vary_Cache::register_groups( [
-			'dev-group',
-			'design-group',
-		] );
+			'qa-group'     => '',
+		], Vary_Cache::get_groups(), 'Registered groups do not match expected.' );
 	}
 
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
-		$result = Vary_Cache::register_groups( [
+		[ $result, $warnings ] = $this->capture_errors( fn() => Vary_Cache::register_groups( [
 			'dev-group',
 			'design-group',
-		] );
+		] ) );
 
 		self::assertFalse( $result );
+		self::assertSame( [ 'Failed to register_groups (dev-group, design-group); cannot be called after the `send_headers` hook has fired.' ], $warnings );
 		self::assertEmpty( Vary_Cache::get_groups(), 'Registered groups are not empty.' );
 	}
 
@@ -305,11 +247,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		return [
 			'invalid-group-array' => [
 				[ 'dev-group', 'dev-group---__' ],
-				'invalid_vary_group_name',
+				[ 'dev-group' => '' ],
 			],
 			'invalid-group-name'  => [
 				[ 'dev-group---__' ],
-				'invalid_vary_group_name',
+				[],
 			],
 		];
 	}
@@ -317,19 +259,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
-	public function test__register_groups__invalid__warning( $invalid_groups ) {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		Vary_Cache::register_groups( $invalid_groups );
-	}
+	public function test__register_groups__invalid( $groups, $expected_groups ) {
+		[ $result, $warnings ] = $this->capture_errors( fn() => Vary_Cache::register_groups( $groups ) );
 
-	/**
-	 * @dataProvider get_test_data__register_groups_invalid
-	 */
-	public function test__register_groups__invalid( $invalid_groups ) {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
-		$result = Vary_Cache::register_groups( $invalid_groups );
 		self::assertTrue( $result );
+		self::assertCount( 1, $warnings );
+		self::assertStringStartsWith( 'Failed to register group (dev-group---__);', $warnings[0] );
+		self::assertEquals( $expected_groups, Vary_Cache::get_groups() );
 	}
 
 	public function get_test_data__set_group_for_user_invalid() {
@@ -364,7 +300,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'yes%',
 				'invalid_vary_group_segment',
 			],
-
+			'group-not-registered'                  => [
+				'dev-group',
+				'yes',
+				'invalid_vary_group_notregistered',
+			],
 		];
 	}
 
@@ -389,7 +329,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		}
 		Vary_Cache::set_cookie_expiry( HOUR_IN_SECONDS );
 		Vary_Cache::register_group( 'dev-group' );
-		Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->assertEquals( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'Groups did not match expected value' );
+		$this->record_did_send_headers();
 		$before = time();
 		try {
 			do_action( 'send_headers' );
@@ -397,6 +339,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
 			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
 		}
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
 		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
 		$this->assertTrue( $raw );
@@ -409,7 +352,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 			$this->assertStringStartsWith( '123.', $value );
 			$payload = substr( $value, 4 );
 			$this->assertSame( $payload, base64_encode( base64_decode( $payload, true ) ) );
-			$value = self::get_vary_cache_method( 'decrypt_cookie_value' )->invoke( null, $payload );
+			$value = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, $payload );
 		}
 		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
 	}
@@ -428,9 +371,12 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * Verify no-cache creation and deletion reach their respective writers.
 	 */
 	public function test_nocache_cookie_parameters(): void {
-		Vary_Cache::set_nocache_for_user();
+		$this->assertTrue( Vary_Cache::set_nocache_for_user(), 'Result was not true' );
+		$this->assertTrue( Vary_Cache::is_user_in_nocache(), 'Did not switch on nocache mode' );
+		$this->record_did_send_headers();
 		$before = time();
 		do_action( 'send_headers' );
+		$this->assertSame( [ [ false, true ] ], $this->did_send_headers_calls, 'Only the cookie should be sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
 		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
 		$this->assertTrue( $raw );
@@ -443,10 +389,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 		Vary_Cache::unload();
 		Vary_Cache::load();
-		Cookie_Recorder::$calls = [];
-		Vary_Cache::remove_nocache_for_user();
+		Cookie_Recorder::$calls       = [];
+		$this->did_send_headers_calls = [];
+		$this->assertTrue( Vary_Cache::remove_nocache_for_user(), 'Result was not true' );
+		$this->assertFalse( Vary_Cache::is_user_in_nocache(), 'Did not switch off nocache mode' );
 		$before = time();
 		do_action( 'send_headers' );
+		$this->assertSame( [ [ false, true ] ], $this->did_send_headers_calls, 'Only the cookie should be sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
 		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
 		$this->assertFalse( $raw );
@@ -456,42 +405,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
 		$this->assertSame( '', $path );
 		$this->assertSame( '', $domain );
-	}
-
-	public function test__set_group_for_user__valid() {
-
-		Vary_Cache::register_group( 'dev-group' );
-
-		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
-
-		$this->assertTrue( $actual_result, 'Return value was not true' );
-
-		$this->assertEquals( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'Groups did not match expected value' );
-
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_group_cookie' ), 'Did not update group cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertTrue( $sent_vary, 'Vary was not sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
-	}
-
-	public function test__set_group_for_user_group_not_registered() {
-
-		$expected_error_code = 'invalid_vary_group_notregistered';
-
-		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
 	/**
@@ -506,17 +419,24 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	public function test__set_group_for_user__did_send_headers() {
+	public function get_test_data__did_send_headers() {
+		return [
+			'set_group_for_user'      => [ fn() => Vary_Cache::set_group_for_user( 'group', 'segment' ) ],
+			'set_nocache_for_user'    => [ fn() => Vary_Cache::set_nocache_for_user() ],
+			'remove_nocache_for_user' => [ fn() => Vary_Cache::remove_nocache_for_user() ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__did_send_headers
+	 */
+	public function test__did_send_headers( callable $set_after_headers ) {
 		do_action( 'send_headers' );
 
-		$expected_error_code = 'did_send_headers';
-
-		$actual_result = Vary_Cache::set_group_for_user( 'group', 'segment' );
+		$actual_result = $set_after_headers();
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
 	}
 
 	public function test__enable_encryption_invalid() {
@@ -586,7 +506,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__validate_cookie_value_invalid
 	 */
 	public function test__validate_cookie_values_invalid( $value, $expected_error_code ) {
-		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
+		$get_validate_cookie_value_method = get_class_method_as_public( Vary_Cache::class, 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			$value,
@@ -599,23 +519,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function test__validate_cookie_value_valid() {
-		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
+		$get_validate_cookie_value_method = get_class_method_as_public( Vary_Cache::class, 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			'dev-group',
 		] );
 
 		$this->assertTrue( $actual_result );
-	}
-
-	public function test__send_vary_headers__sent_for_group() {
-		Vary_Cache::register_group( 'dev-group' );
-
-		do_action( 'send_headers' );
-
-		$headers = headers_list();
-		self::assertIsArray( $headers );
-		self::assertContains( 'Vary: X-VIP-Go-Segmentation', $headers, '', true );
 	}
 
 	public function test__send_vary_headers__dont_override_headers() {
@@ -654,66 +564,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		self::assertNotContains( 'Vary: X-VIP-Go-Auth', $headers, 'Response should not include Vary: X-VIP-Go-Auth header', true );
 	}
 
-	public function test__set_nocache_for_user__did_send_headers() {
-		do_action( 'send_headers' );
-
-		$actual_result = Vary_Cache::set_nocache_for_user();
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
-	}
-
-	public function test__set_nocache_for_user() {
-		$actual_result = Vary_Cache::set_nocache_for_user();
-
-		$this->assertTrue( $actual_result, 'Result was not true' );
-
-		$this->assertTrue( self::get_vary_cache_property( 'is_user_in_nocache' ), 'Did not switch on nocache mode' );
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
-	}
-
-	public function test__remove_nocache_for_user__did_send_headers() {
-		do_action( 'send_headers' );
-
-		$actual_result = Vary_Cache::remove_nocache_for_user();
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
-	}
-
-	public function test__remove_nocache_for_user() {
-		$actual_result = Vary_Cache::remove_nocache_for_user();
-
-		$this->assertTrue( $actual_result, 'Result was not true' );
-
-		$this->assertFalse( self::get_vary_cache_property( 'is_user_in_nocache' ), 'Did not switch off nocache mode' );
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
-	}
-
-
-
 	public function get_test_data__stringify_groups() {
 		return [
 			'values_for_all_groups'           => [
@@ -750,7 +600,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__stringify_groups
 	 */
 	public function test__stringify_groups_valid( $groups, $group_values, $expected_result ) {
-		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
+		$get_stringify_groups_method = get_class_method_as_public( Vary_Cache::class, 'stringify_groups' );
 		Vary_Cache::register_groups( $groups );
 		foreach ( $group_values as $key => $value ) {
 			Vary_Cache::set_group_for_user( $key, $value );
@@ -838,7 +688,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result ) {
 		$_SERVER                       = array_merge( $_SERVER, $headers );
 		$_COOKIE                       = $initial_cookie;
-		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
+		$get_parse_group_cookie_method = get_class_method_as_public( Vary_Cache::class, 'parse_group_cookie' );
 		if ( ! empty( $secrets ) ) {
 			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets['key'] );
 			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', $secrets['iv'] );

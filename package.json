@@ -12,7 +12,7 @@
     "typecheck": "npm run typecheck:e2e",
     "typecheck:e2e": "bin/typecheck-e2e.sh",
     "test": "CI=1 ./bin/test.sh",
-    "test:smoke": "CI=1 ./bin/test.sh --filter test__administrator_should_not_have_update_core_cap",
+    "test:smoke": "CI=1 ./bin/test.sh --filter test__super_admin_should_not_have_update_core_cap",
     "setup-e2e-env": "npm --prefix __tests__/e2e run setup-env --",
     "destroy-e2e-env": "npm --prefix __tests__/e2e run destroy-env",
     "test-e2e": "npm --prefix __tests__/e2e test",

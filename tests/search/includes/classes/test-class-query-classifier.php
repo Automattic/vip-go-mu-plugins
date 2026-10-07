@@ -2,11 +2,11 @@
 
 namespace Automattic\VIP\Search;
 
-use WP_UnitTestCase;
+use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../../search/includes/classes/class-query-classifier.php';
 
-class Query_Classifier_Test extends WP_UnitTestCase {
+class Query_Classifier_Test extends TestCase {
 	/** @var Query_Classifier */
 	private $classifier;
 
@@ -85,176 +85,181 @@ class Query_Classifier_Test extends WP_UnitTestCase {
 		$this->assertSame( Query_Classifier::SCOPE_BOUNDED, $this->classifier->scope( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] ) );
 	}
 
-	public function test_volatile_values_and_pagination_produce_the_same_structure(): void {
-		$first  = $this->classifier->classify( [
-			'from'  => 0,
-			'size'  => 10,
-			'query' => [ 'term' => [ 'post_author' => 123 ] ],
-		] );
-		$second = $this->classifier->classify( [
-			'from'  => 9000,
-			'size'  => 100,
-			'query' => [ 'term' => [ 'post_author' => 987654 ] ],
-		] );
-
-		$this->assertSame( $first['structure'], $second['structure'] );
-	}
-
-	public function test_scalar_list_values_use_type_and_count_buckets(): void {
-		$first  = $this->classifier->classify( [ 'query' => [ 'terms' => [ 'post_author' => [ 1, 2, 3 ] ] ] ] );
-		$second = $this->classifier->classify( [ 'query' => [ 'terms' => [ 'post_author' => [ 7, 8, 9, 10, 11 ] ] ] ] );
-
-		$this->assertSame( $first['structure'], $second['structure'] );
-	}
-
-	public function test_field_names_and_operators_change_the_structure(): void {
-		$title   = $this->classifier->classify( [ 'query' => [ 'match' => [ 'post_title' => 'events' ] ] ] );
-		$content = $this->classifier->classify( [ 'query' => [ 'match' => [ 'post_content' => 'events' ] ] ] );
-		$term    = $this->classifier->classify( [ 'query' => [ 'term' => [ 'post_title' => 'events' ] ] ] );
-
-		$this->assertNotSame( $title['structure'], $content['structure'] );
-		$this->assertNotSame( $title['structure'], $term['structure'] );
-	}
-
-	public function test_multi_match_fields_are_preserved_but_query_text_is_not(): void {
-		$first  = $this->classifier->classify( [
-			'query' => [
-				'multi_match' => [
-					'query'  => 'events',
-					'fields' => [ 'post_title', 'post_content' ],
+	public function same_structure_data(): array {
+		$data = [
+			'volatile values and pagination'          => [
+				[
+					'from'  => 0,
+					'size'  => 10,
+					'query' => [ 'term' => [ 'post_author' => 123 ] ],
+				],
+				[
+					'from'  => 9000,
+					'size'  => 100,
+					'query' => [ 'term' => [ 'post_author' => 987654 ] ],
 				],
 			],
-		] );
-		$second = $this->classifier->classify( [
-			'query' => [
-				'multi_match' => [
-					'query'  => 'a different term',
-					'fields' => [ 'post_content', 'post_title' ],
+			'scalar lists use type and count buckets' => [
+				[ 'query' => [ 'terms' => [ 'post_author' => [ 1, 2, 3 ] ] ] ],
+				[ 'query' => [ 'terms' => [ 'post_author' => [ 7, 8, 9, 10, 11 ] ] ] ],
+			],
+			'multi match fields but not query text'   => [
+				[
+					'query' => [
+						'multi_match' => [
+							'query'  => 'events',
+							'fields' => [ 'post_title', 'post_content' ],
+						],
+					],
+				],
+				[
+					'query' => [
+						'multi_match' => [
+							'query'  => 'a different term',
+							'fields' => [ 'post_content', 'post_title' ],
+						],
+					],
 				],
 			],
-		] );
+			'nested sort filter values'               => [
+				[
+					'query' => [ 'match_all' => [] ],
+					'sort'  => [
+						[
+							'offer.price' => [
+								'order'  => 'asc',
+								'nested' => [
+									'path'   => 'offer',
+									'filter' => [ 'term' => [ 'offer.color' => 'blue' ] ],
+								],
+							],
+						],
+					],
+				],
+				[
+					'query' => [ 'match_all' => [] ],
+					'sort'  => [
+						[
+							'offer.price' => [
+								'order'  => 'asc',
+								'nested' => [
+									'path'   => 'offer',
+									'filter' => [ 'term' => [ 'offer.color' => 'red' ] ],
+								],
+							],
+						],
+					],
+				],
+			],
+			'order insensitive bool clauses'          => [
+				[
+					'query' => [
+						'bool' => [
+							'filter' => [
+								[ 'term' => [ 'post_type' => 'post' ] ],
+								[ 'term' => [ 'post_status' => 'publish' ] ],
+							],
+						],
+					],
+				],
+				[
+					'query' => [
+						'bool' => [
+							'filter' => [
+								[ 'term' => [ 'post_status' => 'private' ] ],
+								[ 'term' => [ 'post_type' => 'page' ] ],
+							],
+						],
+					],
+				],
+			],
+		];
 
-		$this->assertSame( $first['structure'], $second['structure'] );
-	}
-
-	public function test_reserved_looking_document_field_values_remain_volatile(): void {
+		// Runtime values for reserved-looking document field names must not change the family.
 		foreach ( [ 'field', 'fields', 'path' ] as $document_field ) {
-			$first  = $this->classifier->classify( [ 'query' => [ 'term' => [ $document_field => 'first runtime value' ] ] ] );
-			$second = $this->classifier->classify( [ 'query' => [ 'term' => [ $document_field => 'second runtime value' ] ] ] );
-
-			$this->assertSame( $first['structure'], $second['structure'], 'Runtime values for document field ' . $document_field . ' must not change the family.' );
+			$data[ "runtime value of document field {$document_field}" ] = [
+				[ 'query' => [ 'term' => [ $document_field => 'first runtime value' ] ] ],
+				[ 'query' => [ 'term' => [ $document_field => 'second runtime value' ] ] ],
+			];
 		}
+
+		return $data;
 	}
 
-	public function test_structural_query_options_change_the_structure(): void {
-		$one_required = $this->classifier->classify( [
-			'query' => [
-				'bool' => [
-					'minimum_should_match' => 1,
-					'should'               => [
-						[ 'term' => [ 'post_type' => 'post' ] ],
-						[ 'term' => [ 'post_status' => 'publish' ] ],
-					],
-				],
-			],
-		] );
-		$two_required = $this->classifier->classify( [
-			'query' => [
-				'bool' => [
-					'minimum_should_match' => 2,
-					'should'               => [
-						[ 'term' => [ 'post_type' => 'post' ] ],
-						[ 'term' => [ 'post_status' => 'publish' ] ],
-					],
-				],
-			],
-		] );
-
-		$this->assertNotSame( $one_required['structure'], $two_required['structure'] );
+	/**
+	 * @dataProvider same_structure_data
+	 */
+	public function test_queries_of_the_same_family_produce_the_same_structure( array $first, array $second ): void {
+		$this->assertSame( $this->classifier->classify( $first )['structure'], $this->classifier->classify( $second )['structure'] );
 	}
 
-	public function test_sort_order_and_direction_change_the_structure(): void {
-		$date_then_title = $this->classifier->classify( [
+	public function distinct_structure_data(): array {
+		$should_clauses  = [
+			[ 'term' => [ 'post_type' => 'post' ] ],
+			[ 'term' => [ 'post_status' => 'publish' ] ],
+		];
+		$date_then_title = [
 			'query' => [ 'match_all' => [] ],
 			'sort'  => [
 				[ 'post_date' => [ 'order' => 'desc' ] ],
 				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
 			],
-		] );
-		$title_then_date = $this->classifier->classify( [
-			'query' => [ 'match_all' => [] ],
-			'sort'  => [
-				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
-				[ 'post_date' => [ 'order' => 'desc' ] ],
-			],
-		] );
-		$ascending_date  = $this->classifier->classify( [
-			'query' => [ 'match_all' => [] ],
-			'sort'  => [
-				[ 'post_date' => [ 'order' => 'asc' ] ],
-				[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
-			],
-		] );
+		];
 
-		$this->assertNotSame( $date_then_title['structure'], $title_then_date['structure'] );
-		$this->assertNotSame( $date_then_title['structure'], $ascending_date['structure'] );
-	}
-
-	public function test_nested_sort_filter_values_remain_volatile(): void {
-		$first  = $this->classifier->classify( [
-			'query' => [ 'match_all' => [] ],
-			'sort'  => [
+		return [
+			'field names'        => [
+				[ 'query' => [ 'match' => [ 'post_title' => 'events' ] ] ],
+				[ 'query' => [ 'match' => [ 'post_content' => 'events' ] ] ],
+			],
+			'operators'          => [
+				[ 'query' => [ 'match' => [ 'post_title' => 'events' ] ] ],
+				[ 'query' => [ 'term' => [ 'post_title' => 'events' ] ] ],
+			],
+			'structural options' => [
 				[
-					'offer.price' => [
-						'order'  => 'asc',
-						'nested' => [
-							'path'   => 'offer',
-							'filter' => [ 'term' => [ 'offer.color' => 'blue' ] ],
+					'query' => [
+						'bool' => [
+							'minimum_should_match' => 1,
+							'should'               => $should_clauses,
+						],
+					],
+				],
+				[
+					'query' => [
+						'bool' => [
+							'minimum_should_match' => 2,
+							'should'               => $should_clauses,
 						],
 					],
 				],
 			],
-		] );
-		$second = $this->classifier->classify( [
-			'query' => [ 'match_all' => [] ],
-			'sort'  => [
+			'sort order'         => [
+				$date_then_title,
 				[
-					'offer.price' => [
-						'order'  => 'asc',
-						'nested' => [
-							'path'   => 'offer',
-							'filter' => [ 'term' => [ 'offer.color' => 'red' ] ],
-						],
+					'query' => [ 'match_all' => [] ],
+					'sort'  => [
+						[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
+						[ 'post_date' => [ 'order' => 'desc' ] ],
 					],
 				],
 			],
-		] );
-
-		$this->assertSame( $first['structure'], $second['structure'] );
+			'sort direction'     => [
+				$date_then_title,
+				[
+					'query' => [ 'match_all' => [] ],
+					'sort'  => [
+						[ 'post_date' => [ 'order' => 'asc' ] ],
+						[ 'post_title.keyword' => [ 'order' => 'asc' ] ],
+					],
+				],
+			],
+		];
 	}
 
-	public function test_order_insensitive_bool_clauses_are_canonicalized(): void {
-		$first  = $this->classifier->classify( [
-			'query' => [
-				'bool' => [
-					'filter' => [
-						[ 'term' => [ 'post_type' => 'post' ] ],
-						[ 'term' => [ 'post_status' => 'publish' ] ],
-					],
-				],
-			],
-		] );
-		$second = $this->classifier->classify( [
-			'query' => [
-				'bool' => [
-					'filter' => [
-						[ 'term' => [ 'post_status' => 'private' ] ],
-						[ 'term' => [ 'post_type' => 'page' ] ],
-					],
-				],
-			],
-		] );
-
-		$this->assertSame( $first['structure'], $second['structure'] );
+	/**
+	 * @dataProvider distinct_structure_data
+	 */
+	public function test_query_differences_that_change_the_family_change_the_structure( array $first, array $second ): void {
+		$this->assertNotSame( $this->classifier->classify( $first )['structure'], $this->classifier->classify( $second )['structure'] );
 	}
 }
