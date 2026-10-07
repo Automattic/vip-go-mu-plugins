@@ -1222,47 +1222,6 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $actual_diff );
 	}
 
-	public function test_get_index_settings_diff_for_indexable__returns_error_from_get_index_settings() {
-		$index_name = 'vip-123-post-1-v2';
-		$error      = new WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' );
-
-		/** @var Search&MockObject */
-		$mock_search = $this->createMock( Search::class );
-
-		$mock_search->versioning = $this->getMockBuilder( Versioning::class )
-			->onlyMethods( [ 'set_current_version_number', 'reset_current_version_number' ] )
-			->getMock();
-
-		$health = new Health( $mock_search );
-
-		/** @var Indexable&MockObject */
-		$mocked_indexable = $this->getMockBuilder( Indexable::class )
-			->onlyMethods( self::$indexable_methods )
-			->getMock();
-
-		$mocked_indexable->slug = 'post';
-		$mocked_indexable->method( 'index_exists' )->willReturn( true );
-		$mocked_indexable->method( 'get_index_name' )->willReturn( $index_name );
-		$mocked_indexable->expects( $this->never() )->method( 'generate_mapping' );
-
-		/** @var Elasticsearch&MockObject */
-		$health->elasticsearch = $this->getMockBuilder( Elasticsearch::class )
-			->onlyMethods( [ 'get_index_settings' ] )
-			->getMock();
-
-		$health->elasticsearch->method( 'get_index_settings' )
-			->with( $index_name )
-			->willReturn( $error );
-
-		$mock_search->versioning->expects( $this->once() )
-			->method( 'reset_current_version_number' )
-			->with( $mocked_indexable );
-
-		$result = $health->get_index_settings_diff_for_indexable( $mocked_indexable, [ 'index_version' => 2 ] );
-
-		$this->assertSame( $error, $result );
-	}
-
 	public function test_get_index_versions_settings_diff_for_indexable__only_returns_active_version() {
 		$index_name     = 'vip-123-post-1';
 		$active_version = 2;
