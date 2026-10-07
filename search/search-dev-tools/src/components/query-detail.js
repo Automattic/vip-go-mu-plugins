@@ -7,7 +7,7 @@ import { JsonTree } from './json-tree';
 import { AnnounceContext } from '../context';
 import { deepActiveElement } from '../dom';
 import { hitIndex } from '../tree-lines';
-import { RUN_SHORTCUT, backtraceFrames, countHits, describeJsonSize, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, postData, shortIndexName, summarizeResult } from '../utils';
+import { RUN_SHORTCUT, backtraceFrames, countHits, describeJsonSize, describeNotReturned, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, postData, shortIndexName, summarizeResult } from '../utils';
 
 
 /**
@@ -243,9 +243,8 @@ const RunControl = ( { pending, running, onRun } ) => {
  * @return {import('preact').VNode} Breakdown.
  */
 const IndexBreakdown = ( { result, queried, pageSize } ) => {
-	const { total, returned } = countHits( result );
 	// Matched hits beyond the page size: the header counts them, the per-index counts can't.
-	const notReturned = typeof total === 'number' ? total - returned : 0;
+	const notReturned = describeNotReturned( countHits( result ), pageSize );
 	return (
 		<span className="sdt-breakdown" title="Returned hits per index">
 			{ hitsPerIndex( result, queried ).map( ( { index, label, count } ) => (
@@ -253,15 +252,8 @@ const IndexBreakdown = ( { result, queried, pageSize } ) => {
 					{ label } <strong>{ count }</strong>
 				</span>
 			) ) }
-			{ notReturned > 0
-				? (
-					<span
-						className="sdt-breakdown__item is-more"
-						title={ `${ total } matched; the request returns at most ${ pageSize ?? returned } (size), so per-index counts cover ${ returned }.` }
-					>
-						+{ notReturned } not returned
-					</span>
-				)
+			{ notReturned
+				? <span className="sdt-breakdown__item is-more" title={ notReturned.title }>{ notReturned.label }</span>
 				: null }
 		</span>
 	);
@@ -480,12 +472,16 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 		}
 	}, [ text, query.url, onDraftChange, announce, draft?.pendingRun ] );
 
-	const updateText = code => onDraftChange( prev => {
-		const next = { ...prev, text: code };
-		// Typing back to the original with no re-run result is no edit at all, unless a run is in flight:
-		// its result merges into this draft and must not fall back to the text that was sent.
-		return ! next.pendingRun && next.result === undefined && ! isDraftEdited( next, originalText ) ? undefined : next;
-	} );
+	const updateText = code => {
+		// A failure message describes the request that was run (or rejected), not the one being edited now.
+		setError( '' );
+		onDraftChange( prev => {
+			const next = { ...prev, text: code };
+			// Typing back to the original with no re-run result is no edit at all, unless a run is in flight:
+			// its result merges into this draft and must not fall back to the text that was sent.
+			return ! next.pendingRun && next.result === undefined && ! isDraftEdited( next, originalText ) ? undefined : next;
+		} );
+	};
 
 	const reset = () => {
 		setError( '' );

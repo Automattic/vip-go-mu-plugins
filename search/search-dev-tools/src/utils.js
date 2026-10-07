@@ -102,15 +102,27 @@ export function describeError( body ) {
 }
 
 /**
- * Count with a pluralized noun, e.g. `1 hit`, `7 hits`.
+ * Number with thousands separators, e.g. `10,000`.
  *
  * @param {number} count Count.
- * @param {string} noun  Singular noun.
+ * @return {string} Formatted count.
+ */
+const formatCount = count => count.toLocaleString( 'en-US' );
+
+/**
+ * Count with a pluralized noun, e.g. `1 hit`, `2,507 hits`, or `10,000+ hits` for a lower bound.
+ *
+ * @param {number}  count      Count.
+ * @param {string}  noun       Singular noun.
+ * @param {boolean} lowerBound Whether the count is only a lower bound.
  * @return {string} Label.
  */
-const countLabel = ( count, noun ) => {
+const countLabel = ( count, noun, lowerBound = false ) => {
+	if ( lowerBound ) {
+		return `${ formatCount( count ) }+ ${ noun }s`;
+	}
 	const word = count === 1 ? noun : `${ noun }s`;
-	return `${ count } ${ word }`;
+	return `${ formatCount( count ) } ${ word }`;
 };
 
 /**
@@ -122,10 +134,10 @@ const countLabel = ( count, noun ) => {
  */
 export function summarizeResult( body, response ) {
 	const failed = isFailedResult( body, response );
-	const { total, returned } = countHits( body );
+	const { total, returned, relation } = countHits( body );
 	// Matched total, not the returned page size, so size-limited and counts-only queries read correctly.
 	const matched = total ?? returned;
-	const hitsLabel = failed ? 'failed' : countLabel( matched, 'hit' );
+	const hitsLabel = failed ? 'failed' : countLabel( matched, 'hit', relation === 'gte' );
 
 	return {
 		took: typeof body?.took === 'number' ? body.took : null,
@@ -161,9 +173,32 @@ function isFailedResult( body, response ) {
  */
 export function countHits( body ) {
 	const rawTotal = body?.hits?.total;
+	const isObject = Boolean( rawTotal ) && typeof rawTotal === 'object';
 	return {
-		total: rawTotal && typeof rawTotal === 'object' ? rawTotal.value : rawTotal,
+		total: isObject ? rawTotal.value : rawTotal,
+		// `gte` when Elasticsearch stopped counting (a capped or disabled `track_total_hits`): `total` is a lower bound.
+		relation: isObject && rawTotal.relation === 'gte' ? 'gte' : 'eq',
 		returned: Array.isArray( body?.hits?.hits ) ? body.hits.hits.length : 0,
+	};
+}
+
+/**
+ * Matched hits the response didn't return (beyond the request size), for the per-index breakdown.
+ *
+ * @param {Object}  counts   countHits() result.
+ * @param {?number} pageSize Request size, if known.
+ * @return {?{label: string, title: string}} Label and hover text, or null when every match was returned.
+ */
+export function describeNotReturned( { total, returned, relation }, pageSize ) {
+	const notReturned = typeof total === 'number' ? total - returned : 0;
+	if ( notReturned <= 0 ) {
+		return null;
+	}
+	const lowerBound = relation === 'gte';
+	const matched = lowerBound ? `At least ${ formatCount( total ) }` : formatCount( total );
+	return {
+		label: lowerBound ? `at least ${ formatCount( notReturned ) } not returned` : `+${ formatCount( notReturned ) } not returned`,
+		title: `${ matched } matched; the request returns at most ${ pageSize ?? returned } (size), so per-index counts cover ${ returned }.`,
 	};
 }
 

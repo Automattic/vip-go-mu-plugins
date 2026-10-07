@@ -8,6 +8,7 @@ import { describe, it } from 'node:test';
 import { buildTreeLines, childPath, hitIndex } from '../src/tree-lines.js';
 import {
 	countHits,
+	describeNotReturned,
 	countLines,
 	describeJsonSize,
 	escapeHtml,
@@ -91,6 +92,12 @@ describe( 'summarizeResult', () => {
 		assert.equal( summarizeResult( okBody( 7, 3 ), { code: 200 } ).hitsLabel, '7 hits' );
 		assert.equal( summarizeResult( okBody( 7, 0 ), { code: 200 } ).hitsLabel, '7 hits' );
 		assert.equal( summarizeResult( okBody( 1 ), { code: 200 } ).hitsLabel, '1 hit' );
+	} );
+
+	it( 'labels a capped total as a lower bound', () => {
+		const body = { took: 3, hits: { total: { value: 10000, relation: 'gte' }, hits: [] } };
+		assert.equal( summarizeResult( body, { code: 200 } ).hitsLabel, '10,000+ hits' );
+		assert.equal( summarizeResult( okBody( 2507 ), { code: 200 } ).hitsLabel, '2,507 hits' );
 	} );
 
 	it( 'flags failures and extracts the Elasticsearch reason', () => {
@@ -229,9 +236,22 @@ describe( 'hitsPerIndex', () => {
 } );
 
 describe( 'countHits', () => {
-	// The object form of `total` is covered by summarizeResult above.
+	it( 'keeps the total\'s relation', () => {
+		assert.equal( countHits( { hits: { total: { value: 10000, relation: 'gte' }, hits: [] } } ).relation, 'gte' );
+	} );
+
 	it( 'reads the plain-number form of the total', () => {
-		assert.deepEqual( countHits( { hits: { total: 3, hits: [ {}, {}, {} ] } } ), { total: 3, returned: 3 } );
+		assert.deepEqual( countHits( { hits: { total: 3, hits: [ {}, {}, {} ] } } ), { total: 3, relation: 'eq', returned: 3 } );
+	} );
+} );
+
+describe( 'describeNotReturned', () => {
+	it( 'counts matches beyond the page exactly, or as a lower bound when the total is', () => {
+		assert.equal( describeNotReturned( { total: 25, returned: 10, relation: 'eq' }, 10 ).label, '+15 not returned' );
+		const capped = describeNotReturned( { total: 10000, returned: 10, relation: 'gte' }, 10 );
+		assert.equal( capped.label, 'at least 9,990 not returned' );
+		assert.match( capped.title, /^At least 10,000 matched; / );
+		assert.equal( describeNotReturned( { total: 10, returned: 10, relation: 'eq' }, 10 ), null );
 	} );
 } );
 

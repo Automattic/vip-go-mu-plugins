@@ -176,6 +176,11 @@ test.describe( 'Search Dev Tools', () => {
 			} );
 			expect( requests ).toBe( 0 );
 		} );
+
+		await test.step( 'Editing clears a failure that described the previous request', async () => {
+			await searchPage.editQuery( query );
+			await expect( searchPage.requestError() ).toBeHidden();
+		} );
 	} );
 
 	test( 'keeps large requests and responses responsive', async () => {
