@@ -38,6 +38,8 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'agentforce not loaded'                   => [ AgentforceIntegration::class, null ],
 			'agentforce file constant'                => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_FILE' ],
 			'block data api not loaded'               => [ BlockDataApiIntegration::class, null ],
+			'clipisode not loaded'                    => [ ClipisodeIntegration::class, null ],
+			'clipisode loaded constant'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION' ],
 			'real-time collaboration not loaded'      => [ RealTimeCollaborationIntegration::class, null ],
 			'real-time collaboration loaded constant' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED' ],
 			'remote data blocks not loaded'           => [ RemoteDataBlocksIntegration::class, null ],
@@ -146,6 +148,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 	public static function data_unavailable_plugin(): array {
 		return [
 			'block data api without versions'       => [ BlockDataApiIntegration::class, [ 'get_latest_version' => null ] ],
+			'clipisode without versions'            => [ ClipisodeIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents without versions'   => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents missing entry file' => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => 'content-for-agents-missing-test-plugin' ] ],
 			'remote data blocks without versions'   => [
@@ -188,6 +191,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 
 	public static function data_already_loaded(): array {
 		return [
+			'clipisode'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION', [ 'get_latest_version' ] ],
 			'content for agents'      => [ ContentForAgentsIntegration::class, 'CONTENT_FOR_AGENTS_LOADED', [ 'get_latest_version' ] ],
 			// Without the WebSocket constants, a load past the guard would deactivate the integration.
 			'real-time collaboration' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED', [] ],
