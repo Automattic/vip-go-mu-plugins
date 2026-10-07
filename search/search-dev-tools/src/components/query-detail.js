@@ -288,10 +288,25 @@ const PlainResponse = ( { size, onShowTree } ) => (
 	</>
 );
 
+/**
+ * Copy button label for the last copy's outcome.
+ *
+ * @param {string} state idle|copied|failed
+ * @return {string} Label.
+ */
+const copyLabel = state => {
+	if ( state === 'copied' ) {
+		return 'Copied';
+	}
+	return state === 'failed' ? 'Copy failed' : 'Copy';
+};
+
 // Memoized: its props don't change while the request is edited, so typing doesn't re-render a large tree.
 const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes } ) {
 	const announce = useContext( AnnounceContext );
-	const [ copied, setCopied ] = useState( false );
+	// idle | copied | failed: the button label says how the last copy went, for a moment.
+	const [ copyState, setCopyState ] = useState( 'idle' );
+	const copyResetRef = useRef( null );
 	// `version` remounts the tree so manual toggles reset when a fold-all button is used.
 	// `forceTree` lets the user opt back into the tree for a large response.
 	const [ fold, setFold ] = useState( { mode: 'auto', version: 0, forceTree: false } );
@@ -317,12 +332,16 @@ const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite
 		try {
 			// Reuse the pretty-printed text when it has already been computed for the plain view.
 			await copyText( sizeOf.peek()?.text ?? JSON.stringify( result, null, 2 ) );
-			setCopied( true );
+			setCopyState( 'copied' );
 			announce( 'Response copied to the clipboard.' );
-			setTimeout( () => setCopied( false ), 1500 );
 		} catch {
-			// Clipboard unavailable or the copy was refused: don't claim success.
+			// Clipboard unavailable or the copy was refused: say so, rather than claim success or stay silent.
+			setCopyState( 'failed' );
+			announce( 'Couldn\'t copy the response to the clipboard.' );
 		}
+		// A newer copy restarts the timer, so its label isn't cleared early by an older one.
+		clearTimeout( copyResetRef.current );
+		copyResetRef.current = setTimeout( () => setCopyState( 'idle' ), 1500 );
 	};
 
 	return (
@@ -332,7 +351,7 @@ const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite
 				<div className="sdt-pane__actions">
 					<button type="button" className="sdt-btn sdt-btn--small sdt-btn--ghost" onClick={ () => foldAll( 'expanded' ) }>Expand all</button>
 					<button type="button" className="sdt-btn sdt-btn--small sdt-btn--ghost" onClick={ () => foldAll( 'collapsed' ) }>Collapse all</button>
-					<button type="button" className="sdt-btn sdt-btn--small" onClick={ copy }>{ copied ? 'Copied' : 'Copy' }</button>
+					<button type="button" className="sdt-btn sdt-btn--small" onClick={ copy }>{ copyLabel( copyState ) }</button>
 				</div>
 			</div>
 			{ crossSite

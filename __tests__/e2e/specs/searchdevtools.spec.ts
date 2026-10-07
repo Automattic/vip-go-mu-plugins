@@ -63,6 +63,10 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.useCopyFallback( false );
 			await searchPage.clickResponseAction( 'Copy' );
 			await expect.poll( () => searchPage.copyAttempts() ).toEqual( { copies: [ expect.any( String ) ], copiedShown: false, leftovers: 0 } );
+			// The refusal is reported, on the button and to screen readers.
+			await expect( searchPage.copyButton() ).toHaveText( 'Copy failed' );
+			await expect( searchPage.announcement() ).toContainText( 'Couldn\'t copy the response' );
+			await expect( searchPage.copyButton() ).toHaveText( 'Copy' );
 
 			// The Clipboard API is there but refuses (e.g. a permissions policy): the fallback still copies.
 			await searchPage.useCopyFallback( true, 'refuses' );

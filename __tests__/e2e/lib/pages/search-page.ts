@@ -271,7 +271,7 @@ export class SearchPage {
 	 * @return {Locator} Copy button
 	 */
 	public copyButton(): Locator {
-		return this.panel.locator( '.sdt-pane--response' ).getByRole( 'button', { name: /^Cop(y|ied)$/ } );
+		return this.panel.locator( '.sdt-pane--response' ).getByRole( 'button', { name: /^(Copy|Copied|Copy failed)$/ } );
 	}
 
 	/**
