@@ -20,9 +20,11 @@ export const JsonTree = ( { value, mode = 'auto', annotate, maxLines, renderTooL
 	const rootRef = useRef( null );
 
 	// The builder stops at maxLines, so a huge payload never allocates every row before falling back.
+	// Depends on the limit, not on `renderTooLarge`, whose identity changes on every parent render.
+	const lineLimit = renderTooLarge ? maxLines : undefined;
 	const { lines, truncated } = useMemo(
-		() => buildTreeLines( value, { mode, overrides, annotate, maxLines: renderTooLarge ? maxLines : undefined } ),
-		[ value, overrides, mode, annotate, maxLines, renderTooLarge ],
+		() => buildTreeLines( value, { mode, overrides, annotate, maxLines: lineLimit } ),
+		[ value, overrides, mode, annotate, lineLimit ],
 	);
 
 	const toggle = useCallback( ( path, collapsed ) => {

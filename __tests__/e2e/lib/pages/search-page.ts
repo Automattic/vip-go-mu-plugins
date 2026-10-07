@@ -298,7 +298,7 @@ export class SearchPage {
 			const toolbar = document.querySelector( '.sdt-pane--response' );
 			if ( toolbar ) {
 				new MutationObserver( () => {
-					state.copiedShown ||= toolbar.querySelector( 'button.sdt-btn' )?.textContent === 'Copied';
+					state.copiedShown ||= [ ...toolbar.querySelectorAll( 'button' ) ].some( ( button ) => button.textContent === 'Copied' );
 				} ).observe( toolbar, { subtree: true, childList: true, characterData: true } );
 			}
 			Object.defineProperty( document, 'execCommand', {

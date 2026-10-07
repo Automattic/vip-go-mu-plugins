@@ -1,4 +1,5 @@
 import cx from 'classnames';
+import { memo } from 'preact/compat';
 import { useCallback, useContext, useMemo, useRef, useState } from 'preact/hooks';
 
 import { CodeEditor, EDITOR_HINT } from './code-editor';
@@ -314,7 +315,8 @@ const PlainResponse = ( { size, onShowTree } ) => (
 	</>
 );
 
-const ResponsePane = ( { result, resultKey, crossSite, queriedIndexes, pageSize } ) => {
+// Memoized: its props don't change while the request is edited, so typing doesn't re-render a large tree.
+const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes, pageSize } ) {
 	const announce = useContext( AnnounceContext );
 	const [ copied, setCopied ] = useState( false );
 	// `version` remounts the tree so manual toggles reset when a fold-all button is used.
@@ -385,7 +387,7 @@ const ResponsePane = ( { result, resultKey, crossSite, queriedIndexes, pageSize 
 			</div>
 		</div>
 	);
-};
+} );
 
 /**
  * What the detail view shows for a query, given its draft (edits, last re-run, in-flight run).
@@ -432,8 +434,8 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 	const originalText = meta.requestText;
 	const { text, ranText, hasRerun, hasPendingEdits, running, result, resultKey } = draftState( draft, originalText, query );
 	const summary = useMemo(
-		() => ( hasRerun ? summarizeResult( draft.result ) : meta.summary ),
-		[ hasRerun, draft, meta.summary ],
+		() => ( hasRerun ? summarizeResult( result ) : meta.summary ),
+		[ hasRerun, result, meta.summary ],
 	);
 	const frames = query.backtrace || [];
 	// Parsed once per request text, not on every keystroke render.
