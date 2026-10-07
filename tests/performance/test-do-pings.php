@@ -7,8 +7,9 @@ use WP_UnitTestCase;
 class Do_Pings_Test extends WP_UnitTestCase {
 	public function get_data__block_encloseme_metadata_filter() {
 		return [
-			'other meta key keeps the earlier value' => [ 'test', true, true ],
-			'_encloseme is blocked'                  => [ '_encloseme', true, false ],
+			'other meta key keeps an earlier true'  => [ 'test', true, true ],
+			'other meta key keeps an earlier false' => [ 'test', false, false ],
+			'_encloseme is blocked'                 => [ '_encloseme', true, false ],
 		];
 	}
 
