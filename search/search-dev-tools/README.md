@@ -9,7 +9,7 @@ Search Dev Tools is aiming to be a one-stop shop for developers integrating Sear
 - A detail view for the selected query:
 	* Edit the request JSON in a syntax highlighted editor and re-run it with **Run** (shown once the request is edited), **Run query** or ⌘/Ctrl+Enter. **Reset** restores the original request and response.
 	* See the WP_Query arguments and the stack trace (with the calling frame highlighted).
-	* Browse the response in a collapsible JSON tree, with Elasticsearch errors surfaced above it. **Expand all** makes the whole response searchable with the browser's find.
+	* Browse the response in a collapsible JSON tree, with failed responses identified in the status chip and their errors visible in the response. **Expand all** makes the whole response searchable with the browser's find.
 - Multisite cross-site queries (`'sites' => [ 2, 3 ]` or `'all'`) show how far they reached: the site count after the hits in the sidebar (`4 hits · 2 sites`), the index list in the header (for the network alias, the real indexes it resolved to, e.g. `post-1, post-2, post-3-v2 via post-all`), returned hits per index above the response, and the index on each hit.
 - Large payloads stay responsive: above 1 MB or 50,000 lines, **Expand all** shows the response as plain text (with a **Show tree anyway** option); a response that would exceed 50,000 lines even folded (e.g. thousands of aggregation buckets) starts as plain text; and requests above 200 KB are edited without syntax highlighting.
 - Light and dark themes. The default follows the system preference; the choice is remembered per browser.
