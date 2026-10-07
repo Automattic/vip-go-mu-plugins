@@ -79,11 +79,19 @@ function rest_callback( \WP_REST_Request $request ) {
 	);
 
 	if ( ! is_wp_error( $result ) ) {
-		$body   = json_decode( wp_remote_retrieve_body( $result ) );
-		$result = [
+		$body    = json_decode( wp_remote_retrieve_body( $result ) );
+		$code    = wp_remote_retrieve_response_code( $result );
+		$message = wp_remote_retrieve_response_message( $result );
+		$result  = [
 			// A proxy or gateway error page isn't JSON; report it instead of failing on the decode.
-			'body' => is_object( $body ) ? sanitize_query_response( $body ) : [
-				'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', wp_remote_retrieve_response_code( $result ) ),
+			'body'     => is_object( $body ) ? sanitize_query_response( $body ) : [
+				'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', $code ),
+			],
+			// Like the page's query log: the status marks a failure even when the body is JSON without an
+			// `error` field (e.g. a gateway's `{"message":"Bad Gateway"}`).
+			'response' => [
+				'code'    => $code,
+				'message' => $message,
 			],
 		];
 	} else {

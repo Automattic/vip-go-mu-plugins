@@ -404,6 +404,8 @@ function draftState( draft, originalText, query ) {
 		hasPendingEdits: text !== ranText,
 		running: Boolean( draft?.pendingRun ),
 		result: hasRerun ? draft.result : query.request?.body,
+		// HTTP status meta of the shown result; a non-2xx status is a failure whatever the body says.
+		response: hasRerun ? draft.response : query.request?.response,
 		resultKey: hasRerun ? `rerun-${ draft.runId }` : 'original',
 		// In the draft, not component state: a run can fail after this component unmounted.
 		error: draft?.error ?? '',
@@ -428,10 +430,10 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 	const inFlightRef = useRef( false );
 
 	const originalText = meta.requestText;
-	const { text, ranText, hasRerun, hasPendingEdits, running, result, resultKey, error } = draftState( draft, originalText, query );
+	const { text, ranText, hasRerun, hasPendingEdits, running, result, response, resultKey, error } = draftState( draft, originalText, query );
 	const summary = useMemo(
-		() => ( hasRerun ? summarizeResult( result ) : meta.summary ),
-		[ hasRerun, result, meta.summary ],
+		() => ( hasRerun ? summarizeResult( result, response ) : meta.summary ),
+		[ hasRerun, result, response, meta.summary ],
 	);
 	const frames = backtraceFrames( query );
 	// Parsed once per request text, not on every keystroke render.
@@ -458,12 +460,13 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 			const { ajaxurl, nonce } = window.VIPSearchDevTools;
 			const res = await postData( ajaxurl, { url: query.url, query: text }, nonce );
 			const body = res?.result ? res.result.body : res;
+			const ranResponse = res?.result?.response;
 			// Apply only if this run is still the current one (not reset or superseded), merging into the latest
 			// draft so edits typed while it was in flight survive.
 			onDraftChange( prev => ( prev?.pendingRun === token
-				? { ...withoutPendingRun( prev ), ranText: text, runId: Date.now(), result: body }
+				? { ...withoutPendingRun( prev ), ranText: text, runId: Date.now(), result: body, response: ranResponse }
 				: prev ) );
-			announce( runAnnouncement( summarizeResult( body ) ) );
+			announce( runAnnouncement( summarizeResult( body, ranResponse ) ) );
 		} catch ( err ) {
 			onDraftChange( prev => ( prev?.pendingRun === token
 				? { ...withoutPendingRun( prev ), error: `Request failed: ${ err.message }` }

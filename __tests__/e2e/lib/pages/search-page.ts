@@ -414,10 +414,11 @@ export class SearchPage {
 	 * Replace the Dev Tools REST response (re-runs) with a fixed body.
 	 *
 	 * @param {Object} body Elasticsearch response body to return
+	 * @param {Object} response Optional Elasticsearch HTTP status meta (`code`, `message`)
 	 * @return {Promise<void>} Resolves once the route is registered
 	 */
-	public async stubRunResponse( body: unknown ): Promise<void> {
-		await this.page.route( `**${ DEV_TOOLS_ENDPOINT }`, ( route ) => route.fulfill( { json: { result: { body } } } ) );
+	public async stubRunResponse( body: unknown, response?: { code: number, message: string } ): Promise<void> {
+		await this.page.route( `**${ DEV_TOOLS_ENDPOINT }`, ( route ) => route.fulfill( { json: { result: { body, response } } } ) );
 	}
 
 	/**

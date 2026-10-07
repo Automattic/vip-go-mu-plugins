@@ -108,6 +108,12 @@ describe( 'summarizeResult', () => {
 		assert.equal( summary.errorReason, 'query_shard_exception: No mapping found for [x]' );
 	} );
 
+	it( 'treats a non-2xx status as a failure even when the body has no error field', () => {
+		const summary = summarizeResult( { message: 'Bad Gateway' }, { code: 502, message: 'Bad Gateway' } );
+		assert.equal( summary.failed, true );
+		assert.equal( summary.errorReason, 'Bad Gateway' );
+	} );
+
 	it( 'treats REST error payloads from a re-run as failures', () => {
 		const summary = summarizeResult( { code: 'rest_cookie_invalid_nonce', message: 'Cookie check failed' } );
 		assert.equal( summary.failed, true );

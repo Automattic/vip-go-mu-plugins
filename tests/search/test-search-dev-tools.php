@@ -125,15 +125,44 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	}
 
 	public function test__rest_callback_reports_a_non_json_response() {
+		$data = $this->run_rest_callback_with_response( 502, 'Bad Gateway', '<html><body>Bad Gateway</body></html>' );
+
+		$this->assertSame( [ 'error' => 'Elasticsearch returned a non-JSON response (HTTP 502).' ], $data['result']['body'] );
+		$this->assertSame( 502, $data['result']['response']['code'] );
+	}
+
+	public function test__rest_callback_keeps_the_status_of_a_json_error_response() {
+		// A gateway error can be JSON without an `error` field; the status is what marks it as failed.
+		$data = $this->run_rest_callback_with_response( 502, 'Bad Gateway', '{"message":"Bad Gateway"}' );
+
+		$this->assertSame( 'Bad Gateway', $data['result']['body']->message );
+		$this->assertSame(
+			[
+				'code'    => 502,
+				'message' => 'Bad Gateway',
+			],
+			$data['result']['response']
+		);
+	}
+
+	/**
+	 * Run the Dev Tools REST callback against a mocked Elasticsearch response.
+	 *
+	 * @param int    $code    HTTP status.
+	 * @param string $message HTTP status message.
+	 * @param string $body    Response body.
+	 * @return array REST response data.
+	 */
+	private function run_rest_callback_with_response( int $code, string $message, string $body ): array {
 		$this->init_search();
 		add_filter(
 			'pre_http_request',
 			fn () => [
 				'headers'  => [],
-				'body'     => '<html><body>Bad Gateway</body></html>',
+				'body'     => $body,
 				'response' => [
-					'code'    => 502,
-					'message' => 'Bad Gateway',
+					'code'    => $code,
+					'message' => $message,
 				],
 				'cookies'  => [],
 			]
@@ -142,9 +171,7 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		$request = new \WP_REST_Request( 'POST' );
 		$request->set_param( 'url', 'https://elasticsearch:9200/vip-123-post-1/_search' );
 		$request->set_param( 'query', '{}' );
-		$data = \Automattic\VIP\Search\Dev_Tools\rest_callback( $request )->get_data();
-
-		$this->assertSame( [ 'error' => 'Elasticsearch returned a non-JSON response (HTTP 502).' ], $data['result']['body'] );
+		return \Automattic\VIP\Search\Dev_Tools\rest_callback( $request )->get_data();
 	}
 
 	public function test__get_alias_indexes_resolves_network_alias_once() {

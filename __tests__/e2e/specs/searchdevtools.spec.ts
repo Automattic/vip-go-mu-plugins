@@ -179,6 +179,14 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.ensureQueryResponse( 'No mapping found' );
 		} );
 
+		await test.step( 'A gateway error with a JSON body counts as a failed run', async () => {
+			await searchPage.stubRunResponse( { message: 'Bad Gateway' }, { code: 502, message: 'Bad Gateway' } );
+			await searchPage.runQuery();
+			await expect( searchPage.statusChip() ).toHaveText( 'Edited · failed' );
+			await expect( searchPage.statusChip() ).toHaveClass( /sdt-chip--bad/ );
+			await searchPage.stopDelayingRuns();
+		} );
+
 		await test.step( 'Invalid JSON is rejected without a request', async () => {
 			await searchPage.editQuery( '{ "query": ' );
 			const requests = await searchPage.countRunRequests( async () => {
