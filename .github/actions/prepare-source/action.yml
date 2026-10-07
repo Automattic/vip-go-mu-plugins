@@ -12,7 +12,8 @@ runs:
 
     - name: Copy plugins into the source tree
       shell: bash
-      run: 'rsync -r --delete --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
+      # Hard-link files from the checkout instead of copying ~500 MB of data.
+      run: 'rsync -r --delete --link-dest="${PWD}/vip-go-mu-plugins-ext" --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
 
     - name: Clean up
       shell: bash
