@@ -435,7 +435,7 @@ function get_alias_indexes( string $index_part ): array {
 	}
 
 	$indexes  = [];
-	$response = \ElasticPress\Elasticsearch::factory()->remote_request( $index_part . '/_alias', [ 'method' => 'GET' ], [], 'get_alias' );
+	$response = \ElasticPress\Elasticsearch::factory()->remote_request( $index_part . '/_alias', [ 'method' => 'GET' ], [], 'get' );
 	if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 		if ( is_array( $body ) ) {
