@@ -22,22 +22,35 @@ use RuntimeException;
  * @return array{exit: int, stdout: string, stderr: string}
  */
 function run_php( array $args, string $stdin = '' ): array {
-	// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Runs test fixtures in isolation.
-	$process = proc_open( array_merge( [ PHP_BINARY ], $args ), [ [ 'pipe', 'r' ], [ 'pipe', 'w' ], [ 'pipe', 'w' ] ], $pipes );
-	if ( ! is_resource( $process ) ) {
-		throw new RuntimeException( 'Could not start a PHP process' );
+	// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPress.WP.AlternativeFunctions.file_system_operations_fwrite, WordPress.WP.AlternativeFunctions.unlink_unlink, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Test-only temporary files.
+	// The child writes its output to files rather than pipes, so it can't block on a full pipe
+	// while this process waits for it.
+	$stdout_file = tempnam( get_temp_dir(), 'vip-run-php-' );
+	$stderr_file = tempnam( get_temp_dir(), 'vip-run-php-' );
+
+	try {
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Runs test fixtures in isolation.
+		$process = proc_open(
+			array_merge( [ PHP_BINARY ], $args ),
+			[ [ 'pipe', 'r' ], [ 'file', $stdout_file, 'w' ], [ 'file', $stderr_file, 'w' ] ],
+			$pipes
+		);
+		if ( ! is_resource( $process ) ) {
+			throw new RuntimeException( 'Could not start a PHP process' );
+		}
+
+		fwrite( $pipes[0], $stdin );
+		fclose( $pipes[0] );
+		$exit = proc_close( $process );
+
+		return [
+			'exit'   => $exit,
+			'stdout' => (string) file_get_contents( $stdout_file ),
+			'stderr' => (string) file_get_contents( $stderr_file ),
+		];
+	} finally {
+		unlink( $stdout_file );
+		unlink( $stderr_file );
 	}
-
-	fwrite( $pipes[0], $stdin ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
-	fclose( $pipes[0] );
-	$stdout = stream_get_contents( $pipes[1] );
-	$stderr = stream_get_contents( $pipes[2] );
-	fclose( $pipes[1] );
-	fclose( $pipes[2] );
-
-	return [
-		'exit'   => proc_close( $process ),
-		'stdout' => $stdout,
-		'stderr' => $stderr,
-	];
+	// phpcs:enable
 }

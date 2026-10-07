@@ -150,11 +150,12 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * Default purge permissions must follow the user's editing capabilities.
 	 */
 	public function test_default_purge_permissions(): void {
+		// [ role, or null when logged out; whether the default allows purging ]
 		foreach ( [
-			null         => false,
-			'subscriber' => false,
-			'editor'     => true,
-		] as $role => $allowed ) {
+			[ null, false ],
+			[ 'subscriber', false ],
+			[ 'editor', true ],
+		] as [ $role, $allowed ] ) {
 			wp_set_current_user( $role ? self::factory()->user->create( [ 'role' => $role ] ) : 0 );
 			$this->assertSame( $allowed, $this->can_purge( 'url' ), $role ?: 'logged out' );
 		}
