@@ -46,6 +46,8 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'safe publish loaded constant'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED' ],
 			'safe publish plugin file constant'       => [ SafePublishIntegration::class, 'SAFE_PUBLISH_PLUGIN_FILE' ],
 			'security boost not loaded'               => [ SecurityBoostIntegration::class, null ],
+			'share a draft not loaded'                => [ ShareadraftIntegration::class, null ],
+			'share a draft loaded constant'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED' ],
 			'security boost loaded constant'          => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST__LOADED' ],
 			'vip governance not loaded'               => [ VipGovernanceIntegration::class, null ],
 			'vip workflows not loaded'                => [ VipWorkflowsIntegration::class, null ],
@@ -75,6 +77,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 		$agentforce     = $folders( 'vip-agentforce', [ '2.5', '1.11', '1.2' ] );
 		$safe_publish   = $folders( 'safe-publish', [ '2.5', '1.11', '1.2' ] );
 		$security_boost = $folders( 'vip-security-boost', [ '2.5', '1.11', '1.2' ] );
+		$shareadraft    = $folders( 'shareadraft', [ '2.5', '2.0' ] );
 		$vip_workflows  = $folders( 'vip-workflows', [ '0.1', '0.0' ] );
 
 		return [
@@ -88,6 +91,9 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'security boost latest'            => [ SecurityBoostIntegration::class, 'latest', $security_boost, 'vip-security-boost-2.5' ],
 			'security boost specified version' => [ SecurityBoostIntegration::class, '1.2', $security_boost, 'vip-security-boost-1.2' ],
 			'security boost empty version'     => [ SecurityBoostIntegration::class, '', $security_boost, 'vip-security-boost-2.5' ],
+			'share a draft latest'             => [ ShareadraftIntegration::class, 'latest', $shareadraft, 'shareadraft-2.5' ],
+			'share a draft specified version'  => [ ShareadraftIntegration::class, '2.0', $shareadraft, 'shareadraft-2.0' ],
+			'share a draft unknown version'    => [ ShareadraftIntegration::class, '9.9', $shareadraft, 'shareadraft-2.5' ],
 			'vip workflows default version'    => [ VipWorkflowsIntegration::class, null, $vip_workflows, 'vip-workflows-0.1' ],
 			'vip workflows specified version'  => [ VipWorkflowsIntegration::class, '0.0', $vip_workflows, 'vip-workflows-0.0' ],
 		];
@@ -117,6 +123,8 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'remote data blocks keeps existing'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS_CONFIGS', $existing, $existing ],
 			'security boost defines empty config'    => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', null, [] ],
 			'security boost keeps existing constant' => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', $existing, $existing ],
+			'share a draft defines empty config'     => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', null, [] ],
+			'share a draft keeps existing constant'  => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', $existing, $existing ],
 		];
 	}
 
@@ -156,6 +164,14 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 				],
 			],
 			'safe publish without versions'         => [ SafePublishIntegration::class, [ 'get_versions' => [] ] ],
+			'share a draft without versions'        => [ ShareadraftIntegration::class, [ 'get_versions' => [] ] ],
+			'share a draft missing entry file'      => [
+				ShareadraftIntegration::class,
+				[
+					'get_versions'                => [ 'shareadraft-missing-test-plugin' => '2.0' ],
+					'get_selected_version_folder' => 'shareadraft-missing-test-plugin',
+				],
+			],
 			'vip governance without versions'       => [ VipGovernanceIntegration::class, [ 'get_latest_version' => null ] ],
 			'vip workflows without versions'        => [ VipWorkflowsIntegration::class, [ 'get_versions' => [] ] ],
 			'wordpress mcp without versions'        => [ WordPressMcpIntegration::class, [ 'get_versions' => [] ] ],
@@ -193,6 +209,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'real-time collaboration' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED', [] ],
 			'remote data blocks'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS__LOADED', [ 'is_supported_wp_version', 'get_latest_version' ] ],
 			'safe publish'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
+			'share a draft'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
 			'vip workflows'           => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
 		];
 	}
