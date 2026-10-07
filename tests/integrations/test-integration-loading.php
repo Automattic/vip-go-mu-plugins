@@ -13,6 +13,38 @@ use WP_UnitTestCase;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 class Integration_Loading_Test extends WP_UnitTestCase {
+	private function create_clipisode_fixture( string $version, string $required_wp_version ): string {
+		$directory = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/clipisode-' . $version;
+		wp_mkdir_p( $directory );
+
+		$plugin = <<<PHP
+<?php
+/**
+ * Plugin Name: Clipisode test fixture
+ * Requires at least: {$required_wp_version}
+ */
+\Automattic\VIP\Integrations\define( 'CLIPISODE_VERSION', '{$version}' );
+PHP;
+
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Test-owned bundled plugin fixture.
+		file_put_contents( $directory . '/clipisode.php', $plugin );
+
+		return $directory;
+	}
+
+	private function remove_clipisode_fixture( string $directory ): void {
+		$plugin_file = $directory . '/clipisode.php';
+		if ( file_exists( $plugin_file ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Remove the test-owned bundled plugin fixture.
+			unlink( $plugin_file );
+		}
+
+		if ( is_dir( $directory ) ) {
+			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir -- Remove the test-owned bundled plugin fixture directory.
+			rmdir( $directory );
+		}
+	}
+
 	/**
 	 * Run load() and then only the plugins_loaded callbacks it registers, not every callback of the test bootstrap.
 	 */
@@ -38,6 +70,8 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'agentforce not loaded'                   => [ AgentforceIntegration::class, null ],
 			'agentforce file constant'                => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_FILE' ],
 			'block data api not loaded'               => [ BlockDataApiIntegration::class, null ],
+			'clipisode not loaded'                    => [ ClipisodeIntegration::class, null ],
+			'clipisode loaded constant'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION' ],
 			'real-time collaboration not loaded'      => [ RealTimeCollaborationIntegration::class, null ],
 			'real-time collaboration loaded constant' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED' ],
 			'remote data blocks not loaded'           => [ RemoteDataBlocksIntegration::class, null ],
@@ -146,6 +180,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 	public static function data_unavailable_plugin(): array {
 		return [
 			'block data api without versions'       => [ BlockDataApiIntegration::class, [ 'get_latest_version' => null ] ],
+			'clipisode without versions'            => [ ClipisodeIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents without versions'   => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents missing entry file' => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => 'content-for-agents-missing-test-plugin' ] ],
 			'remote data blocks without versions'   => [
@@ -188,6 +223,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 
 	public static function data_already_loaded(): array {
 		return [
+			'clipisode'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION', [ 'get_latest_version' ] ],
 			'content for agents'      => [ ContentForAgentsIntegration::class, 'CONTENT_FOR_AGENTS_LOADED', [ 'get_latest_version' ] ],
 			// Without the WebSocket constants, a load past the guard would deactivate the integration.
 			'real-time collaboration' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED', [] ],
@@ -195,5 +231,55 @@ class Integration_Loading_Test extends WP_UnitTestCase {
 			'safe publish'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
 			'vip workflows'           => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
 		];
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_clipisode_loads_the_latest_compatible_bundled_plugin(): void {
+		global $wp_version;
+		$wp_version = '6.6'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
+
+		$older_fixture  = $this->create_clipisode_fixture( '999.0', '6.6' );
+		$latest_fixture = $this->create_clipisode_fixture( '999.1', '6.6' );
+
+		try {
+			$integration = new ClipisodeIntegration( 'test' );
+			$integration->activate();
+
+			$this->assertSame( 'clipisode-999.1', $integration->get_latest_version() );
+
+			$this->load_on_plugins_loaded( $integration );
+
+			$this->assertTrue( $integration->is_active() );
+			$this->assertTrue( defined( 'CLIPISODE_VERSION' ) );
+			$this->assertSame( '999.1', constant( 'CLIPISODE_VERSION' ) );
+		} finally {
+			$this->remove_clipisode_fixture( $older_fixture );
+			$this->remove_clipisode_fixture( $latest_fixture );
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_clipisode_stays_inactive_when_wordpress_is_unsupported(): void {
+		global $wp_version;
+		$wp_version = '6.5'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
+
+		$fixture = $this->create_clipisode_fixture( '999.2', '6.6' );
+
+		try {
+			$integration = new ClipisodeIntegration( 'test' );
+			$integration->activate();
+			$this->load_on_plugins_loaded( $integration );
+
+			$this->assertFalse( $integration->is_active() );
+			$this->assertFalse( defined( 'CLIPISODE_VERSION' ) );
+		} finally {
+			$this->remove_clipisode_fixture( $fixture );
+		}
 	}
 }
