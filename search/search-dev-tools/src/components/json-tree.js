@@ -124,8 +124,8 @@ export const JsonTree = ( { value, mode = 'auto', annotate, maxLines, renderTooL
 							)
 							: null }
 					</span>
-					<span className="sdt-json__code">
-						<span aria-hidden="true">{ ' '.repeat( line.depth * 2 ) }</span>
+					{ /* Preact sets this through the CSSOM (`style.paddingLeft`), which a strict `style-src` CSP doesn't block. */ }
+					<span className="sdt-json__code" style={ { paddingLeft: `${ line.depth * 2 }ch` } }>
 						{ line.parts.map( ( [ type, text, slot ] ) => (
 							type === 'summary'
 								// Mouse shortcut only; keyboard users expand with the toggle.

@@ -163,12 +163,13 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.stopDelayingRuns();
 		} );
 
-		await test.step( 'A run that fails after the panel was closed shows its error on reopening', async () => {
+		await test.step( 'A run that fails after the panel was closed shows as the failed result on reopening', async () => {
 			await searchPage.failRuns( 500 );
 			await searchPage.headerRunButton().click();
 			await searchPage.closeSearchDevTools();
 			await searchPage.openSearchDevTools();
-			await expect( searchPage.requestError() ).toContainText( 'Request failed' );
+			await expect( searchPage.statusChip() ).toHaveText( 'Re-run · failed' );
+			await searchPage.ensureQueryResponse( 'Request failed' );
 			await searchPage.stopDelayingRuns();
 		} );
 

@@ -83,10 +83,7 @@ function rest_callback( \WP_REST_Request $request ) {
 		$code    = wp_remote_retrieve_response_code( $result );
 		$message = wp_remote_retrieve_response_message( $result );
 		$result  = [
-			// A proxy or gateway error page isn't JSON; report it instead of failing on the decode.
-			'body'     => is_object( $body ) ? sanitize_query_response( $body ) : [
-				'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', $code ),
-			],
+			'body'     => rest_response_body( $body, $code ),
 			// Like the page's query log: the status marks a failure even when the body is JSON without an
 			// `error` field (e.g. a gateway's `{"message":"Bad Gateway"}`).
 			'response' => [
@@ -487,6 +484,24 @@ function skip_js_do_concat( bool $do_concat, string $handle ): bool {
 		$do_concat = false;
 	}
 	return $do_concat;
+}
+
+/**
+ * Run response body for the frontend. A proxy or gateway error page may not be JSON at all; report that
+ * instead of failing on the decode, and pass any other JSON (a string or array message) through as is.
+ *
+ * @param mixed      $body Decoded Elasticsearch response body (null when it wasn't JSON).
+ * @param int|string $code HTTP status.
+ * @return mixed Body.
+ */
+function rest_response_body( $body, $code ) {
+	if ( is_object( $body ) ) {
+		return sanitize_query_response( $body );
+	}
+	if ( null === $body ) {
+		return [ 'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', $code ) ];
+	}
+	return $body;
 }
 
 /**

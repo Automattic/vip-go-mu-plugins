@@ -251,11 +251,6 @@ const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose, ann
 const App = () => {
 	const [ visible, setVisible ] = useState( false );
 	const buttonRef = useRef( null );
-	const close = useCallback( () => {
-		setVisible( false );
-		buttonRef.current?.focus();
-	}, [] );
-	const toggle = useCallback( () => setVisible( prev => ! prev ), [] );
 	const [ selected, setSelected ] = useState( 0 );
 	const [ drafts, setDrafts ] = useState( {} );
 	const [ announcement, setAnnouncement ] = useState( '' );
@@ -271,9 +266,24 @@ const App = () => {
 			timer = setTimeout( () => setAnnouncement( message ), 50 );
 		};
 		announceMessage.cancel = () => clearTimeout( timer );
+		// Opening or closing the panel starts it with an empty live region, not the last message.
+		announceMessage.clear = () => {
+			clearTimeout( timer );
+			setAnnouncement( '' );
+		};
 		return announceMessage;
 	} );
 	useEffect( () => () => announce.cancel(), [ announce ] );
+
+	const close = useCallback( () => {
+		announce.clear();
+		setVisible( false );
+		buttonRef.current?.focus();
+	}, [ announce ] );
+	const toggle = useCallback( () => {
+		announce.clear();
+		setVisible( prev => ! prev );
+	}, [ announce ] );
 	const data = window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] };
 	const items = useMemo( () => data.queries.map( describeQuery ), [ data.queries ] );
 	const hasFailures = items.some( item => item.summary.failed );

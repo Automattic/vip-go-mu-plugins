@@ -302,7 +302,7 @@ const copyLabel = state => {
 };
 
 // Memoized: its props don't change while the request is edited, so typing doesn't re-render a large tree.
-const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes } ) {
+const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite, queriedIndexes, failed } ) {
 	const announce = useContext( AnnounceContext );
 	// idle | copied | failed: the button label says how the last copy went, for a moment.
 	const [ copyState, setCopyState ] = useState( 'idle' );
@@ -354,7 +354,8 @@ const ResponsePane = memo( function ResponsePane( { result, resultKey, crossSite
 					<button type="button" className="sdt-btn sdt-btn--small" onClick={ copy }>{ copyLabel( copyState ) }</button>
 				</div>
 			</div>
-			{ crossSite
+			{ /* A failed request returned no hits; per-index zeros would read as indexes that matched nothing. */ }
+			{ crossSite && ! failed
 				? (
 					<div className="sdt-pane__subhead">
 						<span className="sdt-muted">Returned per index:</span>
@@ -462,9 +463,13 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 				: prev ) );
 			announce( runAnnouncement( summarizeResult( body, ranResponse ) ) );
 		} catch ( err ) {
+			// A transport failure is this run's result too: shown and announced like a failed response, so the
+			// header and response pane don't keep presenting the previous result.
+			const failure = { error: `Request failed: ${ err.message }` };
 			onDraftChange( prev => ( prev?.pendingRun === token
-				? { ...withoutPendingRun( prev ), error: `Request failed: ${ err.message }` }
+				? { ...withoutPendingRun( prev ), ranText: text, runId: Date.now(), result: failure, response: undefined }
 				: prev ) );
+			announce( runAnnouncement( summarizeResult( failure ) ) );
 		} finally {
 			inFlightRef.current = false;
 		}
@@ -532,6 +537,7 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 					resultKey={ resultKey }
 					crossSite={ meta.crossSite }
 					queriedIndexes={ meta.queriedIndexes }
+					failed={ summary.failed }
 				/>
 			</div>
 		</section>
