@@ -23,7 +23,7 @@ class Integration_Loading_Test extends WP_UnitTestCase {
  * Plugin Name: Clipisode test fixture
  * Requires at least: {$required_wp_version}
  */
-define( 'CLIPISODE_VERSION', '{$version}' );
+\Automattic\VIP\Integrations\define( 'CLIPISODE_VERSION', '{$version}' );
 PHP;
 
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Test-owned bundled plugin fixture.
@@ -254,7 +254,7 @@ PHP;
 
 			$this->assertTrue( $integration->is_active() );
 			$this->assertTrue( defined( 'CLIPISODE_VERSION' ) );
-			$this->assertSame( '999.1', CLIPISODE_VERSION );
+			$this->assertSame( '999.1', constant( 'CLIPISODE_VERSION' ) );
 		} finally {
 			$this->remove_clipisode_fixture( $older_fixture );
 			$this->remove_clipisode_fixture( $latest_fixture );
