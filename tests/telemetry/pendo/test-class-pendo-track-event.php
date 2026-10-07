@@ -35,6 +35,9 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		$event_properties = [
 			'property1' => 'value1',
 			'property2' => 'value2',
+			// Booleans and integers are sent as-is, like the base is_multisite and is_vip_user properties.
+			'flag'      => false,
+			'count'     => 3,
 		];
 
 		$event = new Pendo_Track_Event( 'prefix_', 'test_event', $event_context, $event_properties );
@@ -60,6 +63,8 @@ class Pendo_Track_Event_Test extends WP_UnitTestCase {
 		// Test passed event properties.
 		$this->assertSame( 'value1', $event->get_data()->properties->property1 );
 		$this->assertSame( 'value2', $event->get_data()->properties->property2 );
+		$this->assertFalse( $event->get_data()->properties->flag );
+		$this->assertSame( 3, $event->get_data()->properties->count );
 
 		$this->assertTrue( $event->is_recordable() );
 	}

@@ -11,10 +11,12 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 			'queue size in range'    => [ 'jetpack_sync_settings_max_queue_size', '30000', 30000 ],
 			'queue size above max'   => [ 'jetpack_sync_settings_max_queue_size', 10000000, 100000 ],
 			'queue size non-numeric' => [ 'jetpack_sync_settings_max_queue_size', 'apples', 10000 ],
+			'queue size not set'     => [ 'jetpack_sync_settings_max_queue_size', null, 10000 ],
 			'queue lag below min'    => [ 'jetpack_sync_settings_max_queue_lag', 1, 7200 ],
 			'queue lag in range'     => [ 'jetpack_sync_settings_max_queue_lag', '15000', 15000 ],
 			'queue lag above max'    => [ 'jetpack_sync_settings_max_queue_lag', 10000000, 86400 ],
 			'queue lag non-numeric'  => [ 'jetpack_sync_settings_max_queue_lag', 'apples', 7200 ],
+			'queue lag not set'      => [ 'jetpack_sync_settings_max_queue_lag', null, 7200 ],
 		];
 	}
 
