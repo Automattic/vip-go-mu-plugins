@@ -91,26 +91,13 @@ const panelFocusables = panel => Array.from( panel?.querySelectorAll( 'button:no
  * @param {Object}   props.drafts        Drafts keyed by query index.
  * @param {Function} props.onDraftChange ( index, draft | updater | undefined ) => void.
  * @param {Function} props.onClose       Close handler.
+ * @param {string}   props.announcement  Screen reader announcement (see App).
  * @return {import('preact').VNode} Panel.
  */
-const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose } ) => {
+const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose, announcement } ) => {
 	const { queries, information } = useContext( SearchContext );
 	const [ theme, setTheme ] = useState( readStoredTheme );
-	const [ announcement, setAnnouncement ] = useState( '' );
 	const panelRef = useRef( null );
-
-	// Clear first so repeating the same message is announced again; the pending timer is cancelled on close.
-	const [ announce ] = useState( () => {
-		let timer;
-		const announceMessage = message => {
-			clearTimeout( timer );
-			setAnnouncement( '' );
-			timer = setTimeout( () => setAnnouncement( message ), 50 );
-		};
-		announceMessage.cancel = () => clearTimeout( timer );
-		return announceMessage;
-	} );
-	useEffect( () => () => announce.cancel(), [ announce ] );
 
 	// aria-modal: keep Tab inside the panel. The editor handles (and prevents) Tab itself while it captures it.
 	const trapFocus = evt => {
@@ -197,61 +184,59 @@ const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose } ) 
 			onKeyDown={ trapFocus }
 		>
 			<div className="sdt-visually-hidden" aria-live="polite" aria-atomic="true" data-testid="sdt-live">{ announcement }</div>
-			<AnnounceContext.Provider value={ announce }>
-				{ /* A div, not <header>: a header outside sectioning content is a second page banner landmark. */ }
-				<div className="sdt-header">
-					<div className="sdt-header__title">
-						<h1 id="sdt-title">Enterprise Search Dev Tools</h1>
-						<span className="sdt-muted">
-							{ queries.length } { queries.length === 1 ? 'query' : 'queries' } · { formatDuration( totalTime ) }
-						</span>
-					</div>
-					<div className="sdt-header__actions">
-						<fieldset className="sdt-segmented" aria-label="Color theme">
-							{ [ 'light', 'dark' ].map( value => (
-								<button
-									key={ value }
-									type="button"
-									aria-pressed={ theme === value }
-									className={ cx( { 'is-active': theme === value } ) }
-									onClick={ () => chooseTheme( value ) }
-							>
-									{ value === 'light' ? 'Light' : 'Dark' }
-								</button>
-						) ) }
-						</fieldset>
-						<button type="button" className="sdt-icon-btn" onClick={ onClose } aria-label="Close VIP Search Dev Tools">
-							<CloseIcon />
-						</button>
-					</div>
+			{ /* A div, not <header>: a header outside sectioning content is a second page banner landmark. */ }
+			<div className="sdt-header">
+				<div className="sdt-header__title">
+					<h1 id="sdt-title">Enterprise Search Dev Tools</h1>
+					<span className="sdt-muted">
+						{ queries.length } { queries.length === 1 ? 'query' : 'queries' } · { formatDuration( totalTime ) }
+					</span>
 				</div>
+				<div className="sdt-header__actions">
+					<fieldset className="sdt-segmented" aria-label="Color theme">
+						{ [ 'light', 'dark' ].map( value => (
+							<button
+								key={ value }
+								type="button"
+								aria-pressed={ theme === value }
+								className={ cx( { 'is-active': theme === value } ) }
+								onClick={ () => chooseTheme( value ) }
+						>
+								{ value === 'light' ? 'Light' : 'Dark' }
+							</button>
+					) ) }
+					</fieldset>
+					<button type="button" className="sdt-icon-btn" onClick={ onClose } aria-label="Close VIP Search Dev Tools">
+						<CloseIcon />
+					</button>
+				</div>
+			</div>
 
-				<InfoStrip information={ information } />
+			<InfoStrip information={ information } />
 
-				{ items.length
-				? (
-					<div className="sdt-body">
-						<QueryList
-							items={ items }
-							selected={ selected }
-							onSelect={ onSelect }
-							isEdited={ idx => isDraftEdited( drafts[ idx ], items[ idx ].requestText ) }
-						/>
-						<QueryDetail
-							key={ selected }
-							query={ queries[ selected ] }
-							meta={ items[ selected ] }
-							draft={ drafts[ selected ] }
-							onDraftChange={ change => onDraftChange( selected, change ) }
-						/>
-					</div>
-				)
-				: (
-					<div className="sdt-body sdt-body--empty">
-						<p>No Elasticsearch queries ran on this page.</p>
-					</div>
-				) }
-			</AnnounceContext.Provider>
+			{ items.length
+			? (
+				<div className="sdt-body">
+					<QueryList
+						items={ items }
+						selected={ selected }
+						onSelect={ onSelect }
+						isEdited={ idx => isDraftEdited( drafts[ idx ], items[ idx ].requestText ) }
+					/>
+					<QueryDetail
+						key={ selected }
+						query={ queries[ selected ] }
+						meta={ items[ selected ] }
+						draft={ drafts[ selected ] }
+						onDraftChange={ change => onDraftChange( selected, change ) }
+					/>
+				</div>
+			)
+			: (
+				<div className="sdt-body sdt-body--empty">
+					<p>No Elasticsearch queries ran on this page.</p>
+				</div>
+			) }
 		</dialog>
 	);
 };
@@ -273,6 +258,22 @@ const App = () => {
 	const toggle = useCallback( () => setVisible( prev => ! prev ), [] );
 	const [ selected, setSelected ] = useState( 0 );
 	const [ drafts, setDrafts ] = useState( {} );
+	const [ announcement, setAnnouncement ] = useState( '' );
+
+	// Announcer for the live region. It lives here, not in the panel: a run can finish after the panel was
+	// closed and reopened, and its result must reach the panel that's open now. Clearing first makes a
+	// repeated message announce again.
+	const [ announce ] = useState( () => {
+		let timer;
+		const announceMessage = message => {
+			clearTimeout( timer );
+			setAnnouncement( '' );
+			timer = setTimeout( () => setAnnouncement( message ), 50 );
+		};
+		announceMessage.cancel = () => clearTimeout( timer );
+		return announceMessage;
+	} );
+	useEffect( () => () => announce.cancel(), [ announce ] );
 	const data = window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] };
 	const items = useMemo( () => data.queries.map( describeQuery ), [ data.queries ] );
 	const hasFailures = items.some( item => item.summary.failed );
@@ -304,13 +305,16 @@ const App = () => {
 			drafts={ drafts }
 			onDraftChange={ updateDraft }
 			onClose={ close }
+			announcement={ announcement }
 		/>
 	);
 
 	return (
 		<SearchContext.Provider value={ data }>
-			<AdminBarButton ref={ buttonRef } onClick={ toggle } expanded={ visible } hasFailures={ hasFailures } />
-			{ visible && portal ? createPortal( panel, portal ) : null }
+			<AnnounceContext.Provider value={ announce }>
+				<AdminBarButton ref={ buttonRef } onClick={ toggle } expanded={ visible } hasFailures={ hasFailures } />
+				{ visible && portal ? createPortal( panel, portal ) : null }
+			</AnnounceContext.Provider>
 		</SearchContext.Provider>
 	);
 };

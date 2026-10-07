@@ -144,6 +144,8 @@ test.describe( 'Search Dev Tools', () => {
 				await expect( searchPage.statusChip() ).toHaveText( 'Re-run' );
 			} );
 			expect( requests ).toBe( 1 );
+			// The run started in the closed panel; its result is announced in the reopened one.
+			await expect( searchPage.announcement() ).toContainText( 'Query ran' );
 		} );
 
 		await test.step( 'Typing back to the original during a run keeps the latest text', async () => {
@@ -154,6 +156,15 @@ test.describe( 'Search Dev Tools', () => {
 			await searchPage.editQuery( query );
 			await expect( searchPage.statusChip() ).toHaveText( 'Edited' );
 			await expect( searchPage.getQuery() ).resolves.toBe( query );
+			await searchPage.stopDelayingRuns();
+		} );
+
+		await test.step( 'A run that fails after the panel was closed shows its error on reopening', async () => {
+			await searchPage.failRuns( 500 );
+			await searchPage.headerRunButton().click();
+			await searchPage.closeSearchDevTools();
+			await searchPage.openSearchDevTools();
+			await expect( searchPage.requestError() ).toContainText( 'Request failed' );
 			await searchPage.stopDelayingRuns();
 		} );
 

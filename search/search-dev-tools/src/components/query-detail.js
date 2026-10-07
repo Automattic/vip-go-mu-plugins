@@ -405,6 +405,8 @@ function draftState( draft, originalText, query ) {
 		running: Boolean( draft?.pendingRun ),
 		result: hasRerun ? draft.result : query.request?.body,
 		resultKey: hasRerun ? `rerun-${ draft.runId }` : 'original',
+		// In the draft, not component state: a run can fail after this component unmounted.
+		error: draft?.error ?? '',
 	};
 }
 
@@ -424,10 +426,9 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 	// The in-flight run lives in the draft (App state), so it survives this keyed component unmounting when
 	// another query is selected or the panel is closed; the ref only covers presses within the same tick.
 	const inFlightRef = useRef( false );
-	const [ error, setError ] = useState( '' );
 
 	const originalText = meta.requestText;
-	const { text, ranText, hasRerun, hasPendingEdits, running, result, resultKey } = draftState( draft, originalText, query );
+	const { text, ranText, hasRerun, hasPendingEdits, running, result, resultKey, error } = draftState( draft, originalText, query );
 	const summary = useMemo(
 		() => ( hasRerun ? summarizeResult( result ) : meta.summary ),
 		[ hasRerun, result, meta.summary ],
@@ -445,15 +446,14 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 		try {
 			JSON.parse( text );
 		} catch ( err ) {
-			setError( `Invalid JSON: ${ err.message }` );
+			onDraftChange( prev => ( { ...prev, text: prev?.text ?? text, error: `Invalid JSON: ${ err.message }` } ) );
 			setTab( 'request' );
 			return;
 		}
 
-		setError( '' );
 		inFlightRef.current = true;
 		const token = nextRunToken();
-		onDraftChange( prev => ( { ...prev, text: prev?.text ?? text, pendingRun: token } ) );
+		onDraftChange( prev => ( { ...prev, text: prev?.text ?? text, pendingRun: token, error: undefined } ) );
 		try {
 			const { ajaxurl, nonce } = window.VIPSearchDevTools;
 			const res = await postData( ajaxurl, { url: query.url, query: text }, nonce );
@@ -465,18 +465,18 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 				: prev ) );
 			announce( runAnnouncement( summarizeResult( body ) ) );
 		} catch ( err ) {
-			setError( `Request failed: ${ err.message }` );
-			onDraftChange( prev => ( prev?.pendingRun === token ? withoutPendingRun( prev ) : prev ) );
+			onDraftChange( prev => ( prev?.pendingRun === token
+				? { ...withoutPendingRun( prev ), error: `Request failed: ${ err.message }` }
+				: prev ) );
 		} finally {
 			inFlightRef.current = false;
 		}
 	}, [ text, query.url, onDraftChange, announce, draft?.pendingRun ] );
 
 	const updateText = code => {
-		// A failure message describes the request that was run (or rejected), not the one being edited now.
-		setError( '' );
 		onDraftChange( prev => {
-			const next = { ...prev, text: code };
+			// A failure message describes the request that was run (or rejected), not the one being edited now.
+			const next = { ...prev, text: code, error: undefined };
 			// Typing back to the original with no re-run result is no edit at all, unless a run is in flight:
 			// its result merges into this draft and must not fall back to the text that was sent.
 			return ! next.pendingRun && next.result === undefined && ! isDraftEdited( next, originalText ) ? undefined : next;
@@ -484,7 +484,6 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 	};
 
 	const reset = () => {
-		setError( '' );
 		onDraftChange( undefined );
 	};
 

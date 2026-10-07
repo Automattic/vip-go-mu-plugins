@@ -462,6 +462,28 @@ export class SearchPage {
 	}
 
 	/**
+	 * Fail Dev Tools re-run requests with a network error after `ms` (until stopDelayingRuns()).
+	 *
+	 * @param {number} ms Delay before the failure
+	 * @return {Promise<void>} Resolves once the route is installed
+	 */
+	public async failRuns( ms: number ): Promise<void> {
+		await this.page.route( `**${ DEV_TOOLS_ENDPOINT }`, async ( route ) => {
+			await new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+			await route.abort( 'failed' );
+		} );
+	}
+
+	/**
+	 * Live region the panel announces results in.
+	 *
+	 * @return {Locator} Live region
+	 */
+	public announcement(): Locator {
+		return this.panel.getByTestId( 'sdt-live' );
+	}
+
+	/**
 	 * Stop delaying Dev Tools re-run requests.
 	 *
 	 * @return {Promise<void>} Resolves once the route is removed
