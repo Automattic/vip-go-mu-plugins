@@ -21,25 +21,27 @@ import {
 	formatDuration,
 	hitsPerIndex,
 	isDraftEdited,
-	parseFrame,
 	queryLabel,
 	speedClass,
 	summarizeResult,
 } from '../src/utils.js';
 
+// Query log backtrace frames, as ElasticPress records them.
+const frame = ( file, line, call ) => ( { file, line, call } );
+
 const MAIN_QUERY_TRACE = [
-	String.raw`wp-content/mu-plugins/search/elasticpress/includes/classes/Elasticsearch.php:372 ElasticPress\Elasticsearch->remote_request()`,
-	String.raw`wp-includes/class-wp-hook.php:341 ElasticPress\Indexable\Post\QueryIntegration->get_es_posts()`,
-	'wp-includes/class-wp-query.php:3958 WP_Query->get_posts()',
-	'wp-includes/class-wp.php:704 WP_Query->query()',
-	'wp-includes/class-wp.php:824 WP->query_posts()',
-	'index.php:17 require(\'wp-blog-header.php\')',
+	frame( 'wp-content/mu-plugins/search/elasticpress/includes/classes/Elasticsearch.php', 372, String.raw`ElasticPress\Elasticsearch->remote_request()` ),
+	frame( 'wp-includes/class-wp-hook.php', 341, String.raw`ElasticPress\Indexable\Post\QueryIntegration->get_es_posts()` ),
+	frame( 'wp-includes/class-wp-query.php', 3958, 'WP_Query->get_posts()' ),
+	frame( 'wp-includes/class-wp.php', 704, 'WP_Query->query()' ),
+	frame( 'wp-includes/class-wp.php', 824, 'WP->query_posts()' ),
+	frame( 'index.php', 17, "require('wp-blog-header.php')" ),
 ];
 
 const PLUGIN_TRACE = [
-	String.raw`wp-content/mu-plugins/search/elasticpress/includes/classes/Elasticsearch.php:372 ElasticPress\Elasticsearch->remote_request()`,
-	'wp-includes/class-wp-query.php:3958 WP_Query->get_posts()',
-	'wp-content/client-mu-plugins/demo.php:16 WP_Query->__construct()',
+	frame( 'wp-content/mu-plugins/search/elasticpress/includes/classes/Elasticsearch.php', 372, String.raw`ElasticPress\Elasticsearch->remote_request()` ),
+	frame( 'wp-includes/class-wp-query.php', 3958, 'WP_Query->get_posts()' ),
+	frame( 'wp-content/client-mu-plugins/demo.php', 16, 'WP_Query->__construct()' ),
 ];
 
 const okBody = ( total, returned = total ) => ( {
@@ -47,21 +49,18 @@ const okBody = ( total, returned = total ) => ( {
 	hits: { total: { value: total, relation: 'eq' }, hits: Array.from( { length: returned }, () => ( {} ) ) },
 } );
 
-describe( 'parseFrame', () => {
-	it( 'splits file, line and call', () => {
-		assert.deepEqual( parseFrame( 'wp-includes/class-wp.php:704  WP_Query->query()' ), { file: 'wp-includes/class-wp.php', line: '704', call: 'WP_Query->query()' } );
-		assert.deepEqual( parseFrame( 'index.php require()' ), { file: 'index.php', line: '', call: 'require()' } );
-	} );
-
-	it( 'keeps frames without a PHP file as the call', () => {
-		assert.deepEqual( parseFrame( 'Closure->__invoke()' ), { file: '', line: '', call: 'Closure->__invoke()' } );
-		assert.deepEqual( parseFrame( 'file.php:12:3 call()' ), { file: '', line: '', call: 'file.php:12:3 call()' } );
-	} );
-} );
-
 describe( 'findCallerIndex', () => {
 	it( 'falls back to the core caller for the main query', () => {
 		assert.equal( findCallerIndex( MAIN_QUERY_TRACE ), 3 );
+	} );
+
+	it( 'ignores backtrace entries that are not frames, such as old string backtraces', () => {
+		assert.equal( describeQuery( { url: 'https://es:9200/vip-1-post-1/_search', backtrace: [ 'index.php:17 require()' ] }, 0 ).caller, '' );
+	} );
+
+	it( 'skips frames without a PHP file', () => {
+		const internal = [ frame( '', null, '{closure}()' ), frame( "themes/x/functions.php(12) : eval()'d code", 3, 'eval()' ) ];
+		assert.equal( findCallerIndex( [ ...internal, ...PLUGIN_TRACE ] ), 4 );
 	} );
 } );
 

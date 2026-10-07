@@ -27,25 +27,6 @@ const INTERNAL_FRAME = /^(wp-includes\/|wp-admin\/|wp-content\/mu-plugins\/searc
 const PLUMBING_FRAME = /^(wp-content\/mu-plugins\/search\/|wp-includes\/(class-wp-hook|plugin|class-wp-query)\.php)/;
 
 /**
- * Split a backtrace frame such as `wp-includes/class-wp.php:704 WP_Query->query()`.
- *
- * @param {string} frame Backtrace frame.
- * @return {{file: string, line: string, call: string}} Parsed frame.
- */
-export function parseFrame( frame = '' ) {
-	// Plain string scanning rather than one regex, which backtracks on long frames without a match.
-	const space = frame.search( /\s/ );
-	const location = space > 0 ? frame.slice( 0, space ) : '';
-	const colon = location.lastIndexOf( ':' );
-	const line = colon > 0 && /^\d+$/.test( location.slice( colon + 1 ) ) ? location.slice( colon + 1 ) : '';
-	const file = line ? location.slice( 0, colon ) : location;
-	if ( ! file.endsWith( '.php' ) ) {
-		return { file: '', line: '', call: frame };
-	}
-	return { file, line, call: frame.slice( space ).trimStart() };
-}
-
-/**
  * Shorten a file path for display.
  *
  * @param {string} file File path relative to ABSPATH.
@@ -54,16 +35,26 @@ export function parseFrame( frame = '' ) {
 export const displayPath = file => file.replace( /^wp-content\//, '' );
 
 /**
+ * A query's backtrace frames (`{ file, line, call }`, as ElasticPress logs them). Anything else is dropped, so an
+ * older string backtrace leaves the trace empty instead of breaking the panel.
+ *
+ * @param {Object} query Query log entry.
+ * @return {Array<{file: string, line: ?number, call: string}>} Frames.
+ */
+export const backtraceFrames = query => ( Array.isArray( query?.backtrace ) ? query.backtrace.filter( frame => frame && typeof frame === 'object' ) : [] );
+
+/**
  * Find the most useful frame to describe where a query came from.
  *
- * @param {Array<string>} backtrace Backtrace frames.
+ * @param {Array<{file: string, line: ?number, call: string}>} backtrace Backtrace frames from the query log.
  * @return {number} Index of the caller frame, or -1.
  */
 export function findCallerIndex( backtrace = [] ) {
-	const frames = backtrace.map( parseFrame );
-	let idx = frames.findIndex( frame => frame.file && ! INTERNAL_FRAME.test( frame.file ) );
+	// Only frames in a PHP file can be the caller: not internal calls (no file) or eval()'d code.
+	const inPhpFile = frame => Boolean( frame?.file?.endsWith( '.php' ) );
+	let idx = backtrace.findIndex( frame => inPhpFile( frame ) && ! INTERNAL_FRAME.test( frame.file ) );
 	if ( idx === -1 ) {
-		idx = frames.findIndex( frame => frame.file && ! PLUMBING_FRAME.test( frame.file ) );
+		idx = backtrace.findIndex( frame => inPhpFile( frame ) && ! PLUMBING_FRAME.test( frame.file ) );
 	}
 	return idx;
 }
@@ -202,7 +193,7 @@ export function speedClass( took, failed = false ) {
  */
 export function queryLabel( query, index ) {
 	const args = query.query_args || {};
-	const isMain = ( query.backtrace || [] ).some( frame => frame.includes( 'WP->query_posts()' ) );
+	const isMain = backtraceFrames( query ).some( frame => frame.call === 'WP->query_posts()' );
 	const postType = args.post_type && args.post_type !== 'any' ? [ args.post_type ].flat().join( ', ' ) : '';
 
 	if ( args.s ) {
@@ -220,7 +211,7 @@ export function queryLabel( query, index ) {
 /**
  * Caller location for display, e.g. `themes/foo/inc/related.php:88`.
  *
- * @param {{file: string, line: string}} frame Parsed frame.
+ * @param {{file: string, line: ?number}} frame Backtrace frame.
  * @return {string} Location.
  */
 const formatCaller = ( { file, line } ) => ( line ? `${ displayPath( file ) }:${ line }` : displayPath( file ) );
@@ -280,9 +271,9 @@ function describeIndexScope( query ) {
  * @return {Object} View model.
  */
 export function describeQuery( query, index ) {
-	const backtrace = query.backtrace || [];
+	const backtrace = backtraceFrames( query );
 	const callerIndex = findCallerIndex( backtrace );
-	const caller = callerIndex >= 0 ? parseFrame( backtrace[ callerIndex ] ) : null;
+	const caller = callerIndex >= 0 ? backtrace[ callerIndex ] : null;
 	const scope = describeIndexScope( query );
 
 	const summary = summarizeResult( query.request?.body, query.request?.response );

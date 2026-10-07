@@ -7,7 +7,7 @@ import { JsonTree } from './json-tree';
 import { AnnounceContext } from '../context';
 import { deepActiveElement } from '../dom';
 import { hitIndex } from '../tree-lines';
-import { RUN_SHORTCUT, countHits, describeJsonSize, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, parseFrame, postData, shortIndexName, summarizeResult } from '../utils';
+import { RUN_SHORTCUT, backtraceFrames, countHits, describeJsonSize, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, postData, shortIndexName, summarizeResult } from '../utils';
 
 
 /**
@@ -67,6 +67,8 @@ const WpQueryArgs = ( { args } ) => {
 	);
 };
 
+const frameId = frame => `${ frame.file }:${ frame.line } ${ frame.call }`;
+
 const Trace = ( { frames, callerIndex } ) => {
 	if ( ! frames.length ) {
 		return <p className="sdt-empty">No stack trace was recorded. Enable WP_DEBUG to collect one.</p>;
@@ -74,11 +76,11 @@ const Trace = ( { frames, callerIndex } ) => {
 	return (
 		<ol className="sdt-trace">
 			{ frames.map( ( frame, idx ) => {
-				const { file, line, call } = parseFrame( frame );
+				const { file, line, call } = frame;
 				// Frames repeat under recursion, so the key counts earlier occurrences of the same frame.
-				const occurrence = frames.slice( 0, idx ).filter( earlier => earlier === frame ).length;
+				const occurrence = frames.slice( 0, idx ).filter( earlier => frameId( earlier ) === frameId( frame ) ).length;
 				return (
-					<li key={ `${ frame }#${ occurrence }` } className={ cx( { 'is-caller': idx === callerIndex } ) }>
+					<li key={ `${ frameId( frame ) }#${ occurrence }` } className={ cx( { 'is-caller': idx === callerIndex } ) }>
 						<span className="sdt-gutter-num" aria-hidden="true">{ idx + 1 }</span>
 						<span className="sdt-trace__frame">
 							<span className="sdt-trace__call">{ call }</span>
@@ -438,7 +440,7 @@ export const QueryDetail = ( { query, meta, draft, onDraftChange } ) => {
 		() => ( hasRerun ? summarizeResult( result ) : meta.summary ),
 		[ hasRerun, result, meta.summary ],
 	);
-	const frames = query.backtrace || [];
+	const frames = backtraceFrames( query );
 	// Parsed once per request text, not on every keystroke render.
 	const pageSize = useMemo( () => requestSize( ranText ), [ ranText ] );
 
