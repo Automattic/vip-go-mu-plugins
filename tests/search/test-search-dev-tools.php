@@ -82,10 +82,6 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 			$this->assertArrayHasKey( 'value', $item );
 			$this->assertIsBool( $item['options']['collapsible'] );
 		}
-
-		// Per-site settings are flagged so the UI can say they only describe the current site.
-		$site_scoped = array_column( array_filter( $information, fn ( $item ) => 'site' === ( $item['scope'] ?? null ) ), 'key' );
-		$this->assertSame( [ 'post_types', 'post_statuses', 'meta_allow_list' ], $site_scoped );
 	}
 
 	public function test__is_cross_site_query_needs_network_mode() {

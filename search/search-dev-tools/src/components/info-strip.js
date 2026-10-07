@@ -108,22 +108,8 @@ const InfoItem = ( { item } ) => {
  * @param {Array}  props.information Info items from the backend.
  * @return {import('preact').VNode} Info strip.
  */
-export const InfoStrip = ( { information } ) => {
-	// Cluster-wide values first; per-site settings in their own group, since other sites may differ.
-	const global = information.filter( item => item.scope !== 'site' );
-	const site = information.filter( item => item.scope === 'site' );
-	const renderItem = item => <InfoItem key={ item.key || item.label } item={ item } />;
-	return (
-		<div className="sdt-info">
-			<div className="sdt-info__group">{ global.map( renderItem ) }</div>
-			{ site.length
-				? (
-					<div className="sdt-info__group sdt-info__group--site">
-						<span className="sdt-info__group-label" title="These settings apply to the current site only; other sites on the network may differ.">This site:</span>
-						{ site.map( renderItem ) }
-					</div>
-				)
-				: null }
-		</div>
-	);
-};
+export const InfoStrip = ( { information } ) => (
+	<div className="sdt-info">
+		{ information.map( item => <InfoItem key={ item.key || item.label } item={ item } /> ) }
+	</div>
+);

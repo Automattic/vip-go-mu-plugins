@@ -285,25 +285,6 @@ $sidebar-width: 336px;
 			color: var(--sdt-text-muted);
 		}
 
-		&__group {
-			display: flex;
-			flex-wrap: wrap;
-			align-items: baseline;
-			gap: 6px 28px;
-
-			// Thin divider before the per-site group.
-			&--site {
-				gap: 6px 20px;
-				padding-left: 28px;
-				border-left: 1px solid var(--sdt-border-strong);
-			}
-		}
-
-		&__group-label {
-			margin-right: -12px;
-			color: var(--sdt-text-muted);
-		}
-
 		&__toggle {
 			display: inline-flex;
 			align-items: baseline;

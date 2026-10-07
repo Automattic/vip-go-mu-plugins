@@ -20,8 +20,8 @@ test.describe( 'Search Dev Tools', () => {
 	test( 'inspects the queries run on the page', async () => {
 		// Formatting rules (labels, timing, index names, cross-site flags) are unit tested in
 		// search/search-dev-tools/tests/; these steps check the real WordPress + Elasticsearch data.
-		await test.step( 'Info strip lists global settings, then this site\'s settings', async () => {
-			expect( await searchPage.getInfoStrip() ).toMatch( /Elasticsearch[\s\S]*Rate limited[\s\S]*Concurrent[\s\S]*This site:[\s\S]*Post types[\s\S]*Statuses[\s\S]*Meta/ );
+		await test.step( 'Info strip lists the Elasticsearch and site settings', async () => {
+			expect( await searchPage.getInfoStrip() ).toMatch( /Elasticsearch[\s\S]*Rate limited[\s\S]*Concurrent[\s\S]*Post types[\s\S]*Statuses[\s\S]*Meta/ );
 		} );
 
 		await test.step( 'Sidebar lists the main search with its caller', async () => {

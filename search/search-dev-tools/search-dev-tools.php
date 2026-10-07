@@ -292,7 +292,6 @@ function get_information( ?Search $search_instance = null ): array {
 		],
 		[
 			'key'     => 'post_types',
-			'scope'   => 'site',
 			'label'   => 'Post types',
 			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_types() ),
 			'options' => [
@@ -301,7 +300,6 @@ function get_information( ?Search $search_instance = null ): array {
 		],
 		[
 			'key'     => 'post_statuses',
-			'scope'   => 'site',
 			'label'   => 'Statuses',
 			'value'   => array_values( \ElasticPress\Indexables::factory()->get( 'post' )->get_indexable_post_status() ),
 			'options' => [
@@ -310,7 +308,6 @@ function get_information( ?Search $search_instance = null ): array {
 		],
 		[
 			'key'     => 'meta_allow_list',
-			'scope'   => 'site',
 			'label'   => 'Meta',
 			'value'   => get_meta_for_all_indexable_post_types(),
 			'options' => [
