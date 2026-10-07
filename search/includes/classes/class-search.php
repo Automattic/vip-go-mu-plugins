@@ -829,7 +829,18 @@ class Search {
 			$index_name .= sprintf( '-%s', $blog_id );
 		}
 
+		// get_versions() uses get_option(), which is blog-context-sensitive. Without switching,
+		// cross-site queries resolve the version from the calling site instead of the target site.
+		$switched = $blog_id && \is_multisite() && \get_current_blog_id() !== (int) $blog_id;
+		if ( $switched ) {
+			\switch_to_blog( $blog_id );
+		}
+
 		$current_version = $this->versioning->get_current_version_number( $indexable );
+
+		if ( $switched ) {
+			\restore_current_blog();
+		}
 
 		if ( is_int( $current_version ) && $current_version > 1 ) {
 			$index_name .= sprintf( '-v%d', $current_version );
