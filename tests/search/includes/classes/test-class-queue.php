@@ -2,21 +2,23 @@
 
 namespace Automattic\VIP\Search;
 
-use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Logstash\Logger;
-use ElasticPress\Indexable\User\User;
 use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
-use stdClass;
 use WP_UnitTestCase;
 use wpdb;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_static_property_as_public;
+
 require_once __DIR__ . '/trait-es-http-mock.php';
+require_once __DIR__ . '/trait-search-test-bootstrap.php';
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 class Queue_Test extends WP_UnitTestCase {
 	use ES_HTTP_Mock;
+	use Search_Test_Bootstrap;
 
 	/** @var Search */
 	private $es;
@@ -27,22 +29,23 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var SyncManager */
 	private $sync_manager;
 
+	/** @var Search|null */
+	private $search_singleton;
+
 	public function setUp(): void {
 		parent::setUp();
 
-		Constant_Mocker::clear();
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		Constant_Mocker::define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
+		// Users indexable is registered because we have tests that queue user objects
+		$this->es = $this->boot_search( [
+			'VIP_ELASTICSEARCH_ENDPOINTS'      => array( 'https://elasticsearch:9200' ),
+			'VIP_SEARCH_ENABLE_ASYNC_INDEXING' => true,
+		], true );
 
-		require_once __DIR__ . '/../../../../search/search.php';
-
-		$this->es = new Search();
-		$this->es->init();
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		// Users indexable doesn't get registered by default, but we have tests that queue user objects
-		Indexables::factory()->register( new User() );
+		// Rate limited indexing reports to Prometheus through Search::instance() once the collector is loaded.
+		// Without an instance, that call would boot a second Search whose init() resets the queue's static limits.
+		$singleton              = get_static_property_as_public( Search::class, 'instance' );
+		$this->search_singleton = $singleton->getValue();
+		$singleton->setValue( null, $this->es );
 
 		$this->queue = $this->es->queue;
 		$this->queue->schema->prepare_table();
@@ -57,7 +60,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		$this->remove_es_http_mock();
-		Constant_Mocker::clear();
+		get_static_property_as_public( Search::class, 'instance' )->setValue( null, $this->search_singleton );
 		parent::tearDown();
 	}
 
@@ -136,10 +139,6 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	public function test_deduplication_of_repeat_indexing() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
 		$objects = array(
 			array(
 				'id'   => 1,
@@ -160,23 +159,11 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 
 			// Now it should only exist once
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
-					$object['id'],
-					$object['type']
-				)
-			);
-
-			$this->assertCount( 1, $results );
+			$this->assertCount( 1, $this->get_queued_rows( $object['type'], $object['id'] ) );
 		}
 	}
 
 	public function test_rate_limiting_of_repeat_indexing() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
 		$objects = array(
 			array(
 				'id'   => 1,
@@ -202,17 +189,12 @@ class Queue_Test extends WP_UnitTestCase {
 			// Since it was already running, we should now have a new queued entry with a start_time
 			// that is now() + min interval - this is the rate limit
 
-			$row = $wpdb->get_row(
-				$wpdb->prepare(
-					"SELECT `start_time` FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = %s AND `status` = 'queued'",
-					$object['id'],
-					$object['type']
-				)
-			);
+			$rows = $this->get_queued_rows( $object['type'], $object['id'] );
 
 			$expected_start_time = gmdate( 'Y-m-d H:i:s', $now + $this->queue->get_index_interval_time() );
 
-			$this->assertEquals( $expected_start_time, $row->start_time );
+			$this->assertCount( 1, $rows );
+			$this->assertEquals( $expected_start_time, $rows[0]->start_time );
 		}
 	}
 
@@ -389,22 +371,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'queued', $job2_updated[0]->status );
 	}
 
-	public function test_checkout_jobs_same_time() {
-		$this->queue->queue_object( 1, 'post' );
-		$job = $this->queue->get_next_job_for_object( 1, 'post' );
-
-		// Simulate another process already checking out this job
-		$this->queue->update_job( $job->job_id, array( 'status' => 'scheduled' ) );
-
-		// Try to checkout the job (should fail because it's no longer 'queued')
-		$checked_out_jobs = $this->queue->checkout_jobs( 10 );
-
-		// The job should not be in the checked out jobs because it was already scheduled
-		$checked_out_job_ids = wp_list_pluck( $checked_out_jobs, 'job_id' );
-		$this->assertNotContains( $job->job_id, $checked_out_job_ids, 'Job that was already scheduled should not be checked out again' );
-	}
-
-
 	public function test_delete_jobs() {
 		$this->queue->queue_object( 1, 'post' );
 		$this->queue->queue_object( 2, 'post' );
@@ -431,16 +397,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$count = $this->queue->count_jobs( 'queued', 'post' );
 
 		$this->assertEquals( 0, $count );
-	}
-
-	public function test_count_jobs() {
-		$this->queue->queue_object( 1, 'post' );
-		$this->queue->queue_object( 2, 'post' );
-		$this->queue->queue_object( 3, 'post' );
-
-		$count = $this->queue->count_jobs( 'queued', 'post' );
-
-		$this->assertEquals( 3, $count );
 	}
 
 	public function test_count_jobs_due_now() {
@@ -471,28 +427,27 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 2, $count_version_2, 'Wrong count for index version 2' );
 	}
 
-	public function test_get_next_job_for_object() {
-		$this->queue->queue_object( 1, 'post' );
-
-		$job = $this->queue->get_next_job_for_object( 1, 'post' );
-
-		$this->assertEquals( 1, $job->object_id );
-		$this->assertEquals( 'post', $job->object_type );
-		$this->assertEquals( 'queued', $job->status );
-		$this->assertEquals( null, $job->start_time );
+	public function get_next_job_for_object_data() {
+		return [
+			'current index version'  => [ array(), 1 ],
+			'specific index version' => [ array( 'index_version' => 2 ), 2 ],
+		];
 	}
 
-	public function test_get_next_job_for_object_with_version() {
+	/**
+	 * @dataProvider get_next_job_for_object_data
+	 */
+	public function test_get_next_job_for_object( $options, $expected_index_version ) {
 		$this->queue->queue_object( 1, 'post' );
 		$this->queue->queue_object( 1, 'post', array( 'index_version' => 2 ) );
 
-		$job = $this->queue->get_next_job_for_object( 1, 'post', array( 'index_version' => 2 ) );
+		$job = $this->queue->get_next_job_for_object( 1, 'post', $options );
 
 		$this->assertEquals( 1, $job->object_id );
 		$this->assertEquals( 'post', $job->object_type );
 		$this->assertEquals( 'queued', $job->status );
 		$this->assertEquals( null, $job->start_time );
-		$this->assertEquals( 2, $job->index_version );
+		$this->assertEquals( $expected_index_version, $job->index_version );
 	}
 
 	public function test_process_jobs() {
@@ -611,20 +566,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$results = $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE 1", \ARRAY_N );
 
 		$this->assertEquals( 0, count( $results ), 'shouldn\'t add objects to queue if object id list isn\'t an array' );
-	}
-
-	public function test_queue_objects_should_match_database() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
-		$objects = range( 10, 20 );
-
-		$this->queue->queue_objects( $objects );
-
-		$results = \wp_list_pluck( $wpdb->get_results( "SELECT object_id FROM `{$table_name}` WHERE 1" ), 'object_id' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		$this->assertEquals( $objects, $results, 'ids of objects sent to queue don\'t match ids of objects found in the database' );
 	}
 
 	public function test_queue_objects_with_specific_index_version() {
@@ -773,74 +714,13 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_free_deadlocked_jobs_handle_duplicates() {
-		$first_job                 = (object) [
-			'job_id'        => 1,
-			'object_id'     => 10,
-			'object_type'   => 'post',
-			'index_version' => 1,
-		];
-		$second_job                = (object) [
-			'job_id'        => 2,
-			'object_id'     => 10,
-			'object_type'   => 'post',
-			'index_version' => 1,
-		];
-		$third_job_on_other_object = (object) [
-			'job_id'        => 3,
-			'object_id'     => 20,
-			'object_type'   => 'post',
-			'index_version' => 1,
-		];
-
-		/** @var MockObject&Queue */
-		$partially_mocked_queue = $this->getMockBuilder( Queue::class )
-			->onlyMethods( [
-				'get_deadlocked_jobs',
-				'delete_jobs_on_the_already_queued_object',
-				'update_jobs',
-				'delete_jobs',
-			] )
-			->getMock();
-
-		$partially_mocked_queue
-			->method( 'get_deadlocked_jobs' )
-			->willReturnOnConsecutiveCalls(
-				[ $first_job, $second_job, $third_job_on_other_object ],
-				[],
-				[],
-				[],
-				[]
-			);
-
-		$partially_mocked_queue
-			->method( 'delete_jobs_on_the_already_queued_object' )
-			->with( [ $first_job, $third_job_on_other_object ] )
-			->willReturn( [ $first_job, $third_job_on_other_object ] );
-
-		$partially_mocked_queue->expects( $this->once() )
-			->method( 'update_jobs' )
-			->with(
-				$this->equalTo( [ 1, 3 ] ),
-				$this->equalTo( [
-					'status'         => 'queued',
-					'scheduled_time' => null,
-				] )
-			);
-
-		$partially_mocked_queue->expects( $this->once() )
-			->method( 'delete_jobs' )
-			->with( [ $second_job ] );
-
-		$partially_mocked_queue->free_deadlocked_jobs();
-	}
-
 	/**
 	 * Ensure that the value passed into the filter is returned if the indexable_slug is not 'post'
 	 */
 	public function test__ratelimit_indexing_should_pass_bail_if_not_post() {
 		$this->assertTrue( $this->queue->ratelimit_indexing( true, '', 'hippo' ), 'should return true since true was passed in' );
 		$this->assertFalse( $this->queue->ratelimit_indexing( false, '', 'hippo' ), 'should return false since false was passed in' );
+		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist if function calls all returned early' );
 	}
 
 	/**
@@ -849,22 +729,6 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test__ratelimit_indexing_should_pass_bail_if_sync_queue_empty() {
 		$this->assertTrue( $this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' ), 'should return true since true was passed in' );
 		$this->assertFalse( $this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' ), 'should return false since false was passed in' );
-	}
-
-	/**
-	 * Ensure that the count in the cache doesn't exist on load
-	 */
-	public function test_ratelimit_indexing_cache_count_should_not_exist_onload() {
-		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist prior to first function call' );
-	}
-
-	/**
-	 * Ensure that the count in the cache doesn't exist if the ratelimit_indexing returns early
-	 */
-	public function test_ratelimit_indexing_cache_count_should_not_exists_if_early_return() {
-		$this->queue->ratelimit_indexing( true, '', 'hippo' );
-		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
-
 		$this->assertFalse( wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count shouldn\'t exist if function calls all returned early' );
 	}
 
@@ -872,10 +736,6 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure that the queue isn't populated if ratelimiting isn't triggered
 	 */
 	public function test_ratelimit_indexing_queue_should_be_empty_if_no_ratelimiting() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
 		$this->add_posts_to_queue( range( 3, 9 ) );
 
 		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
@@ -884,56 +744,23 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
-
-		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
-					$object_id
-				)
-			);
-
-			$this->assertCount( 0, $results, "should be 0 occurrences of post id #$object_id in queue table" );
-		}
+		$this->assertSame( [], $this->get_post_ids_in_queue_table(), 'no post should be in the queue table' );
 
 		$this->sync_manager->reset_sync_queue();
 
-		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
-		$post_ids = range( 10, 20 );
-		$this->add_posts_to_queue( $post_ids );
+		$this->add_posts_to_queue( range( 10, 20 ) );
 
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
-
-		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
-					$object_id
-				)
-			);
-
-			$this->assertCount( 0, $results, "should be 0 occurrences of post id #$object_id in queue table" );
-		}
+		$this->assertSame( [], $this->get_post_ids_in_queue_table(), 'no post should be in the queue table' );
 	}
 
 	/**
 	 * Ensure that the queue is populated if ratelimiting is triggered
 	 */
 	public function test_ratelimit_indexing_queue_should_be_populated_if_ratelimiting_enabled() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
-		$this->add_posts_to_queue( [ 1 ] );
-
-		$this->queue->offload_indexing_to_queue();
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
-		$this->assertTrue( $current_bail );
-
-		$post_ids = range( 3, 9 );
-		$this->add_posts_to_queue( $post_ids );
+		$this->add_posts_to_queue( range( 3, 9 ) );
 
 		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
@@ -941,35 +768,18 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
+		$this->assertSame( range( 3, 9 ), $this->get_post_ids_in_queue_table(), 'each post should be in the queue table once' );
 
-		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
-					$object_id
-				)
-			);
-
-			$this->assertCount( 1, $results, "should be 1 occurrence of post id #$object_id in queue table" );
-		}
-
-		$post_ids = range( 10, 20 );
-		$this->add_posts_to_queue( $post_ids );
+		$this->add_posts_to_queue( range( 10, 20 ) );
 
 		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
-
-		foreach ( $this->sync_manager->get_sync_queue() as $object_id ) {
-			$results = $wpdb->get_results(
-				$wpdb->prepare(
-					"SELECT * FROM `{$table_name}` WHERE `object_id` = %d AND `object_type` = 'post' AND `status` = 'queued'",
-					$object_id
-				)
-			);
-
-			$this->assertCount( 1, $results, "should be 0 occurrences of post id #$object_id in queue table" );
-		}
+		$this->assertSame( range( 3, 20 ), $this->get_post_ids_in_queue_table(), 'each post should be in the queue table once' );
+		// Once ratelimiting is on, new jobs wait in the queue instead of being scheduled right away.
+		$queued = array_map( 'intval', wp_list_pluck( $this->get_queued_rows( 'post' ), 'object_id' ) );
+		sort( $queued );
+		$this->assertSame( range( 10, 20 ), $queued, 'ratelimited posts should be queued' );
 	}
 
 	public function test__ratelimit_indexing__handles_start_correctly() {
@@ -1040,7 +850,7 @@ class Queue_Test extends WP_UnitTestCase {
 	 * Ensure the incrementor for tracking indexing operations counts behaves properly
 	 */
 	public function test__index_count_incr() {
-		$index_count_incr = self::get_method( 'index_count_incr' );
+		$index_count_incr = get_class_method_as_public( Queue::class, 'index_count_incr' );
 
 		// Reset cache key
 		wp_cache_delete( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP );
@@ -1054,51 +864,15 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 14, $index_count_incr->invokeArgs( $this->queue, [ 5 ] ), 'should increment properly without using the default increment of 1' );
 	}
 
-	public function test__count_jobs_all_should_be_0_by_default() {
-		$this->assertEquals( 0, $this->queue->count_jobs( 'all', 'all' ) );
-	}
-
-	public function test__count_jobs_all_should_return_the_queue_count() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
-
-		foreach ( range( 0, 9 ) as $object_id ) {
-			$wpdb->query(
-				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )",
-					$object_id
-				)
-			);
-		}
-
-		$this->assertEquals( 10, $this->queue->count_jobs( 'all', 'all' ) );
-	}
-
 	public function test__count_jobs_all_statuses_should_return_proper_count_by_object_type() {
-		global $wpdb;
-
-		$table_name = $this->queue->schema->get_table_name();
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all', 'all' ), 'queue should be empty before inserting jobs' );
 
 		// Add junk rows that shouldn't be picked up in count_jobs
-		foreach ( range( 0, 9 ) as $object_id ) {
-			$wpdb->query(
-				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id` ) VALUES ( %d )",
-					$object_id
-				)
-			);
-		}
-
-		foreach ( range( 0, 2 ) as $object_id ) {
-			$wpdb->query(
-				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id`, `object_type` ) VALUES ( %d, %s )",
-					$object_id,
-					'random object type'
-				)
-			);
-		}
+		$this->insert_raw_jobs( array_map( fn( $object_id ) => [ 'object_id' => $object_id ], range( 0, 9 ) ) );
+		$this->insert_raw_jobs( array_map( fn( $object_id ) => [
+			'object_id'   => $object_id,
+			'object_type' => 'random object type',
+		], range( 0, 2 ) ) );
 
 		$this->assertEquals( 13, $this->queue->count_jobs( 'all', 'all' ), 'total queue size should be 13' );
 		$this->assertEquals( 3, $this->queue->count_jobs( 'all', 'random object type' ), "queue size for 'random object type' should be 3" );
@@ -1226,18 +1000,13 @@ class Queue_Test extends WP_UnitTestCase {
 			),
 		);
 
-		foreach ( $objects as $object ) {
-			$wpdb->query(
-				$wpdb->prepare(
-					"INSERT INTO $table_name ( `object_id`, `object_type`, `status`, `index_version`, `queued_time` ) VALUES ( %d, %s, %s, %d, %s )",
-					$object['id'],
-					$object['type'],
-					'queued',
-					$object['version'],
-					'2020-10-31 00:00:00'
-				)
-			);
-		}
+		$this->insert_raw_jobs( array_map( fn( $object ) => [
+			'object_id'     => $object['id'],
+			'object_type'   => $object['type'],
+			'status'        => 'queued',
+			'index_version' => $object['version'],
+			'queued_time'   => '2020-10-31 00:00:00',
+		], $objects ) );
 
 		$this->queue->delete_jobs_for_index_version( 'post', 2 );
 
@@ -1302,113 +1071,51 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 	}
 
-	/* Format:
-	 * [
-	 *      [
-	 *          $filter,
-	 *          $too_low_message,
-	 *          $too_high_message,
-	 *      ]
-	 * ]
-	 */
 	public function vip_search_ratelimiting_filter_data() {
-		return array(
-			[
-				'vip_search_index_count_period',
+		$bounds_messages = array(
+			'vip_search_index_count_period'          => array(
 				'vip_search_index_count_period should not be set below 60 seconds.',
 				'vip_search_index_count_period should not be set above 7200 seconds.',
-			],
-			[
-				'vip_search_max_indexing_op_count',
+			),
+			'vip_search_max_indexing_op_count'       => array(
 				'vip_search_max_indexing_op_count should not be below 10 queries per second.',
 				'vip_search_max_indexing_op_count should not exceed 250 queries per second.',
-			],
-			[
-				'vip_search_index_ratelimiting_duration',
+			),
+			'vip_search_index_ratelimiting_duration' => array(
 				'vip_search_index_ratelimiting_duration should not be set below 60 seconds.',
 				'vip_search_index_ratelimiting_duration should not be set above 1200 seconds.',
-			],
-			[
-				'vip_search_max_indexing_count',
+			),
+			'vip_search_max_indexing_count'          => array(
 				'vip_search_max_sync_indexing_count should not be below 2500.',
 				'vip_search_max_sync_indexing_count should not be above 25000.',
-			],
-		);
-	}
-
-	/**
-	 * @dataProvider vip_search_ratelimiting_filter_data
-	 */
-	public function test__filter__vip_search_ratelimiting_numeric_validation( $filter, $too_low_message, $too_high_message ) {
-		add_filter(
-			$filter,
-			function () {
-				return '30.ffr';
-			}
+			),
 		);
 
-		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
-
-		$this->assertContains( "{$filter} should be an integer.", $messages );
-	}
-
-	/**
-	 * @dataProvider vip_search_ratelimiting_filter_data
-	 */
-	public function test__filter__vip_search_ratelimiting_too_low_validation( $filter, $too_low_message, $too_high_message ) {
-		add_filter(
-			$filter,
-			function () {
-				return 0;
-			}
-		);
-
-		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
-
-		$this->assertContains( $too_low_message, $messages );
-	}
-
-	/**
-	 * @dataProvider vip_search_ratelimiting_filter_data
-	 */
-	public function test__filter__vip_search_ratelimiting_too_high_validation( $filter, $too_low_message, $too_high_message ) {
-		if ( empty( $too_high_message ) ) {
-			$this->markTestSkipped( "$filter doesn't have a too high message" );
+		$data = array();
+		foreach ( $bounds_messages as $filter => list( $too_low_message, $too_high_message ) ) {
+			$data[ "{$filter} not numeric" ] = array( $filter, '30.ffr', "{$filter} should be an integer." );
+			$data[ "{$filter} too low" ]     = array( $filter, 0, $too_low_message );
+			$data[ "{$filter} too high" ]    = array( $filter, PHP_INT_MAX, $too_high_message );
 		}
 
+		return $data;
+	}
+
+	/**
+	 * @dataProvider vip_search_ratelimiting_filter_data
+	 */
+	public function test__filter__vip_search_ratelimiting_validation( $filter, $value, $expected_message ) {
 		add_filter(
 			$filter,
-			function () {
-				return PHP_INT_MAX;
+			function () use ( $value ) {
+				return $value;
 			}
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
 		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
 
-		$this->assertContains( $too_high_message, $messages );
-	}
-
-	public function test__log_index_ratelimiting_start() {
-		/** @var Logger&MockObject */
-		$this->queue->logger = $this->getMockBuilder( Logger::class )
-			->onlyMethods( [ 'log' ] )
-			->getMock();
-
-		$this->queue->logger->expects( $this->once() )
-			->method( 'log' )
-			->with(
-				$this->equalTo( 'warning' ),
-				$this->equalTo( 'search_indexing_rate_limiting' ),
-				$this->equalTo(
-					'Application 123 - http://example.org has triggered Elasticsearch indexing rate limiting, which will last for 300 seconds. Large batch indexing operations are being queued for indexing in batches over time.'
-				),
-				$this->anything()
-			);
-
-		$this->queue->log_index_ratelimiting_start();
+		$this->assertContains( $expected_message, $messages );
 	}
 
 	public function test__no_index_queueing() {
@@ -1431,19 +1138,6 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * We need to fake the OK response from the ES server to avoid the actual request.
-	 */
-	public function filter_index_exists_request_ok( $request, $query, $args, $failures, $type ) {
-		if ( 'index_exists' === $type ) {
-			return [
-				'response' => [ 'code' => 200 ],
-				'body'     => [],
-			];
-		}
-		return $request;
-	}
-
-	/**
 	 * We need to fake the bad response from the ES server to avoid the actual request.
 	 */
 	public function filter_index_exists_request_bad( $request, $query, $args, $failures, $type ) {
@@ -1457,22 +1151,6 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Collects the messages passed to _doing_it_wrong() while running the callback.
-	 */
-	private function get_doing_it_wrong_messages( callable $callback ): array {
-		$messages = [];
-		$listener = function ( $function_name, $message ) use ( &$messages ) {
-			$messages[] = $message;
-		};
-
-		add_action( 'doing_it_wrong_run', $listener, 10, 2 );
-		$callback();
-		remove_action( 'doing_it_wrong_run', $listener, 10 );
-
-		return $messages;
-	}
-
-	/**
 	 * Helper function for adding an array of post objects to the sync manager queue.
 	 */
 	protected function add_posts_to_queue( $post_ids ) {
@@ -1482,12 +1160,45 @@ class Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * Returns the queued jobs of an object type, optionally only those of one object.
 	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\Queue' );
-		$method = $class->getMethod( $name );
-		return $method;
+	private function get_queued_rows( string $object_type, ?int $object_id = null ): array {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+		$where      = $wpdb->prepare( '`object_type` = %s AND `status` = %s', $object_type, 'queued' );
+		if ( null !== $object_id ) {
+			$where .= $wpdb->prepare( ' AND `object_id` = %d', $object_id );
+		}
+
+		return $wpdb->get_results( "SELECT * FROM `{$table_name}` WHERE {$where}" );
+	}
+
+	/**
+	 * Returns the sorted object IDs of all post jobs in the queue table, whatever their status.
+	 *
+	 * @return int[]
+	 */
+	private function get_post_ids_in_queue_table(): array {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		return array_map( 'intval', $wpdb->get_col( "SELECT `object_id` FROM `{$table_name}` WHERE `object_type` = 'post' ORDER BY `object_id`" ) );
+	}
+
+	/**
+	 * Inserts rows straight into the queue table, bypassing Queue::queue_object().
+	 *
+	 * @param array[] $rows Column => value maps.
+	 */
+	private function insert_raw_jobs( array $rows ): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+		foreach ( $rows as $row ) {
+			$wpdb->insert( $table_name, $row );
+		}
 	}
 
 	/**

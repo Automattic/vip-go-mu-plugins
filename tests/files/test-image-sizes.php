@@ -2,6 +2,8 @@
 
 use Automattic\Test\Constant_Mocker;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 require_once __DIR__ . '/../../files/class-image.php';
 require_once __DIR__ . '/../../files/class-image-sizes.php';
 
@@ -51,15 +53,13 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		Constant_Mocker::clear();
 		Constant_Mocker::define( 'LOCAL_UPLOADS', '/tmp/uploads' );
 		Constant_Mocker::define( 'WP_CONTENT_DIR', '/tmp/wordpress/wp-content' );
 
 		// Add filters so we have consistent filesize meta handling.
 		// (backporting WP 6.0 feature: https://core.trac.wordpress.org/ticket/49412)
 		$this->vip_filesystem = new Automattic\VIP\Files\VIP_Filesystem();
-		$add_filters          = self::getVIPFilesystemMethod( 'add_filters' );
-		$add_filters->invoke( $this->vip_filesystem );
+		get_class_method_as_public( Automattic\VIP\Files\VIP_Filesystem::class, 'add_filters' )->invoke( $this->vip_filesystem );
 
 		$this->enable_a8c_files();
 		$this->enable_image_sizes();
@@ -67,18 +67,11 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 	/**
 	 * Cleanup after a test.
-	 *
-	 * Remove added uploads.
 	 */
 	public function tearDown(): void {
-		Constant_Mocker::clear();
-
 		// Remove vip filesystem filters.
-		$remove_filters = self::getVIPFilesystemMethod( 'remove_filters' );
-		$remove_filters->invoke( $this->vip_filesystem );
+		get_class_method_as_public( Automattic\VIP\Files\VIP_Filesystem::class, 'remove_filters' )->invoke( $this->vip_filesystem );
 		$this->vip_filesystem = null;
-
-		$this->remove_added_uploads();
 
 		/*
 		 * Can't use `@backupStaticAttributes enabled` due to
@@ -91,25 +84,27 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Helper function for accessing protected method.
+	 * Create an attachment for the test image (or another fixture) with its generated metadata.
 	 *
-	 * @param string $name Name of the method.
+	 * Each test gets a fresh attachment ID: a8c_files_maybe_inject_image_sizes() caches the sizes
+	 * it injects per attachment ID for the rest of the request.
 	 *
-	 * @return ReflectionMethod
+	 * @param string $file      Absolute path of the fixture.
+	 * @param string $mime_type The fixture's mime type.
+	 *
+	 * @return int Attachment ID.
 	 */
-	protected static function getMethod( $name ) {
-		$class  = new ReflectionClass( 'Automattic\\VIP\\Files\\ImageSizes' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
+	private function create_attachment( $file = null, $mime_type = 'image/jpeg' ) {
+		$file          = $file ?? $this->test_image;
+		$attachment_id = self::factory()->attachment->create_object(
+			$file, 0, [
+				'post_mime_type' => $mime_type,
+				'post_type'      => 'attachment',
+			]
+		);
+		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $file ) );
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function getVIPFilesystemMethod( $name ) {
-		$class  = new \ReflectionClass( 'Automattic\VIP\Files\VIP_Filesystem' );
-		$method = $class->getMethod( $name );
-		return $method;
+		return $attachment_id;
 	}
 
 	/**
@@ -124,16 +119,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 */
 	public function enable_image_sizes() {
 		add_filter( 'wp_get_attachment_metadata', '\\a8c_files_maybe_inject_image_sizes', 20, 2 );
-	}
-
-	/**
-	 * Helper function for turning the a8c_files implementation off.
-	 */
-	public function disable_a8c_files() {
-		remove_action( 'init', 'a8c_files_init' );
-		remove_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );
-		remove_filter( 'intermediate_image_sizes_advanced', 'wpcom_intermediate_sizes' );
-		remove_filter( 'fallback_intermediate_image_sizes', 'wpcom_intermediate_sizes' );
 	}
 
 	/**
@@ -201,20 +186,14 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * @param array $expected_sizes Array of expected sizes.
 	 */
 	public function test__generate_sizes( $expected_sizes ) {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$attachment_id = $this->create_attachment();
 
 		$postmeta    = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
 		// Disable the static property generated during construction.
 		$image_sizes::$sizes = null;
 
-		$generate_sizes  = self::getMethod( 'generate_sizes' );
+		$generate_sizes  = get_class_method_as_public( Automattic\VIP\Files\ImageSizes::class, 'generate_sizes' );
 		$generated_sizes = $generate_sizes->invokeArgs( $image_sizes, [] );
 
 		$this->assertEquals( $expected_sizes, $generated_sizes, 'Mismatching arrayof generated sizes meta.' );
@@ -283,13 +262,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * @dataProvider get_expected_sizes_meta
 	 */
 	public function test__generate_sizes_meta( $expected_sizes_meta ) {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$attachment_id = $this->create_attachment();
 
 		$postmeta         = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 		$image_sizes      = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
@@ -297,7 +270,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_sizes_meta, $image_sizes_meta );
 	}
-
 
 	public function get_size_data_for_standardize_size_data() {
 		return [
@@ -348,16 +320,8 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * @dataProvider get_size_data_for_standardize_size_data
 	 */
 	public function test__standardize_size_data( $size_data, $expected ) {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
-		$postmeta               = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$image_sizes            = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
+		// The method doesn't depend on the attachment, so skip the constructor.
+		$image_sizes            = ( new ReflectionClass( Automattic\VIP\Files\ImageSizes::class ) )->newInstanceWithoutConstructor();
 		$standardised_size_data = $image_sizes->standardize_size_data( $size_data );
 
 		$this->assertEquals( $expected, $standardised_size_data );
@@ -449,13 +413,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 
 		$this->disable_image_sizes();
 
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$attachment_id = $this->create_attachment();
 
 		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 
@@ -467,39 +425,13 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Integration test of the virtual creation of intermediate sizes.
-	 * No physical copies are being created.
-	 */
-	public function test__inject_image_sizes() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
-		$postmeta = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$this->assertEmpty( $postmeta['sizes'], 'Intermediate image sizes has been physically created.' );
-
-		$metadata = wp_get_attachment_metadata( $attachment_id );
-		$this->assertNotEmpty( $metadata['sizes'], 'Virtual copies were not created.' );
-	}
-
-	/**
 	 * Integration test of the virtual creation of intermediate sizes for non-image files.
 	 * No physical or virtual copies should be created.
 	 *
 	 * @group srcset-pdf
 	 */
 	public function test__inject_image_sizes_for_pdf() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_pdf, 0, [
-				'post_mime_type' => 'application/pdf',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_pdf ) );
+		$attachment_id = $this->create_attachment( $this->test_pdf, 'application/pdf' );
 
 		$postmeta          = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
 		$postmeta['sizes'] = $postmeta['sizes'] ?? [];
@@ -511,30 +443,8 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Integration test for checking whether all sizes are properly generated.
-	 */
-	public function test__correct_sizes_are_created() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
-		$metadata = wp_get_attachment_metadata( $attachment_id );
-
-		$this->assertEquals( array_keys( $this->default_sizes() ), array_keys( $metadata['sizes'] ), 'Some registered sizes have not been created.' );
-
-		// Have all sizes have the right dimensions?
-		foreach ( $this->default_sizes() as $size => $properties ) {
-			$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
-			$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
-		}
-	}
-
-	/**
-	 * Integration test for properly generated dimensions of a custom size.
+	 * Integration test of the virtual sizes injected into the metadata, including a custom size:
+	 * all registered sizes are present, with the right dimensions and VIP Go File Service URLs.
 	 */
 	public function test__custom_size() {
 		// Register the custom size.
@@ -543,58 +453,24 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 		$height           = 180;
 		add_image_size( $custom_size_name, $width, $height, true );
 		try {
-			$attachment_id = self::factory()->attachment->create_object(
-				$this->test_image, 0, [
-					'post_mime_type' => 'image/jpeg',
-					'post_type'      => 'attachment',
-				]
-			);
-			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+			$attachment_id = $this->create_attachment();
 
 			$metadata = wp_get_attachment_metadata( $attachment_id );
 
-			$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'The newly registered image size has not been created.' );
-
-			// Has all the sizes, including the new one, have correct dimensions?
-			foreach ( $this->default_sizes() as $size => $properties ) {
-				$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
-				$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
-			}
-
-			// Does the custom size have the correct dimensions?
-			$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
-			$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
-		} finally {
-			remove_image_size( $custom_size_name );
-		}
-	}
-
-	/**
-	 * Integration test of properly generated URLs to VIP Go File Service.
-	 */
-	public function test__correctness_of_the_urls() {
-		// Register the custom size.
-		$custom_size_name = 'custom_size';
-		try {
-			add_image_size( $custom_size_name, 200, 180, true );
-			$attachment_id = self::factory()->attachment->create_object(
-				$this->test_image, 0, [
-					'post_mime_type' => 'image/jpeg',
-					'post_type'      => 'attachment',
-				]
-			);
-			wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
-
-			$metadata = wp_get_attachment_metadata( $attachment_id );
+			$this->assertEquals( array_merge( array_keys( $this->default_sizes() ), [ $custom_size_name ] ), array_keys( $metadata['sizes'] ), 'Some registered sizes have not been created.' );
 
 			$filename = wp_basename( $this->test_image );
 
-			// Check the default sizes.
+			// Have all the default sizes the correct dimensions and URLs?
 			foreach ( $this->default_sizes() as $size => $properties ) {
+				$this->assertEquals( $properties['calculated_dimensions']['width'], $metadata['sizes'][ $size ]['width'], 'Incorrect calculated width.' );
+				$this->assertEquals( $properties['calculated_dimensions']['height'], $metadata['sizes'][ $size ]['height'], 'Incorrect calculated height.' );
 				$this->assertEquals( add_query_arg( $properties['params'], $filename ), $metadata['sizes'][ $size ]['file'], sprintf( 'Incorrect file or query params for %s size.', $size ) );
 			}
 
-			// Check the custom size.
+			// Does the custom size have the correct dimensions and URL?
+			$this->assertEquals( $height, $metadata['sizes']['custom_size']['height'], 'Incorrect calculated height for the custom size.' );
+			$this->assertEquals( $width, $metadata['sizes']['custom_size']['width'], 'Incorrect calculated width for the custom size.' );
 			$this->assertEquals( add_query_arg( [ 'resize' => '200,180' ], $filename ), $metadata['sizes'][ $custom_size_name ]['file'], 'Incorrect file for custom size.' );
 		} finally {
 			remove_image_size( $custom_size_name );
@@ -605,13 +481,7 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 * Integration test for wp_get_attachment_image_srcset
 	 */
 	public function test__generated_srcset() {
-		$attachment_id = self::factory()->attachment->create_object(
-			$this->test_image, 0, [
-				'post_mime_type' => 'image/jpeg',
-				'post_type'      => 'attachment',
-			]
-		);
-		wp_update_attachment_metadata( $attachment_id, wp_generate_attachment_metadata( $attachment_id, $this->test_image ) );
+		$attachment_id = $this->create_attachment();
 
 		// Test medium size.
 		$expected_srcset =

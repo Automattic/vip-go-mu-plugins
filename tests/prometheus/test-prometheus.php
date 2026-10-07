@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\Test\Utils\Captures_Errors;
 use Prometheus\Counter;
 use Prometheus\Gauge;
 use Prometheus\RegistryInterface;
@@ -11,6 +12,8 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/class-plugin-helper.php';
 
 class Test_Prometheus extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -20,39 +23,11 @@ class Test_Prometheus extends WP_UnitTestCase {
 		remove_all_actions( 'init' );
 
 		Plugin_Helper::clear_instance();
-
-		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ): never {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-			throw new \Exception( $errstr, $errno );
-		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
-		restore_error_handler();
-
 		Plugin::get_instance();
 		parent::tearDown();
-	}
-
-	public function test_collectors_filter(): void {
-		$plugin = Plugin_Helper::get_instance();
-		self::assertInstanceOf( Plugin_Helper::class, $plugin );
-
-		$filter_invoked = false;
-
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
-			$filter_invoked = true;
-			WP_UnitTestCase::assertIsArray( $collectors );
-			return $collectors;
-		};
-
-		add_filter( 'vip_prometheus_collectors', $available_collectors_filter );
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertTrue( $filter_invoked );
-		self::assertIsArray( $plugin->get_collectors() );
 	}
 
 	public function test_double_init(): void {
@@ -69,15 +44,25 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertSame( $second, $third );
 	}
 
-	public function test_collectors_filter_wrong_return_type(): void {
+	public function get_data__collectors_filter_wrong_type(): array {
+		return [
+			'wrong return type'    => [ null ],
+			'wrong collector type' => [ [ new \stdClass() ] ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data__collectors_filter_wrong_type
+	 */
+	public function test_collectors_filter_wrong_type( $filtered_collectors ): void {
 		$plugin = Plugin_Helper::get_instance();
 
 		$filter_invoked = false;
 
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
+		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked, $filtered_collectors ) {
 			$filter_invoked = true;
 			WP_UnitTestCase::assertIsArray( $collectors );
-			return null;
+			return $filtered_collectors;
 		};
 
 		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
@@ -85,24 +70,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		self::assertTrue( $filter_invoked );
 		self::assertIsArray( $plugin->get_collectors() );
-		self::assertEmpty( $plugin->get_collectors() );
-	}
-
-	public function test_collectors_filter_wrong_collector_type(): void {
-		$plugin = Plugin_Helper::get_instance();
-
-		$filter_invoked = false;
-
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
-			$filter_invoked = true;
-			WP_UnitTestCase::assertIsArray( $collectors );
-			return [ new \stdClass() ];
-		};
-
-		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertTrue( $filter_invoked );
 		self::assertEmpty( $plugin->get_collectors() );
 	}
 
@@ -114,14 +81,17 @@ class Test_Prometheus extends WP_UnitTestCase {
 	}
 
 	public function test_create_registry_wrong_backend(): void {
-		Plugin_Helper::get_instance();
+		$plugin = Plugin_Helper::get_instance();
 
 		add_filter( 'vip_prometheus_storage_backend', function () {
 			return new \stdClass();
 		} );
 
-		$this->expectException( \Exception::class );
-		do_action( 'vip_mu_plugins_loaded' );
+		[ , $warnings ] = $this->capture_errors( fn() => do_action( 'vip_mu_plugins_loaded' ) );
+
+		self::assertSame( [ 'Invalid storage backend' ], $warnings );
+		// Falls back to the in-memory storage.
+		self::assertInstanceOf( RegistryInterface::class, $plugin->get_registry() );
 	}
 
 	public function test_merge_collectors(): void {

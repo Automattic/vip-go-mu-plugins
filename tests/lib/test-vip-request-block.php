@@ -34,15 +34,14 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_CF_CONNECTING_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT'] );
+		VIP_Request_Block::toggle_logging( true );
 		parent::tearDown();
 	}
 
 
 	/**
-	 * Exercise the native HTTP denial path in a separate PHP server process.
-	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * Exercise the native HTTP denial path in a separate PHP server process (`php -S`), so the
+	 * headers and exit never touch this process.
 	 */
 	public function test_native_block_sends_forbidden_no_cache_and_exits() {
 		$socket = stream_socket_server( 'tcp://127.0.0.1:0', $error_code, $error_message );
@@ -111,114 +110,72 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		// phpcs:enable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 	}
 
-	public function test__no_error_raised_when_ip_is_not_present() {
-		$_SERVER['HTTP_TRUE_CLIENT_IP']  = '4.4.4.4';
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '2.2.2.2' );
-		self::assertFalse( $actual );
-	}
-
-	public function test__invalid_ip_should_not_raise_error() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '1' );
-		self::assertFalse( $actual );
-	}
-
-	public function test__error_raised_when_true_client_ip() {
-		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '4.4.4.4';
-
-		$actual = VIP_Request_Block::ip( '4.4.4.4' );
-		self::assertTrue( $actual );
-	}
-
-	public function test__error_raised_first_ip_forwarded() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '1.1.1.1' );
-		self::assertTrue( $actual );
-	}
-
-	public function test__error_raised_second_ip_forwarded() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '1.1.1.1, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '8.8.8.8' );
-		self::assertTrue( $actual );
-	}
-
-	public function test_partial_match_xff(): void {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '11.1.1.11, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '1.1.1.1' );
-		self::assertFalse( $actual );
-	}
-
-	public function test__true_client_ip_takes_precedence_over_cf_connecting_ip(): void {
-		$_SERVER['HTTP_TRUE_CLIENT_IP']   = '4.4.4.4';
-		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
-
-		$actual = VIP_Request_Block::ip( '4.4.4.4' );
-		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_TRUE_CLIENT_IP' );
-
-		$actual = VIP_Request_Block::ip( '5.5.5.5' );
-		self::assertFalse( $actual, 'Expected request not to be blocked when IP only in HTTP_CF_CONNECTING_IP, since HTTP_TRUE_CLIENT_IP takes precedence' );
-	}
-
-	public function test__cf_connecting_ip_takes_precedence_over_x_forwarded_for(): void {
-		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
-		$_SERVER['HTTP_X_FORWARDED_FOR']  = '1.1.1.1, 8.8.8.8';
-
-		$actual = VIP_Request_Block::ip( '5.5.5.5' );
-		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_CF_CONNECTING_IP (takes precedence over HTTP_X_FORWARDED_FOR)' );
-
-		$actual = VIP_Request_Block::ip( '1.1.1.1' );
-		self::assertTrue( $actual, 'Expected request to be blocked when blocking IP from HTTP_X_FORWARDED_FOR' );
-	}
-
-	public function test__error_raised_when_cf_connecting_ip(): void {
-		$_SERVER['HTTP_CF_CONNECTING_IP'] = '5.5.5.5';
-
-		$actual = VIP_Request_Block::ip( '5.5.5.5' );
-		self::assertTrue( $actual );
-	}
-
-	public function test__no_error_log_when_suppressed(): void {
+	/**
+	 * @dataProvider data_logging
+	 */
+	public function test__error_log_unless_suppressed( bool $should_log ): void {
 		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
 
-		LogTrackingRequestBlock::toggle_logging( false );
+		LogTrackingRequestBlock::toggle_logging( $should_log );
 		LogTrackingRequestBlock::ip( '1.1.1.1' );
 
-		self::assertFalse( LogTrackingRequestBlock::$log_called );
+		self::assertSame( $should_log, LogTrackingRequestBlock::$log_called );
 	}
 
-	public function test__error_log_when_not_suppressed(): void {
-		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
-
-		LogTrackingRequestBlock::toggle_logging( true );
-		LogTrackingRequestBlock::ip( '1.1.1.1' );
-
-		self::assertTrue( LogTrackingRequestBlock::$log_called );
+	public function data_logging(): array {
+		return [
+			'logging enabled'    => [ true ],
+			'logging suppressed' => [ false ],
+		];
 	}
 
 	/**
-	 * @dataProvider data_ipv6_corner_cases
+	 * @dataProvider data_ip
 	 */
-	public function test_ipv6_corner_cases( string $index, string $value, string $block ): void {
-		$_SERVER[ $index ] = $value;
+	public function test_ip( array $headers, string $block, bool $expected ): void {
+		foreach ( $headers as $header => $value ) {
+			$_SERVER[ $header ] = $value;
+		}
 
-		$actual = VIP_Request_Block::ip( $block );
-		self::assertTrue( $actual );
+		self::assertSame( $expected, VIP_Request_Block::ip( $block ) );
 	}
 
-	public function data_ipv6_corner_cases(): iterable {
+	public function data_ip(): iterable {
+		$xff = [ 'HTTP_X_FORWARDED_FOR' => '1.1.1.1, 8.8.8.8' ];
+
 		return [
-			[ 'HTTP_TRUE_CLIENT_IP', '::ffff:127.0.0.1', '::FFFF:127.0.0.1' ],
-			[ 'HTTP_X_FORWARDED_FOR', '::ffff:127.0.0.1', '::FFFF:127.0.0.1' ],
-			[ 'HTTP_TRUE_CLIENT_IP', '2001:4860:4860::8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
-			[ 'HTTP_TRUE_CLIENT_IP', '2001:4860:4860:0:0:0:0:8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
-			[ 'HTTP_X_FORWARDED_FOR', '2001:4860:4860::8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
-			[ 'HTTP_X_FORWARDED_FOR', '2001:4860:4860:0:0:0:0:8844', '2001:4860:4860:0000:0000:0000:0000:8844' ],
+			'IP not present'                              => [ [ 'HTTP_TRUE_CLIENT_IP' => '4.4.4.4' ] + $xff, '2.2.2.2', false ],
+			'invalid IP'                                  => [ $xff, '1', false ],
+			'true-client-ip'                              => [ [ 'HTTP_TRUE_CLIENT_IP' => '4.4.4.4' ], '4.4.4.4', true ],
+			'first x-forwarded-for IP'                    => [ $xff, '1.1.1.1', true ],
+			'second x-forwarded-for IP'                   => [ $xff, '8.8.8.8', true ],
+			'partial x-forwarded-for match'               => [ [ 'HTTP_X_FORWARDED_FOR' => '11.1.1.11, 8.8.8.8' ], '1.1.1.1', false ],
+			'cf-connecting-ip'                            => [ [ 'HTTP_CF_CONNECTING_IP' => '5.5.5.5' ], '5.5.5.5', true ],
+			'true-client-ip over cf-connecting-ip'        => [
+				[
+					'HTTP_TRUE_CLIENT_IP'   => '4.4.4.4',
+					'HTTP_CF_CONNECTING_IP' => '5.5.5.5',
+				],
+				'4.4.4.4',
+				true,
+			],
+			// HTTP_TRUE_CLIENT_IP takes precedence, so cf-connecting-ip is never checked.
+			'cf-connecting-ip shadowed by true-client-ip' => [
+				[
+					'HTTP_TRUE_CLIENT_IP'   => '4.4.4.4',
+					'HTTP_CF_CONNECTING_IP' => '5.5.5.5',
+				],
+				'5.5.5.5',
+				false,
+			],
+			'cf-connecting-ip over x-forwarded-for'       => [ [ 'HTTP_CF_CONNECTING_IP' => '5.5.5.5' ] + $xff, '5.5.5.5', true ],
+			'x-forwarded-for still checked with cf-connecting-ip' => [ [ 'HTTP_CF_CONNECTING_IP' => '5.5.5.5' ] + $xff, '1.1.1.1', true ],
+			'IPv4-mapped IPv6 true-client-ip'             => [ [ 'HTTP_TRUE_CLIENT_IP' => '::ffff:127.0.0.1' ], '::FFFF:127.0.0.1', true ],
+			'IPv4-mapped IPv6 x-forwarded-for'            => [ [ 'HTTP_X_FORWARDED_FOR' => '::ffff:127.0.0.1' ], '::FFFF:127.0.0.1', true ],
+			'compressed IPv6 true-client-ip'              => [ [ 'HTTP_TRUE_CLIENT_IP' => '2001:4860:4860::8844' ], '2001:4860:4860:0000:0000:0000:0000:8844', true ],
+			'unpadded IPv6 true-client-ip'                => [ [ 'HTTP_TRUE_CLIENT_IP' => '2001:4860:4860:0:0:0:0:8844' ], '2001:4860:4860:0000:0000:0000:0000:8844', true ],
+			'compressed IPv6 x-forwarded-for'             => [ [ 'HTTP_X_FORWARDED_FOR' => '2001:4860:4860::8844' ], '2001:4860:4860:0000:0000:0000:0000:8844', true ],
+			'unpadded IPv6 x-forwarded-for'               => [ [ 'HTTP_X_FORWARDED_FOR' => '2001:4860:4860:0:0:0:0:8844' ], '2001:4860:4860:0000:0000:0000:0000:8844', true ],
 		];
 	}
 

@@ -12,15 +12,7 @@ require_once __DIR__ . '/../../search/elasticpress/elasticpress.php';
 class Search_Dev_Tools_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
-		Constant_Mocker::clear();
 		require_once __DIR__ . '/../../search/search-dev-tools/search-dev-tools.php';
-		do_action( 'rest_api_init' );
-	}
-
-	public function tearDown(): void {
-		// Don't leak mocked constants into other test classes (tests run in random order on CI).
-		Constant_Mocker::clear();
-		parent::tearDown();
 	}
 
 	/**

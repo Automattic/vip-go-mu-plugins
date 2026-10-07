@@ -14,6 +14,9 @@ class Login_Error_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * A late priority keeps other plugins' filters from restoring the specific messages.
+	 */
 	public function test_has_filters(): void {
 		self::assertEquals( 99, has_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error' ) );
 		self::assertEquals( 99, has_filter( 'wp_login_errors', __NAMESPACE__ . '\use_ambiguous_confirmation' ) );

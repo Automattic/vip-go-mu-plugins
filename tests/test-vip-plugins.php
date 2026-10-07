@@ -9,6 +9,7 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 	protected $option_active_plugins          = [];
 	protected $option_active_sitewide_plugins = [];
 	protected $code_activated_plugins         = [];
+	private $loaded_plugins_backup;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -47,7 +48,8 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		 * Clear global of code activated plugins from previous test
 		 */
 		global $vip_loaded_plugins;
-		$vip_loaded_plugins = array();
+		$this->loaded_plugins_backup = $vip_loaded_plugins;
+		$vip_loaded_plugins          = array();
 
 		/**
 		 * Set active_plugins to empty to start the test
@@ -58,6 +60,13 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		 * Set active_sitewide_plugins to empty to start the test
 		 */
 		update_site_option( 'active_sitewide_plugins', [] );
+	}
+
+	public function tearDown(): void {
+		global $vip_loaded_plugins;
+		$vip_loaded_plugins = $this->loaded_plugins_backup;
+
+		parent::tearDown();
 	}
 
 	public function test__modify_active_plugins() {

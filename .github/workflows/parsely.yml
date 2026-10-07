@@ -43,6 +43,11 @@ jobs:
     steps:
       - name: Check out source code
         uses: actions/checkout@v7.0.1
+        env:
+          # Clone submodules in parallel instead of one at a time.
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: submodule.fetchJobs
+          GIT_CONFIG_VALUE_0: 8
         with:
           submodules: recursive
 

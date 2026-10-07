@@ -3,10 +3,16 @@
 require_once __DIR__ . '/../../vip-dashboard.php';
 
 class Test_VIP_Dashboard extends WP_UnitTestCase {
+	private static $admin_id;
+
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
+		self::$admin_id = $factory->user->create( array( 'role' => 'administrator' ) );
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();
-		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		wp_set_current_user( self::$admin_id );
 		$_GET['_wpnonce'] = wp_create_nonce( 'vip-dashboard' );
 		$_POST            = array(
 			'name'     => 'Support Requester',

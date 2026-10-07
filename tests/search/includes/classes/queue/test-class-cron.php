@@ -2,18 +2,18 @@
 
 namespace Automattic\VIP\Search\Queue;
 
-use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Search\Queue;
 use Automattic\VIP\Search\Queue\Cron;
 use Automattic\VIP\Search\Search;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
-use wpdb;
 
 require_once __DIR__ . '/../trait-es-http-mock.php';
+require_once __DIR__ . '/../trait-search-test-bootstrap.php';
 
 class Cron_Test extends WP_UnitTestCase {
 	use \Automattic\VIP\Search\ES_HTTP_Mock;
+	use \Automattic\VIP\Search\Search_Test_Bootstrap;
 
 	/** @var Search */
 	private $es;
@@ -26,15 +26,13 @@ class Cron_Test extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		Constant_Mocker::clear();
 
-		define( 'VIP_SEARCH_ENABLE_ASYNC_INDEXING', true );
-		define( 'VIP_GO_ENV', 'production' );
-
-		require_once __DIR__ . '/../../../../../search/search.php';
-
-		$this->es = new Search();
-		$this->es->init();
+		$this->es = $this->boot_search( [
+			'VIP_ELASTICSEARCH_ENDPOINTS'      => array( 'https://elasticsearch:9200' ),
+			'VIP_SEARCH_ENABLE_ASYNC_INDEXING' => true,
+			'VIP_GO_ENV'                       => 'production',
+		] );
+		$this->add_es_http_mock();
 
 		$this->queue = $this->es->queue;
 
@@ -46,7 +44,7 @@ class Cron_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		Constant_Mocker::clear();
+		$this->remove_es_http_mock();
 		parent::tearDown();
 	}
 
@@ -58,34 +56,19 @@ class Cron_Test extends WP_UnitTestCase {
 		self::assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
 	}
 
-	public function test_schedule_sweeper_job() {
+	public function test_schedule_and_disable_sweeper_job() {
 		// Make sure it's not already scheduled
 		$this->cron->disable_sweeper_job();
 
-		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-
-		$this->assertFalse( $existing, 'Existing cron event, wp_clear_scheduled_hook() failed' );
+		$this->assertFalse( wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME ), 'Existing cron event, wp_clear_scheduled_hook() failed' );
 
 		$this->cron->schedule_sweeper_job();
 
-		$next = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-
-		$this->assertTrue( (bool) $next, 'After Cron::schedule_sweeper_job(), job was not found' );
-	}
-
-	public function test_disable_sweeper_job() {
-		// Make sure it already exists
-		$this->cron->schedule_sweeper_job();
-
-		$existing = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-
-		$this->assertTrue( (bool) $existing, 'Sweeper cron event not scheduled, cannot test deletion' );
+		$this->assertTrue( (bool) wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME ), 'After Cron::schedule_sweeper_job(), job was not found' );
 
 		$this->cron->disable_sweeper_job();
 
-		$next = wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME );
-
-		$this->assertFalse( $next, 'After Cron:disable_sweeper_job(), job was still found' );
+		$this->assertFalse( wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME ), 'After Cron:disable_sweeper_job(), job was still found' );
 	}
 
 	public function test_process_jobs() {
@@ -135,10 +118,6 @@ class Cron_Test extends WP_UnitTestCase {
 	public function test_process_scheduled_option_batch() {
 		global $wpdb;
 
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		$this->es->init();
-		$this->add_es_http_mock();
-		do_action( 'plugins_loaded' );
 		$post_ids = self::factory()->post->create_many( 3, array( 'post_status' => 'publish' ) );
 		$this->queue->empty_queue();
 		$this->queue->queue_objects( array_slice( $post_ids, 0, 2 ) );
@@ -152,11 +131,12 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->assertSame( $job_ids, get_option( $option ) );
 		$event = wp_get_scheduled_event( Cron::PROCESSOR_CRON_EVENT_NAME, array( array( 'option' => $option ) ) );
 		$this->assertNotFalse( $event );
+		$this->assertEqualsWithDelta( time(), $event->timestamp, 1, 'The batch should be scheduled to run immediately' );
 
 		// This extra job must remain queued after the stored batch is consumed.
 		$this->queue->queue_object( $post_ids[2] );
 		$indexed_ids = array();
-		$http        = static function ( $preempt, $args, $url ) use ( &$indexed_ids ) {
+		$responder   = static function ( $args, $url ) use ( &$indexed_ids ) {
 			if ( false !== strpos( $url, '/_bulk' ) ) {
 				$lines      = preg_split( '/\n+/', trim( $args['body'] ) );
 				$line_count = count( $lines );
@@ -164,96 +144,16 @@ class Cron_Test extends WP_UnitTestCase {
 					$indexed_ids[] = json_decode( $lines[ $offset ], true )['index']['_id'];
 				}
 			}
-			return array(
-				'headers'  => array(),
-				'body'     => '{}',
-				'response' => array(
-					'code'    => 200,
-					'message' => 'OK',
-				),
-				'cookies'  => array(),
-				'filename' => null,
-			);
+			return self::es_response();
 		};
-		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
-		try {
+
+		$this->with_es_http( $responder, function () use ( $event, $post_ids, $job_ids, $option, &$indexed_ids ) {
 			do_action_ref_array( $event->hook, $event->args );
 			$this->assertSame( array_slice( $post_ids, 0, 2 ), array_values( array_unique( $indexed_ids ) ) );
 			$this->assertSame( array(), $this->queue->get_jobs_by_ids( $job_ids ) );
 			$this->assertNotNull( $this->queue->get_next_job_for_object( $post_ids[2], 'post' ) );
 			$this->assertFalse( get_option( $option ) );
-		} finally {
-			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
-			$this->remove_es_http_mock();
-			delete_option( $option );
-			wp_unschedule_event( $event->timestamp, $event->hook, $event->args );
-		}
-	}
-
-	public function test_schedule_batch_job() {
-		/** @var wpdb $wpdb */
-		global $wpdb;
-
-		/** @var Cron&MockObject */
-		$partially_mocked_cron = $this->getMockBuilder( Cron::class )
-			->onlyMethods( [ 'get_processor_job_count', 'get_max_concurrent_processor_job_count' ] )
-			->getMock();
-
-		$mock_queue = $this->getMockBuilder( Queue::class )
-			->onlyMethods( [ 'checkout_jobs', 'free_deadlocked_jobs' ] )
-			->getMock();
-
-		$mock_jobs = array(
-			(object) array(
-				'job_id'      => 1,
-				'object_id'   => 1,
-				'object_type' => 'post',
-			),
-			(object) array(
-				'job_id'      => 2,
-				'object_id'   => 2,
-				'object_type' => 'user',
-			),
-		);
-
-		$mock_queue->expects( $this->once() )
-			->method( 'checkout_jobs' )
-			->willReturn( $mock_jobs );
-
-		// Only schedule once as the second count is already maximum
-		$partially_mocked_cron->method( 'get_processor_job_count' )->willReturnOnConsecutiveCalls( 1, 5 );
-		$partially_mocked_cron->method( 'get_max_concurrent_processor_job_count' )->willReturn( 5 );
-
-		$partially_mocked_cron->queue = $mock_queue;
-
-		$now = time();
-
-		$partially_mocked_cron->sweep_jobs();
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$option_name = $wpdb->get_var( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE 'vip:esqp\_%'" );
-		self::assertIsString( $option_name );
-
-		$expected_cron_event_args = [
-			[
-				'option' => $option_name,
-			],
-		];
-
-		$expected_job_ids = [ 1, 2 ];
-
-		// Should have scheduled 1 cron event to process the posts
-		$cron_event_time = wp_next_scheduled( Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
-
-		$this->assertEqualsWithDelta( $now, $cron_event_time, 1 );
-
-		$job_ids = get_option( $option_name );
-		self::assertEquals( $expected_job_ids, $job_ids );
-
-		self::assertTrue( delete_option( $option_name ) );
-
-		// Unschedule event to not pollute other tests
-		wp_unschedule_event( $now, Cron::PROCESSOR_CRON_EVENT_NAME, $expected_cron_event_args );
+		} );
 	}
 
 	public function schedule_batch_job__scheduling_limits_data() {
@@ -296,33 +196,17 @@ class Cron_Test extends WP_UnitTestCase {
 		$partially_mocked_cron->sweep_jobs();
 	}
 
-
-	/**
-	 * Test if cron is enabled or disabled
-	 *
-	 * Currently this is always true
-	 */
-	public function test_is_enabled() {
-		$enabled = $this->cron->is_enabled();
-
-		$this->assertTrue( $enabled );
-	}
-
 	public function configure_concurrency_data() {
 		return [
-			[ // min 1
+			'min 1'               => [
 				1,
 				[ 'vip_search_queue_processor' => 1 ],
 			],
-			[ // max 25 %
+			'max 25 %'            => [
 				10,
 				[ 'vip_search_queue_processor' => 3 ],
 			],
-			[
-				20,
-				[ 'vip_search_queue_processor' => 3 ],
-			],
-			[ // max of 3 takes over
+			'max of 3 takes over' => [
 				30,
 				[ 'vip_search_queue_processor' => 3 ],
 			],

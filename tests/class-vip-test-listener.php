@@ -1,5 +1,7 @@
 <?php
 
+use Automattic\Test\Constant_Mocker;
+use PHPUnit\Framework\Test;
 use PHPUnit\Framework\TestListener;
 use PHPUnit\Framework\TestSuite;
 use Yoast\PHPUnitPolyfills\TestListeners\TestListenerDefaultImplementation;
@@ -9,6 +11,7 @@ class VIP_Test_Listener implements TestListener {
 
 	private static $hooks_saved = [];
 	private static $globals     = [ 'wp_actions', 'wp_filters', 'wp_current_filter' ];
+	private static $server      = [];
 
 	public function startTestSuite( TestSuite $suite ): void {
 		$this->backup_hooks();
@@ -16,6 +19,17 @@ class VIP_Test_Listener implements TestListener {
 
 	public function endTestSuite( TestSuite $suite ): void {
 		$this->restore_hooks();
+	}
+
+	public function startTest( Test $test ): void {
+		self::$server = $_SERVER;
+		Constant_Mocker::clear();
+	}
+
+	public function endTest( Test $test, float $time ): void {
+		// Request state and mocked constants never leak into the next test, whatever order the tests run in.
+		$_SERVER = self::$server;
+		Constant_Mocker::clear();
 	}
 
 	private function backup_hooks(): void {

@@ -8,9 +8,16 @@ use Automattic\Test\Constant_Mocker;
 require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
 class Feature_Test extends TestCase {
+	/** @var array{0: array, 1: array, 2: array} The registered feature percentages, IDs and environments. */
+	private $original_features;
+
+	public function setUp(): void {
+		parent::setUp();
+		$this->original_features = [ Feature::$feature_percentages, Feature::$feature_ids, Feature::$feature_envs ];
+	}
 
 	public function tearDown(): void {
-		Constant_Mocker::clear();
+		[ Feature::$feature_percentages, Feature::$feature_ids, Feature::$feature_envs ] = $this->original_features;
 		parent::tearDown();
 	}
 
@@ -147,6 +154,18 @@ class Feature_Test extends TestCase {
 				// Expected enabled/disabled
 				false,
 			),
+
+			// 75% enabled
+			array(
+				// Feature name
+				'foo-feature',
+				// Enabled percentage
+				0.75,
+				// Site id
+				1,
+				// Expected enabled/disabled
+				true,
+			),
 		);
 	}
 
@@ -165,18 +184,6 @@ class Feature_Test extends TestCase {
 		$this->assertEquals( $expected, $enabled );
 	}
 
-	public function test_is_enabled_by_percentage_using_constant() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
-
-		Feature::$feature_percentages = array(
-			'foo-feature' => 0.75,
-		);
-
-		$enabled = Feature::is_enabled_by_percentage( 'foo-feature' );
-
-		$this->assertEquals( true, $enabled );
-	}
-
 	public function test_is_enabled_by_percentage_with_undefined_feature() {
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 1 );
 
@@ -189,7 +196,19 @@ class Feature_Test extends TestCase {
 		$this->assertEquals( false, $enabled );
 	}
 
-	public function test_is_enabled_by_ids() {
+	public function get_test_data__by_ids() {
+		return [
+			'site not listed'   => [ 'foo', false, false ],
+			'site enabled'      => [ 'bar', true, false ],
+			'site disabled'     => [ 'test', false, true ],
+			'feature not exist' => [ 'feature-not-exist', false, false ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__by_ids
+	 */
+	public function test_is_enabled_and_disabled_by_ids( $feature, $expected_enabled, $expected_disabled ) {
 		Feature::$feature_ids = [
 			'foo'  => [
 				123 => true,
@@ -202,189 +221,73 @@ class Feature_Test extends TestCase {
 
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
 
-		$result = Feature::is_enabled_by_ids( 'foo' );
-
-		$this->assertEquals( false, $result );
-
-		$result = Feature::is_enabled_by_ids( 'bar' );
-
-		$this->assertEquals( true, $result );
-
-		$result = Feature::is_enabled_by_ids( 'test' );
-
-		$this->assertEquals( false, $result );
-
-		$result = Feature::is_enabled_by_ids( 'feature-not-exist' );
-
-		$this->assertEquals( false, $result );
+		$this->assertSame( $expected_enabled, Feature::is_enabled_by_ids( $feature ) );
+		$this->assertSame( $expected_disabled, Feature::is_disabled_by_ids( $feature ) );
 	}
 
-	public function test_is_disabled_by_ids() {
-		Feature::$feature_ids = [
-			'foo'  => [
-				123 => true,
-				789 => false,
+	public function get_test_data__is_enabled_by_env() {
+		return [
+			'non-production flag on local'          => [ [ 'non-production' => true ], 'local', true ],
+			'staging flag on staging'               => [ [ 'staging' => true ], 'staging', true ],
+			'staging flag on production'            => [ [ 'staging' => true ], 'production', false ],
+			'unknown environment flag'              => [ [ 'other' => true ], 'local', false ],
+			'disabled on production'                => [
+				[
+					'production' => false,
+					'local'      => true,
+				],
+				'production',
+				false,
 			],
-			'bar'  => [ 456 => true ],
-			'test' => [ 456 => false ],
-		];
-
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
-
-		$result = Feature::is_disabled_by_ids( 'foo' );
-		$this->assertFalse( $result );
-
-		$result = Feature::is_disabled_by_ids( 'bar' );
-		$this->assertFalse( $result );
-
-		$result = Feature::is_disabled_by_ids( 'test' );
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled_by_env__non_prod() {
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-
-		Feature::$feature_envs = array(
-			'non-prod-feature-only' => [ 'non-production' => true ],
-		);
-
-		$result = Feature::is_enabled_by_env( 'non-prod-feature-only' );
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled_by_env__staging() {
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'staging' );
-
-		Feature::$feature_envs = array(
-			'staging-feature-only' => [ 'staging' => true ],
-		);
-
-		$result = Feature::is_enabled_by_env( 'staging-feature-only' );
-		$this->assertTrue( $result );
-
-		Constant_Mocker::clear();
-
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
-		$result = Feature::is_enabled_by_env( 'staging-feature-only' );
-		$this->assertFalse( $result );
-	}
-
-	public function test_is_enabled_by_env__other() {
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-
-		Feature::$feature_envs = array(
-			'other-feature-only' => [ 'other' => true ],
-		);
-
-		$result = Feature::is_enabled_by_env( 'other-feature-only' );
-		$this->assertFalse( $result );
-	}
-
-	public function test_is_enabled_by_env__no_prod() {
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
-
-		Feature::$feature_envs = array(
-			'no-prod' => [
-				'production' => false,
-				'local'      => true,
-			],
-		);
-
-		$result = Feature::is_enabled_by_env( 'no-prod' );
-		$this->assertFalse( $result );
-
-		Constant_Mocker::clear();
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-		$result = Feature::is_enabled_by_env( 'no-prod' );
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled__percentage_only() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 456 );
-
-		Feature::$feature_percentages = array(
-			'foobar' => 1,
-		);
-
-		$result = Feature::is_enabled( 'foobar' );
-
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled__id_only() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-
-		Feature::$feature_ids = array(
-			'foo-bar' => [ 123 => true ],
-		);
-
-		$result = Feature::is_enabled( 'foo-bar' );
-
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled__env_only() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-
-		Feature::$feature_envs = array(
-			'foo-bar-feature' => [ 'local' => true ],
-		);
-
-		$result = Feature::is_enabled( 'foo-bar-feature' );
-
-		$this->assertTrue( $result );
-	}
-
-	public function test_is_enabled__none() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-
-		$result = Feature::is_enabled( 'foo-bar-test' );
-
-		$this->assertFalse( $result );
-	}
-
-
-	public function test_is_enabled__disabled_ids() {
-		Feature::$feature_ids = [
-			'foo' => [
-				123 => false,
+			'disabled on production, local enabled' => [
+				[
+					'production' => false,
+					'local'      => true,
+				],
+				'local',
+				true,
 			],
 		];
-
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-
-		$result = Feature::is_enabled( 'foo' );
-
-		$this->assertFalse( $result );
 	}
 
+	/**
+	 * @dataProvider get_test_data__is_enabled_by_env
+	 */
+	public function test_is_enabled_by_env( $envs, $environment, $expected ) {
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', $environment );
 
-	public function test_is_enabled__disabled_id_overrides_percentage_rollout() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-		Feature::$feature_ids['disabled-rollout']         = [ 123 => false ];
-		Feature::$feature_percentages['disabled-rollout'] = 1;
+		Feature::$feature_envs = array(
+			'env-feature' => $envs,
+		);
 
-		$this->assertFalse( Feature::is_enabled( 'disabled-rollout' ) );
+		$this->assertSame( $expected, Feature::is_enabled_by_env( 'env-feature' ) );
 	}
 
-	public function test_is_enabled__disabled_id_overrides_environment_grant() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+	public function get_test_data__is_enabled() {
+		return [
+			'percentage only'                          => [ 456, [ 'feature' => 1 ], [], [], true ],
+			'ID only'                                  => [ 123, [], [ 'feature' => [ 123 => true ] ], [], true ],
+			'environment only'                         => [ 123, [], [], [ 'feature' => [ 'local' => true ] ], true ],
+			'none'                                     => [ 123, [], [], [], false ],
+			'disabled ID'                              => [ 123, [], [ 'feature' => [ 123 => false ] ], [], false ],
+			'disabled ID overrides percentage rollout' => [ 123, [ 'feature' => 1 ], [ 'feature' => [ 123 => false ] ], [], false ],
+			'disabled ID overrides environment grant'  => [ 123, [], [ 'feature' => [ 123 => false ] ], [ 'feature' => [ 'local' => true ] ], false ],
+			'explicit enable with overlapping grants'  => [ 123, [ 'feature' => 1 ], [ 'feature' => [ 123 => true ] ], [ 'feature' => [ 'local' => true ] ], true ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__is_enabled
+	 */
+	public function test_is_enabled( $site_id, $percentages, $ids, $envs, $expected ) {
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', $site_id );
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-		Feature::$feature_ids['disabled-environment']  = [ 123 => false ];
-		Feature::$feature_envs['disabled-environment'] = [ 'local' => true ];
 
-		$this->assertFalse( Feature::is_enabled( 'disabled-environment' ) );
-	}
+		Feature::$feature_percentages = $percentages;
+		Feature::$feature_ids         = $ids;
+		Feature::$feature_envs        = $envs;
 
-	public function test_is_enabled__explicit_enable_with_overlapping_grants() {
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'local' );
-		Feature::$feature_ids['overlapping-grants']         = [ 123 => true ];
-		Feature::$feature_percentages['overlapping-grants'] = 1;
-		Feature::$feature_envs['overlapping-grants']        = [ 'local' => true ];
-
-		$this->assertTrue( Feature::is_enabled( 'overlapping-grants' ) );
+		$this->assertSame( $expected, Feature::is_enabled( 'feature' ) );
 	}
 
 	public function test_get_features() {

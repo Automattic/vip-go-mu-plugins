@@ -6,6 +6,9 @@ use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
 use WP_Error;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
+
 require_once __DIR__ . '/../../files/class-api-client.php';
 
 class API_Client_Test extends WP_UnitTestCase {
@@ -73,20 +76,6 @@ class API_Client_Test extends WP_UnitTestCase {
 		}, 10, 3 );
 	}
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\API_Client' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
-	public static function get_property( $object, $name ) {
-		$property = new \ReflectionProperty( get_class( $object ), $name );
-		return $property;
-	}
-
 	public function get_test_data__is_valid_path() {
 		return [
 			'other path'                                   => [
@@ -112,7 +101,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__is_valid_path
 	 */
 	public function test__is_valid_path( $path, $expected ) {
-		$is_valid_path_method = self::get_method( 'is_valid_path' );
+		$is_valid_path_method = get_class_method_as_public( API_Client::class, 'is_valid_path' );
 
 		$actual = $is_valid_path_method->invokeArgs( $this->api_client, [
 			$path,
@@ -125,7 +114,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$expected_error_code = 'invalid-path';
 		$this->mock_http_response( [] ); // don't care about the response
 
-		$call_api_method = self::get_method( 'call_api' );
+		$call_api_method = get_class_method_as_public( API_Client::class, 'call_api' );
 
 		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
 			'/path/to/image.jpg',
@@ -142,7 +131,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$expected_response = [ 'foo' => 'bar' ];
 		$this->mock_http_response( $expected_response );
 
-		$call_api_method = self::get_method( 'call_api' );
+		$call_api_method = get_class_method_as_public( API_Client::class, 'call_api' );
 
 		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
 			'/wp-content/uploads/path/to/image.jpg',
@@ -179,7 +168,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$expected_response = [ 'foo' => 'bar' ];
 		$this->mock_http_response( $expected_response );
 
-		$call_api_method = self::get_method( 'call_api' );
+		$call_api_method = get_class_method_as_public( API_Client::class, 'call_api' );
 
 		$call_api_method->invokeArgs( $this->api_client, [
 			'/wp-content/uploads/path/to/image.jpg',
@@ -210,7 +199,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__get_api_url
 	 */
 	public function test__get_api_url( $path, $expected_url ) {
-		$get_api_url_method = self::get_method( 'get_api_url' );
+		$get_api_url_method = get_class_method_as_public( API_Client::class, 'get_api_url' );
 
 		$actual_url = $get_api_url_method->invokeArgs( $this->api_client, [
 			$path,
@@ -260,20 +249,6 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$actual_result = $this->api_client->is_file( '/wp-content/uploads/file.jpg' );
 		$this->assertEquals( $expected_result, $actual_result );
-	}
-
-	public function test__is_file__validate_request() {
-		$this->mock_http_response( [] ); // don't care about the response
-
-		$this->api_client->is_file( '/wp-content/uploads/file.jpg' );
-
-		$actual_http_request = reset( $this->http_requests );
-
-		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
-		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
-		$this->assertArraySubset( [
-			'X-Action' => 'file_exists',
-		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
 	}
 
 	public function get_test_data__delete_file() {
@@ -346,17 +321,6 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( 'file_exists', $this->http_requests[1]['headers']['X-Action'] );
 	}
 
-	public function test__delete_file__validate_request() {
-		$this->mock_http_response( [] ); // don't care about the response
-
-		$this->api_client->delete_file( '/wp-content/uploads/delete/this/file.jpg' );
-
-		$actual_http_request = reset( $this->http_requests );
-
-		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/delete/this/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
-		$this->assertEquals( 'DELETE', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
-	}
-
 	public function get_test_data__get_file() {
 		return [
 			'WP_Error'            => [
@@ -422,26 +386,6 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function test__get_file__validate_request() {
-		$this->mock_is_file_response( [
-			'response' => [
-				'code' => 200,
-			],
-			'body'     => wp_json_encode( [
-				'size' => 12345,
-			] ),
-		] );
-
-		$this->mock_http_response( [] ); // don't care about the response
-
-		$this->api_client->get_file( '/wp-content/uploads/get/this/file.jpg' );
-
-		$actual_http_request = reset( $this->http_requests );
-
-		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/get/this/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
-		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
-	}
-
 	public function get_test_data__upload_timeout() {
 		return [
 			'empty-file' => [
@@ -470,7 +414,7 @@ class API_Client_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__upload_timeout
 	 */
 	public function test__calculate_upload_timeout( $file_size, $expected_timeout ) {
-		$calculate_upload_timeout_method = self::get_method( 'calculate_upload_timeout' );
+		$calculate_upload_timeout_method = get_class_method_as_public( API_Client::class, 'calculate_upload_timeout' );
 
 		$actual_timeout = $calculate_upload_timeout_method->invokeArgs( $this->api_client, [
 			$file_size,
@@ -578,7 +522,7 @@ class API_Client_Test extends WP_UnitTestCase {
 		$file_path   = __DIR__ . '/../fixtures/files/upload.jpg';
 		$upload_path = '/wp-content/uploads/file.txt';
 
-		$cache = self::get_property( $this->api_client, 'cache' )->getValue( $this->api_client );
+		$cache = get_class_property_as_public( API_Client::class, 'cache' )->getValue( $this->api_client );
 
 		// To test that upload_file() properly clears the cache, we'll set some data to start
 		$cache->cache_file_stats( 'wp-content/uploads/file.txt', array(
@@ -647,18 +591,38 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function test__get_unique_filename__validate_request() {
+	public function get_test_data__validate_request() {
+		return [
+			'is_file'             => [ 'is_file', '/wp-content/uploads/file.jpg', 'GET', [ 'X-Action' => 'file_exists' ] ],
+			'delete_file'         => [ 'delete_file', '/wp-content/uploads/delete/this/file.jpg', 'DELETE', [] ],
+			'get_file'            => [ 'get_file', '/wp-content/uploads/get/this/file.jpg', 'GET', [] ],
+			'get_unique_filename' => [ 'get_unique_filename', '/wp-content/uploads/file.jpg', 'GET', [ 'X-Action' => 'unique_filename' ] ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__validate_request
+	 */
+	public function test__validate_request( $method, $path, $expected_http_method, $expected_headers ) {
+		// get_file() checks that the file exists first; the other calls don't care about the response.
+		$this->mock_is_file_response( [
+			'response' => [
+				'code' => 200,
+			],
+			'body'     => wp_json_encode( [
+				'size' => 12345,
+			] ),
+		] );
+
 		$this->mock_http_response( [] ); // don't care about the response
 
-		$this->api_client->get_unique_filename( '/wp-content/uploads/file.jpg' );
+		$this->api_client->$method( $path );
 
 		$actual_http_request = reset( $this->http_requests );
 
-		$this->assertEquals( 'https://files.go-vip.co/wp-content/uploads/file.jpg', $actual_http_request['url'], 'Incorrect API URL' );
-		$this->assertEquals( 'GET', $actual_http_request['args']['method'], 'Incorrect HTTP method' );
-		$this->assertArraySubset( [
-			'X-Action' => 'unique_filename',
-		], $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
+		$this->assertEquals( 'https://files.go-vip.co' . $path, $actual_http_request['url'], 'Incorrect API URL' );
+		$this->assertEquals( $expected_http_method, $actual_http_request['args']['method'], 'Incorrect HTTP method' );
+		$this->assertArraySubset( $expected_headers, $actual_http_request['args']['headers'], 'Missing `X-Action` header' );
 	}
 
 	/**

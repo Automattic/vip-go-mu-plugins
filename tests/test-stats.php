@@ -2,16 +2,13 @@
 
 use Automattic\Test\Constant_Mocker;
 
-class Test_Stats extends WP_UnitTestCase {
-	private $server_backup;
+use function Automattic\Test\Utils\run_php;
 
+class Test_Stats extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 
-		Constant_Mocker::clear();
-
 		// Tracking is skipped for Jetpack requests, so don't depend on what earlier tests left in $_SERVER
-		$this->server_backup = $_SERVER;
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 		unset( $_SERVER['HTTP_USER_AGENT'], $_SERVER['HTTP_X_FORWARDED_FOR'] );
 
@@ -32,18 +29,13 @@ class Test_Stats extends WP_UnitTestCase {
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
 		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance      = null;
 
-		$_SERVER = $this->server_backup;
-
-		Constant_Mocker::clear();
 		parent::tear_down();
 	}
-
 
 	/**
 	 * Verify the production stats bootstrap registers the XML-RPC telemetry hook.
 	 *
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * The script runs in its own PHP process, so the test doesn't need process isolation.
 	 */
 	public function test_production_bootstrap_registers_xmlrpc_telemetry_hook() {
 		$script = <<<'PHP'
@@ -70,30 +62,10 @@ namespace {
 }
 PHP;
 		$script = str_replace( '__STATS_PATH__', wp_json_encode( dirname( __DIR__ ) . '/stats.php', JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR ), $script );
-		// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- The test writes only a disposable subprocess fixture in the system temp directory.
-		$path = tempnam( get_temp_dir(), 'vip-stats-bootstrap-' );
-		file_put_contents( $path, $script );
-		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- A subprocess isolates constants and exercises production bootstrap registration.
-		$process = proc_open(
-			[ PHP_BINARY, $path ],
-			[
-				0 => [ 'pipe', 'r' ],
-				1 => [ 'pipe', 'w' ],
-				2 => [ 'pipe', 'w' ],
-			],
-			$pipes
-		);
-		fclose( $pipes[0] );
-		$output = stream_get_contents( $pipes[1] );
-		$error  = stream_get_contents( $pipes[2] );
-		fclose( $pipes[1] );
-		fclose( $pipes[2] );
-		$exit_code = proc_close( $process );
-		unlink( $path );
-		// phpcs:enable
+		$result = run_php( [], $script );
 
-		$this->assertSame( 0, $exit_code, $error );
-		$events = json_decode( $output, true );
+		$this->assertSame( 0, $result['exit'], $result['stderr'] );
+		$events = json_decode( $result['stdout'], true );
 		$this->assertSame( 'xmlrpc_authentication', $events[0][0] ?? null );
 		$this->assertSame( 'wp.getUsersBlogs', $events[0][1]['method'] ?? null );
 	}
@@ -143,55 +115,58 @@ PHP;
 		$this->assertEquals( 'user_pass', \Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type );
 	}
 
+	private function inject_mock_tracks(): \PHPUnit\Framework\MockObject\MockObject {
+		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'record_event' ] )
+			->getMock();
+
+		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
+
+		return $mock_tracks;
+	}
+
 	public function test_record_xmlrpc_auth_telemetry_not_xmlrpc_request() {
 		Constant_Mocker::define( 'XMLRPC_REQUEST', false );
 
 		// Log in, so only the XML-RPC check can prevent tracking
 		wp_set_current_user( self::factory()->user->create() );
 
-		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'record_event' ] )
-			->getMock();
-		
-		// Inject mock tracks instance
-		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
-		
-		$mock_tracks->expects( $this->never() )->method( 'record_event' );
+		$this->inject_mock_tracks()->expects( $this->never() )->method( 'record_event' );
 
 		do_action( 'xmlrpc_call', 'test.method' );
 	}
 
-	public function test_record_xmlrpc_auth_telemetry_authenticated() {
+	public function data_record_xmlrpc_auth_telemetry_authenticated(): array {
+		return [
+			'application password' => [ 'app_pass', 'test.method' ],
+			'user password'        => [ 'user_pass', 'wp.getUsersBlogs' ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_record_xmlrpc_auth_telemetry_authenticated
+	 */
+	public function test_record_xmlrpc_auth_telemetry_authenticated( string $password_type, string $method ) {
 		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
 
 		// Create and log in a test user
-		$user_id = self::factory()->user->create();
-		wp_set_current_user( $user_id );
+		wp_set_current_user( self::factory()->user->create() );
 
-		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'record_event' ] )
-			->getMock();
-
-		// Inject mock tracks instance
-		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
-
-		// Set the password type to app_pass
-		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'app_pass';
+		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = $password_type;
 
 		// Expect the event to be recorded with correct data
-		$mock_tracks->expects( $this->once() )
+		$this->inject_mock_tracks()->expects( $this->once() )
 			->method( 'record_event' )
 			->with(
 				'xmlrpc_authentication',
-				$this->callback( function ( $properties ) {
-					return 'app_pass' === $properties['password_type'] &&
-						'test.method' === $properties['method'];
+				$this->callback( function ( $properties ) use ( $password_type, $method ) {
+					return $password_type === $properties['password_type'] &&
+						$method === $properties['method'];
 				} )
 			);
 
-		do_action( 'xmlrpc_call', 'test.method' );
+		do_action( 'xmlrpc_call', $method );
 	}
 
 	public function test_record_xmlrpc_auth_telemetry_unauthenticated() {
@@ -200,58 +175,8 @@ PHP;
 		// Ensure no user is logged in
 		wp_set_current_user( 0 );
 
-		$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'record_event' ] )
-			->getMock();
-
-		// Inject mock tracks instance
-		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
-
-		// Expect no event to be recorded
-		$mock_tracks->expects( $this->never() )->method( 'record_event' );
+		$this->inject_mock_tracks()->expects( $this->never() )->method( 'record_event' );
 
 		do_action( 'xmlrpc_call', 'test.method' );
-	}
-
-	public function test_record_xmlrpc_auth_telemetry_different_methods() {
-		Constant_Mocker::define( 'XMLRPC_REQUEST', true );
-
-		// Create and log in a test user
-		$user_id = self::factory()->user->create();
-		wp_set_current_user( $user_id );
-
-		// Set the password type to user_pass
-		\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$xmlrpc_password_type = 'user_pass';
-
-		// Test different XML-RPC methods
-		$methods = [
-			'wp.getUsersBlogs',
-			'wp.getProfile',
-			'wp.getPost',
-			'wp.newPost',
-		];
-
-		foreach ( $methods as $method ) {
-			$mock_tracks = $this->getMockBuilder( 'Automattic\\VIP\\Telemetry\\Tracks' )
-				->disableOriginalConstructor()
-				->onlyMethods( [ 'record_event' ] )
-				->getMock();
-
-			// Inject mock tracks instance
-			\Automattic\VIP\Stats\XML_RPC_Auth_Tracker::$tracks_instance = $mock_tracks;
-
-			$mock_tracks->expects( $this->once() )
-				->method( 'record_event' )
-				->with(
-					'xmlrpc_authentication',
-					$this->callback( function ( $properties ) use ( $method ) {
-						return 'user_pass' === $properties['password_type'] &&
-							$method === $properties['method'];
-					} )
-				);
-
-			do_action( 'xmlrpc_call', $method );
-		}
 	}
 }

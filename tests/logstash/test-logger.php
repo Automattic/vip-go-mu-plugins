@@ -87,95 +87,30 @@ class Logger_Test extends WP_UnitTestCase {
 		$this->assertEquals( $entries, Testable_Logger::get_entries() );
 	}
 
-	public function test__log2logstash__invalid_site_id() {
-		$data = [
-			'site_id'  => 'invalid',
+	public function data_log2logstash__invalid(): array {
+		return [
+			'site_id not an integer'   => [ [ 'site_id' => 'invalid' ], 'Invalid `site_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.' ],
+			'blog_id not an integer'   => [ [ 'blog_id' => 'invalid' ], 'Invalid `blog_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.' ],
+			'http_host over 255 bytes' => [ [ 'http_host' => str_repeat( 'a', 256 ) ], 'Invalid `http_host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.' ],
+			'unknown severity'         => [ [ 'severity' => 'invalid' ], 'Invalid `severity` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be one of: ``, `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, `debug`.' ],
+			'feature over 200 bytes'   => [ [ 'feature' => str_repeat( 'a', 201 ) ], 'Invalid `feature` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 200 bytes or less.' ],
+			'extra is a resource'      => [ [ 'extra' => tmpfile() ], 'Invalid `extra` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an object, array, or scalar value.' ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_log2logstash__invalid
+	 */
+	public function test__log2logstash__invalid( array $data, string $expected_error ) {
+		$data = array_merge( [
 			'severity' => 'alert',
 			'feature'  => 'test',
 			'message'  => 'Test alert',
-		];
+		], $data );
 
 		Logger::log2logstash( $data );
 
-		$this->assertError( 'Invalid `site_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.', E_USER_WARNING );
-
-		// No new entries added
-		$this->assertEquals( [], Testable_Logger::get_entries() );
-	}
-
-	public function test__log2logstash__invalid_blog_id() {
-		$data = [
-			'blog_id'  => 'invalid',
-			'severity' => 'alert',
-			'feature'  => 'test',
-			'message'  => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `blog_id` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an integer > 0.', E_USER_WARNING );
-
-		// No new entries added
-		$this->assertEquals( [], Testable_Logger::get_entries() );
-	}
-
-	public function test__log2logstash__invalid_http_host_size() {
-		$data = [
-			'http_host' => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
-			'severity'  => 'alert',
-			'feature'   => 'test',
-			'message'   => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `http_host` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 255 bytes or less.', E_USER_WARNING );
-
-		// No new entries added
-		$this->assertEquals( [], Testable_Logger::get_entries() );
-	}
-
-	public function test__log2logstash__invalid_severity() {
-		$data = [
-			'severity' => 'invalid',
-			'feature'  => 'test',
-			'message'  => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `severity` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be one of: ``, `emergency`, `alert`, `critical`, `error`, `warning`, `notice`, `info`, `debug`.', E_USER_WARNING );
-
-		// No new entries added
-		$this->assertEquals( [], Testable_Logger::get_entries() );
-	}
-
-	public function test__log2logstash__invalid_feature_size() {
-		$data = [
-			'severity' => 'alert',
-			'feature'  => 'BqnKKZj3EHPqnzg7HC9aHJRFfqMZiHPJbKjKZJBeCrqcQmFq2QN2202GOYwsuVzkmKnxycLXUhTS4vbIDsMcNfsPWB0vcz9TxjfbqiJ3Tt0akDmxf841w409Ghge2PnUJ1fA7PkeyQmQux3D36AiLz8VmglrIbiI4zhDG8iiJG09XuOyMWjthvnyWqQqSuQLx2vbdifauXfEXMcPanXk2T2quG94OfHzBkptLPnUKi8n7FMk8mSagR0OHrM1QPOso',
-			'message'  => 'Test alert',
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `feature` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be 200 bytes or less.', E_USER_WARNING );
-
-		// No new entries added
-		$this->assertEquals( [], Testable_Logger::get_entries() );
-	}
-
-	public function test__log2logstash__invalid_extra() {
-		$data = [
-			'severity' => 'alert',
-			'feature'  => 'test',
-			'message'  => 'Test alert',
-			'extra'    => tmpfile(),
-		];
-
-		Logger::log2logstash( $data );
-
-		$this->assertError( 'Invalid `extra` in call to Automattic\VIP\Logstash\Logger::log2logstash(). Must be an object, array, or scalar value.', E_USER_WARNING );
+		$this->assertError( $expected_error, E_USER_WARNING );
 
 		// No new entries added
 		$this->assertEquals( [], Testable_Logger::get_entries() );

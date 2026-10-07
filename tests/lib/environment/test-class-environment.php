@@ -7,62 +7,36 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/../../../lib/environment/class-environment.php';
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-
 class Environment_Test extends TestCase {
-	private $error_reporting;
-
-	protected function setUp(): void {
-		parent::setUp();
-		$this->error_reporting = error_reporting();
-		Constant_Mocker::clear();
-	}
-
-	protected function tearDown(): void {
-		Constant_Mocker::clear();
-		error_reporting( $this->error_reporting );
-		parent::tearDown();
-	}
-
 	public function get_var_standard_env() {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
 	public function test_has_var() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
 		$this->get_var_standard_env();
 		$val = Environment::has_var( 'MY_VAR' );
 		$this->assertEquals( true, $val );
 	}
 
 	public function test_has_var_missing() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
 		$val = Environment::has_var( 'MY_VAR' );
 		$this->assertEquals( false, $val );
 	}
 
 	// tests the use-case where $key parameter is not found
 	public function test_get_default_var() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
 	}
 
 	// tests the use-case where $key parameter is ''
 	public function test_get_var_empty_key() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
 		$this->get_var_standard_env();
 		$val = Environment::get_var( '', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
 	}
 
 	public function test_get_var() {
-		error_reporting( $this->error_reporting & ~E_USER_NOTICE );
-
 		$this->get_var_standard_env();
 		$val = Environment::get_var( 'MY_VAR', 'default_value' );
 		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );

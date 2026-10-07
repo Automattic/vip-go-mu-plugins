@@ -6,13 +6,16 @@ namespace Automattic\VIP\Telemetry;
 
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/trait-telemetry-test-helpers.php';
+
 class Telemetry_Event_Queue_Test extends WP_UnitTestCase {
+	use Telemetry_Test_Helpers;
 
 	/**
 	 * Deliver queued real events through production shutdown registration once.
 	 */
 	public function test_shutdown_delivers_queued_events_once(): void {
-		wp_set_current_user( self::factory()->user->create() );
+		$this->login_as();
 		$event  = new \Automattic\VIP\Telemetry\Tracks\Tracks_Event( 'test_', 'shutdown_event' );
 		$client = $this->createMock( Telemetry_Client::class );
 		$client->expects( $this->once() )->method( 'batch_record_events' )->with( array( $event ) )->willReturn( true );
@@ -42,7 +45,7 @@ class Telemetry_Event_Queue_Test extends WP_UnitTestCase {
 	 * Return the real invalid event error without storing or sending the event.
 	 */
 	public function test_invalid_event_returns_validation_error(): void {
-		wp_set_current_user( self::factory()->user->create() );
+		$this->login_as();
 		$event = new \Automattic\VIP\Telemetry\Tracks\Tracks_Event( 'test_', 'Invalid Event' );
 		$error = $event->is_recordable();
 		$this->assertInstanceOf( \WP_Error::class, $error );

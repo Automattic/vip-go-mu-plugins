@@ -17,7 +17,7 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	const VALID_AUTH_MECHANISM   = 'VIP-MACHINE-TOKEN';
 	const INVALID_AUTH_MECHANISM = 'Basic';
 
-	/** @var WP_REST_Server */
+	/** @var WP_REST_Server|null */
 	private $server;
 
 	/**
@@ -30,11 +30,6 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		if ( ! defined( 'NONCE_SALT' ) ) {
 			define( 'NONCE_SALT', time() );
 		}
-
-		global $wp_rest_server;
-		$wp_rest_server = new WP_REST_Server();
-		$this->server   = $wp_rest_server;
-		do_action( 'rest_api_init' );
 	}
 
 	/**
@@ -48,176 +43,106 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that a valid token verifies as expected
+	 * Dispatch GET /vip/v1/sites with the given $_SERVER values and return the response status.
+	 *
+	 * The REST server is built on first use, so tests that never dispatch skip rest_api_init.
+	 * $request->add_header() doesn't populate the vars our endpoint checks, hence $_SERVER.
+	 *
+	 * @param array<string,string> $server $_SERVER keys to set for the request.
 	 */
-	public function test__valid_token_creation() {
-		$token = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
+	private function dispatch_sites( array $server = [] ): int {
+		if ( ! $this->server ) {
+			global $wp_rest_server;
+			$wp_rest_server = new WP_REST_Server();
+			$this->server   = $wp_rest_server;
+			do_action( 'rest_api_init' );
+		}
 
-		$header = self::VALID_AUTH_MECHANISM . ' ' . $token;
+		foreach ( $server as $key => $value ) {
+			$_SERVER[ $key ] = $value;
+		}
 
-		$this->assertTrue( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, $header ) );
-	}
-
-	/**
-	 * Test that a token doesn't verify for a different namespace
-	 */
-	public function test__invalid_token_creation() {
-		$token = \wpcom_vip_generate_go_rest_api_request_token( self::INVALID_NAMESPACE );
-
-		$header = self::VALID_AUTH_MECHANISM . ' ' . $token;
-
-		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, $header ) );
-	}
-
-	/**
-	 * Test that a valid token doesn't verify with an invalid header
-	 */
-	public function test__invalid_header() {
-		$token = \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
-
-		$header = self::INVALID_AUTH_MECHANISM . ' ' . $token;
-
-		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, $header ) );
+		try {
+			return $this->server->dispatch( new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' ) )->get_status();
+		} finally {
+			foreach ( array_keys( $server ) as $key ) {
+				unset( $_SERVER[ $key ] );
+			}
+		}
 	}
 
 	/**
 	 * Test request with valid authorization
 	 */
 	public function test__request_with_valid_header() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
 		// Retry only when the clock crosses a tick during dispatch.
-		try {
-			for ( $attempt = 0; $attempt < 3; ++$attempt ) {
-				$tick                          = ceil( time() / 120 );
-				$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, NONCE_SALT );
-				$response                      = $this->server->dispatch( $request );
-				if ( ceil( time() / 120 ) === $tick ) {
-					break;
-				}
+		for ( $attempt = 0; $attempt < 3; ++$attempt ) {
+			$tick   = ceil( time() / 120 );
+			$status = $this->dispatch_sites( [
+				'HTTP_AUTHORIZATION' => self::VALID_AUTH_MECHANISM . ' ' . hash_hmac( 'sha256', $tick . '|' . self::VALID_NAMESPACE, NONCE_SALT ),
+			] );
+			if ( ceil( time() / 120 ) === $tick ) {
+				break;
 			}
-			$this->assertSame( $tick, ceil( time() / 120 ), 'Dispatch must finish within a stable token tick.' );
-		} finally {
-			unset( $_SERVER['HTTP_AUTHORIZATION'] );
+		}
+		$this->assertSame( $tick, ceil( time() / 120 ), 'Dispatch must finish within a stable token tick.' );
+
+		$this->assertEquals( 200, $status );
+	}
+
+	public function data_rejected_authorization_header(): array {
+		return [
+			'no header'                   => [ null, null ],
+			'invalid auth mechanism'      => [ self::INVALID_AUTH_MECHANISM, self::VALID_NAMESPACE ],
+			'token for another namespace' => [ self::VALID_AUTH_MECHANISM, self::INVALID_NAMESPACE ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_rejected_authorization_header
+	 */
+	public function test__request_with_rejected_authorization_header( ?string $mechanism, ?string $token_namespace ) {
+		$server = [];
+		if ( null !== $mechanism ) {
+			$server['HTTP_AUTHORIZATION'] = $mechanism . ' ' . \wpcom_vip_generate_go_rest_api_request_token( $token_namespace );
 		}
 
-		$this->assertEquals( 200, $response->get_status() );
+		$this->assertEquals( 401, $this->dispatch_sites( $server ) );
+	}
+
+	public function data_basic_auth_credentials(): array {
+		return [
+			'empty credentials'       => [ null, 401 ],
+			'user without capability' => [ [], 401 ],
+			'user with manage_sites'  => [ [ 'manage_sites' ], 200 ],
+		];
 	}
 
 	/**
-	 * Test request with invalid auth mechanism
+	 * @dataProvider data_basic_auth_credentials
+	 *
+	 * @param string[]|null $caps Caps to grant a new user, or null to send empty credentials.
 	 */
-	public function test__request_with_invalid_mechanism() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
+	public function test__basic_auth_credentials( ?array $caps, int $expected_status ) {
+		$server = [
+			'PHP_AUTH_USER' => '',
+			'PHP_AUTH_PW'   => '',
+		];
 
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['HTTP_AUTHORIZATION'] = self::INVALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::VALID_NAMESPACE );
+		if ( null !== $caps ) {
+			$password = wp_generate_password( 12 );
+			$user     = $this->factory()->user->create_and_get( [ 'user_pass' => $password ] );
+			foreach ( $caps as $cap ) {
+				$user->add_cap( $cap );
+			}
 
-		$response = $this->server->dispatch( $request );
+			$server = [
+				'PHP_AUTH_USER' => $user->user_login,
+				'PHP_AUTH_PW'   => $password,
+			];
+		}
 
-		unset( $_SERVER['HTTP_AUTHORIZATION'] );
-
-		$this->assertEquals( 401, $response->get_status() );
-	}
-
-	/**
-	 * Test request with token for different namespace
-	 */
-	public function test__request_with_invalid_token() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['HTTP_AUTHORIZATION'] = self::VALID_AUTH_MECHANISM . ' ' . \wpcom_vip_generate_go_rest_api_request_token( self::INVALID_NAMESPACE );
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['HTTP_AUTHORIZATION'] );
-
-		$this->assertEquals( 401, $response->get_status() );
-	}
-
-	/**
-	 * Test request without any auth header
-	 */
-	public function test__request_without_header() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		$response = $this->server->dispatch( $request );
-
-		$this->assertEquals( 401, $response->get_status() );
-	}
-
-	public function test__invalid_basic_auth_credentials() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['PHP_AUTH_USER'] = '';
-		$_SERVER['PHP_AUTH_PW']   = '';
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['PHP_AUTH_USER'] );
-		unset( $_SERVER['PHP_AUTH_PW'] );
-
-		$this->assertEquals( 401, $response->get_status() );
-	}
-
-	public function test__insufficient_basic_auth_credentials() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		list( $random_username, $random_password ) = self::get_test_username_password();
-		wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW']   = $random_password;
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['PHP_AUTH_USER'] );
-		unset( $_SERVER['PHP_AUTH_PW'] );
-
-		$this->assertEquals( 401, $response->get_status() );
-	}
-
-	public function test__valid__vip_support_basic_auth_credentials() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		list( $random_username, $random_password ) = self::get_test_username_password();
-		$user_id                                   = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-		$user                                      = get_user_by( 'id', $user_id );
-		$user->add_cap( 'vip_support' );
-
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW']   = $random_password;
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['PHP_AUTH_USER'] );
-		unset( $_SERVER['PHP_AUTH_PW'] );
-
-		$this->assertEquals( 200, $response->get_status() );
-	}
-
-	public function test__valid_basic_auth_credentials() {
-		$request = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-
-		list( $random_username, $random_password ) = self::get_test_username_password();
-		$user_id                                   = wp_create_user( $random_username, $random_password, $random_username . '@example.com' );
-		$user                                      = get_user_by( 'id', $user_id );
-		$user->add_cap( 'manage_sites' );
-
-		// $request->add_header() doesn't populate the vars our endpoint checks
-		$_SERVER['PHP_AUTH_USER'] = $random_username;
-		$_SERVER['PHP_AUTH_PW']   = $random_password;
-
-		$response = $this->server->dispatch( $request );
-
-		unset( $_SERVER['PHP_AUTH_USER'] );
-		unset( $_SERVER['PHP_AUTH_PW'] );
-
-		$this->assertEquals( 200, $response->get_status() );
+		$this->assertEquals( $expected_status, $this->dispatch_sites( $server ) );
 	}
 
 	/**
@@ -226,16 +151,15 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	public function test__privileged_basic_auth_requires_correct_password() {
 		$user = $this->factory()->user->create_and_get( [ 'user_pass' => 'correct-password' ] );
 		$user->add_cap( 'vip_support' );
-		$request                  = new \WP_REST_Request( 'GET', '/' . self::VALID_NAMESPACE . '/sites' );
-		$_SERVER['PHP_AUTH_USER'] = $user->user_login;
-		try {
-			$_SERVER['PHP_AUTH_PW'] = 'wrong-nonempty-password';
-			$this->assertSame( 401, $this->server->dispatch( $request )->get_status() );
-			$_SERVER['PHP_AUTH_PW'] = 'correct-password';
-			$this->assertSame( 200, $this->server->dispatch( $request )->get_status() );
-		} finally {
-			unset( $_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW'] );
-		}
+
+		$this->assertSame( 401, $this->dispatch_sites( [
+			'PHP_AUTH_USER' => $user->user_login,
+			'PHP_AUTH_PW'   => 'wrong-nonempty-password',
+		] ) );
+		$this->assertSame( 200, $this->dispatch_sites( [
+			'PHP_AUTH_USER' => $user->user_login,
+			'PHP_AUTH_PW'   => 'correct-password',
+		] ) );
 	}
 
 	/**
@@ -256,13 +180,5 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 		$this->assertNotSame( $expected, $other );
 		$stale = hash_hmac( 'sha256', ( $tick - 2 ) . '|' . self::VALID_NAMESPACE, NONCE_SALT );
 		$this->assertFalse( \wpcom_vip_verify_go_rest_api_request_authorization( self::VALID_NAMESPACE, self::VALID_AUTH_MECHANISM . ' ' . $stale ) );
-	}
-
-	// Helper function to generate random username and password
-	public static function get_test_username_password() {
-		// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand
-		$username = 'testuser_' . mt_rand();
-		$password = wp_generate_password( 12 );
-		return array( $username, $password );
 	}
 }

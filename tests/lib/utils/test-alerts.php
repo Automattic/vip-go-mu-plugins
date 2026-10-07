@@ -4,6 +4,8 @@ namespace Automattic\VIP\Utils;
 
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\http_response;
+
 require_once __DIR__ . '/class-testable-alerts.php';
 
 class Alerts_Test extends WP_UnitTestCase {
@@ -195,26 +197,8 @@ class Alerts_Test extends WP_UnitTestCase {
 
 	public function get_test_data__invalid_send_responses() {
 		return [
-			'not-found'    => [
-				[
-					'body'     => '{}',
-					'response' => [
-						'code'    => 404,
-						'message' => 'Not found',
-					],
-					'cookies'  => [],
-				],
-			],
-			'server-error' => [
-				[
-					'body'     => '{}',
-					'response' => [
-						'code'    => 500,
-						'message' => 'Server error',
-					],
-					'cookies'  => [],
-				],
-			],
+			'not-found'    => [ http_response( 404 ) ],
+			'server-error' => [ http_response( 500 ) ],
 		];
 	}
 
@@ -236,7 +220,6 @@ class Alerts_Test extends WP_UnitTestCase {
 		return [
 			'invalid-type'             => [ 'string' ],
 			'empty-array'              => [ [] ],
-			'missing-keys'             => [ [ 'source' => 'test' ] ],
 			'missing-severity'         => [
 				[
 					'source' => 'test',

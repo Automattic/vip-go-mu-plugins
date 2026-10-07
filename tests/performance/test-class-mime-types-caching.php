@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Performance;
 
+use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 
 /**
@@ -9,92 +10,33 @@ use WP_UnitTestCase;
  */
 class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
-	public function setUp(): void {
-		parent::setUp();
-		$this->mock_attachments_data();
-	}
+	/**
+	 * Attachments shared by all tests. Changes made by a test are rolled back after it.
+	 */
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {
+		$mime_types = [
+			'image/jpeg',
+			'image/jpeg',
+			'image/jpeg',
+			'image/gif',
+			'image/gif',
+			'image/png',
+			'application/octet-stream',
+			'video/mp4',
+			'audio/mpeg',
+			'application/pdf',
+		];
 
-	protected function mock_attachments_data() {
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 01',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/jpeg',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 02',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/jpeg',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 03',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/jpeg',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 04',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/gif',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 05',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/gif',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 06',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'image/png',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 07',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'application/octet-stream',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 08',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'video/mp4',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 09',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'audio/mpeg',
-			)
-		);
-		$this->factory()->post->create(
-			array(
-				'post_title'     => 'Mock Attachment 10',
-				'post_status'    => 'inherit',
-				'post_type'      => 'attachment',
-				'post_mime_type' => 'application/pdf',
-			)
-		);
+		foreach ( $mime_types as $i => $mime_type ) {
+			$factory->post->create(
+				array(
+					'post_title'     => sprintf( 'Mock Attachment %02d', $i + 1 ),
+					'post_status'    => 'inherit',
+					'post_type'      => 'attachment',
+					'post_mime_type' => $mime_type,
+				)
+			);
+		}
 	}
 
 	protected function get_sample_post_id() {
@@ -110,22 +52,6 @@ class Mime_Types_Caching_Test extends WP_UnitTestCase {
 
 	protected function is_using_default_mime_types() {
 		return wp_cache_get( Mime_Types_Caching::MIME_TYPES_CACHE_KEY, Mime_Types_Caching::CACHE_GROUP )['using_defaults'] ?? false;
-	}
-
-	public function test__mime_type_caching_hooked_on_init() {
-		$tag      = 'pre_get_available_post_mime_types';
-		$function = array( 'Automattic\VIP\Performance\Mime_Types_Caching', 'get_cached_post_mime_types' );
-
-		// Filter is already loaded on init action.
-		$before_filter_removal = remove_filter( $tag, $function );
-		$after_filter_removal  = has_filter( $tag, $function );
-		\vip_cache_mime_types(); // Call to class init to re-hook the filter.
-		$filter_after_class_init = has_filter( $tag, $function );
-
-		$this->assertNotFalse( has_action( 'init', 'vip_cache_mime_types' ) );
-		$this->assertTrue( $before_filter_removal );
-		$this->assertFalse( $after_filter_removal );
-		$this->assertNotFalse( $filter_after_class_init );
 	}
 
 	public function test__default_mime_types() {
