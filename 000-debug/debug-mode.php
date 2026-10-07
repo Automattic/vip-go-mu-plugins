@@ -36,13 +36,18 @@ function init_debug_mode() {
 	}
 }
 
-function is_debug_mode_enabled() {
+function has_debug_mode_cookies() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_debug   = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+
+	return $is_nocache && $is_debug;
+}
+
+function is_debug_mode_enabled() {
 	$is_proxied = \is_proxied_request();
 	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
-	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
+	if ( ( has_debug_mode_cookies() && $is_proxied ) || $is_local ) {
 		return true;
 	}
 
@@ -73,9 +78,10 @@ function enable_debug_mode() {
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
 	}
 
+	// Without a path, browsers scope the cookies to the current directory, so Debug Mode wouldn't follow you around the site.
 	$ttl = time() + COOKIE_TTL;
-	setcookie( 'vip-go-cb', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'vip-go-cb', '1', $ttl, '/' );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '1', $ttl, '/' );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'enable' ] );
 
@@ -85,9 +91,10 @@ function enable_debug_mode() {
 function disable_debug_mode() {
 	nocache_headers();
 
+	// Use the same path as enable_debug_mode(), or the browser keeps the original cookies.
 	$ttl = time() - COOKIE_TTL;
-	setcookie( 'vip-go-cb', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'vip-go-cb', '', $ttl, '/' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '', $ttl, '/' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'disable' ] );
 
@@ -121,20 +128,99 @@ function enable_debug_tools() {
 		add_filter( 'show_admin_bar', '__return_true', PHP_INT_MAX );
 	}, 9999 );
 
+	// Local environments get the debug tools without entering Debug Mode, so only flag it when someone did.
+	if ( ! has_debug_mode_cookies() ) {
+		return;
+	}
+
+	// Show the flag in the admin bar so it doesn't cover page content.
+	add_action( 'admin_bar_init', __NAMESPACE__ . '\add_debug_admin_bar_styles' );
+	add_action( 'admin_bar_menu', __NAMESPACE__ . '\add_debug_admin_bar_node' );
+
+	// Fall back to a floating flag where there's no admin bar (e.g. wp-login.php).
 	add_action( 'wp_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 	add_action( 'login_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 }
 
-function show_debug_flag() {
-	$disable_url = add_query_arg( [
+function get_disable_debug_mode_url() {
+	return add_query_arg( [
 		'a8c-debug' => 'false',
 		// Remove the cache-buster, if set.
 		'random'    => false,
 	] );
+}
+
+/**
+ * @param WP_Admin_Bar $wp_admin_bar
+ */
+function add_debug_admin_bar_node( $wp_admin_bar ) {
+	$wp_admin_bar->add_node( [
+		'id'     => 'a8c-debug',
+		'parent' => 'top-secondary',
+		'title'  => 'A8C<span class="a8c-debug-suffix"> Debug</span>',
+		'href'   => get_disable_debug_mode_url(),
+		'meta'   => [
+			'title' => 'Click to disable Debug Mode',
+		],
+	] );
+}
+
+function add_debug_admin_bar_styles() {
+	$css = <<<'CSS'
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item {
+		padding: 0 10px;
+		background: rgb(194,156,105);
+		color: #fff;
+		font-size: 11px;
+		font-weight: 600;
+		/* Core's line-height is relative to its 13px font; match the 32px item height instead. */
+		line-height: 32px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:hover,
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:focus {
+		background: rgb(168,132,84);
+		color: #fff;
+	}
+
+	/* Core's `#wpadminbar *` reset would otherwise restyle the suffix. */
+	#wpadminbar #wp-admin-bar-a8c-debug .a8c-debug-suffix {
+		font: inherit;
+		letter-spacing: inherit;
+		text-transform: inherit;
+	}
+
+	@media screen and (max-width: 782px) {
+		/* Core hides non-default top-level items on small screens. */
+		#wpadminbar li#wp-admin-bar-a8c-debug {
+			display: block;
+		}
+
+		#wpadminbar #wp-admin-bar-a8c-debug > .ab-item {
+			line-height: 46px;
+		}
+
+		/* Keep the toolbar on one row next to core's 52px icons. */
+		#wpadminbar #wp-admin-bar-a8c-debug .a8c-debug-suffix {
+			display: none;
+		}
+	}
+	CSS;
+
+	wp_add_inline_style( 'admin-bar', $css );
+}
+
+function show_debug_flag() {
+	// The admin bar already shows the flag.
+	if ( did_action( 'wp_after_admin_bar_render' ) ) {
+		return;
+	}
 
 	?>
 	<div id="a8c-debug-flag">
-		<a href="<?php echo esc_url( $disable_url ); ?>" title="Click to disable Debug Mode">A8C Debug</a>
+		<a href="<?php echo esc_url( get_disable_debug_mode_url() ); ?>" title="Click to disable Debug Mode">A8C Debug</a>
 	</div>
 	<style>
 	#a8c-debug-flag {
