@@ -4,6 +4,7 @@
 import { render } from 'preact';
 
 import SearchDevToolsApp from './components/app';
+import './style/admin-bar.scss';
 
 const renderApp = () => render( <SearchDevToolsApp />, document.querySelector( '[data-widget-host="vip-search-dev-tools"]' ) );
 

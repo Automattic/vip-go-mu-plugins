@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
+import { deepActiveElement } from '../dom';
 import { buildTreeLines } from '../tree-lines';
 
 /**
@@ -34,7 +35,7 @@ export const JsonTree = ( { value, mode = 'auto', annotate, maxLines, renderTooL
 	// After a re-render (rows are reused by index), keep exactly one toggle as the Tab stop, preferring the focused one.
 	useEffect( () => {
 		const stops = Array.from( rootRef.current?.querySelectorAll( 'button[data-path][tabindex="0"]' ) ?? [] );
-		const keep = stops.find( btn => btn === document.activeElement ) ?? stops[ 0 ] ?? rootRef.current?.querySelector( 'button[data-path]' );
+		const keep = stops.find( btn => btn === deepActiveElement() ) ?? stops[ 0 ] ?? rootRef.current?.querySelector( 'button[data-path]' );
 		stops.filter( btn => btn !== keep ).forEach( btn => btn.setAttribute( 'tabindex', '-1' ) );
 		keep?.setAttribute( 'tabindex', '0' );
 	}, [ lines ] );

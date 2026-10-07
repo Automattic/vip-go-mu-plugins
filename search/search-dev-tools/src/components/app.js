@@ -2,13 +2,13 @@ import cx from 'classnames';
 import { createPortal, forwardRef } from 'preact/compat';
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'preact/hooks';
 
-// Global styles
-import '../style/style.scss';
-
 import { InfoStrip } from './info-strip';
 import { QueryDetail } from './query-detail';
 import { QueryList } from './query-list';
 import { AnnounceContext, SearchContext } from '../context';
+import { deepActiveElement, eventOrigin, shadowContainer } from '../dom';
+// The panel's CSS, as a string for its shadow root.
+import panelStyles from '../style/style.scss?shadow';
 import { describeQuery, formatDuration, isDraftEdited } from '../utils';
 
 const THEME_KEY = 'vip-search-dev-tools-theme';
@@ -121,7 +121,7 @@ const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose } ) 
 		if ( ! focusables.length ) {
 			return;
 		}
-		const index = focusables.indexOf( document.activeElement );
+		const index = focusables.indexOf( deepActiveElement() );
 		// Shift+Tab from the first control, or from the panel itself (focused on open), wraps to the last.
 		if ( evt.shiftKey && ( index === 0 || evt.target === evt.currentTarget ) ) {
 			evt.preventDefault();
@@ -141,12 +141,12 @@ const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose } ) 
 		const panel = panelRef.current;
 		const outside = el => el && panel && ! panel.contains( el ) && ! el.closest?.( '#wp-admin-bar-vip-search-dev-tools' );
 		const onFocusIn = evt => {
-			if ( outside( evt.target ) ) {
+			if ( outside( eventOrigin( evt ) ) ) {
 				( panelFocusables( panel )[ 0 ] ?? panel ).focus();
 			}
 		};
 		const onTab = evt => {
-			if ( evt.key !== 'Tab' || ! panel || panel.contains( document.activeElement ) ) {
+			if ( evt.key !== 'Tab' || ! panel || panel.contains( deepActiveElement() ) ) {
 				return;
 			}
 			evt.preventDefault();
@@ -164,7 +164,7 @@ const Panel = ( { items, selected, onSelect, drafts, onDraftChange, onClose } ) 
 	useEffect( () => {
 		const onKey = evt => {
 			// Escape inside the request editor releases its Tab capture; don't close the panel for it.
-			if ( evt.key !== 'Escape' || evt.target?.closest?.( '.sdt-code' ) ) {
+			if ( evt.key !== 'Escape' || eventOrigin( evt )?.closest?.( '.sdt-code' ) ) {
 				return;
 			}
 			// Don't check defaultPrevented: the admin bar cancels Escape when its button has focus.
@@ -276,7 +276,8 @@ const App = () => {
 	const data = window?.VIPSearchDevTools || { status: 'disabled', queries: [], information: [] };
 	const items = useMemo( () => data.queries.map( describeQuery ), [ data.queries ] );
 	const hasFailures = items.some( item => item.summary.failed );
-	const portal = document.getElementById( 'search-dev-tools-portal' );
+	// The panel renders in a shadow root on the portal element, so theme CSS can't restyle it.
+	const [ portal ] = useState( () => shadowContainer( document.getElementById( 'search-dev-tools-portal' ), panelStyles ) );
 
 	/**
 	 * Update one query's draft. `change` is a draft, an updater ( prev ) => draft, or undefined to discard.

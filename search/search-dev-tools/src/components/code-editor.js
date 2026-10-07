@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'preact/hooks';
+import { useEffect, useMemo, useRef } from 'preact/hooks';
 import { highlight, languages } from 'prismjs/components/prism-core';
 import 'prismjs/components/prism-json';
 import Editor from 'react-simple-code-editor';
@@ -27,8 +27,9 @@ export const CodeEditor = ( { id, value, onValueChange, onRun, label } ) => {
 	const large = isLargeRequest( value );
 
 	// react-simple-code-editor doesn't forward aria-describedby to its textarea; attach the hint directly.
+	const rootRef = useRef( null );
 	useEffect( () => {
-		document.getElementById( id )?.setAttribute( 'aria-describedby', `${ id }-hint` );
+		rootRef.current?.querySelector( 'textarea' )?.setAttribute( 'aria-describedby', `${ id }-hint` );
 	}, [ id ] );
 
 	// Runs before the editor's own key handling, so Cmd/Ctrl+Enter doesn't also auto-indent a new line.
@@ -40,7 +41,7 @@ export const CodeEditor = ( { id, value, onValueChange, onRun, label } ) => {
 	};
 
 	return (
-		<div className="sdt-code">
+		<div className="sdt-code" ref={ rootRef }>
 			<label className="sdt-visually-hidden" htmlFor={ id }>{ label }</label>
 			{ /* Accessible description; the visible copy is in the Request tab bar while the editor has focus. */ }
 			<div className="sdt-visually-hidden" id={ `${ id }-hint` }>{ EDITOR_HINT }</div>

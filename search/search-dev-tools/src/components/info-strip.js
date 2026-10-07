@@ -1,6 +1,8 @@
 import cx from 'classnames';
 import { useEffect, useRef, useState } from 'preact/hooks';
 
+import { eventOrigin } from '../dom';
+
 // Lists this short are shown inline instead of behind a popover.
 const INLINE_MAX_ITEMS = 3;
 const INLINE_MAX_CHARS = 40;
@@ -24,7 +26,7 @@ const InfoItem = ( { item } ) => {
 		if ( ! open ) {
 			return undefined;
 		}
-		const onPointer = evt => ! ref.current?.contains( evt.target ) && setOpen( false );
+		const onPointer = evt => ! ref.current?.contains( eventOrigin( evt ) ) && setOpen( false );
 		const onKey = evt => {
 			if ( evt.key === 'Escape' ) {
 				// Captured on window first, so this keeps the panel from closing too.

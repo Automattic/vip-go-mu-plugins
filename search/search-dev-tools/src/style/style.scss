@@ -1,55 +1,14 @@
-// Search Dev Tools styles.
-// Everything is scoped under the portal ID (or #wpadminbar) so theme and admin CSS can't leak in.
+// Search Dev Tools panel styles. They load inside the panel's shadow root (see app.js), so theme and plugin CSS
+// can't reach the panel and these rules can't leak out. The Admin Bar button's styles are in admin-bar.scss.
 
 $sidebar-width: 336px;
 
-/* Admin bar trigger */
-
-.vip-search-dev-tools-ab .ab-item {
-	display: none !important;
-}
-
-#wpadminbar .sdt-ab-btn {
-	display: flex;
-	align-items: center;
-	gap: 7px;
-	height: 32px;
-	margin: 0;
-	padding: 0 10px;
-	border: 0;
-	border-radius: 0;
-	background: transparent;
-	color: #f0f0f1;
-	font: inherit;
-	font-size: 13px;
-	line-height: 32px;
-	cursor: pointer;
-
-	&::before {
-		content: url('../assets/wpvip.svg');
-		display: block;
-		height: 14px;
-		line-height: 0;
-	}
-
-	&:hover,
-	&:focus-visible,
-	&[aria-expanded='true'] {
-		background: #2c3338;
-		color: #72aee6;
-	}
-
-	&__alert {
-		width: 7px;
-		height: 7px;
-		border-radius: 50%;
-		background: #f86368;
-	}
-}
-
 /* Panel */
 
-#search-dev-tools-portal .sdt {
+.sdt {
+	// Reset everything inherited through the shadow host first; custom properties (the tokens below) are kept.
+	all: initial;
+
 	// Light theme tokens.
 	--sdt-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 	--sdt-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
@@ -121,7 +80,7 @@ $sidebar-width: 336px;
 		box-sizing: border-box;
 	}
 
-	// Neutralize theme element styles.
+	// Undo browser default styles.
 	h1,
 	h2,
 	h3,
@@ -139,8 +98,6 @@ $sidebar-width: 336px;
 		border: 0;
 		font: inherit;
 		color: inherit;
-		letter-spacing: normal;
-		text-transform: none;
 		background: none;
 	}
 
@@ -160,15 +117,9 @@ $sidebar-width: 336px;
 		border: 0;
 		border-radius: 0;
 		background: none;
-		box-shadow: none;
 		color: inherit;
 		font: inherit;
 		line-height: inherit;
-		letter-spacing: normal;
-		text-transform: none;
-		text-decoration: none;
-		min-height: 0;
-		width: auto;
 		cursor: pointer;
 
 		&:focus-visible {
@@ -934,15 +885,16 @@ $sidebar-width: 336px;
 		}
 
 		&__textarea {
-			// The editor's own `:empty` placeholder rule makes the text opaque; Preact never gives the
-			// textarea child text, so it always matches and hides the highlighted layer underneath.
-			-webkit-text-fill-color: transparent !important;
-			min-height: 0 !important;
-			max-width: none !important;
-			border-radius: 0 !important;
-			box-shadow: none !important;
 			outline: none !important;
 			caret-color: var(--sdt-text);
+
+			// The editor's own `.npm__react-simple-code-editor__textarea:empty` rule makes the text opaque. Preact
+			// never gives the textarea child text, so it always matches and would hide the highlighted layer.
+			// Matching `:empty` too outranks it, whatever order the two style sheets load in.
+			&,
+			&:empty {
+				-webkit-text-fill-color: transparent !important;
+			}
 		}
 
 		&__pre {
@@ -1227,7 +1179,7 @@ $sidebar-width: 336px;
 	}
 }
 
-#search-dev-tools-portal .sdt[data-theme='dark'] {
+.sdt[data-theme='dark'] {
 	--sdt-bg: #1b1917;
 	--sdt-bg-subtle: #211f1c;
 	--sdt-bg-raised: #2a2724;

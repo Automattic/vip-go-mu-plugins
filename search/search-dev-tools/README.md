@@ -18,7 +18,9 @@ Search Dev Tools is aiming to be a one-stop shop for developers integrating Sear
 
 The backend consists of a single REST endpoint whose sole purpose is to translate the incoming request into a Search API request and pass back the results to the frontend. The page data (`window.VIPSearchDevTools`) is printed in the footer; info strip items carry a stable `key` the frontend relies on.
 
-The frontend is a Preact app which mounts onto an Admin Bar node and renders into a portal in DOM. The UI is displayed as a full-screen panel below the Admin Bar. See [src/](src/).
+The frontend is a Preact app which mounts onto an Admin Bar node and renders the panel into an open shadow root on `#search-dev-tools-portal`, so theme and plugin CSS can't restyle it. The UI is displayed as a full-screen panel below the Admin Bar. See [src/](src/).
+
+Styles: [src/style/style.scss](src/style/style.scss) is the panel's CSS, bundled into `bundle.js` as a string and placed in the shadow root. [src/style/admin-bar.scss](src/style/admin-bar.scss) is the only global CSS (`bundle.css`), for the Admin Bar button. Inside the shadow root, `document.activeElement` and event targets seen from the document stop at the host; use the helpers in [src/dom.js](src/dom.js).
 
 We use Prism.js and React Simple Code Editor for the request editor. The response viewer is a small custom JSON tree ([src/components/json-tree.js](src/components/json-tree.js)).
 

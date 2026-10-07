@@ -3,7 +3,8 @@ import { expect, type Locator, type Page } from '@playwright/test';
 const selectors = {
 	devToolsMenu: () => '#wp-admin-bar-vip-search-dev-tools',
 	devToolsTrigger: () => 'button.sdt-ab-btn',
-	panel: () => '#search-dev-tools-portal > .sdt',
+	// The panel renders in an open shadow root on the portal element; Playwright's CSS locators pierce it.
+	panel: () => '#search-dev-tools-portal .sdt',
 	closeButton: () => 'button[aria-label="Close VIP Search Dev Tools"]',
 	infoStrip: () => '.sdt-info',
 	queryListItem: () => '.sdt-list__item',
@@ -295,7 +296,8 @@ export class SearchPage {
 			const copies: string[] = [];
 			const state = { copies, copiedShown: false };
 			( window as unknown as { sdtCopy: typeof state } ).sdtCopy = state;
-			const toolbar = document.querySelector( '.sdt-pane--response' );
+			const shadow = document.getElementById( 'search-dev-tools-portal' )?.shadowRoot;
+			const toolbar = shadow?.querySelector( '.sdt-pane--response' );
 			if ( toolbar ) {
 				new MutationObserver( () => {
 					state.copiedShown ||= [ ...toolbar.querySelectorAll( 'button' ) ].some( ( button ) => button.textContent === 'Copied' );
@@ -305,7 +307,7 @@ export class SearchPage {
 				configurable: true,
 				value: () => {
 					// The copy takes the selection in the focused element.
-					const el = document.activeElement;
+					const el = document.activeElement?.shadowRoot?.activeElement ?? document.activeElement;
 					copies.push( el instanceof HTMLTextAreaElement ? el.value.slice( el.selectionStart, el.selectionEnd ) : '' );
 					return acceptCopy;
 				},
@@ -322,7 +324,27 @@ export class SearchPage {
 	public copyAttempts(): Promise<{ copies: string[], copiedShown: boolean, leftovers: number }> {
 		return this.page.evaluate( () => {
 			const { copies, copiedShown } = ( window as unknown as { sdtCopy: { copies: string[], copiedShown: boolean } } ).sdtCopy;
-			return { copies, copiedShown, leftovers: document.querySelectorAll( 'textarea[readonly]' ).length };
+			const shadow = document.getElementById( 'search-dev-tools-portal' )?.shadowRoot;
+			const leftovers = document.querySelectorAll( 'textarea[readonly]' ).length + ( shadow?.querySelectorAll( 'textarea[readonly]' ).length ?? 0 );
+			return { copies, copiedShown, leftovers };
+		} );
+	}
+
+	/**
+	 * Add aggressive page CSS, as a hostile theme might, and read back styles from inside the panel.
+	 *
+	 * @return {Promise<Object>} Computed styles of the panel, its title and a toolbar button
+	 */
+	public async stylesUnderHostileThemeCss(): Promise<Record<string, string>> {
+		await this.page.addStyleTag( { content: 'body { letter-spacing: 4px; font-style: italic; } button { background: rgb(255, 0, 0) !important; } h1 { font-size: 40px !important; }' } );
+		return this.panel.evaluate( ( panel ) => {
+			const style = ( el: Element | null ) => ( el ? getComputedStyle( el ) : null );
+			return {
+				panelLetterSpacing: style( panel )?.letterSpacing ?? '',
+				panelFontStyle: style( panel )?.fontStyle ?? '',
+				titleFontSize: style( panel.querySelector( 'h1' ) )?.fontSize ?? '',
+				buttonBackground: style( panel.querySelector( '.sdt-btn' ) )?.backgroundColor ?? '',
+			};
 		} );
 	}
 
@@ -435,7 +457,8 @@ export class SearchPage {
 	 * @return {Promise<boolean>} Focus inside
 	 */
 	public isFocusInsidePanel(): Promise<boolean> {
-		return this.panel.evaluate( ( panel ) => panel.contains( document.activeElement ) );
+		// Inside the shadow root, document.activeElement is the host; ask the panel's own root instead.
+		return this.panel.evaluate( ( panel ) => panel.contains( ( panel.getRootNode() as ShadowRoot ).activeElement ) );
 	}
 
 	/**

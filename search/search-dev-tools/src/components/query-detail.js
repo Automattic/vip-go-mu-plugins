@@ -5,6 +5,7 @@ import { useCallback, useContext, useMemo, useRef, useState } from 'preact/hooks
 import { CodeEditor, EDITOR_HINT } from './code-editor';
 import { JsonTree } from './json-tree';
 import { AnnounceContext } from '../context';
+import { deepActiveElement } from '../dom';
 import { hitIndex } from '../tree-lines';
 import { RUN_SHORTCUT, countHits, describeJsonSize, displayPath, formatDuration, formatSize, hitsPerIndex, LARGE_JSON_LINES, isDraftEdited, parseFrame, postData, shortIndexName, summarizeResult } from '../utils';
 
@@ -24,7 +25,7 @@ async function copyText( text ) {
 			// Refused, e.g. by a permissions policy: the legacy path below may still work.
 		}
 	}
-	const previous = document.activeElement;
+	const previous = deepActiveElement();
 	const textarea = document.createElement( 'textarea' );
 	textarea.value = text;
 	textarea.setAttribute( 'readonly', '' );

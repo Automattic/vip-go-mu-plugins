@@ -75,6 +75,12 @@ test.describe( 'Search Dev Tools', () => {
 			await expect( searchPage.copyButton() ).toBeFocused();
 		} );
 
+		await test.step( 'Theme CSS does not reach the panel', async () => {
+			const styles = await searchPage.stylesUnderHostileThemeCss();
+			expect( styles ).toMatchObject( { panelLetterSpacing: 'normal', panelFontStyle: 'normal', titleFontSize: '15px' } );
+			expect( styles.buttonBackground ).not.toBe( 'rgb(255, 0, 0)' );
+		} );
+
 		await test.step( 'Close Dev Tools', () => searchPage.closeSearchDevTools() );
 	} );
 

@@ -1,0 +1,46 @@
+// Admin Bar button for Search Dev Tools. Global CSS (bundle.css), scoped to #wpadminbar; the panel's own styles
+// live in style.scss and render inside its shadow root.
+
+/* Admin bar trigger */
+
+.vip-search-dev-tools-ab .ab-item {
+	display: none !important;
+}
+
+#wpadminbar .sdt-ab-btn {
+	display: flex;
+	align-items: center;
+	gap: 7px;
+	height: 32px;
+	margin: 0;
+	padding: 0 10px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	color: #f0f0f1;
+	font: inherit;
+	font-size: 13px;
+	line-height: 32px;
+	cursor: pointer;
+
+	&::before {
+		content: url('../assets/wpvip.svg');
+		display: block;
+		height: 14px;
+		line-height: 0;
+	}
+
+	&:hover,
+	&:focus-visible,
+	&[aria-expanded='true'] {
+		background: #2c3338;
+		color: #72aee6;
+	}
+
+	&__alert {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+		background: #f86368;
+	}
+}
