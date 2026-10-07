@@ -23,6 +23,7 @@ add_action( 'admin_enqueue_scripts', __NAMESPACE__ . '\enqueue_assets', 11 );
 add_filter( 'js_do_concat', __NAMESPACE__ . '\skip_js_do_concat', 10, 2 );
 add_action( 'wp_footer', __NAMESPACE__ . '\print_data', 5 ); // Must be below 20 (`wp_print_footer_scripts`)
 add_action( 'admin_footer', __NAMESPACE__ . '\print_data', 5 );
+add_action( 'ep_add_query_log', __NAMESPACE__ . '\record_cross_site' );
 
 /**
  * Register Dev Tools Endpoint.
@@ -78,8 +79,12 @@ function rest_callback( \WP_REST_Request $request ) {
 	);
 
 	if ( ! is_wp_error( $result ) ) {
+		$body   = json_decode( wp_remote_retrieve_body( $result ) );
 		$result = [
-			'body' => sanitize_query_response( json_decode( $result['body'] ) ),
+			// A proxy or gateway error page isn't JSON; report it instead of failing on the decode.
+			'body' => is_object( $body ) ? sanitize_query_response( $body ) : [
+				'error' => sprintf( 'Elasticsearch returned a non-JSON response (HTTP %s).', wp_remote_retrieve_response_code( $result ) ),
+			],
 		];
 	} else {
 		$result = [
@@ -207,8 +212,10 @@ function print_data() {
 				];
 			}
 
-			// ElasticPress's own cross-site decision, from the unfiltered args (before falsy values are dropped below).
-			$query['cross_site'] = is_cross_site_query( (array) ( $query['query_args'] ?? [] ) );
+			// Whether the search left its site, as noted while it ran (judged now only for anything logged before
+			// Dev Tools was listening).
+			$index_part          = (string) Search::instance()->get_index_name_for_url( $query['url'] );
+			$query['cross_site'] = cross_site_decisions()[ query_log_key( $query ) ] ?? is_cross_site_request( $index_part );
 
 			$query['args']['body'] = json_decode( $query['args']['body'], true );
 			$query['args']['body'] = array_merge( [ 'profile' => false ], $query['args']['body'] );
@@ -221,7 +228,7 @@ function print_data() {
 				}
 			);
 			// Network alias queries: the indexes the alias reached, or a flag when they couldn't be looked up.
-			return array_merge( $query, get_alias_details( (string) Search::instance()->get_index_name_for_url( $query['url'] ) ) );
+			return array_merge( $query, get_alias_details( $index_part ) );
 		},
 		$queries
 	);
@@ -318,28 +325,60 @@ function get_information( ?Search $search_instance = null ): array {
 }
 
 /**
- * Whether a query searched beyond the current site, decided the way ElasticPress does in
- * QueryIntegration::get_es_posts(): the `sites` arg (filtered by `ep_search_scope`) only applies in network
- * mode, and numeric/array scopes are compared with the current blog ID.
+ * Whether a search request left the current site: it named an index that isn't one of this site's own (the
+ * network alias for `'sites' => 'all'`, or other sites' indexes). This reads the index ElasticPress actually
+ * chose, so its scope rules (`sites`, `ep_search_scope`, network mode) aren't repeated here.
  *
- * @param array $query_args WP_Query arguments.
- * @return bool Cross-site query.
+ * @param string $index_part Index part of the request URL (see Search::get_index_name_for_url()).
+ * @return bool Cross-site request.
  */
-function is_cross_site_query( array $query_args ): bool {
-	if ( ! is_multisite() || ! defined( 'EP_IS_NETWORK' ) || ! constant( 'EP_IS_NETWORK' ) ) {
+function is_cross_site_request( string $index_part ): bool {
+	if ( '' === $index_part || ! is_multisite() ) {
 		return false;
 	}
+	$own = array_map( fn ( $indexable ) => $indexable->get_index_name(), \ElasticPress\Indexables::factory()->get_all() );
+	return (bool) array_diff( explode( ',', $index_part ), $own );
+}
 
-	$scope = empty( $query_args['sites'] ) ? 'current' : $query_args['sites'];
-	$scope = apply_filters( 'ep_search_scope', $scope ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- ElasticPress hook.
+/**
+ * Key tying a query log entry to the decision record_cross_site() noted for it.
+ *
+ * @param array $query Query log entry.
+ * @return string Key.
+ */
+function query_log_key( array $query ): string {
+	return ( $query['url'] ?? '' ) . '|' . ( $query['time_start'] ?? '' );
+}
 
-	if ( 'all' === $scope ) {
-		return true;
+/**
+ * Cross-site decisions noted while requests ran, keyed by query_log_key().
+ *
+ * @param array|null $query    Query log entry to note a decision for, or null to only read.
+ * @param bool       $decision Decision for `$query`.
+ * @return bool[] Decisions so far.
+ */
+function cross_site_decisions( ?array $query = null, bool $decision = false ): array {
+	static $decisions = [];
+	if ( null !== $query ) {
+		$decisions[ query_log_key( $query ) ] = $decision;
 	}
+	return $decisions;
+}
 
-	// Any other scope ('current', unknown strings) stays on this site.
-	$sites = is_numeric( $scope ) || is_array( $scope ) ? array_map( 'intval', (array) $scope ) : [];
-	return (bool) array_diff( $sites, [ get_current_blog_id() ] );
+/**
+ * On `ep_add_query_log`: note whether a search left its site while that site is still current. print_data()
+ * runs in the footer, where a query made inside switch_to_blog() would be judged against the wrong site.
+ *
+ * @param array $query Query log entry.
+ * @return void
+ */
+function record_cross_site( $query ): void {
+	// Same condition as ElasticPress's query log: without the log there's nothing to show.
+	$logging = ( defined( 'WP_DEBUG' ) && constant( 'WP_DEBUG' ) ) || ( defined( 'WP_EP_DEBUG' ) && constant( 'WP_EP_DEBUG' ) );
+	if ( ! $logging || ! is_multisite() || ! is_array( $query ) || false === stripos( (string) ( $query['url'] ?? '' ), '_search' ) ) {
+		return;
+	}
+	cross_site_decisions( $query, is_cross_site_request( (string) Search::instance()->get_index_name_for_url( $query['url'] ) ) );
 }
 
 /**

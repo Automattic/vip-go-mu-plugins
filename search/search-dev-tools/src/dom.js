@@ -25,6 +25,26 @@ export function deepActiveElement() {
 export const eventOrigin = evt => evt.composedPath?.()[ 0 ] ?? evt.target;
 
 /**
+ * Apply CSS to a shadow root. A constructed style sheet isn't an inline `<style>` element, so a strict
+ * Content-Security-Policy `style-src` (no 'unsafe-inline') doesn't block it; `<style>` is the fallback for
+ * browsers without constructable style sheets.
+ *
+ * @param {ShadowRoot} shadow Shadow root.
+ * @param {string}     styles CSS.
+ */
+function applyStyles( shadow, styles ) {
+	if ( 'adoptedStyleSheets' in shadow && 'replaceSync' in CSSStyleSheet.prototype ) {
+		const sheet = new CSSStyleSheet();
+		sheet.replaceSync( styles );
+		shadow.adoptedStyleSheets = [ sheet ];
+		return;
+	}
+	const style = document.createElement( 'style' );
+	style.textContent = styles;
+	shadow.append( style );
+}
+
+/**
  * A container in a shadow root on `host`, with `styles` applied, created once and reused.
  * Theme and plugin CSS can't reach inside, and the styles can't leak out.
  *
@@ -38,9 +58,8 @@ export function shadowContainer( host, styles ) {
 	}
 	if ( ! host.shadowRoot ) {
 		const shadow = host.attachShadow( { mode: 'open' } );
-		const style = document.createElement( 'style' );
-		style.textContent = styles;
-		shadow.append( style, document.createElement( 'div' ) );
+		applyStyles( shadow, styles );
+		shadow.append( document.createElement( 'div' ) );
 	}
 	return host.shadowRoot.lastElementChild;
 }

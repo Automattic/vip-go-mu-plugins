@@ -270,5 +270,14 @@ test.describe( 'Search Dev Tools', () => {
 			await expect( searchPage.panel ).toHaveAttribute( 'data-theme', 'dark' );
 			await searchPage.setTheme( 'Light' );
 		} );
+
+		await test.step( 'The panel is styled under a strict style-src Content-Security-Policy', async () => {
+			await searchPage.serveWithStrictStyleCsp();
+			await page.reload( { waitUntil: 'domcontentloaded' } );
+			await expect( searchPage.isInlineStyleBlocked() ).resolves.toBe( true );
+			await searchPage.openSearchDevTools();
+			await expect.poll( () => searchPage.panelPosition() ).toBe( 'fixed' );
+			await searchPage.stopServingWithStrictStyleCsp();
+		} );
 	} );
 } );

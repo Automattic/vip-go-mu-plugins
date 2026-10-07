@@ -475,6 +475,62 @@ export class SearchPage {
 	}
 
 	/**
+	 * Serve page loads with `Content-Security-Policy: style-src 'self'`, which blocks inline `<style>` elements.
+	 * Every request is fetched and fulfilled here, not just the document: Chromium treats a fulfilled page as
+	 * public, and its Private Network Access rules would then block the page's requests to the local site.
+	 *
+	 * @return {Promise<void>} Resolves once the route is installed
+	 */
+	public async serveWithStrictStyleCsp(): Promise<void> {
+		await this.page.route( '**/*', async ( route ) => {
+			const response = await route.fetch();
+			const headers = response.headers();
+			if ( route.request().resourceType() === 'document' ) {
+				headers[ 'content-security-policy' ] = "style-src 'self'";
+			}
+			await route.fulfill( { response, headers } );
+		} );
+	}
+
+	/**
+	 * Stop serving pages with the strict CSP.
+	 *
+	 * @return {Promise<void>} Resolves once routes are removed
+	 */
+	public stopServingWithStrictStyleCsp(): Promise<void> {
+		return this.page.unrouteAll( { behavior: 'ignoreErrors' } );
+	}
+
+	/**
+	 * Whether the page blocks inline `<style>` elements, i.e. the strict CSP is in effect.
+	 *
+	 * @return {Promise<boolean>} Inline styles blocked
+	 */
+	public isInlineStyleBlocked(): Promise<boolean> {
+		return this.page.evaluate( () => {
+			const style = document.createElement( 'style' );
+			style.textContent = '#sdt-csp-probe { position: fixed; }';
+			const probe = document.createElement( 'div' );
+			probe.id = 'sdt-csp-probe';
+			document.head.append( style );
+			document.body.append( probe );
+			const blocked = getComputedStyle( probe ).position !== 'fixed';
+			style.remove();
+			probe.remove();
+			return blocked;
+		} );
+	}
+
+	/**
+	 * The panel's computed `position`: `fixed` only when its own styles applied (an unstyled dialog is `absolute`).
+	 *
+	 * @return {Promise<string>} CSS position
+	 */
+	public panelPosition(): Promise<string> {
+		return this.panel.evaluate( ( panel ) => getComputedStyle( panel ).position );
+	}
+
+	/**
 	 * Live region the panel announces results in.
 	 *
 	 * @return {Locator} Live region
