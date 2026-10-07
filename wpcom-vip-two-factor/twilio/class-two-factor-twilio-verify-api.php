@@ -65,7 +65,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 		) );
 
 		if ( is_wp_error( $response ) ) {
-			$masked_number = substr( $this->phone, 0, ( (int) strlen( $this->phone ) / 1.5 ) ) . 'xxx';
+			$masked_number = substr( $this->phone, 0, (int) ( strlen( $this->phone ) / 1.5 ) ) . 'xxx';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', esc_html( $masked_number ), esc_html( $response->get_error_message() ) ), E_USER_WARNING );
 
@@ -81,7 +81,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 
 		$status_code = wp_remote_retrieve_response_code( $response );
 		if ( $status_code >= 300 ) {
-			$masked_number = substr( $this->phone, 0, ( (int) strlen( $this->phone ) / 1.5 ) ) . 'xxx';
+			$masked_number = substr( $this->phone, 0, (int) ( strlen( $this->phone ) / 1.5 ) ) . 'xxx';
 
 			if ( $body_data && isset( $body_data->code ) && isset( $body_data->message ) ) {
 				$error_message = sprintf( 'Twilio Verify API responded with error (%d): %s', $body_data->code, $body_data->message );
@@ -122,7 +122,7 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 
 		if ( empty( $verification_sid ) ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( sprintf( 'Could not find a Twilio Verify SID for user %d to verify the 2FA code ', $this->user_id, $verification_sid ) );
+			error_log( sprintf( 'Could not find a Twilio Verify SID for user %d to verify the 2FA code ', $this->user_id ) );
 			return false;
 		}
 
