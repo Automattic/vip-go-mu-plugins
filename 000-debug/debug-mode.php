@@ -78,10 +78,9 @@ function enable_debug_mode() {
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
 	}
 
-	// Without a path, browsers scope the cookies to the current directory, so Debug Mode wouldn't follow you around the site.
-	$ttl = time() + COOKIE_TTL;
-	setcookie( 'vip-go-cb', '1', $ttl, '/' );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '1', $ttl, '/' );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() + COOKIE_TTL );
+	setcookie( 'vip-go-cb', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'enable' ] );
 
@@ -91,14 +90,30 @@ function enable_debug_mode() {
 function disable_debug_mode() {
 	nocache_headers();
 
-	// Use the same path as enable_debug_mode(), or the browser keeps the original cookies.
-	$ttl = time() - COOKIE_TTL;
-	setcookie( 'vip-go-cb', '', $ttl, '/' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '', $ttl, '/' );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() - COOKIE_TTL );
+	setcookie( 'vip-go-cb', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'disable' ] );
 
 	redirect_back();
+}
+
+/**
+ * Shared so enable and disable always target the same cookies.
+ *
+ * @param int $expires Unix timestamp; in the past to clear the cookies.
+ * @return array
+ */
+function get_debug_mode_cookie_options( $expires ) {
+	return [
+		'expires'  => $expires,
+		// Without a path, browsers scope the cookies to the current directory, so Debug Mode wouldn't follow you around the site.
+		'path'     => '/',
+		'secure'   => is_ssl(),
+		// Only PHP and the edge cache read these cookies.
+		'httponly' => true,
+	];
 }
 
 /**
@@ -170,7 +185,8 @@ function add_debug_admin_bar_styles() {
 	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item {
 		padding: 0 10px;
 		background: rgb(194,156,105);
-		color: #fff;
+		/* Dark text keeps WCAG AA contrast (4.5:1) on both gold backgrounds; white doesn't. */
+		color: #1d2327;
 		font-size: 11px;
 		font-weight: 600;
 		/* Core's line-height is relative to its 13px font; match the 32px item height instead. */
@@ -182,7 +198,7 @@ function add_debug_admin_bar_styles() {
 	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:hover,
 	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:focus {
 		background: rgb(168,132,84);
-		color: #fff;
+		color: #1d2327;
 	}
 
 	/* Core's `#wpadminbar *` reset would otherwise restyle the suffix. */
@@ -236,7 +252,7 @@ function show_debug_flag() {
 
 	#a8c-debug-flag a {
 		text-transform: uppercase;
-		color: #fff;
+		color: #1d2327;
 		letter-spacing: 0.2em;
 		font-size: 9px;
 		font-weight: bold;
