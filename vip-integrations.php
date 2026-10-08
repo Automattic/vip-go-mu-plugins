@@ -62,6 +62,10 @@ if ( file_exists( __DIR__ . '/integrations/content-for-agents.php' ) ) {
 	require_once __DIR__ . '/integrations/content-for-agents.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/clipisode.php' ) ) {
+	require_once __DIR__ . '/integrations/clipisode.php';
+}
+
 if ( file_exists( __DIR__ . '/integrations/shareadraft.php' ) ) {
 	require_once __DIR__ . '/integrations/shareadraft.php';
 }
@@ -107,6 +111,10 @@ if ( class_exists( __NAMESPACE__ . '\\ConnectorControlsIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\ContentForAgentsIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new ContentForAgentsIntegration( 'content-for-agents' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ClipisodeIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ClipisodeIntegration( 'clipisode' ) );
 }
 
 if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
