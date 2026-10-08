@@ -13,13 +13,6 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class ShareadraftIntegration extends Integration {
-	/**
-	 * The version of Share a Draft to load, defaults to the latest version.
-	 *
-	 * @var string
-	 */
-	public string $version = 'latest';
-
 	public function is_loaded(): bool {
 		return defined( 'VIP_SHAREADRAFT_LOADED' );
 	}
@@ -36,10 +29,19 @@ class ShareadraftIntegration extends Integration {
 		if ( ! defined( 'VIP_SHAREADRAFT_CONFIG' ) ) {
 			define( 'VIP_SHAREADRAFT_CONFIG', $configs );
 		}
+	}
 
-		if ( isset( $configs['version'] ) && is_string( $configs['version'] ) && '' !== $configs['version'] ) {
-			$this->version = $configs['version'];
-		}
+	/**
+	 * Returns whether the current WordPress version meets the bundled plugin requirement.
+	 */
+	public function is_supported_wp_version( string $plugin_file ): bool {
+		global $wp_version;
+
+		$requirements = get_file_data( $plugin_file, [
+			'wp' => 'Requires at least',
+		] );
+
+		return empty( $requirements['wp'] ) || version_compare( $wp_version, $requirements['wp'], '>=' );
 	}
 
 	public function load(): void {
@@ -49,50 +51,32 @@ class ShareadraftIntegration extends Integration {
 				return;
 			}
 
-			$versions = $this->get_versions();
-
-			if ( empty( $versions ) ) {
+			$latest_directory = $this->get_latest_version();
+			if ( null === $latest_directory ) {
 				$this->is_active = false;
 				return;
 			}
 
-			$selected_version_folder = $this->get_selected_version_folder( $versions );
-			$load_path               = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $selected_version_folder . '/shareadraft.php';
+			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/shareadraft.php';
+			if ( ! file_exists( $load_path ) || ! $this->is_supported_wp_version( $load_path ) ) {
+				$this->is_active = false;
+				return;
+			}
 
-			if ( file_exists( $load_path ) ) {
-				require_once $load_path;
-			} else {
+			require_once $load_path;
+
+			if ( ! $this->is_loaded() ) {
 				$this->is_active = false;
 			}
 		}, 1 );
 	}
 
 	/**
-	 * Get the available versions of Share a Draft in descending order.
+	 * Get the latest bundled Share a Draft release.
 	 *
-	 * @return array<string,string>
+	 * @return string|null The directory for the latest version, or null when unavailable.
 	 */
-	public function get_versions(): array {
-		return get_available_versions( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'shareadraft', 'shareadraft.php' );
-	}
-
-	/**
-	 * Get the folder name for the selected version of the integration.
-	 *
-	 * @param array<string,string> $versions Available versions keyed by folder name.
-	 * @return string The selected folder name.
-	 */
-	public function get_selected_version_folder( array $versions ): string {
-		if ( 'latest' === $this->version ) {
-			return array_key_first( $versions );
-		}
-
-		$desired_version = array_search( $this->version, $versions, true );
-
-		if ( false !== $desired_version ) {
-			return $desired_version;
-		}
-
-		return array_key_first( $versions );
+	public function get_latest_version(): ?string {
+		return get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'shareadraft', 'shareadraft.php' );
 	}
 }

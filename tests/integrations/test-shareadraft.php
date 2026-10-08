@@ -26,7 +26,7 @@ class Shareadraft_Integration_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider data_multisite_config
 	 */
-	public function test_configure_merges_environment_and_network_site_config_for_multisite( array $env_config, ?array $site_config, array $expected, string $expected_version ): void {
+	public function test_configure_merges_environment_and_network_site_config_for_multisite( array $env_config, ?array $site_config, array $expected ): void {
 		$blog_2_id = $this->switch_to_secondary_blog();
 
 		$network_sites = [];
@@ -53,14 +53,12 @@ class Shareadraft_Integration_Test extends WP_UnitTestCase {
 		$integration->configure();
 
 		$this->assertSame( $expected, constant( 'VIP_SHAREADRAFT_CONFIG' ) );
-		$this->assertSame( $expected_version, $integration->version );
 	}
 
 	public static function data_multisite_config(): array {
 		$env_config = [
 			'ip_allowlist'           => '192.0.2.0/24',
 			'dead_link_grace_period' => '1814400',
-			'version'                => '2.0',
 		];
 
 		return [
@@ -68,20 +66,14 @@ class Shareadraft_Integration_Test extends WP_UnitTestCase {
 				$env_config,
 				null,
 				$env_config,
-				'2.0',
 			],
 			'network site values win for duplicate keys' => [
 				$env_config,
-				[
-					'ip_allowlist' => '198.51.100.0/24',
-					'version'      => '2.1',
-				],
+				[ 'ip_allowlist' => '198.51.100.0/24' ],
 				[
 					'ip_allowlist'           => '198.51.100.0/24',
 					'dead_link_grace_period' => '1814400',
-					'version'                => '2.1',
 				],
-				'2.1',
 			],
 		];
 	}
