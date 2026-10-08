@@ -7,6 +7,14 @@
 
 namespace Automattic\VIP\Integrations;
 
+// Deploys are non-atomic, so this file can arrive before the trait it uses. Without the trait, skip
+// declaring the class, which leaves the integration unregistered until the deploy finishes.
+if ( ! file_exists( __DIR__ . '/bundled-plugin-loader.php' ) ) {
+	return;
+}
+
+require_once __DIR__ . '/bundled-plugin-loader.php';
+
 /**
  * Loads the Clipisode integration.
  *

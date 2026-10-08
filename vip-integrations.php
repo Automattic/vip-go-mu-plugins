@@ -17,7 +17,6 @@ defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
 require_once __DIR__ . '/integrations/integration-utils.php';
-require_once __DIR__ . '/integrations/bundled-plugin-loader.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
 require_once __DIR__ . '/integrations/integration-vip-config.php';
