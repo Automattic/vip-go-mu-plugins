@@ -13,6 +13,8 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class ShareadraftIntegration extends Integration {
+	use LoadsLatestBundledPlugin;
+
 	public function is_loaded(): bool {
 		return defined( 'VIP_SHAREADRAFT_LOADED' );
 	}
@@ -31,44 +33,8 @@ class ShareadraftIntegration extends Integration {
 		}
 	}
 
-	/**
-	 * Returns whether the current WordPress version meets the bundled plugin requirement.
-	 */
-	public function is_supported_wp_version( string $plugin_file ): bool {
-		global $wp_version;
-
-		$requirements = get_file_data( $plugin_file, [
-			'wp' => 'Requires at least',
-		] );
-
-		return empty( $requirements['wp'] ) || version_compare( $wp_version, $requirements['wp'], '>=' );
-	}
-
 	public function load(): void {
-		// Wait until plugins_loaded to give precedence to the plugin in the customer repo.
-		add_action( 'plugins_loaded', function (): void {
-			if ( $this->is_loaded() ) {
-				return;
-			}
-
-			$latest_directory = $this->get_latest_version();
-			if ( null === $latest_directory ) {
-				$this->is_active = false;
-				return;
-			}
-
-			$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $latest_directory . '/shareadraft.php';
-			if ( ! file_exists( $load_path ) || ! $this->is_supported_wp_version( $load_path ) ) {
-				$this->is_active = false;
-				return;
-			}
-
-			require_once $load_path;
-
-			if ( ! $this->is_loaded() ) {
-				$this->is_active = false;
-			}
-		}, 1 );
+		$this->load_latest_bundled_plugin( 'shareadraft.php' );
 	}
 
 	/**
