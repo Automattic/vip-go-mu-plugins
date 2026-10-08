@@ -3,6 +3,7 @@
 namespace Automattic\VIP\Admin_Notice;
 
 use PHPUnit\Framework\MockObject\MockObject;
+use WP_HTML_Tag_Processor;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 
@@ -44,8 +45,27 @@ class Admin_Notice_Class_Test extends WP_UnitTestCase {
 	public function test__display(): void {
 		$message = '<a href="https://example.org/" title="Allowed" target="_blank" onclick="bad()">Allowed link</a><script>bad-script-text</script><img src="x" onerror="bad()">';
 		$notice  = new Admin_Notice( $message );
-		$this->expectOutputString( '<div data-vip-admin-notice="" class="notice notice-info vip-notice"><p><a href="https://example.org/" title="Allowed" target="_blank">Allowed link</a>bad-script-text</p></div>' );
+
+		ob_start();
 		$notice->display();
+		$output = ob_get_clean();
+
+		// WordPress 7.2 reimplements wp_kses() with the HTML API, which reorders attributes and drops
+		// <script> contents, so check what the notice must allow and strip rather than the exact markup.
+		$this->assertStringStartsWith( '<div data-vip-admin-notice="" class="notice notice-info vip-notice"><p>', $output );
+		$this->assertStringEndsWith( '</p></div>', $output );
+		$this->assertStringContainsString( '>Allowed link</a>', $output );
+		$this->assertStringNotContainsString( '<script', $output );
+		$this->assertStringNotContainsString( '<img', $output );
+
+		$processor = new WP_HTML_Tag_Processor( $output );
+		$this->assertTrue( $processor->next_tag( 'a' ) );
+		$attributes = $processor->get_attribute_names_with_prefix( '' );
+		sort( $attributes );
+		$this->assertSame( [ 'href', 'target', 'title' ], $attributes );
+		$this->assertSame( 'https://example.org/', $processor->get_attribute( 'href' ) );
+		$this->assertSame( 'Allowed', $processor->get_attribute( 'title' ) );
+		$this->assertSame( '_blank', $processor->get_attribute( 'target' ) );
 	}
 
 	/**
