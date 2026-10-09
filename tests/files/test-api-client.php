@@ -110,7 +110,21 @@ class API_Client_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $actual );
 	}
 
-	public function test__call_api_invalid_path() {
+	public function get_invalid_path_methods(): array {
+		return [
+			'read'   => [ 'GET' ],
+			'create' => [ 'POST' ],
+			'update' => [ 'PUT' ],
+			'delete' => [ 'DELETE' ],
+		];
+	}
+
+	/**
+	 * Rejected paths must never reach the HTTP API, including for write operations.
+	 *
+	 * @dataProvider get_invalid_path_methods
+	 */
+	public function test__call_api_invalid_path( string $method ) {
 		$expected_error_code = 'invalid-path';
 		$this->mock_http_response( [] ); // don't care about the response
 
@@ -118,13 +132,14 @@ class API_Client_Test extends WP_UnitTestCase {
 
 		$actual_response = $call_api_method->invokeArgs( $this->api_client, [
 			'/path/to/image.jpg',
-			'GET',
+			$method,
 		] );
 
 		$this->assertWPError( $actual_response, 'Expected WP_Error object to be returned' );
 
 		$actual_error_code = $actual_response->get_error_code();
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Invalid error code returned' );
+		$this->assertSame( [], $this->http_requests, 'Rejected paths must not dispatch an HTTP request.' );
 	}
 
 	public function test__call_api() {
