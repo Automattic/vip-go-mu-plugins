@@ -311,6 +311,38 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertTrue( $current_bail );
 	}
 
+	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
+		$term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+		$tt_id = get_term( $term_id, 'category' )->term_taxonomy_id;
+
+		// Treat every term as large, so the test doesn't need thousands of posts
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
+
+		$max_count->setValue( null, $original );
+
+		// ElasticPress should not have loaded and queued the term's posts; the cron job handles them instead
+		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
+		$this->assertNotFalse( wp_next_scheduled( Queue\Cron::TERM_UPDATE_CRON_EVENT_NAME, [ $tt_id ] ) );
+	}
+
+	public function test_offload_term_indexing_to_queue_keeps_elasticpress_sync_for_small_terms() {
+		$term_id = self::factory()->category->create();
+		$post_id = self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
+
+		// Small terms are still queued by ElasticPress, then offloaded to the async queue
+		$this->assertArrayHasKey( $post_id, $this->sync_manager->get_sync_queue() );
+		$this->assertTrue( apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' ) );
+	}
+
 	public function test_update_job() {
 		$this->queue->queue_object( 1, 'post' );
 
