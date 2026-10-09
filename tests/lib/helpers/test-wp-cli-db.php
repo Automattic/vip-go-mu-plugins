@@ -214,6 +214,9 @@ class WP_Cli_Db_Test extends TestCase {
 			'cli alone'           => [ [ 'db', 'cli' ], 'The `wp db cli` subcommand is not permitted for this site.' ],
 			'cli with extra args' => [ [ 'db', 'cli', 'whatever' ], 'The `wp db cli` subcommand is not permitted for this site.' ],
 			'query alone'         => [ [ 'db', 'query' ], 'Please provide the database query as a part of the command.' ],
+			'drop query'          => [ [ 'db', 'query', 'DROP TABLE wp_example' ], 'This query is disallowed.' ],
+			'create query'        => [ [ 'db', 'query', 'CREATE TABLE wp_example (id INT)' ], 'This query is disallowed.' ],
+			'truncate query'      => [ [ 'db', 'query', 'TrUnCaTe TABLE wp_example' ], 'This query is disallowed.' ],
 		];
 	}
 
@@ -230,6 +233,7 @@ class WP_Cli_Db_Test extends TestCase {
 	public function get_test_data__allowed_subcommands() {
 		return [
 			'read query'             => [ [ 'db', 'query', 'SELECT * FROM crypto_wallet_keys' ] ],
+			'read query with flags'  => [ [ 'db', 'query', 'SELECT 1', '--skip-column-names' ] ],
 			'query with extra input' => [ [ 'db', 'query', 'whatever' ] ],
 		];
 	}
