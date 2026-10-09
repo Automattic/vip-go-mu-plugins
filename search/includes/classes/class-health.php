@@ -1046,16 +1046,16 @@ class Health {
 		$diff = [];
 
 		if ( $indexable->index_exists() ) {
-			$index_name      = $indexable->get_index_name();
-			$settings        = $this->elasticsearch->get_index_settings( $index_name );
-			$actual_settings = $settings[ $index_name ]['settings'] ?? [];
+			$index_name = $indexable->get_index_name();
+			$settings   = $this->elasticsearch->get_index_settings( $index_name );
 
-			if ( is_wp_error( $actual_settings ) ) {
+			if ( is_wp_error( $settings ) ) {
 				$this->search->versioning->reset_current_version_number( $indexable );
 
-				return $actual_settings;
+				return $settings;
 			}
 
+			$actual_settings  = $settings[ $index_name ]['settings'] ?? [];
 			$mapping          = $indexable->generate_mapping();
 			$desired_settings = $mapping['settings'];
 
