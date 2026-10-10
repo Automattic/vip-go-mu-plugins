@@ -36,13 +36,18 @@ function init_debug_mode() {
 	}
 }
 
-function is_debug_mode_enabled() {
+function has_debug_mode_cookies() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_debug   = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+
+	return $is_nocache && $is_debug;
+}
+
+function is_debug_mode_enabled() {
 	$is_proxied = \is_proxied_request();
 	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
-	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
+	if ( ( has_debug_mode_cookies() && $is_proxied ) || $is_local ) {
 		return true;
 	}
 
@@ -73,9 +78,9 @@ function enable_debug_mode() {
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
 	}
 
-	$ttl = time() + COOKIE_TTL;
-	setcookie( 'vip-go-cb', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() + COOKIE_TTL );
+	setcookie( 'vip-go-cb', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'enable' ] );
 
@@ -85,13 +90,30 @@ function enable_debug_mode() {
 function disable_debug_mode() {
 	nocache_headers();
 
-	$ttl = time() - COOKIE_TTL;
-	setcookie( 'vip-go-cb', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() - COOKIE_TTL );
+	setcookie( 'vip-go-cb', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'disable' ] );
 
 	redirect_back();
+}
+
+/**
+ * Shared so enable and disable always target the same cookies.
+ *
+ * @param int $expires Unix timestamp; in the past to clear the cookies.
+ * @return array
+ */
+function get_debug_mode_cookie_options( $expires ) {
+	return [
+		'expires'  => $expires,
+		// Without a path, browsers scope the cookies to the current directory, so Debug Mode wouldn't follow you around the site.
+		'path'     => '/',
+		'secure'   => is_ssl(),
+		// Only PHP and the edge cache read these cookies.
+		'httponly' => true,
+	];
 }
 
 /**
@@ -121,43 +143,188 @@ function enable_debug_tools() {
 		add_filter( 'show_admin_bar', '__return_true', PHP_INT_MAX );
 	}, 9999 );
 
+	// Local environments get the debug tools without entering Debug Mode, so only flag it when someone did.
+	if ( ! has_debug_mode_cookies() ) {
+		return;
+	}
+
+	// Show the flag in the admin bar so it doesn't cover page content.
+	add_action( 'admin_bar_init', __NAMESPACE__ . '\add_debug_admin_bar_styles' );
+	add_action( 'admin_bar_menu', __NAMESPACE__ . '\add_debug_admin_bar_node' );
+
+	// Fall back to a floating flag where there's no admin bar (e.g. wp-login.php).
 	add_action( 'wp_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 	add_action( 'login_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
 }
 
-function show_debug_flag() {
-	$disable_url = add_query_arg( [
+function get_disable_debug_mode_url() {
+	return add_query_arg( [
 		'a8c-debug' => 'false',
 		// Remove the cache-buster, if set.
 		'random'    => false,
 	] );
+}
+
+/**
+ * @param WP_Admin_Bar $wp_admin_bar
+ */
+function add_debug_admin_bar_node( $wp_admin_bar ) {
+	$wp_admin_bar->add_node( [
+		'id'     => 'a8c-debug',
+		'parent' => 'top-secondary',
+		// The hidden text tells screen readers what clicking does; the visible label only says Debug Mode is on.
+		'title'  => 'A8C<span class="a8c-debug-suffix"> Debug</span><span class="screen-reader-text">, turn off Debug Mode</span>',
+		'href'   => get_disable_debug_mode_url(),
+		'meta'   => [
+			'title' => 'Turn off Debug Mode',
+		],
+	] );
+}
+
+function add_debug_admin_bar_styles() {
+	$css = <<<'CSS'
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item {
+		padding: 0 10px;
+		background: rgb(194,156,105);
+		/* Dark text keeps WCAG AA contrast (4.5:1) on both gold backgrounds; white doesn't. */
+		color: #1d2327;
+		font-size: 11px;
+		font-weight: 600;
+		/* Core's line-height is relative to its 13px font; match the 32px item height instead. */
+		line-height: 32px;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+	}
+
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:hover,
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:focus {
+		background: rgb(168,132,84);
+		color: #1d2327;
+	}
+
+	/* Core's admin bar outline is transparent, and the darker gold alone is too subtle a focus cue. */
+	#wpadminbar #wp-admin-bar-a8c-debug > .ab-item:focus-visible {
+		outline: 2px solid #1d2327;
+		outline-offset: -4px;
+	}
+
+	/* Core's `#wpadminbar *` reset would otherwise restyle the suffix. */
+	#wpadminbar #wp-admin-bar-a8c-debug .a8c-debug-suffix {
+		font: inherit;
+		letter-spacing: inherit;
+		text-transform: inherit;
+	}
+
+	@media screen and (max-width: 782px) {
+		/* Core hides non-default top-level items on small screens. */
+		#wpadminbar li#wp-admin-bar-a8c-debug {
+			display: block;
+		}
+
+		#wpadminbar #wp-admin-bar-a8c-debug > .ab-item {
+			line-height: 46px;
+		}
+
+		/* Keep the toolbar on one row next to core's 52px icons. */
+		#wpadminbar #wp-admin-bar-a8c-debug .a8c-debug-suffix {
+			display: none;
+		}
+	}
+	CSS;
+
+	wp_add_inline_style( 'admin-bar', $css );
+}
+
+function show_debug_flag() {
+	// The admin bar already shows the flag.
+	if ( did_action( 'wp_after_admin_bar_render' ) ) {
+		return;
+	}
 
 	?>
 	<div id="a8c-debug-flag">
-		<a href="<?php echo esc_url( $disable_url ); ?>" title="Click to disable Debug Mode">A8C Debug</a>
+		<a href="<?php echo esc_url( get_disable_debug_mode_url() ); ?>" title="Turn off Debug Mode">A8C <span class="a8c-debug-flag-label">Debug</span><span class="a8c-debug-flag-sr">, turn off Debug Mode</span></a>
 	</div>
 	<style>
+	/* A small tab docked to the bottom-left corner, so it covers as little of the page as possible. */
 	#a8c-debug-flag {
-		z-index: 9991;
-		font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
-		background: rgb(194,156,105);
-		bottom: 145px;
-		left: 20px;
 		position: fixed;
-		width: 93px;
-		height: 28px;
+		bottom: 0;
+		left: 0;
+		z-index: 9991;
+		margin: 0;
+		padding: 0;
 	}
 
 	#a8c-debug-flag a {
-		text-transform: uppercase;
-		color: #fff;
-		letter-spacing: 0.2em;
-		font-size: 9px;
-		font-weight: bold;
-		text-align: center;
-		width: 100%;
-		display: block;
+		display: flex;
+		align-items: center;
+		box-sizing: border-box;
+		/* min-height, not height, so the background grows with zoomed text. */
+		min-height: 24px;
+		padding: 0 10px;
+		background: rgb(194,156,105);
+		color: #1d2327;
+		font: bold 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		letter-spacing: 0.05em;
 		text-decoration: none;
+		white-space: nowrap;
+		border-top-right-radius: 6px;
+	}
+
+	#a8c-debug-flag a:hover,
+	#a8c-debug-flag a:focus {
+		background: rgb(168,132,84);
+		color: #1d2327;
+	}
+
+	/* Drawn inside the tab: an outer ring would be clipped by the viewport edges, and themes often remove focus styles. */
+	#a8c-debug-flag a:focus-visible {
+		outline: 2px solid #1d2327;
+		outline-offset: -4px;
+	}
+
+	/* Themes may not define .screen-reader-text, so use our own. */
+	#a8c-debug-flag .a8c-debug-flag-sr {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	/*
+	 * Collapsed to "A8C" until hovered or focused. Hidden with max-width, not display, so screen readers still hear the label.
+	 * Uppercased in CSS so screen readers say "Debug" rather than spelling it out.
+	 */
+	#a8c-debug-flag .a8c-debug-flag-label {
+		max-width: 0;
+		margin-left: 0;
+		overflow: hidden;
+		text-transform: uppercase;
+		transition: max-width 0.15s ease-out, margin-left 0.15s ease-out;
+	}
+
+	#a8c-debug-flag a:hover .a8c-debug-flag-label,
+	#a8c-debug-flag a:focus .a8c-debug-flag-label {
+		max-width: 10em;
+		margin-left: 0.6em;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		#a8c-debug-flag .a8c-debug-flag-label {
+			transition: none;
+		}
+	}
+
+	@media print {
+		#a8c-debug-flag {
+			display: none;
+		}
 	}
 	</style>
 	<?php

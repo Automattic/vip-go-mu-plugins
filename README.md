@@ -71,3 +71,5 @@ when Jetpack is unavailable. See [local import testing](docs/testing.md#local-sq
 
 For the isolated configuration sync runtime regression, see
 [configuration sync testing](docs/testing.md#configuration-sync-runtime).
+
+Jetpack SSO status is stored in WordPress session metadata. Existing sessions need a fresh SSO login to receive the flags; see [SSO session metadata](docs/architecture.md#jetpack-sso-session-metadata).
