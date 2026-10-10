@@ -859,6 +859,26 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertNotSame( $this->object_cache->key( 'user  name', 'users' ), $this->object_cache->key( 'user name', 'users' ) );
 	}
 
+	public function test_get_stats_reports_keys_as_passed() {
+		$keys   = [ 'user name', "tab\tname", '50%', 'literal%SP%marker', 'already%25escaped' ];
+		$prefix = $this->object_cache->blog_prefix . ':stats-keys:';
+
+		$this->object_cache->get_multiple( $keys, 'stats-keys' );
+
+		$stats    = $this->object_cache->get_stats();
+		$reported = array_map(
+			fn( $key ) => substr( $key, strlen( $prefix ) ),
+			$stats['operations']['get_multiple'][0]['key']
+		);
+
+		self::assertSame( [ 'user name', 'tab name', '50%', 'literal%SP%marker', 'already%25escaped' ], $reported );
+
+		// A reported key passed back to the cache API must map to the same memcached key, or it changes on every round trip.
+		foreach ( $keys as $index => $key ) {
+			self::assertSame( $this->object_cache->key( $key, 'stats-keys' ), $this->object_cache->key( $reported[ $index ], 'stats-keys' ) );
+		}
+	}
+
 	public function test_non_persistent_themes_group() {
 		$key        = 'theme-test-key';
 		$group      = 'themes';

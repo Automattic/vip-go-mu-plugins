@@ -115,6 +115,9 @@ class Stats {
 	 * We want to strip the `key_salt:flush_number` part to not leak the memcached keys.
 	 * If `key_salt` is set we strip `'key_salt:flush_number`, otherwise just strip the `flush_number` part.
 	 *
+	 * We also undo the escaping done in WP_Object_Cache::key(), so each key is reported as the caller
+	 * passed it.
+	 *
 	 * @param string|string[] $keys
 	 * @return string|string[]
 	 */
@@ -133,7 +136,13 @@ class Stats {
 			// Strip off the flush number.
 			$flush_piece    = strpos( $value, ':', $offset );
 			$start          = false === $flush_piece ? $offset : $flush_piece;
-			$keys[ $index ] = substr( $value, $start + 1 );
+			$keys[ $index ] = strtr(
+				substr( $value, $start + 1 ),
+				[
+					'%SP%' => ' ',
+					'%25'  => '%',
+				]
+			);
 		}
 
 		if ( 1 === count( $keys ) ) {
