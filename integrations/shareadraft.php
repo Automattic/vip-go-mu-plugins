@@ -28,13 +28,8 @@ class ShareadraftIntegration extends Integration {
 	}
 
 	public function configure(): void {
-		$configs = $this->get_env_config();
-
-		// Network sites inherit the environment config, so a site-wide IP allowlist still applies to a
-		// network site that has no config of its own.
-		if ( is_multisite() ) {
-			$configs = array_merge( $configs, $this->get_network_site_config() );
-		}
+		// Share a Draft is configured per WordPress site, so on multisite each network site has its own config.
+		$configs = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
 
 		if ( ! defined( 'VIP_SHAREADRAFT_CONFIG' ) ) {
 			define( 'VIP_SHAREADRAFT_CONFIG', $configs );
