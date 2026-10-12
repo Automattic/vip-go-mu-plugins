@@ -66,6 +66,10 @@ if ( file_exists( __DIR__ . '/integrations/clipisode.php' ) ) {
 	require_once __DIR__ . '/integrations/clipisode.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/shareadraft.php' ) ) {
+	require_once __DIR__ . '/integrations/shareadraft.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -111,6 +115,10 @@ if ( class_exists( __NAMESPACE__ . '\\ContentForAgentsIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\ClipisodeIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new ClipisodeIntegration( 'clipisode' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ShareadraftIntegration( 'shareadraft' ) );
 }
 
 // @codeCoverageIgnoreEnd
