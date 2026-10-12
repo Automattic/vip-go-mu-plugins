@@ -25,7 +25,7 @@ function vip_non_prod_enqueue_scripts() {
 
 	if ( apply_filters( 'vip_show_non_prod_bar', true ) ) {
 		wp_register_style( 'vip-non-prod-bar', plugins_url( '/assets/nonprod.css', __FILE__ ), [], '1.0' );
-		wp_register_script( 'vip-non-prod-bar', plugins_url( '/assets/nonprod.js', __FILE__ ), [], '1.0', true );
+		wp_register_script( 'vip-non-prod-bar', plugins_url( '/assets/nonprod.js', __FILE__ ), [], '1.1', true );
 
 		wp_enqueue_style( 'vip-non-prod-bar' );
 		wp_enqueue_script( 'vip-non-prod-bar' );
