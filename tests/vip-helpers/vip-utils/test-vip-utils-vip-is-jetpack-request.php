@@ -3,8 +3,12 @@
 use Automattic\VIP\Utils\Jetpack_IP_Manager;
 
 class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends WP_UnitTestCase {
+	private $server_backup;
+
 	public function setUp(): void {
 		parent::setUp();
+
+		$this->server_backup = $_SERVER;
 
 		add_filter( 'pre_http_request', function ( $response, $args, $url ) {
 			if ( Jetpack_IP_Manager::ENDPOINT === $url ) {
@@ -21,6 +25,13 @@ class WPCOM_VIP_Utils_Vip_Is_Jetpack_Request_Test extends WP_UnitTestCase {
 
 			return $response;
 		}, 10, 3 );
+	}
+
+	public function tearDown(): void {
+		// Don't leak the Jetpack user agent and IPs into later tests
+		$_SERVER = $this->server_backup;
+
+		parent::tearDown();
 	}
 
 	public function test__vip_is_jetpack_request__shortcut() {

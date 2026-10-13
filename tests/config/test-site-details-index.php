@@ -10,15 +10,17 @@ namespace Automattic\VIP\Config;
 
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_static_property_as_public;
+
 require_once __DIR__ . '/../../config/class-site-details-index.php';
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
+
+		// Start without a singleton, so instance() creates (and hooks) a fresh one with the requested timestamp.
+		$this->reset_site_details_index();
+
 		add_filter( 'pre_http_request', function ( $result ) {
 			if ( false === $result ) {
 				$result = [
@@ -34,6 +36,17 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 			return $result;
 		}, 10 );
+	}
+
+	public function tearDown(): void {
+		// The singleton's filter is removed when hooks are restored, so don't leak the instance either.
+		$this->reset_site_details_index();
+
+		parent::tearDown();
+	}
+
+	private function reset_site_details_index(): void {
+		get_static_property_as_public( Site_Details_Index::class, 'instance' )->setValue( null, null );
 	}
 
 	public function test__data_filter_should_not_be_hooked_if_no_init() {

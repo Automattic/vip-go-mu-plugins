@@ -2,7 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
-use Automattic\VIP\Proxy\Proxy_Verification_Helper;
+use Automattic\Test\Constant_Mocker;
 
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 
@@ -16,8 +16,13 @@ class Fix_Remote_Address_With_Verification_Key_Test extends IP_Forward_Test_Base
 	public function setUp(): void {
 		parent::setUp();
 
-		// Mocks `define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' )`
-		Proxy_Verification_Helper::set_proxy_verification_key( 'valid-key' );
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+	}
+
+	public function tearDown(): void {
+		Constant_Mocker::clear();
+		parent::tearDown();
 	}
 
 	public function test__invalid_ip() {

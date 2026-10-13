@@ -14,6 +14,8 @@ namespace Automattic\VIP\Integrations;
 use ErrorException;
 use WP_UnitTestCase;
 
+// phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.directory_mkdir, WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Temporary fixtures under get_temp_dir().
+
 // Define mocks for PHP built-in functions in the same namespace
 function is_dir( $dir ) {
 	// Mock implementation for different test cases
@@ -38,7 +40,7 @@ function is_dir( $dir ) {
 		return true;
 	}
 	
-	return false;
+	return \is_dir( $dir );
 }
 
 function scandir( $dir ) {
@@ -46,7 +48,7 @@ function scandir( $dir ) {
 	global $mock_filesystem_state;
 
 	if ( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' !== $dir ) {
-		return [ '.', '..' ];
+		return \scandir( $dir );
 	}
 
 	if ( isset( $mock_filesystem_state ) && 'empty' === $mock_filesystem_state ) {
@@ -79,7 +81,8 @@ function file_exists( $file ) {
 	return (
 		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.2/fake.php' === $file ||
 		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-1.11/fake.php' === $file ||
-		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-2.5/fake.php' === $file
+		WPVIP_MU_PLUGIN_DIR . '/vip-integrations/fake-2.5/fake.php' === $file ||
+		\file_exists( $file )
 	);
 }
 
@@ -179,5 +182,29 @@ class VIP_Integration_Utils_Test extends WP_UnitTestCase {
 		$latest_version = get_latest_version( WPVIP_MU_PLUGIN_DIR . '/vip-integrations/', 'fake', 'fake.php' );
 
 		$this->assertNull( $latest_version );
+	}
+	/**
+	 * A real entry file must not make a directory with no matching name eligible.
+	 */
+	public function test_get_versions_rejects_real_nonmatching_directory(): void {
+		global $mock_filesystem_state;
+		$mock_filesystem_state = 'full';
+		$directory             = get_temp_dir() . 'vip-version-' . wp_generate_password( 12, false ) . '/';
+		mkdir( $directory );
+		mkdir( $directory . 'other-1.0' );
+		mkdir( $directory . 'fake-2.0' );
+		file_put_contents( $directory . 'other-1.0/fake.php', '<?php' );
+		file_put_contents( $directory . 'fake-2.0/fake.php', '<?php' );
+		try {
+			$this->assertFileExists( $directory . 'other-1.0/fake.php' );
+			$this->assertSame( [ 'fake-2.0' => '2.0' ], get_available_versions( $directory, 'fake', 'fake.php' ) );
+		} finally {
+			unlink( $directory . 'other-1.0/fake.php' );
+			unlink( $directory . 'fake-2.0/fake.php' );
+			rmdir( $directory . 'other-1.0' );
+			rmdir( $directory . 'fake-2.0' );
+			rmdir( $directory );
+			unset( $mock_filesystem_state );
+		}
 	}
 }

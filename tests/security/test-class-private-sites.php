@@ -119,4 +119,43 @@ class Private_Sites_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( '-1', $filtered );
 	}
+	/**
+	 * Privacy initialization must affect real option, Jetpack and feed hooks.
+	 */
+	public function test__privacy_restrictions_through_registered_hooks() {
+		update_option( 'blog_public', '1' );
+		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', false );
+		$public = new Private_Sites();
+		$public->init();
+		$this->assertSame( '1', get_option( 'blog_public' ) );
+		$this->assertSame( [ 'json-api', 'search' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search' ] ) );
+		$this->assertFalse( has_action( 'do_feed_rss2', [ $public, 'action_do_feed' ] ) );
+
+		Constant_Mocker::clear();
+		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', true );
+		$private = new Private_Sites();
+		$private->init();
+		$this->assertSame( '-1', get_option( 'blog_public' ) );
+		$this->assertSame( [ 'other' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search', 'other' ] ) );
+		$this->assertSame( [ 'search' => true ], apply_filters( 'jetpack_get_available_modules', [
+			'json-api' => true,
+			'search'   => true,
+		] ) );
+		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Controlled request fixture.
+		$original_agent             = $_SERVER['HTTP_USER_AGENT'] ?? null;
+		$_SERVER['HTTP_USER_AGENT'] = Private_Sites::FEEDBOT_USER_AGENT;
+		try {
+			do_action( 'do_feed_rss2', false );
+			$this->fail( 'Expected private feed request to be blocked.' );
+		} catch ( \WPDieException $error ) {
+			$this->assertSame( 'Feeds are disabled in Jetpack Private Mode', $error->getMessage() );
+		} finally {
+			if ( null === $original_agent ) {
+				unset( $_SERVER['HTTP_USER_AGENT'] );
+			} else {
+				$_SERVER['HTTP_USER_AGENT'] = $original_agent;
+			}
+		}
+		// phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+	}
 }

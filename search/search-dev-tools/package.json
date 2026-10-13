@@ -14,7 +14,7 @@
     "build/*"
   ],
   "devDependencies": {
-    "@automattic/eslint-plugin-wpvip": "^1.1.1",
+    "@automattic/eslint-plugin-wpvip": "^2.0.0",
     "@babel/core": "^8.0.1",
     "@babel/plugin-transform-react-jsx": "^8.0.1",
     "@babel/preset-env": "^8.0.2",
@@ -39,7 +39,7 @@
     "classnames": "^2.5.1",
     "clipboard": "^2.0.11",
     "pluralize": "^8.0.0",
-    "preact": "^10.26.10",
+    "preact": "^11.0.0",
     "prismjs": "^1.30.0",
     "react-simple-code-editor": "^0.14.1"
   }

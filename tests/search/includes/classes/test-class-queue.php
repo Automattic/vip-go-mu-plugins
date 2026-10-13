@@ -11,9 +11,12 @@ use stdClass;
 use WP_UnitTestCase;
 use wpdb;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+
 // phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 class Queue_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
 
 	/** @var Search */
 	private $es;
@@ -46,12 +49,14 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
+		$this->add_es_http_mock();
 
 		$indexable          = Indexables::factory()->get( 'post' );
 		$this->sync_manager = $indexable->sync_manager;
 	}
 
 	public function tearDown(): void {
+		$this->remove_es_http_mock();
 		Constant_Mocker::clear();
 		parent::tearDown();
 	}
@@ -330,12 +335,16 @@ class Queue_Test extends WP_UnitTestCase {
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertNotEquals( '2020-01-01 00:00:00', $job->start_time );
 
-		$this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+		$updated = $this->queue->update_job( $job->job_id, array( 'start_time' => '2020-01-01 00:00:00' ) );
+
+		$this->assertSame( 1, $updated );
 
 		$job = $this->queue->get_next_job_for_object( 1, 'post' );
 
 		$this->assertEquals( 'queued', $job->status );
+		$this->assertEquals( '2020-01-01 00:00:00', $job->start_time );
 	}
 
 	public function test_update_jobs() {
@@ -490,12 +499,23 @@ class Queue_Test extends WP_UnitTestCase {
 		/** @var wpdb $wpdb */
 		global $wpdb;
 
-		$object_ids = array(
-			'12',
-			'45',
-			'89',
-			'246',
-		);
+		$object_ids = self::factory()->post->create_many( 3, array(
+			'post_status'  => 'publish',
+			'post_title'   => 'Queue indexing title',
+			'post_content' => 'Queue indexing content',
+		) );
+
+		$bulk_requests = array();
+		$capture_bulk  = static function ( $preempt, $args, $url ) use ( &$bulk_requests ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$bulk_requests[] = array(
+					'url'  => $url,
+					'args' => $args,
+				);
+			}
+			return $preempt;
+		};
+		add_filter( 'pre_http_request', $capture_bulk, 10, 3 );
 
 		// Add some jobs to the queue
 		$this->queue->queue_objects( $object_ids );
@@ -514,7 +534,36 @@ class Queue_Test extends WP_UnitTestCase {
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 		$this->queue->update_jobs( $job_ids, array( 'status' => 'scheduled' ) );
 
-		$this->queue->process_jobs( $jobs );
+		try {
+			$this->queue->process_jobs( $jobs );
+		} finally {
+			remove_filter( 'pre_http_request', $capture_bulk, 10 );
+		}
+
+		$this->assertNotEmpty( $bulk_requests, 'Processing must send the documents to Elasticsearch.' );
+		foreach ( $bulk_requests as $request ) {
+			$this->assertSame( $bulk_requests[0]['args']['body'], $request['args']['body'], 'Mirrored requests must index the same documents.' );
+		}
+		$this->assertSame( 'POST', $bulk_requests[0]['args']['method'] );
+		$lines      = preg_split( '/\n+/', trim( $bulk_requests[0]['args']['body'] ) );
+		$index_name = Indexables::factory()->get( 'post' )->get_index_name();
+		$this->assertCount( 2 * count( $object_ids ), $lines );
+		$documents  = array();
+		$line_count = count( $lines );
+		for ( $offset = 0; $offset < $line_count; $offset += 2 ) {
+			$action                  = json_decode( $lines[ $offset ], true );
+			$object_id               = (int) $action['index']['_id'];
+			$documents[ $object_id ] = json_decode( $lines[ $offset + 1 ], true );
+		}
+		$indexed_ids = array_keys( $documents );
+		sort( $indexed_ids );
+		sort( $object_ids );
+		$this->assertSame( $object_ids, $indexed_ids );
+		$this->assertStringContainsString( '/' . $index_name . '/', $bulk_requests[0]['url'] );
+		foreach ( $documents as $document ) {
+			$this->assertSame( 'Queue indexing title', $document['post_title'] );
+			$this->assertSame( 'Queue indexing content', $document['post_content'] );
+		}
 
 		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
@@ -650,42 +699,6 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( $expected_deadlocked_job_ids, $deadlocked_job_ids );
 	}
-
-	public function test_free_deadlocked_jobs() {
-		$this->markTestSkipped( 'MySQL does not handle references to the same TEMPORARY table more than once in the same query, see https://dev.mysql.com/doc/refman/8.0/en/temporary-table-problems.html' );
-		$this->queue->queue_object( 1000, 'post' );
-		$this->queue->queue_object( 2000, 'post' );
-		$this->queue->queue_object( 3000, 'post' );
-
-		// Set the first job to have been scheduled in the recent past, to be flagged as deadlocked
-		$job1 = $this->queue->get_next_job_for_object( 1000, 'post' );
-
-		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME;
-
-		$this->queue->update_job( $job1->job_id, array(
-			'status'         => 'scheduled',
-			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
-		) );
-
-		// Set the second job to have been scheduled in the far past, to be flagged as deadlocked
-		$job2 = $this->queue->get_next_job_for_object( 3000, 'post' );
-
-		$deadlocked_time = time() - $this->queue::DEADLOCK_TIME - ( 3 * DAY_IN_SECONDS );
-
-		$this->queue->update_job( $job2->job_id, array(
-			'status'         => 'scheduled',
-			'scheduled_time' => gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
-		) );
-
-		// Now free the deadlocked jobs
-		$this->queue->free_deadlocked_jobs();
-
-		// And all jobs should be back to being queued
-		$count = $this->queue->count_jobs_due_now( 'post' );
-
-		$this->assertEquals( 3, $count );
-	}
-
 
 	public function test_free_deadlocked_jobs_handle_duplicates() {
 		$first_job                 = (object) [
@@ -1262,7 +1275,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( "{$filter} should be an integer.", $messages );
 	}
 
 	/**
@@ -1277,7 +1292,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_low_message, $messages );
 	}
 
 	/**
@@ -1296,7 +1313,9 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$this->setExpectedIncorrectUsage( 'add_filter' );
-		$this->queue->apply_settings();
+		$messages = $this->get_doing_it_wrong_messages( [ $this->queue, 'apply_settings' ] );
+
+		$this->assertContains( $too_high_message, $messages );
 	}
 
 	public function test__log_index_ratelimiting_start() {
@@ -1362,6 +1381,22 @@ class Queue_Test extends WP_UnitTestCase {
 			];
 		}
 		return $request;
+	}
+
+	/**
+	 * Collects the messages passed to _doing_it_wrong() while running the callback.
+	 */
+	private function get_doing_it_wrong_messages( callable $callback ): array {
+		$messages = [];
+		$listener = function ( $function_name, $message ) use ( &$messages ) {
+			$messages[] = $message;
+		};
+
+		add_action( 'doing_it_wrong_run', $listener, 10, 2 );
+		$callback();
+		remove_action( 'doing_it_wrong_run', $listener, 10 );
+
+		return $messages;
 	}
 
 	/**

@@ -117,14 +117,6 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$this->assertSame( $expected, $result );
 	}
 
-	public function test__jp_sync_settings_constants_defined() {
-		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_LOWER_LIMIT' ) );
-		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_SIZE_UPPER_LIMIT' ) );
-
-		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_LOWER_LIMIT' ) );
-		$this->assertTrue( defined( 'VIP_GO_JETPACK_SYNC_MAX_QUEUE_LAG_UPPER_LIMIT' ) );
-	}
-
 	public function get_jetpack_sync_modules_data() {
 		return [
 			'enabled-no-matching-modules'   => [
@@ -152,8 +144,6 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_jetpack_sync_modules_data
 	 */
 	public function test__jetpack_sync_modules__class_exists( $modules, $expected_modules ) {

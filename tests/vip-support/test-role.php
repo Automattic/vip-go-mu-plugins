@@ -79,6 +79,8 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		// Run initial upgrade.
 		Role::init()->maybe_upgrade_version();
 
+		$this->assertSame( Role::VERSION, (int) get_option( 'vipsupportrole_version' ) );
+
 		// Remove a role which we'll use to verify our test.
 		remove_role( Role::VIP_SUPPORT_ROLE );
 
@@ -86,7 +88,9 @@ class VIPSupportRoleTest extends WP_UnitTestCase {
 		Role::init()->maybe_upgrade_version();
 
 		// Verify that the role was not added again (because the upgrade didn't run).
-		$roles = get_editable_roles();
-		$this->assertFalse( isset( $roles[ Role::VIP_SUPPORT_ROLE ] ) );
+		$roles = wp_roles()->roles;
+		$this->assertArrayNotHasKey( Role::VIP_SUPPORT_ROLE, $roles );
+		$this->assertNull( get_role( Role::VIP_SUPPORT_ROLE ) );
+		$this->assertSame( Role::VERSION, (int) get_option( 'vipsupportrole_version' ) );
 	}
 }

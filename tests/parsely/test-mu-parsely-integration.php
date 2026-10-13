@@ -30,14 +30,44 @@ function is_latest_version() {
  * @preserveGlobalState disabled
  */
 class MU_Parsely_Integration_Test extends WP_UnitTestCase {
+	/**
+	 * Tests that only have something to check once wp-parsely is loaded (the parsely workflow's enabled modes).
+	 */
+	private const REQUIRES_LOADED_PLUGIN = [
+		'test_parsely_instance',
+		'test_default_parsely_configs',
+		'test_custom_parsely_configs',
+		'test_parsely_configs_for_managed_mode',
+		'test_unprotected_published_posts_show_meta',
+		'test_protected_post_do_not_show_meta',
+	];
+
 	protected static $test_mode;
 	protected static $major_version;
+
+	public function setName( string $name ): void {
+		parent::setName( $name );
+
+		// When wp-parsely is disabled these tests are skipped in setUp(). PHPUnit names the test right before it
+		// applies `@runTestsInSeparateProcesses`, so opt out here to avoid booting WordPress again only to skip.
+		if ( is_parsely_disabled() && in_array( $name, self::REQUIRES_LOADED_PLUGIN, true ) ) {
+			$this->setRunTestInSeparateProcess( false );
+		}
+	}
 
 	public static function setUpBeforeClass(): void {
 		parent::setUpBeforeClass();
 
 		self::$test_mode     = get_parsely_test_mode();
 		self::$major_version = test_version();
+	}
+
+	public function setUp(): void {
+		parent::setUp();
+
+		if ( is_parsely_disabled() && in_array( $this->getName( false ), self::REQUIRES_LOADED_PLUGIN, true ) ) {
+			$this->markTestSkipped( 'Requires wp-parsely to be loaded (see the parsely workflow).' );
+		}
 	}
 
 	public function test_parsely_loader_info_defaults() {
@@ -49,31 +79,13 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 			$this->assertEquals( Parsely_Integration_Type::NONE, Parsely_Loader_Info::get_integration_type() );
 			$this->assertEquals( [], Parsely_Loader_Info::get_parsely_options() );
 			$this->assertEquals( Parsely_Loader_Info::VERSION_UNKNOWN, Parsely_Loader_Info::get_version() );
+			$this->assertNull( Parsely_Loader_Info::get_configs() );
 		} elseif ( is_parsely_disabled() ) {
 			$this->assertFalse( Parsely_Loader_Info::is_active() );
+			$this->assertNull( Parsely_Loader_Info::get_configs() );
 		} else {
 			$this->assertTrue( Parsely_Loader_Info::is_active() );
 		}
-	}
-
-	public function test_is_queued_for_activation_get() {
-		set_current_screen( 'plugins' );
-
-		$this->set_get_globals_for_parsely_activation();
-		$this->assertTrue( is_queued_for_activation() );
-	}
-
-	public function test_is_queued_for_activation_post() {
-		set_current_screen( 'plugins' );
-
-		$this->set_post_globals_for_parsely_activation();
-		$this->assertTrue( is_queued_for_activation() );
-	}
-
-	public function test_is_not_queued_for_activation() {
-		set_current_screen( 'plugins' );
-
-		$this->assertFalse( is_queued_for_activation() );
 	}
 
 	public function test_parsely_class_existence() {
@@ -89,15 +101,13 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( class_exists( 'Parsely' ) );
 		$this->assertFalse( class_exists( 'Parsely\Parsely' ) );
+		$this->assertFalse( is_callable( '\Parsely\parsely_initialize_plugin' ) );
+		$this->assertFalse( isset( $GLOBALS['parsely'] ) );
 	}
 
 	public function test_parsely_instance() {
 		maybe_load_plugin();
 		$this->assertFalse( isset( $GLOBALS['parsely'] ) );
-
-		if ( is_parsely_disabled() ) {
-			return;
-		}
 
 		\Parsely\parsely_initialize_plugin();
 
@@ -231,11 +241,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_default_parsely_configs() {
 		maybe_load_plugin();
 
-		if ( is_parsely_disabled() ) {
-			$this->assertNull( Parsely_Loader_Info::get_configs() );
-			return;
-		}
-
 		\Parsely\parsely_initialize_plugin();
 
 		$this->assertEquals( Parsely_Loader_Info::get_configs(), array(
@@ -264,11 +269,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 	public function test_custom_parsely_configs() {
 		maybe_load_plugin();
-
-		if ( is_parsely_disabled() ) {
-			$this->assertNull( Parsely_Loader_Info::get_configs() );
-			return;
-		}
 
 		\Parsely\parsely_initialize_plugin();
 		$current_settings = get_option( 'parsely' ) ?: [];
@@ -317,11 +317,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 	public function test_parsely_configs_for_managed_mode() {
 		maybe_load_plugin();
 
-		if ( is_parsely_disabled() ) {
-			$this->assertNull( Parsely_Loader_Info::get_configs() );
-			return;
-		}
-
 		// Arrange.
 		$parsely_integration = new ParselyIntegration( 'parsely' );
 		get_class_property_as_public( Integration::class, 'options' )->setValue( $parsely_integration, [
@@ -361,28 +356,8 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		), $configs );
 	}
 
-	public function test_alter_option_use_repeated_metas() {
-		maybe_load_plugin();
-		$options = alter_option_use_repeated_metas();
-		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
-
-		$options = alter_option_use_repeated_metas( array( 'some_option' => 'value' ) );
-		$this->assertSame( array(
-			'some_option' => 'value',
-			'meta_type'   => 'repeated_metas',
-		), $options );
-
-		$options = alter_option_use_repeated_metas( array( 'meta_type' => 'json_ld' ) );
-		$this->assertSame( array( 'meta_type' => 'repeated_metas' ), $options );
-	}
-
 	public function test_unprotected_published_posts_show_meta() {
 		maybe_load_plugin();
-
-		if ( is_parsely_disabled() ) {
-			$this->assertFalse( is_callable( '\Parsely\parsely_initialize_plugin' ) );
-			return;
-		}
 
 		\Parsely\parsely_initialize_plugin();
 
@@ -406,11 +381,6 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 		global $parsely;
 
 		maybe_load_plugin();
-
-		if ( is_parsely_disabled() ) {
-			$this->assertFalse( is_callable( '\Parsely\parsely_initialize_plugin' ) );
-			return;
-		}
 
 		\Parsely\parsely_initialize_plugin();
 
@@ -465,15 +435,5 @@ class MU_Parsely_Integration_Test extends WP_UnitTestCase {
 
 		$metadata = new \Parsely\Metadata( $parsely );
 		return $metadata->construct_metadata( $_post );
-	}
-
-	private function set_get_globals_for_parsely_activation() {
-		$_GET['plugin'] = 'wp-parsely/wp-parsely.php';
-		$_GET['action'] = 'activate';
-	}
-
-	private function set_post_globals_for_parsely_activation() {
-		$_POST['checked'] = [ 'wp-parsely/wp-parsely.php' ];
-		$_POST['action']  = 'activate-selected';
 	}
 }

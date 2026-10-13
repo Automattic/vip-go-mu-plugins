@@ -115,8 +115,4 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 			'Cache-Control' => 'max-age=666',
 		], $response_headers );
 	}
-
-	public function test__skip_ttl_if_already_set_via_php_header() {
-		$this->markTestSkipped( 'Cannot test since we cannot simulate `header()` or `header_list()` in PHPUnit.' );
-	}
 }

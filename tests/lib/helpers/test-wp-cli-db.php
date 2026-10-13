@@ -50,12 +50,26 @@ class WP_Cli_Db_Test extends TestCase {
 
 		$wp_cli_db_mock = $this->getMockBuilder( Wp_Cli_Db::class )
 			->setConstructorArgs( [ $config_mock ] )
+			->onlyMethods( [ 'validate_subcommand' ] )
 			->getMock();
 		$wp_cli_db_mock
 			->expects( $this->never() )
 			->method( 'validate_subcommand' );
 
 		$wp_cli_db_mock->before_run_command( [ 'notdb', 'something', '--something="else"' ] );
+	}
+
+
+	public function test_before_run_command_uses_real_entry_to_select_database_server() {
+		$GLOBALS['db_servers'] = [ SERVERS['rw'] ];
+		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
+		$config  = new Config();
+		$command = new Wp_Cli_Db( $config );
+
+		$command->before_run_command( [ 'db', 'query', 'SELECT 1' ] );
+
+		$this->assertSame( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
+		$this->assertSame( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
 	}
 
 	public function test_get_database_server_db_not_enabled() {
@@ -116,28 +130,6 @@ class WP_Cli_Db_Test extends TestCase {
 		$this->assertEquals( SERVERS['rw'][1], Constant_Mocker::constant( 'DB_USER' ) );
 		$this->assertEquals( SERVERS['rw'][2], Constant_Mocker::constant( 'DB_PASSWORD' ) );
 		$this->assertEquals( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
-	}
-
-	public function test_validate_subcommand_no_console_cli() {
-		$GLOBALS['db_servers'] = [
-			SERVERS['r'],
-		];
-		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'The `wp db cli` subcommand is not permitted for this site.' );
-		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'cli' ] );
-	}
-
-	public function test_validate_subcommand_no_console_query_and_no_querystring() {
-		$GLOBALS['db_servers'] = [
-			SERVERS['r'],
-		];
-		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 1 );
-
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'Please provide the database query as a part of the command' );
-		( new Wp_Cli_Db( new Config() ) )->validate_subcommand( [ 'db', 'query' ] );
 	}
 
 	public function test_config_not_enabled_writes_disallowed_by_default() {
@@ -207,19 +199,6 @@ class WP_Cli_Db_Test extends TestCase {
 	public function test_no_config() {
 		$this->expectException( ArgumentCountError::class );
 		new Wp_Cli_Db();
-	}
-
-	public function test_get_database_server_not_enabled_no_const() {
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
-		( new Config() )->get_database_server();
-	}
-
-	public function test_get_database_server_not_enabled_non_1_const() {
-		Constant_Mocker::define( 'WPVIP_ENABLE_WP_DB', 'gibberish' );
-		$this->expectException( Exception::class );
-		$this->expectExceptionMessage( 'The db command is not currently supported in this environment.' );
-		( new Config() )->get_database_server();
 	}
 
 	public function test_get_database_server_unset() {

@@ -38,24 +38,24 @@ class Admin_Notice_Class_Test extends WP_UnitTestCase {
 		parent::tearDownAfterClass();
 	}
 
-	public function test__display() {
-		$message = 'Test Message';
+	/**
+	 * Preserve allowed anchor markup while removing forbidden tags and handlers.
+	 */
+	public function test__display(): void {
+		$message = '<a href="https://example.org/" title="Allowed" target="_blank" onclick="bad()">Allowed link</a><script>bad-script-text</script><img src="x" onerror="bad()">';
 		$notice  = new Admin_Notice( $message );
-
-		$expected_html = "#<div data-vip-admin-notice=\"\" class=\"notice notice-info vip-notice\"><p>$message</p></div>#";
-		$this->expectOutputRegex( $expected_html );
-
+		$this->expectOutputString( '<div data-vip-admin-notice="" class="notice notice-info vip-notice"><p><a href="https://example.org/" title="Allowed" target="_blank">Allowed link</a>bad-script-text</p></div>' );
 		$notice->display();
 	}
 
-	public function test__display_dismissible() {
+	/**
+	 * Escape quotes and angle brackets in the dismissible notice identifier.
+	 */
+	public function test__display_dismissible(): void {
 		$message    = 'Test Message';
-		$dismiss_id = 'dismiss_id';
+		$dismiss_id = 'dismiss_id" onmouseover="bad()"><script>';
 		$notice     = new Admin_Notice( $message, [], $dismiss_id );
-
-		$expected_html = "#<div data-vip-admin-notice=\"$dismiss_id\" class=\"notice notice-info vip-notice is-dismissible\"><p>$message</p></div>#";
-		$this->expectOutputRegex( $expected_html );
-
+		$this->expectOutputString( '<div data-vip-admin-notice="dismiss_id&quot; onmouseover=&quot;bad()&quot;&gt;&lt;script&gt;" class="notice notice-info vip-notice is-dismissible"><p>Test Message</p></div>' );
 		$notice->display();
 	}
 

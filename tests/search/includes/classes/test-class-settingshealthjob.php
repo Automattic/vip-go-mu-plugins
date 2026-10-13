@@ -9,7 +9,11 @@ use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+
 class SettingsHealthJob_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
+
 	/** @var Search */
 	public $search;
 	/** @var Versioning */
@@ -31,6 +35,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$this->search->init();
 
 		Constant_Mocker::clear();
+		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
 		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
 			'https://es-endpoint1',
 			'https://es-endpoint2',
@@ -45,6 +50,13 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
 		$this->search->load_collector();
 		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
+
+		$this->add_es_http_mock();
+	}
+
+	public function tearDown(): void {
+		$this->remove_es_http_mock();
+		parent::tearDown();
 	}
 
 	public function test__process_indexables_settings_health_results__reports_error() {

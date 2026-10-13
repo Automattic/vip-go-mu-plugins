@@ -150,26 +150,33 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_details() {
 		return [
 			'invalid-type' => [ 'string' ],
+			'empty-array'  => [ [] ],
 			'missing-keys' => [
-				'alias'       => 'test/alert',
-				'description' => 'Test alert',
-				'entity'      => 'test',
-				'source'      => 'test',
+				[
+					'alias'       => 'test/alert',
+					'description' => 'Test alert',
+					'entity'      => 'test',
+					'source'      => 'test',
+				],
 			],
 			'extra-keys'   => [
-				'alias'       => 'test/alert',
-				'description' => 'Test alert',
-				'entity'      => 'test',
-				'priority'    => 'P4',
-				'source'      => 'test',
-				'extra'       => 'invalid',
+				[
+					'alias'       => 'test/alert',
+					'description' => 'Test alert',
+					'entity'      => 'test',
+					'priority'    => 'P4',
+					'source'      => 'test',
+					'extra'       => 'invalid',
+				],
 			],
 			'empty-keys'   => [
-				'alias'       => 'test/alert',
-				'description' => '',
-				'entity'      => 'test',
-				'priority'    => 'P4',
-				'source'      => 'test',
+				[
+					'alias'       => 'test/alert',
+					'description' => '',
+					'entity'      => 'test',
+					'priority'    => 'P4',
+					'source'      => 'test',
+				],
 			],
 		];
 	}
@@ -228,26 +235,43 @@ class Alerts_Test extends WP_UnitTestCase {
 	public function get_test_data__invalid_pagerduty_details() {
 		return [
 			'invalid-type'             => [ 'string' ],
-			'missing-keys'             => [
-				'source' => 'test',
+			'empty-array'              => [ [] ],
+			'missing-keys'             => [ [ 'source' => 'test' ] ],
+			'missing-severity'         => [
+				[
+					'source' => 'test',
+				],
+			],
+			'missing-source'           => [
+				[
+					'severity' => 'critical',
+				],
 			],
 			'empty-keys'               => [
-				'severity' => '',
-				'source'   => 'test',
+				[
+					'severity' => '',
+					'source'   => 'test',
+				],
 			],
 			'extra-keys'               => [
-				'severity' => '',
-				'source'   => 'test',
-				'invalid'  => 'invalid',
+				[
+					'severity' => 'critical',
+					'source'   => 'test',
+					'invalid'  => 'invalid',
+				],
 			],
 			'invalid-severity'         => [
-				'severity' => 'invalid',
-				'source'   => 'test',
+				[
+					'severity' => 'invalid',
+					'source'   => 'test',
+				],
 			],
 			'non-array-custom-details' => [
-				'severity'       => 'critical',
-				'source'         => 'test',
-				'custom_details' => 'invalid',
+				[
+					'severity'       => 'critical',
+					'source'         => 'test',
+					'custom_details' => 'invalid',
+				],
 			],
 		];
 	}
@@ -261,6 +285,20 @@ class Alerts_Test extends WP_UnitTestCase {
 		$result = $alerts->validate_pagerduty_details( $details );
 
 		$this->assertWPError( $result );
+		$this->assertEquals( 'invalid-pagerduty-details', $result->get_error_code(), 'Wrong error code' );
+	}
+
+	public function test__validate_pagerduty_details__required_keys_only() {
+		$details = [
+			'severity' => 'warning',
+			'source'   => 'test',
+		];
+
+		$alerts = Testable_Alerts::instance();
+
+		$result = $alerts->validate_pagerduty_details( $details );
+
+		$this->assertEquals( $details, $result );
 	}
 
 	public function test__validate_pagerduty_details() {

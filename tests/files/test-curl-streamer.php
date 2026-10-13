@@ -30,10 +30,6 @@ class Curl_Streamer_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__init_upload() {
-		$this->markTestSkipped( 'Cannot get `curl` opts, making this hard to test. We can look into using a test webserver in the future.' );
-	}
-
 	public function test__handle_upload() {
 		$read_pass_1 = $this->curl_streamer->handle_upload( null, $this->file_stream, 10 );
 

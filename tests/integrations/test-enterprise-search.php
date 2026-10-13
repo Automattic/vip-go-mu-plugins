@@ -46,21 +46,18 @@ class VIP_EnterpriseSearch_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( $preload_state, class_exists( '\Automattic\VIP\Search\Search' ) );
 	}
 
+	/**
+	 * Load Search in a fresh process with a proved absent-class precondition.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test__load_call_if_class_not_exist(): void {
-		/**
-		 * Integration mock.
-		 *
-		 * @var MockObject|EnterpriseSearchIntegration
-		 */
-		$es_integration_mock = $this->getMockBuilder( EnterpriseSearchIntegration::class )->setConstructorArgs( [ 'enterprise-search' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
-		$es_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
-		$existing_value = class_exists( '\Automattic\VIP\Search\Search' );
-
-		$es_integration_mock->load();
-
-		if ( ! $existing_value ) {
-			$this->assertTrue( class_exists( '\Automattic\VIP\Search\Search' ) );
-		}
+		$this->assertFalse( class_exists( '\Automattic\VIP\Search\Search', false ) );
+		$integration = new EnterpriseSearchIntegration( $this->slug );
+		$integration->load();
+		$this->assertTrue( class_exists( '\Automattic\VIP\Search\Search', false ) );
+		$this->assertTrue( $integration->is_loaded() );
 	}
 
 	public function test__configure_action(): void {

@@ -208,15 +208,20 @@ class API_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $stats['/test/path/test.jpg'] );
 	}
 
-	public function test__copy_to_cache() {
-		$file_path = __DIR__ . '/../fixtures/files/upload.jpg';
-		$prop      = self::get_property( $this->cache, 'files' );
-
-		$this->cache->copy_to_cache( '/test/path/test.txt', $file_path );
-
-		$files = $prop->getValue( $this->cache );
-
-		$this->assertTrue( isset( $files['/test/path/test.txt'] ) );
+	/**
+	 * A newly allocated cache file must contain the source bytes.
+	 */
+	public function test__copy_to_cache(): void {
+		$file_path   = __DIR__ . '/../fixtures/files/upload.jpg';
+		$destination = '/test/path/test.txt';
+		$this->assertFalse( $this->cache->get_file( $destination ) );
+		$this->cache->copy_to_cache( $destination, $file_path );
+		$cached_path = $this->cache->get_file( $destination );
+		$this->assertIsString( $cached_path );
+		$this->assertNotSame( $file_path, $cached_path );
+		$this->assertFileExists( $cached_path );
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Both paths are local test files.
+		$this->assertSame( file_get_contents( $file_path ), file_get_contents( $cached_path ) );
 	}
 
 	public function test__copy_to_cache__update_cache() {

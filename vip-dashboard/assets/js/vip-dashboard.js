@@ -30,19 +30,20 @@ jQuery(document).ready(function ($) {
             type: 'POST',
             url: contact_form.prop('action'),
             data: data,
-            success: function (data, textStatus) {
-                if (textStatus === 'success') {
-                    var result = jQuery.parseJSON(data);
-                    renderVIPContactFormMessage(result.status, result.message);
+            dataType: 'json',
+            success: function (result) {
+                renderVIPContactFormMessage(result.status, result.message);
 
-                    if ( result.status === 'success' ) {
-                        contact_form.reset();
-                    }
-                } else {
-                    renderVIPContactFormMessage('error', 'Your message could not be sent, please try again.');
+                if ( result.status === 'success' ) {
+                    contact_form[0].reset();
                 }
+            },
+            error: function () {
+                renderVIPContactFormMessage('error', 'Your message could not be sent, please try again.');
+            },
+            complete: function () {
                 contact_form_submit.prop('disabled', false);
-            }.bind(this)
+            }
         });
     });
 });

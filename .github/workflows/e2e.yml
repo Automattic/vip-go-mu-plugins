@@ -99,7 +99,8 @@ jobs:
         working-directory: __tests__/e2e
 
       - name: Install Playwright with Chromium
-        run: npx playwright install chromium
+        # Tests run headless, which only needs the headless shell (and ffmpeg for retry videos).
+        run: npx playwright install chromium --only-shell
         working-directory: __tests__/e2e
 
       - name: Install VIP CLI

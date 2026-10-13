@@ -20,21 +20,17 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	private WP_User $user;
 
 	public function setUp(): void {
+		// Create the user after parent::setUp() so it is rolled back with the test transaction
+		// and hashed with the test suite's cheaper bcrypt cost.
+		parent::setUp();
+
 		$this->user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $this->user->ID );
-
-		parent::setUp();
 	}
 
 	public function tearDown(): void {
 		Constant_Mocker::clear();
 		parent::tearDown();
-	}
-
-	public function test_should_create_event() {
-		$event = new Tracks_Event( 'prefix_', 'test_event', [ 'property1' => 'value1' ] );
-
-		$this->assertInstanceOf( Tracks_Event::class, $event );
 	}
 
 	public function test_should_return_event_data() {

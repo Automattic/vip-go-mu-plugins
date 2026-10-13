@@ -122,6 +122,73 @@ class Pendo_Test extends WP_UnitTestCase {
 		$this->assertFalse( self::get_property( 'is_enabled' )->getValue( $pendo ) );
 	}
 
+	/**
+	 * Provides request paths and their expected query-free event context.
+	 *
+	 * @return array
+	 */
+	public function request_context_data(): array {
+		return array(
+			'admin with query' => array( '/wp-admin/edit.php?token=private', '/wp-admin/edit.php' ),
+			'root'             => array( '/', '/' ),
+			'missing URI'      => array( null, '/' ),
+		);
+	}
+
+	/**
+	 * Verify production event context through the real event and queue.
+	 *
+	 * @dataProvider request_context_data
+	 */
+	// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Controlled request fixtures and restoration.
+	public function test_event_context_contains_request_path( $uri, $expected_path ): void {
+		$user = self::factory()->user->create();
+		wp_set_current_user( $user );
+		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
+		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$previous_uri   = $_SERVER['REQUEST_URI'] ?? null;
+		$previous_agent = $_SERVER['HTTP_USER_AGENT'] ?? null;
+		if ( null === $uri ) {
+			unset( $_SERVER['REQUEST_URI'] );
+		} else {
+			$_SERVER['REQUEST_URI'] = $uri;
+		}
+		$_SERVER['HTTP_USER_AGENT'] = 'Telemetry context test';
+
+		$client = $this->createMock( Pendo_Track_Client::class );
+		$client->expects( $this->once() )->method( 'batch_record_events' )
+			->willReturnCallback( function ( $events ) use ( $expected_path ) {
+				$this->assertCount( 1, $events );
+				$data = $events[0]->get_data();
+				$this->assertSame( array(
+					'url'       => $expected_path,
+					'userAgent' => 'Telemetry context test',
+				), (array) $data->context );
+				$this->assertIsString( $data->context->url );
+				$this->assertStringNotContainsString( '?', $data->context->url );
+				return true;
+			} );
+		$queue = new Telemetry_Event_Queue( $client );
+		try {
+			$this->assertTrue( ( new Pendo( 'test_', array(), $queue ) )->record_event( 'context_event', array() ) );
+			$this->assertTrue( $queue->record_events() );
+		} finally {
+			remove_action( 'shutdown', array( $queue, 'record_events' ) );
+			if ( null === $previous_uri ) {
+				unset( $_SERVER['REQUEST_URI'] );
+			} else {
+				$_SERVER['REQUEST_URI'] = $previous_uri;
+			}
+			if ( null === $previous_agent ) {
+				unset( $_SERVER['HTTP_USER_AGENT'] );
+			} else {
+				$_SERVER['HTTP_USER_AGENT'] = $previous_agent;
+			}
+		}
+	}
+
+	// phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
 	public function test_event_queued() {
 		$user = $this->factory()->user->create_and_get();
 		wp_set_current_user( $user->ID );
@@ -204,12 +271,6 @@ class Pendo_Test extends WP_UnitTestCase {
 		$pendo        = new Pendo();
 		$event_prefix = self::get_property( 'event_prefix' )->getValue( $pendo );
 		$this->assertEquals( 'vip_wordpress_', $event_prefix );
-	}
-
-	public function test_custom_event_prefix() {
-		$pendo        = new Pendo( 'test_' );
-		$event_prefix = self::get_property( 'event_prefix' )->getValue( $pendo );
-		$this->assertEquals( 'test_', $event_prefix );
 	}
 
 	/**

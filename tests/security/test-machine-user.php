@@ -48,10 +48,23 @@ class Machine_User_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A plain editor is already blocked by core, so grant the user-management caps
+	 * (as a custom role would) to make sure the machine user guard is what denies access.
+	 *
 	 * @dataProvider get_test_data__user_modification_caps
 	 */
 	public function test__non_admin_users_cannot_modify_machine_user( $test_cap ) {
+		if ( is_multisite() && 'delete_user' === $test_cap ) {
+			$this->markTestSkipped( 'Core only allows super admins to delete users on multisite.' );
+		}
+
 		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
+		foreach ( [ 'edit_users', 'delete_users', 'remove_users', 'promote_users', 'manage_network_users' ] as $user_management_cap ) {
+			$test_user->add_cap( $user_management_cap );
+		}
+
+		$other_user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
+		$this->assertTrue( $test_user->has_cap( $test_cap, $other_user->ID ), 'Precondition failed: user cannot modify a regular user' );
 
 		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
 

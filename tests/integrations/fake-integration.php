@@ -23,3 +23,17 @@ class FakeIntegration extends Integration {
 class FakeIntegrationWithPendoTracking extends FakeIntegration {
 	protected bool $enable_pendo_tracking = true;
 }
+
+/**
+ * Records actual load calls made by the integration dispatcher.
+ */
+class RecordingFakeIntegration extends FakeIntegration {
+	public int $load_count = 0;
+
+	/**
+	 * Record dispatcher execution without loading an external plugin.
+	 */
+	public function load(): void {
+		++$this->load_count;
+	}
+}

@@ -80,17 +80,19 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 
 	public function test_record_write_without_initialize_is_noop(): void {
 		// No initialize() this test; tearDown nulled the static handle.
+		$this->expectNotToPerformAssertions(); // Reaching the end means no error/exception.
+
 		Filesystem_Stats_Collector::record_write( 1024, 'wp-content/uploads/a.jpg' );
-		$this->assertTrue( true ); // Reaching here means no error/exception.
 	}
 
 	public function test_record_write_swallows_observe_exception(): void {
 		[ , $histogram ] = $this->init_with_histogram_spy();
-		$histogram->method( 'observe' )->willThrowException( new \RuntimeException( 'boom' ) );
+		$histogram->expects( $this->once() )
+			->method( 'observe' )
+			->willThrowException( new \RuntimeException( 'boom' ) );
 
 		// Must not throw.
 		Filesystem_Stats_Collector::record_write( 1024, 'wp-content/uploads/a.jpg' );
-		$this->assertTrue( true );
 	}
 
 	/**
@@ -191,12 +193,20 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		// New file: open fetches, gets file-not-found, creates empty resource.
 		$client->method( 'get_file' )->willReturn( new \WP_Error( 'file-not-found', 'nope' ) );
 		// Close flushes: upload succeeds (returns a truthy filename, not WP_Error).
-		$client->expects( $this->once() )->method( 'upload_file' )->willReturn( '/wp-content/uploads/x.jpg' );
+
+		$client->expects( $this->once() )->method( 'upload_file' )
+			->willReturnCallback( function ( $source, $destination ) {
+				$this->assertSame( 'wp-content/uploads/x.jpg', $destination );
+				$this->assertFileExists( $source );
+				// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local staged upload.
+				$this->assertSame( 'data', file_get_contents( $source ) );
+				return '/wp-content/uploads/x.jpg';
+			} );
 
 		$this->register_wrapper_with_client( $client );
 
 		// 4 bytes, written through the vip:// wrapper to exercise stream_flush().
-		file_put_contents( 'vip://wp-content/uploads/x.jpg', 'data' ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
+		$this->assertSame( 4, file_put_contents( 'vip://wp-content/uploads/x.jpg', 'data' ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 	}
 
 	public function test_stream_open_read_accumulates_and_drains(): void {

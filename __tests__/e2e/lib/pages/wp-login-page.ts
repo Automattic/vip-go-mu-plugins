@@ -22,13 +22,6 @@ export class LoginPage {
 	}
 
 	/**
-	 * Navigate to login page
-	 */
-	public visit(): Promise<unknown> {
-		return this.page.goto( '/wp-login.php' );
-	}
-
-	/**
 	 * Logs in to account with specified username and password
 	 *
 	 * @param {string} username Username to login as

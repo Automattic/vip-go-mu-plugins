@@ -19,13 +19,6 @@ export class SettingsWritingPage {
 	}
 
 	/**
-	 * Navigate to Writing Settings page
-	 */
-	public visit(): Promise<unknown> {
-		return this.page.goto( '/wp-admin/options-writing.php' );
-	}
-
-	/**
 	 * Checks to see if Classic Editor Settings are available
 	 *
 	 * @return { Promise<boolean> } Whether classic editor settings are visible
@@ -36,11 +29,14 @@ export class SettingsWritingPage {
 	}
 
 	/**
-	 * Select settings to allow either block or classic editor
+	 * Select settings to allow either block or classic editor, and wait until they are saved
 	 */
 	public async allowBothEditors(): Promise<void> {
 		await this.page.locator( selectors.classicEditorBlock ).click();
 		await this.page.locator( selectors.classicEditorAllow ).click();
-		await this.page.locator( selectors.saveButton ).click();
+		await Promise.all( [
+			this.page.waitForURL( /[?&]settings-updated=true/ ),
+			this.page.locator( selectors.saveButton ).click(),
+		] );
 	}
 }

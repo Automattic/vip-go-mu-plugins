@@ -3,6 +3,8 @@
 // phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
+require_once __DIR__ . '/fixtures/class-cache-manager-input-stream.php';
+
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	/** @var WPCOM_VIP_Cache_Manager */
 	public $cache_manager;
@@ -152,6 +154,74 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public function test_purge_site_cache_returns_false_after_first_call() {
 		$this->assertTrue( $this->cache_manager->purge_site_cache(), 'First site purge should return true.' );
 		$this->assertFalse( $this->cache_manager->purge_site_cache(), 'Subsequent site purge should return false for same request.' );
+	}
+
+	/**
+	 * Default purge permissions must follow the user's editing capabilities.
+	 */
+	public function test_default_purge_permissions(): void {
+		$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
+		foreach ( [
+			null         => false,
+			'subscriber' => false,
+			'editor'     => true,
+		] as $role => $allowed ) {
+			wp_set_current_user( $role ? self::factory()->user->create( [ 'role' => $role ] ) : 0 );
+			$this->assertSame( $allowed, $method->invoke( $this->cache_manager, 'url' ), $role ?: 'logged out' );
+		}
+	}
+
+	/**
+	 * Supply denied and allowed users for the real AJAX action.
+	 */
+	public function get_ajax_permission_cases(): array {
+		return [
+			'subscriber' => [ 'subscriber', false ],
+			'editor'     => [ 'editor', true ],
+		];
+	}
+
+	/**
+	 * Dispatch the production AJAX hook with a valid request.
+	 *
+	 * @dataProvider get_ajax_permission_cases
+	 */
+	public function test_ajax_permissions_with_valid_nonce( string $role, bool $allowed ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => $role ] ) );
+		VIP_Cache_Manager_Input_Stream::$body = wp_json_encode( [
+			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
+			'purge_action' => 'url',
+			'url'          => home_url( '/cache-permission-test/' ),
+		] );
+		$die_handler                          = static function () {
+			return static function () {
+				throw new RuntimeException( 'AJAX complete' );
+			};
+		};
+		add_filter( 'wp_doing_ajax', '__return_true' );
+		add_filter( 'wp_die_ajax_handler', $die_handler );
+		stream_wrapper_unregister( 'php' );
+		stream_wrapper_register( 'php', VIP_Cache_Manager_Input_Stream::class );
+		ob_start();
+		try {
+			do_action( 'wp_ajax_vip_cache_manager_dashboard_purge' );
+			$this->fail( 'The AJAX response must terminate.' );
+		} catch ( RuntimeException $exception ) {
+			$this->assertSame( 'AJAX complete', $exception->getMessage() );
+		} finally {
+			$response = ob_get_clean();
+			stream_wrapper_restore( 'php' );
+			remove_filter( 'wp_die_ajax_handler', $die_handler );
+			remove_filter( 'wp_doing_ajax', '__return_true' );
+		}
+		$decoded = json_decode( $response, true );
+		$this->assertSame( $allowed, $decoded['success'] );
+		if ( $allowed ) {
+			$this->assertContains( home_url( '/cache-permission-test/' ), $this->cache_manager->get_queued_purge_urls() );
+		} else {
+			$this->assertSame( [ 'message' => 'Unauthorized.' ], $decoded['data'] );
+			$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+		}
 	}
 
 	public function test_current_user_can_purge_cache_filter_receives_scope_and_user() {

@@ -18,7 +18,6 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__update_heartbeat_on_failure
 	 */
 	public function test__update_heartbeat_on_failure( ?int $backoff_factor, int $expected_backoff, int $failed_attempts ) {
@@ -46,7 +45,6 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 */
 	public function test__update_heartbeat_on_success() {
 		$this->set_heartbeat( [
@@ -74,7 +72,6 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__should_back_off
 	 */
 	public function test__should_back_off( ?int $backoff_factor, ?DateTime $failure_time, ?DateTime $legacy_time, int $failed_attempts, bool $expected ) {
