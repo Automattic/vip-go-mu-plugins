@@ -41,6 +41,7 @@ final class SyncManager_Helper {
 		 * - (term cache gets cleaned here, get_term() will return the updated value)
 		 * - edited_term 
 		 * -    <====== we use this action to get the fully updated term (priority=0)
+		 * -    <====== Queue::offload_term_indexing_to_queue() sends large terms to cron (priority=5)
 		 * -    <====== EP uses this hook to sync the term index (priority=10)
 		 * - edited_{$taxonomy}
 		 * - saved_term <====== we use this action to clean up after edit_terms

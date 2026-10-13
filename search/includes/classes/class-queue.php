@@ -264,7 +264,7 @@ class Queue {
 		// We should make sure to apply the settings again after the customer code have been loaded to ensure the consistency.
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX );
 
-		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 ); // saved_term fires after SyncManager_Helper actions
+		add_action( 'edited_term', [ $this, 'offload_term_indexing_to_queue' ], 5, 3 ); // After SyncManager_Helper (0), before ElasticPress queues the term's posts (10)
 
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
