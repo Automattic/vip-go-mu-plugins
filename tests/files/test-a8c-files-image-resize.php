@@ -15,10 +15,6 @@ class VIP_Go_A8C_Files_Image_Resize_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		if ( ! function_exists( 'wp_theme_has_theme_json' ) ) {
-			$this->markTestSkipped( 'Test requires theme.json support.' );
-		}
-
 		$this->original_content_width = $GLOBALS['content_width'] ?? null;
 		unset( $GLOBALS['content_width'] );
 

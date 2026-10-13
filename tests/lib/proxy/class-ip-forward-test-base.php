@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Tests;
 
+use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
@@ -10,6 +11,11 @@ use PHPUnit\Framework\TestCase;
 
 abstract class IP_Forward_Test_Base extends TestCase {
 	const DEFAULT_REMOTE_ADDR = '1.0.1.0';
+
+	/**
+	 * The WPCOM_VIP_PROXY_VERIFICATION key configured for each test, if any.
+	 */
+	const PROXY_VERIFICATION_KEY = null;
 
 	/** @var string|null */
 	private $original_remote_addr;
@@ -21,6 +27,10 @@ abstract class IP_Forward_Test_Base extends TestCase {
 		$this->original_x_forwarded_for = isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : null;
 
 		$_SERVER['REMOTE_ADDR'] = self::DEFAULT_REMOTE_ADDR;
+
+		if ( null !== static::PROXY_VERIFICATION_KEY ) {
+			Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', static::PROXY_VERIFICATION_KEY );
+		}
 	}
 
 	public function tearDown(): void {

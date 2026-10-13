@@ -21,6 +21,20 @@ npm run test            # full PHPUnit suite in Docker
 - runs tests in `ghcr.io/automattic/vip-container-images/wp-test-runner`
 - uses `tests/bootstrap.php` to load MU plugin stack
 
+`tests/class-vip-test-listener.php` restores `$_SERVER` and clears
+`Constant_Mocker` around every test, so tests don't need to do either in `setUp()`/`tearDown()`.
+`tests/bootstrap.php` lowers the bcrypt cost everywhere, so users created in
+`wpSetUpBeforeClass()` are as cheap as users created in a test; prefer sharing read-only
+fixtures that way.
+
+Shared helpers in `tests/utils/` (namespace `Automattic\Test\Utils`):
+
+- `get_class_method_as_public()` / `get_class_property_as_public()` for reflection
+- `http_response()` builds a `pre_http_request` / `WP_Http` response array
+- `Captures_Errors::capture_errors()` asserts a return value and a `trigger_error()` message in one test
+- `run_php()` runs PHP in a child process without booting WordPress; prefer it to
+  `@runInSeparateProcess` when the code under test doesn't need WordPress
+
 The repository is mounted into the container, so run `composer install` and
 `git submodule update --init --recursive` first (including in fresh worktrees).
 Without `vendor/yoast/phpunit-polyfills`, the runner fails before any test runs with
@@ -31,7 +45,7 @@ Useful variants:
 ```bash
 CI=1 ./bin/test.sh --multisite 1
 CI=1 ./bin/test.sh --wp 6.8.x --php 8.2
-CI=1 ./bin/test.sh --filter test__administrator_should_not_have_update_core_cap
+CI=1 ./bin/test.sh --filter test__super_admin_should_not_have_update_core_cap
 ```
 
 The Search shared-counter integration test uses two independent PHP workers and

@@ -97,3 +97,9 @@ option write. It uses SDS's existing timestamp, change detection, scheduled
 uploads, and heartbeats. The Integration Center displays the last observed
 source, including stale or unavailable observations; this is not confirmation
 that a provider accepts the key or that a newly saved assignment has propagated.
+
+## Jetpack SSO session metadata
+
+`wpcom-vip-two-factor/is-jetpack-sso.php` attaches `vip_jetpack_sso` and `vip_jetpack_sso_two_step` to the WordPress session created after `jetpack_sso_handle_login`. Only that user's first newly created session receives the flags; subsequent password sessions do not inherit them. The predicates return the current user ID or `false` and read metadata only from that user's valid authentication or logged-in cookie session. Two-step status requires both flags. Expiry and revocation follow the WordPress session.
+
+Legacy SSO marker cookies are ignored. Existing sessions remain logged in but need a fresh Jetpack SSO login to receive the metadata and regain the WordPress.com two-step exemption. Users without local two-factor configured can have capabilities restricted until then. The exemption continues to follow the positive WordPress.com `two_step_enabled` result; this change does not alter the separate `jetpack_sso_accept_wpcom_2fa` local-challenge policy.

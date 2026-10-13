@@ -6,8 +6,14 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
+require_once __DIR__ . '/trait-vip-stream-wrapper-fixture.php';
+
 // phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error, WordPress.WP.AlternativeFunctions.file_system_read_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.WP.AlternativeFunctions.file_system_operations_fread, WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite,WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_rename, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_content, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
+	use VIP_Stream_Wrapper_Fixture;
+
 	/** @var VIP_Filesystem_Local_Stream_Wrapper */
 	private $stream_wrapper;
 
@@ -16,116 +22,35 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 	private $errors = [];
 
-	private $original_routing_maps;
-	private $original_default_client;
-	private $wrapper_was_registered;
 	private $generated_files = [];
-	private static $expected_cache_route;
-
-	/**
-	 * Preserve the ambient route expected by the ordered isolation check.
-	 */
-	public static function wpSetUpBeforeClass(): void {
-		require_once WPMU_PLUGIN_DIR . '/files/class-vip-filesystem-local-stream-wrapper.php';
-		self::$expected_cache_route = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' );
-	}
 
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once WPMU_PLUGIN_DIR . '/files/class-vip-filesystem-local-stream-wrapper.php';
-
-		$this->original_routing_maps   = $this->snapshot_routing_maps();
-		$this->original_default_client = VIP_Filesystem_Local_Stream_Wrapper::$default_client;
-		$this->wrapper_was_registered  = in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true );
-		$this->generated_files         = [];
+		$this->generated_files = [];
 
 		/** @var MockObject&Api_Client */
 		$this->api_client_mock = $this->createMock( Api_Client::class );
 
-		$this->stream_wrapper = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-
-		if ( ! in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true ) ) {
-			$this->stream_wrapper->register();
-		}
-
-		VIP_Filesystem_Local_Stream_Wrapper::$default_client = $this->api_client_mock;
+		$this->stream_wrapper = $this->register_vip_stream_wrapper( $this->api_client_mock );
 
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions
 		set_error_handler( [ $this, 'errorHandler' ] );
 	}
 
 	public function tearDown(): void {
-		try {
-			$this->restore_fixture_state();
-		} finally {
-			$this->stream_wrapper  = null;
-			$this->api_client_mock = null;
-			$this->errors          = [];
-			restore_error_handler();
-			parent::tearDown();
-		}
-	}
-
-	/**
-	 * Capture each routing map independently, including ambient entries.
-	 */
-	private function snapshot_routing_maps(): array {
-		$maps = [];
-		foreach ( [ 'local_files_map', 'local_file_patterns', 'local_file_names' ] as $name ) {
-			$reflection    = new \ReflectionProperty( VIP_Filesystem_Local_Stream_Wrapper::class, $name );
-			$maps[ $name ] = $reflection->getValue();
-		}
-		return $maps;
-	}
-
-	/**
-	 * Restore ambient routes, client and wrapper registration and remove test files.
-	 */
-	private function restore_fixture_state(): void {
-		foreach ( $this->original_routing_maps as $name => $values ) {
-			$reflection = new \ReflectionProperty( VIP_Filesystem_Local_Stream_Wrapper::class, $name );
-			$reflection->setValue( null, $values );
-		}
-		VIP_Filesystem_Local_Stream_Wrapper::$default_client = $this->original_default_client;
-		$registered = in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true );
-		if ( $registered && ! $this->wrapper_was_registered ) {
-			stream_wrapper_unregister( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL );
-		} elseif ( ! $registered && $this->wrapper_was_registered ) {
-			$this->stream_wrapper->register();
-		}
 		foreach ( $this->generated_files as $file ) {
 			if ( file_exists( $file ) ) {
 				unlink( $file );
 			}
 		}
+
 		$this->generated_files = [];
-	}
-
-	/**
-	 * Prove fixture cleanup restores all routing categories and external state.
-	 */
-	public function test_fixture_cleanup_restores_state(): void {
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://wp-content/uploads/restoration-exact.txt' );
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://wp-content/uploads/restoration/*.json' );
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( '.restoration-name' );
-		$file                    = wp_tempnam( 'stream-fixture-cleanup' );
-		$this->generated_files[] = $file;
-		$this->assertFileExists( $file );
-		$this->restore_fixture_state();
-		$this->assertSame( $this->original_routing_maps, $this->snapshot_routing_maps() );
-		$this->assertSame( $this->original_default_client, VIP_Filesystem_Local_Stream_Wrapper::$default_client );
-		$this->assertSame( $this->wrapper_was_registered, in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true ) );
-		$this->assertFileDoesNotExist( $file );
-	}
-
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem_Local_Stream_Wrapper' );
-		$method = $class->getMethod( $name );
-		return $method;
+		$this->stream_wrapper  = null;
+		$this->api_client_mock = null;
+		$this->errors          = [];
+		restore_error_handler();
+		parent::tearDown();
 	}
 
 	/**
@@ -197,7 +122,7 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 			'read mode'   => [ 'r' ],
 			'write mode'  => [ 'w' ],
 			'append mode' => [ 'a' ],
-			'x mode'      => [ 'x' ],
+			// 'x' mode is covered by the test__validate__x_mode_* tests.
 		];
 	}
 
@@ -370,15 +295,10 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 	 * Test local files functionality
 	 */
 	public function test_local_files() {
-		// Set up the API client mock
-		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-		$this->stream_wrapper->register();
-
 		// Test adding a file to the local files list
 		$test_file = 'vip://wp-content/uploads/test-local-file.txt';
 		foreach ( [ $test_file, 'vip://wp-content/uploads/test-local-file-copy.txt', 'vip://wp-content/uploads/test-local-file-renamed.txt' ] as $path ) {
-			$this->generated_files[] = self::get_method( 'get_local_tmp_path' )->invoke( null, $path );
+			$this->generated_files[] = get_class_method_as_public( VIP_Filesystem_Local_Stream_Wrapper::class, 'get_local_tmp_path' )->invoke( null, $path );
 		}
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $test_file ) );
 
@@ -446,11 +366,6 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 	 * Test wildcard pattern matching capabilities
 	 */
 	public function test_wildcard_matching() {
-		// Set up the API client mock
-		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-		$this->stream_wrapper->register();
-
 		// Add a wildcard pattern for image files
 		$image_pattern = 'vip://wp-content/uploads/*.jpg';
 		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $image_pattern );
@@ -478,53 +393,9 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/abc.pdf' ) );
 		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/123.pdf' ) );
 
-		// Cleanup
+		// Removing a pattern stops matching it
 		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $image_pattern );
-		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $question_pattern );
-		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $char_class_pattern );
-	}
-
-	/**
-	 * Test O(1) lookup optimizations
-	 */
-	public function test_lookup_optimization() {
-		// Set up the API client mock
-		$this->api_client_mock = $this->createMock( API_Client::class );
-		$this->stream_wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $this->api_client_mock );
-		$this->stream_wrapper->register();
-
-		// Clean existing files before testing
-		$existing_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
-		foreach ( $existing_files as $path => $value ) {
-			VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $path );
-		}
-
-		// First, verify no files are registered
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/exact-file.txt' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/pattern-123.txt' ) );
-
-		// Add exact file path
-		$exact_path = 'vip://wp-content/uploads/exact-file.txt';
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $exact_path );
-
-		// Verify exact file is now recognized
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $exact_path ) );
-
-		// Add wildcard pattern
-		$pattern = 'vip://wp-content/uploads/pattern-*.txt';
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $pattern );
-
-		// Verify pattern-matched files are recognized (O(1) lookup optimization)
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/pattern-123.txt' ) );
-		$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/pattern-abc.txt' ) );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/different-123.txt' ) );
-
-		// Test removing files
-		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $exact_path );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $exact_path ) );
-
-		VIP_Filesystem_Local_Stream_Wrapper::remove_local_file( $pattern );
-		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/pattern-123.txt' ) );
+		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/image.jpg' ) );
 	}
 
 	public function test_filename_substring_matching() {
@@ -539,43 +410,19 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/.htaccess' ) );
 	}
 
-	public function test__global_helpers__add() {
-		// Add files using the global helper
-		$result = wpvip_fs_local_file_add( 'vip://wp-content/uploads/direct.txt' );
-
-		$this->assertTrue( $result );
-
-		// Verify it was added to the stream wrapper
-		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
-		$this->assertArrayHasKey( 'vip://wp-content/uploads/direct.txt', $local_files );
-	}
-
-	public function test__global_helpers__remove() {
-		// Add a file first
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://wp-content/uploads/to-remove.txt' );
-
-		// Verify it exists
-		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
-		$this->assertArrayHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
-
-		// Remove it using global helper
-		$result = wpvip_fs_local_file_remove( 'vip://wp-content/uploads/to-remove.txt' );
-
-		$this->assertTrue( $result );
-
-		// Verify it was removed
-		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
-		$this->assertArrayNotHasKey( 'vip://wp-content/uploads/to-remove.txt', $local_files );
-	}
-
-	public function test__global_helpers__list() {
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file1.txt' );
-		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( 'vip://file2.txt' );
+	public function test__global_helpers__add_list_remove() {
+		$this->assertTrue( wpvip_fs_local_file_add( 'vip://wp-content/uploads/direct.txt' ) );
+		$this->assertTrue( wpvip_fs_local_file_add( 'vip://wp-content/uploads/cache/*.json' ) );
 
 		$list = wpvip_fs_local_file_list();
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/direct.txt', $list );
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $list );
 
-		$this->assertArrayHasKey( 'vip://file1.txt', $list );
-		$this->assertArrayHasKey( 'vip://file2.txt', $list );
+		$this->assertTrue( wpvip_fs_local_file_remove( 'vip://wp-content/uploads/direct.txt' ) );
+
+		$list = wpvip_fs_local_file_list();
+		$this->assertArrayNotHasKey( 'vip://wp-content/uploads/direct.txt', $list );
+		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $list );
 	}
 
 	public function test__global_helpers__invalid_input() {
@@ -589,31 +436,5 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 
 		$result = wpvip_fs_local_file_add( 123 );
 		$this->assertFalse( $result );
-	}
-
-	public function test__global_helpers__pattern_matching() {
-		// Add a wildcard pattern
-		wpvip_fs_local_file_add( 'vip://wp-content/uploads/cache/*.json' );
-
-		// Check if it's recognized as a pattern
-		$local_files = VIP_Filesystem_Local_Stream_Wrapper::get_local_files();
-		$this->assertArrayHasKey( 'vip://wp-content/uploads/cache/*.json', $local_files );
-
-		// Test that a matching file is recognized
-		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' );
-		$this->assertTrue( $is_local );
-
-		// Test that a non-matching file is not recognized
-		$is_local = VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.txt' );
-		$this->assertFalse( $is_local );
-	}
-	/**
-	 * Check actual teardown after the preceding test adds its cache wildcard.
-	 *
-	 * @depends test__global_helpers__pattern_matching
-	 */
-	public function test_cache_route_is_restored_after_pattern_test( $previous_result ): void {
-		$this->assertNull( $previous_result );
-		$this->assertSame( self::$expected_cache_route, VIP_Filesystem_Local_Stream_Wrapper::is_local_file( 'vip://wp-content/uploads/cache/data.json' ) );
 	}
 }

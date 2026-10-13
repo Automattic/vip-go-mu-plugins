@@ -8,59 +8,31 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 use Automattic\VIP\Integrations\IntegrationVipConfig;
 use Env_Integration_Status;
-use ErrorException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/fake-integration.php';
+require_once __DIR__ . '/trait-secondary-blog.php';
+
 class VIP_Integration_Test extends WP_UnitTestCase {
-	private $original_error_reporting;
+	use Secondary_Blog;
 
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->original_error_reporting = error_reporting();
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno ); // NOSONAR
-			}
-
-			return false;
-		}, E_USER_WARNING );
-	}
-
-	public function tearDown(): void {
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
-		parent::tearDown();
-	}
-
-	public function test__slug_is_setting_up_on_instantiation(): void {
+	public function test__manual_activation_uses_the_passed_in_config(): void {
 		$integration = new FakeIntegration( 'fake' );
 
 		$this->assertEquals( 'fake', $integration->get_slug() );
-	}
-
-	public function test__activate_is_marking_the_integration_as_active(): void {
-		$integration = new FakeIntegration( 'fake' );
-
-		$integration->activate();
-
-		$this->assertTrue( $integration->is_active() );
-	}
-
-	public function test__activate_is_setting_up_the_plugins_config(): void {
-		$integration = new FakeIntegration( 'fake' );
+		$this->assertFalse( $integration->is_active() );
 
 		$integration->activate( [ 'config' => [ 'config_test' ] ] );
 
+		$this->assertTrue( $integration->is_active() );
 		$this->assertEquals( [ 'config_test' ], $integration->get_env_config() );
 		$this->assertEquals( [ 'config_test' ], $integration->get_network_site_config() );
+		$this->assertEquals( [], $integration->get_child_configs() );
+		$this->assertEquals( [], $integration->get_child_env_configs() );
 	}
 
 	public function test__calling_activate_when_the_integration_is_already_loaded_does_not_activate_the_integration_again(): void {
@@ -88,20 +60,12 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 	}
 
 	public function test__switch_to_blog_is_getting_the_correct_config_for_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite' );
-		}
+		$this->skipWithoutMultisite();
 
 		$integration = new FakeIntegration( 'fake' );
 		$integration->activate( [ 'config' => [ 'activate_config' ] ] );
-		$blog_2_id = $this->factory()->blog->create_object( [ 'domain' => 'integration-test.site/2' ] );
-		/**
-		 * Integration Config Mock.
-		 *
-		 * @var IntegrationVipConfig|MockObject
-		 */
-		$config_mock = $this->getMockBuilder( IntegrationVipConfig::class )->disableOriginalConstructor()->onlyMethods( [ 'get_vip_config_from_file' ] )->getMock();
-		$config_mock->method( 'get_vip_config_from_file' )->willReturn( [
+		$blog_2_id = self::$secondary_blog_id;
+		$integration->set_vip_config( new IntegrationVipConfig( 'slug', [
 			'network_sites' => [
 				get_current_blog_id() => [
 					'status' => Env_Integration_Status::ENABLED,
@@ -112,9 +76,7 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 					'config' => array( 'network_site_2_config' ),
 				],
 			],
-		] );
-		$config_mock->__construct( 'slug' );
-		$integration->set_vip_config( $config_mock );
+		] ) );
 
 		// The vip config overrides the custom passed-in config when set.
 		$this->assertEquals( array( 'network_site_1_config' ), $integration->get_network_site_config() );
@@ -128,91 +90,27 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( array( 'network_site_1_config' ), $integration->get_network_site_config() );
 	}
 
-	public function test__is_active_returns_false_when_integration_is_not_active(): void {
-		$integration = new FakeIntegration( 'fake' );
-
-		$this->assertFalse( $integration->is_active() );
-	}
-
-	public function test__get_child_configs_returns_empty_array_for_manual_activation(): void {
-		$integration = new FakeIntegration( 'fake' );
-
-		$this->assertEquals( [], $integration->get_child_configs() );
-	}
-
-	public function test__get_child_env_configs_returns_empty_array_for_manual_activation(): void {
-		$integration = new FakeIntegration( 'fake' );
-
-		$this->assertEquals( [], $integration->get_child_env_configs() );
-	}
-
 	public function test__get_child_configs_delegates_to_vip_config_when_present(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
 		$children_config = [
 			'airtable' => [
 				'type' => 'airtable',
 				'env'  => [
 					'status' => 'enabled',
-					'config' => [],
+					'config' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
 				],
 			],
 		];
 
-		/** @var MockObject&IntegrationVipConfig $vip_config_mock */
-		$vip_config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'get_child_configs' ] )
-			->getMock();
-
-		$vip_config_mock->expects( $this->once() )
-			->method( 'get_child_configs' )
-			->willReturn( $children_config );
-
 		$integration = new FakeIntegration( 'fake' );
 		$integration->activate();
-		$integration->set_vip_config( $vip_config_mock );
+		$integration->set_vip_config( new IntegrationVipConfig( 'fake', [ 'children' => $children_config ] ) );
 
 		$this->assertEquals( $children_config, $integration->get_child_configs() );
+		$this->assertEquals( [ 'airtable' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ] ], $integration->get_child_env_configs() );
 	}
 
-	public function test__get_child_env_configs_delegates_to_vip_config_when_present(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$child_env_configs = [
-			'airtable' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
-		];
-
-		/** @var MockObject&IntegrationVipConfig $vip_config_mock */
-		$vip_config_mock = $this->getMockBuilder( IntegrationVipConfig::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'get_child_env_configs' ] )
-			->getMock();
-
-		$vip_config_mock->expects( $this->once() )
-			->method( 'get_child_env_configs' )
-			->willReturn( $child_env_configs );
-
-		$integration = new FakeIntegration( 'fake' );
-		$integration->activate();
-		$integration->set_vip_config( $vip_config_mock );
-
-		$this->assertEquals( $child_env_configs, $integration->get_child_env_configs() );
-	}
-
-	public function test__should_track_in_pendo_returns_false_by_default(): void {
-		$integration = new FakeIntegration( 'fake' );
-
-		$this->assertFalse( $integration->should_track_in_pendo() );
-	}
-
-	public function test__should_track_in_pendo_returns_true_when_enabled(): void {
-		$integration = new FakeIntegrationWithPendoTracking( 'fake' );
-
-		$this->assertTrue( $integration->should_track_in_pendo() );
+	public function test__should_track_in_pendo_follows_the_integration_setting(): void {
+		$this->assertFalse( ( new FakeIntegration( 'fake' ) )->should_track_in_pendo() );
+		$this->assertTrue( ( new FakeIntegrationWithPendoTracking( 'fake' ) )->should_track_in_pendo() );
 	}
 }

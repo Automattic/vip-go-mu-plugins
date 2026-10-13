@@ -1,15 +1,17 @@
 <?php
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+use Automattic\Test\Utils\Captures_Errors;
+
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
 
 require_once __DIR__ . '/fixtures/class-cache-manager-input-stream.php';
 
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	/** @var WPCOM_VIP_Cache_Manager */
 	public $cache_manager;
-
-	private $original_error_reporting;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -18,23 +20,20 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
 		$this->reset_cache_manager_state();
-
-		$this->original_error_reporting = error_reporting();
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
-			}
-
-			return false;
-		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
 		$this->reset_cache_manager_state();
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
 		parent::tearDown();
+	}
+
+	/**
+	 * Call the private WPCOM_VIP_Cache_Manager::current_user_can_purge_cache().
+	 *
+	 * @param string ...$scope Optional purge scope; omitted to use the method's default.
+	 */
+	private function can_purge( string ...$scope ): bool {
+		return get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' )->invoke( $this->cache_manager, ...$scope );
 	}
 
 	public function get_data_for_valid_queue_purge_url_test() {
@@ -91,20 +90,11 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
-	public function test__invalid__queue_purge_url__warning( $queue_url ) {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->cache_manager->queue_purge_url( $queue_url );
-	}
-
-	/**
-	 * @dataProvider get_data_for_invalid_queue_purge_url_test
-	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		[ $result, $warnings ] = $this->capture_errors( fn() => $this->cache_manager->queue_purge_url( $queue_url ) );
 
-		$result = $this->cache_manager->queue_purge_url( $queue_url );
 		self::assertFalse( $result );
+		self::assertSame( [ 'vip-cache-manager: Tried to PURGE invalid URL: ' . esc_html( $queue_url ) ], $warnings );
 		self::assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
 	}
 
@@ -160,14 +150,14 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * Default purge permissions must follow the user's editing capabilities.
 	 */
 	public function test_default_purge_permissions(): void {
-		$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
+		// [ role, or null when logged out; whether the default allows purging ]
 		foreach ( [
-			null         => false,
-			'subscriber' => false,
-			'editor'     => true,
-		] as $role => $allowed ) {
+			[ null, false ],
+			[ 'subscriber', false ],
+			[ 'editor', true ],
+		] as [ $role, $allowed ] ) {
 			wp_set_current_user( $role ? self::factory()->user->create( [ 'role' => $role ] ) : 0 );
-			$this->assertSame( $allowed, $method->invoke( $this->cache_manager, 'url' ), $role ?: 'logged out' );
+			$this->assertSame( $allowed, $this->can_purge( 'url' ), $role ?: 'logged out' );
 		}
 	}
 
@@ -224,86 +214,28 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test_current_user_can_purge_cache_filter_receives_scope_and_user() {
+	public function test_current_user_can_purge_cache_filter() {
 		$user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
 		wp_set_current_user( $user_id );
 
-		$captured_scope = null;
-		$captured_user  = null;
+		$calls = [];
+		add_filter( 'vip_cache_manager_can_purge_cache', static function ( $can_purge_cache, $user, $scope ) use ( &$calls ) {
+			$calls[] = [ $can_purge_cache, $user, $scope ];
 
-		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope, &$captured_user ) {
-			$captured_scope = $scope;
-			$captured_user  = $user;
-
-			return $can_purge_cache;
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$method->invoke( $this->cache_manager, 'url' );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertSame( 'url', $captured_scope, 'Scope should be passed to the permission filter.' );
-		$this->assertInstanceOf( WP_User::class, $captured_user, 'Current user should be passed to the permission filter.' );
-		$this->assertSame( $user_id, $captured_user->ID, 'Permission filter should receive the current user ID.' );
-	}
-
-	public function test_current_user_can_purge_cache_filter_scope_defaults_to_null() {
-		$captured_scope = 'not-set';
-
-		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope ) {
-			$captured_scope = $scope;
-
-			return $can_purge_cache;
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$method->invoke( $this->cache_manager );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertNull( $captured_scope, 'Scope should default to null when no specific purge context is provided.' );
-	}
-
-	public function test_current_user_can_purge_cache_allows_scope_specific_permissions() {
-		$callback = static function ( $can_purge_cache, $user, $scope ) {
 			return 'url' === $scope;
-		};
+		}, 10, 3 );
 
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+		$this->assertTrue( $this->can_purge( 'url' ), 'URL scope should be allowed by the filter callback.' );
+		$this->assertFalse( $this->can_purge( 'site' ), 'Non-URL scope should be denied by the filter callback.' );
+		$this->assertFalse( $this->can_purge(), 'No scope should be denied by the filter callback.' );
 
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$this->assertTrue( $method->invoke( $this->cache_manager, 'url' ), 'URL scope should be allowed by the filter callback.' );
-			$this->assertFalse( $method->invoke( $this->cache_manager, 'site' ), 'Non-URL scope should be denied by the filter callback.' );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-	}
-
-	public function test_available_manual_purge_actions_are_filtered_by_scope_permissions() {
-		$callback = static function ( $can_purge_cache, $user, $scope ) {
-			return in_array( $scope, [ 'url', 'origin' ], true );
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method          = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'get_available_manual_purge_actions_config' );
-			$visible_actions = $method->invoke( $this->cache_manager );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertSame( [ 'url', 'origin' ], array_keys( $visible_actions ), 'Only allowed purge scopes should be returned for rendering.' );
+		[ $can_purge_cache, $user, $scope ] = $calls[0];
+		$this->assertFalse( $can_purge_cache, 'Subscribers cannot purge the cache by default.' );
+		$this->assertInstanceOf( WP_User::class, $user, 'Current user should be passed to the permission filter.' );
+		$this->assertSame( $user_id, $user->ID, 'Permission filter should receive the current user ID.' );
+		$this->assertSame( 'url', $scope, 'Scope should be passed to the permission filter.' );
+		$this->assertSame( 'site', $calls[1][2], 'Scope should be passed to the permission filter.' );
+		$this->assertNull( $calls[2][2], 'Scope should default to null when no specific purge context is provided.' );
 	}
 
 	public function test_render_dashboard_widget_dropdown_only_shows_allowed_scopes() {
@@ -359,8 +291,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $properties as $property => $value ) {
-			$reflection = new \ReflectionProperty( WPCOM_VIP_Cache_Manager::class, $property );
-			$reflection->setValue( $this->cache_manager, $value );
+			get_class_property_as_public( WPCOM_VIP_Cache_Manager::class, $property )->setValue( $this->cache_manager, $value );
 		}
 	}
 }

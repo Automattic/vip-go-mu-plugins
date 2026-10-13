@@ -37,6 +37,14 @@ jobs:
         run: npm ci --ignore-scripts
         working-directory: search/search-dev-tools
 
+      - name: Lint
+        run: npm run lint
+        working-directory: search/search-dev-tools
+
+      - name: Unit tests
+        run: npm test
+        working-directory: search/search-dev-tools
+
       - name: Build files
         run: npm run build
         working-directory: search/search-dev-tools

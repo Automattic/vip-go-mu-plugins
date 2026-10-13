@@ -3,6 +3,9 @@
 namespace Automattic\VIP\Cache;
 
 use DMS\PHPUnitExtensions\ArraySubset\ArraySubsetAsserts;
+use WP_Error;
+use WP_REST_Request;
+use WP_REST_Response;
 use WP_REST_Server;
 use WP_Test_REST_TestCase;
 
@@ -16,28 +19,18 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		global $wp_rest_server;
-		$wp_rest_server = new WP_REST_Server();
-		$this->server   = $wp_rest_server;
-		do_action( 'rest_api_init' );
-
-		register_rest_route( 'tests/v1', '/endpoint', [
-			'methods'             => [ 'GET', 'HEAD', 'POST', 'PUT', 'DELETE' ],
-			'callback'            => '__return_null',
-			'permission_callback' => '__return_true',
-		] );
+		// The TTL is set on `rest_post_dispatch`, so no routes need to be registered.
+		$this->server = new WP_REST_Server();
 	}
 
-	public function tearDown(): void {
-		global $wp_rest_server;
-		$wp_rest_server = null;
-
-		parent::tearDown();
-	}
-
-	protected function dispatch_request( $method ) {
-		$request  = new \WP_REST_Request( $method, '/tests/v1/endpoint' );
-		$response = $this->server->dispatch( $request );
+	/**
+	 * Run the `rest_post_dispatch` filters on the response to a request to a test endpoint.
+	 *
+	 * @param string                 $method   HTTP method.
+	 * @param WP_REST_Response|mixed $response Endpoint result; defaults to an empty, successful response.
+	 */
+	protected function dispatch_request( $method, $response = null ) {
+		$request = new WP_REST_Request( $method, '/tests/v1/endpoint' );
 		return apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
 	}
 
@@ -79,8 +72,9 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * Write requests never get a TTL (see test__set_ttl_for_unauthenticated_write_requests).
+	 *
 	 * @dataProvider get_rest_read_methods
-	 * @dataProvider get_rest_write_methods
 	 */
 	public function test__skip_ttl_for_authenticated_requests( $method ) {
 		$user_id = $this->factory()->user->create();
@@ -94,9 +88,7 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	public function test__skip_ttl_for_error_responses() {
-		$request             = new \WP_REST_Request( 'GET', '/tests/v1/this-does-not-exist' );
-		$response            = $this->server->dispatch( $request );
-		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
+		$dispatched_response = $this->dispatch_request( 'GET', rest_convert_error_to_response( new WP_Error( 'rest_no_route', 'No route was found matching the URL and request method.', [ 'status' => 404 ] ) ) );
 
 		$response_headers = $dispatched_response->get_headers();
 
@@ -104,10 +96,9 @@ class TTL_Manager__REST_API__Test extends WP_Test_REST_TestCase {
 	}
 
 	public function test__skip_ttl_if_already_set_via_rest_response() {
-		$request  = new \WP_REST_Request( 'GET', '/tests/v1/endpoint' );
-		$response = $this->server->dispatch( $request );
+		$response = new WP_REST_Response();
 		$response->header( 'Cache-Control', 'max-age=666' );
-		$dispatched_response = apply_filters( 'rest_post_dispatch', rest_ensure_response( $response ), $this->server, $request );
+		$dispatched_response = $this->dispatch_request( 'GET', $response );
 
 		$response_headers = $dispatched_response->get_headers();
 

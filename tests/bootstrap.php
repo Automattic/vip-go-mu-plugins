@@ -75,6 +75,16 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
 
+// WP_UnitTestCase lowers the bcrypt cost only while a test runs. Lower it everywhere, so users
+// created in wpSetUpBeforeClass() are as cheap to create and log in as users created in tests.
+tests_add_filter( 'wp_hash_password_options', function ( $options, $algorithm ) {
+	if ( PASSWORD_BCRYPT === $algorithm ) {
+		$options['cost'] = 5;
+	}
+
+	return $options;
+}, 1, 2 );
+
 // Disable calls to wordpress.org to get translations
 tests_add_filter( 'translations_api', function ( $res ) {
 	if ( false === $res ) {

@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry\Tracks;
 
 use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Telemetry\Telemetry_Test_Helpers;
 use WP_UnitTestCase;
 use WP_Error;
 use WP_User;
 
+require_once __DIR__ . '/../trait-telemetry-test-helpers.php';
+
 class Tracks_Event_Test extends WP_UnitTestCase {
+	use Telemetry_Test_Helpers;
 
 	protected const VIP_TELEMETRY_SALT = 'test_salt';
 
@@ -20,17 +24,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	private WP_User $user;
 
 	public function setUp(): void {
-		// Create the user after parent::setUp() so it is rolled back with the test transaction
-		// and hashed with the test suite's cheaper bcrypt cost.
 		parent::setUp();
 
-		$this->user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $this->user->ID );
-	}
-
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
+		$this->user = get_userdata( $this->login_as() );
 	}
 
 	public function test_should_return_event_data() {

@@ -3,53 +3,36 @@
 namespace Automattic\VIP\Search;
 
 use WP_UnitTestCase;
-use Automattic\Test\Constant_Mocker;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 
+require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
 require_once __DIR__ . '/trait-es-http-mock.php';
+require_once __DIR__ . '/trait-search-test-bootstrap.php';
 
 class SettingsHealthJob_Test extends WP_UnitTestCase {
 	use ES_HTTP_Mock;
+	use Search_Test_Bootstrap;
 
 	/** @var Search */
 	public $search;
 	/** @var Versioning */
 	public $version_instance;
 
-	public static function tearDownAfterClass(): void {
-		Constant_Mocker::clear();
-		parent::tearDownAfterClass();
-	}
-
 	public function setUp(): void {
 		parent::setUp();
 
-		require_once __DIR__ . '/../../../../search/search.php';
-		require_once __DIR__ . '/../../../../search/includes/classes/class-settingshealthjob.php';
-		require_once __DIR__ . '/../../../../prometheus.php';
-
-		$this->search = new Search();
-		$this->search->init();
-
-		Constant_Mocker::clear();
-		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
-		Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array(
-			'https://es-endpoint1',
-			'https://es-endpoint2',
-		) );
+		$this->search = $this->boot_search( [
+			'FILES_CLIENT_SITE_ID'        => 123,
+			'VIP_ELASTICSEARCH_ENDPOINTS' => array(
+				'https://es-endpoint1',
+				'https://es-endpoint2',
+			),
+		] );
 
 		$this->version_instance = $this->search->versioning;
-
-		// Required so that EP registers the Indexables
-		do_action( 'plugins_loaded' );
-		do_action( 'init' );
-
-		\Automattic\VIP\Prometheus\Plugin::get_instance()->init_registry();
-		$this->search->load_collector();
-		\Automattic\VIP\Prometheus\Plugin::get_instance()->load_collectors();
 
 		$this->add_es_http_mock();
 	}
@@ -59,38 +42,31 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test__process_indexables_settings_health_results__reports_error() {
+	public function process_indexables_settings_health_results_error_data() {
 		$error = new WP_Error( 'foo', 'Bar' );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
-
-		$stub->expects( $this->once() )
-			->method( 'send_alert' );
-
-		$stub->process_indexables_settings_health_results( $error );
+		return [
+			'whole check failed' => [ $error, 1 ],
+			'indexables failed'  => [
+				[
+					'post' => $error,
+					'user' => $error,
+				],
+				2,
+			],
+		];
 	}
 
-	public function test__process_indexables_settings_health_results__reports_error_per_indexable() {
-		$error                = new WP_Error( 'foo', 'Bar' );
-		$unhealthy_indexables = [
-			'post' => $error,
-			'user' => $error,
-		];
+	/**
+	 * @dataProvider process_indexables_settings_health_results_error_data
+	 */
+	public function test__process_indexables_settings_health_results__reports_error( $results, $expected_alerts ) {
+		$stub = $this->stub_job();
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
-
-		$stub->expects( $this->exactly( count( $unhealthy_indexables ) ) )
+		$stub->expects( $this->exactly( $expected_alerts ) )
 			->method( 'send_alert' );
 
-		$stub->process_indexables_settings_health_results( $unhealthy_indexables );
+		$stub->process_indexables_settings_health_results( $results );
 	}
 
 	public function test__heal_index_settings__reports_error_per_failed_indexable_retrieval() {
@@ -103,11 +79,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$indexables_mock = $this->createMock( Indexables::class );
 		$indexables_mock->method( 'get' )->willReturn( $error );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
+		$stub = $this->stub_job();
 
 		$stub->indexables = $indexables_mock;
 
@@ -161,11 +133,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 			'index_name'    => 'foo-index',
 		) );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
+		$stub = $this->stub_job();
 
 		$stub->indexables = $indexables_mock;
 		$stub->health     = $health_mock;
@@ -180,13 +148,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 	public function test__maybe_process_build__one_version_existence() {
 		$indexable = Indexables::factory()->get( 'post' );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job();
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
@@ -202,13 +164,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$this->version_instance->add_version( $indexable );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job();
 
 		$stub->expects( $this->once() )
 			->method( 'send_alert' );
@@ -224,13 +180,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$indexable = Indexables::factory()->get( 'post' );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'send_alert' ] )
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job();
 
 		$stub->expects( $this->never() )
 			->method( 'send_alert' );
@@ -239,52 +189,29 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
 		$this->assertFalse( $event );
-
-		delete_option( SettingsHealthJob::BUILD_LOCK_NAME );
-
-		$stub->maybe_process_build( $indexable );
-
-		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
-		$this->assertIsInt( $event );
-	}
-
-	public function test__maybe_process_build() {
-		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
-
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'check_process_build' ] )
-			->getMock();
-
-		$stub->search = $this->search;
-
-		$stub->expects( $this->once() )
-			->method( 'check_process_build' );
-
-		$indexable = Indexables::factory()->get( 'post' );
-		$stub->maybe_process_build( $indexable );
 	}
 
 	public function test__maybe_process_build__in_progress() {
 		update_option( SettingsHealthJob::BUILD_LOCK_NAME, time() );
+		$last_processed_id = '1234';
+		update_option( SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->onlyMethods( [ 'check_process_build' ] )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job( [ 'check_process_build', 'alert_to_swap_index_versions', 'send_alert' ] );
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'in-progress' );
 
+		$stub->expects( $this->never() )
+			->method( 'alert_to_swap_index_versions' );
+		$stub->expects( $this->never() )
+			->method( 'send_alert' );
+
 		$indexable = Indexables::factory()->get( 'post' );
 		$stub->maybe_process_build( $indexable );
 
-		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] );
-		$this->assertFalse( $event );
+		// Unlike 'resume', a build that is still in progress must not be rescheduled from the last processed ID
+		$this->assertFalse( wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $last_processed_id ] ) );
+		$this->assertFalse( wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug ] ) );
 	}
 
 	public function test__maybe_process_build__resume() {
@@ -292,13 +219,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$last_processed_id = '1234';
 		update_option( SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $last_processed_id );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->onlyMethods( [ 'check_process_build' ] )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job( [ 'check_process_build' ] );
 
 		$stub->method( 'check_process_build' )
 			->willReturn( 'resume' );
@@ -315,13 +236,7 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$completed_status = 'Indexing completed';
 		update_option( SettingsHealthJob::LAST_PROCESSED_ID_OPTION, $completed_status );
 
-		/** @var MockObject&SettingsHealthJob */
-		$stub = $this->getMockBuilder( SettingsHealthJob::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'check_process_build', 'alert_to_swap_index_versions' ] )
-			->getMock();
-
-		$stub->search = $this->search;
+		$stub = $this->stub_job( [ 'check_process_build', 'alert_to_swap_index_versions' ] );
 
 		$stub->method( 'check_process_build' )
 		->willReturn( 'swap' );
@@ -334,5 +249,20 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 
 		$event = wp_next_scheduled( SettingsHealthJob::CRON_EVENT_BUILD_NAME, [ $indexable->slug, $completed_status ] );
 		$this->assertFalse( $event );
+	}
+
+	/**
+	 * @return MockObject&SettingsHealthJob
+	 */
+	private function stub_job( array $methods = [ 'send_alert' ] ): SettingsHealthJob {
+		/** @var MockObject&SettingsHealthJob */
+		$stub = $this->getMockBuilder( SettingsHealthJob::class )
+			->disableOriginalConstructor()
+			->onlyMethods( $methods )
+			->getMock();
+
+		$stub->search = $this->search;
+
+		return $stub;
 	}
 }

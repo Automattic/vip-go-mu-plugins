@@ -8,11 +8,10 @@ use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/trait-telemetry-test-helpers.php';
+
 class Telemetry_Test extends WP_UnitTestCase {
-	public function tear_down() {
-		parent::tear_down();
-		Constant_Mocker::clear();
-	}
+	use Telemetry_Test_Helpers;
 
 	/**
 	 * Exercise default and explicit-null options through real systems and queues.
@@ -20,9 +19,8 @@ class Telemetry_Test extends WP_UnitTestCase {
 	 * @dataProvider nullable_constructor_options
 	 */
 	public function test_default_constructor_records_real_events( $explicit_null ) {
-		wp_set_current_user( $this->factory()->user->create() );
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$this->login_as();
+		$this->enable_pendo_environment();
 		Constant_Mocker::define( 'VIP_PENDO_TRACK_INTEGRATION_KEY', 'fake-integration-key' );
 
 		global $wp_filter;
@@ -70,11 +68,8 @@ class Telemetry_Test extends WP_UnitTestCase {
 	}
 
 	public function test_event_queued() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$this->login_as();
+		$this->enable_pendo_environment();
 
 		/** @var MockObject|Telemetry_Event_Queue */
 		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
@@ -89,6 +84,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 				$this->assertFalse( is_wp_error( $event_data ) );
 				$this->assertSame( 'test_cool_event', $event_data->_en ?? $event_data->event );
 				$this->assertSame( 'bar', $event_data->foo ?? $event_data->properties->foo );
+				$this->assertFalse( isset( $event_data->global_baz ) || isset( $event_data->properties->global_baz ) );
 
 				return true;
 			} ) )
@@ -100,11 +96,8 @@ class Telemetry_Test extends WP_UnitTestCase {
 	}
 
 	public function test_event_queued_with_global_properties() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
-
-		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
-		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
+		$this->login_as();
+		$this->enable_pendo_environment();
 
 		/** @var MockObject|Telemetry_Event_Queue */
 		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
@@ -133,8 +126,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 	}
 
 	public function test_event_queued_with_pendo_disabled() {
-		$user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $user->ID );
+		$this->login_as();
 
 		/** @var MockObject|Telemetry_Event_Queue */
 		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )

@@ -2,191 +2,131 @@
 
 namespace Automattic\VIP\Security;
 
+use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 use WP_User;
 
 require_once __DIR__ . '/../../security/machine-user.php';
 
 class Machine_User_Test extends WP_UnitTestCase {
-	/** @var WP_User */
-	private $machine_user;
-
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->machine_user = $this->factory()->user->create_and_get( [
-			'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
-			'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
-			'role'       => WPCOM_VIP_MACHINE_USER_ROLE,
-		] );
-	}
-
-	public function get_test_data__user_modification_caps() {
-		return [
-			'edit_user'    => [ 'edit_user' ],
-			'remove_user'  => [ 'remove_user' ],
-			'delete_user'  => [ 'delete_user' ],
-			'promote_user' => [ 'promote_user' ],
-		];
-	}
-
-	// For testing non-superadmin Administrator users
-	public function get_test_data__selective_user_modification_caps() {
-		return [
-			'remove_user'  => [ 'remove_user' ],
-			'promote_user' => [ 'promote_user' ],
-		];
-	}
-
 	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__machine_user_cannot_modify_self( $test_cap ) {
-		$actual_has_cap = $this->machine_user->has_cap( $test_cap, $this->machine_user->ID );
-
-		$this->assertFalse( $actual_has_cap );
-	}
-
-	/**
-	 * A plain editor is already blocked by core, so grant the user-management caps
-	 * (as a custom role would) to make sure the machine user guard is what denies access.
+	 * Shared, read-only actors keyed by name: `machine`, `editor`, `manager` (an editor granted the
+	 * user-management caps, as a custom role would), `administrator`, `super_admin` and the `target` author.
 	 *
-	 * @dataProvider get_test_data__user_modification_caps
+	 * @var array<string, WP_User>
 	 */
-	public function test__non_admin_users_cannot_modify_machine_user( $test_cap ) {
-		if ( is_multisite() && 'delete_user' === $test_cap ) {
+	private static $users = [];
+
+	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {
+		self::$users = [
+			'machine'       => $factory->user->create_and_get( [
+				'user_login' => WPCOM_VIP_MACHINE_USER_LOGIN,
+				'user_email' => WPCOM_VIP_MACHINE_USER_EMAIL,
+				'role'       => WPCOM_VIP_MACHINE_USER_ROLE,
+			] ),
+			'editor'        => $factory->user->create_and_get( [ 'role' => 'editor' ] ),
+			'manager'       => $factory->user->create_and_get( [ 'role' => 'editor' ] ),
+			'administrator' => $factory->user->create_and_get( [ 'role' => 'administrator' ] ),
+			'super_admin'   => $factory->user->create_and_get( [ 'role' => 'administrator' ] ),
+			'target'        => $factory->user->create_and_get( [ 'role' => 'author' ] ),
+		];
+
+		foreach ( [ 'edit_users', 'delete_users', 'remove_users', 'promote_users', 'manage_network_users' ] as $user_management_cap ) {
+			self::$users['manager']->add_cap( $user_management_cap );
+		}
+
+		if ( is_multisite() ) {
+			grant_super_admin( self::$users['super_admin']->ID );
+		}
+	}
+
+	public static function wpTearDownAfterClass() {
+		if ( is_multisite() ) {
+			revoke_super_admin( self::$users['super_admin']->ID );
+		}
+	}
+
+	public function data_machine_user_guard(): iterable {
+		return self::actors_and_caps( [ 'machine', 'manager', 'administrator', 'super_admin' ] );
+	}
+
+	public function data_user_managers(): iterable {
+		return self::actors_and_caps( [ 'manager', 'administrator', 'super_admin' ] );
+	}
+
+	public function data_user_modification_caps(): iterable {
+		return self::actors_and_caps( [ 'editor' ] );
+	}
+
+	private static function actors_and_caps( array $actors ): iterable {
+		// Listed here rather than read from USER_MODIFICATION_CAPS, so dropping a cap there fails the tests.
+		foreach ( $actors as $actor ) {
+			foreach ( [ 'edit_user', 'delete_user', 'remove_user', 'promote_user' ] as $cap ) {
+				yield "$actor $cap" => [ $actor, $cap ];
+			}
+		}
+	}
+
+	/**
+	 * Nobody, the machine user included, may modify the machine user. The other actors can modify
+	 * regular users (see test__can_still_modify_others), so the machine user guard is what denies access.
+	 *
+	 * @dataProvider data_machine_user_guard
+	 */
+	public function test__cannot_modify_machine_user( string $actor, string $cap ) {
+		$this->skip_unsupported( $actor, $cap );
+
+		$this->assertFalse( self::$users[ $actor ]->has_cap( $cap, self::$users['machine']->ID ) );
+	}
+
+	/**
+	 * @dataProvider data_user_managers
+	 */
+	public function test__can_still_modify_others( string $actor, string $cap ) {
+		if ( is_multisite() && 'administrator' === $actor && in_array( $cap, [ 'edit_user', 'delete_user' ], true ) ) {
+			$this->markTestSkipped( 'Administrators without super admin cannot edit or delete other users on multisite.' );
+		}
+
+		$this->skip_unsupported( $actor, $cap );
+
+		$this->assertTrue( self::$users[ $actor ]->has_cap( $cap, self::$users['target']->ID ) );
+	}
+
+	/**
+	 * The machine user guard leaves core's checks in place for everyone else.
+	 *
+	 * @dataProvider data_user_modification_caps
+	 */
+	public function test__users_without_user_management_caps_cannot_modify_others( string $actor, string $cap ) {
+		$this->assertFalse( self::$users[ $actor ]->has_cap( $cap, self::$users['target']->ID ) );
+	}
+
+	/**
+	 * @dataProvider data_non_machine_actor
+	 */
+	public function test__can_still_modify_self( string $actor ) {
+		$this->skip_unsupported( $actor, 'edit_user' );
+
+		$user = self::$users[ $actor ];
+
+		$this->assertTrue( $user->has_cap( 'edit_user', $user->ID ) );
+	}
+
+	public function data_non_machine_actor(): array {
+		return [
+			'editor'        => [ 'editor' ],
+			'administrator' => [ 'administrator' ],
+			'super_admin'   => [ 'super_admin' ],
+		];
+	}
+
+	private function skip_unsupported( string $actor, string $cap ): void {
+		if ( 'super_admin' === $actor && ! is_multisite() ) {
+			$this->markTestSkipped( 'No superadmins on single site installs.' );
+		}
+
+		if ( 'manager' === $actor && 'delete_user' === $cap && is_multisite() ) {
 			$this->markTestSkipped( 'Core only allows super admins to delete users on multisite.' );
 		}
-
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-		foreach ( [ 'edit_users', 'delete_users', 'remove_users', 'promote_users', 'manage_network_users' ] as $user_management_cap ) {
-			$test_user->add_cap( $user_management_cap );
-		}
-
-		$other_user = $this->factory()->user->create_and_get( [ 'role' => 'author' ] );
-		$this->assertTrue( $test_user->has_cap( $test_cap, $other_user->ID ), 'Precondition failed: user cannot modify a regular user' );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
-
-		$this->assertFalse( $actual_has_cap );
-	}
-
-	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__admin_users_cannot_modify_machine_user( $test_cap ) {
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
-
-		$this->assertFalse( $actual_has_cap );
-	}
-
-	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__superadmin_users_cannot_modify_machine_user( $test_cap ) {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'No superadmins on single site installs.' );
-		}
-
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		grant_super_admin( $test_user->ID );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $this->machine_user->ID );
-
-		$this->assertFalse( $actual_has_cap );
-	}
-
-	public function test__non_admin_users_can_still_modify_self() {
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-
-		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
-
-		$this->assertTrue( $actual_has_cap );
-	}
-
-	public function test__admin_users_can_still_modify_self() {
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-
-		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
-
-		$this->assertTrue( $actual_has_cap );
-	}
-
-	public function test__superadmin_users_can_still_modify_self() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'No superadmins on single site installs.' );
-		}
-
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		grant_super_admin( $test_user->ID );
-
-		$actual_has_cap = $test_user->has_cap( 'edit_user', $test_user->ID );
-
-		$this->assertTrue( $actual_has_cap );
-	}
-
-	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__non_admin_users_cannot_modify_others( $test_cap ) {
-		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
-
-		$this->assertFalse( $actual_has_cap );
-	}
-
-	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__admin_users_can_still_modify_others_on_single_site( $test_cap ) {
-		if ( is_multisite() ) {
-			$this->markTestSkipped( 'Single site test for administrator user; multisite tested separately.' );
-		}
-
-		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
-
-		$this->assertTrue( $actual_has_cap );
-	}
-
-	/**
-	 * Administrators without super admin have a more restricted set of caps on multisite (no edit or delete).
-	 *
-	 * @dataProvider get_test_data__selective_user_modification_caps
-	 */
-	public function test__admin_users_can_still_selectively_modify_others_on_multsite( $test_cap ) {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Multisite test for administrator user; single site tested separately.' );
-		}
-
-		$test_user    = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
-
-		$this->assertTrue( $actual_has_cap );
-	}
-
-	/**
-	 * @dataProvider get_test_data__user_modification_caps
-	 */
-	public function test__superadmin_users_can_still_modify_others( $test_cap ) {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'No superadmins on single site installs.' );
-		}
-
-		$test_user = $this->factory()->user->create_and_get( [ 'role' => 'administrator' ] );
-		grant_super_admin( $test_user->ID );
-		$user_to_edit = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
-
-		$actual_has_cap = $test_user->has_cap( $test_cap, $user_to_edit->ID );
-
-		$this->assertTrue( $actual_has_cap );
 	}
 }

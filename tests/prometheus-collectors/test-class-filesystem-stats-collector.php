@@ -7,12 +7,13 @@ use Prometheus\Histogram;
 use Prometheus\RegistryInterface;
 use WP_UnitTestCase;
 use Automattic\VIP\Files\API_Client;
-use Automattic\VIP\Files\VIP_Filesystem_Local_Stream_Wrapper;
+use Automattic\VIP\Files\VIP_Stream_Wrapper_Fixture;
 
 require_once __DIR__ . '/../../prometheus-collectors/class-filesystem-stats-collector.php';
-require_once __DIR__ . '/../../files/class-vip-filesystem-local-stream-wrapper.php';
+require_once __DIR__ . '/../files/trait-vip-stream-wrapper-fixture.php';
 
 class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
+	use VIP_Stream_Wrapper_Fixture;
 
 	public function tearDown(): void {
 		// Reset the collector's static state so tests are isolated. No setAccessible():
@@ -24,8 +25,6 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		foreach ( [ 'read_bytes_acc', 'read_files_acc' ] as $prop ) {
 			$ref->getProperty( $prop )->setValue( null, 0 );
 		}
-
-		VIP_Filesystem_Local_Stream_Wrapper::$default_client = null;
 
 		parent::tearDown();
 	}
@@ -50,32 +49,32 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		return [ $collector, $histogram ];
 	}
 
-	public function test_record_write_observes_size_and_labels(): void {
-		[ , $histogram ] = $this->init_with_histogram_spy();
-
-		$histogram->expects( $this->once() )
-			->method( 'observe' )
-			->with( 2048, [ 'image', 'image/jpeg' ] );
-
-		Filesystem_Stats_Collector::record_write( 2048, 'wp-content/uploads/2026/06/photo.jpg' );
+	/**
+	 * Uploads observe their size, labelled by file type and mime type; empty writes are skipped.
+	 */
+	public function get_test_data__record_write(): array {
+		return [
+			'image'             => [ 2048, 'wp-content/uploads/2026/06/photo.jpg', [ 'image', 'image/jpeg' ] ],
+			'unknown extension' => [ 2048, 'wp-content/uploads/file.unknownext', [ 'other', 'other' ] ],
+			'zero size'         => [ 0, 'wp-content/uploads/empty.jpg', null ],
+		];
 	}
 
-	public function test_record_write_unknown_extension_is_other(): void {
+	/**
+	 * @dataProvider get_test_data__record_write
+	 */
+	public function test_record_write( int $size, string $path, ?array $expected_labels ): void {
 		[ , $histogram ] = $this->init_with_histogram_spy();
 
-		$histogram->expects( $this->once() )
-			->method( 'observe' )
-			->with( 2048, [ 'other', 'other' ] );
+		if ( null === $expected_labels ) {
+			$histogram->expects( $this->never() )->method( 'observe' );
+		} else {
+			$histogram->expects( $this->once() )
+				->method( 'observe' )
+				->with( $size, $expected_labels );
+		}
 
-		Filesystem_Stats_Collector::record_write( 2048, 'wp-content/uploads/file.unknownext' );
-	}
-
-	public function test_record_write_zero_size_is_skipped(): void {
-		[ , $histogram ] = $this->init_with_histogram_spy();
-
-		$histogram->expects( $this->never() )->method( 'observe' );
-
-		Filesystem_Stats_Collector::record_write( 0, 'wp-content/uploads/empty.jpg' );
+		Filesystem_Stats_Collector::record_write( $size, $path );
 	}
 
 	public function test_record_write_without_initialize_is_noop(): void {
@@ -173,14 +172,6 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		$this->assertInstanceOf( Filesystem_Stats_Collector::class, $collectors['filesystem'] );
 	}
 
-	private function register_wrapper_with_client( API_Client $client ): void {
-		VIP_Filesystem_Local_Stream_Wrapper::$default_client = $client;
-
-		if ( ! in_array( VIP_Filesystem_Local_Stream_Wrapper::DEFAULT_PROTOCOL, stream_get_wrappers(), true ) ) {
-			( new VIP_Filesystem_Local_Stream_Wrapper( $client ) )->register();
-		}
-	}
-
 	public function test_stream_flush_records_upload(): void {
 		[ , $histogram ] = $this->init_with_histogram_spy();
 
@@ -203,7 +194,7 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 				return '/wp-content/uploads/x.jpg';
 			} );
 
-		$this->register_wrapper_with_client( $client );
+		$this->register_vip_stream_wrapper( $client );
 
 		// 4 bytes, written through the vip:// wrapper to exercise stream_flush().
 		$this->assertSame( 4, file_put_contents( 'vip://wp-content/uploads/x.jpg', 'data' ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
@@ -221,7 +212,7 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		$client = $this->createMock( API_Client::class );
 		$client->method( 'get_file' )->willReturn( $tmp );
 
-		$this->register_wrapper_with_client( $client );
+		$this->register_vip_stream_wrapper( $client );
 
 		$contents = file_get_contents( 'vip://wp-content/uploads/y.jpg' ); // phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsRemoteFile
 		$this->assertSame( 100, strlen( $contents ) );

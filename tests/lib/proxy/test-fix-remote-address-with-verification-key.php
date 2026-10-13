@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Tests;
 
-use Automattic\Test\Constant_Mocker;
-
 use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 
 require_once __DIR__ . '/class-ip-forward-test-base.php';
@@ -13,42 +11,23 @@ require_once __DIR__ . '/class-ip-forward-test-base.php';
 // phpcs:disable WordPress.Security.ValidatedSanitizedInput
 
 class Fix_Remote_Address_With_Verification_Key_Test extends IP_Forward_Test_Base {
-	public function setUp(): void {
-		parent::setUp();
+	const PROXY_VERIFICATION_KEY = 'valid-key';
 
-		Constant_Mocker::clear();
-		Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' );
+	public function data_fix_remote_address_with_verification_key(): array {
+		return [
+			'invalid IP'  => [ 'bad_ip', 'valid-key', false, self::DEFAULT_REMOTE_ADDR ],
+			'invalid key' => [ '5.6.7.8', 'not-a-valid-key', false, self::DEFAULT_REMOTE_ADDR ],
+			'all valid'   => [ '5.6.7.8', 'valid-key', true, '5.6.7.8' ],
+		];
 	}
 
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
-	}
+	/**
+	 * @dataProvider data_fix_remote_address_with_verification_key
+	 */
+	public function test__fix_remote_address_with_verification_key( string $user_ip, string $key, bool $expected, string $expected_remote_addr ) {
+		$result = fix_remote_address_with_verification_key( $user_ip, $key );
 
-	public function test__invalid_ip() {
-		$key     = 'valid-key';
-		$user_ip = 'bad_ip';
-		$result  = fix_remote_address_with_verification_key( $user_ip, $key );
-
-		self::assertFalse( $result );
-		self::assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__invalid_key() {
-		$key     = 'not-a-valid-key';
-		$user_ip = '5.6.7.8';
-		$result  = fix_remote_address_with_verification_key( $user_ip, $key );
-
-		self::assertFalse( $result );
-		self::assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__all_valid() {
-		$key     = 'valid-key';
-		$user_ip = '5.6.7.8';
-		$result  = fix_remote_address_with_verification_key( $user_ip, $key );
-
-		self::assertTrue( $result );
-		self::assertEquals( '5.6.7.8', $_SERVER['REMOTE_ADDR'] );
+		self::assertSame( $expected, $result );
+		self::assertEquals( $expected_remote_addr, $_SERVER['REMOTE_ADDR'] );
 	}
 }

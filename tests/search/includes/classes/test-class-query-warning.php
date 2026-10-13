@@ -12,11 +12,9 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	private $warnings = [];
 
 	/** @var array */
-	private $original_server = [];
 
 	public function setUp(): void {
 		parent::setUp();
-		$this->original_server  = $_SERVER;
 		$this->warnings         = [];
 		$_SERVER['HTTPS']       = 'on';
 		$_SERVER['HTTP_HOST']   = 'example.com';
@@ -46,12 +44,11 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function tearDown(): void {
 		restore_error_handler();
-		$_SERVER = $this->original_server;
 		parent::tearDown();
 	}
 
 	public function test_200_ms_engine_time_does_not_warn_and_201_ms_does(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$body    = [
 			'query' => [ 'term' => [ 'post_status' => 'publish' ] ],
 			'size'  => 10,
@@ -64,16 +61,30 @@ class Query_Warning_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'Review how this query is constructed', $this->warnings[1] );
 	}
 
-	public function test_slow_request_with_fast_engine_and_small_payload_does_not_warn(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_name' => 'example' ] ] ] );
+	public function emit_decision_data(): array {
+		$term_body = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
 
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 3, 1, 1 ), 260.0, $this->customer_backtrace(), 2048 ) );
-		$this->assertSame( [], $this->warnings );
+		return [
+			'slow request with fast engine and small payload' => [ wp_json_encode( [ 'query' => [ 'term' => [ 'post_name' => 'example' ] ] ] ), 3, 1, 1, 260.0, 2048, false ],
+			'slow request just under one mebibyte of data' => [ $term_body, 5, 10, 10, 300.0, MB_IN_BYTES - strlen( $term_body ) - 1, false ],
+			'slow request with one mebibyte of data'       => [ $term_body, 5, 10, 10, 300.0, MB_IN_BYTES - strlen( $term_body ), true ],
+			'slow request with unknown response size'      => [ $term_body, 5, 10, 10, 300.0, null, false ],
+			'slow request with unknown request size'       => [ [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ], 5, 10, 10, 300.0, 5 * MB_IN_BYTES, false ],
+			'fast request with large payload'              => [ $term_body, 12, 500, 900, 150.0, 5 * MB_IN_BYTES, false ],
+			'slow request without engine time'             => [ $term_body, null, 1, 1, 900.0, 5 * MB_IN_BYTES, false ],
+		];
+	}
+
+	/**
+	 * @dataProvider emit_decision_data
+	 */
+	public function test_emit_decision( $body, ?int $engine_ms, int $returned, int $total_hits, float $request_ms, ?int $response_bytes, bool $expected ): void {
+		$this->assertSame( $expected, $this->warning()->maybe_emit( $body, $this->response( $engine_ms, $returned, $total_hits ), $request_ms, $this->customer_backtrace(), $response_bytes ) );
+		$this->assertCount( $expected ? 2 : 0, $this->warnings );
 	}
 
 	public function test_slow_request_with_fast_engine_and_large_payload_warns(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$body    = wp_json_encode( [
 			'query' => [ 'term' => [ 'post_status' => 'publish' ] ],
 			'size'  => 500,
@@ -88,40 +99,9 @@ class Query_Warning_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'Review how this query is constructed', $this->warnings[1] );
 	}
 
-	public function test_payload_rule_starts_at_one_mebibyte_of_request_and_response_data(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
-
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), MB_IN_BYTES - strlen( $body ) - 1 ) );
-		$this->assertTrue( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), MB_IN_BYTES - strlen( $body ) ) );
-	}
-
-	public function test_payload_rule_requires_known_payload_size(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
-
-		$this->assertFalse( $warning->maybe_emit( wp_json_encode( $body ), $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace() ) );
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 5, 10, 10 ), 300.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
-	}
-
-	public function test_large_payload_with_fast_request_does_not_warn(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
-
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 12, 500, 900 ), 150.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
-	}
-
-	public function test_missing_engine_time_does_not_slow_warn(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
-		$body    = wp_json_encode( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ] );
-
-		$this->assertFalse( $warning->maybe_emit( $body, $this->response( null, 1, 1 ), 900.0, $this->customer_backtrace(), 5 * MB_IN_BYTES ) );
-		$this->assertSame( [], $this->warnings );
-	}
-
 	public function test_invalid_filter_values_fall_back_and_valid_threshold_is_used(): void {
 		add_filter( 'vip_search_slow_query_threshold_ms', static fn() => 'invalid' );
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$body    = [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ];
 
 		$this->assertFalse( $warning->maybe_emit( $body, $this->response( 200, 0, 0 ), 210.0, $this->customer_backtrace() ) );
@@ -133,7 +113,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_tuned_dedupe_window_is_exposed_in_both_messages(): void {
 		add_filter( 'vip_search_query_warning_dedupe_window_s', static fn(): int => 120 );
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [], $this->response( 10, 0, 0 ), 50.0, $this->customer_backtrace() );
 
 		$this->assertStringContainsString( 'dedupe_window_s=120', $this->warnings[0] );
@@ -141,13 +121,11 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_exact_combined_message_contract_and_order(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [ 'size' => 10 ], $this->response( 493, 0, 0 ), 527.0, $this->customer_backtrace() );
 
 		$this->assertCount( 2, $this->warnings );
-		preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $this->warnings[0], $matches );
-		$this->assertArrayHasKey( 1, $matches );
-		$id = $matches[1];
+		$id = $this->warning_id( $this->warnings[0] );
 
 		$this->assertSame(
 			'VIP_SEARCH_QUERY_WARNING v=1 warning_id=VSQ-TEST000 types=slow_query,unbounded_query request_ms=527 request_limit_ms=200 engine_ms=493 requested=10 returned=0 total_hits=0 query_scope=unbounded url="https://example.com/search/?category=events" deduplicated=true dedupe_window_s=300',
@@ -160,14 +138,14 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_slow_only_and_unbounded_only_select_different_human_copy(): void {
-		$slow = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$slow = $this->warning();
 		$slow->maybe_emit( [ 'query' => [ 'term' => [ 'post_status' => 'publish' ] ] ], $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() );
 		$this->assertStringContainsString( 'triggered a slow VIP Search query', $this->warnings[1] );
 		$this->assertStringNotContainsString( 'unbounded', strtolower( $this->warnings[1] ) );
 
 		$this->warnings = [];
 		wp_cache_flush();
-		$unbounded = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$unbounded = $this->warning();
 		$unbounded->maybe_emit( [], $this->response( 10, 2, 2 ), 50.0, $this->customer_backtrace() );
 		$this->assertStringStartsWith( 'VIP_SEARCH_QUERY_WARNING: ', $this->warnings[1] );
 		$this->assertStringContainsString( 'triggered an unbounded VIP Search query', $this->warnings[1] );
@@ -175,7 +153,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_volatile_query_values_share_warning_id_and_are_deduplicated(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [ 'query' => [ 'term' => [ 'post_author' => 1 ] ] ], $this->response( 250, 1, 1 ), 251.0, $this->customer_backtrace() );
 		$warning->maybe_emit( [ 'query' => [ 'term' => [ 'post_author' => 9999 ] ] ], $this->response( 250, 1, 1 ), 251.0, $this->customer_backtrace() );
 
@@ -183,18 +161,16 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_new_violation_set_emits_with_same_warning_id_inside_window(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [], $this->response( 10, 1, 1 ), 50.0, $this->customer_backtrace() );
 		$warning->maybe_emit( [], $this->response( 250, 1, 1 ), 251.0, $this->customer_backtrace() );
 
 		$this->assertCount( 4, $this->warnings );
-		preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $this->warnings[0], $first );
-		preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $this->warnings[2], $second );
-		$this->assertSame( $first[1], $second[1] );
+		$this->assertSame( $this->warning_id( $this->warnings[0] ), $this->warning_id( $this->warnings[2] ) );
 	}
 
 	public function test_different_customer_origins_receive_different_warning_ids(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [ 'query' => [ 'match_all' => [] ] ], $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() );
 		$warning->maybe_emit(
 			[ 'query' => [ 'match_all' => [] ] ],
@@ -209,13 +185,11 @@ class Query_Warning_Test extends WP_UnitTestCase {
 			]
 		);
 
-		preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $this->warnings[0], $first );
-		preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $this->warnings[2], $second );
-		$this->assertNotSame( $first[1], $second[1] );
+		$this->assertNotSame( $this->warning_id( $this->warnings[0] ), $this->warning_id( $this->warnings[2] ) );
 	}
 
 	public function test_site_budget_counts_pairs_and_suppresses_the_sixth_family(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 
 		for ( $index = 1; $index <= 6; $index++ ) {
 			$warning->maybe_emit(
@@ -241,7 +215,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_invalid_body_can_slow_warn_without_unbounded_label(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( '{invalid', $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() );
 
 		$this->assertStringContainsString( 'types=slow_query', $this->warnings[0] );
@@ -251,7 +225,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_messages_are_single_line_and_do_not_copy_request_body_or_absolute_path(): void {
 		$_SERVER['REQUEST_URI'] = "/search/?s=visible\nInjected";
-		$warning                = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning                = $this->warning();
 		$warning->maybe_emit(
 			[ 'query' => [ 'match' => [ 'post_content' => 'secret-body-term' ] ] ],
 			$this->response( 250, 0, 0 ),
@@ -268,7 +242,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_missing_customer_frame_uses_safe_origin_fallback(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [], $this->response( 10, 0, 0 ), 50.0, [
 			[
 				'file' => '/srv/www/wp-content/mu-plugins/search.php',
@@ -282,7 +256,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_non_http_context_uses_an_explicit_allowlisted_source(): void {
 		unset( $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI'] );
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [], $this->response( 10, 0, 0 ), 50.0, $this->customer_backtrace() );
 		$_SERVER['HTTP_HOST']   = 'example.com';
 		$_SERVER['REQUEST_URI'] = '/search/?category=events';
@@ -292,7 +266,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_fractional_slow_duration_is_reported_above_the_threshold(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( wp_json_encode( [ 'query' => [ 'match_all' => [] ] ] ), $this->response( 5, 0, 0 ), 200.1, $this->customer_backtrace(), MB_IN_BYTES );
 
 		$this->assertStringContainsString( 'types=slow_query,unbounded_query request_ms=201 request_limit_ms=200', $this->warnings[0] );
@@ -300,7 +274,7 @@ class Query_Warning_Test extends WP_UnitTestCase {
 	}
 
 	public function test_non_persistent_cache_suppresses_warning(): void {
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_false' );
+		$warning = $this->warning( '__return_false' );
 
 		$this->assertFalse( $warning->maybe_emit( [], $this->response( 250, 0, 0 ), 251.0, $this->customer_backtrace() ) );
 		$this->assertSame( [], $this->warnings );
@@ -346,12 +320,22 @@ class Query_Warning_Test extends WP_UnitTestCase {
 
 	public function test_cron_source_takes_precedence_over_http_request_variables(): void {
 		add_filter( 'wp_doing_cron', '__return_true' );
-		$warning = new Query_Warning( new Query_Classifier(), static fn(): int => 1000, '__return_true' );
+		$warning = $this->warning();
 		$warning->maybe_emit( [], $this->response( 10, 0, 0 ), 50.0, $this->customer_backtrace() );
 
 		$this->assertStringContainsString( 'source="wp_cron"', $this->warnings[0] );
 		$this->assertStringNotContainsString( 'url=', $this->warnings[0] );
 		$this->assertStringContainsString( 'A scheduled WordPress task triggered', $this->warnings[1] );
+	}
+
+	private function warning( string $persistent_cache = '__return_true' ): Query_Warning {
+		return new Query_Warning( new Query_Classifier(), static fn(): int => 1000, $persistent_cache );
+	}
+
+	private function warning_id( string $message ): string {
+		$this->assertSame( 1, preg_match( '/warning_id=(VSQ-[A-F0-9]{8})/', $message, $matches ), 'The message should contain a warning ID' );
+
+		return $matches[1];
 	}
 
 	private function response( ?int $engine_ms, int $returned, int $total_hits ): array {

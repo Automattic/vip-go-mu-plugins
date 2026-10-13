@@ -54,7 +54,7 @@ runs:
       run: |
         if [ "${COVERAGE}" = "yes" ] && [ -n "${COVERAGE_FILE}" ]; then
           echo "coverage=pcov" >> $GITHUB_OUTPUT
-          echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
+          echo 'ini=apc.enable_cli=1, pcov.directory=., pcov.exclude="~/(vendor|tests|node_modules|jetpack[^/]*|wp-parsely[^/]+|vip-integrations|advanced-post-cache|akismet|cron-control|drop-ins|http-concat|lightweight-term-count-update|query-monitor|(search/(elasticpress|debug-bar-elasticpress|es-wp-query))|shared-plugins|rewrite-rules-inspector|vaultpress|wordpress-importer)/~"' >> $GITHUB_OUTPUT
         else
           echo "coverage=none" >> $GITHUB_OUTPUT
           echo "ini=apc.enable_cli=1, opcache.enable_cli=0" >> $GITHUB_OUTPUT
@@ -62,10 +62,6 @@ runs:
       env:
         COVERAGE: ${{ inputs.coverage }}
         COVERAGE_FILE: ${{ inputs.coverage-file }}
-
-    - name: Install svn
-      run: sudo apt-get update && sudo apt-get install -y subversion
-      shell: bash
 
     - name: Set up PHP
       uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
@@ -85,10 +81,46 @@ runs:
       env:
         PHPUNIT_VERSION: ${{ inputs.phpunit }}
 
+    # Not ramsey/composer-install: its cache key hashes every composer.json in the workspace,
+    # which takes ~10s once the mu-plugins-ext copies are in place.
+    - name: Get Composer cache directory
+      id: composer-cache
+      shell: bash
+      run: echo "dir=$(composer config cache-files-dir)" >> "${GITHUB_OUTPUT}"
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v6.1.0
+      with:
+        path: ${{ steps.composer-cache.outputs.dir }}
+        key: composer-${{ runner.os }}-php-${{ inputs.php }}-${{ hashFiles('composer.lock') }}
+        restore-keys: composer-${{ runner.os }}-php-${{ inputs.php }}-
+
     - name: Install PHP Dependencies
-      uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+      shell: bash
+      run: composer install --no-interaction --no-progress
+
+    # The test library action needs Subversion only when the test library isn't cached yet
+    # (always for nightly). Try without it first; installing it costs ~10s per job. A failed
+    # first attempt installs it and retries.
+    - name: Install svn
+      if: inputs.wordpress == 'nightly' || inputs.wordpress == 'trunk'
+      run: sudo apt-get update && sudo apt-get install -y subversion
+      shell: bash
 
     - name: Set up WordPress and WordPress Test Library
+      id: wptl
+      uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
+      continue-on-error: true
+      with:
+        version: ${{ inputs.wordpress }}
+
+    - name: Install svn (test library not cached)
+      if: steps.wptl.outcome == 'failure'
+      run: sudo apt-get update && sudo apt-get install -y subversion
+      shell: bash
+
+    - name: Set up WordPress and WordPress Test Library (with svn)
+      if: steps.wptl.outcome == 'failure'
       uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
       with:
         version: ${{ inputs.wordpress }}
