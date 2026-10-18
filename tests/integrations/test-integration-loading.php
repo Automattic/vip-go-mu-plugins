@@ -13,27 +13,33 @@ use WP_UnitTestCase;
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
 
 class Integration_Loading_Test extends WP_UnitTestCase {
-	private function create_clipisode_fixture( string $version, string $required_wp_version ): string {
-		$directory = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/clipisode-' . $version;
+	/**
+	 * Create a bundled plugin in vip-integrations/<slug>-<version>/<slug>.php that defines $loaded_constant as its version.
+	 *
+	 * @return string The plugin file path.
+	 */
+	private function create_bundled_plugin_fixture( string $slug, string $version, string $required_wp_version, string $loaded_constant ): string {
+		$directory = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $slug . '-' . $version;
 		wp_mkdir_p( $directory );
 
 		$plugin = <<<PHP
 <?php
 /**
- * Plugin Name: Clipisode test fixture
+ * Plugin Name: {$slug} test fixture
  * Requires at least: {$required_wp_version}
  */
-\Automattic\VIP\Integrations\define( 'CLIPISODE_VERSION', '{$version}' );
+\Automattic\VIP\Integrations\define( '{$loaded_constant}', '{$version}' );
 PHP;
 
+		$plugin_file = $directory . '/' . $slug . '.php';
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents -- Test-owned bundled plugin fixture.
-		file_put_contents( $directory . '/clipisode.php', $plugin );
+		file_put_contents( $plugin_file, $plugin );
 
-		return $directory;
+		return $plugin_file;
 	}
 
-	private function remove_clipisode_fixture( string $directory ): void {
-		$plugin_file = $directory . '/clipisode.php';
+	private function remove_bundled_plugin_fixture( string $plugin_file ): void {
+		$directory = dirname( $plugin_file );
 		if ( file_exists( $plugin_file ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Remove the test-owned bundled plugin fixture.
 			unlink( $plugin_file );
@@ -80,6 +86,8 @@ PHP;
 			'safe publish loaded constant'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED' ],
 			'safe publish plugin file constant'       => [ SafePublishIntegration::class, 'SAFE_PUBLISH_PLUGIN_FILE' ],
 			'security boost not loaded'               => [ SecurityBoostIntegration::class, null ],
+			'share a draft not loaded'                => [ ShareadraftIntegration::class, null ],
+			'share a draft loaded constant'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED' ],
 			'security boost loaded constant'          => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST__LOADED' ],
 			'vip governance not loaded'               => [ VipGovernanceIntegration::class, null ],
 			'vip workflows not loaded'                => [ VipWorkflowsIntegration::class, null ],
@@ -151,6 +159,8 @@ PHP;
 			'remote data blocks keeps existing'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS_CONFIGS', $existing, $existing ],
 			'security boost defines empty config'    => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', null, [] ],
 			'security boost keeps existing constant' => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', $existing, $existing ],
+			'share a draft defines empty config'     => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', null, [] ],
+			'share a draft keeps existing constant'  => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', $existing, $existing ],
 		];
 	}
 
@@ -191,6 +201,8 @@ PHP;
 				],
 			],
 			'safe publish without versions'         => [ SafePublishIntegration::class, [ 'get_versions' => [] ] ],
+			'share a draft without versions'        => [ ShareadraftIntegration::class, [ 'get_latest_version' => null ] ],
+			'share a draft missing entry file'      => [ ShareadraftIntegration::class, [ 'get_latest_version' => 'shareadraft-missing-test-plugin' ] ],
 			'vip governance without versions'       => [ VipGovernanceIntegration::class, [ 'get_latest_version' => null ] ],
 			'vip workflows without versions'        => [ VipWorkflowsIntegration::class, [ 'get_versions' => [] ] ],
 			'wordpress mcp without versions'        => [ WordPressMcpIntegration::class, [ 'get_versions' => [] ] ],
@@ -229,6 +241,7 @@ PHP;
 			'real-time collaboration' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED', [] ],
 			'remote data blocks'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS__LOADED', [ 'is_supported_wp_version', 'get_latest_version' ] ],
 			'safe publish'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
+			'share a draft'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED', [ 'get_latest_version' ] ],
 			'vip workflows'           => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_LOADED', [ 'get_versions', 'get_selected_version_folder' ] ],
 		];
 	}
@@ -241,8 +254,8 @@ PHP;
 		global $wp_version;
 		$wp_version = '6.6'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
 
-		$older_fixture  = $this->create_clipisode_fixture( '999.0', '6.6' );
-		$latest_fixture = $this->create_clipisode_fixture( '999.1', '6.6' );
+		$older_fixture  = $this->create_bundled_plugin_fixture( 'clipisode', '999.0', '6.6', 'CLIPISODE_VERSION' );
+		$latest_fixture = $this->create_bundled_plugin_fixture( 'clipisode', '999.1', '6.6', 'CLIPISODE_VERSION' );
 
 		try {
 			$integration = new ClipisodeIntegration( 'test' );
@@ -256,8 +269,8 @@ PHP;
 			$this->assertTrue( defined( 'CLIPISODE_VERSION' ) );
 			$this->assertSame( '999.1', constant( 'CLIPISODE_VERSION' ) );
 		} finally {
-			$this->remove_clipisode_fixture( $older_fixture );
-			$this->remove_clipisode_fixture( $latest_fixture );
+			$this->remove_bundled_plugin_fixture( $older_fixture );
+			$this->remove_bundled_plugin_fixture( $latest_fixture );
 		}
 	}
 
@@ -269,7 +282,7 @@ PHP;
 		global $wp_version;
 		$wp_version = '6.5'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
 
-		$fixture = $this->create_clipisode_fixture( '999.2', '6.6' );
+		$fixture = $this->create_bundled_plugin_fixture( 'clipisode', '999.2', '6.6', 'CLIPISODE_VERSION' );
 
 		try {
 			$integration = new ClipisodeIntegration( 'test' );
@@ -279,7 +292,33 @@ PHP;
 			$this->assertFalse( $integration->is_active() );
 			$this->assertFalse( defined( 'CLIPISODE_VERSION' ) );
 		} finally {
-			$this->remove_clipisode_fixture( $fixture );
+			$this->remove_bundled_plugin_fixture( $fixture );
 		}
+	}
+
+	/**
+	 * @dataProvider data_shareadraft_wordpress_requirement
+	 */
+	public function test_shareadraft_loads_only_when_wordpress_meets_the_bundled_requirement( string $version, string $required_wp_version, bool $expected ): void {
+		$fixture = $this->create_bundled_plugin_fixture( 'shareadraft', $version, $required_wp_version, 'VIP_SHAREADRAFT_LOADED' );
+
+		try {
+			$integration = new ShareadraftIntegration( 'test' );
+			$integration->activate();
+			$this->load_on_plugins_loaded( $integration );
+
+			$this->assertSame( $expected, $integration->is_active() );
+			$this->assertSame( $expected, defined( 'VIP_SHAREADRAFT_LOADED' ) );
+		} finally {
+			$this->remove_bundled_plugin_fixture( $fixture );
+		}
+	}
+
+	public static function data_shareadraft_wordpress_requirement(): array {
+		// Each case needs its own plugin file, since require_once skips a file an earlier case loaded.
+		return [
+			'supported WordPress'   => [ '999.0', '5.0', true ],
+			'unsupported WordPress' => [ '999.1', '99.0', false ],
+		];
 	}
 }
