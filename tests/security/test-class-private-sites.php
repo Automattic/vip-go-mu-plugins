@@ -84,6 +84,7 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$this->assertSame( '1', get_option( 'blog_public' ) );
 		$this->assertSame( [ 'json-api', 'search' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search' ] ) );
 		$this->assertFalse( has_action( 'do_feed_rss2', [ $public, 'action_do_feed' ] ) );
+		$this->assertTrue( apply_filters( 'jetpack_publicize_should_load', true ) );
 
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', true );
@@ -101,6 +102,7 @@ class Private_Sites_Test extends WP_UnitTestCase {
 			'search' => true,
 			'other'  => true,
 		], $available_modules );
+		$this->assertFalse( apply_filters( 'jetpack_publicize_should_load', true ) );
 		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Controlled request fixture.
 		$original_agent             = $_SERVER['HTTP_USER_AGENT'] ?? null;
 		$_SERVER['HTTP_USER_AGENT'] = Private_Sites::FEEDBOT_USER_AGENT;
