@@ -64,6 +64,10 @@ class Private_Sites {
 		$this->block_unnecessary_access();
 
 		add_filter( 'jetpack_ai_enabled', '__return_false' );
+
+		// WP.com rejects Publicize connection requests from private sites, and Jetpack never caches the failure,
+		// so every uncached request would make a blocking call to WP.com. WP.com and Atomic skip Publicize on private sites too.
+		add_filter( 'jetpack_publicize_should_load', '__return_false' );
 	}
 
 	/**
