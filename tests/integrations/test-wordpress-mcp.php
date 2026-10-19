@@ -67,6 +67,34 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		];
 	}
 
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_is_loaded_when_adapter_plugin_file_loaded_without_version_constant(): void {
+		// A 0.7+ plugin file that stood down or lacks its autoloader loads Autoloader but not WP_MCP_VERSION or Plugin.
+		// phpcs:ignore Squiz.PHP.Eval.Discouraged -- Defines a stub of the adapter autoloader in this isolated process.
+		eval( 'namespace WP\MCP; final class Autoloader {}' );
+
+		$this->assertTrue( ( new WordPressMcpIntegration( $this->slug ) )->is_loaded() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_library_classes_do_not_stop_integration_from_activating(): void {
+		// A bundled library copy must not stop the integration from activating its auth hooks or loading.
+		// phpcs:ignore Squiz.PHP.Eval.Discouraged -- Defines stubs of bundled adapter classes in this isolated process.
+		eval( 'namespace WP\MCP\Core; final class McpAdapter {} namespace WP\MCP; final class Plugin {}' );
+
+		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
+		$wordpress_mcp_integration->activate();
+
+		$this->assertFalse( $wordpress_mcp_integration->is_loaded() );
+		$this->assertTrue( $wordpress_mcp_integration->is_active() );
+	}
+
 	public function test_load_registers_default_server_config_filter_at_max_priority(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		$wordpress_mcp_integration->activate( [ 'config' => [ 'server_namespace' => 'vip-mcp/v1' ] ] );
@@ -240,14 +268,14 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		];
 
 		return [
-			'pinned version on supported WordPress'     => [ '6.9', $versions, 'wordpress-mcp-0.6' ],
+			'pinned version on supported WordPress'     => [ '6.9', $versions, 'wordpress-mcp-0.7' ],
 			'latest version when pinned one is missing' => [
 				'6.9',
 				[
-					'wordpress-mcp-0.7' => '0.7',
+					'wordpress-mcp-0.6' => '0.6',
 					'wordpress-mcp-0.5' => '0.5',
 				],
-				'wordpress-mcp-0.7',
+				'wordpress-mcp-0.6',
 			],
 			'legacy version on older WordPress'         => [ '6.8', $versions, 'wordpress-mcp-0.5' ],
 			'no legacy version on older WordPress'      => [ '6.8', [ 'wordpress-mcp-0.6' => '0.6' ], null ],
