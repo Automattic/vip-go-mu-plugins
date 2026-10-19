@@ -82,27 +82,26 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$public = new Private_Sites();
 		$public->init();
 		$this->assertSame( '1', get_option( 'blog_public' ) );
-		$this->assertSame( [ 'json-api', 'search' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search' ] ) );
+		$this->assertSame( [ 'json-api', 'search', 'publicize' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search', 'publicize' ] ) );
 		$this->assertFalse( has_action( 'do_feed_rss2', [ $public, 'action_do_feed' ] ) );
-		$this->assertTrue( apply_filters( 'jetpack_publicize_should_load', true ) );
 
 		Constant_Mocker::clear();
 		Constant_Mocker::define( 'VIP_JETPACK_IS_PRIVATE', true );
 		$private = new Private_Sites();
 		$private->init();
 		$this->assertSame( '-1', get_option( 'blog_public' ) );
-		$this->assertSame( [ 'other' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'enhanced-distribution', 'search', 'other' ] ) );
+		$this->assertSame( [ 'other' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'enhanced-distribution', 'search', 'publicize', 'other' ] ) );
 		$available_modules = apply_filters( 'jetpack_get_available_modules', [
 			'json-api'              => true,
 			'enhanced-distribution' => true,
 			'search'                => true,
+			'publicize'             => true,
 			'other'                 => true,
 		] );
 		$this->assertSame( [
 			'search' => true,
 			'other'  => true,
 		], $available_modules );
-		$this->assertFalse( apply_filters( 'jetpack_publicize_should_load', true ) );
 		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Controlled request fixture.
 		$original_agent             = $_SERVER['HTTP_USER_AGENT'] ?? null;
 		$_SERVER['HTTP_USER_AGENT'] = Private_Sites::FEEDBOT_USER_AGENT;
