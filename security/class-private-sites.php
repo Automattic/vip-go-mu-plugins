@@ -64,12 +64,6 @@ class Private_Sites {
 		$this->block_unnecessary_access();
 
 		add_filter( 'jetpack_ai_enabled', '__return_false' );
-
-		// WP.com rejects Publicize connection requests from private sites, and Jetpack never caches the failure,
-		// so every uncached request would make a blocking call to WP.com. WP.com and Atomic skip Publicize on private sites too.
-		// filter_jetpack_active_modules() must also drop the publicize module: if an active module fails to load,
-		// Jetpack removes it from the saved active modules, and it would stay off once the site is no longer private.
-		add_filter( 'jetpack_publicize_should_load', '__return_false' );
 	}
 
 	/**
@@ -168,6 +162,8 @@ class Private_Sites {
 			'json-api',
 			'enhanced-distribution',
 			'search',
+			// WP.com rejects Publicize requests from private sites, and Jetpack doesn't cache the failure,
+			// so Publicize would make a blocking call to WP.com on every uncached request.
 			'publicize',
 		] ) );
 	}
@@ -183,6 +179,7 @@ class Private_Sites {
 
 		unset( $modules['json-api'] );
 		unset( $modules['enhanced-distribution'] );
+		unset( $modules['publicize'] );
 
 		return $modules;
 	}
