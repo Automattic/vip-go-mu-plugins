@@ -178,33 +178,11 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 */
 	public function test_ajax_permissions_with_valid_nonce( string $role, bool $allowed ): void {
 		wp_set_current_user( self::factory()->user->create( [ 'role' => $role ] ) );
-		VIP_Cache_Manager_Input_Stream::$body = wp_json_encode( [
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_cache_manager_dashboard_purge', [
 			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
 			'purge_action' => 'url',
 			'url'          => home_url( '/cache-permission-test/' ),
 		] );
-		$die_handler                          = static function () {
-			return static function () {
-				throw new RuntimeException( 'AJAX complete' );
-			};
-		};
-		add_filter( 'wp_doing_ajax', '__return_true' );
-		add_filter( 'wp_die_ajax_handler', $die_handler );
-		stream_wrapper_unregister( 'php' );
-		stream_wrapper_register( 'php', VIP_Cache_Manager_Input_Stream::class );
-		ob_start();
-		try {
-			do_action( 'wp_ajax_vip_cache_manager_dashboard_purge' );
-			$this->fail( 'The AJAX response must terminate.' );
-		} catch ( RuntimeException $exception ) {
-			$this->assertSame( 'AJAX complete', $exception->getMessage() );
-		} finally {
-			$response = ob_get_clean();
-			stream_wrapper_restore( 'php' );
-			remove_filter( 'wp_die_ajax_handler', $die_handler );
-			remove_filter( 'wp_doing_ajax', '__return_true' );
-		}
-		$decoded = json_decode( $response, true );
 		$this->assertSame( $allowed, $decoded['success'] );
 		if ( $allowed ) {
 			$this->assertContains( home_url( '/cache-permission-test/' ), $this->cache_manager->get_queued_purge_urls() );
@@ -212,6 +190,111 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 			$this->assertSame( [ 'message' => 'Unauthorized.' ], $decoded['data'] );
 			$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
 		}
+	}
+
+	public function get_ajax_nonce_cases(): array {
+		return [
+			'dashboard missing'        => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'missing' ],
+			'dashboard invalid'        => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'invalid' ],
+			'dashboard wrong purpose'  => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'wrong-purpose' ],
+			'page cache missing'       => [ 'wp_ajax_vip_purge_page_cache', 'missing' ],
+			'page cache invalid'       => [ 'wp_ajax_vip_purge_page_cache', 'invalid' ],
+			'page cache wrong purpose' => [ 'wp_ajax_vip_purge_page_cache', 'wrong-purpose' ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_ajax_nonce_cases
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_ajax_rejects_bad_nonce_without_queueing( string $hook, string $nonce_case ): void {
+		// Keep the hosted application identity local to this process, including when a guard is bypassed.
+		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
+			define( 'VIP_GO_APP_ID', 12345 );
+		}
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+		$is_dashboard  = 'wp_ajax_vip_cache_manager_dashboard_purge' === $hook;
+		$other_purpose = $is_dashboard ? 'purge-page' : 'vip_cache_manager_dashboard_purge';
+		$url           = home_url( '/cache-nonce-test/' );
+		$payload       = $is_dashboard ? [
+			'purge_action' => 'url',
+			'url'          => $url,
+		] : [ 'urls' => [ $url ] ];
+
+		if ( 'invalid' === $nonce_case ) {
+			$payload['nonce'] = 'invalid';
+		} elseif ( 'wrong-purpose' === $nonce_case ) {
+			$payload['nonce'] = wp_create_nonce( $other_purpose );
+		}
+
+		$decoded = $this->dispatch_purge_ajax( $hook, $payload );
+		$this->assertSame( false, $decoded['success'] );
+		$this->assertSame( $is_dashboard ? [ 'message' => 'Unauthorized.' ] : [ 'error' => 'Unauthorized' ], $decoded['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_page_cache_ajax_valid_nonce_queues_url(): void {
+		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
+			define( 'VIP_GO_APP_ID', 12345 );
+		}
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+		$url = home_url( '/cache-nonce-test/' );
+
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+		$this->assertSame( true, $decoded['success'] );
+		$this->assertContains( $url, $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Dispatch a JSON request through the registered production AJAX action.
+	 *
+	 * @return array Decoded JSON response.
+	 */
+	private function dispatch_purge_ajax( string $hook, array $payload ): array {
+		$previous_body                        = VIP_Cache_Manager_Input_Stream::$body;
+		VIP_Cache_Manager_Input_Stream::$body = wp_json_encode( $payload );
+		$die_handler                          = static function () {
+			return static function () {
+				throw new RuntimeException( 'AJAX complete' );
+			};
+		};
+		add_filter( 'wp_doing_ajax', '__return_true' );
+		add_filter( 'wp_die_ajax_handler', $die_handler );
+		$stream_replaced = false;
+		try {
+			$this->assertTrue( stream_wrapper_unregister( 'php' ) );
+			$stream_replaced = true;
+			$this->assertTrue( stream_wrapper_register( 'php', VIP_Cache_Manager_Input_Stream::class ) );
+			ob_start();
+			try {
+				do_action( $hook );
+				$this->fail( 'The AJAX response must terminate.' );
+			} catch ( RuntimeException $exception ) {
+				$this->assertSame( 'AJAX complete', $exception->getMessage() );
+			} finally {
+				$response = ob_get_clean();
+			}
+		} finally {
+			if ( $stream_replaced ) {
+				stream_wrapper_restore( 'php' );
+			}
+			VIP_Cache_Manager_Input_Stream::$body = $previous_body;
+			remove_filter( 'wp_die_ajax_handler', $die_handler );
+			remove_filter( 'wp_doing_ajax', '__return_true' );
+		}
+		$decoded = json_decode( $response, true );
+		$this->assertIsArray( $decoded, 'AJAX response must be JSON.' );
+		return $decoded;
 	}
 
 	public function test_current_user_can_purge_cache_filter() {
