@@ -162,9 +162,6 @@ class Private_Sites {
 			'json-api',
 			'enhanced-distribution',
 			'search',
-			// WP.com rejects Publicize requests from private sites, and Jetpack doesn't cache the failure,
-			// so Publicize would make a blocking call to WP.com on every uncached request.
-			'publicize',
 		] ) );
 	}
 
@@ -179,7 +176,6 @@ class Private_Sites {
 
 		unset( $modules['json-api'] );
 		unset( $modules['enhanced-distribution'] );
-		unset( $modules['publicize'] );
 
 		return $modules;
 	}

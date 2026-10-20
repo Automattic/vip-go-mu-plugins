@@ -82,7 +82,7 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$public = new Private_Sites();
 		$public->init();
 		$this->assertSame( '1', get_option( 'blog_public' ) );
-		$this->assertSame( [ 'json-api', 'search', 'publicize' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search', 'publicize' ] ) );
+		$this->assertSame( [ 'json-api', 'search' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'search' ] ) );
 		$this->assertFalse( has_action( 'do_feed_rss2', [ $public, 'action_do_feed' ] ) );
 
 		Constant_Mocker::clear();
@@ -90,12 +90,11 @@ class Private_Sites_Test extends WP_UnitTestCase {
 		$private = new Private_Sites();
 		$private->init();
 		$this->assertSame( '-1', get_option( 'blog_public' ) );
-		$this->assertSame( [ 'other' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'enhanced-distribution', 'search', 'publicize', 'other' ] ) );
+		$this->assertSame( [ 'other' ], apply_filters( 'jetpack_active_modules', [ 'json-api', 'enhanced-distribution', 'search', 'other' ] ) );
 		$available_modules = apply_filters( 'jetpack_get_available_modules', [
 			'json-api'              => true,
 			'enhanced-distribution' => true,
 			'search'                => true,
-			'publicize'             => true,
 			'other'                 => true,
 		] );
 		$this->assertSame( [
