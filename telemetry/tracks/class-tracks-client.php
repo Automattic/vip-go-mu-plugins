@@ -12,7 +12,6 @@ namespace Automattic\VIP\Telemetry\Tracks;
 use WP_Error;
 use WP_Http;
 use Automattic\VIP\Telemetry\Telemetry_Client;
-use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Handles all operations related to the Tracks API.
@@ -69,15 +68,13 @@ class Tracks_Client extends Telemetry_Client {
 			)
 		);
 
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( ! is_wp_error( $response ) && ( $status_code < 200 || $status_code >= 300 ) ) {
+			$response = new WP_Error( 'tracks_http_rejected', 'Telemetry endpoint rejected the event.', array( 'status' => $status_code ) );
+		}
+
 		if ( is_wp_error( $response ) ) {
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => 'error batch recording events to Tracks',
-				'extra'    => [
-					'error' => $response->get_error_messages(),
-				],
-			] );
+			$this->log_recording_error( $response, $status_code, 'error batch recording events to Tracks' );
 			return $response;
 		}
 

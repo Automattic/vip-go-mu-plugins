@@ -15,15 +15,12 @@ use function Automattic\Test\Utils\get_class_property_as_public;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.VariableComment.Missing
 
+/**
+ * ParselyIntegration::is_loaded() against the real plugin is covered by MU_Parsely_Integration_Test, which
+ * loads wp-parsely in a separate process instead of leaking its classes into this one.
+ */
 class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 	private string $slug = 'parsely';
-
-	public function test_is_loaded_returns_true_if_parsley_exist(): void {
-		require_once __DIR__ . '/../../wp-parsely/wp-parsely.php';
-
-		$parsely_integration = new ParselyIntegration( $this->slug );
-		$this->assertTrue( $parsely_integration->is_loaded() );
-	}
 
 	public function test__load_call_returns_without_setting_constant_if_parsely_is_already_loaded(): void {
 		/**
@@ -33,11 +30,10 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 */
 		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( true );
-		$preload_state = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' );
 
 		$parsely_integration_mock->load();
 
-		$this->assertEquals( $preload_state, Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
+		$this->assertFalse( Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
 	}
 
 	public function test__load_call_is_setting_the_enabled_constant_if_no_constant_is_defined(): void {
@@ -48,15 +44,10 @@ class VIP_Parsely_Integration_Test extends WP_UnitTestCase {
 		 */
 		$parsely_integration_mock = $this->getMockBuilder( ParselyIntegration::class )->setConstructorArgs( [ 'parsely' ] )->onlyMethods( [ 'is_loaded' ] )->getMock();
 		$parsely_integration_mock->expects( $this->once() )->method( 'is_loaded' )->willReturn( false );
-		$existing_value = Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) ? Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) : null;
 
 		$parsely_integration_mock->load();
 
-		if ( is_null( $existing_value ) || $existing_value ) {
-			$this->assertTrue( Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) );
-		} else {
-			$this->assertFalse( Constant_Mocker::defined( 'VIP_PARSELY_ENABLED' ) );
-		}
+		$this->assertTrue( Constant_Mocker::constant( 'VIP_PARSELY_ENABLED' ) );
 	}
 
 	public function test__configure_is_adding_necessary_hooks_need_for_configuration_on_vip_platform(): void {

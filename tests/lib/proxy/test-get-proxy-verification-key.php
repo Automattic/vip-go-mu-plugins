@@ -12,34 +12,6 @@ use function Automattic\VIP\Proxy\fix_remote_address_with_verification_key;
 // phpcs:disable Squiz.PHP.CommentedOutCode.Found
 
 class Get_Proxy_Verification_Key_Test extends TestCase {
-	public function setUp(): void {
-		parent::setUp();
-		Constant_Mocker::clear();
-	}
-
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
-	}
-
-	public function test__not_defined() {
-		// not defining the key
-
-		$actual_key = get_proxy_verification_key();
-
-		$this->assertNotEmpty( $actual_key, 'The Proxy Verification Key is empty' );
-		$this->assertTrue( is_string( $actual_key ), 'The Proxy Verification Key is not a string' );
-	}
-
-	public function test__defined_but_empty() {
-		Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', '' );
-
-		$actual_key = get_proxy_verification_key();
-
-		$this->assertNotEmpty( $actual_key, 'The Proxy Verification Key is empty' );
-		$this->assertTrue( is_string( $actual_key ), 'The Proxy Verification Key is not a string' );
-	}
-
 	public function test__defined_but_integer() {
 		Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', 1234 );
 
@@ -67,6 +39,8 @@ class Get_Proxy_Verification_Key_Test extends TestCase {
 			Constant_Mocker::define( 'WPCOM_VIP_PROXY_VERIFICATION', $configured_key );
 		}
 		$captured = get_proxy_verification_key();
+		$this->assertIsString( $captured, 'The Proxy Verification Key is not a string' );
+		$this->assertNotEmpty( $captured, 'The Proxy Verification Key is empty' );
 		$this->assertNotSame( $captured, get_proxy_verification_key() );
 		$this->assertFalse( is_valid_proxy_verification_key( $captured ) );
 		// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.ValidatedSanitizedInput.InputNotValidated, WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders -- Controlled request fixture and exact restoration.

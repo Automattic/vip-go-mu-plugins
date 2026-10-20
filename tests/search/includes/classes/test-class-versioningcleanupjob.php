@@ -7,7 +7,12 @@ use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+require_once __DIR__ . '/trait-search-test-bootstrap.php';
+
 class VersioningCleanupJob_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
+	use Search_Test_Bootstrap;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -60,11 +65,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 	}
 
 	public function test__versioning_cleanup__deletes_real_inactive_index() {
-		\Automattic\Test\Constant_Mocker::define( 'VIP_ELASTICSEARCH_ENDPOINTS', array( 'https://elasticsearch:9200' ) );
-		require_once __DIR__ . '/../../../../search/search.php';
-		$search = new Search();
-		$search->init();
-		do_action( 'plugins_loaded' );
+		$search = $this->boot_search();
 		$search->queue->schema->prepare_table();
 		$indexable = Indexables::factory()->get( 'post' );
 		$versions  = array(
@@ -85,23 +86,14 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 		$search->versioning->reset_current_version_number( $indexable );
 		$active_name = $indexable->get_index_name();
 		$deletes     = array();
-		$http        = static function ( $preempt, $args, $url ) use ( &$deletes ) {
+		$responder   = static function ( $args, $url ) use ( &$deletes ) {
 			if ( 'DELETE' === $args['method'] ) {
 				$deletes[] = $url;
 			}
-			return array(
-				'headers'  => array(),
-				'body'     => '{}',
-				'response' => array(
-					'code'    => 200,
-					'message' => 'OK',
-				),
-				'cookies'  => array(),
-				'filename' => null,
-			);
+			return self::es_response();
 		};
-		add_filter( 'pre_http_request', $http, PHP_INT_MAX, 3 );
-		try {
+
+		$this->with_es_http( $responder, function () use ( $search, $indexable, $inactive_name, $active_name, &$deletes ) {
 			( new VersioningCleanupJob( Indexables::factory(), $search->versioning ) )->versioning_cleanup();
 			$this->assertNotEmpty( $deletes );
 			foreach ( $deletes as $url ) {
@@ -109,10 +101,7 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 			}
 			$this->assertSame( $active_name, $indexable->get_index_name() );
 			$this->assertSame( array( 1 ), array_keys( $search->versioning->get_versions( $indexable ) ) );
-		} finally {
-			remove_filter( 'pre_http_request', $http, PHP_INT_MAX );
-			\Automattic\Test\Constant_Mocker::clear();
-		}
+		} );
 	}
 
 	public function get_stale_inactive_versions_data() {

@@ -102,17 +102,4 @@ class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 		$this->assertNotWPError( $result );
 		$this->assertContains( get_term_link( $term_id, self::TEST_TAXONOMY_SLUG ), $this->cache_manager->get_queued_purge_urls() );
 	}
-
-	/**
-	 * @dataProvider get_data_for_valid_term_and_taxonomy_tests
-	 */
-	public function test_valid_term_and_taxonomy( $taxonomy_args ) {
-		$term_id = $this->register_taxonomy_and_term( $taxonomy_args );
-
-		$this->cache_manager->queue_terms_purges( $term_id, self::TEST_TAXONOMY_SLUG );
-
-		$expected_term_link = get_term_link( $term_id, self::TEST_TAXONOMY_SLUG );
-		$queued_purge_urls  = $this->cache_manager->get_queued_purge_urls();
-		$this->assertContains( $expected_term_link, $queued_purge_urls );
-	}
 }

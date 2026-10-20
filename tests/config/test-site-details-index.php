@@ -10,7 +10,8 @@ namespace Automattic\VIP\Config;
 
 use WP_UnitTestCase;
 
-use function Automattic\Test\Utils\get_static_property_as_public;
+use function Automattic\Test\Utils\block_http_requests;
+use function Automattic\Test\Utils\reset_site_details_index;
 
 require_once __DIR__ . '/../../config/class-site-details-index.php';
 
@@ -19,34 +20,15 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		// Start without a singleton, so instance() creates (and hooks) a fresh one with the requested timestamp.
-		$this->reset_site_details_index();
-
-		add_filter( 'pre_http_request', function ( $result ) {
-			if ( false === $result ) {
-				$result = [
-					'headers'  => [],
-					'body'     => '',
-					'response' => [
-						'code'    => 418,
-						'message' => "I'm a teapot",
-					],
-					'cookies'  => [],
-				];
-			}
-
-			return $result;
-		}, 10 );
+		reset_site_details_index();
+		block_http_requests();
 	}
 
 	public function tearDown(): void {
 		// The singleton's filter is removed when hooks are restored, so don't leak the instance either.
-		$this->reset_site_details_index();
+		reset_site_details_index();
 
 		parent::tearDown();
-	}
-
-	private function reset_site_details_index(): void {
-		get_static_property_as_public( Site_Details_Index::class, 'instance' )->setValue( null, null );
 	}
 
 	public function test__data_filter_should_not_be_hooked_if_no_init() {
@@ -55,13 +37,9 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) );
 	}
 
-	public function test__data_filter_should_be_hooked_if_init() {
-		// Getting the instance should call init which should add set_env_and_core to the hook.
-		$sdi = Site_Details_Index::instance();
-
-		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
-	}
-
+	/**
+	 * Site_Details_Index::instance() hooks set_env_and_core(), which supplies all of the data checked here.
+	 */
 	public function test__vip_site_details_index_data_filter() {
 		global $wp_version;
 
@@ -155,8 +133,6 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			],
 			$site_details['plugins']
 		);
-
-		remove_filter( 'pre_site_transient_update_plugins', [ $this, 'mock_update_plugins_transient' ], 999 );
 	}
 
 	/**

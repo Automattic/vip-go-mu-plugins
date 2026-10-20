@@ -8,11 +8,6 @@ use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
 class Pendo_Utils_Test extends WP_UnitTestCase {
-	public function tear_down() {
-		parent::tear_down();
-		Constant_Mocker::clear();
-	}
-
 	public function test_get_base_properties_of_pendo_track_event(): void {
 		wp_set_current_user( 1 );
 

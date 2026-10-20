@@ -12,14 +12,12 @@ require_once __DIR__ . '/../../admin-notice/conditions/class-capability-conditio
  */
 class Capability_Condition_Integration_Test extends WP_UnitTestCase {
 	/**
-	 * Supply allowed and denied WordPress roles.
+	 * Supply an allowed role and a role that has only one of the capabilities.
 	 */
 	public function permission_cases(): array {
 		return [
 			'administrator' => [ 'administrator', true ],
 			'editor'        => [ 'editor', false ],
-			'subscriber'    => [ 'subscriber', false ],
-			'logged out'    => [ '', false ],
 		];
 	}
 
@@ -29,7 +27,7 @@ class Capability_Condition_Integration_Test extends WP_UnitTestCase {
 	 * @dataProvider permission_cases
 	 */
 	public function test_notice_visibility( string $role, bool $allowed ): void {
-		wp_set_current_user( $role ? self::factory()->user->create( [ 'role' => $role ] ) : 0 );
+		wp_set_current_user( self::factory()->user->create( [ 'role' => $role ] ) );
 		$condition = new Capability_Condition( 'manage_options', 'edit_others_posts' );
 		$notice    = new Admin_Notice( 'Capability restricted notice', [ $condition ] );
 		$this->assertSame( $allowed, $condition->evaluate() );

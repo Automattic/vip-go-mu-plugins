@@ -11,6 +11,10 @@ use ReflectionClass;
 use ReflectionProperty;
 
 require_once __DIR__ . '/../utils/parsely-utils.php';
+require_once __DIR__ . '/http-response.php';
+require_once __DIR__ . '/run-php.php';
+require_once __DIR__ . '/site-details-helpers.php';
+require_once __DIR__ . '/trait-captures-errors.php';
 
 /**
  * For testing purpose gets private property of a class by making it as public.

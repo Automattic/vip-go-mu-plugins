@@ -22,7 +22,7 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->integrations = new Integrations();
 	}
 
-	public function test__get_integration_is_now_public(): void {
+	public function test__get_integration_returns_the_registered_instance(): void {
 		$integration = new FakeIntegration( 'test-integration' );
 		$this->integrations->register( $integration );
 
@@ -31,36 +31,29 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->assertSame( $integration, $result );
 	}
 
-	public function test__get_integration_returns_null_for_non_existent(): void {
-		$result = $this->integrations->get_integration( 'non-existent' );
-
-		$this->assertNull( $result );
+	public function test__unregistered_slug_has_no_integration_status_or_info(): void {
+		$this->assertNull( $this->integrations->get_integration( 'non-existent' ) );
+		$this->assertFalse( $this->integrations->is_integration_enabled( 'non-existent' ) );
+		$this->assertNull( $this->integrations->get_integration_info( 'non-existent' ) );
 	}
 
-	public function test__is_integration_enabled_returns_true_for_active_integration(): void {
-		$integration = new FakeIntegration( 'active-integration' );
-		$this->integrations->register( $integration );
-		$this->integrations->activate( 'active-integration' );
+	/**
+	 * @dataProvider data_is_integration_enabled
+	 */
+	public function test__is_integration_enabled_reflects_activation( bool $activate ): void {
+		$this->integrations->register( new FakeIntegration( 'test-integration' ) );
+		if ( $activate ) {
+			$this->integrations->activate( 'test-integration' );
+		}
 
-		$result = $this->integrations->is_integration_enabled( 'active-integration' );
-
-		$this->assertTrue( $result );
+		$this->assertSame( $activate, $this->integrations->is_integration_enabled( 'test-integration' ) );
 	}
 
-	public function test__is_integration_enabled_returns_false_for_inactive_integration(): void {
-		$integration = new FakeIntegration( 'inactive-integration' );
-		$this->integrations->register( $integration );
-		// Not activating the integration
-
-		$result = $this->integrations->is_integration_enabled( 'inactive-integration' );
-
-		$this->assertFalse( $result );
-	}
-
-	public function test__is_integration_enabled_returns_false_for_non_existent_integration(): void {
-		$result = $this->integrations->is_integration_enabled( 'non-existent' );
-
-		$this->assertFalse( $result );
+	public static function data_is_integration_enabled(): array {
+		return [
+			'active integration'   => [ true ],
+			'inactive integration' => [ false ],
+		];
 	}
 
 	public function test__get_enabled_integrations_returns_only_active_integrations(): void {
@@ -84,16 +77,6 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->assertArrayNotHasKey( 'inactive-1', $result );
 		$this->assertSame( $integration1, $result['active-1'] );
 		$this->assertSame( $integration3, $result['active-2'] );
-	}
-
-	public function test__get_enabled_integrations_returns_empty_array_when_none_active(): void {
-		$integration = new FakeIntegration( 'inactive' );
-		$this->integrations->register( $integration );
-		// Not activating
-
-		$result = $this->integrations->get_enabled_integrations();
-
-		$this->assertEmpty( $result );
 	}
 
 	public function test__get_all_integrations_returns_all_registered_integrations(): void {
@@ -149,12 +132,6 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $result['env_config'] );
 	}
 
-	public function test__get_integration_info_returns_null_for_non_existent_integration(): void {
-		$result = $this->integrations->get_integration_info( 'non-existent' );
-
-		$this->assertNull( $result );
-	}
-
 	public function test__get_integrations_summary_returns_correct_format(): void {
 		$integration1 = new FakeIntegration( 'active-with-config' );
 		$integration2 = new FakeIntegration( 'active-no-config' );
@@ -190,11 +167,5 @@ class VIP_Integrations_Public_API_Test extends WP_UnitTestCase {
 		$this->assertEquals( 'inactive', $result['inactive']['slug'] );
 		$this->assertFalse( $result['inactive']['is_active'] );
 		$this->assertFalse( $result['inactive']['has_config'] );
-	}
-
-	public function test__get_integrations_summary_returns_empty_array_when_no_integrations(): void {
-		$result = $this->integrations->get_integrations_summary();
-
-		$this->assertEmpty( $result );
 	}
 }

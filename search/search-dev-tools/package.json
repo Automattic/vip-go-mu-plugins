@@ -8,7 +8,8 @@
     "serve": "webpack serve",
     "serve:prod": "webpack serve --env production",
     "dev": "webpack serve",
-    "lint": "eslint src"
+    "lint": "eslint src tests",
+    "test": "node --test --disable-warning=MODULE_TYPELESS_PACKAGE_JSON \"tests/**/*.test.mjs\""
   },
   "eslintIgnore": [
     "build/*"
@@ -37,8 +38,6 @@
   },
   "dependencies": {
     "classnames": "^2.5.1",
-    "clipboard": "^2.0.11",
-    "pluralize": "^8.0.0",
     "preact": "^11.0.0",
     "prismjs": "^1.30.0",
     "react-simple-code-editor": "^0.14.1"

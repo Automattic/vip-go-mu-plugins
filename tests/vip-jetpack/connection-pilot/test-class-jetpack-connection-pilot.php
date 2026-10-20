@@ -5,17 +5,12 @@ namespace Automattic\VIP\Jetpack;
 use DateTime;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 /**
  * @requires function Jetpack_Options::get_option
  */
 class Connection_Pilot_Test extends WP_UnitTestCase {
-	protected static function getMethod( $name ) {
-		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
-		$method = $class->getMethod( $name );
-
-		return $method;
-	}
-
 	/**
 	 * @group jetpack-required
 	 * @dataProvider get_test_data__update_heartbeat_on_failure
@@ -31,7 +26,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		] );
 
 		$connection_pilot      = Connection_Pilot::instance();
-		$update_backoff_factor = self::getMethod( 'update_heartbeat_on_failure' );
+		$update_backoff_factor = get_class_method_as_public( Connection_Pilot::class, 'update_heartbeat_on_failure' );
 		$update_backoff_factor->invoke( $connection_pilot );
 
 		$option = $this->get_heartbeat();
@@ -56,7 +51,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		] );
 
 		$connection_pilot = Connection_Pilot::instance();
-		$update_heartbeat = self::getMethod( 'update_heartbeat_on_success' );
+		$update_heartbeat = get_class_method_as_public( Connection_Pilot::class, 'update_heartbeat_on_success' );
 		$update_heartbeat->invoke( $connection_pilot );
 
 		$option = $this->get_heartbeat();
@@ -84,7 +79,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		}
 
 		$connection_pilot = Connection_Pilot::instance();
-		$should_back_off  = self::getMethod( 'should_back_off' );
+		$should_back_off  = get_class_method_as_public( Connection_Pilot::class, 'should_back_off' );
 
 		$this->assertEquals( $expected, $should_back_off->invoke( $connection_pilot ) );
 	}
@@ -143,7 +138,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		], false );
 
 		if ( ! $saved ) {
-			throw new Error( 'Failed to set heartbeat' );
+			throw new \Error( 'Failed to set heartbeat' );
 		}
 	}
 }

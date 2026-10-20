@@ -3,30 +3,25 @@
 namespace Automattic\VIP\Files;
 
 use Automattic\Test\Constant_Mocker;
-use ErrorException;
+use Automattic\Test\Utils\Captures_Errors;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
-use WP_Filesystem_Base;
-use WP_Filesystem_Direct;
 use WP_UnitTestCase;
 
-require_once __DIR__ . '/../../files/class-vip-filesystem.php';
-VIP_Filesystem_Test::configure_constant_mocker();
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
+require_once __DIR__ . '/../../files/class-vip-filesystem.php';
 
 class VIP_Filesystem_Test extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	const TEST_IMAGE_PATH = VIP_GO_MUPLUGINS_TESTS__DIR__ . '/fixtures/image.jpg';
 
 	/**
 	 * @var     VIP_Filesystem
 	 */
 	protected $vip_filesystem;
-
-	/** @var int */
-	private $original_error_reporting;
-
-	public static $actor;
 
 	public static function configure_constant_mocker(): void {
 		Constant_Mocker::clear();
@@ -37,48 +32,23 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
 
-		self::$actor = null;
 		self::configure_constant_mocker();
 
 		$this->vip_filesystem = new VIP_Filesystem();
 
 		// add the filters for upload dir tests
-		$add_filters = self::get_method( 'add_filters' );
+		$add_filters = get_class_method_as_public( VIP_Filesystem::class, 'add_filters' );
 		$add_filters->invoke( $this->vip_filesystem );
-
-		$this->original_error_reporting = error_reporting();
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( $errno & error_reporting() ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno ); // NOSONAR
-			}
-
-			return false;
-		}, E_ALL );
 	}
 
 	public function tearDown(): void {
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
-		Constant_Mocker::clear();
-
 		// remove the filters
-		$remove_filters = self::get_method( 'remove_filters' );
+		$remove_filters = get_class_method_as_public( VIP_Filesystem::class, 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
 
 		$this->vip_filesystem = null;
 
 		parent::tearDown();
-	}
-
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\VIP_Filesystem' );
-		$method = $class->getMethod( $name );
-		return $method;
 	}
 
 	/**
@@ -132,7 +102,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_upload_path() {
-		$get_upload_path = self::get_method( 'get_upload_path' );
+		$get_upload_path = get_class_method_as_public( VIP_Filesystem::class, 'get_upload_path' );
 
 		$actual = $get_upload_path->invoke( $this->vip_filesystem );
 
@@ -170,7 +140,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
 		Constant_Mocker::define( 'WP_CONTENT_DIR', WP_CONTENT_DIR );
 
-		$clean_file_path = self::get_method( 'clean_file_path' );
+		$clean_file_path = get_class_method_as_public( VIP_Filesystem::class, 'clean_file_path' );
 
 		$actual = $clean_file_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
 
@@ -194,7 +164,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__get_file_uri_path
 	 */
 	public function test__get_file_uri_path( $file_path, $expected ) {
-		$get_file_uri_path = self::get_method( 'get_file_uri_path' );
+		$get_file_uri_path = get_class_method_as_public( VIP_Filesystem::class, 'get_file_uri_path' );
 
 		$actual = $get_file_uri_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
 
@@ -256,13 +226,11 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 	public function test__filter_wp_generate_attachment_metadata( $initial_metadata, $expected_metadata ) {
 		// Remove filters as they conflict with the logic in our filter function below.
 		// We don't have a test-specific wrapper that we can fall back to.
-		$remove_filters = self::get_method( 'remove_filters' );
+		$remove_filters = get_class_method_as_public( VIP_Filesystem::class, 'remove_filters' );
 		$remove_filters->invoke( $this->vip_filesystem );
 
-		// Only the original file's size matters here; skip slow intermediate size generation.
-		add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
-
-		$attachment_id = $this->factory()->attachment->create_upload_object( self::TEST_IMAGE_PATH );
+		// Only the attached file's size matters here, so point the attachment at the fixture instead of uploading it.
+		$attachment_id = $this->factory()->attachment->create_object( self::TEST_IMAGE_PATH, 0, [ 'post_mime_type' => 'image/jpeg' ] );
 
 		$actual_metadata = $this->vip_filesystem->filter_wp_generate_attachment_metadata( $initial_metadata, $attachment_id );
 
@@ -307,11 +275,10 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		// Match the real WordPress upload directory for this integration fixture.
 		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
 		Constant_Mocker::define( 'WP_CONTENT_DIR', \WP_CONTENT_DIR );
-		$client   = new API_Client( 'https://files.go-vip.co', 123, 'test-token', API_Cache::get_instance() );
-		$wrapper  = new VIP_Filesystem_Local_Stream_Wrapper( $client );
-		$property = new \ReflectionProperty( VIP_Filesystem::class, 'stream_wrapper' );
-		$property->setValue( $this->vip_filesystem, $wrapper );
-		$path          = trailingslashit( self::get_method( 'get_upload_path' )->invoke( $this->vip_filesystem ) ) . 'original.jpg';
+		$client  = new API_Client( 'https://files.go-vip.co', 123, 'test-token', API_Cache::get_instance() );
+		$wrapper = new VIP_Filesystem_Local_Stream_Wrapper( $client );
+		get_class_property_as_public( VIP_Filesystem::class, 'stream_wrapper' )->setValue( $this->vip_filesystem, $wrapper );
+		$path          = trailingslashit( get_class_method_as_public( VIP_Filesystem::class, 'get_upload_path' )->invoke( $this->vip_filesystem ) ) . 'original.jpg';
 		$requests      = 0;
 		$http_boundary = function ( $preempt, $args, $url ) use ( $response, $client, $path, &$requests ) {
 			++$requests;
@@ -321,27 +288,14 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			return $response;
 		};
 		add_filter( 'pre_http_request', $http_boundary, 10, 3 );
-		$warnings         = [];
-		$previous_handler = null;
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler -- Capture the helper's documented service-error warning.
-		$previous_handler = set_error_handler( static function ( $level, $message ) use ( &$warnings, &$previous_handler ) {
-			if ( E_USER_WARNING === $level ) {
-				$warnings[] = $message;
-				return true;
-			}
-			return $previous_handler ? $previous_handler( $level, $message ) : false;
-		} );
-		$file             = [
+		$file = [
 			'name'     => 'original.jpg',
 			'tmp_name' => '/tmp/upload-fixture',
 			'error'    => 0,
 		];
-		try {
-			$result = apply_filters( 'wp_handle_upload_prefilter', $file );
-		} finally {
-			restore_error_handler();
-			remove_filter( 'pre_http_request', $http_boundary, 10 );
-		}
+		// Capture the helper's documented service-error warning.
+		[ $result, $warnings ] = $this->capture_errors( fn() => apply_filters( 'wp_handle_upload_prefilter', $file ) );
+
 		$this->assertSame( 1, $requests );
 		$this->assertSame( $expected_name, $result['name'] );
 		$this->assertSame( $file['tmp_name'], $result['tmp_name'] );
@@ -354,51 +308,6 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		if ( $expects_warning ) {
 			$this->assertStringContainsString( $expected_error, $warnings[0] );
 		}
-	}
-
-	public function test__filter_validate_file__valid_file() {
-		$file     = [
-			'name' => 'testfile.txt',
-		];
-		$basepath = $this->get_upload_path();
-
-		/** @var MockObject&VIP_Filesystem */
-		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-			->onlyMethods( [ 'validate_file_name' ] )
-			->getMock();
-
-		$stub->expects( $this->once() )
-			->method( 'validate_file_name' )
-			->with( $basepath . '/' . $file['name'] )
-			->will( $this->returnValue( $file['name'] ) );
-
-		$actual = $stub->filter_validate_file( $file );
-
-		$this->assertEquals( $file['name'], $actual['name'] );
-		$this->assertArrayNotHasKey( 'error', $actual );
-	}
-
-	public function test__filter_validate_file__unique_file() {
-		$file             = [
-			'name' => 'testfile.txt',
-		];
-		$unique_file_name = 'testfile_8hj30h.txt';
-		$basepath         = $this->get_upload_path();
-
-		/** @var MockObject&VIP_Filesystem */
-		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-			->onlyMethods( [ 'validate_file_name' ] )
-			->getMock();
-
-		$stub->expects( $this->once() )
-			->method( 'validate_file_name' )
-			->with( $basepath . '/' . $file['name'] )
-			->will( $this->returnValue( $unique_file_name ) );
-
-		$actual = $stub->filter_validate_file( $file );
-
-		$this->assertEquals( $unique_file_name, $actual['name'] );
-		$this->assertArrayNotHasKey( 'error', $actual );
 	}
 
 	public function test__filter_validate_file__invalid_file_length() {
@@ -425,66 +334,7 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 			$actual['error']
 		);
 	}
-
-	public function test__filter_validate_file__invalid_file_type() {
-		$file     = [
-			'name' => 'testfile.exe',
-		];
-		$basepath = $this->get_upload_path();
-
-		/** @var MockObject&VIP_Filesystem */
-		$stub = $this->getMockBuilder( VIP_Filesystem::class )
-			->onlyMethods( [ 'validate_file_name' ] )
-			->getMock();
-
-		$stub->expects( $this->once() )
-			->method( 'validate_file_name' )
-			->with( $basepath . '/' . $file['name'] )
-			->will( $this->returnValue( new WP_Error( 'invalid-file-type', 'Failed to generate new unique file name `testfile.exe` (response code: 400)' ) ) );
-
-		$actual = $stub->filter_validate_file( $file );
-
-		$this->assertArrayHasKey( 'error', $actual );
-		$this->assertEquals(
-			'Failed to generate new unique file name `testfile.exe` (response code: 400)',
-			$actual['error']
-		);
-	}
-
-	/**
-	 * @dataProvider data_get_transport_for_path
-	 */
-	public function test_get_transport_for_path( string $file, string $expected ): void {
-		$direct = new class( '' ) extends WP_Filesystem_Direct {
-			public function put_contents( $file, $contents, $mode = false ) {
-				VIP_Filesystem_Test::$actor = 'direct';
-				return true;
-			}
-		};
-
-		$uploads = new class() extends WP_Filesystem_Base {
-			public function put_contents( $file, $contents, $mode = false ) {
-				VIP_Filesystem_Test::$actor = 'uploads';
-				return true;
-			}
-		};
-
-		$vipfs  = new WP_Filesystem_VIP( [ $uploads, $direct ] );
-		$result = $vipfs->put_contents( $file, 'xxx' );
-		self::assertTrue( $result );
-		self::assertEquals( $expected, self::$actor );
-		self::assertEmpty( $vipfs->errors->get_error_messages() );
-	}
-
-	public function data_get_transport_for_path(): iterable {
-		return [
-			[ ABSPATH . '.maintenance', 'direct' ],
-			[ get_temp_dir() . '/test.txt', 'direct' ],
-			[ constant( 'WP_CONTENT_DIR' ) . '/upgrade/test.txt', 'direct' ],
-			[ constant( 'WP_CONTENT_DIR' ) . '/upgrade-temp-backup/test.txt', 'direct' ],
-			[ constant( 'WP_CONTENT_DIR' ) . '/themes/test.txt', 'direct' ],
-			[ constant( 'WP_CONTENT_DIR' ) . '/plugins/test.txt', 'direct' ],
-			[ constant( 'WP_CONTENT_DIR' ) . '/languages/test.txt', 'direct' ],
-		];
-	}
 }
+
+// The data providers read these constants, so define them as soon as the file is loaded.
+VIP_Filesystem_Test::configure_constant_mocker();

@@ -8,13 +8,17 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/../../../lib/feature/class-feature.php';
 
 class Feature_Multisite_Test extends WP_UnitTestCase {
-
 	public static $site_id = 400; // Hashes to 13
+
+	/** @var array|null */
+	private $original_feature_percentages;
 
 	public function setUp(): void {
 		$this->skipWithoutMultisite();
 
 		parent::setUp();
+
+		$this->original_feature_percentages = Feature::$feature_percentages;
 
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', self::$site_id );
 
@@ -22,7 +26,9 @@ class Feature_Multisite_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		Constant_Mocker::clear();
+		if ( null !== $this->original_feature_percentages ) {
+			Feature::$feature_percentages = $this->original_feature_percentages;
+		}
 		parent::tearDown();
 	}
 

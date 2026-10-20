@@ -6,6 +6,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php';
 
 class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
@@ -32,15 +34,6 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP_Uploads' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
 	public function filter_uploads_basedir( $upload_dir ) {
 		$upload_dir['basedir'] = '/tmp/uploads';
 		return $upload_dir;
@@ -50,7 +43,7 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$test_path               = '/tmp/uploads/file/to/path.txt';
 		$expected_sanitized_path = '/wp-content/uploads/file/to/path.txt';
 
-		$test_method = $this->get_method( 'sanitize_uploads_path' );
+		$test_method = get_class_method_as_public( WP_Filesystem_VIP_Uploads::class, 'sanitize_uploads_path' );
 
 		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
 			$test_path,
@@ -63,7 +56,7 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$test_path               = WP_CONTENT_DIR . '/uploads/path/to/file.jpg';
 		$expected_sanitized_path = '/wp-content/uploads/path/to/file.jpg';
 
-		$test_method = $this->get_method( 'sanitize_uploads_path' );
+		$test_method = get_class_method_as_public( WP_Filesystem_VIP_Uploads::class, 'sanitize_uploads_path' );
 
 		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
 			$test_path,
