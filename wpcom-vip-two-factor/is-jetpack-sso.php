@@ -79,3 +79,14 @@ function is_jetpack_sso_two_step() {
 
 	return $is_sso && true === ( $session['vip_jetpack_sso_two_step'] ?? false ) ? get_current_user_id() : false;
 }
+
+// A legacy 2SA cookie never grants the exemption, it only sends pre-#7275 SSO sessions back through SSO.
+add_action( 'admin_init', function () {
+	if ( wp_doing_ajax() || ! isset( $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ] ) || is_jetpack_sso_two_step() ) { // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return;
+	}
+	setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	wp_logout();
+	wp_safe_redirect( add_query_arg( 'action', 'jetpack-sso', wp_login_url() ) );
+	exit;
+} );
