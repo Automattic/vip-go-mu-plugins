@@ -79,3 +79,26 @@ function is_jetpack_sso_two_step() {
 
 	return $is_sso && true === ( $session['vip_jetpack_sso_two_step'] ?? false ) ? get_current_user_id() : false;
 }
+
+// A legacy 2SA cookie never grants the exemption, it only sends pre-#7275 SSO sessions back through SSO.
+add_action( 'admin_init', function () {
+	// GET only, so a submitted form is never discarded, and only for users the enforcement is currently restricting.
+	$is_get = isset( $_SERVER['REQUEST_METHOD'] ) && 'GET' === $_SERVER['REQUEST_METHOD'];
+	if ( ! $is_get || wp_doing_ajax() || ! isset( $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ] ) || ! \wpcom_vip_is_two_factor_forced() ) { // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return;
+	}
+
+	// Only a cookie issued for the current session counts; wp_logout() revokes that session, so an uncleared cookie can't loop.
+	$user_id = get_current_user_id();
+	$cookie  = $_COOKIE[ VIP_IS_JETPACK_SSO_2SA_COOKIE ]; // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- validated by wp_validate_auth_cookie()
+	$parsed  = wp_parse_auth_cookie( $cookie, 'secure_auth' );
+	$token   = current_auth_session_token( $user_id );
+	if ( ! $parsed || ! $token || ! hash_equals( $token, $parsed['token'] ) || (int) wp_validate_auth_cookie( $cookie, 'secure_auth' ) !== $user_id ) {
+		return;
+	}
+
+	setcookie( VIP_IS_JETPACK_SSO_2SA_COOKIE, ' ', time() - YEAR_IN_SECONDS, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	wp_logout();
+	wp_safe_redirect( add_query_arg( 'action', 'jetpack-sso', wp_login_url() ) );
+	exit;
+} );
