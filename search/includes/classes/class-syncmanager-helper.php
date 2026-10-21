@@ -153,13 +153,19 @@ final class SyncManager_Helper {
 	 *
 	 * Only the saved term is cleared, so a term saved during another term's edit
 	 * (e.g. a synced translation) doesn't drop the outer term's state.
+	 * Called without arguments, it clears the state of every term.
 	 *
-	 * @param int $term_id      Term ID.
-	 * @param int $tt_id        Term taxonomy ID.
-	 * @param string $taxonomy  Taxonomy slug.
+	 * @param int|null $term_id     Term ID.
+	 * @param int|null $tt_id       Term taxonomy ID.
+	 * @param string|null $taxonomy Taxonomy slug.
 	 * @return void
 	 */
-	public function saved_term( $term_id, $tt_id, $taxonomy ): void {
+	public function saved_term( $term_id = null, $tt_id = null, $taxonomy = null ): void {
+		if ( null === $term_id || null === $taxonomy ) {
+			$this->terms = [];
+			return;
+		}
+
 		unset( $this->terms[ "{$term_id}:{$taxonomy}" ] );
 	}
 
