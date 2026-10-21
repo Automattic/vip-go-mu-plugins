@@ -279,7 +279,7 @@ class VIP_Revision_Meta_Test extends WP_UnitTestCase {
 			$this->assertSame( 200, $response->get_status() );
 			remove_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10 );
 			$unfiltered = $this->request( 'HEAD', '/wp/v2/posts/' . $post_id . $suffix );
-			add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10, 2 );
+			add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10, 3 );
 			$this->assertSame( $unfiltered->get_status(), $response->get_status() );
 			$this->assertSame( $unfiltered->get_headers(), $response->get_headers() );
 			// Older cores prepare GET-equivalent data for HEAD; newer cores return no data.
@@ -324,6 +324,148 @@ class VIP_Revision_Meta_Test extends WP_UnitTestCase {
 		foreach ( [ 'global_value', 'subtype_value' ] as $key ) {
 			$this->assertSame( 'keep ' . $key, get_post_meta( $post_id, $key, true ) );
 		}
+	}
+
+	/**
+	 * Registration order must not let a non-revisioned field replace a shared alias.
+	 *
+	 * @dataProvider shared_alias_registrations
+	 * @param bool $revisioned_first Whether the revisioned field is registered first.
+	 * @param bool $global Whether both fields are registered globally.
+	 */
+	public function test_shared_alias_keeps_revisioned_value( bool $revisioned_first, bool $global ): void {
+		$keys = $revisioned_first ? [ 'shared_revisioned', 'shared_live' ] : [ 'shared_live', 'shared_revisioned' ];
+		foreach ( $keys as $key ) {
+			$args = [
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => 'shared_revisioned' === $key ? 'revision default' : 'live default',
+				'revisions_enabled' => 'shared_revisioned' === $key,
+				'show_in_rest'      => [ 'name' => 'shared_alias' ],
+			];
+			if ( $global ) {
+				register_meta( 'post', $key, $args );
+			} else {
+				register_post_meta( 'post', $key, $args );
+			}
+		}
+
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		update_metadata( 'post', $revision_id, 'shared_revisioned', 'revision snapshot' );
+		update_post_meta( $post_id, 'shared_revisioned', 'latest value' );
+		update_post_meta( $post_id, 'shared_live', 'live value' );
+
+		$response = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( 'revision snapshot', $response->get_data()['meta']['shared_alias'] ?? null );
+		$this->assertSame( 'snapshot meta', $response->get_data()['meta']['revisioned_alias'] );
+		$this->assertArrayNotHasKey( 'rtc_unrelated', $response->get_data()['meta'] );
+
+		delete_metadata( 'post', $revision_id, 'shared_revisioned' );
+		$response = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 'revision default', $response->get_data()['meta']['shared_alias'] ?? null );
+		$this->assertSame( 'latest value', get_post_meta( $post_id, 'shared_revisioned', true ) );
+		$this->assertSame( 'live value', get_post_meta( $post_id, 'shared_live', true ) );
+	}
+
+	/**
+	 * Both registration orders, in both metadata registration buckets.
+	 *
+	 * @return array Test cases.
+	 */
+	public static function shared_alias_registrations(): array {
+		return [
+			'subtype revisioned first' => [ true, false ],
+			'subtype revisioned last'  => [ false, false ],
+			'global revisioned first'  => [ true, true ],
+			'global revisioned last'   => [ false, true ],
+		];
+	}
+
+	/**
+	 * A collision must use the revisioned field's preparation and context schema.
+	 */
+	public function test_shared_alias_uses_revisioned_preparation_and_context(): void {
+		register_meta( 'post', 'shared_revisioned', [
+			'type'              => 'object',
+			'single'            => true,
+			'revisions_enabled' => true,
+			'show_in_rest'      => [
+				'name'             => 'shared_alias',
+				'prepare_callback' => static function ( $value, $request ) {
+					$value['public'] = $request['context'] . ': ' . ( $value['public'] ?? '' );
+					return $value;
+				},
+				'schema'           => [
+					'context'    => [ 'edit', 'view' ],
+					'properties' => [
+						'public'  => [
+							'type'    => 'string',
+							'context' => [ 'edit', 'view' ],
+						],
+						'private' => [
+							'type'    => 'string',
+							'context' => [ 'edit' ],
+						],
+					],
+				],
+			],
+		] );
+		register_post_meta( 'post', 'shared_live', [
+			'type'         => 'string',
+			'single'       => true,
+			'show_in_rest' => [
+				'name'   => 'shared_alias',
+				'schema' => [ 'context' => [ 'edit' ] ],
+			],
+		] );
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		update_metadata( 'post', $revision_id, 'shared_revisioned', [
+			'public'  => 'snapshot',
+			'private' => 'secret',
+		] );
+
+		foreach ( [ 'view', 'edit' ] as $context ) {
+			$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+			$request->set_param( 'context', $context );
+			$response = rest_get_server()->dispatch( $request );
+			$this->assertSame( 200, $response->get_status() );
+			$expected = [ 'public' => $context . ': snapshot' ];
+			if ( 'edit' === $context ) {
+				$expected['private'] = 'secret';
+			}
+			$this->assertSame( $expected, $response->get_data()['meta']['shared_alias'] ?? null );
+			$this->assertArrayNotHasKey( 'rtc_unrelated', $response->get_data()['meta'] );
+		}
+
+		$request->set_param( '_fields', 'id,meta.shared_alias.public' );
+		$response = rest_get_server()->dispatch( $request );
+		$response = rest_filter_response_fields( $response, rest_get_server(), $request );
+		$this->assertSame( [
+			'id'   => $revision_id,
+			'meta' => [ 'shared_alias' => [ 'public' => 'edit: snapshot' ] ],
+		], $response->get_data() );
+	}
+
+	/**
+	 * Rebuilding registered metadata must preserve custom response-only fields.
+	 */
+	public function test_unregistered_response_meta_is_preserved(): void {
+		add_filter( 'rest_prepare_revision', static function ( $response ) {
+			$data                   = $response->get_data();
+			$data['meta']['custom'] = 'response-only value';
+			$response->set_data( $data );
+			return $response;
+		}, 9 );
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$response    = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( 'response-only value', $response->get_data()['meta']['custom'] );
+		$this->assertSame( 'snapshot meta', $response->get_data()['meta']['revisioned_alias'] );
+		$this->assertArrayNotHasKey( 'rtc_unrelated', $response->get_data()['meta'] );
 	}
 
 	/**
