@@ -65,7 +65,7 @@ npm run destroy-e2e-env
 - [Testing](docs/testing.md)
 - [Release](docs/release.md)
 - [Agent guide](AGENTS.md)
-- [Temporary RTC revision metadata workaround](docs/rtc-core-66329-workaround.md)
+- [Temporary revision metadata workaround](docs/core-66329-revision-meta-workaround.md)
 
 Local SQL import cleanup removes imported service connection credentials even
 when Jetpack is unavailable. See [local import testing](docs/testing.md#local-sql-import-credentials).
