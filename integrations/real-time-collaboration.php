@@ -117,8 +117,6 @@ class RealTimeCollaborationIntegration extends Integration {
 	 * This is called after the integration is activated and configured.
 	 */
 	public function load(): void {
-		add_filter( 'rest_prepare_revision', [ $this, 'filter_revision_crdt_meta' ], 10, 2 );
-
 		/*
 		* Wait until plugins_loaded to give precedence to the plugin in the customer repo.
 		* Use priority 1 to ensure we load before any plugins hook into plugins_loaded.
@@ -154,37 +152,6 @@ class RealTimeCollaborationIntegration extends Integration {
 			require_once $gutenberg_path;
 			require_once $load_path;
 		}, 1);
-	}
-
-	/**
-	 * Keep revision restores from overwriting the live, non-revisioned CRDT document.
-	 *
-	 * Temporary workaround for https://core.trac.wordpress.org/ticket/66329.
-	 * Remove once the upstream revision-meta fix is deployed on all supported cores.
-	 *
-	 * @param \WP_REST_Response $response Prepared REST response.
-	 * @param \WP_Post          $post     Revision or parent post (for own-draft autosaves).
-	 * @return \WP_REST_Response Response without non-revisioned CRDT metadata.
-	 */
-	public function filter_revision_crdt_meta( \WP_REST_Response $response, \WP_Post $post ): \WP_REST_Response {
-		if ( ! $this->is_loaded() || 'revision' !== $post->post_type ) {
-			return $response;
-		}
-
-		$data = $response->get_data();
-		if ( ! is_array( $data['meta'] ?? null ) || ! array_key_exists( '_crdt_document', $data['meta'] ) ) {
-			return $response;
-		}
-
-		// Respect an explicit revision opt-in; Gutenberg intentionally disables it.
-		if ( in_array( '_crdt_document', (array) wp_post_revision_meta_keys( get_post_type( $post->post_parent ) ), true ) ) {
-			return $response;
-		}
-
-		unset( $data['meta']['_crdt_document'] );
-		$response->set_data( $data );
-
-		return $response;
 	}
 
 	/**

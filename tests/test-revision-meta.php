@@ -1,13 +1,12 @@
 <?php
 /**
- * REST integration regressions for the temporary core #66329 RTC workaround.
+ * REST integration regressions for the temporary Core #66329 metadata workaround.
  *
- * @package Automattic\VIP\Integrations
+ * @package Automattic\VIP\Core\RevisionMeta
  */
 
-namespace Automattic\VIP\Integrations;
+namespace Automattic\VIP\Core\RevisionMeta;
 
-use Automattic\Test\Constant_Mocker;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_UnitTestCase;
@@ -15,7 +14,7 @@ use WP_UnitTestCase;
 /**
  * Exercise the editor's revision restore against real WordPress REST controllers.
  */
-class RTC_Revision_Meta_Test extends WP_UnitTestCase {
+class VIP_Revision_Meta_Test extends WP_UnitTestCase {
 	/**
 	 * Y.encodeStateAsUpdate() for a Y.Doc with clientID 66329 and
 	 * getText('content').insert(0, 'Shared RTC content'), encoded as base64.
@@ -23,14 +22,7 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 	private const CRDT_DOCUMENT = 'AQGZhgQABAEHY29udGVudBJTaGFyZWQgUlRDIGNvbnRlbnQA';
 
 	/**
-	 * Managed integration instance whose hooks are exercised by REST requests.
-	 *
-	 * @var RealTimeCollaborationIntegration
-	 */
-	private RealTimeCollaborationIntegration $integration;
-
-	/**
-	 * Set up the managed integration and Gutenberg's actual CRDT meta contract.
+	 * Register revisioned and non-revisioned metadata, including Gutenberg's CRDT contract.
 	 */
 	public function setUp(): void {
 		parent::setUp();
@@ -62,11 +54,6 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 			'single'       => true,
 			'show_in_rest' => true,
 		] );
-
-		$this->integration = new RealTimeCollaborationIntegration( 'real-time-collaboration' );
-		$this->integration->load();
-		// Emulate the installed plugin, without requiring its external build or WebSocket service.
-		Constant_Mocker::define( 'VIP_REAL_TIME_COLLABORATION__LOADED', true );
 	}
 
 	/**
@@ -151,6 +138,7 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 		] );
 		$this->assertSame( 200, $restore->get_status() );
 		$this->assertSame( self::CRDT_DOCUMENT, get_post_meta( $post_id, '_crdt_document', true ), 'A revision restore must not reset persisted CRDT state.' );
+		$this->assertSame( 'customer value', get_post_meta( $post_id, 'rtc_unrelated', true ) );
 		$this->assertSame( 'Snapshot content.', get_post( $post_id )->post_content );
 		$this->assertSame( 'snapshot meta', get_post_meta( $post_id, 'rtc_revisioned', true ) );
 		$this->assertArrayNotHasKey( '_crdt_document', $data['meta'] );
@@ -160,8 +148,8 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 		foreach ( $collection->get_data() as $item ) {
 			$this->assertArrayNotHasKey( '_crdt_document', $item['meta'] );
 			$this->assertArrayHasKey( 'revisioned_alias', $item['meta'] );
-			// This workaround deliberately does not change other non-revisioned fields.
-			$this->assertArrayHasKey( 'rtc_unrelated', $item['meta'] );
+			// Non-revisioned metadata is omitted even without the RTC integration.
+			$this->assertArrayNotHasKey( 'rtc_unrelated', $item['meta'] );
 		}
 	}
 
@@ -214,21 +202,6 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Inactive RTC must not alter revision responses on unrelated sites.
-	 */
-	public function test_without_loaded_rtc_revision_meta_is_unchanged(): void {
-		Constant_Mocker::clear();
-		$post_id     = $this->create_document();
-		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
-		$response    = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
-		$this->assertSame( 200, $response->get_status() );
-		remove_filter( 'rest_prepare_revision', [ $this->integration, 'filter_revision_crdt_meta' ], 10 );
-		$unfiltered = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
-		$this->assertSame( $unfiltered->get_status(), $response->get_status() );
-		$this->assertSame( $unfiltered->get_data(), $response->get_data() );
-	}
-
-	/**
 	 * Explicit revision opt-in remains authoritative, even for the CRDT key.
 	 */
 	public function test_explicitly_revisioned_crdt_meta_is_unchanged(): void {
@@ -275,9 +248,9 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Including meta in a projection must still omit only the non-revisioned CRDT.
+	 * Including meta in a projection must still omit all non-revisioned fields.
 	 */
-	public function test_revision_meta_projection_preserves_unrelated_fields(): void {
+	public function test_revision_meta_projection_keeps_only_revisioned_fields(): void {
 		$post_id     = $this->create_document();
 		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
 		$request     = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
@@ -291,7 +264,6 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 			'id'   => $revision_id,
 			'meta' => [
 				'revisioned_alias' => 'snapshot meta',
-				'rtc_unrelated'    => '',
 			],
 		], $response->get_data() );
 	}
@@ -305,9 +277,9 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 		foreach ( [ '/revisions', '/revisions/' . $revision_id ] as $suffix ) {
 			$response = $this->request( 'HEAD', '/wp/v2/posts/' . $post_id . $suffix );
 			$this->assertSame( 200, $response->get_status() );
-			remove_filter( 'rest_prepare_revision', [ $this->integration, 'filter_revision_crdt_meta' ], 10 );
+			remove_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10 );
 			$unfiltered = $this->request( 'HEAD', '/wp/v2/posts/' . $post_id . $suffix );
-			add_filter( 'rest_prepare_revision', [ $this->integration, 'filter_revision_crdt_meta' ], 10, 2 );
+			add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10, 2 );
 			$this->assertSame( $unfiltered->get_status(), $response->get_status() );
 			$this->assertSame( $unfiltered->get_headers(), $response->get_headers() );
 			// Older cores prepare GET-equivalent data for HEAD; newer cores return no data.
@@ -315,6 +287,125 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 			$this->assertSame( $expected, $response->get_data() );
 		}
 		$this->assertSame( self::CRDT_DOCUMENT, get_post_meta( $post_id, '_crdt_document', true ) );
+	}
+
+	/**
+	 * Global and subtype metadata use REST aliases, not their storage keys.
+	 */
+	public function test_nonrevisioned_global_and_subtype_aliases_are_not_restored(): void {
+		foreach ( [ 'global_value', 'subtype_value' ] as $key ) {
+			$args = [
+				'type'         => 'string',
+				'single'       => true,
+				'show_in_rest' => [ 'name' => $key . '_alias' ],
+			];
+			if ( 'global_value' === $key ) {
+				register_meta( 'post', $key, $args );
+			} else {
+				register_post_meta( 'post', $key, $args );
+			}
+		}
+		$post_id = $this->create_document();
+		foreach ( [ 'global_value', 'subtype_value' ] as $key ) {
+			update_post_meta( $post_id, $key, 'keep ' . $key );
+		}
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$response    = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		foreach ( [ 'global_value', 'subtype_value' ] as $key ) {
+			$this->assertArrayNotHasKey( $key . '_alias', $data['meta'] );
+		}
+		$restore = $this->request( 'POST', '/wp/v2/posts/' . $post_id, [
+			'content' => $data['content']['raw'],
+			'meta'    => $data['meta'],
+		] );
+		$this->assertSame( 200, $restore->get_status() );
+		foreach ( [ 'global_value', 'subtype_value' ] as $key ) {
+			$this->assertSame( 'keep ' . $key, get_post_meta( $post_id, $key, true ) );
+		}
+	}
+
+	/**
+	 * The effective revision key filter governs both opt-ins and exclusions.
+	 */
+	public function test_filtered_revision_keys_are_authoritative(): void {
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		add_metadata( 'post', $revision_id, 'rtc_unrelated', 'filtered snapshot' );
+		add_filter( 'wp_post_revision_meta_keys', static function () {
+			return [ 'rtc_unrelated', null, 123 ];
+		} );
+		$response = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( [ 'rtc_unrelated' => 'filtered snapshot' ], $response->get_data()['meta'] );
+	}
+
+	/**
+	 * Invalid revision-key filter results must not cause a PHP error.
+	 */
+	public function test_nonarray_revision_keys_filter_omits_registered_meta(): void {
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		add_filter( 'wp_post_revision_meta_keys', '__return_false' );
+		$response = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( [], $response->get_data()['meta'] );
+	}
+
+	/**
+	 * A subtype can disable revisioning enabled by a global registration.
+	 */
+	public function test_subtype_revision_opt_out_overrides_global_registration(): void {
+		$args = [
+			'type'              => 'string',
+			'single'            => true,
+			'show_in_rest'      => [ 'name' => 'global_alias' ],
+			'revisions_enabled' => true,
+		];
+		register_meta( 'post', 'global_setting', $args );
+		$args['revisions_enabled'] = false;
+		$args['show_in_rest']      = [ 'name' => 'subtype_alias' ];
+		register_post_meta( 'post', 'global_setting', $args );
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$response    = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertArrayNotHasKey( 'subtype_alias', $response->get_data()['meta'] );
+		$this->assertArrayNotHasKey( 'global_alias', $response->get_data()['meta'] );
+	}
+
+	/**
+	 * Pattern revisions must not reset a non-revisioned sync status to its default.
+	 */
+	public function test_pattern_revision_restore_preserves_sync_status(): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'administrator' ] ) );
+		wp_create_initial_post_meta();
+		$post_id = self::factory()->post->create( [
+			'post_type'    => 'wp_block',
+			'post_content' => 'Original pattern.',
+		] );
+		update_post_meta( $post_id, 'wp_pattern_sync_status', 'unsynced' );
+		wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => 'Snapshot pattern.',
+		] );
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		wp_update_post( [
+			'ID'           => $post_id,
+			'post_content' => 'Latest pattern.',
+		] );
+		$response = $this->request( 'GET', '/wp/v2/blocks/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$data = $response->get_data();
+		$this->assertArrayNotHasKey( 'wp_pattern_sync_status', $data['meta'] );
+		$restore = $this->request( 'POST', '/wp/v2/blocks/' . $post_id, [
+			'content' => $data['content']['raw'],
+			'meta'    => $data['meta'],
+		] );
+		$this->assertSame( 200, $restore->get_status() );
+		$this->assertSame( 'Snapshot pattern.', get_post( $post_id )->post_content );
+		$this->assertSame( 'unsynced', get_post_meta( $post_id, 'wp_pattern_sync_status', true ) );
 	}
 
 	/**

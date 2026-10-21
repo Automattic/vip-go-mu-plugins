@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/001-core/privacy.php';
+require_once __DIR__ . '/001-core/revision-meta.php';
 
 if ( file_exists( __DIR__ . '/001-core/options-api.php' ) ) {
 	require_once __DIR__ . '/001-core/options-api.php';
