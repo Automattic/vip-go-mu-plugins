@@ -44,7 +44,7 @@ function filter_revision_meta( \WP_REST_Response $response, \WP_Post $post ): \W
 		return $response;
 	}
 
-	$revisioned_keys = array_filter( (array) wp_post_revision_meta_keys( $post_type ), 'is_string' );
+	$revisioned_keys = (array) wp_post_revision_meta_keys( $post_type );
 	$registered      = array_merge( get_registered_meta_keys( 'post' ), get_registered_meta_keys( 'post', $post_type ) );
 	foreach ( $registered as $meta_key => $args ) {
 		if ( empty( $args['show_in_rest'] ) || in_array( $meta_key, $revisioned_keys, true ) ) {
@@ -53,7 +53,9 @@ function filter_revision_meta( \WP_REST_Response $response, \WP_Post $post ): \W
 
 		// REST names can differ from storage keys; subtype registrations override global ones.
 		$rest_name = is_array( $args['show_in_rest'] ) ? ( $args['show_in_rest']['name'] ?? $meta_key ) : $meta_key;
-		unset( $data['meta'][ $rest_name ] );
+		if ( array_key_exists( $rest_name, $data['meta'] ) ) {
+			unset( $data['meta'][ $rest_name ] );
+		}
 	}
 
 	$response->set_data( $data );
