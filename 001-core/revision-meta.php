@@ -2,6 +2,19 @@
 /**
  * Temporary REST revision metadata compatibility fix for Core #66329.
  *
+ * Revision responses include defaults for non-revisioned metadata. Restoring
+ * those defaults in the block editor can overwrite the live post's values.
+ * Filter actual revision responses to retain only revision-enabled registered
+ * metadata, respecting post-type overrides and REST aliases. Normal post
+ * responses and own-draft autosaves returning the parent post are unchanged.
+ *
+ * This response-only workaround leaves REST OPTIONS schemas unchanged and
+ * cannot recover already-cleared data. Before rollout, verify revision restores
+ * on a sandbox, including two-editor RTC restore/reload/convergence behavior.
+ * Remove this module and its require once all supported cores include the fix:
+ * https://core.trac.wordpress.org/ticket/66329
+ * https://github.com/WordPress/wordpress-develop/pull/14359
+ *
  * @package Automattic\VIP\Core
  */
 
@@ -11,10 +24,6 @@ add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10
 
 /**
  * Omit defaults for metadata that is not stored on revisions.
- *
- * Remove once all supported cores include the fix for
- * https://core.trac.wordpress.org/ticket/66329.
- * This response-only workaround deliberately leaves REST schemas unchanged.
  *
  * @param \WP_REST_Response $response Prepared REST response.
  * @param \WP_Post          $post     Revision or parent post (for own-draft autosaves).
