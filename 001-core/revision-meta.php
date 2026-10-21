@@ -30,12 +30,8 @@ add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10
  * @return \WP_REST_Response Response containing only revision-enabled registered meta.
  */
 function filter_revision_meta( \WP_REST_Response $response, \WP_Post $post ): \WP_REST_Response {
-	if ( 'revision' !== $post->post_type || ! function_exists( 'wp_post_revision_meta_keys' ) ) {
-		return $response;
-	}
-
 	$data = $response->get_data();
-	if ( ! is_array( $data['meta'] ?? null ) ) {
+	if ( 'revision' !== $post->post_type || ! function_exists( 'wp_post_revision_meta_keys' ) || ! is_array( $data['meta'] ?? null ) ) {
 		return $response;
 	}
 
