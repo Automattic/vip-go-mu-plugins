@@ -53,9 +53,7 @@ function filter_revision_meta( \WP_REST_Response $response, \WP_Post $post ): \W
 
 		// REST names can differ from storage keys; subtype registrations override global ones.
 		$rest_name = is_array( $args['show_in_rest'] ) ? ( $args['show_in_rest']['name'] ?? $meta_key ) : $meta_key;
-		if ( array_key_exists( $rest_name, $data['meta'] ) ) {
-			unset( $data['meta'][ $rest_name ] );
-		}
+		unset( $data['meta'][ $rest_name ] );
 	}
 
 	$response->set_data( $data );
