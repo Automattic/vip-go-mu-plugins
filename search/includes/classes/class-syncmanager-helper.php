@@ -50,7 +50,7 @@ final class SyncManager_Helper {
 
 		add_action( 'edit_terms', [ $this, 'edit_terms' ], 10, 2 );
 		add_action( 'edited_term', [ $this, 'edited_term' ], 0, 3 );
-		add_action( 'saved_term', [ $this, 'saved_term' ] );
+		add_action( 'saved_term', [ $this, 'saved_term' ], 10, 3 );
 
 		add_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10, 4 );
 
@@ -151,10 +151,16 @@ final class SyncManager_Helper {
 	/**
 	 * Fires after a term has been saved, and the term cache has been cleared.
 	 *
+	 * Only the saved term is cleared, so a term saved during another term's edit
+	 * (e.g. a synced translation) doesn't drop the outer term's state.
+	 *
+	 * @param int $term_id      Term ID.
+	 * @param int $tt_id        Term taxonomy ID.
+	 * @param string $taxonomy  Taxonomy slug.
 	 * @return void
 	 */
-	public function saved_term(): void {
-		$this->terms = [];
+	public function saved_term( $term_id, $tt_id, $taxonomy ): void {
+		unset( $this->terms[ "{$term_id}:{$taxonomy}" ] );
 	}
 
 	/**

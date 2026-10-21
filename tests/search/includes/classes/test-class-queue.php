@@ -389,6 +389,37 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $received[1] );
 	}
 
+	public function test_offload_term_indexing_to_queue_keeps_skip_through_nested_term_saves() {
+		$large_term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $large_term_id ] ] );
+		$other_term_id = self::factory()->category->create();
+		$tt_id         = get_term( $large_term_id, 'category' )->term_taxonomy_id;
+
+		// Like a plugin syncing a translated term: saves another term before ElasticPress handles the large one
+		add_action(
+			'edited_term',
+			function ( $term_id ) use ( $large_term_id, $other_term_id ) {
+				if ( $large_term_id === $term_id ) {
+					wp_update_term( $other_term_id, 'category', [ 'name' => 'Synced category' ] );
+				}
+			},
+			7
+		);
+
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $large_term_id, 'category', [ 'name' => 'Renamed large category' ] );
+
+		$max_count->setValue( null, $original );
+
+		// The nested save must not drop the large term's skip
+		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
+		$this->assertNotFalse( wp_next_scheduled( Queue\Cron::TERM_UPDATE_CRON_EVENT_NAME, [ $tt_id ] ) );
+	}
+
 	public function test_update_job() {
 		$this->queue->queue_object( 1, 'post' );
 
