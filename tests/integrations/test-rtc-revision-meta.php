@@ -259,6 +259,65 @@ class RTC_Revision_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A subtype can opt in to revisions without changing the global registration.
+	 */
+	public function test_subtype_revision_opt_in_overrides_global_crdt_registration(): void {
+		$args                      = get_registered_meta_keys( 'post' )['_crdt_document'];
+		$args['revisions_enabled'] = true;
+		register_post_meta( 'post', '_crdt_document', $args );
+		$this->assertFalse( get_registered_meta_keys( 'post' )['_crdt_document']['revisions_enabled'] );
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$this->assertSame( self::CRDT_DOCUMENT, get_post_meta( $revision_id, '_crdt_document', true ) );
+		$response = $this->request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( self::CRDT_DOCUMENT, $response->get_data()['meta']['_crdt_document'] );
+	}
+
+	/**
+	 * Including meta in a projection must still omit only the non-revisioned CRDT.
+	 */
+	public function test_revision_meta_projection_preserves_unrelated_fields(): void {
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$request     = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+		$request->set_query_params( [
+			'context' => 'edit',
+			'_fields' => 'id,meta',
+		] );
+		$response = rest_get_server()->dispatch( $request );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( [
+			'id'   => $revision_id,
+			'meta' => [
+				'revisioned_alias' => 'snapshot meta',
+				'rtc_unrelated'    => '',
+			],
+		], $response->get_data() );
+	}
+
+	/**
+	 * HEAD must retain the controller's response semantics without exposing CRDT.
+	 */
+	public function test_revision_head_responses_preserve_controller_behavior(): void {
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		foreach ( [ '/revisions', '/revisions/' . $revision_id ] as $suffix ) {
+			$response = $this->request( 'HEAD', '/wp/v2/posts/' . $post_id . $suffix );
+			$this->assertSame( 200, $response->get_status() );
+			remove_filter( 'rest_prepare_revision', [ $this->integration, 'filter_revision_crdt_meta' ], 10 );
+			$unfiltered = $this->request( 'HEAD', '/wp/v2/posts/' . $post_id . $suffix );
+			add_filter( 'rest_prepare_revision', [ $this->integration, 'filter_revision_crdt_meta' ], 10, 2 );
+			$this->assertSame( $unfiltered->get_status(), $response->get_status() );
+			$this->assertSame( $unfiltered->get_headers(), $response->get_headers() );
+			// Older cores prepare GET-equivalent data for HEAD; newer cores return no data.
+			$expected = empty( $unfiltered->get_data() ) ? $unfiltered->get_data() : $this->request( 'GET', '/wp/v2/posts/' . $post_id . $suffix )->get_data();
+			$this->assertSame( $expected, $response->get_data() );
+		}
+		$this->assertSame( self::CRDT_DOCUMENT, get_post_meta( $post_id, '_crdt_document', true ) );
+	}
+
+	/**
 	 * The response filter must not weaken REST read or write permissions.
 	 */
 	public function test_unauthorized_reader_cannot_read_revisions_or_write_crdt(): void {

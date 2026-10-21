@@ -24,7 +24,9 @@ writes, and own-draft autosaves returning the parent post are unchanged.
 This is deliberately **not** a full backport of #14359: unrelated non-revisioned
 metadata still has core's existing behavior. No database migration, document
 rewrite, upstream Gutenberg edit, or WebSocket protocol change is involved.
-Already-cleared CRDT state is not recovered by this patch.
+Already-cleared CRDT state is not recovered by this patch. It targets Gutenberg's
+current unaliased `_crdt_document` REST field; a custom REST alias for that key
+is outside scope. Unrelated metadata aliases remain unchanged.
 
 ## Verification
 
@@ -43,8 +45,9 @@ base64-encoded Yjs update, not a mocked metadata API. It saves through REST,
 restores revision content and meta through REST, then checks the persisted CRDT
 bytes and restored revisioned metadata. It also exercises revision collections,
 autosave creation/reads, own-draft autosaves, unaffected metadata, the inactive
-integration, field projection, and read/write authorization. The external managed
-plugin build and WebSocket service are not loaded by this PHP regression.
+integration, field projection with and without meta, HEAD responses, global and
+subtype-specific CRDT revision opt-ins, and read/write authorization. The external
+managed plugin build and WebSocket service are not loaded by this PHP regression.
 
 ## Sandbox rollout and removal
 
