@@ -41,7 +41,7 @@ final class SyncManager_Helper {
 		 * - (term cache gets cleaned here, get_term() will return the updated value)
 		 * - edited_term 
 		 * -    <====== we use this action to get the fully updated term (priority=0)
-		 * -    <====== Queue::offload_term_indexing_to_queue() sends large terms to cron (priority=5)
+		 * -    <====== Queue::offload_term_indexing_to_queue() sends large terms to cron and calls skip_term_edit() (priority=5)
 		 * -    <====== EP uses this hook to sync the term index (priority=10)
 		 * - edited_{$taxonomy}
 		 * - saved_term <====== we use this action to clean up after edit_terms
@@ -155,6 +155,17 @@ final class SyncManager_Helper {
 	 */
 	public function saved_term(): void {
 		$this->terms = [];
+	}
+
+	/**
+	 * Skip ElasticPress's action_edited_term() for the rest of this term edit,
+	 * e.g. when the term's posts are reindexed by the term update cron job instead
+	 *
+	 * @param WP_Term $term The term being edited
+	 * @return void
+	 */
+	public function skip_term_edit( WP_Term $term ): void {
+		$this->terms[ "{$term->term_id}:{$term->taxonomy}" ] = $term;
 	}
 
 	/**

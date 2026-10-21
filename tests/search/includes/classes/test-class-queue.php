@@ -56,6 +56,8 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$indexable          = Indexables::factory()->get( 'post' );
 		$this->sync_manager = $indexable->sync_manager;
+
+		SyncManager_Helper::instance()->init();
 	}
 
 	public function tearDown(): void {
@@ -341,6 +343,50 @@ class Queue_Test extends WP_UnitTestCase {
 		// Small terms are still queued by ElasticPress, then offloaded to the async queue
 		$this->assertArrayHasKey( $post_id, $this->sync_manager->get_sync_queue() );
 		$this->assertTrue( apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' ) );
+	}
+
+	public function test_offload_term_indexing_to_queue_only_skips_the_offloaded_term() {
+		$large_term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $large_term_id ] ] );
+		$small_term_id = self::factory()->category->create();
+		$small_post_id = self::factory()->post->create( [ 'post_category' => [ $small_term_id ] ] );
+
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $large_term_id, 'category', [ 'name' => 'Renamed large category' ] );
+
+		$max_count->setValue( null, $original );
+
+		// A smaller term edited later in the same request is still reindexed by ElasticPress
+		wp_update_term( $small_term_id, 'category', [ 'name' => 'Renamed small category' ] );
+
+		$this->assertSame( [ $small_post_id ], array_keys( $this->sync_manager->get_sync_queue() ) );
+	}
+
+	public function test_offload_term_indexing_to_queue_supports_skip_filters_using_object_ids() {
+		$term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+
+		// Same signature as the ep_skip_action_edited_term callbacks ElasticPress documents
+		$received = [];
+		add_filter(
+			'ep_skip_action_edited_term',
+			function ( $skip, $term_id, $tt_id, $taxonomy, $object_ids ) use ( &$received ) {
+				$received[] = $object_ids;
+				return $skip;
+			},
+			10,
+			5
+		);
+
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
+
+		// The offload passes an empty list, ElasticPress then passes the term's object ids
+		$this->assertSame( [], $received[0] );
+		$this->assertNotEmpty( $received[1] );
 	}
 
 	public function test_update_job() {
