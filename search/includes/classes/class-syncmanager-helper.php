@@ -41,6 +41,7 @@ final class SyncManager_Helper {
 		 * - (term cache gets cleaned here, get_term() will return the updated value)
 		 * - edited_term 
 		 * -    <====== we use this action to get the fully updated term (priority=0)
+		 * -    <====== Queue::offload_term_indexing_to_queue() sends large terms to cron and calls skip_term_edit() (priority=5)
 		 * -    <====== EP uses this hook to sync the term index (priority=10)
 		 * - edited_{$taxonomy}
 		 * - saved_term <====== we use this action to clean up after edit_terms
@@ -49,7 +50,7 @@ final class SyncManager_Helper {
 
 		add_action( 'edit_terms', [ $this, 'edit_terms' ], 10, 2 );
 		add_action( 'edited_term', [ $this, 'edited_term' ], 0, 3 );
-		add_action( 'saved_term', [ $this, 'saved_term' ] );
+		add_action( 'saved_term', [ $this, 'saved_term' ], 10, 3 );
 
 		add_filter( 'ep_skip_action_edited_term', [ $this, 'ep_skip_action_edited_term' ], 10, 4 );
 
@@ -150,10 +151,33 @@ final class SyncManager_Helper {
 	/**
 	 * Fires after a term has been saved, and the term cache has been cleared.
 	 *
+	 * Only the saved term is cleared, so a term saved during another term's edit
+	 * (e.g. a synced translation) doesn't drop the outer term's state.
+	 * Called without arguments, it clears the state of every term.
+	 *
+	 * @param int|null $term_id     Term ID.
+	 * @param int|null $tt_id       Term taxonomy ID.
+	 * @param string|null $taxonomy Taxonomy slug.
 	 * @return void
 	 */
-	public function saved_term(): void {
-		$this->terms = [];
+	public function saved_term( $term_id = null, $tt_id = null, $taxonomy = null ): void {
+		if ( null === $term_id || null === $taxonomy ) {
+			$this->terms = [];
+			return;
+		}
+
+		unset( $this->terms[ "{$term_id}:{$taxonomy}" ] );
+	}
+
+	/**
+	 * Skip ElasticPress's action_edited_term() for the rest of this term edit,
+	 * e.g. when the term's posts are reindexed by the term update cron job instead
+	 *
+	 * @param WP_Term $term The term being edited
+	 * @return void
+	 */
+	public function skip_term_edit( WP_Term $term ): void {
+		$this->terms[ "{$term->term_id}:{$term->taxonomy}" ] = $term;
 	}
 
 	/**
