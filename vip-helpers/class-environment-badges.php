@@ -57,7 +57,7 @@ class Environment_Badges {
 
 		// Registered from an enqueue hook, too late for our own enqueue callback to run.
 		if ( did_action( 'wp_enqueue_scripts' ) || did_action( 'admin_enqueue_scripts' ) || did_action( 'login_enqueue_scripts' ) ) {
-			self::enqueue_style();
+			static::enqueue_style();
 		}
 	}
 
@@ -91,7 +91,7 @@ class Environment_Badges {
 	 * @param \WP_Admin_Bar $wp_admin_bar
 	 */
 	public static function add_admin_bar_nodes( $wp_admin_bar ): void {
-		foreach ( self::get_badges() as $id => $badge ) {
+		foreach ( static::get_badges() as $id => $badge ) {
 			// No href or child nodes: the link or disclosure lives inside the badge's own markup.
 			$wp_admin_bar->add_node( [
 				'id'     => 'vip-badge-' . $id,
@@ -110,7 +110,7 @@ class Environment_Badges {
 			return;
 		}
 
-		$badges = self::get_badges();
+		$badges = static::get_badges();
 		if ( empty( $badges ) ) {
 			return;
 		}
