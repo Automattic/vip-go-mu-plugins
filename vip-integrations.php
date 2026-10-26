@@ -20,6 +20,9 @@ require_once __DIR__ . '/integrations/integration-utils.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
 require_once __DIR__ . '/integrations/integration-vip-config.php';
+require_once __DIR__ . '/integrations/generic-integration.php';
+require_once __DIR__ . '/integrations/generic-integration-vip-config.php';
+require_once __DIR__ . '/integrations/generic-integrations.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
@@ -128,6 +131,10 @@ if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
 if ( class_exists( __NAMESPACE__ . '\\GistAnswersIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new GistAnswersIntegration( 'gist-answers' ) );
 }
+
+// Manifest-backed integrations from the active-integrations mapping, after the hand-written ones so
+// those keep their slugs. Behind the `vip-generic-integrations` feature, off by default.
+register_generic_integrations( IntegrationsSingleton::instance() );
 
 // @codeCoverageIgnoreEnd
 

@@ -103,6 +103,11 @@ class Integrations {
 	 * @return IntegrationVipConfig
 	 */
 	protected function get_integration_vip_config( string $slug ): IntegrationVipConfig {
+		// Only a GenericIntegration falls back to the VIP_INTEGRATIONS constant for its config.
+		if ( $this->get_integration( $slug ) instanceof GenericIntegration ) {
+			return new GenericIntegrationVipConfig( $slug );
+		}
+
 		return new IntegrationVipConfig( $slug );
 	}
 
