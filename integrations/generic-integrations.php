@@ -21,16 +21,18 @@ const GENERIC_INTEGRATIONS_FEATURE = 'vip-generic-integrations';
 const ACTIVE_INTEGRATIONS_FILE = 'active-integrations.php';
 
 /**
- * The newest mapping format this loader knows. It reads any format from 1 up, entry by entry, so
- * mu-plugins and the platform can deploy in either order:
+ * The newest mapping format this loader knows, from the mapping's top-level `format`. It's a label,
+ * not a gate: this loader reads any format, entry by entry, so mu-plugins and the platform can deploy
+ * in either order:
  *
- * - A newer mapping is still read; this loader uses the keys it knows and ignores the rest, and
- *   warns that the mapping is newer than it.
+ * - A missing `format` is read as 1. A newer one is still read; this loader uses the keys it knows
+ *   and ignores the rest, and warns that the mapping is newer than it. An invalid one is read the
+ *   same way, with a warning.
  * - Only the keys in ACTIVE_INTEGRATION_REQUIRED_KEYS are required, and those are in every format.
  *   Any key added later is optional, with a default, so a newer loader reads an older mapping.
  * - The platform never removes a key or changes what one means; a new meaning gets a new key.
  */
-const ACTIVE_INTEGRATIONS_FORMAT_VERSION = 1;
+const ACTIVE_INTEGRATIONS_FORMAT = 1;
 
 /**
  * Keys an entry must have, with the rule each value must match. Never add to this: a key added
@@ -82,8 +84,8 @@ function register_generic_integrations( Integrations $integrations ): void {
 
 /**
  * The valid entries of the active-integrations mapping, keyed by slug. Empty when there's no
- * mapping, or it isn't an array in a format this loader knows. An invalid entry is skipped with a
- * warning.
+ * mapping, or it isn't an array with an `integrations` map. An invalid entry is skipped with a
+ * warning; the mapping's `format` never stops it being read (see ACTIVE_INTEGRATIONS_FORMAT).
  *
  * GOOP writes the mapping: into the `integrations-config` ConfigMap on K8s, and as the
  * `VIP_ACTIVE_INTEGRATIONS` constant on WP Cloud, which vip-wpcloud-externals returns from a
@@ -104,17 +106,15 @@ function get_active_integrations_mapping(): array {
 	}
 
 	// A config file that doesn't reach a `return` gives 1, so check for an array, not for null.
-	if (
-		! is_array( $mapping ) ||
-		! is_int( $mapping['version'] ?? null ) ||
-		$mapping['version'] < 1 ||
-		! is_array( $mapping['integrations'] ?? null )
-	) {
+	if ( ! is_array( $mapping ) || ! is_array( $mapping['integrations'] ?? null ) ) {
 		return [];
 	}
 
-	if ( $mapping['version'] > ACTIVE_INTEGRATIONS_FORMAT_VERSION ) {
-		trigger_error( sprintf( 'The active integrations mapping is format %d; this loader knows up to %d, and reads the keys it knows.', (int) $mapping['version'], (int) ACTIVE_INTEGRATIONS_FORMAT_VERSION ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	$format = $mapping['format'] ?? 1;
+	if ( ! is_int( $format ) || $format < 1 ) {
+		trigger_error( 'The active integrations mapping has an invalid format; reading the keys this loader knows.', E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	} elseif ( $format > ACTIVE_INTEGRATIONS_FORMAT ) {
+		trigger_error( sprintf( 'The active integrations mapping is format %d; this loader knows up to %d, and reads the keys it knows.', (int) $format, (int) ACTIVE_INTEGRATIONS_FORMAT ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 	}
 
 	$entries = [];
