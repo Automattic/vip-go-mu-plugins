@@ -150,7 +150,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		add_filter( 'vip_integrations_pre_load_active_integrations', function () use ( &$read ) {
 			$read = true;
 			return [
-				'version'      => 1,
+				'format'       => 1,
 				'integrations' => [ 'acme-sync' => $this->entry() ],
 			];
 		} );
@@ -165,7 +165,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__register_registers_each_entry_while_on(): void {
 		$this->enable_feature_for_site();
 		$this->use_mapping( [
-			'version'      => 1,
+			'format'       => 1,
 			'integrations' => [
 				'acme-sync' => $this->entry(),
 				'beta-sync' => $this->entry( 'beta-sync' ),
@@ -184,7 +184,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__register_keeps_a_hand_written_integration_with_the_same_slug(): void {
 		$this->enable_feature_for_site();
 		$this->use_mapping( [
-			'version'      => 1,
+			'format'       => 1,
 			'integrations' => [ 'fake' => $this->entry( 'fake' ) ],
 		] );
 		$integrations = new Integrations();
@@ -205,7 +205,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__mapping_keeps_only_the_keys_the_loader_uses(): void {
 		$this->use_mapping( [
-			'version'      => 1,
+			'format'       => 1,
 			'integrations' => [ 'acme-sync' => $this->entry( 'acme-sync', [ 'extra' => 'ignored' ] ) ],
 		] );
 
@@ -217,22 +217,10 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 			'no file'                         => [ null ],
 			'a file with no return'           => [ 1 ],
 			'not an array'                    => [ 'mapping' ],
-			'no version'                      => [ [ 'integrations' => [] ] ],
-			'version 0'                       => [
-				[
-					'version'      => 0,
-					'integrations' => [ 'acme-sync' => $this->entry() ],
-				],
-			],
-			'the version as a string'         => [
-				[
-					'version'      => '1',
-					'integrations' => [],
-				],
-			],
+			'no integrations'                 => [ [ 'format' => 1 ] ],
 			'integrations that are not a map' => [
 				[
-					'version'      => 1,
+					'format'       => 1,
 					'integrations' => 'acme-sync',
 				],
 			],
@@ -253,9 +241,39 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( [], $this->warnings );
 	}
 
+	public function test__a_mapping_without_a_format_is_read_as_format_1(): void {
+		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry() ] ] );
+
+		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
+		$this->assertSame( [], $this->warnings );
+	}
+
+	public function data_invalid_formats(): array {
+		return [
+			'0'            => [ 0 ],
+			'a string'     => [ '1' ],
+			'a negative'   => [ -1 ],
+			'not a scalar' => [ [ 1 ] ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_invalid_formats
+	 */
+	public function test__a_mapping_with_an_invalid_format_is_still_read_with_a_warning( $format ): void {
+		$this->use_mapping( [
+			'format'       => $format,
+			'integrations' => [ 'acme-sync' => $this->entry() ],
+		] );
+
+		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
+		$this->assertCount( 1, $this->warnings );
+		$this->assertStringContainsString( 'invalid format', $this->warnings[0] );
+	}
+
 	public function test__a_newer_mapping_is_read_with_a_warning(): void {
 		$this->use_mapping( [
-			'version'      => ACTIVE_INTEGRATIONS_FORMAT_VERSION + 1,
+			'format'       => ACTIVE_INTEGRATIONS_FORMAT + 1,
 			'top_level'    => 'ignored',
 			'integrations' => [
 				'acme-sync' => $this->entry( 'acme-sync', [ 'added_later' => [ 'ignored' ] ] ),
@@ -271,7 +289,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$entry = $this->entry();
 		unset( $entry['version_strategy'], $entry['scope'] );
 		$this->use_mapping( [
-			'version'      => 1,
+			'format'       => 1,
 			'integrations' => [ 'acme-sync' => $entry ],
 		] );
 
@@ -312,7 +330,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	 */
 	public function test__an_invalid_entry_is_skipped_with_a_warning( string $slug, $entry ): void {
 		$this->use_mapping( [
-			'version'      => 1,
+			'format'       => 1,
 			'integrations' => [
 				$slug       => $entry,
 				'beta-sync' => $this->entry( 'beta-sync' ),
@@ -329,7 +347,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		file_put_contents(
 			$dir . '/' . ACTIVE_INTEGRATIONS_FILE,
 			'<?php return ' . var_export( [
-				'version'      => 1,
+				'format'       => 1,
 				'integrations' => [ 'acme-sync' => $this->entry() ],
 			], true ) . ';' // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_var_export
 		);
