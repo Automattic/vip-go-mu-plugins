@@ -14,6 +14,7 @@ namespace Automattic\VIP\Integrations;
 
 use Automattic\Test\Constant_Mocker;
 use Automattic\VIP\Feature;
+use ReflectionClass;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
@@ -27,6 +28,9 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	private array $original_feature_percentages;
 	private array $original_feature_envs;
 
+	/** @var array<string,mixed> Feature's statics as declared in class-feature.php. */
+	private array $declared_feature_defaults;
+
 	/** @var string[] */
 	private array $warnings = [];
 
@@ -39,6 +43,13 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->original_feature_ids         = Feature::$feature_ids;
 		$this->original_feature_percentages = Feature::$feature_percentages;
 		$this->original_feature_envs        = Feature::$feature_envs;
+
+		// Other suites (e.g. test-class-feature.php) overwrite Feature's statics without restoring
+		// them, so start every test from the values declared in class-feature.php.
+		$this->declared_feature_defaults = ( new ReflectionClass( Feature::class ) )->getDefaultProperties();
+		Feature::$feature_ids            = $this->declared_feature_defaults['feature_ids'];
+		Feature::$feature_percentages    = $this->declared_feature_defaults['feature_percentages'];
+		Feature::$feature_envs           = $this->declared_feature_defaults['feature_envs'];
 
 		Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', self::SITE_ID );
 
@@ -106,10 +117,11 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	*/
 
 	public function test__feature_is_off_by_default(): void {
-		$this->assertArrayHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->original_feature_ids );
-		$this->assertSame( [], $this->original_feature_ids[ GENERIC_INTEGRATIONS_FEATURE ] );
-		$this->assertArrayNotHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->original_feature_percentages );
-		$this->assertArrayNotHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->original_feature_envs );
+		// What class-feature.php declares, whatever earlier tests did to the statics.
+		$this->assertArrayHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->declared_feature_defaults['feature_ids'] );
+		$this->assertSame( [], $this->declared_feature_defaults['feature_ids'][ GENERIC_INTEGRATIONS_FEATURE ] );
+		$this->assertArrayNotHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->declared_feature_defaults['feature_percentages'] );
+		$this->assertArrayNotHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->declared_feature_defaults['feature_envs'] );
 
 		$this->assertFalse( generic_integrations_enabled() );
 	}
