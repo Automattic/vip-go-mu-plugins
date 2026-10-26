@@ -56,7 +56,7 @@ jobs:
           echo "version=${version:-release}" >> "$GITHUB_OUTPUT"
 
       - name: Create changelog
-        uses: Automattic/vip-actions/changelog@438cd00aac2463a2dbfb4a747ad7b1ac67a2575a
+        uses: Automattic/vip-actions/changelog@6bf9fde7ac8acce516488384357e3e6fb28669cf
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}
