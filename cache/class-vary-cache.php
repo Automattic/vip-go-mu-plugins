@@ -559,6 +559,11 @@ class Vary_Cache {
 	private static function set_group_cookie() {
 		$group_string = self::stringify_groups();
 		if ( empty( $group_string ) ) {
+			$cookie_name   = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
+			$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
+			$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
+
+			self::unset_cookie( $cookie_name, $cookie_path, $cookie_domain );
 			return;
 		}
 
@@ -623,11 +628,13 @@ class Vary_Cache {
 	/**
 	 * Wrapper for the set cookie function to clear out the cookie
 	 *
-	 * @param string $name  Cookie Name.
+	 * @param string $name   Cookie Name.
+	 * @param string $path   Cookie Path.
+	 * @param string $domain Cookie Domain.
 	 */
-	private static function unset_cookie( $name ) {
+	private static function unset_cookie( $name, $path = '', $domain = '' ) {
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-		setcookie( $name, '', time() - 3600 );
+		setcookie( $name, '', time() - 3600, $path, $domain );
 	}
 	/**
 	 * Only allow alphanumerics, dash and underscore
