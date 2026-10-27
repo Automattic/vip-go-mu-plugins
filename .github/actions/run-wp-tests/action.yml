@@ -133,7 +133,10 @@ runs:
           rm -rf "${debs}"
           mkdir -p "${debs}/partial"
           sudo apt-get update
-          sudo apt-get install -y -f --no-install-recommends -o Dir::Cache::archives="${debs}" subversion
+          sudo apt-get install -y -f --no-install-recommends -o Dir::Cache::archives="${debs}" -o APT::Keep-Downloaded-Packages=true subversion
+          # apt leaves a root-only `partial` directory and `lock` file there, and tar can't save the cache with them.
+          sudo rm -rf "${debs}/partial" "${debs}/lock"
+          sudo chown -R "$(id -u):$(id -g)" "${debs}"
         fi
 
     - name: Set up WordPress and WordPress Test Library (with svn)

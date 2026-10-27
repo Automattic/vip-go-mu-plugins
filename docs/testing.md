@@ -102,7 +102,8 @@ The jobs use the runner image's MySQL instead of a service container, and they r
 `vip-go-mu-plugins-ext` from the Actions cache, keyed by its `HEAD` commit.
 
 `core-tests.yml` runs WordPress core's PHPUnit suite with these MU plugins loaded. The
-main suite and the `ajax`/`ms-files` groups run as parallel jobs. The `external-http`
+main suite runs as three parallel shards split by test class name, and the
+`ajax`/`ms-files` groups run in a fourth job. The `external-http`
 group depends on third-party hosts, so it runs only on the daily schedule and on manual
 runs. The workflow lists the few core tests it excludes, with the reason for each, next
 to its PHPUnit filter.

@@ -53,15 +53,18 @@ env:
 
 jobs:
   wp-core:
-    name: "Run WP Core Tests: ${{ matrix.suite }}"
+    name: "Run WP Core Tests: ${{ matrix.suite }}${{ matrix.shard && format(' {0}/3', matrix.shard) || '' }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        # The main suite takes several minutes, so the group runs get their own job.
-        suite:
-          - main
-          - groups
+        # The main suite took over 10 minutes in one job, so it runs in three shards. The group runs get
+        # their own job.
+        include:
+          - { suite: main, shard: 1 }
+          - { suite: main, shard: 2 }
+          - { suite: main, shard: 3 }
+          - { suite: groups }
     steps:
       - name: Get the latest WP version
         id: version
@@ -164,12 +167,25 @@ jobs:
           excluded+='|WP_Test_REST_Settings_Controller::test_get_items$'
           excluded+='|test_default_script_module_files_exist'
 
+          # Shards split the test classes by name, balanced on measured run time. Shard 3 takes every class
+          # the first two don't match, so a new or renamed class always runs. PHPUnit matches case-insensitively.
+          shard1='WP_|Tests_[defgv]'
+          shard2='Tests_[cmnoruwx]'
+          case "${SHARD}" in
+            1) classes="(?=${shard1})" ;;
+            2) classes="(?!${shard1})(?=${shard2})" ;;
+            3) classes="(?!${shard1})(?!${shard2})" ;;
+            *) echo "Unknown shard: ${SHARD}" >&2; exit 1 ;;
+          esac
+
           node ./tools/local-env/scripts/docker.js run php php tests/phpunit/includes/install.php wp-tests-config.php no_ms_tests run_core_tests
           node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit \
             --verbose -c phpunit.xml.dist \
-            --filter "^(?!.*(${excluded})).*\$"
+            --filter "^${classes}(?!.*(${excluded})).*\$"
+        env:
+          SHARD: ${{ matrix.shard }}
         working-directory: wordpress
-        timeout-minutes: 30
+        timeout-minutes: 20
 
       - name: Run AJAX tests
         if: matrix.suite == 'groups'
