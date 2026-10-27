@@ -1,6 +1,6 @@
 <?php
 /**
- * Environment badges: Debug Mode, Sandbox, Non-production and Not proxied.
+ * Environment badges: Debug Mode, Sandbox and Not proxied.
  *
  * Badges show as items in the admin bar. Where no admin bar is drawn (wp-login.php,
  * logged-out visitors, themes that remove it, wp-admin iframes), they show as small tabs docked to
@@ -14,7 +14,7 @@ class Environment_Badges {
 	const STYLE_VERSION = '1.0';
 
 	/**
-	 * @var array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string, show: ?callable}>
+	 * @var array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string}>
 	 */
 	private static $badges = [];
 
@@ -33,8 +33,7 @@ class Environment_Badges {
 	 *     @type array<string, string> $details   Optional name => value pairs, shown in a panel that the badge opens.
 	 *     @type int                   $order     Badges with a lower order come first. Default 10.
 	 *     @type string                $legacy_id Optional ID for the badge's outer element, so sites' CSS that hid the old badge
-	 *                                            (e.g. `#vip-non-prod-bar { display: none; }`) still hides it, link and all.
-	 *     @type callable|null         $show      Optional callback, checked when the badge renders; return false to hide it.
+	 *                                            (e.g. `#wpcom-sandboxed-bar { display: none; }`) still hides it, link and all.
 	 * }
 	 */
 	public static function add( string $id, array $args ): void {
@@ -52,7 +51,6 @@ class Environment_Badges {
 			'details'   => [],
 			'order'     => 10,
 			'legacy_id' => '',
-			'show'      => null,
 		], $args );
 
 		// Registered from an enqueue hook, too late for our own enqueue callback to run.
@@ -62,10 +60,10 @@ class Environment_Badges {
 	}
 
 	/**
-	 * @return array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string, show: ?callable}>
+	 * @return array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string}>
 	 */
 	public static function get_badges(): array {
-		$badges = array_filter( self::$badges, fn( $badge ) => ! is_callable( $badge['show'] ) || call_user_func( $badge['show'] ) );
+		$badges = self::$badges;
 		uasort( $badges, fn( $a, $b ) => $a['order'] <=> $b['order'] );
 
 		return $badges;

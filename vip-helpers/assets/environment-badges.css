@@ -3,7 +3,7 @@
  *
  * Each badge is a .vip-badge-chip (which carries any legacy ID) around a .vip-badge-face (a link, a <summary>,
  * or plain text). The chip never gets a `display` rule here, so sites' CSS that hid the old badges
- * (e.g. `#vip-non-prod-bar { display: none; }`) still hides the whole badge, link included.
+ * (e.g. `#a8c-debug-flag { display: none; }`) still hides the whole badge, link included.
  *
  * Colours per badge; text keeps WCAG AA contrast (4.5:1) on both backgrounds.
  */
@@ -16,12 +16,6 @@
 .vip-badge--sandbox {
 	--vip-badge-bg: #c2410c;
 	--vip-badge-bg-hover: #9a3412;
-	--vip-badge-fg: #fff;
-}
-
-.vip-badge--non-production {
-	--vip-badge-bg: #4c2c92;
-	--vip-badge-bg-hover: #3c2275;
 	--vip-badge-fg: #fff;
 }
 
