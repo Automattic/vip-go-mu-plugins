@@ -3,7 +3,7 @@
  * Environment badges: Debug Mode, Sandbox and Not proxied.
  *
  * Badges show as items in the admin bar. Where no admin bar is drawn (wp-login.php,
- * logged-out visitors, themes that remove it, wp-admin iframes), they show as small tabs docked to
+ * logged-out visitors, themes that remove it), they show as small tabs docked to
  * the bottom-left corner instead, so they never float over page content.
  */
 
@@ -73,7 +73,8 @@ class Environment_Badges {
 
 		add_action( 'admin_bar_menu', [ __CLASS__, 'add_admin_bar_nodes' ] );
 
-		// Output late, after the admin bar would have been drawn. wp-admin too, for pages without the admin bar.
+		// Output late, after the admin bar would have been drawn. wp-admin draws it on every page except iframes,
+		// which hide admin_footer output, so admin_footer only matters when a plugin unhooks the admin bar.
 		add_action( 'wp_footer', [ __CLASS__, 'render_dock' ], 9999 );
 		add_action( 'admin_footer', [ __CLASS__, 'render_dock' ], 9999 );
 		add_action( 'login_footer', [ __CLASS__, 'render_dock' ], 9999 );
