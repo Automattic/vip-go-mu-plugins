@@ -178,6 +178,16 @@ jobs:
             *) echo "Unknown shard: ${SHARD}" >&2; exit 1 ;;
           esac
 
+          # Core's tests stand in for built files this job doesn't build with empty files (self::touch()), and
+          # some tests only pass because an earlier class created one: Tests_Embed_Template needs the
+          # wp-embed.js from the oEmbed classes. Create them all up front, so each shard has what one full run
+          # would.
+          grep -rhoE "self::touch\( ABSPATH \. WPINC \. '[^']+'" tests/phpunit/tests | sed -E "s/.*'([^']+)'$/\1/" | sort -u |
+            while read -r file; do
+              mkdir -p "src/wp-includes$(dirname "${file}")"
+              touch "src/wp-includes${file}"
+            done
+
           node ./tools/local-env/scripts/docker.js run php php tests/phpunit/includes/install.php wp-tests-config.php no_ms_tests run_core_tests
           node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit \
             --verbose -c phpunit.xml.dist \
