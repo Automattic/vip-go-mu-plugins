@@ -18,6 +18,7 @@ use function Automattic\Test\Utils\get_class_method_as_public;
 use function Automattic\Test\Utils\http_response;
 
 require_once __DIR__ . '/mock-header.php';
+require_once __DIR__ . '/../../../../search/includes/classes/class-queue.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-query-classifier.php';
 require_once __DIR__ . '/../../../../search/includes/classes/class-query-warning.php';
 require_once __DIR__ . '/../../../../search/search.php';
