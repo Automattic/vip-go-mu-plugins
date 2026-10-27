@@ -18,16 +18,22 @@
 
 namespace Automattic\VIP\NotProxiedFlag;
 
+use Automattic\VIP\Helpers\Environment_Badges;
+
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\enable_not_proxied_flag' );
 
 function enable_not_proxied_flag() {
-	add_action( 'admin_footer', __NAMESPACE__ . '\maybe_show_not_proxied_flag', 9999 ); // output later in the page
+	add_action( 'init', __NAMESPACE__ . '\maybe_add_not_proxied_badge' );
 }
 
-function maybe_show_not_proxied_flag() {
+function maybe_add_not_proxied_badge() {
+	if ( ! is_admin() || ! class_exists( Environment_Badges::class ) ) {
+		return;
+	}
+
 	/*
 	 * Display only if is an automattician.
-	 */ 
+	 */
 	$is_automattician = function_exists( '\is_automattician' ) && \is_automattician();
 
 	if ( ! $is_automattician ) {
@@ -43,30 +49,10 @@ function maybe_show_not_proxied_flag() {
 		return;
 	}
 
-	?>
-	<div id="a8c-not-proxied-flag">
-		Not Proxied
-	</div>
-
-	<style>
-	#a8c-not-proxied-flag {
-		z-index: 9991;
-		background-color: rgb(0, 124, 186);
-		color: rgb(221, 221, 221);
-		text-align: center;
-		bottom: 50px;
-		left: 20px;
-		position: fixed;
-		height: 28px;
-		line-height: 28px;
-		letter-spacing: 0.2em;
-		text-shadow: none;
-		font-family: 'Helvetica Neue',Arial,Helvetica,sans-serif;
-		font-size: 9px;
-		font-weight: bold;
-		text-transform: uppercase;
-		padding: 0 10px;
-	}
-	</style>
-	<?php
+	Environment_Badges::add( 'not-proxied', [
+		'label' => 'Not proxied',
+		'short' => 'NP',
+		'title' => 'This request did not come through the A8C proxy',
+		'order' => 30,
+	] );
 }
