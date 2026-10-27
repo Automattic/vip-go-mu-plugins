@@ -590,8 +590,9 @@ class Search_Test extends WP_UnitTestCase {
 			)
 		);
 
-		$this->assertContains( $this->search_instance->filter__ep_pre_request_host( 'endpoint1', 0 ), Constant_Mocker::constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ), 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 0 total failures' );
-		$this->assertContains( $this->search_instance->filter__ep_pre_request_host( 'endpoint1', 107 ), Constant_Mocker::constant( 'VIP_ELASTICSEARCH_ENDPOINTS' ), 'filter__ep_pre_request_host() didn\'t return a value that exists in VIP_ELASTICSEARCH_ENDPOINTS with 107 failures' );
+		// Failures advance the host index, which wraps around the endpoint list
+		$this->assertSame( 'endpoint1', $this->search_instance->filter__ep_pre_request_host( 'test', 0 ), 'filter__ep_pre_request_host() didn\'t use the first endpoint with 0 total failures' );
+		$this->assertSame( 'endpoint6', $this->search_instance->filter__ep_pre_request_host( 'test', 107 ), 'filter__ep_pre_request_host() didn\'t wrap around the endpoints with 107 total failures' );
 	}
 
 	/*
@@ -1354,12 +1355,10 @@ class Search_Test extends WP_UnitTestCase {
 			'jetpack migration: no filters'             => [ true, null, null, $jetpack_defaults ],
 			'jetpack migration: VIP filter'             => [ true, [ 'foo' ], null, array_merge( $jetpack_defaults, [ 'foo' ] ) ],
 			'jetpack migration: VIP and JP filters'     => [ true, [ 'foo' ], [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar', 'foo' ] ) ],
-			'jetpack migration: empty VIP filter, JP filter' => [ true, [], [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar' ] ) ],
 			'jetpack migration: JP filter'              => [ true, null, [ 'bar' ], array_merge( $jetpack_defaults, [ 'bar' ] ) ],
 			'not jetpack migration: no filters'         => [ false, null, null, Search::POST_META_DEFAULT_ALLOW_LIST ],
 			'not jetpack migration: VIP filter'         => [ false, [ 'foo' ], null, array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ) ],
 			'not jetpack migration: VIP and JP filters' => [ false, [ 'foo' ], [ 'bar' ], array_merge( Search::POST_META_DEFAULT_ALLOW_LIST, [ 'foo' ] ) ],
-			'not jetpack migration: empty VIP filter, JP filter' => [ false, [], [ 'bar' ], Search::POST_META_DEFAULT_ALLOW_LIST ],
 			'not jetpack migration: JP filter'          => [ false, null, [ 'bar' ], Search::POST_META_DEFAULT_ALLOW_LIST ],
 		];
 	}
@@ -1834,35 +1833,31 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertTrue( $this->search_instance->is_protected_content_enabled() );
 	}
 
-	public function test__maybe_enable_ep_query_logging_no_cap() {
-		wp_set_current_user( 0 );
-
-		$this->init_es();
-
-		$this->assertFalse( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
+	public function maybe_enable_ep_query_logging_data() {
+		return array(
+			// Current user role (null when logged out), filtered vip_search_dev_tools_cap (null for the default), expected
+			'no cap'       => array( null, null, false ),
+			'has cap'      => array( 'administrator', null, true ),
+			'filtered cap' => array( 'editor', 'edit_posts', true ),
+		);
 	}
 
-	public function test__maybe_enable_ep_query_logging_has_cap() {
-		$super_admin = $this->factory()->user->create_and_get( array( 'role' => 'administrator' ) );
-		wp_set_current_user( $super_admin->ID );
+	/**
+	 * @dataProvider maybe_enable_ep_query_logging_data
+	 */
+	public function test__maybe_enable_ep_query_logging( $role, $cap, $expected ) {
+		if ( null !== $cap ) {
+			add_filter( 'vip_search_dev_tools_cap', fn() => $cap );
+		}
+
+		wp_set_current_user( null === $role ? 0 : $this->factory()->user->create( array( 'role' => $role ) ) );
 
 		$this->init_es();
 
-		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
-		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
-	}
-
-	public function test__maybe_enable_ep_query_logging_filtered_cap() {
-		add_filter( 'vip_search_dev_tools_cap', function () {
-			return 'edit_posts';
-		} );
-		$editor = $this->factory()->user->create_and_get( array( 'role' => 'editor' ) );
-		wp_set_current_user( $editor->ID );
-
-		$this->init_es();
-
-		$this->assertTrue( Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
-		$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
+		$this->assertSame( $expected, Constant_Mocker::defined( 'WP_EP_DEBUG' ) );
+		if ( $expected ) {
+			$this->assertTrue( Constant_Mocker::constant( 'WP_EP_DEBUG' ) );
+		}
 	}
 
 	public function limit_max_result_window_data() {

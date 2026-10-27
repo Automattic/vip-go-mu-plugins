@@ -66,58 +66,23 @@ class A8C_Files_Image_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Data provider for testing the Automattic\VIP\Files\Image::reset_to_original.
-	 *
-	 * @return array Array of Arrays of Arrays in order to provide input and expected output.
-	 */
-	public function get_data_for_generate_sizes() {
-		return [
-			'thumbnail'    => [
-				[
-					'width'  => '150',
-					'height' => '150',
-					'crop'   => '1',
-				],
-			],
-			'medium'       => [
-				[
-					'width'  => '300',
-					'height' => '300',
-					'crop'   => false,
-				],
-			],
-			'medium_large' => [
-				[
-					'width'  => '768',
-					'height' => '0',
-					'crop'   => false,
-				],
-			],
-			'large'        => [
-				[
-					'width'  => '1024',
-					'height' => '1024',
-					'crop'   => false,
-				],
-			],
-		];
-	}
-
-	/**
 	 * Test the reset of dimensions to original.
 	 *
-	 * Image::get_size() is covered by A8C_Files_ImageSizes_Test::test__generate_sizes_meta().
+	 * reset_to_original() has no branches, so one size is enough. Image::get_size() is covered by
+	 * A8C_Files_ImageSizes_Test::test__generate_sizes_meta().
 	 *
 	 * @covers Automattic\VIP\Files\Image::reset_to_original
-	 * @dataProvider get_data_for_generate_sizes
-	 *
-	 * @param array $size Array of requested size dimensions.
 	 */
-	public function test__reset_to_original( $size ) {
+	public function test__reset_to_original() {
 		$postmeta = self::$postmeta;
 
 		$image = new Automattic\VIP\Files\Image( $postmeta, 'image/jpeg' );
-		$image->resize( $size );
+		$image->resize( [
+			'width'  => '150',
+			'height' => '150',
+			'crop'   => '1',
+		] );
+		$this->assertTrue( $image->is_resized(), 'Image was not resized before the reset.' );
 		$image->reset_to_original();
 
 		$this->assertFalse( $image->is_resized(), 'Image is not marked as NOT resized.' );

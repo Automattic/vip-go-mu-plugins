@@ -58,16 +58,21 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
+	/**
+	 * Only attachments inheriting their parent's status follow it, so a draft parent doesn't restrict them.
+	 */
 	public function test__check_file_visibility__attachment_not_inherit() {
 		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 
-		$post_id       = $this->factory()->post->create();
+		$post_id       = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
 		$attachment_id = $this->create_attachment( '2021/01/not-inherit.jpg', $post_id );
 
+		// WordPress coerces any other attachment status except `private`, `trash` and `auto-draft` to `inherit`.
 		wp_update_post( [
 			'ID'          => $attachment_id,
-			'post_status' => 'publish',
+			'post_status' => 'private',
 		] );
+		$this->assertSame( 'private', get_post_status( $attachment_id ) );
 
 		$file_visibility = false;
 		$file_path       = get_post_meta( $attachment_id, '_wp_attached_file', true );
@@ -77,23 +82,21 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
-	public function test__check_file_visibility__multisite_subsite_attachment_with_sites_path() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped();
-		}
+	/**
+	 * Multisite file paths have a `sites/<id>/` prefix that `_wp_attached_file` doesn't store.
+	 *
+	 * The prefix is stripped by pattern, so this needs neither multisite nor a real subsite.
+	 */
+	public function test__check_file_visibility__strips_sites_path_prefix() {
+		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 
-		$expected_file_visibility = \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
-
-		// Switch to a subsite
-		$subsite_id = $this->factory()->blog->create();
-		switch_to_blog( $subsite_id );
-
-		// Create attachment
-		$attachment_id = $this->create_attachment( '2021/01/subsite.jpg' );
+		$post_id       = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
+		$attachment_id = $this->create_attachment( '2021/01/subsite.jpg', $post_id );
 
 		$file_visibility = false;
-		$file_path       = sprintf( 'sites/%d/%s', $subsite_id, get_post_meta( $attachment_id, '_wp_attached_file', true ) );
+		$file_path       = 'sites/2/' . get_post_meta( $attachment_id, '_wp_attached_file', true );
 
+		// Only finding the attachment by the stripped path reaches the draft parent and denies access.
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );

@@ -2,6 +2,7 @@
 
 use Automattic\Test\Utils\Captures_Errors;
 
+use function Automattic\Test\Utils\block_http_requests;
 use function Automattic\Test\Utils\get_class_method_as_public;
 use function Automattic\Test\Utils\get_class_property_as_public;
 
@@ -20,6 +21,9 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
 		$this->reset_cache_manager_state();
+
+		// The page-cache AJAX handler reports its outcome with a stats pixel request.
+		block_http_requests();
 	}
 
 	public function tearDown(): void {
@@ -147,18 +151,11 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Default purge permissions must follow the user's editing capabilities.
+	 * Logged-out visitors can't purge by default. test_ajax_permissions_with_valid_nonce covers the default for roles.
 	 */
-	public function test_default_purge_permissions(): void {
-		// [ role, or null when logged out; whether the default allows purging ]
-		foreach ( [
-			[ null, false ],
-			[ 'subscriber', false ],
-			[ 'editor', true ],
-		] as [ $role, $allowed ] ) {
-			wp_set_current_user( $role ? self::factory()->user->create( [ 'role' => $role ] ) : 0 );
-			$this->assertSame( $allowed, $this->can_purge( 'url' ), $role ?: 'logged out' );
-		}
+	public function test_default_purge_permissions_deny_logged_out_users(): void {
+		wp_set_current_user( 0 );
+		$this->assertFalse( $this->can_purge( 'url' ) );
 	}
 
 	/**
@@ -204,16 +201,11 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Both handlers reject the nonce before the page-cache success path reads VIP_GO_APP_ID, so these run in-process.
+	 *
 	 * @dataProvider get_ajax_nonce_cases
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
 	 */
 	public function test_ajax_rejects_bad_nonce_without_queueing( string $hook, string $nonce_case ): void {
-		// Keep the hosted application identity local to this process, including when a guard is bypassed.
-		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
-			define( 'VIP_GO_APP_ID', 12345 );
-		}
-
 		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
 		$is_dashboard  = 'wp_ajax_vip_cache_manager_dashboard_purge' === $hook;
 		$other_purpose = $is_dashboard ? 'purge-page' : 'vip_cache_manager_dashboard_purge';

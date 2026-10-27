@@ -65,8 +65,9 @@ class Pendo_JavaScript_Library_Test extends WP_UnitTestCase {
 			'filter-allowed admin page' => [ 'admin.php', 'admin-page-slug', [], [ 'admin-page-slug' ] ],
 		];
 
+		// Without a tracked integration the script is skipped before any screen check, so one screen covers that.
+		yield 'core screen, no tracked integration' => [ false, ...$screens['core screen'], false ];
 		foreach ( $screens as $name => $screen ) {
-			yield "$name, no tracked integration" => [ false, ...$screen, false ];
 			yield "$name, a tracked integration" => [ true, ...$screen, true ];
 		}
 	}

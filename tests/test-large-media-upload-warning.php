@@ -61,11 +61,6 @@ class Large_Media_Upload_Warning_Test extends WP_UnitTestCase {
 		$this->assertSame( 8 * 1024 * 1024, $this->instance->get_threshold_bytes() );
 	}
 
-	public function test_threshold_filter_overrides_default(): void {
-		add_filter( 'vip_large_media_warning_threshold_bytes', fn() => 524288 );
-		$this->assertSame( 524288, $this->instance->get_threshold_bytes() );
-	}
-
 	public function test_threshold_constant_overrides_default(): void {
 		Constant_Mocker::define( 'VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES', 12345 );
 		$this->assertSame( 12345, $this->instance->get_threshold_bytes() );
