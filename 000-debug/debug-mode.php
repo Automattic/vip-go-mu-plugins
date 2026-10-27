@@ -20,11 +20,6 @@ use Automattic\VIP\Helpers\Environment_Badges;
 
 use function Automattic\VIP\Stats\send_pixel;
 
-// Added in the same release as this file; a non-atomic deploy can deliver this file first.
-if ( file_exists( __DIR__ . '/../vip-helpers/class-environment-badges.php' ) ) {
-	require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
-}
-
 // How long should we enable Debug mode for?
 const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
 
@@ -156,14 +151,13 @@ function enable_debug_tools() {
 	}
 
 	Environment_Badges::add( 'a8c-debug', [
-		'label'     => 'A8C',
-		'more'      => 'Debug',
+		'label'   => 'A8C',
+		'more'    => 'Debug',
 		// The visible label only says Debug Mode is on; tell screen readers what clicking does.
-		'sr_text'   => ', turn off Debug Mode',
-		'title'     => 'Turn off Debug Mode',
-		'href'      => get_disable_debug_mode_url(),
-		'order'     => 40,
-		'legacy_id' => 'a8c-debug-flag',
+		'sr_text' => ', turn off Debug Mode',
+		'title'   => 'Turn off Debug Mode',
+		'href'    => get_disable_debug_mode_url(),
+		'order'   => 40,
 	] );
 }
 

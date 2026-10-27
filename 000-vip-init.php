@@ -198,6 +198,11 @@ if ( ! defined( 'FS_METHOD' ) ) {
 	define( 'FS_METHOD', 'direct' );
 }
 
+// For the sandbox and debug badges below. They check class_exists(), since a non-atomic deploy can deliver them before this class.
+if ( file_exists( __DIR__ . '/vip-helpers/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/vip-helpers/class-environment-badges.php';
+}
+
 if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }

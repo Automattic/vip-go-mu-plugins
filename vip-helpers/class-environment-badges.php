@@ -14,7 +14,7 @@ class Environment_Badges {
 	const STYLE_VERSION = '1.0';
 
 	/**
-	 * @var array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string}>
+	 * @var array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int}>
 	 */
 	private static $badges = [];
 
@@ -32,8 +32,6 @@ class Environment_Badges {
 	 *     @type string                $href      Optional link.
 	 *     @type array<string, string> $details   Optional name => value pairs, shown in a panel that the badge opens.
 	 *     @type int                   $order     Badges with a lower order come first. Default 10.
-	 *     @type string                $legacy_id Optional ID for the badge's outer element, so sites' CSS that hid the old badge
-	 *                                            (e.g. `#wpcom-sandboxed-bar { display: none; }`) still hides it, link and all.
 	 * }
 	 */
 	public static function add( string $id, array $args ): void {
@@ -42,15 +40,14 @@ class Environment_Badges {
 		}
 
 		self::$badges[ $id ] = array_merge( [
-			'label'     => '',
-			'short'     => '',
-			'more'      => '',
-			'sr_text'   => '',
-			'title'     => '',
-			'href'      => '',
-			'details'   => [],
-			'order'     => 10,
-			'legacy_id' => '',
+			'label'   => '',
+			'short'   => '',
+			'more'    => '',
+			'sr_text' => '',
+			'title'   => '',
+			'href'    => '',
+			'details' => [],
+			'order'   => 10,
 		], $args );
 
 		// Registered from an enqueue hook, too late for our own enqueue callback to run.
@@ -60,7 +57,7 @@ class Environment_Badges {
 	}
 
 	/**
-	 * @return array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int, legacy_id: string}>
+	 * @return array<string, array{label: string, short: string, more: string, sr_text: string, title: string, href: string, details: array<string, string>, order: int}>
 	 */
 	public static function get_badges(): array {
 		$badges = self::$badges;
@@ -122,9 +119,8 @@ class Environment_Badges {
 	}
 
 	/**
-	 * The same markup is used in the admin bar and the dock. The outer element carries the legacy ID, so hiding
-	 * it also takes the badge's link or button out of the tab order. The inner "face" is a link, a native
-	 * <details> disclosure (keyboard, click and expanded state for free), or plain text.
+	 * The same markup is used in the admin bar and the dock. The outer chip carries the badge's colours; the inner
+	 * "face" is a link, a native <details> disclosure (keyboard, click and expanded state for free), or plain text.
 	 */
 	private static function get_badge_html( string $id, array $badge ): string {
 		$title = $badge['title'] ? sprintf( ' title="%s"', esc_attr( $badge['title'] ) ) : '';
@@ -143,9 +139,7 @@ class Environment_Badges {
 			$face = sprintf( '<span class="vip-badge-face"%s>%s</span>', $title, $label );
 		}
 
-		$id_attribute = $badge['legacy_id'] ? sprintf( ' id="%s"', esc_attr( $badge['legacy_id'] ) ) : '';
-
-		return sprintf( '<div class="vip-badge-chip vip-badge--%s"%s>%s</div>', esc_attr( $id ), $id_attribute, $face );
+		return sprintf( '<div class="vip-badge-chip vip-badge--%s">%s</div>', esc_attr( $id ), $face );
 	}
 
 	private static function get_label_html( array $badge ): string {

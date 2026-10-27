@@ -20,11 +20,6 @@ namespace Automattic\VIP\NotProxiedFlag;
 
 use Automattic\VIP\Helpers\Environment_Badges;
 
-// Added in the same release as this file; a non-atomic deploy can deliver this file first.
-if ( file_exists( __DIR__ . '/../vip-helpers/class-environment-badges.php' ) ) {
-	require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
-}
-
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\enable_not_proxied_flag' );
 
 function enable_not_proxied_flag() {
@@ -55,10 +50,9 @@ function maybe_add_not_proxied_badge() {
 	}
 
 	Environment_Badges::add( 'not-proxied', [
-		'label'     => 'Not proxied',
-		'short'     => 'NP',
-		'title'     => 'This request did not come through the A8C proxy',
-		'order'     => 30,
-		'legacy_id' => 'a8c-not-proxied-flag',
+		'label' => 'Not proxied',
+		'short' => 'NP',
+		'title' => 'This request did not come through the A8C proxy',
+		'order' => 30,
 	] );
 }
