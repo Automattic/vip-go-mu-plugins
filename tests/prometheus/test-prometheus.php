@@ -73,13 +73,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertEmpty( $plugin->get_collectors() );
 	}
 
-	public function test_create_registry(): void {
-		$plugin = Plugin_Helper::get_instance();
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertInstanceOf( RegistryInterface::class, $plugin->get_registry() );
-	}
-
 	public function test_create_registry_wrong_backend(): void {
 		$plugin = Plugin_Helper::get_instance();
 

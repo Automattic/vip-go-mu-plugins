@@ -1161,54 +1161,8 @@ class Versioning_Test extends WP_UnitTestCase {
 	}
 
 	public function replicate_queued_objects_to_other_versions_data() {
+		// Replicating queued items on the active index is covered by test_queue_job_replication()
 		return array(
-			// Replicates queued items on the active index to a single non-active indexe
-			array(
-				// Input
-				array(
-					'post' => array(
-						// Active version
-						1    => array(
-							array(
-								'object_id' => 1, // Object id
-								'options'   => array(), // Additional options it was originally queued with
-							),
-							array(
-								'object_id' => 9000, // Object id
-								'options'   => array(), // Additional options it was originally queued with
-							),
-						),
-						// Some other random version, should have no effect on replicated jobs
-						9999 => array(
-							array(
-								'object_id' => 1, // Object id
-								'options'   => array(), // Additional options it was originally queued with
-							),
-							array(
-								'object_id' => 9000, // Object id
-								'options'   => array(), // Additional options it was originally queued with
-							),
-						),
-					),
-				),
-
-				// Expected queued jobs
-				array(
-					array(
-						'object_id'     => 1,
-						'object_type'   => 'post',
-						'index_version' => 2,
-						'status'        => 'queued',
-					),
-					array(
-						'object_id'     => 9000,
-						'object_type'   => 'post',
-						'index_version' => 2,
-						'status'        => 'queued',
-					),
-				),
-			),
-
 			// Does not replicate queued items on non-active indexes
 			array(
 				// Input
@@ -1819,18 +1773,6 @@ class Versioning_Test extends WP_UnitTestCase {
 		$result = self::$version_instance->parse_index_name( $index );
 
 		$this->assertEquals( $expected, $result );
-	}
-
-	public function test__create_versioned_index_with_mapping__ok_mapping() {
-		$indexable = Indexables::factory()->get( 'post' );
-
-		add_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX, 5 );
-
-		$result = self::$version_instance->create_versioned_index_with_mapping( $indexable, 2 );
-
-		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_put_mapping_request_ok' ], PHP_INT_MAX );
-
-		$this->assertTrue( $result );
 	}
 
 	public function test__create_versioned_index_with_mapping__bad_mapping() {

@@ -17,7 +17,8 @@ npm run test            # full PHPUnit suite in Docker
 
 `bin/test.sh`:
 
-- creates an isolated Docker network and MySQL container
+- creates an isolated Docker network and MySQL container, named per run, so several runs
+  (for example single-site and multisite) can go in parallel
 - runs tests in `ghcr.io/automattic/vip-container-images/wp-test-runner`
 - uses `tests/bootstrap.php` to load MU plugin stack
 
@@ -94,6 +95,21 @@ Current workflows cover:
 - Lint: `.github/workflows/lint.yml`
 - Typecheck + e2e lint/test: `.github/workflows/e2e.yml`
 - Unit/integration tests: `.github/workflows/ci.yml`, `.github/workflows/core-tests.yml`, `.github/workflows/parsely.yml`
+
+`ci.yml` runs PHP 8.2 against every tested WordPress version, plus nightly. Newer PHP
+versions run only against the oldest and the latest WordPress version tested with them.
+The jobs use the runner image's MySQL instead of a service container, and they restore
+`vip-go-mu-plugins-ext` from the Actions cache, keyed by its `HEAD` commit.
+
+`core-tests.yml` runs WordPress core's PHPUnit suite with these MU plugins loaded. The
+main suite runs as three parallel shards split by test class name, and the
+`ajax`/`ms-files` groups run in a fourth job. The `external-http`
+group depends on third-party hosts, so it runs only on the daily schedule and on manual
+runs. The workflow lists the few core tests it excludes, with the reason for each, next
+to its PHPUnit filter.
+
+`ci.yml` and `core-tests.yml` skip changes that only touch Markdown, `docs/`, the e2e
+tests or the Search Dev Tools frontend.
 
 ## Troubleshooting
 

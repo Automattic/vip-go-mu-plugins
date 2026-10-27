@@ -33,14 +33,6 @@ inputs:
     description: Coverage flags for CodeCov.
     required: false
     default: ''
-  mysql-host:
-    description: The hostname of the MySQL server.
-    required: false
-    default: '127.0.0.1'
-  mysql-port:
-    description: The port of the MySQL server.
-    required: false
-    default: '3306'
   codecov-token:
     description: The token to use for CodeCov.
     required: false
@@ -48,6 +40,12 @@ inputs:
 runs:
   using: composite
   steps:
+    # The runner image ships MySQL; starting it takes a few seconds, whereas a `mysql` service
+    # container took 13-16s to initialize. Start it now and wait for it right before the tests.
+    - name: Start MySQL
+      shell: bash
+      run: sudo systemctl start --no-block mysql.service
+
     - name: Set up coverage reporting parameters
       id: coverage
       shell: bash
@@ -99,28 +97,50 @@ runs:
       shell: bash
       run: composer install --no-interaction --no-progress
 
-    # The test library action needs Subversion only when the test library isn't cached yet
-    # (always for nightly). Try without it first; installing it costs ~10s per job. A failed
-    # first attempt installs it and retries.
-    - name: Install svn
-      if: inputs.wordpress == 'nightly' || inputs.wordpress == 'trunk'
-      run: sudo apt-get update && sudo apt-get install -y subversion
-      shell: bash
-
+    # The test library action needs Subversion only when the test library isn't cached yet, which is
+    # always the case for nightly. Other versions try without it first; a failed first attempt
+    # installs it and retries.
     - name: Set up WordPress and WordPress Test Library
       id: wptl
+      if: inputs.wordpress != 'nightly' && inputs.wordpress != 'trunk'
       uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
       continue-on-error: true
       with:
         version: ${{ inputs.wordpress }}
 
-    - name: Install svn (test library not cached)
-      if: steps.wptl.outcome == 'failure'
-      run: sudo apt-get update && sudo apt-get install -y subversion
+    - name: Get Subversion package cache key
+      id: svn-cache
+      if: steps.wptl.outcome != 'success'
       shell: bash
+      # An exact cache hit is never saved again, so key on the image version to pick up new packages.
+      run: echo "key=svn-debs-${ImageOS}-${ImageVersion}" >> "${GITHUB_OUTPUT}"
+
+    # Downloading the packages from the Ubuntu mirror took up to a minute.
+    - name: Restore Subversion packages
+      if: steps.wptl.outcome != 'success'
+      uses: actions/cache@v6.1.0
+      with:
+        path: ${{ runner.temp }}/svn-debs
+        key: ${{ steps.svn-cache.outputs.key }}
+
+    - name: Install svn
+      if: steps.wptl.outcome != 'success'
+      shell: bash
+      run: |
+        debs="${RUNNER_TEMP}/svn-debs"
+        if ! sudo dpkg -i "${debs}"/*.deb; then
+          # No cached packages, or they no longer fit the runner image: download them again.
+          rm -rf "${debs}"
+          mkdir -p "${debs}/partial"
+          sudo apt-get update
+          sudo apt-get install -y -f --no-install-recommends -o Dir::Cache::archives="${debs}" -o APT::Keep-Downloaded-Packages=true subversion
+          # apt leaves a root-only `partial` directory and `lock` file there, and tar can't save the cache with them.
+          sudo rm -rf "${debs}/partial" "${debs}/lock"
+          sudo chown -R "$(id -u):$(id -g)" "${debs}"
+        fi
 
     - name: Set up WordPress and WordPress Test Library (with svn)
-      if: steps.wptl.outcome == 'failure'
+      if: steps.wptl.outcome != 'success'
       uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
       with:
         version: ${{ inputs.wordpress }}
@@ -135,19 +155,22 @@ runs:
       run: echo "VIP_JETPACK_SKIP_LOAD=1" >> $GITHUB_ENV
       if: inputs.jetpack == 'no'
 
-    - name: Verify MariaDB connection
+    # The test library action configures WordPress for wordpress:wordpress@127.0.0.1/wordpress_test.
+    # The runner image's MySQL root password is `root`.
+    - name: Create the test database
       shell: bash
       run: |
         echo Waiting for MySQL to come online...
         second=0
-        while ! mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent && [ "${second}" -lt 60 ]; do
+        while ! mysqladmin ping -h 127.0.0.1 --silent && [ "${second}" -lt 60 ]; do
           sleep 1
           second=$((second+1))
         done
-        mysqladmin ping -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" --silent
-      env:
-        MYSQL_HOST: ${{ inputs.mysql-host }}
-        MYSQL_PORT: ${{ inputs.mysql-port }}
+        mysql -h 127.0.0.1 -u root -proot -e "
+          CREATE DATABASE IF NOT EXISTS wordpress_test;
+          CREATE USER IF NOT EXISTS 'wordpress'@'%' IDENTIFIED BY 'wordpress';
+          GRANT ALL PRIVILEGES ON wordpress_test.* TO 'wordpress'@'%';
+        "
 
     - name: Run tests
       shell: bash

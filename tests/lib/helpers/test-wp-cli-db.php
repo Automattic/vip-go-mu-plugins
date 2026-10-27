@@ -221,6 +221,8 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	/**
+	 * The query rows also cover validate_query(), which a `query` subcommand must pass.
+	 *
 	 * @dataProvider get_test_data__blocked_subcommands
 	 */
 	public function test_validate_subcommand_blocked( array $command, string $message ) {
@@ -243,21 +245,6 @@ class WP_Cli_Db_Test extends TestCase {
 	 */
 	public function test_validate_subcommand_allowed( array $command ) {
 		$this->assertNull( ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( $command ) );
-	}
-
-	public function get_test_data__validate_query() {
-		return [
-			'drop'   => [ 'DROP TABLE table', false ],
-			'create' => [ 'CREATE TABLE wp_table', false ],
-			'select' => [ 'SELECT * FROM wp_options WHERE option_name="home"', true ],
-		];
-	}
-
-	/**
-	 * @dataProvider get_test_data__validate_query
-	 */
-	public function test_validate_query( string $query, bool $expected ) {
-		$this->assertSame( $expected, ( new Wp_Cli_Db( new Config() ) )->validate_query( $query ) );
 	}
 
 	public function test_allow_writes() {

@@ -72,8 +72,8 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 		$https_test         = apply_filters( 'pre_transient_jetpack_https_test', null );
 		$https_test_message = apply_filters( 'pre_transient_jetpack_https_test_message', null );
 
-		$this->assertEquals( 1, $https_test, 'Value of the jetpack_https_test pre-transient filter is incorrect' );
-		$this->assertEquals( '', $https_test_message, 'Value of the jetpack_https_test_message pre-transient filter is incorrect' );
+		$this->assertSame( 1, $https_test, 'Value of the jetpack_https_test pre-transient filter is incorrect' );
+		$this->assertSame( '', $https_test_message, 'Value of the jetpack_https_test_message pre-transient filter is incorrect' );
 	}
 
 	public function test__jetpack_options_fallback_no_verify_ssl_certs__filter() {
@@ -86,7 +86,7 @@ class VIP_Go_Jetpack_Test extends WP_UnitTestCase {
 
 		$value = \Jetpack_Options::get_option( 'fallback_no_verify_ssl_certs' );
 
-		$this->assertEquals( 0, $value, 'The fallback_no_verify_ssl_certs Jetpack option value is incorrect' );
+		$this->assertSame( 0, $value, 'The fallback_no_verify_ssl_certs Jetpack option value is incorrect' );
 	}
 
 	/**

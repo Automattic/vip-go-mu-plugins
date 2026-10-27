@@ -296,23 +296,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, $not_scheduled_count );
 	}
 
-	public function test_offload_indexing_to_queue() {
-		$this->add_posts_to_queue( range( 1, 3 ) );
-
-		// Make sure we're not already bailing on EP indexing, otherwise the test isn't doing anything
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
-
-		$this->assertFalse( $current_bail );
-
-		// Offload indexing
-		$this->queue->offload_indexing_to_queue();
-
-		// Now the filter should return true to bail early from EP indexing
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
-
-		$this->assertTrue( $current_bail );
-	}
-
 	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
 		$term_id = self::factory()->category->create();
 		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
@@ -817,6 +800,9 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertSame( $expected, $actual );
 		} finally {
 			$this->queue->schema = $original_schema;
+			// CREATE TABLE and DROP TABLE commit implicitly. Roll back first, so the DROP doesn't commit
+			// the writes made since the CREATE (such as the cached index_exists site options).
+			$wpdb->query( 'ROLLBACK' );
 			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
 			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
 			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );

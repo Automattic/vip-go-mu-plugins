@@ -76,18 +76,20 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$this->assertEquals( $user_id, $result->ID );
 	}
 
+	/**
+	 * A request that already failed keeps its errors: the limit error isn't added even for a locked username.
+	 */
 	public function test__lostpassword_post_unmodified_errors() {
+		$_POST = [
+			'user_login' => $this->test_username,
+		];
+		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->test_username, true, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
-		$original_error_code = 'original-error-code';
-		$original_error_text = 'Original Error Code';
-		$errors              = new WP_Error();
-		$errors->add( $original_error_code, $original_error_text );
+		$errors = new WP_Error( 'original-error-code', 'Original Error Code' );
 
 		do_action( 'lostpassword_post', $errors, false );
 
-		$actual_error_codes = $errors;
-
-		$this->assertEquals( $actual_error_codes->get_error_code(), $original_error_code );
+		$this->assertSame( [ 'original-error-code' ], $errors->get_error_codes() );
 	}
 
 	public function test__lost_password_limit() {
