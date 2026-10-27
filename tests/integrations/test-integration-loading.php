@@ -89,6 +89,8 @@ PHP;
 			'share a draft not loaded'                => [ ShareadraftIntegration::class, null ],
 			'share a draft loaded constant'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED' ],
 			'security boost loaded constant'          => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST__LOADED' ],
+			'sourcepoint not loaded'                  => [ SourcepointIntegration::class, null ],
+			'sourcepoint loaded constant'             => [ SourcepointIntegration::class, 'VIP_SOURCEPOINT_CONFIGS' ],
 			'vip governance not loaded'               => [ VipGovernanceIntegration::class, null ],
 			'vip workflows not loaded'                => [ VipWorkflowsIntegration::class, null ],
 			'vip workflows loaded constant'           => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_LOADED' ],
@@ -161,6 +163,8 @@ PHP;
 			'security boost keeps existing constant' => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', $existing, $existing ],
 			'share a draft defines empty config'     => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', null, [] ],
 			'share a draft keeps existing constant'  => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_CONFIG', $existing, $existing ],
+			'sourcepoint defines empty config'       => [ SourcepointIntegration::class, 'VIP_SOURCEPOINT_CONFIGS', null, [] ],
+			'sourcepoint keeps existing constant'    => [ SourcepointIntegration::class, 'VIP_SOURCEPOINT_CONFIGS', $existing, $existing ],
 		];
 	}
 
