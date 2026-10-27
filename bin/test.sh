@@ -74,7 +74,8 @@ echo "Will test with WP_VERSION=${WP_VERSION} and WP_MULTISITE=${WP_MULTISITE}"
 echo "--------------"
 echo
 
-UUID=$(date +%s000)
+# The PID keeps runs started in the same second from sharing a network and database.
+UUID="$(date +%s)-$$"
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
     docker network create "${NETWORK_NAME}"

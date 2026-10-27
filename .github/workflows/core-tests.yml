@@ -7,13 +7,35 @@ on:
       - staging
       - production
       - gh-readonly-queue/**
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '__tests__/e2e/**'
+      - 'search/search-dev-tools/build/**'
+      - 'search/search-dev-tools/src/**'
+      - 'search/search-dev-tools/tests/**'
+      - 'search/search-dev-tools/*.js'
+      - 'search/search-dev-tools/*.json'
   pull_request:
     branches:
       - develop
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '__tests__/e2e/**'
+      - 'search/search-dev-tools/build/**'
+      - 'search/search-dev-tools/src/**'
+      - 'search/search-dev-tools/tests/**'
+      - 'search/search-dev-tools/*.js'
+      - 'search/search-dev-tools/*.json'
+  schedule:
+    # The external HTTP tests depend on third-party hosts, so they run daily instead of on every change.
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # The event keeps a push to develop from cancelling the scheduled run, and the other way round.
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 permissions:
@@ -31,8 +53,15 @@ env:
 
 jobs:
   wp-core:
-    name: "Run WP Core Tests"
+    name: "Run WP Core Tests: ${{ matrix.suite }}"
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The main suite takes several minutes, so the group runs get their own job.
+        suite:
+          - main
+          - groups
     steps:
       - name: Get the latest WP version
         id: version
@@ -57,6 +86,11 @@ jobs:
 
       - name: Check out source code
         uses: actions/checkout@v7.0.1
+        env:
+          # Clone submodules in parallel instead of one at a time.
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: submodule.fetchJobs
+          GIT_CONFIG_VALUE_0: 8
         with:
           submodules: recursive
           path: wordpress/src/wp-content/mu-plugins
@@ -71,8 +105,6 @@ jobs:
         uses: actions/setup-node@v7.1.0
         with:
           node-version-file: 'wordpress/.nvmrc'
-          cache: npm
-          cache-dependency-path: 'wordpress/package-lock.json'
 
       - name: Set up PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
@@ -85,8 +117,13 @@ jobs:
         with:
           working-directory: wordpress
 
+      # The local environment scripts only need these three packages. `npm ci` would install all
+      # of wordpress-develop's build tooling, which took ~30s.
       - name: Install npm dependencies
-        run: npm ci
+        run: |
+          mapfile -t packages < <(jq -r '.devDependencies | "dotenv@\(.dotenv)", "dotenv-expand@\(.["dotenv-expand"])", "wait-on@\(.["wait-on"])"' package.json)
+          npm install --prefix "${RUNNER_TEMP}/wp-env" --no-save --no-package-lock --no-audit --no-fund "${packages[@]}"
+          ln -s "${RUNNER_TEMP}/wp-env/node_modules" node_modules
         working-directory: wordpress
 
       - name: Start Docker environment
@@ -109,25 +146,45 @@ jobs:
         run: npm run env:install
         working-directory: wordpress
 
+      # Core's bootstrap reinstalls the test site in every process-isolated test. Its tear_down() calls
+      # wp_set_current_user() after the ROLLBACK, and the MU plugins' `set_current_user` callback reads
+      # the users table, so the parent held a lock that the child's DROP TABLE waited on forever.
+      # Install once and let isolated tests reuse it, as tests/class-speedup-isolated-wp-tests.php does.
+      #
+      # PHPUnit wraps a filter that isn't a delimited regex in /.../i and keeps its special characters,
+      # so the lookahead must not be escaped. An escaped `\(` matched nothing and ran no tests.
       - name: Run PHPUnit tests
-        run: >
-          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit
-          --verbose -c phpunit.xml.dist
-          --filter "^\(?!.*test_wp_generate_attachment_metadata_png_thumbnail_smaller_than_original\).*\$"
+        if: matrix.suite == 'main'
+        run: |
+          # Excluded tests:
+          # - a8c-files.php disables big image scaling, so PNGs are never scaled down.
+          # - The bundled Akismet adds `wordpress_api_key` to the REST settings.
+          # - Script module files come from the Gutenberg build, which this job doesn't download.
+          excluded='test_wp_generate_attachment_metadata_png_thumbnail_smaller_than_original'
+          excluded+='|WP_Test_REST_Settings_Controller::test_get_items$'
+          excluded+='|test_default_script_module_files_exist'
+
+          node ./tools/local-env/scripts/docker.js run php php tests/phpunit/includes/install.php wp-tests-config.php no_ms_tests run_core_tests
+          node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit \
+            --verbose -c phpunit.xml.dist \
+            --filter "^(?!.*(${excluded})).*\$"
         working-directory: wordpress
-        timeout-minutes: 15
+        timeout-minutes: 30
 
       - name: Run AJAX tests
+        if: matrix.suite == 'groups'
         run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group ajax
         working-directory: wordpress
         timeout-minutes: 15
 
       - name: Run ms-files tests as a multisite install
+        if: matrix.suite == 'groups'
         run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c tests/phpunit/multisite.xml --group ms-files
         working-directory: wordpress
         timeout-minutes: 15
 
       - name: Run external HTTP tests
+        if: matrix.suite == 'groups' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
           node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
         working-directory: wordpress
