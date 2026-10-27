@@ -20,7 +20,10 @@ use Automattic\VIP\Helpers\Environment_Badges;
 
 use function Automattic\VIP\Stats\send_pixel;
 
-require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
+// Added in the same release as this file; a non-atomic deploy can deliver this file first.
+if ( file_exists( __DIR__ . '/../vip-helpers/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
+}
 
 // How long should we enable Debug mode for?
 const COOKIE_TTL = 2 * HOUR_IN_SECONDS;
@@ -148,7 +151,7 @@ function enable_debug_tools() {
 	}, 9999 );
 
 	// Local environments get the debug tools without entering Debug Mode, so only flag it when someone did.
-	if ( ! has_debug_mode_cookies() ) {
+	if ( ! has_debug_mode_cookies() || ! class_exists( Environment_Badges::class ) ) {
 		return;
 	}
 

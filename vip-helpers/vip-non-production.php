@@ -4,7 +4,10 @@ if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' === constant( 'VIP_GO
 	return;
 }
 
-require_once __DIR__ . '/class-environment-badges.php';
+// Added in the same release as this file; a non-atomic deploy can deliver this file first.
+if ( file_exists( __DIR__ . '/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/class-environment-badges.php';
+}
 
 /**
  * No longer outputs anything: the badge now lives in the admin bar or the corner dock.
@@ -19,7 +22,7 @@ function vip_do_non_prod_bar() {}
  * this function from `wp_enqueue_scripts` / `admin_enqueue_scripts`.
  */
 function vip_non_prod_enqueue_scripts() {
-	if ( ! current_user_can( 'edit_posts' ) || ! apply_filters( 'vip_show_non_prod_bar', true ) ) {
+	if ( ! class_exists( \Automattic\VIP\Helpers\Environment_Badges::class ) || ! current_user_can( 'edit_posts' ) || ! apply_filters( 'vip_show_non_prod_bar', true ) ) {
 		return;
 	}
 

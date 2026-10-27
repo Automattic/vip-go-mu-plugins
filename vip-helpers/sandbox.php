@@ -4,10 +4,13 @@ if ( ! defined( 'WPCOM_SANDBOXED' ) || ! WPCOM_SANDBOXED ) {
 	return;
 }
 
-require_once __DIR__ . '/class-environment-badges.php';
+// Added in the same release as this file; a non-atomic deploy can deliver this file first.
+if ( file_exists( __DIR__ . '/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/class-environment-badges.php';
+}
 
 function wpcom_add_sandbox_badge() {
-	if ( ! apply_filters( 'wpcom_show_sandbox_bar', false ) ) {
+	if ( ! class_exists( \Automattic\VIP\Helpers\Environment_Badges::class ) || ! apply_filters( 'wpcom_show_sandbox_bar', false ) ) {
 		return;
 	}
 

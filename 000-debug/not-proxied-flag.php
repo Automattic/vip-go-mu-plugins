@@ -20,7 +20,10 @@ namespace Automattic\VIP\NotProxiedFlag;
 
 use Automattic\VIP\Helpers\Environment_Badges;
 
-require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
+// Added in the same release as this file; a non-atomic deploy can deliver this file first.
+if ( file_exists( __DIR__ . '/../vip-helpers/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/../vip-helpers/class-environment-badges.php';
+}
 
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\enable_not_proxied_flag' );
 
@@ -29,7 +32,7 @@ function enable_not_proxied_flag() {
 }
 
 function maybe_add_not_proxied_badge() {
-	if ( ! is_admin() ) {
+	if ( ! is_admin() || ! class_exists( Environment_Badges::class ) ) {
 		return;
 	}
 
