@@ -433,6 +433,44 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
 	}
 
+	public function get_test_data__has_group_cookie(): array {
+		return [
+			'plain-without-cookie'            => [ false, [], '', false ],
+			'plain-with-segment-cookie'       => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
+			'plain-with-auth-cookie'          => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
+			'plain-with-decrypted-header'     => [ false, [], 'vc-v1__dev-group_--_yes', false ],
+			'encrypted-without-cookie'        => [ true, [], '', false ],
+			'encrypted-with-auth-cookie'      => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
+			'encrypted-with-decrypted-header' => [ true, [], 'vc-v1__dev-group_--_yes', true ],
+			'encrypted-with-segment-cookie'   => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__has_group_cookie
+	 */
+	public function test__has_group_cookie( bool $encrypted, array $cookies, string $auth_header, bool $expected ): void {
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		if ( '' !== $auth_header ) {
+			$_SERVER[ Vary_Cache::HEADER_AUTH ] = $auth_header;
+		}
+
+		try {
+			$has_group_cookie_method = get_class_method_as_public( Vary_Cache::class, 'has_group_cookie' );
+			$this->assertSame( $expected, $has_group_cookie_method->invoke( null ) );
+		} finally {
+			unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		}
+	}
+
 	/**
 	 * Cover both plaintext and encrypted group cookies.
 	 */
@@ -479,8 +517,8 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertSame( '', $value );
 		$this->assertGreaterThanOrEqual( $before - HOUR_IN_SECONDS, $expiry );
 		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
-		$this->assertSame( '', $path );
-		$this->assertSame( '', $domain );
+		$this->assertSame( COOKIEPATH, $path );
+		$this->assertSame( (string) COOKIE_DOMAIN, $domain );
 	}
 
 	/**

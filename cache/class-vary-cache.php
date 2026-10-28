@@ -552,6 +552,21 @@ class Vary_Cache {
 	}
 
 	/**
+	 * Checks whether the request has the active group cookie.
+	 *
+	 * @return boolean Whether the request has the cookie.
+	 */
+	private static function has_group_cookie() {
+		if ( self::is_encryption_enabled() ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+			return isset( $_COOKIE[ self::COOKIE_AUTH ] ) || ! empty( $_SERVER[ self::HEADER_AUTH ] );
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return isset( $_COOKIE[ self::COOKIE_SEGMENT ] );
+	}
+
+	/**
 	 * Sets the group/segment cookie based on the user's current groupings.
 	 *
 	 * @return boolean Was a Set-Cookie header sent?
@@ -560,20 +575,11 @@ class Vary_Cache {
 		$group_string = self::stringify_groups();
 		if ( empty( $group_string ) ) {
 			$cookie_name = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
-			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-			$has_group_cookie = isset( $_COOKIE[ $cookie_name ] );
-			if ( self::COOKIE_AUTH === $cookie_name && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
-				$has_group_cookie = true;
-			}
-
-			if ( ! $has_group_cookie ) {
+			if ( ! self::has_group_cookie() ) {
 				return false;
 			}
 
-			$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
-			$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
-
-			self::unset_cookie( $cookie_name, $cookie_path, $cookie_domain );
+			self::unset_cookie( $cookie_name );
 			return true;
 		}
 
@@ -640,13 +646,13 @@ class Vary_Cache {
 	/**
 	 * Wrapper for the set cookie function to clear out the cookie
 	 *
-	 * @param string $name   Cookie Name.
-	 * @param string $path   Cookie Path.
-	 * @param string $domain Cookie Domain.
+	 * @param string $name Cookie Name.
 	 */
-	private static function unset_cookie( $name, $path = '', $domain = '' ) {
+	private static function unset_cookie( $name ) {
+		$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
+		$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-		setcookie( $name, '', time() - 3600, $path, $domain );
+		setcookie( $name, '', time() - 3600, $cookie_path, $cookie_domain );
 	}
 	/**
 	 * Only allow alphanumerics, dash and underscore
