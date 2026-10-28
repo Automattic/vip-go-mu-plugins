@@ -67,6 +67,49 @@ class VIP_Revision_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * An earlier response filter's error must pass through without a type error.
+	 */
+	public function test_earlier_revision_filter_error_passes_through(): void {
+		$post_id     = $this->create_document();
+		$revision_id = array_key_first( wp_get_post_revisions( $post_id ) );
+		$error       = new \WP_Error( 'revision_unavailable', 'Revision unavailable.', [ 'status' => 403 ] );
+		$filter      = static function () use ( $error ) {
+			return $error;
+		};
+		add_filter( 'rest_prepare_revision', $filter, 9 );
+
+		try {
+			$request = new WP_REST_Request( 'GET', '/wp/v2/posts/' . $post_id . '/revisions/' . $revision_id );
+			$this->assertSame( $error, apply_filters( 'rest_prepare_revision', new WP_REST_Response(), get_post( $revision_id ), $request ) );
+			$response = $this->request( 'GET', $request->get_route() );
+			$this->assertSame( 403, $response->get_status() );
+			$this->assertSame( 'revision_unavailable', $response->get_data()['code'] );
+		} finally {
+			remove_filter( 'rest_prepare_revision', $filter, 9 );
+		}
+	}
+
+	/**
+	 * Unexpected earlier filter values are not response objects to modify.
+	 */
+	public function test_earlier_revision_filter_unexpected_values_pass_through(): void {
+		$post    = self::factory()->post->create_and_get( [ 'post_type' => 'revision' ] );
+		$request = new WP_REST_Request( 'GET' );
+		foreach ( [ null, false, [], new \stdClass() ] as $value ) {
+			$filter = static function () use ( $value ) {
+				return $value;
+			};
+			add_filter( 'rest_prepare_revision', $filter, 9 );
+
+			try {
+				$this->assertSame( $value, apply_filters( 'rest_prepare_revision', new WP_REST_Response(), $post, $request ) );
+			} finally {
+				remove_filter( 'rest_prepare_revision', $filter, 9 );
+			}
+		}
+	}
+
+	/**
 	 * Dispatch a JSON REST request with edit context.
 	 *
 	 * @param string $method HTTP method.
