@@ -54,8 +54,8 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
-	 * How loading went: null until `load_bundle()` runs, then `loaded`, `already_loaded` or
-	 * `missing_bundle`.
+	 * How loading went: null until `configure()` refuses or `load_bundle()` runs, then
+	 * `config_conflict`, `loaded`, `already_loaded` or `missing_bundle`.
 	 *
 	 * @var string|null
 	 */
@@ -108,13 +108,20 @@ class GenericIntegration extends Integration {
 	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. On
 	 * multisite that's the current network site's config, which is where the platform writes it, as
 	 * for the hand-written integrations (e.g. Parse.ly); otherwise the environment's. Values are typed
-	 * by GOOP from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
+	 * by GOOP from the manifest's fields.
+	 *
+	 * When the constant is already defined, e.g. in vip-config.php, the integration isn't loaded:
+	 * that config would skip GOOP's validation and replace the config the platform manages, secrets
+	 * included. It's deactivated with a warning, and reported as `config_conflict`.
 	 *
 	 * @private
 	 */
 	public function configure(): void {
 		$constant = $this->get_config_constant_name();
 		if ( defined( $constant ) ) {
+			$this->is_active   = false;
+			$this->load_status = 'config_conflict';
+			trigger_error( sprintf( 'VIP Integration "%s" was not loaded: %s is already defined, and its config comes from the platform.', esc_html( $this->get_slug() ), esc_html( $constant ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			return;
 		}
 
@@ -197,7 +204,8 @@ class GenericIntegration extends Integration {
 	 *
 	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
 	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
-	 * e.g. from the customer's repo) or `missing_bundle` (no bundle in vip-integrations/, so nothing
+	 * e.g. from the customer's repo), `config_conflict` (its config constant was already defined, so
+	 * it wasn't loaded) or `missing_bundle` (no bundle in vip-integrations/, so nothing
 	 * was loaded). `bundle` is the folder that was loaded, or null.
 	 *
 	 * @return array{slug:string,folder:string,version:string,version_strategy:string,scope:string,active:bool,status:string,bundle:?string}
