@@ -124,6 +124,11 @@ npm run test-e2e
 
 Equivalent package-local commands are in `__tests__/e2e/package.json`.
 
+The setup version selector has a local component check:
+`__tests__/e2e/bin/test-setup-env-version.sh`. It uses a fixture manifest with
+the real `jq` selector while replacing manifest download and VIP CLI effects.
+An unknown requested ref falls back to `trunk`.
+
 ## CI coverage
 
 Current workflows cover:
