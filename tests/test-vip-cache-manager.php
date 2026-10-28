@@ -231,6 +231,28 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
 	 */
+	public function test_page_cache_ajax_denies_subscriber_with_valid_nonce(): void {
+		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
+			define( 'VIP_GO_APP_ID', 12345 );
+		}
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		$url = home_url( '/cache-permission-test/' );
+
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+
+		$this->assertFalse( $decoded['success'] );
+		$this->assertSame( [ 'error' => 'Unauthorized' ], $decoded['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
 	public function test_page_cache_ajax_valid_nonce_queues_url(): void {
 		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
 			define( 'VIP_GO_APP_ID', 12345 );
