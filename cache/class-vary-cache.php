@@ -70,7 +70,7 @@ class Vary_Cache {
 	private static $groups = [];
 
 	/**
-	 * Plaintext group string carried by the request's group cookie.
+	 * Plaintext group string carried by the request's group cookie, as the cache layer sees it.
 	 *
 	 * @access  private
 	 * @var     array  Key - Cookie name, Value - group string
@@ -425,6 +425,7 @@ class Vary_Cache {
 	 */
 	private static function parse_group_cookie() {
 		self::$request_group_cookie = [];
+		$cookie_name                = null;
 
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
@@ -433,7 +434,8 @@ class Vary_Cache {
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
-			$cookie_name = self::COOKIE_AUTH;
+			// The cache layer also drops the header for an expired or undecryptable cookie, so leave $cookie_name
+			// unset: this cookie must not stop a fresh one from being sent.
 			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -462,7 +464,9 @@ class Vary_Cache {
 			return;
 		}
 
-		self::$request_group_cookie = [ $cookie_name => $cookie_value ];
+		if ( null !== $cookie_name ) {
+			self::$request_group_cookie = [ $cookie_name => $cookie_value ];
+		}
 
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups       = explode( self::GROUP_SEPARATOR, $cookie_value );
@@ -607,7 +611,8 @@ class Vary_Cache {
 			/**
 			 * Filters whether to re-send a group cookie whose groups are unchanged.
 			 *
-			 * Re-sending slides the cookie expiry forward, but the response won't be cached.
+			 * Re-sending slides the cookie expiry forward, or re-issues the cookie after its path or domain
+			 * changed, but the response won't be cached.
 			 *
 			 * @param bool  $refresh Whether to re-send the unchanged group cookie. Default false.
 			 * @param array $groups  The user's group-value pairs.

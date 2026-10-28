@@ -18,8 +18,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	private $original_cookie;
 
-	private $original_server;
-
 	/** @var array[] Arguments of each `vip_vary_cache_did_send_headers` action. */
 	private $did_send_headers_calls = [];
 
@@ -32,7 +30,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_cookie = $_COOKIE;
-		$this->original_server = $_SERVER;
 
 		header_remove();
 		Cookie_Recorder::$calls = [];
@@ -48,7 +45,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_cookie;
-		$_SERVER = $this->original_server;
 
 		parent::tearDown();
 	}
@@ -438,8 +434,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__unchanged_group_cookie(): array {
-		$encrypted_cookie = '123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I';
-
 		return [
 			'plain-cookie'     => [
 				false,
@@ -450,11 +444,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				true,
 				[ 'vip-go-auth' => 'opaque' ],
 				[ 'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes' ],
-			],
-			'encrypted-cookie' => [
-				true,
-				[ 'vip-go-auth' => $encrypted_cookie ],
-				[ 'HTTP_COOKIE' => 'vip-go-auth=' . $encrypted_cookie ],
 			],
 		];
 	}
@@ -470,9 +459,8 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$_SERVER = array_merge( $_SERVER, $server );
 
 		if ( $encrypted ) {
-			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '1231231231231234' );
-			Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
 			Vary_Cache::enable_encryption();
 		}
 
@@ -531,6 +519,34 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
 	}
 
+	/**
+	 * Verify that an auth cookie the cache layer didn't decrypt into a header is re-sent, even when unchanged.
+	 *
+	 * The cache layer drops the header for an expired cookie, so PHP's own decryption can't vouch for it.
+	 */
+	public function test_auth_cookie_without_cache_header_is_resent(): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+		Vary_Cache::enable_encryption();
+
+		$encrypt_cookie_value = get_class_method_as_public( Vary_Cache::class, 'encrypt_cookie_value' );
+		$auth_cookie          = '123.' . $encrypt_cookie_value->invoke( null, 'vc-v1__dev-group_--_yep' );
+		$_COOKIE              = [ Vary_Cache::COOKIE_AUTH => $auth_cookie ];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		$_SERVER['HTTP_COOKIE'] = Vary_Cache::COOKIE_AUTH . '=' . $auth_cookie;
+
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertSame( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'The auth cookie was not decrypted' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+
+		do_action( 'send_headers' );
+
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		$this->assertSame( Vary_Cache::COOKIE_AUTH, Cookie_Recorder::$calls[0][1] );
+	}
+
 	public function test_refresh_filter_resends_unchanged_group_cookie(): void {
 		$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yep';
 		add_filter( 'vip_vary_cache_refresh_group_cookie', '__return_true' );
@@ -538,9 +554,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		Vary_Cache::register_group( 'dev-group' );
 		Vary_Cache::parse_cookies();
 		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->record_did_send_headers();
 
 		do_action( 'send_headers' );
 
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
 		[ , $name, $value ] = Cookie_Recorder::$calls[0];
 		$this->assertSame( Vary_Cache::COOKIE_SEGMENT, $name );

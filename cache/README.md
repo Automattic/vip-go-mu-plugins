@@ -98,7 +98,7 @@ add_action( 'vip_vary_cache_did_send_headers', function() {
 } );
 ```
 
-`Vary_Cache::set_group_for_user` only sends the group cookie when the user's groups change, because a response that sets a cookie isn't cached. If the user is already in the `beta` segment, `vip_vary_cache_did_send_headers` still fires (the `Vary` header is always sent for registered groups), but its second argument, `$sent_cookie`, is `false`. To re-send an unchanged cookie anyway, for example to push its expiry forward, return `true` from the `vip_vary_cache_refresh_group_cookie` filter; those responses won't be cached.
+A response that sets a cookie isn't cached, so `Vary_Cache::set_group_for_user` doesn't send the group cookie when the request already carries the exact cookie it would send. Calling it with the user's current groups therefore doesn't extend the cookie's expiry: the cookie expires `set_cookie_expiry()` seconds (a month by default) after it was last sent. If the user is already in the `beta` segment, `vip_vary_cache_did_send_headers` still fires (the `Vary` header is always sent for registered groups), but its second argument, `$sent_cookie`, is `false`. To re-send an unchanged cookie anyway, for example to push its expiry forward, return `true` from the `vip_vary_cache_refresh_group_cookie` filter; those responses won't be cached.
 
 ### Step 4: Enable Beta Features
 
