@@ -15,7 +15,7 @@ npm run test            # full PHPUnit suite in Docker
 
 Both shell runners forward each PHPUnit argument as one value, including quoted
 filters containing spaces or wildcard characters. `--docker-options` remains an
-explicitly split multi-option string. Run `python3 bin/test-runner-argv.py`
+explicitly split multi-option string. Run `php bin/test-runner-argv.php`
 to inspect exact Docker-bound arguments without starting Docker.
 
 ## PHPUnit details
