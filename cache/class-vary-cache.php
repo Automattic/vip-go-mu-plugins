@@ -70,6 +70,14 @@ class Vary_Cache {
 	private static $groups = [];
 
 	/**
+	 * Plaintext group string carried by the request's group cookie.
+	 *
+	 * @access  private
+	 * @var     array  Key - Cookie name, Value - group string
+	 */
+	private static $request_group_cookie = [];
+
+	/**
 	 * Local reference for cookie expiry.
 	 *
 	 * @since   1.0.0
@@ -156,6 +164,7 @@ class Vary_Cache {
 
 		self::clear_groups();
 
+		self::$request_group_cookie         = [];
 		self::$did_send_headers             = false;
 		self::$encryption_enabled           = false;
 		self::$is_user_in_nocache           = false;
@@ -236,6 +245,8 @@ class Vary_Cache {
 
 	/**
 	 * Assigns the user to given group and optionally a value for that group. E.g. location=US
+	 *
+	 * The group cookie is only sent if the user's groups differ from the request's group cookie.
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -413,12 +424,16 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
+		self::$request_group_cookie = [];
+
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+			$cookie_name = self::COOKIE_AUTH;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+			$cookie_name = self::COOKIE_AUTH;
 			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -438,6 +453,7 @@ class Vary_Cache {
 			$cookie_value = self::decrypt_cookie_value( $value );
 
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			$cookie_name = self::COOKIE_SEGMENT;
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
@@ -445,6 +461,8 @@ class Vary_Cache {
 		if ( empty( $cookie_value ) ) {
 			return;
 		}
+
+		self::$request_group_cookie = [ $cookie_name => $cookie_value ];
 
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
 		$groups       = explode( self::GROUP_SEPARATOR, $cookie_value );
@@ -573,14 +591,30 @@ class Vary_Cache {
 	 */
 	private static function set_group_cookie() {
 		$group_string = self::stringify_groups();
+		$cookie_name  = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
 		if ( empty( $group_string ) ) {
-			$cookie_name = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
 			if ( ! self::has_group_cookie() ) {
 				return false;
 			}
 
 			self::unset_cookie( $cookie_name );
 			return true;
+		}
+
+		// Re-sending the cookie the request already carries would only make the response uncacheable.
+		// Compare plaintext group strings: encrypted values embed a random nonce and an expiry.
+		if ( ( self::$request_group_cookie[ $cookie_name ] ?? null ) === $group_string ) {
+			/**
+			 * Filters whether to re-send a group cookie whose groups are unchanged.
+			 *
+			 * Re-sending slides the cookie expiry forward, but the response won't be cached.
+			 *
+			 * @param bool  $refresh Whether to re-send the unchanged group cookie. Default false.
+			 * @param array $groups  The user's group-value pairs.
+			 */
+			if ( ! apply_filters( 'vip_vary_cache_refresh_group_cookie', false, self::$groups ) ) {
+				return false;
+			}
 		}
 
 		if ( self::is_encryption_enabled() ) {
