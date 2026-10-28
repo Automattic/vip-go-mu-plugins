@@ -117,13 +117,13 @@ npm --prefix __tests__/e2e ci
 npm run lint:e2e
 npm run typecheck:e2e
 
-# Runs __tests__/e2e tests; this will set up and tear down the e2e env
-# via the package's pretest/posttest hooks.
+# Runs __tests__/e2e tests in a new, uniquely named VIP site and destroys it afterwards.
 npm run test-e2e
 
-# Optional: to manage the env lifecycle manually instead of using hooks:
+# Optional: to keep one site across several test runs:
+# export E2E_SITE_SLUG=e2e-manual
 # npm run setup-e2e-env
-# npm run test-e2e
+# E2E_BASE_URL="http://${E2E_SITE_SLUG}.vipdev.lndo.site" npm run test-e2e
 # npm run destroy-e2e-env
 ```
 
