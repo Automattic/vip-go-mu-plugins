@@ -38,6 +38,34 @@ permissions:
   contents: read
 
 jobs:
+  shared-cache-contention:
+    name: Shared-cache contention (Memcached)
+    runs-on: ubuntu-latest
+    services:
+      memcached:
+        image: memcached:1.6-alpine
+        ports:
+          - 11211:11211
+    env:
+      VIP_TEST_MEMCACHED_SERVER: 127.0.0.1:11211
+      VIP_TEST_REQUIRE_SHARED_CACHE: '1'
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
+
+      - name: Run shared-cache worker test
+        uses: ./.github/actions/run-wp-tests
+        with:
+          php: '8.2'
+          extensions: memcached
+          test-filter: 'Test_Concurrency_Shared_Cache::test_two_workers_share_atomic_counter'
+        timeout-minutes: 15
+
   unit-tests:
     name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
     runs-on: ubuntu-latest

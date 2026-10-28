@@ -16,6 +16,9 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 	 */
 	public function test_two_workers_share_atomic_counter(): void {
 		if ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) || ! extension_loaded( 'memcached' ) || ! function_exists( 'proc_open' ) ) {
+			if ( getenv( 'VIP_TEST_REQUIRE_SHARED_CACHE' ) ) {
+				self::fail( 'Shared-cache CI profile requires VIP_TEST_MEMCACHED_SERVER, the memcached extension and proc_open.' );
+			}
 			self::markTestSkipped( 'Requires VIP_TEST_MEMCACHED_SERVER, the memcached extension and proc_open; see docs/testing.md.' );
 		}
 

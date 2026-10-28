@@ -21,6 +21,14 @@ inputs:
     description: The version of PHPUnit to use.
     required: false
     default: ''
+  extensions:
+    description: Additional PHP extensions required by the selected test profile.
+    required: false
+    default: ''
+  test-filter:
+    description: Optional PHPUnit filter for a focused test profile.
+    required: false
+    default: ''
   coverage:
     description: Whether to generate code coverage reports.
     required: false
@@ -67,6 +75,7 @@ runs:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
         php-version: ${{ inputs.php }}
+        extensions: ${{ inputs.extensions }}
       env:
         fail-fast: 'true'
 
@@ -186,10 +195,25 @@ runs:
         else
           OPTIONS="${OPTIONS} --order-by=random"
         fi
-        "${PHPUNIT}" ${OPTIONS}
+        if [ -n "${TEST_FILTER}" ]; then
+          report="$(mktemp "${RUNNER_TEMP:-/tmp}/focused-phpunit.XXXXXX.xml")"
+          trap 'rm -f "${report}"' EXIT
+          "${PHPUNIT}" ${OPTIONS} --filter "${TEST_FILTER}" --log-junit "${report}"
+          python3 - "${report}" <<'PY'
+        import sys
+        import xml.etree.ElementTree as ET
+
+        cases = list(ET.parse(sys.argv[1]).iter('testcase'))
+        if len(cases) != 1 or cases[0].find('skipped') is not None:
+            raise SystemExit('Focused PHPUnit profile must execute exactly one unskipped test.')
+        PY
+        else
+          "${PHPUNIT}" ${OPTIONS}
+        fi
       env:
         PHPUNIT_VERSION: ${{ inputs.phpunit }}
         COVERAGE: ${{ steps.coverage.outputs.coverage }}
+        TEST_FILTER: ${{ inputs.test-filter }}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
