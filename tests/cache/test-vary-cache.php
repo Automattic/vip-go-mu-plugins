@@ -522,6 +522,89 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Cover plain HTTP, HTTPS, HTTPS on a site with an http:// home URL, and a site that turns Secure off.
+	 */
+	public function get_cookie_secure_cases(): array {
+		return [
+			'http'                 => [ false, 'https://example.org', null, false ],
+			'https'                => [ true, 'https://example.org', null, true ],
+			'https-with-http-home' => [ true, 'http://example.org', null, false ],
+			'https-filtered-off'   => [ true, 'https://example.org', false, false ],
+		];
+	}
+
+	/**
+	 * Verify cookies are cleared with the attributes they were set with, and Secure follows the request and home URL schemes.
+	 *
+	 * @dataProvider get_cookie_secure_cases
+	 */
+	public function test_cookie_attributes_match_on_set_and_clear( bool $https, string $home, ?bool $filtered, bool $expected_secure ): void {
+		$original_https = $_SERVER['HTTPS'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( $https ) {
+			$_SERVER['HTTPS'] = 'on';
+		} else {
+			unset( $_SERVER['HTTPS'] );
+		}
+
+		$filtered_names = [];
+		$secure_filter  = static function ( $secure, $name ) use ( $filtered, &$filtered_names ) {
+			$filtered_names[] = $name;
+			return $filtered ?? $secure;
+		};
+		add_filter( 'vip_vary_cache_cookie_secure', $secure_filter, 10, 2 );
+		$home_filter = static function () use ( $home ) {
+			return $home;
+		};
+		add_filter( 'pre_option_home', $home_filter );
+
+		try {
+			Vary_Cache::register_group( 'dev-group' );
+			Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+			Vary_Cache::set_nocache_for_user();
+			do_action( 'send_headers' );
+			$set_calls = Cookie_Recorder::$calls;
+
+			Vary_Cache::unload();
+			Vary_Cache::load();
+			Cookie_Recorder::$calls = [];
+
+			$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yep';
+			$_COOKIE[ Vary_Cache::COOKIE_NOCACHE ] = '1';
+			Vary_Cache::register_group( 'dev-group' );
+			Vary_Cache::parse_cookies();
+			Vary_Cache::set_group_for_user( 'dev-group', '' );
+			Vary_Cache::remove_nocache_for_user();
+			do_action( 'send_headers' );
+			$clear_calls = Cookie_Recorder::$calls;
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_secure', $secure_filter, 10 );
+			remove_filter( 'pre_option_home', $home_filter );
+			if ( null === $original_https ) {
+				unset( $_SERVER['HTTPS'] );
+			} else {
+				$_SERVER['HTTPS'] = $original_https;
+			}
+		}
+
+		$attributes_by_name = static function ( array $calls ): array {
+			$attributes = [];
+			foreach ( $calls as [ , $name, , , $path, $domain, $secure, $httponly ] ) {
+				$attributes[ $name ] = [ $path, $domain, $secure, $httponly ];
+			}
+			return $attributes;
+		};
+		$expected           = [ COOKIEPATH, (string) COOKIE_DOMAIN, $expected_secure, false ];
+		$expected_by_name   = [
+			Vary_Cache::COOKIE_SEGMENT => $expected,
+			Vary_Cache::COOKIE_NOCACHE => $expected,
+		];
+
+		$this->assertSame( $expected_by_name, $attributes_by_name( $set_calls ), 'Cookies were set with unexpected attributes' );
+		$this->assertSame( $expected_by_name, $attributes_by_name( $clear_calls ), 'Cookies were cleared with unexpected attributes' );
+		$this->assertSame( [ Vary_Cache::COOKIE_SEGMENT, Vary_Cache::COOKIE_NOCACHE, Vary_Cache::COOKIE_SEGMENT, Vary_Cache::COOKIE_NOCACHE ], $filtered_names );
+	}
+
+	/**
 	 * @dataProvider get_test_data__set_group_for_user_invalid
 	 */
 	public function test__set_group_for_user_invalid( $group, $value, $expected_error_code ) {

@@ -636,11 +636,9 @@ class Vary_Cache {
 	 * @param string $value Cookie Value.
 	 */
 	private static function set_cookie( $name, $value ) {
-		$expiry        = time() + self::$cookie_expiry;
-		$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
-		$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
+		$options = self::get_cookie_options( $name, time() + self::$cookie_expiry );
 		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
-		setrawcookie( $name, $value, $expiry, $cookie_path, $cookie_domain );
+		setrawcookie( $name, $value, $options );
 	}
 
 	/**
@@ -649,11 +647,42 @@ class Vary_Cache {
 	 * @param string $name Cookie Name.
 	 */
 	private static function unset_cookie( $name ) {
-		$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
-		$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
+		$options = self::get_cookie_options( $name, time() - 3600 );
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-		setcookie( $name, '', time() - 3600, $cookie_path, $cookie_domain );
+		setcookie( $name, '', $options );
 	}
+
+	/**
+	 * Shared so a cookie is always cleared with the attributes it was set with.
+	 *
+	 * @param string $name    Cookie Name.
+	 * @param int    $expires Unix timestamp; in the past to clear the cookie.
+	 * @return array
+	 */
+	private static function get_cookie_options( $name, $expires ) {
+		// Like core's logged_in cookie: a Secure cookie set over HTTPS on a site with an http:// home URL
+		// would not be sent on its own links, and browsers would refuse to overwrite it from http://.
+		$secure = is_ssl() && 'https' === wp_parse_url( get_option( 'home' ), PHP_URL_SCHEME );
+
+		/**
+		 * Whether to send the cookie with the Secure attribute.
+		 *
+		 * Browsers drop a Secure cookie sent over plain HTTP, so returning true there means the cookie is never set or cleared.
+		 *
+		 * @param bool   $secure Whether to set the Secure attribute. Defaults to true on HTTPS requests to a site with an HTTPS home URL.
+		 * @param string $name   Cookie Name.
+		 */
+		$secure = (bool) apply_filters( 'vip_vary_cache_cookie_secure', $secure, $name );
+
+		// No HttpOnly: sites may read or write the segmentation cookie from client-side code.
+		return [
+			'expires' => $expires,
+			'path'    => (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH ),
+			'domain'  => (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN ),
+			'secure'  => $secure,
+		];
+	}
+
 	/**
 	 * Only allow alphanumerics, dash and underscore
 	 *
