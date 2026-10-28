@@ -108,9 +108,6 @@ jobs:
         run: npx playwright install chromium --only-shell
         working-directory: __tests__/e2e
 
-      - name: Install VIP CLI
-        run: npm install -g @automattic/vip
-
       - name: Determine WP version
         run: |
           if [ -z "${{ github.event.inputs.wpversion }}" ]; then
@@ -126,9 +123,13 @@ jobs:
           echo "E2E_USER=${{ github.event.inputs.user }}" >> $GITHUB_ENV
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
 
+      # `npm test` runs the VIP CLI installed by `npm ci`.
       - name: Run e2e tests
         run: npm test
         working-directory: __tests__/e2e
+        env:
+          # The runner is discarded after the job, so destroying the site only costs time.
+          E2E_PRESERVE_SITE: 'true'
 
       - name: Archive test results
         uses: actions/upload-artifact@v7
