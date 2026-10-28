@@ -67,6 +67,20 @@ reads the shared counter from a fresh process and requires zero.
 
 `CI=1` is recommended in non-interactive shells.
 
+The APCu admission regression case uses two independent PHP CLI server
+workers with shared APCu storage:
+
+```bash
+CI=1 ./bin/test.sh --filter Test_Concurrency_APCu_Shared
+```
+
+It requires APCu, `proc_open()`, POSIX process control, `setsid`, and PHP CLI
+server worker support. The test checks distinct worker PIDs and a shared APCu
+marker, exactly one admission at limit one, and eventual counter release. A
+test-only fetch/modify/store boundary demonstrates that a non-atomic operation
+admits both actors under the same barrier. The nested hook test separately
+checks in-flight limiting within one request.
+
 ## e2e tests
 
 From repository root:
