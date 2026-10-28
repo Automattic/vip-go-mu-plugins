@@ -14,8 +14,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$host1 = getenv( 'MEMCACHED_HOST_1' );
-		$host2 = getenv( 'MEMCACHED_HOST_2' );
+		$host1 = getenv( 'MEMCACHED_HOST_1' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
+		$host2 = getenv( 'MEMCACHED_HOST_2' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
 
 		$host1 = $host1 ? "{$host1}" : 'localhost:11211';
 		$host2 = $host2 ? "{$host2}" : 'localhost:11212';
@@ -722,6 +722,52 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertNotEmpty( $new_global_flush_number );
 		self::assertNotEquals( $initial_site_flush_number, $new_site_flush_number );
 		self::assertNotEquals( $initial_global_flush_number, $new_global_flush_number );
+	}
+
+	/**
+	 * A subsite flush must rotate only that site's persistent prefix.
+	 */
+	public function test_non_main_site_flush_preserves_global_and_other_blog(): void {
+		if ( ! is_multisite() ) {
+			self::markTestSkipped( 'Requires the multisite test profile.' );
+		}
+		if ( ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) && ! getenv( 'MEMCACHED_HOST_1' ) ) || ! extension_loaded( $this->is_using_memcached_ext ? 'memcached' : 'memcache' ) ) {
+			self::markTestSkipped( 'Requires an owned backend through VIP_TEST_MEMCACHED_SERVER or MEMCACHED_HOST_1.' );
+		}
+
+		$main_blog = get_current_blog_id();
+		self::assertTrue( is_main_site( $main_blog ) );
+		$other_blog = $this->factory()->blog->create();
+		self::assertNotSame( $main_blog, $other_blog );
+		$group = 'flush-global-' . bin2hex( random_bytes( 8 ) );
+		$key   = 'flush-site-' . bin2hex( random_bytes( 8 ) );
+		$this->object_cache->add_global_groups( $group );
+
+		try {
+			self::assertTrue( $this->object_cache->set( $key, 'main' ) );
+			self::assertTrue( $this->object_cache->set( $key, 'global', $group ) );
+			switch_to_blog( $other_blog );
+			try {
+				self::assertFalse( is_main_site() );
+				self::assertTrue( $this->object_cache->set( $key, 'other' ) );
+				$this->object_cache->flush_runtime();
+				self::assertSame( 'other', $this->object_cache->get( $key ) );
+				self::assertTrue( $this->object_cache->flush() );
+				$this->object_cache->flush_runtime();
+				self::assertFalse( $this->object_cache->get( $key ), 'The flushed subsite must miss remotely.' );
+				self::assertSame( 'global', $this->object_cache->get( $key, $group ), 'A subsite flush must preserve global data.' );
+			} finally {
+				$this->object_cache->delete( $key );
+				restore_current_blog();
+			}
+			$this->object_cache->flush_runtime();
+			self::assertSame( 'main', $this->object_cache->get( $key ), 'The other blog must survive the subsite flush.' );
+			self::assertSame( 'global', $this->object_cache->get( $key, $group ) );
+		} finally {
+			$this->object_cache->delete( $key );
+			$this->object_cache->delete( $key, $group );
+			wpmu_delete_blog( $other_blog, true );
+		}
 	}
 
 	public function test_flush_runtime() {
