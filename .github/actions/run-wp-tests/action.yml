@@ -21,6 +21,14 @@ inputs:
     description: The version of PHPUnit to use.
     required: false
     default: ''
+  extensions:
+    description: Additional PHP extensions required by the selected test profile.
+    required: false
+    default: ''
+  test-filter:
+    description: Optional PHPUnit filter for a focused test profile.
+    required: false
+    default: ''
   coverage:
     description: Whether to generate code coverage reports.
     required: false
@@ -67,6 +75,7 @@ runs:
         coverage: ${{ steps.coverage.outputs.coverage }}
         ini-values: ${{ steps.coverage.outputs.ini }}
         php-version: ${{ inputs.php }}
+        extensions: ${{ inputs.extensions }}
       env:
         fail-fast: 'true'
 
@@ -186,10 +195,29 @@ runs:
         else
           OPTIONS="${OPTIONS} --order-by=random"
         fi
-        "${PHPUNIT}" ${OPTIONS}
+        if [ -n "${TEST_FILTER}" ]; then
+          report="$(mktemp "${RUNNER_TEMP:-/tmp}/focused-phpunit.XXXXXX.xml")"
+          trap 'rm -f "${report}"' EXIT
+          "${PHPUNIT}" ${OPTIONS} --filter "${TEST_FILTER}" --log-junit "${report}"
+          php -r '
+            $report = new DOMDocument();
+            if ( ! $report->load( $argv[1], LIBXML_NONET ) ) {
+              fwrite( STDERR, "Unable to read the focused PHPUnit report.\n" );
+              exit( 1 );
+            }
+            $cases = $report->getElementsByTagName( "testcase" );
+            if ( 1 !== $cases->length || 0 !== $cases->item( 0 )->getElementsByTagName( "skipped" )->length ) {
+              fwrite( STDERR, "Focused PHPUnit profile must execute exactly one unskipped test.\n" );
+              exit( 1 );
+            }
+          ' "${report}"
+        else
+          "${PHPUNIT}" ${OPTIONS}
+        fi
       env:
         PHPUNIT_VERSION: ${{ inputs.phpunit }}
         COVERAGE: ${{ steps.coverage.outputs.coverage }}
+        TEST_FILTER: ${{ inputs.test-filter }}
 
     - name: Upload coverage report
       uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

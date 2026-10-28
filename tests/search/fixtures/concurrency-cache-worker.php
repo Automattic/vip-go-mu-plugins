@@ -105,7 +105,7 @@ if ( 'increment' !== $argv[3] ) {
 	$found = false;
 	$count = wp_cache_get( Object_Cache_Backend::KEY_NAME, Object_Cache_Backend::GROUP_NAME, true, $found );
 	fwrite( STDOUT, json_encode( [ $found, $count ] ) . "\n" );
-	if ( 'count' === $argv[3] ) {
+	if ( 'cleanup' === $argv[3] ) {
 		wp_cache_delete( Object_Cache_Backend::KEY_NAME, Object_Cache_Backend::GROUP_NAME );
 	}
 } else {

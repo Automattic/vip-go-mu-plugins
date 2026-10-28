@@ -65,6 +65,11 @@ counter operation and retain their increments until both admission results are
 reported. The test requires exactly one admitted request at limit one, then
 reads the shared counter from a fresh process and requires zero.
 
+The dedicated `shared-cache-contention` CI job provisions Memcached, enables the
+PHP extension, and runs this test with `VIP_TEST_REQUIRE_SHARED_CACHE=1`. Missing
+prerequisites fail that job instead of skipping the test. Each test uses a random
+cache namespace and deletes its counter after the final read.
+
 `CI=1` is recommended in non-interactive shells.
 
 ## e2e tests
@@ -95,6 +100,7 @@ Current workflows cover:
 - Lint: `.github/workflows/lint.yml`
 - Typecheck + e2e lint/test: `.github/workflows/e2e.yml`
 - Unit/integration tests: `.github/workflows/ci.yml`, `.github/workflows/core-tests.yml`, `.github/workflows/parsely.yml`
+- Shared-cache worker contention: the dedicated `shared-cache-contention` job in `.github/workflows/ci.yml`
 
 `ci.yml` runs PHP 8.2 against every tested WordPress version, plus nightly. Newer PHP
 versions run only against the oldest and the latest WordPress version tested with them.
