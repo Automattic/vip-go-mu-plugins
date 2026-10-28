@@ -58,7 +58,15 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
-	 * The bundle folder loaded from vip-integrations/, once it's loaded.
+	 * How loading went: null until `load_bundle()` runs, then `loaded`, `already_loaded`,
+	 * `missing_bundle` or `unsupported_wp`.
+	 *
+	 * @var string|null
+	 */
+	private ?string $load_status = null;
+
+	/**
+	 * The bundle folder that was loaded, e.g. `acme-sync-1.2`, or null.
 	 *
 	 * @var string|null
 	 */
@@ -144,24 +152,34 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Requires the bundle's entry file. With no bundle to load, or one that needs a newer WordPress
-	 * than the site's, the integration is no longer active.
+	 * Requires the bundle's entry file, and records how loading went for `get_runtime_status()`. With
+	 * no bundle to load, or one that needs a newer WordPress than the site's, the integration is no
+	 * longer active.
 	 *
 	 * @private
 	 */
 	public function load_bundle(): void {
 		if ( $this->is_loaded() ) {
+			$this->load_status = 'already_loaded';
 			return;
 		}
 
 		$folder = $this->get_bundle_folder();
-		if ( null === $folder || ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
-			$this->is_active = false;
+		if ( null === $folder ) {
+			$this->is_active   = false;
+			$this->load_status = 'missing_bundle';
+			return;
+		}
+
+		if ( ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
+			$this->is_active   = false;
+			$this->load_status = 'unsupported_wp';
 			return;
 		}
 
 		require_once $this->get_bundle_path( $folder );
 
+		$this->load_status   = 'loaded';
 		$this->loaded_bundle = $folder;
 	}
 
@@ -198,6 +216,35 @@ class GenericIntegration extends Integration {
 	 */
 	public function get_bundle_path( string $folder ): string {
 		return WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
+	}
+
+	/**
+	 * How the integration loaded, for the Site Details Service. Holds no config, so nothing secret.
+	 *
+	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
+	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
+	 * e.g. from the customer's repo) or `missing_bundle` (no bundle in vip-integrations/, so nothing
+	 * was loaded). `bundle` is the folder that was loaded, or null.
+	 *
+	 * @return array{slug:string,folder:string,version:string,version_strategy:string,scope:string,active:bool,status:string,bundle:?string}
+	 */
+	public function get_runtime_status(): array {
+		if ( null !== $this->load_status ) {
+			$status = $this->load_status;
+		} else {
+			$status = $this->is_active() ? 'pending' : 'inactive';
+		}
+
+		return [
+			'slug'             => $this->get_slug(),
+			'folder'           => $this->folder,
+			'version'          => $this->version,
+			'version_strategy' => $this->version_strategy,
+			'scope'            => $this->scope,
+			'active'           => $this->is_active(),
+			'status'           => $status,
+			'bundle'           => $this->loaded_bundle,
+		];
 	}
 
 	/**
