@@ -38,6 +38,9 @@ Search's shared-counter integration test starts two PHP workers against an
 isolated Memcached service: `CI=1 ./bin/test.sh --memcached --filter Test_Concurrency_Shared_Cache`.
 See [testing](docs/testing.md) for runtime requirements and test scope.
 
+Check shell runner resource ownership with
+`php bin/test-runner-resource-ownership.php`.
+
 ## Local development
 
 VIP local dev environment (recommended):

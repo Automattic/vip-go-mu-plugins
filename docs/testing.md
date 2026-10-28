@@ -22,6 +22,12 @@ npm run test            # full PHPUnit suite in Docker
 - runs tests in `ghcr.io/automattic/vip-container-images/wp-test-runner`
 - uses `tests/bootstrap.php` to load MU plugin stack
 
+Run `php bin/test-runner-resource-ownership.php` to check both shell runners
+with recording Docker and a fixed clock. It checks distinct resource names,
+cleanup after successful and failed test runs, and caller-owned network/database
+overrides. The check does not create Docker resources or establish live Docker
+interference.
+
 `tests/class-vip-test-listener.php` restores `$_SERVER` and clears
 `Constant_Mocker` around every test, so tests don't need to do either in `setUp()`/`tearDown()`.
 `tests/bootstrap.php` lowers the bcrypt cost everywhere, so users created in

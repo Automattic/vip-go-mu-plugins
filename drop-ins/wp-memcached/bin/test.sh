@@ -72,7 +72,8 @@ echo
 
 MARIADB_VERSION="10.3"
 
-UUID=$(date +%s000)
+# Pair the clock with this shell's PID so same-second launches own distinct resources.
+UUID="$(date +%s)-$$"
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
     docker network create "${NETWORK_NAME}"
