@@ -737,13 +737,13 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 		$main_blog = get_current_blog_id();
 		self::assertTrue( is_main_site( $main_blog ) );
-		$other_blog = $this->factory()->blog->create();
-		self::assertNotSame( $main_blog, $other_blog );
 		$group = 'flush-global-' . bin2hex( random_bytes( 8 ) );
 		$key   = 'flush-site-' . bin2hex( random_bytes( 8 ) );
-		$this->object_cache->add_global_groups( $group );
+		$other_blog = $this->factory()->blog->create();
 
 		try {
+			self::assertNotSame( $main_blog, $other_blog );
+			$this->object_cache->add_global_groups( $group );
 			self::assertTrue( $this->object_cache->set( $key, 'main' ) );
 			self::assertTrue( $this->object_cache->set( $key, 'global', $group ) );
 			switch_to_blog( $other_blog );
@@ -757,16 +757,25 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 				self::assertFalse( $this->object_cache->get( $key ), 'The flushed subsite must miss remotely.' );
 				self::assertSame( 'global', $this->object_cache->get( $key, $group ), 'A subsite flush must preserve global data.' );
 			} finally {
-				$this->object_cache->delete( $key );
-				restore_current_blog();
+				try {
+					$this->object_cache->delete( $key );
+				} finally {
+					restore_current_blog();
+				}
 			}
 			$this->object_cache->flush_runtime();
 			self::assertSame( 'main', $this->object_cache->get( $key ), 'The other blog must survive the subsite flush.' );
 			self::assertSame( 'global', $this->object_cache->get( $key, $group ) );
 		} finally {
-			$this->object_cache->delete( $key );
-			$this->object_cache->delete( $key, $group );
-			wpmu_delete_blog( $other_blog, true );
+			try {
+				$this->object_cache->delete( $key );
+			} finally {
+				try {
+					$this->object_cache->delete( $key, $group );
+				} finally {
+					wpmu_delete_blog( $other_blog, true );
+				}
+			}
 		}
 	}
 
