@@ -54,6 +54,21 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
+	 * How loading went: null until `load_bundle()` runs, then `loaded`, `already_loaded` or
+	 * `missing_bundle`.
+	 *
+	 * @var string|null
+	 */
+	private ?string $load_status = null;
+
+	/**
+	 * The bundle folder that was loaded, e.g. `acme-sync-1.2`, or null.
+	 *
+	 * @var string|null
+	 */
+	private ?string $loaded_bundle = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug  Slug of the integration.
@@ -126,36 +141,46 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Requires the bundle's entry file. With no bundle to load, the integration is no longer active.
+	 * Requires the bundle's entry file, and records how loading went for `get_runtime_status()`. With
+	 * no bundle to load, the integration is no longer active.
 	 *
 	 * @private
 	 */
 	public function load_bundle(): void {
 		if ( $this->is_loaded() ) {
+			$this->load_status = 'already_loaded';
 			return;
 		}
 
-		$load_path = $this->get_load_path();
-		if ( null === $load_path ) {
-			$this->is_active = false;
+		$folder = $this->get_bundle_folder();
+		if ( null === $folder ) {
+			$this->is_active   = false;
+			$this->load_status = 'missing_bundle';
 			return;
 		}
 
-		require_once $load_path;
+		require_once $this->get_bundle_path( $folder );
+
+		$this->load_status   = 'loaded';
+		$this->loaded_bundle = $folder;
 	}
 
 	/**
 	 * The entry file of the bundle to load, or null when there's no bundle to load.
 	 */
 	public function get_load_path(): ?string {
+		$folder = $this->get_bundle_folder();
+
+		return null === $folder ? null : $this->get_bundle_path( $folder );
+	}
+
+	/**
+	 * The bundle folder to load, or null when there's none with a readable entry file.
+	 */
+	public function get_bundle_folder(): ?string {
 		$folder = $this->get_selected_version_folder( $this->get_versions() );
-		if ( null === $folder ) {
-			return null;
-		}
 
-		$load_path = $this->get_bundle_path( $folder );
-
-		return is_readable( $load_path ) ? $load_path : null;
+		return null !== $folder && is_readable( $this->get_bundle_path( $folder ) ) ? $folder : null;
 	}
 
 	/**
@@ -165,6 +190,35 @@ class GenericIntegration extends Integration {
 	 */
 	public function get_bundle_path( string $folder ): string {
 		return WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
+	}
+
+	/**
+	 * How the integration loaded, for the Site Details Service. Holds no config, so nothing secret.
+	 *
+	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
+	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
+	 * e.g. from the customer's repo) or `missing_bundle` (no bundle in vip-integrations/, so nothing
+	 * was loaded). `bundle` is the folder that was loaded, or null.
+	 *
+	 * @return array{slug:string,folder:string,version:string,version_strategy:string,scope:string,active:bool,status:string,bundle:?string}
+	 */
+	public function get_runtime_status(): array {
+		if ( null !== $this->load_status ) {
+			$status = $this->load_status;
+		} else {
+			$status = $this->is_active() ? 'pending' : 'inactive';
+		}
+
+		return [
+			'slug'             => $this->get_slug(),
+			'folder'           => $this->folder,
+			'version'          => $this->version,
+			'version_strategy' => $this->version_strategy,
+			'scope'            => $this->scope,
+			'active'           => $this->is_active(),
+			'status'           => $status,
+			'bundle'           => $this->loaded_bundle,
+		];
 	}
 
 	/**

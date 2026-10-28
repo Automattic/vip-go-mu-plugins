@@ -739,4 +739,83 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertTrue( $integrations->get_integration( 'acme-sync' )->is_active() );
 		$this->assertSame( 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
 	}
+
+	/*
+	|--------------------------------------------------------------------------
+	| Load outcome
+	|--------------------------------------------------------------------------
+	*/
+
+	public function test__status_is_inactive_before_activation(): void {
+		$status = ( new GenericIntegration( 'acme-sync', $this->entry() ) )->get_runtime_status();
+
+		$this->assertSame(
+			[
+				'slug'             => 'acme-sync',
+				'folder'           => 'acme-sync',
+				'version'          => '1.2.0',
+				'version_strategy' => 'latest',
+				'scope'            => 'site',
+				'active'           => false,
+				'status'           => 'inactive',
+				'bundle'           => null,
+			],
+			$status
+		);
+	}
+
+	public function test__status_is_pending_until_the_bundle_is_loaded(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
+		$integration->activate();
+
+		$this->assertSame( 'pending', $integration->get_runtime_status()['status'] );
+	}
+
+	public function test__status_reports_the_bundle_it_loaded(): void {
+		// A slug no other test uses: an included file stays included for the rest of the run.
+		$integration = $this->integration_with_bundles( 'status-sync', [
+			'status-sync-2.0' => '2.0',
+			'status-sync-1.2' => '1.2',
+		] );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$status = $integration->get_runtime_status();
+		$this->assertTrue( $status['active'] );
+		$this->assertSame( 'loaded', $status['status'] );
+		$this->assertSame( 'status-sync-2.0', $status['bundle'] );
+	}
+
+	public function test__status_reports_a_missing_bundle_and_deactivates(): void {
+		$integration = $this->integration_with_bundles( 'missing-sync', [ 'missing-sync-1.2' => '1.2' ], false );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$status = $integration->get_runtime_status();
+		$this->assertFalse( $status['active'] );
+		$this->assertSame( 'missing_bundle', $status['status'] );
+		$this->assertNull( $status['bundle'] );
+	}
+
+	public function test__status_reports_a_plugin_loaded_some_other_way(): void {
+		$dir = $this->temp_dir();
+		mkdir( $dir . '/elsewhere-sync' );
+		file_put_contents( $dir . '/elsewhere-sync/elsewhere-sync.php', '<?php' );
+		require_once $dir . '/elsewhere-sync/elsewhere-sync.php';
+
+		$integration = $this->integration_with_bundles( 'elsewhere-sync', [ 'elsewhere-sync-1.2' => '1.2' ] );
+		$integration->load_bundle();
+
+		$this->assertSame( 'already_loaded', $integration->get_runtime_status()['status'] );
+		$this->assertNull( $integration->get_runtime_status()['bundle'] );
+	}
+
+	public function test__status_holds_no_config(): void {
+		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
+		$integration->activate();
+
+		$this->assertStringNotContainsString( 'env-key', wp_json_encode( $integration->get_runtime_status() ) );
+	}
 }

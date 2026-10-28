@@ -72,6 +72,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			$site_details['connector_controls'],
 			'SDS should carry only the dedicated, secret-free runtime report.'
 		);
+		$this->assertSame( [], $site_details['generic_integrations'], 'No generic integration is registered while the feature is off.' );
 		$this->assertEquals(
 			[
 				[
@@ -217,5 +218,23 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$this->assertGreaterThanOrEqual( $before, $timestamp );
 		$this->assertLessThanOrEqual( $after, $timestamp );
+	}
+
+	public function test__generic_integrations_report_each_generic_integration_by_slug() {
+		$integrations = \Automattic\VIP\Integrations\IntegrationsSingleton::instance();
+		$integrations->register(
+			new \Automattic\VIP\Integrations\GenericIntegration( 'acme-sync', [
+				'folder'           => 'acme-sync',
+				'entry_file'       => 'acme-sync.php',
+				'version'          => '1.2.0',
+				'version_strategy' => 'latest',
+				'scope'            => 'site',
+			] )
+		);
+
+		$info = Site_Details_Index::instance( 100 )->get_generic_integrations_info();
+
+		$this->assertSame( [ 'acme-sync' ], array_keys( $info ), 'Only generic integrations are reported.' );
+		$this->assertSame( $integrations->get_integration( 'acme-sync' )->get_runtime_status(), $info['acme-sync'] );
 	}
 }
