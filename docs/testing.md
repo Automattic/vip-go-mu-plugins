@@ -78,6 +78,18 @@ cache namespace and deletes its counter after the final read.
 
 `CI=1` is recommended in non-interactive shells.
 
+The cache drop-in multisite flush profile uses an owned Memcached backend.
+From the repository root, run:
+
+```bash
+CI=1 ./bin/test.sh --memcached --multisite 1 --configuration drop-ins/wp-memcached/phpunit.xml.dist --filter 'test_(flush|non_main_site_flush_preserves_global_and_other_blog)$'
+```
+
+The new case creates a subsite, then verifies that flushing it invalidates only
+its local entry while the main site's entry and a global-group entry survive
+fresh remote reads. The component runner's `MEMCACHED_HOST_1`/`MEMCACHED_HOST_2`
+backend configuration is also supported.
+
 ## e2e tests
 
 From repository root:
