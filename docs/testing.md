@@ -22,7 +22,7 @@ npm run test            # full PHPUnit suite in Docker
 - runs tests in `ghcr.io/automattic/vip-container-images/wp-test-runner`
 - uses `tests/bootstrap.php` to load MU plugin stack
 
-Run `python3 bin/test-runner-resource-ownership.py` to check both shell runners
+Run `php bin/test-runner-resource-ownership.php` to check both shell runners
 with recording Docker and a fixed clock. It checks distinct resource names,
 cleanup after successful and failed test runs, and caller-owned network/database
 overrides. The check does not create Docker resources or establish live Docker

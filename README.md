@@ -39,7 +39,7 @@ isolated Memcached service: `CI=1 ./bin/test.sh --memcached --filter Test_Concur
 See [testing](docs/testing.md) for runtime requirements and test scope.
 
 Check shell runner resource ownership with
-`python3 bin/test-runner-resource-ownership.py`.
+`php bin/test-runner-resource-ownership.php`.
 
 ## Local development
 
