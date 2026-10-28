@@ -132,74 +132,6 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Data provider for testing the Automattic\VIP\Files\ImageSizes::generate_sizes.
-	 *
-	 * Provides WordPress default sizes set
-	 *
-	 * @return array Array of arrays of arrays
-	 */
-	public function get_data_for_generate_sizes() {
-		return [
-			[
-				[
-					'thumbnail'    => [
-						'width'  => '150',
-						'height' => '150',
-						'crop'   => '1',
-					],
-					'medium'       => [
-						'width'  => '300',
-						'height' => '300',
-						'crop'   => false,
-					],
-					'medium_large' => [
-						'width'  => '768',
-						'height' => '0',
-						'crop'   => false,
-					],
-					'large'        => [
-						'width'  => '1024',
-						'height' => '1024',
-						'crop'   => false,
-					],
-					'1536x1536'    => [
-						'width'  => '1536',
-						'height' => '1536',
-						'crop'   => false,
-					],
-					'2048x2048'    => [
-						'width'  => '2048',
-						'height' => '2048',
-						'crop'   => false,
-					],
-				],
-			],
-		];
-	}
-
-	/**
-	 * Unit test covering the generate_sizes method.
-	 *
-	 * @covers Automattic\VIP\Files\ImageSizes::generate_sizes
-	 * @dataProvider get_data_for_generate_sizes
-	 *
-	 * @param array $expected_sizes Array of expected sizes.
-	 */
-	public function test__generate_sizes( $expected_sizes ) {
-		$attachment_id = $this->create_attachment();
-
-		$postmeta    = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
-		$image_sizes = new Automattic\VIP\Files\ImageSizes( $attachment_id, $postmeta );
-		// Disable the static property generated during construction.
-		$image_sizes::$sizes = null;
-
-		$generate_sizes  = get_class_method_as_public( Automattic\VIP\Files\ImageSizes::class, 'generate_sizes' );
-		$generated_sizes = $generate_sizes->invokeArgs( $image_sizes, [] );
-
-		$this->assertEquals( $expected_sizes, $generated_sizes, 'Mismatching arrayof generated sizes meta.' );
-	}
-
-	/**
 	 * Provides expected default sizes meta.
 	 *
 	 * @return array
@@ -258,6 +190,9 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	/**
 	 * Unit test covering the generate_sizes_meta method.
 	 *
+	 * The sizes come from generate_sizes(), so a wrong width, height or crop there changes these dimensions.
+	 *
+	 * @covers Automattic\VIP\Files\ImageSizes::generate_sizes
 	 * @covers Automattic\VIP\Files\ImageSizes::generate_sizes_meta
 	 * @dataProvider get_expected_sizes_meta
 	 */

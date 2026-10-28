@@ -71,11 +71,16 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	 */
 	public function test__should_back_off( ?int $backoff_factor, ?DateTime $failure_time, ?DateTime $legacy_time, int $failed_attempts, bool $expected ) {
 		if ( null !== $backoff_factor ) {
-			$this->set_heartbeat( [
-				'backoff_factor'    => $backoff_factor,
-				'failed_attempts'   => $failed_attempts,
-				'failure_timestamp' => null === $failure_time ? $legacy_time->getTimestamp() : $failure_time->getTimestamp(),
-			] );
+			$heartbeat = [
+				'backoff_factor'  => $backoff_factor,
+				'failed_attempts' => $failed_attempts,
+			];
+			if ( null === $failure_time ) {
+				$heartbeat['timestamp'] = $legacy_time->getTimestamp();
+			} else {
+				$heartbeat['failure_timestamp'] = $failure_time->getTimestamp();
+			}
+			$this->set_heartbeat( $heartbeat );
 		}
 
 		$connection_pilot = Connection_Pilot::instance();
@@ -127,7 +132,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	}
 
 	private function set_heartbeat( $values = [] ) {
-		$saved = update_option( 'vip_jetpack_connection_pilot_heartbeat', [
+		$heartbeat = [
 			'site_url'          => $values['site_url'] ?? get_site_url(),
 			'hashed_site_url'   => isset( $values['site_url'] ) ? md5( $values['site_url'] ) : md5( get_site_url() ),
 			'cache_site_id'     => $values['cache_site_id'] ?? (int) \Jetpack_Options::get_option( 'id', - 1 ),
@@ -135,7 +140,15 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			'backoff_factor'    => $values['backoff_factor'] ?? 0,
 			'failed_attempts'   => $values['failed_attempts'] ?? 0,
 			'failure_timestamp' => $values['failure_timestamp'] ?? 0,
-		], false );
+		];
+
+		// Heartbeats saved before `failure_timestamp` existed only have the legacy `timestamp`.
+		if ( isset( $values['timestamp'] ) ) {
+			unset( $heartbeat['failure_timestamp'] );
+			$heartbeat['timestamp'] = $values['timestamp'];
+		}
+
+		$saved = update_option( 'vip_jetpack_connection_pilot_heartbeat', $heartbeat, false );
 
 		if ( ! $saved ) {
 			throw new \Error( 'Failed to set heartbeat' );

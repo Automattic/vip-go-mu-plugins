@@ -1,0 +1,70 @@
+name: Detect changes
+description: Reports whether a pull request or push changes anything outside skip-paths.txt.
+outputs:
+  tests:
+    description: "'false' when every changed file matches skip-paths.txt, otherwise 'true'."
+    value: ${{ steps.detect.outputs.tests }}
+runs:
+  using: composite
+  steps:
+    # Test jobs skip themselves on this output instead of the workflow being filtered out, so a skipped
+    # job still reports a status and can be a required check.
+    - name: Compare changed files with the skip list
+      id: detect
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        EVENT_NAME: ${{ github.event_name }}
+        REPOSITORY: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        PR_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        BEFORE: ${{ github.event.before }}
+        AFTER: ${{ github.sha }}
+        SKIP_PATHS: ${{ github.action_path }}/skip-paths.txt
+      run: |
+        # Run the tests unless the complete list of changed files is known and every file matches.
+        files=
+        case "${EVENT_NAME}" in
+          pull_request)
+            # The pull request files API lists at most 3,000 files.
+            if [ "${PR_CHANGED_FILES}" -lt 3000 ]; then
+              files=$(gh api --paginate "repos/${REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100" --jq '.[] | .filename, (.previous_filename // empty)')
+            fi
+            ;;
+          push)
+            # A new branch has no previous commit to compare with. The compare API lists at most 300 files.
+            if [ -n "${BEFORE}" ] && [ "${BEFORE}" != 0000000000000000000000000000000000000000 ]; then
+              compare=$(gh api "repos/${REPOSITORY}/compare/${BEFORE}...${AFTER}")
+              if [ "$(jq '.files | length' <<< "${compare}")" -lt 300 ]; then
+                files=$(jq -r '.files[] | .filename, (.previous_filename // empty)' <<< "${compare}")
+              fi
+            fi
+            ;;
+        esac
+
+        mapfile -t patterns < <(grep -vE '^[[:space:]]*(#|$)' "${SKIP_PATHS}")
+        tests=false
+        if [ -z "${files}" ]; then
+          tests=true
+        fi
+        while IFS= read -r file; do
+          [ -n "${file}" ] || continue
+          matched=false
+          for pattern in "${patterns[@]}"; do
+            # shellcheck disable=SC2053 # The pattern is a glob.
+            if [[ "${file}" == ${pattern} ]]; then
+              matched=true
+              break
+            fi
+          done
+          if [ "${matched}" = false ]; then
+            echo "Tests run for ${file}"
+            tests=true
+            break
+          fi
+        done <<< "${files}"
+
+        if [ "${tests}" = false ]; then
+          echo "Every changed file matches skip-paths.txt; the tests are skipped."
+        fi
+        echo "tests=${tests}" >> "${GITHUB_OUTPUT}"

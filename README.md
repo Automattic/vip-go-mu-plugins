@@ -9,6 +9,7 @@ Development repository for WordPress VIP Go MU plugins.
 - [`config/`](config/README.md): site details metadata sent to SDS.
 - `tests/`: PHPUnit test suite for root MU code.
 - `__tests__/e2e/`: Playwright e2e suite.
+  Check setup version selection with `__tests__/e2e/bin/test-setup-env-version.sh`.
 - `ci/`, `.github/workflows/`: automation, CI, release/deploy workflows.
 - `advanced-post-cache/`, `http-concat/`, `jetpack/`, `lightweight-term-count-update/`, `rewrite-rules-inspector/`, `search/elasticpress/`, `wp-parsely/`, `gutenberg-ramp/`, `drop-ins/hyperdb/`: external submodules/upstream code.
 
@@ -34,9 +35,14 @@ npm run lint
 npm run test
 ```
 
+Check exact PHP runner argument forwarding with `php bin/test-runner-argv.php`.
+
 Search's shared-counter integration test starts two PHP workers against an
 isolated Memcached service: `CI=1 ./bin/test.sh --memcached --filter Test_Concurrency_Shared_Cache`.
 See [testing](docs/testing.md) for runtime requirements and test scope.
+
+Check shell runner resource ownership with
+`php bin/test-runner-resource-ownership.php`.
 
 ## Local development
 

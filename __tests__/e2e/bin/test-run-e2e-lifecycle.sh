@@ -33,9 +33,17 @@ chmod +x "$tmp/bin/"*
 export PATH="$tmp/bin:$PATH"
 export E2E_TEST_LOG="$tmp/log"
 
+# `! command` doesn't trigger `set -e`, so a "must not appear" check has to exit explicitly.
+refute_log() {
+    if rg -q "$1" "$E2E_TEST_LOG"; then
+        printf 'unexpected log line matching: %s\n' "$1" >&2
+        exit 1
+    fi
+}
+
 # External targets skip all VIP provisioning and teardown.
 E2E_BASE_URL=https://external.example "$script_dir/run-e2e.sh" --grep smoke
-! rg -q '^vip ' "$E2E_TEST_LOG"
+refute_log '^vip '
 rg -q '^npx playwright test -c playwright.config.ts --grep smoke$' "$E2E_TEST_LOG"
 
 # Local runs use a unique slug for all lifecycle operations and clean up on failures.
@@ -47,7 +55,7 @@ fi
 slug=$(sed -n 's/^vip --slug=\([^ ]*\) dev-env create.*/\1/p' "$E2E_TEST_LOG")
 [ -n "$slug" ]
 rg -q "^vip dev-env destroy --slug=$slug$" "$E2E_TEST_LOG"
-! rg -q 'e2e-test-site' "$E2E_TEST_LOG"
+refute_log 'e2e-test-site'
 
 # Operators can retain a failed local site for diagnosis.
 : > "$E2E_TEST_LOG"
@@ -55,7 +63,13 @@ if E2E_TEST_NPX_STATUS=7 E2E_PRESERVE_ON_FAILURE=true "$script_dir/run-e2e.sh"; 
     echo 'expected the stubbed Playwright run to fail' >&2
     exit 1
 fi
-! rg -q '^vip dev-env destroy ' "$E2E_TEST_LOG"
+refute_log '^vip dev-env destroy '
+
+# Throwaway hosts such as CI runners can keep every site.
+: > "$E2E_TEST_LOG"
+E2E_PRESERVE_SITE=true "$script_dir/run-e2e.sh"
+rg -q '^vip --slug=[^ ]* dev-env create' "$E2E_TEST_LOG"
+refute_log '^vip dev-env destroy '
 
 # A failed create for a caller-selected existing slug is never cleaned up.
 : > "$E2E_TEST_LOG"
@@ -63,5 +77,5 @@ if E2E_TEST_FAIL_CREATE=true E2E_SITE_SLUG=e2e-existing "$script_dir/run-e2e.sh"
     echo 'expected the stubbed VIP create to fail' >&2
     exit 1
 fi
-! rg -q '^vip dev-env destroy --slug=e2e-existing$' "$E2E_TEST_LOG"
+refute_log '^vip dev-env destroy --slug=e2e-existing$'
 echo 'E2E lifecycle wrapper checks passed'

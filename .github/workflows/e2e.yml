@@ -99,17 +99,16 @@ jobs:
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
 
+      # Install scripts only check versions or build optional native add-ons; the VIP CLI's keychain add-on
+      # is for logins, which e2e doesn't use.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Install Playwright with Chromium
         # Tests run headless, which only needs the headless shell (and ffmpeg for retry videos).
         run: npx playwright install chromium --only-shell
         working-directory: __tests__/e2e
-
-      - name: Install VIP CLI
-        run: npm install -g @automattic/vip
 
       - name: Determine WP version
         run: |
@@ -126,9 +125,13 @@ jobs:
           echo "E2E_USER=${{ github.event.inputs.user }}" >> $GITHUB_ENV
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
 
+      # `npm test` runs the VIP CLI installed by `npm ci`.
       - name: Run e2e tests
         run: npm test
         working-directory: __tests__/e2e
+        env:
+          # The runner is discarded after the job, so destroying the site only costs time.
+          E2E_PRESERVE_SITE: 'true'
 
       - name: Archive test results
         uses: actions/upload-artifact@v7
@@ -161,7 +164,7 @@ jobs:
           cache-dependency-path: __tests__/e2e/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Run TypeScript typecheck

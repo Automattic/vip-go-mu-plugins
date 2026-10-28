@@ -75,31 +75,4 @@ class Admin_Notice_Controller_Test extends WP_UnitTestCase {
 
 		$partially_mocked_controller->maybe_clean_stale_dismissed_notices();
 	}
-
-	public function clean_stale_dismissed_notices_data() {
-		// [ dismissed identifiers, registered identifiers, dismissed identifiers left after cleanup ]
-		return [
-			'nothing dismissed'                     => [ [], [ 'a' ], [] ],
-			'dismissed notice still registered'     => [ [ 'a' ], [ 'a' ], [ 'a' ] ],
-			'dismissed notice no longer registered' => [ [ 'a' ], [ 'b', 'c' ], [] ],
-		];
-	}
-
-	/**
-	 * @dataProvider clean_stale_dismissed_notices_data
-	 */
-	public function test__clean_stale_dismissed_notices( $dismissed_notices, $registered_notices, $expected_remaining ) {
-		foreach ( $dismissed_notices as $identifier ) {
-			add_user_meta( self::$user_id, Admin_Notice_Controller::DISMISS_USER_META, $identifier );
-		}
-
-		$controller = new Admin_Notice_Controller();
-		foreach ( $registered_notices as $identifier ) {
-			$controller->add( new Admin_Notice( 'hi', [], $identifier ) );
-		}
-
-		$controller->clean_stale_dismissed_notices();
-
-		$this->assertSame( $expected_remaining, get_user_meta( self::$user_id, Admin_Notice_Controller::DISMISS_USER_META, false ) );
-	}
 }

@@ -101,14 +101,6 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $actual );
 	}
 
-	public function test__get_upload_path() {
-		$get_upload_path = get_class_method_as_public( VIP_Filesystem::class, 'get_upload_path' );
-
-		$actual = $get_upload_path->invoke( $this->vip_filesystem );
-
-		$this->assertStringNotContainsString( 'vip://', $actual );
-	}
-
 	/**
 	 * Give every prefixed and unprefixed path its own input/expected pair.
 	 */

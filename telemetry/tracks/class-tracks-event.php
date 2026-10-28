@@ -106,9 +106,9 @@ class Tracks_Event extends Telemetry_Event {
 			$event->_ts = static::milliseconds_since_epoch( $this->event_timestamp );
 		}
 
-		// Remove non-routable IPs to prevent record from being discarded.
+		// Remove RFC 1918 private IPv4 addresses; preserve other address classes.
 		if ( isset( $event->_via_ip ) &&
-			1 === preg_match( '/^192\.168|^10\./', $event->_via_ip ) ) {
+			1 === preg_match( '/^(?:192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.)/', $event->_via_ip ) ) {
 			unset( $event->_via_ip );
 		}
 

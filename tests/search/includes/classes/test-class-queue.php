@@ -32,6 +32,47 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var Search|null */
 	private $search_singleton;
 
+	/** @var string Real queue table for test_free_deadlocked_jobs(). */
+	private static $recovery_table;
+
+	/**
+	 * The deadlock recovery self-joins the queue table, which a temporary table doesn't allow, so its test needs
+	 * a real table. Creating it here, outside any test's transaction, keeps that test free of DDL, which would
+	 * commit everything the test and setUp() wrote before it.
+	 */
+	public static function wpSetUpBeforeClass(): void {
+		global $wpdb;
+
+		// setUp() boots Search, which loads the class; this runs first.
+		require_once __DIR__ . '/../../../../search/includes/classes/queue/class-schema.php';
+
+		self::$recovery_table = $wpdb->prefix . 'vip_queue_recovery';
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
+
+		$schema = new class( self::$recovery_table ) extends Queue\Schema {
+			private $table_name;
+
+			public function __construct( string $table_name ) {
+				$this->table_name = $table_name;
+			}
+
+			public function get_table_name() {
+				return $this->table_name;
+			}
+
+			public function create_table(): void {
+				$this->_prepare_table();
+			}
+		};
+		$schema->create_table();
+	}
+
+	public static function wpTearDownAfterClass(): void {
+		global $wpdb;
+
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -296,21 +337,111 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, $not_scheduled_count );
 	}
 
-	public function test_offload_indexing_to_queue() {
-		$this->add_posts_to_queue( range( 1, 3 ) );
+	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
+		$term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+		$tt_id = get_term( $term_id, 'category' )->term_taxonomy_id;
 
-		// Make sure we're not already bailing on EP indexing, otherwise the test isn't doing anything
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
+		// Treat every term as large, so the test doesn't need thousands of posts
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
 
-		$this->assertFalse( $current_bail );
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
 
-		// Offload indexing
-		$this->queue->offload_indexing_to_queue();
+		$max_count->setValue( null, $original );
 
-		// Now the filter should return true to bail early from EP indexing
-		$current_bail = apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' );
+		// ElasticPress should not have loaded and queued the term's posts; the cron job handles them instead
+		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
+		$this->assertNotFalse( wp_next_scheduled( Queue\Cron::TERM_UPDATE_CRON_EVENT_NAME, [ $tt_id ] ) );
+	}
 
-		$this->assertTrue( $current_bail );
+	public function test_offload_term_indexing_to_queue_keeps_elasticpress_sync_for_small_terms() {
+		$term_id = self::factory()->category->create();
+		$post_id = self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
+
+		// Small terms are still queued by ElasticPress, then offloaded to the async queue
+		$this->assertArrayHasKey( $post_id, $this->sync_manager->get_sync_queue() );
+		$this->assertTrue( apply_filters( 'pre_ep_index_sync_queue', false, $this->sync_manager, 'post' ) );
+	}
+
+	public function test_offload_term_indexing_to_queue_only_skips_the_offloaded_term() {
+		$large_term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $large_term_id ] ] );
+		$small_term_id = self::factory()->category->create();
+		$small_post_id = self::factory()->post->create( [ 'post_category' => [ $small_term_id ] ] );
+
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $large_term_id, 'category', [ 'name' => 'Renamed large category' ] );
+
+		$max_count->setValue( null, $original );
+
+		// A smaller term edited later in the same request is still reindexed by ElasticPress
+		wp_update_term( $small_term_id, 'category', [ 'name' => 'Renamed small category' ] );
+
+		$this->assertSame( [ $small_post_id ], array_keys( $this->sync_manager->get_sync_queue() ) );
+	}
+
+	public function test_offload_term_indexing_to_queue_supports_skip_filters_using_object_ids() {
+		$term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
+
+		// Same signature as the ep_skip_action_edited_term callbacks ElasticPress documents
+		$received = [];
+		add_filter(
+			'ep_skip_action_edited_term',
+			function ( $skip, $term_id, $tt_id, $taxonomy, $object_ids ) use ( &$received ) {
+				$received[] = $object_ids;
+				return $skip;
+			},
+			10,
+			5
+		);
+
+		wp_update_term( $term_id, 'category', [ 'name' => 'Renamed category' ] );
+
+		// The offload passes an empty list, ElasticPress then passes the term's object ids
+		$this->assertSame( [], $received[0] );
+		$this->assertNotEmpty( $received[1] );
+	}
+
+	public function test_offload_term_indexing_to_queue_keeps_skip_through_nested_term_saves() {
+		$large_term_id = self::factory()->category->create();
+		self::factory()->post->create( [ 'post_category' => [ $large_term_id ] ] );
+		$other_term_id = self::factory()->category->create();
+		$tt_id         = get_term( $large_term_id, 'category' )->term_taxonomy_id;
+
+		// Like a plugin syncing a translated term: saves another term before ElasticPress handles the large one
+		add_action(
+			'edited_term',
+			function ( $term_id ) use ( $large_term_id, $other_term_id ) {
+				if ( $large_term_id === $term_id ) {
+					wp_update_term( $other_term_id, 'category', [ 'name' => 'Synced category' ] );
+				}
+			},
+			7
+		);
+
+		$max_count = get_static_property_as_public( Queue::class, 'max_sync_indexing_count' );
+		$original  = $max_count->getValue();
+		$max_count->setValue( null, 0 );
+
+		$this->sync_manager->reset_sync_queue();
+		wp_update_term( $large_term_id, 'category', [ 'name' => 'Renamed large category' ] );
+
+		$max_count->setValue( null, $original );
+
+		// The nested save must not drop the large term's skip
+		$this->assertEmpty( $this->sync_manager->get_sync_queue() );
+		$this->assertNotFalse( wp_next_scheduled( Queue\Cron::TERM_UPDATE_CRON_EVENT_NAME, [ $tt_id ] ) );
 	}
 
 	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
@@ -754,16 +885,11 @@ class Queue_Test extends WP_UnitTestCase {
 		global $wpdb;
 
 		$original_schema = $this->queue->schema;
-		$table_name      = $wpdb->prefix . 'vip_queue_recovery_' . wp_generate_password( 12, false );
-		$source_table    = $original_schema->get_table_name();
+		$table_name      = self::$recovery_table;
 		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
 		$schema->method( 'get_table_name' )->willReturn( $table_name );
 
-		// The ordinary copy preserves production indexes and permits the recovery self-join.
-		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
-		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		try {
-			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $source_table ) ) );
 			$this->queue->schema = $schema;
 			$fixtures            = array(
 				array( 1000, 'post', 1, 'running' ),
@@ -817,9 +943,6 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertSame( $expected, $actual );
 		} finally {
 			$this->queue->schema = $original_schema;
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
-			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
-			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		}
 	}
 

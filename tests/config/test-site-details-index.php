@@ -210,8 +210,12 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_current_timestamp() {
+		// The implementation rounds to milliseconds; floor/ceil bound that rounding.
+		$before    = floor( microtime( true ) * 1000 );
 		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+		$after     = ceil( microtime( true ) * 1000 );
 
-		$this->assertEquals( gmdate( 'd-m-Y', (int) ( $timestamp / 1000 ) ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
+		$this->assertGreaterThanOrEqual( $before, $timestamp );
+		$this->assertLessThanOrEqual( $after, $timestamp );
 	}
 }
