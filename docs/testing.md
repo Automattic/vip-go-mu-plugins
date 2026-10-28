@@ -13,6 +13,11 @@ npm run test:smoke      # one fast PHPUnit test in Docker
 npm run test            # full PHPUnit suite in Docker
 ```
 
+Both shell runners forward each PHPUnit argument as one value, including quoted
+filters containing spaces or wildcard characters. `--docker-options` remains an
+explicitly split multi-option string. Run `php bin/test-runner-argv.php`
+to inspect exact Docker-bound arguments without starting Docker.
+
 ## PHPUnit details
 
 `bin/test.sh`:

@@ -35,6 +35,8 @@ npm run lint
 npm run test
 ```
 
+Check exact PHP runner argument forwarding with `php bin/test-runner-argv.php`.
+
 Search's shared-counter integration test starts two PHP workers against an
 isolated Memcached service: `CI=1 ./bin/test.sh --memcached --filter Test_Concurrency_Shared_Cache`.
 See [testing](docs/testing.md) for runtime requirements and test scope.
