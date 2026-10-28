@@ -435,14 +435,16 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__has_group_cookie(): array {
 		return [
-			'plain-without-cookie'            => [ false, [], '', false ],
-			'plain-with-segment-cookie'       => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
-			'plain-with-auth-cookie'          => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
-			'plain-with-decrypted-header'     => [ false, [], 'vc-v1__dev-group_--_yes', false ],
-			'encrypted-without-cookie'        => [ true, [], '', false ],
-			'encrypted-with-auth-cookie'      => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
-			'encrypted-with-decrypted-header' => [ true, [], 'vc-v1__dev-group_--_yes', true ],
-			'encrypted-with-segment-cookie'   => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+			'plain-without-cookie'             => [ false, [], '', false ],
+			'plain-with-segment-cookie'        => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
+			'plain-with-auth-cookie'           => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
+			'plain-with-decrypted-header'      => [ false, [], 'vc-v1__dev-group_--_yes', false ],
+			'encrypted-without-cookie'         => [ true, [], '', false ],
+			'encrypted-with-auth-cookie'       => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
+			'encrypted-with-decrypted-header'  => [ true, [], 'vc-v1__dev-group_--_yes', true ],
+			'encrypted-with-segment-cookie'    => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+			'plain-with-array-segment-cookie'  => [ false, [ 'vip-go-seg' => [ 'value' ] ], '', true ],
+			'encrypted-with-array-auth-cookie' => [ true, [ 'vip-go-auth' => [ 'value' ] ], '', true ],
 		];
 	}
 
@@ -937,5 +939,40 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		} finally {
 			$_COOKIE = [];
 		}
+	}
+
+	public function get_test_data__parse_group_cookie_non_string(): array {
+		return [
+			'plain-list'     => [ false, [ 'vip-go-seg' => [ 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[]=vc-v1__dev-group_--_yes' ],
+			'plain-keyed'    => [ false, [ 'vip-go-seg' => [ 'a' => 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[a]=vc-v1__dev-group_--_yes' ],
+			'encrypted-list' => [ true, [ 'vip-go-auth' => [ '123.value' ] ], 'vip-go-auth[]=123.value' ],
+		];
+	}
+
+	/**
+	 * A `name[]=` cookie reaches $_COOKIE as an array; parsing must ignore it instead of failing on `init`.
+	 *
+	 * @dataProvider get_test_data__parse_group_cookie_non_string
+	 */
+	public function test_parse_group_cookie_ignores_non_string_value( bool $encrypted, array $cookies, string $raw_cookie ): void {
+		$_COOKIE                = $cookies;
+		$_SERVER['HTTP_COOKIE'] = $raw_cookie;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+			Vary_Cache::enable_encryption();
+		}
+
+		try {
+			[ , $errors ] = $this->capture_errors( [ Vary_Cache::class, 'parse_cookies' ], E_ALL );
+		} finally {
+			unset( $_SERVER['HTTP_COOKIE'] );
+		}
+
+		$this->assertSame( [], $errors, 'Parsing raised an error' );
+		$this->assertSame( [], Vary_Cache::get_groups(), 'Groups were parsed from a non-string cookie' );
 	}
 }

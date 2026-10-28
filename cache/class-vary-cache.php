@@ -411,13 +411,15 @@ class Vary_Cache {
 
 	/**
 	 * Parses the group/segment cookie into the local groups array of key-values.
+	 *
+	 * A non-string cookie value (PHP parses `vip-go-seg[]=x` as an array) is treated as absent.
 	 */
 	private static function parse_group_cookie() {
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
-		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
+		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && is_string( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) { // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
 			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
@@ -437,7 +439,7 @@ class Vary_Cache {
 			}
 			$cookie_value = self::decrypt_cookie_value( $value );
 
-		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) && is_string( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) { // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
 		}
@@ -551,6 +553,9 @@ class Vary_Cache {
 
 	/**
 	 * Checks whether the request has the active group cookie.
+	 *
+	 * Any value counts, even one parse_group_cookie() ignores: PHP lets `vip-go-seg[]=x` hide a
+	 * real `vip-go-seg` cookie sent alongside it, and clearing by name still removes the real one.
 	 *
 	 * @return boolean Whether the request has the cookie.
 	 */
