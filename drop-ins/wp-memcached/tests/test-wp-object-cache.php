@@ -14,8 +14,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$host1 = getenv( 'MEMCACHED_HOST_1' );
-		$host2 = getenv( 'MEMCACHED_HOST_2' );
+		$host1 = getenv( 'MEMCACHED_HOST_1' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
+		$host2 = getenv( 'MEMCACHED_HOST_2' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
 
 		$host1 = $host1 ? "{$host1}" : 'localhost:11211';
 		$host2 = $host2 ? "{$host2}" : 'localhost:11212';
@@ -88,6 +88,61 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		// Succeeds after removing from local cache because it never existed remotely.
 		unset( $this->object_cache->cache[ $cache_key ] );
 		self::assertTrue( $this->object_cache->add( 'key', $value, $group ) );
+	}
+
+	/**
+	 * A supported positive TTL must reach the persistent adapter unchanged.
+	 *
+	 * @dataProvider data_persistent_write_methods
+	 */
+	public function test_persistent_write_passes_positive_ttl_to_adapter( string $method ): void {
+		$adapter = $this->getMockBuilder( \Automattic\Memcached\Memcached_Adapter::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'add', 'replace', 'set' ] )
+			->getMock();
+		$adapter->expects( self::once() )
+			->method( $method )
+			->with( self::anything(), 'default', 'value', 17 )
+			->willReturn( true );
+
+		$cache = new WP_Object_Cache( $adapter );
+		$cache->flush_number[ $cache->blog_prefix ] = 1;
+		$cache->global_flush_number                = 1;
+		self::assertTrue( $cache->$method( 'ttl-key', 'value', 'default', 17 ) );
+	}
+
+	public function data_persistent_write_methods(): array {
+		return [
+			'add'     => [ 'add' ],
+			'replace' => [ 'replace' ],
+			'set'     => [ 'set' ],
+		];
+	}
+
+	/**
+	 * The pre-expiry read proves the write reached the owned Memcached backend.
+	 *
+	 * @dataProvider data_persistent_write_methods
+	 */
+	public function test_persistent_positive_ttl_expires_remotely( string $method ): void {
+		if ( ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) && ! getenv( 'MEMCACHED_HOST_1' ) ) || ! extension_loaded( $this->is_using_memcached_ext ? 'memcached' : 'memcache' ) ) {
+			self::markTestSkipped( 'Requires an owned backend through VIP_TEST_MEMCACHED_SERVER or MEMCACHED_HOST_1.' );
+		}
+
+		$key = 'ttl-' . bin2hex( random_bytes( 12 ) );
+		try {
+			if ( 'replace' === $method ) {
+				self::assertTrue( $this->object_cache->set( $key, 'old' ) );
+			}
+			self::assertTrue( $this->object_cache->$method( $key, 'value', 'default', 2 ) );
+			$this->object_cache->flush_runtime();
+			self::assertSame( 'value', $this->object_cache->get( $key ), 'The value must exist remotely before expiry.' );
+			usleep( 2200000 );
+			$this->object_cache->flush_runtime();
+			self::assertFalse( $this->object_cache->get( $key ), 'A fresh remote read must miss after expiry.' );
+		} finally {
+			$this->object_cache->delete( $key );
+		}
 	}
 
 	public function test_add_multiple() {
