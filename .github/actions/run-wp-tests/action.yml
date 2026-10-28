@@ -199,14 +199,18 @@ runs:
           report="$(mktemp "${RUNNER_TEMP:-/tmp}/focused-phpunit.XXXXXX.xml")"
           trap 'rm -f "${report}"' EXIT
           "${PHPUNIT}" ${OPTIONS} --filter "${TEST_FILTER}" --log-junit "${report}"
-          python3 - "${report}" <<'PY'
-        import sys
-        import xml.etree.ElementTree as ET
-
-        cases = list(ET.parse(sys.argv[1]).iter('testcase'))
-        if len(cases) != 1 or cases[0].find('skipped') is not None:
-            raise SystemExit('Focused PHPUnit profile must execute exactly one unskipped test.')
-        PY
+          php -r '
+            $report = new DOMDocument();
+            if ( ! $report->load( $argv[1], LIBXML_NONET ) ) {
+              fwrite( STDERR, "Unable to read the focused PHPUnit report.\n" );
+              exit( 1 );
+            }
+            $cases = $report->getElementsByTagName( "testcase" );
+            if ( 1 !== $cases->length || 0 !== $cases->item( 0 )->getElementsByTagName( "skipped" )->length ) {
+              fwrite( STDERR, "Focused PHPUnit profile must execute exactly one unskipped test.\n" );
+              exit( 1 );
+            }
+          ' "${report}"
         else
           "${PHPUNIT}" ${OPTIONS}
         fi
