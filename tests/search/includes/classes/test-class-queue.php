@@ -32,6 +32,47 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var Search|null */
 	private $search_singleton;
 
+	/** @var string Real queue table for test_free_deadlocked_jobs(). */
+	private static $recovery_table;
+
+	/**
+	 * The deadlock recovery self-joins the queue table, which a temporary table doesn't allow, so its test needs
+	 * a real table. Creating it here, outside any test's transaction, keeps that test free of DDL, which would
+	 * commit everything the test and setUp() wrote before it.
+	 */
+	public static function wpSetUpBeforeClass(): void {
+		global $wpdb;
+
+		// setUp() boots Search, which loads the class; this runs first.
+		require_once __DIR__ . '/../../../../search/includes/classes/queue/class-schema.php';
+
+		self::$recovery_table = $wpdb->prefix . 'vip_queue_recovery';
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
+
+		$schema = new class( self::$recovery_table ) extends Queue\Schema {
+			private $table_name;
+
+			public function __construct( string $table_name ) {
+				$this->table_name = $table_name;
+			}
+
+			public function get_table_name() {
+				return $this->table_name;
+			}
+
+			public function create_table(): void {
+				$this->_prepare_table();
+			}
+		};
+		$schema->create_table();
+	}
+
+	public static function wpTearDownAfterClass(): void {
+		global $wpdb;
+
+		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -737,16 +778,11 @@ class Queue_Test extends WP_UnitTestCase {
 		global $wpdb;
 
 		$original_schema = $this->queue->schema;
-		$table_name      = $wpdb->prefix . 'vip_queue_recovery_' . wp_generate_password( 12, false );
-		$source_table    = $original_schema->get_table_name();
+		$table_name      = self::$recovery_table;
 		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
 		$schema->method( 'get_table_name' )->willReturn( $table_name );
 
-		// The ordinary copy preserves production indexes and permits the recovery self-join.
-		remove_filter( 'query', array( $this, '_create_temporary_tables' ) );
-		remove_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		try {
-			$this->assertNotFalse( $wpdb->query( $wpdb->prepare( 'CREATE TABLE %i LIKE %i', $table_name, $source_table ) ) );
 			$this->queue->schema = $schema;
 			$fixtures            = array(
 				array( 1000, 'post', 1, 'running' ),
@@ -800,12 +836,6 @@ class Queue_Test extends WP_UnitTestCase {
 			$this->assertSame( $expected, $actual );
 		} finally {
 			$this->queue->schema = $original_schema;
-			// CREATE TABLE and DROP TABLE commit implicitly. Roll back first, so the DROP doesn't commit
-			// the writes made since the CREATE (such as the cached index_exists site options).
-			$wpdb->query( 'ROLLBACK' );
-			$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', $table_name ) );
-			add_filter( 'query', array( $this, '_create_temporary_tables' ) );
-			add_filter( 'query', array( $this, '_drop_temporary_tables' ) );
 		}
 	}
 
