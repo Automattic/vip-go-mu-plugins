@@ -4,7 +4,6 @@ const MiniCssExtractPlugin = require( 'mini-css-extract-plugin' );
 const TerserPlugin = require( 'terser-webpack-plugin' );
 const CssMinimizerPlugin = require( 'css-minimizer-webpack-plugin' );
 const HtmlWebpackPlugin = require( 'html-webpack-plugin' );
-const { CleanWebpackPlugin } = require( 'clean-webpack-plugin' );
 
 const postcssLoader = {
 	loader: 'postcss-loader',
@@ -37,6 +36,7 @@ module.exports = function( env ) {
 			filename: '[name].js',
 			chunkFilename: '[name].chunk.js',
 			assetModuleFilename: '[file][query]',
+			clean: true,
 		},
 		devServer: {
 			headers: {
@@ -112,7 +112,6 @@ module.exports = function( env ) {
 			],
 		},
 		plugins: [
-			new CleanWebpackPlugin(),
 			new webpack.DefinePlugin( {
 				'process.env.NODE_ENV': JSON.stringify( dev ? 'development' : 'production' ),
 			} ),

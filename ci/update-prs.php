@@ -1,8 +1,6 @@
 <?php
 // phpcs:disable
 
-require "vendor/autoload.php";
-
 $options = getopt( null, [
     "verify-commit-hash", // Use --verify-commit-hash=false in order to skip hash validation. This is useful when testing the integration
     "debug", // Show debug information

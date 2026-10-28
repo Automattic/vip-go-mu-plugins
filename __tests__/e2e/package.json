@@ -16,7 +16,6 @@
     "@automattic/vip": "^4.1.6",
     "@playwright/test": "^1.59.1",
     "@types/node": "^26.0.1",
-    "asana-phrase": "^0.0.8",
     "eslint-plugin-playwright": "^2.10.2",
     "typescript": "^6.0.3"
   }

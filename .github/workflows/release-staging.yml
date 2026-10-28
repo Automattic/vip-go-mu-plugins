@@ -23,9 +23,6 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
 
-      - name: Install
-        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
-
       - name: Execute
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

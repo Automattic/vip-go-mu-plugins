@@ -34,7 +34,7 @@ npm install
 npm run phplint
 ```
 - Runs in ~5 seconds
-- Uses npx phplint on all PHP files except vendor/, node_modules/, jetpack*/, wp-parsely*/
+- Runs `php -l` (in parallel) on all PHP files except vendor/, node_modules/, jetpack*/, wp-parsely*/
 - Always run before committing PHP changes
 
 ### PHP Code Standards (PHPCS)
