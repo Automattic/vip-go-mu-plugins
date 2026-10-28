@@ -14,6 +14,7 @@ use function Automattic\Test\Utils\block_http_requests;
 use function Automattic\Test\Utils\reset_site_details_index;
 
 require_once __DIR__ . '/../../config/class-site-details-index.php';
+require_once __DIR__ . '/../integrations/fake-integration.php';
 
 class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function setUp(): void {
@@ -221,7 +222,10 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 	}
 
 	public function test__generic_integrations_report_each_generic_integration_by_slug() {
-		$integrations = \Automattic\VIP\Integrations\IntegrationsSingleton::instance();
+		// Its own registry, not the platform's: SpeedUp_Isolated_WP_Tests runs this class in one process,
+		// so registering into the singleton would leak into the other tests.
+		$integrations = new \Automattic\VIP\Integrations\Integrations();
+		$integrations->register( new \Automattic\VIP\Integrations\FakeIntegration( 'fake' ) );
 		$integrations->register(
 			new \Automattic\VIP\Integrations\GenericIntegration( 'acme-sync', [
 				'folder'           => 'acme-sync',
@@ -232,7 +236,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			] )
 		);
 
-		$info = Site_Details_Index::instance( 100 )->get_generic_integrations_info();
+		$info = Site_Details_Index::instance( 100 )->get_generic_integrations_info( $integrations );
 
 		$this->assertSame( [ 'acme-sync' ], array_keys( $info ), 'Only generic integrations are reported.' );
 		$this->assertSame( $integrations->get_integration( 'acme-sync' )->get_runtime_status(), $info['acme-sync'] );
