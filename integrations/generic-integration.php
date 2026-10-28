@@ -95,19 +95,26 @@ class GenericIntegration extends Integration {
 	 * @private
 	 */
 	public function load(): void {
-		add_action( 'plugins_loaded', function () {
-			if ( $this->is_loaded() ) {
-				return;
-			}
+		add_action( 'plugins_loaded', [ $this, 'load_bundle' ], 1 );
+	}
 
-			$load_path = $this->get_load_path();
-			if ( null === $load_path ) {
-				$this->is_active = false;
-				return;
-			}
+	/**
+	 * Requires the bundle's entry file. With no bundle to load, the integration is no longer active.
+	 *
+	 * @private
+	 */
+	public function load_bundle(): void {
+		if ( $this->is_loaded() ) {
+			return;
+		}
 
-			require_once $load_path;
-		}, 1 );
+		$load_path = $this->get_load_path();
+		if ( null === $load_path ) {
+			$this->is_active = false;
+			return;
+		}
+
+		require_once $load_path;
 	}
 
 	/**
@@ -119,9 +126,18 @@ class GenericIntegration extends Integration {
 			return null;
 		}
 
-		$load_path = WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
+		$load_path = $this->get_bundle_path( $folder );
 
 		return is_readable( $load_path ) ? $load_path : null;
+	}
+
+	/**
+	 * The entry file's path in a bundle folder in vip-integrations/.
+	 *
+	 * @param string $folder The bundle folder, e.g. `acme-sync-1.2`.
+	 */
+	public function get_bundle_path( string $folder ): string {
+		return WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
 	}
 
 	/**

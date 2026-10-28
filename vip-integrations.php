@@ -12,7 +12,8 @@
 
 namespace Automattic\VIP\Integrations;
 
-// @codeCoverageIgnoreStart -- the actual code here is tested individually in the unit tests.
+// The actual code here is tested individually in the unit tests.
+// @codeCoverageIgnoreStart
 defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
