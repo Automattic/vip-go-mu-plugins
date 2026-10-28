@@ -23,9 +23,6 @@
   "author": "Automattic",
   "devDependencies": {
     "husky": "9.1.7",
-    "lint-staged": "^15.0.1",
-    "phplint": "2.0.5"
-  },
-  "dependencies": {
+    "lint-staged": "^15.0.1"
   }
 }
