@@ -90,6 +90,33 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
+	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. A
+	 * `site` integration is configured per WordPress site, so on multisite each network site gets its
+	 * own config, as Share a Draft does; a `network` one gets the environment's. Values are typed by
+	 * GOOP from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
+	 *
+	 * @private
+	 */
+	public function configure(): void {
+		$constant = $this->get_config_constant_name();
+		if ( defined( $constant ) ) {
+			return;
+		}
+
+		$config = 'site' === $this->scope && is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
+
+		define( $constant, $config );
+	}
+
+	/**
+	 * The plugin's config constant: the slug upper-cased, with `-` as `_`, e.g. `acme-sync` is
+	 * `VIP_ACME_SYNC_CONFIG`. The manifest doesn't name it; it's always derived from the slug.
+	 */
+	public function get_config_constant_name(): string {
+		return 'VIP_' . strtoupper( str_replace( '-', '_', $this->get_slug() ) ) . '_CONFIG';
+	}
+
+	/**
 	 * Loads the plugin's bundle on plugins_loaded, unless the plugin is already loaded.
 	 *
 	 * @private
