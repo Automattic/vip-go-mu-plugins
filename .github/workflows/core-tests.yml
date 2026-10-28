@@ -7,27 +7,9 @@ on:
       - staging
       - production
       - gh-readonly-queue/**
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '__tests__/e2e/**'
-      - 'search/search-dev-tools/build/**'
-      - 'search/search-dev-tools/src/**'
-      - 'search/search-dev-tools/tests/**'
-      - 'search/search-dev-tools/*.js'
-      - 'search/search-dev-tools/*.json'
   pull_request:
     branches:
       - develop
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '__tests__/e2e/**'
-      - 'search/search-dev-tools/build/**'
-      - 'search/search-dev-tools/src/**'
-      - 'search/search-dev-tools/tests/**'
-      - 'search/search-dev-tools/*.js'
-      - 'search/search-dev-tools/*.json'
   schedule:
     # The external HTTP tests depend on third-party hosts, so they run daily instead of on every change.
     - cron: '17 6 * * *'
@@ -52,8 +34,29 @@ env:
   PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+    steps:
+      - name: Check out the change detection action
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/actions/detect-changes
+          persist-credentials: false
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+
   wp-core:
     name: "Run WP Core Tests: ${{ matrix.suite }}${{ matrix.shard && format(' {0}/3', matrix.shard) || '' }}"
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -120,13 +123,38 @@ jobs:
         with:
           working-directory: wordpress
 
-      # The local environment scripts only need these three packages. `npm ci` would install all
-      # of wordpress-develop's build tooling, which took ~30s.
+      # The local environment scripts only need the few packages they require. `npm ci` would install all of
+      # wordpress-develop's build tooling, which took ~30s, so it's only the fallback for a script requiring a
+      # package that package.json doesn't list.
       - name: Install npm dependencies
         run: |
-          mapfile -t packages < <(jq -r '.devDependencies | "dotenv@\(.dotenv)", "dotenv-expand@\(.["dotenv-expand"])", "wait-on@\(.["wait-on"])"' package.json)
-          npm install --prefix "${RUNNER_TEMP}/wp-env" --no-save --no-package-lock --no-audit --no-fund "${packages[@]}"
-          ln -s "${RUNNER_TEMP}/wp-env/node_modules" node_modules
+          # shellcheck disable=SC2016,SC2086 # The JavaScript is single-quoted; `packages` has one package per word.
+          if packages=$(node -e '
+            const fs = require( "fs" );
+            const { isBuiltin } = require( "module" );
+            const { dependencies = {}, devDependencies = {} } = require( "./package.json" );
+            const versions = { ...dependencies, ...devDependencies };
+            const dir = "tools/local-env/scripts";
+            const names = new Set();
+            for ( const file of fs.readdirSync( dir ).filter( ( name ) => name.endsWith( ".js" ) ) ) {
+              for ( const [ , id ] of fs.readFileSync( `${ dir }/${ file }`, "utf8" ).matchAll( /require\(\s*["\x27]([^"\x27]+)["\x27]\s*\)/g ) ) {
+                if ( ! id.startsWith( "." ) && ! isBuiltin( id ) ) {
+                  names.add( id.split( "/" ).slice( 0, id.startsWith( "@" ) ? 2 : 1 ).join( "/" ) );
+                }
+              }
+            }
+            for ( const name of names ) {
+              if ( ! versions[ name ] ) {
+                console.error( `${ name } is not in package.json` );
+                process.exit( 1 );
+              }
+              console.log( `${ name }@${ versions[ name ] }` );
+            }
+          ') && [ -n "${packages}" ] && npm install --prefix "${RUNNER_TEMP}/wp-env" --no-save --no-package-lock --no-audit --no-fund ${packages}; then
+            ln -s "${RUNNER_TEMP}/wp-env/node_modules" node_modules
+          else
+            npm ci
+          fi
         working-directory: wordpress
 
       - name: Start Docker environment
@@ -152,7 +180,9 @@ jobs:
       # Core's bootstrap reinstalls the test site in every process-isolated test. Its tear_down() calls
       # wp_set_current_user() after the ROLLBACK, and the MU plugins' `set_current_user` callback reads
       # the users table, so the parent held a lock that the child's DROP TABLE waited on forever.
-      # Install once and let isolated tests reuse it, as tests/class-speedup-isolated-wp-tests.php does.
+      # So each PHPUnit step installs the test site once and runs its tests with WP_TESTS_SKIP_INSTALL, as
+      # tests/class-speedup-isolated-wp-tests.php does. The install is a run that matches no tests: only the
+      # bootstrap runs, and it passes install.php the arguments that the configuration calls for.
       #
       # PHPUnit wraps a filter that isn't a delimited regex in /.../i and keeps its special characters,
       # so the lookahead must not be escaped. An escaped `\(` matched nothing and ran no tests.
@@ -188,7 +218,7 @@ jobs:
               touch "src/wp-includes${file}"
             done
 
-          node ./tools/local-env/scripts/docker.js run php php tests/phpunit/includes/install.php wp-tests-config.php no_ms_tests run_core_tests
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit -c phpunit.xml.dist --filter '^$'
           node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit \
             --verbose -c phpunit.xml.dist \
             --filter "^${classes}(?!.*(${excluded})).*\$"
@@ -197,21 +227,27 @@ jobs:
         working-directory: wordpress
         timeout-minutes: 20
 
+      # These install the test site once, too; see "Run PHPUnit tests".
       - name: Run AJAX tests
         if: matrix.suite == 'groups'
-        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group ajax
+        run: |
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit -c phpunit.xml.dist --filter '^$'
+          node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group ajax
         working-directory: wordpress
         timeout-minutes: 15
 
       - name: Run ms-files tests as a multisite install
         if: matrix.suite == 'groups'
-        run: node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c tests/phpunit/multisite.xml --group ms-files
+        run: |
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit -c tests/phpunit/multisite.xml --filter '^$'
+          node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit --verbose -c tests/phpunit/multisite.xml --group ms-files
         working-directory: wordpress
         timeout-minutes: 15
 
       - name: Run external HTTP tests
         if: matrix.suite == 'groups' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
         run: |
-          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
+          node ./tools/local-env/scripts/docker.js run php ./vendor/bin/phpunit -c phpunit.xml.dist --filter '^$'
+          node ./tools/local-env/scripts/docker.js run -e WP_TESTS_SKIP_INSTALL=1 php ./vendor/bin/phpunit --verbose -c phpunit.xml.dist --group external-http
         working-directory: wordpress
         timeout-minutes: 15

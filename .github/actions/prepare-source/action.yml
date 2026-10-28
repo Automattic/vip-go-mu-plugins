@@ -9,10 +9,11 @@ runs:
       # --exit-code fails the step instead of producing an empty cache key.
       run: echo "sha=$(git ls-remote --exit-code https://github.com/Automattic/vip-go-mu-plugins-ext.git HEAD | cut -f1)" >> "${GITHUB_OUTPUT}"
 
-    # Cloning the ~500 MB repository took 15-48s per job.
+    # Cloning the ~500 MB repository took 15-48s per job. Every branch and pull request restores the copy
+    # that develop saved; when each saved its own 820 MB copy, they crowded other caches out.
     - name: Restore mu-plugins-ext
       id: ext-cache
-      uses: actions/cache@v6.1.0
+      uses: actions/cache/restore@v6.1.0
       with:
         path: ${{ runner.temp }}/vip-go-mu-plugins-ext
         key: mu-plugins-ext-${{ steps.ext.outputs.sha }}
@@ -30,8 +31,15 @@ runs:
       if: steps.ext-cache.outputs.cache-hit != 'true'
       shell: bash
       # Moving the checkout out of the workspace is a rename on the same disk; `rm -rf` took 10-14s.
-      # The cache is saved from there after the job.
       run: rm -rf vip-go-mu-plugins-ext/.git && mv vip-go-mu-plugins-ext "${RUNNER_TEMP}/"
+
+    # Saved before any test runs, since the workspace hard-links these files.
+    - name: Save mu-plugins-ext
+      if: steps.ext-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/develop'
+      uses: actions/cache/save@v6.1.0
+      with:
+        path: ${{ runner.temp }}/vip-go-mu-plugins-ext
+        key: mu-plugins-ext-${{ steps.ext.outputs.sha }}
 
     - name: Copy plugins into the source tree
       shell: bash
