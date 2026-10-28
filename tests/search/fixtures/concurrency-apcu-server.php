@@ -6,6 +6,23 @@ namespace Automattic\VIP\Search\ConcurrencyLimiter;
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions, WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput, WordPress.WP.AlternativeFunctions.json_encode_json_encode, WordPress.WP.GlobalVariablesOverride.Prohibited
 // This test-only boundary can reproduce a fetch/modify/store mutation. The
 // baseline delegates to the real APCu atomic primitive.
+function apcu_fetch( $key ) {
+	$value = \apcu_fetch( $key );
+	// If production changes to a read/modify/write sequence, hold both real
+	// reads before their stores so the baseline admission assertion rejects it.
+	if ( 'baseline' === getenv( 'APCU_TEST_MODE' ) && APCu_Backend::KEY_NAME === $key && isset( $_GET['id'] ) ) {
+		file_put_contents( getenv( 'APCU_TEST_DIR' ) . '/fetched-' . $_GET['id'], '1' );
+		$deadline = microtime( true ) + 15;
+		while ( ! file_exists( getenv( 'APCU_TEST_DIR' ) . '/racego' ) && microtime( true ) < $deadline ) {
+			usleep( 10000 );
+		}
+		if ( ! file_exists( getenv( 'APCU_TEST_DIR' ) . '/racego' ) ) {
+			throw new \RuntimeException( 'Read/modify/write barrier timed out' );
+		}
+	}
+	return $value;
+}
+
 function apcu_inc( $key, $step, &$success, $ttl ) {
 	if ( 'mutant' !== getenv( 'APCU_TEST_MODE' ) ) {
 		return \apcu_inc( $key, $step, $success, $ttl );

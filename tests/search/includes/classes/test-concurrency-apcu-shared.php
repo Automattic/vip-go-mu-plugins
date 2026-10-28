@@ -69,13 +69,11 @@ class Test_Concurrency_APCu_Shared extends TestCase {
 			foreach ( [ 1, 2 ] as $id ) {
 				$clients[] = proc_open( [ PHP_BINARY, '-r', 'echo file_get_contents($argv[1]);', $base . '/actor?id=' . $id ], [ [ 'file', '/dev/null', 'r' ], [ 'file', $dir . '/client-' . $id . '.out', 'w' ], [ 'file', $dir . '/client-' . $id . '.err', 'w' ] ], $client_pipes );
 				self::assertIsResource( $clients[ $id - 1 ] );
+				// Hold the first server worker before starting the second actor.
+				$this->await_files( $dir, [ 'ready-' . $id ] );
 			}
-			$this->await_files( $dir, [ 'ready-1', 'ready-2' ] );
 			file_put_contents( $dir . '/go', '1' );
-			if ( 'mutant' === $mode ) {
-				$this->await_files( $dir, [ 'fetched-1', 'fetched-2' ] );
-				file_put_contents( $dir . '/racego', '1' );
-			}
+			$this->release_non_atomic_readers( $dir );
 			$this->await_files( $dir, [ 'result-1', 'result-2' ] );
 			$results = [ json_decode( file_get_contents( $dir . '/result-1' ), true ), json_decode( file_get_contents( $dir . '/result-2' ), true ) ];
 			self::assertSame( [ $dir, $dir ], array_column( $results, 'marker' ), 'Both independent actors must read the same APCu marker.' );
@@ -119,6 +117,21 @@ class Test_Concurrency_APCu_Shared extends TestCase {
 		}
 	}
 
+	private function release_non_atomic_readers( string $dir ): void {
+		$deadline = microtime( true ) + 15;
+		do {
+			if ( file_exists( $dir . '/result-1' ) && file_exists( $dir . '/result-2' ) ) {
+				return;
+			}
+			if ( file_exists( $dir . '/fetched-1' ) && file_exists( $dir . '/fetched-2' ) ) {
+				file_put_contents( $dir . '/racego', '1' );
+				return;
+			}
+			usleep( 10000 );
+		} while ( microtime( true ) < $deadline );
+		self::fail( 'Timed out waiting for APCu counter results or non-atomic reads.' );
+	}
+
 	private function await_files( string $dir, array $files ): void {
 		$deadline = microtime( true ) + 15;
 		do {
@@ -128,6 +141,6 @@ class Test_Concurrency_APCu_Shared extends TestCase {
 			}
 			usleep( 10000 );
 		} while ( microtime( true ) < $deadline );
-		self::fail( 'Timed out waiting for APCu worker barrier: ' . implode( ', ', $files ) );
+		self::fail( 'Timed out waiting for APCu worker barrier: ' . implode( ', ', $files ) . file_get_contents( $dir . '/server.log' ) );
 	}
 }
