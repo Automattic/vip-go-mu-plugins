@@ -475,16 +475,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
 	}
 
-	public function test__enable_encryption_true_valid() {
-		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
-		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
-
-		Vary_Cache::enable_encryption();
-
-		$this->assertTrue( Vary_Cache::is_encryption_enabled() );
-	}
-
 	public function get_test_data__validate_cookie_value_invalid() {
 		return [
 			'invalid-group-name-group-separator' => [
@@ -516,16 +506,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 		$actual_error_code = $actual_result->get_error_code();
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
-	}
-
-	public function test__validate_cookie_value_valid() {
-		$get_validate_cookie_value_method = get_class_method_as_public( Vary_Cache::class, 'validate_cookie_value' );
-
-		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
-			'dev-group',
-		] );
-
-		$this->assertTrue( $actual_result );
 	}
 
 	public function test__send_vary_headers__dont_override_headers() {

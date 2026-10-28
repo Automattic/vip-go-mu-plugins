@@ -71,29 +71,26 @@ PHP;
 		$this->assertSame( null !== $constant, ( new $class_name( 'test' ) )->is_loaded() );
 	}
 
+	/**
+	 * Loaded constants in data_already_loaded() are covered there: load() only returns early when is_loaded() is true.
+	 */
 	public static function data_is_loaded(): array {
 		return [
-			'agentforce not loaded'                   => [ AgentforceIntegration::class, null ],
-			'agentforce file constant'                => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_FILE' ],
-			'block data api not loaded'               => [ BlockDataApiIntegration::class, null ],
-			'clipisode not loaded'                    => [ ClipisodeIntegration::class, null ],
-			'clipisode loaded constant'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION' ],
-			'real-time collaboration not loaded'      => [ RealTimeCollaborationIntegration::class, null ],
-			'real-time collaboration loaded constant' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED' ],
-			'remote data blocks not loaded'           => [ RemoteDataBlocksIntegration::class, null ],
-			'remote data blocks loaded constant'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS__LOADED' ],
-			'safe publish not loaded'                 => [ SafePublishIntegration::class, null ],
-			'safe publish loaded constant'            => [ SafePublishIntegration::class, 'SAFE_PUBLISH_LOADED' ],
-			'safe publish plugin file constant'       => [ SafePublishIntegration::class, 'SAFE_PUBLISH_PLUGIN_FILE' ],
-			'security boost not loaded'               => [ SecurityBoostIntegration::class, null ],
-			'share a draft not loaded'                => [ ShareadraftIntegration::class, null ],
-			'share a draft loaded constant'           => [ ShareadraftIntegration::class, 'VIP_SHAREADRAFT_LOADED' ],
-			'security boost loaded constant'          => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST__LOADED' ],
-			'vip governance not loaded'               => [ VipGovernanceIntegration::class, null ],
-			'vip workflows not loaded'                => [ VipWorkflowsIntegration::class, null ],
-			'vip workflows loaded constant'           => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_LOADED' ],
-			'vip workflows plugin file constant'      => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_PLUGIN_FILE' ],
-			'wordpress mcp not loaded'                => [ WordPressMcpIntegration::class, null ],
+			'agentforce not loaded'              => [ AgentforceIntegration::class, null ],
+			'agentforce file constant'           => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_FILE' ],
+			'block data api not loaded'          => [ BlockDataApiIntegration::class, null ],
+			'clipisode not loaded'               => [ ClipisodeIntegration::class, null ],
+			'real-time collaboration not loaded' => [ RealTimeCollaborationIntegration::class, null ],
+			'remote data blocks not loaded'      => [ RemoteDataBlocksIntegration::class, null ],
+			'safe publish not loaded'            => [ SafePublishIntegration::class, null ],
+			'safe publish plugin file constant'  => [ SafePublishIntegration::class, 'SAFE_PUBLISH_PLUGIN_FILE' ],
+			'security boost not loaded'          => [ SecurityBoostIntegration::class, null ],
+			'share a draft not loaded'           => [ ShareadraftIntegration::class, null ],
+			'security boost loaded constant'     => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST__LOADED' ],
+			'vip governance not loaded'          => [ VipGovernanceIntegration::class, null ],
+			'vip workflows not loaded'           => [ VipWorkflowsIntegration::class, null ],
+			'vip workflows plugin file constant' => [ VipWorkflowsIntegration::class, 'VIP_WORKFLOWS_PLUGIN_FILE' ],
+			'wordpress mcp not loaded'           => [ WordPressMcpIntegration::class, null ],
 		];
 	}
 
@@ -247,15 +244,11 @@ PHP;
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * The WordPress requirement check is shared with Share a Draft and covered by its test below.
 	 */
-	public function test_clipisode_loads_the_latest_compatible_bundled_plugin(): void {
-		global $wp_version;
-		$wp_version = '6.6'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
-
-		$older_fixture  = $this->create_bundled_plugin_fixture( 'clipisode', '999.0', '6.6', 'CLIPISODE_VERSION' );
-		$latest_fixture = $this->create_bundled_plugin_fixture( 'clipisode', '999.1', '6.6', 'CLIPISODE_VERSION' );
+	public function test_clipisode_loads_the_latest_bundled_plugin(): void {
+		$older_fixture  = $this->create_bundled_plugin_fixture( 'clipisode', '999.0', '5.0', 'CLIPISODE_VERSION' );
+		$latest_fixture = $this->create_bundled_plugin_fixture( 'clipisode', '999.1', '5.0', 'CLIPISODE_VERSION' );
 
 		try {
 			$integration = new ClipisodeIntegration( 'test' );
@@ -271,28 +264,6 @@ PHP;
 		} finally {
 			$this->remove_bundled_plugin_fixture( $older_fixture );
 			$this->remove_bundled_plugin_fixture( $latest_fixture );
-		}
-	}
-
-	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
-	 */
-	public function test_clipisode_stays_inactive_when_wordpress_is_unsupported(): void {
-		global $wp_version;
-		$wp_version = '6.5'; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Exercise plugin header compatibility.
-
-		$fixture = $this->create_bundled_plugin_fixture( 'clipisode', '999.2', '6.6', 'CLIPISODE_VERSION' );
-
-		try {
-			$integration = new ClipisodeIntegration( 'test' );
-			$integration->activate();
-			$this->load_on_plugins_loaded( $integration );
-
-			$this->assertFalse( $integration->is_active() );
-			$this->assertFalse( defined( 'CLIPISODE_VERSION' ) );
-		} finally {
-			$this->remove_bundled_plugin_fixture( $fixture );
 		}
 	}
 
@@ -317,8 +288,9 @@ PHP;
 	public static function data_shareadraft_wordpress_requirement(): array {
 		// Each case needs its own plugin file, since require_once skips a file an earlier case loaded.
 		return [
-			'supported WordPress'   => [ '999.0', '5.0', true ],
-			'unsupported WordPress' => [ '999.1', '99.0', false ],
+			'supported WordPress'          => [ '999.0', '5.0', true ],
+			'exactly the required version' => [ '999.2', $GLOBALS['wp_version'], true ],
+			'unsupported WordPress'        => [ '999.1', '99.0', false ],
 		];
 	}
 }

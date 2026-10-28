@@ -10,6 +10,7 @@ use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
 use Exception;
 use TypeError;
+use function Automattic\Test\Utils\run_php;
 
 const SERVERS = [
 	'no_access'             => [ 'n-0-0', 'user123', 'hunter2', 'treasure_trove', 0, 0 ],
@@ -72,6 +73,135 @@ class WP_Cli_Db_Test extends TestCase {
 
 		$this->assertSame( SERVERS['rw'][0], Constant_Mocker::constant( 'DB_HOST' ) );
 		$this->assertSame( SERVERS['rw'][3], Constant_Mocker::constant( 'DB_NAME' ) );
+	}
+
+	public function get_write_option_cases(): array {
+		return [
+			'absent'                    => [ [], false, false ],
+			'false'                     => [ [ 'read-write' => false ], false, false ],
+			'string false'              => [ [ 'read-write' => 'false' ], false, false ],
+			'string zero'               => [ [ 'read-write' => '0' ], false, false ],
+			'integer one unsupported'   => [ [ 'read-write' => 1 ], false, false ],
+			'true'                      => [ [ 'read-write' => true ], true, false ],
+			'string true'               => [ [ 'read-write' => 'true' ], true, false ],
+			'string one'                => [ [ 'read-write' => '1' ], true, false ],
+			'skip without write'        => [ [ 'skip-confirm' => true ], false, false ],
+			'skip false'                => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => false,
+				],
+				true,
+				false,
+			],
+			'skip string false'         => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => 'false',
+				],
+				true,
+				false,
+			],
+			'skip string zero'          => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => '0',
+				],
+				true,
+				false,
+			],
+			'skip integer one rejected' => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => 1,
+				],
+				true,
+				false,
+			],
+			'skip yes rejected'         => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => 'yes',
+				],
+				true,
+				false,
+			],
+			'skip true'                 => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => true,
+				],
+				true,
+				true,
+			],
+			'skip string true'          => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => 'true',
+				],
+				true,
+				true,
+			],
+			'skip string one'           => [
+				[
+					'read-write'   => true,
+					'skip-confirm' => '1',
+				],
+				true,
+				true,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_write_option_cases
+	 */
+	public function test_before_run_command_confirms_write_mode_before_server_selection( array $options, bool $writes, bool $bypass ): void {
+		$result = $this->run_write_option_case( $options );
+		$events = $writes ? [ 'confirm', 'enable_writes', 'select_server' ] : [ 'select_server' ];
+		if ( $bypass ) {
+			$events = [ 'enable_writes', 'select_server' ];
+		}
+
+		$this->assertSame( $events, $result['events'] );
+		$this->assertSame( $writes && ! $bypass ? "You're running in read-write mode. Would you like to proceed?" : null, $result['prompt'] );
+		$this->assertSame( $writes, $result['allow_writes'] );
+		$this->assertSame( $writes ? 'read-write' : 'read-only', $result['host'] );
+		$this->assertFalse( $result['refused'] );
+	}
+
+	public function get_refused_write_option_cases(): array {
+		return [
+			[ true ],
+			[ 'true' ],
+			[ '1' ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_refused_write_option_cases
+	 */
+	public function test_before_run_command_refusal_never_enables_writes( $read_write ): void {
+		$result = $this->run_write_option_case( [ 'read-write' => $read_write ], false );
+
+		$this->assertTrue( $result['refused'] );
+		$this->assertSame( [ 'confirm' ], $result['events'] );
+		$this->assertFalse( $result['allow_writes'] );
+		$this->assertNull( $result['host'] );
+	}
+
+	private function run_write_option_case( array $options, bool $accept = true ): array {
+		$child = run_php(
+			[ __DIR__ . '/fixtures/wp-cli-db-entry.php' ],
+			wp_json_encode( [
+				'options' => $options,
+				'accept'  => $accept,
+			] )
+		);
+		$this->assertSame( 0, $child['exit'], $child['stderr'] );
+		$result = json_decode( $child['stdout'], true );
+		$this->assertIsArray( $result, $child['stderr'] );
+		return $result;
 	}
 
 	public function get_test_data__get_database_server_errors() {
@@ -221,6 +351,8 @@ class WP_Cli_Db_Test extends TestCase {
 	}
 
 	/**
+	 * The query rows also cover validate_query(), which a `query` subcommand must pass.
+	 *
 	 * @dataProvider get_test_data__blocked_subcommands
 	 */
 	public function test_validate_subcommand_blocked( array $command, string $message ) {
@@ -243,21 +375,6 @@ class WP_Cli_Db_Test extends TestCase {
 	 */
 	public function test_validate_subcommand_allowed( array $command ) {
 		$this->assertNull( ( new Wp_Cli_Db( new Config() ) )->validate_subcommand( $command ) );
-	}
-
-	public function get_test_data__validate_query() {
-		return [
-			'drop'   => [ 'DROP TABLE table', false ],
-			'create' => [ 'CREATE TABLE wp_table', false ],
-			'select' => [ 'SELECT * FROM wp_options WHERE option_name="home"', true ],
-		];
-	}
-
-	/**
-	 * @dataProvider get_test_data__validate_query
-	 */
-	public function test_validate_query( string $query, bool $expected ) {
-		$this->assertSame( $expected, ( new Wp_Cli_Db( new Config() ) )->validate_query( $query ) );
 	}
 
 	public function test_allow_writes() {

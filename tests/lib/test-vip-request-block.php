@@ -4,46 +4,25 @@ require_once __DIR__ . '/../../lib/class-vip-request-block.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders
 
-// phpcs:disable Generic.Files.OneObjectStructurePerFile.MultipleFound
-class LogTrackingRequestBlock extends VIP_Request_Block {
-	public static $log_called = false;
-
-	public static function log( string $criteria, string $value ): void {
-		self::$log_called = true;
-	}
-
-	public static function block_and_log( string $value, string $criteria ) {
-		if ( static::$should_log ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			static::log( $criteria, $value );
-		}
-	}
-}
-
 class VIP_Request_Block_Test extends WP_UnitTestCase {
 	/*
 	 * The $_SERVER headers that are used in this class to test
 	 * are defined in the tests/bootstrap.php file.
 	 */
 
-	public function setUp(): void {
-		parent::setUp();
-		LogTrackingRequestBlock::$log_called = false;
-	}
-
 	public function tearDown(): void {
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__HTTP_USER_AGENT__
 		unset( $_SERVER['HTTP_TRUE_CLIENT_IP'], $_SERVER['HTTP_CF_CONNECTING_IP'], $_SERVER['HTTP_X_FORWARDED_FOR'], $_SERVER['HTTP_USER_AGENT'] );
-		VIP_Request_Block::toggle_logging( true );
 		parent::tearDown();
 	}
-
 
 	/**
 	 * Exercise the native HTTP denial path in a separate PHP server process (`php -S`), so the
 	 * headers and exit never touch this process.
+	 *
+	 * @dataProvider data_should_log
 	 */
-	public function test_native_block_sends_forbidden_no_cache_and_exits() {
+	public function test_native_block_sends_forbidden_no_cache_and_exits( bool $should_log ) {
 		$socket = stream_socket_server( 'tcp://127.0.0.1:0', $error_code, $error_message );
 		$this->assertNotFalse( $socket, $error_message );
 		$address = stream_socket_get_name( $socket, false );
@@ -54,13 +33,15 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 		$script_path = tempnam( get_temp_dir(), 'vip-request-block-' );
 		$server_log  = tempnam( get_temp_dir(), 'vip-request-block-log-' );
 		$source      = sprintf(
-			"<?php\nrequire %s;\nVIP_Request_Block::toggle_logging( false );\n\$_SERVER['HTTP_TRUE_CLIENT_IP'] = '203.0.113.9';\nVIP_Request_Block::ip( '203.0.113.9' );\necho 'BLOCK_DID_NOT_EXIT';\n",
-			wp_json_encode( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR )
+			"<?php\nrequire %s;\nVIP_Request_Block::toggle_logging( %s );\n\$_SERVER['HTTP_TRUE_CLIENT_IP'] = '203.0.113.9';\nVIP_Request_Block::ip( '203.0.113.9' );\necho 'BLOCK_DID_NOT_EXIT';\n",
+			wp_json_encode( dirname( __DIR__, 2 ) . '/lib/class-vip-request-block.php', JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR ),
+			$should_log ? 'true' : 'false'
 		);
 		file_put_contents( $script_path, $source );
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- Spawn the isolated native HTTP request.
 		$server = proc_open(
-			[ PHP_BINARY, '-S', '127.0.0.1:' . $port, $script_path ],
+			// An empty error_log sends error_log() to the server's stderr, which is written to $server_log.
+			[ PHP_BINARY, '-d', 'error_log=', '-S', '127.0.0.1:' . $port, $script_path ],
 			// phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound -- Descriptor tuples are short and fixed.
 			[
 				0 => [ 'pipe', 'r' ],
@@ -105,27 +86,24 @@ class VIP_Request_Block_Test extends WP_UnitTestCase {
 				proc_close( $server );
 			}
 			unlink( $script_path );
+			// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local server log.
+			$log = (string) file_get_contents( $server_log );
 			unlink( $server_log );
 		}
 		// phpcs:enable WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents, WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
+
+		$logged = 'VIP Request Block: request was blocked based on "true-client-ip" with value of "203.0.113.9"';
+		if ( $should_log ) {
+			$this->assertStringContainsString( $logged, $log );
+		} else {
+			$this->assertStringNotContainsString( $logged, $log );
+		}
 	}
 
-	/**
-	 * @dataProvider data_logging
-	 */
-	public function test__error_log_unless_suppressed( bool $should_log ): void {
-		$_SERVER['HTTP_TRUE_CLIENT_IP'] = '1.1.1.1';
-
-		LogTrackingRequestBlock::toggle_logging( $should_log );
-		LogTrackingRequestBlock::ip( '1.1.1.1' );
-
-		self::assertSame( $should_log, LogTrackingRequestBlock::$log_called );
-	}
-
-	public function data_logging(): array {
+	public function data_should_log(): array {
 		return [
-			'logging enabled'    => [ true ],
-			'logging suppressed' => [ false ],
+			'logging enabled'  => [ true ],
+			'logging disabled' => [ false ],
 		];
 	}
 

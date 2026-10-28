@@ -315,6 +315,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	/**
 	 * The real OPENAI_API_KEY constant can be defined only once per process, so each data set groups the cases that
 	 * expose the same constant value. They share one separate process and reset all other state between cases.
+	 * A case given as a string names a method that runs its own scenario.
 	 *
 	 * @dataProvider runtime_status_provider
 	 * @runInSeparateProcess
@@ -324,7 +325,11 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$hooks = $this->snapshot_hooks();
 		foreach ( $cases as $case => $arguments ) {
 			try {
-				$this->assert_runtime_status( $case, true, ...$arguments );
+				if ( is_string( $arguments ) ) {
+					$this->$arguments( $case );
+				} else {
+					$this->assert_runtime_status( $case, true, ...$arguments );
+				}
 			} catch ( ExpectationFailedException $failure ) {
 				// Report the failing case and diff as text: compared connectors hold closures, which can't be serialized out of the separate process.
 				$comparison = $failure->getComparisonFailure();
@@ -430,6 +435,8 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 				'managed' => [ false, null, true, 'integration' ],
 				'preexisting constant equal to managed remains external' => [ false, 'managed-test-secret', true, 'php_constant' ],
 				'empty environment falls through to managed constant' => [ '', null, true, 'integration' ],
+				'provider registered after connector initialization' => 'assert_managed_constant_is_available_to_provider_registered_after_connector_initialization',
+				'normal constant path preserves earlier explicit authentication' => 'assert_normal_constant_path_preserves_earlier_explicit_authentication',
 			],
 		];
 		yield 'customer constant' => [
@@ -506,52 +513,52 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * A runtime status case: the managed constant reaches a provider registered after connector initialization.
 	 */
-	public function test_managed_constant_is_available_to_provider_registered_after_connector_initialization(): void {
-		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+	private function assert_managed_constant_is_available_to_provider_registered_after_connector_initialization( string $case ): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $case ) {
 			$integration = new ConnectorControlsIntegration( 'connector-controls' );
 			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
 			$integration->configure();
 			$integration->configure();
-			$this->expose_mocked_constant_to_ai_client();
-			$this->assertSame( 'managed-test-secret', \constant( 'OPENAI_API_KEY' ) );
-			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+			// An earlier case in this process already defined the real constant, so check what configure() defined.
+			$this->assertTrue( Constant_Mocker::defined( 'OPENAI_API_KEY' ), "{$case}: configure() did not define the managed OPENAI_API_KEY." );
+			$this->assertSame( 'managed-test-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ), $case );
+			$this->expose_mocked_constant_to_ai_client( true, $case );
+			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ), $case );
 			do_action( 'wp_connectors_init', $connector_registry );
-			$this->assertSame( 'provider_unavailable', $integration->get_runtime_status()['providers']['openai']['status'] );
+			$this->assertSame( 'provider_unavailable', $integration->get_runtime_status()['providers']['openai']['status'], $case );
 
 			$registry->registerProvider( $provider_class );
-			$this->assertSame( 'managed-test-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey() );
+			$this->assertSame( 'managed-test-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey(), $case );
 			$this->assertSame( [
 				'source' => 'integration',
 				'status' => 'configured',
-			], $integration->get_runtime_status()['providers']['openai'] );
+			], $integration->get_runtime_status()['providers']['openai'], $case );
 		}, false );
 	}
 
 	/**
-	 * @runInSeparateProcess
-	 * @preserveGlobalState disabled
+	 * A runtime status case: authentication set before the provider's normal constant path is preserved.
 	 */
-	public function test_normal_constant_path_preserves_earlier_explicit_authentication(): void {
-		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+	private function assert_normal_constant_path_preserves_earlier_explicit_authentication( string $case ): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $case ) {
 			$existing_authentication = new ApiKeyRequestAuthentication( 'earlier-custom-secret' );
 			$registry->setProviderRequestAuthentication( 'openai', $existing_authentication );
 			$integration = new ConnectorControlsIntegration( 'connector-controls' );
 			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
 			$integration->configure();
-			$this->expose_mocked_constant_to_ai_client();
+			$this->expose_mocked_constant_to_ai_client( true, $case );
 			$registry->registerProvider( $provider_class );
 			\_wp_connectors_register_default_ai_providers( $connector_registry );
 			do_action( 'wp_connectors_init', $connector_registry );
 
-			$this->assertSame( $existing_authentication, $registry->getProviderRequestAuthentication( 'openai' ) );
-			$this->assertStringEndsWith( 'Manage credential assignments in VIP Integration Center. The credential source could not be determined.', $connector_registry->get_registered( 'openai' )['description'] );
+			$this->assertSame( $existing_authentication, $registry->getProviderRequestAuthentication( 'openai' ), $case );
+			$this->assertStringEndsWith( 'Manage credential assignments in VIP Integration Center. The credential source could not be determined.', $connector_registry->get_registered( 'openai' )['description'], $case );
 			$this->assertSame( [
 				'source' => 'unknown',
 				'status' => 'configured',
-			], $integration->get_runtime_status()['providers']['openai'] );
+			], $integration->get_runtime_status()['providers']['openai'], $case );
 		} );
 	}
 

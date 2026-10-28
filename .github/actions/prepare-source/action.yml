@@ -3,20 +3,45 @@ description: Checks out and installs all dependencies
 runs:
   using: composite
   steps:
+    - name: Get mu-plugins-ext revision
+      id: ext
+      shell: bash
+      # --exit-code fails the step instead of producing an empty cache key.
+      run: echo "sha=$(git ls-remote --exit-code https://github.com/Automattic/vip-go-mu-plugins-ext.git HEAD | cut -f1)" >> "${GITHUB_OUTPUT}"
+
+    # Cloning the ~500 MB repository took 15-48s per job. Every branch and pull request restores the copy
+    # that develop saved; when each saved its own 820 MB copy, they crowded other caches out.
+    - name: Restore mu-plugins-ext
+      id: ext-cache
+      uses: actions/cache/restore@v6.1.0
+      with:
+        path: ${{ runner.temp }}/vip-go-mu-plugins-ext
+        key: mu-plugins-ext-${{ steps.ext.outputs.sha }}
+
     - name: Check out mu-plugins-ext
+      if: steps.ext-cache.outputs.cache-hit != 'true'
       uses: actions/checkout@v7.0.1
       with:
         repository: 'Automattic/vip-go-mu-plugins-ext'
+        ref: ${{ steps.ext.outputs.sha }}
         path: 'vip-go-mu-plugins-ext'
         persist-credentials: false
+
+    - name: Move mu-plugins-ext out of the workspace
+      if: steps.ext-cache.outputs.cache-hit != 'true'
+      shell: bash
+      # Moving the checkout out of the workspace is a rename on the same disk; `rm -rf` took 10-14s.
+      run: rm -rf vip-go-mu-plugins-ext/.git && mv vip-go-mu-plugins-ext "${RUNNER_TEMP}/"
+
+    # Saved before any test runs, since the workspace hard-links these files.
+    - name: Save mu-plugins-ext
+      if: steps.ext-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/develop'
+      uses: actions/cache/save@v6.1.0
+      with:
+        path: ${{ runner.temp }}/vip-go-mu-plugins-ext
+        key: mu-plugins-ext-${{ steps.ext.outputs.sha }}
 
     - name: Copy plugins into the source tree
       shell: bash
       # Hard-link files from the checkout instead of copying ~500 MB of data.
-      run: 'rsync -r --delete --link-dest="${PWD}/vip-go-mu-plugins-ext" --exclude-from="vip-go-mu-plugins-ext/.dockerignore" vip-go-mu-plugins-ext/* ./'
-
-    - name: Clean up
-      shell: bash
-      # Moving the checkout out of the workspace is a rename on the same disk; `rm -rf` took 10-14s.
-      run: mv vip-go-mu-plugins-ext "${RUNNER_TEMP}/"
-
+      run: 'rsync -r --delete --link-dest="${RUNNER_TEMP}/vip-go-mu-plugins-ext" --exclude-from="${RUNNER_TEMP}/vip-go-mu-plugins-ext/.dockerignore" "${RUNNER_TEMP}"/vip-go-mu-plugins-ext/* ./'

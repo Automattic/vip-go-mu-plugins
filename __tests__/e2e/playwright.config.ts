@@ -11,8 +11,9 @@ const config: PlaywrightTestConfig = {
 	reporter: process.env.CI ? [ [ 'list' ], [ 'github' ] ] : 'line',
 	reportSlowTests: null,
 	// Every test creates its own content, so tests can be spread across workers individually.
+	// CI runners have 4 CPUs.
 	fullyParallel: true,
-	workers: process.env.CI ? 2 : undefined,
+	workers: process.env.CI ? 4 : undefined,
 	use: {
 		headless: process.env.DEBUG_TESTS !== 'true',
 		viewport: { width: 1280, height: 1000 },

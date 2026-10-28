@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+ARGS=()
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -43,7 +45,7 @@ while [ $# -gt 0 ]; do
         ;;
 
         *)
-            ARGS="${ARGS} $1"
+            ARGS+=( "$1" )
         ;;
     esac
 
@@ -72,7 +74,8 @@ echo
 
 MARIADB_VERSION="10.3"
 
-UUID=$(date +%s000)
+# Pair the clock with this shell's PID so same-second launches own distinct resources.
+UUID="$(date +%s)-$$"
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
     docker network create "${NETWORK_NAME}"
@@ -125,7 +128,7 @@ else
     interactive=""
 fi
 
-# shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
+# shellcheck disable=SC2086,SC2248,SC2312 # DOCKER_OPTIONS is an explicitly split multi-option interface
 docker run \
     ${interactive} \
     --rm \
@@ -145,4 +148,4 @@ docker run \
     ${DOCKER_OPTIONS} \
     -v "$(pwd):/home/circleci/project" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
-    ${ARGS}
+    "${ARGS[@]}"

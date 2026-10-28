@@ -7,7 +7,7 @@
 - Composer
 - Node.js + npm
 - Docker (required for `bin/test.sh`)
-- Optional: [VIP CLI](https://docs.wpvip.com/technical-references/vip-cli/installing-vip-cli/) for local dev/e2e
+- Optional: [VIP CLI](https://docs.wpvip.com/technical-references/vip-cli/installing-vip-cli/) for local dev. The e2e tests use the copy that `npm --prefix __tests__/e2e ci` installs.
 
 ## First run
 

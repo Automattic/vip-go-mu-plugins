@@ -88,7 +88,7 @@ npx playwright install chromium
 npm test  # Sets up environment, runs tests, tears down
 ```
 
-**Note:** E2E tests require VIP CLI (`npm install -g @automattic/vip`). Tests automatically manage test environment lifecycle.
+**Note:** E2E tests use the VIP CLI (`@automattic/vip`) that `npm ci` installs, and Docker. Tests automatically manage test environment lifecycle.
 
 ### Run All Quality Checks
 
