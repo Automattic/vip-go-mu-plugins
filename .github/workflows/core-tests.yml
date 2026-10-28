@@ -125,7 +125,8 @@ jobs:
 
       # The local environment scripts only need the few packages they require. `npm ci` would install all of
       # wordpress-develop's build tooling, which took ~30s, so it's only the fallback for a script requiring a
-      # package that package.json doesn't list.
+      # package that package.json doesn't list. Neither runs the packages' install scripts, which none of
+      # these scripts needs.
       - name: Install npm dependencies
         run: |
           # shellcheck disable=SC2016,SC2086 # The JavaScript is single-quoted; `packages` has one package per word.
@@ -150,10 +151,10 @@ jobs:
               }
               console.log( `${ name }@${ versions[ name ] }` );
             }
-          ') && [ -n "${packages}" ] && npm install --prefix "${RUNNER_TEMP}/wp-env" --no-save --no-package-lock --no-audit --no-fund ${packages}; then
+          ') && [ -n "${packages}" ] && npm install --prefix "${RUNNER_TEMP}/wp-env" --ignore-scripts --no-save --no-package-lock --no-audit --no-fund ${packages}; then
             ln -s "${RUNNER_TEMP}/wp-env/node_modules" node_modules
           else
-            npm ci
+            npm ci --ignore-scripts
           fi
         working-directory: wordpress
 
