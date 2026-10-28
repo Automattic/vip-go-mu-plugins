@@ -166,6 +166,61 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		return \Automattic\VIP\Search\Dev_Tools\rest_callback( $request )->get_data();
 	}
 
+	/**
+	 * @dataProvider get_route_permission_cases
+	 */
+	public function test_registered_route_checks_permission_before_query( ?string $role, bool $allowed ): void {
+		$this->init_search();
+		// WordPress resets actions between tests, while require_once keeps this module loaded.
+		add_action( 'rest_api_init', '\\Automattic\\VIP\\Search\\Dev_Tools\\register_rest_routes' );
+		// Earlier tests may have initialized the REST server before this module was loaded.
+		do_action( 'rest_api_init' );
+		$this->assertTrue( function_exists( 'ep_get_query_log' ), 'The query-log prerequisite must be available.' );
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- Disable debug-mode cookies for this permission test.
+		unset( $_COOKIE['vip-go-cb'], $_COOKIE['a8c-debug'] );
+		$this->assertFalse( is_debug_mode_enabled(), 'Debug mode would bypass the capability gate.' );
+		add_filter( 'vip_search_dev_tools_cap', static fn () => 'manage_options' );
+		wp_set_current_user( null === $role ? 0 : self::factory()->user->create( [ 'role' => $role ] ) );
+
+		$requests = [];
+		add_filter( 'pre_http_request', static function ( $preempt, $args, $url ) use ( &$requests ) {
+			$requests[] = $url;
+			return [
+				'headers'  => [],
+				'body'     => '{}',
+				'response' => [
+					'code'    => 200,
+					'message' => 'OK',
+				],
+				'cookies'  => [],
+			];
+		}, 10, 3 );
+
+		$request = new \WP_REST_Request( 'POST', '/vip/v1/search/dev-tools' );
+		$request->set_param( 'url', 'https://elasticsearch:9200/vip-' . FILES_CLIENT_SITE_ID . '-post-1/_search' );
+		$request->set_param( 'query', '{}' );
+		$response = rest_do_request( $request );
+
+		if ( $allowed ) {
+			$this->assertSame( 200, $response->get_status() );
+			$this->assertNotEmpty( $requests, 'An authorized request must reach Elasticsearch.' );
+			$this->assertStringContainsString( '_search', end( $requests ) );
+		} else {
+			$this->assertSame( null === $role ? 401 : 403, $response->get_status() );
+			$this->assertSame( 'rest_forbidden', $response->get_data()['code'] );
+			$this->assertSame( [], $requests, 'Denied requests must not reach Elasticsearch.' );
+		}
+	}
+
+	public function get_route_permission_cases(): array {
+		return [
+			'anonymous'  => [ null, false ],
+			'subscriber' => [ 'subscriber', false ],
+			'admin'      => [ 'administrator', true ],
+		];
+	}
+
 	public function test__get_alias_indexes_resolves_network_alias_once() {
 		$this->init_search();
 
