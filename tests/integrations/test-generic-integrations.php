@@ -355,6 +355,11 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
 	}
 
+	public function test__mapping_is_read_from_the_default_config_dir_without_the_constant(): void {
+		// Nothing is there in the test environment.
+		$this->assertNull( read_active_integrations_file() );
+	}
+
 	public function test__a_mapping_file_with_no_return_gives_no_entries(): void {
 		$dir = $this->temp_dir();
 		Constant_Mocker::define( 'WPVIP_INTEGRATIONS_CONFIG_DIR', $dir );
@@ -446,6 +451,118 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		require_once $dir . '/bundled-sync-1.2/bundled-sync.php';
 
 		$this->assertFalse( $integration->is_loaded() );
+	}
+
+	/**
+	 * A GenericIntegration whose bundles are the given folders in a temp dir, each with an entry
+	 * file when `$with_entry_file`.
+	 */
+	private function integration_with_bundles( string $slug, array $versions, bool $with_entry_file = true ): GenericIntegration {
+		$dir = $this->temp_dir();
+		foreach ( array_keys( $versions ) as $folder ) {
+			mkdir( $dir . '/' . $folder );
+			if ( $with_entry_file ) {
+				file_put_contents( $dir . '/' . $folder . '/' . $slug . '.php', '<?php' );
+			}
+		}
+
+		$integration = $this->getMockBuilder( GenericIntegration::class )
+			->setConstructorArgs( [ $slug, $this->entry( $slug ) ] )
+			->onlyMethods( [ 'get_versions', 'get_bundle_path' ] )
+			->getMock();
+		$integration->method( 'get_versions' )->willReturn( $versions );
+		$integration->method( 'get_bundle_path' )->willReturnCallback( fn( $folder ) => $dir . '/' . $folder . '/' . $slug . '.php' );
+
+		return $integration;
+	}
+
+	public function test__load_loads_the_bundle_on_plugins_loaded(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
+		$integration->load();
+
+		$this->assertSame( 1, has_action( 'plugins_loaded', [ $integration, 'load_bundle' ] ) );
+	}
+
+	public function test__has_the_load_path_of_the_selected_bundle(): void {
+		$integration = $this->integration_with_bundles( 'path-sync', [
+			'path-sync-2.0' => '2.0',
+			'path-sync-1.2' => '1.2',
+		] );
+
+		$this->assertStringEndsWith( '/path-sync-2.0/path-sync.php', $integration->get_load_path() );
+	}
+
+	public function test__has_no_load_path_when_the_bundle_has_no_entry_file(): void {
+		$integration = $this->integration_with_bundles( 'empty-sync', [ 'empty-sync-1.2' => '1.2' ], false );
+
+		$this->assertNull( $integration->get_load_path() );
+	}
+
+	public function test__load_bundle_requires_the_selected_bundle(): void {
+		// A slug no other test uses: an included file stays included for the rest of the run.
+		$integration = $this->integration_with_bundles( 'required-sync', [ 'required-sync-1.2' => '1.2' ] );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$this->assertContains( $integration->get_load_path(), get_included_files() );
+		$this->assertTrue( $integration->is_active() );
+	}
+
+	public function test__load_bundle_deactivates_without_a_bundle(): void {
+		$integration = $this->integration_with_bundles( 'nothing-sync', [] );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$this->assertFalse( $integration->is_active() );
+	}
+
+	public function test__load_bundle_leaves_a_plugin_loaded_some_other_way(): void {
+		$dir = $this->temp_dir();
+		mkdir( $dir . '/elsewhere-sync' );
+		file_put_contents( $dir . '/elsewhere-sync/elsewhere-sync.php', '<?php' );
+		require_once $dir . '/elsewhere-sync/elsewhere-sync.php';
+
+		$integration = $this->integration_with_bundles( 'elsewhere-sync', [ 'elsewhere-sync-1.2' => '1.2' ] );
+
+		$integration->load_bundle();
+
+		$this->assertNotContains( $integration->get_load_path(), get_included_files() );
+	}
+
+	public function test__bundle_path_is_in_vip_integrations(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
+
+		$this->assertSame(
+			WPVIP_MU_PLUGIN_DIR . '/vip-integrations/acme-sync-1.2/acme-sync.php',
+			$integration->get_bundle_path( 'acme-sync-1.2' )
+		);
+	}
+
+	public function test__has_no_versions_without_bundles_in_vip_integrations(): void {
+		$this->assertSame( [], ( new GenericIntegration( 'no-bundle-sync', $this->entry( 'no-bundle-sync' ) ) )->get_versions() );
+	}
+
+	public function test__exposes_its_mapping_entry(): void {
+		$integration = new GenericIntegration(
+			'acme-sync',
+			$this->entry( 'acme-sync', [
+				'version_strategy' => 'semantic_versioning',
+				'scope'            => 'network',
+			] )
+		);
+
+		$this->assertSame(
+			[ 'acme-sync', 'acme-sync.php', '1.2.0', 'semantic_versioning', 'network' ],
+			[
+				$integration->get_folder(),
+				$integration->get_entry_file(),
+				$integration->get_version(),
+				$integration->get_version_strategy(),
+				$integration->get_scope(),
+			]
+		);
 	}
 
 	/*
