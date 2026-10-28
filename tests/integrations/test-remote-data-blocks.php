@@ -70,18 +70,23 @@ class Remote_Data_Blocks_Integration_Test extends WP_UnitTestCase {
 		$this->assertTrue( defined( 'REMOTE_DATA_BLOCKS_CONFIGS' ) );
 		
 		$configs = constant( 'REMOTE_DATA_BLOCKS_CONFIGS' );
-		$this->assertIsArray( $configs );
-		$this->assertCount( 3, $configs );
-
-		// Verify each source has the service field added
-		$this->assertEquals( 'airtable', $configs[0]['service'] );
-		$this->assertEquals( 'test-uuid-1', $configs[0]['uuid'] );
-		
-		$this->assertEquals( 'airtable', $configs[1]['service'] );
-		$this->assertEquals( 'test-uuid-2', $configs[1]['uuid'] );
-		
-		$this->assertEquals( 'google-sheets', $configs[2]['service'] );
-		$this->assertEquals( 'test-uuid-3', $configs[2]['uuid'] );
+		$this->assertSame( [
+			[
+				'uuid'           => 'test-uuid-1',
+				'service_config' => [ 'key' => 'value1' ],
+				'service'        => 'airtable',
+			],
+			[
+				'uuid'           => 'test-uuid-2',
+				'service_config' => [ 'key' => 'value2' ],
+				'service'        => 'airtable',
+			],
+			[
+				'uuid'           => 'test-uuid-3',
+				'service_config' => [ 'key' => 'value3' ],
+				'service'        => 'google-sheets',
+			],
+		], $configs );
 	}
 
 	/**
