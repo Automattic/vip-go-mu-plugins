@@ -409,6 +409,31 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Verify that clearing an empty group does not set a cookie when none exists.
+	 *
+	 * @dataProvider get_cookie_encoding_cases
+	 */
+	public function test_empty_group_without_existing_cookie_does_not_set_cookie( bool $encrypted ): void {
+		$_COOKIE = [];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', '' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, false ] ], $this->did_send_headers_calls, 'Only the Vary header should be sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+	}
+
+	/**
 	 * Cover both plaintext and encrypted group cookies.
 	 */
 	public function get_cookie_encoding_cases(): array {

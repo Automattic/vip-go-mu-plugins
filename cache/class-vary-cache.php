@@ -539,9 +539,7 @@ class Vary_Cache {
 		$sent_cookie = false;
 
 		if ( self::$should_update_group_cookie ) {
-			$sent_cookie = true;
-
-			self::set_group_cookie();
+			$sent_cookie = self::set_group_cookie();
 		}
 
 		if ( self::$should_update_nocache_cookie ) {
@@ -555,16 +553,28 @@ class Vary_Cache {
 
 	/**
 	 * Sets the group/segment cookie based on the user's current groupings.
+	 *
+	 * @return boolean Was a Set-Cookie header sent?
 	 */
 	private static function set_group_cookie() {
 		$group_string = self::stringify_groups();
 		if ( empty( $group_string ) ) {
-			$cookie_name   = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
+			$cookie_name = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
+			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+			$has_group_cookie = isset( $_COOKIE[ $cookie_name ] );
+			if ( self::COOKIE_AUTH === $cookie_name && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+				$has_group_cookie = true;
+			}
+
+			if ( ! $has_group_cookie ) {
+				return false;
+			}
+
 			$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
 			$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
 
 			self::unset_cookie( $cookie_name, $cookie_path, $cookie_domain );
-			return;
+			return true;
 		}
 
 		if ( self::is_encryption_enabled() ) {
@@ -573,6 +583,8 @@ class Vary_Cache {
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
+
+		return true;
 	}
 
 	/**
