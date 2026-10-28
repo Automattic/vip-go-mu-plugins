@@ -55,6 +55,19 @@ CI=1 ./bin/test.sh --wp 6.8.x --php 8.2
 CI=1 ./bin/test.sh --filter test__super_admin_should_not_have_update_core_cap
 ```
 
+The cache drop-in positive-TTL regression profile requires an owned Memcached
+backend and its PHP extension. From the repository root, run:
+
+```bash
+CI=1 ./bin/test.sh --memcached --configuration drop-ins/wp-memcached/phpunit.xml.dist --filter 'test_persistent_(write_passes_positive_ttl_to_adapter|positive_ttl_expires_remotely)'
+```
+
+The adapter-boundary cases check exact positive TTL arguments for persistent
+`add()`, `replace()`, and `set()`. The integration cases read each value through
+the remote backend before and after expiry, clearing the runtime cache on both
+reads. The component runner's `MEMCACHED_HOST_1`/`MEMCACHED_HOST_2` backend
+configuration is also supported.
+
 The Search shared-counter integration test uses two independent PHP workers and
 the production `drop-ins/wp-memcached` cache implementation. Start an isolated
 Memcached service with:
