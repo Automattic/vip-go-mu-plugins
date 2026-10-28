@@ -117,13 +117,13 @@ npm --prefix __tests__/e2e ci
 npm run lint:e2e
 npm run typecheck:e2e
 
-# Runs __tests__/e2e tests; this will set up and tear down the e2e env
-# via the package's pretest/posttest hooks.
+# Runs __tests__/e2e tests in a new, uniquely named VIP site and destroys it afterwards.
 npm run test-e2e
 
-# Optional: to manage the env lifecycle manually instead of using hooks:
+# Optional: to keep one site across several test runs:
+# export E2E_SITE_SLUG=e2e-manual
 # npm run setup-e2e-env
-# npm run test-e2e
+# E2E_BASE_URL="http://${E2E_SITE_SLUG}.vipdev.lndo.site" npm run test-e2e
 # npm run destroy-e2e-env
 ```
 
@@ -146,7 +146,9 @@ Current workflows cover:
 `ci.yml` runs PHP 8.2 against every tested WordPress version, plus nightly. Newer PHP
 versions run only against the oldest and the latest WordPress version tested with them.
 The jobs use the runner image's MySQL instead of a service container, and they restore
-`vip-go-mu-plugins-ext` from the Actions cache, keyed by its `HEAD` commit.
+`vip-go-mu-plugins-ext` from the Actions cache, keyed by its `HEAD` commit. Only `develop`
+saves that cache; other branches and pull requests clone the repository when `develop`
+hasn't cached its current commit yet.
 
 `core-tests.yml` runs WordPress core's PHPUnit suite with these MU plugins loaded. The
 main suite runs as three parallel shards split by test class name, and the
@@ -155,8 +157,10 @@ group depends on third-party hosts, so it runs only on the daily schedule and on
 runs. The workflow lists the few core tests it excludes, with the reason for each, next
 to its PHPUnit filter.
 
-`ci.yml` and `core-tests.yml` skip changes that only touch Markdown, `docs/`, the e2e
-tests or the Search Dev Tools frontend.
+`ci.yml`, `core-tests.yml` and `parsely.yml` skip their tests for changes that only touch
+paths in `.github/actions/detect-changes/skip-paths.txt`: Markdown, `docs/`, the e2e tests
+and the Search Dev Tools frontend. A `changes` job decides, and the test jobs report as
+skipped, so they can be made required checks.
 
 ## Troubleshooting
 

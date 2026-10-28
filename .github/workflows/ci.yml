@@ -7,27 +7,9 @@ on:
       - staging
       - production
       - gh-readonly-queue/**
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '__tests__/e2e/**'
-      - 'search/search-dev-tools/build/**'
-      - 'search/search-dev-tools/src/**'
-      - 'search/search-dev-tools/tests/**'
-      - 'search/search-dev-tools/*.js'
-      - 'search/search-dev-tools/*.json'
   pull_request:
     branches:
       - develop
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '__tests__/e2e/**'
-      - 'search/search-dev-tools/build/**'
-      - 'search/search-dev-tools/src/**'
-      - 'search/search-dev-tools/tests/**'
-      - 'search/search-dev-tools/*.js'
-      - 'search/search-dev-tools/*.json'
   workflow_dispatch:
 
 concurrency:
@@ -38,8 +20,29 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+    steps:
+      - name: Check out the change detection action
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/actions/detect-changes
+          persist-credentials: false
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+
   shared-cache-contention:
     name: Shared-cache contention (Memcached)
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     services:
       memcached:
@@ -68,6 +71,8 @@ jobs:
 
   unit-tests:
     name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

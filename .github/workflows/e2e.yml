@@ -99,8 +99,10 @@ jobs:
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
 
+      # Install scripts only check versions or build optional native add-ons; the VIP CLI's keychain add-on
+      # is for logins, which e2e doesn't use.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Install Playwright with Chromium
@@ -162,7 +164,7 @@ jobs:
           cache-dependency-path: __tests__/e2e/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Run TypeScript typecheck
