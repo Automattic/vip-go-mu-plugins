@@ -4,6 +4,7 @@ namespace Automattic\VIP\Config;
 
 use Automattic\VIP\Integrations\ConnectorControlsIntegration;
 use Automattic\VIP\Integrations\GenericIntegration;
+use Automattic\VIP\Integrations\Integrations;
 use Automattic\VIP\Integrations\IntegrationsSingleton;
 use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
 
@@ -111,15 +112,21 @@ class Site_Details_Index {
 	 * How each manifest-backed integration loaded, keyed by slug. Empty while the
 	 * `vip-generic-integrations` feature is off, since none is registered.
 	 *
+	 * @param Integrations|null $integrations The registered integrations; the platform's by default.
+	 *
 	 * @return array<string,array> Each integration's `GenericIntegration::get_runtime_status()`.
 	 */
-	public function get_generic_integrations_info(): array {
-		if ( ! class_exists( IntegrationsSingleton::class ) || ! class_exists( GenericIntegration::class ) ) {
-			return [];
+	public function get_generic_integrations_info( ?Integrations $integrations = null ): array {
+		if ( null === $integrations ) {
+			if ( ! class_exists( IntegrationsSingleton::class ) ) {
+				return [];
+			}
+
+			$integrations = IntegrationsSingleton::instance();
 		}
 
 		$info = [];
-		foreach ( IntegrationsSingleton::instance()->get_all_integrations() as $slug => $integration ) {
+		foreach ( $integrations->get_all_integrations() as $slug => $integration ) {
 			if ( $integration instanceof GenericIntegration ) {
 				$info[ $slug ] = $integration->get_runtime_status();
 			}
