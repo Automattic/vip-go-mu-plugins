@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../../vip-dashboard.php';
 
+use function Automattic\Test\Utils\run_php;
+
 class Test_VIP_Dashboard extends WP_UnitTestCase {
 	private static $admin_id;
 
@@ -46,6 +48,31 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		}
 
 		return json_decode( $response, true );
+	}
+
+	public function get_rejected_contact_nonce_cases(): array {
+		return [
+			'invalid'       => [ 'invalid', 'Security check failed. Make sure you should be doing this, and try again.' ],
+			'wrong purpose' => [ 'wrong-purpose', 'Security check failed. Make sure you should be doing this, and try again.' ],
+			'missing'       => [ 'missing', 'Please complete all required fields.' ],
+		];
+	}
+
+	/**
+	 * The handler calls die() on rejection, so invoke the real handler in a child process.
+	 * The child replaces only the WordPress and mail boundaries.
+	 *
+	 * @dataProvider get_rejected_contact_nonce_cases
+	 */
+	public function test_contact_form_rejects_bad_nonce_without_mail( string $nonce_case, string $message ): void {
+		$child = run_php( [ __DIR__ . '/fixtures/contact-form-nonce.php', $nonce_case ] );
+
+		self::assertSame( 0, $child['exit'], $child['stderr'] );
+		self::assertSame( 'mail_attempts:0', trim( $child['stderr'] ) );
+		self::assertSame( [
+			'status'  => 'error',
+			'message' => $message,
+		], json_decode( $child['stdout'], true ) );
 	}
 
 	public function test_contact_form_respects_configured_sender(): void {

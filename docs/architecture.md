@@ -103,3 +103,12 @@ that a provider accepts the key or that a newly saved assignment has propagated.
 `wpcom-vip-two-factor/is-jetpack-sso.php` attaches `vip_jetpack_sso` and `vip_jetpack_sso_two_step` to the WordPress session created after `jetpack_sso_handle_login`. Only that user's first newly created session receives the flags; subsequent password sessions do not inherit them. The predicates return the current user ID or `false` and read metadata only from that user's valid authentication or logged-in cookie session. Two-step status requires both flags. Expiry and revocation follow the WordPress session.
 
 Legacy SSO marker cookies are ignored. Existing sessions remain logged in but need a fresh Jetpack SSO login to receive the metadata and regain the WordPress.com two-step exemption. Users without local two-factor configured can have capabilities restricted until then. The exemption continues to follow the positive WordPress.com `two_step_enabled` result; this change does not alter the separate `jetpack_sso_accept_wpcom_2fa` local-challenge policy.
+
+## Tracks private IPv4 policy
+
+Both the platform Tracks event builder and the legacy Parse.ly Tracks builder
+remove RFC 1918 private IPv4 addresses from `_via_ip`: `10.0.0.0/8`,
+`172.16.0.0/12`, and `192.168.0.0/16`. Public addresses, including the neighbors
+of the 172.16/12 range, are preserved. This local filtering contract does not
+define filtering for other reserved IPv4 ranges or IPv6, or establish how
+the remote ingestion service handles an address.

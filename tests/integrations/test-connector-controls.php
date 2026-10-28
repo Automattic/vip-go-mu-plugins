@@ -521,8 +521,10 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			$integration->activate( [ 'config' => [ 'openai_api_key' => 'managed-test-secret' ] ] );
 			$integration->configure();
 			$integration->configure();
+			// An earlier case in this process already defined the real constant, so check what configure() defined.
+			$this->assertTrue( Constant_Mocker::defined( 'OPENAI_API_KEY' ), "{$case}: configure() did not define the managed OPENAI_API_KEY." );
+			$this->assertSame( 'managed-test-secret', Constant_Mocker::constant( 'OPENAI_API_KEY' ), $case );
 			$this->expose_mocked_constant_to_ai_client( true, $case );
-			$this->assertSame( 'managed-test-secret', \constant( 'OPENAI_API_KEY' ), $case );
 			$this->assertFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ), $case );
 			do_action( 'wp_connectors_init', $connector_registry );
 			$this->assertSame( 'provider_unavailable', $integration->get_runtime_status()['providers']['openai']['status'], $case );
