@@ -382,20 +382,28 @@ class Vary_Cache {
 	/**
 	 * Decrypts a string using the auth credentials for the site.
 	 *
+	 * Like the cache layer, rejects values that aren't plain base64, and payloads that aren't `random|groups|expiry`
+	 * or whose expiry has passed.
+	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
-	 * @return string decrypted version of string
+	 * @return string|null The group payload, or null if the payload is malformed or expired.
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
+		// openssl_decrypt() skips characters outside the base64 alphabet, which the cache layer rejects.
+		if ( ! preg_match( '#^[A-Za-z0-9+/]+={0,2}\z#', $cookie_value ) ) {
+			return null;
+		}
+
 		$client_key    = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv     = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 		$cookie_array  = explode( '|', $cipher_cookie );
-		// Parse out the group payload (2nd item).
-		if ( count( $cookie_array ) < 2 ) {
+		if ( 3 !== count( $cookie_array ) || ! is_numeric( $cookie_array[2] ) || (float) $cookie_array[2] <= time() ) {
 			return null;
 		}
-		return $cookie_array [1];
+		// Parse out the group payload (2nd item).
+		return $cookie_array[1];
 	}
 
 	/**
@@ -433,7 +441,7 @@ class Vary_Cache {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the cache layer didn't supply the header, fall back to decrypting the cookie itself.
+			// If the cache layer didn't supply the header, decrypt the cookie here, applying the same checks.
 			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
 			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
 			// didn't vouch for must not stop a fresh one from being sent.

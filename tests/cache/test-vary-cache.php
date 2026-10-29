@@ -979,7 +979,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__parse_group_cookies() {
 		return [
-			'values_regular_group'             => [
+			'values_regular_group'          => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
@@ -990,7 +990,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 					'dev-group'    => 'yes',
 				],
 			],
-			'values_encrypted_group_header'    => [
+			'values_encrypted_group_header' => [
 				[
 					'key'    => 'abc',
 					'iv'     => '1231231231231234',
@@ -1005,24 +1005,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 					'dev-group'    => 'yes',
 				],
 			],
-			'values_encrypted_group_no_header' => [
-				[
-					'key'    => 'abc',
-					'iv'     => '1231231231231234',
-					'siteid' => 123,
-				],
-				[
-					'vip-go-auth' => '123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
-				],
-				[
-					'HTTP_COOKIE' => 'vip-go-auth=123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I;',
-				],
-				[
-					'design-group' => 'no',
-					'dev-group'    => 'yes',
-				],
-			],
-			'values_regular_nogroup'           => [
+			'values_regular_nogroup'        => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__',
@@ -1030,7 +1013,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				[],
 				[],
 			],
-			'values_encrypted_nogroup'         => [
+			'values_encrypted_nogroup'      => [
 				[
 					'key'    => 'abc',
 					'iv'     => '1231231231231234',
@@ -1063,6 +1046,52 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		}
 		$get_parse_group_cookie_method->invokeArgs( null, [] );
 		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
+	}
+
+	public function get_test_data__parse_auth_cookie_without_header(): array {
+		// In the payload, `%d` is replaced with the expiry: now + the given offset. In the cookie, `%s` is the encrypted payload.
+		return [
+			'unexpired'          => [
+				'42|vc-v1__design-group_--_no---__dev-group_--_yes|%d',
+				HOUR_IN_SECONDS,
+				[
+					'design-group' => 'no',
+					'dev-group'    => 'yes',
+				],
+			],
+			'expired'            => [ '42|vc-v1__dev-group_--_yes|%d', -1, [] ],
+			'expires-now'        => [ '42|vc-v1__dev-group_--_yes|%d', 0, [] ],
+			'missing-expiry'     => [ '42|vc-v1__dev-group_--_yes', HOUR_IN_SECONDS, [] ],
+			'non-numeric-expiry' => [ '42|vc-v1__dev-group_--_yes|never', HOUR_IN_SECONDS, [] ],
+			'extra-part'         => [ '42|vc-v1__dev-group_--_yes|%d|42', HOUR_IN_SECONDS, [] ],
+			'double-dot'         => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123..%s' ],
+			'stray-space'        => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123. %s' ],
+			'other-app-id'       => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '456.%s' ],
+		];
+	}
+
+	/**
+	 * Verify that decrypting the auth cookie in PHP, when the cache layer didn't, applies the cache layer's checks.
+	 *
+	 * @dataProvider get_test_data__parse_auth_cookie_without_header
+	 */
+	public function test__parse_auth_cookie_without_header( string $payload_format, int $expires_in, array $expected_groups, string $cookie_format = '123.%s' ): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+		Vary_Cache::enable_encryption();
+
+		$payload     = sprintf( $payload_format, time() + $expires_in );
+		$auth_cookie = sprintf( $cookie_format, openssl_encrypt( $payload, 'aes-128-cbc', '0123456789abcdef', 0, 'fedcba9876543210' ) );
+		$_COOKIE     = [ Vary_Cache::COOKIE_AUTH => $auth_cookie ];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		$_SERVER['HTTP_COOKIE'] = Vary_Cache::COOKIE_AUTH . '=' . $auth_cookie;
+
+		Vary_Cache::parse_cookies();
+
+		$this->assertSame( $expected_groups, Vary_Cache::get_groups() );
+		// A rejected cookie must still count as present, so removing the user's last group expires it.
+		$this->assertTrue( get_class_method_as_public( Vary_Cache::class, 'has_group_cookie' )->invoke( null ) );
 	}
 
 	/**
