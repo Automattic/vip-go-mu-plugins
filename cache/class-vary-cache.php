@@ -512,7 +512,12 @@ class Vary_Cache {
 				continue;
 			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
-			self::$groups[ $group_name ]      = $group_value ?? '';
+			// Skip pairs that can't be written back: setrawcookie() throws on these, and PHP won't send a header with NUL.
+			// $_COOKIE is urldecoded, so a client-written cookie can carry them as e.g. %2C or %20.
+			if ( false !== strpbrk( $group_name . $group_value, ",; \t\r\n\v\f\0" ) ) {
+				continue;
+			}
+			self::$groups[ $group_name ] = $group_value ?? '';
 		}
 	}
 
