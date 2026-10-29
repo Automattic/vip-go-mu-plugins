@@ -255,3 +255,39 @@ Requests with the correct cookie will bypass Maintenance Mode and still benefit 
 ### The Final Result
 
 You can see the completed, working example here: https://github.com/Automattic/vip-go-mu-plugins/blob/master/cache/examples/segmentation-maintenance-mode-bypass/vip-config.php
+
+---
+
+## Reference
+
+### Cookies
+
+| Cookie | Holds | Set by |
+| --- | --- | --- |
+| `vip-go-seg` | The user's groups, in plain text. The VIP cache varies on it. | `set_group_for_user()` |
+| `vip-go-auth` | The user's groups, encrypted. The VIP cache decrypts it and varies on the result. | `set_group_for_user()` after `enable_encryption()` |
+| `vip-go-cb` | A flag that makes the user bypass the VIP cache. | `set_nocache_for_user()`; cleared by `remove_nocache_for_user()` |
+
+- Cookies expire `set_cookie_expiry()` seconds after they're sent: a month by default, and at least an hour.
+- Their path and domain are `COOKIEPATH` and `COOKIE_DOMAIN`. Change them with the `vip_vary_cache_cookie_path` and `vip_vary_cache_cookie_domain` filters. A cookie that was already set with the old path or domain stays until it expires.
+- They're `Secure` on HTTPS requests to a site whose home URL uses HTTPS. Override that with the `vip_vary_cache_cookie_secure` filter, which also receives the cookie name.
+- They aren't `HttpOnly`, so client-side code can read them.
+- A response that sets one of these cookies isn't cached.
+
+### Groups
+
+- Group names and values may contain letters, digits, `-` and `_`, but not the separators `---__` or `_--_`.
+- Values are stored as strings. A value set as `1` reads back as `'1'`, and `is_user_in_group_segment( 'beta', 1 )` matches it on later requests too.
+- Assigning an empty value removes the user from a group. If that leaves them in no groups, the group cookie is expired.
+
+### Encrypted segmentation
+
+- Call `Vary_Cache::enable_encryption()` before `init` priority 10. It needs the `VIP_GO_AUTH_COOKIE_KEY` and `VIP_GO_AUTH_COOKIE_IV` constants, which VIP Support provides for each environment; without them, it stops the request with a fatal error.
+- With encryption enabled, the plaintext `vip-go-seg` cookie is ignored. Users who only have that cookie, for example from before encryption was enabled, are in no groups until they're assigned again.
+- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired. When `Vary_Cache` decrypts the cookie itself, it applies the same checks.
+
+### Hooks
+
+- `vip_vary_cache_did_send_headers( $sent_vary, $sent_cookie )`: fires after `Vary_Cache` sends its headers, if it sent a `Vary` header (whenever the request has groups, registered or from the cookie) or a cookie. `$sent_cookie` is `true` only if a cookie was actually sent.
+- `vip_vary_cache_refresh_group_cookie( $refresh, $groups )`: return `true` to re-send an unchanged group cookie (see Step 3).
+- `vip_vary_cache_cookie_path`, `vip_vary_cache_cookie_domain` and `vip_vary_cache_cookie_secure`: cookie attributes (see [Cookies](#cookies)).
