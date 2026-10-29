@@ -50,6 +50,12 @@ Vary_Cache::register_group( 'beta' );
 
 This sends a hint to our caching backend (via a `Vary` header) that this and future requests may need to be varied by our segmentation cookie.
 
+Timing matters. `Vary_Cache` reads the visitor's cookie on `init` at priority 10:
+
+- Register groups before that, when your code loads (as above) or on `init` at a priority below 10. Registering a group resets its value for the current request, so a group registered after the cookie is read loses the visitor's value, and is left out of the cookie if it's written later in the same request.
+- Read and assign groups after that, on `init` at a priority above 10 or on a later hook. A value assigned before the cookie is read is replaced by the cookie's value for that group, if it has one.
+- To take a user out of a group, assign an empty value: `Vary_Cache::set_group_for_user( 'beta', '' )`.
+
 ### Step 2: Display the Opt-in Button
 
 We need to implement a call-to-action for our Beta; a simple floating button at the bottom of the page will do. We'll user the `wp_footer` action to render it for users not already in the beta (we can use the `Vary_Cache::is_user_in_group_segment` helper to verify that.)
