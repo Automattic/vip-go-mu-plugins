@@ -98,6 +98,8 @@ add_action( 'vip_vary_cache_did_send_headers', function() {
 } );
 ```
 
+A response that sets a cookie isn't cached, so `Vary_Cache::set_group_for_user` doesn't re-send the group cookie when the request's cookie already holds the same groups. Calling it with the user's current groups therefore doesn't extend the cookie's expiry: the cookie expires `set_cookie_expiry()` seconds (a month by default) after it was last sent. If the user is already in the `beta` segment, `vip_vary_cache_did_send_headers` still fires (the `Vary` header is always sent for registered groups), but its second argument, `$sent_cookie`, is `false`. Encrypted cookies are compared after the VIP cache layer decrypts them, so without it (for example, in local development) they're always re-sent. To re-send an unchanged cookie anyway, for example to push its expiry forward, return `true` from the `vip_vary_cache_refresh_group_cookie` filter; those responses won't be cached.
+
 ### Step 4: Enable Beta Features
 
 Now that users can opt-in to the beta, we need to actually enable the beta features for them. In our case, we want to display a Like button to all posts. We'll use the `the_content` filter, and the `Vary_Cache::is_user_in_group_segment` helper to verify if they are a beta user.
