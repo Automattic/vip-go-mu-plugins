@@ -117,6 +117,8 @@ add_filter( 'the_content', function( $content ) {
 } );
 ```
 
+To read the user's value for a group instead of checking it against a known one, use `Vary_Cache::get_group_value( 'beta' )`. It returns the value (`'yes'` here), or `null` if the user isn't in the group. The value may come from the user's cookie, so escape it before output.
+
 Note: For the purpose of this exercise, we've kept things pretty simple and the Like button isn't actually wired up. There would be more code behind the scenes if we were to actually implement it.
 
 ### The Final Result

@@ -217,6 +217,62 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
+	public function get_test_data__get_group_value(): array {
+		return [
+			'value-from-cookie'            => [
+				[ 'vip-go-seg' => 'dev-group_--_yes' ],
+				'dev-group',
+				'yes',
+			],
+			'zero-value-from-cookie'       => [
+				[ 'vip-go-seg' => 'dev-group_--_0' ],
+				'dev-group',
+				'0',
+			],
+			'empty-value-from-cookie'      => [
+				[ 'vip-go-seg' => 'dev-group_--_' ],
+				'dev-group',
+				null,
+			],
+			'whitespace-value-from-cookie' => [
+				[ 'vip-go-seg' => 'dev-group_--_ ' ],
+				'dev-group',
+				null,
+			],
+			'registered-without-value'     => [
+				[],
+				'dev-group',
+				null,
+			],
+			'unknown-group'                => [
+				[ 'vip-go-seg' => 'dev-group_--_yes' ],
+				'design-group',
+				null,
+			],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__get_group_value
+	 */
+	public function test__get_group_value( array $initial_cookie, string $test_group, ?string $expected_result ): void {
+		$_COOKIE = $initial_cookie;
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+
+		$this->assertSame( $expected_result, Vary_Cache::get_group_value( $test_group ) );
+	}
+
+	public function test__get_group_value__set_group_for_user(): void {
+		Vary_Cache::register_group( 'dev-group' );
+
+		Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+		$this->assertSame( 'yes', Vary_Cache::get_group_value( 'dev-group' ) );
+
+		Vary_Cache::set_group_for_user( 'dev-group', '' );
+		$this->assertNull( Vary_Cache::get_group_value( 'dev-group' ) );
+	}
+
 	public function test__register_group_and_groups() {
 		$this->assertTrue( Vary_Cache::register_group( 'dev-group' ), 'register_group returned false' );
 		$this->assertEquals( [ 'dev-group' => '' ], Vary_Cache::get_groups() );

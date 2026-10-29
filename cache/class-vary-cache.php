@@ -320,6 +320,20 @@ class Vary_Cache {
 		return self::$groups[ $group ] === $segment;
 	}
 
+	/**
+	 * Returns the user's value for a given group. e.g. 'yes' for 'dev-group'
+	 *
+	 * The value may come from the request's group cookie, so treat it as untrusted input.
+	 *
+	 * @access  public
+	 *
+	 * @param  string $group Group name.
+	 *
+	 * @return string|null  The group's value, or null if the user isn't in the group.
+	 */
+	public static function get_group_value( $group ): ?string {
+		return self::is_user_in_group( $group ) ? self::$groups[ $group ] : null;
+	}
 
 	/**
 	 * Returns the associated groups for the request.
