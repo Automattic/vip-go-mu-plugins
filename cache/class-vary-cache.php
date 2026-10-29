@@ -215,7 +215,8 @@ class Vary_Cache {
 				continue;
 			}
 
-			self::$groups[ $group ] = '';
+			// Keep any value the group already has, parsed from the cookie or assigned with set_group_for_user().
+			self::$groups += [ $group => '' ];
 		}
 
 		return true;
