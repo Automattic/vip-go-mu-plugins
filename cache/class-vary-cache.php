@@ -371,20 +371,22 @@ class Vary_Cache {
 	/**
 	 * Decrypts a string using the auth credentials for the site.
 	 *
+	 * Like the cache layer, rejects payloads that aren't `random|groups|expiry` or whose expiry has passed.
+	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
-	 * @return string decrypted version of string
+	 * @return string|null The group payload, or null if the payload is malformed or expired.
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
 		$client_key    = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv     = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 		$cookie_array  = explode( '|', $cipher_cookie );
-		// Parse out the group payload (2nd item).
-		if ( count( $cookie_array ) < 2 ) {
+		if ( 3 !== count( $cookie_array ) || ! is_numeric( $cookie_array[2] ) || (float) $cookie_array[2] <= time() ) {
 			return null;
 		}
-		return $cookie_array [1];
+		// Parse out the group payload (2nd item).
+		return $cookie_array[1];
 	}
 
 	/**
