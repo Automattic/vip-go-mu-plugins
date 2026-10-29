@@ -437,28 +437,23 @@ class Vary_Cache {
 			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
 			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
 			// didn't vouch for must not stop a fresh one from being sent.
-			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			foreach ( explode( '; ', $_SERVER['HTTP_COOKIE'] ) as $rawcookie ) {
-				list( $k, $v ) = explode( '=', $rawcookie, 2 );
-				if ( self::COOKIE_AUTH === $k ) {
-					$auth_cookie = $v;
-					break;
-				}
-			}
+			$auth_cookie = (string) self::get_raw_cookie( self::COOKIE_AUTH );
 
 			// Remove the site prefix at the beginning
 			$prefix = constant( 'VIP_GO_APP_ID' ) . '.';
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
-				$value = substr( $auth_cookie, strlen( $prefix ) );
+				$cookie_value = self::decrypt_cookie_value( substr( $auth_cookie, strlen( $prefix ) ) );
 			}
-			$cookie_value = self::decrypt_cookie_value( $value );
-
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			$cookie_name = self::COOKIE_SEGMENT;
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
+
+			// PHP lets `vip-go-seg[]=x` replace a real `vip-go-seg` with an array. Read the real one, as the cache layer does.
+			if ( ! is_string( $cookie_value ) ) {
+				$cookie_value = self::get_raw_cookie( self::COOKIE_SEGMENT );
+			}
 		}
 
 		if ( empty( $cookie_value ) ) {
@@ -478,6 +473,28 @@ class Vary_Cache {
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
 			self::$groups[ $group_name ]      = $group_value ?? '';
 		}
+	}
+
+	/**
+	 * Gets the first cookie with exactly this name from the raw Cookie header, without urldecoding it.
+	 *
+	 * @param string $name Cookie name.
+	 * @return string|null The cookie value, or null if the request doesn't have the cookie.
+	 */
+	private static function get_raw_cookie( $name ) {
+		if ( ! isset( $_SERVER['HTTP_COOKIE'] ) ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		foreach ( explode( ';', $_SERVER['HTTP_COOKIE'] ) as $rawcookie ) {
+			$parts = explode( '=', ltrim( $rawcookie ), 2 );
+			if ( 2 === count( $parts ) && $name === $parts[0] ) {
+				return $parts[1];
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -574,6 +591,9 @@ class Vary_Cache {
 
 	/**
 	 * Checks whether the request has the active group cookie.
+	 *
+	 * Any value counts: PHP lets `vip-go-seg[]=x` replace a real `vip-go-seg` with an array, and
+	 * parse_group_cookie() still reads the real one from the Cookie header, so it may need clearing.
 	 *
 	 * @return boolean Whether the request has the cookie.
 	 */
