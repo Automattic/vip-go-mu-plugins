@@ -61,6 +61,14 @@ class Vary_Cache {
 	private static $should_update_group_cookie = false;
 
 	/**
+	 * Flag to indicate if a group or nocache setter was called while serving a REST request.
+	 *
+	 * @access  private
+	 * @var     bool
+	 */
+	private static $should_send_rest_headers = false;
+
+	/**
 	 * Member variable to store the parsed group values.
 	 *
 	 * @since   1.0.0
@@ -117,6 +125,7 @@ class Vary_Cache {
 
 		self::$is_user_in_nocache           = true;
 		self::$should_update_nocache_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -138,6 +147,7 @@ class Vary_Cache {
 
 		self::$is_user_in_nocache           = false;
 		self::$should_update_nocache_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -170,6 +180,7 @@ class Vary_Cache {
 		self::$is_user_in_nocache           = false;
 		self::$should_update_nocache_cookie = false;
 		self::$should_update_group_cookie   = false;
+		self::$should_send_rest_headers     = false;
 		self::$cookie_expiry                = MONTH_IN_SECONDS;
 	}
 
@@ -181,6 +192,7 @@ class Vary_Cache {
 	protected static function add_filters() {
 		add_action( 'init', [ self::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ self::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
+		add_filter( 'rest_pre_serve_request', [ self::class, 'send_rest_headers' ], PHP_INT_MAX ); // REST requests exit before send_headers
 	}
 
 	/**
@@ -191,6 +203,7 @@ class Vary_Cache {
 	protected static function remove_filters() {
 		remove_action( 'init', [ self::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ self::class, 'send_headers' ], PHP_INT_MAX );
+		remove_filter( 'rest_pre_serve_request', [ self::class, 'send_rest_headers' ], PHP_INT_MAX );
 	}
 
 	/**
@@ -279,6 +292,7 @@ class Vary_Cache {
 		self::$groups[ $group ] = (string) $value;
 
 		self::$should_update_group_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -578,6 +592,38 @@ class Vary_Cache {
 				 */
 				do_action( 'vip_vary_cache_did_send_headers', $sent_vary, $sent_cookie );
 			}
+		}
+	}
+
+	/**
+	 * Sends headers on REST requests if REST code called a group or nocache setter.
+	 *
+	 * Setter calls made before the REST request started, such as on `init`, don't count: sites often make them on every
+	 * request, and they have never been sent on REST requests. GET and HEAD requests are skipped, as the cache layer
+	 * stores their responses, and so are OPTIONS requests, as browsers ignore cookies on preflight responses. The HTTP
+	 * method decides, not the REST request's, which a `_method` override can change.
+	 *
+	 * @access  private
+	 *
+	 * @param mixed $served Whether the request has already been served.
+	 * @return mixed Unchanged.
+	 */
+	public static function send_rest_headers( $served ) {
+		$is_skipped_method = in_array( $_SERVER['REQUEST_METHOD'] ?? '', [ 'GET', 'HEAD', 'OPTIONS' ], true );
+
+		if ( ! $is_skipped_method && self::$should_send_rest_headers ) {
+			self::send_headers();
+		}
+
+		return $served;
+	}
+
+	/**
+	 * Records a setter call made by REST code, i.e. after WordPress started serving a REST request.
+	 */
+	private static function note_rest_write() {
+		if ( defined( 'REST_REQUEST' ) && constant( 'REST_REQUEST' ) ) {
+			self::$should_send_rest_headers = true;
 		}
 	}
 
