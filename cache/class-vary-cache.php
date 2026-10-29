@@ -252,8 +252,8 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $group  Group name to vary the request on.
-	 * @param  string $value A value for the group.
+	 * @param  string     $group  Group name to vary the request on.
+	 * @param  string|int $value A value for the group.
 	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
@@ -275,7 +275,8 @@ class Vary_Cache {
 			return new WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
 		}
 
-		self::$groups[ $group ] = $value;
+		// Store what later requests will parse from the cookie, so a segment check gives the same answer on both.
+		self::$groups[ $group ] = (string) $value;
 
 		self::$should_update_group_cookie = true;
 
@@ -307,8 +308,8 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $group Group name.
-	 * @param  string $segment Which segment within the group to check.
+	 * @param  string     $group Group name.
+	 * @param  string|int $segment Which segment within the group to check.
 	 *
 	 * @return bool   True on success. False on failure.
 	 */
@@ -317,8 +318,8 @@ class Vary_Cache {
 			return false;
 		}
 
-		// Check for a specific group segment.
-		return self::$groups[ $group ] === $segment;
+		// Check for a specific group segment. Group values are strings, so `1` matches the `1` parsed from the cookie.
+		return is_scalar( $segment ) && self::$groups[ $group ] === (string) $segment;
 	}
 
 
