@@ -1094,6 +1094,90 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertTrue( get_class_method_as_public( Vary_Cache::class, 'has_group_cookie' )->invoke( null ) );
 	}
 
+	public function get_test_data__encrypted_segment_cookie(): array {
+		return [
+			'no-auth'                        => [ [], [] ],
+			'empty-auth-cookie'              => [ [ 'vip-go-auth' => '' ], [ 'HTTP_COOKIE' => 'vip-go-auth=' ] ],
+			'auth-cookie-without-raw-header' => [ [ 'vip-go-auth' => '123.value' ], [] ],
+		];
+	}
+
+	/**
+	 * Verify that encrypted requests ignore the plaintext segment cookie when no auth value is read.
+	 *
+	 * @dataProvider get_test_data__encrypted_segment_cookie
+	 */
+	public function test_encrypted_parse_ignores_segment_cookie( array $auth_cookie, array $server ): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+
+		$this->start_encrypted_request( [ Vary_Cache::COOKIE_SEGMENT => 'vc-v1__dev-group_--_yes' ] + $auth_cookie, $server );
+
+		$this->assertSame( [ 'dev-group' => '' ], Vary_Cache::get_groups() );
+	}
+
+	/**
+	 * Verify that a group cleared from the auth cookie stays cleared when a plaintext segment cookie is left over.
+	 */
+	public function test_cleared_encrypted_group_stays_cleared_with_segment_cookie(): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		$cookies = [ Vary_Cache::COOKIE_SEGMENT => 'vc-v1__dev-group_--_yes' ];
+
+		// Request 1: the user is assigned to the group.
+		$this->start_encrypted_request( $cookies );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yes' ) );
+		do_action( 'send_headers' );
+		$cookies = $this->apply_recorded_cookies( $cookies );
+		$this->assertStringStartsWith( '123.', $cookies[ Vary_Cache::COOKIE_AUTH ] ?? '' );
+
+		// Request 2: the edge supplies the decrypted auth cookie, and the user leaves the group.
+		$auth_header = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, substr( $cookies[ Vary_Cache::COOKIE_AUTH ], 4 ) );
+		$this->start_encrypted_request( $cookies, [ Vary_Cache::HEADER_AUTH => $auth_header ] );
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', 'yes' ) );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', '' ) );
+		do_action( 'send_headers' );
+		$cookies = $this->apply_recorded_cookies( $cookies );
+		$this->assertArrayNotHasKey( Vary_Cache::COOKIE_AUTH, $cookies );
+
+		// Request 3: the remaining cookies must not restore the group.
+		$this->start_encrypted_request( $cookies );
+
+		$this->assertFalse( Vary_Cache::is_user_in_group( 'dev-group' ), 'The cleared group was restored' );
+	}
+
+	/**
+	 * Reset Vary_Cache and parse a new encrypted request with the given cookies and server variables.
+	 */
+	private function start_encrypted_request( array $cookies, array $server = [] ): void {
+		Vary_Cache::unload();
+		Vary_Cache::load();
+		Cookie_Recorder::$calls = [];
+
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ], $_SERVER['HTTP_COOKIE'] );
+		$_SERVER = array_merge( $_SERVER, $server );
+
+		Vary_Cache::enable_encryption();
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+	}
+
+	/**
+	 * Apply the recorded Set-Cookie calls to a browser cookie jar.
+	 */
+	private function apply_recorded_cookies( array $cookies ): array {
+		foreach ( Cookie_Recorder::$calls as [ , $name, $value, $expiry ] ) {
+			if ( $expiry < time() ) {
+				unset( $cookies[ $name ] );
+			} else {
+				$cookies[ $name ] = $value;
+			}
+		}
+
+		return $cookies;
+	}
+
 	/**
 	 * @ticket 157433-z
 	 */

@@ -453,7 +453,8 @@ class Vary_Cache {
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
 				$cookie_value = self::decrypt_cookie_value( substr( $auth_cookie, strlen( $prefix ) ) );
 			}
-		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( ! static::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			// The plaintext cookie is only read when encryption is off; encrypted requests ignore it.
 			$cookie_name = self::COOKIE_SEGMENT;
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
