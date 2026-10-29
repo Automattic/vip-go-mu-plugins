@@ -679,12 +679,22 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		];
 	}
 
-	public function test__configure_defines_the_constant_from_the_env_config(): void {
+	public function data_scopes(): array {
+		return [
+			'site'    => [ 'site' ],
+			'network' => [ 'network' ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_scopes
+	 */
+	public function test__configure_defines_the_constant_from_the_env_config_on_a_single_site( string $scope ): void {
 		if ( is_multisite() ) {
-			$this->markTestSkipped( 'On multisite a site integration reads the network site config.' );
+			$this->markTestSkipped( 'On multisite the network site config is read.' );
 		}
 
-		$this->configured_integration( 'site', $this->acme_sync_config() )->configure();
+		$this->configured_integration( $scope, $this->acme_sync_config() )->configure();
 
 		// Values keep the types GOOP wrote.
 		$this->assertSame(
@@ -697,20 +707,20 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test__configure_gives_a_site_integration_its_network_site_config_on_multisite(): void {
+	/**
+	 * Whatever the scope, as the hand-written integrations do: the platform writes a multisite's
+	 * config per network site.
+	 *
+	 * @dataProvider data_scopes
+	 */
+	public function test__configure_defines_the_constant_from_the_network_site_config_on_multisite( string $scope ): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only on multisite.' );
 		}
 
-		$this->configured_integration( 'site', $this->acme_sync_config() )->configure();
+		$this->configured_integration( $scope, $this->acme_sync_config() )->configure();
 
 		$this->assertSame( [ 'api_key' => 'site-key' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
-	}
-
-	public function test__configure_gives_a_network_integration_the_env_config(): void {
-		$this->configured_integration( 'network', $this->acme_sync_config() )->configure();
-
-		$this->assertSame( 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
 	}
 
 	public function test__configure_defines_an_empty_config_when_there_is_none(): void {
@@ -737,7 +747,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$integrations->activate_platform_integrations();
 
 		$this->assertTrue( $integrations->get_integration( 'acme-sync' )->is_active() );
-		$this->assertSame( 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
+		$this->assertSame( is_multisite() ? 'site-key' : 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
 	}
 
 	/*
@@ -816,6 +826,8 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
 		$integration->activate();
 
-		$this->assertStringNotContainsString( 'env-key', wp_json_encode( $integration->get_runtime_status() ) );
+		$status = wp_json_encode( $integration->get_runtime_status() );
+		$this->assertStringNotContainsString( 'env-key', $status );
+		$this->assertStringNotContainsString( 'site-key', $status );
 	}
 }

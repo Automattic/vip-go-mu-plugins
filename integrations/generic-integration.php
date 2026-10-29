@@ -105,10 +105,10 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. A
-	 * `site` integration is configured per WordPress site, so on multisite each network site gets its
-	 * own config, as Share a Draft does; a `network` one gets the environment's. Values are typed by
-	 * GOOP from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
+	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. On
+	 * multisite that's the current network site's config, which is where the platform writes it, as
+	 * for the hand-written integrations (e.g. Parse.ly); otherwise the environment's. Values are typed
+	 * by GOOP from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
 	 *
 	 * @private
 	 */
@@ -118,7 +118,7 @@ class GenericIntegration extends Integration {
 			return;
 		}
 
-		$config = 'site' === $this->scope && is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
+		$config = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
 
 		define( $constant, $config );
 	}
