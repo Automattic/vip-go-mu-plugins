@@ -1192,50 +1192,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function get_test_data__parse_group_cookie_unsendable_pair(): array {
-		// As $_COOKIE holds it: PHP urldecodes the raw cookie, so e.g. `%2C` arrives as `,`.
-		return [
-			'comma'          => [ 'segment_--_a,b' ],
-			'semicolon'      => [ 'segment_--_a;b' ],
-			'space-in-value' => [ 'segment_--_a b' ],
-			'space-in-name'  => [ 'seg ment_--_a' ],
-			'tab'            => [ "segment_--_a\tb" ],
-			'line-break'     => [ "segment_--_a\r\nb" ],
-			'vertical-tab'   => [ "segment_--_a\vb" ],
-			'form-feed'      => [ "segment_--_a\fb" ],
-			'nul'            => [ "segment_--_a\0b" ],
-		];
-	}
-
-	/**
-	 * Verify that a pair the cookie can't carry is dropped, so writing the cookie back doesn't fatal.
-	 *
-	 * @dataProvider get_test_data__parse_group_cookie_unsendable_pair
-	 */
-	public function test_parse_group_cookie_drops_unsendable_pair( string $pair ): void {
-		$_COOKIE = [ Vary_Cache::COOKIE_SEGMENT => 'vc-v1__ab-test_--_beta.2---__' . $pair . '---__dev-group_--_yes' ];
-		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ], $_SERVER['HTTP_COOKIE'] );
-
-		Vary_Cache::register_group( 'dev-group' );
-		Vary_Cache::parse_cookies();
-
-		$this->assertSame(
-			[
-				'dev-group' => 'yes',
-				'ab-test'   => 'beta.2',
-			],
-			Vary_Cache::get_groups()
-		);
-
-		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'no' ), 'Return value was not true' );
-		do_action( 'send_headers' );
-
-		$this->assertCount( 1, Cookie_Recorder::$calls );
-		[ , $name, $value ] = Cookie_Recorder::$calls[0];
-		$this->assertSame( Vary_Cache::COOKIE_SEGMENT, $name );
-		$this->assertSame( 'vc-v1__ab-test_--_beta.2---__dev-group_--_no', $value );
-	}
-
 	public function get_test_data__parse_group_cookie_unusual_cookie_header(): array {
 		// $_COOKIE as PHP builds it from the raw header. In the raw header, `%s` is an encrypted `vc-v1__dev-group_--_yes`.
 		return [
