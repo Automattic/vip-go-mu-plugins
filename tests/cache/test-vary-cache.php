@@ -104,6 +104,18 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
+			'user-in-group-but-searching-for-array'        => [
+				[
+					'vip-go-seg' => 'dev-group_--_Array',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				[],
+				false,
+			],
+
 			'user-in-group-but-different-segment'          => [
 				[
 					'vip-go-seg' => 'dev-group_--_maybe',
@@ -137,6 +149,18 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				],
 				'dev-group',
 				'0',
+				true,
+			],
+
+			'user-in-group-and-int-segment'                => [
+				[
+					'vip-go-seg' => 'dev-group_--_1',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				1,
 				true,
 			],
 		];
@@ -202,6 +226,41 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$actual_result = Vary_Cache::is_user_in_group_segment( $test_group, $test_value );
 
 		$this->assertEquals( $expected_result, $actual_result );
+	}
+
+	public function get_test_data__non_string_segment(): array {
+		return [
+			'int'                   => [ 1, 1 ],
+			'int-checked-as-string' => [ 1, '1' ],
+			'bool-true'             => [ true, true ],
+		];
+	}
+
+	/**
+	 * Verify that a segment matches both on the request that sets it and on later requests, which parse it from the cookie.
+	 *
+	 * @dataProvider get_test_data__non_string_segment
+	 */
+	public function test_non_string_segment_matches_on_later_requests( $value, $segment ): void {
+		$_COOKIE = [];
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', $value ), 'Return value was not true' );
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', $segment ), 'Segment did not match on the request that set it' );
+
+		do_action( 'send_headers' );
+
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ , $name, $cookie ] = Cookie_Recorder::$calls[0];
+
+		// Start the next request with the cookie that was written.
+		Vary_Cache::unload();
+		Vary_Cache::load();
+		$_COOKIE = [ $name => $cookie ];
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', $segment ), 'Segment did not match on a later request' );
 	}
 
 	/**
