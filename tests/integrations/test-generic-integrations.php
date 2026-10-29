@@ -629,4 +629,205 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( ( new GenericIntegrationVipConfig( 'acme-sync' ) )->is_active_via_vip() );
 	}
+
+	/*
+	|--------------------------------------------------------------------------
+	| Config constant
+	|--------------------------------------------------------------------------
+	*/
+
+	public function data_config_constant_names(): array {
+		return [
+			'one word'      => [ 'acme', 'VIP_ACME_CONFIG' ],
+			'hyphenated'    => [ 'acme-sync', 'VIP_ACME_SYNC_CONFIG' ],
+			'with a number' => [ 'acme-sync-2', 'VIP_ACME_SYNC_2_CONFIG' ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_config_constant_names
+	 */
+	public function test__config_constant_is_derived_from_the_slug( string $slug, string $expected ): void {
+		$this->assertSame( $expected, ( new GenericIntegration( $slug, $this->entry( $slug ) ) )->get_config_constant_name() );
+	}
+
+	private function configured_integration( string $scope, array $config ): GenericIntegration {
+		add_filter( 'vip_integrations_pre_load_config', fn() => $config );
+
+		$integration = new GenericIntegration( 'acme-sync', $this->entry( 'acme-sync', [ 'scope' => $scope ] ) );
+		$integration->set_vip_config( new GenericIntegrationVipConfig( 'acme-sync' ) );
+
+		return $integration;
+	}
+
+	private function acme_sync_config(): array {
+		return [
+			'env'           => [
+				'status' => 'enabled',
+				'config' => [
+					'api_key' => 'env-key',
+					'retries' => 3,
+					'enabled' => false,
+				],
+			],
+			'network_sites' => [
+				get_current_blog_id() => [
+					'status' => 'enabled',
+					'config' => [ 'api_key' => 'site-key' ],
+				],
+			],
+		];
+	}
+
+	public function data_scopes(): array {
+		return [
+			'site'    => [ 'site' ],
+			'network' => [ 'network' ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_scopes
+	 */
+	public function test__configure_defines_the_constant_from_the_env_config_on_a_single_site( string $scope ): void {
+		if ( is_multisite() ) {
+			$this->markTestSkipped( 'On multisite the network site config is read.' );
+		}
+
+		$this->configured_integration( $scope, $this->acme_sync_config() )->configure();
+
+		// Values keep the types GOOP wrote.
+		$this->assertSame(
+			[
+				'api_key' => 'env-key',
+				'retries' => 3,
+				'enabled' => false,
+			],
+			Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )
+		);
+	}
+
+	/**
+	 * Whatever the scope, as the hand-written integrations do: the platform writes a multisite's
+	 * config per network site.
+	 *
+	 * @dataProvider data_scopes
+	 */
+	public function test__configure_defines_the_constant_from_the_network_site_config_on_multisite( string $scope ): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only on multisite.' );
+		}
+
+		$this->configured_integration( $scope, $this->acme_sync_config() )->configure();
+
+		$this->assertSame( [ 'api_key' => 'site-key' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
+	}
+
+	public function test__configure_defines_an_empty_config_when_there_is_none(): void {
+		$this->configured_integration( 'network', [ 'env' => [ 'status' => 'enabled' ] ] )->configure();
+
+		$this->assertSame( [], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
+	}
+
+	public function test__configure_keeps_a_constant_that_is_already_defined(): void {
+		Constant_Mocker::define( 'VIP_ACME_SYNC_CONFIG', [ 'api_key' => 'from-vip-config' ] );
+
+		$this->configured_integration( 'network', $this->acme_sync_config() )->configure();
+
+		$this->assertSame( [ 'api_key' => 'from-vip-config' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
+	}
+
+	public function test__activating_platform_integrations_defines_the_constant(): void {
+		$this->enable_feature_for_site();
+		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry( 'acme-sync', [ 'scope' => 'network' ] ) ] ] );
+		add_filter( 'vip_integrations_pre_load_config', fn( $config, $path, $slug ) => 'acme-sync' === $slug ? $this->acme_sync_config() : $config, 10, 3 );
+
+		$integrations = new Integrations();
+		register_generic_integrations( $integrations );
+		$integrations->activate_platform_integrations();
+
+		$this->assertTrue( $integrations->get_integration( 'acme-sync' )->is_active() );
+		$this->assertSame( is_multisite() ? 'site-key' : 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
+	}
+
+	/*
+	|--------------------------------------------------------------------------
+	| Load outcome
+	|--------------------------------------------------------------------------
+	*/
+
+	public function test__status_is_inactive_before_activation(): void {
+		$status = ( new GenericIntegration( 'acme-sync', $this->entry() ) )->get_runtime_status();
+
+		$this->assertSame(
+			[
+				'slug'             => 'acme-sync',
+				'folder'           => 'acme-sync',
+				'version'          => '1.2.0',
+				'version_strategy' => 'latest',
+				'scope'            => 'site',
+				'active'           => false,
+				'status'           => 'inactive',
+				'bundle'           => null,
+			],
+			$status
+		);
+	}
+
+	public function test__status_is_pending_until_the_bundle_is_loaded(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
+		$integration->activate();
+
+		$this->assertSame( 'pending', $integration->get_runtime_status()['status'] );
+	}
+
+	public function test__status_reports_the_bundle_it_loaded(): void {
+		// A slug no other test uses: an included file stays included for the rest of the run.
+		$integration = $this->integration_with_bundles( 'status-sync', [
+			'status-sync-2.0' => '2.0',
+			'status-sync-1.2' => '1.2',
+		] );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$status = $integration->get_runtime_status();
+		$this->assertTrue( $status['active'] );
+		$this->assertSame( 'loaded', $status['status'] );
+		$this->assertSame( 'status-sync-2.0', $status['bundle'] );
+	}
+
+	public function test__status_reports_a_missing_bundle_and_deactivates(): void {
+		$integration = $this->integration_with_bundles( 'missing-sync', [ 'missing-sync-1.2' => '1.2' ], false );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$status = $integration->get_runtime_status();
+		$this->assertFalse( $status['active'] );
+		$this->assertSame( 'missing_bundle', $status['status'] );
+		$this->assertNull( $status['bundle'] );
+	}
+
+	public function test__status_reports_a_plugin_loaded_some_other_way(): void {
+		$dir = $this->temp_dir();
+		mkdir( $dir . '/elsewhere-sync' );
+		file_put_contents( $dir . '/elsewhere-sync/elsewhere-sync.php', '<?php' );
+		require_once $dir . '/elsewhere-sync/elsewhere-sync.php';
+
+		$integration = $this->integration_with_bundles( 'elsewhere-sync', [ 'elsewhere-sync-1.2' => '1.2' ] );
+		$integration->load_bundle();
+
+		$this->assertSame( 'already_loaded', $integration->get_runtime_status()['status'] );
+		$this->assertNull( $integration->get_runtime_status()['bundle'] );
+	}
+
+	public function test__status_holds_no_config(): void {
+		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
+		$integration->activate();
+
+		$status = wp_json_encode( $integration->get_runtime_status() );
+		$this->assertStringNotContainsString( 'env-key', $status );
+		$this->assertStringNotContainsString( 'site-key', $status );
+	}
 }

@@ -14,6 +14,7 @@ use function Automattic\Test\Utils\block_http_requests;
 use function Automattic\Test\Utils\reset_site_details_index;
 
 require_once __DIR__ . '/../../config/class-site-details-index.php';
+require_once __DIR__ . '/../integrations/fake-integration.php';
 
 class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function setUp(): void {
@@ -72,6 +73,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			$site_details['connector_controls'],
 			'SDS should carry only the dedicated, secret-free runtime report.'
 		);
+		$this->assertSame( [], $site_details['generic_integrations'], 'No generic integration is registered while the feature is off.' );
 		$this->assertEquals(
 			[
 				[
@@ -217,5 +219,26 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$this->assertGreaterThanOrEqual( $before, $timestamp );
 		$this->assertLessThanOrEqual( $after, $timestamp );
+	}
+
+	public function test__generic_integrations_report_each_generic_integration_by_slug() {
+		// Its own registry, not the platform's: SpeedUp_Isolated_WP_Tests runs this class in one process,
+		// so registering into the singleton would leak into the other tests.
+		$integrations = new \Automattic\VIP\Integrations\Integrations();
+		$integrations->register( new \Automattic\VIP\Integrations\FakeIntegration( 'fake' ) );
+		$integrations->register(
+			new \Automattic\VIP\Integrations\GenericIntegration( 'acme-sync', [
+				'folder'           => 'acme-sync',
+				'entry_file'       => 'acme-sync.php',
+				'version'          => '1.2.0',
+				'version_strategy' => 'latest',
+				'scope'            => 'site',
+			] )
+		);
+
+		$info = Site_Details_Index::instance( 100 )->get_generic_integrations_info( $integrations );
+
+		$this->assertSame( [ 'acme-sync' ], array_keys( $info ), 'Only generic integrations are reported.' );
+		$this->assertSame( $integrations->get_integration( 'acme-sync' )->get_runtime_status(), $info['acme-sync'] );
 	}
 }
