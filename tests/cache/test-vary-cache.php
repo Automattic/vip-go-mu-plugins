@@ -930,6 +930,119 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		self::assertNotContains( 'Vary: X-VIP-Go-Auth', $headers, 'Response should not include Vary: X-VIP-Go-Auth header', true );
 	}
 
+	/**
+	 * Run the filter WP_REST_Server::serve_request() applies before output; REST requests never fire `send_headers`.
+	 *
+	 * The REST request always says POST, as a `_method` override can make it; only the HTTP method should matter.
+	 */
+	private function serve_rest_request( string $http_method, bool $served ) {
+		$original_method           = $_SERVER['REQUEST_METHOD'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- restored as is
+		$_SERVER['REQUEST_METHOD'] = $http_method;
+
+		try {
+			return apply_filters( 'rest_pre_serve_request', $served, new \WP_REST_Response(), new \WP_REST_Request( 'POST' ), new \WP_REST_Server() );
+		} finally {
+			if ( null === $original_method ) {
+				unset( $_SERVER['REQUEST_METHOD'] );
+			} else {
+				$_SERVER['REQUEST_METHOD'] = $original_method;
+			}
+		}
+	}
+
+	private function assert_rest_sent_nothing(): void {
+		$this->assertSame( [], $this->did_send_headers_calls, 'Headers were sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+		$this->assertEmpty( preg_grep( '/^Vary:/i', headers_list() ), 'A Vary header was sent' );
+	}
+
+	public function get_test_data__rest_pending_write(): array {
+		return [
+			'group'   => [
+				function () {
+					Vary_Cache::register_group( 'dev-group' );
+					return Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+				},
+				[ [ true, true ] ],
+				'vip-go-seg',
+			],
+			'nocache' => [ fn() => Vary_Cache::set_nocache_for_user(), [ [ false, true ] ], 'vip-go-cb' ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__rest_pending_write
+	 */
+	public function test_rest_request_sends_pending_write( callable $write, array $expected_calls, string $expected_cookie ): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		$this->assertTrue( $write(), 'Write failed' );
+		$this->record_did_send_headers();
+
+		$this->assertFalse( $this->serve_rest_request( 'POST', false ), 'Filter value was changed' );
+
+		$this->assertSame( $expected_calls, $this->did_send_headers_calls, 'Unexpected vip_vary_cache_did_send_headers calls' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		$this->assertSame( $expected_cookie, Cookie_Recorder::$calls[0][1] );
+	}
+
+	public function get_test_data__rest_skipped_method(): array {
+		return [
+			'GET'     => [ 'GET' ],
+			'HEAD'    => [ 'HEAD' ],
+			'OPTIONS' => [ 'OPTIONS' ],
+		];
+	}
+
+	/**
+	 * Writes on requests the cache stores, e.g. while rendering post content, must not make REST responses vary or uncacheable.
+	 *
+	 * @dataProvider get_test_data__rest_skipped_method
+	 */
+	public function test_rest_skipped_method_does_not_send_pending_write( string $http_method ): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Write failed' );
+		$this->record_did_send_headers();
+
+		$this->assertFalse( $this->serve_rest_request( $http_method, false ), 'Filter value was changed' );
+
+		$this->assert_rest_sent_nothing();
+	}
+
+	/**
+	 * Writes made before the REST request started, e.g. on `init` on every request, have never been sent on REST requests.
+	 */
+	public function test_rest_request_does_not_send_write_made_before_it(): void {
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Write failed' );
+		$this->assertTrue( Vary_Cache::set_nocache_for_user(), 'Nocache write failed' );
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		$this->record_did_send_headers();
+
+		$this->assertFalse( $this->serve_rest_request( 'POST', false ), 'Filter value was changed' );
+
+		$this->assert_rest_sent_nothing();
+	}
+
+	public function test_rest_request_without_pending_write_sends_nothing(): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		Vary_Cache::register_group( 'dev-group' );
+		$this->record_did_send_headers();
+
+		$this->assertTrue( $this->serve_rest_request( 'POST', true ), 'Filter value was changed' );
+
+		$this->assert_rest_sent_nothing();
+	}
+
+	public function test_unload_removes_rest_hook(): void {
+		$callback = [ Vary_Cache::class, 'send_rest_headers' ];
+		$this->assertSame( PHP_INT_MAX, has_filter( 'rest_pre_serve_request', $callback ) );
+
+		Vary_Cache::unload();
+
+		$this->assertFalse( has_filter( 'rest_pre_serve_request', $callback ) );
+	}
+
 	public function get_test_data__stringify_groups() {
 		return [
 			'values_for_all_groups'           => [
