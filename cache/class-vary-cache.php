@@ -332,7 +332,7 @@ class Vary_Cache {
 	 * @return string|null  The group's value, or null if the user isn't in the group.
 	 */
 	public static function get_group_value( $group ): ?string {
-		return self::is_user_in_group( $group ) ? self::$groups[ $group ] : null;
+		return static::is_user_in_group( $group ) ? self::$groups[ $group ] : null;
 	}
 
 	/**
