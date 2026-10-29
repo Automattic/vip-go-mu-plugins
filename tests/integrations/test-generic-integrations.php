@@ -729,12 +729,80 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( [], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
 	}
 
-	public function test__configure_keeps_a_constant_that_is_already_defined(): void {
+	public function test__configure_refuses_a_constant_that_is_already_defined(): void {
 		Constant_Mocker::define( 'VIP_ACME_SYNC_CONFIG', [ 'api_key' => 'from-vip-config' ] );
+		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
+		$integration->activate();
 
-		$this->configured_integration( 'network', $this->acme_sync_config() )->configure();
+		$integration->configure();
 
+		// The customer's constant stays, but the plugin isn't loaded with it.
 		$this->assertSame( [ 'api_key' => 'from-vip-config' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
+		$this->assertFalse( $integration->is_active() );
+		$this->assertSame( 'config_conflict', $integration->get_runtime_status()['status'] );
+		$this->assertSame(
+			[ 'VIP Integration "acme-sync" was not loaded: VIP_ACME_SYNC_CONFIG is already defined, and its config comes from the platform.' ],
+			$this->warnings
+		);
+	}
+
+	public function test__a_predefined_constant_keeps_the_platform_from_loading_the_integration(): void {
+		Constant_Mocker::define( 'VIP_ACME_SYNC_CONFIG', [ 'api_key' => 'from-vip-config' ] );
+		$this->enable_feature_for_site();
+		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry( 'acme-sync', [ 'scope' => 'network' ] ) ] ] );
+		add_filter( 'vip_integrations_pre_load_config', fn( $config, $path, $slug ) => 'acme-sync' === $slug ? $this->acme_sync_config() : $config, 10, 3 );
+
+		$integrations = new Integrations();
+		register_generic_integrations( $integrations );
+		$integrations->activate_platform_integrations();
+		$integrations->load_active();
+
+		$integration = $integrations->get_integration( 'acme-sync' );
+		$this->assertFalse( $integration->is_active() );
+		$this->assertFalse( has_action( 'plugins_loaded', [ $integration, 'load_bundle' ] ) );
+	}
+
+	/*
+	|--------------------------------------------------------------------------
+	| Activation in code
+	|--------------------------------------------------------------------------
+	*/
+
+	public function test__a_generic_integration_cannot_be_activated_in_code(): void {
+		$integrations = new Integrations();
+		$integrations->register( new GenericIntegration( 'acme-sync', $this->entry() ) );
+
+		$integrations->activate( 'acme-sync', [ 'config' => [ 'api_key' => 'from-code' ] ] );
+
+		$this->assertFalse( $integrations->get_integration( 'acme-sync' )->is_active() );
+		$this->assertSame(
+			[ 'VIP Integration "acme-sync" is activated by the platform and can\'t be activated in code.' ],
+			$this->warnings
+		);
+	}
+
+	public function test__activating_in_code_leaves_the_platform_to_activate_it(): void {
+		$this->enable_feature_for_site();
+		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry( 'acme-sync', [ 'scope' => 'network' ] ) ] ] );
+		add_filter( 'vip_integrations_pre_load_config', fn( $config, $path, $slug ) => 'acme-sync' === $slug ? [ 'env' => [ 'status' => 'disabled' ] ] : $config, 10, 3 );
+
+		$integrations = new Integrations();
+		register_generic_integrations( $integrations );
+		$integrations->activate( 'acme-sync' );
+		$integrations->activate_platform_integrations();
+
+		// Disabled by the platform, so the customer's activation doesn't load it.
+		$this->assertFalse( $integrations->get_integration( 'acme-sync' )->is_active() );
+	}
+
+	public function test__a_hand_written_integration_can_still_be_activated_in_code(): void {
+		$integrations = new Integrations();
+		$integrations->register( new FakeIntegration( 'fake' ) );
+
+		$integrations->activate( 'fake' );
+
+		$this->assertTrue( $integrations->get_integration( 'fake' )->is_active() );
+		$this->assertSame( [], $this->warnings );
 	}
 
 	public function test__activating_platform_integrations_defines_the_constant(): void {
