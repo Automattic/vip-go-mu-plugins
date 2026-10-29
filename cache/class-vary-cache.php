@@ -543,9 +543,7 @@ class Vary_Cache {
 		}
 
 		if ( self::$should_update_nocache_cookie ) {
-			$sent_cookie = true;
-
-			self::set_nocache_cookie();
+			$sent_cookie = self::set_nocache_cookie() || $sent_cookie;
 		}
 
 		return $sent_cookie;
@@ -594,14 +592,32 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Sets (or unsets) the group/segment cookie.
+	 * Checks whether the request has the nocache cookie.
+	 *
+	 * @return boolean Whether the request has the cookie.
+	 */
+	private static function has_nocache_cookie() {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return isset( $_COOKIE[ self::COOKIE_NOCACHE ] );
+	}
+
+	/**
+	 * Sets (or unsets) the nocache cookie.
+	 *
+	 * @return boolean Was a Set-Cookie header sent?
 	 */
 	private static function set_nocache_cookie() {
 		if ( self::$is_user_in_nocache ) {
 			self::set_cookie( self::COOKIE_NOCACHE, 1 );
-		} else {
-			self::unset_cookie( self::COOKIE_NOCACHE );
+			return true;
 		}
+
+		if ( ! self::has_nocache_cookie() ) {
+			return false;
+		}
+
+		self::unset_cookie( self::COOKIE_NOCACHE );
+		return true;
 	}
 
 	/**

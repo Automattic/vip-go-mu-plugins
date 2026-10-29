@@ -482,9 +482,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Verify no-cache creation and deletion reach their respective writers.
+	 * Verify no-cache creation reaches the raw cookie writer.
 	 */
-	public function test_nocache_cookie_parameters(): void {
+	public function test_set_nocache_cookie_parameters(): void {
 		$this->assertTrue( Vary_Cache::set_nocache_for_user(), 'Result was not true' );
 		$this->assertTrue( Vary_Cache::is_user_in_nocache(), 'Did not switch on nocache mode' );
 		$this->record_did_send_headers();
@@ -500,15 +500,36 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertLessThanOrEqual( time() + MONTH_IN_SECONDS, $expiry );
 		$this->assertSame( COOKIEPATH, $path );
 		$this->assertSame( (string) COOKIE_DOMAIN, $domain );
+	}
 
-		Vary_Cache::unload();
-		Vary_Cache::load();
-		Cookie_Recorder::$calls       = [];
-		$this->did_send_headers_calls = [];
+	/**
+	 * Verify that removing no-cache expires the existing cookie.
+	 */
+	public function test_remove_nocache_expires_existing_cookie(): void {
+		$path_filter   = static function () {
+			return '/segmentation/';
+		};
+		$domain_filter = static function () {
+			return 'cookies.example.org';
+		};
+		add_filter( 'vip_vary_cache_cookie_path', $path_filter );
+		add_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+
+		$_COOKIE[ Vary_Cache::COOKIE_NOCACHE ] = '1';
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::is_user_in_nocache(), 'Did not parse nocache mode' );
 		$this->assertTrue( Vary_Cache::remove_nocache_for_user(), 'Result was not true' );
 		$this->assertFalse( Vary_Cache::is_user_in_nocache(), 'Did not switch off nocache mode' );
+		$this->record_did_send_headers();
 		$before = time();
-		do_action( 'send_headers' );
+
+		try {
+			do_action( 'send_headers' );
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
+			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		}
+
 		$this->assertSame( [ [ false, true ] ], $this->did_send_headers_calls, 'Only the cookie should be sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
 		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
@@ -517,8 +538,36 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertSame( '', $value );
 		$this->assertGreaterThanOrEqual( $before - HOUR_IN_SECONDS, $expiry );
 		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
-		$this->assertSame( COOKIEPATH, $path );
-		$this->assertSame( (string) COOKIE_DOMAIN, $domain );
+		$this->assertSame( '/segmentation/', $path );
+		$this->assertSame( 'cookies.example.org', $domain );
+	}
+
+	public function get_test_data__remove_nocache_without_existing_cookie(): array {
+		return [
+			'without-groups' => [ false, [] ],
+			'with-group'     => [ true, [ [ true, false ] ] ],
+		];
+	}
+
+	/**
+	 * Verify that removing no-cache does not set a cookie when none exists.
+	 *
+	 * @dataProvider get_test_data__remove_nocache_without_existing_cookie
+	 */
+	public function test_remove_nocache_without_existing_cookie_does_not_set_cookie( bool $register_group, array $expected_calls ): void {
+		$_COOKIE = [];
+
+		if ( $register_group ) {
+			Vary_Cache::register_group( 'dev-group' );
+		}
+
+		$this->assertTrue( Vary_Cache::remove_nocache_for_user(), 'Result was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( $expected_calls, $this->did_send_headers_calls, 'Unexpected vip_vary_cache_did_send_headers calls' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
 	}
 
 	/**
