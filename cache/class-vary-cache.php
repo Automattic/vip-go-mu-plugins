@@ -70,7 +70,7 @@ class Vary_Cache {
 	private static $groups = [];
 
 	/**
-	 * Plaintext group string carried by the request's group cookie, as the cache layer sees it.
+	 * Plaintext group string carried by the request's group cookie, if the cache layer read the same value.
 	 *
 	 * @access  private
 	 * @var     array  Key - Cookie name, Value - group string
@@ -433,9 +433,10 @@ class Vary_Cache {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
-			// The cache layer also drops the header for an expired or undecryptable cookie, so leave $cookie_name
-			// unset: this cookie must not stop a fresh one from being sent.
+			// If the cache layer didn't supply the header, fall back to decrypting the cookie itself.
+			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
+			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
+			// didn't vouch for must not stop a fresh one from being sent.
 			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -611,8 +612,7 @@ class Vary_Cache {
 			/**
 			 * Filters whether to re-send a group cookie whose groups are unchanged.
 			 *
-			 * Re-sending slides the cookie expiry forward, or re-issues the cookie after its path or domain
-			 * changed, but the response won't be cached.
+			 * Re-sending slides the cookie expiry forward, but the response won't be cached.
 			 *
 			 * @param bool  $refresh Whether to re-send the unchanged group cookie. Default false.
 			 * @param array $groups  The user's group-value pairs.

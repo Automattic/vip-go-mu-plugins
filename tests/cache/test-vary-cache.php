@@ -522,7 +522,8 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * Verify that an auth cookie the cache layer didn't decrypt into a header is re-sent, even when unchanged.
 	 *
-	 * The cache layer drops the header for an expired cookie, so PHP's own decryption can't vouch for it.
+	 * The cache layer only sets the header for a cookie it can decrypt and that hasn't expired, so PHP's own
+	 * decryption can't vouch for the cookie.
 	 */
 	public function test_auth_cookie_without_cache_header_is_resent(): void {
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
@@ -540,11 +541,16 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		Vary_Cache::parse_cookies();
 		$this->assertSame( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'The auth cookie was not decrypted' );
 		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->record_did_send_headers();
 
 		do_action( 'send_headers' );
 
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
 		$this->assertCount( 1, Cookie_Recorder::$calls );
-		$this->assertSame( Vary_Cache::COOKIE_AUTH, Cookie_Recorder::$calls[0][1] );
+		[ , $name, $value ] = Cookie_Recorder::$calls[0];
+		$this->assertSame( Vary_Cache::COOKIE_AUTH, $name );
+		$value = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, substr( $value, 4 ) );
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
 	}
 
 	public function test_refresh_filter_resends_unchanged_group_cookie(): void {
