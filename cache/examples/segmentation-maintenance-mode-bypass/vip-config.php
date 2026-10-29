@@ -14,6 +14,8 @@ function x_maybe_enable_maintenance_mode() {
 		$enable_maintenance_mode = false;
 	} elseif ( isset( $_COOKIE['vip-go-seg'] )
 		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		&& is_string( $_COOKIE['vip-go-seg'] )
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 		&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
 		// Don't enable if the request has our secret key.
 		$enable_maintenance_mode = false;

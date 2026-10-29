@@ -205,13 +205,14 @@ Now, if the cookie is set and includes the correct secret, we can skip enabling 
 
 ```
 if ( isset( $_COOKIE['vip-go-seg'] )
+	&& is_string( $_COOKIE['vip-go-seg'] )
 	&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
 	// Don't enable if the request has our secret key.
 	$enable_maintenance_mode = false;
 }
 ```
 
-Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack).
+Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack). The `is_string` check matters too: PHP parses a cookie sent as `vip-go-seg[]=…` into an array, and `hash_equals` throws a fatal error when it gets an array.
 
 Now, we can set our constant based on the outcome of the tests:
 
