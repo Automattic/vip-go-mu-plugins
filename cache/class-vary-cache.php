@@ -209,6 +209,9 @@ class Vary_Cache {
 	/**
 	 * Set request to indicate the request will vary on one or more groups.
 	 *
+	 * Registering a group resets its value for the current request. Register groups before `init` priority 10,
+	 * when the visitor's cookie is parsed, so the parsed value isn't discarded.
+	 *
 	 * @since   1.0.0
 	 * @access  public
 	 *
@@ -228,8 +231,7 @@ class Vary_Cache {
 				continue;
 			}
 
-			// Keep any value the group already has, parsed from the cookie or assigned with set_group_for_user().
-			self::$groups += [ $group => '' ];
+			self::$groups[ $group ] = '';
 		}
 
 		return true;

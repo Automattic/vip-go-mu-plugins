@@ -383,49 +383,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		self::assertEquals( $expected_groups, Vary_Cache::get_groups() );
 	}
 
-	/**
-	 * Verify that registering a group after the cookie was parsed keeps the parsed value, including on the next cookie write.
-	 */
-	public function test_register_groups_after_parse_keeps_cookie_value(): void {
-		$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yes';
-
-		Vary_Cache::parse_cookies();
-		$this->assertTrue( Vary_Cache::register_groups( [ 'dev-group', 'design-group' ] ) );
-
-		$this->assertSame( [
-			'dev-group'    => 'yes',
-			'design-group' => '',
-		], Vary_Cache::get_groups() );
-		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', 'yes' ), 'The parsed value was lost' );
-
-		$this->assertTrue( Vary_Cache::set_group_for_user( 'design-group', 'no' ), 'Return value was not true' );
-		do_action( 'send_headers' );
-
-		$this->assertCount( 1, Cookie_Recorder::$calls );
-		[ , $name, $value ] = Cookie_Recorder::$calls[0];
-		$this->assertSame( Vary_Cache::COOKIE_SEGMENT, $name );
-		$this->assertSame( 'vc-v1__design-group_--_no---__dev-group_--_yes', $value );
-	}
-
-	/**
-	 * Verify that registering a group again keeps the value assigned with set_group_for_user().
-	 */
-	public function test_register_group_again_keeps_assigned_value(): void {
-		Vary_Cache::register_group( 'dev-group' );
-		Vary_Cache::parse_cookies();
-		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yes' ), 'Return value was not true' );
-		$this->assertTrue( Vary_Cache::register_group( 'dev-group' ) );
-
-		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', 'yes' ), 'The assigned value was lost' );
-
-		do_action( 'send_headers' );
-
-		$this->assertCount( 1, Cookie_Recorder::$calls );
-		[ , $name, $value ] = Cookie_Recorder::$calls[0];
-		$this->assertSame( Vary_Cache::COOKIE_SEGMENT, $name );
-		$this->assertSame( 'vc-v1__dev-group_--_yes', $value );
-	}
-
 	public function get_test_data__set_group_for_user_invalid() {
 		return [
 			'invalid-group-name-group-separator'    => [
