@@ -573,14 +573,16 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__has_group_cookie(): array {
 		return [
-			'plain-without-cookie'            => [ false, [], '', false ],
-			'plain-with-segment-cookie'       => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
-			'plain-with-auth-cookie'          => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
-			'plain-with-decrypted-header'     => [ false, [], 'vc-v1__dev-group_--_yes', false ],
-			'encrypted-without-cookie'        => [ true, [], '', false ],
-			'encrypted-with-auth-cookie'      => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
-			'encrypted-with-decrypted-header' => [ true, [], 'vc-v1__dev-group_--_yes', true ],
-			'encrypted-with-segment-cookie'   => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+			'plain-without-cookie'             => [ false, [], '', false ],
+			'plain-with-segment-cookie'        => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
+			'plain-with-auth-cookie'           => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
+			'plain-with-decrypted-header'      => [ false, [], 'vc-v1__dev-group_--_yes', false ],
+			'encrypted-without-cookie'         => [ true, [], '', false ],
+			'encrypted-with-auth-cookie'       => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
+			'encrypted-with-decrypted-header'  => [ true, [], 'vc-v1__dev-group_--_yes', true ],
+			'encrypted-with-segment-cookie'    => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+			'plain-with-array-segment-cookie'  => [ false, [ 'vip-go-seg' => [ 'value' ] ], '', true ],
+			'encrypted-with-array-auth-cookie' => [ true, [ 'vip-go-auth' => [ 'value' ] ], '', true ],
 		];
 	}
 
@@ -1159,5 +1161,67 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		} finally {
 			$_COOKIE = [];
 		}
+	}
+
+	public function get_test_data__parse_group_cookie_unusual_cookie_header(): array {
+		// $_COOKIE as PHP builds it from the raw header. In the raw header, `%s` is an encrypted `vc-v1__dev-group_--_yes`.
+		return [
+			'plain-array-only'          => [ false, [ 'vip-go-seg' => [ 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[]=vc-v1__dev-group_--_yes', [] ],
+			'plain-keyed-array-only'    => [ false, [ 'vip-go-seg' => [ 'a' => 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[a]=vc-v1__dev-group_--_yes', [] ],
+			'plain-real-then-array'     => [ false, [ 'vip-go-seg' => [ 'x' ] ], 'vip-go-seg=vc-v1__dev-group_--_yes; vip-go-seg[]=x', [ 'dev-group' => 'yes' ] ],
+			'plain-array-then-real'     => [ false, [ 'vip-go-seg' => [ 'x' ] ], 'vip-go-seg[]=x; vip-go-seg=vc-v1__dev-group_--_yes', [ 'dev-group' => 'yes' ] ],
+			'encrypted-array-only'      => [ true, [ 'vip-go-auth' => [ 'x' ] ], 'vip-go-auth[]=x', [] ],
+			'encrypted-array-then-real' => [ true, [ 'vip-go-auth' => [ 'x' ] ], 'vip-go-auth[]=x; vip-go-auth=123.%s', [ 'dev-group' => 'yes' ] ],
+			'encrypted-without-prefix'  => [ true, [ 'vip-go-auth' => 'garbage' ], 'vip-go-auth=garbage', [] ],
+			'encrypted-without-space'   => [
+				true,
+				[
+					'a'           => 'b',
+					'vip-go-auth' => 'encrypted',
+				],
+				'a=b;vip-go-auth=123.%s',
+				[ 'dev-group' => 'yes' ],
+			],
+			'encrypted-after-valueless' => [
+				true,
+				[
+					'flag'        => '',
+					'vip-go-auth' => 'encrypted',
+				],
+				'flag; vip-go-auth=123.%s',
+				[ 'dev-group' => 'yes' ],
+			],
+		];
+	}
+
+	/**
+	 * Parsing reads the cookie the cache layer would see, without warnings, even when PHP's $_COOKIE disagrees.
+	 *
+	 * @dataProvider get_test_data__parse_group_cookie_unusual_cookie_header
+	 */
+	public function test_parse_group_cookie_unusual_cookie_header( bool $encrypted, array $cookies, string $raw_cookie, array $expected_groups ): void {
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+			Vary_Cache::enable_encryption();
+
+			$encrypt_method = get_class_method_as_public( Vary_Cache::class, 'encrypt_cookie_value' );
+			$raw_cookie     = sprintf( $raw_cookie, $encrypt_method->invoke( null, 'vc-v1__dev-group_--_yes' ) );
+		}
+
+		$_COOKIE                = $cookies;
+		$_SERVER['HTTP_COOKIE'] = $raw_cookie;
+
+		try {
+			[ , $errors ] = $this->capture_errors( [ Vary_Cache::class, 'parse_cookies' ], E_ALL );
+		} finally {
+			unset( $_SERVER['HTTP_COOKIE'] );
+		}
+
+		$this->assertSame( [], $errors, 'Parsing raised an error' );
+		$this->assertSame( $expected_groups, Vary_Cache::get_groups() );
 	}
 }
