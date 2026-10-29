@@ -371,13 +371,19 @@ class Vary_Cache {
 	/**
 	 * Decrypts a string using the auth credentials for the site.
 	 *
-	 * Like the cache layer, rejects payloads that aren't `random|groups|expiry` or whose expiry has passed.
+	 * Like the cache layer, rejects values that aren't plain base64, and payloads that aren't `random|groups|expiry`
+	 * or whose expiry has passed.
 	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
 	 * @return string|null The group payload, or null if the payload is malformed or expired.
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
+		// openssl_decrypt() skips characters outside the base64 alphabet, which the cache layer rejects.
+		if ( ! preg_match( '#^[A-Za-z0-9+/]+={0,2}\z#', $cookie_value ) ) {
+			return null;
+		}
+
 		$client_key    = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv     = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
@@ -420,7 +426,8 @@ class Vary_Cache {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
+			// The cache layer didn't set the header, e.g. because it rejected the cookie as expired or malformed.
+			// Decrypt the cookie here, applying the same checks.
 			$auth_cookie = '';
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -435,10 +442,8 @@ class Vary_Cache {
 			// Remove the site prefix at the beginning
 			$prefix = constant( 'VIP_GO_APP_ID' ) . '.';
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
-				$value = substr( $auth_cookie, strlen( $prefix ) );
+				$cookie_value = self::decrypt_cookie_value( substr( $auth_cookie, strlen( $prefix ) ) );
 			}
-			$cookie_value = self::decrypt_cookie_value( $value );
-
 		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];

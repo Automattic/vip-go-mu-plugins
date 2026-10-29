@@ -777,7 +777,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__parse_auth_cookie_without_header(): array {
-		// `%d` is replaced with the expiry: now + the given offset.
+		// In the payload, `%d` is replaced with the expiry: now + the given offset. In the cookie, `%s` is the encrypted payload.
 		return [
 			'unexpired'          => [
 				'42|vc-v1__design-group_--_no---__dev-group_--_yes|%d',
@@ -792,6 +792,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 			'missing-expiry'     => [ '42|vc-v1__dev-group_--_yes', HOUR_IN_SECONDS, [] ],
 			'non-numeric-expiry' => [ '42|vc-v1__dev-group_--_yes|never', HOUR_IN_SECONDS, [] ],
 			'extra-part'         => [ '42|vc-v1__dev-group_--_yes|%d|42', HOUR_IN_SECONDS, [] ],
+			'double-dot'         => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123..%s' ],
+			'stray-space'        => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123. %s' ],
+			'other-app-id'       => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '456.%s' ],
 		];
 	}
 
@@ -800,23 +803,19 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider get_test_data__parse_auth_cookie_without_header
 	 */
-	public function test__parse_auth_cookie_without_header( string $payload_format, int $expires_in, array $expected_groups ): void {
+	public function test__parse_auth_cookie_without_header( string $payload_format, int $expires_in, array $expected_groups, string $cookie_format = '123.%s' ): void {
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
 		Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
 		Vary_Cache::enable_encryption();
 
 		$payload     = sprintf( $payload_format, time() + $expires_in );
-		$auth_cookie = '123.' . openssl_encrypt( $payload, 'aes-128-cbc', '0123456789abcdef', 0, 'fedcba9876543210' );
+		$auth_cookie = sprintf( $cookie_format, openssl_encrypt( $payload, 'aes-128-cbc', '0123456789abcdef', 0, 'fedcba9876543210' ) );
 		$_COOKIE     = [ Vary_Cache::COOKIE_AUTH => $auth_cookie ];
 		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
 		$_SERVER['HTTP_COOKIE'] = Vary_Cache::COOKIE_AUTH . '=' . $auth_cookie;
 
-		try {
-			Vary_Cache::parse_cookies();
-		} finally {
-			unset( $_SERVER['HTTP_COOKIE'] );
-		}
+		Vary_Cache::parse_cookies();
 
 		$this->assertSame( $expected_groups, Vary_Cache::get_groups() );
 		// A rejected cookie must still count as present, so removing the user's last group expires it.
