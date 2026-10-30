@@ -11,7 +11,7 @@ const USER_MODIFICATION_CAPS = [
 
 // Don't allow the VIP machine user to be edited or removed.
 function prevent_machine_user_mods( $caps, $requested_cap, $user_id, $args ) {
-	if ( in_array( $requested_cap, USER_MODIFICATION_CAPS, true ) ) {
+	if ( isset( $args[0] ) && in_array( $requested_cap, USER_MODIFICATION_CAPS, true ) ) {
 		// args[0] is who we're performing the action on.
 		$user_to_edit_id = $args[0];
 		$user_to_edit    = get_userdata( $user_to_edit_id );

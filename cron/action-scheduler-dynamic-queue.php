@@ -155,6 +155,11 @@ class Action_Scheduler_Dynamic_Queue {
 		// TODO: Look into using the action_scheduler_maximum_execution_time_likely_to_be_exceeded filter to track averages better.
 		$average_actions_processed_per_queue = min( absint( apply_filters( 'action_scheduler_queue_runner_batch_size', 25 ) ) * 2, 100 );
 
+		// A batch size of zero means the queue won't process anything, so extra queues wouldn't help.
+		if ( $average_actions_processed_per_queue < 1 ) {
+			return 0;
+		}
+
 		// Rely on the default recurring cron queue to handle some of the volume.
 		$actions_needing_a_queue = $unclaimed_pending_actions_due - $average_actions_processed_per_queue;
 
