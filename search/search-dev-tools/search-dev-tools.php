@@ -49,10 +49,7 @@ function register_rest_routes() {
 				'query' => [
 					'type'              => 'string',
 					'required'          => true,
-					'validate_callback' => function ( $value, $request, $param ) {
-						json_decode( $value );
-						return JSON_ERROR_NONE === json_last_error() ?: new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid JSON', $param ) );
-					},
+					'validate_callback' => __NAMESPACE__ . '\rest_endpoint_query_validate_callback',
 				],
 			],
 		]
@@ -110,6 +107,28 @@ function rest_callback( \WP_REST_Request $request ) {
 function should_enable_search_dev_tools(): bool {
 	$cap = apply_filters( 'vip_search_dev_tools_cap', 'manage_options' );
 	return ( current_user_can( $cap ) || ( function_exists( 'is_debug_mode_enabled' ) && is_debug_mode_enabled() ) ) && function_exists( 'ep_get_query_log' );
+}
+
+/**
+ * Validate the request query - it must be a string containing valid JSON.
+ *
+ * A JSON request body can decode this param into a non-string, so check the type before decoding.
+ *
+ * @param mixed $value
+ * @param WP_Rest_Request $request
+ * @param string $param key
+ * @return mixed true if valid, WP_Error if not.
+ */
+function rest_endpoint_query_validate_callback( $value, $request, $param ) {
+	if ( is_string( $value ) ) {
+		json_decode( $value );
+
+		if ( JSON_ERROR_NONE === json_last_error() ) {
+			return true;
+		}
+	}
+
+	return new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid JSON', $param ) );
 }
 
 /**
