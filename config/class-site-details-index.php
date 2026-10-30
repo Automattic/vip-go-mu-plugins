@@ -285,7 +285,7 @@ class Site_Details_Index {
 			foreach ( $wp_roles->roles as $slug => $role ) {
 				$roles[] = [
 					'slug' => $slug,
-					'name' => $role['name'],
+					'name' => $role['name'] ?? $slug,
 				];
 			}
 		}

@@ -168,7 +168,7 @@ add_action( 'transition_post_status', function ( $new_status, $old_status, $post
  */
 function wpcom_vip_old_slug_redirect() {
 	global $wp_query;
-	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
+	if ( is_404() && '' !== ( $wp_query->query_vars['name'] ?? '' ) ) {
 		global $wpdb;
 
 		// Guess the current post_type based on the query vars.
@@ -485,6 +485,7 @@ function wpcom_vip_attachment_cache_key( $url ) {
 }
 
 function wpcom_vip_attachment_url_to_postid( $url ) {
+	$url       = (string) $url;
 	$cache_key = wpcom_vip_attachment_cache_key( $url );
 	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
@@ -544,7 +545,7 @@ function wpcom_vip_enable_old_slug_redirect_caching() {
  */
 function wpcom_vip_wp_old_slug_redirect() {
 	global $wp_query;
-	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
+	if ( is_404() && '' !== ( $wp_query->query_vars['name'] ?? '' ) ) {
 
 		$redirect = wp_cache_get( 'old_slug' . $wp_query->query_vars['name'] );
 
