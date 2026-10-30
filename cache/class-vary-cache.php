@@ -377,7 +377,7 @@ class Vary_Cache {
 		// Validate that we have the secret values.
 		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) {
-			trigger_error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.', E_USER_ERROR );
+			throw new \Error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.' );
 		}
 
 		static::$encryption_enabled = true;
