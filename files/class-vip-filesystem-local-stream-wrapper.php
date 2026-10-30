@@ -1007,7 +1007,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		$tmp_handler = tmpfile();
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		if ( false === fwrite( $tmp_handler, $data ) ) {
-			trigger_error( 'Error creating temporary resource #vip-go-streams', E_USER_ERROR );
+			throw new \Error( 'Error creating temporary resource #vip-go-streams' );
 		}
 
 		switch ( $mode ) {

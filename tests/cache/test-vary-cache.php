@@ -4,7 +4,6 @@ namespace Automattic\VIP\Cache;
 
 use Automattic\Test\Constant_Mocker;
 use Automattic\Test\Utils\Captures_Errors;
-use ErrorException;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
@@ -941,36 +940,22 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	}
 
 	public function test__enable_encryption_invalid() {
-		$this->assert_enable_encryption_triggers_error();
+		$this->assert_enable_encryption_throws_error();
 	}
 
 	public function test__enable_encryption_invalid_empty_constants() {
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
-		$this->assert_enable_encryption_triggers_error();
+		$this->assert_enable_encryption_throws_error();
 	}
 
-	private function assert_enable_encryption_triggers_error(): void {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( E_USER_ERROR === $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, 0, $errno );
-			}
-
-			// PHP 8.4+ also emits a deprecation for passing E_USER_ERROR to trigger_error().
-			return true;
-		}, E_USER_ERROR | E_DEPRECATED );
-
+	private function assert_enable_encryption_throws_error(): void {
 		try {
 			Vary_Cache::enable_encryption();
-			$this->fail( 'Expected enable_encryption() to trigger an E_USER_ERROR' );
-		} catch ( ErrorException $e ) {
-			$this->assertSame( E_USER_ERROR, $e->getSeverity() );
+			$this->fail( 'Expected enable_encryption() to throw an Error' );
+		} catch ( \Error $e ) {
 			$this->assertStringContainsString( 'Cannot enable encryption', $e->getMessage() );
-		} finally {
-			restore_error_handler();
 		}
 
 		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
