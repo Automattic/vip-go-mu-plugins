@@ -813,6 +813,40 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * @dataProvider connector_badge_provider
+	 */
+	public function test_connector_badge_requires_runtime_authentication( ?string $credential, bool $provider_available, bool $expected_connected ): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $credential, $provider_available, $expected_connected ) {
+			update_option( 'connectors_ai_openai_api_key', 'old-database-secret' );
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_blocked' => 'true' ] ] );
+			$integration->configure();
+			$this->assertSame( '', get_option( 'connectors_ai_openai_api_key' ) );
+
+			if ( null !== $credential ) {
+				$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( $credential ) );
+			}
+			// Provider availability can stay true from cached models after a credential is removed.
+			$provider_class::$availability->method( 'isConfigured' )->willReturn( $provider_available );
+			\_wp_connectors_register_default_ai_providers( $connector_registry );
+			do_action( 'wp_connectors_init', $connector_registry );
+
+			$data = \_wp_connectors_get_connector_script_module_data( [] );
+			$this->assertSame( $provider_available, $data['connectors']['openai']['authentication']['isConnected'] );
+			$filtered = $integration->lock_connector_fields( $data );
+			$this->assertSame( $expected_connected, $filtered['connectors']['openai']['authentication']['isConnected'] );
+			$this->assertSame( 'constant', $filtered['connectors']['openai']['authentication']['keySource'] );
+		} );
+	}
+
+	public function connector_badge_provider(): iterable {
+		yield 'cached availability without authentication' => [ null, true, false ];
+		yield 'cached availability with empty authentication' => [ '', true, false ];
+		yield 'configured runtime credential' => [ 'runtime-secret', true, true ];
+		yield 'runtime credential rejected by provider' => [ 'runtime-secret', false, false ];
+	}
+
+	/**
 	 * @dataProvider missing_database_option_provider
 	 */
 	public function test_managed_database_options_cannot_store_new_credentials( string $option_name, bool $cache_missing_option ): void {

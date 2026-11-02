@@ -396,6 +396,7 @@ class ConnectorControlsIntegration extends Integration {
 	 * Core recognizes provider constants and environment variables as read-only.
 	 * Its constant marker also locks fields with no credential or a runtime
 	 * fallback, without exposing inert database values.
+	 * Suppress stale connected badges when runtime authentication is absent.
 	 *
 	 * @param array<string,mixed> $data Connector screen script-module data.
 	 * @return array<string,mixed>
@@ -405,6 +406,8 @@ class ConnectorControlsIntegration extends Integration {
 			return $data;
 		}
 
+		$report = $this->get_runtime_status();
+
 		foreach ( array_keys( self::CONNECTORS ) as $connector_id ) {
 			if ( ! isset( $data['connectors'][ $connector_id ]['authentication'] ) ) {
 				continue;
@@ -413,6 +416,12 @@ class ConnectorControlsIntegration extends Integration {
 			$key_source = $data['connectors'][ $connector_id ]['authentication']['keySource'] ?? 'none';
 			if ( ! in_array( $key_source, [ 'env', 'constant' ], true ) ) {
 				$data['connectors'][ $connector_id ]['authentication']['keySource'] = 'constant';
+			}
+
+			// Core's availability check can reuse cached models after a credential is removed.
+			$status = $report['providers'][ $connector_id ]['status'] ?? 'unknown';
+			if ( in_array( $status, [ 'unconfigured', 'provider_unavailable' ], true ) ) {
+				$data['connectors'][ $connector_id ]['authentication']['isConnected'] = false;
 			}
 		}
 

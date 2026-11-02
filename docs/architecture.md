@@ -83,6 +83,12 @@ this does not verify provider acceptance of a key. Code that replaces authentica
 after connector initialization can change the runtime source after this metadata
 snapshot; SDS observes the registry again when collecting its report.
 
+The screen's connected badge is suppressed when the current runtime report shows
+no credential or an unavailable provider. Core's availability check can otherwise
+reuse cached model metadata after a credential is removed. When runtime
+authentication exists, Core's connection result is preserved. The field remains
+read-only in either case, and provider caches are not cleared.
+
 The existing Site Details Service (SDS) report includes `connector_controls` with
 an `active` flag and per-provider `source` and `status` enums. The reporter inspects
 the actual registry authentication: integration, environment variable, PHP
