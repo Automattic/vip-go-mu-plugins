@@ -132,6 +132,11 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
 		Constant_Mocker::define( 'WP_CONTENT_DIR', WP_CONTENT_DIR );
 
+		// Duplicate-prefix cleanup follows the configured uploads root, including Core's test directory.
+		$upload_dir = wp_get_upload_dir();
+		$file_path  = str_replace( 'vip://wp-content/uploads', $upload_dir['basedir'], $file_path );
+		$expected   = str_replace( 'vip://wp-content/uploads', $upload_dir['basedir'], $expected );
+
 		$clean_file_path = get_class_method_as_public( VIP_Filesystem::class, 'clean_file_path' );
 
 		$actual = $clean_file_path->invokeArgs( $this->vip_filesystem, [ $file_path ] );
@@ -267,10 +272,17 @@ class VIP_Filesystem_Test extends WP_UnitTestCase {
 		// Match the real WordPress upload directory for this integration fixture.
 		Constant_Mocker::undefine( 'WP_CONTENT_DIR' );
 		Constant_Mocker::define( 'WP_CONTENT_DIR', \WP_CONTENT_DIR );
+		// Map Core's isolated uploads directory to the Files API's canonical wp-content/uploads path.
+		remove_filter( 'upload_dir', [ $this->vip_filesystem, 'filter_upload_dir' ] );
+		$upload_dir = wp_get_upload_dir();
+		add_filter( 'upload_dir', [ $this->vip_filesystem, 'filter_upload_dir' ] );
+		Constant_Mocker::undefine( 'LOCAL_UPLOADS' );
+		Constant_Mocker::define( 'LOCAL_UPLOADS', $upload_dir['basedir'] );
 		$client  = new API_Client( 'https://files.go-vip.co', 123, 'test-token', API_Cache::get_instance() );
 		$wrapper = new VIP_Filesystem_Local_Stream_Wrapper( $client );
 		get_class_property_as_public( VIP_Filesystem::class, 'stream_wrapper' )->setValue( $this->vip_filesystem, $wrapper );
-		$path          = trailingslashit( get_class_method_as_public( VIP_Filesystem::class, 'get_upload_path' )->invoke( $this->vip_filesystem ) ) . 'original.jpg';
+		$path = trailingslashit( get_class_method_as_public( VIP_Filesystem::class, 'get_upload_path' )->invoke( $this->vip_filesystem ) ) . 'original.jpg';
+		$this->assertStringStartsWith( 'wp-content/uploads/', $path );
 		$requests      = 0;
 		$http_boundary = function ( $preempt, $args, $url ) use ( $response, $client, $path, &$requests ) {
 			++$requests;

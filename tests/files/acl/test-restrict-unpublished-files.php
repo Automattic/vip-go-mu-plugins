@@ -190,7 +190,9 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	private function strip_wpcontent_uploads( $path ) {
-		return substr( $path, strlen( '/wp-content/uploads/' ) );
+		$upload_dir = wp_get_upload_dir();
+		$base_path  = trailingslashit( wp_parse_url( $upload_dir['baseurl'], PHP_URL_PATH ) );
+		return substr( $path, strlen( $base_path ) );
 	}
 
 	public function test__purge_attachments_for_post__invalid_post() {
