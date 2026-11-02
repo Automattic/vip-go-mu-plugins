@@ -289,4 +289,23 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_url_validate_callback( $input, new \WP_REST_Request( 'POST' ), 'url' );
 		$this->assertEquals( $val, $expected, 'URL validation failed' );
 	}
+
+	public function data_provider_queries() {
+		$error = new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid JSON', 'query' ) );
+
+		return [
+			'valid JSON string'   => [ '{"query":{"match_all":{}}}', true ],
+			'invalid JSON string' => [ '{"query":', $error ],
+			'decoded object'      => [ [ 'query' => [ 'match_all' => [] ] ], $error ],
+			'number'              => [ 123, $error ],
+		];
+	}
+
+	/**
+	 * @dataProvider data_provider_queries
+	 */
+	public function test__query_validation( $input, $expected ) {
+		$val = \Automattic\VIP\Search\Dev_Tools\rest_endpoint_query_validate_callback( $input, new \WP_REST_Request( 'POST' ), 'query' );
+		$this->assertEquals( $expected, $val, 'Query validation failed' );
+	}
 }
