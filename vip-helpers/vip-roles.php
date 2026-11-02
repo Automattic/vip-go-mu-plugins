@@ -160,7 +160,8 @@ function wpcom_vip_remove_role_caps( $role, $caps ) {
  * @param string $role Role name
  */
 function _wpcom_vip_maybe_refresh_current_user_caps( $role ) {
-	if ( is_user_logged_in() && current_user_can( $role ) ) {
+	// Roles can change before pluggable functions load, when there's no current user to refresh yet.
+	if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() && current_user_can( $role ) ) {
 		wp_get_current_user()->get_role_caps();
 	}
 }

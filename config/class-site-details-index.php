@@ -172,20 +172,25 @@ class Site_Details_Index {
 		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
 
 		foreach ( $no_update as $plugin_path => $plugin_data ) {
+			// Cast, as an entry can be an array, or an incomplete object when its class isn't loaded.
+			$plugin_data = (array) $plugin_data;
+
 			$update_data[ $plugin_path ] = [
-				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
+				'slug'        => $plugin_data['slug'] ?? null,
+				'marketplace' => $this->get_marketplace( $plugin_data['url'] ?? '' ),
 				'new_version' => null,
 				'package'     => null,
 			];
 		}
 
 		foreach ( $has_update as $plugin_path => $plugin_data ) {
+			$plugin_data = (array) $plugin_data;
+
 			$update_data[ $plugin_path ] = [
-				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
-				'new_version' => $plugin_data->new_version ?? null,
-				'package'     => wp_http_validate_url( $plugin_data->package ?? '' ) !== false ? $plugin_data->package : null,
+				'slug'        => $plugin_data['slug'] ?? null,
+				'marketplace' => $this->get_marketplace( $plugin_data['url'] ?? '' ),
+				'new_version' => $plugin_data['new_version'] ?? null,
+				'package'     => wp_http_validate_url( $plugin_data['package'] ?? '' ) !== false ? $plugin_data['package'] : null,
 			];
 		}
 
@@ -254,6 +259,9 @@ class Site_Details_Index {
 		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
 
 		foreach ( $no_update as $theme_path => $theme_data ) {
+			// Cast, as an entry can be an object rather than the usual array.
+			$theme_data = (array) $theme_data;
+
 			$update_data[ $theme_path ] = [
 				'slug'        => $theme_data['theme'] ?? null,
 				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
@@ -263,6 +271,8 @@ class Site_Details_Index {
 		}
 
 		foreach ( $has_update as $theme_path => $theme_data ) {
+			$theme_data = (array) $theme_data;
+
 			$update_data[ $theme_path ] = [
 				'slug'        => $theme_data['theme'] ?? null,
 				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
