@@ -25,7 +25,7 @@
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) && function_exists( 'stats_get_csv' ) ) {
 		
 		// WordPress.com stats defaults to current UTC date, default to site's local date instead
 		if ( ! $end_date ) {
@@ -67,7 +67,7 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) && function_exists( 'stats_get_csv' ) ) {
 		$args = array(
 			'post_id'  => $post_id,
 			'num_days' => $num_days,

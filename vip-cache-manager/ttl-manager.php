@@ -18,7 +18,8 @@ function init() {
 }
 
 function enforce_rest_api_read_ttl( $response, $rest_server, $request ) {
-	if ( $response->is_error() ) {
+	// Batch requests can pass a WP_Error through rest_post_dispatch.
+	if ( ! $response instanceof \WP_REST_Response || $response->is_error() ) {
 		return $response;
 	}
 
