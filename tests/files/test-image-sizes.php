@@ -417,19 +417,21 @@ class A8C_Files_ImageSizes_Test extends WP_UnitTestCase {
 	 */
 	public function test__generated_srcset() {
 		$attachment_id = $this->create_attachment();
+		$upload_dir    = wp_get_upload_dir();
+		$image_url     = trailingslashit( $upload_dir['baseurl'] ) . $this->test_image;
 
 		// Test medium size.
 		$expected_srcset =
-			'http://example.org/wp-content/uploads/' . $this->test_image . '?resize=300,169 300w'
-			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=768,432 768w'
-			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1024,576 1024w'
-			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=1536,865 1536w'
-			. ', http://example.org/wp-content/uploads/' . $this->test_image . '?resize=2048,1153 2048w';
+			$image_url . '?resize=300,169 300w'
+			. ', ' . $image_url . '?resize=768,432 768w'
+			. ', ' . $image_url . '?resize=1024,576 1024w'
+			. ', ' . $image_url . '?resize=1536,865 1536w'
+			. ', ' . $image_url . '?resize=2048,1153 2048w';
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id ) );
 
 		// Test custom size passed by dimensions.
-		$expected_srcset = 'http://example.org/wp-content/uploads/' . $this->test_image . ' 5472w' . ", {$expected_srcset}";
+		$expected_srcset = $image_url . ' 5472w' . ", {$expected_srcset}";
 
 		$this->assertEquals( $expected_srcset, wp_get_attachment_image_srcset( $attachment_id, [ 400, 200 ] ), 'Incorrectly generated srcset.' );
 	}
