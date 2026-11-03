@@ -303,12 +303,13 @@ class VIP_Revision_Meta_Test extends WP_UnitTestCase {
 		] );
 		$response = rest_get_server()->dispatch( $request );
 		$this->assertSame( 200, $response->get_status() );
-		$this->assertSame( [
-			'id'   => $revision_id,
-			'meta' => [
-				'revisioned_alias' => 'snapshot meta',
-			],
-		], $response->get_data() );
+		$data = $response->get_data();
+		$this->assertSame( [ 'id', 'meta' ], array_keys( $data ) );
+		$this->assertSame( $revision_id, $data['id'] );
+		// Core and plugins may register other revisioned fields, such as footnotes.
+		$this->assertSame( 'snapshot meta', $data['meta']['revisioned_alias'] );
+		$this->assertArrayNotHasKey( '_crdt_document', $data['meta'] );
+		$this->assertArrayNotHasKey( 'rtc_unrelated', $data['meta'] );
 	}
 
 	/**

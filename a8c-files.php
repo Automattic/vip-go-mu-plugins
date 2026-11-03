@@ -293,7 +293,7 @@ class A8C_Files {
 		// For resize requests coming from an image's attachment page, override
 		// the supplied $size and use the user-defined $content_width if the
 		// theme-defined $content_width has been manually passed in.
-		if ( is_attachment() && $id === $post->ID ) {
+		if ( is_attachment() && isset( $post->ID ) && $id === $post->ID ) {
 			if ( is_array( $size ) && ! empty( $size ) && isset( $GLOBALS['content_width'] ) && $size[0] == $GLOBALS['content_width'] ) {
 				$size = array( $content_width, $content_width );
 			}

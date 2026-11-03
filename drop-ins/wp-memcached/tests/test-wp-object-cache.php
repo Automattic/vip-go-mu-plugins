@@ -834,6 +834,16 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		}
 	}
 
+	public function test_group_ops_stats_treats_empty_group_as_default() {
+		$this->object_cache->group_ops = [];
+
+		self::assertTrue( $this->object_cache->set( 'null-group', 'data', null ) );
+		self::assertTrue( $this->object_cache->set( 'empty-group', 'data', '' ) );
+
+		self::assertArrayNotHasKey( '', $this->object_cache->group_ops );
+		self::assertCount( 2, $this->object_cache->group_ops['default'] );
+	}
+
 	public function test_flush_runtime() {
 		// Add a value to memcached (local and remote)
 		self::assertTrue( $this->object_cache->add( 'key', 'data' ) );

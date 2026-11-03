@@ -47,13 +47,14 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__path_checks() {
+		$upload_dir = wp_get_upload_dir();
 		// Not ideal that we are using the constants for our test cases.
 		// However, it's the easiest way to ensure consistency across test environments.
 		return [
 			'uploads: other wp-* path'         => [ 'is_uploads_path', [ '/var/www/file.jpg' ], false ],
 			'uploads: ABSPATH path'            => [ 'is_uploads_path', [ ABSPATH . '/wp-includes/js/jquery.js' ], false ],
 			'uploads: other wp-content path'   => [ 'is_uploads_path', [ WP_CONTENT_DIR . '/themes/twentyseveteen/style.css' ], false ],
-			'uploads: valid path'              => [ 'is_uploads_path', [ WP_CONTENT_DIR . '/uploads/2018/04/04.jpg' ], true ],
+			'uploads: valid path'              => [ 'is_uploads_path', [ $upload_dir['basedir'] . '/2018/04/04.jpg' ], true ],
 			'tmp: other path'                  => [ 'is_tmp_path', [ '/wp-includes/js/jquery.js' ], false ],
 			'tmp: valid path'                  => [ 'is_tmp_path', [ '/tmp/file.css' ], true ],
 			'maintenance: invalid path'        => [ 'is_maintenance_file', [ '/var/log/.maintenance' ], false ],
@@ -84,10 +85,11 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	}
 
 	public function get_test_data__get_transport_for_path() {
+		$upload_dir = wp_get_upload_dir();
 		return [
 			'read'                         => [ 'test/file/path', 'read', 'direct' ],
-			'uploads with stream wrapper'  => [ '/tmp/wordpress/wp-content/uploads/file.file', 'read', 'direct', [ 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' => true ] ],
-			'uploads'                      => [ '/tmp/wordpress/wp-content/uploads/file.file', 'write', 'uploads' ],
+			'uploads with stream wrapper'  => [ $upload_dir['basedir'] . '/file.file', 'read', 'direct', [ 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' => true ] ],
+			'uploads'                      => [ $upload_dir['basedir'] . '/file.file', 'write', 'uploads' ],
 			'tmp path'                     => [ '/tmp/file.file', 'write', 'direct' ],
 			// Outside VIP Go, WP-CLI and core/plugin/theme/language installs can write directly.
 			'non-VIP: maintenance file'    => [ ABSPATH . '.maintenance', 'write', 'direct', [ 'VIP_GO_ENV' => false ] ],
@@ -122,10 +124,12 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 	}
 
 	public function test__get_transport_for_path__disallowed_write() {
+		$upload_dir = wp_get_upload_dir();
+
 		[ $result, $warnings ] = $this->capture_errors( fn() => $this->get_transport_for_path( '/test/random/directory/file.file', 'write' ) );
 
 		self::assertFalse( $result );
-		self::assertSame( [ 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `/tmp/wordpress/wp-content/uploads` directories and reads can be performed everywhere.' ], $warnings );
+		self::assertSame( [ 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `' . $upload_dir['basedir'] . '` directories and reads can be performed everywhere.' ], $warnings );
 	}
 
 	public function test__put_contents__uses_transport_for_path() {

@@ -63,7 +63,7 @@ class ImageSizes {
 		$intermediate_image_sizes = get_intermediate_image_sizes();             // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.get_intermediate_image_sizes_get_intermediate_image_sizes
 		add_filter( 'intermediate_image_sizes', 'wpcom_intermediate_sizes' );   // Re-add the filter.
 
-		foreach ( $intermediate_image_sizes as $s ) {
+		foreach ( (array) $intermediate_image_sizes as $s ) {
 			$sizes[ $s ] = [
 				'width'  => '',
 				'height' => '',

@@ -209,6 +209,18 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		];
 	}
 
+	public function test__get_user_roles_falls_back_to_the_slug_for_a_role_without_a_name() {
+		$wp_roles = wp_roles();
+
+		$wp_roles->roles['role_without_name'] = [ 'capabilities' => [] ];
+
+		$roles = ( new Site_Details_Index() )->get_user_roles();
+
+		unset( $wp_roles->roles['role_without_name'] );
+
+		$this->assertContains( [ 'slug' => 'role_without_name', 'name' => 'role_without_name' ], $roles );
+	}
+
 	public function test__get_current_timestamp() {
 		// The implementation rounds to milliseconds; floor/ceil bound that rounding.
 		$before    = floor( microtime( true ) * 1000 );

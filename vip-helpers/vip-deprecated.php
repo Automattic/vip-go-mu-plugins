@@ -1144,8 +1144,7 @@ function wpcom_vip_require_lib( $slug ) {
 	_deprecated_function( __FUNCTION__, '2.0.0' );
 
 	if ( ! preg_match( '|^[a-z0-9/_.-]+$|i', $slug ) ) {
-		trigger_error( sprintf( 'Cannot load a library with invalid slug %s.', esc_html( $slug ) ), E_USER_ERROR );
-		return;
+		throw new \Error( sprintf( 'Cannot load a library with invalid slug %s.', esc_html( $slug ) ) );
 	}
 	$basename = basename( $slug );
 	$lib_dir  = WP_CONTENT_DIR . '/plugins/lib';
@@ -1160,7 +1159,7 @@ function wpcom_vip_require_lib( $slug ) {
 			return;
 		}
 	}
-	trigger_error( sprintf( 'Cannot find a library with slug %s.', esc_html( $slug ) ), E_USER_ERROR );
+	throw new \Error( sprintf( 'Cannot find a library with slug %s.', esc_html( $slug ) ) );
 }
 
 /**
