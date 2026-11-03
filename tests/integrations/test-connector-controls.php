@@ -13,6 +13,7 @@ use Org_Integration_Status;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\ExpectationFailedException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderInterface;
@@ -20,6 +21,7 @@ use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
 use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WP_UnitTestCase;
 
@@ -844,6 +846,50 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		yield 'cached availability with empty authentication' => [ '', true, false ];
 		yield 'configured runtime credential' => [ 'runtime-secret', true, true ];
 		yield 'runtime credential rejected by provider' => [ 'runtime-secret', false, false ];
+	}
+
+	public function test_model_caches_are_invalidated_when_the_runtime_credential_changes(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = new class() implements ModelMetadataDirectoryInterface, CachesDataInterface {
+				public int $invalidations = 0;
+
+				public function listModelMetadata(): array {
+					return [];
+				}
+
+				public function hasModelMetadata( string $model_id ): bool {
+					return false;
+				}
+
+				public function getModelMetadata( string $model_id ): ModelMetadata {
+					throw new \LogicException( 'This test does not read models.' );
+				}
+
+				public function invalidateCaches(): void {
+					++$this->invalidations;
+				}
+			};
+			$provider_class::$model_metadata_directory = $directory;
+
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_blocked' => 'true' ] ] );
+			$integration->configure();
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'first-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 1, $directory->invalidations, 'An unknown previous credential may have populated the cache.' );
+
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 1, $directory->invalidations, 'Keep the cache while the credential is unchanged.' );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'rotated-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 2, $directory->invalidations );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( '' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 3, $directory->invalidations );
+		} );
 	}
 
 	/**

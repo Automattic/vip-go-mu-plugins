@@ -8,6 +8,7 @@
 namespace Automattic\VIP\Integrations;
 
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 
 /**
@@ -148,6 +149,7 @@ class ConnectorControlsIntegration extends Integration {
 			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
+		add_action( 'wp_connectors_init', [ $this, 'invalidate_stale_model_caches' ], PHP_INT_MAX );
 		add_action( 'wp_connectors_init', [ $this, 'describe_managed_connectors' ], PHP_INT_MAX );
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
 
@@ -300,6 +302,43 @@ class ConnectorControlsIntegration extends Integration {
 			$connector                = $registry->unregister( $connector_id );
 			$connector['description'] = trim( $connector['description'] . ' ' . $description );
 			$registry->register( $connector_id, $connector );
+		}
+	}
+
+	/**
+	 * Drop a provider's cached models when its runtime credential changes.
+	 *
+	 * The AI Client caches each provider's model list per class, not per credential,
+	 * so availability checks keep succeeding after a key is removed or rotated.
+	 * Only a salted hash of the credential is stored.
+	 */
+	public function invalidate_stale_model_caches(): void {
+		$cache = AiClient::getCache();
+		if ( null === $cache || get_current_blog_id() !== $this->configured_blog_id ) {
+			return;
+		}
+
+		$registry  = AiClient::defaultRegistry();
+		$cache_key = static fn ( string $connector_id ): string => 'vip_connector_controls_credential_' . $connector_id;
+		$stored    = $cache->getMultiple( array_map( $cache_key, array_keys( self::CONNECTORS ) ) );
+
+		foreach ( array_keys( self::CONNECTORS ) as $connector_id ) {
+			if ( ! $registry->hasProvider( $connector_id ) ) {
+				continue;
+			}
+
+			$authentication = $registry->getProviderRequestAuthentication( $connector_id );
+			$credential     = $authentication instanceof ApiKeyRequestAuthentication ? $authentication->getApiKey() : '';
+			$fingerprint    = wp_hash( $connector_id . '|' . $credential );
+			if ( ( $stored[ $cache_key( $connector_id ) ] ?? null ) === $fingerprint ) {
+				continue;
+			}
+
+			$directory = $registry->getProviderClassName( $connector_id )::modelMetadataDirectory();
+			if ( $directory instanceof CachesDataInterface ) {
+				$directory->invalidateCaches();
+			}
+			$cache->set( $cache_key( $connector_id ), $fingerprint );
 		}
 	}
 
