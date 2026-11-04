@@ -20,10 +20,6 @@ class FakeIntegration extends Integration {
 	public function configure(): void { }
 }
 
-class FakeIntegrationWithPendoTracking extends FakeIntegration {
-	protected bool $enable_pendo_tracking = true;
-}
-
 /**
  * Records actual load calls made by the integration dispatcher.
  */

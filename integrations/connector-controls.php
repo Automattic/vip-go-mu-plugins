@@ -65,13 +65,6 @@ class ConnectorControlsIntegration extends Integration {
 	];
 
 	/**
-	 * Enable Pendo tracking for this integration.
-	 *
-	 * @var bool
-	 */
-	protected bool $enable_pendo_tracking = true;
-
-	/**
 	 * Whether the integration has configured the runtime.
 	 */
 	public function is_loaded(): bool {

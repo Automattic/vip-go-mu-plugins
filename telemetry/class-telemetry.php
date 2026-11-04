@@ -9,7 +9,6 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry;
 
-use Automattic\VIP\Telemetry\Pendo;
 use Automattic\VIP\Telemetry\Tracks;
 use WP_Error;
 
@@ -35,7 +34,6 @@ class Telemetry extends Telemetry_System {
 	 */
 	public function __construct( ?string $event_prefix = null, ?array $global_event_properties = [], ?Telemetry_Event_Queue $queue = null ) {
 		$this->systems = [
-			new Pendo( $event_prefix ?? 'vip_wordpress_', $global_event_properties ?? [], $queue ),
 			new Tracks( $event_prefix ?? 'vip_', $global_event_properties ?? [], $queue ),
 		];
 	}

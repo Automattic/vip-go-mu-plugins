@@ -15,13 +15,6 @@ namespace Automattic\VIP\Integrations;
  */
 class RemoteDataBlocksIntegration extends Integration {
 	/**
-	 * Enable Pendo tracking for this integration.
-	 *
-	 * @var bool
-	 */
-	protected bool $enable_pendo_tracking = true;
-
-	/**
 	 * Returns `true` if Remote Data Blocks is already available e.g. via customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */

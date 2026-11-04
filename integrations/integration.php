@@ -48,13 +48,6 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
-	 * A boolean indicating if this integration should be tracked in Pendo. Defaults to false.
-	 *
-	 * @var bool
-	 */
-	protected bool $enable_pendo_tracking = false;
-
-	/**
 	 * Parent integration slug for integrations stored as child config.
 	 *
 	 * @var string|null
@@ -226,15 +219,6 @@ abstract class Integration {
 	 */
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
 		$this->vip_config = $vip_config;
-	}
-
-	/**
-	 * Returns true if this integration should be tracked in Pendo.
-	 *
-	 * @return bool
-	 */
-	final public function should_track_in_pendo(): bool {
-		return $this->enable_pendo_tracking;
 	}
 
 	/**

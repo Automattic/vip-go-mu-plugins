@@ -20,13 +20,6 @@ class SafePublishIntegration extends Integration {
 	 */
 	public string $version = 'latest';
 
-	/**
-	 * Enable Pendo tracking for this integration.
-	 *
-	 * @var bool
-	 */
-	protected bool $enable_pendo_tracking = true;
-
 	public function is_loaded(): bool {
 		return defined( 'SAFE_PUBLISH_LOADED' ) || defined( 'SAFE_PUBLISH_PLUGIN_FILE' );
 	}
