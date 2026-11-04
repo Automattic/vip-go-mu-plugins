@@ -16,7 +16,7 @@ use function Automattic\VIP\Integrations\wpvip_get_enabled_integrations;
  * Records a Tracks event when an editor views a supported wp-admin screen on a
  * production site that uses one of the integrations we track.
  */
-class Admin_Page_View_Tracker {
+final class Admin_Page_View_Tracker {
 	/**
 	 * Admin screen hook suffixes where page views are recorded.
 	 */
@@ -117,19 +117,11 @@ class Admin_Page_View_Tracker {
 	 */
 	public static function is_enabled_for_environment(): bool {
 		// The platform still sets the opt-out under its Pendo-era name.
-		if ( defined( 'VIP_DISABLE_PENDO_TELEMETRY' ) && true === constant( 'VIP_DISABLE_PENDO_TELEMETRY' ) ) {
-			return false;
-		}
+		$opted_out     = defined( 'VIP_DISABLE_PENDO_TELEMETRY' ) && true === constant( 'VIP_DISABLE_PENDO_TELEMETRY' );
+		$is_production = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
+		$is_fedramp    = defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' );
 
-		if ( ! is_wpvip_site() ) {
-			return false;
-		}
-
-		if ( ! defined( 'VIP_GO_APP_ENVIRONMENT' ) || 'production' !== constant( 'VIP_GO_APP_ENVIRONMENT' ) ) {
-			return false;
-		}
-
-		return ! ( defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' ) );
+		return ! $opted_out && $is_production && ! $is_fedramp && is_wpvip_site();
 	}
 
 	/**
