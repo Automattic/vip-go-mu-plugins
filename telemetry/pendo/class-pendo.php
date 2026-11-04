@@ -35,13 +35,6 @@ class Pendo extends Telemetry_System {
 	}
 
 	/**
-	 * Pendo is disabled everywhere.
-	 */
-	final public static function is_pendo_enabled_for_environment(): bool {
-		return false;
-	}
-
-	/**
 	 * Records nothing.
 	 *
 	 * @param string               $event_name       Ignored.
