@@ -113,16 +113,13 @@ final class Admin_Page_View_Tracker {
 
 	/**
 	 * Checks if page views may be recorded in the current environment: VIP
-	 * production environments that are not sandboxed, not FedRAMP, and have not
-	 * opted out.
+	 * production environments that are not sandboxed or FedRAMP.
 	 */
 	public static function is_enabled_for_environment(): bool {
-		// The platform still sets the opt-out under its Pendo-era name.
-		$opted_out     = defined( 'VIP_DISABLE_PENDO_TELEMETRY' ) && true === constant( 'VIP_DISABLE_PENDO_TELEMETRY' );
 		$is_production = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === constant( 'VIP_GO_APP_ENVIRONMENT' );
 		$is_fedramp    = defined( 'VIP_IS_FEDRAMP' ) && true === constant( 'VIP_IS_FEDRAMP' );
 
-		return ! $opted_out && $is_production && ! $is_fedramp && is_wpvip_site();
+		return $is_production && ! $is_fedramp && is_wpvip_site();
 	}
 
 	/**

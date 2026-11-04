@@ -53,7 +53,7 @@ new Telemetry( 'myplugin_', [ 'plugin_version' => '1.2.3' ] );
 
 ## wp-admin page views
 
-A `vip_wordpress_admin_page_view` event is recorded when a user who can edit posts views a supported wp-admin screen. This only happens on VIP production environments that are not sandboxed or FedRAMP, have not opted out with `VIP_DISABLE_PENDO_TELEMETRY`, and use an integration that sets `$enable_admin_page_tracking`. See `Admin_Page_View_Tracker`.
+A `vip_wordpress_admin_page_view` event is recorded when a user who can edit posts views a supported wp-admin screen. This only happens on VIP production environments that are not sandboxed or FedRAMP and use an integration that sets `$enable_admin_page_tracking`. See `Admin_Page_View_Tracker`.
 
 To record page views on more screens, add their hook suffixes with the `vip_telemetry_admin_page_view_screens` filter:
 

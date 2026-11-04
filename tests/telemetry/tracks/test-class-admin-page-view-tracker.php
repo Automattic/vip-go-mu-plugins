@@ -79,7 +79,6 @@ class Admin_Page_View_Tracker_Test extends WP_UnitTestCase {
 		yield 'not VIP' => [ [ 'WPCOM_IS_VIP_ENV' => false ] ];
 		yield 'sandboxed' => [ [ 'WPCOM_SANDBOXED' => true ] ];
 		yield 'FedRAMP' => [ [ 'VIP_IS_FEDRAMP' => true ] ];
-		yield 'opted out' => [ [ 'VIP_DISABLE_PENDO_TELEMETRY' => true ] ];
 	}
 
 	/**
