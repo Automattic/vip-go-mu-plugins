@@ -18,10 +18,12 @@ use Automattic\VIP\Support_User\User as Support_User;
  */
 function get_base_properties_of_track_event(): array {
 	$props = [
-		'hosting_provider' => get_hosting_provider(),
-		'is_vip_user'      => Support_User::user_has_vip_support_role( get_current_user_id() ),
-		'is_multisite'     => is_multisite(),
-		'wp_version'       => get_bloginfo( 'version' ),
+		'environment_type'   => defined( 'WP_ENVIRONMENT_TYPE' ) ? constant( 'WP_ENVIRONMENT_TYPE' ) : 'unknown',
+		'hosting_provider'   => get_hosting_provider(),
+		'is_vip_user'        => Support_User::user_has_vip_support_role( get_current_user_id() ),
+		'is_multisite'       => is_multisite(),
+		'mu_plugins_version' => get_mu_plugins_version(),
+		'wp_version'         => get_bloginfo( 'version' ),
 	];
 
 	// Set VIP environment if it exists.
@@ -123,10 +125,15 @@ function get_base_properties_of_track_user(): array {
 }
 
 /**
- * Get the core properties for a Tracks event.
+ * Returns the version of VIP mu-plugins.
  *
- * @return array<string, mixed> The core properties.
+ * @return string The version.
  */
-function get_tracks_core_properties(): array {
-	return array_merge( get_base_properties_of_track_event(), get_base_properties_of_track_user() );
+function get_mu_plugins_version(): string {
+	if ( defined( 'WPVIP_MU_PLUGIN_DIR' ) && file_exists( constant( 'WPVIP_MU_PLUGIN_DIR' ) . '/.version' ) ) {
+		// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- This is a local file, not a remote URL.
+		return trim( (string) file_get_contents( constant( 'WPVIP_MU_PLUGIN_DIR' ) . '/.version' ) );
+	}
+
+	return 'unknown';
 }

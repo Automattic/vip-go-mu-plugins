@@ -108,9 +108,4 @@ class VIP_Integration_Test extends WP_UnitTestCase {
 		$this->assertEquals( $children_config, $integration->get_child_configs() );
 		$this->assertEquals( [ 'airtable' => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ] ], $integration->get_child_env_configs() );
 	}
-
-	public function test__should_track_in_pendo_follows_the_integration_setting(): void {
-		$this->assertFalse( ( new FakeIntegration( 'fake' ) )->should_track_in_pendo() );
-		$this->assertTrue( ( new FakeIntegrationWithPendoTracking( 'fake' ) )->should_track_in_pendo() );
-	}
 }

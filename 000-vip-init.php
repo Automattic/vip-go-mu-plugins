@@ -248,18 +248,23 @@ require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
 require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-client.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event.php';
-require_once __DIR__ . '/telemetry/pendo/pendo-utils.php';
 
 // Temporary loader during rollout, remove and directly require after rollout.
-if ( file_exists( __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php' ) ) {
-	require_once __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php';
+if ( file_exists( __DIR__ . '/telemetry/tracks/class-admin-page-view-tracker.php' ) ) {
+	require_once __DIR__ . '/telemetry/tracks/class-admin-page-view-tracker.php';
 
-	add_action( 'init', [ Automattic\VIP\Telemetry\Pendo::class, 'enable_javascript_library' ] );
+	add_action( 'admin_init', [ Automattic\VIP\Telemetry\Tracks\Admin_Page_View_Tracker::class, 'init' ] );
 }
+
+// Pendo has been removed. Its files stay loaded for one release because deploys are
+// non-atomic and the previous release's files still reference them. Remove these
+// lines and delete telemetry/pendo/ after this release has fully rolled out.
+foreach ( [ 'class-pendo', 'class-pendo-track-client', 'class-pendo-track-event-dto', 'class-pendo-track-event', 'pendo-utils', 'class-pendo-javascript-library' ] as $vip_pendo_file ) {
+	if ( file_exists( __DIR__ . '/telemetry/pendo/' . $vip_pendo_file . '.php' ) ) {
+		require_once __DIR__ . '/telemetry/pendo/' . $vip_pendo_file . '.php';
+	}
+}
+unset( $vip_pendo_file );
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 

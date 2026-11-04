@@ -112,30 +112,8 @@ class Tracks_Event extends Telemetry_Event {
 			unset( $event->_via_ip );
 		}
 
-		$base_props = get_base_properties_of_track_event();
-
-		if ( isset( $base_props['vip_env'] ) ) {
-			$event->vip_env = $base_props['vip_env'];
-		}
-
-		if ( isset( $base_props['vip_org'] ) ) {
-			$event->vip_org = $base_props['vip_org'];
-		}
-
-		if ( isset( $base_props['hosting_provider'] ) ) {
-			$event->hosting_provider = $base_props['hosting_provider'];
-		}
-
-		if ( isset( $base_props['is_vip_user'] ) ) {
-			$event->is_vip_user = $base_props['is_vip_user'];
-		}
-
-		if ( isset( $base_props['is_multisite'] ) ) {
-			$event->is_multisite = $base_props['is_multisite'];
-		}
-
-		if ( isset( $base_props['wp_version'] ) ) {
-			$event->wp_version = $base_props['wp_version'];
+		foreach ( get_base_properties_of_track_event() as $key => $value ) {
+			$event->$key = $value;
 		}
 
 		return $event;
@@ -171,76 +149,48 @@ class Tracks_Event extends Telemetry_Event {
 	protected function get_event_validation_result( Tracks_Event_DTO $event ): ?WP_Error {
 		// Check that required fields are defined.
 		if ( ! $event->_en ) {
-			$msg = __( 'The _en property must be specified to non-empty value', 'vip-telemetry' );
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => $msg,
-				'extra'    => [
-					'event' => (array) $event,
-				],
-			] );
-			return new WP_Error(
-				'invalid_event',
-				$msg
-			);
+			return static::log_validation_error( $event, 'invalid_event', __( 'The _en property must be specified to non-empty value', 'vip-telemetry' ) );
 		}
 
 		// Validate Event Name (_en).
 		if ( ! static::event_name_is_valid( $event->_en ) ) {
-			$msg = __( 'A valid event name must be specified', 'vip-telemetry' );
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => $msg,
-				'extra'    => [
-					'event' => (array) $event,
-				],
-			] );
-			return new WP_Error(
-				'invalid_event_name',
-				$msg
-			);
+			return static::log_validation_error( $event, 'invalid_event_name', __( 'A valid event name must be specified', 'vip-telemetry' ) );
 		}
-
 
 		// Validate property names format.
 		foreach ( get_object_vars( $event ) as $key => $_ ) {
 			if ( ! static::property_name_is_valid( $key ) ) {
-				$msg = __( 'A valid property name must be specified', 'vip-telemetry' );
-				log2logstash( [
-					'severity' => 'error',
-					'feature'  => 'telemetry',
-					'message'  => $msg,
-					'extra'    => [
-						'event' => (array) $event,
-					],
-				] );
-				return new WP_Error(
-					'invalid_property_name',
-					$msg
-				);
+				return static::log_validation_error( $event, 'invalid_property_name', __( 'A valid property name must be specified', 'vip-telemetry' ) );
 			}
 		}
 
 		// Validate User ID (_ui) and User ID Type (_ut).
 		if ( ! isset( $event->_ui ) && ! isset( $event->_ut ) ) {
-			$msg = __( 'Could not determine user identity and type', 'vip-telemetry' );
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => $msg,
-				'extra'    => [
-					'event' => (array) $event,
-				],
-			] );
-			return new WP_Error(
-				'empty_user_information',
-				$msg
-			);
+			return static::log_validation_error( $event, 'empty_user_information', __( 'Could not determine user identity and type', 'vip-telemetry' ) );
 		}
 
 		return null;
+	}
+
+	/**
+	 * Logs a validation failure and returns it as an error.
+	 *
+	 * @param Tracks_Event_DTO $event   The invalid event.
+	 * @param string           $code    The error code.
+	 * @param string           $message The error message.
+	 * @return WP_Error The validation error.
+	 */
+	protected static function log_validation_error( Tracks_Event_DTO $event, string $code, string $message ): WP_Error {
+		log2logstash( [
+			'severity' => 'error',
+			'feature'  => 'telemetry',
+			'message'  => $message,
+			'extra'    => [
+				'event' => (array) $event,
+			],
+		] );
+
+		return new WP_Error( $code, $message );
 	}
 
 	/**

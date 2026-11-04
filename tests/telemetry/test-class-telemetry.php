@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry;
 
-use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
@@ -20,8 +19,6 @@ class Telemetry_Test extends WP_UnitTestCase {
 	 */
 	public function test_default_constructor_records_real_events( $explicit_null ) {
 		$this->login_as();
-		$this->enable_pendo_environment();
-		Constant_Mocker::define( 'VIP_PENDO_TRACK_INTEGRATION_KEY', 'fake-integration-key' );
 
 		global $wp_filter;
 		$original_shutdown = $wp_filter['shutdown'];
@@ -41,15 +38,11 @@ class Telemetry_Test extends WP_UnitTestCase {
 			$telemetry = $explicit_null ? new Telemetry( null, null, null ) : new Telemetry();
 			$this->assertTrue( $telemetry->record_event( 'default_event', array( 'foo' => 'bar' ) ) );
 			do_action( 'shutdown' );
-			$this->assertCount( 2, $requests );
-			$names = array();
-			foreach ( $requests as list( $url, $body ) ) {
-				$event   = $body['events'][0] ?? $body[0] ?? $body;
-				$names[] = $event['_en'] ?? $event['event'];
-				$this->assertSame( 'bar', $event['foo'] ?? $event['properties']['foo'] );
-			}
-			sort( $names );
-			$this->assertSame( array( 'vip_default_event', 'vip_wordpress_default_event' ), $names );
+			$this->assertCount( 1, $requests );
+			list( $url, $body ) = $requests[0];
+			$this->assertSame( 'https://public-api.wordpress.com/rest/v1.1/tracks/record', $url );
+			$this->assertSame( 'vip_default_event', $body['events'][0]['_en'] );
+			$this->assertSame( 'bar', $body['events'][0]['foo'] );
 		} finally {
 			remove_filter( 'pre_http_request', $capture, PHP_INT_MAX );
 			// phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the dispatch boundary.
@@ -67,65 +60,7 @@ class Telemetry_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_event_queued() {
-		$this->login_as();
-		$this->enable_pendo_environment();
-
-		/** @var MockObject|Telemetry_Event_Queue */
-		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$queue->expects( $this->exactly( 2 ) )
-			->method( 'record_event_asynchronously' )
-			->with($this->callback( function ( Telemetry_Event $event ) {
-				$event_data = $event->get_data();
-
-				$this->assertFalse( is_wp_error( $event_data ) );
-				$this->assertSame( 'test_cool_event', $event_data->_en ?? $event_data->event );
-				$this->assertSame( 'bar', $event_data->foo ?? $event_data->properties->foo );
-				$this->assertFalse( isset( $event_data->global_baz ) || isset( $event_data->properties->global_baz ) );
-
-				return true;
-			} ) )
-			->willReturn( true );
-
-		$telemetry = new Telemetry( 'test_', [], $queue );
-
-		$this->assertTrue( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
-	}
-
 	public function test_event_queued_with_global_properties() {
-		$this->login_as();
-		$this->enable_pendo_environment();
-
-		/** @var MockObject|Telemetry_Event_Queue */
-		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$queue->expects( $this->exactly( 2 ) )
-			->method( 'record_event_asynchronously' )
-			->with($this->callback( function ( Telemetry_Event $event ) {
-				$event_data = $event->get_data();
-
-				$this->assertFalse( is_wp_error( $event_data ) );
-				$this->assertSame( 'nice_fuzzy_event', $event_data->_en ?? $event_data->event );
-				$this->assertSame( 'bar', $event_data->foo ?? $event_data->properties->foo );
-				$this->assertSame( 'qux', $event_data->global_baz ?? $event_data->properties->global_baz );
-
-				return true;
-			} ) )
-			->willReturn( true );
-
-		$telemetry = new Telemetry( 'nice_', [
-			'global_baz' => 'qux',
-			'foo'        => 'default_foo',
-		], $queue );
-		$this->assertTrue( $telemetry->record_event( 'fuzzy_event', [ 'foo' => 'bar' ] ) );
-	}
-
-	public function test_event_queued_with_pendo_disabled() {
 		$this->login_as();
 
 		/** @var MockObject|Telemetry_Event_Queue */
@@ -139,16 +74,18 @@ class Telemetry_Test extends WP_UnitTestCase {
 				$event_data = $event->get_data();
 
 				$this->assertFalse( is_wp_error( $event_data ) );
-				$this->assertSame( 'test_cool_event', $event_data->_en );
+				$this->assertSame( 'nice_fuzzy_event', $event_data->_en );
 				$this->assertSame( 'bar', $event_data->foo );
+				$this->assertSame( 'qux', $event_data->global_baz );
 
 				return true;
 			} ) )
 			->willReturn( true );
 
-		$telemetry = new Telemetry( 'test_', [], $queue );
-
-		// Returns false because at least one system is disabled.
-		$this->assertFalse( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
+		$telemetry = new Telemetry( 'nice_', [
+			'global_baz' => 'qux',
+			'foo'        => 'default_foo',
+		], $queue );
+		$this->assertTrue( $telemetry->record_event( 'fuzzy_event', [ 'foo' => 'bar' ] ) );
 	}
 }

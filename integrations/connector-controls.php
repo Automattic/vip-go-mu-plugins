@@ -65,11 +65,11 @@ class ConnectorControlsIntegration extends Integration {
 	];
 
 	/**
-	 * Enable Pendo tracking for this integration.
+	 * Record wp-admin page views in Tracks for this integration.
 	 *
 	 * @var bool
 	 */
-	protected bool $enable_pendo_tracking = true;
+	protected bool $enable_admin_page_tracking = true;
 
 	/**
 	 * Whether the integration has configured the runtime.
