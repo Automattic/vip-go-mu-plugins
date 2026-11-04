@@ -242,12 +242,15 @@ require_once __DIR__ . '/telemetry/class-telemetry-system.php';
 require_once __DIR__ . '/telemetry/class-telemetry-client.php';
 require_once __DIR__ . '/telemetry/class-telemetry-event-queue.php';
 require_once __DIR__ . '/telemetry/class-telemetry-event.php';
-require_once __DIR__ . '/telemetry/class-telemetry.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks.php';
+require_once __DIR__ . '/telemetry/class-telemetry.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
+require_once __DIR__ . '/telemetry/tracks/class-admin-page-view-tracker.php';
 require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
+
+add_action( 'admin_init', [ Automattic\VIP\Telemetry\Tracks\Admin_Page_View_Tracker::class, 'init' ] );
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 

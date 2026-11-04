@@ -65,6 +65,13 @@ class ConnectorControlsIntegration extends Integration {
 	];
 
 	/**
+	 * Record wp-admin page views in Tracks for this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $enable_admin_page_tracking = true;
+
+	/**
 	 * Whether the integration has configured the runtime.
 	 */
 	public function is_loaded(): bool {

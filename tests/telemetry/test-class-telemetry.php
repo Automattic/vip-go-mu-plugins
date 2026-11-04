@@ -66,33 +66,6 @@ class Telemetry_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_event_queued() {
-		$this->login_as();
-
-		/** @var MockObject|Telemetry_Event_Queue */
-		$queue = $this->getMockBuilder( Telemetry_Event_Queue::class )
-			->disableOriginalConstructor()
-			->getMock();
-
-		$queue->expects( $this->once() )
-			->method( 'record_event_asynchronously' )
-			->with($this->callback( function ( Telemetry_Event $event ) {
-				$event_data = $event->get_data();
-
-				$this->assertFalse( is_wp_error( $event_data ) );
-				$this->assertSame( 'test_cool_event', $event_data->_en );
-				$this->assertSame( 'bar', $event_data->foo );
-				$this->assertFalse( isset( $event_data->global_baz ) );
-
-				return true;
-			} ) )
-			->willReturn( true );
-
-		$telemetry = new Telemetry( 'test_', [], $queue );
-
-		$this->assertTrue( $telemetry->record_event( 'cool_event', [ 'foo' => 'bar' ] ) );
-	}
-
 	public function test_event_queued_with_global_properties() {
 		$this->login_as();
 

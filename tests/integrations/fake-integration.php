@@ -20,6 +20,10 @@ class FakeIntegration extends Integration {
 	public function configure(): void { }
 }
 
+class FakeIntegrationWithAdminPageTracking extends FakeIntegration {
+	protected bool $enable_admin_page_tracking = true;
+}
+
 /**
  * Records actual load calls made by the integration dispatcher.
  */

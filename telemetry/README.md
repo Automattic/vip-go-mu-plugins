@@ -1,8 +1,6 @@
 # VIP Telemetry Library
 
-For most use cases, you should use the `Telemetry` class, which will send events to all configured telemetry systems. Currently, the only configured system is Tracks, an event tracking tool used to understand user behavior within Automattic.
-
-If you would like to configure and use a telemetry system directly, see the section below.
+For most use cases, you should use the `Telemetry` class, which sends events to Tracks, an event tracking tool used to understand user behavior within Automattic. Events are sent after the response has been sent to the browser.
 
 ## How to use
 
@@ -53,12 +51,15 @@ If you would like to provide global properties to all events, you can pass an ar
 new Telemetry( 'myplugin_', [ 'plugin_version' => '1.2.3' ] );
 ```
 
-## Using Tracks directly
+## wp-admin page views
 
-If you wish, you can configure and use the `Tracks` class directly. It has the same API as the `Telemetry` class.
+A `vip_wordpress_admin_page_view` event is recorded when a user who can edit posts views a supported wp-admin screen. This only happens on VIP production environments that are not sandboxed or FedRAMP, have not opted out with `VIP_DISABLE_PENDO_TELEMETRY`, and use an integration that sets `$enable_admin_page_tracking`. See `Admin_Page_View_Tracker`.
+
+To record page views on more screens, add their hook suffixes with the `vip_telemetry_admin_page_view_screens` filter:
 
 ```php
-use Automattic\VIP\Telemetry\Tracks;
-
-new Tracks( 'myplugin_', [ /* global properties */ ] );
+add_filter( 'vip_telemetry_admin_page_view_screens', function ( $screens ) {
+	$screens[] = 'toplevel_page_my-plugin';
+	return $screens;
+} );
 ```

@@ -14,6 +14,13 @@ namespace Automattic\VIP\Integrations;
  */
 class ParselyIntegration extends Integration {
 	/**
+	 * Record wp-admin page views in Tracks for this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $enable_admin_page_tracking = true;
+
+	/**
 	 * Returns `true` if `Parse.ly` is already available e.g. customer code. We will use
 	 * this function to prevent loading of integration again from platform side.
 	 */

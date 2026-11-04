@@ -26,6 +26,13 @@ class WordPressMcpIntegration extends Integration {
 	private const AUTH_KEY_CONFIG_KEY = 'auth_key';
 
 	/**
+	 * Record wp-admin page views in Tracks for this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $enable_admin_page_tracking = true;
+
+	/**
 	 * Parent integration slug for child config lookup.
 	 *
 	 * @var string|null

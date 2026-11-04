@@ -48,6 +48,13 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
+	 * A boolean indicating if wp-admin page views should be recorded in Tracks for sites using this integration. Defaults to false.
+	 *
+	 * @var bool
+	 */
+	protected bool $enable_admin_page_tracking = false;
+
+	/**
 	 * Parent integration slug for integrations stored as child config.
 	 *
 	 * @var string|null
@@ -219,6 +226,15 @@ abstract class Integration {
 	 */
 	public function set_vip_config( IntegrationVipConfig $vip_config ): void {
 		$this->vip_config = $vip_config;
+	}
+
+	/**
+	 * Returns true if wp-admin page views should be recorded in Tracks for sites using this integration.
+	 *
+	 * @return bool
+	 */
+	final public function should_track_admin_pages(): bool {
+		return $this->enable_admin_page_tracking;
 	}
 
 	/**
