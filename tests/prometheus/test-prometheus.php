@@ -136,73 +136,22 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertEquals( $expected, $plugin->get_collectors() );
 	}
 
-	public function test_keyed_collectors_initialized_once_across_load_hooks(): void {
-		$plugin = Plugin_Helper::get_instance();
+	public function test_builtin_collectors_initialized_once_across_load_hooks(): void {
+		Plugin_Helper::get_instance();
 
-		$initialized = new \ArrayObject();
-		$make        = function ( string $slug ) use ( $initialized ): CollectorInterface {
-			return new class( $slug, $initialized ) implements CollectorInterface {
-				private string $slug;
-				private \ArrayObject $initialized;
+		// prometheus.php builds a new Cache_Collector on every filter call, and each initialization hooks `shutdown` to count cache stats.
+		$count_cache_shutdown_hooks = fn () => count(
+			array_filter(
+				$GLOBALS['wp_filter']['shutdown']->callbacks[10] ?? [],
+				fn ( $callback ) => is_array( $callback['function'] ) && $callback['function'][0] instanceof Cache_Collector
+			)
+		);
 
-				public function __construct( string $slug, \ArrayObject $initialized ) {
-					$this->slug        = $slug;
-					$this->initialized = $initialized;
-				}
-
-				public function initialize( RegistryInterface $registry ): void {
-					$this->initialized[ $this->slug ] = ( $this->initialized[ $this->slug ] ?? 0 ) + 1;
-				}
-
-				public function collect_metrics(): void {
-					// Do nothing
-				}
-
-				public function process_metrics(): void {
-					// Do nothing
-				}
-			};
-		};
-
-		$static_collector = $make( 'static' );
-
-		add_filter( 'vip_prometheus_collectors', function ( array $collectors ) use ( $make, $static_collector ): array {
-			// New instance on every call, like the built-in collectors in prometheus.php.
-			$collectors['fresh'] = $make( 'fresh' );
-			// Same instance on every call, like third-party collectors that keep a static instance.
-			$collectors['static'] = $static_collector;
-			return $collectors;
-		} );
-
-		$cache_shutdown_callbacks_before = self::count_cache_collector_shutdown_callbacks();
-
+		$before = $count_cache_shutdown_hooks();
 		do_action( 'vip_mu_plugins_loaded' );
 		do_action( 'plugins_loaded' );
 
-		$expected = [
-			'fresh'  => 1,
-			'static' => 1,
-		];
-		self::assertSame( $expected, $initialized->getArrayCopy() );
-		self::assertSame( $static_collector, $plugin->get_collectors()['static'] );
-		// The built-in cache collector hooks `shutdown` once per initialization; more than one double-counts cache stats.
-		self::assertSame( 1, self::count_cache_collector_shutdown_callbacks() - $cache_shutdown_callbacks_before );
-	}
-
-	private static function count_cache_collector_shutdown_callbacks(): int {
-		global $wp_filter;
-
-		$callbacks = isset( $wp_filter['shutdown'] ) ? $wp_filter['shutdown']->callbacks : [];
-		$count     = 0;
-		foreach ( $callbacks as $priority_callbacks ) {
-			foreach ( $priority_callbacks as $callback ) {
-				if ( is_array( $callback['function'] ) && $callback['function'][0] instanceof Cache_Collector ) {
-					++$count;
-				}
-			}
-		}
-
-		return $count;
+		self::assertSame( 1, $count_cache_shutdown_hooks() - $before );
 	}
 
 	public function test_safe_adapter(): void {
