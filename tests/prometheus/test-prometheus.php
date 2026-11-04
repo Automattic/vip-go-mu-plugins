@@ -18,7 +18,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		parent::setUp();
 
 		remove_all_actions( 'vip_mu_plugins_loaded' );
-		remove_all_actions( 'mu_plugins_loaded' );
 		remove_all_actions( 'plugins_loaded' );
 		remove_all_actions( 'init' );
 
@@ -112,9 +111,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ) use ( $collector1, $collector2, $collector3 ): array {
 			switch ( $hook ) {
 				case 'vip_mu_plugins_loaded':
-					return [ $collector1 ];
-
-				case 'mu_plugins_loaded':
 					return [ $collector1, $collector2 ];
 
 				case 'plugins_loaded':
@@ -128,11 +124,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		do_action( 'vip_mu_plugins_loaded' );
 		self::assertEquals( 1, $collector1->initialize_called );
-		self::assertEquals( 0, $collector2->initialize_called );
-		self::assertEquals( 0, $collector3->initialize_called );
-
-		do_action( 'mu_plugins_loaded' );
-		self::assertEquals( 1, $collector1->initialize_called );
 		self::assertEquals( 1, $collector2->initialize_called );
 		self::assertEquals( 0, $collector3->initialize_called );
 
@@ -143,6 +134,75 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		$expected = [ $collector1, $collector2, $collector3 ];
 		self::assertEquals( $expected, $plugin->get_collectors() );
+	}
+
+	public function test_keyed_collectors_initialized_once_across_load_hooks(): void {
+		$plugin = Plugin_Helper::get_instance();
+
+		$initialized = new \ArrayObject();
+		$make        = function ( string $slug ) use ( $initialized ): CollectorInterface {
+			return new class( $slug, $initialized ) implements CollectorInterface {
+				private string $slug;
+				private \ArrayObject $initialized;
+
+				public function __construct( string $slug, \ArrayObject $initialized ) {
+					$this->slug        = $slug;
+					$this->initialized = $initialized;
+				}
+
+				public function initialize( RegistryInterface $registry ): void {
+					$this->initialized[ $this->slug ] = ( $this->initialized[ $this->slug ] ?? 0 ) + 1;
+				}
+
+				public function collect_metrics(): void {
+					// Do nothing
+				}
+
+				public function process_metrics(): void {
+					// Do nothing
+				}
+			};
+		};
+
+		$static_collector = $make( 'static' );
+
+		add_filter( 'vip_prometheus_collectors', function ( array $collectors ) use ( $make, $static_collector ): array {
+			// New instance on every call, like the built-in collectors in prometheus.php.
+			$collectors['fresh'] = $make( 'fresh' );
+			// Same instance on every call, like third-party collectors that keep a static instance.
+			$collectors['static'] = $static_collector;
+			return $collectors;
+		} );
+
+		$cache_shutdown_callbacks_before = self::count_cache_collector_shutdown_callbacks();
+
+		do_action( 'vip_mu_plugins_loaded' );
+		do_action( 'plugins_loaded' );
+
+		$expected = [
+			'fresh'  => 1,
+			'static' => 1,
+		];
+		self::assertSame( $expected, $initialized->getArrayCopy() );
+		self::assertSame( $static_collector, $plugin->get_collectors()['static'] );
+		// The built-in cache collector hooks `shutdown` once per initialization; more than one double-counts cache stats.
+		self::assertSame( 1, self::count_cache_collector_shutdown_callbacks() - $cache_shutdown_callbacks_before );
+	}
+
+	private static function count_cache_collector_shutdown_callbacks(): int {
+		global $wp_filter;
+
+		$callbacks = isset( $wp_filter['shutdown'] ) ? $wp_filter['shutdown']->callbacks : [];
+		$count     = 0;
+		foreach ( $callbacks as $priority_callbacks ) {
+			foreach ( $priority_callbacks as $callback ) {
+				if ( is_array( $callback['function'] ) && $callback['function'][0] instanceof Cache_Collector ) {
+					++$count;
+				}
+			}
+		}
+
+		return $count;
 	}
 
 	public function test_safe_adapter(): void {
