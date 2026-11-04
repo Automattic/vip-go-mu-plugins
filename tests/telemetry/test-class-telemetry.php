@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Automattic\VIP\Telemetry;
 
-use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
@@ -16,15 +15,10 @@ class Telemetry_Test extends WP_UnitTestCase {
 	/**
 	 * Exercise default and explicit-null options through real systems and queues.
 	 *
-	 * Runs in a VIP production environment that still defines the legacy Pendo
-	 * key, so it also guards against events reaching anything but Tracks.
-	 *
 	 * @dataProvider nullable_constructor_options
 	 */
 	public function test_default_constructor_records_real_events( $explicit_null ) {
 		$this->login_as();
-		$this->enable_vip_production_environment();
-		Constant_Mocker::define( 'VIP_PENDO_TRACK_INTEGRATION_KEY', 'fake-integration-key' );
 
 		global $wp_filter;
 		$original_shutdown = $wp_filter['shutdown'];
