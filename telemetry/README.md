@@ -1,11 +1,6 @@
 # VIP Telemetry Library
 
-For most use cases, you should use the `Telemetry` class, which will send events to all configured telemetry systems:
-
-- Tracks is an event tracking tool used to understand user behavior within Automattic.
-- Pendo is a product analytics tool used by WPVIP to understand user behavior on WordPress admin screens. Note that Pendo is completely disabled in some environments; see `Pendo::is_pendo_enabled_for_environment()` for details.
-
-If you would like to configure and use the telemetry systems individually, see the section below.
+For most use cases, you should use the `Telemetry` class, which sends events to Tracks, an event tracking tool used to understand user behavior within Automattic. Events are sent after the response has been sent to the browser.
 
 ## How to use
 
@@ -56,20 +51,15 @@ If you would like to provide global properties to all events, you can pass an ar
 new Telemetry( 'myplugin_', [ 'plugin_version' => '1.2.3' ] );
 ```
 
-## Using Tracks and Pendo individually
+## wp-admin page views
 
-If you wish, you can configure and use `Tracks` and `Pendo` classes individually. They have the same API as the `Telemetry` class.
+A `vip_wordpress_admin_page_view` event is recorded when a user who can edit posts views a supported wp-admin screen. This only happens on VIP production environments that are not sandboxed or FedRAMP and use an integration that sets `$enable_admin_page_tracking`. See `Admin_Page_View_Tracker`.
+
+To record page views on more screens, add their hook suffixes with the `vip_telemetry_admin_page_view_screens` filter:
 
 ```php
-use Automattic\VIP\Telemetry\Pendo;
-use Automattic\VIP\Telemetry\Tracks;
-
-new Pendo( 'myplugin_', [ /* global properties */ ] );
-new Tracks( 'myplugin_', [ /* global properties */ ] );
+add_filter( 'vip_telemetry_admin_page_view_screens', function ( $screens ) {
+	$screens[] = 'toplevel_page_my-plugin';
+	return $screens;
+} );
 ```
-
-## Pendo Page/Feature events
-
-Pendo Page/Feature events are client-side events that are sent to Pendo when a user interacts with a feature or page in the WordPress admin dashboard. It is automatically enabled in environments that support it and have not opted-out. Configuration is largely done via the Pendo platform.
-
-**Note:** While it is possible to send Pendo "Track events" via the client-side library, we should always send them server-side via `Telemetry::record_event()` or `Pendo::record_event()` for consistency and safety. We use a customized version of the Pendo library with a custom browser global that may not follow code examples found in their documentation.

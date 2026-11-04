@@ -37,9 +37,9 @@ trait Telemetry_Test_Helpers {
 	}
 
 	/**
-	 * Define the constants of a VIP production environment, where Pendo is enabled.
+	 * Define the constants of a VIP production environment.
 	 */
-	private function enable_pendo_environment(): void {
+	private function enable_vip_production_environment(): void {
 		Constant_Mocker::define( 'VIP_GO_APP_ENVIRONMENT', 'production' );
 		Constant_Mocker::define( 'WPCOM_IS_VIP_ENV', true );
 	}

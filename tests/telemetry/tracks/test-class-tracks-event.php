@@ -56,6 +56,8 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'other', $event->get_data()->hosting_provider );
 		$this->assertSame( is_multisite(), $event->get_data()->is_multisite );
 		$this->assertSame( get_bloginfo( 'version' ), $event->get_data()->wp_version );
+		$this->assertSame( 'unknown', $event->get_data()->environment_type );
+		$this->assertSame( 'unknown', $event->get_data()->mu_plugins_version );
 		$this->assertFalse( $event->get_data()->is_vip_user );
 		$this->assertTrue( $event->is_recordable() );
 	}

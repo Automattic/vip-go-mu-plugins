@@ -48,11 +48,11 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
-	 * A boolean indicating if this integration should be tracked in Pendo. Defaults to false.
+	 * A boolean indicating if wp-admin page views should be recorded in Tracks for sites using this integration. Defaults to false.
 	 *
 	 * @var bool
 	 */
-	protected bool $enable_pendo_tracking = false;
+	protected bool $enable_admin_page_tracking = false;
 
 	/**
 	 * Parent integration slug for integrations stored as child config.
@@ -229,12 +229,25 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns true if this integration should be tracked in Pendo.
+	 * Returns true if wp-admin page views should be recorded in Tracks for sites using this integration.
 	 *
 	 * @return bool
 	 */
+	final public function should_track_admin_pages(): bool {
+		return $this->enable_admin_page_tracking;
+	}
+
+	/**
+	 * Pendo has been removed, so no integration is tracked in it. Kept for one
+	 * release because deploys are non-atomic and the previous release's Pendo
+	 * JavaScript library still calls it.
+	 *
+	 * @deprecated Delete with `telemetry/pendo/` once this release has fully rolled out.
+	 *
+	 * @return bool Always false.
+	 */
 	final public function should_track_in_pendo(): bool {
-		return $this->enable_pendo_tracking;
+		return false;
 	}
 
 	/**
