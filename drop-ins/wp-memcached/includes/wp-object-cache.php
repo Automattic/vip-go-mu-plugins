@@ -146,7 +146,7 @@ class WP_Object_Cache {
 
 			$this->cache[ $key ] = [
 				'value' => $data,
-				'found' => false,
+				'found' => true,
 			];
 
 			return true;
@@ -297,7 +297,7 @@ class WP_Object_Cache {
 
 			$this->cache[ $key ] = [
 				'value' => $data,
-				'found' => false,
+				'found' => true,
 			];
 
 			return true;
