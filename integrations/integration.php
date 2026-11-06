@@ -238,19 +238,6 @@ abstract class Integration {
 	}
 
 	/**
-	 * Pendo has been removed, so no integration is tracked in it. Kept for one
-	 * release because deploys are non-atomic and the previous release's Pendo
-	 * JavaScript library still calls it.
-	 *
-	 * @deprecated Delete with `telemetry/pendo/` once this release has fully rolled out.
-	 *
-	 * @return bool Always false.
-	 */
-	final public function should_track_in_pendo(): bool {
-		return false;
-	}
-
-	/**
 	 * Returns `true` if the integration is already available e.g. via customer code. We will use
 	 * this function to prevent activating of integration again.
 	 *
