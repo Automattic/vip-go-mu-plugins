@@ -79,7 +79,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Fails to add now because it already exists in local cache.
@@ -216,7 +216,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $replace_value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Can't replace a value that isn't set yet.
@@ -270,7 +270,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Never made it's way to the remote cache.
@@ -365,11 +365,11 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertFalse( $this->object_cache->get( 'key', $group, true, $found ) );
 		self::assertFalse( $found );
 
-		// Set in local cache and check again. $found is still false by design.
+		// Set in local cache and check again.
 		self::assertTrue( $this->object_cache->set( 'key', $value, $group ) );
 		$found = null;
 		self::assertEquals( $this->object_cache->get( 'key', $group, true, $found ), $value );
-		self::assertFalse( $found );
+		self::assertTrue( $found );
 	}
 
 	public function test_get_multiple() {
