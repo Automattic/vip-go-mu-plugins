@@ -13,13 +13,13 @@ use Org_Integration_Status;
 use PHPUnit\Framework\AssertionFailedError;
 use PHPUnit\Framework\ExpectationFailedException;
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
+use WordPress\AiClient\Providers\ApiBasedImplementation\AbstractApiBasedModelMetadataDirectory;
+use WordPress\AiClient\Providers\ApiBasedImplementation\ListModelsApiBasedProviderAvailability;
 use WordPress\AiClient\Providers\Contracts\ModelMetadataDirectoryInterface;
 use WordPress\AiClient\Providers\Contracts\ProviderAvailabilityInterface;
-use WordPress\AiClient\Providers\Contracts\ProviderInterface;
-use WordPress\AiClient\Providers\DTO\ProviderMetadata;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
-use WordPress\AiClient\Providers\Models\Contracts\ModelInterface;
-use WordPress\AiClient\Providers\Models\DTO\ModelConfig;
+use WordPress\AiClient\Providers\Models\DTO\ModelMetadata;
 use WordPress\AiClient\Providers\ProviderRegistry;
 use WP_UnitTestCase;
 
@@ -187,36 +187,46 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		yield 'invalid credential' => [ false ];
 	}
 
-	private function with_test_registry( callable $test, bool $register_provider = true ): void {
-		$provider                            = new class() implements ProviderInterface {
-			public static ProviderAvailabilityInterface $availability;
-			public static ModelMetadataDirectoryInterface $model_metadata_directory;
+	/**
+	 * Create an AI Client test provider with fresh availability and model mocks.
+	 *
+	 * @return class-string<Connector_Controls_Test_Provider>
+	 */
+	private function create_test_provider( string $provider_id ): string {
+		// Load the base class only once the AI Client is known to exist.
+		require_once __DIR__ . '/connector-controls-test-provider.php';
 
-			public static function metadata(): ProviderMetadata {
-				return ProviderMetadata::fromArray(
-					[
-						'id'                   => 'openai',
-						'name'                 => 'Test provider',
-						'type'                 => 'cloud',
-						'authenticationMethod' => 'api_key',
-					]
-				);
-			}
-
-			public static function model( string $model_id, ?ModelConfig $model_config = null ): ModelInterface {
-				throw new \LogicException( 'This test does not create models.' );
-			}
-
-			public static function availability(): ProviderAvailabilityInterface {
-				return self::$availability;
-			}
-
-			public static function modelMetadataDirectory(): ModelMetadataDirectoryInterface {
-				return self::$model_metadata_directory;
-			}
-		};
+		// Each anonymous class needs its own declaration to keep separate static state.
+		switch ( $provider_id ) {
+			case 'anthropic':
+				$provider = new class() extends Connector_Controls_Test_Provider {
+					protected const ID = 'anthropic';
+					public static ProviderAvailabilityInterface $availability;
+					public static ModelMetadataDirectoryInterface $model_metadata_directory;
+				};
+				break;
+			case 'google':
+				$provider = new class() extends Connector_Controls_Test_Provider {
+					protected const ID = 'google';
+					public static ProviderAvailabilityInterface $availability;
+					public static ModelMetadataDirectoryInterface $model_metadata_directory;
+				};
+				break;
+			default:
+				$provider = new class() extends Connector_Controls_Test_Provider {
+					protected const ID = 'openai';
+					public static ProviderAvailabilityInterface $availability;
+					public static ModelMetadataDirectoryInterface $model_metadata_directory;
+				};
+		}
 		$provider::$availability             = $this->createMock( ProviderAvailabilityInterface::class );
 		$provider::$model_metadata_directory = $this->createMock( ModelMetadataDirectoryInterface::class );
+
+		return get_class( $provider );
+	}
+
+	private function with_test_registry( callable $test, bool $register_provider = true, string $provider_id = 'openai' ): void {
+		$provider = $this->create_test_provider( $provider_id );
 
 		// Keep this test's provider and authentication out of the shared AI Client registry.
 		$registry_property           = new \ReflectionProperty( AiClient::class, 'defaultRegistry' );
@@ -230,9 +240,9 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 
 		try {
 			if ( $register_provider ) {
-				$ai_registry->registerProvider( get_class( $provider ) );
+				$ai_registry->registerProvider( $provider );
 			}
-			$test( $ai_registry, $connector_registry, get_class( $provider ) );
+			$test( $ai_registry, $connector_registry, $provider );
 		} finally {
 			$registry_property->setValue( null, $previous_ai_registry );
 			$connector_registry_property->setValue( null, $previous_connector_registry );
@@ -810,6 +820,288 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 		$this->assertSame( 'constant', $filtered['connectors']['openai']['authentication']['keySource'] );
 		$this->assertSame( 'env', $filtered['connectors']['anthropic']['authentication']['keySource'] );
 		$this->assertSame( 'database', $filtered['connectors']['custom']['authentication']['keySource'] );
+	}
+
+	/**
+	 * @dataProvider connector_badge_provider
+	 */
+	public function test_connector_badge_requires_runtime_authentication( string $connector_id, ?string $credential, bool $provider_available, bool $expected_connected ): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) use ( $connector_id, $credential, $provider_available, $expected_connected ) {
+			update_option( "connectors_ai_{$connector_id}_api_key", 'old-database-secret' );
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ "{$connector_id}_blocked" => 'true' ] ] );
+			$integration->configure();
+			$this->assertSame( '', get_option( "connectors_ai_{$connector_id}_api_key" ) );
+
+			if ( null !== $credential ) {
+				$registry->setProviderRequestAuthentication( $connector_id, new ApiKeyRequestAuthentication( $credential ) );
+			}
+			// Provider availability can stay true from cached models after a credential is removed.
+			$provider_class::$availability->method( 'isConfigured' )->willReturn( $provider_available );
+			\_wp_connectors_register_default_ai_providers( $connector_registry );
+			do_action( 'wp_connectors_init', $connector_registry );
+
+			$data = \_wp_connectors_get_connector_script_module_data( [] );
+			$this->assertSame( $provider_available, $data['connectors'][ $connector_id ]['authentication']['isConnected'] );
+			$filtered = $integration->lock_connector_fields( $data );
+			$this->assertSame( $expected_connected, $filtered['connectors'][ $connector_id ]['authentication']['isConnected'] );
+			$this->assertSame( 'constant', $filtered['connectors'][ $connector_id ]['authentication']['keySource'] );
+		}, true, $connector_id );
+	}
+
+	public function connector_badge_provider(): iterable {
+		foreach ( [ 'openai', 'anthropic', 'google' ] as $connector_id ) {
+			yield "{$connector_id}: cached availability without authentication" => [ $connector_id, null, true, false ];
+			yield "{$connector_id}: cached availability with empty authentication" => [ $connector_id, '', true, false ];
+			yield "{$connector_id}: configured runtime credential" => [ $connector_id, 'runtime-secret', true, true ];
+			yield "{$connector_id}: runtime credential rejected by provider" => [ $connector_id, 'runtime-secret', false, false ];
+		}
+	}
+
+	public function test_connector_badge_is_cleared_when_the_ai_provider_is_unavailable(): void {
+		$this->with_test_registry( function () {
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->configure();
+			$this->assertSame( 'provider_unavailable', $integration->get_runtime_status()['providers']['openai']['status'] );
+
+			// Core already reports an unavailable provider as disconnected, so supply a contradicting value.
+			$filtered = $integration->lock_connector_fields( [
+				'connectors' => [
+					'openai' => [
+						'authentication' => [
+							'keySource'   => 'none',
+							'isConnected' => true,
+						],
+					],
+				],
+			] );
+
+			$this->assertFalse( $filtered['connectors']['openai']['authentication']['isConnected'] );
+		}, false );
+	}
+
+	public function test_connector_badge_is_preserved_while_runtime_status_is_unknown(): void {
+		global $wp_actions;
+
+		$integration = new ConnectorControlsIntegration( 'connector-controls' );
+		$integration->configure();
+		$data = [
+			'connectors' => [
+				'openai' => [
+					'authentication' => [
+						'keySource'   => 'none',
+						'isConnected' => true,
+					],
+				],
+			],
+		];
+
+		$previous_count = $wp_actions['wp_connectors_init'] ?? null;
+		unset( $wp_actions['wp_connectors_init'] );
+		try {
+			$this->assertSame( 'unknown', $integration->get_runtime_status()['providers']['openai']['status'] );
+			$filtered = $integration->lock_connector_fields( $data );
+		} finally {
+			if ( null !== $previous_count ) {
+				$wp_actions['wp_connectors_init'] = $previous_count; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the action count changed above.
+			}
+		}
+
+		$this->assertTrue( $filtered['connectors']['openai']['authentication']['isConnected'] );
+		$this->assertSame( 'constant', $filtered['connectors']['openai']['authentication']['keySource'] );
+	}
+
+	private function create_counting_model_directory(): ModelMetadataDirectoryInterface {
+		return new class() implements ModelMetadataDirectoryInterface, CachesDataInterface {
+			public int $invalidations = 0;
+
+			public function listModelMetadata(): array {
+				return [];
+			}
+
+			public function hasModelMetadata( string $model_id ): bool {
+				return false;
+			}
+
+			public function getModelMetadata( string $model_id ): ModelMetadata {
+				throw new \LogicException( 'This test does not read models.' );
+			}
+
+			public function invalidateCaches(): void {
+				++$this->invalidations;
+			}
+		};
+	}
+
+	public function test_model_caches_are_invalidated_when_the_runtime_credential_changes(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = $this->create_counting_model_directory();
+			$provider_class::$model_metadata_directory = $directory;
+
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_blocked' => 'true' ] ] );
+			$integration->configure();
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'first-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 1, $directory->invalidations, 'An unknown previous credential may have populated the cache.' );
+
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 1, $directory->invalidations, 'Keep the cache while the credential is unchanged.' );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'rotated-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 2, $directory->invalidations );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( '' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 3, $directory->invalidations );
+		} );
+	}
+
+	public function test_removed_credential_stops_reusing_cached_models_from_core(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = new class() extends AbstractApiBasedModelMetadataDirectory {
+				public int $requests = 0;
+
+				protected function sendListModelsRequest(): array {
+					++$this->requests;
+					$authentication = $this->getRequestAuthentication();
+					if ( ! $authentication instanceof ApiKeyRequestAuthentication || 'valid-secret' !== $authentication->getApiKey() ) {
+						throw new \RuntimeException( 'The provider rejected the credential.' );
+					}
+
+					return [];
+				}
+			};
+			$provider_class::$model_metadata_directory = $directory;
+			$provider_class::$availability             = new ListModelsApiBasedProviderAvailability( $directory );
+			$this->assertNotNull( AiClient::getCache(), "Exercise Core's shared AI Client cache." );
+
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_blocked' => 'true' ] ] );
+			$integration->configure();
+
+			// Each connectors initialization below stands in for a new request.
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'valid-secret' ) );
+			do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+			$this->assertTrue( $registry->isProviderConfigured( 'openai' ) );
+			$this->assertSame( 1, $directory->requests );
+
+			do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+			$this->assertTrue( $registry->isProviderConfigured( 'openai' ) );
+			$this->assertSame( 1, $directory->requests, 'Reuse cached models while the credential is unchanged.' );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( '' ) );
+			$this->assertTrue( $registry->isProviderConfigured( 'openai' ), 'Without invalidation, cached models outlive the credential.' );
+
+			do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+			$this->assertFalse( $registry->isProviderConfigured( 'openai' ) );
+			$this->assertSame( 2, $directory->requests );
+		} );
+	}
+
+	public function test_model_cache_fingerprint_uses_the_runtime_credential_fallback(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = $this->create_counting_model_directory();
+			$provider_class::$model_metadata_directory = $directory;
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_putenv -- Force the runtime credential fallback.
+			putenv( 'OPENAI_API_KEY=' );
+
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->activate( [ 'config' => [ 'openai_api_key' => 'platform-secret' ] ] );
+			$integration->configure();
+			$this->assertNotFalse( has_action( 'wp_connectors_init', [ $integration, 'apply_runtime_credential_fallbacks' ] ) );
+
+			do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+			$this->assertSame( 'platform-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey() );
+			$this->assertSame( 1, $directory->invalidations );
+
+			// Hashing before the fallback would see a different credential on each run.
+			do_action( 'wp_connectors_init', new \WP_Connector_Registry() );
+			$this->assertSame( 1, $directory->invalidations );
+		} );
+	}
+
+	public function test_model_cache_invalidation_is_limited_to_the_changed_provider(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $openai_class ) {
+			$anthropic_class = $this->create_test_provider( 'anthropic' );
+			$registry->registerProvider( $anthropic_class );
+			$openai_directory                           = $this->create_counting_model_directory();
+			$anthropic_directory                        = $this->create_counting_model_directory();
+			$openai_class::$model_metadata_directory    = $openai_directory;
+			$anthropic_class::$model_metadata_directory = $anthropic_directory;
+
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->configure();
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'openai-secret' ) );
+			$registry->setProviderRequestAuthentication( 'anthropic', new ApiKeyRequestAuthentication( 'anthropic-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 1, $openai_directory->invalidations );
+			$this->assertSame( 1, $anthropic_directory->invalidations );
+
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'rotated-openai-secret' ) );
+			$integration->invalidate_stale_model_caches();
+			$this->assertSame( 2, $openai_directory->invalidations );
+			$this->assertSame( 1, $anthropic_directory->invalidations );
+		} );
+	}
+
+	public function test_model_caches_are_not_invalidated_without_a_shared_cache(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = $this->create_counting_model_directory();
+			$provider_class::$model_metadata_directory = $directory;
+			$integration                               = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->configure();
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'openai-secret' ) );
+
+			// The AI Client's per-object cache does not outlive the request without a shared cache.
+			$previous_cache = AiClient::getCache();
+			AiClient::setCache( null );
+			try {
+				$integration->invalidate_stale_model_caches();
+			} finally {
+				AiClient::setCache( $previous_cache );
+			}
+
+			$this->assertSame( 0, $directory->invalidations );
+		} );
+	}
+
+	public function test_model_caches_are_not_invalidated_on_a_switched_blog(): void {
+		$this->skipWithoutMultisite();
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$directory                                 = $this->create_counting_model_directory();
+			$provider_class::$model_metadata_directory = $directory;
+			$integration                               = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->configure();
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'openai-secret' ) );
+
+			switch_to_blog( $this->factory()->blog->create() );
+			try {
+				$integration->invalidate_stale_model_caches();
+			} finally {
+				restore_current_blog();
+			}
+
+			$this->assertSame( 0, $directory->invalidations );
+		} );
+	}
+
+	public function test_model_cache_fingerprint_is_saved_for_directories_without_caches(): void {
+		$this->with_test_registry( function ( $registry, $connector_registry, $provider_class ) {
+			$integration = new ConnectorControlsIntegration( 'connector-controls' );
+			$integration->configure();
+			$registry->setProviderRequestAuthentication( 'openai', new ApiKeyRequestAuthentication( 'openai-secret' ) );
+			$this->assertNotInstanceOf( CachesDataInterface::class, $provider_class::$model_metadata_directory );
+			$integration->invalidate_stale_model_caches();
+
+			$directory                                 = $this->create_counting_model_directory();
+			$provider_class::$model_metadata_directory = $directory;
+			$integration->invalidate_stale_model_caches();
+
+			$this->assertSame( 0, $directory->invalidations );
+		} );
 	}
 
 	/**
