@@ -79,3 +79,14 @@ For the isolated configuration sync runtime regression, see
 [configuration sync testing](docs/testing.md#configuration-sync-runtime).
 
 Jetpack SSO status is stored in WordPress session metadata. Existing sessions need a fresh SSO login to receive the flags; see [SSO session metadata](docs/architecture.md#jetpack-sso-session-metadata).
+
+## Maintainers
+
+Maintained by the WordPress VIP Platform Cantina team (`@Automattic/vip-platform-cantina`), which owns this repository's code review:
+
+- [@luismulinari](https://github.com/luismulinari)
+- [@luiztiago](https://github.com/luiztiago)
+- [@rebeccahum](https://github.com/rebeccahum)
+- [@rinatkhaziev](https://github.com/rinatkhaziev)
+- [@robersongomes](https://github.com/robersongomes)
+- [@sjinks](https://github.com/sjinks)

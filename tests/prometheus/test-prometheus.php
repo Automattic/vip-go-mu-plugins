@@ -18,7 +18,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		parent::setUp();
 
 		remove_all_actions( 'vip_mu_plugins_loaded' );
-		remove_all_actions( 'mu_plugins_loaded' );
 		remove_all_actions( 'plugins_loaded' );
 		remove_all_actions( 'init' );
 
@@ -112,9 +111,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ) use ( $collector1, $collector2, $collector3 ): array {
 			switch ( $hook ) {
 				case 'vip_mu_plugins_loaded':
-					return [ $collector1 ];
-
-				case 'mu_plugins_loaded':
 					return [ $collector1, $collector2 ];
 
 				case 'plugins_loaded':
@@ -128,11 +124,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		do_action( 'vip_mu_plugins_loaded' );
 		self::assertEquals( 1, $collector1->initialize_called );
-		self::assertEquals( 0, $collector2->initialize_called );
-		self::assertEquals( 0, $collector3->initialize_called );
-
-		do_action( 'mu_plugins_loaded' );
-		self::assertEquals( 1, $collector1->initialize_called );
 		self::assertEquals( 1, $collector2->initialize_called );
 		self::assertEquals( 0, $collector3->initialize_called );
 
@@ -143,6 +134,24 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		$expected = [ $collector1, $collector2, $collector3 ];
 		self::assertEquals( $expected, $plugin->get_collectors() );
+	}
+
+	public function test_builtin_collectors_initialized_once_across_load_hooks(): void {
+		Plugin_Helper::get_instance();
+
+		// prometheus.php builds a new Cache_Collector on every filter call, and each initialization hooks `shutdown` to count cache stats.
+		$count_cache_shutdown_hooks = fn () => count(
+			array_filter(
+				$GLOBALS['wp_filter']['shutdown']->callbacks[10] ?? [],
+				fn ( $callback ) => is_array( $callback['function'] ) && $callback['function'][0] instanceof Cache_Collector
+			)
+		);
+
+		$before = $count_cache_shutdown_hooks();
+		do_action( 'vip_mu_plugins_loaded' );
+		do_action( 'plugins_loaded' );
+
+		self::assertSame( 1, $count_cache_shutdown_hooks() - $before );
 	}
 
 	public function test_safe_adapter(): void {

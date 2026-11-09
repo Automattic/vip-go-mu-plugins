@@ -26,11 +26,11 @@ class WordPressMcpIntegration extends Integration {
 	private const AUTH_KEY_CONFIG_KEY = 'auth_key';
 
 	/**
-	 * Enable Pendo tracking for this integration.
+	 * Record wp-admin page views in Tracks for this integration.
 	 *
 	 * @var bool
 	 */
-	protected bool $enable_pendo_tracking = true;
+	protected bool $enable_admin_page_tracking = true;
 
 	/**
 	 * Parent integration slug for child config lookup.

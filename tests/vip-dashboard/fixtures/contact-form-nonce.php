@@ -13,7 +13,7 @@ function add_action() {}
 function add_filter() {}
 function remove_action() {}
 function remove_filter() {}
-function __( $text ) {
+function __( $text, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Matches the WordPress signature.
 	return $text;
 }
 function wp_json_encode( $value ) {
