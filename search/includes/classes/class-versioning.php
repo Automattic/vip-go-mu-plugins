@@ -292,12 +292,17 @@ class Versioning {
 	 * Given a version number, normalize it by translating any aliases into actual version numbers
 	 *
 	 * @param Indexable $indexable Indexable
-	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
+	 * @param mixed $version_number The version number to normalize, can be an id or alias like "next" or "previous"
 	 * @return int|WP_Error $version_number Normalized version number
 	 */
 	public function normalize_version_number( Indexable $indexable, $version_number ) {
 		if ( is_int( $version_number ) ) {
 			return $version_number;
+		}
+
+		// Request input such as ?vip-search-post-version[]=1 arrives as an array, which trim() can't take
+		if ( ! is_scalar( $version_number ) ) {
+			return new WP_Error( 'invalid-version-number', 'Version number must be an integer or a string' );
 		}
 
 		$version_number = trim( $version_number );
