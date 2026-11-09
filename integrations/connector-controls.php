@@ -149,7 +149,8 @@ class ConnectorControlsIntegration extends Integration {
 			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
-		add_action( 'wp_connectors_init', [ $this, 'invalidate_stale_model_caches' ], PHP_INT_MAX );
+		// Invalidate after runtime credentials are finalized, before describing connectors.
+		add_action( 'wp_connectors_init', [ $this, 'invalidate_stale_model_caches' ], PHP_INT_MAX - 1 );
 		add_action( 'wp_connectors_init', [ $this, 'describe_managed_connectors' ], PHP_INT_MAX );
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
 
@@ -311,6 +312,9 @@ class ConnectorControlsIntegration extends Integration {
 	 * The AI Client caches each provider's model list per class, not per credential,
 	 * so availability checks keep succeeding after a key is removed or rotated.
 	 * Only a salted hash of the credential is stored.
+	 *
+	 * Temporary workaround until the credential-aware cache fix is available in Core:
+	 * https://github.com/WordPress/php-ai-client/pull/310
 	 */
 	public function invalidate_stale_model_caches(): void {
 		$cache = AiClient::getCache();

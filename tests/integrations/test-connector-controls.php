@@ -298,7 +298,7 @@ class Connector_Controls_Integration_Test extends WP_UnitTestCase {
 			\_wp_connectors_register_default_ai_providers( $connector_registry );
 			$original_connector = $connector_registry->get_registered( 'openai' );
 
-			$this->assertSame( PHP_INT_MAX - 1, has_action( 'wp_connectors_init', 'Automattic\\VIP\\Helpers\\update_ai_connectors' ) );
+			$this->assertSame( PHP_INT_MAX - 2, has_action( 'wp_connectors_init', 'Automattic\\VIP\\Helpers\\update_ai_connectors' ) );
 			$this->assertFalse( has_action( 'init', 'Automattic\\VIP\\Helpers\\update_ai_connectors' ) );
 			$this->assertSame( 'customer-environment-secret', \vip_get_env_var( 'OPENAI_API_KEY' ) );
 			$this->assertSame( 'managed-test-secret', $registry->getProviderRequestAuthentication( 'openai' )->getApiKey() );
