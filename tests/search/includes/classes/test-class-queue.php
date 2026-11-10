@@ -881,6 +881,22 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( array( '31' ), $wpdb->get_col( "SELECT object_id FROM `{$table_name}`" ), 'an object out of retries should be given up on, others queued again' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
+	public function test__action__ep_after_bulk_index_does_not_count_failures_while_a_retry_is_queued() {
+		$unavailable = new \WP_Error( 503, 'Service Unavailable' );
+
+		$this->assertTrue( $this->queue->action__ep_after_bulk_index( array( 30 ), 'post', $unavailable ) );
+
+		// e.g. the post saved and indexed right away again while its retry waits
+		for ( $failure = 1; $failure <= Queue::MAX_REQUEUE_ATTEMPTS; $failure++ ) {
+			$this->assertFalse( $this->queue->action__ep_after_bulk_index( array( 30 ), 'post', $unavailable ), 'an object already queued should not use up a retry' );
+		}
+
+		// Its retry runs and fails
+		$this->queue->empty_queue();
+
+		$this->assertTrue( $this->queue->action__ep_after_bulk_index( array( 30 ), 'post', $unavailable ), 'the failed retry should still be queued again' );
+	}
+
 	public function test_get_deadlocked_jobs() {
 		$this->queue->queue_object( 1000, 'post' );
 		$this->queue->queue_object( 2000, 'post' );

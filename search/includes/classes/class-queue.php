@@ -1154,6 +1154,21 @@ class Queue {
 			return false;
 		}
 
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
+		// An object that is already queued will be indexed by that job anyway, so this failure doesn't use up one of its
+		// retries (e.g. a post saved again, and indexed right away, while its retry waits)
+		$escaped_ids = implode( ',', array_map( 'intval', array_keys( $failed_ids ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IDs cast to int above
+		$queued_ids = $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM {$table_name} WHERE object_id IN ({$escaped_ids}) AND object_type = %s AND status = 'queued' AND index_version = %d", $slug, $index_version ) );
+		$failed_ids = array_diff_key( $failed_ids, array_flip( array_map( 'intval', $queued_ids ) ) );
+
+		if ( ! $failed_ids ) {
+			return false;
+		}
+
 		// Count the retries in the object cache: an eviction only allows a few more
 		$object_ids_by_key = [];
 		foreach ( array_keys( $failed_ids ) as $object_id ) {
@@ -1189,8 +1204,6 @@ class Queue {
 
 		wp_cache_set_multiple( $retries, self::CACHE_GROUP, DAY_IN_SECONDS );
 
-		global $wpdb;
-
 		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
 		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
 		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $retries ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
@@ -1204,9 +1217,8 @@ class Queue {
 			},
 			array_keys( $retries )
 		);
-		$table_name = $this->schema->get_table_name();
 
-		// IGNORE: an object that is already queued will be indexed anyway
+		// IGNORE: an object queued since the check above will be indexed anyway
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- rows prepared above
 		$wpdb->query( "INSERT IGNORE INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority) VALUES " . implode( ', ', $rows ) );
 
