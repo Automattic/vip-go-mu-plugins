@@ -212,19 +212,24 @@ class Cron {
 			),
 		);
 
-		do {
+		while ( true ) {
 			$post_ids = $indexable->query_db( $args )['objects'];
-			if ( $post_ids ) {
-				$this->queue->queue_objects( $post_ids, 'post', array( 'priority' => self::TERM_UPDATE_PRIORITY ) );
 
-				// Copy this page's jobs to the inactive index versions now, rather than keep every queued post in memory until
-				// shutdown, and drop the local object cache's copy of each post's last index time
-				\Automattic\VIP\Search\Search::instance()->versioning->action__shutdown();
-				vip_reset_local_object_cache();
-
-				$args['ep_indexing_last_processed_object_id'] = end( $post_ids );
+			// Each page has lower post IDs than the last. A filter that turns paging by ID off (post__in, an offset or
+			// ep_indexing_advanced_pagination) gets the same page every time: stop instead of queueing it forever.
+			if ( ! $post_ids || end( $post_ids ) >= ( $args['ep_indexing_last_processed_object_id'] ?? PHP_INT_MAX ) ) {
+				return;
 			}
-		} while ( $post_ids );
+
+			$this->queue->queue_objects( $post_ids, 'post', array( 'priority' => self::TERM_UPDATE_PRIORITY ) );
+
+			// Copy this page's jobs to the inactive index versions now, rather than keep every queued post in memory until
+			// shutdown, and drop the local object cache's copy of each post's last index time
+			\Automattic\VIP\Search\Search::instance()->versioning->action__shutdown();
+			vip_reset_local_object_cache();
+
+			$args['ep_indexing_last_processed_object_id'] = end( $post_ids );
+		}
 	}
 
 	/**
