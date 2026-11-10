@@ -1053,6 +1053,20 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( Queue::RETRY_PRIORITY + 2, $this->queue->get_next_job_for_object( 5000, 'post' )->priority, 'queueing an object again should not reset its retry level' );
 	}
 
+	public function test_checkout_jobs_skips_an_object_whose_job_is_running(): void {
+		// A post's retried job is running (or died while running), and the post was queued again meanwhile
+		$this->queue->queue_object( 6000, 'post' );
+		$running = $this->queue->get_next_job_for_object( 6000, 'post' );
+		$this->queue->update_job( $running->job_id, array(
+			'status'   => 'running',
+			'priority' => Queue::RETRY_PRIORITY + 2,
+		) );
+		$this->queue->queue_object( 6000, 'post' );
+		$this->queue->queue_object( 6001, 'post' );
+
+		$this->assertSame( array( '6001' ), wp_list_pluck( $this->queue->checkout_jobs( 500 ), 'object_id' ), 'a post whose job is running should wait for it instead of joining another batch' );
+	}
+
 	/**
 	 * Ensure that the value passed into the filter is returned if the indexable_slug is not 'post'
 	 */

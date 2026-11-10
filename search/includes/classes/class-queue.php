@@ -759,6 +759,19 @@ class Queue {
 			return array();
 		}
 
+		// An object whose other job is checked out or running waits for it: if that job is killing the processor, this one
+		// would take a full batch down with it, and the batch couldn't be set as running (the status is part of the unique
+		// key). If that job died, recovery gives this one its next retry level.
+		$object_key  = static fn( $job ) => "{$job->object_id}_{$job->object_type}_{$job->index_version}";
+		$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $jobs, 'object_id' ) ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+		$busy = array_map( $object_key, $wpdb->get_results( "SELECT object_id, object_type, index_version FROM {$table_name} WHERE object_id IN ( {$escaped_ids} ) AND status IN ( 'scheduled', 'running' )" ) );
+		$jobs = array_values( array_filter( $jobs, fn( $job ) => ! in_array( $object_key( $job ), $busy, true ) ) );
+
+		if ( empty( $jobs ) ) {
+			return array();
+		}
+
 		// Never mix retried jobs with other work, and retry them in batches 10x smaller on each attempt, so a job that
 		// keeps killing the processor ends up alone instead of holding back the rest of its batch.
 		$attempts = self::get_failed_attempts( $jobs[0] );
