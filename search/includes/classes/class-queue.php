@@ -841,17 +841,12 @@ class Queue {
 				break;
 			}
 
-			// Before deduplicating, so a newer job for the same object survives instead of a job that's about to be dropped
-			$filtered_deadlocked_jobs = $this->delete_jobs_out_of_retries( $deadlocked_jobs );
+			// Delete the jobs that can't be queued again, which the update below then skips. Out of retries first, so a
+			// newer job for the same object is the one kept instead of a job that's about to be dropped.
+			$this->delete_jobs_out_of_retries( $deadlocked_jobs );
+			$this->delete_jobs_already_queued_or_duplicated( $deadlocked_jobs );
 
-			if ( empty( $filtered_deadlocked_jobs ) ) {
-				continue;
-			}
-
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $filtered_deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
-
-			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' ) ) );
+			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $deadlocked_jobs, 'job_id' ) ) );
 
 			// A 'running' job died while being processed, so it moves up one retry level. MySQL runs single-table
 			// assignments left to right, so `priority` is computed from the old `status`. Only while still deadlocked: a
@@ -875,13 +870,12 @@ class Queue {
 	 * A deadlocked 'running' job died while being processed. Give up on it, and log it, once it has used up its retries.
 	 *
 	 * @param array $deadlocked_jobs List of deadlocked jobs
-	 * @return array The deadlocked jobs that were not deleted
 	 */
 	private function delete_jobs_out_of_retries( $deadlocked_jobs ) {
 		$exhausted = array_filter( $deadlocked_jobs, fn( $job ) => 'running' === $job->status && self::get_failed_attempts( $job ) >= self::MAX_RETRIES );
 
 		if ( empty( $exhausted ) ) {
-			return $deadlocked_jobs;
+			return;
 		}
 
 		$this->carry_retry_level_to_waiting_jobs( $exhausted );
@@ -900,85 +894,37 @@ class Queue {
 				), array_values( $exhausted ) ),
 			)
 		);
-
-		return array_values( array_diff_key( $deadlocked_jobs, $exhausted ) );
 	}
 
 	/**
-	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
-	 * If we would try to update all of them at once we would break the DB constraint
-	 * (state + object_id + object_type + index_version).
+	 * A deadlocked job can't be queued again, as status + object_id + object_type + index_version is unique, when its
+	 * object is already queued or is also the object of an earlier deadlocked job. Delete those jobs instead.
 	 *
-	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
-	 *
-	 * @param array $all_deadlocked_jobs Array of all deadlocked jobs
-	 * @return array $filtered_deadlocked_jobs Unique deadlocked jobs
+	 * @param array $deadlocked_jobs List of deadlocked jobs
 	 */
-	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects            = [];
-		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted       = [];
+	private function delete_jobs_already_queued_or_duplicated( $deadlocked_jobs ) {
+		global $wpdb;
 
-		foreach ( $all_deadlocked_jobs as $job ) {
-			$unique_key = sprintf( '%s_%s_%s',
-				$job->{'object_id'},
-				$job->{'object_type'},
-				$job->{'index_version'}
-			);
+		$table_name  = $this->schema->get_table_name();
+		$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $deadlocked_jobs, 'job_id' ) ) );
 
-			if ( array_key_exists( $unique_key, $found_objects ) ) {
-				$jobs_to_be_deleted[] = $job;
-			} else {
-				$found_objects[ $unique_key ] = true;
-
-				$filtered_deadlocked_jobs[] = $job;
-			}
-		}
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+		$jobs_to_be_deleted = $wpdb->get_results(
+			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE deadlocked.job_id IN ( {$escaped_ids} ) AND EXISTS (
+				SELECT 1 FROM {$table_name} other
+				WHERE other.object_id = deadlocked.object_id
+				AND other.object_type = deadlocked.object_type
+				AND other.index_version = deadlocked.index_version
+				AND ( other.status = 'queued' OR ( other.job_id IN ( {$escaped_ids} ) AND other.job_id < deadlocked.job_id ) )
+			)"
+		);
+		// phpcs:enable
 
 		if ( ! empty( $jobs_to_be_deleted ) ) {
 			// The job kept may be one that never started, while a deleted one died
 			$this->carry_retry_level_to_waiting_jobs( $jobs_to_be_deleted );
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
-
-		return $filtered_deadlocked_jobs;
-	}
-
-	/**
-	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
-	 *
-	 * @param array $deadlocked_jobs List of deadlocked jobs
-	 * @return array $deadlocked_jobs List of deadlocked jobs deleted from queue
-	 */
-	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
-		global $wpdb;
-
-		$table_name = $this->schema->get_table_name();
-
-		$job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
-
-		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$jobs_to_be_deleted = $wpdb->get_results(
-			 // Cannot prepare table name. @codingStandardsIgnoreStart
-			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE `job_id` IN ( {$escaped_ids} ) AND EXISTS (
-				 SELECT queued.* FROM {$table_name} queued
-				 WHERE queued.status = 'queued'
-				 AND queued.object_id = deadlocked.object_id
-				 AND queued.object_type = deadlocked.object_type
-				 AND queued.index_version = deadlocked.index_version
-				 AND queued.job_id != deadlocked.job_id
-			)",
-			 // @codingStandardsIgnoreEnd
-		);
-
-		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->carry_retry_level_to_waiting_jobs( $jobs_to_be_deleted );
-			$this->delete_jobs( $jobs_to_be_deleted );
-		}
-
-		return $deadlocked_jobs;
 	}
 
 	/**

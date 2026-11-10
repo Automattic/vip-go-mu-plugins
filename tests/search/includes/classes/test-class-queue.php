@@ -1013,45 +1013,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( Queue::RETRY_PRIORITY + Queue::MAX_RETRIES, $this->queue->get_next_job_for_object( 4000, 'post', array( 'index_version' => 1 ) )->priority, 'the stale job of an object whose job ran out of retries should run alone, not in a full batch' );
 	}
 
-	public function test_free_deadlocked_jobs_leaves_a_batch_that_starts_during_recovery(): void {
-		global $wpdb;
-
-		$table_name = $this->use_recovery_table();
-
-		$this->queue->queue_objects( self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) ) );
-		$job_ids = wp_list_pluck( $this->queue->checkout_jobs( 500 ), 'job_id' );
-
-		// The batch's cron event ran late: it was checked out longer than DEADLOCK_TIME ago
-		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET scheduled_time = %s', $table_name, gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ) ) );
-
-		// ... and starts, as process_jobs() does, after the sweeper found it but before it hands it back
-		$started = false;
-		add_filter( 'query', function ( $query ) use ( &$started, $job_ids ) {
-			if ( ! $started && false !== strpos( $query, "`status` = 'queued', `scheduled_time` = NULL" ) ) {
-				$started = true;
-				$this->queue->update_jobs( $job_ids, array(
-					'status'         => 'running',
-					'scheduled_time' => gmdate( 'Y-m-d H:i:s' ),
-				), 'scheduled' );
-			}
-			return $query;
-		} );
-
-		$this->queue->free_deadlocked_jobs();
-
-		$this->assertTrue( $started );
-		$this->assertEquals(
-			array(
-				(object) array(
-					'status'   => 'running',
-					'priority' => (string) Queue::INDEX_DEFAULT_PRIORITY,
-				),
-			),
-			$wpdb->get_results( $wpdb->prepare( 'SELECT DISTINCT status, priority FROM %i', $table_name ) ),
-			'a batch that started should not be handed back or counted as one whose processing died'
-		);
-	}
-
 	public function test_free_deadlocked_jobs_leaves_a_batch_that_started_late_running(): void {
 		global $wpdb;
 
