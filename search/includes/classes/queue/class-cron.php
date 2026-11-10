@@ -49,6 +49,12 @@ class Cron {
 	const TERM_UPDATE_BATCH_SIZE = 25000;
 
 	/**
+	 * Queue priority for posts requeued after a term change: after edits queued while indexing is ratelimited (5), so they
+	 * don't wait behind a large term, and before other bulk work (15)
+	 */
+	const TERM_UPDATE_PRIORITY = 10;
+
+	/**
 	 * The maximum number if processor jobs allowed at one time
 	 */
 	const MAX_PROCESSOR_JOB_COUNT = 3;
@@ -187,32 +193,18 @@ class Cron {
 	 * @param int $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		$indexable_post_types    = Indexables::factory()->get( 'post' )->get_indexable_post_types();
-		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+		$indexable = Indexables::factory()->get( 'post' );
 
-		// Only proceed if indexable post types are defined correctly
-		if ( ! is_array( $indexable_post_types ) || empty( $indexable_post_types ) ) {
+		// Only proceed if indexable post types and statuses are defined correctly
+		if ( empty( $indexable->get_indexable_post_types() ) || empty( $indexable->get_indexable_post_status() ) ) {
 			return;
 		}
 
-		// Only proceed if indexable post statuses are defined correctly
-		if ( ! is_array( $indexable_post_statuses ) || empty( $indexable_post_statuses ) ) {
-			return;
-		}
-
-		// WP_Query args for looking up posts that match the term taxonomy id and indexable
-		// post types/statuses
+		// Indexing's own query: it matches the posts that indexing would, and pages by post ID instead of an offset
 		$args = array(
-			// phpcs:ignored WordPress.WP.PostsPerPage.posts_per_page_posts_per_page
-			'posts_per_page'         => self::TERM_UPDATE_BATCH_SIZE,
-			'post_type'              => $indexable_post_types,
-			'post_status'            => $indexable_post_statuses,
-			'paged'                  => 1,
-			'fields'                 => 'ids',
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-			'ignore_sticky_posts'    => true,
-			'tax_query'              => array(  // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+			'per_page'  => self::TERM_UPDATE_BATCH_SIZE,
+			'fields'    => 'ids',
+			'tax_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
 				array(
 					'field' => 'term_taxonomy_id',
 					'terms' => $term_taxonomy_id,
@@ -220,27 +212,19 @@ class Cron {
 			),
 		);
 
-		$posts = new \WP_Query( $args );
+		do {
+			$post_ids = $indexable->query_db( $args )['objects'];
+			if ( $post_ids ) {
+				$this->queue->queue_objects( $post_ids, 'post', array( 'priority' => self::TERM_UPDATE_PRIORITY ) );
 
-		// If no posts, just return early
-		if ( ! $posts->have_posts() ) {
-			return;
-		}
+				// Copy this page's jobs to the inactive index versions now, rather than keep every queued post in memory until
+				// shutdown, and drop the local object cache's copy of each post's last index time
+				\Automattic\VIP\Search\Search::instance()->versioning->action__shutdown();
+				vip_reset_local_object_cache();
 
-		// Iterate pagination
-		while ( $args['paged'] <= $posts->max_num_pages ) {
-			// Queue all posts for page
-			$this->queue->queue_objects( $posts->posts, 'post' );
-
-			// Go to the next page and reset $posts
-			$args['paged'] = intval( $args['paged'] ) + 1;
-			$posts         = new \WP_Query( $args );
-
-			// If page is empty, just return early
-			if ( ! $posts->have_posts() ) {
-				return;
+				$args['ep_indexing_last_processed_object_id'] = end( $post_ids );
 			}
-		}
+		} while ( $post_ids );
 	}
 
 	/**

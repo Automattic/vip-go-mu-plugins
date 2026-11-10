@@ -337,6 +337,30 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, $not_scheduled_count );
 	}
 
+	public function test_queue_posts_for_term_taxonomy_id_pages_through_the_term_at_a_lower_priority(): void {
+		global $wpdb;
+
+		$term_id = self::factory()->category->create();
+		$in_term = self::factory()->post->create_many( 3, array( 'post_category' => array( $term_id ) ) );
+		self::factory()->post->create(); // Not in the term
+		self::factory()->post->create( array(
+			'post_status'   => 'draft', // Not indexable
+			'post_category' => array( $term_id ),
+		) );
+
+		// Pages of 2, so the 3 posts take more than one page
+		add_filter( 'ep_index_posts_args', fn( $args ) => array_merge( $args, array( 'posts_per_page' => 2 ) ) );
+
+		$this->queue->cron->queue_posts_for_term_taxonomy_id( get_term( $term_id )->term_taxonomy_id );
+
+		sort( $in_term );
+		$this->assertSame( $in_term, $this->get_post_ids_in_queue_table() );
+
+		$table_name = $this->queue->schema->get_table_name();
+		$priorities = $wpdb->get_col( "SELECT DISTINCT `priority` FROM {$table_name}" );
+		$this->assertSame( array( (string) Queue\Cron::TERM_UPDATE_PRIORITY ), $priorities );
+	}
+
 	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
 		$term_id = self::factory()->category->create();
 		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
