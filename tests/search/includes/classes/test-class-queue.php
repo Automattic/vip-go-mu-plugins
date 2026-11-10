@@ -337,6 +337,24 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 1, $not_scheduled_count );
 	}
 
+	public function test_checkout_jobs_leaves_jobs_whose_object_is_still_scheduled(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		// Post 1 is checked out, but its cron event hasn't run yet
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->checkout_jobs( 10 );
+
+		// Post 1 changes again and post 2 is queued, both due now
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 2, 'post' );
+		$wpdb->query( "UPDATE {$table_name} SET start_time = NULL" );
+
+		$this->assertSame( array( '2' ), wp_list_pluck( $this->queue->checkout_jobs( 10 ), 'object_id' ), 'Post 1 waits for its scheduled job, post 2 is still checked out.' );
+		$this->assertSame( array(), $this->queue->checkout_jobs( 10 ), 'Post 2 is not checked out twice.' );
+	}
+
 	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
 		$term_id = self::factory()->category->create();
 		self::factory()->post->create( [ 'post_category' => [ $term_id ] ] );
@@ -656,6 +674,23 @@ class Queue_Test extends WP_UnitTestCase {
 		$jobs = $this->queue->get_jobs_by_range( $min_id, $max_id );
 
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
+	}
+
+	public function test_process_jobs_deletes_jobs_of_a_missing_indexable(): void {
+		$this->assertFalse( Indexables::factory()->get( 'term' ), 'Precondition: the term Indexable is not registered.' );
+
+		$this->insert_raw_jobs( array(
+			array(
+				'object_id'     => 1,
+				'object_type'   => 'term',
+				'status'        => 'scheduled',
+				'index_version' => 1,
+			),
+		) );
+
+		$this->queue->process_jobs( $this->queue->get_jobs_by_ids( array( (int) $this->get_min_object_id_from_queue() ) ) );
+
+		$this->assertSame( 0, $this->queue->count_jobs( 'all', 'all' ) );
 	}
 
 	public function test_intercept_ep_sync_manager_indexing() {

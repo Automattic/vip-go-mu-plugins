@@ -507,6 +507,9 @@ class Queue {
 	/**
 	 * Update a list of jobs
 	 *
+	 * A job whose update would duplicate another job's object, status and index version (the UNIQUE key) is skipped,
+	 * instead of failing the whole update.
+	 *
 	 * @param array $job_ids Array of job ids to update
 	 * @param array $data Data to update jobs with
 	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'scheduled')
@@ -527,7 +530,7 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
-		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		$sql = "UPDATE IGNORE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 		if ( null !== $where_status ) {
 			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
 		}
@@ -751,6 +754,13 @@ class Queue {
 			'scheduled_time' => $scheduled_time,
 		), 'queued' );
 
+		// Keep only the jobs this call scheduled: a job stays queued while another job for its object is still scheduled
+		$scheduled_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array(
+			'status'         => 'scheduled',
+			'scheduled_time' => $scheduled_time,
+		) ), 'job_id' );
+		$jobs          = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $scheduled_ids, true ) ) );
+
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status         = 'scheduled';
@@ -807,8 +817,9 @@ class Queue {
 				break;
 			}
 
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
+			// Duplicates of one object can't all be requeued (the UNIQUE key), so update_jobs() skips all but one. The rest stay
+			// deadlocked, and the next round deletes them below, as their object is already queued.
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $deadlocked_jobs );
 
 			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
@@ -817,44 +828,6 @@ class Queue {
 				'scheduled_time' => null,
 			) );
 		}
-	}
-
-	/**
-	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
-	 * If we would try to update all of them at once we would break the DB constraint
-	 * (state + object_id + object_type + index_version).
-	 *
-	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
-	 *
-	 * @param array $all_deadlocked_jobs Array of all deadlocked jobs
-	 * @return array $filtered_deadlocked_jobs Unique deadlocked jobs
-	 */
-	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects            = [];
-		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted       = [];
-
-		foreach ( $all_deadlocked_jobs as $job ) {
-			$unique_key = sprintf( '%s_%s_%s',
-				$job->{'object_id'},
-				$job->{'object_type'},
-				$job->{'index_version'}
-			);
-
-			if ( array_key_exists( $unique_key, $found_objects ) ) {
-				$jobs_to_be_deleted[] = $job;
-			} else {
-				$found_objects[ $unique_key ] = true;
-
-				$filtered_deadlocked_jobs[] = $job;
-			}
-		}
-
-		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->delete_jobs( $jobs_to_be_deleted );
-		}
-
-		return $filtered_deadlocked_jobs;
 	}
 
 	/**
@@ -905,6 +878,7 @@ class Queue {
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
 
 		$indexables = Indexables::factory();
+		$versioning = \Automattic\VIP\Search\Search::instance()->versioning;
 
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
@@ -914,15 +888,14 @@ class Queue {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
-				// If the index version no longer exists, just delete the jobs and don't bother with stats or anything
-				// since the jobs weren't actually processed
-				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
-				if ( ! array_key_exists( intval( $index_version ), $index_versions ) ) {
+				// If the Indexable (e.g. its feature was turned off) or the index version no longer exists, just delete the jobs
+				// and don't bother with stats or anything since the jobs weren't actually processed
+				if ( ! $indexable || ! array_key_exists( intval( $index_version ), $versioning->get_versions( $indexable ) ) ) {
 					$this->delete_jobs( $jobs );
 					continue;
 				}
 
-				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
+				$versioning->set_current_version_number( $indexable, $index_version );
 
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
@@ -950,7 +923,7 @@ class Queue {
 				// Mark them as done in queue
 				$this->delete_jobs( $jobs );
 
-				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
+				$versioning->reset_current_version_number( $indexable );
 			}
 		}
 	}
