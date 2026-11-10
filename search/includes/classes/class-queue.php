@@ -870,6 +870,7 @@ class Queue {
 			return $deadlocked_jobs;
 		}
 
+		$this->carry_retry_level_to_queued_jobs( $exhausted );
 		$this->delete_jobs( $exhausted );
 
 		$this->logger->log(
@@ -957,18 +958,32 @@ class Queue {
 		);
 
 		if ( ! empty( $jobs_to_be_deleted ) ) {
-			// A 'running' job died while being processed: the object's queued job takes over its next retry level, as
-			// free_deadlocked_jobs() would have given it
-			$died_ids = implode( ', ', array_map( 'intval', wp_list_pluck( wp_list_filter( $jobs_to_be_deleted, array( 'status' => 'running' ) ), 'job_id' ) ) );
-			if ( $died_ids ) {
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
-				$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} queued JOIN {$table_name} died ON queued.object_id = died.object_id AND queued.object_type = died.object_type AND queued.index_version = died.index_version SET queued.priority = GREATEST( queued.priority, GREATEST( died.priority, %d ) + 1 ) WHERE queued.status = 'queued' AND died.job_id IN ( {$died_ids} )", self::RETRY_PRIORITY ) );
-			}
-
+			$this->carry_retry_level_to_queued_jobs( $jobs_to_be_deleted );
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
 		return $deadlocked_jobs;
+	}
+
+	/**
+	 * Before a 'running' job that died while being processed is deleted, the object's queued job takes over its next
+	 * retry level, as free_deadlocked_jobs() would have given it. Past the last level, the queued job gets the last one,
+	 * so it runs alone and is dropped if it crashes too, instead of going back into a full batch.
+	 *
+	 * @param array $jobs Jobs about to be deleted
+	 */
+	private function carry_retry_level_to_queued_jobs( $jobs ) {
+		global $wpdb;
+
+		$died_ids = implode( ', ', array_map( 'intval', wp_list_pluck( wp_list_filter( $jobs, array( 'status' => 'running' ) ), 'job_id' ) ) );
+		if ( ! $died_ids ) {
+			return;
+		}
+
+		$table_name = $this->schema->get_table_name();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} queued JOIN {$table_name} died ON queued.object_id = died.object_id AND queued.object_type = died.object_type AND queued.index_version = died.index_version SET queued.priority = GREATEST( queued.priority, LEAST( GREATEST( died.priority, %d ) + 1, %d ) ) WHERE queued.status = 'queued' AND died.job_id IN ( {$died_ids} )", self::RETRY_PRIORITY, self::RETRY_PRIORITY + self::MAX_RETRIES ) );
 	}
 
 	/**

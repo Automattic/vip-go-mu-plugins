@@ -789,6 +789,9 @@ class Queue_Test extends WP_UnitTestCase {
 			// Out of retries, and a newer job for the same object that hasn't run yet
 			array( 4000, 'post', 1, 'running', Queue::RETRY_PRIORITY + Queue::MAX_RETRIES ),
 			array( 4000, 'post', 1, 'scheduled' ),
+			// Out of retries, and the object was queued again while it crashed
+			array( 5000, 'post', 1, 'running', Queue::RETRY_PRIORITY + Queue::MAX_RETRIES ),
+			array( 5000, 'post', 1, 'queued' ),
 		);
 		$expected      = array();
 		$duplicate_ids = array();
@@ -807,8 +810,8 @@ class Queue_Test extends WP_UnitTestCase {
 			if ( 3000 === $object_id ) {
 				$duplicate_ids[] = (int) $job->job_id;
 			}
-			// Only the same-object/type/version duplicates and the job out of retries should be removed.
-			if ( ! in_array( $offset, array( 0, 6, 7 ), true ) ) {
+			// Only the same-object/type/version duplicates and the jobs out of retries should be removed.
+			if ( ! in_array( $offset, array( 0, 6, 7, 9 ), true ) ) {
 				$expected[] = array(
 					'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
 					'object_id'     => $object_id,
@@ -833,6 +836,7 @@ class Queue_Test extends WP_UnitTestCase {
 		unset( $job );
 		$this->assertSame( $expected, $actual );
 		$this->assertEquals( Queue::RETRY_PRIORITY + 1, $this->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose job died should take over its next retry level' );
+		$this->assertEquals( Queue::RETRY_PRIORITY + Queue::MAX_RETRIES, $this->queue->get_next_job_for_object( 5000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose job ran out of retries should run alone, not in a full batch' );
 	}
 
 	public function test_free_deadlocked_jobs_leaves_a_batch_that_started_late_running(): void {
