@@ -36,7 +36,9 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::error( 'There is no validate-contents run ongoing' );
 		}
 
-		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP );
+		// Expire with the run's lock, so a stop request for a run that already died can't abort a later one
+		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- 15 minutes
+		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP, $health::CONTENT_VALIDATION_LOCK_TIMEOUT );
 		if ( $stop ) {
 			WP_CLI::success( 'Attempting to abort validate-contents run...' );
 		} else {
@@ -225,6 +227,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				if ( ! $indexable->index_exists( $site['blog_id'] ) ) {
 					$blog_id = $site['blog_id'];
 					WP_CLI::line( "Skipping validation of '$indexable_slug' index for site $blog_id as it doesn't exist.\n\n" );
+					restore_current_blog();
 					continue;
 				}
 

@@ -508,6 +508,14 @@ class VersionCommand extends \WPCOM_VIP_CLI_Command {
 
 			$result = $search->versioning->delete_version( $indexable, $args[1] );
 
+			if ( is_wp_error( $result ) ) {
+				return WP_CLI::error( $result->get_error_message() );
+			}
+
+			if ( ! $result ) {
+				return WP_CLI::error( sprintf( 'Failed to delete index version %d for type %s', $version['number'], $type ) );
+			}
+
 			WP_CLI::success( sprintf( 'Successfully deleted index version %d for type %s', $version['number'], $type ) );
 		}
 	}
