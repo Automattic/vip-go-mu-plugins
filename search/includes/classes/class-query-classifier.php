@@ -124,9 +124,15 @@ final class Query_Classifier {
 	}
 
 	private function scope_from_body( array $body ): string {
-		return ! array_key_exists( 'query', $body ) || ! $this->has_effective_clause( $body['query'] )
-			? self::SCOPE_UNBOUNDED
-			: self::SCOPE_BOUNDED;
+		$clauses = [ $body['query'] ?? null ];
+
+		// ElasticPress puts the filters of non-search queries (e.g. archives) in post_filter next to match_all.
+		// post_filter limits hits but not aggregations, so it only bounds queries without them.
+		if ( empty( $body['aggs'] ) && empty( $body['aggregations'] ) ) {
+			$clauses[] = $body['post_filter'] ?? null;
+		}
+
+		return $this->has_effective_clause( $clauses ) ? self::SCOPE_BOUNDED : self::SCOPE_UNBOUNDED;
 	}
 
 	/**
