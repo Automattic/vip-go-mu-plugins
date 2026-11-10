@@ -1081,6 +1081,12 @@ class Queue {
 	 * @return bool Whether to bail on indexing or not
 	 */
 	public function ratelimit_indexing( $bail, $sync_manager, $indexable_slug ) {
+		// An earlier filter already took over (e.g. a plugin that indexes these posts itself), so don't count them
+		// toward the ratelimit or queue them to be indexed anyway
+		if ( $bail ) {
+			return $bail;
+		}
+
 		// Only posts supported right now
 		if ( 'post' !== $indexable_slug ) {
 			return $bail;
@@ -1115,8 +1121,7 @@ class Queue {
 			$this->clear_index_limiting_start_timestamp();
 		}
 
-		// Honor filters that want to bail on indexing while also honoring ratelimiting
-		return true === $bail || true === static::is_indexing_ratelimited();
+		return static::is_indexing_ratelimited();
 	}
 
 	/**

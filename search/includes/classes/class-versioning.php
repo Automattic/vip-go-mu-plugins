@@ -840,6 +840,11 @@ class Versioning {
 	}
 
 	public function filter__pre_ep_index_sync_queue( $bail, $sync_manager, $indexable_slug ) {
+		// An earlier filter already took over, so these objects aren't being indexed into the active version either
+		if ( $bail ) {
+			return $bail;
+		}
+
 		$indexable = \ElasticPress\Indexables::factory()->get( $indexable_slug );
 
 		// If it's not a valid indexable, just skip

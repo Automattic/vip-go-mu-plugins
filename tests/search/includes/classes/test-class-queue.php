@@ -866,7 +866,7 @@ class Queue_Test extends WP_UnitTestCase {
 		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = PHP_INT_MAX; // Ensure ratelimiting is disabled
 
-		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 		$this->assertSame( [], $this->get_post_ids_in_queue_table(), 'no post should be in the queue table' );
@@ -875,7 +875,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->add_posts_to_queue( range( 10, 20 ) );
 
-		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 		$this->assertSame( [], $this->get_post_ids_in_queue_table(), 'no post should be in the queue table' );
@@ -890,14 +890,14 @@ class Queue_Test extends WP_UnitTestCase {
 		// phpcs:ignore Squiz.PHP.DisallowMultipleAssignments.Found
 		$this->queue::$max_indexing_op_count = 0; // Ensure ratelimiting is enabled
 
-		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 7, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 7' );
 		$this->assertSame( range( 3, 9 ), $this->get_post_ids_in_queue_table(), 'each post should be in the queue table once' );
 
 		$this->add_posts_to_queue( range( 10, 20 ) );
 
-		$this->queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$this->queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 
 		$this->assertEquals( 18, wp_cache_get( $this->queue::INDEX_COUNT_CACHE_KEY, $this->queue::INDEX_COUNT_CACHE_GROUP ), 'indexing ops count should be 18' );
 		$this->assertSame( range( 3, 20 ), $this->get_post_ids_in_queue_table(), 'each post should be in the queue table once' );
@@ -941,7 +941,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$partially_mocked_queue->expects( $this->once() )->method( 'handle_index_limiting_start_timestamp' );
 		$partially_mocked_queue->expects( $this->once() )->method( 'maybe_alert_for_prolonged_index_limiting' );
 
-		$partially_mocked_queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$partially_mocked_queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 	}
 
 	public function test__ratelimit_indexing__clears_start_correctly() {
@@ -957,7 +957,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$post_ids = range( 3, 9 );
 		$this->add_posts_to_queue( $post_ids );
 
-		$partially_mocked_queue->ratelimit_indexing( true, $this->sync_manager, 'post' );
+		$partially_mocked_queue->ratelimit_indexing( false, $this->sync_manager, 'post' );
 	}
 
 	/**
