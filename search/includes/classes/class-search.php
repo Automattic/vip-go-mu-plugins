@@ -1875,7 +1875,9 @@ class Search {
 				$search_length = self::MAX_SEARCH_LENGTH;
 			}
 
-			$truncated_search = substr( $search, 0, $search_length );
+			// Same byte budget as before, but never cut a multibyte character in half: invalid UTF-8 blanks the search
+			// box and heading, since esc_attr() and esc_html() return '' for it
+			$truncated_search = mb_strcut( $search, 0, $search_length, 'UTF-8' );
 
 			$query->set( 's', $truncated_search );
 		}
