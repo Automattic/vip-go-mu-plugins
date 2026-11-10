@@ -273,8 +273,6 @@ class CoreCommand {
 		$using_versions = $assoc_args['using-versions'] ?? false;
 		$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
 
-		$this->maybe_setup_index_version( $assoc_args );
-
 		$network_mode = isset( $assoc_args['network-wide'] );
 		$batch_mode   = isset( $assoc_args['blog-ids'] );
 		/**
@@ -338,6 +336,9 @@ class CoreCommand {
 
 			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
+			// Set up the version only for the site indexed here. Each child process above sets up its own site's version.
+			$this->maybe_setup_index_version( $assoc_args );
+
 			if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
 				self::confirm_destructive_operation( $assoc_args );
 			}
@@ -365,12 +366,12 @@ class CoreCommand {
 
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
-		}
 
-		if ( $using_versions ) {
-			// resetting skip-confirm after it was cleared for elasticpress
-			$assoc_args['skip-confirm'] = $skip_confirm;
-			$this->shift_version_after_index( $assoc_args );
+			if ( $using_versions ) {
+				// resetting skip-confirm after it was cleared for elasticpress
+				$assoc_args['skip-confirm'] = $skip_confirm;
+				$this->shift_version_after_index( $assoc_args );
+			}
 		}
 	}
 
