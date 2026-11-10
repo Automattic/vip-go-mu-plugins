@@ -498,6 +498,7 @@ class Health {
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		$results = [];
+		$errors  = [];
 
 		// To fully validate the index, we have to check batches of post IDs
 		// to compare the values in the DB with the index (and catch any that don't exist in either)
@@ -534,12 +535,15 @@ class Health {
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options );
 
 			if ( is_wp_error( $result ) ) {
-				$result = array( 'errors' => array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) ) );
-			} elseif ( count( $result ) && ! $do_not_heal ) {
-				self::reconcile_diff( $result );
-			}
+				// Kept apart from the diffs: the batch's posts weren't compared, so there's nothing to reconcile or report for them
+				$errors[] = sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() );
+			} else {
+				if ( count( $result ) && ! $do_not_heal ) {
+					self::reconcile_diff( $result );
+				}
 
-			$results = array_merge( $results, $result );
+				$results = array_merge( $results, $result );
+			}
 
 			// Limit $results size
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
@@ -574,7 +578,11 @@ class Health {
 			vip_reset_local_object_cache();
 
 			if ( $is_cli && ! $silent ) {
-				printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				if ( is_wp_error( $result ) ) {
+					printf( "...✘ (%s)\n", $result->get_error_message() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				} else {
+					printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				}
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
@@ -594,6 +602,14 @@ class Health {
 		}
 		if ( $track_process ) {
 			$this->remove_validate_content_process();
+		}
+
+		// Report the batches that couldn't be validated, along with the diffs of those that were
+		if ( $errors && ! is_wp_error( $results ) ) {
+			$error = new WP_Error( 'es_validate_content_batch_failed', sprintf( 'Could not validate %d batches. First error: %s', count( $errors ), $errors[0] ) );
+			$error->add_data( $results, 'diff' );
+
+			$results = $error;
 		}
 
 		return $results;

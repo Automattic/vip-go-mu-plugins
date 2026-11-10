@@ -701,6 +701,37 @@ class Health_Test extends WP_UnitTestCase {
 		] );
 	}
 
+	public function test_validate_index_posts_content__reports_failed_batches_apart_from_diffs() {
+		$health = $this->mock_content_validation_health( 0 );
+		$diff   = [
+			'post_2' => [
+				'type'  => 'post',
+				'id'    => 2,
+				'issue' => 'missing_from_index',
+			],
+		];
+
+		$health->method( 'validate_index_posts_content_batch' )->willReturnOnConsecutiveCalls(
+			new \WP_Error( 'es_mget_failed', 'first failure' ),
+			$diff,
+			new \WP_Error( 'es_mget_failed', 'second failure' )
+		);
+
+		$result = $health->validate_index_posts_content( [
+			'start_post_id'            => 1,
+			'last_post_id'             => 3,
+			'batch_size'               => 1,
+			'do_not_heal'              => true,
+			'force_parallel_execution' => true,
+		] );
+
+		$this->assertWPError( $result, 'a run with failed batches should report them' );
+		$this->assertSame( 'es_validate_content_batch_failed', $result->get_error_code() );
+		$this->assertStringStartsWith( 'Could not validate 2 batches. First error: batch 1 - 1', $result->get_error_message() );
+		$this->assertStringEndsWith( 'error: first failure', $result->get_error_message() );
+		$this->assertSame( $diff, $result->get_error_data( 'diff' ), 'the diffs of the batches that were validated should be kept, without the errors' );
+	}
+
 	public function test_validate_index_posts_content__do_not_pick_up_after_interruption_when_non_default_start_post_id() {
 		$start_post_id = 2;
 
