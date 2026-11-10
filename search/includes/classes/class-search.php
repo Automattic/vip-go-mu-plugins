@@ -545,8 +545,9 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
-		// Rate-limit query integration
+		// Rate-limit query integration, deciding again each time a WP_Query runs (before EP's pre_get_posts check)
 		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
+		add_action( 'pre_get_posts', [ $this, 'reset_query_ratelimit_decision' ], PHP_INT_MIN );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -1498,6 +1499,16 @@ class Search {
 		}
 
 		return $ratelimited;
+	}
+
+	/**
+	 * Forget the decision rate_limit_ep_query_integration() stored on a WP_Query, so running the same object again
+	 * (e.g. via query()) gets a new one.
+	 *
+	 * @param \WP_Query $query
+	 */
+	public function reset_query_ratelimit_decision( $query ): void {
+		unset( $query->vip_search_ratelimited );
 	}
 
 	public function record_ratelimited_query_stat() {
