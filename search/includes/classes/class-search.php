@@ -1633,8 +1633,8 @@ class Search {
 		// Send a request to get all current mappings
 		$raw = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
 
-		// Elasticsearch responses are in JSON
-		$body = json_decode( $raw['body'], true );
+		// Elasticsearch responses are in JSON (empty body on a WP_Error, which the check below handles)
+		$body = json_decode( wp_remote_retrieve_body( $raw ), true );
 
 		// If JSON wasn't parsed correctly
 		if ( ! is_array( $body ) || empty( $body ) ) {
