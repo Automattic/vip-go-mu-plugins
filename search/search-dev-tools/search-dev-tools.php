@@ -45,6 +45,8 @@ function register_rest_routes() {
 					'type'              => 'string',
 					'required'          => true,
 					'validate_callback' => __NAMESPACE__ . '\rest_endpoint_url_validate_callback',
+					// Runs after validation, so the callback gets the URL's index names instead of the raw URL
+					'sanitize_callback' => __NAMESPACE__ . '\get_search_url_indexes',
 				],
 				'query' => [
 					'type'              => 'string',
@@ -66,8 +68,7 @@ function rest_callback( \WP_REST_Request $request ) {
 
 	$ep     = \ElasticPress\Elasticsearch::factory();
 	$result = $ep->remote_request(
-		// `url` passed rest_endpoint_url_validate_callback(), so send its index names rather than the raw path
-		get_search_url_indexes( $request['url'] ) . '/_search',
+		$request['url'] . '/_search',
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
@@ -154,7 +155,7 @@ function rest_endpoint_url_validate_callback( $value, $request, $param ) {
  * @return string|null
  */
 function get_search_url_indexes( $url ): ?string {
-	$index = 'vip-' . FILES_CLIENT_SITE_ID . '-[a-z0-9_-]+';
+	$index = 'vip-' . preg_quote( (string) FILES_CLIENT_SITE_ID, '#' ) . '-[a-z0-9_-]+';
 	$path  = is_string( $url ) ? wp_parse_url( $url, PHP_URL_PATH ) : null;
 
 	return is_string( $path ) && preg_match( "#^/($index(?:,$index)*)/_search$#D", $path, $matches ) ? $matches[1] : null;
