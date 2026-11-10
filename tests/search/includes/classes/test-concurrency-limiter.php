@@ -101,14 +101,15 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Search requests are limited, indexing requests are not.
+	 * Search requests are limited, document and indexing requests are not.
 	 *
 	 * @return iterable
 	 */
 	public function data_concurrent_requests(): iterable {
 		foreach ( $this->data_concurrency_limiting() as $name => list( $backend ) ) {
-			yield "{$name} search" => [ $backend, '/_search', true ];
-			yield "{$name} index"  => [ $backend, '/_index', false ];
+			yield "{$name} search"   => [ $backend, '/_search', true ];
+			yield "{$name} document" => [ $backend, '/index/_doc/1', false ];
+			yield "{$name} index"    => [ $backend, '/_index', false ];
 		}
 	}
 

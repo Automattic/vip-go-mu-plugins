@@ -1093,6 +1093,11 @@ class Search {
 		// Mirror write requests to migration ES hosts if in migration mode
 		$this->mirror_write_to_migration_hosts( $query, $args, $type, $is_testing_next_version );
 
+		if ( 'delete' === $type ) {
+			// EP fires no hook after a document delete, so drop the responses cached before it
+			SyncManager_Helper::instance()->bump_last_changed();
+		}
+
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			add_site_option( $index_exists_option_name, $response );
