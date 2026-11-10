@@ -860,15 +860,29 @@ class Health_Test extends WP_UnitTestCase {
 					],
 				],
 				2,
+				2,
 			],
-			'checks the default version when none are stored'                     => [ [ 1 => $legacy_version ], 1 ],
+			'checks the default version when none are stored'                     => [ [ 1 => $legacy_version ], 1, 1 ],
+			'checks version 1, which the index name falls back to, when none is active' => [
+				[
+					1 => array_merge( $legacy_version, [ 'active' => false ] ),
+					2 => [
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1234567900,
+						'activated_time' => null,
+					],
+				],
+				new \WP_Error( 'no-active-version', 'No active version found' ),
+				1,
+			],
 		];
 	}
 
 	/**
 	 * @dataProvider get_index_versions_settings_diff_for_indexable_data
 	 */
-	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version ) {
+	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version_number, $version_to_check ) {
 		[ $health, $mocked_indexable, $versioning ] = $this->build_settings_diff_health(
 			'vip-123-post-1',
 			[ 'index.number_of_replicas' => 2 ],
@@ -876,15 +890,15 @@ class Health_Test extends WP_UnitTestCase {
 		);
 
 		$versioning->method( 'get_versions' )->willReturn( $versions );
-		$versioning->method( 'get_active_version_number' )->willReturn( $active_version );
+		$versioning->method( 'get_active_version_number' )->willReturn( $active_version_number );
 		$versioning->expects( $this->once() )
 			->method( 'set_current_version_number' )
-			->with( $mocked_indexable, $active_version );
+			->with( $mocked_indexable, $version_to_check );
 
 		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
 
 		$this->assertCount( 1, $result );
-		$this->assertEquals( $active_version, $result[0]['index_version'] );
+		$this->assertEquals( $version_to_check, $result[0]['index_version'] );
 		$this->assertNotEmpty( $result[0]['diff'] );
 	}
 

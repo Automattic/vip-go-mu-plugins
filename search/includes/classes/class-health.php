@@ -1045,7 +1045,13 @@ class Health {
 		// With no versions stored yet, the default version 1 is the active one
 		$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
 		if ( is_wp_error( $version_to_check ) ) {
-			return $version_to_check;
+			// With none active, the index name falls back to version 1's (see Search::filter__ep_index_name()), so a stored
+			// version 1 (e.g. a legacy one, with no created or activated time) is the index in use
+			if ( ! isset( $this->search->versioning->get_versions( $indexable )[1] ) ) {
+				return $version_to_check;
+			}
+
+			$version_to_check = 1;
 		}
 
 		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
