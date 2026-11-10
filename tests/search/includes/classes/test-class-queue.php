@@ -820,6 +820,40 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( array( '15', '15' ), wp_list_pluck( $requeued, 'priority' ), 'at its jobs\' priority' );
 	}
 
+	public function test_process_jobs_skips_posts_that_left_the_index() {
+		$jobs = $this->schedule_jobs_for_new_posts( 4 );
+		$ids  = array_map( 'intval', wp_list_pluck( $jobs, 'object_id' ) );
+
+		$indexed = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$indexed ) {
+				if ( false !== strpos( $url, '/_bulk' ) ) {
+					foreach ( preg_split( '/\n+/', trim( $args['body'] ) ) as $line ) {
+						$action = json_decode( $line, true );
+						if ( isset( $action['index']['_id'] ) ) {
+							$indexed[] = (int) $action['index']['_id'];
+						}
+					}
+				}
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			function () use ( $jobs, $ids ) {
+				wp_trash_post( $ids[1] );
+				wp_update_post( array(
+					'ID'          => $ids[2],
+					'post_status' => 'draft',
+				) );
+				wp_delete_post( $ids[3], true );
+
+				$this->queue->process_jobs( $jobs );
+			}
+		);
+
+		$this->assertSame( array( $ids[0] ), $indexed, 'only the post that is still published should be indexed' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the skipped posts\' jobs should be deleted too' );
+	}
+
 	/**
 	 * Create posts, queue them and mark their jobs as scheduled, as checkout_jobs() does
 	 *

@@ -920,17 +920,23 @@ class Queue {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
-				// If the index version no longer exists, just delete the jobs and don't bother with stats or anything
-				// since the jobs weren't actually processed
+				// If the index version no longer exists, there's nothing to index into
 				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
-				if ( ! array_key_exists( intval( $index_version ), $index_versions ) ) {
+				$ids            = array_key_exists( intval( $index_version ), $index_versions ) ? wp_list_pluck( $jobs, 'object_id' ) : [];
+
+				// Posts deleted, trashed or unpublished since they were queued were already removed from the index by
+				// ElasticPress's sync, and indexing them would put them back
+				if ( $ids && 'post' === $type ) {
+					$ids = $this->filter_indexable_post_ids( $indexable, $ids );
+				}
+
+				// Nothing to index: just delete the jobs, without stats, since they weren't actually processed
+				if ( ! $ids ) {
 					$this->delete_jobs( $jobs );
 					continue;
 				}
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
-
-				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
 				static::index_count_incr( count( $ids ) );
@@ -989,6 +995,27 @@ class Queue {
 		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
 			$this->bulk_index_split_if_too_large( $indexable, $half );
 		}
+	}
+
+	/**
+	 * Of the given post IDs, return those whose post exists and has a post type and status ElasticPress indexes
+	 *
+	 * @param \ElasticPress\Indexable $indexable The post Indexable
+	 * @param array                   $ids       Post IDs
+	 * @return array Post IDs to index
+	 */
+	private function filter_indexable_post_ids( $indexable, array $ids ): array {
+		// One query for the batch instead of one per post, which also warms the term caches bulk_index() reads. Not meta:
+		// it can be large, and loading it for the whole batch at once could exhaust memory, so it's still read per post.
+		_prime_post_caches( $ids, true, false );
+
+		$post_types    = $indexable->get_indexable_post_types();
+		$post_statuses = $indexable->get_indexable_post_status();
+
+		return array_values( array_filter( $ids, function ( $id ) use ( $post_types, $post_statuses ) {
+			$post = get_post( $id );
+			return $post && in_array( $post->post_type, $post_types, true ) && in_array( $post->post_status, $post_statuses, true );
+		} ) );
 	}
 
 	/**
