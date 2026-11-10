@@ -12,6 +12,14 @@ class Queue {
 	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/**
+	 * Jobs whose processing died (fatal, OOM, timeout) are retried after all other work, in smaller batches on each
+	 * attempt, and dropped after MAX_RETRIES. A retried job's priority is RETRY_PRIORITY plus its failed attempts.
+	 * Queueing the object again resets it, since a requeue keeps the lowest priority.
+	 */
+	const RETRY_PRIORITY = 100;
+	const MAX_RETRIES    = 3;
+
 	/** @var Queue\Schema */
 	public $schema;
 	/** @var Indexables */
@@ -337,7 +345,7 @@ class Queue {
 
 		$index_version      = $this->get_index_version_number_from_options( $indexable_slug, $options );
 		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
-		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
+		$priority           = min( (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY ), self::RETRY_PRIORITY - 1 );
 
 		$table_name = $this->schema->get_table_name();
 
@@ -741,6 +749,12 @@ class Queue {
 			return array();
 		}
 
+		// Never mix retried jobs with other work, and retry them in batches 10x smaller on each attempt, so a job that
+		// keeps killing the processor ends up alone instead of holding back the rest of its batch.
+		$attempts = self::get_failed_attempts( $jobs[0] );
+		$jobs     = array_filter( $jobs, fn( $job ) => self::get_failed_attempts( $job ) === $attempts );
+		$jobs     = array_slice( $jobs, 0, max( 1, intdiv( $count, 10 ** min( $attempts, self::MAX_RETRIES ) ) ) );
+
 		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
@@ -796,6 +810,10 @@ class Queue {
 	 * Find and release deadlocked jobs
 	 */
 	public function free_deadlocked_jobs() {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
 		// Run this several times, to release potentially many jobs in reasonable batches
 		$batches = 5;
 
@@ -809,14 +827,61 @@ class Queue {
 
 			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
 			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
+			$filtered_deadlocked_jobs = $this->delete_jobs_out_of_retries( $filtered_deadlocked_jobs );
 
-			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
+			if ( empty( $filtered_deadlocked_jobs ) ) {
+				continue;
+			}
 
-			$this->update_jobs( $deadlocked_job_ids, array(
-				'status'         => 'queued',
-				'scheduled_time' => null,
-			) );
+			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' ) ) );
+
+			// A 'running' job died while being processed, so it moves up one retry level. MySQL runs single-table
+			// assignments left to right, so `priority` is computed from the old `status`.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET `priority` = IF( `status` = 'running', GREATEST( `priority`, %d ) + 1, `priority` ), `status` = 'queued', `scheduled_time` = NULL WHERE `job_id` IN ( {$escaped_ids} )", self::RETRY_PRIORITY ) );
 		}
+	}
+
+	/**
+	 * How many times processing a job has failed, as recorded in its priority (see RETRY_PRIORITY).
+	 *
+	 * @param object $job Job
+	 * @return int Number of failed attempts
+	 */
+	private static function get_failed_attempts( $job ): int {
+		return max( 0, (int) $job->priority - self::RETRY_PRIORITY );
+	}
+
+	/**
+	 * A deadlocked 'running' job died while being processed. Give up on it, and log it, once it has used up its retries.
+	 *
+	 * @param array $deadlocked_jobs List of deadlocked jobs
+	 * @return array The deadlocked jobs that were not deleted
+	 */
+	private function delete_jobs_out_of_retries( $deadlocked_jobs ) {
+		$exhausted = array_filter( $deadlocked_jobs, fn( $job ) => 'running' === $job->status && self::get_failed_attempts( $job ) >= self::MAX_RETRIES );
+
+		if ( empty( $exhausted ) ) {
+			return $deadlocked_jobs;
+		}
+
+		$this->delete_jobs( $exhausted );
+
+		$this->logger->log(
+			'warning',
+			'search_queue',
+			sprintf( 'Dropped %d jobs whose processing failed %d times', count( $exhausted ), self::MAX_RETRIES + 1 ),
+			array(
+				'homeurl' => home_url(),
+				'jobs'    => array_map( fn( $job ) => array(
+					'object_id'     => (int) $job->object_id,
+					'object_type'   => $job->object_type,
+					'index_version' => (int) $job->index_version,
+				), array_values( $exhausted ) ),
+			)
+		);
+
+		return array_values( array_diff_key( $deadlocked_jobs, $exhausted ) );
 	}
 
 	/**
@@ -861,7 +926,7 @@ class Queue {
 	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
 	 *
 	 * @param array $deadlocked_jobs List of deadlocked jobs
-	 * @return array $deadlocked_jobs List of deadlocked jobs deleted from queue
+	 * @return array $deadlocked_jobs The deadlocked jobs that were not deleted
 	 */
 	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
 		global $wpdb;
@@ -890,7 +955,9 @@ class Queue {
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
-		return $deadlocked_jobs;
+		$deleted_job_ids = wp_list_pluck( $jobs_to_be_deleted, 'job_id' );
+
+		return array_values( array_filter( $deadlocked_jobs, fn( $job ) => ! in_array( $job->job_id, $deleted_job_ids, true ) ) );
 	}
 
 	/**

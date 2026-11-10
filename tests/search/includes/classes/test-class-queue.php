@@ -777,66 +777,57 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs() {
 		global $wpdb;
 
-		$original_schema = $this->queue->schema;
-		$table_name      = self::$recovery_table;
-		$schema          = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
-		$schema->method( 'get_table_name' )->willReturn( $table_name );
-
-		try {
-			$this->queue->schema = $schema;
-			$fixtures            = array(
-				array( 1000, 'post', 1, 'running' ),
-				array( 1000, 'post', 1, 'queued' ),
-				array( 1000, 'post', 2, 'scheduled' ),
-				array( 2000, 'post', 1, 'queued' ),
-				array( 2000, 'user', 1, 'running' ),
-				array( 3000, 'post', 1, 'scheduled' ),
-				array( 3000, 'post', 1, 'running' ),
-			);
-			$expected            = array();
-			$duplicate_ids       = array();
-			foreach ( $fixtures as $offset => $fixture ) {
-				list( $object_id, $object_type, $version, $status ) = $fixture;
-				$options = array( 'index_version' => $version );
-				$this->queue->queue_object( $object_id, $object_type, $options );
-				$job = $this->queue->get_next_job_for_object( $object_id, $object_type, $options );
-				if ( 'queued' !== $status ) {
-					$this->queue->update_job( $job->job_id, array(
-						'status'         => $status,
-						'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
-					) );
-				}
-				if ( 3000 === $object_id ) {
-					$duplicate_ids[] = (int) $job->job_id;
-				}
-				// Only the same-object/type/version duplicates should be removed.
-				if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
-					$expected[] = array(
-						'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
-						'object_id'     => $object_id,
-						'object_type'   => $object_type,
-						'index_version' => $version,
-						'status'        => 'queued',
-					);
-				}
+		$table_name    = $this->use_recovery_table();
+		$fixtures      = array(
+			array( 1000, 'post', 1, 'running' ),
+			array( 1000, 'post', 1, 'queued' ),
+			array( 1000, 'post', 2, 'scheduled' ),
+			array( 2000, 'post', 1, 'queued' ),
+			array( 2000, 'user', 1, 'running' ),
+			array( 3000, 'post', 1, 'scheduled' ),
+			array( 3000, 'post', 1, 'running' ),
+		);
+		$expected      = array();
+		$duplicate_ids = array();
+		foreach ( $fixtures as $offset => $fixture ) {
+			list( $object_id, $object_type, $version, $status ) = $fixture;
+			$options = array( 'index_version' => $version );
+			$this->queue->queue_object( $object_id, $object_type, $options );
+			$job = $this->queue->get_next_job_for_object( $object_id, $object_type, $options );
+			if ( 'queued' !== $status ) {
+				$this->queue->update_job( $job->job_id, array(
+					'status'         => $status,
+					'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
+				) );
 			}
-
-			$this->queue->free_deadlocked_jobs();
-			$actual = $wpdb->get_results( $wpdb->prepare( 'SELECT job_id, object_id, object_type, index_version, status FROM %i ORDER BY job_id', $table_name ), ARRAY_A );
-			foreach ( $actual as &$job ) {
-				$job['job_id']        = (int) $job['job_id'];
-				$job['object_id']     = (int) $job['object_id'];
-				$job['index_version'] = (int) $job['index_version'];
-				if ( 3000 === $job['object_id'] ) {
-					$this->assertContains( $job['job_id'], $duplicate_ids );
-					$job['job_id'] = 0;
-				}
+			if ( 3000 === $object_id ) {
+				$duplicate_ids[] = (int) $job->job_id;
 			}
-			unset( $job );
-			$this->assertSame( $expected, $actual );
-		} finally {
-			$this->queue->schema = $original_schema;
+			// Only the same-object/type/version duplicates should be removed.
+			if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
+				$expected[] = array(
+					'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
+					'object_id'     => $object_id,
+					'object_type'   => $object_type,
+					'index_version' => $version,
+					'status'        => 'queued',
+				);
+			}
 		}
+
+		$this->queue->free_deadlocked_jobs();
+		$actual = $wpdb->get_results( $wpdb->prepare( 'SELECT job_id, object_id, object_type, index_version, status FROM %i ORDER BY job_id', $table_name ), ARRAY_A );
+		foreach ( $actual as &$job ) {
+			$job['job_id']        = (int) $job['job_id'];
+			$job['object_id']     = (int) $job['object_id'];
+			$job['index_version'] = (int) $job['index_version'];
+			if ( 3000 === $job['object_id'] ) {
+				$this->assertContains( $job['job_id'], $duplicate_ids );
+				$job['job_id'] = 0;
+			}
+		}
+		unset( $job );
+		$this->assertSame( $expected, $actual );
 	}
 
 	/**
@@ -1273,6 +1264,89 @@ class Queue_Test extends WP_UnitTestCase {
 			];
 		}
 		return $request;
+	}
+
+	/**
+	 * A job that kills the processor on every attempt must not keep the rest of its batch from being indexed.
+	 */
+	public function test_free_deadlocked_jobs_isolates_and_drops_a_job_that_keeps_failing(): void {
+		global $wpdb;
+
+		$table_name = $this->use_recovery_table();
+
+		[ $healthy_1, $poisoned, $healthy_2, $edited ] = self::factory()->post->create_many( 4, array( 'post_status' => 'publish' ) );
+
+		$this->queue->logger = $this->createMock( Logger::class );
+		$this->queue->logger->expects( $this->once() )->method( 'log' )->with(
+			'warning',
+			'search_queue',
+			$this->anything(),
+			$this->callback( fn( $context ) => array( $poisoned ) === wp_list_pluck( $context['jobs'], 'object_id' ) )
+		);
+
+		// Simulates a fatal (OOM, TypeError, timeout) while preparing one document.
+		add_filter( 'ep_bulk_index_action_args', static function ( $action_args, $document ) use ( $poisoned ) {
+			if ( (int) ( $document['ID'] ?? 0 ) === $poisoned ) {
+				throw new \RuntimeException( 'simulated fatal' );
+			}
+			return $action_args;
+		}, 10, 2 );
+
+		$indexed = array();
+		add_filter( 'pre_http_request', static function ( $preempt, $args, $url ) use ( &$indexed ) {
+			if ( false !== strpos( $url, '/_bulk' ) && preg_match_all( '/"_id":(\d+)/', $args['body'], $matches ) ) {
+				$indexed = array_merge( $indexed, array_map( 'intval', $matches[1] ) );
+			}
+			return $preempt;
+		}, 10, 3 );
+
+		$this->queue->queue_objects( array( $healthy_1, $poisoned, $healthy_2 ) );
+
+		// Each round: check out a batch, the cron event dies if the batch holds the poisoned post, the jobs go stale,
+		// and the sweeper recovers them.
+		for ( $round = 0; $round < 10; $round++ ) {
+			if ( 1 === $round ) {
+				$this->queue->queue_object( $edited, 'post' );
+			}
+
+			$jobs = $this->queue->checkout_jobs( 500 );
+			if ( empty( $jobs ) ) {
+				break;
+			}
+
+			if ( 1 === $round ) {
+				$this->assertSame( array( (string) $edited ), wp_list_pluck( $jobs, 'object_id' ), 'New work must not wait behind, or mix with, retried jobs.' );
+			}
+
+			try {
+				$this->queue->process_jobs( $jobs );
+			} catch ( \RuntimeException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// The cron event died.
+			}
+
+			$wpdb->query( $wpdb->prepare( "UPDATE %i SET scheduled_time = %s WHERE status IN ( 'scheduled', 'running' )", $table_name, gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ) ) );
+			$this->queue->free_deadlocked_jobs();
+		}
+
+		sort( $indexed );
+		$expected = array( $healthy_1, $healthy_2, $edited );
+		sort( $expected );
+		$this->assertSame( $expected, $indexed, 'Every healthy post is indexed once, the poisoned one never.' );
+		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) ), 'The poisoned job is dropped instead of retried forever.' );
+	}
+
+	/**
+	 * Deadlock recovery self-joins the queue table, which a temporary table doesn't allow, so point the queue at the real one.
+	 *
+	 * @return string The recovery table's name
+	 */
+	private function use_recovery_table(): string {
+		$schema = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
+		$schema->method( 'get_table_name' )->willReturn( self::$recovery_table );
+
+		$this->queue->schema = $schema;
+
+		return self::$recovery_table;
 	}
 
 	/**
