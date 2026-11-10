@@ -865,6 +865,20 @@ class Search {
 	}
 
 	/**
+	 * Delete the cached index_exists response for an index
+	 *
+	 * @param string $option_name Name of the option holding the cached response
+	 */
+	private function delete_index_exists_option( $option_name ) {
+		delete_site_option( $option_name );
+
+		// Ensure the cache for the option was actually deleted.
+		if ( false !== wp_cache_get( $option_name, 'options' ) ) {
+			wp_cache_delete( $option_name, 'options' );
+		}
+	}
+
+	/**
 	 * Filter to intercept EP remote requests.
 	 *
 	 * @param  array|WP_Error $request  New remote request response
@@ -899,14 +913,9 @@ class Search {
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
 					// Return cached index_exists option.
 					return $cached_index_exists_request;
-				} else {
-					// Invalidate index_exists caching on certain actions.
-					delete_site_option( $index_exists_option_name );
-
-					// Ensure the cache for the option was actually deleted.
-					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
-						wp_cache_delete( $index_exists_option_name, 'options' );
-					}
+				} elseif ( 'bulk_index' !== $type ) {
+					// Invalidate index_exists caching on certain actions (bulks are handled after the request).
+					$this->delete_index_exists_option( $index_exists_option_name );
 				}
 			}
 		}
@@ -1072,6 +1081,15 @@ class Search {
 						],
 					) );
 				}
+			}
+		}
+
+		// A bulk can create a missing index (ES auto-creates it), and a failed one may mean the index was deleted outside
+		// WordPress. Either makes the cached index_exists stale; a successful bulk into an existing index doesn't.
+		if ( 'bulk_index' === $type && false !== $cached_index_exists_request ) {
+			$bulk_failed = is_wp_error( $response ) || $response_code >= 400 || ! empty( $response_body['errors'] );
+			if ( $bulk_failed || 404 === $cached_index_exists_response_code ) {
+				$this->delete_index_exists_option( $index_exists_option_name );
 			}
 		}
 
