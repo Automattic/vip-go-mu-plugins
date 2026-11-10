@@ -8,7 +8,7 @@ use Automattic\Test\Constant_Mocker;
 use PHPUnit\Framework\TestCase;
 
 /**
- * The wrapped Environment methods are covered by Automattic\VIP\Environment_Test.
+ * The wrappers delegate directly, so this also covers Environment::has_var() and Environment::get_var().
  */
 class Environment_Test extends TestCase {
 	public function test_wrappers_delegate_to_environment() {

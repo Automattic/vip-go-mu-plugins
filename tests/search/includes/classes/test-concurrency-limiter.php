@@ -49,8 +49,8 @@ class Test_Concurrency_Limiter extends WP_UnitTestCase {
 
 		$response2 = null;
 
-		// This is how we simulate a concurrent request
-		// We need to inject into `ep_remote_request` as early as possible, before `Concurrency_Limiter` has a chance to mark the first request as completed.
+		// This nested request verifies in-flight limiting, not atomic APCu contention.
+		// Inject before `Concurrency_Limiter` marks the first request as completed.
 		// The first thing we need to do is to remove ourselves from the hook list to avoid infinite loops.
 		$send_request = function () use ( $es, $path, &$response2, &$send_request, $backend ) {
 			remove_action( 'ep_remote_request', $send_request, 0 );

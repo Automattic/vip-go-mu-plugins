@@ -534,104 +534,77 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertSame( 'es_query_error', $result->get_error_code() );
 	}
 
-	public function test_validate_index_entity_count__failed_ES_should_pass_error() {
+	public function validate_index_entity_count_data() {
 		$error = new WP_Error( 'test error' );
 
-		$mocked_indexable = $this->mock_indexable();
-		$mocked_indexable->method( 'index_exists' )->willReturn( true );
-
-		/** @var Health&MockObject */
-		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ $this->createMock( Search::class ) ] )
-			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
-			->getMock();
-
-		$patrtially_mocked_health->method( 'get_index_entity_count_from_elastic_search' )
-			->willReturn( $error );
-
-		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
-
-		$this->assertEquals( $result, $error );
-	}
-
-	public function test_validate_index_entity_count__returns_all_data() {
-		$expected_result = [
-			'entity'   => 'foo',
-			'type'     => 'N/A',
-			'db_total' => 10,
-			'es_total' => 8,
-			'diff'     => -2,
-			'skipped'  => false,
-			'reason'   => 'N/A',
-		];
-
-		$mocked_indexable = $this->mock_indexable( $expected_result['entity'] );
-		$mocked_indexable->method( 'query_db' )
-			->willReturn( [
-				'total_objects' => $expected_result['db_total'],
-			] );
-		$mocked_indexable->method( 'index_exists' )->willReturn( true );
-
-		/** @var Health&MockObject */
-		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ $this->createMock( Search::class ) ] )
-			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
-			->getMock();
-
-		$patrtially_mocked_health->method( 'get_index_entity_count_from_elastic_search' )
-			->willReturn( $expected_result['es_total'] );
-
-		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
-
-		$this->assertEquals( $result, $expected_result );
-	}
-
-	public function test_validate_index_entity_count__skipping_non_initialized_indexes() {
-		$expected_result = [
-			'entity'   => 'foo',
-			'type'     => 'N/A',
-			'db_total' => 'N/A',
-			'es_total' => 0,
-			'diff'     => 'N/A',
-			'skipped'  => true,
-			'reason'   => 'index-empty',
-		];
-
-		$mocked_indexable = $this->mock_indexable( $expected_result['entity'] );
-		$mocked_indexable->method( 'index_exists' )->willReturn( true );
-
-		/** @var Health&MockObject */
-		$patrtially_mocked_health = $this->getMockBuilder( Health::class )
-			->setConstructorArgs( [ $this->createMock( Search::class ) ] )
-			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
-			->getMock();
-
-		$patrtially_mocked_health->method( 'get_index_entity_count_from_elastic_search' )
-			->willReturn( $expected_result['es_total'] );
-
-		$result = $patrtially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
-
-		$this->assertEquals( $result, $expected_result );
-	}
-
-	public function test_validate_index_entity_count__skipping_non_existing_indexes() {
-		$expected_result = [
+		$result = [
 			'entity'   => 'foo',
 			'type'     => 'N/A',
 			'db_total' => 'N/A',
 			'es_total' => 'N/A',
 			'diff'     => 'N/A',
-			'skipped'  => true,
-			'reason'   => 'index-not-found',
+			'skipped'  => false,
+			'reason'   => 'N/A',
 		];
 
-		$mocked_indexable = $this->mock_indexable( $expected_result['entity'] );
-		$mocked_indexable->method( 'index_exists' )->willReturn( false );
+		// Index exists, ES count (null if it must not be queried), DB count (null if it must not be queried), expected
+		return [
+			'failed ES count is passed back'  => [ true, $error, null, $error ],
+			'returns all data'                => [
+				true,
+				8,
+				10,
+				array_merge( $result, [
+					'db_total' => 10,
+					'es_total' => 8,
+					'diff'     => -2,
+				] ),
+			],
+			'skips non-initialized indexes'   => [
+				true,
+				0,
+				null,
+				array_merge( $result, [
+					'es_total' => 0,
+					'skipped'  => true,
+					'reason'   => 'index-empty',
+				] ),
+			],
+			'skips indexes that do not exist' => [
+				false,
+				null,
+				null,
+				array_merge( $result, [
+					'skipped' => true,
+					'reason'  => 'index-not-found',
+				] ),
+			],
+		];
+	}
 
-		$health = new Health( $this->createMock( Search::class ) );
-		$result = $health->validate_index_entity_count( [], $mocked_indexable );
+	/**
+	 * @dataProvider validate_index_entity_count_data
+	 */
+	public function test_validate_index_entity_count( $index_exists, $es_total, $db_total, $expected ) {
+		$mocked_indexable = $this->mock_indexable();
+		$mocked_indexable->method( 'index_exists' )->willReturn( $index_exists );
+		$mocked_indexable->expects( null === $db_total ? $this->never() : $this->once() )
+			->method( 'query_db' )
+			->willReturn( [ 'total_objects' => $db_total ] );
 
-		$this->assertEquals( $result, $expected_result );
+		/** @var Health&MockObject */
+		$partially_mocked_health = $this->getMockBuilder( Health::class )
+			->setConstructorArgs( [ $this->createMock( Search::class ) ] )
+			->onlyMethods( [ 'get_index_entity_count_from_elastic_search' ] )
+			->getMock();
+
+		$partially_mocked_health->expects( null === $es_total ? $this->never() : $this->once() )
+			->method( 'get_index_entity_count_from_elastic_search' )
+			->willReturn( $es_total );
+
+		$result = $partially_mocked_health->validate_index_entity_count( [], $mocked_indexable );
+
+		$this->assertEquals( $expected, $result );
 	}
 
 	public function test_validate_index_posts_content__should_set_and_clear_lock() {

@@ -15,8 +15,29 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+    steps:
+      - name: Check out the change detection action
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/actions/detect-changes
+          persist-credentials: false
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+
   test:
     name: "Parse.ly: ${{ matrix.config.parsely }} ${{ matrix.config.mode }}"
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,17 +50,6 @@ jobs:
           # Latest version of the parsely plugin
           - { wp: latest, mode: 'filter_enabled', php: '8.1' }
           - { wp: latest, mode: 'filter_disabled', php: '8.1' }
-    services:
-      mysql:
-        image: mysql:8
-        ports:
-          - "3306:3306"
-        env:
-          MYSQL_ROOT_PASSWORD: wordpress
-          MYSQL_INITDB_SKIP_TZINFO: 1
-          MYSQL_USER: wordpress
-          MYSQL_PASSWORD: wordpress
-          MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
         uses: actions/checkout@v7.0.1

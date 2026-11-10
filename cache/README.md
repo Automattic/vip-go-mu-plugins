@@ -50,6 +50,12 @@ Vary_Cache::register_group( 'beta' );
 
 This sends a hint to our caching backend (via a `Vary` header) that this and future requests may need to be varied by our segmentation cookie.
 
+Timing matters. `Vary_Cache` reads the visitor's cookie on `init` at priority 10:
+
+- Register groups before that, when your code loads (as above) or on `init` at a priority below 10. Registering a group resets its value for the current request, so a group registered after the cookie is read loses the visitor's value, and is left out of the cookie if it's written later in the same request.
+- Read and assign groups after that, on `init` at a priority above 10 or on a later hook. A value assigned before the cookie is read is replaced by the cookie's value for that group, if it has one.
+- To take a user out of a group, assign an empty value: `Vary_Cache::set_group_for_user( 'beta', '' )`.
+
 ### Step 2: Display the Opt-in Button
 
 We need to implement a call-to-action for our Beta; a simple floating button at the bottom of the page will do. We'll user the `wp_footer` action to render it for users not already in the beta (we can use the `Vary_Cache::is_user_in_group_segment` helper to verify that.)
@@ -98,6 +104,10 @@ add_action( 'vip_vary_cache_did_send_headers', function() {
 } );
 ```
 
+A response that sets a cookie isn't cached, so `Vary_Cache::set_group_for_user` doesn't re-send the group cookie when the request's cookie already holds the same groups. Calling it with the user's current groups therefore doesn't extend the cookie's expiry: the cookie expires `set_cookie_expiry()` seconds (a month by default) after it was last sent. If the user is already in the `beta` segment, `vip_vary_cache_did_send_headers` still fires (the `Vary` header is always sent for registered groups), but its second argument, `$sent_cookie`, is `false`. Encrypted cookies are compared after the VIP cache layer decrypts them, so without it (for example, in local development) they're always re-sent. To re-send an unchanged cookie anyway, for example to push its expiry forward, return `true` from the `vip_vary_cache_refresh_group_cookie` filter; those responses won't be cached.
+
+REST API requests end before the `send_headers` action, so `Vary_Cache` sends their cookie writes from the `rest_pre_serve_request` filter instead, but only if REST code made one: a write made before the REST request started, such as on `init`, doesn't count on its own. Make REST writes in a route callback or another REST hook that runs before `rest_pre_serve_request` (writes in `_embed`ded routes or on `rest_pre_echo_response` aren't sent), on a request that isn't GET, HEAD or OPTIONS: those are skipped, because the VIP cache stores GET and HEAD responses. Other requests that don't fire `send_headers`, such as admin-ajax, have no such hook, so a handler there that writes cookies through `Vary_Cache` must call `Vary_Cache::send_headers()` itself before any output.
+
 ### Step 4: Enable Beta Features
 
 Now that users can opt-in to the beta, we need to actually enable the beta features for them. In our case, we want to display a Like button to all posts. We'll use the `the_content` filter, and the `Vary_Cache::is_user_in_group_segment` helper to verify if they are a beta user.
@@ -114,6 +124,8 @@ add_filter( 'the_content', function( $content ) {
 	return $content;
 } );
 ```
+
+To read the user's value for a group instead of checking it against a known one, use `Vary_Cache::get_group_value( 'beta' )`. It returns the value (`'yes'` here), or `null` if the user isn't in the group. The value may come from the user's cookie, so escape it before output.
 
 Note: For the purpose of this exercise, we've kept things pretty simple and the Like button isn't actually wired up. There would be more code behind the scenes if we were to actually implement it.
 
@@ -205,13 +217,14 @@ Now, if the cookie is set and includes the correct secret, we can skip enabling 
 
 ```
 if ( isset( $_COOKIE['vip-go-seg'] )
+	&& is_string( $_COOKIE['vip-go-seg'] )
 	&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
 	// Don't enable if the request has our secret key.
 	$enable_maintenance_mode = false;
 }
 ```
 
-Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack).
+Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack). The `is_string` check matters too: PHP parses a cookie sent as `vip-go-seg[]=…` into an array, and `hash_equals` throws a fatal error when it gets an array.
 
 Now, we can set our constant based on the outcome of the tests:
 
@@ -242,3 +255,39 @@ Requests with the correct cookie will bypass Maintenance Mode and still benefit 
 ### The Final Result
 
 You can see the completed, working example here: https://github.com/Automattic/vip-go-mu-plugins/blob/master/cache/examples/segmentation-maintenance-mode-bypass/vip-config.php
+
+---
+
+## Reference
+
+### Cookies
+
+| Cookie | Holds | Set by |
+| --- | --- | --- |
+| `vip-go-seg` | The user's groups, in plain text. The VIP cache varies on it. | `set_group_for_user()` |
+| `vip-go-auth` | The user's groups, encrypted. The VIP cache decrypts it and varies on the result. | `set_group_for_user()` after `enable_encryption()` |
+| `vip-go-cb` | A flag that makes the user bypass the VIP cache. | `set_nocache_for_user()`; cleared by `remove_nocache_for_user()` |
+
+- Cookies expire `set_cookie_expiry()` seconds after they're sent: a month by default, and at least an hour.
+- Their path and domain are `COOKIEPATH` and `COOKIE_DOMAIN`. Change them with the `vip_vary_cache_cookie_path` and `vip_vary_cache_cookie_domain` filters. A cookie that was already set with the old path or domain stays until it expires.
+- They're `Secure` on HTTPS requests to a site whose home URL uses HTTPS. Override that with the `vip_vary_cache_cookie_secure` filter, which also receives the cookie name.
+- They aren't `HttpOnly`, so client-side code can read them.
+- A response that sets one of these cookies isn't cached.
+
+### Groups
+
+- Group names and values may contain letters, digits, `-` and `_`, but not the separators `---__` or `_--_`.
+- Values are stored as strings. A value set as `1` reads back as `'1'`, and `is_user_in_group_segment( 'beta', 1 )` matches it on later requests too.
+- Assigning an empty value removes the user from a group. If that leaves them in no groups, the group cookie is expired.
+
+### Encrypted segmentation
+
+- Call `Vary_Cache::enable_encryption()` before `init` priority 10. It needs the `VIP_GO_AUTH_COOKIE_KEY` and `VIP_GO_AUTH_COOKIE_IV` constants, which VIP Support provides for each environment; without them, it stops the request with a fatal error.
+- With encryption enabled, the plaintext `vip-go-seg` cookie is ignored. Users who only have that cookie, for example from before encryption was enabled, are in no groups until they're assigned again.
+- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired. When `Vary_Cache` decrypts the cookie itself, it applies the same checks.
+
+### Hooks
+
+- `vip_vary_cache_did_send_headers( $sent_vary, $sent_cookie )`: fires after `Vary_Cache` sends its headers, if it sent a `Vary` header (whenever the request has groups, registered or from the cookie) or a cookie. `$sent_cookie` is `true` only if a cookie was actually sent.
+- `vip_vary_cache_refresh_group_cookie( $refresh, $groups )`: return `true` to re-send an unchanged group cookie (see Step 3).
+- `vip_vary_cache_cookie_path`, `vip_vary_cache_cookie_domain` and `vip_vary_cache_cookie_secure`: cookie attributes (see [Cookies](#cookies)).

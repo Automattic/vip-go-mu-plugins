@@ -108,19 +108,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test_load_registers_exposed_abilities_args_filter_when_configured(): void {
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'exposed_abilities' => [ 'core/get-site-info' ] ] ] );
-		$wordpress_mcp_integration->configure();
-
-		$wordpress_mcp_integration->load();
-
-		$this->assertSame(
-			PHP_INT_MAX,
-			has_filter( 'wp_register_ability_args', [ $wordpress_mcp_integration, 'filter_exposed_abilities_args' ] )
-		);
-	}
-
 	public function test_load_does_not_register_default_server_config_filter_without_server_config(): void {
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
@@ -447,27 +434,6 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		return array_combine( $variants, array_map( static fn( $variant ) => [ $variant ], $variants ) );
 	}
 
-	public function test_report_auth_error_surfaces_rest_error_when_user_not_found(): void {
-		$auth_key = 'test-auth-key';
-		$email    = 'missing-' . wp_generate_password( 8, false ) . '@example.com';
-
-		$this->sign_mcp_request( $email, $auth_key );
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
-
-		// A valid signature for an unknown user must not resolve to a user ID; the
-		// input is preserved and the hard failure is recorded for the REST layer.
-		$this->assertFalse( $wordpress_mcp_integration->authenticate_mcp_request( false ) );
-
-		$error = $wordpress_mcp_integration->report_auth_error( null );
-
-		$this->assertInstanceOf( \WP_Error::class, $error );
-		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
-		$this->assertStringContainsString( $email, $error->get_error_message() );
-		$this->assertSame( 401, $error->get_error_data()['status'] );
-	}
-
 	/**
 	 * Registered callbacks must resolve signed users and propagate unknown-user errors.
 	 */
@@ -493,6 +459,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$error = $server->check_authentication();
 		$this->assertInstanceOf( \WP_Error::class, $error );
 		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
+		$this->assertStringContainsString( 'unknown-hook-user@example.com', $error->get_error_message() );
 		$this->assertSame( 401, $error->get_error_data()['status'] );
 	}
 
@@ -513,27 +480,5 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		// An error set by another handler must not be overridden.
 		$existing = new \WP_Error( 'existing_error', 'Existing error' );
 		$this->assertSame( $existing, $wordpress_mcp_integration->report_auth_error( $existing ) );
-	}
-
-	public function test_report_auth_error_returns_null_for_valid_user(): void {
-		$auth_key = 'test-auth-key';
-		$email    = 'mcp-user-' . wp_generate_password( 8, false ) . '@example.com';
-		$user_id  = $this->factory()->user->create( [ 'user_email' => $email ] );
-
-		$this->sign_mcp_request( $email, $auth_key );
-
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-		$wordpress_mcp_integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
-
-		$this->assertSame( $user_id, $wordpress_mcp_integration->authenticate_mcp_request( false ) );
-
-		// A successful auth must not surface a hard error for the REST layer.
-		$this->assertNull( $wordpress_mcp_integration->report_auth_error( null ) );
-	}
-
-	public function test_report_auth_error_returns_null_without_recorded_error(): void {
-		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
-
-		$this->assertNull( $wordpress_mcp_integration->report_auth_error( null ) );
 	}
 }

@@ -1,0 +1,332 @@
+/*
+ * Environment badges. See vip-helpers/class-environment-badges.php.
+ *
+ * Each badge is a .vip-badge-chip around a .vip-badge-face (a link, a <summary>, or plain text), with the same
+ * markup in the admin bar and in the dock (#vip-environment-badges). Admin bar selectors use two IDs, so they win
+ * over core's `#wpadminbar *` reset and its hover and focus colours.
+ *
+ * Colours per badge; text keeps WCAG AA contrast (4.5:1) on both backgrounds.
+ */
+.vip-badge--a8c-debug {
+	--vip-badge-bg: #c29c69;
+	--vip-badge-bg-hover: #a88454;
+	--vip-badge-fg: #1d2327;
+}
+
+.vip-badge--sandbox {
+	--vip-badge-bg: #c2410c;
+	--vip-badge-bg-hover: #9a3412;
+	--vip-badge-fg: #fff;
+}
+
+.vip-badge--not-proxied {
+	--vip-badge-bg: #2271b1;
+	--vip-badge-bg-hover: #135e96;
+	--vip-badge-fg: #fff;
+}
+
+/* Shared by the admin bar and the dock. */
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face,
+#vip-environment-badges .vip-badge-face {
+	margin: 0;
+	padding: 0 10px;
+	background: var(--vip-badge-bg);
+	color: var(--vip-badge-fg);
+	text-transform: uppercase;
+	text-decoration: none;
+	white-space: nowrap;
+	cursor: default;
+	list-style: none;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary a.vip-badge-face,
+#wpadminbar #wp-admin-bar-top-secondary summary.vip-badge-face,
+#vip-environment-badges a.vip-badge-face,
+#vip-environment-badges summary.vip-badge-face {
+	cursor: pointer;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary a.vip-badge-face:hover,
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face:focus,
+#wpadminbar #wp-admin-bar-top-secondary summary.vip-badge-face:hover,
+#wpadminbar #wp-admin-bar-top-secondary details[open] > .vip-badge-face,
+#vip-environment-badges a.vip-badge-face:hover,
+#vip-environment-badges .vip-badge-face:focus,
+#vip-environment-badges summary.vip-badge-face:hover,
+#vip-environment-badges details[open] > .vip-badge-face {
+	background: var(--vip-badge-bg-hover);
+	color: var(--vip-badge-fg);
+}
+
+/*
+ * Drawn inside the badge: core's admin bar outline is transparent, an outer ring would be clipped by the
+ * viewport edges in the dock, and themes often remove focus styles.
+ */
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face:focus-visible,
+#vip-environment-badges .vip-badge-face:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: -4px;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face::-webkit-details-marker,
+#vip-environment-badges .vip-badge-face::-webkit-details-marker {
+	display: none;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-short,
+#vip-environment-badges .vip-badge-short {
+	display: none;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details,
+#vip-environment-badges .vip-badge-details {
+	position: absolute;
+	display: grid;
+	grid-template-columns: auto auto;
+	gap: 2px 12px;
+	box-sizing: border-box;
+	width: max-content;
+	margin: 0;
+	padding: 8px 10px;
+	color: #f0f0f1;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details dt,
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details dd,
+#vip-environment-badges .vip-badge-details dt,
+#vip-environment-badges .vip-badge-details dd {
+	margin: 0;
+	color: #f0f0f1;
+	font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	letter-spacing: normal;
+	text-transform: none;
+	/* Long sandbox names, child themes and IPv6 addresses wrap instead of running off narrow screens. */
+	white-space: normal;
+	overflow-wrap: anywhere;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details dt,
+#vip-environment-badges .vip-badge-details dt {
+	font-weight: 600;
+}
+
+/* Themes may not define .screen-reader-text, so use our own. */
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-sr,
+#vip-environment-badges .vip-badge-sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Admin bar. The admin bar item itself stays transparent; the face inside it carries the look. */
+#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge > .ab-item,
+#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge > .ab-item:hover,
+#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge > .ab-item:focus,
+#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge.hover > .ab-item {
+	padding: 0;
+	background: none;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-chip {
+	position: relative;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face {
+	height: auto;
+	font-size: 11px;
+	font-weight: 600;
+	/* Core's line-height is relative to its 13px font; match the 32px item height instead. */
+	line-height: 32px;
+	letter-spacing: 0.1em;
+}
+
+/* <summary> keeps its own display: restyling it can break its disclosure behaviour in some browser and screen reader pairs. */
+#wpadminbar #wp-admin-bar-top-secondary a.vip-badge-face,
+#wpadminbar #wp-admin-bar-top-secondary span.vip-badge-face {
+	display: block;
+}
+
+/* Core's `#wpadminbar *` reset would otherwise restyle the parts of the label. */
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face * {
+	font: inherit;
+	letter-spacing: inherit;
+	text-transform: inherit;
+	text-decoration: none;
+}
+
+/* Hint that the badge opens; hidden from screen readers, which announce it as expandable. */
+#wpadminbar #wp-admin-bar-top-secondary summary.vip-badge-face::after {
+	content: "\25BE" / "";
+	margin-left: 0.4em;
+}
+
+#wpadminbar #wp-admin-bar-top-secondary details[open] > summary.vip-badge-face::after {
+	content: "\25B4" / "";
+}
+
+#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details {
+	top: 100%;
+	right: 0;
+	max-width: calc(100vw - 16px);
+	background: #2c3338;
+	box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+@media screen and (max-width: 782px) {
+	/* Core hides non-default top-level items on small screens. */
+	#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge {
+		display: block;
+	}
+
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face {
+		line-height: 46px;
+	}
+
+	/* Open the details full width under the admin bar, like core's own menus here, so they can't run off the screen. */
+	#wpadminbar #wp-admin-bar-top-secondary > li.vip-badge,
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-chip {
+		position: static;
+	}
+
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details {
+		left: 0;
+		right: 0;
+		width: auto;
+		max-width: none;
+	}
+
+	/* Keep the toolbar on one row next to core's 52px icons. */
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-more {
+		display: none;
+	}
+
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-short {
+		display: inline;
+	}
+
+	/* Swap in the short label; the full one stays for screen readers. */
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-label {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		margin: -1px;
+		padding: 0;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
+		border: 0;
+	}
+}
+
+/* Dock: small tabs in the bottom-left corner, for pages without an admin bar. */
+#vip-environment-badges {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	z-index: 9991;
+	display: flex;
+	align-items: flex-end;
+	margin: 0;
+	padding: 0;
+}
+
+/* Keep focused page content from scrolling in behind the dock. */
+html:has(#vip-environment-badges) {
+	scroll-padding-bottom: 32px;
+}
+
+/* Not positioned, so an open panel is placed against the dock and starts at the screen's left edge. */
+#vip-environment-badges .vip-badge-chip {
+	margin: 0;
+	padding: 0;
+}
+
+#vip-environment-badges .vip-badge-face {
+	box-sizing: border-box;
+	/* min-height, not height, so the background grows with zoomed text. */
+	min-height: 24px;
+	font: bold 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	letter-spacing: 0.05em;
+}
+
+#vip-environment-badges a.vip-badge-face,
+#vip-environment-badges span.vip-badge-face {
+	display: flex;
+	align-items: center;
+}
+
+/* <summary> keeps its own display (see above), so centre its text with line-height. */
+#vip-environment-badges summary.vip-badge-face {
+	line-height: 24px;
+}
+
+#vip-environment-badges > .vip-badge-chip:last-child .vip-badge-face {
+	border-top-right-radius: 6px;
+}
+
+/* The panel opens upwards here. */
+#vip-environment-badges summary.vip-badge-face::after {
+	content: "\25B4" / "";
+	margin-left: 0.5em;
+}
+
+#vip-environment-badges details[open] > summary.vip-badge-face::after {
+	content: "\25BE" / "";
+}
+
+/* Collapsed until hovered or focused. Hidden with max-width, not display, so screen readers still hear it. */
+#vip-environment-badges .vip-badge-more {
+	max-width: 0;
+	margin-left: 0;
+	overflow: hidden;
+	transition: max-width 0.15s ease-out, margin-left 0.15s ease-out;
+}
+
+#vip-environment-badges .vip-badge-face:hover .vip-badge-more,
+#vip-environment-badges .vip-badge-face:focus .vip-badge-more {
+	max-width: 10em;
+	margin-left: 0.6em;
+}
+
+#vip-environment-badges .vip-badge-details {
+	bottom: 100%;
+	left: 0;
+	max-width: 100vw;
+	background: #1d2327;
+	border-top-right-radius: 6px;
+}
+
+/* Backgrounds disappear in forced colours (e.g. Windows High Contrast); outline each badge and panel so they stay distinct. */
+@media (forced-colors: active) {
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face,
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-details,
+	#vip-environment-badges .vip-badge-face,
+	#vip-environment-badges .vip-badge-details {
+		outline: 1px solid CanvasText;
+		outline-offset: -1px;
+	}
+
+	#wpadminbar #wp-admin-bar-top-secondary .vip-badge-face:focus-visible,
+	#vip-environment-badges .vip-badge-face:focus-visible {
+		outline: 2px solid Highlight;
+		outline-offset: -4px;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	#vip-environment-badges .vip-badge-more {
+		transition: none;
+	}
+}
+
+@media print {
+	#vip-environment-badges {
+		display: none;
+	}
+}

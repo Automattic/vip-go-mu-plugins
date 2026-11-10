@@ -40,15 +40,26 @@ if [ -n "${E2E_SITE_CREATED_MARKER:-}" ]; then
 fi
 vip dev-env start --slug "${E2E_SITE_SLUG}" --skip-wp-versions-check
 vip dev-env shell --root --slug "${E2E_SITE_SLUG}" -- chown -R www-data:www-data /wp/wp-content/plugins
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp plugin install --activate classic-editor
 if [ "${WPVER}" = 'trunk' ]; then
     vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp core update --force --version="${version}"
     vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp core update-db
 fi
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp rewrite structure '/%postname%/'
 
-# Exercise the real import command with Jetpack disabled, before customer cleanup hooks.
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp config set VIP_JETPACK_SKIP_LOAD true --raw --add --type=constant
+# Every `vip dev-env exec` costs a few seconds, so commands that can share a WP-CLI process run in one.
+# The import check below needs a new process, started after VIP_JETPACK_SKIP_LOAD is set, so that
+# Jetpack is not loaded during the import cleanup.
+vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp eval '
+WP_CLI::runcommand( "plugin install --activate classic-editor", [ "launch" => false ] );
+WP_CLI::runcommand( "rewrite structure /%postname%/", [ "launch" => false ] );
+WP_CLI::runcommand( "config set VIP_JETPACK_SKIP_LOAD true --raw --add --type=constant", [ "launch" => false ] );
+'
+
+# Exercise the real import command with Jetpack disabled, before customer cleanup hooks. Then restore
+# Jetpack, set up the large media upload warning and the admin password for the tests.
+#
+# --add is required for constants that don't yet exist in wp-config.php; without it,
+# `wp config set` silently no-ops and the constants never get defined, leaving the large media
+# upload warning disabled in tests. `config get` prints each constant and fails setup if one is missing.
 vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp eval '
 $names = [ "jetpack_options", "jetpack_private_options", "jetpack_secrets", "vaultpress", "wordpress_api_key", "vip_jetpack_connection_pilot_heartbeat" ];
 foreach ( $names as $name ) { if ( ! update_option( $name, "e2e-import-credential" ) ) { WP_CLI::error( "Could not seed credential: " . $name ); } }
@@ -66,21 +77,14 @@ foreach ( $names as $name ) {
 }
 if ( "keep" !== get_option( "e2e_unrelated_option" ) ) { WP_CLI::error( "Unrelated option removed." ); }
 delete_option( "e2e_unrelated_option" );
+
+WP_CLI::runcommand( "config delete VIP_JETPACK_SKIP_LOAD --type=constant", [ "launch" => false ] );
+WP_CLI::runcommand( "config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw --add --type=constant", [ "launch" => false ] );
+WP_CLI::runcommand( "config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw --add --type=constant", [ "launch" => false ] );
+// `config get` loads wp-config.php, which this process already has, so it runs in its own process.
+foreach ( [ "VIP_LARGE_MEDIA_WARNING_ENABLED", "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES" ] as $constant ) {
+    echo $constant . "=" . WP_CLI::runcommand( "config get " . $constant . " --type=constant", [ "launch" => true, "return" => true ] ) . PHP_EOL;
+}
+
+WP_CLI::runcommand( "user update vipgo --user_pass=password", [ "launch" => false ] );
 '
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp config delete VIP_JETPACK_SKIP_LOAD --type=constant
-
-# Enable the large media upload warning module and lower its threshold for e2e tests.
-# --add is required for constants that don't yet exist in wp-config.php; without it,
-# `wp config set` silently no-ops (especially when --quiet is set) and the constants
-# never get defined, leaving the module disabled in tests.
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_ENABLED true --raw --add --type=constant
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp config set VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES 524288 --raw --add --type=constant
-
-# Diagnostic: print resolved constants so a future failure is obvious in CI logs.
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp eval '
-echo "VIP_LARGE_MEDIA_WARNING_ENABLED=" . ( defined( "VIP_LARGE_MEDIA_WARNING_ENABLED" ) ? var_export( VIP_LARGE_MEDIA_WARNING_ENABLED, true ) : "UNDEFINED" ) . PHP_EOL;
-echo "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES=" . ( defined( "VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES" ) ? VIP_LARGE_MEDIA_WARNING_THRESHOLD_BYTES : "UNDEFINED" ) . PHP_EOL;
-'
-
-# Change admin password to "password"
-vip dev-env exec --slug "${E2E_SITE_SLUG}" --quiet -- wp user update vipgo --user_pass=password

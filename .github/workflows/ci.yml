@@ -20,8 +20,59 @@ permissions:
   contents: read
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      tests: ${{ steps.changes.outputs.tests }}
+    steps:
+      - name: Check out the change detection action
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: .github/actions/detect-changes
+          persist-credentials: false
+
+      - name: Detect changes
+        id: changes
+        uses: ./.github/actions/detect-changes
+
+  shared-cache-contention:
+    name: Shared-cache contention (Memcached)
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
+    runs-on: ubuntu-latest
+    services:
+      memcached:
+        image: memcached:1.6-alpine
+        ports:
+          - 11211:11211
+    env:
+      VIP_TEST_MEMCACHED_SERVER: 127.0.0.1:11211
+      VIP_TEST_REQUIRE_SHARED_CACHE: '1'
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v7.0.1
+        with:
+          submodules: recursive
+
+      - name: Prepare source code
+        uses: ./.github/actions/prepare-source
+
+      - name: Run shared-cache worker test
+        uses: ./.github/actions/run-wp-tests
+        with:
+          php: '8.2'
+          extensions: memcached
+          test-filter: 'Test_Concurrency_Shared_Cache::test_two_workers_share_atomic_counter'
+        timeout-minutes: 15
+
   unit-tests:
     name: "WP ${{ matrix.config.wp }}, multisite: ${{ matrix.config.ms }}, JP: ${{ matrix.config.jp }}, PHP: ${{ matrix.config.php }}"
+    needs: changes
+    if: needs.changes.outputs.tests == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -47,46 +98,21 @@ jobs:
         # PHP 8.2, no JP
           - { wp: latest,  ms: 'no',  jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
           - { wp: latest,  ms: 'yes', jp: 'no', php: '8.2', phpunit: '', coverage: 'yes' }
+        # PHP 8.2 covers every tested WordPress version. Newer PHP versions run against only the
+        # oldest and the latest WordPress versions tested with them.
         # PHP 8.3
           - { wp: 6.5.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: 6.5.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.6.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.6.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.9.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 6.9.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 7.0.x,   ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
-          - { wp: 7.0.x,   ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.3', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.3', phpunit: '' }
         # PHP 8.4
           - { wp: 6.7.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: 6.7.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 6.8.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 6.9.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 6.9.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 7.0.x,   ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
-          - { wp: 7.0.x,   ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.4', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.4', phpunit: '' }
         # PHP 8.5
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.5', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.5', phpunit: '' }
-    services:
-      mysql:
-        image: mysql:8
-        ports:
-          - "3306:3306"
-        env:
-          MYSQL_ROOT_PASSWORD: wordpress
-          MYSQL_INITDB_SKIP_TZINFO: 1
-          MYSQL_USER: wordpress
-          MYSQL_PASSWORD: wordpress
-          MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
         uses: actions/checkout@v7.0.1

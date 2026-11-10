@@ -41,7 +41,7 @@ function get_latest_dataset_name() {
 		return $latest['name'];
 	}
 
-	trigger_error( 'latest dataset not found', E_USER_ERROR );
+	throw new \Error( 'latest dataset not found' );
 }
 
 function get_primary_dataset() {
@@ -52,5 +52,5 @@ function get_primary_dataset() {
 		}
 	}
 
-	trigger_error( 'primary dataset not found', E_USER_ERROR );
+	throw new \Error( 'primary dataset not found' );
 }

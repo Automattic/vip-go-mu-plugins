@@ -37,7 +37,7 @@ for ( const postType of postTypes ) {
 
 		test.beforeEach( async ( { request } ) => {
 			const response = await WPAPIHelper.createPost( request, {
-				title: DataHelper.getRandomPhrase(),
+				title: DataHelper.getRandomTitle(),
 				body: initialBodyText,
 				postType,
 			} );
@@ -64,7 +64,7 @@ for ( const postType of postTypes ) {
 		test( `edit a ${ postType } in the block editor`, async ( { page, request } ) => {
 			const { id, link } = createdPost!;
 			const editorPage = new EditorPage( page );
-			const titleText = DataHelper.getRandomPhrase();
+			const titleText = DataHelper.getRandomTitle();
 
 			await test.step( `Select ${ postType } to edit from the list`, async () => {
 				const postListPage = new PostListPage( page, postType );

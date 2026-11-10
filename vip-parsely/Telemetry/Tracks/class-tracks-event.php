@@ -93,8 +93,8 @@ class Tracks_Event {
 			return new WP_Error( 'invalid_event', 'A valid event must be specified via `_en`', 400 );
 		}
 
-		// delete non-routable addresses otherwise geoip will discard the record entirely.
-		if ( property_exists( $event, '_via_ip' ) && preg_match( '/^192\.168|^10\./', $event->_via_ip ) ) {
+		// Remove RFC 1918 private IPv4 addresses; preserve other address classes.
+		if ( property_exists( $event, '_via_ip' ) && preg_match( '/^(?:192\.168\.|10\.|172\.(?:1[6-9]|2\d|3[01])\.)/', $event->_via_ip ) ) {
 			unset( $event->_via_ip );
 		}
 

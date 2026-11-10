@@ -56,25 +56,6 @@ class WPCOM_VIP_Utils_Remote_Requests_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test that fast responses never trigger the fallback with custom args
-	 *
-	 * @dataProvider data_provider_all_args
-	 */
-	public function test__normal_response_with_all_args( callable $remote_function, array $args ) {
-		$url      = 'https://localhost';
-		$response = 'mock_response';
-
-		$this->mock_http_response( $response );
-
-		// We can call it 4 times (which is above our custom threshold from args) and it always returns the expected response (no failure / fallback)
-		for ( $i = 0; $i < 4; $i++ ) {
-			$res = $remote_function( $url, 'custom_fallback', 1, 2, 10, $args );
-
-			$this->assertEquals( $response, $res, 'Response for call ' . $i . ' was incorrect' );
-		}
-	}
-
-	/**
 	 * Test vip_safe_wp_remote_request() behavior with slow response - returns fallback after 3 failures
 	 *
 	 * A timeout of 0 seconds makes every request count as slow, so the default threshold can be

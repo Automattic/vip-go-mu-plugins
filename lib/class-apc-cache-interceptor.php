@@ -162,6 +162,9 @@ if ( ! class_exists( 'APC_Cache_Interceptor' ) ) :
 		}
 
 		protected function quick_check_key_intercept( $key, $group ) {
+			// Callers can pass a non-string group, such as an integer.
+			$group = (string) $group;
+
 			if ( '__key__' === $group ) {
 				return false; // never handle __key__ which is part of mcremote
 			}

@@ -54,4 +54,13 @@ class Test_SyncManager_Helper extends WP_UnitTestCase {
 		self::assertIsArray( $data );
 		self::assertTrue( $this->outcome );
 	}
+
+	public function test_saved_term_without_arguments_clears_every_term(): void {
+		$helper = SyncManager_Helper::instance();
+		$helper->skip_term_edit( get_term( self::$tag_id, 'post_tag' ) );
+
+		$helper->saved_term();
+
+		self::assertFalse( apply_filters( 'ep_skip_action_edited_term', false, self::$tag_id, 0, 'post_tag' ) );
+	}
 }

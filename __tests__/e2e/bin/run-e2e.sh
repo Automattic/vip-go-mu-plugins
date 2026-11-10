@@ -20,7 +20,9 @@ cleanup() {
     result=$?
     trap - EXIT HUP INT TERM
     if [ -f "$E2E_SITE_CREATED_MARKER" ]; then
-        if [ "$result" -eq 0 ] || [ "${E2E_PRESERVE_ON_FAILURE:-false}" != "true" ]; then
+        if [ "${E2E_PRESERVE_SITE:-false}" = "true" ]; then
+            printf 'Preserving E2E site: %s\n' "$E2E_SITE_SLUG" >&2
+        elif [ "$result" -eq 0 ] || [ "${E2E_PRESERVE_ON_FAILURE:-false}" != "true" ]; then
             vip dev-env destroy --slug="$E2E_SITE_SLUG" || true
         else
             printf 'Preserving failed E2E site: %s\n' "$E2E_SITE_SLUG" >&2

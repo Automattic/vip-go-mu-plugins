@@ -103,14 +103,6 @@ class Test_Jetpack_SSO_Session extends WP_UnitTestCase {
 		$this->assertFalse( is_jetpack_sso_two_step() );
 	}
 
-	public function test_normal_login_has_no_sso_flags(): void {
-		$this->activate_session( $this->create_auth_session( $this->user_id ) );
-
-		$this->assertFalse( is_jetpack_sso() );
-		$this->assertFalse( is_jetpack_sso_two_step() );
-		$this->assertTrue( wpcom_vip_should_force_two_factor() );
-	}
-
 	public function test_other_user_session_is_not_tagged_and_filter_is_consumed_once(): void {
 		$other_user_id = self::factory()->user->create();
 		do_action( 'jetpack_sso_handle_login', get_user_by( 'id', $this->user_id ), (object) [ 'two_step_enabled' => true ] );

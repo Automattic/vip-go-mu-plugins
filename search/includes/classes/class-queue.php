@@ -264,7 +264,7 @@ class Queue {
 		// We should make sure to apply the settings again after the customer code have been loaded to ensure the consistency.
 		add_action( 'after_setup_theme', array( $this, 'apply_settings' ), PHP_INT_MAX );
 
-		add_action( 'saved_term', [ $this, 'offload_term_indexing_to_queue' ], 0, 3 ); // saved_term fires after SyncManager_Helper actions
+		add_action( 'edited_term', [ $this, 'offload_term_indexing_to_queue' ], 5, 3 ); // After SyncManager_Helper (0), before ElasticPress queues the term's posts (10)
 
 		add_action( 'pre_delete_term', [ $this, 'offload_indexing_to_queue' ] );
 
@@ -1005,7 +1005,7 @@ class Queue {
 			return;
 		}
 
-		if ( true === apply_filters( 'ep_skip_action_edited_term', false, $term_id, $tt_id, $taxonomy ) ) {
+		if ( true === apply_filters( 'ep_skip_action_edited_term', false, $term_id, $tt_id, $taxonomy, [] ) ) {
 			return; // Do not offload if SyncManager_Helper is skipping actions on immaterial term changes
 		}
 
@@ -1015,7 +1015,7 @@ class Queue {
 			return;
 		}
 
-		add_filter( 'ep_skip_action_edited_term', '__return_true' ); // Disable ElasticPress execution on term edit
+		SyncManager_Helper::instance()->skip_term_edit( $term ); // Disable ElasticPress execution on this term edit only
 		$this->cron->schedule_queue_posts_for_term_taxonomy_id( $term->term_taxonomy_id );
 	}
 

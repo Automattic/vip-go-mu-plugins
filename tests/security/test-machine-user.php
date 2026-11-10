@@ -120,6 +120,12 @@ class Machine_User_Test extends WP_UnitTestCase {
 		];
 	}
 
+	public function test__capability_check_without_a_target_user_leaves_caps_unchanged() {
+		$caps = [ 'edit_users' ];
+
+		$this->assertSame( $caps, prevent_machine_user_mods( $caps, 'edit_user', self::$users['editor']->ID, [] ) );
+	}
+
 	private function skip_unsupported( string $actor, string $cap ): void {
 		if ( 'super_admin' === $actor && ! is_multisite() ) {
 			$this->markTestSkipped( 'No superadmins on single site installs.' );

@@ -20,8 +20,8 @@ class FakeIntegration extends Integration {
 	public function configure(): void { }
 }
 
-class FakeIntegrationWithPendoTracking extends FakeIntegration {
-	protected bool $enable_pendo_tracking = true;
+class FakeIntegrationWithAdminPageTracking extends FakeIntegration {
+	protected bool $enable_admin_page_tracking = true;
 }
 
 /**

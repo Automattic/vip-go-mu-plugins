@@ -28,11 +28,11 @@ class RealTimeCollaborationIntegration extends Integration {
 	const VIP_RTC_GUTENBERG_VERSION = '0.2-20261019';
 
 	/**
-	 * Enable Pendo tracking for this integration.
+	 * Record wp-admin page views in Tracks for this integration.
 	 *
 	 * @var bool
 	 */
-	protected bool $enable_pendo_tracking = true;
+	protected bool $enable_admin_page_tracking = true;
 
 	public function is_loaded(): bool {
 		// Check for the existence of the plugin version constant defined in the main plugin file.

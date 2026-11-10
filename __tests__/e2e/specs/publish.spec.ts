@@ -41,7 +41,7 @@ for ( const editor of editors ) {
 		for ( const postType of postTypes ) {
 			test( `publish a ${ postType }`, async ( { page } ) => {
 				const editorPage = editor.open( page );
-				const titleText = DataHelper.getRandomPhrase();
+				const titleText = DataHelper.getRandomTitle();
 
 				await test.step( `Add new ${ postType }`, () => page.goto( editor.newPostURL( postType ) ) );
 

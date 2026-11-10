@@ -209,9 +209,25 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		];
 	}
 
-	public function test__get_current_timestamp() {
-		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+	public function test__get_user_roles_falls_back_to_the_slug_for_a_role_without_a_name() {
+		$wp_roles = wp_roles();
 
-		$this->assertEquals( gmdate( 'd-m-Y', (int) ( $timestamp / 1000 ) ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
+		$wp_roles->roles['role_without_name'] = [ 'capabilities' => [] ];
+
+		$roles = ( new Site_Details_Index() )->get_user_roles();
+
+		unset( $wp_roles->roles['role_without_name'] );
+
+		$this->assertContains( [ 'slug' => 'role_without_name', 'name' => 'role_without_name' ], $roles );
+	}
+
+	public function test__get_current_timestamp() {
+		// The implementation rounds to milliseconds; floor/ceil bound that rounding.
+		$before    = floor( microtime( true ) * 1000 );
+		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+		$after     = ceil( microtime( true ) * 1000 );
+
+		$this->assertGreaterThanOrEqual( $before, $timestamp );
+		$this->assertLessThanOrEqual( $after, $timestamp );
 	}
 }

@@ -12,34 +12,15 @@ class Environment_Test extends TestCase {
 		Constant_Mocker::define( 'VIP_ENV_VAR_MY_VAR', 'VIP_ENV_VAR_MY_VAR' );
 	}
 
-	public function test_has_var() {
-		$this->get_var_standard_env();
-		$val = Environment::has_var( 'MY_VAR' );
-		$this->assertEquals( true, $val );
-	}
-
-	public function test_has_var_missing() {
-		$val = Environment::has_var( 'MY_VAR' );
-		$this->assertEquals( false, $val );
-	}
-
-	// tests the use-case where $key parameter is not found
-	public function test_get_default_var() {
-		$val = Environment::get_var( 'MY_VAR', 'default_value' );
-		$this->assertEquals( 'default_value', $val );
-	}
-
-	// tests the use-case where $key parameter is ''
+	/**
+	 * A set and a missing key are covered through the vip_*_env_var() wrappers by Automattic\VIP\Helpers\Environment_Test.
+	 *
+	 * This tests the use-case where $key parameter is ''.
+	 */
 	public function test_get_var_empty_key() {
 		$this->get_var_standard_env();
 		$val = Environment::get_var( '', 'default_value' );
 		$this->assertEquals( 'default_value', $val );
-	}
-
-	public function test_get_var() {
-		$this->get_var_standard_env();
-		$val = Environment::get_var( 'MY_VAR', 'default_value' );
-		$this->assertEquals( 'VIP_ENV_VAR_MY_VAR', $val );
 	}
 
 	public function is_sandbox_container_data() {

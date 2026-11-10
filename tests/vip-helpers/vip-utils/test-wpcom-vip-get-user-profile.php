@@ -10,6 +10,32 @@ class WPCOM_VIP_Get_User_Profile_Test extends WP_UnitTestCase {
 		add_filter( 'pre_http_request', fn() => http_response( 200, $body ) );
 	}
 
+	public function test__wpcom_vip_get_user_profile__request_identity_and_destination() {
+		$requests = [];
+		$entry    = [ 'displayName' => 'Mixed Case User' ];
+		// Substitute only HTTP transport: capture the real helper's request.
+		add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( &$requests, $entry ) {
+			$requests[] = [
+				'url'    => $url,
+				'method' => $args['method'],
+			];
+			// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize
+			return http_response( 200, serialize( [ 'entry' => [ $entry ] ] ) );
+		}, 10, 3 );
+
+		$result = wpcom_vip_get_user_profile( 'Mixed.Case@Example.COM' );
+
+		self::assertSame( $entry, $result );
+		self::assertSame( [
+			[
+				'url'    => 'https://en.gravatar.com/7a126a993c9ece5663288f1e48a453a6b4b12656af38d84103cb6beb8a5862b9.php',
+				'method' => 'GET',
+			],
+		], $requests );
+		self::assertStringNotContainsString( '@', $requests[0]['url'] );
+		self::assertStringNotContainsString( 'Mixed.Case', $requests[0]['url'] );
+	}
+
 	/**
 	 * Test that __wakeup() is not triggered when the remote response contains
 	 * a serialized object (insecure deserialization protection via allowed_classes => false).

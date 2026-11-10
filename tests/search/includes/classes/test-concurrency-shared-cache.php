@@ -16,6 +16,9 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 	 */
 	public function test_two_workers_share_atomic_counter(): void {
 		if ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) || ! extension_loaded( 'memcached' ) || ! function_exists( 'proc_open' ) ) {
+			if ( getenv( 'VIP_TEST_REQUIRE_SHARED_CACHE' ) ) {
+				self::fail( 'Shared-cache CI profile requires VIP_TEST_MEMCACHED_SERVER, the memcached extension and proc_open.' );
+			}
 			self::markTestSkipped( 'Requires VIP_TEST_MEMCACHED_SERVER, the memcached extension and proc_open; see docs/testing.md.' );
 		}
 
@@ -35,7 +38,33 @@ class Test_Concurrency_Shared_Cache extends TestCase {
 					proc_close( $worker['process'] );
 				}
 			}
+			// A failed assertion may precede the final count read. Always remove
+			// this run's persistent counter from a separate cache reader.
+			$cleanup = $this->start_worker( $salt, 'cleanup' );
+			try {
+				$this->complete_cleanup_worker( $cleanup );
+			} finally {
+				if ( is_resource( $cleanup['process'] ) ) {
+					proc_terminate( $cleanup['process'] );
+					foreach ( $cleanup['pipes'] as $pipe ) {
+						if ( is_resource( $pipe ) ) {
+							fclose( $pipe );
+						}
+					}
+					proc_close( $cleanup['process'] );
+				}
+			}
 		}
+	}
+
+	/**
+	 * Drain the cleanup reader's response and verify its successful exit.
+	 *
+	 * @param array $worker Owned cleanup worker and its pipes.
+	 */
+	private function complete_cleanup_worker( array $worker ): void {
+		$this->read_worker( $worker );
+		$this->finish_worker( $worker );
 	}
 
 	/**

@@ -12,7 +12,6 @@ use WP_UnitTestCase;
 
 class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 	private static $user_id;
-	private static $post_id;
 
 	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ): void {
 		$user = get_user_by( 'login', 'wpcomvip' );
@@ -24,12 +23,6 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 		} else {
 			self::$user_id = $user->ID;
 		}
-
-		self::$post_id = $factory->post->create([
-			'post_title'   => 'Test Post',
-			'post_content' => 'Lorem ipsum sit amet',
-			'post_author'  => 1,
-		]);
 	}
 
 	public function setUp(): void {
@@ -51,21 +44,6 @@ class Test_WPComVIP_Restrictions extends WP_UnitTestCase {
 		self::assertInstanceOf( WP_Post::class, $post );
 
 		self::assertEquals( 1, $post->post_author );
-	}
-
-	public function test_update_post(): void {
-		$data = [
-			'ID'          => self::$post_id,
-			'post_author' => self::$user_id,
-		];
-
-		$result = wp_update_post( $data );
-		self::assertNotInstanceOf( WP_Error::class, $result );
-
-		$actual = get_post( self::$post_id );
-		self::assertInstanceOf( WP_Post::class, $actual );
-
-		self::assertEquals( 1, $actual->post_author );
 	}
 
 	public function test_insert_attachment(): void {

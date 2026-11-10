@@ -102,7 +102,17 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
-		$merged_plugins = array_unique( array_merge( $this->option_active_plugins, wpcom_vip_get_filtered_loaded_plugins() ) );
+		$merged_plugins = [
+			'advent-calender/advent-calendar.php',
+			'airplane-mode/airplane-mode.php',
+			'gutenberg/gutenberg.php',
+			'hello.php',
+			'liveblog/liveblog.php',
+			'msm-sitemap/msm-sitemap.php',
+			'shortcake/shortcode-ui.php',
+			'wp-instagram-widget/wp-instagram-widget.php',
+		];
+		$this->assertNotContains( 'shared-plugins/two-factor/two-factor.php', get_option( 'active_plugins' ) );
 		sort( $merged_plugins );
 		$this->assertEquals( $merged_plugins, get_option( 'active_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 
@@ -131,7 +141,7 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check that the option still makes sense again
 		 */
-		$saved_plugins = array_merge( $plugin_change, wpcom_vip_get_filtered_loaded_plugins() );
+		$saved_plugins = array_merge( $merged_plugins, [ 'amp-wp/amp.php' ] );
 		sort( $saved_plugins );
 		$this->assertEquals( $saved_plugins, get_option( 'active_plugins' ), 'The value of `$saved_plugins` does not match the returned value of `get_option( \'active_plugins\')`.' );
 	}
@@ -174,7 +184,16 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check that the returned option matches a merge of the filtered loaded plugins and active plugins
 		 */
-		$merged_plugins = array_merge( $this->option_active_sitewide_plugins, wpcom_vip_get_network_filtered_loaded_plugins() );
+		// The option contract assigns code-loaded plugins this file's timestamp.
+		$code_timestamp = filemtime( __DIR__ . '/../vip-plugins/vip-plugins.php' );
+		$merged_plugins = [
+			'advent-calender/advent-calendar.php' => $code_timestamp,
+			'akismet/akismet.php'                 => 1507904154,
+			'hello.php'                           => 1507904134,
+			'msm-sitemap/msm-sitemap.php'         => $code_timestamp,
+			'shortcake/shortcode-ui.php'          => 1507904134,
+		];
+		$this->assertArrayNotHasKey( 'shared-plugins/two-factor/two-factor.php', get_site_option( 'active_sitewide_plugins' ) );
 		ksort( $merged_plugins );
 		$this->assertEquals( $merged_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 
@@ -197,7 +216,7 @@ class VIP_Go_Plugins_Test extends WP_UnitTestCase {
 		/**
 		 * Check that the option still makes sense again
 		 */
-		$saved_plugins = array_merge( $plugin_change, wpcom_vip_get_network_filtered_loaded_plugins() );
+		$saved_plugins = array_merge( $merged_plugins, [ 'amp-wp/amp.php' => 1507904134 ] );
 		ksort( $saved_plugins );
 		$this->assertEquals( $saved_plugins, get_site_option( 'active_sitewide_plugins' ), 'The value of `$merged_plugins` does not match the returned value of `get_site_option( \'active_sitewide_plugins\')`.' );
 	}

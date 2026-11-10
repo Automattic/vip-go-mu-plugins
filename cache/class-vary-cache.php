@@ -61,6 +61,14 @@ class Vary_Cache {
 	private static $should_update_group_cookie = false;
 
 	/**
+	 * Flag to indicate if a group or nocache setter was called while serving a REST request.
+	 *
+	 * @access  private
+	 * @var     bool
+	 */
+	private static $should_send_rest_headers = false;
+
+	/**
 	 * Member variable to store the parsed group values.
 	 *
 	 * @since   1.0.0
@@ -68,6 +76,14 @@ class Vary_Cache {
 	 * @var     array  Key - Group,  Value - group value
 	 */
 	private static $groups = [];
+
+	/**
+	 * Plaintext group string carried by the request's group cookie, if the cache layer read the same value.
+	 *
+	 * @access  private
+	 * @var     array  Key - Cookie name, Value - group string
+	 */
+	private static $request_group_cookie = [];
 
 	/**
 	 * Local reference for cookie expiry.
@@ -109,6 +125,7 @@ class Vary_Cache {
 
 		self::$is_user_in_nocache           = true;
 		self::$should_update_nocache_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -130,6 +147,7 @@ class Vary_Cache {
 
 		self::$is_user_in_nocache           = false;
 		self::$should_update_nocache_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -156,11 +174,13 @@ class Vary_Cache {
 
 		self::clear_groups();
 
+		self::$request_group_cookie         = [];
 		self::$did_send_headers             = false;
 		self::$encryption_enabled           = false;
 		self::$is_user_in_nocache           = false;
 		self::$should_update_nocache_cookie = false;
 		self::$should_update_group_cookie   = false;
+		self::$should_send_rest_headers     = false;
 		self::$cookie_expiry                = MONTH_IN_SECONDS;
 	}
 
@@ -172,6 +192,7 @@ class Vary_Cache {
 	protected static function add_filters() {
 		add_action( 'init', [ self::class, 'parse_cookies' ] );
 		add_action( 'send_headers', [ self::class, 'send_headers' ], PHP_INT_MAX ); // run late to catch any changes that may happen earlier in send_headers
+		add_filter( 'rest_pre_serve_request', [ self::class, 'send_rest_headers' ], PHP_INT_MAX ); // REST requests exit before send_headers
 	}
 
 	/**
@@ -182,10 +203,14 @@ class Vary_Cache {
 	protected static function remove_filters() {
 		remove_action( 'init', [ self::class, 'parse_cookies' ] );
 		remove_action( 'send_headers', [ self::class, 'send_headers' ], PHP_INT_MAX );
+		remove_filter( 'rest_pre_serve_request', [ self::class, 'send_rest_headers' ], PHP_INT_MAX );
 	}
 
 	/**
 	 * Set request to indicate the request will vary on one or more groups.
+	 *
+	 * Registering a group resets its value for the current request. Register groups before `init` priority 10,
+	 * when the visitor's cookie is parsed, so the parsed value isn't discarded.
 	 *
 	 * @since   1.0.0
 	 * @access  public
@@ -237,11 +262,13 @@ class Vary_Cache {
 	/**
 	 * Assigns the user to given group and optionally a value for that group. E.g. location=US
 	 *
+	 * The group cookie is only sent if the user's groups differ from the request's group cookie.
+	 *
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $group  Group name to vary the request on.
-	 * @param  string $value A value for the group.
+	 * @param  string     $group  Group name to vary the request on.
+	 * @param  string|int $value A value for the group.
 	 * @return WP_Error|boolean
 	 */
 	public static function set_group_for_user( $group, $value ) {
@@ -263,9 +290,11 @@ class Vary_Cache {
 			return new WP_Error( 'invalid_vary_group_notregistered', sprintf( 'Failed to set group (%s): Must register the group with register_group( <groupname> ) first. ', $group ) );
 		}
 
-		self::$groups[ $group ] = $value;
+		// Store what later requests will parse from the cookie, so a segment check gives the same answer on both.
+		self::$groups[ $group ] = (string) $value;
 
 		self::$should_update_group_cookie = true;
+		self::note_rest_write();
 
 		return true;
 	}
@@ -295,8 +324,8 @@ class Vary_Cache {
 	 * @since   1.0.0
 	 * @access  public
 	 *
-	 * @param  string $group Group name.
-	 * @param  string $segment Which segment within the group to check.
+	 * @param  string     $group Group name.
+	 * @param  string|int $segment Which segment within the group to check.
 	 *
 	 * @return bool   True on success. False on failure.
 	 */
@@ -305,10 +334,24 @@ class Vary_Cache {
 			return false;
 		}
 
-		// Check for a specific group segment.
-		return self::$groups[ $group ] === $segment;
+		// Check for a specific group segment. Group values are strings, so `1` matches the `1` parsed from the cookie.
+		return is_scalar( $segment ) && self::$groups[ $group ] === (string) $segment;
 	}
 
+	/**
+	 * Returns the user's value for a given group. e.g. 'yes' for 'dev-group'
+	 *
+	 * The value may come from the request's group cookie, so treat it as untrusted input.
+	 *
+	 * @access  public
+	 *
+	 * @param  string $group Group name.
+	 *
+	 * @return string|null  The group's value, or null if the user isn't in the group.
+	 */
+	public static function get_group_value( $group ): ?string {
+		return static::is_user_in_group( $group ) ? self::$groups[ $group ] : null;
+	}
 
 	/**
 	 * Returns the associated groups for the request.
@@ -334,7 +377,7 @@ class Vary_Cache {
 		// Validate that we have the secret values.
 		if ( ! defined( 'VIP_GO_AUTH_COOKIE_KEY' ) || ! defined( 'VIP_GO_AUTH_COOKIE_IV' ) ||
 			empty( constant( 'VIP_GO_AUTH_COOKIE_KEY' ) ) || empty( constant( 'VIP_GO_AUTH_COOKIE_IV' ) ) ) {
-			trigger_error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.', E_USER_ERROR );
+			throw new \Error( 'Vary_Cache: Cannot enable encryption because the required constants (VIP_GO_AUTH_COOKIE_KEY and VIP_GO_AUTH_COOKIE_IV) are not defined correctly. Please contact VIP Support for assistance.' );
 		}
 
 		static::$encryption_enabled = true;
@@ -371,20 +414,28 @@ class Vary_Cache {
 	/**
 	 * Decrypts a string using the auth credentials for the site.
 	 *
+	 * Like the cache layer, rejects values that aren't plain base64, and payloads that aren't `random|groups|expiry`
+	 * or whose expiry has passed.
+	 *
 	 * @param string $cookie_value the encrypted string.
 	 * @throws string If credentials ENV Variables aren't defined.
-	 * @return string decrypted version of string
+	 * @return string|null The group payload, or null if the payload is malformed or expired.
 	 */
 	private static function decrypt_cookie_value( $cookie_value ) {
+		// openssl_decrypt() skips characters outside the base64 alphabet, which the cache layer rejects.
+		if ( ! preg_match( '#^[A-Za-z0-9+/]+={0,2}\z#', $cookie_value ) ) {
+			return null;
+		}
+
 		$client_key    = constant( 'VIP_GO_AUTH_COOKIE_KEY' );
 		$client_iv     = constant( 'VIP_GO_AUTH_COOKIE_IV' );
 		$cipher_cookie = openssl_decrypt( $cookie_value, 'aes-128-cbc', $client_key, 0, $client_iv );
 		$cookie_array  = explode( '|', $cipher_cookie );
-		// Parse out the group payload (2nd item).
-		if ( count( $cookie_array ) < 2 ) {
+		if ( 3 !== count( $cookie_array ) || ! is_numeric( $cookie_array[2] ) || (float) $cookie_array[2] <= time() ) {
 			return null;
 		}
-		return $cookie_array [1];
+		// Parse out the group payload (2nd item).
+		return $cookie_array[1];
 	}
 
 	/**
@@ -413,37 +464,45 @@ class Vary_Cache {
 	 * Parses the group/segment cookie into the local groups array of key-values.
 	 */
 	private static function parse_group_cookie() {
+		self::$request_group_cookie = [];
+		$cookie_name                = null;
+
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
+			$cookie_name = self::COOKIE_AUTH;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the header auth isn't set (in case of a logged-in user), fall back to decrypting the cookie itself.
-			$auth_cookie = '';
+			// If the cache layer didn't supply the header, decrypt the cookie here, applying the same checks.
+			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
+			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
+			// didn't vouch for must not stop a fresh one from being sent.
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
-			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-			foreach ( explode( '; ', $_SERVER['HTTP_COOKIE'] ) as $rawcookie ) {
-				list( $k, $v ) = explode( '=', $rawcookie, 2 );
-				if ( self::COOKIE_AUTH === $k ) {
-					$auth_cookie = $v;
-					break;
-				}
-			}
+			$auth_cookie = (string) self::get_raw_cookie( self::COOKIE_AUTH );
 
 			// Remove the site prefix at the beginning
 			$prefix = constant( 'VIP_GO_APP_ID' ) . '.';
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
-				$value = substr( $auth_cookie, strlen( $prefix ) );
+				$cookie_value = self::decrypt_cookie_value( substr( $auth_cookie, strlen( $prefix ) ) );
 			}
-			$cookie_value = self::decrypt_cookie_value( $value );
-
-		} elseif ( ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( ! static::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+			// The plaintext cookie is only read when encryption is off; encrypted requests ignore it.
+			$cookie_name = self::COOKIE_SEGMENT;
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_COOKIE[ self::COOKIE_SEGMENT ];
+
+			// PHP lets `vip-go-seg[]=x` replace a real `vip-go-seg` with an array. Read the real one, as the cache layer does.
+			if ( ! is_string( $cookie_value ) ) {
+				$cookie_value = self::get_raw_cookie( self::COOKIE_SEGMENT );
+			}
 		}
 
 		if ( empty( $cookie_value ) ) {
 			return;
+		}
+
+		if ( null !== $cookie_name ) {
+			self::$request_group_cookie = [ $cookie_name => $cookie_value ];
 		}
 
 		$cookie_value = str_replace( self::VERSION_PREFIX, '', $cookie_value );
@@ -453,8 +512,35 @@ class Vary_Cache {
 				continue;
 			}
 			list( $group_name, $group_value ) = explode( self::VALUE_SEPARATOR, $group );
-			self::$groups[ $group_name ]      = $group_value ?? '';
+			// Skip pairs that can't be written back: setrawcookie() throws on these, and PHP won't send a header with NUL.
+			// $_COOKIE is urldecoded, so a client-written cookie can carry them as e.g. %2C or %20.
+			if ( false !== strpbrk( $group_name . $group_value, ",; \t\r\n\v\f\0" ) ) {
+				continue;
+			}
+			self::$groups[ $group_name ] = $group_value ?? '';
 		}
+	}
+
+	/**
+	 * Gets the first cookie with exactly this name from the raw Cookie header, without urldecoding it.
+	 *
+	 * @param string $name Cookie name.
+	 * @return string|null The cookie value, or null if the request doesn't have the cookie.
+	 */
+	private static function get_raw_cookie( $name ) {
+		if ( ! isset( $_SERVER['HTTP_COOKIE'] ) ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		foreach ( explode( ';', $_SERVER['HTTP_COOKIE'] ) as $rawcookie ) {
+			$parts = explode( '=', ltrim( $rawcookie ), 2 );
+			if ( 2 === count( $parts ) && $name === $parts[0] ) {
+				return $parts[1];
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -531,6 +617,38 @@ class Vary_Cache {
 	}
 
 	/**
+	 * Sends headers on REST requests if REST code called a group or nocache setter.
+	 *
+	 * Setter calls made before the REST request started, such as on `init`, don't count: sites often make them on every
+	 * request, and they have never been sent on REST requests. GET and HEAD requests are skipped, as the cache layer
+	 * stores their responses, and so are OPTIONS requests, as browsers ignore cookies on preflight responses. The HTTP
+	 * method decides, not the REST request's, which a `_method` override can change.
+	 *
+	 * @access  private
+	 *
+	 * @param mixed $served Whether the request has already been served.
+	 * @return mixed Unchanged.
+	 */
+	public static function send_rest_headers( $served ) {
+		$is_skipped_method = in_array( $_SERVER['REQUEST_METHOD'] ?? '', [ 'GET', 'HEAD', 'OPTIONS' ], true );
+
+		if ( ! $is_skipped_method && self::$should_send_rest_headers ) {
+			self::send_headers();
+		}
+
+		return $served;
+	}
+
+	/**
+	 * Records a setter call made by REST code, i.e. after WordPress started serving a REST request.
+	 */
+	private static function note_rest_write() {
+		if ( defined( 'REST_REQUEST' ) && constant( 'REST_REQUEST' ) ) {
+			self::$should_send_rest_headers = true;
+		}
+	}
+
+	/**
 	 * Determines if cookies need to be set and then sets them.
 	 *
 	 * @return boolean Was at least one cookie set?
@@ -539,27 +657,65 @@ class Vary_Cache {
 		$sent_cookie = false;
 
 		if ( self::$should_update_group_cookie ) {
-			$sent_cookie = true;
-
-			self::set_group_cookie();
+			$sent_cookie = self::set_group_cookie();
 		}
 
 		if ( self::$should_update_nocache_cookie ) {
-			$sent_cookie = true;
-
-			self::set_nocache_cookie();
+			$sent_cookie = self::set_nocache_cookie() || $sent_cookie;
 		}
 
 		return $sent_cookie;
 	}
 
 	/**
+	 * Checks whether the request has the active group cookie.
+	 *
+	 * Any value counts: PHP lets `vip-go-seg[]=x` replace a real `vip-go-seg` with an array, and
+	 * parse_group_cookie() still reads the real one from the Cookie header, so it may need clearing.
+	 *
+	 * @return boolean Whether the request has the cookie.
+	 */
+	private static function has_group_cookie() {
+		if ( self::is_encryption_enabled() ) {
+			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+			return isset( $_COOKIE[ self::COOKIE_AUTH ] ) || ! empty( $_SERVER[ self::HEADER_AUTH ] );
+		}
+
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return isset( $_COOKIE[ self::COOKIE_SEGMENT ] );
+	}
+
+	/**
 	 * Sets the group/segment cookie based on the user's current groupings.
+	 *
+	 * @return boolean Was a Set-Cookie header sent?
 	 */
 	private static function set_group_cookie() {
 		$group_string = self::stringify_groups();
+		$cookie_name  = self::is_encryption_enabled() ? self::COOKIE_AUTH : self::COOKIE_SEGMENT;
 		if ( empty( $group_string ) ) {
-			return;
+			if ( ! self::has_group_cookie() ) {
+				return false;
+			}
+
+			self::unset_cookie( $cookie_name );
+			return true;
+		}
+
+		// Re-sending the cookie the request already carries would only make the response uncacheable.
+		// Compare plaintext group strings: encrypted values embed a random nonce and an expiry.
+		if ( ( self::$request_group_cookie[ $cookie_name ] ?? null ) === $group_string ) {
+			/**
+			 * Filters whether to re-send a group cookie whose groups are unchanged.
+			 *
+			 * Re-sending slides the cookie expiry forward, but the response won't be cached.
+			 *
+			 * @param bool  $refresh Whether to re-send the unchanged group cookie. Default false.
+			 * @param array $groups  The user's group-value pairs.
+			 */
+			if ( ! apply_filters( 'vip_vary_cache_refresh_group_cookie', false, self::$groups ) ) {
+				return false;
+			}
 		}
 
 		if ( self::is_encryption_enabled() ) {
@@ -568,17 +724,37 @@ class Vary_Cache {
 		} else {
 			self::set_cookie( self::COOKIE_SEGMENT, $group_string );
 		}
+
+		return true;
 	}
 
 	/**
-	 * Sets (or unsets) the group/segment cookie.
+	 * Checks whether the request has the nocache cookie.
+	 *
+	 * @return boolean Whether the request has the cookie.
+	 */
+	private static function has_nocache_cookie() {
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+		return isset( $_COOKIE[ self::COOKIE_NOCACHE ] );
+	}
+
+	/**
+	 * Sets (or unsets) the nocache cookie.
+	 *
+	 * @return boolean Was a Set-Cookie header sent?
 	 */
 	private static function set_nocache_cookie() {
 		if ( self::$is_user_in_nocache ) {
 			self::set_cookie( self::COOKIE_NOCACHE, 1 );
-		} else {
-			self::unset_cookie( self::COOKIE_NOCACHE );
+			return true;
 		}
+
+		if ( ! self::has_nocache_cookie() ) {
+			return false;
+		}
+
+		self::unset_cookie( self::COOKIE_NOCACHE );
+		return true;
 	}
 
 	/**
@@ -613,22 +789,53 @@ class Vary_Cache {
 	 * @param string $value Cookie Value.
 	 */
 	private static function set_cookie( $name, $value ) {
-		$expiry        = time() + self::$cookie_expiry;
-		$cookie_path   = (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH );
-		$cookie_domain = (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN );
+		$options = self::get_cookie_options( $name, time() + self::$cookie_expiry );
 		// Need to use setrawcookie() here to prevent PHP from URLEncoding the base-64 terminator (==) on encrypted payloads
-		setrawcookie( $name, $value, $expiry, $cookie_path, $cookie_domain );
+		setrawcookie( $name, $value, $options );
 	}
 
 	/**
 	 * Wrapper for the set cookie function to clear out the cookie
 	 *
-	 * @param string $name  Cookie Name.
+	 * @param string $name Cookie Name.
 	 */
 	private static function unset_cookie( $name ) {
+		$options = self::get_cookie_options( $name, time() - 3600 );
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-		setcookie( $name, '', time() - 3600 );
+		setcookie( $name, '', $options );
 	}
+
+	/**
+	 * Shared so a cookie is always cleared with the attributes it was set with.
+	 *
+	 * @param string $name    Cookie Name.
+	 * @param int    $expires Unix timestamp; in the past to clear the cookie.
+	 * @return array
+	 */
+	private static function get_cookie_options( $name, $expires ) {
+		// Like core's logged_in cookie: a Secure cookie set over HTTPS on a site with an http:// home URL
+		// would not be sent on its own links, and browsers would refuse to overwrite it from http://.
+		$secure = is_ssl() && 'https' === wp_parse_url( get_option( 'home' ), PHP_URL_SCHEME );
+
+		/**
+		 * Whether to send the cookie with the Secure attribute.
+		 *
+		 * Browsers drop a Secure cookie sent over plain HTTP, so returning true there means the cookie is never set or cleared.
+		 *
+		 * @param bool   $secure Whether to set the Secure attribute. Defaults to true on HTTPS requests to a site with an HTTPS home URL.
+		 * @param string $name   Cookie Name.
+		 */
+		$secure = (bool) apply_filters( 'vip_vary_cache_cookie_secure', $secure, $name );
+
+		// No HttpOnly: sites may read or write the segmentation cookie from client-side code.
+		return [
+			'expires' => $expires,
+			'path'    => (string) apply_filters( 'vip_vary_cache_cookie_path', COOKIEPATH ),
+			'domain'  => (string) apply_filters( 'vip_vary_cache_cookie_domain', COOKIE_DOMAIN ),
+			'secure'  => $secure,
+		];
+	}
+
 	/**
 	 * Only allow alphanumerics, dash and underscore
 	 *

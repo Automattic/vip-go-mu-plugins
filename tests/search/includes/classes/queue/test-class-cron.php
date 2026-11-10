@@ -48,23 +48,18 @@ class Cron_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	public function test_filter_cron_schedules() {
-		$schedules = wp_get_schedules();
-
-		self::assertArrayHasKey( Cron::SWEEPER_CRON_INTERVAL_NAME, $schedules );
-		self::assertArrayHasKey( 'interval', $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ] );
-		self::assertEquals( $schedules[ Cron::SWEEPER_CRON_INTERVAL_NAME ]['interval'], Cron::SWEEPER_CRON_INTERVAL );
-	}
-
 	public function test_schedule_and_disable_sweeper_job() {
 		// Make sure it's not already scheduled
 		$this->cron->disable_sweeper_job();
 
 		$this->assertFalse( wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME ), 'Existing cron event, wp_clear_scheduled_hook() failed' );
 
+		// wp_schedule_event() fails unless the cron_schedules filter registered the custom interval
 		$this->cron->schedule_sweeper_job();
 
-		$this->assertTrue( (bool) wp_next_scheduled( Cron::SWEEPER_CRON_EVENT_NAME ), 'After Cron::schedule_sweeper_job(), job was not found' );
+		$event = wp_get_scheduled_event( Cron::SWEEPER_CRON_EVENT_NAME );
+		$this->assertNotFalse( $event, 'After Cron::schedule_sweeper_job(), job was not found' );
+		$this->assertSame( Cron::SWEEPER_CRON_INTERVAL, $event->interval, 'The job does not use the sweeper interval' );
 
 		$this->cron->disable_sweeper_job();
 
