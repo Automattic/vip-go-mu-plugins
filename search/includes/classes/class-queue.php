@@ -930,6 +930,23 @@ class Queue {
 
 				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
 
+				// Posts deleted, trashed or unpublished since they were queued were already removed from the index by
+				// ElasticPress's sync, and indexing them would put them back, so only send what it would index now
+				if ( 'post' === $type ) {
+					$indexable_ids = $this->get_indexable_post_ids( $indexable, wp_list_pluck( $jobs, 'object_id' ) );
+					$skipped_jobs  = array_filter( $jobs, fn( $job ) => ! in_array( (int) $job->object_id, $indexable_ids, true ) );
+
+					if ( $skipped_jobs ) {
+						$this->delete_jobs( $skipped_jobs );
+						$jobs = array_diff_key( $jobs, $skipped_jobs );
+					}
+
+					if ( empty( $jobs ) ) {
+						\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
+						continue;
+					}
+				}
+
 				$ids = wp_list_pluck( $jobs, 'object_id' );
 
 				// Increment first to prevent overrunning ratelimiting
@@ -989,6 +1006,30 @@ class Queue {
 		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
 			$this->bulk_index_split_if_too_large( $indexable, $half );
 		}
+	}
+
+	/**
+	 * Of the given post IDs, return those that still exist with a post type and status ElasticPress indexes
+	 *
+	 * @param \ElasticPress\Indexable $indexable The post Indexable
+	 * @param array                   $ids       Post IDs
+	 * @return int[] Indexable post IDs
+	 */
+	private function get_indexable_post_ids( $indexable, array $ids ): array {
+		_prime_post_caches( array_map( 'intval', $ids ) );
+
+		$post_types    = $indexable->get_indexable_post_types();
+		$post_statuses = $indexable->get_indexable_post_status();
+		$indexable_ids = [];
+
+		foreach ( $ids as $id ) {
+			$post = get_post( (int) $id );
+			if ( $post && in_array( $post->post_type, $post_types, true ) && in_array( $post->post_status, $post_statuses, true ) ) {
+				$indexable_ids[] = (int) $id;
+			}
+		}
+
+		return $indexable_ids;
 	}
 
 	/**
