@@ -827,13 +827,15 @@ class Queue {
 				break;
 			}
 
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_out_of_retries( $filtered_deadlocked_jobs );
+			// Before deduplicating, so a newer job for the same object survives instead of a job that's about to be dropped
+			$filtered_deadlocked_jobs = $this->delete_jobs_out_of_retries( $deadlocked_jobs );
 
 			if ( empty( $filtered_deadlocked_jobs ) ) {
 				continue;
 			}
+
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $filtered_deadlocked_jobs );
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
 
 			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' ) ) );
 
@@ -928,7 +930,7 @@ class Queue {
 	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
 	 *
 	 * @param array $deadlocked_jobs List of deadlocked jobs
-	 * @return array $deadlocked_jobs The deadlocked jobs that were not deleted
+	 * @return array $deadlocked_jobs List of deadlocked jobs deleted from queue
 	 */
 	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
 		global $wpdb;
@@ -957,9 +959,7 @@ class Queue {
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
-		$deleted_job_ids = wp_list_pluck( $jobs_to_be_deleted, 'job_id' );
-
-		return array_values( array_filter( $deadlocked_jobs, fn( $job ) => ! in_array( $job->job_id, $deleted_job_ids, true ) ) );
+		return $deadlocked_jobs;
 	}
 
 	/**

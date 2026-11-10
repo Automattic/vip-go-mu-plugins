@@ -777,8 +777,8 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs() {
 		global $wpdb;
 
-		$table_name    = $this->use_recovery_table();
-		$fixtures      = array(
+		$table_name = $this->use_recovery_table();
+		$fixtures   = array(
 			array( 1000, 'post', 1, 'running' ),
 			array( 1000, 'post', 1, 'queued' ),
 			array( 1000, 'post', 2, 'scheduled' ),
@@ -786,6 +786,9 @@ class Queue_Test extends WP_UnitTestCase {
 			array( 2000, 'user', 1, 'running' ),
 			array( 3000, 'post', 1, 'scheduled' ),
 			array( 3000, 'post', 1, 'running' ),
+			// Out of retries, and a newer job for the same object that hasn't run yet
+			array( 4000, 'post', 1, 'running', Queue::RETRY_PRIORITY + Queue::MAX_RETRIES ),
+			array( 4000, 'post', 1, 'scheduled' ),
 		);
 		$expected      = array();
 		$duplicate_ids = array();
@@ -798,13 +801,14 @@ class Queue_Test extends WP_UnitTestCase {
 				$this->queue->update_job( $job->job_id, array(
 					'status'         => $status,
 					'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
+					'priority'       => $fixture[4] ?? Queue::INDEX_DEFAULT_PRIORITY,
 				) );
 			}
 			if ( 3000 === $object_id ) {
 				$duplicate_ids[] = (int) $job->job_id;
 			}
-			// Only the same-object/type/version duplicates should be removed.
-			if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
+			// Only the same-object/type/version duplicates and the job out of retries should be removed.
+			if ( ! in_array( $offset, array( 0, 6, 7 ), true ) ) {
 				$expected[] = array(
 					'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
 					'object_id'     => $object_id,
