@@ -633,13 +633,6 @@ class Search {
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 
-		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
-		// Set the priority to 9999 so customers can unset it if needed.
-		// The current usages of this filter have priority 10 in ElasticPress. May need to be adjusted if this changes.
-		if ( false !== $this->is_protected_content_enabled() ) {
-			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
-		}
-
 		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
 
 		// Limit the max result window on index settings
@@ -2351,26 +2344,6 @@ class Search {
 		$dc = strtolower( $dc );
 
 		return $dc;
-	}
-
-	/**
-	 * Since we've established that enabling the protected content feature causes attachments
-	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
-	 * protected content is enabled.
-	 *
-	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
-	 * @return array New list of indexable post types in VIP Search.
-	 */
-	public function add_attachment_to_ep_indexable_post_types( $indexable_post_types ) {
-		if ( ! is_array( $indexable_post_types ) ) {
-			return $indexable_post_types;
-		}
-
-		if ( ! isset( $indexable_post_types['attachment'] ) ) {
-			$indexable_post_types['attachment'] = 'attachment';
-		}
-
-		return $indexable_post_types;
 	}
 
 	/**
