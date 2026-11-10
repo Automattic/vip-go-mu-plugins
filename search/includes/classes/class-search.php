@@ -2412,7 +2412,11 @@ class Search {
 	}
 
 	public function clear_query_limiting_start_timestamp() {
-		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+		// Runs for every query that isn't ratelimited. A delete always goes to the cache server (a get is answered
+		// locally after the first), so only delete when a start timestamp is actually set
+		if ( false !== static::get_query_rate_limit_start() ) {
+			wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+		}
 	}
 
 	/**
