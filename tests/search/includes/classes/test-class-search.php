@@ -2336,15 +2336,22 @@ class Search_Test extends WP_UnitTestCase {
 					'hits'    => $hits,
 				] ),
 				$this->es_response( 200, [
+					'took'      => 1,
+					'timed_out' => true,
+					'_shards'   => [ 'failed' => 0 ],
+					'hits'      => $hits,
+				] ),
+				$this->es_response( 200, [
 					'took' => 1,
 					'hits' => $hits,
 				] )
 			);
 
 			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":true}' );
+			$this->intercept_query( '/vip-123-post-1/_search', '{"timeout":true}' );
 			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":false}' );
 
-			$this->assertSame( [ MINUTE_IN_SECONDS, 5 * MINUTE_IN_SECONDS ], $wp_object_cache->expirations );
+			$this->assertSame( [ MINUTE_IN_SECONDS, MINUTE_IN_SECONDS, 5 * MINUTE_IN_SECONDS ], $wp_object_cache->expirations );
 		} finally {
 			$wp_object_cache = $original_cache; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 		}
