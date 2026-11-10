@@ -803,17 +803,23 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		// If job was scheduled before this time, it is considered deadlocked
-		$deadlocked_time = time() - self::DEADLOCK_TIME;
-
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results( $wpdb->prepare(
 			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND (`scheduled_time` <= %s OR `scheduled_time` IS NULL) LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
-			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+			self::get_deadlocked_time(),
 			$count
 		) );
 
 		return $jobs;
+	}
+
+	/**
+	 * A job scheduled (or, once its batch started, running) since before this time is considered deadlocked.
+	 *
+	 * @return string MySQL datetime, in UTC
+	 */
+	private static function get_deadlocked_time(): string {
+		return gmdate( 'Y-m-d H:i:s', time() - self::DEADLOCK_TIME );
 	}
 
 	/**
@@ -848,9 +854,10 @@ class Queue {
 			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' ) ) );
 
 			// A 'running' job died while being processed, so it moves up one retry level. MySQL runs single-table
-			// assignments left to right, so `priority` is computed from the old `status`.
+			// assignments left to right, so `priority` is computed from the old `status`. Only while still deadlocked: a
+			// batch whose cron event started since it was found restarted its deadlock timer, and is being processed.
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
-			$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET `priority` = IF( `status` = 'running', GREATEST( `priority`, %d ) + 1, `priority` ), `status` = 'queued', `scheduled_time` = NULL WHERE `job_id` IN ( {$escaped_ids} )", self::RETRY_PRIORITY ) );
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET `priority` = IF( `status` = 'running', GREATEST( `priority`, %d ) + 1, `priority` ), `status` = 'queued', `scheduled_time` = NULL WHERE `job_id` IN ( {$escaped_ids} ) AND `status` IN ( 'scheduled', 'running' ) AND ( `scheduled_time` <= %s OR `scheduled_time` IS NULL )", self::RETRY_PRIORITY, self::get_deadlocked_time() ) );
 		}
 	}
 
@@ -877,7 +884,7 @@ class Queue {
 			return $deadlocked_jobs;
 		}
 
-		$this->carry_retry_level_to_queued_jobs( $exhausted );
+		$this->carry_retry_level_to_waiting_jobs( $exhausted );
 		$this->delete_jobs( $exhausted );
 
 		$this->logger->log(
@@ -929,6 +936,8 @@ class Queue {
 		}
 
 		if ( ! empty( $jobs_to_be_deleted ) ) {
+			// The job kept may be one that never started, while a deleted one died
+			$this->carry_retry_level_to_waiting_jobs( $jobs_to_be_deleted );
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
@@ -965,7 +974,7 @@ class Queue {
 		);
 
 		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->carry_retry_level_to_queued_jobs( $jobs_to_be_deleted );
+			$this->carry_retry_level_to_waiting_jobs( $jobs_to_be_deleted );
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
@@ -973,13 +982,14 @@ class Queue {
 	}
 
 	/**
-	 * Before a 'running' job that died while being processed is deleted, the object's queued job takes over its next
-	 * retry level, as free_deadlocked_jobs() would have given it. Past the last level, the queued job gets the last one,
-	 * so it runs alone and is dropped if it crashes too, instead of going back into a full batch.
+	 * Before a 'running' job that died while being processed is deleted, the object's waiting job (queued, or deadlocked
+	 * before it started and about to be queued again) takes over its next retry level, as free_deadlocked_jobs() would
+	 * have given it. Past the last level, the waiting job gets the last one, so it runs alone and is dropped if it crashes
+	 * too, instead of going back into a full batch.
 	 *
 	 * @param array $jobs Jobs about to be deleted
 	 */
-	private function carry_retry_level_to_queued_jobs( $jobs ) {
+	private function carry_retry_level_to_waiting_jobs( $jobs ) {
 		global $wpdb;
 
 		$died_ids = implode( ', ', array_map( 'intval', wp_list_pluck( wp_list_filter( $jobs, array( 'status' => 'running' ) ), 'job_id' ) ) );
@@ -990,7 +1000,7 @@ class Queue {
 		$table_name = $this->schema->get_table_name();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
-		$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} queued JOIN {$table_name} died ON queued.object_id = died.object_id AND queued.object_type = died.object_type AND queued.index_version = died.index_version SET queued.priority = GREATEST( queued.priority, LEAST( GREATEST( died.priority, %d ) + 1, %d ) ) WHERE queued.status = 'queued' AND died.job_id IN ( {$died_ids} )", self::RETRY_PRIORITY, self::RETRY_PRIORITY + self::MAX_RETRIES ) );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} waiting JOIN {$table_name} died ON waiting.object_id = died.object_id AND waiting.object_type = died.object_type AND waiting.index_version = died.index_version SET waiting.priority = GREATEST( waiting.priority, LEAST( GREATEST( died.priority, %d ) + 1, %d ) ) WHERE ( waiting.status = 'queued' OR ( waiting.status = 'scheduled' AND ( waiting.scheduled_time <= %s OR waiting.scheduled_time IS NULL ) ) ) AND died.job_id IN ( {$died_ids} )", self::RETRY_PRIORITY, self::RETRY_PRIORITY + self::MAX_RETRIES, self::get_deadlocked_time() ) );
 	}
 
 	/**
