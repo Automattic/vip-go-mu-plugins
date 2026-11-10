@@ -201,24 +201,40 @@ class Cron {
 		}
 
 		// Indexing's own query: it matches the posts that indexing would, and pages by post ID instead of an offset
-		$args = array(
-			'per_page'  => self::TERM_UPDATE_BATCH_SIZE,
-			'fields'    => 'ids',
-			'tax_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-				array(
-					'field' => 'term_taxonomy_id',
-					'terms' => $term_taxonomy_id,
-				),
-			),
-		);
+		$args = array( 'per_page' => self::TERM_UPDATE_BATCH_SIZE );
+
+		// Runs after customers' indexing filters, which may replace tax_query or rebuild the args, so the query stays on this
+		// term instead of queueing the whole site, and returns IDs
+		$term_only = static function ( $args ) use ( $term_taxonomy_id ) {
+			$term = array(
+				'field' => 'term_taxonomy_id',
+				'terms' => $term_taxonomy_id,
+			);
+
+			// An empty clause would match nothing, so only nest a filter's own tax_query
+			if ( ! empty( $args['tax_query'] ) ) {
+				$term = array(
+					'relation' => 'AND',
+					$args['tax_query'],
+					$term,
+				);
+			}
+
+			$args['tax_query'] = array( $term ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+			$args['fields']    = 'ids';
+
+			return $args;
+		};
+		add_filter( 'ep_index_posts_args', $term_only, PHP_INT_MAX );
 
 		while ( true ) {
 			$post_ids = $indexable->query_db( $args )['objects'];
 
-			// Each page has lower post IDs than the last. A filter that turns paging by ID off (post__in, an offset or
-			// ep_indexing_advanced_pagination) gets the same page every time: stop instead of queueing it forever.
-			if ( ! $post_ids || end( $post_ids ) >= ( $args['ep_indexing_last_processed_object_id'] ?? PHP_INT_MAX ) ) {
-				return;
+			// Each page has lower post IDs than the last, so the cursor is the page's lowest. Without paging by ID (a filter
+			// set post__in, an offset or ep_indexing_advanced_pagination) the same page comes back: stop instead of queueing
+			// it forever. If a filter changed the order, pages still don't overlap, so this ends after the term's posts.
+			if ( ! $post_ids || min( $post_ids ) >= ( $args['ep_indexing_last_processed_object_id'] ?? PHP_INT_MAX ) ) {
+				break;
 			}
 
 			$this->queue->queue_objects( $post_ids, 'post', array( 'priority' => self::TERM_UPDATE_PRIORITY ) );
@@ -228,8 +244,10 @@ class Cron {
 			\Automattic\VIP\Search\Search::instance()->versioning->action__shutdown();
 			vip_reset_local_object_cache();
 
-			$args['ep_indexing_last_processed_object_id'] = end( $post_ids );
+			$args['ep_indexing_last_processed_object_id'] = min( $post_ids );
 		}
+
+		remove_filter( 'ep_index_posts_args', $term_only, PHP_INT_MAX );
 	}
 
 	/**
