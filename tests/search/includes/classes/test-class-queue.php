@@ -272,6 +272,17 @@ class Queue_Test extends WP_UnitTestCase {
 		self::assertSame( 2 * Queue::INDEX_DEFAULT_PRIORITY, (int) $job->priority );
 	}
 
+	public function test_requeue_does_not_wait_for_a_pending_retry(): void {
+		$this->queue->action__ep_after_bulk_index( array( 1 ), 'post', new \WP_Error( 503, 'Service Unavailable' ) );
+		$this->assertNotNull( $this->get_queued_rows( 'post', 1 )[0]->start_time, 'the retry should be delayed' );
+
+		$this->queue->queue_object( 1, 'post' );
+
+		$rows = $this->get_queued_rows( 'post', 1 );
+		$this->assertCount( 1, $rows );
+		$this->assertNull( $rows[0]->start_time, 'a change queued while the retry waits should be due now' );
+	}
+
 	public function test_checkout_jobs() {
 		global $wpdb;
 

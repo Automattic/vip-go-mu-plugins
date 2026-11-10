@@ -353,10 +353,13 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
+		// An object already queued keeps its job, at the higher priority and the earlier start time, so a change doesn't
+		// wait for a retry's backoff. LEAST() returns NULL (due now) if either start time is NULL.
 		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
 		$wpdb->query(
 			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
-				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
+				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d)
+				ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d), start_time = LEAST(start_time, {$start_time_escaped})",
 				[ $object_id, $indexable_slug, $index_version, $priority, $priority ]
 			)
 		);
