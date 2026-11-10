@@ -270,9 +270,6 @@ class CoreCommand {
 	public function index( $args, $assoc_args ) {
 		$this->verify_arguments_compatibility( $assoc_args );
 
-		$using_versions = $assoc_args['using-versions'] ?? false;
-		$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
-
 		$network_mode = isset( $assoc_args['network-wide'] );
 		$batch_mode   = isset( $assoc_args['blog-ids'] );
 		/**
@@ -336,7 +333,11 @@ class CoreCommand {
 
 			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
-			// Set up the version only for the site indexed here. Each child process above sets up its own site's version.
+			$using_versions = $assoc_args['using-versions'] ?? false;
+			$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
+
+			// Set up the version only for the site indexed here. Each child process above versions what it indexes, so a
+			// global indexable (e.g. users) is rebuilt by every child: redundant, but each rebuild is complete.
 			$this->maybe_setup_index_version( $assoc_args );
 
 			if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
