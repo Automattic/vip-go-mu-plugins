@@ -879,6 +879,23 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( wp_list_pluck( $jobs, 'object_id' ), $queued, 'a failed batch should leave every object queued, including one whose job was handed back' );
 	}
 
+	public function test_process_jobs_finishes_a_job_handed_back_before_it_started() {
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		// The batch started late, so free_deadlocked_jobs() handed its first job back before it ran
+		$this->queue->update_job( $jobs[0]->job_id, array(
+			'status'         => 'queued',
+			'scheduled_time' => null,
+		) );
+
+		$this->with_es_http(
+			fn( $args, $url ) => false === strpos( $url, '/_bulk' ) ? self::es_response() : self::es_response( '{"errors":false,"items":[]}' ),
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'a successful batch should not leave its handed-back job to be indexed again' );
+	}
+
 	/**
 	 * Create posts, queue them and mark their jobs as scheduled, as checkout_jobs() does
 	 *

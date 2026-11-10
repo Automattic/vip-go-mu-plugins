@@ -909,10 +909,11 @@ class Queue {
 	 * @param array $jobs List of jobs
 	 */
 	public function process_jobs( $jobs ) {
-		// Set them as running
+		// Set them as running, including any free_deadlocked_jobs() handed back to the queue because the batch started late,
+		// so they're deleted once indexed rather than indexed again
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
+		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
 
 		$indexables = Indexables::factory();
 
@@ -962,8 +963,8 @@ class Queue {
 				$this->bulk_index_split_if_too_large( $indexable, $ids );
 
 				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
-				// action__ep_after_bulk_index(), as new rows. Jobs free_deadlocked_jobs() handed back to the queue meanwhile
-				// (the batch started or ran late) stay queued, to be indexed again: their row would block a failed object's.
+				// action__ep_after_bulk_index(), as new rows. Jobs free_deadlocked_jobs() handed back to the queue while the batch
+				// ran (it ran late) stay queued, to be indexed again: their row would block a failed object's.
 				$this->delete_jobs( $jobs, 'running' );
 
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
