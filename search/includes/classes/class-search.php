@@ -975,7 +975,7 @@ class Search {
 
 		$start_time = microtime( true );
 
-		$timeout = $this->get_http_timeout_for_query( $query, $args );
+		$timeout = $this->get_http_timeout_for_query( $type );
 
 		if ( $is_testing_next_version ) {
 			$url = $this->build_elasticsearch_url( $query['url'], self::ELASTICSEARCH_MIGRATION_NEXT );
@@ -1340,28 +1340,20 @@ class Search {
 		return false !== strpos( strtolower( $error_message ), 'curl error 28' );
 	}
 
-	public function get_http_timeout_for_query( $query, $args ) {
-		$is_cli  = defined( 'WP_CLI' ) && constant( 'WP_CLI' );
-		$timeout = $is_cli ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
-
-		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );
-		$is_post_request = false;
-
-		if ( isset( $args['method'] ) && 0 === strcasecmp( 'POST', $args['method'] ) ) {
-			$is_post_request = true;
+	/**
+	 * Index-level requests (bulk indexing, and creating, changing or deleting an index) can take a while on Elasticsearch's
+	 * side, so they get the 30 seconds ElasticPress asks for. Searches and single-document requests keep short timeouts.
+	 *
+	 * @param string|null $type ElasticPress request type
+	 * @return int Timeout in seconds
+	 */
+	public function get_http_timeout_for_query( $type ) {
+		$index_request_types = [ 'bulk_index', 'put_mapping', 'get_mapping', 'update_index_settings', 'open_index', 'close_index', 'delete_index' ];
+		if ( in_array( $type, $index_request_types, true ) ) {
+			return 30;
 		}
 
-		// Increase timeouts for certain requests
-		if ( $is_post_request ) {
-			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
-			foreach ( $request_types as $type ) {
-				if ( str_ends_with( $query_path, $type ) ) {
-					return 30;
-				}
-			}
-		}
-
-		return $timeout;
+		return defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 	}
 
 	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
