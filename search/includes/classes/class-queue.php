@@ -15,7 +15,8 @@ class Queue {
 	/**
 	 * Jobs whose processing died (fatal, OOM, timeout) are retried before other work, in smaller batches on each
 	 * attempt, and dropped after MAX_RETRIES. A retried job's priority is RETRY_PRIORITY plus its failed attempts.
-	 * Queueing the object again resets it, since a requeue keeps the lowest priority.
+	 * Queueing the object again keeps its retry level, so an object that keeps killing the processor while it keeps being
+	 * queued again (e.g. a plugin updating its meta) is still isolated and dropped.
 	 */
 	const RETRY_PRIORITY = 100;
 	const MAX_RETRIES    = 3;
@@ -358,8 +359,8 @@ class Queue {
 		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
 		$wpdb->query(
 			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
-				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d)",
-				[ $object_id, $indexable_slug, $index_version, $priority, $priority ]
+				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d) ON DUPLICATE KEY UPDATE priority = IF(priority >= %d, priority, LEAST(priority, %d))",
+				[ $object_id, $indexable_slug, $index_version, $priority, self::RETRY_PRIORITY, $priority ]
 			)
 		);
 		// phpcs:enable
@@ -956,6 +957,14 @@ class Queue {
 		);
 
 		if ( ! empty( $jobs_to_be_deleted ) ) {
+			// A 'running' job died while being processed: the object's queued job takes over its next retry level, as
+			// free_deadlocked_jobs() would have given it
+			$died_ids = implode( ', ', array_map( 'intval', wp_list_pluck( wp_list_filter( $jobs_to_be_deleted, array( 'status' => 'running' ) ), 'job_id' ) ) );
+			if ( $died_ids ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} queued JOIN {$table_name} died ON queued.object_id = died.object_id AND queued.object_type = died.object_type AND queued.index_version = died.index_version SET queued.priority = GREATEST( queued.priority, GREATEST( died.priority, %d ) + 1 ) WHERE queued.status = 'queued' AND died.job_id IN ( {$died_ids} )", self::RETRY_PRIORITY ) );
+			}
+
 			$this->delete_jobs( $jobs_to_be_deleted );
 		}
 
@@ -968,10 +977,14 @@ class Queue {
 	 * @param array $jobs List of jobs
 	 */
 	public function process_jobs( $jobs ) {
-		// Set them as running
+		// Set them as running, restarting their deadlock timer: time spent waiting for cron isn't time spent processing, and
+		// free_deadlocked_jobs() would otherwise count a batch that started late as one whose processing died
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
+		$this->update_jobs( $job_ids, array(
+			'status'         => 'running',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s' ),
+		), 'scheduled' );
 
 		$indexables = Indexables::factory();
 

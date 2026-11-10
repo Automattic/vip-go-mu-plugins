@@ -832,6 +832,43 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 		unset( $job );
 		$this->assertSame( $expected, $actual );
+		$this->assertEquals( Queue::RETRY_PRIORITY + 1, $this->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose job died should take over its next retry level' );
+	}
+
+	public function test_free_deadlocked_jobs_leaves_a_batch_that_started_late_running(): void {
+		global $wpdb;
+
+		$table_name = $this->use_recovery_table();
+
+		$this->queue->queue_objects( self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) ) );
+		$jobs = $this->queue->checkout_jobs( 500 );
+
+		// The batch's cron event ran late: it was checked out longer than DEADLOCK_TIME ago
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET scheduled_time = %s', $table_name, gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ) ) );
+
+		// The sweeper runs while the batch is indexing
+		$handed_back = null;
+		add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( &$handed_back, $table_name, $wpdb ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$this->queue->free_deadlocked_jobs();
+				$handed_back = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'queued'", $table_name ) );
+			}
+			return $preempt;
+		}, 10, 3 );
+
+		$this->queue->process_jobs( $jobs );
+
+		$this->assertSame( 0, $handed_back, 'a running batch should not be counted as one whose processing died, however late it started' );
+	}
+
+	public function test_queue_object_keeps_a_retried_jobs_level(): void {
+		$this->queue->queue_object( 5000, 'post' );
+		$job = $this->queue->get_next_job_for_object( 5000, 'post' );
+		$this->queue->update_job( $job->job_id, array( 'priority' => Queue::RETRY_PRIORITY + 2 ) );
+
+		$this->queue->queue_object( 5000, 'post' );
+
+		$this->assertEquals( Queue::RETRY_PRIORITY + 2, $this->queue->get_next_job_for_object( 5000, 'post' )->priority, 'queueing an object again should not reset its retry level' );
 	}
 
 	/**
