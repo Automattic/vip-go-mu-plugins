@@ -940,7 +940,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
 		/** @var MockObject&Search */
 		$partially_mocked_search = $this->getMockBuilder( Search::class )
-			->onlyMethods( [ 'handle_query_limiting_start_timestamp', 'maybe_alert_for_prolonged_query_limiting' ] )
+			->onlyMethods( [ 'handle_query_limiting_start_timestamp' ] )
 			->getMock();
 		$partially_mocked_search->init();
 
@@ -952,7 +952,6 @@ class Search_Test extends WP_UnitTestCase {
 		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
-		$partially_mocked_search->expects( $this->once() )->method( 'maybe_alert_for_prolonged_query_limiting' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
 		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
@@ -1562,51 +1561,6 @@ class Search_Test extends WP_UnitTestCase {
 			->with( '#vip-go-es-alerts', $expected_message, $expected_level );
 
 		$partially_mocked_search->maybe_alert_for_field_count();
-	}
-
-	public function maybe_alert_for_prolonged_query_limiting_data() {
-		return [
-			[ false, false ],
-			[ 0, false ],
-			[ 12, false ],
-			[ 7201, true ],
-		];
-	}
-
-	/**
-	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
-	 */
-	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
-		$expected_level = 2;
-
-		$time = time();
-
-		if ( false !== $difference ) {
-			$query_limited_start = $time - $difference;
-			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::SEARCH_CACHE_GROUP );
-		}
-
-		$this->search_instance->set_time( $time );
-
-		$alerts_mocked = $this->mock_alerts( $this->search_instance );
-
-		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
-			->method( 'send_to_chat' )
-			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
-
-		// trigger_error is only called if an alert should happen
-		if ( $should_alert ) {
-			$this->expectException( \Exception::class );
-			$this->expectExceptionMessage(
-				sprintf(
-					'Application 123 - http://example.org has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
-					$difference
-				)
-			);
-		}
-
-		$this->search_instance->maybe_alert_for_prolonged_query_limiting();
-		$this->search_instance->reset_time();
 	}
 
 	public function vip_search_ratelimiting_filter_data() {

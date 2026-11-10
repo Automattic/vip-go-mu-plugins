@@ -146,12 +146,11 @@ class Search {
 
 	private static $query_count_ttl;
 
-	private const DEFAULT_SEARCH_LENGTH          = 80;
-	private const MAX_SEARCH_LENGTH              = 510;
-	private const DISABLE_POST_META_ALLOW_LIST   = array();
-	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
-	private const POST_FIELD_COUNT_LIMIT         = 5000;
-	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const DEFAULT_SEARCH_LENGTH        = 80;
+	private const MAX_SEARCH_LENGTH            = 510;
+	private const DISABLE_POST_META_ALLOW_LIST = array();
+	private const STALE_QUEUE_WAIT_LIMIT       = 3600; // 1 hour in seconds
+	private const POST_FIELD_COUNT_LIMIT       = 5000;
 
 	private const DEFAULT_QUERY_COUNT_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
@@ -1471,8 +1470,6 @@ class Search {
 
 			$this->handle_query_limiting_start_timestamp();
 
-			$this->maybe_alert_for_prolonged_query_limiting();
-
 			// $query_db_fallback_value is by default 5, which would result in roughly half offloaded to the db
 			// @see vip_search_query_db_fallback_value filter
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
@@ -1537,41 +1534,6 @@ class Search {
 	 */
 	public static function get_query_rate_limit_start() {
 		return wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
-	}
-
-	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start = static::get_query_rate_limit_start();
-
-		if ( false === $query_limiting_start ) {
-			return;
-		}
-
-		$query_limiting_time = $this->get_time() - $query_limiting_start;
-
-		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$query_limiting_time
-		);
-
-		if ( ! is_wp_error( $this->alerts ) ) {
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
-		}
-
-		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'warning',
-				'feature'  => 'search_query_rate_limiting',
-				'message'  => $message,
-			)
-		);
 	}
 
 	/**
