@@ -79,7 +79,8 @@ function vip_go_amp_force_query_var_value( $query_vars ) {
 			global $wp_rewrite;
 
 			// If there is something after /amp/, pretend we didn't hit that rewrite rule.
-			if ( $wp_rewrite->use_trailing_slashes && '' !== $query_vars[ AMP_QUERY_VAR ] ) {
+			// Skip non-string values (e.g. ?name[]=x), which WP_Query discards on its own.
+			if ( $wp_rewrite->use_trailing_slashes && is_string( $query_vars[ AMP_QUERY_VAR ] ) && is_string( $query_vars['name'] ?? null ) ) {
 
 				// Check for extra-long slugs, which will truncate and remove the /amp/* part.
 				if ( strlen( $query_vars['name'] ) > 190 ) {
