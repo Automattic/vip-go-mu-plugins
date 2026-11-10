@@ -545,8 +545,9 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
-		// Rate-limit query integration
-		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX );
+		// Rate-limit query integration, deciding again each time a WP_Query runs (before EP's pre_get_posts check)
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
+		add_action( 'pre_get_posts', [ $this, 'reset_query_ratelimit_decision' ], PHP_INT_MIN );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -1448,13 +1449,22 @@ class Search {
 	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
+	 * @param \WP_Query|null $query The query EP is asking about
 	 * @return bool new value of ep_skip_query_integration
 	 */
-	public function rate_limit_ep_query_integration( $skip ) {
+	public function rate_limit_ep_query_integration( $skip, $query = null ) {
 		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
 		}
+
+		// EP asks again for the same query in pre_get_posts, posts_pre_query and found_posts. A new random answer each
+		// time could send the query to MySQL but use EP's found_posts (0), so decide once per query.
+		if ( isset( $query->vip_search_ratelimited ) ) {
+			return $query->vip_search_ratelimited;
+		}
+
+		$ratelimited = false;
 
 		// If the query count has exceeded the maximum pass through certain percentage to the database
 		if ( self::get_query_count() > self::$max_query_count ) {
@@ -1470,13 +1480,27 @@ class Search {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
-				return true;
+				$ratelimited = true;
 			}
 		} else {
 			$this->clear_query_limiting_start_timestamp();
 		}
 
-		return false;
+		if ( $query instanceof \WP_Query ) {
+			$query->vip_search_ratelimited = $ratelimited;
+		}
+
+		return $ratelimited;
+	}
+
+	/**
+	 * Forget the decision rate_limit_ep_query_integration() stored on a WP_Query, so running the same object again
+	 * (e.g. via query()) gets a new one.
+	 *
+	 * @param \WP_Query $query
+	 */
+	public function reset_query_ratelimit_decision( $query ): void {
+		unset( $query->vip_search_ratelimited );
 	}
 
 	public function record_ratelimited_query_stat() {
