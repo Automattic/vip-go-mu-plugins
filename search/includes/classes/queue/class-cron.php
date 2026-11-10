@@ -323,17 +323,23 @@ class Cron {
 
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$base = 'vip:esqp_';
-		do {
-			$random = wp_generate_uuid4();
-			$option = $base . $random;
-		} while ( false === add_option( $option, $job_ids, '', false ) );
+		// Retry only a UUID collision, not a failing DB forever. Jobs checked out here are freed by the deadlock sweeper.
+		$option = false;
+		for ( $attempt = 0; $attempt < 3 && ! $option; $attempt++ ) {
+			$candidate = 'vip:esqp_' . wp_generate_uuid4();
+			$option    = add_option( $candidate, $job_ids, '', false ) ? $candidate : false;
+		}
 
-		$options = [
-			'option' => $option,
-		];
+		if ( ! $option ) {
+			return new WP_Error( 'vip-search-queue-batch-option-failed', 'Could not store the job IDs for the queue processor' );
+		}
 
-		return wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ $options ], true );
+		$scheduled = wp_schedule_single_event( time(), self::PROCESSOR_CRON_EVENT_NAME, [ [ 'option' => $option ] ], true );
+		if ( is_wp_error( $scheduled ) ) {
+			delete_option( $option );
+		}
+
+		return $scheduled;
 	}
 
 	public function schedule_queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {

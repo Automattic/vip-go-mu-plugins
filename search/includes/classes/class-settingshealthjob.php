@@ -90,8 +90,8 @@ class SettingsHealthJob {
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ] );
 
 		// Clean-up last processed ID option
-		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
-		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] );
+		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_id' ], 10, 2 );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] ); // 1 arg: always clears, even for a resumed build
 
 		if ( $this->is_enabled() ) {
 			$this->schedule_job();
@@ -310,10 +310,15 @@ class SettingsHealthJob {
 	/**
 	 * Delete last processed post ID as part of clean-up.
 	 *
+	 * @param array $args       CLI positional args, when called from a CLI index hook.
+	 * @param array $assoc_args CLI associative args, when called from ep_wp_cli_pre_index.
+	 *
 	 * @return void
 	 */
-	public function delete_last_processed_id() {
-		if ( ! wp_doing_cron() ) {
+	public function delete_last_processed_id( $args = [], $assoc_args = [] ) {
+		// A resumed build (upper-limit-object-id set) keeps its resume point until its first batch replaces it,
+		// so a run that dies before then can still be resumed.
+		if ( ! wp_doing_cron() || ! empty( $assoc_args['upper-limit-object-id'] ) ) {
 			return;
 		}
 
