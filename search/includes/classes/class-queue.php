@@ -1005,8 +1005,9 @@ class Queue {
 	 * @return array Post IDs to index
 	 */
 	private function filter_indexable_post_ids( $indexable, array $ids ): array {
-		// One query for the batch instead of one per post, which also warms the meta and term caches bulk_index() reads
-		_prime_post_caches( $ids );
+		// One query for the batch instead of one per post, which also warms the term caches bulk_index() reads. Not meta:
+		// it can be large, and loading it for the whole batch at once could exhaust memory, so it's still read per post.
+		_prime_post_caches( $ids, true, false );
 
 		$post_types    = $indexable->get_indexable_post_types();
 		$post_statuses = $indexable->get_indexable_post_status();
