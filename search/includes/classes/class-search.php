@@ -2522,7 +2522,10 @@ class Search {
 	}
 
 	public function action__init() {
-		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( $post_indexable ) {
+			remove_action( 'wp_initialize_site', [ $post_indexable->sync_manager, 'action_create_blog_index' ] );
+		}
 
 		$this->handle_testing_next_version_session_update();
 	}
