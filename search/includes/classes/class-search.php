@@ -1099,8 +1099,12 @@ class Search {
 		}
 
 		if ( $is_cacheable && isset( $response_body_json ) && strlen( $response_body_json ) < 6 * MB_IN_BYTES ) {
+			// Partial results (a shard failed or the search timed out) are only kept briefly: enough to absorb repeats,
+			// without serving incomplete results for long
+			$is_partial = ! empty( $response_body['timed_out'] ) || ! empty( $response_body['_shards']['failed'] );
+
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, $is_partial ? MINUTE_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
 		}
 
 		return $response;
