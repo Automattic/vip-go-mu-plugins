@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Search;
 
+use ElasticPress\Elasticsearch;
 use ElasticPress\Indexables;
 use WP_Error;
 
@@ -321,7 +322,7 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
-		if ( ! $indexable->index_exists() ) {
+		if ( $this->is_index_missing( $indexable ) ) {
 			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
 		}
 
@@ -395,13 +396,29 @@ class Queue {
 
 		$indexable = Indexables::factory()->get( $indexable_slug );
 
-		if ( ! $indexable || ! $indexable->index_exists() ) {
+		if ( ! $indexable || $this->is_index_missing( $indexable ) ) {
 			return;
 		}
 
 		foreach ( $object_ids as $object_id ) {
 			$this->queue_object( $object_id, $indexable_slug, $options );
 		}
+	}
+
+	/**
+	 * Whether the Indexable's index is known to be missing (not set up yet), so nothing should be queued for it
+	 *
+	 * Unlike index_exists(), a failed check (no response, a 5xx) doesn't count as missing, so updates aren't dropped
+	 * while Elasticsearch is briefly unavailable.
+	 *
+	 * @param \ElasticPress\Indexable $indexable The Indexable
+	 * @return bool Whether Elasticsearch said the index doesn't exist
+	 */
+	private function is_index_missing( $indexable ): bool {
+		// The same request as index_exists(), so its cached result is reused
+		$response = Elasticsearch::factory()->remote_request( $indexable->get_index_name(), array( 'method' => 'HEAD' ), array(), 'index_exists' );
+
+		return 404 === wp_remote_retrieve_response_code( $response );
 	}
 
 	/**

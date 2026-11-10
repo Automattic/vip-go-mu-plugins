@@ -1262,6 +1262,20 @@ class Queue_Test extends WP_UnitTestCase {
 		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_bad' ], PHP_INT_MAX );
 	}
 
+	public function test_queue_objects_when_index_check_fails(): void {
+		remove_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX );
+		$timeout = static function ( $request, $query, $args, $failures, $type ) {
+			return 'index_exists' === $type ? new \WP_Error( 'http_request_failed', 'cURL error 28: Operation timed out' ) : $request;
+		};
+		add_filter( 'ep_do_intercept_request', $timeout, PHP_INT_MAX, 5 );
+
+		// EP's sync queue is handed over and reset, so the updates must land in the VIP queue
+		$this->add_posts_to_queue( [ 11, 12 ] );
+		$this->assertTrue( $this->queue->intercept_ep_sync_manager_indexing( false, $this->sync_manager, 'post' ) );
+
+		$this->assertSame( [ 11, 12 ], $this->get_post_ids_in_queue_table() );
+	}
+
 	/**
 	 * We need to fake the bad response from the ES server to avoid the actual request.
 	 */
