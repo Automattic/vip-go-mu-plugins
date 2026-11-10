@@ -2667,8 +2667,12 @@ class Search {
 	 * @return string $value Whether the index exists for the $blog_id.
 	 */
 	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
-		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
-		return false === $index_exists ? 'no' : 'yes';
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( ! $post_indexable ) {
+			return $value;
+		}
+
+		return false === $post_indexable->index_exists( $blog_id ) ? 'no' : 'yes';
 	}
 
 	public function setup_collector(): void {
