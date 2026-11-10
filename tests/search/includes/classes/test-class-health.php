@@ -871,6 +871,17 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
+	public function test_get_index_settings_diff_for_indexable_returns_error_when_the_settings_request_fails(): void {
+		$error_body = array(
+			'error'  => array( 'type' => 'cluster_block_exception' ),
+			'status' => 503,
+		);
+
+		[ $health, $mocked_indexable ] = $this->build_settings_diff_health( 'vip-123-post-1', [], [ 'index.number_of_shards' => 1 ], true, $error_body );
+
+		$this->assertWPError( $health->get_index_settings_diff_for_indexable( $mocked_indexable ), 'An error response must not read as every setting differing.' );
+	}
+
 	public function get_index_versions_settings_diff_for_indexable_data() {
 		$legacy_version = [
 			'number'         => 1,
@@ -1294,7 +1305,7 @@ class Health_Test extends WP_UnitTestCase {
 	 *
 	 * @return array{0: Health, 1: Indexable&MockObject, 2: Versioning&MockObject}
 	 */
-	private function build_settings_diff_health( string $index_name, array $actual, array $desired, bool $index_exists = true ): array {
+	private function build_settings_diff_health( string $index_name, array $actual, array $desired, bool $index_exists = true, ?array $response = null ): array {
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
 
@@ -1309,7 +1320,7 @@ class Health_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'get_index_settings' ] )
 			->getMock();
 		$health->elasticsearch->method( 'get_index_settings' )
-			->willReturn( [
+			->willReturn( $response ?? [
 				$index_name => [
 					'settings' => $actual,
 				],

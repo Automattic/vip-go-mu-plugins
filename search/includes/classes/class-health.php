@@ -1097,13 +1097,15 @@ class Health {
 			$index_name = $indexable->get_index_name();
 			$settings   = $this->elasticsearch->get_index_settings( $index_name );
 
-			if ( is_wp_error( $settings ) ) {
+			// ElasticPress returns an HTTP error's body (or null), not a WP_Error. Without the index's settings, every monitored
+			// key would read as a diff, and trigger an alert, a settings update and a shard rebuild.
+			if ( is_wp_error( $settings ) || ! isset( $settings[ $index_name ]['settings'] ) ) {
 				$this->search->versioning->reset_current_version_number( $indexable );
 
-				return $settings;
+				return is_wp_error( $settings ) ? $settings : new WP_Error( 'es_index_settings_failed', sprintf( 'Fetching the settings of index %s from Elasticsearch failed', $index_name ) );
 			}
 
-			$actual_settings  = $settings[ $index_name ]['settings'] ?? [];
+			$actual_settings  = $settings[ $index_name ]['settings'];
 			$mapping          = $indexable->generate_mapping();
 			$desired_settings = $mapping['settings'];
 
