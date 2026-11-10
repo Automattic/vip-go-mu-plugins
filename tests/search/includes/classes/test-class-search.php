@@ -461,69 +461,16 @@ class Search_Test extends WP_UnitTestCase {
 
 	public function vip_search_get_http_timeout_for_query_data() {
 		return array(
-			// Regular search
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_search',
-				),
-				// The expected timeout
-				2,
-			),
-			// Bulk index
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_bulk',
-				),
-				// The expected timeout
-				30,
-			),
-			// Url containing _bulk
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_bulk/bar?_bulk',
-				),
-				// The expected timeout
-				2,
-			),
-			// Random other url
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_anything',
-				),
-				// The expected timeout
-				2,
-			),
-			// Opening an index
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_open',
-				),
-				// The expected timeout
-				30,
-			),
-			// Closing an index
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_close',
-				),
-				// The expected timeout
-				30,
-			),
-			// Updating index settings
-			array(
-				// The $query object
-				array(
-					'url' => 'https://foo.com/index/type/_settings',
-				),
-				// The expected timeout
-				30,
-			),
+			'search'                => array( 'query', 2 ),
+			'single document'       => array( 'index', 2 ),
+			'no type'               => array( null, 2 ),
+			'bulk index'            => array( 'bulk_index', 30 ),
+			'open index'            => array( 'open_index', 30 ),
+			'close index'           => array( 'close_index', 30 ),
+			'update index settings' => array( 'update_index_settings', 30 ),
+			'create index'          => array( 'put_mapping', 30 ),
+			'get mapping'           => array( 'get_mapping', 30 ),
+			'delete index'          => array( 'delete_index', 30 ),
 		);
 	}
 
@@ -532,10 +479,8 @@ class Search_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider vip_search_get_http_timeout_for_query_data()
 	 */
-	public function test__vip_search_get_http_timeout_for_query( $query, $expected_timeout ) {
-		$timeout = $this->search_instance->get_http_timeout_for_query( $query, [ 'method' => 'POST' ] );
-
-		$this->assertEquals( $expected_timeout, $timeout );
+	public function test__vip_search_get_http_timeout_for_query( $type, $expected_timeout ) {
+		$this->assertSame( $expected_timeout, $this->search_instance->get_http_timeout_for_query( $type ) );
 	}
 
 	/**
@@ -988,6 +933,16 @@ class Search_Test extends WP_UnitTestCase {
 		for ( $i = 2; $i < 10; $i++ ) {
 			$this->assertEquals( $i, $query_count_incr->invokeArgs( $this->search_instance, [] ), 'value should increment with loop' );
 		}
+	}
+
+	public function test__truncate_search_string_length__keeps_multibyte_characters_whole(): void {
+		$wp_query_mock = new \WP_Query();
+		$wp_query_mock->set( 's', str_repeat( '検索', 20 ) ); // 40 characters, 120 bytes
+		$wp_query_mock->is_search = true;
+
+		$this->search_instance->truncate_search_string_length( $wp_query_mock );
+
+		$this->assertSame( str_repeat( '検索', 13 ), $wp_query_mock->get( 's' ), 'Cut to whole characters within the 80-byte limit.' );
 	}
 
 	public function test__truncate_search_string_length__user_no_cap() {

@@ -91,8 +91,7 @@ final class Admin_Page_View_Tracker {
 
 		$has_tracked_integration = false;
 		foreach ( wpvip_get_enabled_integrations() as $integration ) {
-			// A non-atomic deploy can pair this file with the previous Integration class.
-			if ( method_exists( $integration, 'should_track_admin_pages' ) && $integration->should_track_admin_pages() ) {
+			if ( $integration->should_track_admin_pages() ) {
 				$has_tracked_integration = true;
 				break;
 			}

@@ -545,8 +545,9 @@ class Search {
 		add_filter( 'ep_skip_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 		add_filter( 'ep_skip_user_query_integration', array( __CLASS__, 'ep_skip_query_integration' ), 5 );
 
-		// Rate-limit query integration
-		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX );
+		// Rate-limit query integration, deciding again each time a WP_Query runs (before EP's pre_get_posts check)
+		add_filter( 'ep_skip_query_integration', [ $this, 'rate_limit_ep_query_integration' ], PHP_INT_MAX, 2 );
+		add_action( 'pre_get_posts', [ $this, 'reset_query_ratelimit_decision' ], PHP_INT_MIN );
 
 		// Disable certain EP Features
 		add_filter( 'ep_feature_active', array( $this, 'filter__ep_feature_active' ), PHP_INT_MAX, 3 );
@@ -975,7 +976,7 @@ class Search {
 
 		$start_time = microtime( true );
 
-		$timeout = $this->get_http_timeout_for_query( $query, $args );
+		$timeout = $this->get_http_timeout_for_query( $type );
 
 		if ( $is_testing_next_version ) {
 			$url = $this->build_elasticsearch_url( $query['url'], self::ELASTICSEARCH_MIGRATION_NEXT );
@@ -1340,28 +1341,20 @@ class Search {
 		return false !== strpos( strtolower( $error_message ), 'curl error 28' );
 	}
 
-	public function get_http_timeout_for_query( $query, $args ) {
-		$is_cli  = defined( 'WP_CLI' ) && constant( 'WP_CLI' );
-		$timeout = $is_cli ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
-
-		$query_path      = wp_parse_url( $query['url'], PHP_URL_PATH );
-		$is_post_request = false;
-
-		if ( isset( $args['method'] ) && 0 === strcasecmp( 'POST', $args['method'] ) ) {
-			$is_post_request = true;
+	/**
+	 * Index-level requests (bulk indexing, and creating, changing or deleting an index) can take a while on Elasticsearch's
+	 * side, so they get the 30 seconds ElasticPress asks for. Searches and single-document requests keep short timeouts.
+	 *
+	 * @param string|null $type ElasticPress request type
+	 * @return int Timeout in seconds
+	 */
+	public function get_http_timeout_for_query( $type ) {
+		$index_request_types = [ 'bulk_index', 'put_mapping', 'get_mapping', 'update_index_settings', 'open_index', 'close_index', 'delete_index' ];
+		if ( in_array( $type, $index_request_types, true ) ) {
+			return 30;
 		}
 
-		// Increase timeouts for certain requests
-		if ( $is_post_request ) {
-			$request_types = [ '_bulk', '_open', '_close', '_settings' ];
-			foreach ( $request_types as $type ) {
-				if ( str_ends_with( $query_path, $type ) ) {
-					return 30;
-				}
-			}
-		}
-
-		return $timeout;
+		return defined( 'WP_CLI' ) && constant( 'WP_CLI' ) ? self::GLOBAL_QUERY_TIMEOUT_CLI_SEC : self::GLOBAL_QUERY_TIMEOUT_WEB_SEC;
 	}
 
 	public function filter__ep_feature_active( $active, $feature_settings, $feature ) {
@@ -1456,13 +1449,22 @@ class Search {
 	 * defined percentage of the queries to the database and the rest through Elasticsearch.
 	 *
 	 * @param $skip current ep_skip_query_integration value
+	 * @param \WP_Query|null $query The query EP is asking about
 	 * @return bool new value of ep_skip_query_integration
 	 */
-	public function rate_limit_ep_query_integration( $skip ) {
+	public function rate_limit_ep_query_integration( $skip, $query = null ) {
 		// Honor previous filters that skip query integration
 		if ( $skip ) {
 			return true;
 		}
+
+		// EP asks again for the same query in pre_get_posts, posts_pre_query and found_posts. A new random answer each
+		// time could send the query to MySQL but use EP's found_posts (0), so decide once per query.
+		if ( isset( $query->vip_search_ratelimited ) ) {
+			return $query->vip_search_ratelimited;
+		}
+
+		$ratelimited = false;
 
 		// If the query count has exceeded the maximum pass through certain percentage to the database
 		if ( self::get_query_count() > self::$max_query_count ) {
@@ -1478,13 +1480,27 @@ class Search {
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
 			if ( self::$query_db_fallback_value >= rand( 1, 10 ) ) {
 				$this->record_ratelimited_query_stat();
-				return true;
+				$ratelimited = true;
 			}
 		} else {
 			$this->clear_query_limiting_start_timestamp();
 		}
 
-		return false;
+		if ( $query instanceof \WP_Query ) {
+			$query->vip_search_ratelimited = $ratelimited;
+		}
+
+		return $ratelimited;
+	}
+
+	/**
+	 * Forget the decision rate_limit_ep_query_integration() stored on a WP_Query, so running the same object again
+	 * (e.g. via query()) gets a new one.
+	 *
+	 * @param \WP_Query $query
+	 */
+	public function reset_query_ratelimit_decision( $query ): void {
+		unset( $query->vip_search_ratelimited );
 	}
 
 	public function record_ratelimited_query_stat() {
@@ -1617,8 +1633,8 @@ class Search {
 		// Send a request to get all current mappings
 		$raw = \ElasticPress\Elasticsearch::factory()->remote_request( $path );
 
-		// Elasticsearch responses are in JSON
-		$body = json_decode( $raw['body'], true );
+		// Elasticsearch responses are in JSON (empty body on a WP_Error, which the check below handles)
+		$body = json_decode( wp_remote_retrieve_body( $raw ), true );
 
 		// If JSON wasn't parsed correctly
 		if ( ! is_array( $body ) || empty( $body ) ) {
@@ -1875,7 +1891,9 @@ class Search {
 				$search_length = self::MAX_SEARCH_LENGTH;
 			}
 
-			$truncated_search = substr( $search, 0, $search_length );
+			// Same byte budget as before, but never cut a multibyte character in half: invalid UTF-8 blanks the search
+			// box and heading, since esc_attr() and esc_html() return '' for it
+			$truncated_search = mb_strcut( $search, 0, $search_length, 'UTF-8' );
 
 			$query->set( 's', $truncated_search );
 		}
@@ -2394,7 +2412,11 @@ class Search {
 	}
 
 	public function clear_query_limiting_start_timestamp() {
-		wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+		// Runs for every query that isn't ratelimited. A delete always goes to the cache server (a get is answered
+		// locally after the first), so only delete when a start timestamp is actually set
+		if ( false !== static::get_query_rate_limit_start() ) {
+			wp_cache_delete( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
+		}
 	}
 
 	/**
