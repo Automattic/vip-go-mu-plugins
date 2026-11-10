@@ -545,9 +545,10 @@ class Queue {
 	 * Delete a list of jobs
 	 *
 	 * @param array $job_ids Array of job objects to delete
+	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'running')
 	 * @return array Array of jobs deleted
 	 */
-	public function delete_jobs( $jobs ) {
+	public function delete_jobs( $jobs, $where_status = null ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -557,6 +558,9 @@ class Queue {
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
 		$sql = "DELETE FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		if ( null !== $where_status ) {
+			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
+		}
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -958,8 +962,9 @@ class Queue {
 				$this->bulk_index_split_if_too_large( $indexable, $ids );
 
 				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
-				// action__ep_after_bulk_index(), as new rows.
-				$this->delete_jobs( $jobs );
+				// action__ep_after_bulk_index(), as new rows. Jobs free_deadlocked_jobs() handed back to the queue meanwhile
+				// (the batch started or ran late) stay queued, to be indexed again: their row would block a failed object's.
+				$this->delete_jobs( $jobs, 'running' );
 
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
 			}

@@ -854,6 +854,31 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the skipped posts\' jobs should be deleted too' );
 	}
 
+	public function test_process_jobs_keeps_a_job_handed_back_to_the_queue() {
+		global $wpdb;
+
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		$this->with_es_http(
+			function ( $args, $url ) use ( $jobs ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The batch ran late, so free_deadlocked_jobs() handed its first job back to the queue
+				$this->queue->update_job( $jobs[0]->job_id, array( 'status' => 'queued' ) );
+
+				return self::es_response( '{}', 503 );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$table_name = $this->queue->schema->get_table_name();
+		$queued     = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `status` = 'queued' ORDER BY object_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( wp_list_pluck( $jobs, 'object_id' ), $queued, 'a failed batch should leave every object queued, including one whose job was handed back' );
+	}
+
 	/**
 	 * Create posts, queue them and mark their jobs as scheduled, as checkout_jobs() does
 	 *
