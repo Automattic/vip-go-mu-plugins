@@ -36,9 +36,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 			WP_CLI::error( 'There is no validate-contents run ongoing' );
 		}
 
-		// Expire with the run's lock, so a stop request for a run that already died can't abort a later one
-		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- 15 minutes
-		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP, $health::CONTENT_VALIDATION_LOCK_TIMEOUT );
+		$stop = wp_cache_add( $health::STOP_VALIDATE_CONTENTS_KEY, true, $health::CACHE_GROUP );
 		if ( $stop ) {
 			WP_CLI::success( 'Attempting to abort validate-contents run...' );
 		} else {

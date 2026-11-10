@@ -517,6 +517,12 @@ class CoreCommand {
 			WP_CLI::error( $response->get_error_message() );
 		}
 
+		// HTTP errors (e.g. a missing index) come back as ordinary responses
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $response_code >= 400 ) {
+			WP_CLI::error( sprintf( 'Elasticsearch returned HTTP %d: %s', $response_code, wp_remote_retrieve_body( $response ) ) );
+		}
+
 		WP_CLI::line( wp_remote_retrieve_body( $response ) );
 	}
 
