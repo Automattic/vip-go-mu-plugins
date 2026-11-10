@@ -13,7 +13,7 @@ class Queue {
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
 	/**
-	 * Jobs whose processing died (fatal, OOM, timeout) are retried after all other work, in smaller batches on each
+	 * Jobs whose processing died (fatal, OOM, timeout) are retried before other work, in smaller batches on each
 	 * attempt, and dropped after MAX_RETRIES. A retried job's priority is RETRY_PRIORITY plus its failed attempts.
 	 * Queueing the object again resets it, since a requeue keeps the lowest priority.
 	 */
@@ -740,7 +740,9 @@ class Queue {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// Retried jobs first, as they were waiting before their processing died
+				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority` >= %d DESC, `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				self::RETRY_PRIORITY,
 				$count
 			)
 		);

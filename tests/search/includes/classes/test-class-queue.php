@@ -1315,7 +1315,7 @@ class Queue_Test extends WP_UnitTestCase {
 			}
 
 			if ( 1 === $round ) {
-				$this->assertSame( array( (string) $edited ), wp_list_pluck( $jobs, 'object_id' ), 'New work must not wait behind, or mix with, retried jobs.' );
+				$this->assertSame( array_map( 'strval', array( $healthy_1, $poisoned, $healthy_2 ) ), wp_list_pluck( $jobs, 'object_id' ), 'Retried jobs go first, without new work mixed in.' );
 			}
 
 			try {
