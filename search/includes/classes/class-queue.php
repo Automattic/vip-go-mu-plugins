@@ -513,7 +513,7 @@ class Queue {
 	 * @param array $job_ids Array of job ids to update
 	 * @param array $data Data to update jobs with
 	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'scheduled')
-	 * @return array Array of jobs updated
+	 * @return int|bool Number of jobs updated, false on failure
 	 */
 	public function update_jobs( $job_ids, $data, $where_status = null ) {
 		global $wpdb;
@@ -535,7 +535,7 @@ class Queue {
 			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
 		}
 
-		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
+		return $wpdb->query( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -749,17 +749,19 @@ class Queue {
 
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
-		$this->update_jobs( $job_ids, array(
+		$scheduled_count = $this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
 		), 'queued' );
 
-		// Keep only the jobs this call scheduled: a job stays queued while another job for its object is still scheduled
-		$scheduled_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array(
-			'status'         => 'scheduled',
-			'scheduled_time' => $scheduled_time,
-		) ), 'job_id' );
-		$jobs          = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $scheduled_ids, true ) ) );
+		// A job stays queued while another job for its object is still scheduled. If any were, keep only the jobs this call scheduled.
+		if ( count( $job_ids ) !== $scheduled_count ) {
+			$scheduled_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array(
+				'status'         => 'scheduled',
+				'scheduled_time' => $scheduled_time,
+			) ), 'job_id' );
+			$jobs          = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $scheduled_ids, true ) ) );
+		}
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
