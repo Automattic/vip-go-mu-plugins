@@ -513,10 +513,13 @@ class Queue {
 	/**
 	 * Update a list of jobs
 	 *
+	 * A job whose update would duplicate another job's object, status and index version (the UNIQUE key) is skipped,
+	 * instead of failing the whole update.
+	 *
 	 * @param array $job_ids Array of job ids to update
 	 * @param array $data Data to update jobs with
 	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'scheduled')
-	 * @return array Array of jobs updated
+	 * @return int|bool Number of jobs updated, false on failure
 	 */
 	public function update_jobs( $job_ids, $data, $where_status = null ) {
 		global $wpdb;
@@ -533,12 +536,12 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
-		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		$sql = "UPDATE IGNORE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 		if ( null !== $where_status ) {
 			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
 		}
 
-		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
+		return $wpdb->query( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
 
 	/**
@@ -734,11 +737,16 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		// TODO transaction
+		// Skip jobs whose object is still scheduled: the UNIQUE key keeps them queued until that job starts running, and
+		// they shouldn't take up the batch.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// Cannot prepare table name. @codingStandardsIgnoreStart
+				"SELECT queued.* FROM {$table_name} queued WHERE ( queued.`start_time` <= NOW() OR queued.`start_time` IS NULL ) AND queued.`status` = 'queued' AND NOT EXISTS (
+					SELECT 1 FROM {$table_name} scheduled WHERE scheduled.`object_id` = queued.`object_id` AND scheduled.`object_type` = queued.`object_type` AND scheduled.`index_version` = queued.`index_version` AND scheduled.`status` = 'scheduled'
+				) ORDER BY queued.`priority`, queued.`job_id` LIMIT %d",
+				// @codingStandardsIgnoreEnd
 				$count
 			)
 		);
@@ -752,15 +760,28 @@ class Queue {
 
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
-		$this->update_jobs( $job_ids, array(
+		// start_time only matters while a job is queued, so it holds a random past time that marks the jobs this call
+		// claims, apart from those a concurrent checkout claims in the same second. Being in the past, it keeps a job
+		// that free_deadlocked_jobs() queues again due right away, as it was when checked out.
+		$claim = gmdate( 'Y-m-d H:i:s', wp_rand( 0, time() ) );
+
+		$scheduled_count = $this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
+			'start_time'     => $claim,
 		), 'queued' );
+
+		// Another checkout claimed some of these jobs first. Keep only the ones this call claimed.
+		if ( count( $job_ids ) !== $scheduled_count ) {
+			$claimed_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array( 'start_time' => $claim ) ), 'job_id' );
+			$jobs        = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $claimed_ids, true ) ) );
+		}
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
+			$job->start_time     = $claim;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
@@ -813,8 +834,9 @@ class Queue {
 				break;
 			}
 
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
+			// Duplicates of one object can't all be requeued (the UNIQUE key), so update_jobs() skips all but one. The rest stay
+			// deadlocked, and the next round deletes them below, as their object is already queued.
+			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $deadlocked_jobs );
 
 			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
 
@@ -823,44 +845,6 @@ class Queue {
 				'scheduled_time' => null,
 			) );
 		}
-	}
-
-	/**
-	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
-	 * If we would try to update all of them at once we would break the DB constraint
-	 * (state + object_id + object_type + index_version).
-	 *
-	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
-	 *
-	 * @param array $all_deadlocked_jobs Array of all deadlocked jobs
-	 * @return array $filtered_deadlocked_jobs Unique deadlocked jobs
-	 */
-	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects            = [];
-		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted       = [];
-
-		foreach ( $all_deadlocked_jobs as $job ) {
-			$unique_key = sprintf( '%s_%s_%s',
-				$job->{'object_id'},
-				$job->{'object_type'},
-				$job->{'index_version'}
-			);
-
-			if ( array_key_exists( $unique_key, $found_objects ) ) {
-				$jobs_to_be_deleted[] = $job;
-			} else {
-				$found_objects[ $unique_key ] = true;
-
-				$filtered_deadlocked_jobs[] = $job;
-			}
-		}
-
-		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->delete_jobs( $jobs_to_be_deleted );
-		}
-
-		return $filtered_deadlocked_jobs;
 	}
 
 	/**
@@ -911,6 +895,7 @@ class Queue {
 		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
 
 		$indexables = Indexables::factory();
+		$versioning = \Automattic\VIP\Search\Search::instance()->versioning;
 
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
@@ -920,9 +905,8 @@ class Queue {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
-				// If the index version no longer exists, there's nothing to index into
-				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
-				$ids            = array_key_exists( intval( $index_version ), $index_versions ) ? wp_list_pluck( $jobs, 'object_id' ) : [];
+				// If the Indexable (e.g. its feature was turned off) or the index version no longer exists, there's nothing to index into
+				$ids = $indexable && array_key_exists( intval( $index_version ), $versioning->get_versions( $indexable ) ) ? wp_list_pluck( $jobs, 'object_id' ) : [];
 
 				// Posts deleted, trashed or unpublished since they were queued were already removed from the index by
 				// ElasticPress's sync, and indexing them would put them back
@@ -936,7 +920,7 @@ class Queue {
 					continue;
 				}
 
-				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
+				$versioning->set_current_version_number( $indexable, $index_version );
 
 				// Increment first to prevent overrunning ratelimiting
 				static::index_count_incr( count( $ids ) );
@@ -961,7 +945,7 @@ class Queue {
 				// action__ep_after_bulk_index(), as new rows.
 				$this->delete_jobs( $jobs );
 
-				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
+				$versioning->reset_current_version_number( $indexable );
 			}
 		}
 	}
