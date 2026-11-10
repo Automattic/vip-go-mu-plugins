@@ -2308,6 +2308,48 @@ class Search_Test extends WP_UnitTestCase {
 		$this->assertSame( $response, $this->intercept_query( $url, $body ) );
 	}
 
+	public function test__query_cache_keeps_partial_responses_for_a_minute(): void {
+		global $wp_object_cache;
+
+		$original_cache  = $wp_object_cache;
+		$wp_object_cache = new class() extends \WP_Object_Cache { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- records the TTLs the response cache sets
+			public $expirations = [];
+
+			public function set( $key, $data, $group = 'default', $expire = 0 ) {
+				if ( str_starts_with( $key, 'es_query_cache:' ) ) {
+					$this->expirations[] = $expire;
+				}
+				return parent::set( $key, $data, $group, $expire );
+			}
+		};
+
+		try {
+			$this->init_es();
+			$hits = [
+				'total' => [ 'value' => 0 ],
+				'hits'  => [],
+			];
+			self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )->willReturnOnConsecutiveCalls(
+				$this->es_response( 200, [
+					'took'    => 1,
+					'_shards' => [ 'failed' => 1 ],
+					'hits'    => $hits,
+				] ),
+				$this->es_response( 200, [
+					'took' => 1,
+					'hits' => $hits,
+				] )
+			);
+
+			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":true}' );
+			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":false}' );
+
+			$this->assertSame( [ MINUTE_IN_SECONDS, 5 * MINUTE_IN_SECONDS ], $wp_object_cache->expirations );
+		} finally {
+			$wp_object_cache = $original_cache; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		}
+	}
+
 	public function test__vip_search_query_warning_failure_does_not_change_response(): void {
 		wp_cache_flush();
 		$this->init_es();
