@@ -534,7 +534,7 @@ class Health {
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options );
 
 			if ( is_wp_error( $result ) ) {
-				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
+				$result = array( 'errors' => array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) ) );
 			} elseif ( count( $result ) && ! $do_not_heal ) {
 				self::reconcile_diff( $result );
 			}
@@ -558,6 +558,9 @@ class Health {
 
 				return $error;
 			}
+
+			// Silent runs (e.g. the weekly cron) keep going past the limit, so cap the diffs they keep in memory
+			$results = array_slice( $results, 0, $max_diff_size );
 
 			$start_post_id += $batch_size;
 
@@ -649,8 +652,19 @@ class Health {
 
 		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
-		// Grab all of the documents from ES
+		// Grab all of the documents from ES. A failed request would report the whole batch as missing (ElasticPress returns
+		// [] on an HTTP error and false on a transport error), so check the response code too.
+		$response_code   = null;
+		$capture_request = static function ( $query ) use ( &$response_code ) {
+			$response_code = wp_remote_retrieve_response_code( $query['request'] );
+		};
+		add_action( 'ep_remote_request', $capture_request );
 		$documents = $indexable->multi_get( $document_ids );
+		remove_action( 'ep_remote_request', $capture_request );
+
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching documents from Elasticsearch failed (response code: %s)', $response_code ? $response_code : 'none' ) );
+		}
 
 		// Filter out any that weren't found
 		$documents = array_filter( $documents, function ( $document ) {
@@ -1009,17 +1023,10 @@ class Health {
 	}
 
 	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$versions         = $this->search->versioning->get_versions( $indexable );
-		$version_to_check = 1;
-
-		// Check if this is the default version 1 (no versions stored yet)
-		$is_default_version = isset( $versions[1] ) && null === $versions[1]['created_time']
-			&& null === $versions[1]['activated_time'];
-		if ( ! $is_default_version ) {
-			$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
-			if ( is_wp_error( $version_to_check ) ) {
-				return $version_to_check;
-			}
+		// With no versions stored yet, the default version 1 is the active one
+		$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
+		if ( is_wp_error( $version_to_check ) ) {
+			return $version_to_check;
 		}
 
 		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(

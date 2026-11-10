@@ -841,15 +841,17 @@ class Health_Test extends WP_UnitTestCase {
 	}
 
 	public function get_index_versions_settings_diff_for_indexable_data() {
+		$legacy_version = [
+			'number'         => 1,
+			'active'         => true,
+			'created_time'   => null,
+			'activated_time' => null,
+		];
+
 		return [
-			'only checks the active version' => [
+			'checks the active version while the legacy version 1 is still stored' => [
 				[
-					1 => [
-						'number'         => 1,
-						'active'         => false,
-						'created_time'   => 1234567890,
-						'activated_time' => 1234567890,
-					],
+					1 => array_merge( $legacy_version, [ 'active' => false ] ),
 					2 => [
 						'number'         => 2,
 						'active'         => true,
@@ -857,32 +859,16 @@ class Health_Test extends WP_UnitTestCase {
 						'activated_time' => 1234567900,
 					],
 				],
-				// Active version number
-				2,
-				// Expected checked version
 				2,
 			],
-			'uses the default version when none are stored' => [
-				[
-					1 => [
-						'number'         => 1,
-						'active'         => true,
-						'created_time'   => null,
-						'activated_time' => null,
-					],
-				],
-				// Active version number, must not be looked up
-				null,
-				// Expected checked version
-				1,
-			],
+			'checks the default version when none are stored'                     => [ [ 1 => $legacy_version ], 1 ],
 		];
 	}
 
 	/**
 	 * @dataProvider get_index_versions_settings_diff_for_indexable_data
 	 */
-	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version, $expected_version ) {
+	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version ) {
 		[ $health, $mocked_indexable, $versioning ] = $this->build_settings_diff_health(
 			'vip-123-post-1',
 			[ 'index.number_of_replicas' => 2 ],
@@ -890,21 +876,31 @@ class Health_Test extends WP_UnitTestCase {
 		);
 
 		$versioning->method( 'get_versions' )->willReturn( $versions );
-		if ( null === $active_version ) {
-			$versioning->expects( $this->never() )->method( 'get_active_version_number' );
-		} else {
-			$versioning->method( 'get_active_version_number' )->willReturn( $active_version );
-		}
-
+		$versioning->method( 'get_active_version_number' )->willReturn( $active_version );
 		$versioning->expects( $this->once() )
 			->method( 'set_current_version_number' )
-			->with( $mocked_indexable, $expected_version );
+			->with( $mocked_indexable, $active_version );
 
 		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
 
 		$this->assertCount( 1, $result );
-		$this->assertEquals( $expected_version, $result[0]['index_version'] );
+		$this->assertEquals( $active_version, $result[0]['index_version'] );
 		$this->assertNotEmpty( $result[0]['diff'] );
+	}
+
+	public function test_validate_index_posts_content_batch_returns_error_when_mget_fails(): void {
+		$this->boot_search();
+		$post_id = self::factory()->post->create();
+
+		$this->with_es_http(
+			fn() => self::es_response( '{"error":"circuit_breaking_exception"}', 503 ),
+			function () use ( $post_id ) {
+				$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+				$health    = new Health( $this->createMock( Search::class ) );
+
+				$this->assertWPError( $health->validate_index_posts_content_batch( $indexable, $post_id, $post_id + 1, [] ), 'A failed request must not report the batch as missing.' );
+			}
+		);
 	}
 
 	public function heal_index_settings_for_indexable_data() {
