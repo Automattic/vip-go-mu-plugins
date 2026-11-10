@@ -12,6 +12,9 @@ class Queue {
 	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/** How many times, within a day, an object whose indexing failed for a reason that may pass is queued again */
+	const MAX_REQUEUE_ATTEMPTS = 3;
+
 	/** @var Queue\Schema */
 	public $schema;
 	/** @var Indexables */
@@ -20,6 +23,9 @@ class Queue {
 	public $logger;
 	/** @var Queue\Cron */
 	public $cron;
+
+	/** @var int[] Priorities of the queue jobs being indexed, by object ID, so a retry keeps its job's priority */
+	private $priorities_being_indexed = [];
 
 	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
@@ -943,15 +949,49 @@ class Queue {
 					]
 				);
 
-				$indexable->bulk_index( $ids );
+				$this->priorities_being_indexed = array_map( 'intval', wp_list_pluck( $jobs, 'priority', 'object_id' ) );
 
-				// TODO handle errors
+				$this->bulk_index_split_if_too_large( $indexable, $ids );
 
-				// Mark them as done in queue
+				$this->priorities_being_indexed = [];
+
+				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
+				// action__ep_after_bulk_index(), as new rows.
 				$this->delete_jobs( $jobs );
 
 				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
 			}
+		}
+	}
+
+	/**
+	 * Index objects in one bulk request. A batch of large posts can exceed the request size limit (413), so send it again
+	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
+	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
+	 * bulk_index() fires.
+	 *
+	 * @param \ElasticPress\Indexable $indexable Indexable
+	 * @param array                   $ids       Object IDs
+	 */
+	private function bulk_index_split_if_too_large( $indexable, array $ids ): void {
+		$result = $indexable->bulk_index( $ids );
+
+		if ( ! is_wp_error( $result ) || 413 !== $result->get_error_code() ) {
+			return;
+		}
+
+		if ( 1 === count( $ids ) ) {
+			$this->logger->log(
+				'warning',
+				'search_queue',
+				sprintf( 'Could not index %s %d: too large for a bulk request', $indexable->slug, reset( $ids ) ),
+				[ 'homeurl' => home_url() ]
+			);
+			return;
+		}
+
+		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
+			$this->bulk_index_split_if_too_large( $indexable, $half );
 		}
 	}
 
@@ -1051,22 +1091,122 @@ class Queue {
 	}
 
 	/**
-	 * Hook after bulk indexing looking for errors. If there's an error with indexing some of the posts and the queue is enabled,
-	 * queue all of the posts for indexing.
+	 * Hook after bulk indexing looking for errors. Queue the objects again, 10 to 40 minutes later, if they failed for a reason
+	 * that may pass: no response, a 429 or a 5xx. A failed request doesn't say which documents it carried, so it queues
+	 * all of them; a document rejected in a request that went through queues only itself. Other errors (e.g. 400, a
+	 * document too big to send) would fail again, so those objects aren't queued. An object that still fails after
+	 * MAX_REQUEUE_ATTEMPTS retries within a day is given up on and logged, so one that always fails (e.g. in a batch that
+	 * times out every time) isn't sent every 10 minutes forever.
 	 *
-	 * @param array $document_ids IDs of the documents that were to be indexed
-	 * @param string $slug Indexable slug
-	 * @param array|boolean $return Elasticsearch response. False on error.
-	 * @return bool Whether anything was done
+	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
+	 *
+	 * @param array  $document_ids IDs of the documents that were to be indexed
+	 * @param string $slug         Indexable slug
+	 * @param mixed  $return       The bulk_index() result (WP_Error or Elasticsearch response), or for
+	 *                             ep_after_bulk_index_dynamically a list of them, one per request
+	 * @return bool Whether anything was queued
 	 */
 	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
-		if ( false === $this->is_enabled() || ! is_array( $document_ids ) || 'post' !== $slug || false !== $return ) {
+		if ( false === $this->is_enabled() || ! is_array( $document_ids ) ) {
 			return false;
 		}
 
-		// TODO shouldn't this have a type?
+		// 'vip-search-upstream-request-failed' is Search::filter__ep_do_intercept_request() reporting no response
+		$is_transient = static fn( $code ) => 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
+		$results      = 'ep_after_bulk_index_dynamically' === current_action() ? (array) $return : [ $return ];
 
-		$this->queue_objects( $document_ids );
+		// bulk_index_dynamically() sends a failed request's documents again with the next ones, so a failed request only
+		// loses documents if no request went through after it
+		$request_failed = false;
+		$failed_ids     = [];
+		foreach ( $results as $result ) {
+			if ( is_wp_error( $result ) ) {
+				// A document skipped as too big to send isn't a request
+				if ( 'ep_too_big_request_skipped' !== $result->get_error_code() ) {
+					$request_failed = $is_transient( $result->get_error_code() );
+				}
+				continue;
+			}
+
+			$request_failed = false;
+			foreach ( empty( $result['errors'] ) ? [] : ( $result['items'] ?? [] ) as $item ) {
+				$item = reset( $item );
+				if ( isset( $item['_id'] ) && $is_transient( (int) ( $item['status'] ?? 200 ) ) ) {
+					$failed_ids[ (int) $item['_id'] ] = true;
+				}
+			}
+		}
+
+		if ( $request_failed ) {
+			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
+		}
+
+		if ( ! $failed_ids ) {
+			return false;
+		}
+
+		// The version the documents were sent to, e.g. the jobs' version while processing the queue
+		$index_version = $this->get_index_version_number_from_options( $slug );
+
+		if ( ! is_numeric( $index_version ) ) {
+			return false;
+		}
+
+		// Count the retries in the object cache: an eviction only allows a few more
+		$object_ids_by_key = [];
+		foreach ( array_keys( $failed_ids ) as $object_id ) {
+			$object_ids_by_key[ "requeue_attempts_{$slug}_{$index_version}_{$object_id}" ] = $object_id;
+		}
+
+		$retries  = [];
+		$given_up = [];
+		foreach ( wp_cache_get_multiple( array_keys( $object_ids_by_key ), self::CACHE_GROUP ) as $key => $count ) {
+			if ( (int) $count >= self::MAX_REQUEUE_ATTEMPTS ) {
+				$given_up[] = $object_ids_by_key[ $key ];
+			} else {
+				$retries[ $key ] = (int) $count + 1;
+			}
+		}
+
+		if ( $given_up ) {
+			$this->logger->log(
+				'warning',
+				'search_queue',
+				sprintf( 'Gave up indexing %d %s objects that failed %d times', count( $given_up ), $slug, self::MAX_REQUEUE_ATTEMPTS + 1 ),
+				[
+					'homeurl'       => home_url(),
+					'index_version' => (int) $index_version,
+					'object_ids'    => $given_up,
+				]
+			);
+		}
+
+		if ( ! $retries ) {
+			return false;
+		}
+
+		wp_cache_set_multiple( $retries, self::CACHE_GROUP, DAY_IN_SECONDS );
+
+		global $wpdb;
+
+		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
+		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
+		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $retries ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
+		$rows       = array_map(
+			function ( $key ) use ( $wpdb, $object_ids_by_key, $slug, $index_version, $start_time ) {
+				$object_id = $object_ids_by_key[ $key ];
+				// Retries of bulk indexing that didn't come from the queue (e.g. a CLI sync) go after fresh changes
+				$priority = $this->priorities_being_indexed[ $object_id ] ?? self::INDEX_DEFAULT_PRIORITY + 1;
+
+				return $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priority );
+			},
+			array_keys( $retries )
+		);
+		$table_name = $this->schema->get_table_name();
+
+		// IGNORE: an object that is already queued will be indexed anyway
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- rows prepared above
+		$wpdb->query( "INSERT IGNORE INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority) VALUES " . implode( ', ', $rows ) );
 
 		return true;
 	}
