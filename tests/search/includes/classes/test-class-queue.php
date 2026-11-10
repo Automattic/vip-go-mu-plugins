@@ -889,7 +889,16 @@ class Queue_Test extends WP_UnitTestCase {
 		) );
 
 		$this->with_es_http(
-			fn( $args, $url ) => false === strpos( $url, '/_bulk' ) ? self::es_response() : self::es_response( '{"errors":false,"items":[]}' ),
+			function ( $args, $url ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The sweeper runs while the batch is indexing
+				$this->queue->free_deadlocked_jobs();
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
 			fn() => $this->queue->process_jobs( $jobs )
 		);
 

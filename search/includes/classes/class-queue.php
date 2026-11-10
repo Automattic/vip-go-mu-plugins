@@ -910,10 +910,14 @@ class Queue {
 	 */
 	public function process_jobs( $jobs ) {
 		// Set them as running, including any free_deadlocked_jobs() handed back to the queue because the batch started late,
-		// so they're deleted once indexed rather than indexed again
+		// so they're deleted once indexed rather than indexed again. Restart their deadlock timer: time spent waiting for
+		// cron isn't time spent processing, and a handed-back job's scheduled_time is NULL, which counts as deadlocked.
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ) );
+		$this->update_jobs( $job_ids, array(
+			'status'         => 'running',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s' ),
+		) );
 
 		$indexables = Indexables::factory();
 
