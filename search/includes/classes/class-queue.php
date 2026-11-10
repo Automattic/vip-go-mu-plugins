@@ -731,11 +731,16 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		// TODO transaction
+		// Skip jobs whose object is still scheduled: the UNIQUE key keeps them queued until that job starts running, and
+		// they shouldn't take up the batch.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// Cannot prepare table name. @codingStandardsIgnoreStart
+				"SELECT queued.* FROM {$table_name} queued WHERE ( queued.`start_time` <= NOW() OR queued.`start_time` IS NULL ) AND queued.`status` = 'queued' AND NOT EXISTS (
+					SELECT 1 FROM {$table_name} scheduled WHERE scheduled.`object_id` = queued.`object_id` AND scheduled.`object_type` = queued.`object_type` AND scheduled.`index_version` = queued.`index_version` AND scheduled.`status` = 'scheduled'
+				) ORDER BY queued.`priority`, queued.`job_id` LIMIT %d",
+				// @codingStandardsIgnoreEnd
 				$count
 			)
 		);
@@ -749,24 +754,28 @@ class Queue {
 
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
+		// start_time only matters while a job is queued, so it holds a random past time that marks the jobs this call
+		// claims, apart from those a concurrent checkout claims in the same second. Being in the past, it keeps a job
+		// that free_deadlocked_jobs() queues again due right away, as it was when checked out.
+		$claim = gmdate( 'Y-m-d H:i:s', wp_rand( 0, time() ) );
+
 		$scheduled_count = $this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
+			'start_time'     => $claim,
 		), 'queued' );
 
-		// A job stays queued while another job for its object is still scheduled. If any were, keep only the jobs this call scheduled.
+		// Another checkout claimed some of these jobs first. Keep only the ones this call claimed.
 		if ( count( $job_ids ) !== $scheduled_count ) {
-			$scheduled_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array(
-				'status'         => 'scheduled',
-				'scheduled_time' => $scheduled_time,
-			) ), 'job_id' );
-			$jobs          = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $scheduled_ids, true ) ) );
+			$claimed_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array( 'start_time' => $claim ) ), 'job_id' );
+			$jobs        = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $claimed_ids, true ) ) );
 		}
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
+			$job->start_time     = $claim;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
