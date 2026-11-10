@@ -1776,6 +1776,50 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->maybe_log_query_ratelimiting_start();
 	}
 
+	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		// Protected content must be active before init() for the filter to be registered
+		Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new Search();
+		$es->init();
+
+		$this->assertSame( 9999, has_filter( 'ep_indexable_post_types', [ $es, 'add_attachment_to_ep_indexable_post_types' ] ) );
+
+		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
+		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
+		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
+		$this->assertEquals( new stdClass(), apply_filters( 'ep_indexable_post_types', new stdClass() ) );
+	}
+
+	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
+		// Ensure ElasticPress is ready
+		do_action( 'plugins_loaded' );
+
+		Features::factory()->activate_feature( 'protected_content' );
+
+		$es = new Search();
+		$es->init();
+
+		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
+		$this->assertEquals(
+			array(
+				'test'       => 'test',
+				'one'        => 'one',
+				'attachment' => 'attachment',
+			),
+			apply_filters(
+				'ep_indexable_post_types',
+				array(
+					'test' => 'test',
+					'one'  => 'one',
+				)
+			)
+		);
+	}
+
 	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
 		$this->init_es();
 
