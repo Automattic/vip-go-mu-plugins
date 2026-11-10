@@ -24,9 +24,6 @@ class Queue {
 	/** @var Queue\Cron */
 	public $cron;
 
-	/** @var int[] Priorities of the queue jobs being indexed, by object ID, so a retry keeps its job's priority */
-	private $priorities_being_indexed = [];
-
 	public const INDEX_COUNT_CACHE_GROUP            = 'vip_search';
 	public const INDEX_COUNT_CACHE_KEY              = 'index_op_count';
 	public const INDEX_RATE_LIMITED_START_CACHE_KEY = 'index_rate_limited_start';
@@ -952,11 +949,7 @@ class Queue {
 					]
 				);
 
-				$this->priorities_being_indexed = array_map( 'intval', wp_list_pluck( $jobs, 'priority', 'object_id' ) );
-
 				$this->bulk_index_split_if_too_large( $indexable, $ids );
-
-				$this->priorities_being_indexed = [];
 
 				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
 				// action__ep_after_bulk_index(), as new rows.
@@ -1094,12 +1087,9 @@ class Queue {
 	}
 
 	/**
-	 * Hook after bulk indexing looking for errors. Queue the objects again, 10 to 40 minutes later, if they failed for a reason
-	 * that may pass: no response, a 429 or a 5xx. A failed request doesn't say which documents it carried, so it queues
-	 * all of them, except during a sync; a document rejected in a request that went through queues only itself. Other errors (e.g. 400, a
-	 * document too big to send) would fail again, so those objects aren't queued. An object that still fails after
-	 * MAX_REQUEUE_ATTEMPTS retries within a day is given up on and logged, so one that always fails (e.g. in a batch that
-	 * times out every time) isn't sent every 10 minutes forever.
+	 * Hook after bulk indexing: queue the objects that failed for a reason that may pass (no response, a 429 or a 5xx) again,
+	 * after a backoff, and give up on (and log) one that still fails after MAX_REQUEUE_ATTEMPTS retries within a day, so one
+	 * that always fails isn't sent forever. Other errors (e.g. a 400) would fail again.
 	 *
 	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
 	 *
@@ -1116,23 +1106,17 @@ class Queue {
 
 		// 'vip-search-upstream-request-failed' is Search::filter__ep_do_intercept_request() reporting no response
 		$is_transient = static fn( $code ) => 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
-		$results      = 'ep_after_bulk_index_dynamically' === current_action() ? (array) $return : [ $return ];
 
-		// bulk_index_dynamically() sends a failed request's documents again with the next ones, so a failed request only
-		// loses documents if no request went through after it
-		$request_failed = false;
-		$failed_ids     = [];
-		foreach ( $results as $result ) {
-			if ( is_wp_error( $result ) ) {
-				// A document skipped as too big to send isn't a request
-				if ( 'ep_too_big_request_skipped' !== $result->get_error_code() ) {
-					$request_failed = $is_transient( $result->get_error_code() );
-				}
-				continue;
-			}
+		// A document skipped as too big to send isn't a request
+		$requests = array_filter(
+			'ep_after_bulk_index_dynamically' === current_action() ? (array) $return : [ $return ],
+			static fn( $result ) => ! is_wp_error( $result ) || 'ep_too_big_request_skipped' !== $result->get_error_code()
+		);
 
-			$request_failed = false;
-			foreach ( empty( $result['errors'] ) ? [] : ( $result['items'] ?? [] ) as $item ) {
+		// A request that went through only lost the documents Elasticsearch rejected
+		$failed_ids = [];
+		foreach ( $requests as $result ) {
+			foreach ( is_wp_error( $result ) || empty( $result['errors'] ) ? [] : ( $result['items'] ?? [] ) as $item ) {
 				$item = reset( $item );
 				if ( isset( $item['_id'] ) && $is_transient( (int) ( $item['status'] ?? 200 ) ) ) {
 					$failed_ids[ (int) $item['_id'] ] = true;
@@ -1140,9 +1124,11 @@ class Queue {
 			}
 		}
 
-		// A sync (CLI, dashboard, shard rebuild) reports its failed requests and is run again, and during an incident it can
-		// fail every batch of a site in minutes, so only queue the documents Elasticsearch rejected
-		if ( $request_failed && ! did_action( 'ep_pre_index_batch' ) ) {
+		// A failed request doesn't say which documents it carried, so it lost all of them, unless a later one went through:
+		// bulk_index_dynamically() sends them again with the next request. Not during a sync (CLI, dashboard, shard rebuild):
+		// it reports its failed requests and is run again, and during an incident can fail every batch of a site in minutes.
+		$last_request = end( $requests );
+		if ( is_wp_error( $last_request ) && $is_transient( $last_request->get_error_code() ) && ! did_action( 'ep_pre_index_batch' ) ) {
 			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
 		}
 
@@ -1159,32 +1145,34 @@ class Queue {
 
 		global $wpdb;
 
-		$table_name = $this->schema->get_table_name();
-
-		// An object that is already queued will be indexed by that job anyway, so this failure doesn't use up one of its
-		// retries (e.g. a post saved again, and indexed right away, while its retry waits)
+		$table_name  = $this->schema->get_table_name();
 		$escaped_ids = implode( ',', array_map( 'intval', array_keys( $failed_ids ) ) );
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IDs cast to int above
-		$queued_ids = $wpdb->get_col( $wpdb->prepare( "SELECT object_id FROM {$table_name} WHERE object_id IN ({$escaped_ids}) AND object_type = %s AND status = 'queued' AND index_version = %d", $slug, $index_version ) );
-		$failed_ids = array_diff_key( $failed_ids, array_flip( array_map( 'intval', $queued_ids ) ) );
 
-		if ( ! $failed_ids ) {
-			return false;
+		// An object already queued will be indexed by that job anyway, so this failure doesn't use up one of its retries (e.g.
+		// a post saved again, and indexed right away, while its retry waits). A retry keeps the priority of the queue job that
+		// was being indexed; others (e.g. from a CLI sync) go after fresh changes.
+		$priorities = array_fill_keys( array_keys( $failed_ids ), self::INDEX_DEFAULT_PRIORITY + 1 );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- IDs cast to int above
+		$jobs = $wpdb->get_results( $wpdb->prepare( "SELECT object_id, status, priority FROM {$table_name} WHERE object_id IN ({$escaped_ids}) AND object_type = %s AND index_version = %d AND status IN ('queued', 'running')", $slug, $index_version ) );
+		foreach ( $jobs as $job ) {
+			if ( 'queued' === $job->status ) {
+				unset( $priorities[ (int) $job->object_id ] );
+			} elseif ( isset( $priorities[ (int) $job->object_id ] ) ) {
+				$priorities[ (int) $job->object_id ] = (int) $job->priority;
+			}
 		}
 
 		// Count the retries in the object cache: an eviction only allows a few more
-		$object_ids_by_key = [];
-		foreach ( array_keys( $failed_ids ) as $object_id ) {
-			$object_ids_by_key[ "requeue_attempts_{$slug}_{$index_version}_{$object_id}" ] = $object_id;
-		}
-
-		$retries  = [];
-		$given_up = [];
-		foreach ( wp_cache_get_multiple( array_keys( $object_ids_by_key ), self::CACHE_GROUP ) as $key => $count ) {
-			if ( (int) $count >= self::MAX_REQUEUE_ATTEMPTS ) {
-				$given_up[] = $object_ids_by_key[ $key ];
+		$cache_key = static fn( $object_id ) => "requeue_attempts_{$slug}_{$index_version}_{$object_id}";
+		$counts    = wp_cache_get_multiple( array_map( $cache_key, array_keys( $priorities ) ), self::CACHE_GROUP );
+		$attempts  = [];
+		$given_up  = [];
+		foreach ( array_keys( $priorities ) as $object_id ) {
+			$attempt = (int) $counts[ $cache_key( $object_id ) ] + 1;
+			if ( $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
+				$given_up[] = $object_id;
 			} else {
-				$retries[ $key ] = (int) $count + 1;
+				$attempts[ $object_id ] = $attempt;
 			}
 		}
 
@@ -1201,25 +1189,19 @@ class Queue {
 			);
 		}
 
-		if ( ! $retries ) {
+		if ( ! $attempts ) {
 			return false;
 		}
 
-		wp_cache_set_multiple( $retries, self::CACHE_GROUP, DAY_IN_SECONDS );
+		wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
 
 		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
 		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
-		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $retries ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
-		$rows       = array_map(
-			function ( $key ) use ( $wpdb, $object_ids_by_key, $slug, $index_version, $start_time ) {
-				$object_id = $object_ids_by_key[ $key ];
-				// Retries of bulk indexing that didn't come from the queue (e.g. a CLI sync) go after fresh changes
-				$priority = $this->priorities_being_indexed[ $object_id ] ?? self::INDEX_DEFAULT_PRIORITY + 1;
-
-				return $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priority );
-			},
-			array_keys( $retries )
-		);
+		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $attempts ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
+		$rows       = [];
+		foreach ( array_keys( $attempts ) as $object_id ) {
+			$rows[] = $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priorities[ $object_id ] );
+		}
 
 		// IGNORE: an object queued since the check above will be indexed anyway
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- rows prepared above
