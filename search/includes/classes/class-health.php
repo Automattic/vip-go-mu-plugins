@@ -652,18 +652,10 @@ class Health {
 
 		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
-		// Grab all of the documents from ES. A failed request would report the whole batch as missing (ElasticPress returns
-		// [] on an HTTP error and false on a transport error), so check the response code too.
-		$response_code   = null;
-		$capture_request = static function ( $query ) use ( &$response_code ) {
-			$response_code = wp_remote_retrieve_response_code( $query['request'] );
-		};
-		add_action( 'ep_remote_request', $capture_request );
-		$documents = $indexable->multi_get( $document_ids );
-		remove_action( 'ep_remote_request', $capture_request );
-
-		if ( 200 !== $response_code ) {
-			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching documents from Elasticsearch failed (response code: %s)', $response_code ? $response_code : 'none' ) );
+		// Grab all of the documents from ES
+		$documents = $this->get_documents( $indexable, $document_ids );
+		if ( is_wp_error( $documents ) ) {
+			return $documents;
 		}
 
 		// Filter out any that weren't found
@@ -707,6 +699,33 @@ class Health {
 		}
 
 		return $diffs;
+	}
+
+	/**
+	 * Fetch documents from Elasticsearch
+	 *
+	 * A failed request would report every document as missing (ElasticPress's multi_get() returns [] on an HTTP error and
+	 * false on a transport error), so this checks the response code too.
+	 *
+	 * @param \ElasticPress\Indexable $indexable    The Indexable
+	 * @param array                   $document_ids Document IDs
+	 * @return array|WP_Error Documents keyed by ID, or WP_Error if the request failed
+	 */
+	private function get_documents( $indexable, array $document_ids ) {
+		$response_code   = null;
+		$capture_request = static function ( $query ) use ( &$response_code ) {
+			$response_code = wp_remote_retrieve_response_code( $query['request'] );
+		};
+
+		add_filter( 'ep_remote_request', $capture_request );
+		$documents = $indexable->multi_get( $document_ids );
+		remove_filter( 'ep_remote_request', $capture_request );
+
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching documents from Elasticsearch failed (response code: %s)', $response_code ? $response_code : 'none' ) );
+		}
+
+		return $documents;
 	}
 
 	public static function simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ) {
