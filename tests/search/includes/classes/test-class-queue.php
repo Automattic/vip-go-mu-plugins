@@ -827,6 +827,29 @@ class Queue_Test extends WP_UnitTestCase {
 		return $jobs;
 	}
 
+	public function test__action__ep_after_bulk_index_during_a_sync_only_queues_rejected_documents() {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+		$rejected   = array(
+			'errors' => true,
+			'items'  => array(
+				array(
+					'index' => array(
+						'_id'    => '51',
+						'status' => 429,
+					),
+				),
+			),
+		);
+
+		do_action( 'ep_pre_index_batch', array() );
+
+		$this->assertFalse( $this->queue->action__ep_after_bulk_index( array( 50, 51 ), 'post', new \WP_Error( 503, 'Service Unavailable' ) ), 'a sync reports its failed requests itself' );
+		$this->assertTrue( $this->queue->action__ep_after_bulk_index( array( 50, 51 ), 'post', $rejected ) );
+		$this->assertEquals( array( '51' ), $wpdb->get_col( "SELECT object_id FROM `{$table_name}`" ), 'documents Elasticsearch rejected should still be queued again' ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
 	public function test__action__ep_after_bulk_index_gives_up_after_max_attempts() {
 		$unavailable = new \WP_Error( 503, 'Service Unavailable' );
 

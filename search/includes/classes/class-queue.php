@@ -1093,7 +1093,7 @@ class Queue {
 	/**
 	 * Hook after bulk indexing looking for errors. Queue the objects again, 10 to 40 minutes later, if they failed for a reason
 	 * that may pass: no response, a 429 or a 5xx. A failed request doesn't say which documents it carried, so it queues
-	 * all of them; a document rejected in a request that went through queues only itself. Other errors (e.g. 400, a
+	 * all of them, except during a sync; a document rejected in a request that went through queues only itself. Other errors (e.g. 400, a
 	 * document too big to send) would fail again, so those objects aren't queued. An object that still fails after
 	 * MAX_REQUEUE_ATTEMPTS retries within a day is given up on and logged, so one that always fails (e.g. in a batch that
 	 * times out every time) isn't sent every 10 minutes forever.
@@ -1137,7 +1137,9 @@ class Queue {
 			}
 		}
 
-		if ( $request_failed ) {
+		// A sync (CLI, dashboard, shard rebuild) reports its failed requests and is run again, and during an incident it can
+		// fail every batch of a site in minutes, so only queue the documents Elasticsearch rejected
+		if ( $request_failed && ! did_action( 'ep_pre_index_batch' ) ) {
 			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
 		}
 
