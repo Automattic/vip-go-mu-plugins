@@ -32,45 +32,12 @@ class Queue_Test extends WP_UnitTestCase {
 	/** @var Search|null */
 	private $search_singleton;
 
-	/** @var string Real queue table for test_free_deadlocked_jobs(). */
-	private static $recovery_table;
-
-	/**
-	 * The deadlock recovery self-joins the queue table, which a temporary table doesn't allow, so its test needs
-	 * a real table. Creating it here, outside any test's transaction, keeps that test free of DDL, which would
-	 * commit everything the test and setUp() wrote before it.
-	 */
 	public static function wpSetUpBeforeClass(): void {
-		global $wpdb;
-
-		// setUp() boots Search, which loads the class; this runs first.
-		require_once __DIR__ . '/../../../../search/includes/classes/queue/class-schema.php';
-
-		self::$recovery_table = $wpdb->prefix . 'vip_queue_recovery';
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
-
-		$schema = new class( self::$recovery_table ) extends Queue\Schema {
-			private $table_name;
-
-			public function __construct( string $table_name ) {
-				$this->table_name = $table_name;
-			}
-
-			public function get_table_name() {
-				return $this->table_name;
-			}
-
-			public function create_table(): void {
-				$this->_prepare_table();
-			}
-		};
-		$schema->create_table();
+		self::create_queue_table();
 	}
 
 	public static function wpTearDownAfterClass(): void {
-		global $wpdb;
-
-		$wpdb->query( $wpdb->prepare( 'DROP TABLE IF EXISTS %i', self::$recovery_table ) );
+		self::drop_queue_table();
 	}
 
 	public function setUp(): void {
@@ -89,7 +56,6 @@ class Queue_Test extends WP_UnitTestCase {
 		$singleton->setValue( null, $this->es );
 
 		$this->queue = $this->es->queue;
-		$this->queue->schema->prepare_table();
 		$this->queue->empty_queue();
 
 		add_filter( 'ep_do_intercept_request', [ $this, 'filter_index_exists_request_ok' ], PHP_INT_MAX, 5 );
@@ -346,6 +312,47 @@ class Queue_Test extends WP_UnitTestCase {
 
 		// There should be 1 that now isn't marked as running, and that's post 1 which was rescheduled again for the future (rate limited)
 		$this->assertEquals( 1, $not_scheduled_count );
+	}
+
+	public function test_checkout_jobs_leaves_jobs_whose_object_is_still_scheduled(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		// Post 1 is checked out, but its cron event hasn't run yet
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->checkout_jobs( 10 );
+
+		// Post 1 changes again and post 2 is queued, both due now
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 2, 'post' );
+		$wpdb->query( "UPDATE {$table_name} SET start_time = NULL" );
+
+		$this->assertSame( array( '2' ), wp_list_pluck( $this->queue->checkout_jobs( 1 ), 'object_id' ), 'Post 1 waits for its scheduled job without taking up the batch, post 2 is checked out.' );
+		$this->assertSame( array(), $this->queue->checkout_jobs( 10 ), 'Post 2 is not checked out twice.' );
+	}
+
+	public function test_checkout_jobs_returns_only_the_jobs_it_claimed(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$this->queue->queue_object( 1, 'post' );
+		$this->queue->queue_object( 2, 'post' );
+		$wpdb->query( "UPDATE {$table_name} SET start_time = NULL" );
+
+		// Another checkout claims post 1 in the same second, after this one selected it but before it claims it
+		$concurrent_checkout = function ( $query ) use ( $wpdb, $table_name, &$concurrent_checkout ) {
+			if ( 0 === strpos( $query, "UPDATE IGNORE {$table_name}" ) ) {
+				remove_filter( 'query', $concurrent_checkout );
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} SET status = 'scheduled', scheduled_time = %s WHERE object_id = 1", gmdate( 'Y-m-d H:i:s' ) ) );
+			}
+
+			return $query;
+		};
+		add_filter( 'query', $concurrent_checkout );
+
+		$this->assertSame( array( '2' ), wp_list_pluck( $this->queue->checkout_jobs( 10 ), 'object_id' ) );
 	}
 
 	public function test_offload_term_indexing_to_queue_skips_elasticpress_for_large_terms() {
@@ -669,6 +676,23 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $jobs, 'jobs should be gone after being processed' );
 	}
 
+	public function test_process_jobs_deletes_jobs_of_a_missing_indexable(): void {
+		$this->assertFalse( Indexables::factory()->get( 'term' ), 'Precondition: the term Indexable is not registered.' );
+
+		$this->insert_raw_jobs( array(
+			array(
+				'object_id'     => 1,
+				'object_type'   => 'term',
+				'status'        => 'scheduled',
+				'index_version' => 1,
+			),
+		) );
+
+		$this->queue->process_jobs( $this->queue->get_jobs_by_ids( array( (int) $this->get_min_object_id_from_queue() ) ) );
+
+		$this->assertSame( 0, $this->queue->count_jobs( 'all', 'all' ) );
+	}
+
 	public function test_intercept_ep_sync_manager_indexing() {
 		$this->add_posts_to_queue( [ 1, 2, 1000 ] );
 
@@ -820,6 +844,91 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( array( '15', '15' ), wp_list_pluck( $requeued, 'priority' ), 'at its jobs\' priority' );
 	}
 
+	public function test_process_jobs_skips_posts_that_left_the_index() {
+		$jobs = $this->schedule_jobs_for_new_posts( 4 );
+		$ids  = array_map( 'intval', wp_list_pluck( $jobs, 'object_id' ) );
+
+		$indexed = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$indexed ) {
+				if ( false !== strpos( $url, '/_bulk' ) ) {
+					foreach ( preg_split( '/\n+/', trim( $args['body'] ) ) as $line ) {
+						$action = json_decode( $line, true );
+						if ( isset( $action['index']['_id'] ) ) {
+							$indexed[] = (int) $action['index']['_id'];
+						}
+					}
+				}
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			function () use ( $jobs, $ids ) {
+				wp_trash_post( $ids[1] );
+				wp_update_post( array(
+					'ID'          => $ids[2],
+					'post_status' => 'draft',
+				) );
+				wp_delete_post( $ids[3], true );
+
+				$this->queue->process_jobs( $jobs );
+			}
+		);
+
+		$this->assertSame( array( $ids[0] ), $indexed, 'only the post that is still published should be indexed' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the skipped posts\' jobs should be deleted too' );
+	}
+
+	public function test_process_jobs_keeps_a_job_handed_back_to_the_queue() {
+		global $wpdb;
+
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		$this->with_es_http(
+			function ( $args, $url ) use ( $jobs ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The batch ran late, so free_deadlocked_jobs() handed its first job back to the queue
+				$this->queue->update_job( $jobs[0]->job_id, array( 'status' => 'queued' ) );
+
+				return self::es_response( '{}', 503 );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$table_name = $this->queue->schema->get_table_name();
+		$queued     = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `status` = 'queued' ORDER BY object_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( wp_list_pluck( $jobs, 'object_id' ), $queued, 'a failed batch should leave every object queued, including one whose job was handed back' );
+	}
+
+	public function test_process_jobs_finishes_a_job_handed_back_before_it_started() {
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		// The batch started late, so free_deadlocked_jobs() handed its first job back before it ran
+		$this->queue->update_job( $jobs[0]->job_id, array(
+			'status'         => 'queued',
+			'scheduled_time' => null,
+		) );
+
+		$this->with_es_http(
+			function ( $args, $url ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The sweeper runs while the batch is indexing
+				$this->queue->free_deadlocked_jobs();
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'a successful batch should not leave its handed-back job to be indexed again' );
+	}
+
 	/**
 	 * Create posts, queue them and mark their jobs as scheduled, as checkout_jobs() does
 	 *
@@ -949,7 +1058,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs() {
 		global $wpdb;
 
-		$table_name = $this->use_recovery_table();
+		$table_name = $this->queue->schema->get_table_name();
 		$fixtures   = array(
 			array( 1000, 'post', 1, 'running' ),
 			array( 1000, 'post', 1, 'queued' ),
@@ -1020,7 +1129,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs_leaves_a_batch_that_started_late_running(): void {
 		global $wpdb;
 
-		$table_name = $this->use_recovery_table();
+		$table_name = $this->queue->schema->get_table_name();
 
 		$this->queue->queue_objects( self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) ) );
 		$jobs = $this->queue->checkout_jobs( 500 );
@@ -1509,7 +1618,7 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs_isolates_and_drops_a_job_that_keeps_failing(): void {
 		global $wpdb;
 
-		$table_name = $this->use_recovery_table();
+		$table_name = $this->queue->schema->get_table_name();
 
 		[ $healthy_1, $poisoned, $healthy_2, $edited ] = self::factory()->post->create_many( 4, array( 'post_status' => 'publish' ) );
 
@@ -1570,20 +1679,6 @@ class Queue_Test extends WP_UnitTestCase {
 		sort( $expected );
 		$this->assertSame( $expected, $indexed, 'Every healthy post is indexed once, the poisoned one never.' );
 		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) ), 'The poisoned job is dropped instead of retried forever.' );
-	}
-
-	/**
-	 * Deadlock recovery self-joins the queue table, which a temporary table doesn't allow, so point the queue at the real one.
-	 *
-	 * @return string The recovery table's name
-	 */
-	private function use_recovery_table(): string {
-		$schema = $this->getMockBuilder( Queue\Schema::class )->onlyMethods( array( 'get_table_name' ) )->getMock();
-		$schema->method( 'get_table_name' )->willReturn( self::$recovery_table );
-
-		$this->queue->schema = $schema;
-
-		return self::$recovery_table;
 	}
 
 	/**
