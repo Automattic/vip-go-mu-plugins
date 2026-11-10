@@ -35,11 +35,6 @@ class Versioning {
 	public $elastic_search_indexables;
 
 	/**
-	 * Injectable instance of \Automattic\VIP\Utils\Alerts
-	 */
-	public $alerts;
-
-	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
 	private $current_index_version_by_type = array();
@@ -71,7 +66,6 @@ class Versioning {
 
 		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
-		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
 	}
 
 	public function action__elasticpress_loaded() {
@@ -969,13 +963,10 @@ class Versioning {
 		}
 
 		foreach ( $indexables_to_heal as $indexable ) {
-			$this->alert_for_index_self_healing( $indexable->slug );
-
 			$versions = $this->reconstruct_versions_for_indexable( $indices, $indexable );
 
 			if ( empty( $versions ) ) {
 				$this->mark_self_heal_ongoing( true );
-				$this->alert_for_index_self_healing_failed( $indexable->slug );
 			} else {
 				$this->update_versions( $indexable, $versions );
 
@@ -993,36 +984,6 @@ class Versioning {
 				);
 			}
 		}
-	}
-
-	public function alert_for_index_self_healing( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
-	}
-
-	public function alert_for_index_self_healing_failed( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s vip-search versioning FAILED to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
 	}
 
 	public function get_all_accessible_indices() {
