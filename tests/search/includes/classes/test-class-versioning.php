@@ -6,7 +6,6 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 use Automattic\Test\Constant_Mocker;
-use Automattic\VIP\Utils\Alerts;
 use ElasticPress\Elasticsearch;
 use ElasticPress\Indexable;
 use ElasticPress\Indexables;
@@ -1545,7 +1544,6 @@ class Versioning_Test extends WP_UnitTestCase {
 			->method( 'reconstruct_versions_for_indexable' );
 
 		$partially_mocked_versioning->elastic_search_indexables = $indexables_mock;
-		$partially_mocked_versioning->alerts                    = $this->createMock( Alerts::class );
 
 		$partially_mocked_versioning->maybe_self_heal();
 	}

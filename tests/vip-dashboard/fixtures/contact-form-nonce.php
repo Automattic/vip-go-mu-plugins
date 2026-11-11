@@ -9,18 +9,19 @@ register_shutdown_function( static function () use ( &$mail_attempts ) {
 	fwrite( STDERR, 'mail_attempts:' . $mail_attempts . PHP_EOL );
 } );
 
-function add_action() {}
-function add_filter() {}
-function remove_action() {}
-function remove_filter() {}
-function __( $text, $domain = 'default' ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- Matches the WordPress signature.
+// phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter -- Stubs keep WordPress's signatures so static analysis matches real call sites.
+function add_action( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {}
+function add_filter( $hook_name, $callback, $priority = 10, $accepted_args = 1 ) {}
+function remove_action( $hook_name, $callback, $priority = 10 ) {}
+function remove_filter( $hook_name, $callback, $priority = 10 ) {}
+function __( $text, $domain = 'default' ) {
 	return $text;
 }
-function wp_json_encode( $value ) {
+function wp_json_encode( $value, $flags = 0, $depth = 512 ) {
 	// phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode -- WordPress is deliberately absent in this fixture.
 	return json_encode( $value );
 }
-function wp_send_json( $value ) {
+function wp_send_json( $value, $status_code = null, $flags = 0 ) {
 	echo wp_json_encode( $value );
 	die();
 }
@@ -37,42 +38,43 @@ function wp_get_current_user() {
 		'user_login'   => 'requester',
 	];
 }
-function wp_strip_all_tags( $value ) {
+function wp_strip_all_tags( $value, $remove_breaks = false ) {
 	// phpcs:ignore WordPressVIPMinimum.Functions.StripTags.StripTagsOneParameter -- Test payload contains plain text only.
 	return strip_tags( $value );
 }
-function is_email( $email ) {
+function is_email( $email, $deprecated = false ) {
 	return (bool) filter_var( $email, FILTER_VALIDATE_EMAIL );
 }
-function apply_filters( $hook, $value ) {
+function apply_filters( $hook, $value, ...$args ) {
 	return $value;
 }
-function wp_get_theme() {
+function wp_get_theme( $stylesheet = '', $theme_root = '' ) {
 	return new class() {
 		public function get() {
 			return 'Test Theme';
 		}
 	};
 }
-function get_bloginfo() {
+function get_bloginfo( $show = '', $filter = 'raw' ) {
 	return 'Test Site';
 }
-function site_url() {
+function site_url( $path = '', $scheme = null ) {
 	return 'https://example.org';
 }
-function admin_url() {
+function admin_url( $path = '', $scheme = 'admin' ) {
 	return 'https://example.org/wp-admin';
 }
-function get_option() {
+function get_option( $option, $default_value = false ) {
 	return 'test-theme';
 }
-function home_url() {
+function home_url( $path = '', $scheme = null ) {
 	return 'https://example.org';
 }
-function wp_mail() {
+function wp_mail( $to, $subject, $message, $headers = '', $attachments = array() ) {
 	++$GLOBALS['mail_attempts'];
 	return true;
 }
+// phpcs:enable Generic.CodeAnalysis.UnusedFunctionParameter
 
 require_once __DIR__ . '/../../../vip-dashboard/vip-dashboard.php';
 
