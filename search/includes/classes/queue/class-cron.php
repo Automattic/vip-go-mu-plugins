@@ -49,6 +49,12 @@ class Cron {
 	const TERM_UPDATE_BATCH_SIZE = 25000;
 
 	/**
+	 * Queue priority for posts requeued after a term change: after edits queued while indexing is ratelimited (5), so they
+	 * don't wait behind a large term, and before other bulk work (15)
+	 */
+	const TERM_UPDATE_PRIORITY = 10;
+
+	/**
 	 * The maximum number if processor jobs allowed at one time
 	 */
 	const MAX_PROCESSOR_JOB_COUNT = 3;
@@ -187,60 +193,61 @@ class Cron {
 	 * @param int $term_taxonomy_id The term taxonomy id you want to index
 	 */
 	public function queue_posts_for_term_taxonomy_id( $term_taxonomy_id ) {
-		$indexable_post_types    = Indexables::factory()->get( 'post' )->get_indexable_post_types();
-		$indexable_post_statuses = Indexables::factory()->get( 'post' )->get_indexable_post_status();
+		$indexable = Indexables::factory()->get( 'post' );
 
-		// Only proceed if indexable post types are defined correctly
-		if ( ! is_array( $indexable_post_types ) || empty( $indexable_post_types ) ) {
+		// Only proceed if indexable post types and statuses are defined correctly
+		if ( empty( $indexable->get_indexable_post_types() ) || empty( $indexable->get_indexable_post_status() ) ) {
 			return;
 		}
 
-		// Only proceed if indexable post statuses are defined correctly
-		if ( ! is_array( $indexable_post_statuses ) || empty( $indexable_post_statuses ) ) {
-			return;
-		}
+		// Indexing's own query: it matches the posts that indexing would, and pages by post ID instead of an offset
+		$args = array( 'per_page' => self::TERM_UPDATE_BATCH_SIZE );
 
-		// WP_Query args for looking up posts that match the term taxonomy id and indexable
-		// post types/statuses
-		$args = array(
-			// phpcs:ignored WordPress.WP.PostsPerPage.posts_per_page_posts_per_page
-			'posts_per_page'         => self::TERM_UPDATE_BATCH_SIZE,
-			'post_type'              => $indexable_post_types,
-			'post_status'            => $indexable_post_statuses,
-			'paged'                  => 1,
-			'fields'                 => 'ids',
-			'update_post_meta_cache' => false,
-			'update_post_term_cache' => false,
-			'ignore_sticky_posts'    => true,
-			'tax_query'              => array(  // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
-				array(
-					'field' => 'term_taxonomy_id',
-					'terms' => $term_taxonomy_id,
-				),
-			),
-		);
+		// Runs after customers' indexing filters, which may replace tax_query or rebuild the args, so the query stays on this
+		// term instead of queueing the whole site, and returns IDs
+		$term_only = static function ( $args ) use ( $term_taxonomy_id ) {
+			$term = array(
+				'field' => 'term_taxonomy_id',
+				'terms' => $term_taxonomy_id,
+			);
 
-		$posts = new \WP_Query( $args );
-
-		// If no posts, just return early
-		if ( ! $posts->have_posts() ) {
-			return;
-		}
-
-		// Iterate pagination
-		while ( $args['paged'] <= $posts->max_num_pages ) {
-			// Queue all posts for page
-			$this->queue->queue_objects( $posts->posts, 'post' );
-
-			// Go to the next page and reset $posts
-			$args['paged'] = intval( $args['paged'] ) + 1;
-			$posts         = new \WP_Query( $args );
-
-			// If page is empty, just return early
-			if ( ! $posts->have_posts() ) {
-				return;
+			// An empty clause would match nothing, so only nest a filter's own tax_query
+			if ( ! empty( $args['tax_query'] ) ) {
+				$term = array(
+					'relation' => 'AND',
+					$args['tax_query'],
+					$term,
+				);
 			}
+
+			$args['tax_query'] = array( $term ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query
+			$args['fields']    = 'ids';
+
+			return $args;
+		};
+		add_filter( 'ep_index_posts_args', $term_only, PHP_INT_MAX );
+
+		while ( true ) {
+			$post_ids = $indexable->query_db( $args )['objects'];
+
+			// Each page has lower post IDs than the last, so the cursor is the page's lowest. Without paging by ID (a filter
+			// set post__in, an offset or ep_indexing_advanced_pagination) the same page comes back: stop instead of queueing
+			// it forever. If a filter changed the order, pages still don't overlap, so this ends after the term's posts.
+			if ( ! $post_ids || min( $post_ids ) >= ( $args['ep_indexing_last_processed_object_id'] ?? PHP_INT_MAX ) ) {
+				break;
+			}
+
+			$this->queue->queue_objects( $post_ids, 'post', array( 'priority' => self::TERM_UPDATE_PRIORITY ) );
+
+			// Copy this page's jobs to the inactive index versions now, rather than keep every queued post in memory until
+			// shutdown, and drop the local object cache's copy of each post's last index time
+			\Automattic\VIP\Search\Search::instance()->versioning->action__shutdown();
+			vip_reset_local_object_cache();
+
+			$args['ep_indexing_last_processed_object_id'] = min( $post_ids );
 		}
+
+		remove_filter( 'ep_index_posts_args', $term_only, PHP_INT_MAX );
 	}
 
 	/**

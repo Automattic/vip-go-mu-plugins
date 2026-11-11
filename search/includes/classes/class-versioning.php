@@ -763,6 +763,9 @@ class Versioning {
 	 */
 	public function action__shutdown() {
 		$this->replicate_queued_objects_to_other_versions( $this->queued_objects_by_type_and_version );
+
+		// Also called before shutdown (e.g. between pages of a large term requeue), so don't replicate these again
+		$this->queued_objects_by_type_and_version = array();
 	}
 
 	/**
