@@ -345,8 +345,8 @@ function _delete_archive_file( $archive_url ) {
 	// For local usage, just delete locally.
 	if ( true !== WPCOM_IS_VIP_ENV ) {
 		$local_path = wp_privacy_exports_dir() . wp_basename( (string) $archive_path );
-		if ( is_file( $local_path ) ) {
-			unlink( $local_path );
+		if ( is_file( $local_path ) && ! unlink( $local_path ) ) {
+			return new WP_Error( 'local-delete-failed', __( 'Unable to delete the local export file.' ) );
 		}
 		return true;
 	}
@@ -419,21 +419,23 @@ function delete_old_export_files() {
 	$expiration_timestamp = time() - $expiration;
 
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- direct query to avoid the unnecessary overhead of WP_Query.
-	$request_ids = $wpdb->get_col(
-		$wpdb->prepare( "SELECT post_id FROM $wpdb->postmeta
+	$expired_exports = $wpdb->get_results(
+		$wpdb->prepare( "SELECT post_id, meta_value FROM $wpdb->postmeta
 			WHERE meta_key = '_vip_export_generated_time'
 				AND meta_value <= %d
 			LIMIT 100", $expiration_timestamp
 		)
 	);
 
-	if ( empty( $request_ids ) ) {
+	if ( empty( $expired_exports ) ) {
 		return;
 	}
 
-	update_postmeta_cache( $request_ids );
+	update_postmeta_cache( wp_list_pluck( $expired_exports, 'post_id' ) );
 
-	foreach ( $request_ids as $request_id ) {
+	foreach ( $expired_exports as $expired_export ) {
+		$request_id = (int) $expired_export->post_id;
+
 		// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
 		$file_name = get_post_meta( $request_id, '_export_file_name', true );
 		$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
@@ -451,8 +453,9 @@ function delete_old_export_files() {
 			continue;
 		}
 
-		// Stop selecting this export once its file is gone. Regenerating the export sets the timestamp again.
-		delete_post_meta( $request_id, '_vip_export_generated_time' );
+		// Stop selecting this export once its file is gone. Only remove the timestamp we selected,
+		// so a regeneration that ran in the meantime keeps its new one.
+		delete_post_meta( $request_id, '_vip_export_generated_time', $expired_export->meta_value );
 	}
 }
 
