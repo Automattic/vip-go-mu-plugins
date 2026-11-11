@@ -436,6 +436,14 @@ function delete_old_export_files() {
 	foreach ( $expired_exports as $expired_export ) {
 		$request_id = (int) $expired_export->post_id;
 
+		// Regenerating reuses the file name and updates the timestamp before building and uploading the archive.
+		// Re-read the timestamp uncached right before deleting, so an export regenerated since the query is kept.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$current_timestamp = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->postmeta WHERE post_id = %d AND meta_key = '_vip_export_generated_time'", $request_id ) );
+		if ( $current_timestamp !== $expired_export->meta_value ) {
+			continue;
+		}
+
 		// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
 		$file_name = get_post_meta( $request_id, '_export_file_name', true );
 		$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
