@@ -225,7 +225,7 @@ class Vary_Cache {
 		}
 
 		foreach ( $groups as $group ) {
-			$validate_result = self::validate_cookie_value( $group );
+			$validate_result = self::validate_group_name( $group );
 			if ( is_wp_error( $validate_result ) ) {
 				trigger_error( sprintf( 'Failed to register group (%s); %s', esc_html( $group ), esc_html( $validate_result->get_error_message() ) ), E_USER_WARNING );
 				continue;
@@ -276,7 +276,7 @@ class Vary_Cache {
 			return new WP_Error( 'did_send_headers', sprintf( 'Failed to set group (%s => %s) for user; cannot be called after the `send_headers` hook has fired.', $group, $value ) );
 		}
 
-		$validate_group_result = self::validate_cookie_value( $group );
+		$validate_group_result = self::validate_group_name( $group );
 		if ( is_wp_error( $validate_group_result ) ) {
 			return new WP_Error( 'invalid_vary_group_name', sprintf( 'Failed to set group (%s): %s', $group, $validate_group_result->get_error_message() ) );
 		}
@@ -849,6 +849,28 @@ class Vary_Cache {
 
 		if ( strpos( $value, self::VALUE_SEPARATOR ) !== false || strpos( $value, self::GROUP_SEPARATOR ) !== false ) {
 			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Cannot use the delimiter values (`%s` or `%s`)', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Validates a group name, which the cookie follows with the value separator.
+	 *
+	 * A name ending in `_--` or `---_` forms a delimiter early with that separator, so it can't be parsed back.
+	 *
+	 * @param string $group The group name.
+	 * @return WP_Error|boolean
+	 */
+	private static function validate_group_name( $group ) {
+		$validate_result = self::validate_cookie_value( $group );
+		if ( is_wp_error( $validate_result ) ) {
+			return $validate_result;
+		}
+
+		$pair_prefix = $group . self::VALUE_SEPARATOR;
+		if ( strpos( $pair_prefix, self::VALUE_SEPARATOR ) !== strlen( $group ) || strpos( $pair_prefix, self::GROUP_SEPARATOR ) !== false ) {
+			return new WP_Error( 'vary_cache_group_cannot_use_delimiter', sprintf( 'Group names cannot end in a way that forms a delimiter (`%s` or `%s`) with the value separator', self::GROUP_SEPARATOR, self::VALUE_SEPARATOR ) );
 		}
 
 		return true;
