@@ -159,8 +159,9 @@ class CoreCommand {
 
 		$body = json_decode( wp_remote_retrieve_body( $response ) );
 		if ( ! is_array( $body ) ) {
-			$message = property_exists( $body, 'error' ) ? $body->error : 'Something went wrong during list_indexes().';
-			return new \WP_Error( 'list-indexes-error', $message );
+			// ES errors are {"error": "..."} or {"error": {...}}; the body may also not be JSON at all
+			$error = $body->error ?? 'Something went wrong during list_indexes().';
+			return new \WP_Error( 'list-indexes-error', is_string( $error ) ? $error : wp_json_encode( $error ) );
 		}
 
 		$indexes = array_column( $body, 'index' );
@@ -270,11 +271,6 @@ class CoreCommand {
 	public function index( $args, $assoc_args ) {
 		$this->verify_arguments_compatibility( $assoc_args );
 
-		$using_versions = $assoc_args['using-versions'] ?? false;
-		$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
-
-		$this->maybe_setup_index_version( $assoc_args );
-
 		$network_mode = isset( $assoc_args['network-wide'] );
 		$batch_mode   = isset( $assoc_args['blog-ids'] );
 		/**
@@ -338,6 +334,13 @@ class CoreCommand {
 
 			WP_CLI::line( WP_CLI::colorize( '%CRun took: ' . ( round( microtime( true ) - $start, 3 ) ) . '%n' ) );
 		} else {
+			$using_versions = $assoc_args['using-versions'] ?? false;
+			$skip_confirm   = isset( $assoc_args['skip-confirm'] ) && $assoc_args['skip-confirm'];
+
+			// Set up the version only for the site indexed here. Each child process above versions what it indexes, so a
+			// global indexable (e.g. users) is rebuilt by every child: redundant, but each rebuild is complete.
+			$this->maybe_setup_index_version( $assoc_args );
+
 			if ( isset( $assoc_args['setup'] ) && $assoc_args['setup'] ) {
 				self::confirm_destructive_operation( $assoc_args );
 			}
@@ -365,12 +368,12 @@ class CoreCommand {
 
 			array_unshift( $args, 'elasticpress', 'index' );
 			WP_CLI::run_command( $args, $assoc_args );
-		}
 
-		if ( $using_versions ) {
-			// resetting skip-confirm after it was cleared for elasticpress
-			$assoc_args['skip-confirm'] = $skip_confirm;
-			$this->shift_version_after_index( $assoc_args );
+			if ( $using_versions ) {
+				// resetting skip-confirm after it was cleared for elasticpress
+				$assoc_args['skip-confirm'] = $skip_confirm;
+				$this->shift_version_after_index( $assoc_args );
+			}
 		}
 	}
 
@@ -504,15 +507,25 @@ class CoreCommand {
 	 * @param array $assoc_args Associative CLI args.
 	 */
 	public function get_mapping( $args, $assoc_args ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
-		$index_names = (array) ( isset( $assoc_args['index-name'] ) ? $assoc_args['index-name'] : $this->list_indexes() );
+		$index_names = isset( $assoc_args['index-name'] ) ? (array) $assoc_args['index-name'] : $this->list_indexes();
+		if ( is_wp_error( $index_names ) ) {
+			WP_CLI::error( $index_names->get_error_message() );
+		}
 
 		$path = join( ',', $index_names ) . '/_mapping';
 
 		$response = Elasticsearch::factory()->remote_request( $path );
+		if ( is_wp_error( $response ) ) {
+			WP_CLI::error( $response->get_error_message() );
+		}
 
-		$body = wp_remote_retrieve_body( $response );
+		// HTTP errors (e.g. a missing index) come back as ordinary responses
+		$response_code = (int) wp_remote_retrieve_response_code( $response );
+		if ( $response_code >= 400 ) {
+			WP_CLI::error( sprintf( 'Elasticsearch returned HTTP %d: %s', $response_code, wp_remote_retrieve_body( $response ) ) );
+		}
 
-		WP_CLI::line( $body );
+		WP_CLI::line( wp_remote_retrieve_body( $response ) );
 	}
 
 	/**

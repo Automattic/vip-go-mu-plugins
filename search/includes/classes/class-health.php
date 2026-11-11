@@ -465,6 +465,11 @@ class Health {
 			return new WP_Error( 'es_request_to_stop_content_validation', 'Content validation is in the process of being stopped. Please wait a bit before re-attempting!' );
 		}
 
+		// With no run holding the lock, a leftover stop request is for a run that died, so it must not abort this one
+		if ( ! $this->is_validate_content_ongoing() ) {
+			wp_cache_delete( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP );
+		}
+
 		$interrupted_start_post_id = $this->get_validate_content_abandoned_process();
 		if ( $track_process && $interrupted_start_post_id ) {
 			$start_post_id = $interrupted_start_post_id;
@@ -955,10 +960,11 @@ class Health {
 	 * @return WP_Query
 	 */
 	private static function query_objects( array $query_args, string $type ) {
+		// Callers only use the parsed query vars, so skip the SQL row count, which scans every match on large tables
 		if ( 'user' === $type ) {
-			return new WP_User_Query( $query_args );
+			return new WP_User_Query( $query_args + [ 'count_total' => false ] );
 		}
-		return new WP_Query( $query_args );
+		return new WP_Query( $query_args + [ 'no_found_rows' => true ] );
 	}
 
 	private static function simplified_format_post_diff( $id, $issue ) {
