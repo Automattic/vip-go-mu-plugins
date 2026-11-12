@@ -82,10 +82,19 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
+	public function get_data__check_file_visibility__attachment_with_deleted_parent() {
+		return [
+			'without user'          => [ null, \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			'with user permissions' => [ 'editor', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED ],
+		];
+	}
+
 	/**
-	 * An attachment with a dangling parent reference is treated as unattached.
+	 * An attachment with a dangling parent reference stays private, with access checked against the attachment itself.
+	 *
+	 * @dataProvider get_data__check_file_visibility__attachment_with_deleted_parent
 	 */
-	public function test__check_file_visibility__attachment_with_deleted_parent() {
+	public function test__check_file_visibility__attachment_with_deleted_parent( $user_role, $expected_file_visibility ) {
 		$post_id       = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
 		$attachment_id = $this->create_attachment( '2021/01/orphaned.jpg', $post_id );
 
@@ -98,11 +107,15 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		] );
 		$this->assertSame( $post_id, get_post( $attachment_id )->post_parent );
 
+		if ( $user_role ) {
+			wp_set_current_user( $this->factory()->user->create( [ 'role' => $user_role ] ) );
+		}
+
 		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
 
 		$actual_file_visibility = check_file_visibility( false, $file_path );
 
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, $actual_file_visibility );
+		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
 	/**
