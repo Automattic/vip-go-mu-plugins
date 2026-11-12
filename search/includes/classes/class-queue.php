@@ -324,6 +324,12 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
+		// No active version (e.g. after `index-versions deactivate`) and none passed in
+		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
+		if ( is_wp_error( $index_version ) ) {
+			return $index_version;
+		}
+
 		if ( ! $indexable->index_exists() ) {
 			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
 		}
@@ -338,7 +344,6 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version      = $this->get_index_version_number_from_options( $indexable_slug, $options );
 		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
 		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
 
@@ -480,7 +485,8 @@ class Queue {
 	public function get_last_index_time_cache_key( $object_id, $indexable_slug, $options = array() ) {
 		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
 
-		return sprintf( '%s-%d-v%d', $indexable_slug, $object_id, $index_version );
+		// Without an active version there's no current version to key on; use 0 so the debounce still works
+		return sprintf( '%s-%d-v%d', $indexable_slug, $object_id, is_wp_error( $index_version ) ? 0 : $index_version );
 	}
 
 	/**

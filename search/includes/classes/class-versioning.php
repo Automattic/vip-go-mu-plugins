@@ -797,8 +797,9 @@ class Versioning {
 
 			$active_version_number = $this->get_active_version_number( $indexable );
 
-			// Is there an active version and no changes to the active version? If so, we skip - we don't keep replicate non-active indexes to others
-			if ( ! is_wp_error( $active_version_number ) && ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) ) {
+			// Without an active version there's nothing to replicate from. Otherwise, skip when the active version had no
+			// changes - we don't replicate non-active indexes to others
+			if ( is_wp_error( $active_version_number ) || empty( $objects_by_version[ $active_version_number ] ) ) {
 				continue;
 			}
 
