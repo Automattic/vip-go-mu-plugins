@@ -40,7 +40,9 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	if ( 'inherit' === $attachment->post_status && $attachment->post_parent ) {
 		$parent_post = get_post( $attachment->post_parent );
-		if ( 'publish' === $parent_post->post_status ) {
+
+		// An attachment whose parent was deleted is effectively unattached.
+		if ( ! $parent_post || 'publish' === $parent_post->post_status ) {
 			return FILE_IS_PUBLIC;
 		}
 

@@ -83,6 +83,23 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Deleting a post leaves its attachments pointing at the missing parent; treat them as unattached.
+	 */
+	public function test__check_file_visibility__attachment_with_deleted_parent() {
+		$post_id       = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
+		$attachment_id = $this->create_attachment( '2021/01/orphaned.jpg', $post_id );
+
+		wp_delete_post( $post_id, true );
+		$this->assertSame( $post_id, get_post( $attachment_id )->post_parent );
+
+		$file_path = get_post_meta( $attachment_id, '_wp_attached_file', true );
+
+		$actual_file_visibility = check_file_visibility( false, $file_path );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, $actual_file_visibility );
+	}
+
+	/**
 	 * Multisite file paths have a `sites/<id>/` prefix that `_wp_attached_file` doesn't store.
 	 *
 	 * The prefix is stripped by pattern, so this needs neither multisite nor a real subsite.
