@@ -79,14 +79,17 @@ function vip_go_amp_force_query_var_value( $query_vars ) {
 			global $wp_rewrite;
 
 			// If there is something after /amp/, pretend we didn't hit that rewrite rule.
-			if ( $wp_rewrite->use_trailing_slashes && '' !== $query_vars[ AMP_QUERY_VAR ] ) {
+			if ( $wp_rewrite->use_trailing_slashes ) {
+				// Treat missing or non-scalar values (e.g. ?name[]=x) as empty, as WP_Query does.
+				$name = is_scalar( $query_vars['name'] ?? null ) ? (string) $query_vars['name'] : '';
+				$amp  = is_scalar( $query_vars[ AMP_QUERY_VAR ] ) ? (string) $query_vars[ AMP_QUERY_VAR ] : '';
 
 				// Check for extra-long slugs, which will truncate and remove the /amp/* part.
-				if ( strlen( $query_vars['name'] ) > 190 ) {
+				if ( strlen( $name ) > 190 ) {
 					// Give WP_Query an improbable string to get a 404.
-					$query_vars['name'] = substr( $query_vars['name'], 0, - 20 ) . substr( md5( $query_vars['name'] ), 0, 20 );
+					$query_vars['name'] = substr( $name, 0, - 20 ) . substr( md5( $name ), 0, 20 );
 				} else {
-					$query_vars['name'] = $query_vars['name'] . '/amp/' . $query_vars[ AMP_QUERY_VAR ];
+					$query_vars['name'] = $name . '/amp/' . $amp;
 				}
 				unset( $query_vars[ AMP_QUERY_VAR ] );
 			}
