@@ -94,6 +94,11 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// We manage the disk space, test gives bogus results.
 	unset( $tests['direct']['available_updates_disk_space'] );
 
+	// Disable "Opcode cache" test (WordPress 7.0+).
+	// OPcache is managed by VIP, but opcache.restrict_api blocks the
+	// opcache_get_status() call the test relies on, so it reports it as not enabled.
+	unset( $tests['direct']['opcode_cache'] );
+
 	return $tests;
 }
 
