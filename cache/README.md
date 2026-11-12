@@ -276,7 +276,7 @@ You can see the completed, working example here: https://github.com/Automattic/v
 
 ### Groups
 
-- Group names and values may contain letters, digits, `-` and `_`, but not the separators `---__` or `_--_`.
+- Group names and values may contain letters, digits, `-` and `_`, but not the separators `---__` or `_--_`. Group names also can't end in `_--` or `---_`, which would run into a separator in the cookie.
 - Values are stored as strings. A value set as `1` reads back as `'1'`, and `is_user_in_group_segment( 'beta', 1 )` matches it on later requests too.
 - Assigning an empty value removes the user from a group. If that leaves them in no groups, the group cookie is expired.
 
