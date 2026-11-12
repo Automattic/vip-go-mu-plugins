@@ -252,7 +252,7 @@ function generate_personal_data_export_file( $request_id ) {
 
 	// The new archive reuses the file name, so wait for a cleanup that is deleting the expired one,
 	// and keep cleanups away from this export until the new archive is uploaded.
-	$locked = _lock_export( $request_id, EXPORT_LOCK_TTL );
+	_lock_export( $request_id, EXPORT_LOCK_TTL );
 
 	// Track generated time to simplify deletions.
 	// We can't currently iterate through files in the Files Service so we need a way to query exports by date.
@@ -308,20 +308,16 @@ function generate_personal_data_export_file( $request_id ) {
 	// Remove the HTML file.
 	unlink( $html_report_pathname );
 
-	if ( ! $error ) {
+	if ( $error ) {
+		wp_send_json_error( $error );
+	} else {
 		/** This filter is documented in wp-admin/includes/file.php */
 		do_action( 'wp_privacy_personal_data_export_file_created', $local_archive_pathname, $archive_url, $html_report_pathname, $request_id, $json_report_pathname );
 
 		_upload_archive_file( $local_archive_pathname );
 	}
 
-	if ( $locked ) {
-		_unlock_export( $request_id );
-	}
-
-	if ( $error ) {
-		wp_send_json_error( $error );
-	}
+	_unlock_export( $request_id );
 }
 
 /**
@@ -472,11 +468,6 @@ function delete_old_export_files() {
 
 	update_postmeta_cache( wp_list_pluck( $expired_exports, 'post_id' ) );
 
-	// The timestamp re-read below must see a regeneration's write, so don't read it from a lagging replica.
-	if ( method_exists( $wpdb, 'send_reads_to_masters' ) ) {
-		$wpdb->send_reads_to_masters();
-	}
-
 	foreach ( $expired_exports as $expired_export ) {
 		$request_id = (int) $expired_export->post_id;
 
@@ -485,47 +476,37 @@ function delete_old_export_files() {
 			continue;
 		}
 
-		_delete_expired_export( $request_id, $expired_export->meta_value );
+		try {
+			// A regeneration that finished since the query changed the timestamp and uploaded a new archive under the same name, so keep it.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			$current_timestamp = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->postmeta WHERE post_id = %d AND meta_key = '_vip_export_generated_time'", $request_id ) );
+			if ( $current_timestamp !== $expired_export->meta_value ) {
+				continue;
+			}
 
-		_unlock_export( $request_id );
+			// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
+			$file_name = get_post_meta( $request_id, '_export_file_name', true );
+			$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
+
+			$delete_result = $file_url ? _delete_archive_file( $file_url ) : true;
+			if ( is_wp_error( $delete_result ) ) {
+				// Log the request ID, not the file URL or API message: both contain the export's secret file name.
+				/* translators: 1: export request ID 2: error code */
+				$message = sprintf( __( 'Failed to delete expired personal data export for request %1$d: %2$s' ), $request_id, $delete_result->get_error_code() );
+
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( esc_html( $message ), E_USER_WARNING );
+
+				// Keep the timestamp so the next run retries this export.
+				continue;
+			}
+
+			// Stop selecting this export once its file is gone.
+			delete_post_meta( $request_id, '_vip_export_generated_time', $expired_export->meta_value );
+		} finally {
+			_unlock_export( $request_id );
+		}
 	}
-}
-
-/**
- * Delete an expired export's archive. The caller must hold the export's lock.
- *
- * @param int    $request_id     Export request ID.
- * @param string $generated_time The `_vip_export_generated_time` value the expiry query selected.
- */
-function _delete_expired_export( $request_id, $generated_time ) {
-	global $wpdb;
-
-	// A regeneration that finished since the query changed the timestamp and uploaded a new archive under the same name, so keep it.
-	// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-	$current_timestamp = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->postmeta WHERE post_id = %d AND meta_key = '_vip_export_generated_time'", $request_id ) );
-	if ( $current_timestamp !== $generated_time ) {
-		return;
-	}
-
-	// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
-	$file_name = get_post_meta( $request_id, '_export_file_name', true );
-	$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
-
-	$delete_result = $file_url ? _delete_archive_file( $file_url ) : true;
-	if ( is_wp_error( $delete_result ) ) {
-		// Log the request ID, not the file URL or API message: both contain the export's secret file name.
-		/* translators: 1: export request ID 2: error code */
-		$message = sprintf( __( 'Failed to delete expired personal data export for request %1$d: %2$s' ), $request_id, $delete_result->get_error_code() );
-
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( esc_html( $message ), E_USER_WARNING );
-
-		// Keep the timestamp so the next run retries this export.
-		return;
-	}
-
-	// Stop selecting this export once its file is gone.
-	delete_post_meta( $request_id, '_vip_export_generated_time', $generated_time );
 }
 
 /**
