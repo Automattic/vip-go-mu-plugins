@@ -123,6 +123,48 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}
 
+	public function get_data_for_unpublished_post_purge_test() {
+		return [
+			// 1: old status
+			// 2: new status
+			// 3: whether the post's URLs are queued
+
+			'publish to draft'   => [ 'publish', 'draft', true ],
+			'publish to private' => [ 'publish', 'private', true ],
+			// Already queued through `clean_post_cache`.
+			'publish to trash'   => [ 'publish', 'trash', false ],
+			'publish to publish' => [ 'publish', 'publish', false ],
+			'draft to pending'   => [ 'draft', 'pending', false ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_unpublished_post_purge_test
+	 */
+	public function test__queue_unpublished_post_purge( $old_status, $new_status, $expected_purge ) {
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => $new_status ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		$this->cache_manager->queue_unpublished_post_purge( $new_status, $old_status, $post );
+
+		$this->assertSame( $expected_purge, in_array( home_url( '/' ), $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
+	/**
+	 * A post made private keeps its permalink, so only the unpublish purge clears its cached page.
+	 */
+	public function test__unpublished_post_purge__private_post_permalink() {
+		$post_id = $this->factory()->post->create( [ 'post_status' => 'publish' ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_update_post( [
+			'ID'          => $post_id,
+			'post_status' => 'private',
+		] );
+
+		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
+	}
+
 	public function get_data_for_special_purge_actions() {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],

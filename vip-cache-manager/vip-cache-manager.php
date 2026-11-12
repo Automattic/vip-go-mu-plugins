@@ -36,6 +36,9 @@ class WPCOM_VIP_Cache_Manager {
 		'private_files' => '/.vip/purge-all-private-files',
 	];
 
+	// Post statuses that `queue_post_purge()` purges whenever a post's cache is cleaned.
+	const PURGEABLE_POST_STATUSES = [ 'publish', 'inherit', 'trash' ];
+
 	private $ban_urls          = array();
 	private $purge_urls        = array();
 	private $site_cache_purged = false;
@@ -62,6 +65,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
+		add_action( 'transition_post_status', array( $this, 'queue_unpublished_post_purge' ), 10, 3 );
 
 		add_action( 'admin_menu', array( $this, 'vip_purge_cache_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_widget_assets' ) );
@@ -807,7 +811,15 @@ class WPCOM_VIP_Cache_Manager {
 		return $this->queue_purge_url( $url );
 	}
 
-	public function queue_post_purge( $post_id ) {
+	/**
+	 * Queue a purge of a post's URLs.
+	 *
+	 * @param int|WP_Post $post_id       Post ID or object.
+	 * @param bool        $was_published Whether the post just left the published state, so it's
+	 *                                   purged even though its new status isn't purgeable.
+	 * @return bool True if the post's URLs were queued.
+	 */
+	public function queue_post_purge( $post_id, $was_published = false ) {
 		if ( $this->site_cache_purged ) {
 			return false;
 		}
@@ -819,7 +831,7 @@ class WPCOM_VIP_Cache_Manager {
 		$post = get_post( $post_id );
 		if ( empty( $post ) ||
 			'revision' === $post->post_type ||
-			! in_array( get_post_status( $post_id ), array( 'publish', 'inherit', 'trash' ), true ) ) {
+			( ! $was_published && ! in_array( get_post_status( $post_id ), self::PURGEABLE_POST_STATUSES, true ) ) ) {
 			return false;
 		}
 
@@ -928,6 +940,25 @@ class WPCOM_VIP_Cache_Manager {
 		$this->purge_urls = array_unique( $this->purge_urls );
 
 		return true;
+	}
+
+	/**
+	 * Queue a purge for a post that left the published state.
+	 *
+	 * `queue_post_purge()` skips posts whose status isn't purgeable, so without this, moving a
+	 * published post to draft, private, pending or future would leave its URLs and files cached.
+	 *
+	 * @param string  $new_status New post status.
+	 * @param string  $old_status Old post status.
+	 * @param WP_Post $post       Post object.
+	 */
+	public function queue_unpublished_post_purge( $new_status, $old_status, $post ) {
+		// Posts moving to a purgeable status were already queued through `clean_post_cache`.
+		if ( 'publish' !== $old_status || in_array( $new_status, self::PURGEABLE_POST_STATUSES, true ) ) {
+			return;
+		}
+
+		$this->queue_post_purge( $post->ID, true );
 	}
 
 	/**
