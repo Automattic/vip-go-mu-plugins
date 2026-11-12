@@ -40,11 +40,13 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	if ( 'inherit' === $attachment->post_status && $attachment->post_parent ) {
 		$parent_post = get_post( $attachment->post_parent );
-		if ( 'publish' === $parent_post->post_status ) {
+		if ( $parent_post && 'publish' === $parent_post->post_status ) {
 			return FILE_IS_PUBLIC;
 		}
 
-		$user_has_edit_access = current_user_can( 'edit_post', $parent_post->ID );
+		// Keep files of a deleted parent private, and check access against the attachment itself.
+		$post_id_to_check     = $parent_post ? $parent_post->ID : $attachment->ID;
+		$user_has_edit_access = current_user_can( 'edit_post', $post_id_to_check );
 
 		if ( $user_has_edit_access ) {
 			return FILE_IS_PRIVATE_AND_ALLOWED;
