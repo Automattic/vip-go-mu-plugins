@@ -144,7 +144,19 @@ class HealthJob {
 			)
 		);
 
-		if ( is_wp_error( $results ) && 'es_content_validation_already_ongoing' !== $results->get_error_code() ) {
+		if ( is_wp_error( $results ) && 'es_validate_content_batch_failed' === $results->get_error_code() ) {
+			// Elasticsearch errors are already logged per request, and an outage would make every site's run alert, so only log
+			\Automattic\VIP\Logstash\log2logstash(
+				array(
+					'severity' => 'warning',
+					'feature'  => 'search_content_validation',
+					'message'  => $results->get_error_message(),
+					'extra'    => [
+						'homeurl' => home_url(),
+					],
+				)
+			);
+		} elseif ( is_wp_error( $results ) && 'es_content_validation_already_ongoing' !== $results->get_error_code() ) {
 			$message = sprintf( 'Cron validate-contents error for site %d (%s): %s', FILES_CLIENT_SITE_ID, home_url(), $results->get_error_message() );
 			Alerts::chat( '#vip-go-es-alerts', $message, 2 );
 		}
