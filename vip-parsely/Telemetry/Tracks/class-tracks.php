@@ -138,6 +138,7 @@ class Tracks implements Telemetry_System {
 			self::TRACKS_RECORD_URL,
 			array(
 				'blocking' => $blocking,
+				'timeout'  => 1,
 				'body'     => array(
 					'events'      => $events,
 					'commonProps' => $common_props,
