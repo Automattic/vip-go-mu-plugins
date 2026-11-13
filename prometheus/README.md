@@ -8,6 +8,8 @@ This system is intended for use by WPVIP to monitor the operation of sites and i
 
 Prometheus metrics are exposed at `/.vip-prom-metrics`.
 
+The endpoint runs without WordPress. On each scrape it refreshes the APCu and OPcache gauges, which describe the pod serving the scrape.
+
 ## Collectors
 
 Stat collection is implemented as Collectors (see the `prometheus-collectors` directory). Each Collector implements `CollectorInterface` and is responsible for collecting the relevant metrics.
