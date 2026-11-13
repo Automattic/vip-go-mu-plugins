@@ -16,8 +16,8 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 		$this->original_current_user_id = get_current_user_id();
 
-		foreach ( PATH_CACHE_HOOKS as $hook ) {
-			add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 4 );
+		foreach ( \Automattic\VIP\Files\Acl\PATH_CACHE_HOOKS as $hook ) {
+			add_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache', 10, 4 );
 		}
 	}
 
@@ -172,13 +172,19 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	public function test__check_file_visibility__path_cached_as_not_found_gets_attached() {
-		$file_path = '2021/01/reused.jpg';
+		$file_path  = '2021/01/reused.jpg';
+		$moved_path = '2021/01/moved-here.jpg';
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $moved_path ) );
 
-		$this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+		$attachment_id = $this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
+
+		update_attached_file( $attachment_id, $moved_path );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $moved_path ) );
 	}
 
 	public function get_data__check_file_visibility__attachment_stops_using_cached_path() {

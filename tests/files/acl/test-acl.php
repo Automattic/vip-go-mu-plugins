@@ -95,8 +95,8 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 
 		// A request on this site can still switch to a site that restricts unpublished files.
-		foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
-			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), "$hook action does not have correct callback attached" );
+		foreach ( PATH_CACHE_HOOKS as $hook ) {
+			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache' ), "$hook action does not have correct callback attached" );
 		}
 	}
 
