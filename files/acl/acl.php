@@ -54,6 +54,7 @@ function maybe_load_restrictions() {
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
+		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\Restrict_Unpublished_Files\send_derived_file_purges' );
 	}
 }
 

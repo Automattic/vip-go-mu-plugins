@@ -24,6 +24,10 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	public function tearDown(): void {
 		wp_set_current_user( $this->original_current_user_id );
 
+		// Don't leave queued purges for other tests.
+		queue_derived_file_purges( [], true );
+		\WPCOM_VIP_Cache_Manager::instance()->clear_queued_purge_urls();
+
 		parent::tearDown();
 	}
 
@@ -353,32 +357,50 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_urls, $actual_urls );
 	}
 
-	public function get_data__purge_attachments_for_post__derived_files() {
-		return [
-			'unpublished post' => [ 'draft', true ],
-			'published post'   => [ 'publish', false ],
-		];
-	}
-
 	/**
-	 * Derived files are purged after the main files, and only when they become private.
-	 *
-	 * @dataProvider get_data__purge_attachments_for_post__derived_files
+	 * Derived files are purged after every main file in the request, and only for posts that aren't published.
 	 */
-	public function test__purge_attachments_for_post__derived_files( $post_status, $expect_derived ) {
-		$post_id       = $this->factory()->post->create( [ 'post_status' => $post_status ] );
-		$attachment_id = $this->create_edited_attachment( $post_id );
-		$url           = wp_get_attachment_url( $attachment_id );
-		$base_url      = trailingslashit( dirname( $url ) );
+	public function test__purge_attachments_for_post__derived_files_go_last() {
+		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\send_derived_file_purges' );
+		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
+		$cache_manager->clear_queued_purge_urls();
 
-		$expected_urls = $expect_derived ? [
-			$url,
+		$draft_id      = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
+		$pending_id    = $this->factory()->post->create( [ 'post_status' => 'pending' ] );
+		$published_id  = $this->factory()->post->create();
+		$attachment_id = $this->create_edited_attachment( $draft_id );
+		$base_url      = trailingslashit( dirname( wp_get_attachment_url( $attachment_id ) ) );
+		foreach ( [
+			'pending'   => $pending_id,
+			'published' => $published_id,
+		] as $name => $post_id ) {
+			wp_update_attachment_metadata( $this->create_attachment( "2021/01/$name-rotated.jpg", $post_id ), [ 'original_image' => "$name.jpg" ] );
+		}
+
+		// As the cache manager does with the URLs for each post it purges.
+		foreach ( [ $draft_id, $pending_id, $published_id ] as $post_id ) {
+			foreach ( purge_attachments_for_post( [], $post_id ) as $url ) {
+				$cache_manager->queue_purge_url( $url );
+			}
+		}
+
+		$main_urls = [
+			$base_url . 'photo-rotated-e1700000000123.jpg',
+			$base_url . 'pending-rotated.jpg',
+			$base_url . 'published-rotated.jpg',
+		];
+		$this->assertSame( $main_urls, $cache_manager->get_queued_purge_urls() );
+
+		// The cache manager fires this as it's about to send its purges.
+		do_action( 'wpcom_vip_cache_pre_execute_purges', $cache_manager->get_queued_purge_urls() );
+
+		$derived_urls = [
 			$base_url . 'photo.jpg',
 			$base_url . 'photo-rotated-e1700000000123-300x200.jpg',
 			$base_url . 'photo-rotated.jpg',
-		] : [ $url ];
-
-		$this->assertEquals( $expected_urls, purge_attachments_for_post( [], $post_id ) );
+			$base_url . 'pending.jpg',
+		];
+		$this->assertSame( array_merge( $main_urls, $derived_urls ), $cache_manager->get_queued_purge_urls() );
 	}
 
 	public function get_data__check_file_visibility__names_ending_in_core_suffixes() {

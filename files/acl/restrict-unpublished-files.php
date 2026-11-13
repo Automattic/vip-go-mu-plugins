@@ -297,6 +297,39 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		}
 	}
 
-	// Derived files go last, so if the cache manager caps the purge, it drops them before this post's main files.
-	return array_merge( $urls, $derived_urls );
+	queue_derived_file_purges( $derived_urls );
+
+	return $urls;
+}
+
+/**
+ * Queue derived files' URLs to purge after everything else in the request.
+ *
+ * The cache manager purges a limited number of URLs per request, keeping the first ones queued. Handing
+ * it these last, as it's about to send its purges, means that if it has to drop URLs, it drops these
+ * before any page or main file, including other posts'.
+ *
+ * @param string[] $urls URLs to purge.
+ * @param bool     $send Whether to hand the URLs queued so far to the cache manager.
+ */
+function queue_derived_file_purges( array $urls, $send = false ) {
+	static $queued = [];
+
+	$queued = array_merge( $queued, $urls );
+	if ( ! $send ) {
+		return;
+	}
+
+	foreach ( array_unique( $queued ) as $url ) {
+		wpvip_purge_edge_cache_for_url( $url );
+	}
+
+	$queued = [];
+}
+
+/**
+ * Hand the queued derived files' URLs to the cache manager, which is about to send its purges.
+ */
+function send_derived_file_purges() {
+	queue_derived_file_purges( [], true );
 }
