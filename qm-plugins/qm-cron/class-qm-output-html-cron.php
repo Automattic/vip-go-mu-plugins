@@ -2,6 +2,11 @@
 
 class QM_Output_Html_Cron extends QM_Output_Html {
 
+	/**
+	 * Most events listed per table, so sites with many events still get a usable panel.
+	 */
+	private const MAX_LISTED_EVENTS = 500;
+
 	private $doing_cron = false;
 
 	public function __construct( \QM_Collector $collector ) {
@@ -91,10 +96,10 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 		</table>
 		<br />
 		<h3><strong>Custom Events</strong></h3>
-		<?php $this->display_events( $data->user_crons, 'qm-cron-user-crons' ); ?>
+		<?php $this->display_events( $data->user_crons, $data->total_user_crons ); ?>
 		<br />
 		<h3><strong>Core Events</strong></h3>
-		<?php $this->display_events( $data->core_crons, 'qm-cron-core-crons' ); ?>
+		<?php $this->display_events( $data->core_crons, $data->total_core_crons ); ?>
 		</div>
 		<?php
 	}
@@ -102,14 +107,14 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 	/**
 	 * Displays the events in an easy to read table.
 	 *
-	 * @param array  $events        Array of events.
-	 * @param string $no_events_msg Message to display if there are no events.
+	 * @param array $events       Array of events.
+	 * @param int   $total_events Number of events in the array.
 	 */
-	private function display_events( $events, $html_table_id = '', $no_events_msg = 'No events found' ) {
+	private function display_events( $events, $total_events ) {
 		// Exit early if no events found.
 		if ( ! is_array( $events ) || empty( $events ) ) {
 			echo '
-			<p>', esc_html( $no_events_msg ), '</p>';
+			<p>', esc_html__( 'No events found', 'query-monitor' ), '</p>';
 			return;
 		}
 
@@ -125,10 +130,17 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 				</tr></thead>
 				<tbody>';
 
+		$listed_events = 0;
 		foreach ( $events as $time => $time_cron_array ) {
-			$time        = (int) $time;
-			$event_count = $this->get_arg_set_count( $time_cron_array );
-			$show_time   = true;
+			// Stop at a time boundary, so the time and hook cells keep their row spans.
+			if ( $listed_events >= self::MAX_LISTED_EVENTS ) {
+				break;
+			}
+
+			$time           = (int) $time;
+			$event_count    = $this->get_arg_set_count( $time_cron_array );
+			$show_time      = true;
+			$listed_events += $event_count;
 
 			foreach ( $time_cron_array as $hook => $data ) {
 				$row_attributes = $this->get_event_row_attributes( $time, $hook );
@@ -170,6 +182,15 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 		unset( $time, $time_cron_array, $show_time );
 
 		echo '</tbody></table>';
+
+		if ( $listed_events < $total_events ) {
+			echo '<p>', esc_html( sprintf(
+				/* translators: 1: number of events listed, 2: total number of events */
+				__( 'Showing the first %1$s of %2$s events.', 'query-monitor' ),
+				number_format_i18n( $listed_events ),
+				number_format_i18n( $total_events )
+			) ), '</p>';
+		}
 	}
 
 	/**

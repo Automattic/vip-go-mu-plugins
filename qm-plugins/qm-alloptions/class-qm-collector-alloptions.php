@@ -18,6 +18,12 @@ class QM_Collector_AllOptions extends QM_Collector {
 	}
 
 	public function process() {
+		// Only the HTML dispatcher shows this panel, but the REST, redirect and Ajax
+		// dispatchers process every collector too. Skip refetching and compressing alloptions there.
+		$html_dispatcher = QM_Dispatchers::get( 'html' );
+		if ( ! $html_dispatcher || ! $html_dispatcher->should_dispatch() ) {
+			return;
+		}
 
 		$alloptions = wp_load_alloptions( true );
 		$total_size = 0;
