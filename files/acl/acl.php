@@ -46,11 +46,9 @@ function maybe_load_restrictions() {
 	}
 	// Purge attachments for posts for better cacheability
 	add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\purge_attachments_for_post', 10, 2 );
-	// Purge an attachment's files when it's saved or attached, or its files change, while they're restricted
+	// Purge an attachment's files when it's saved or attached while they're restricted (clear_path_cache() does when they change)
 	add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
 	add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
-	add_action( 'added_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
-	add_action( 'updated_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
 
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
@@ -64,14 +62,19 @@ function maybe_load_restrictions() {
 }
 
 /**
- * Whether the current site restricts access to unpublished files, as decided in maybe_load_restrictions()
- * for the site a request starts on.
+ * Load restrict-unpublished-files.php if the current site restricts access to unpublished files, as decided
+ * in maybe_load_restrictions() for the site a request starts on.
  *
- * @return bool
+ * @return bool Whether the current site restricts access to unpublished files.
  */
-function restricts_unpublished_files() {
-	return true === get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' )
-		&& true !== get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' );
+function load_unpublished_restrictions() {
+	if ( true !== get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' ) || true === get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' ) ) {
+		return false;
+	}
+
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	return true;
 }
 
 /**
@@ -84,13 +87,7 @@ function restricts_unpublished_files() {
  * @return array
  */
 function purge_attachments_for_post( $urls, $post_id ) {
-	if ( ! restricts_unpublished_files() ) {
-		return $urls;
-	}
-
-	require_once __DIR__ . '/restrict-unpublished-files.php';
-
-	return Restrict_Unpublished_Files\purge_attachments_for_post( $urls, $post_id );
+	return load_unpublished_restrictions() ? Restrict_Unpublished_Files\purge_attachments_for_post( $urls, $post_id ) : $urls;
 }
 
 /**
@@ -101,28 +98,14 @@ function purge_attachments_for_post( $urls, $post_id ) {
  * @param int $post_id Post ID. Posts that aren't attachments are skipped.
  */
 function purge_restricted_attachment_files( $post_id ) {
-	if ( restricts_unpublished_files() ) {
-		require_once __DIR__ . '/restrict-unpublished-files.php';
-
+	if ( load_unpublished_restrictions() ) {
 		Restrict_Unpublished_Files\purge_restricted_attachment_files( $post_id );
 	}
 }
 
 /**
- * PURGE a restricted attachment's files when the meta that lists them is added or updated.
- *
- * @param int    $meta_id  Meta ID.
- * @param int    $post_id  Post ID.
- * @param string $meta_key Meta key.
- */
-function purge_restricted_attachment_files_on_meta_change( $meta_id, $post_id, $meta_key ) {
-	if ( in_array( $meta_key, FILE_META_KEYS, true ) ) {
-		purge_restricted_attachment_files( $post_id );
-	}
-}
-
-/**
- * Clear the cached attachment lookups for the files an attachment starts or stops using.
+ * Clear the cached attachment lookups for the files an attachment starts or stops using, and purge those files
+ * if they're restricted.
  *
  * Otherwise a lookup cached before the change (as not found, or as an attachment that has since
  * moved or been deleted while another one still uses the path) would return an outdated result until it expires.
@@ -153,6 +136,8 @@ function clear_path_cache( $meta_id, $post_id, $meta_key ) {
 			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path, 'image' ), Restrict_Unpublished_Files\CACHE_GROUP );
 		}
 	}
+
+	purge_restricted_attachment_files( $post_id );
 }
 
 /**

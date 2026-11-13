@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../../files/acl/acl.php';
@@ -506,15 +507,13 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Hook up the purge of restricted attachments' files as acl.php does on a site that restricts unpublished files,
-	 * starting from an empty purge queue.
+	 * Hook up the purge of restricted attachments' files on a site that restricts unpublished files, starting from
+	 * an empty purge queue.
 	 */
 	private function hook_restricted_attachment_purges(): \WPCOM_VIP_Cache_Manager {
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
 		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
-		add_action( 'clean_post_cache', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files' );
-		add_action( 'clean_attachment_cache', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files' );
-		add_action( 'added_post_meta', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files_on_meta_change', 10, 3 );
-		add_action( 'updated_post_meta', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+		\Automattic\VIP\Files\Acl\maybe_load_restrictions();
 
 		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$cache_manager->clear_queued_purge_urls();

@@ -98,8 +98,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 			[ 'wpcom_vip_cache_purge_urls', 'purge_attachments_for_post' ],
 			[ 'clean_post_cache', 'purge_restricted_attachment_files' ],
 			[ 'clean_attachment_cache', 'purge_restricted_attachment_files' ],
-			[ 'added_post_meta', 'purge_restricted_attachment_files_on_meta_change' ],
-			[ 'updated_post_meta', 'purge_restricted_attachment_files_on_meta_change' ],
 		];
 		foreach ( PATH_CACHE_HOOKS as $hook ) {
 			$callbacks[] = [ $hook, 'clear_path_cache' ];
