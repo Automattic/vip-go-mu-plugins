@@ -381,9 +381,14 @@ function purge_restricted_attachment_files( $attachment_id ) {
 		return;
 	}
 
-	foreach ( get_attachment_file_urls( $attachment->ID ) as $url ) {
-		wpvip_purge_edge_cache_for_url( $url );
+	$file_urls = get_attachment_file_urls( $attachment->ID );
+	if ( ! $file_urls ) {
+		return;
 	}
+
+	// The derived files go after everything else in the request, as when a post's attachments are purged.
+	wpvip_purge_edge_cache_for_url( array_shift( $file_urls ) );
+	queue_derived_file_purges( $file_urls );
 }
 
 /**

@@ -514,6 +514,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
 		add_action( 'added_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
 		add_action( 'updated_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\send_derived_file_purges' );
 
 		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$cache_manager->clear_queued_purge_urls();
@@ -563,7 +564,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * All of an attachment's files are purged when it's attached to an unpublished post.
+	 * All of an attachment's files are purged when it's attached to an unpublished post, its derived files last.
 	 *
 	 * @dataProvider get_data__purge_restricted_attachment_files__attachment_attached
 	 */
@@ -575,7 +576,12 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 		$file_urls = get_attachment_file_urls( $attachment_id );
 		$this->assertCount( 4, $file_urls );
-		$this->assertSame( [], array_diff( $file_urls, $cache_manager->get_queued_purge_urls() ) );
+		$this->assertSame( [ $file_urls[0] ], array_values( array_unique( $cache_manager->get_queued_purge_urls() ) ) );
+
+		// The cache manager fires this as it's about to send its purges.
+		do_action( 'wpcom_vip_cache_pre_execute_purges', $cache_manager->get_queued_purge_urls() );
+
+		$this->assertSame( $file_urls, array_values( array_unique( $cache_manager->get_queued_purge_urls() ) ) );
 	}
 
 	/**
@@ -586,6 +592,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$cache_manager = $this->hook_restricted_attachment_purges();
 
 		wp_update_attachment_metadata( $attachment_id, [ 'original_image' => 'listed-later.jpg' ] );
+		do_action( 'wpcom_vip_cache_pre_execute_purges', $cache_manager->get_queued_purge_urls() );
 
 		$this->assertContains( trailingslashit( dirname( wp_get_attachment_url( $attachment_id ) ) ) . 'listed-later.jpg', $cache_manager->get_queued_purge_urls() );
 	}
