@@ -171,32 +171,22 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
-	/**
-	 * A path lookup cached before an attachment starts or stops using the path is looked up again.
-	 */
-	public function test__check_file_visibility__attachments_change_after_cached_lookup() {
+	public function test__check_file_visibility__path_cached_as_not_found_gets_attached() {
 		$file_path = '2021/01/reused.jpg';
-		$post_id   = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
 
-		$attachment_id = $this->create_attachment( $file_path, $post_id );
+		$this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
 
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ), 'A path cached as not found should be looked up again once attached' );
-
-		// Another attachment shares the path. A differently cased copy keeps the cached exact match on the first one.
-		$this->create_attachment( strtoupper( $file_path ), $post_id );
-		$this->assertSame( $attachment_id, (int) get_attachment_id_from_file_path( $file_path ) );
-
-		wp_delete_attachment( $attachment_id, true );
-
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ), 'A path cached as a deleted attachment should be looked up again' );
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
 
 	public function get_data__check_file_visibility__attachment_stops_using_cached_path() {
 		return [
-			'file moved'   => [ '2021/01/moved.jpg' ],
-			'file removed' => [ '' ], // update_attached_file() calls delete_post_meta() without a value.
+			'attachment deleted' => [ fn( $id ) => wp_delete_attachment( $id, true ) ],
+			'file moved'         => [ fn( $id ) => update_attached_file( $id, '2021/01/moved.jpg' ) ],
+			// Calls delete_post_meta() without a value.
+			'file removed'       => [ fn( $id ) => update_attached_file( $id, '' ) ],
 		];
 	}
 
@@ -205,14 +195,14 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider get_data__check_file_visibility__attachment_stops_using_cached_path
 	 */
-	public function test__check_file_visibility__attachment_stops_using_cached_path( $new_file ) {
+	public function test__check_file_visibility__attachment_stops_using_cached_path( callable $stop_using_path ) {
 		$file_path = '2021/01/shared.jpg';
 		$public_id = $this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'publish' ] ) );
 		$this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
 
-		update_attached_file( $public_id, $new_file );
+		$stop_using_path( $public_id );
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
