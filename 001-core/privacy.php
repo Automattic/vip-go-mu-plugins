@@ -220,9 +220,8 @@ function generate_personal_data_export_file( $request_id ) {
 	$error = false;
 
 	// The archive keeps its file name, so generating it must not overlap with cleaning it up (or generating
-	// it again). Wait out a cleanup, which only holds the lock for one delete; otherwise leave the existing
-	// archive alone and let the admin retry.
-	$lock = _lock_export( $request_id, 10 );
+	// it again). If either is running, leave the existing archive alone and let the admin retry.
+	$lock = _lock_export( $request_id );
 	if ( ! $lock ) {
 		unlink( $json_report_pathname );
 		unlink( $html_report_pathname );
@@ -340,23 +339,13 @@ function generate_personal_data_export_file( $request_id ) {
  * Lock an export request, so generating and cleaning up its archive can't overlap.
  *
  * @param int $request_id Export request ID.
- * @param int $wait       Seconds to wait for the lock.
- * @return string|false Token to release the lock with, or false if it wasn't acquired.
+ * @return string|false Token to release the lock with, or false if it's already held.
  */
-function _lock_export( $request_id, $wait = 0 ) {
-	$token    = wp_generate_uuid4();
-	$deadline = microtime( true ) + $wait;
+function _lock_export( $request_id ) {
+	$token = wp_generate_uuid4();
 
 	// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- EXPORT_LOCK_TTL is 300.
-	while ( ! wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, EXPORT_LOCK_TTL ) ) {
-		if ( microtime( true ) >= $deadline ) {
-			return false;
-		}
-
-		usleep( 250000 );
-	}
-
-	return $token;
+	return wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, EXPORT_LOCK_TTL ) ? $token : false;
 }
 
 /**

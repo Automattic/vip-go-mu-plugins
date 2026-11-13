@@ -12,9 +12,6 @@ require_once ABSPATH . 'wp-admin/includes/privacy-tools.php';
 class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 	use Captures_Errors;
 
-	/** @var float Seconds the stand-in usleep() below has "slept". */
-	public static $slept = 0;
-
 	/** @var string */
 	private $file_path;
 
@@ -149,13 +146,4 @@ class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 		// The timestamp is what makes the next run select this export again.
 		$this->assertSame( $retries, metadata_exists( 'post', $request_id, '_vip_export_generated_time' ) );
 	}
-}
-
-// Stand-ins for the clock `_lock_export()` waits on, so waiting out a held lock doesn't slow the tests down.
-function usleep( $microseconds ) {
-	Privacy_Export_Cleanup_Test::$slept += $microseconds / 1000000;
-}
-
-function microtime( $as_float = false ) {
-	return \microtime( $as_float ) + Privacy_Export_Cleanup_Test::$slept;
 }
