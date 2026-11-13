@@ -171,9 +171,10 @@ class Test_Prometheus extends WP_UnitTestCase {
 			self::markTestSkipped( 'Requires APCu and OPcache.' );
 		}
 
+		// JIT is disabled because enabling OPcache warns at startup when JIT is on and a coverage extension is loaded.
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- runs the standalone endpoint script
 		$process = proc_open(
-			[ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'opcache.enable=1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.restrict_api=' . $restrict_api, '-d', 'display_errors=stderr', dirname( __DIR__, 2 ) . '/prometheus/endpoint.php' ],
+			[ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'opcache.enable=1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.jit=disable', '-d', 'opcache.restrict_api=' . $restrict_api, '-d', 'display_errors=stderr', dirname( __DIR__, 2 ) . '/prometheus/endpoint.php' ],
 			[
 				1 => [ 'pipe', 'w' ],
 				2 => [ 'pipe', 'w' ],
