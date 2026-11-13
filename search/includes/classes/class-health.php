@@ -1074,8 +1074,12 @@ class Health {
 			'index_version' => $version_to_check,
 		) );
 
+		if ( is_wp_error( $version_result ) ) {
+			return $version_result;
+		}
+
 		$diff = [];
-		if ( is_array( $version_result ) && ! empty( $version_result ) ) {
+		if ( ! empty( $version_result ) ) {
 			$diff[] = $version_result;
 		}
 
@@ -1098,11 +1102,14 @@ class Health {
 			$settings   = $this->elasticsearch->get_index_settings( $index_name );
 
 			// ElasticPress returns an HTTP error's body (or null), not a WP_Error. Without the index's settings, every monitored
-			// key would read as a diff, and trigger an alert, a settings update and a shard rebuild.
+			// key would read as a diff, and trigger an alert, a settings update and a shard rebuild. Transport and HTTP errors
+			// share one code, which SettingsHealthJob only logs.
 			if ( is_wp_error( $settings ) || ! isset( $settings[ $index_name ]['settings'] ) ) {
 				$this->search->versioning->reset_current_version_number( $indexable );
 
-				return is_wp_error( $settings ) ? $settings : new WP_Error( 'es_index_settings_failed', sprintf( 'Fetching the settings of index %s from Elasticsearch failed', $index_name ) );
+				$reason = is_wp_error( $settings ) ? $settings->get_error_message() : 'no settings for the index in the response';
+
+				return new WP_Error( 'es_index_settings_failed', sprintf( 'Fetching the settings of index %s from Elasticsearch failed: %s', $index_name, $reason ) );
 			}
 
 			$actual_settings  = $settings[ $index_name ]['settings'];

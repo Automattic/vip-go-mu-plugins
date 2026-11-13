@@ -871,15 +871,19 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function test_get_index_settings_diff_for_indexable_returns_error_when_the_settings_request_fails(): void {
+	public function test_get_index_versions_settings_diff_for_indexable_returns_error_when_the_settings_request_fails(): void {
 		$error_body = array(
 			'error'  => array( 'type' => 'cluster_block_exception' ),
 			'status' => 503,
 		);
 
-		[ $health, $mocked_indexable ] = $this->build_settings_diff_health( 'vip-123-post-1', [], [ 'index.number_of_shards' => 1 ], true, $error_body );
+		[ $health, $mocked_indexable, $versioning ] = $this->build_settings_diff_health( 'vip-123-post-1', [], [ 'index.number_of_shards' => 1 ], true, $error_body );
+		$versioning->method( 'get_active_version_number' )->willReturn( 1 );
 
-		$this->assertWPError( $health->get_index_settings_diff_for_indexable( $mocked_indexable ), 'An error response must not read as every setting differing.' );
+		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
+
+		$this->assertWPError( $result, 'An error response must not read as every setting differing, nor as healthy.' );
+		$this->assertSame( 'es_index_settings_failed', $result->get_error_code() );
 	}
 
 	public function get_index_versions_settings_diff_for_indexable_data() {
