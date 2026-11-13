@@ -17,7 +17,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->original_current_user_id = get_current_user_id();
 
 		foreach ( \Automattic\VIP\Files\Acl\PATH_CACHE_HOOKS as $hook ) {
-			add_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache', 10, 4 );
+			add_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache', 10, 3 );
 		}
 	}
 
@@ -35,6 +35,25 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	 */
 	private function create_attachment( string $file, int $parent_id = 0 ): int {
 		return self::factory()->attachment->create_object( $file, $parent_id, [ 'post_mime_type' => 'image/jpeg' ] );
+	}
+
+	/**
+	 * An image rotated on upload, then edited, with a generated size and a VIP dynamic size.
+	 */
+	private function create_edited_attachment( int $parent_id, string $file = '2021/01/photo-rotated-e1700000000123.jpg' ): int {
+		$attachment_id = $this->create_attachment( $file, $parent_id );
+
+		wp_update_attachment_metadata( $attachment_id, [
+			'file'           => '2021/01/photo-rotated-e1700000000123.jpg',
+			'original_image' => 'photo.jpg',
+			'sizes'          => [
+				'medium' => [ 'file' => 'photo-rotated-e1700000000123-300x200.jpg' ],
+				'large'  => [ 'file' => 'photo-rotated-e1700000000123.jpg?resize=1024,683' ],
+			],
+		] );
+		update_post_meta( $attachment_id, '_wp_attachment_backup_sizes', [ 'full-orig' => [ 'file' => 'photo-rotated.jpg' ] ] );
+
+		return $attachment_id;
 	}
 
 	public function test__check_file_visibility__attachment_not_found() {
@@ -332,5 +351,141 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$actual_urls = purge_attachments_for_post( $input_urls, $test_post_id );
 
 		$this->assertEquals( $expected_urls, $actual_urls );
+	}
+
+	public function get_data__purge_attachments_for_post__derived_files() {
+		return [
+			'unpublished post' => [ 'draft', true ],
+			'published post'   => [ 'publish', false ],
+		];
+	}
+
+	/**
+	 * Derived files are purged after the main files, and only when they become private.
+	 *
+	 * @dataProvider get_data__purge_attachments_for_post__derived_files
+	 */
+	public function test__purge_attachments_for_post__derived_files( $post_status, $expect_derived ) {
+		$post_id       = $this->factory()->post->create( [ 'post_status' => $post_status ] );
+		$attachment_id = $this->create_edited_attachment( $post_id );
+		$url           = wp_get_attachment_url( $attachment_id );
+		$base_url      = trailingslashit( dirname( $url ) );
+
+		$expected_urls = $expect_derived ? [
+			$url,
+			$base_url . 'photo.jpg',
+			$base_url . 'photo-rotated-e1700000000123-300x200.jpg',
+			$base_url . 'photo-rotated.jpg',
+		] : [ $url ];
+
+		$this->assertEquals( $expected_urls, purge_attachments_for_post( [], $post_id ) );
+	}
+
+	public function get_data__check_file_visibility__names_ending_in_core_suffixes() {
+		return [
+			'original named with a size'  => [ 'banner-3000x1000-scaled.jpg', '_wp_attachment_metadata', [ 'original_image' => 'banner-3000x1000.jpg' ], 'banner-3000x1000.jpg' ],
+			'original named with -pdf'    => [ 'team-pdf-scaled.jpg', '_wp_attachment_metadata', [ 'original_image' => 'team-pdf.jpg' ], 'team-pdf.jpg' ],
+			'size of a name with -pdf'    => [ 'team-pdf-scaled.jpg', '_wp_attachment_metadata', [ 'sizes' => [ 'medium' => [ 'file' => 'team-pdf-300x200.jpg' ] ] ], 'team-pdf-300x200.jpg' ],
+			'copy named with a size'      => [ 'hero-1600x900-e1700000000123.jpg', '_wp_attachment_backup_sizes', [ 'full-orig' => [ 'file' => 'hero-1600x900.jpg' ] ], 'hero-1600x900.jpg' ],
+			'preview of a -pdf name'      => [ 'annual-report-pdf.pdf', '_wp_attachment_metadata', [ 'sizes' => [ 'full' => [ 'file' => 'annual-report-pdf-pdf.jpg' ] ] ], 'annual-report-pdf-pdf.jpg' ],
+			'preview of an -e<n> name'    => [ 'invoice-e1.pdf', '_wp_attachment_metadata', [ 'sizes' => [ 'full' => [ 'file' => 'invoice-e1-pdf.jpg' ] ] ], 'invoice-e1-pdf.jpg' ],
+			'thumbnail edited separately' => [ 'x-e1700000000123.jpg', '_wp_attachment_metadata', [ 'sizes' => [ 'thumbnail' => [ 'file' => 'x-e1700000000123-temp-150x150.jpg' ] ] ], 'x-e1700000000123-temp-150x150.jpg' ],
+		];
+	}
+
+	/**
+	 * A name stacked with suffixes mustn't grow the lookup query without bound.
+	 */
+	public function test__check_file_visibility__long_suffix_chain_keeps_query_small() {
+		$queries = [];
+		add_filter( 'query', function ( $query ) use ( &$queries ) {
+			$queries[] = $query;
+			return $query;
+		} );
+
+		check_file_visibility( false, 'a' . str_repeat( '-pdf', 80 ) . '.jpg' );
+
+		$lookup = (string) current( preg_grep( '/_wp_attached_file/', $queries ) );
+		$this->assertLessThanOrEqual( 21, substr_count( $lookup, ' LIKE ' ) );
+	}
+
+	/**
+	 * A file whose own name ends in something that looks like a core suffix still matches its attachment.
+	 *
+	 * @dataProvider get_data__check_file_visibility__names_ending_in_core_suffixes
+	 */
+	public function test__check_file_visibility__names_ending_in_core_suffixes( $main_file, $meta_key, $meta_value, $filename ) {
+		$attachment_id = $this->create_attachment( '2021/01/' . $main_file, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+		update_post_meta( $attachment_id, $meta_key, $meta_value );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/' . $filename ) );
+	}
+
+	/**
+	 * PDF previews are images named after the PDF, with a number added when the name is taken.
+	 */
+	public function test__check_file_visibility__pdf_previews() {
+		$attachment_id = self::factory()->attachment->create_object( '2021/01/doc.pdf', $this->factory()->post->create( [ 'post_status' => 'draft' ] ), [ 'post_mime_type' => 'application/pdf' ] );
+		wp_update_attachment_metadata( $attachment_id, [
+			'sizes' => [
+				'full'      => [ 'file' => 'doc-pdf-1.jpg' ],
+				'thumbnail' => [ 'file' => 'doc-pdf-1-116x150.jpg' ],
+			],
+		] );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/doc-pdf-1.jpg' ) );
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/doc-pdf-1-116x150.jpg' ) );
+	}
+
+	/**
+	 * Deleting one of two attachments that share files mustn't leave a derived file's lookup on the deleted one.
+	 */
+	public function test__check_file_visibility__derived_file_of_deleted_shared_attachment() {
+		$post_id   = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
+		$first_id  = $this->create_edited_attachment( $post_id );
+		$file_path = '2021/01/photo-rotated-e1700000000123-300x200.jpg';
+
+		// A differently cased copy of the shared main file keeps the derived lookup on the first attachment.
+		$this->create_edited_attachment( $post_id, strtoupper( '2021/01/photo-rotated-e1700000000123.jpg' ) );
+		$this->assertSame( $first_id, (int) get_attachment_id_from_image_path( $file_path ) );
+
+		wp_delete_attachment( $first_id, true );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
+	}
+
+	public function get_data__check_file_visibility__derived_files() {
+		return [
+			'original'                     => [ 'photo.jpg', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			'copy replaced by an edit'     => [ 'photo-rotated.jpg', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			'generated size'               => [ 'photo-rotated-e1700000000123-300x200.jpg', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
+			'same base, not in metadata'   => [ 'photo-rotated-e1700000000999.jpg', \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC ],
+			'same base, not an image file' => [ 'photo.pdf', \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC ],
+		];
+	}
+
+	/**
+	 * Files core keeps next to an attachment's main file follow the attachment's visibility.
+	 *
+	 * @dataProvider get_data__check_file_visibility__derived_files
+	 */
+	public function test__check_file_visibility__derived_files( $filename, $expected_file_visibility ) {
+		$this->create_edited_attachment( $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+
+		$this->assertEquals( $expected_file_visibility, check_file_visibility( false, '2021/01/' . $filename ) );
+	}
+
+	public function test__check_file_visibility__derived_file_added_after_cached_lookup() {
+		$file_path     = '2021/01/late-300x200.jpg';
+		$attachment_id = $this->create_attachment( '2021/01/late.jpg', $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+
+		wp_update_attachment_metadata( $attachment_id, [
+			'file'  => '2021/01/late.jpg',
+			'sizes' => [ 'medium' => [ 'file' => 'late-300x200.jpg' ] ],
+		] );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
 }
