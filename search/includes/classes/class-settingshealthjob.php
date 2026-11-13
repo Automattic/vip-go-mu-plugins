@@ -159,34 +159,31 @@ class SettingsHealthJob {
 		}
 
 		foreach ( $results as $indexable_slug => $versions ) {
-			if ( is_wp_error( $versions ) && 'es_index_settings_failed' === $versions->get_error_code() ) {
-				// Elasticsearch errors are already logged per request, and an outage would make every site's run alert, so only log
-				\Automattic\VIP\Logstash\log2logstash(
-					array(
-						'severity' => 'warning',
-						'feature'  => 'search_health_job',
-						'message'  => $versions->get_error_message(),
-						'extra'    => [
-							'homeurl'   => home_url(),
-							'indexable' => $indexable_slug,
-						],
-					)
-				);
-
-				continue;
-			}
-
-			// If there's an error, alert
 			if ( is_wp_error( $versions ) ) {
-				$message = sprintf(
-					'Application %s: Error while validating index settings for indexable %s on %s: %s',
-					FILES_CLIENT_SITE_ID,
-					$indexable_slug,
-					home_url(),
-					$versions->get_error_message()
-				);
+				if ( 'es_index_settings_failed' === $versions->get_error_code() ) {
+					// Elasticsearch errors are already logged per request, and an outage would make every site's run alert, so only log
+					\Automattic\VIP\Logstash\log2logstash(
+						array(
+							'severity' => 'warning',
+							'feature'  => 'search_health_job',
+							'message'  => $versions->get_error_message(),
+							'extra'    => [
+								'homeurl'   => home_url(),
+								'indexable' => $indexable_slug,
+							],
+						)
+					);
+				} else {
+					$message = sprintf(
+						'Application %s: Error while validating index settings for indexable %s on %s: %s',
+						FILES_CLIENT_SITE_ID,
+						$indexable_slug,
+						home_url(),
+						$versions->get_error_message()
+					);
 
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+				}
 
 				continue;
 			}

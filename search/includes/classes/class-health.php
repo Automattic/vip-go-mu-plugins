@@ -1078,12 +1078,7 @@ class Health {
 			return $version_result;
 		}
 
-		$diff = [];
-		if ( ! empty( $version_result ) ) {
-			$diff[] = $version_result;
-		}
-
-		return $diff;
+		return empty( $version_result ) ? [] : [ $version_result ];
 	}
 
 	public function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
