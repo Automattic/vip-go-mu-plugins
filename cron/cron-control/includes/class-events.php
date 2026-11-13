@@ -255,11 +255,12 @@ class Events extends Singleton {
 			add_action( 'shutdown', array( $this, 'do_lock_cleanup_on_shutdown' ) );
 		}
 
-		// Core reschedules/conpletes an event before running it, so we respect that.
-		if ( $event->is_recurring() ) {
-			$event->reschedule();
-		} else {
-			$event->complete();
+		// Core reschedules/completes an event before running it, so we respect that.
+		$transition_result = $this->transition_event( $event );
+
+		if ( is_wp_error( $transition_result ) ) {
+			$this->release_event_locks( $event, $force );
+			return $transition_result;
 		}
 
 		try {
@@ -280,13 +281,7 @@ class Events extends Singleton {
 		}
 
 		// Free locks for the next event, unless they weren't set to begin with.
-		if ( ! $force ) {
-			// If we got this far, there's no uncaught error to handle.
-			$this->running_event = null;
-			remove_action( 'shutdown', array( $this, 'do_lock_cleanup_on_shutdown' ) );
-
-			$this->do_lock_cleanup( $event );
-		}
+		$this->release_event_locks( $event, $force );
 
 		// Callback didn't trigger a Throwable, indicating it succeeded.
 		if ( ! isset( $return ) ) {
@@ -298,6 +293,27 @@ class Events extends Singleton {
 		}
 
 		return $return;
+	}
+
+	private function release_event_locks( Event $event, bool $force ): void {
+		if ( $force ) {
+			return;
+		}
+
+		// If we got this far, there's no uncaught error to handle.
+		$this->running_event = null;
+		remove_action( 'shutdown', array( $this, 'do_lock_cleanup_on_shutdown' ) );
+		$this->do_lock_cleanup( $event );
+	}
+
+	/**
+	 * Persist the event state required before executing its callback.
+	 *
+	 * @param Event $event Event to transition.
+	 * @return true|WP_Error
+	 */
+	protected function transition_event( Event $event ) {
+		return $event->is_recurring() ? $event->reschedule() : $event->complete();
 	}
 
 	private function prime_event_action_lock( Event $event ): void {

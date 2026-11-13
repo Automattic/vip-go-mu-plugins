@@ -52,13 +52,24 @@ class Events_Store extends Singleton {
 			return $is_installed;
 		}
 
-		$table_name = $wpdb->prefix . self::TABLE_SUFFIX;
-		$is_installed = 1 === count( $wpdb->get_col( $wpdb->prepare( 'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_NAME = %s', $table_name ) ) );
+		$is_installed = self::table_exists( $wpdb->prefix . self::TABLE_SUFFIX );
 
 		// Cache the results, will be overridden by _prepare_table() during installation.
 		wp_cache_add( 'is_installed', $is_installed, 'cron-control' );
 
 		return $is_installed;
+	}
+
+	/**
+	 * Check whether the table exists in the current database.
+	 *
+	 * Scoped to DATABASE() because the DB user can usually see every schema on the server,
+	 * and a same-named table in another schema must not count.
+	 */
+	private static function table_exists( string $table_name ): bool {
+		global $wpdb;
+
+		return null !== $wpdb->get_var( $wpdb->prepare( 'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', $table_name ) );
 	}
 
 	/**
@@ -113,8 +124,6 @@ class Events_Store extends Singleton {
 	 * Create the plugin's DB table when necessary
 	 */
 	protected function _prepare_table() {
-		global $wpdb;
-
 		// Use Core's method of creating/updating tables.
 		if ( ! function_exists( 'dbDelta' ) ) {
 			require_once ABSPATH . '/wp-admin/includes/upgrade.php';
@@ -147,7 +156,7 @@ class Events_Store extends Singleton {
 		dbDelta( $schema, true );
 
 		// Confirm that the table was created, and set the option to prevent further updates.
-		$is_installed = 1 === count( $wpdb->get_col( $wpdb->prepare( 'SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_NAME = %s', $table_name ) ) );
+		$is_installed = self::table_exists( $table_name );
 		wp_cache_set( 'is_installed', $is_installed, 'cron-control' );
 
 		if ( $is_installed ) {
