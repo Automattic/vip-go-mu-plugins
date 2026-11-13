@@ -74,6 +74,7 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
+		$this->assertEquals( 10, has_action( 'wpcom_vip_cache_pre_execute_purges', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\send_derived_file_purges' ), 'wpcom_vip_cache_pre_execute_purges action does not have correct callback attached' );
 	}
 
 	public function data_provider__maybe_load_restrictions__option_false() {

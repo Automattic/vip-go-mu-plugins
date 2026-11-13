@@ -17,6 +17,9 @@ const FILE_IS_PRIVATE_AND_DENIED  = 'FILE_IS_PRIVATE_AND_DENIED';
 // Meta hooks that run clear_path_cache(), including the ones before an update or delete.
 const PATH_CACHE_HOOKS = [ 'added_post_meta', 'update_post_meta', 'updated_post_meta', 'delete_post_meta' ];
 
+// Attachment meta that lists its files.
+const FILE_META_KEYS = [ '_wp_attached_file', '_wp_attachment_metadata', '_wp_attachment_backup_sizes' ];
+
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
@@ -38,7 +41,7 @@ function maybe_load_restrictions() {
 
 	// Keep cached path lookups current on every site, since a request can switch to a site that restricts unpublished files.
 	foreach ( PATH_CACHE_HOOKS as $hook ) {
-		add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 4 );
+		add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 3 );
 	}
 
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
@@ -51,38 +54,40 @@ function maybe_load_restrictions() {
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
+		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\Restrict_Unpublished_Files\send_derived_file_purges' );
 	}
 }
 
 /**
- * Clear the cached attachment lookups for the paths an attachment starts or stops using.
+ * Clear the cached attachment lookups for the files an attachment starts or stops using.
  *
  * Otherwise a lookup cached before the change (as not found, or as an attachment that has since
  * moved or been deleted while another one still uses the path) would return an outdated result until it expires.
  *
- * The hooks after an update or delete only pass the new value, or the value given to `delete_post_meta()`,
- * so the paths an update or delete replaces are read and cleared on the hooks before it.
+ * The attachment's files are read from its stored meta: on the hooks before an update or delete, they're
+ * the files it's about to stop using; on the hooks after an add or update, the ones it now uses.
  *
  * restrict-unpublished-files.php is loaded only once there's something to clear: some sites check whether
  * it's loaded at `muplugins_loaded` to tell if they restrict unpublished files.
  *
- * @param int|int[] $meta_id    Meta ID, or IDs when deleted.
- * @param int       $post_id    Post ID.
- * @param string    $meta_key   Meta key.
- * @param mixed     $meta_value Meta value.
+ * @param int|int[] $meta_id  Meta ID, or IDs when deleted.
+ * @param int       $post_id  Post ID.
+ * @param string    $meta_key Meta key.
  */
-function clear_path_cache( $meta_id, $post_id, $meta_key, $meta_value ) {
-	if ( '_wp_attached_file' !== $meta_key ) {
+function clear_path_cache( $meta_id, $post_id, $meta_key ) {
+	if ( ! in_array( $meta_key, FILE_META_KEYS, true ) ) {
 		return;
 	}
 
 	require_once __DIR__ . '/restrict-unpublished-files.php';
 
-	$paths = in_array( current_action(), [ 'update_post_meta', 'delete_post_meta' ], true ) ? get_post_meta( $post_id, '_wp_attached_file', false ) : $meta_value;
+	// Every stored main file, and the files derived from it (original, edited copies, sizes).
+	$paths = array_merge( get_post_meta( $post_id, '_wp_attached_file', false ), Restrict_Unpublished_Files\get_attachment_file_paths( $post_id ) );
 
-	foreach ( (array) $paths as $path ) {
+	foreach ( $paths as $path ) {
 		if ( is_string( $path ) ) {
 			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path ), Restrict_Unpublished_Files\CACHE_GROUP );
+			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path, 'image' ), Restrict_Unpublished_Files\CACHE_GROUP );
 		}
 	}
 }
