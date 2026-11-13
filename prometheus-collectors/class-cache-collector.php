@@ -7,9 +7,7 @@ use Prometheus\RegistryInterface;
 use WP_Object_Cache;
 
 class Cache_Collector implements CollectorInterface {
-	private ?Counter $cache_hits_counter   = null;
-	private ?Counter $cache_misses_counter = null;
-	private ?Counter $operation_counter    = null;
+	private ?Counter $operation_counter = null;
 
 	private string $blog_id;
 	/**
@@ -20,22 +18,6 @@ class Cache_Collector implements CollectorInterface {
 		global $wp_object_cache;
 
 		$this->blog_id = Plugin::get_instance()->get_site_label();
-
-		if ( property_exists( $wp_object_cache, 'cache_hits' ) ) {
-			$this->cache_hits_counter = $registry->getOrRegisterCounter(
-				'object_cache',
-				'cache_hits_total',
-				'Total number of cache hits',
-				[ 'site_id' ]
-			);
-
-			$this->cache_misses_counter = $registry->getOrRegisterCounter(
-				'object_cache',
-				'cache_misses_total',
-				'Total number of cache misses',
-				[ 'site_id' ]
-			);
-		}
 
 		if ( property_exists( $wp_object_cache, 'stats' ) && is_array( $wp_object_cache->stats ) ) {
 			$this->operation_counter = $registry->getOrRegisterCounter(
@@ -64,11 +46,6 @@ class Cache_Collector implements CollectorInterface {
 	public function shutdown(): void {
 		/** @var WP_Object_Cache $wp_object_cache */
 		global $wp_object_cache;
-
-		if ( $this->cache_hits_counter ) {
-			$this->cache_hits_counter->incBy( $wp_object_cache->cache_hits, [ $this->blog_id ] );
-			$this->cache_misses_counter->incBy( $wp_object_cache->cache_misses, [ $this->blog_id ] );
-		}
 
 		if ( $this->operation_counter ) {
 			foreach ( $wp_object_cache->stats as $operation => $count ) {
