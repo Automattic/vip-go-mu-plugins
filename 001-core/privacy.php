@@ -501,10 +501,8 @@ function delete_old_export_files() {
 		return;
 	}
 
-	update_postmeta_cache( wp_list_pluck( $expired_exports, 'post_id' ) );
-
-	// The timestamp re-read below has to see a regeneration that just finished, so read it from the primary:
-	// a lagging replica could still return the expired one.
+	// The meta re-read below has to see a regeneration that just finished, so read it from the primary:
+	// a lagging replica could still return the expired timestamp.
 	if ( method_exists( $wpdb, 'send_reads_to_masters' ) ) {
 		$wpdb->send_reads_to_masters();
 	}
@@ -520,9 +518,8 @@ function delete_old_export_files() {
 
 		try {
 			// A regeneration that finished since the query changed the timestamp and uploaded a new archive under the same name, so keep it.
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-			$current_timestamp = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->postmeta WHERE post_id = %d AND meta_key = '_vip_export_generated_time'", $request_id ) );
-			if ( $current_timestamp !== $expired_export->meta_value ) {
+			wp_cache_delete( $request_id, 'post_meta' );
+			if ( get_post_meta( $request_id, '_vip_export_generated_time', true ) !== $expired_export->meta_value ) {
 				continue;
 			}
 

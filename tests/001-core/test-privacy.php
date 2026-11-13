@@ -7,6 +7,8 @@ use Automattic\Test\Utils\Captures_Errors;
 use WP_UnitTestCase;
 use WPDieException;
 
+require_once ABSPATH . 'wp-admin/includes/privacy-tools.php';
+
 class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 	use Captures_Errors;
 
@@ -17,8 +19,6 @@ class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 	private $file_path;
 
 	public function tearDown(): void {
-		Constant_Mocker::clear();
-
 		if ( $this->file_path && is_file( $this->file_path ) ) {
 			unlink( $this->file_path ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 		}
@@ -38,6 +38,7 @@ class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 		file_put_contents( $this->file_path, 'zip' ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_file_put_contents
 		update_post_meta( $request_id, '_export_file_name', $file_name );
 		update_post_meta( $request_id, '_vip_export_generated_time', time() - 4 * DAY_IN_SECONDS );
+		update_post_meta( $request_id, '_export_data_grouped', [] );
 
 		return $request_id;
 	}
@@ -65,11 +66,8 @@ class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 	}
 
 	public function test_generation_stops_without_touching_the_archive_when_it_cannot_lock(): void {
-		require_once ABSPATH . 'wp-admin/includes/privacy-tools.php';
-
 		$request_id     = $this->create_expired_export();
 		$generated_time = get_post_meta( $request_id, '_vip_export_generated_time', true );
-		update_post_meta( $request_id, '_export_data_grouped', [] );
 
 		// A cleanup is deleting this export.
 		_lock_export( $request_id );
@@ -88,10 +86,7 @@ class Privacy_Export_Cleanup_Test extends WP_UnitTestCase {
 	}
 
 	public function test_generation_releases_its_lock_when_it_dies(): void {
-		require_once ABSPATH . 'wp-admin/includes/privacy-tools.php';
-
 		$request_id = $this->create_expired_export();
-		update_post_meta( $request_id, '_export_data_grouped', [] );
 		add_action( 'wp_privacy_personal_data_export_file_created', static function () {
 			throw new \RuntimeException( 'A callback failed.' );
 		} );
