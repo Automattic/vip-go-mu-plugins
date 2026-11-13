@@ -80,6 +80,7 @@ PHP;
 			'agentforce file constant'           => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_FILE' ],
 			'block data api not loaded'          => [ BlockDataApiIntegration::class, null ],
 			'clipisode not loaded'               => [ ClipisodeIntegration::class, null ],
+			'gist answers not loaded'            => [ GistAnswersIntegration::class, null ],
 			'real-time collaboration not loaded' => [ RealTimeCollaborationIntegration::class, null ],
 			'remote data blocks not loaded'      => [ RemoteDataBlocksIntegration::class, null ],
 			'safe publish not loaded'            => [ SafePublishIntegration::class, null ],
@@ -152,6 +153,8 @@ PHP;
 		return [
 			'agentforce defines empty config'        => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_CONFIGS', null, [] ],
 			'agentforce keeps existing constant'     => [ AgentforceIntegration::class, 'VIP_AGENTFORCE_CONFIGS', $existing, $existing ],
+			'gist answers defines empty config'      => [ GistAnswersIntegration::class, 'VIP_GIST_ANSWERS_CONFIG', null, [] ],
+			'gist answers keeps existing constant'   => [ GistAnswersIntegration::class, 'VIP_GIST_ANSWERS_CONFIG', $existing, $existing ],
 			'remote data blocks defines no sources'  => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS_CONFIGS', null, [] ],
 			'remote data blocks keeps existing'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS_CONFIGS', $existing, $existing ],
 			'security boost defines empty config'    => [ SecurityBoostIntegration::class, 'VIP_SECURITY_BOOST_CONFIGS', null, [] ],
@@ -190,6 +193,8 @@ PHP;
 			'clipisode without versions'            => [ ClipisodeIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents without versions'   => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => null ] ],
 			'content for agents missing entry file' => [ ContentForAgentsIntegration::class, [ 'get_latest_version' => 'content-for-agents-missing-test-plugin' ] ],
+			'gist answers without pinned release'   => [ GistAnswersIntegration::class, [ 'get_latest_version' => null ] ],
+			'gist answers missing entry file'       => [ GistAnswersIntegration::class, [ 'get_latest_version' => 'gist-answers-missing-test-plugin' ] ],
 			'remote data blocks without versions'   => [
 				RemoteDataBlocksIntegration::class,
 				[
@@ -234,6 +239,7 @@ PHP;
 		return [
 			'clipisode'               => [ ClipisodeIntegration::class, 'CLIPISODE_VERSION', [ 'get_latest_version' ] ],
 			'content for agents'      => [ ContentForAgentsIntegration::class, 'CONTENT_FOR_AGENTS_LOADED', [ 'get_latest_version' ] ],
+			'gist answers'            => [ GistAnswersIntegration::class, 'GIST_ANSWERS_VERSION', [ 'get_latest_version' ] ],
 			// Without the WebSocket constants, a load past the guard would deactivate the integration.
 			'real-time collaboration' => [ RealTimeCollaborationIntegration::class, 'VIP_REAL_TIME_COLLABORATION__LOADED', [] ],
 			'remote data blocks'      => [ RemoteDataBlocksIntegration::class, 'REMOTE_DATA_BLOCKS__LOADED', [ 'is_supported_wp_version', 'get_latest_version' ] ],
