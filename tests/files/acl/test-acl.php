@@ -74,9 +74,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
-		foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
-			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), "$hook action does not have correct callback attached" );
-		}
 	}
 
 	public function data_provider__maybe_load_restrictions__option_false() {
@@ -96,6 +93,11 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		maybe_load_restrictions();
 
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
+
+		// A request on this site can still switch to a site that restricts unpublished files.
+		foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
+			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), "$hook action does not have correct callback attached" );
+		}
 	}
 
 	public function test__get_option_as_bool__option_not_exists() {

@@ -33,20 +33,22 @@ function maybe_load_restrictions() {
 		return;
 	}
 
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	// Don't let a cached path lookup outlive a change to the attachments using that path. Register this
+	// on every site, since a request can switch to a site that restricts unpublished files.
+	foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
+		add_action( $hook, __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
+	}
+
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_All_Files\check_file_visibility', 10, 2 );
 	} elseif ( true === $is_restrict_unpublished_enabled ) {
-		require_once __DIR__ . '/restrict-unpublished-files.php';
-
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
-		// Don't let a cached path lookup outlive a change to the attachments using that path
-		foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
-			add_action( $hook, __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
-		}
 	}
 }
 
