@@ -948,12 +948,23 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertNotEmpty( $result[0]['diff'] );
 	}
 
-	public function test_validate_index_posts_content_batch_returns_error_when_mget_fails(): void {
+	public function validate_index_posts_content_batch_mget_failure_data(): array {
+		return [
+			'HTTP error'           => [ 503, '{"error":"circuit_breaking_exception"}' ],
+			// The batch's post ID replaces %d
+			'document-level error' => [ 200, '{"docs":[{"_index":"vip-123-post-1","_id":"%d","error":{"type":"no_shard_available_action_exception"}}]}' ],
+		];
+	}
+
+	/**
+	 * @dataProvider validate_index_posts_content_batch_mget_failure_data
+	 */
+	public function test_validate_index_posts_content_batch_returns_error_when_mget_fails( int $code, string $body ): void {
 		$this->boot_search();
 		$post_id = self::factory()->post->create();
 
 		$this->with_es_http(
-			fn() => self::es_response( '{"error":"circuit_breaking_exception"}', 503 ),
+			fn() => self::es_response( sprintf( $body, $post_id ), $code ),
 			function () use ( $post_id ) {
 				$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
 				$health    = new Health( $this->createMock( Search::class ) );

@@ -720,25 +720,33 @@ class Health {
 	/**
 	 * Fetch documents from Elasticsearch
 	 *
-	 * A failed request would report every document as missing (ElasticPress's multi_get() returns [] on an HTTP error and
-	 * false on a transport error), so this checks the response code too.
+	 * ElasticPress's multi_get() keeps only the documents found, so a failed request would report every document as
+	 * missing: it returns [] on an HTTP error and false on a transport error, and a 200 response can carry an error in
+	 * place of a document (e.g. its shard is unavailable). This checks the response for both.
 	 *
 	 * @param \ElasticPress\Indexable $indexable    The Indexable
 	 * @param array                   $document_ids Document IDs
 	 * @return array|WP_Error Documents keyed by ID, or WP_Error if the request failed
 	 */
 	private function get_documents( $indexable, array $document_ids ) {
-		$response_code   = null;
-		$capture_request = static function ( $query ) use ( &$response_code ) {
-			$response_code = wp_remote_retrieve_response_code( $query['request'] );
+		$request         = null;
+		$capture_request = static function ( $query ) use ( &$request ) {
+			$request = $query['request'];
 		};
 
-		add_filter( 'ep_remote_request', $capture_request );
+		add_action( 'ep_remote_request', $capture_request );
 		$documents = $indexable->multi_get( $document_ids );
-		remove_filter( 'ep_remote_request', $capture_request );
+		remove_action( 'ep_remote_request', $capture_request );
 
+		$response_code = wp_remote_retrieve_response_code( $request );
 		if ( 200 !== $response_code ) {
 			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching documents from Elasticsearch failed (response code: %s)', $response_code ? $response_code : 'none' ) );
+		}
+
+		$docs   = json_decode( wp_remote_retrieve_body( $request ), true )['docs'] ?? [];
+		$errors = array_filter( (array) $docs, fn( $doc ) => isset( $doc['error'] ) );
+		if ( $errors ) {
+			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching %d documents from Elasticsearch failed: %s', count( $errors ), wp_json_encode( reset( $errors )['error'] ) ) );
 		}
 
 		return $documents;
