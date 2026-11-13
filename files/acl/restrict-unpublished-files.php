@@ -73,7 +73,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 function get_attachment_id_from_file_path( $path ) {
 	global $wpdb;
 
-	$cache_key     = 'path_' . md5( $path );
+	$cache_key     = get_path_cache_key( $path );
 	$attachment_id = wp_cache_get( $cache_key, CACHE_GROUP );
 	if ( false !== $attachment_id ) {
 		return $attachment_id;
@@ -106,6 +106,33 @@ function get_attachment_id_from_file_path( $path ) {
 	wp_cache_set( $cache_key, $attachment_id, CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 
 	return $attachment_id;
+}
+
+/**
+ * Cache key for an attachment lookup by path.
+ *
+ * @param string $path Path relative to the uploads directory.
+ * @return string
+ */
+function get_path_cache_key( $path ) {
+	return 'path_' . md5( $path );
+}
+
+/**
+ * Clear the cached attachment lookup for a path when an attachment starts or stops using it.
+ *
+ * Otherwise a lookup cached before the change (as not found, or as an attachment that was since
+ * deleted while another one still uses the path) would return an outdated result until it expires.
+ *
+ * @param int|int[] $meta_id    Meta ID, or IDs when deleted.
+ * @param int       $post_id    Post ID.
+ * @param string    $meta_key   Meta key.
+ * @param mixed     $meta_value Meta value.
+ */
+function clear_path_cache( $meta_id, $post_id, $meta_key, $meta_value ) {
+	if ( '_wp_attached_file' === $meta_key && is_string( $meta_value ) ) {
+		wp_cache_delete( get_path_cache_key( $meta_value ), CACHE_GROUP );
+	}
 }
 
 /**

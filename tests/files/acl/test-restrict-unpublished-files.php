@@ -167,6 +167,32 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
 	}
 
+	/**
+	 * A path lookup cached before an attachment starts or stops using the path is looked up again.
+	 */
+	public function test__check_file_visibility__attachments_change_after_cached_lookup() {
+		add_action( 'added_post_meta', __NAMESPACE__ . '\clear_path_cache', 10, 4 );
+		add_action( 'updated_post_meta', __NAMESPACE__ . '\clear_path_cache', 10, 4 );
+		add_action( 'deleted_post_meta', __NAMESPACE__ . '\clear_path_cache', 10, 4 );
+
+		$file_path = '2021/01/reused.jpg';
+		$post_id   = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+
+		$attachment_id = $this->create_attachment( $file_path, $post_id );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ), 'A path cached as not found should be looked up again once attached' );
+
+		// Another attachment shares the path. A differently cased copy keeps the cached exact match on the first one.
+		$this->create_attachment( strtoupper( $file_path ), $post_id );
+		$this->assertSame( $attachment_id, (int) get_attachment_id_from_file_path( $file_path ) );
+
+		wp_delete_attachment( $attachment_id, true );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ), 'A path cached as a deleted attachment should be looked up again' );
+	}
+
 	public function test__get_attachment_id_from_file_path__attachment_not_found() {
 		$attachment_path        = '/2020/12/not-an-attachment.pdf';
 		$expected_attachment_id = 0;
