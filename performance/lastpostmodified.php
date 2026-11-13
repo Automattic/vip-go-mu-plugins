@@ -3,9 +3,8 @@
 namespace Automattic\VIP\Performance;
 
 class Last_Post_Modified {
-	const OPTION_PREFIX        = 'wpcom_vip_lastpostmodified';
-	const DEFAULT_TIMEZONE     = 'gmt';
-	const LOCK_TIME_IN_SECONDS = 30;
+	const OPTION_PREFIX    = 'wpcom_vip_lastpostmodified';
+	const DEFAULT_TIMEZONE = 'gmt';
 
 	public static function init() {
 		$disable = defined( 'WP_RUN_CORE_TESTS' ) && WP_RUN_CORE_TESTS;
@@ -28,17 +27,13 @@ class Last_Post_Modified {
 			return;
 		}
 
-		$is_locked = self::is_locked( $post->post_type );
-		if ( $is_locked ) {
-			return;
-		}
-
 		do_action( 'wpcom_vip_bump_lastpostmodified', $post );
 	}
 
 	public static function override_get_lastpostmodified( $lastpostmodified, $timezone, $post_type ) {
 		$stored_lastpostmodified = self::get_lastpostmodified( $timezone, $post_type );
-		if ( false === $stored_lastpostmodified ) {
+		// Bumps used to store the post's modified date, which can be zero. A zero date makes feeds answer every request with a 304.
+		if ( false === $stored_lastpostmodified || '0000-00-00 00:00:00' === $stored_lastpostmodified ) {
 			return $lastpostmodified;
 		}
 
@@ -46,15 +41,18 @@ class Last_Post_Modified {
 	}
 
 	public static function bump_lastpostmodified( $post ) {
-		// Update default of `any`
-		self::update_lastpostmodified( $post->post_modified_gmt, 'gmt' );
-		self::update_lastpostmodified( $post->post_modified_gmt, 'server' );
-		self::update_lastpostmodified( $post->post_modified, 'blog' );
+		// Feeds derive Last-Modified and ETag from this value, so record when the change happened. The post's own modified
+		// date can be zero, or older than the stored value (a scheduled post keeps the one from when it was scheduled).
+		// update_option() skips unchanged values, so further bumps in the same second don't write again.
+		$time_gmt = current_time( 'mysql', true );
+		$time     = current_time( 'mysql' );
 
-		// Update value for post_type
-		self::update_lastpostmodified( $post->post_modified_gmt, 'gmt', $post->post_type );
-		self::update_lastpostmodified( $post->post_modified_gmt, 'server', $post->post_type );
-		self::update_lastpostmodified( $post->post_modified, 'blog', $post->post_type );
+		// Update the default of `any` and the value for the post type.
+		foreach ( [ 'any', $post->post_type ] as $post_type ) {
+			self::update_lastpostmodified( $time_gmt, 'gmt', $post_type );
+			self::update_lastpostmodified( $time_gmt, 'server', $post_type );
+			self::update_lastpostmodified( $time, 'blog', $post_type );
+		}
 	}
 
 	public static function get_lastpostmodified( $timezone, $post_type ) {
@@ -65,17 +63,6 @@ class Last_Post_Modified {
 	public static function update_lastpostmodified( $time, $timezone, $post_type = 'any' ) {
 		$option_name = self::get_option_name( $timezone, $post_type );
 		return update_option( $option_name, $time, false );
-	}
-
-	private static function is_locked( $post_type ) {
-		$key = self::get_lock_name( $post_type );
-		// if the add fails, then we already have a lock set
-		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		return false === wp_cache_add( $key, 1, false, self::LOCK_TIME_IN_SECONDS );
-	}
-
-	private static function get_lock_name( $post_type ) {
-		return sprintf( '%s_%s_lock', self::OPTION_PREFIX, $post_type );
 	}
 
 	private static function get_option_name( $timezone, $post_type ) {
