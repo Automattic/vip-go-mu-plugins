@@ -73,7 +73,7 @@ function check_file_visibility( $file_visibility, $file_path ) {
 function get_attachment_id_from_file_path( $path ) {
 	global $wpdb;
 
-	$cache_key     = 'path_' . md5( $path );
+	$cache_key     = get_path_cache_key( $path );
 	$attachment_id = wp_cache_get( $cache_key, CACHE_GROUP );
 	if ( false !== $attachment_id ) {
 		return $attachment_id;
@@ -106,6 +106,16 @@ function get_attachment_id_from_file_path( $path ) {
 	wp_cache_set( $cache_key, $attachment_id, CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
 
 	return $attachment_id;
+}
+
+/**
+ * Cache key for an attachment lookup by path.
+ *
+ * @param string $path Path relative to the uploads directory.
+ * @return string
+ */
+function get_path_cache_key( $path ) {
+	return 'path_' . md5( $path );
 }
 
 /**

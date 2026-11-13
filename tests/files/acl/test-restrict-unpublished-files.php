@@ -15,6 +15,10 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_current_user_id = get_current_user_id();
+
+		foreach ( \Automattic\VIP\Files\Acl\PATH_CACHE_HOOKS as $hook ) {
+			add_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache', 10, 4 );
+		}
 	}
 
 	public function tearDown(): void {
@@ -165,6 +169,48 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$actual_file_visibility = check_file_visibility( $file_visibility, $file_path );
 
 		$this->assertEquals( $expected_file_visibility, $actual_file_visibility );
+	}
+
+	public function test__check_file_visibility__path_cached_as_not_found_gets_attached() {
+		$file_path  = '2021/01/reused.jpg';
+		$moved_path = '2021/01/moved-here.jpg';
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $moved_path ) );
+
+		$attachment_id = $this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
+
+		update_attached_file( $attachment_id, $moved_path );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $moved_path ) );
+	}
+
+	public function get_data__check_file_visibility__attachment_stops_using_cached_path() {
+		return [
+			'attachment deleted' => [ fn( $id ) => wp_delete_attachment( $id, true ) ],
+			'file moved'         => [ fn( $id ) => update_attached_file( $id, '2021/01/moved.jpg' ) ],
+			// Calls delete_post_meta() without a value.
+			'file removed'       => [ fn( $id ) => update_attached_file( $id, '' ) ],
+		];
+	}
+
+	/**
+	 * A path cached as one attachment is looked up again when that attachment stops using it.
+	 *
+	 * @dataProvider get_data__check_file_visibility__attachment_stops_using_cached_path
+	 */
+	public function test__check_file_visibility__attachment_stops_using_cached_path( callable $stop_using_path ) {
+		$file_path = '2021/01/shared.jpg';
+		$public_id = $this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'publish' ] ) );
+		$this->create_attachment( $file_path, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+
+		$stop_using_path( $public_id );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
 
 	public function test__get_attachment_id_from_file_path__attachment_not_found() {
