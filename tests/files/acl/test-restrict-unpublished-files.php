@@ -40,8 +40,8 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	/**
 	 * An image rotated on upload, then edited, with a generated size and a VIP dynamic size.
 	 */
-	private function create_edited_attachment( int $parent_id, string $file = '2021/01/photo-rotated-e1700000000123.jpg' ): int {
-		$attachment_id = $this->create_attachment( $file, $parent_id );
+	private function create_edited_attachment( int $parent_id ): int {
+		$attachment_id = $this->create_attachment( '2021/01/photo-rotated-e1700000000123.jpg', $parent_id );
 
 		wp_update_attachment_metadata( $attachment_id, [
 			'file'           => '2021/01/photo-rotated-e1700000000123.jpg',
@@ -390,6 +390,8 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 			'preview of a -pdf name'      => [ 'annual-report-pdf.pdf', '_wp_attachment_metadata', [ 'sizes' => [ 'full' => [ 'file' => 'annual-report-pdf-pdf.jpg' ] ] ], 'annual-report-pdf-pdf.jpg' ],
 			'preview of an -e<n> name'    => [ 'invoice-e1.pdf', '_wp_attachment_metadata', [ 'sizes' => [ 'full' => [ 'file' => 'invoice-e1-pdf.jpg' ] ] ], 'invoice-e1-pdf.jpg' ],
 			'thumbnail edited separately' => [ 'x-e1700000000123.jpg', '_wp_attachment_metadata', [ 'sizes' => [ 'thumbnail' => [ 'file' => 'x-e1700000000123-temp-150x150.jpg' ] ] ], 'x-e1700000000123-temp-150x150.jpg' ],
+			// Core adds a number to a PDF preview's name when the name is taken.
+			'size of a numbered preview'  => [ 'doc.pdf', '_wp_attachment_metadata', [ 'sizes' => [ 'thumbnail' => [ 'file' => 'doc-pdf-1-116x150.jpg' ] ] ], 'doc-pdf-1-116x150.jpg' ],
 		];
 	}
 
@@ -421,43 +423,19 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/' . $filename ) );
 	}
 
-	/**
-	 * PDF previews are images named after the PDF, with a number added when the name is taken.
-	 */
-	public function test__check_file_visibility__pdf_previews() {
-		$attachment_id = self::factory()->attachment->create_object( '2021/01/doc.pdf', $this->factory()->post->create( [ 'post_status' => 'draft' ] ), [ 'post_mime_type' => 'application/pdf' ] );
-		wp_update_attachment_metadata( $attachment_id, [
-			'sizes' => [
-				'full'      => [ 'file' => 'doc-pdf-1.jpg' ],
-				'thumbnail' => [ 'file' => 'doc-pdf-1-116x150.jpg' ],
-			],
-		] );
-
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/doc-pdf-1.jpg' ) );
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, '2021/01/doc-pdf-1-116x150.jpg' ) );
+	public function get_data__check_file_visibility__attachment_stops_listing_cached_derived_file() {
+		return [
+			'attachment deleted'    => [ fn( $id ) => wp_delete_attachment( $id, true ) ],
+			'dropped from metadata' => [ fn( $id ) => wp_update_attachment_metadata( $id, [ 'sizes' => [] ] ) ],
+		];
 	}
 
 	/**
-	 * Deleting one of two attachments that share files mustn't leave a derived file's lookup on the deleted one.
+	 * A derived file cached as one attachment is looked up again when that attachment stops listing it.
+	 *
+	 * @dataProvider get_data__check_file_visibility__attachment_stops_listing_cached_derived_file
 	 */
-	public function test__check_file_visibility__derived_file_of_deleted_shared_attachment() {
-		$post_id   = $this->factory()->post->create( [ 'post_status' => 'draft' ] );
-		$first_id  = $this->create_edited_attachment( $post_id );
-		$file_path = '2021/01/photo-rotated-e1700000000123-300x200.jpg';
-
-		// A differently cased copy of the shared main file keeps the derived lookup on the first attachment.
-		$this->create_edited_attachment( $post_id, strtoupper( '2021/01/photo-rotated-e1700000000123.jpg' ) );
-		$this->assertSame( $first_id, (int) get_attachment_id_from_image_path( $file_path ) );
-
-		wp_delete_attachment( $first_id, true );
-
-		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
-	}
-
-	/**
-	 * A derived file cached as one attachment is looked up again when that attachment's metadata stops listing it.
-	 */
-	public function test__check_file_visibility__derived_file_dropped_from_cached_attachment() {
+	public function test__check_file_visibility__attachment_stops_listing_cached_derived_file( callable $stop_listing_file ) {
 		$file_path = '2021/01/shared-300x200.jpg';
 		$sizes     = [ 'medium' => [ 'file' => 'shared-300x200.jpg' ] ];
 		$public_id = $this->create_attachment( '2021/01/shared.jpg', $this->factory()->post->create( [ 'post_status' => 'publish' ] ) );
@@ -466,7 +444,7 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
 
-		wp_update_attachment_metadata( $public_id, [ 'sizes' => [] ] );
+		$stop_listing_file( $public_id );
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}

@@ -9,7 +9,6 @@ namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 use const Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
-use const Automattic\VIP\Files\Acl\FILE_META_KEYS;
 
 const CACHE_GROUP = 'vip-files-acl';
 
@@ -212,19 +211,15 @@ function get_attachment_id_from_image_path( $path ) {
  * @return string[]
  */
 function get_attachment_file_paths( $attachment_id ) {
-	$meta = [];
-	foreach ( FILE_META_KEYS as $meta_key ) {
-		$meta[ $meta_key ] = get_post_meta( $attachment_id, $meta_key, true );
-	}
-
-	$file = $meta['_wp_attached_file'];
+	$file = get_post_meta( $attachment_id, '_wp_attached_file', true );
 	if ( ! $file || ! is_string( $file ) ) {
 		return [];
 	}
 
-	$metadata     = is_array( $meta['_wp_attachment_metadata'] ) ? $meta['_wp_attachment_metadata'] : [];
+	$metadata     = get_post_meta( $attachment_id, '_wp_attachment_metadata', true );
+	$metadata     = is_array( $metadata ) ? $metadata : [];
 	$sizes        = $metadata['sizes'] ?? [];
-	$backup_sizes = $meta['_wp_attachment_backup_sizes'];
+	$backup_sizes = get_post_meta( $attachment_id, '_wp_attachment_backup_sizes', true );
 
 	$names = array_merge(
 		[ $file, $metadata['original_image'] ?? '' ],
