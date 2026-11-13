@@ -9,6 +9,7 @@ namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 use const Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
+use const Automattic\VIP\Files\Acl\FILE_META_KEYS;
 
 const CACHE_GROUP = 'vip-files-acl';
 
@@ -36,28 +37,32 @@ function check_file_visibility( $file_visibility, $file_path ) {
 
 	$attachment = get_post( $attachment_id );
 
-	if ( ! $attachment ) {
+	if ( ! $attachment || ! is_attachment_restricted( $attachment ) ) {
 		return FILE_IS_PUBLIC;
 	}
 
-	if ( 'inherit' === $attachment->post_status && $attachment->post_parent ) {
-		$parent_post = get_post( $attachment->post_parent );
-		if ( $parent_post && 'publish' === $parent_post->post_status ) {
-			return FILE_IS_PUBLIC;
-		}
+	// For files of a deleted parent, check access against the attachment itself.
+	$parent_post          = get_post( $attachment->post_parent );
+	$user_has_edit_access = current_user_can( 'edit_post', $parent_post ? $parent_post->ID : $attachment->ID );
 
-		// Keep files of a deleted parent private, and check access against the attachment itself.
-		$post_id_to_check     = $parent_post ? $parent_post->ID : $attachment->ID;
-		$user_has_edit_access = current_user_can( 'edit_post', $post_id_to_check );
+	return $user_has_edit_access ? FILE_IS_PRIVATE_AND_ALLOWED : FILE_IS_PRIVATE_AND_DENIED;
+}
 
-		if ( $user_has_edit_access ) {
-			return FILE_IS_PRIVATE_AND_ALLOWED;
-		}
-		
-		return FILE_IS_PRIVATE_AND_DENIED;
+/**
+ * Whether an attachment's files are restricted: it inherits the status of a parent that isn't published,
+ * or that was deleted.
+ *
+ * @param WP_Post $attachment Attachment.
+ * @return bool
+ */
+function is_attachment_restricted( $attachment ) {
+	if ( 'inherit' !== $attachment->post_status || ! $attachment->post_parent ) {
+		return false;
 	}
 
-	return FILE_IS_PUBLIC;
+	$parent_post = get_post( $attachment->post_parent );
+
+	return ! $parent_post || 'publish' !== $parent_post->post_status;
 }
 
 /**
@@ -286,14 +291,14 @@ function purge_attachments_for_post( $urls, $post_id ) {
 
 	$derived_urls = [];
 	foreach ( $attachment_ids as $attachment_id ) {
-		$url    = wp_get_attachment_url( $attachment_id );
-		$urls[] = $url;
+		$file_urls = get_attachment_file_urls( $attachment_id );
+		if ( ! $file_urls ) {
+			continue;
+		}
 
+		$urls[] = array_shift( $file_urls );
 		if ( $files_are_private ) {
-			// They sit next to the attachment's main file.
-			foreach ( array_slice( get_attachment_file_paths( $attachment_id ), 1 ) as $path ) {
-				$derived_urls[] = trailingslashit( dirname( $url ) ) . wp_basename( $path );
-			}
+			$derived_urls = array_merge( $derived_urls, $file_urls );
 		}
 	}
 
@@ -332,4 +337,64 @@ function queue_derived_file_purges( array $urls, $send = false ) {
  */
 function send_derived_file_purges() {
 	queue_derived_file_purges( [], true );
+}
+
+/**
+ * URLs of an attachment's files: its main file first, then its original, copies replaced in the image
+ * editor and generated sizes.
+ *
+ * @param int $attachment_id Attachment ID.
+ * @return string[]
+ */
+function get_attachment_file_urls( $attachment_id ) {
+	$url = wp_get_attachment_url( $attachment_id );
+	if ( ! $url ) {
+		return [];
+	}
+
+	$urls = [ $url ];
+	// The other files sit next to the attachment's main file.
+	foreach ( array_slice( get_attachment_file_paths( $attachment_id ), 1 ) as $path ) {
+		$urls[] = trailingslashit( dirname( $url ) ) . wp_basename( $path );
+	}
+
+	return $urls;
+}
+
+/**
+ * PURGE an attachment's files if they're restricted.
+ *
+ * The cache manager only purges attachments whose files are public. So when an attachment is added or
+ * attached to a post that isn't published, or its files change while it is, anything cached for its
+ * files' URLs before that would stay cached.
+ *
+ * @param int $attachment_id Post ID. Posts that aren't attachments are skipped.
+ */
+function purge_restricted_attachment_files( $attachment_id ) {
+	// Like the cache manager, skip imports, which can add more attachments than a request can purge.
+	if ( defined( 'WP_IMPORTING' ) && true === WP_IMPORTING ) {
+		return;
+	}
+
+	$attachment = get_post( $attachment_id );
+	if ( ! $attachment || 'attachment' !== $attachment->post_type || ! is_attachment_restricted( $attachment ) ) {
+		return;
+	}
+
+	foreach ( get_attachment_file_urls( $attachment->ID ) as $url ) {
+		wpvip_purge_edge_cache_for_url( $url );
+	}
+}
+
+/**
+ * PURGE a restricted attachment's files when the meta that lists them is added or updated.
+ *
+ * @param int    $meta_id  Meta ID.
+ * @param int    $post_id  Post ID.
+ * @param string $meta_key Meta key.
+ */
+function purge_restricted_attachment_files_on_meta_change( $meta_id, $post_id, $meta_key ) {
+	if ( in_array( $meta_key, FILE_META_KEYS, true ) ) {
+		purge_restricted_attachment_files( $post_id );
+	}
 }

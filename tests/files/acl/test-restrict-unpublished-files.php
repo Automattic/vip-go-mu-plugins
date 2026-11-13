@@ -505,4 +505,88 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
+
+	/**
+	 * Hook up the purge of restricted attachments' files as acl.php does, starting from an empty purge queue.
+	 */
+	private function hook_restricted_attachment_purges(): \WPCOM_VIP_Cache_Manager {
+		add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+		add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+		add_action( 'added_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+		add_action( 'updated_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+
+		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
+		$cache_manager->clear_queued_purge_urls();
+
+		return $cache_manager;
+	}
+
+	public function get_data__purge_restricted_attachment_files__attachment_added() {
+		return [
+			'to an unpublished post' => [ 'draft', true ],
+			'to a published post'    => [ 'publish', false ],
+		];
+	}
+
+	/**
+	 * A new attachment's file is purged when it's restricted from the start.
+	 *
+	 * @dataProvider get_data__purge_restricted_attachment_files__attachment_added
+	 */
+	public function test__purge_restricted_attachment_files__attachment_added( $post_status, $expected_purge ) {
+		$cache_manager = $this->hook_restricted_attachment_purges();
+
+		$attachment_id = $this->create_attachment( '2021/01/added.jpg', $this->factory()->post->create( [ 'post_status' => $post_status ] ) );
+
+		$this->assertSame( $expected_purge, in_array( wp_get_attachment_url( $attachment_id ), $cache_manager->get_queued_purge_urls(), true ) );
+	}
+
+	public function get_data__purge_restricted_attachment_files__attachment_attached() {
+		return [
+			// Inserting an unattached file into a post in the classic editor.
+			'through wp_update_post()'  => [
+				fn( $attachment_id, $post_id ) => wp_update_post( [
+					'ID'          => $attachment_id,
+					'post_parent' => $post_id,
+				] ),
+			],
+			// The Media Library's attach action updates the database directly.
+			'through the Media Library' => [
+				function ( $attachment_id, $post_id ) {
+					global $wpdb;
+					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- As wp_media_attach_action() does.
+					$wpdb->update( $wpdb->posts, [ 'post_parent' => $post_id ], [ 'ID' => $attachment_id ] );
+					clean_attachment_cache( $attachment_id );
+				},
+			],
+		];
+	}
+
+	/**
+	 * All of an attachment's files are purged when it's attached to an unpublished post.
+	 *
+	 * @dataProvider get_data__purge_restricted_attachment_files__attachment_attached
+	 */
+	public function test__purge_restricted_attachment_files__attachment_attached( callable $attach ) {
+		$attachment_id = $this->create_edited_attachment( 0 );
+		$cache_manager = $this->hook_restricted_attachment_purges();
+
+		$attach( $attachment_id, $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+
+		$file_urls = get_attachment_file_urls( $attachment_id );
+		$this->assertCount( 4, $file_urls );
+		$this->assertSame( [], array_diff( $file_urls, $cache_manager->get_queued_purge_urls() ) );
+	}
+
+	/**
+	 * Files a restricted attachment starts listing after it's added, like its original, are purged too.
+	 */
+	public function test__purge_restricted_attachment_files__file_listed_later() {
+		$attachment_id = $this->create_attachment( '2021/01/listed-later-rotated.jpg', $this->factory()->post->create( [ 'post_status' => 'draft' ] ) );
+		$cache_manager = $this->hook_restricted_attachment_purges();
+
+		wp_update_attachment_metadata( $attachment_id, [ 'original_image' => 'listed-later.jpg' ] );
+
+		$this->assertContains( trailingslashit( dirname( wp_get_attachment_url( $attachment_id ) ) ) . 'listed-later.jpg', $cache_manager->get_queued_purge_urls() );
+	}
 }

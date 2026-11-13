@@ -55,6 +55,11 @@ function maybe_load_restrictions() {
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
 		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\Restrict_Unpublished_Files\send_derived_file_purges' );
+		// Purge an attachment's files when it's saved or attached, or its files change, while they're restricted
+		add_action( 'clean_post_cache', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files' );
+		add_action( 'clean_attachment_cache', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files' );
+		add_action( 'added_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+		add_action( 'updated_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files_on_meta_change', 10, 3 );
 	}
 }
 
