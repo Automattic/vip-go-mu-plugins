@@ -39,10 +39,18 @@ function maybe_load_restrictions() {
 		return;
 	}
 
-	// Keep cached path lookups current on every site, since a request can switch to a site that restricts unpublished files.
+	// Keep cached path lookups current and purge files as they become restricted on every site, since a request
+	// can switch to a site that restricts unpublished files. The purges check the current site's settings.
 	foreach ( PATH_CACHE_HOOKS as $hook ) {
 		add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 3 );
 	}
+	// Purge attachments for posts for better cacheability
+	add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\purge_attachments_for_post', 10, 2 );
+	// Purge an attachment's files when it's saved or attached, or its files change, while they're restricted
+	add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	add_action( 'added_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+	add_action( 'updated_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
 
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
@@ -52,14 +60,64 @@ function maybe_load_restrictions() {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
-		// Purge attachments for posts for better cacheability
-		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
-		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\Restrict_Unpublished_Files\send_derived_file_purges' );
-		// Purge an attachment's files when it's saved or attached, or its files change, while they're restricted
-		add_action( 'clean_post_cache', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files' );
-		add_action( 'clean_attachment_cache', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files' );
-		add_action( 'added_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files_on_meta_change', 10, 3 );
-		add_action( 'updated_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+	}
+}
+
+/**
+ * Whether the current site restricts access to unpublished files, as decided in maybe_load_restrictions()
+ * for the site a request starts on.
+ *
+ * @return bool
+ */
+function restricts_unpublished_files() {
+	return true === get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' )
+		&& true !== get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' );
+}
+
+/**
+ * Add the URLs of a post's attachments to purge, if the current site restricts unpublished files.
+ *
+ * @see Restrict_Unpublished_Files\purge_attachments_for_post()
+ *
+ * @param array $urls    URLs to purge.
+ * @param int   $post_id Post ID.
+ * @return array
+ */
+function purge_attachments_for_post( $urls, $post_id ) {
+	if ( ! restricts_unpublished_files() ) {
+		return $urls;
+	}
+
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	return Restrict_Unpublished_Files\purge_attachments_for_post( $urls, $post_id );
+}
+
+/**
+ * PURGE an attachment's files if they're restricted on the current site.
+ *
+ * @see Restrict_Unpublished_Files\purge_restricted_attachment_files()
+ *
+ * @param int $post_id Post ID. Posts that aren't attachments are skipped.
+ */
+function purge_restricted_attachment_files( $post_id ) {
+	if ( restricts_unpublished_files() ) {
+		require_once __DIR__ . '/restrict-unpublished-files.php';
+
+		Restrict_Unpublished_Files\purge_restricted_attachment_files( $post_id );
+	}
+}
+
+/**
+ * PURGE a restricted attachment's files when the meta that lists them is added or updated.
+ *
+ * @param int    $meta_id  Meta ID.
+ * @param int    $post_id  Post ID.
+ * @param string $meta_key Meta key.
+ */
+function purge_restricted_attachment_files_on_meta_change( $meta_id, $post_id, $meta_key ) {
+	if ( in_array( $meta_key, FILE_META_KEYS, true ) ) {
+		purge_restricted_attachment_files( $post_id );
 	}
 }
 

@@ -9,7 +9,6 @@ namespace Automattic\VIP\Files\Acl\Restrict_Unpublished_Files;
 use const Automattic\VIP\Files\Acl\FILE_IS_PUBLIC;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED;
 use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
-use const Automattic\VIP\Files\Acl\FILE_META_KEYS;
 
 const CACHE_GROUP = 'vip-files-acl';
 
@@ -322,6 +321,8 @@ function queue_derived_file_purges( array $urls, $send = false ) {
 
 	$queued = array_merge( $queued, $urls );
 	if ( ! $send ) {
+		// Registered as URLs are queued, so they're sent whichever site the request queued them on.
+		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\send_derived_file_purges' );
 		return;
 	}
 
@@ -389,17 +390,4 @@ function purge_restricted_attachment_files( $attachment_id ) {
 	// The derived files go after everything else in the request, as when a post's attachments are purged.
 	wpvip_purge_edge_cache_for_url( array_shift( $file_urls ) );
 	queue_derived_file_purges( $file_urls );
-}
-
-/**
- * PURGE a restricted attachment's files when the meta that lists them is added or updated.
- *
- * @param int    $meta_id  Meta ID.
- * @param int    $post_id  Post ID.
- * @param string $meta_key Meta key.
- */
-function purge_restricted_attachment_files_on_meta_change( $meta_id, $post_id, $meta_key ) {
-	if ( in_array( $meta_key, FILE_META_KEYS, true ) ) {
-		purge_restricted_attachment_files( $post_id );
-	}
 }

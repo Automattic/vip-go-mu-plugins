@@ -361,7 +361,6 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	 * Derived files are purged after every main file in the request, and only for posts that aren't published.
 	 */
 	public function test__purge_attachments_for_post__derived_files_go_last() {
-		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\send_derived_file_purges' );
 		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$cache_manager->clear_queued_purge_urls();
 
@@ -507,14 +506,15 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Hook up the purge of restricted attachments' files as acl.php does, starting from an empty purge queue.
+	 * Hook up the purge of restricted attachments' files as acl.php does on a site that restricts unpublished files,
+	 * starting from an empty purge queue.
 	 */
 	private function hook_restricted_attachment_purges(): \WPCOM_VIP_Cache_Manager {
-		add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
-		add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
-		add_action( 'added_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
-		add_action( 'updated_post_meta', __NAMESPACE__ . '\purge_restricted_attachment_files_on_meta_change', 10, 3 );
-		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\send_derived_file_purges' );
+		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
+		add_action( 'clean_post_cache', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files' );
+		add_action( 'clean_attachment_cache', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files' );
+		add_action( 'added_post_meta', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files_on_meta_change', 10, 3 );
+		add_action( 'updated_post_meta', 'Automattic\VIP\Files\Acl\purge_restricted_attachment_files_on_meta_change', 10, 3 );
 
 		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
 		$cache_manager->clear_queued_purge_urls();
