@@ -130,17 +130,25 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 				</tr></thead>
 				<tbody>';
 
+		// Keep the soonest events up to the cap before rendering, so the time and hook
+		// row spans only count the rows that are listed.
 		$listed_events = 0;
+		$kept_events   = [];
 		foreach ( $events as $time => $time_cron_array ) {
-			// Stop at a time boundary, so the time and hook cells keep their row spans.
-			if ( $listed_events >= self::MAX_LISTED_EVENTS ) {
-				break;
-			}
+			foreach ( $time_cron_array as $hook => $data ) {
+				if ( $listed_events >= self::MAX_LISTED_EVENTS ) {
+					break 2;
+				}
 
-			$time           = (int) $time;
-			$event_count    = $this->get_arg_set_count( $time_cron_array );
-			$show_time      = true;
-			$listed_events += $event_count;
+				$kept_events[ $time ][ $hook ] = array_slice( $data, 0, self::MAX_LISTED_EVENTS - $listed_events, true );
+				$listed_events                += count( $kept_events[ $time ][ $hook ] );
+			}
+		}
+
+		foreach ( $kept_events as $time => $time_cron_array ) {
+			$time        = (int) $time;
+			$event_count = $this->get_arg_set_count( $time_cron_array );
+			$show_time   = true;
 
 			foreach ( $time_cron_array as $hook => $data ) {
 				$row_attributes = $this->get_event_row_attributes( $time, $hook );
