@@ -9,6 +9,8 @@ namespace Automattic\VIP\Core\Privacy;
 
 use WP_Error;
 
+const EXPORT_LOCK_GROUP = 'vip_privacy_export_lock';
+
 /**
  * Core privacy data export handler doesn't work by default on Go.
  *
@@ -215,6 +217,24 @@ function generate_personal_data_export_file( $request_id ) {
 	 */
 	$error = false;
 
+	// The archive keeps its file name, so generating it must not overlap with cleaning it up (or generating
+	// it again). If either is running, leave the existing archive alone and let the admin retry.
+	$lock = _lock_export( $request_id );
+	if ( ! $lock ) {
+		unlink( $json_report_pathname );
+		unlink( $html_report_pathname );
+
+		wp_send_json_error( __( 'This export is being generated or cleaned up. Please try again in a moment.' ) );
+	}
+
+	// Release it when the request ends, including when generation dies, so a retry doesn't wait for it to expire.
+	add_action( 'shutdown', function () use ( $request_id, $lock ) {
+		_unlock_export( $request_id, $lock );
+	} );
+
+	// Another generation may have named the archive since this request loaded the export's meta.
+	wp_cache_delete( $request_id, 'post_meta' );
+
 	// This meta value is used from version 5.5.
 	$archive_filename = get_post_meta( $request_id, '_export_file_name', true );
 
@@ -311,10 +331,35 @@ function generate_personal_data_export_file( $request_id ) {
 	}
 }
 
+/**
+ * Lock an export request, so generating and cleaning up its archive can't overlap.
+ *
+ * @param int $request_id Export request ID.
+ * @return string|false Token to release the lock with, or false if it's already held.
+ */
+function _lock_export( $request_id ) {
+	$token = wp_generate_uuid4();
+
+	// Longer than generating or cleaning up an export takes, so the lock doesn't expire under its owner.
+	return wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, 5 * MINUTE_IN_SECONDS ) ? $token : false;
+}
+
+/**
+ * Release an export request's lock, unless it expired and someone else holds it now.
+ *
+ * @param int    $request_id Export request ID.
+ * @param string $token      Token returned by `_lock_export()`.
+ */
+function _unlock_export( $request_id, $token ) {
+	if ( wp_cache_get( (int) $request_id, EXPORT_LOCK_GROUP, true ) === $token ) {
+		wp_cache_delete( (int) $request_id, EXPORT_LOCK_GROUP );
+	}
+}
+
 function _upload_archive_file( $archive_path ) {
 	// For local usage, skip the remote upload.
 	// The file is already in the uploads folder.
-	if ( true !== WPCOM_IS_VIP_ENV ) {
+	if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || true !== constant( 'WPCOM_IS_VIP_ENV' ) ) {
 		return true;
 	}
 
@@ -322,13 +367,8 @@ function _upload_archive_file( $archive_path ) {
 		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
-	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
-	// Hard-coded and full of assumptions for now.
-	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
-	$archive_file      = basename( $archive_path );
-	$exports_url       = wp_privacy_exports_url();
-	$wp_content_strpos = strpos( $exports_url, '/wp-content/uploads/' );
-	$upload_path       = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
+	// Build the path from the exports URL, since `LOCAL_UPLOADS` gives us a `/tmp` path.
+	$upload_path = _get_files_service_path( wp_privacy_exports_url() . basename( $archive_path ) );
 
 	$api_client    = \Automattic\VIP\Files\new_api_client();
 	$upload_result = $api_client->upload_file( $archive_path, $upload_path );
@@ -339,12 +379,30 @@ function _upload_archive_file( $archive_path ) {
 	return $upload_result;
 }
 
+/**
+ * The Files Service path of an export file's URL.
+ *
+ * On a subdirectory multisite, a subsite's uploads URLs start with the subsite's directory, which isn't part of the file's path.
+ *
+ * @param string $url Export file URL.
+ * @return string
+ */
+function _get_files_service_path( $url ) {
+	$path     = (string) wp_parse_url( $url, PHP_URL_PATH );
+	$position = strpos( $path, '/wp-content/uploads/' );
+
+	return false === $position ? $path : substr( $path, $position );
+}
+
 function _delete_archive_file( $archive_url ) {
-	$archive_path = wp_parse_url( $archive_url, PHP_URL_PATH );
+	$archive_path = _get_files_service_path( $archive_url );
 
 	// For local usage, just delete locally.
-	if ( true !== WPCOM_IS_VIP_ENV ) {
-		unlink( WP_CONTENT_DIR . $archive_path );
+	if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || true !== constant( 'WPCOM_IS_VIP_ENV' ) ) {
+		$local_path = wp_privacy_exports_dir() . wp_basename( $archive_path );
+		if ( is_file( $local_path ) && ! unlink( $local_path ) ) {
+			return new WP_Error( 'local-delete-failed', __( 'Unable to delete the local export file.' ) );
+		}
 		return true;
 	}
 
@@ -352,8 +410,15 @@ function _delete_archive_file( $archive_url ) {
 		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
-	$api_client = \Automattic\VIP\Files\new_api_client();
-	return $api_client->delete_file( $archive_path );
+	$api_client    = \Automattic\VIP\Files\new_api_client();
+	$delete_result = $api_client->delete_file( $archive_path );
+
+	// A file that is already gone counts as deleted, so it doesn't get retried forever.
+	if ( is_wp_error( $delete_result ) && false === $api_client->is_file( $archive_path ) ) {
+		return true;
+	}
+
+	return $delete_result;
 }
 
 function _ziparchive_create_file( $archive_path, $html_report_path ) {
@@ -409,29 +474,61 @@ function delete_old_export_files() {
 	$expiration_timestamp = time() - $expiration;
 
 	// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- direct query to avoid the unnecessary overhead of WP_Query.
-	$file_urls = $wpdb->get_col(
-		$wpdb->prepare( "SELECT pm.meta_value FROM $wpdb->postmeta AS pm
-			INNER JOIN $wpdb->postmeta AS expiry
-				ON expiry.post_id = pm.post_id
-				AND expiry.meta_key = '_vip_export_generated_time'
-				AND expiry.meta_value <= %d
-			WHERE pm.meta_key = '_export_file_url'
-			LIMIT 100", $expiration_timestamp 
+	$expired_exports = $wpdb->get_results(
+		$wpdb->prepare( "SELECT post_id, meta_value FROM $wpdb->postmeta
+			WHERE meta_key = '_vip_export_generated_time'
+				AND meta_value <= %d
+			LIMIT 100", $expiration_timestamp
 		)
 	);
 
-	if ( empty( $file_urls ) ) {
+	if ( empty( $expired_exports ) ) {
 		return;
 	}
 
-	foreach ( $file_urls as $file_url ) {
-		$delete_result = _delete_archive_file( $file_url );
-		if ( is_wp_error( $delete_result ) ) {
-			/* translators: 1: archive file URL 2: error message */
-			$message = sprintf( __( 'Failed to delete expired personal data export (%1$s): %2$s' ), $file_url, $delete_result->get_error_message() );
+	// The meta re-read below has to see a regeneration that just finished, so read it from the primary:
+	// a lagging replica could still return the expired timestamp.
+	if ( method_exists( $wpdb, 'send_reads_to_masters' ) ) {
+		$wpdb->send_reads_to_masters();
+	}
 
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			trigger_error( esc_html( $message ), E_USER_WARNING );
+	foreach ( $expired_exports as $expired_export ) {
+		$request_id = (int) $expired_export->post_id;
+
+		// Skip exports that are being regenerated; the next run retries them.
+		$lock = _lock_export( $request_id );
+		if ( ! $lock ) {
+			continue;
+		}
+
+		try {
+			// A regeneration that finished since the query changed the timestamp and uploaded a new archive under the same name, so keep it.
+			wp_cache_delete( $request_id, 'post_meta' );
+			if ( get_post_meta( $request_id, '_vip_export_generated_time', true ) !== $expired_export->meta_value ) {
+				continue;
+			}
+
+			// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
+			$file_name = get_post_meta( $request_id, '_export_file_name', true );
+			$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
+
+			$delete_result = $file_url ? _delete_archive_file( $file_url ) : true;
+			if ( is_wp_error( $delete_result ) ) {
+				// Log the request ID, not the file URL or API message: both contain the export's secret file name.
+				/* translators: 1: export request ID 2: error code */
+				$message = sprintf( __( 'Failed to delete expired personal data export for request %1$d: %2$s' ), $request_id, $delete_result->get_error_code() );
+
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( esc_html( $message ), E_USER_WARNING );
+
+				// Keep the timestamp so the next run retries this export.
+				continue;
+			}
+
+			// Stop selecting this export once its file is gone.
+			delete_post_meta( $request_id, '_vip_export_generated_time', $expired_export->meta_value );
+		} finally {
+			_unlock_export( $request_id, $lock );
 		}
 	}
 }
