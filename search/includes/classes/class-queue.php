@@ -554,9 +554,10 @@ class Queue {
 	 * Delete a list of jobs
 	 *
 	 * @param array $job_ids Array of job objects to delete
+	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'running')
 	 * @return array Array of jobs deleted
 	 */
-	public function delete_jobs( $jobs ) {
+	public function delete_jobs( $jobs, $where_status = null ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -566,6 +567,9 @@ class Queue {
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
 		$sql = "DELETE FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		if ( null !== $where_status ) {
+			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
+		}
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -895,10 +899,15 @@ class Queue {
 	 * @param array $jobs List of jobs
 	 */
 	public function process_jobs( $jobs ) {
-		// Set them as running
+		// Set them as running, including any free_deadlocked_jobs() handed back to the queue because the batch started late,
+		// so they're deleted once indexed rather than indexed again. Restart their deadlock timer: time spent waiting for
+		// cron isn't time spent processing, and a handed-back job's scheduled_time is NULL, which counts as deadlocked.
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
+		$this->update_jobs( $job_ids, array(
+			'status'         => 'running',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s' ),
+		) );
 
 		$indexables = Indexables::factory();
 		$versioning = \Automattic\VIP\Search\Search::instance()->versioning;
@@ -948,8 +957,9 @@ class Queue {
 				$this->bulk_index_split_if_too_large( $indexable, $ids );
 
 				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
-				// action__ep_after_bulk_index(), as new rows.
-				$this->delete_jobs( $jobs );
+				// action__ep_after_bulk_index(), as new rows. Jobs free_deadlocked_jobs() handed back to the queue while the batch
+				// ran (it ran late) stay queued, to be indexed again: their row would block a failed object's.
+				$this->delete_jobs( $jobs, 'running' );
 
 				$versioning->reset_current_version_number( $indexable );
 			}

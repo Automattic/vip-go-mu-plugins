@@ -902,6 +902,57 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the skipped posts\' jobs should be deleted too' );
 	}
 
+	public function test_process_jobs_keeps_a_job_handed_back_to_the_queue() {
+		global $wpdb;
+
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		$this->with_es_http(
+			function ( $args, $url ) use ( $jobs ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The batch ran late, so free_deadlocked_jobs() handed its first job back to the queue
+				$this->queue->update_job( $jobs[0]->job_id, array( 'status' => 'queued' ) );
+
+				return self::es_response( '{}', 503 );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$table_name = $this->queue->schema->get_table_name();
+		$queued     = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `status` = 'queued' ORDER BY object_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( wp_list_pluck( $jobs, 'object_id' ), $queued, 'a failed batch should leave every object queued, including one whose job was handed back' );
+	}
+
+	public function test_process_jobs_finishes_a_job_handed_back_before_it_started() {
+		$jobs = $this->schedule_jobs_for_new_posts( 2 );
+
+		// The batch started late, so free_deadlocked_jobs() handed its first job back before it ran
+		$this->queue->update_job( $jobs[0]->job_id, array(
+			'status'         => 'queued',
+			'scheduled_time' => null,
+		) );
+
+		$this->with_es_http(
+			function ( $args, $url ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				// The sweeper runs while the batch is indexing
+				$this->queue->free_deadlocked_jobs();
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'a successful batch should not leave its handed-back job to be indexed again' );
+	}
+
 	/**
 	 * Create posts, queue them and mark their jobs as scheduled, as checkout_jobs() does
 	 *
