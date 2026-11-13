@@ -160,8 +160,18 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 			// Inflate raw list of site IDs, if available
 			if ( is_array( $_sites ) ) {
+				global $wpdb;
+
+				// A site row can outlive its tables, and switching into it queries the missing tables.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+				$options_tables = array_flip( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%options' ) ) );
+
 				// Switch to the blog to ensure certain domain filtering is respected
 				foreach ( $_sites as $_site ) {
+					if ( ! isset( $options_tables[ $wpdb->get_blog_prefix( $_site ) . 'options' ] ) ) {
+						continue;
+					}
+
 					switch_to_blog( $_site );
 
 					$url_parts = wp_parse_args( wp_parse_url( home_url() ), array(

@@ -163,6 +163,28 @@ class VIP_Go_REST_API_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A site row whose tables are gone is skipped, without switching into it.
+	 */
+	public function test__list_sites_skips_sites_without_tables() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		// Insert the site row without creating its tables.
+		remove_action( 'wp_initialize_site', 'wp_initialize_site', 10 );
+		$orphan_id = $this->factory()->blog->create();
+		add_action( 'wp_initialize_site', 'wp_initialize_site', 10, 2 );
+
+		$sites = \WPCOM_VIP_REST_API_Endpoints::instance()->list_sites()->get_data();
+
+		$this->assertNotContains( $orphan_id, wp_list_pluck( $sites, 'ID' ) );
+		$this->assertContains( [
+			'ID'          => get_main_site_id(),
+			'domain_name' => WP_TESTS_DOMAIN,
+		], $sites );
+	}
+
+	/**
 	 * Tokens must independently bind the current tick, namespace and secret salt.
 	 */
 	public function test__independent_token_signing_contract() {
