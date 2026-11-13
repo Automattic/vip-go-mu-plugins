@@ -10,7 +10,8 @@ namespace Automattic\VIP\Core\Privacy;
 use WP_Error;
 
 const EXPORT_LOCK_GROUP = 'vip_privacy_export_lock';
-const EXPORT_LOCK_TTL   = 30;
+// Longer than generating or cleaning up an export takes, so the lock doesn't expire under its owner.
+const EXPORT_LOCK_TTL = 300;
 
 /**
  * Core privacy data export handler doesn't work by default on Go.
@@ -218,6 +219,25 @@ function generate_personal_data_export_file( $request_id ) {
 	 */
 	$error = false;
 
+	// The archive keeps its file name, so generating it must not overlap with cleaning it up (or generating
+	// it again). Wait out a cleanup, which only holds the lock for one delete; otherwise leave the existing
+	// archive alone and let the admin retry.
+	$lock = _lock_export( $request_id, 10 );
+	if ( ! $lock ) {
+		unlink( $json_report_pathname );
+		unlink( $html_report_pathname );
+
+		wp_send_json_error( __( 'This export is being generated or cleaned up. Please try again in a moment.' ) );
+	}
+
+	// Release it even if generation dies first, so a retry doesn't have to wait for it to expire.
+	add_action( 'shutdown', function () use ( $request_id, $lock ) {
+		_unlock_export( $request_id, $lock );
+	} );
+
+	// Another generation may have named the archive while this one waited for the lock.
+	wp_cache_delete( $request_id, 'post_meta' );
+
 	// This meta value is used from version 5.5.
 	$archive_filename = get_post_meta( $request_id, '_export_file_name', true );
 
@@ -249,10 +269,6 @@ function generate_personal_data_export_file( $request_id ) {
 	if ( ! empty( $archive_pathname ) && is_file( $archive_pathname ) ) {
 		wp_delete_file( $archive_pathname );
 	}
-
-	// The new archive reuses the file name, so wait for a cleanup that is deleting the expired one,
-	// and keep cleanups away from this export until the new archive is uploaded.
-	_lock_export( $request_id, EXPORT_LOCK_TTL );
 
 	// Track generated time to simplify deletions.
 	// We can't currently iterate through files in the Files Service so we need a way to query exports by date.
@@ -317,7 +333,7 @@ function generate_personal_data_export_file( $request_id ) {
 		_upload_archive_file( $local_archive_pathname );
 	}
 
-	_unlock_export( $request_id );
+	_unlock_export( $request_id, $lock );
 }
 
 /**
@@ -325,13 +341,14 @@ function generate_personal_data_export_file( $request_id ) {
  *
  * @param int $request_id Export request ID.
  * @param int $wait       Seconds to wait for the lock.
- * @return bool Whether the lock was acquired.
+ * @return string|false Token to release the lock with, or false if it wasn't acquired.
  */
 function _lock_export( $request_id, $wait = 0 ) {
+	$token    = wp_generate_uuid4();
 	$deadline = microtime( true ) + $wait;
 
-	// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- the lock only has to outlive a cleanup's delete request.
-	while ( ! wp_cache_add( (int) $request_id, 1, EXPORT_LOCK_GROUP, EXPORT_LOCK_TTL ) ) {
+	// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- EXPORT_LOCK_TTL is 300.
+	while ( ! wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, EXPORT_LOCK_TTL ) ) {
 		if ( microtime( true ) >= $deadline ) {
 			return false;
 		}
@@ -339,17 +356,25 @@ function _lock_export( $request_id, $wait = 0 ) {
 		usleep( 250000 );
 	}
 
-	return true;
+	return $token;
 }
 
-function _unlock_export( $request_id ) {
-	wp_cache_delete( (int) $request_id, EXPORT_LOCK_GROUP );
+/**
+ * Release an export request's lock, unless it expired and someone else holds it now.
+ *
+ * @param int    $request_id Export request ID.
+ * @param string $token      Token returned by `_lock_export()`.
+ */
+function _unlock_export( $request_id, $token ) {
+	if ( wp_cache_get( (int) $request_id, EXPORT_LOCK_GROUP, true ) === $token ) {
+		wp_cache_delete( (int) $request_id, EXPORT_LOCK_GROUP );
+	}
 }
 
 function _upload_archive_file( $archive_path ) {
 	// For local usage, skip the remote upload.
 	// The file is already in the uploads folder.
-	if ( true !== WPCOM_IS_VIP_ENV ) {
+	if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || true !== constant( 'WPCOM_IS_VIP_ENV' ) ) {
 		return true;
 	}
 
@@ -357,13 +382,8 @@ function _upload_archive_file( $archive_path ) {
 		require WPVIP_MU_PLUGIN_DIR . '/files/class-api-client.php';
 	}
 
-	// Build the `/wp-content/` version of the exports path since `LOCAL_UPLOADS` gives us a `/tmp` path.
-	// Hard-coded and full of assumptions for now.
-	// TODO: need a cleaner approach for this. Can probably borrow `WP_Filesystem_VIP_Uploads::sanitize_uploads_path()`.
-	$archive_file      = basename( $archive_path );
-	$exports_url       = wp_privacy_exports_url();
-	$wp_content_strpos = strpos( $exports_url, '/wp-content/uploads/' );
-	$upload_path       = trailingslashit( substr( $exports_url, $wp_content_strpos ) ) . $archive_file;
+	// Build the path from the exports URL, since `LOCAL_UPLOADS` gives us a `/tmp` path.
+	$upload_path = _get_files_service_path( wp_privacy_exports_url() . basename( $archive_path ) );
 
 	$api_client    = \Automattic\VIP\Files\new_api_client();
 	$upload_result = $api_client->upload_file( $archive_path, $upload_path );
@@ -374,12 +394,27 @@ function _upload_archive_file( $archive_path ) {
 	return $upload_result;
 }
 
+/**
+ * The Files Service path of an export file's URL.
+ *
+ * On a subdirectory multisite, a subsite's uploads URLs start with the subsite's directory, which isn't part of the file's path.
+ *
+ * @param string $url Export file URL.
+ * @return string
+ */
+function _get_files_service_path( $url ) {
+	$path     = (string) wp_parse_url( $url, PHP_URL_PATH );
+	$position = strpos( $path, '/wp-content/uploads/' );
+
+	return false === $position ? $path : substr( $path, $position );
+}
+
 function _delete_archive_file( $archive_url ) {
-	$archive_path = wp_parse_url( $archive_url, PHP_URL_PATH );
+	$archive_path = _get_files_service_path( $archive_url );
 
 	// For local usage, just delete locally.
-	if ( true !== WPCOM_IS_VIP_ENV ) {
-		$local_path = wp_privacy_exports_dir() . wp_basename( (string) $archive_path );
+	if ( ! defined( 'WPCOM_IS_VIP_ENV' ) || true !== constant( 'WPCOM_IS_VIP_ENV' ) ) {
+		$local_path = wp_privacy_exports_dir() . wp_basename( $archive_path );
 		if ( is_file( $local_path ) && ! unlink( $local_path ) ) {
 			return new WP_Error( 'local-delete-failed', __( 'Unable to delete the local export file.' ) );
 		}
@@ -468,11 +503,18 @@ function delete_old_export_files() {
 
 	update_postmeta_cache( wp_list_pluck( $expired_exports, 'post_id' ) );
 
+	// The timestamp re-read below has to see a regeneration that just finished, so read it from the primary:
+	// a lagging replica could still return the expired one.
+	if ( method_exists( $wpdb, 'send_reads_to_masters' ) ) {
+		$wpdb->send_reads_to_masters();
+	}
+
 	foreach ( $expired_exports as $expired_export ) {
 		$request_id = (int) $expired_export->post_id;
 
 		// Skip exports that are being regenerated; the next run retries them.
-		if ( ! _lock_export( $request_id ) ) {
+		$lock = _lock_export( $request_id );
+		if ( ! $lock ) {
 			continue;
 		}
 
@@ -504,7 +546,7 @@ function delete_old_export_files() {
 			// Stop selecting this export once its file is gone.
 			delete_post_meta( $request_id, '_vip_export_generated_time', $expired_export->meta_value );
 		} finally {
-			_unlock_export( $request_id );
+			_unlock_export( $request_id, $lock );
 		}
 	}
 }
