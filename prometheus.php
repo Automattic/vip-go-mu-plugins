@@ -1,10 +1,8 @@
 <?php
 
 use Automattic\VIP\Feature;
-use Automattic\VIP\Prometheus\APCu_Collector;
 use Automattic\VIP\Prometheus\Cache_Collector;
 use Automattic\VIP\Prometheus\Login_Stats_Collector;
-use Automattic\VIP\Prometheus\OpCache_Collector;
 use Automattic\VIP\Prometheus\User_Stats_Collector;
 use Automattic\VIP\Prometheus\Error_Stats_Collector;
 use Automattic\VIP\Prometheus\Multisite_Stats_Collector;
@@ -17,8 +15,6 @@ if ( defined( 'ABSPATH' ) ) {
 
 	$files = [
 		'/prometheus-collectors/class-cache-collector.php',
-		'/prometheus-collectors/class-apcu-collector.php',
-		'/prometheus-collectors/class-opcache-collector.php',
 		'/prometheus-collectors/class-login-stats-collector.php',
 		'/prometheus-collectors/class-error-stats-collector.php',
 		'/prometheus-collectors/class-multisite-stats-collector.php',
@@ -40,8 +36,6 @@ if ( defined( 'ABSPATH' ) ) {
 	add_filter( 'vip_prometheus_collectors', function ( array $collectors ): array {
 		$to_init = [
 			'cache'      => Cache_Collector::class,
-			'apcu'       => APCu_Collector::class,
-			'opcache'    => OpCache_Collector::class,
 			'login'      => Login_Stats_Collector::class,
 			'error'      => Error_Stats_Collector::class,
 			'user'       => User_Stats_Collector::class,
