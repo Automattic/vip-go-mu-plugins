@@ -12,6 +12,9 @@ use const Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_ALLOWED;
 
 const CACHE_GROUP = 'vip-files-acl';
 
+// Meta hooks that run clear_path_cache(), including the ones before an update or delete.
+const PATH_CACHE_HOOKS = [ 'added_post_meta', 'update_post_meta', 'updated_post_meta', 'delete_post_meta', 'deleted_post_meta' ];
+
 /**
  * Given a path determine whether the file is private or public
  *
@@ -119,10 +122,13 @@ function get_path_cache_key( $path ) {
 }
 
 /**
- * Clear the cached attachment lookup for a path when an attachment starts or stops using it.
+ * Clear the cached attachment lookups for the paths an attachment starts or stops using.
  *
- * Otherwise a lookup cached before the change (as not found, or as an attachment that was since
- * deleted while another one still uses the path) would return an outdated result until it expires.
+ * Otherwise a lookup cached before the change (as not found, or as an attachment that has since
+ * moved or been deleted while another one still uses the path) would return an outdated result until it expires.
+ *
+ * The hooks after an update or delete only pass the new value, or the value given to `delete_post_meta()`,
+ * so the hooks before it remember the paths in use, and those are cleared once the change is saved.
  *
  * @param int|int[] $meta_id    Meta ID, or IDs when deleted.
  * @param int       $post_id    Post ID.
@@ -130,8 +136,25 @@ function get_path_cache_key( $path ) {
  * @param mixed     $meta_value Meta value.
  */
 function clear_path_cache( $meta_id, $post_id, $meta_key, $meta_value ) {
-	if ( '_wp_attached_file' === $meta_key && is_string( $meta_value ) ) {
-		wp_cache_delete( get_path_cache_key( $meta_value ), CACHE_GROUP );
+	static $previous_paths = [];
+
+	if ( '_wp_attached_file' !== $meta_key ) {
+		return;
+	}
+
+	if ( in_array( current_action(), [ 'update_post_meta', 'delete_post_meta' ], true ) ) {
+		$previous_paths[ $post_id ] = (array) get_post_meta( $post_id, '_wp_attached_file', false );
+		return;
+	}
+
+	$paths   = $previous_paths[ $post_id ] ?? [];
+	$paths[] = $meta_value;
+	unset( $previous_paths[ $post_id ] );
+
+	foreach ( $paths as $path ) {
+		if ( is_string( $path ) ) {
+			wp_cache_delete( get_path_cache_key( $path ), CACHE_GROUP );
+		}
 	}
 }
 

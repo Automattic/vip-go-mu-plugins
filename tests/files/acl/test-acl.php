@@ -74,9 +74,9 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
 		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
-		$this->assertEquals( 10, has_action( 'added_post_meta', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), 'added_post_meta action does not have correct callback attached' );
-		$this->assertEquals( 10, has_action( 'updated_post_meta', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), 'updated_post_meta action does not have correct callback attached' );
-		$this->assertEquals( 10, has_action( 'deleted_post_meta', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), 'deleted_post_meta action does not have correct callback attached' );
+		foreach ( [ 'added_post_meta', 'update_post_meta', 'updated_post_meta', 'delete_post_meta', 'deleted_post_meta' ] as $hook ) {
+			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\clear_path_cache' ), "$hook action does not have correct callback attached" );
+		}
 	}
 
 	public function data_provider__maybe_load_restrictions__option_false() {

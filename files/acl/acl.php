@@ -44,9 +44,9 @@ function maybe_load_restrictions() {
 		// Purge attachments for posts for better cacheability
 		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
 		// Don't let a cached path lookup outlive a change to the attachments using that path
-		add_action( 'added_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
-		add_action( 'updated_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
-		add_action( 'deleted_post_meta', __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
+		foreach ( Restrict_Unpublished_Files\PATH_CACHE_HOOKS as $hook ) {
+			add_action( $hook, __NAMESPACE__ . '\Restrict_Unpublished_Files\clear_path_cache', 10, 4 );
+		}
 	}
 }
 
