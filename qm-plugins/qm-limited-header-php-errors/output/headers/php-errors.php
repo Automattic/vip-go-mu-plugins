@@ -50,8 +50,13 @@ class QM_Output_Headers_Limited_PHP_Errors extends QM_Output_Headers {
 				'component' => $component,
 			);
 
+			$json = wp_json_encode( $output_error );
+			if ( false === $json ) {
+				continue;
+			}
+
 			$key             = sprintf( 'error-%d', $count );
-			$headers[ $key ] = json_encode( $output_error ); // phpcs:ignore WordPress.WP.AlternativeFunctions.json_encode_json_encode
+			$headers[ $key ] = $json;
 		}
 
 		// VIP: hack to avoid failed requests due to headers being too large
@@ -73,7 +78,7 @@ class QM_Output_Headers_Limited_PHP_Errors extends QM_Output_Headers {
 
 		// Too many headers, slice the array
 		if ( $current_headers_count + $count > $max_total_headers ) {
-			$headers = array_slice( $headers, 0, $max_total_headers - $current_headers_count );
+			$headers = array_slice( $headers, 0, max( 0, $max_total_headers - $current_headers_count ) );
 		}
 
 		// Wholesale remove QM error headers if we're still over the limit
