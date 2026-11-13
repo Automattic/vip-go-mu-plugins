@@ -286,7 +286,7 @@ class QM_Output_Html_Cron extends QM_Output_Html {
 			return;
 		}
 
-		echo wp_json_encode( $args );
+		echo esc_html( wp_json_encode( $args ) );
 	}
 
 	/**
