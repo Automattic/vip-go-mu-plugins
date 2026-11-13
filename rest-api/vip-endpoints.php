@@ -160,18 +160,8 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 			// Inflate raw list of site IDs, if available
 			if ( is_array( $_sites ) ) {
-				global $wpdb;
-
-				// A site row can outlive its tables, and switching into it queries the missing tables.
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-				$options_tables = array_flip( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%options' ) ) );
-
 				// Switch to the blog to ensure certain domain filtering is respected
-				foreach ( $_sites as $_site ) {
-					if ( ! isset( $options_tables[ $wpdb->get_blog_prefix( $_site ) . 'options' ] ) ) {
-						continue;
-					}
-
+				foreach ( $this->filter_sites_with_tables( $_sites ) as $_site ) {
 					switch_to_blog( $_site );
 
 					$url_parts = wp_parse_args( wp_parse_url( home_url() ), array(
@@ -238,7 +228,7 @@ class WPCOM_VIP_REST_API_Endpoints {
 
 			if ( is_array( $_sites ) ) {
 				// Switch to the blog to ensure certain domain filtering is respected.
-				foreach ( $_sites as $_site ) {
+				foreach ( $this->filter_sites_with_tables( $_sites ) as $_site ) {
 					switch_to_blog( $_site );
 					$details[] = $this->get_jetpack_details_for_site();
 
@@ -252,6 +242,25 @@ class WPCOM_VIP_REST_API_Endpoints {
 		}
 
 		return new WP_REST_Response( $details );
+	}
+
+	/**
+	 * Keep only the sites whose options table exists.
+	 *
+	 * A site row can outlive its tables, and switching into it queries the missing tables.
+	 *
+	 * @param int[] $site_ids Site IDs.
+	 * @return int[]
+	 */
+	private function filter_sites_with_tables( array $site_ids ): array {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$options_tables = array_flip( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->base_prefix ) . '%options' ) ) );
+
+		return array_filter( $site_ids, function ( $site_id ) use ( $wpdb, $options_tables ) {
+			return isset( $options_tables[ $wpdb->get_blog_prefix( $site_id ) . 'options' ] );
+		} );
 	}
 
 	/**
