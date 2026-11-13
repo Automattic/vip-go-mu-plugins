@@ -454,6 +454,23 @@ class VIP_Files_Acl_Restrict_Unpublished_Files_Test extends WP_UnitTestCase {
 		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
 	}
 
+	/**
+	 * A derived file cached as one attachment is looked up again when that attachment's metadata stops listing it.
+	 */
+	public function test__check_file_visibility__derived_file_dropped_from_cached_attachment() {
+		$file_path = '2021/01/shared-300x200.jpg';
+		$sizes     = [ 'medium' => [ 'file' => 'shared-300x200.jpg' ] ];
+		$public_id = $this->create_attachment( '2021/01/shared.jpg', $this->factory()->post->create( [ 'post_status' => 'publish' ] ) );
+		wp_update_attachment_metadata( $public_id, [ 'sizes' => $sizes ] );
+		wp_update_attachment_metadata( $this->create_attachment( '2021/01/shared.jpg', $this->factory()->post->create( [ 'post_status' => 'draft' ] ) ), [ 'sizes' => $sizes ] );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PUBLIC, check_file_visibility( false, $file_path ) );
+
+		wp_update_attachment_metadata( $public_id, [ 'sizes' => [] ] );
+
+		$this->assertEquals( \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED, check_file_visibility( false, $file_path ) );
+	}
+
 	public function get_data__check_file_visibility__derived_files() {
 		return [
 			'original'                     => [ 'photo.jpg', \Automattic\VIP\Files\Acl\FILE_IS_PRIVATE_AND_DENIED ],
