@@ -10,8 +10,6 @@ namespace Automattic\VIP\Core\Privacy;
 use WP_Error;
 
 const EXPORT_LOCK_GROUP = 'vip_privacy_export_lock';
-// Longer than generating or cleaning up an export takes, so the lock doesn't expire under its owner.
-const EXPORT_LOCK_TTL = 300;
 
 /**
  * Core privacy data export handler doesn't work by default on Go.
@@ -229,12 +227,12 @@ function generate_personal_data_export_file( $request_id ) {
 		wp_send_json_error( __( 'This export is being generated or cleaned up. Please try again in a moment.' ) );
 	}
 
-	// Release it even if generation dies first, so a retry doesn't have to wait for it to expire.
+	// Release it when the request ends, including when generation dies, so a retry doesn't wait for it to expire.
 	add_action( 'shutdown', function () use ( $request_id, $lock ) {
 		_unlock_export( $request_id, $lock );
 	} );
 
-	// Another generation may have named the archive while this one waited for the lock.
+	// Another generation may have named the archive since this request loaded the export's meta.
 	wp_cache_delete( $request_id, 'post_meta' );
 
 	// This meta value is used from version 5.5.
@@ -331,8 +329,6 @@ function generate_personal_data_export_file( $request_id ) {
 
 		_upload_archive_file( $local_archive_pathname );
 	}
-
-	_unlock_export( $request_id, $lock );
 }
 
 /**
@@ -344,8 +340,8 @@ function generate_personal_data_export_file( $request_id ) {
 function _lock_export( $request_id ) {
 	$token = wp_generate_uuid4();
 
-	// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined -- EXPORT_LOCK_TTL is 300.
-	return wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, EXPORT_LOCK_TTL ) ? $token : false;
+	// Longer than generating or cleaning up an export takes, so the lock doesn't expire under its owner.
+	return wp_cache_add( (int) $request_id, $token, EXPORT_LOCK_GROUP, 5 * MINUTE_IN_SECONDS ) ? $token : false;
 }
 
 /**
