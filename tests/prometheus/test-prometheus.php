@@ -154,6 +154,48 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertSame( 1, $count_cache_shutdown_hooks() - $before );
 	}
 
+	public function get_data__endpoint_opcache_restrict_api(): array {
+		return [
+			'API allowed for the endpoint' => [ dirname( __DIR__, 2 ) . '/prometheus/', true ],
+			'API restricted elsewhere'     => [ '/usr/local/nginx/html/', false ],
+		];
+	}
+
+	/**
+	 * The endpoint runs without WordPress and refreshes the pod's APCu and OPcache gauges on each scrape.
+	 *
+	 * @dataProvider get_data__endpoint_opcache_restrict_api
+	 */
+	public function test_endpoint_refreshes_pod_gauges( string $restrict_api, bool $expect_opcache ): void {
+		if ( ! extension_loaded( 'apcu' ) || ! function_exists( 'opcache_get_status' ) ) {
+			self::markTestSkipped( 'Requires APCu and OPcache.' );
+		}
+
+		// JIT is disabled because enabling OPcache warns at startup when JIT is on and a coverage extension is loaded.
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- runs the standalone endpoint script
+		$process = proc_open(
+			[ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'opcache.enable=1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.jit=disable', '-d', 'opcache.restrict_api=' . $restrict_api, '-d', 'display_errors=stderr', dirname( __DIR__, 2 ) . '/prometheus/endpoint.php' ],
+			[
+				1 => [ 'pipe', 'w' ],
+				2 => [ 'pipe', 'w' ],
+			],
+			$pipes,
+			null,
+			[ 'REQUEST_URI' => '/.vip-prom-metrics' ]
+		);
+		$output  = stream_get_contents( $pipes[1] );
+		$errors  = stream_get_contents( $pipes[2] );
+		proc_close( $process );
+
+		self::assertSame( '', $errors );
+		self::assertStringContainsString( 'apcu_num_slots ', $output );
+		if ( $expect_opcache ) {
+			self::assertStringContainsString( 'opcache_hits ', $output );
+		} else {
+			self::assertStringNotContainsString( 'opcache_', $output );
+		}
+	}
+
 	public function test_safe_adapter(): void {
 		Plugin_Helper::get_instance();
 

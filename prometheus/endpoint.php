@@ -25,6 +25,14 @@ if ( defined( 'ABSPATH' ) || ! Context::is_prom_endpoint_request() ) {
 
 $registry = create_registry();
 
+// APCu and OPcache stats describe this pod's php-fpm, which also serves the scrape, so refresh them on every scrape.
+require_once dirname( __DIR__ ) . '/prometheus-collectors/class-apcu-collector.php';
+require_once dirname( __DIR__ ) . '/prometheus-collectors/class-opcache-collector.php';
+foreach ( [ new APCu_Collector(), new OpCache_Collector() ] as $collector ) {
+	$collector->initialize( $registry );
+	$collector->collect_metrics();
+}
+
 header( 'Content-Type: text/plain' );
 $renderer = new RenderTextFormat();
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
