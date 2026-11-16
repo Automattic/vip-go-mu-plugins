@@ -1093,8 +1093,15 @@ class User {
 	 */
 	public static function remove_stale_support_users() {
 		$support_users = get_users( array(
-			'meta_key' => self::VIP_SUPPORT_USER_META_KEY,
-			'fields'   => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
+			// Skip empty values: those users aren't support users.
+			'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Same meta_key lookup as before, plus a value check.
+				array(
+					'key'     => self::VIP_SUPPORT_USER_META_KEY,
+					'value'   => '',
+					'compare' => '!=',
+				),
+			),
+			'fields'     => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
 		) );
 
 		if ( empty( $support_users ) ) {
@@ -1110,9 +1117,7 @@ class User {
 		$threshold = strtotime( '-8 hours' );
 
 		foreach ( $support_users as $user ) {
-			// Skip users already seen, and users whose meta value is empty (the query matches
-			// those too, but they aren't support users).
-			if ( in_array( $user->ID, $processed_ids, true ) || ! self::has_vip_support_meta( $user->ID ) ) {
+			if ( in_array( $user->ID, $processed_ids, true ) ) {
 				continue;
 			}
 
