@@ -196,6 +196,28 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertFalse( $strategy->has_pending_metadata() );
 	}
 
+	public function data_authentication_page_send_result(): array {
+		return [
+			'code sent'     => [ http_response( 201, wp_json_encode( [ 'status' => 'queued' ] ) ), 'A verification code has been sent' ],
+			'code not sent' => [ new WP_Error( 'http_request_failed', 'Operation timed out after 30000 milliseconds' ), 'A verification code could not be sent' ],
+		];
+	}
+
+	/**
+	 * The login prompt says whether the code was sent (the test bootstrap's GET request sends one).
+	 *
+	 * @dataProvider data_authentication_page_send_result
+	 */
+	public function test_authentication_page_reports_send_result( array|WP_Error $response, string $expected_message ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		$this->add_http_response_mock( self::SMS_API_URL, $response );
+
+		ob_start();
+		Two_Factor_SMS::get_instance()->authentication_page( $user );
+
+		$this->assertStringContainsString( $expected_message, ob_get_clean() );
+	}
+
 	public function test_twilio_sms_api_validate_authentication_failure_invalid_code(): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
 
