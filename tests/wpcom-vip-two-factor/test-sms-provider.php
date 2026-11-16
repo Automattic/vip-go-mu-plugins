@@ -512,6 +512,28 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertSame( $expected_configured, get_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, true ) );
 	}
 
+	public function data_user_options_update_number_removed(): array {
+		return [
+			'number deleted' => [ [ 'vip-two-factor-phone-delete' => 'Delete' ] ],
+			'number changed' => [ [ 'vip-two-factor-phone' => '+1234567890' ] ],
+		];
+	}
+
+	/**
+	 * A code pending for the old number is cleared when the number is deleted or changed, including for Twilio Verify numbers.
+	 *
+	 * @dataProvider data_user_options_update_number_removed
+	 */
+	public function test_user_options_update_clears_pending_code_for_old_number( array $fields ): void {
+		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
+		wp_set_current_user( $user->ID );
+
+		$this->submit_sms_options( $user, $fields );
+
+		$this->assertEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ) );
+	}
+
 	// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
 	public function mock_http_request( false|array|WP_Error $preempt, array $args, string $url ): array|WP_Error {
 		$this->http_requests[] = [

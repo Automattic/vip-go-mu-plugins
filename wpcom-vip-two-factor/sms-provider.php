@@ -209,10 +209,11 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			}
 		}
 
+		// Pending codes are cleared before the number changes, since the stored number picks the strategy that holds them.
 		if ( isset( $_POST['vip-two-factor-phone-delete'] ) ) {
+			$this->get_sms_strategy( $user_id )->cleanup_verification_data();
 			delete_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY );
 			delete_user_meta( $user_id, self::PHONE_META_KEY );
-			$this->get_sms_strategy( $user_id )->cleanup_verification_data();
 		}
 
 		if ( isset( $_POST['vip-two-factor-phone'] ) ) {
@@ -220,6 +221,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			$sms = filter_var( $_POST['vip-two-factor-phone'], FILTER_SANITIZE_NUMBER_FLOAT );
 			// Every profile save resubmits an unverified number, so only a changed number has to be verified again.
 			if ( get_user_meta( $user_id, self::PHONE_META_KEY, true ) !== $sms ) {
+				$this->get_sms_strategy( $user_id )->cleanup_verification_data();
 				update_user_meta( $user_id, self::PHONE_META_KEY, $sms );
 				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 0 );
 			}
