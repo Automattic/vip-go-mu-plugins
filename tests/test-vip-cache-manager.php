@@ -176,6 +176,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 			return $urls;
 		}, 10, 2 );
 
+		$this->cache_manager->clear_queued_purge_urls();
 		$this->assertTrue( wpvip_purge_edge_cache_for_post( get_post( $post_id ) ) );
 
 		$this->assertSame( $post_id, $filtered_id );
