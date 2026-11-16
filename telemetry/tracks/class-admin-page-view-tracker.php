@@ -107,7 +107,8 @@ final class Admin_Page_View_Tracker {
 		 */
 		$screens = apply_filters( 'vip_telemetry_admin_page_view_screens', self::ALLOWED_SCREENS );
 
-		return in_array( $hook_suffix, $screens, true );
+		// A filter that returns a non-array (e.g. one that forgets to return) records nothing.
+		return is_array( $screens ) && in_array( $hook_suffix, $screens, true );
 	}
 
 	/**
