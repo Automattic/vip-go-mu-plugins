@@ -1067,8 +1067,8 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  *
  * @param string $url The URL that should be embedded
  * @param array $args Additional arguments and parameters the embed
- * @param int $ttl How long to cache for in seconds; minimum 18000 (5 Hours)
- * @return string
+ * @param int $ttl How long to cache for in seconds; minimum 18000 (5 Hours). Failures are cached for 5 minutes.
+ * @return string|false The embed HTML, or false on failure
  */
 function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 	// We want a min ttl of 5 hours (1800s).
@@ -1086,12 +1086,14 @@ function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 
 	$html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' );
 	if ( false === $html ) {
-		$html = wp_oembed_get( $url, $args );
+		// A cached false reads back as a miss, so store a failure as an empty string, and only for 5 minutes
+		$html = (string) wp_oembed_get( $url, $args );
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', $ttl );
+		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', '' === $html ? 5 * MINUTE_IN_SECONDS : $ttl );
 	}
 
-	return $html;
+	// Failures come back as false, the same as from wp_oembed_get()
+	return '' === $html ? false : $html;
 }
 
 /**
