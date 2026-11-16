@@ -403,20 +403,15 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 
 	$redirect_url = '';
 
-	// Sanitize the redirects array
-	$vip_redirects_array = array_map( 'untrailingslashit', $vip_redirects_array );
-
+	// Get the current path minus query string and trailing slash
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] ?? '' );
+	$parsed_uri_path = untrailingslashit( (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) );
 
 	if ( $case_insensitive ) {
 		$vip_redirects_array = array_change_key_case( $vip_redirects_array );
-		$uri_unslashed       = strtolower( $uri_unslashed );
+		$parsed_uri_path     = strtolower( $parsed_uri_path );
 	}
 
-	// Get the current URL minus query string
-	$parsed_uri_path         = wp_parse_url( $uri_unslashed, PHP_URL_PATH );
-	$parsed_uri_path         = $parsed_uri_path ? $parsed_uri_path : '';
 	$parsed_uri_path_slashed = trailingslashit( $parsed_uri_path );
 
 	if ( $parsed_uri_path && array_key_exists( $parsed_uri_path, $vip_redirects_array ) ) {
@@ -461,7 +456,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 	foreach ( $vip_redirects_array as $old_path => $new_url ) {
 		if ( substr( $request_uri, 0, strlen( $old_path ) ) == $old_path ) {
 			if ( $append_old_uri ) {
-				$new_url .= str_replace( $old_path, '', $request_uri );
+				$new_url .= substr( $request_uri, strlen( $old_path ) );
 			}
 
 			if ( function_exists( 'wp_redirect' ) ) {
