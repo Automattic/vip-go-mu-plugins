@@ -870,22 +870,15 @@ class User {
 	 * @return string A random hex string
 	 */
 	protected function get_user_email_verification_code( $user_id ) {
-		$generate_new_code = false;
-		$user              = get_user_by( 'id', $user_id );
+		$user = get_user_by( 'id', $user_id );
 
 		$verification_data = get_user_meta( $user_id, self::META_VERIFICATION_DATA, true );
-		if ( ! $verification_data ) {
-			$verification_data = array(
-				'touch' => time(), // GPL timestamp
-			);
-			$generate_new_code = true;
+		if ( ! is_array( $verification_data ) ) {
+			$verification_data = array();
 		}
 
-		if ( $verification_data['email'] != $user->user_email ) {
-			$generate_new_code = true;
-		}
-
-		if ( $generate_new_code ) {
+		// Generate a code the first time, and again when the email has changed.
+		if ( empty( $verification_data['code'] ) || ( $verification_data['email'] ?? '' ) !== $user->user_email ) {
 			$verification_data['code']  = bin2hex( openssl_random_pseudo_bytes( 16 ) );
 			$verification_data['touch'] = time();
 		}
