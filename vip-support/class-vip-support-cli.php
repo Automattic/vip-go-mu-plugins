@@ -122,7 +122,6 @@ class Command extends WP_CLI_Command {
 			\WP_CLI::error( "Could not find a user with ID $user_id" );
 		}
 
-		// If this is a multisite, commence super powers!
 		User::grant_super_admin_if_allowed( $user );
 
 		User::init()->mark_user_email_verified( $user->ID, $user->user_email );

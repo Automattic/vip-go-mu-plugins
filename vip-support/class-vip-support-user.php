@@ -1034,7 +1034,6 @@ class User {
 
 		update_user_meta( $user_id, self::VIP_SUPPORT_USER_META_KEY, time() );
 
-		// If this is a multisite, commence super powers!
 		self::grant_super_admin_if_allowed( $user );
 
 		return $user_id;
