@@ -2,10 +2,13 @@
 
 namespace Automattic\VIP\Jetpack;
 
+use Automattic\VIP\Logstash\Testable_Logger;
 use DateTime;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
+
+require_once __DIR__ . '/../../logstash/class-testable-logger.php';
 
 /**
  * @requires function Jetpack_Options::get_option
@@ -87,6 +90,18 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		$should_back_off  = get_class_method_as_public( Connection_Pilot::class, 'should_back_off' );
 
 		$this->assertEquals( $expected, $should_back_off->invoke( $connection_pilot ) );
+	}
+
+	public function test__run_connection_pilot_respects_opt_out() {
+		add_filter( 'vip_jetpack_connection_pilot_should_run', '__return_false' );
+		wp_schedule_single_event( time(), Connection_Pilot::CRON_ACTION );
+		Testable_Logger::set_entries( [] );
+
+		Connection_Pilot::instance()->run_connection_pilot();
+
+		// Any pilot run logs here: tests aren't a VIP environment, so the connection check always fails.
+		$this->assertSame( [], Testable_Logger::get_entries() );
+		$this->assertFalse( wp_next_scheduled( Connection_Pilot::CRON_ACTION ) );
 	}
 
 	public function get_test_data__update_heartbeat_on_failure() {
