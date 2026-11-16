@@ -120,20 +120,19 @@ class Connection_Pilot {
 	}
 
 	public static function do_cron() {
+		self::instance()->run_connection_pilot();
+	}
+
+	/**
+	 * Checks the JP connection and alerts/auto-resolves when there are problems.
+	 * Cron and data cleanup both call this, so it's where the opt-out is enforced.
+	 */
+	public function run_connection_pilot() {
 		if ( ! self::should_run_connection_pilot() ) {
 			wp_clear_scheduled_hook( self::CRON_ACTION );
 			return;
 		}
 
-		$instance = self::instance();
-		$instance->run_connection_pilot();
-	}
-
-	/**
-	 * The main cron job callback.
-	 * Checks the JP connection and alerts/auto-resolves when there are problems.
-	 */
-	public function run_connection_pilot() {
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
