@@ -75,7 +75,9 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'admin_menu', array( $this, 'vip_purge_cache_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_widget_assets' ) );
 
-		add_action( 'shutdown', array( $this, 'execute_purges' ) );
+		// After other shutdown callbacks, which can still queue purges (e.g. deferred term counts),
+		// but before the ones at PHP_INT_MAX that finish the response early.
+		add_action( 'shutdown', array( $this, 'execute_purges' ), PHP_INT_MAX - 2 );
 		add_action( 'admin_bar_menu', [ $this, 'admin_bar_callback' ], 100, 1 );
 		add_action( 'wp_enqueue_scripts', [ $this, 'button_enqueue_scripts' ] );
 		add_action( 'wp_ajax_vip_purge_page_cache', [ $this, 'ajax_vip_purge_page_cache' ] );

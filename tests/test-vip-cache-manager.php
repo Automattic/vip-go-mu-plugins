@@ -166,6 +166,24 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Shutdown callbacks registered after the cache manager's, like bulk edit's deferred term counts, can queue purges.
+	 */
+	public function test_purges_queued_during_shutdown_are_sent() {
+		$sent = [];
+		add_action( 'wpcom_vip_cache_pre_execute_purges', function ( $urls ) use ( &$sent ) {
+			$sent = $urls;
+		} );
+		remove_all_actions( 'shutdown' );
+		$this->cache_manager->init();
+		add_action( 'shutdown', fn() => $this->cache_manager->queue_purge_url( home_url( '/late/' ) ) );
+
+		// With no purge server configured, sending the purges raises a notice instead.
+		$this->capture_errors( fn() => do_action( 'shutdown' ), E_USER_NOTICE );
+
+		$this->assertContains( home_url( '/late/' ), $sent );
+	}
+
+	/**
 	 * With `%category%` permalinks, a category change moves the post, and the new category is saved before `post_updated`.
 	 */
 	public function test__old_permalink_purge__category_change() {
