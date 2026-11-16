@@ -83,15 +83,17 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			return false;
 		}
 
-		// Ensure days is least 1, but no more than 90
+		// Ensure days is at least 1, but no more than 90
 		$args['days'] = max( 1, min( 90, absint( $args['days'] ) ) );
+
+		// A single post's stats come back as one row per day, and stats_get_csv() defaults to 3 rows
+		$args['limit'] = $args['days'];
 
 		$cache_key = 'views_' . $args['post_id'] . '_' . $args['days'] . '_' . $args['end'];
 
 		$views = wp_cache_get( $cache_key, 'vip_stats' );
 
 		if ( false === $views ) {
-			// A single post's stats come back as one row per day
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.stats_get_csv_stats_get_csv
 			$rows  = stats_get_csv( 'postviews', $args );
 			$views = array_sum( array_column( $rows, 'views' ) );
