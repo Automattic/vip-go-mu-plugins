@@ -274,6 +274,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		$urls = is_array( $req->urls ) && ! empty( $req->urls ) ? $req->urls : [];
+		$urls = array_filter( $urls, fn( $url ) => $this->is_user_purgeable_url( $url ) );
 
 		if ( empty( $urls ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
@@ -1169,8 +1170,8 @@ class WPCOM_VIP_Cache_Manager {
 		$url = isset( $_REQUEST['vip_cache_manager_url'] ) ? esc_url_raw( wp_unslash( $_REQUEST['vip_cache_manager_url'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) ) {
-			return new \WP_Error( 'invalid_url', __( 'Enter a valid URL to purge.', 'vip-cache-manager' ) );
+		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) || ! $this->is_user_purgeable_url( $url ) ) {
+			return new \WP_Error( 'invalid_url', __( 'Enter a valid URL on this site to purge.', 'vip-cache-manager' ) );
 		}
 
 		return $this->queue_purge_url( $url );
@@ -1213,6 +1214,35 @@ class WPCOM_VIP_Cache_Manager {
 
 	protected function is_valid_purge_url( $url ) {
 		return wp_http_validate_url( $url );
+	}
+
+	/**
+	 * Whether a user may purge a URL: it must be on this site and outside the reserved `/.vip/` paths.
+	 *
+	 * @param mixed $url URL submitted by the user.
+	 */
+	private function is_user_purgeable_url( $url ): bool {
+		if ( ! is_string( $url ) ) {
+			return false;
+		}
+
+		// Check the URL in the form it will be purged.
+		$parsed = wp_parse_url( $this->normalize_purge_url( $url ) );
+		$host   = strtolower( $parsed['host'] ?? '' );
+
+		// This site's hosts: home, the hosts it allows redirects to (sites served from more than one domain,
+		// e.g. one per language, add theirs), and the host the request came in on.
+		$home_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		/** This filter is documented in wp-includes/pluggable.php */
+		$site_hosts   = (array) apply_filters( 'allowed_redirect_hosts', [ $home_host ], $host );
+		$site_hosts[] = $home_host;
+		$site_hosts[] = strtolower( $_SERVER['HTTP_HOST'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against.
+		if ( '' === $host || ! in_array( $host, $site_hosts, true ) ) {
+			return false;
+		}
+
+		// Paths under `/.vip/` are reserved for platform purges, and also match when percent-encoded.
+		return false === stripos( rawurldecode( $parsed['path'] ?? '' ), '/.vip/' );
 	}
 
 	private function can_purge_cache( ?string $scope = null ): bool {
