@@ -180,7 +180,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	}
 
 	public function user_options_update( $user_id ) {
-		if ( ! isset( $_POST['_nonce_user_two_factor_sms_options'] ) ) {
+		// Changes need the same recently revalidated session as the Two Factor plugin's own settings.
+		if ( ! isset( $_POST['_nonce_user_two_factor_sms_options'] ) || ! Two_Factor_Core::current_user_can_update_two_factor_options( 'save' ) ) {
 			return;
 		}
 		check_admin_referer( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options' );
