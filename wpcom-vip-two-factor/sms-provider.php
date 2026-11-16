@@ -34,8 +34,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 	protected function __construct() {
 		add_action( 'two_factor_user_options_' . __CLASS__, array( $this, 'user_options' ) );
-		add_action( 'personal_options_update', array( $this, 'user_options_update' ) );
-		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ) );
+		// Before the Two Factor plugin saves enabled providers, so a number verified in the same request can be enabled.
+		add_action( 'personal_options_update', array( $this, 'user_options_update' ), 9 );
+		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ), 9 );
 		parent::__construct();
 	}
 
@@ -137,8 +138,18 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @return boolean
 	 */
 	public function is_available_for_user( $user ) {
-		$sms = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
-		return ! empty( $sms );
+		if ( empty( get_user_meta( $user->ID, self::PHONE_META_KEY, true ) ) ) {
+			return false;
+		}
+
+		$configured = get_user_meta( $user->ID, self::SMS_CONFIGURED_META_KEY, true );
+		if ( '1' === $configured ) {
+			return true;
+		}
+
+		// Numbers saved before verification was enforced have no flag. Keep them working where SMS is already enabled.
+		$enabled_providers = (array) get_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, true );
+		return '' === $configured && in_array( __CLASS__, $enabled_providers, true );
 	}
 
 	/**
@@ -207,7 +218,11 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		if ( isset( $_POST['vip-two-factor-phone'] ) ) {
 			// Remove all characters except digits and +-
 			$sms = filter_var( $_POST['vip-two-factor-phone'], FILTER_SANITIZE_NUMBER_FLOAT );
-			update_user_meta( $user_id, self::PHONE_META_KEY, $sms );
+			// Every profile save resubmits an unverified number, so only a changed number has to be verified again.
+			if ( get_user_meta( $user_id, self::PHONE_META_KEY, true ) !== $sms ) {
+				update_user_meta( $user_id, self::PHONE_META_KEY, $sms );
+				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 0 );
+			}
 		}
 
 		if ( isset( $_POST['vip-two-factor-phone-send-code'] ) ) {

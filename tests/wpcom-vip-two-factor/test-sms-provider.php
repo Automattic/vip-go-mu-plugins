@@ -462,15 +462,54 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		wp_set_current_user( $user->ID );
 		Two_Factor_Core::update_current_user_session( [ 'two-factor-login' => time() - $seconds_since_two_factor ] );
 
-		$form     = [
-			'_nonce_user_two_factor_sms_options' => wp_create_nonce( 'user_two_factor_sms_options' ),
-			'vip-two-factor-phone-delete'        => 'Delete',
-		];
-		$_POST    = $form;
-		$_REQUEST = $form;
-		Two_Factor_SMS::get_instance()->user_options_update( $user->ID );
+		$this->submit_sms_options( $user, [ 'vip-two-factor-phone-delete' => 'Delete' ] );
 
 		$this->assertSame( $expected_phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
+	}
+
+	public function data_is_available_for_user(): array {
+		return [
+			'verified number'                      => [ '1', [], true ],
+			'number without flag, SMS enabled'     => [ '', [ 'Two_Factor_SMS' ], true ],
+			'number without flag, SMS not enabled' => [ '', [], false ],
+			'unverified number, SMS enabled'       => [ '0', [ 'Two_Factor_SMS' ], false ],
+		];
+	}
+
+	/**
+	 * Only a verified number can be enabled; numbers saved before verification was required keep working where SMS is enabled.
+	 *
+	 * @dataProvider data_is_available_for_user
+	 */
+	public function test_is_available_for_user( string $configured, array $enabled_providers, bool $expected ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, $configured );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, $enabled_providers );
+
+		$this->assertSame( $expected, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
+	}
+
+	public function data_user_options_update_phone(): array {
+		return [
+			'same number'      => [ '+1234567890', '' ],
+			'different number' => [ '+1234567899', '0' ],
+		];
+	}
+
+	/**
+	 * Saving a different number marks it unverified, so a number without the flag can't be swapped for an unverified one.
+	 *
+	 * @dataProvider data_user_options_update_phone
+	 */
+	public function test_user_options_update_marks_changed_number_unverified( string $phone, string $expected_configured ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		delete_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY );
+		wp_set_current_user( $user->ID );
+
+		$this->submit_sms_options( $user, [ 'vip-two-factor-phone' => $phone ] );
+
+		$this->assertSame( $phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
+		$this->assertSame( $expected_configured, get_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, true ) );
 	}
 
 	// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
@@ -529,6 +568,16 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 			'url'      => $url,
 			'response' => $response,
 		];
+	}
+
+	/**
+	 * Submit the SMS profile options with a valid nonce, as the profile form does.
+	 */
+	private function submit_sms_options( WP_User $user, array $fields ): void {
+		$form     = [ '_nonce_user_two_factor_sms_options' => wp_create_nonce( 'user_two_factor_sms_options' ) ] + $fields;
+		$_POST    = $form;
+		$_REQUEST = $form;
+		Two_Factor_SMS::get_instance()->user_options_update( $user->ID );
 	}
 
 	private function setup_user_with_phone( string $phone_number ): WP_User {
