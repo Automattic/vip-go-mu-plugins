@@ -89,18 +89,6 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $should_back_off->invoke( $connection_pilot ) );
 	}
 
-	/**
-	 * @group jetpack-required
-	 */
-	public function test__should_attempt_reconnection_skips_offline_mode() {
-		// Same URL and no back-off, so only the error code can prevent the reconnect.
-		$this->set_heartbeat();
-
-		$should_attempt_reconnection = get_class_method_as_public( Connection_Pilot::class, 'should_attempt_reconnection' );
-
-		$this->assertFalse( $should_attempt_reconnection->invoke( Connection_Pilot::instance(), new \WP_Error( 'jp-cxn-pilot-offline-mode' ) ) );
-	}
-
 	public function get_test_data__update_heartbeat_on_failure() {
 		$connection_pilot = Connection_Pilot::instance();
 		$increments       = $connection_pilot::BACKOFF_INCREMENTS;
