@@ -142,7 +142,8 @@ function wpcom_vip_url_to_postid( $url ) {
 	$cache_key = md5( $url );
 	$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
 
-	if ( false === $post_id ) {
+	// Look the URL up again if its post was unpublished or deleted since it was cached
+	if ( false === $post_id || ( $post_id && 'publish' !== get_post_status( $post_id ) ) ) {
 		$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
 		wp_cache_set( $cache_key, $post_id, 'url_to_postid', 3 * HOUR_IN_SECONDS );
 	}
@@ -157,6 +158,13 @@ add_action( 'transition_post_status', function ( $new_status, $old_status, $post
 
 	$url = get_permalink( $post->ID );
 	wp_cache_delete( md5( $url ), 'url_to_postid' );
+}, 10, 3 );
+
+add_action( 'post_updated', function ( $post_id, $post_after, $post_before ) {
+	// A published post's old URL stops mapping to it when its slug changes
+	if ( 'publish' === $post_before->post_status ) {
+		wp_cache_delete( md5( get_permalink( $post_before ) ), 'url_to_postid' );
+	}
 }, 10, 3 );
 
 /**
@@ -438,9 +446,10 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	$query_key     = 'wpcom_vip_adjacent_post_' . md5( $query );
 	$cached_result = wp_cache_get( $query_key );
 
+	// Reuse the cached result, unless its post was unpublished or deleted since
 	if ( 'not found' === $cached_result ) {
 		return false;
-	} elseif ( false !== $cached_result ) {
+	} elseif ( false !== $cached_result && 'publish' === get_post_status( $cached_result ) ) {
 		return get_post( $cached_result );
 	}
 
@@ -522,15 +531,18 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 }
 
 /**
- * Remove cached post ID when attachment post deleted
+ * Remove cached lookups for an attachment's URLs when it's added or deleted
  *
  * @see wpcom_vip_attachment_url_to_postid()
  */
-add_action( 'delete_attachment', function ( $post_id ) {
-	$url       = wp_get_attachment_url( $post_id );
-	$cache_key = wpcom_vip_attachment_cache_key( $url );
-	wp_cache_delete( $cache_key, 'default' );
-} );
+function wpcom_vip_flush_attachment_url_cache( $post_id ) {
+	// The original image URL differs from the attachment URL when a big image was scaled down
+	foreach ( array_unique( array_filter( [ wp_get_attachment_url( $post_id ), wp_get_original_image_url( $post_id ) ] ) ) as $url ) {
+		wp_cache_delete( wpcom_vip_attachment_cache_key( $url ), 'default' );
+	}
+}
+add_action( 'add_attachment', 'wpcom_vip_flush_attachment_url_cache' );
+add_action( 'delete_attachment', 'wpcom_vip_flush_attachment_url_cache' );
 
 function wpcom_vip_enable_old_slug_redirect_caching() {
 	add_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
