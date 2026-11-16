@@ -70,6 +70,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'pre_post_update', array( $this, 'remember_old_permalink' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ) );
 		add_action( 'transition_post_status', array( $this, 'queue_unpublished_post_purge' ), 10, 3 );
+		add_action( 'before_delete_post', array( $this, 'queue_deleted_post_purge' ), 10, 2 );
 
 		add_action( 'admin_menu', array( $this, 'vip_purge_cache_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_widget_assets' ) );
@@ -278,6 +279,7 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		$urls = is_array( $req->urls ) && ! empty( $req->urls ) ? $req->urls : [];
+		$urls = array_filter( $urls, fn( $url ) => $this->is_user_purgeable_url( $url ) );
 
 		if ( empty( $urls ) ) {
 			\Automattic\VIP\Stats\send_pixel( [
@@ -742,7 +744,7 @@ class WPCOM_VIP_Cache_Manager {
 		$max_purge_urls = defined( 'PURGE_BATCH_SERVER_URL' ) ? self::MAX_PURGE_BATCH_URLS : self::MAX_PURGE_URLS;
 		if ( $num_purge_urls > $max_purge_urls ) {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %d', number_format( $num_purge_urls ), number_format( $max_purge_urls ) ), E_USER_WARNING );
+			trigger_error( sprintf( 'vip-cache-manager: Trying to PURGE too many URLs (total count %s); limiting count to %s', number_format( $num_purge_urls ), number_format( $max_purge_urls ) ), E_USER_WARNING );
 			array_splice( $this->purge_urls, $max_purge_urls );
 		}
 
@@ -966,6 +968,21 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	/**
+	 * Queue a purge for a published post that is about to be deleted.
+	 *
+	 * `clean_post_cache` fires after the post is deleted, when `queue_post_purge()` can no longer
+	 * build its URLs. Trashed posts aren't purged again: they were purged when they were trashed.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public function queue_deleted_post_purge( $post_id, $post ) {
+		if ( 'publish' === $post->post_status ) {
+			$this->queue_post_purge( $post_id );
+		}
+	}
+
+	/**
 	 * Purge the cache for a terms
 	 *
 	 * @param object|int $term A WP Term object, or a term ID
@@ -990,6 +1007,8 @@ class WPCOM_VIP_Cache_Manager {
 	 *
 	 * We do not respect requests to clear caches for the entire taxonomy,
 	 * as this would be potentially hundreds or thousands of PURGE requests.
+	 * That includes calls with no IDs, which `clean_term_cache()` makes when
+	 * a term without children is deleted.
 	 *
 	 * @param array  $ids            An array of term IDs.
 	 * @param string $taxonomy       Taxonomy slug.
@@ -997,7 +1016,7 @@ class WPCOM_VIP_Cache_Manager {
 	 */
 	public function queue_terms_purges( $ids, $taxonomy ) {
 		$taxonomy_object = get_taxonomy( $taxonomy );
-		if ( ! $taxonomy_object ) {
+		if ( empty( $ids ) || ! $taxonomy_object ) {
 			return;
 		}
 
@@ -1171,8 +1190,8 @@ class WPCOM_VIP_Cache_Manager {
 		$url = isset( $_REQUEST['vip_cache_manager_url'] ) ? esc_url_raw( wp_unslash( $_REQUEST['vip_cache_manager_url'] ) ) : '';
 		// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) ) {
-			return new \WP_Error( 'invalid_url', __( 'Enter a valid URL to purge.', 'vip-cache-manager' ) );
+		if ( empty( $url ) || ! $this->is_valid_purge_url( $url ) || ! $this->is_user_purgeable_url( $url ) ) {
+			return new \WP_Error( 'invalid_url', __( 'Enter a valid URL on this site to purge.', 'vip-cache-manager' ) );
 		}
 
 		return $this->queue_purge_url( $url );
@@ -1227,6 +1246,35 @@ class WPCOM_VIP_Cache_Manager {
 
 	protected function is_valid_purge_url( $url ) {
 		return wp_http_validate_url( $url );
+	}
+
+	/**
+	 * Whether a user may purge a URL: it must be on this site and outside the reserved `/.vip/` paths.
+	 *
+	 * @param mixed $url URL submitted by the user.
+	 */
+	private function is_user_purgeable_url( $url ): bool {
+		if ( ! is_string( $url ) ) {
+			return false;
+		}
+
+		// Check the URL in the form it will be purged.
+		$parsed = wp_parse_url( $this->normalize_purge_url( $url ) );
+		$host   = strtolower( $parsed['host'] ?? '' );
+
+		// This site's hosts: home, the hosts it allows redirects to (sites served from more than one domain,
+		// e.g. one per language, add theirs), and the host the request came in on.
+		$home_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		/** This filter is documented in wp-includes/pluggable.php */
+		$site_hosts   = (array) apply_filters( 'allowed_redirect_hosts', [ $home_host ], $host );
+		$site_hosts[] = $home_host;
+		$site_hosts[] = strtolower( $_SERVER['HTTP_HOST'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against.
+		if ( '' === $host || ! in_array( $host, $site_hosts, true ) ) {
+			return false;
+		}
+
+		// Paths under `/.vip/` are reserved for platform purges, and also match when percent-encoded.
+		return false === stripos( rawurldecode( $parsed['path'] ?? '' ), '/.vip/' );
 	}
 
 	private function can_purge_cache( ?string $scope = null ): bool {

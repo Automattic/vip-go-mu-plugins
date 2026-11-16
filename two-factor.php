@@ -175,19 +175,12 @@ function wpcom_enable_two_factor_plugin() {
 	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
 	// Switching to require_once so it no longer gets skipped
 	require_once WPVIP_MU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
-	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
-	add_filter( 'two_factor_providers', 'wpcom_vip_two_factor_remove_u2f' );
-}
 
-/**
- * Remove U2F from the list of the available Two Factor providers.
- *
- * @param array $providers List of Two Factor providers.
- * @return array
- */
-function wpcom_vip_two_factor_remove_u2f( $providers ) {
-	unset( $providers[ Two_Factor_FIDO_U2F::class ] );
-	return $providers;
+	// Providers are managed in code (`two_factor_providers`). Drop the Settings → Two-Factor page and its
+	// saved provider list, which could switch off SMS or every provider and lock users out.
+	remove_action( 'init', 'two_factor_register_admin_hooks' );
+
+	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
 }
 
 /**

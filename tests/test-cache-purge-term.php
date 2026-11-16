@@ -108,4 +108,17 @@ class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 		// A new slug moves the term archive, so the old one has to go too.
 		$this->assertContains( $old_link, $this->cache_manager->get_queued_purge_urls() );
 	}
+
+	/**
+	 * Deleting a term with no children cleans the term cache with no IDs, which must not purge every other term.
+	 */
+	public function test_deleting_leaf_term_does_not_purge_other_terms(): void {
+		$term_id = $this->register_taxonomy_and_term( [ 'hierarchical' => true ] );
+		$leaf_id = self::factory()->term->create( [ 'taxonomy' => self::TEST_TAXONOMY_SLUG ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		$this->assertTrue( wp_delete_term( $leaf_id, self::TEST_TAXONOMY_SLUG ) );
+
+		$this->assertNotContains( get_term_link( $term_id, self::TEST_TAXONOMY_SLUG ), $this->cache_manager->get_queued_purge_urls() );
+	}
 }
