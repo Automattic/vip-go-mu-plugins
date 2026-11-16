@@ -50,11 +50,12 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		return json_decode( $response, true );
 	}
 
-	public function get_rejected_contact_nonce_cases(): array {
+	public function get_rejected_contact_cases(): array {
 		return [
 			'invalid'       => [ 'invalid', 'Security check failed. Make sure you should be doing this, and try again.' ],
 			'wrong purpose' => [ 'wrong-purpose', 'Security check failed. Make sure you should be doing this, and try again.' ],
 			'missing'       => [ 'missing', 'Please complete all required fields.' ],
+			'no capability' => [ 'valid', 'Security check failed. Make sure you should be doing this, and try again.' ],
 		];
 	}
 
@@ -62,9 +63,9 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 	 * The handler calls die() on rejection, so invoke the real handler in a child process.
 	 * The child replaces only the WordPress and mail boundaries.
 	 *
-	 * @dataProvider get_rejected_contact_nonce_cases
+	 * @dataProvider get_rejected_contact_cases
 	 */
-	public function test_contact_form_rejects_bad_nonce_without_mail( string $nonce_case, string $message ): void {
+	public function test_contact_form_rejects_request_without_mail( string $nonce_case, string $message ): void {
 		$child = run_php( [ __DIR__ . '/fixtures/contact-form-nonce.php', $nonce_case ] );
 
 		self::assertSame( 0, $child['exit'], $child['stderr'] );
@@ -162,7 +163,8 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 
 	public function test_vip_echo_mailto_vip_hosting(): void {
 		wp_set_current_user( 1 );
-		$actual = vip_echo_mailto_vip_hosting( 'Link', false );
+		$_POST['email'] = ''; // A cleared email field falls back to the account email.
+		$actual         = vip_echo_mailto_vip_hosting( 'Link', false );
 		self::assertStringNotContainsString( '&body=', $actual );
 		self::assertStringNotContainsString( '\n', $actual );
 
@@ -173,5 +175,9 @@ class Test_VIP_Dashboard extends WP_UnitTestCase {
 		$href = $matches[1];
 
 		self::assertStringNotContainsString( ' ', $href );
+
+		parse_str( (string) wp_parse_url( html_entity_decode( $href ), PHP_URL_QUERY ), $query );
+		self::assertStringContainsString( 'Name: Support Requester', $query['body'] );
+		self::assertStringContainsString( 'Email: ' . wp_get_current_user()->user_email, $query['body'] );
 	}
 }

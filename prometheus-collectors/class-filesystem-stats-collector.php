@@ -9,8 +9,8 @@ use Prometheus\RegistryInterface;
  * Collects VIP File Service I/O metrics, instrumented at the stream wrapper.
  *
  * Upload (write) sizes are observed at event-time via record_write().
- * Reads (ingress) are accumulated per-request via record_read() and drained
- * into histograms by collect_metrics() at shutdown.
+ * Reads (ingress) are accumulated per-request via record_read() and observed
+ * at shutdown, only on requests that read.
  */
 class Filesystem_Stats_Collector implements CollectorInterface {
 
@@ -48,7 +48,7 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 	private static ?Histogram $request_read_bytes = null;
 	private static ?Histogram $request_read_files = null;
 
-	/** Per-request read accumulators. Drained and reset in collect_metrics(); PHP clears static state between requests. */
+	/** Per-request read accumulators. Drained and reset in observe_request_reads(); PHP clears static state between requests. */
 	private static int $read_bytes_acc = 0;
 	private static int $read_files_acc = 0;
 
@@ -96,11 +96,16 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 
 	/**
 	 * Accumulate a remote fetch from the File Service. Called from the stream
-	 * wrapper. Per-request totals are drained in collect_metrics(). Must never throw.
+	 * wrapper. The first read of a request hooks observe_request_reads() to
+	 * shutdown, so requests without reads do no extra work. Must never throw.
 	 */
 	public static function record_read( int $size ): void {
 		if ( $size < 0 ) {
 			return;
+		}
+
+		if ( 0 === self::$read_files_acc ) {
+			add_action( 'shutdown', [ self::class, 'observe_request_reads' ], PHP_INT_MAX );
 		}
 
 		self::$read_bytes_acc += $size;
@@ -108,6 +113,13 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 	}
 
 	public function collect_metrics(): void {
+		/* Do nothing: reads are observed per request in observe_request_reads() */
+	}
+
+	/**
+	 * Observe this request's read totals. Hooked to shutdown by record_read().
+	 */
+	public static function observe_request_reads(): void {
 		if ( self::$read_files_acc < 1 ) {
 			return;
 		}
@@ -120,7 +132,7 @@ class Filesystem_Stats_Collector implements CollectorInterface {
 			self::$request_read_files->observe( self::$read_files_acc, [] );
 		}
 
-		// Reset so a second collect_metrics() in the same request does not double-count.
+		// Reset so a second call in the same request does not double-count.
 		self::$read_bytes_acc = 0;
 		self::$read_files_acc = 0;
 	}

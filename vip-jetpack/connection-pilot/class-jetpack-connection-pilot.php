@@ -98,7 +98,6 @@ class Connection_Pilot {
 		}
 
 		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
-		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 	}
 
 	public function schedule_cron() {
@@ -108,25 +107,32 @@ class Connection_Pilot {
 		}
 	}
 
-	public function schedule_immediate_cron() {
+	/**
+	 * Connect a new subsite right away instead of waiting for its hourly event.
+	 *
+	 * `wp_initialize_site` fires in the context of the site that created the subsite,
+	 * so the event has to be scheduled on the new site itself.
+	 */
+	public function schedule_immediate_cron( \WP_Site $new_site ) {
+		switch_to_blog( $new_site->id );
 		wp_schedule_single_event( time(), self::CRON_ACTION );
+		restore_current_blog();
 	}
 
 	public static function do_cron() {
+		self::instance()->run_connection_pilot();
+	}
+
+	/**
+	 * Checks the JP connection and alerts/auto-resolves when there are problems.
+	 * Cron and data cleanup both call this, so it's where the opt-out is enforced.
+	 */
+	public function run_connection_pilot() {
 		if ( ! self::should_run_connection_pilot() ) {
 			wp_clear_scheduled_hook( self::CRON_ACTION );
 			return;
 		}
 
-		$instance = self::instance();
-		$instance->run_connection_pilot();
-	}
-
-	/**
-	 * The main cron job callback.
-	 * Checks the JP connection and alerts/auto-resolves when there are problems.
-	 */
-	public function run_connection_pilot() {
 		$is_connected = Connection_Pilot\Controls::jetpack_is_connected();
 
 		if ( true === $is_connected ) {
@@ -286,8 +292,8 @@ class Connection_Pilot {
 		if ( is_wp_error( $error ) ) {
 			switch ( $error->get_error_code() ) {
 				case 'jp-cxn-pilot-invalid-environment':
-				case 'jp-cxn-pilot-development-mode':
-					$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment. JP may be in development mode.', $error );
+				case 'jp-cxn-pilot-offline-mode':
+					$this->send_alert( 'Jetpack cannot currently be connected on this site due to the environment.', $error );
 					return false;
 
 				// If the site is timing out, then attempting to reconnect right now could mess up an otherwise valid connection.
@@ -366,7 +372,7 @@ class Connection_Pilot {
 			return $message;
 		}
 
-		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-development-mode', 'jp-cxn-pilot-domain-changed', 'jp-cxn-pilot-akismet-connection-failed' ];
+		$errors_to_ignore = [ 'jp-cxn-pilot-not-vip-owned', 'jp-cxn-pilot-offline-mode', 'jp-cxn-pilot-domain-changed', 'jp-cxn-pilot-akismet-connection-failed' ];
 		if ( is_wp_error( $wp_error ) && in_array( $wp_error->get_error_code(), $errors_to_ignore, true ) ) {
 			return $message;
 		}

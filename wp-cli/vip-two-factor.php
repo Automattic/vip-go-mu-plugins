@@ -14,7 +14,7 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 	 * : Filter by user role.
 	 *
 	 * [--2fa-provider=<string>]
-	 * : Filter by 2FA provider. Accepts values of: email, totp, fido_u2f, backup_codes, dummy
+	 * : Filter by 2FA provider. Accepts values of: email, totp, backup_codes, dummy
 	 *
 	 * [--user_login=<login|id|email>]
 	 * : Filter by user login, ID, or email.
@@ -64,7 +64,6 @@ class VIP_Two_Factor_Command extends WPCOM_VIP_CLI_Command {
 		$default_provider_map = [
 			'Two_Factor_Email'        => 'email',
 			'Two_Factor_Totp'         => 'totp',
-			'Two_Factor_FIDO_U2F'     => 'fido_u2f',
 			'Two_Factor_Backup_Codes' => 'backup_codes',
 			'Two_Factor_Dummy'        => 'dummy',
 		];

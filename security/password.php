@@ -38,6 +38,11 @@ function validate_current_password( WP_Error &$errors, bool $update, &$user ) {
 
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- TODO: do we need to wp_unslash() it first?
 	$auth = wp_authenticate( $user->user_login, $_POST['current_pass'] );
+
+	// Two Factor blocks auth cookies for the rest of the request once `authenticate` passes for a 2FA user.
+	// Lift the block so core can refresh the cookies after the password change instead of logging the user out.
+	remove_filter( 'send_auth_cookies', '__return_false', PHP_INT_MAX );
+
 	if ( is_wp_error( $auth ) ) {
 		$errors->add( 'wrong_current_password', '<strong>Error</strong>: The entered current password is not correct.', array( 'form-field' => 'current_pass' ) );
 	}

@@ -57,9 +57,12 @@ class Tracks_Client extends Telemetry_Client {
 			'commonProps' => $common_props,
 		];
 
+		// Blocking so the status can be checked, but with a short timeout: the request
+		// runs after the response, yet still holds the PHP worker until it finishes.
 		$response = $this->http->post(
 			static::TRACKS_ENDPOINT,
 			array(
+				'timeout'    => 1,
 				'body'       => wp_json_encode( $body ),
 				'user-agent' => 'viptelemetry',
 				'headers'    => array(

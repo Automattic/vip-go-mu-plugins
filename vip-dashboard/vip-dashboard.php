@@ -90,7 +90,7 @@ function vip_contact_form_handler() {
 	}
 
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'vip-dashboard' ) ) {
+	if ( ! wp_verify_nonce( $_GET['_wpnonce'], 'vip-dashboard' ) || ! current_user_can( apply_filters( 'vip_dashboard_page_cap', 'publish_posts' ) ) ) {
 		$return = array(
 			'status'  => 'error',
 			'message' => __( 'Security check failed. Make sure you should be doing this, and try again.', 'vip-dashboard' ),
@@ -259,7 +259,7 @@ function vip_echo_mailto_vip_hosting( $linktext = 'Send an email to VIP Hosting.
 	if ( isset( $_POST['email'] ) && is_email( $_POST['email'] ) ) {
 		$useremail = sanitize_email( $_POST['email'] );
 	} elseif ( isset( $current_user->user_email ) ) {
-		$name = $current_user->user_email;
+		$useremail = $current_user->user_email;
 	}
 
 	$email  = "\n\n--\n";

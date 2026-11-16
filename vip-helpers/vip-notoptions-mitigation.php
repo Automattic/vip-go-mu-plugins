@@ -114,14 +114,24 @@ function user_role_backup_scheduling() {
 
 /**
  * Run the backup event
+ *
+ * @return bool Whether the roles were backed up
  */
 function do_user_role_backup() {
 	global $wpdb;
 	$current_roles = get_option( $wpdb->prefix . 'user_roles' );
-	$backup_roles  = get_option( 'vip_backup_user_roles', [] );
+
+	// Don't push good backups out with a copy of missing or broken roles
+	if ( ! is_array( $current_roles ) || ! $current_roles ) {
+		return false;
+	}
+
+	$backup_roles = get_option( 'vip_backup_user_roles', [] );
 
 	$backup_roles[ time() ] = $current_roles; // adds to end of array
 	$backup_roles           = array_slice( $backup_roles, ( USER_ROLE_BACKUP_LENGTH * -1 ), null, true ); // retain last 3
 
 	update_option( 'vip_backup_user_roles', $backup_roles, 'no' );
+
+	return true;
 }

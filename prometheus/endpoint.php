@@ -25,10 +25,26 @@ if ( defined( 'ABSPATH' ) || ! Context::is_prom_endpoint_request() ) {
 
 $registry = create_registry();
 
+// APCu and OPcache stats describe this pod's php-fpm, which also serves the scrape, so refresh them on every scrape.
+require_once dirname( __DIR__ ) . '/prometheus-collectors/class-apcu-collector.php';
+require_once dirname( __DIR__ ) . '/prometheus-collectors/class-opcache-collector.php';
+foreach ( [ new APCu_Collector(), new OpCache_Collector() ] as $collector ) {
+	$collector->initialize( $registry );
+	$collector->collect_metrics();
+}
+
+// Metrics removed from the collectors keep their stored values in APCu until php-fpm restarts, which mu-plugins
+// deploys don't do, so the scrape would keep exporting them frozen. List them here to leave them out.
+$retired_metrics = [ 'object_cache_cache_hits_total', 'object_cache_cache_misses_total' ];
+$metrics         = array_filter(
+	$registry->getMetricFamilySamples(),
+	fn ( $family ) => ! in_array( $family->getName(), $retired_metrics, true )
+);
+
 header( 'Content-Type: text/plain' );
 $renderer = new RenderTextFormat();
 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- this is a text/plain endpoint
-echo $renderer->render( $registry->getMetricFamilySamples() );
+echo $renderer->render( $metrics );
 
 /**
  * Create a registry for Prometheus metrics.

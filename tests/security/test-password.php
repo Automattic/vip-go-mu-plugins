@@ -2,11 +2,13 @@
 
 namespace Automattic\VIP\Security;
 
+use Two_Factor_Core;
 use WP_Error;
 use WP_UnitTest_Factory;
 use WP_UnitTestCase;
 
 require_once __DIR__ . '/../../security/password.php';
+require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
 
 class Current_Password_Change_Test extends WP_UnitTestCase {
 	public static function wpSetUpBeforeClass( WP_UnitTest_Factory $factory ) {
@@ -71,6 +73,21 @@ class Current_Password_Change_Test extends WP_UnitTestCase {
 				'<strong>Error</strong>: The entered current password is not correct.',
 			],
 		];
+	}
+
+	public function test__should_keep_auth_cookies_for_two_factor_user() {
+		$user = get_user_by( 'login', 'john' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, [ 'Two_Factor_Email' ] );
+		// The WP test suite blocks auth cookies for every test.
+		remove_filter( 'send_auth_cookies', '__return_false' );
+
+		$errors = $this->validate_profile_update( true, 'profile', [
+			'pass1'        => 'somepassword',
+			'current_pass' => 'secret1',
+		] );
+
+		$this->assertFalse( $errors->has_errors() );
+		$this->assertTrue( apply_filters( 'send_auth_cookies', true, 0, 0, $user->ID, 'auth', '' ) );
 	}
 
 	/**

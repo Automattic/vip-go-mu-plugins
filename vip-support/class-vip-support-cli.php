@@ -101,7 +101,7 @@ class Command extends WP_CLI_Command {
 	 * Marks the user with the provided ID as having a verified email.
 	 *
 	 * <user-id>
-	 * : The WP User ID to mark as having a verified email address
+	 * : The ID of a user with a VIP Support role (active or inactive) to mark as having a verified email address
 	 *
 	 * @subcommand verify
 	 *
@@ -120,6 +120,9 @@ class Command extends WP_CLI_Command {
 		$user = get_user_by( 'id', $user_id );
 		if ( ! $user ) {
 			\WP_CLI::error( "Could not find a user with ID $user_id" );
+		}
+		if ( ! User::user_has_vip_support_role( $user->ID ) && ! User::user_has_vip_support_role( $user->ID, false ) ) {
+			\WP_CLI::error( "User $user_id does not have a VIP Support role" );
 		}
 
 		// If this is a multisite, commence super powers!

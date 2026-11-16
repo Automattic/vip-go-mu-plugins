@@ -1,0 +1,26 @@
+{
+	"name": "wordpress/php-toolkit",
+	"autoload": {
+		"classmap": [
+			"ByteStream",
+			"DataLiberation",
+			"Encoding",
+			"XML"
+		],
+		"exclude-from-classmap": [
+			"./DataLiberation/vendor-patched/"
+		],
+		"psr-4": {
+			"VendorPrefix\\Brick\\Math\\": "DataLiberation/vendor-patched/brick/math/src/",
+			"VendorPrefix\\Psr\\Log\\": "DataLiberation/vendor-patched/psr/log/src/",
+			"VendorPrefix\\Psr\\EventDispatcher\\": "DataLiberation/vendor-patched/psr/event-dispatcher/src/",
+			"VendorPrefix\\Rowbot\\Idna\\Resource\\": "DataLiberation/vendor-patched/rowbot/idna/resources/",
+			"VendorPrefix\\Rowbot\\Idna\\": "DataLiberation/vendor-patched/rowbot/idna/src/",
+			"VendorPrefix\\Rowbot\\Punycode\\": "DataLiberation/vendor-patched/rowbot/punycode/src/",
+			"VendorPrefix\\Rowbot\\URL\\": "DataLiberation/vendor-patched/rowbot/url/src/",
+			"VendorPrefix\\Symfony\\Polyfill\\Php80\\": "DataLiberation/vendor-patched/symfony/polyfill-php80/src/",
+			"VendorPrefix\\Symfony\\Polyfill\\Intl\\Normalizer\\": "DataLiberation/vendor-patched/symfony/polyfill-intl-normalizer/src/",
+			"VendorPrefix\\Symfony\\Polyfill\\Ctype\\": "DataLiberation/vendor-patched/symfony/polyfill-ctype/src/"
+		}
+	}
+}
