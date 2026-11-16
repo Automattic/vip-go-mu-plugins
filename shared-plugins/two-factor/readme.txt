@@ -1,22 +1,87 @@
-=== Two-Factor ===
-Contributors: georgestephanis, valendesigns, stevenkword, extendwings, sgrant, aaroncampbell, johnbillion, stevegrunwell, netweb, kasparsd, alihusnainarshad, passoniate
+=== Two Factor ===
+Contributors: georgestephanis, kasparsd, masteradhoc, valendesigns, stevenkword, jeffpaul, extendwings, sgrant, aaroncampbell, johnbillion, stevegrunwell, netweb, alihusnainarshad, passoniate
 Tags:         2fa, mfa, totp, authentication, security
-Tested up to: 6.9
-Stable tag:   0.14.2
+Tested up to: 7.1
+Stable tag:   0.17.0
 License:      GPL-2.0-or-later
 License URI:  https://spdx.org/licenses/GPL-2.0-or-later.html
 
-Enable Two-Factor Authentication (2FA) using time-based one-time passwords (TOTP), Universal 2nd Factor (U2F), email, and backup verification codes.
+Enable Two-Factor Authentication (2FA) using time-based one-time passwords (TOTP), email, and backup verification codes.
 
 == Description ==
 
-Use the "Two-Factor Options" section under "Users" → "Your Profile" to enable and configure one or multiple two-factor authentication providers for your account:
+The Two-Factor plugin adds an extra layer of security to your WordPress login by requiring users to provide a second form of authentication in addition to their password.  This helps protect against unauthorized access even if passwords are compromised.
 
-- Email codes
-- Time Based One-Time Passwords (TOTP)
-- FIDO Universal 2nd Factor (U2F)
-- Backup Codes
-- Dummy Method (only for testing purposes)
+## Setup Instructions
+
+**Important**: Each user must individually configure their two-factor authentication settings.
+
+### For Individual Users
+
+1. **Navigate to your profile**: Go to "Users" → "Your Profile" in the WordPress admin
+2. **Find Two-Factor Options**: Scroll down to the "Two-Factor Options" section
+3. **Choose your methods**: Enable one or more authentication providers (noting a site admin may have hidden one or more so what is available could vary):
+   - **Authenticator App (TOTP)** - Use apps like Google Authenticator, Authy, or 1Password
+   - **Email Codes** - Receive one-time codes via email
+   - **Backup Codes** - Generate one-time backup codes for emergencies
+   - **Dummy Method** - For testing purposes only (requires WP_DEBUG)
+4. **Configure each method**: Follow the setup instructions for each enabled provider
+5. **Set primary method**: Choose which method to use as your default authentication
+6. **Save changes**: Click "Update Profile" to save your settings
+
+### For Site Administrators
+
+- **Plugin settings**: The plugin provides a settings page under "Settings → Two-Factor" to configure which providers should be disabled site-wide.
+- **User management**: Administrators can configure 2FA for other users by editing their profiles
+- **Security recommendations**: Encourage users to enable backup methods to prevent account lockouts
+
+## Available Authentication Methods
+
+### Authenticator App (TOTP) - Recommended
+- **Security**: High - Time-based one-time passwords
+- **Setup**: Scan QR code with authenticator app
+- **Compatibility**: Works with Google Authenticator, Authy, 1Password, and other TOTP apps
+- **Best for**: Most users, provides excellent security with good usability
+
+### Backup Codes - Recommended
+- **Security**: Medium - One-time use codes
+- **Setup**: Generate 10 backup codes for emergency access
+- **Compatibility**: Works everywhere, no special hardware needed
+- **Best for**: Emergency access when other methods are unavailable
+
+### Email Codes
+- **Security**: Medium - One-time codes sent via email
+- **Setup**: Automatic - uses your WordPress email address
+- **Compatibility**: Works with any email-capable device
+- **Best for**: Users who prefer email-based authentication
+
+### FIDO U2F Security Keys
+- Deprecated and removed due to loss of browser support.
+
+### Dummy Method
+- **Security**: None - Always succeeds
+- **Setup**: Only available when WP_DEBUG is enabled
+- **Purpose**: Testing and development only
+- **Best for**: Developers testing the plugin
+
+## Important Notes
+
+### HTTPS Requirement
+- All methods work on both HTTP and HTTPS sites
+
+### Browser Compatibility
+- TOTP and email methods work on all devices and browsers
+
+### Account Recovery
+- Always enable backup codes to prevent being locked out of your account
+- If you lose access to all authentication methods, contact your site administrator
+
+### Security Best Practices
+- Use multiple authentication methods when possible
+- Keep backup codes in a secure location
+- Regularly review and update your authentication settings
+
+For more information about two-factor authentication in WordPress, see the [WordPress Advanced Administration Security Guide](https://developer.wordpress.org/advanced-administration/security/mfa/).
 
 For more history, see [this post](https://georgestephanis.wordpress.com/2013/08/14/two-cents-on-two-factor/).
 
@@ -27,12 +92,41 @@ Here is a list of action and filter hooks provided by the plugin:
 - `two_factor_providers` filter overrides the available two-factor providers such as email and time-based one-time passwords. Array values are PHP classnames of the two-factor providers.
 - `two_factor_providers_for_user` filter overrides the available two-factor providers for a specific user. Array values are instances of provider classes and the user object `WP_User` is available as the second argument.
 - `two_factor_enabled_providers_for_user` filter overrides the list of two-factor providers enabled for a user. First argument is an array of enabled provider classnames as values, the second argument is the user ID.
+- `two_factor_is_required_for_user` filter controls whether two-factor authentication is required for a user. Return `false` to bypass the two-factor flow (e.g. for trusted IP addresses). First argument is a boolean (whether the user has a primary provider configured), the second argument is the `WP_User` object.
+- `two_factor_fallback_provider_for_user` filter overrides the provider forced on when none of a user's stored two-factor providers are still registered (e.g. after a provider plugin is deactivated). Defaults to `Two_Factor_Email`. First argument is the provider classname, the second is the user ID, the third is the array of provider classnames that were stored for the user but are no longer registered. The returned provider must be registered and available to the user (`is_available_for_user()`), or the user is shown an error instead of being let through with a fallback.
 - `two_factor_user_authenticated` action which receives the logged in `WP_User` object as the first argument for determining the logged in user right after the authentication workflow.
 - `two_factor_user_api_login_enable` filter restricts authentication for REST API and XML-RPC to application passwords only. Provides the user ID as the second argument.
 - `two_factor_email_token_ttl` filter overrides the time interval in seconds that an email token is considered after generation. Accepts the time in seconds as the first argument and the ID of the `WP_User` object being authenticated.
 - `two_factor_email_token_length` filter overrides the default 8 character count for email tokens.
 - `two_factor_backup_code_length` filter overrides the default 8 character count for backup codes. Provides the `WP_User` of the associated user as the second argument.
 - `two_factor_rest_api_can_edit_user` filter overrides whether a user’s Two-Factor settings can be edited via the REST API. First argument is the current `$can_edit` boolean, the second argument is the user ID.
+- `two_factor_before_authentication_prompt` action which receives the provider object and fires prior to the prompt shown on the authentication input form.
+- `two_factor_after_authentication_prompt` action which receives the provider object and fires after the prompt shown on the authentication input form.
+- `two_factor_after_authentication_input` action which receives the provider object and fires after the input shown on the authentication input form (if form contains no input, action fires immediately after `two_factor_after_authentication_prompt`).
+- `two_factor_login_backup_links` filters the backup links displayed on the two-factor login form.
+- `two_factor_login_nonce_failed` action which fires when a login nonce fails verification. Provides the ID of the user the nonce was presented for as the first argument, and the reason as the second: `no_nonce_stored`, `expired`, or `mismatch`.
+- `two_factor_log_login_nonce_failures` filter overrides whether a failed login nonce verification is written to the PHP error log. Defaults to true for `expired` and `mismatch`, and false for `no_nonce_stored`, which any unauthenticated request can reach. Provides the user ID as the second argument and the reason as the third.
+
+== WP-CLI Commands ==
+
+The plugin includes a `wp two-factor` WP-CLI namespace for managing two-factor authentication from the command line. All commands accept a user by ID, login, or email.
+
+* `wp two-factor status <user>` — Shows a user's current 2FA status (read-only). Supports `--format=json`.
+* `wp two-factor list-providers` — Lists all registered two-factor providers.
+* `wp two-factor enable <user> <provider>` — Enables a provider for a user. Providers that require a shared secret (like TOTP) can't be enabled this way and will point you to the profile page instead.
+* `wp two-factor disable <user> [<provider>]` — Disables a single provider, or performs a full reset of all 2FA for the user when no provider is given. Both forms prompt for confirmation unless `--yes` is passed.
+* `wp two-factor backup-codes generate <user> [--count=<n>]` — Generates a fresh set of backup codes for a user, replacing any existing ones. Defaults to 10 codes.
+* `wp two-factor unlock <user>` — Clears a user's login rate-limit/throttle without changing their 2FA configuration.
+
+Run `wp help two-factor` for the full list, or `wp help two-factor <command>` for options and examples for a specific command.
+
+== Redirect After the Two-Factor Challenge ==
+
+To redirect users to a specific URL after completing the two-factor challenge, use WordPress Core built-in login_redirect filter. The filter works the same way as in a standard WordPress login flow:
+
+    add_filter( 'login_redirect', function( $redirect_to, $requested_redirect_to, $user ) {
+        return home_url( '/dashboard/' );
+    }, 10, 3 );
 
 == Frequently Asked Questions ==
 
@@ -50,14 +144,183 @@ The plugin contributors and WordPress community take security bugs seriously. We
 
 To report a security issue, please visit the [WordPress HackerOne](https://hackerone.com/wordpress) program.
 
+= What if I lose access to all my authentication methods? =
+
+If you have backup codes enabled, you can use one of those to regain access. If you don't have backup codes or have used them all, you'll need to contact your site administrator to reset your account. This is why it's important to always enable backup codes and keep them in a secure location.
+
+= Can I use this plugin with WebAuthn? =
+
+The plugin previously supported FIDO U2F, which was a predecessor to WebAuthn. There is an open issue to [add WebAuthn support here](https://github.com/WordPress/two-factor/pull/427).
+
+= Is there a recommended way to use passkeys or hardware security keys with Two-Factor? =
+
+Yes. For passkeys and hardware security keys, you can install the [Two-Factor Provider: WebAuthn plugin](https://wordpress.org/plugins/two-factor-provider-webauthn/). It integrates directly with Two-Factor and adds WebAuthn-based authentication as an additional two-factor option for users.
+
+= Does this plugin work on WordPress Multisite? =
+
+Yes. The Two-Factor plugin is compatible with WordPress Multisite. Each user configures their own 2FA settings via their profile, and because authentication codes are stored in WordPress user meta, the configuration is tied to the user account and valid across all sites in the network. However, there are no network-wide settings — a super admin cannot enforce or configure 2FA globally from the Network Admin dashboard. To manage 2FA for a specific user, edit their profile on any site where they have an account.
+
+= How do I disable 2FA for a user who is locked out? =
+
+As an administrator, go to **Users → All Users** in the WordPress admin, click **Edit** on the affected user's profile, scroll down to the **Two-Factor Options** section, and uncheck all enabled methods, then click **Update User**. This will remove 2FA for that user, allowing them to log in with their password alone. You can also do this via WP-CLI with wp two-factor disable <user_id> --yes, which performs a full reset (see the WP-CLI Commands section above). Once they're back in, encourage them to re-enable 2FA and generate fresh backup codes.
+
+= Can I require 2FA for all users or specific roles? =
+
+Not through the plugin's interface — there are no built-in enforcement settings. However, developers can use the `two_factor_providers_for_user` filter to control which providers are available per user or role, and combine it with custom logic to redirect users who haven't set up 2FA. Native enforcement support is a known and tracked feature request — follow the discussion at [GitHub issue #255](https://github.com/WordPress/two-factor/issues/255).
+
+
 == Screenshots ==
 
-1. Two-factor options under User Profile.
-2. U2F Security Keys section under User Profile.
-3. Login with authentication app code.
-4. Login with recovery code.
-5. Login with email code.
+1. Two-factor options under User Profile - Shows the main configuration area where users can enable different authentication methods.
+2. Email Code Authentication during WordPress Login - Shows the email verification screen that appears during login.
+3. Authenticator App (TOTP) setup with QR code - Demonstrates the QR code generation and manual key entry for TOTP setup.
+4. Backup codes generation and management - Shows the backup codes interface for generating and managing emergency access codes.
 
 == Changelog ==
 
-See the [release history](https://github.com/wordpress/two-factor/releases).
+= 0.17.0 - 2026-09-25 =
+
+* **Security Fixes:** Ensure that regular passwords can't bypass the two-factor requirement for REST API and XML-RPC requests by @faisalahammad in [#989](https://github.com/WordPress/two-factor/pull/989). Thanks mqrble for responsibly reporting the issue.
+* **Security Fixes:** Add diagnostics for failed login nonce verification by @georgestephanis in [#973](https://github.com/WordPress/two-factor/pull/973). Thanks Ananda Dhakal (Patchstack) for responsibly reporting the issue.
+* **New Features:** Add WP-CLI support with `wp two-factor` commands by @masteradhoc in [#905](https://github.com/WordPress/two-factor/pull/905)
+* **New Features:** Respect intentional bypass via the `two_factor_is_required_for_user` filter by @masteradhoc in [#882](https://github.com/WordPress/two-factor/pull/882)
+* **New Features:** Add a `two_factor_fallback_provider_for_user` filter for when a user's stored providers are no longer registered by @masteradhoc in [#882](https://github.com/WordPress/two-factor/pull/882)
+* **New Features:** Add early notice for soon exhausting recovery codes by @masteradhoc in [#907](https://github.com/WordPress/two-factor/pull/907)
+* **New Features:** Add privacy policy content registration by @masteradhoc in [#869](https://github.com/WordPress/two-factor/pull/869)
+* **Bug Fixes:** Fail closed when CSPRNG is unavailable during nonce generation by @dknauss in [#877](https://github.com/WordPress/two-factor/pull/877)
+* **Bug Fixes:** Only clear the login nonce once it has expired by @georgestephanis in [#980](https://github.com/WordPress/two-factor/pull/980)
+* **Bug Fixes:** Fix unslashed `REMOTE_ADDR` warning in email provider by @masteradhoc in [#975](https://github.com/WordPress/two-factor/pull/975)
+* **Bug Fixes:** Fix TOTP verify button after resetting authenticator app by @lakrisgubben in [#979](https://github.com/WordPress/two-factor/pull/979)
+* **Bug Fixes:** Remove `two_factor_enabled_providers` option on uninstall by @faisalahammad in [#903](https://github.com/WordPress/two-factor/pull/903)
+* **Bug Fixes:** Fix misleading notice by @masteradhoc in [#858](https://github.com/WordPress/two-factor/pull/858)
+* **Bug Fixes:** Reword mixed-audience login failure notice to be informational by @dknauss in [#922](https://github.com/WordPress/two-factor/pull/922)
+* **Bug Fixes:** Rework fail-safe by @masteradhoc in [#927](https://github.com/WordPress/two-factor/pull/927)
+* **Bug Fixes:** Add coverage for provider-specific fallback notices by @dknauss in [#923](https://github.com/WordPress/two-factor/pull/923)
+* **Bug Fixes:** Fix HTML5 validation issues by @masteradhoc in [#910](https://github.com/WordPress/two-factor/pull/910)
+* **Bug Fixes:** Fix users list table fatals (`wp_die`) when a user's 2FA provider is deregistered by @masteradhoc in [#933](https://github.com/WordPress/two-factor/pull/933)
+* **Development Updates:** Prepare for the WordPress 7.0 release by @masteradhoc in [#834](https://github.com/WordPress/two-factor/pull/834)
+* **Development Updates:** Prepare for the WordPress 7.1 release by @masteradhoc in [#900](https://github.com/WordPress/two-factor/pull/900)
+* **Development Updates:** Sync `login_header()` and `login_footer()` with WP 7.1 by @masteradhoc in [#963](https://github.com/WordPress/two-factor/pull/963)
+* **Development Updates:** Update PHPStan to 2.x and exclude `includes/` from analysis by @masteradhoc in [#972](https://github.com/WordPress/two-factor/pull/972)
+* **Development Updates:** Validate against PHPStan version 3, 4 and 5 by @masteradhoc in [#948](https://github.com/WordPress/two-factor/pull/948)
+* **Development Updates:** Update `wp-coding-standards/wpcs` to 3.4.1 by @obenland in [#947](https://github.com/WordPress/two-factor/pull/947)
+* **Development Updates:** Fix PHPCS and PHPStan issues across multiple files by @aslamdoctor in [#818](https://github.com/WordPress/two-factor/pull/818)
+* **Development Updates:** Remove `ReflectionProperty::setAccessible()` and `ReflectionMethod::setAccessible()` calls in the test suite by @masteradhoc in [#942](https://github.com/WordPress/two-factor/pull/942)
+* **Development Updates:** Fix Codecov badge by adding OIDC permission for tokenless upload by @nimesh-xecurify in [#856](https://github.com/WordPress/two-factor/pull/856)
+* **Development Updates:** Update GitHub Actions workflows by @johnbillion in [#892](https://github.com/WordPress/two-factor/pull/892)
+* **Development Updates:** Update Playground PR preview action to v4 by @obenland in [#985](https://github.com/WordPress/two-factor/pull/985)
+* **Development Updates:** Add FAQ entries for Multisite, locked-out users, and role enforcement by @masteradhoc in [#881](https://github.com/WordPress/two-factor/pull/881)
+* **Development Updates:** Update `.md` files with the latest two-factor changes and requirements by @masteradhoc in [#929](https://github.com/WordPress/two-factor/pull/929)
+* **Development Updates:** Update PR template by @masteradhoc in [#870](https://github.com/WordPress/two-factor/pull/870)
+* **Development Updates:** Unbreak CI: PHPStan false positive and matrix fail-fast by @georgestephanis in [#974](https://github.com/WordPress/two-factor/pull/974)
+* **Dependency Updates:** Bump the `qrcode-generator` runtime dependency by @kasparsd
+* **Dependency Updates:** Bump `qs` and `express` by @dependabot[bot] in [#895](https://github.com/WordPress/two-factor/pull/895)
+* **Dependency Updates:** Bump adm-zip and `@wordpress/scripts` by @dependabot[bot] in [#988](https://github.com/WordPress/two-factor/pull/988)
+
+= 0.16.0 - 2026-03-27 =
+
+* **Breaking Changes:** Remove legacy FIDO U2F provider support by [#439](https://github.com/WordPress/two-factor/pull/439).
+* **New Features:** Add a dedicated settings page for plugin configuration in wp-admin by [#764](https://github.com/WordPress/two-factor/pull/764).
+* **New Features:** Add a support links filter so consumers can customize contextual recovery/help links by [#615](https://github.com/WordPress/two-factor/pull/615).
+* **New Features:** Refresh backup codes UI styling and behavior by [#804](https://github.com/WordPress/two-factor/pull/804).
+* **Bug Fixes:** Delete stored TOTP secrets when the TOTP provider is disabled by [#802](https://github.com/WordPress/two-factor/pull/802).
+* **Bug Fixes:** Harden provider handling so login/settings checks do not fail open when expected providers disappear by [#586](https://github.com/WordPress/two-factor/pull/586).
+* **Bug Fixes:** Ensure only configured providers are saved and enabled in user settings by [#798](https://github.com/WordPress/two-factor/pull/798).
+* **Bug Fixes:** Improve settings-page accessibility and fix profile settings link behavior by [#828](https://github.com/WordPress/two-factor/pull/828) and [#830](https://github.com/WordPress/two-factor/pull/830).
+* **Bug Fixes:** Resolve PHPCS violations in provider files by [#851](https://github.com/WordPress/two-factor/pull/851).
+* **Development Updates:** Move login styles and provider scripts from inline output to enqueued/external assets by [#807](https://github.com/WordPress/two-factor/pull/807) and [#814](https://github.com/WordPress/two-factor/pull/814).
+* **Development Updates:** Improve inline docs and static-analysis compatibility (WPCS/phpstan) by [#810](https://github.com/WordPress/two-factor/pull/810), [#815](https://github.com/WordPress/two-factor/pull/815), and [#817](https://github.com/WordPress/two-factor/pull/817).
+* **Development Updates:** Improve unit test reliability and integrate CI code coverage reporting by [#825](https://github.com/WordPress/two-factor/pull/825), [#841](https://github.com/WordPress/two-factor/pull/841), and [#842](https://github.com/WordPress/two-factor/pull/842).
+* **Development Updates:** Update readme docs and modernize CI workflow infrastructure by [#835](https://github.com/WordPress/two-factor/pull/835), [#837](https://github.com/WordPress/two-factor/pull/837), [#843](https://github.com/WordPress/two-factor/pull/843), and [#849](https://github.com/WordPress/two-factor/pull/849).
+* **Dependency Updates:** Bump `qs` from 6.14.1 to 6.14.2 by [#794](https://github.com/WordPress/two-factor/pull/794).
+* **Dependency Updates:** Bump `basic-ftp` from 5.0.5 to 5.2.0 by [#816](https://github.com/WordPress/two-factor/pull/816).
+* **Dependency Updates:** Apply automatic lint/format updates and associated Composer package refreshes by [#799](https://github.com/WordPress/two-factor/pull/799).
+
+= 0.15.0 - 2026-02-13 =
+
+* **Breaking Changes:** Trigger two-factor flow only when expected by @kasparsd in [#660](https://github.com/WordPress/two-factor/pull/660) and [#793](https://github.com/WordPress/two-factor/pull/793).
+* **New Features:** Include user IP address and contextual warning in two-factor code emails by @todeveni in [#728](https://github.com/WordPress/two-factor/pull/728)
+* **New Features:** Optimize email text for TOTP by @masteradhoc in [#789](https://github.com/WordPress/two-factor/pull/789)
+* **New Features:** Add "Settings" action link to plugin list for quick access to profile by @hardikRathi in [#740](https://github.com/WordPress/two-factor/pull/740)
+* **New Features:** Additional form hooks by @eric-michel in [#742](https://github.com/WordPress/two-factor/pull/742)
+* **New Features:** Full RFC6238 Compatibility by @ericmann in [#656](https://github.com/WordPress/two-factor/pull/656)
+* **New Features:** Consistent user experience for TOTP setup by @kasparsd in [#792](https://github.com/WordPress/two-factor/pull/792)
+* **Documentation:** `@since` docs by @masteradhoc in [#781](https://github.com/WordPress/two-factor/pull/781)
+* **Documentation:** Update user and admin docs, prepare for more screenshots by @jeffpaul in [#701](https://github.com/WordPress/two-factor/pull/701)
+* **Documentation:** Add changelog & credits, update release notes by @jeffpaul in [#696](https://github.com/WordPress/two-factor/pull/696)
+* **Documentation:** Clear readme.txt by @masteradhoc in [#785](https://github.com/WordPress/two-factor/pull/785)
+* **Documentation:** Add date and time information above TOTP setup instructions by @masteradhoc in [#772](https://github.com/WordPress/two-factor/pull/772)
+* **Documentation:** Clarify TOTP setup instructions by @masteradhoc in [#763](https://github.com/WordPress/two-factor/pull/763)
+* **Documentation:** Update RELEASING.md by @jeffpaul in [#787](https://github.com/WordPress/two-factor/pull/787)
+* **Development Updates:** Pause deploys to SVN trunk for merges to `master` by @kasparsd in [#738](https://github.com/WordPress/two-factor/pull/738)
+* **Development Updates:** Fix CI checks for PHP compatability by @kasparsd in [#739](https://github.com/WordPress/two-factor/pull/739)
+* **Development Updates:** Fix Playground refs by @kasparsd in [#744](https://github.com/WordPress/two-factor/pull/744)
+* **Development Updates:** Persist existing translations when introducing new helper text in emails by @kasparsd in [#745](https://github.com/WordPress/two-factor/pull/745)
+* **Development Updates:** Fix `missing_direct_file_access_protection` by @masteradhoc in [#760](https://github.com/WordPress/two-factor/pull/760)
+* **Development Updates:** Fix `mismatched_plugin_name` by @masteradhoc in [#754](https://github.com/WordPress/two-factor/pull/754)
+* **Development Updates:** Introduce Props Bot workflow by @jeffpaul in [#749](https://github.com/WordPress/two-factor/pull/749)
+* **Development Updates:** Plugin Check: Fix Missing $domain parameter by @masteradhoc in [#753](https://github.com/WordPress/two-factor/pull/753)
+* **Development Updates:** Tests: Update to supported WP version 6.8 by @masteradhoc in [#770](https://github.com/WordPress/two-factor/pull/770)
+* **Development Updates:** Fix PHP 8.5 deprecated message by @masteradhoc in [#762](https://github.com/WordPress/two-factor/pull/762)
+* **Development Updates:** Exclude 7.2 and 7.3 checks against trunk by @masteradhoc in [#769](https://github.com/WordPress/two-factor/pull/769)
+* **Development Updates:** Fix Plugin Check errors: `MissingTranslatorsComment` & `MissingSingularPlaceholder` by @masteradhoc in [#758](https://github.com/WordPress/two-factor/pull/758)
+* **Development Updates:** Add PHP 8.5 tests for latest and trunk version of WP by @masteradhoc in [#771](https://github.com/WordPress/two-factor/pull/771)
+* **Development Updates:** Add `phpcs:ignore` for falsepositives by @masteradhoc in [#777](https://github.com/WordPress/two-factor/pull/777)
+* **Development Updates:** Fix(totp): `otpauth` link in QR code URL by @sjinks in [#784](https://github.com/WordPress/two-factor/pull/784)
+* **Development Updates:** Update deploy.yml by @masteradhoc in [#773](https://github.com/WordPress/two-factor/pull/773)
+* **Development Updates:** Update required WordPress Version by @masteradhoc in [#765](https://github.com/WordPress/two-factor/pull/765)
+* **Development Updates:** Fix: ensure execution stops after redirects by @sjinks in [#786](https://github.com/WordPress/two-factor/pull/786)
+* **Development Updates:** Fix `WordPress.Security.EscapeOutput.OutputNotEscaped` errors by @masteradhoc in [#776](https://github.com/WordPress/two-factor/pull/776)
+* **Dependency Updates:** Bump qs and express by @dependabot[bot] in [#746](https://github.com/WordPress/two-factor/pull/746)
+* **Dependency Updates:** Bump lodash from 4.17.21 to 4.17.23 by @dependabot[bot] in [#750](https://github.com/WordPress/two-factor/pull/750)
+* **Dependency Updates:** Bump lodash-es from 4.17.21 to 4.17.23 by @dependabot[bot] in [#748](https://github.com/WordPress/two-factor/pull/748)
+* **Dependency Updates:** Bump phpunit/phpunit from 8.5.44 to 8.5.52 by @dependabot[bot] in [#755](https://github.com/WordPress/two-factor/pull/755)
+* **Dependency Updates:** Bump symfony/process from 5.4.47 to 5.4.51 by @dependabot[bot] in [#756](https://github.com/WordPress/two-factor/pull/756)
+* **Dependency Updates:** Bump qs and body-parser by @dependabot[bot] in [#782](https://github.com/WordPress/two-factor/pull/782)
+* **Dependency Updates:** Bump webpack from 5.101.3 to 5.105.0 by @dependabot[bot] in [#780](https://github.com/WordPress/two-factor/pull/780)
+
+= 0.14.2 - 2025-12-11 =
+
+* **New Features:** Add filter for rest_api_can_edit_user_and_update_two_factor_options by @gutobenn in [#689](https://github.com/WordPress/two-factor/pull/689)
+* **Development Updates:** Remove Coveralls tooling and add inline coverage report by @kasparsd in [#717](https://github.com/WordPress/two-factor/pull/717)
+* **Development Updates:** Update blueprint path to pull from main branch instead of a deleted f… by @georgestephanis in [#719](https://github.com/WordPress/two-factor/pull/719)
+* **Development Updates:** Fix blueprint and wporg asset deploys by @kasparsd in [#734](https://github.com/WordPress/two-factor/pull/734)
+* **Development Updates:** Upload release only on tag releases by @kasparsd in [#735](https://github.com/WordPress/two-factor/pull/735)
+* **Development Updates:** Bump playwright and @playwright/test by @dependabot[bot] in [#721](https://github.com/WordPress/two-factor/pull/721)
+* **Development Updates:** Bump tar-fs from 3.1.0 to 3.1.1 by @dependabot[bot] in [#720](https://github.com/WordPress/two-factor/pull/720)
+* **Development Updates:** Bump node-forge from 1.3.1 to 1.3.2 by @dependabot[bot] in [#724](https://github.com/WordPress/two-factor/pull/724)
+* **Development Updates:** Bump js-yaml by @dependabot[bot] in [#725](https://github.com/WordPress/two-factor/pull/725)
+* **Development Updates:** Mark as tested with the latest WP core version by @kasparsd in [#730](https://github.com/WordPress/two-factor/pull/730)
+
+= 0.14.1 - 2025-09-05 =
+
+- Don't URI encode the TOTP url for display. by @dd32 in [#711](https://github.com/WordPress/two-factor/pull/711)
+- Removed the duplicate Security.md by @slvignesh05 in [#712](https://github.com/WordPress/two-factor/pull/712)
+- Fixed linting issues by @sudar in [#707](https://github.com/WordPress/two-factor/pull/707)
+- Update development dependencies and fix failing QR unit test by @kasparsd in [#714](https://github.com/WordPress/two-factor/pull/714)
+- Trigger checkbox js change event by @gedeminas in [#688](https://github.com/WordPress/two-factor/pull/688)
+
+= 0.14.0 - 2025-07-03 =
+
+* **Features:** Enable Application Passwords for REST API and XML-RPC authentication (by default) by @joostdekeijzer in [#697](https://github.com/WordPress/two-factor/pull/697) and [#698](https://github.com/WordPress/two-factor/pull/698). Previously this required two_factor_user_api_login_enable filter to be set to true which is now the default during application password auth. XML-RPC login is still disabled for regular user passwords.
+* **Features:** Label recommended methods to simplify the configuration by @kasparsd in [#676](https://github.com/WordPress/two-factor/pull/676) and [#675](https://github.com/WordPress/two-factor/pull/675)
+* **Documentation:** Add WP.org plugin demo by @kasparsd in [#667](https://github.com/WordPress/two-factor/pull/667)
+* **Documentation:** Document supported versions of WP core and PHP by @jeffpaul in [#695](https://github.com/WordPress/two-factor/pull/695)
+* **Documentation:** Document the release process by @jeffpaul in [#684](https://github.com/WordPress/two-factor/pull/684)
+* **Tooling:** Remove duplicate WP.org screenshots and graphics from SVN trunk by @jeffpaul in [#683](https://github.com/WordPress/two-factor/pull/683)
+
+= 0.13.0 - 2025-04-02 =
+
+- Add two_factor_providers_for_user filter to limit two-factor providers available to each user by @kasparsd in [#669](https://github.com/WordPress/two-factor/pull/669)
+- Update automated testing to cover PHP 8.4 and default to PHP 8.3 by @BrookeDot in [#665](https://github.com/WordPress/two-factor/pull/665)
+
+[View the complete changelog details here](https://github.com/wordpress/two-factor/blob/master/CHANGELOG.md).
+
+== Upgrade Notice ==
+
+= 0.10.0 =
+Bumps WordPress minimum supported version to 6.3 and PHP minimum to 7.2.
+
+= 0.9.0 =
+Users are now asked to re-authenticate with their two-factor before making changes to their two-factor settings. This associates each login session with the two-factor login meta data for improved handling of that session.
+
