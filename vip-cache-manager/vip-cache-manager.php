@@ -42,6 +42,7 @@ class WPCOM_VIP_Cache_Manager {
 	private $ban_urls          = array();
 	private $purge_urls        = array();
 	private $site_cache_purged = false;
+	private $old_permalinks    = array();
 
 	public static function instance() {
 		static $instance = false;
@@ -63,8 +64,11 @@ class WPCOM_VIP_Cache_Manager {
 
 		add_action( 'clean_post_cache', array( $this, 'queue_post_purge' ) );
 		add_action( 'clean_term_cache', array( $this, 'queue_terms_purges' ), 10, 2 );
+		// Fires before a term is updated, so a new slug doesn't leave the old URLs cached.
+		add_action( 'edit_terms', array( $this, 'queue_terms_purges' ), 10, 2 );
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
-		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
+		add_action( 'pre_post_update', array( $this, 'remember_old_permalink' ) );
+		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ) );
 		add_action( 'transition_post_status', array( $this, 'queue_unpublished_post_purge' ), 10, 3 );
 		add_action( 'before_delete_post', array( $this, 'queue_deleted_post_purge' ), 10, 2 );
 
@@ -1197,20 +1201,32 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	/**
+	 * Remember a published post's permalink before an update. It can't be rebuilt after: by
+	 * `post_updated`, new terms are saved, and `%category%` permalinks are built from them.
+	 *
+	 * @param int $post_id Post ID.
+	 */
+	public function remember_old_permalink( $post_id ) {
+		if ( 'publish' === get_post_status( $post_id ) ) {
+			// Keeps the first one if the post is updated again during the update.
+			$this->old_permalinks[ $post_id ] ??= get_permalink( $post_id );
+		}
+	}
+
+	/**
 	 * Schedule purge of old permalink in case it was changed during post update
 	 * and only if the post's status was publish before the update
 	 *
 	 * @param int $post_ID The post ID of update post
-	 * @param WP_Post $post_after The post object as it looks after the update
-	 * @param WP_Post $post_before The post object as it looked before the update
 	 *
 	 * @return void
 	 */
-	public function queue_old_permalink_purge( $post_ID, $post_after, $post_before ) {
-		if ( get_permalink( $post_before ) !== get_permalink( $post_after ) &&
-			'publish' === $post_before->post_status
-		) {
-			$this->queue_purge_url( get_permalink( $post_before ) );
+	public function queue_old_permalink_purge( $post_ID ) {
+		$old_permalink = $this->old_permalinks[ $post_ID ] ?? false;
+		unset( $this->old_permalinks[ $post_ID ] );
+
+		if ( $old_permalink && get_permalink( $post_ID ) !== $old_permalink ) {
+			$this->queue_purge_url( $old_permalink );
 		}
 	}
 

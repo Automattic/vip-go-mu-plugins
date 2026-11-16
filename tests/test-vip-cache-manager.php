@@ -165,6 +165,28 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
 	}
 
+	/**
+	 * With `%category%` permalinks, a category change moves the post, and the new category is saved before `post_updated`.
+	 */
+	public function test__old_permalink_purge__category_change() {
+		$this->set_permalink_structure( '/%category%/%postname%/' );
+		try {
+			$post_id       = self::factory()->post->create( [ 'post_category' => [ self::factory()->category->create() ] ] );
+			$old_permalink = get_permalink( $post_id );
+			$this->cache_manager->clear_queued_purge_urls();
+
+			wp_update_post( [
+				'ID'            => $post_id,
+				'post_category' => [ self::factory()->category->create() ],
+			] );
+
+			$this->assertNotSame( $old_permalink, get_permalink( $post_id ) );
+			$this->assertContains( $old_permalink, $this->cache_manager->get_queued_purge_urls() );
+		} finally {
+			$this->set_permalink_structure( '' );
+		}
+	}
+
 	public function get_data_for_deleted_post_purge_test() {
 		return [
 			'published post' => [ 'publish', true ],
