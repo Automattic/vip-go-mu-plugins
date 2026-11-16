@@ -246,6 +246,14 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertTrue( $strategy->has_pending_metadata() );
 	}
 
+	public function test_validate_authentication_rejects_non_string_code(): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Twilio_SMS_API::TOKEN_META_KEY, wp_hash( '22334455' ) );
+		$_REQUEST['two-factor-sms-code'] = [ '22334455' ];
+
+		$this->assertFalse( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
+	}
+
 	public function test_twilio_verify_generate_and_send_token_success(): void {
 		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
 		$this->add_http_response_mock( self::VERIFICATIONS_URL, http_response( 200, wp_json_encode( [

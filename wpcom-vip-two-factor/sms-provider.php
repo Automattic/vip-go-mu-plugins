@@ -123,12 +123,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 */
 	public function validate_authentication( $user ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
-		if ( ! isset( $user->ID ) || ! isset( $_REQUEST['two-factor-sms-code'] ) ) {
+		if ( ! isset( $user->ID ) || ! is_string( $_REQUEST['two-factor-sms-code'] ?? null ) ) {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Recommended
-		return $this->get_sms_strategy( $user->ID )->verify_code( $_REQUEST['two-factor-sms-code'] );
+		$code = self::sanitize_code_from_request( 'two-factor-sms-code' );
+		return $code && $this->get_sms_strategy( $user->ID )->verify_code( $code );
 	}
 
 	/**
