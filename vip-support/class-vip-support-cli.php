@@ -125,10 +125,7 @@ class Command extends WP_CLI_Command {
 			\WP_CLI::error( "User $user_id does not have a VIP Support role" );
 		}
 
-		// If this is a multisite, commence super powers!
-		if ( is_multisite() ) {
-			grant_super_admin( $user->ID );
-		}
+		User::grant_super_admin_if_allowed( $user );
 
 		User::init()->mark_user_email_verified( $user->ID, $user->user_email );
 
