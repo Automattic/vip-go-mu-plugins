@@ -701,6 +701,37 @@ class Health_Test extends WP_UnitTestCase {
 		] );
 	}
 
+	public function test_validate_index_posts_content__reports_failed_batches_apart_from_diffs() {
+		$health = $this->mock_content_validation_health( 0 );
+		$diff   = [
+			'post_2' => [
+				'type'  => 'post',
+				'id'    => 2,
+				'issue' => 'missing_from_index',
+			],
+		];
+
+		$health->method( 'validate_index_posts_content_batch' )->willReturnOnConsecutiveCalls(
+			new \WP_Error( 'es_mget_failed', 'first failure' ),
+			$diff,
+			new \WP_Error( 'es_mget_failed', 'second failure' )
+		);
+
+		$result = $health->validate_index_posts_content( [
+			'start_post_id'            => 1,
+			'last_post_id'             => 3,
+			'batch_size'               => 1,
+			'do_not_heal'              => true,
+			'force_parallel_execution' => true,
+		] );
+
+		$this->assertWPError( $result, 'a run with failed batches should report them' );
+		$this->assertSame( 'es_validate_content_batch_failed', $result->get_error_code() );
+		$this->assertStringStartsWith( 'Could not validate 2 batches. First error: batch 1 - 1', $result->get_error_message() );
+		$this->assertStringEndsWith( 'error: first failure', $result->get_error_message() );
+		$this->assertSame( $diff, $result->get_error_data( 'diff' ), 'the diffs of the batches that were validated should be kept, without the errors' );
+	}
+
 	public function test_validate_index_posts_content__do_not_pick_up_after_interruption_when_non_default_start_post_id() {
 		$start_post_id = 2;
 
@@ -840,16 +871,33 @@ class Health_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
+	public function test_get_index_versions_settings_diff_for_indexable_returns_error_when_the_settings_request_fails(): void {
+		$error_body = array(
+			'error'  => array( 'type' => 'cluster_block_exception' ),
+			'status' => 503,
+		);
+
+		[ $health, $mocked_indexable, $versioning ] = $this->build_settings_diff_health( 'vip-123-post-1', [], [ 'index.number_of_shards' => 1 ], true, $error_body );
+		$versioning->method( 'get_active_version_number' )->willReturn( 1 );
+
+		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
+
+		$this->assertWPError( $result, 'An error response must not read as every setting differing, nor as healthy.' );
+		$this->assertSame( 'es_index_settings_failed', $result->get_error_code() );
+	}
+
 	public function get_index_versions_settings_diff_for_indexable_data() {
+		$legacy_version = [
+			'number'         => 1,
+			'active'         => true,
+			'created_time'   => null,
+			'activated_time' => null,
+		];
+
 		return [
-			'only checks the active version' => [
+			'checks the active version while the legacy version 1 is still stored' => [
 				[
-					1 => [
-						'number'         => 1,
-						'active'         => false,
-						'created_time'   => 1234567890,
-						'activated_time' => 1234567890,
-					],
+					1 => array_merge( $legacy_version, [ 'active' => false ] ),
 					2 => [
 						'number'         => 2,
 						'active'         => true,
@@ -857,23 +905,21 @@ class Health_Test extends WP_UnitTestCase {
 						'activated_time' => 1234567900,
 					],
 				],
-				// Active version number
 				2,
-				// Expected checked version
 				2,
 			],
-			'uses the default version when none are stored' => [
+			'checks the default version when none are stored'                     => [ [ 1 => $legacy_version ], 1, 1 ],
+			'checks version 1, which the index name falls back to, when none is active' => [
 				[
-					1 => [
-						'number'         => 1,
-						'active'         => true,
-						'created_time'   => null,
+					1 => array_merge( $legacy_version, [ 'active' => false ] ),
+					2 => [
+						'number'         => 2,
+						'active'         => false,
+						'created_time'   => 1234567900,
 						'activated_time' => null,
 					],
 				],
-				// Active version number, must not be looked up
-				null,
-				// Expected checked version
+				new \WP_Error( 'no-active-version', 'No active version found' ),
 				1,
 			],
 		];
@@ -882,7 +928,7 @@ class Health_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_index_versions_settings_diff_for_indexable_data
 	 */
-	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version, $expected_version ) {
+	public function test_get_index_versions_settings_diff_for_indexable( $versions, $active_version_number, $version_to_check ) {
 		[ $health, $mocked_indexable, $versioning ] = $this->build_settings_diff_health(
 			'vip-123-post-1',
 			[ 'index.number_of_replicas' => 2 ],
@@ -890,21 +936,42 @@ class Health_Test extends WP_UnitTestCase {
 		);
 
 		$versioning->method( 'get_versions' )->willReturn( $versions );
-		if ( null === $active_version ) {
-			$versioning->expects( $this->never() )->method( 'get_active_version_number' );
-		} else {
-			$versioning->method( 'get_active_version_number' )->willReturn( $active_version );
-		}
-
+		$versioning->method( 'get_active_version_number' )->willReturn( $active_version_number );
 		$versioning->expects( $this->once() )
 			->method( 'set_current_version_number' )
-			->with( $mocked_indexable, $expected_version );
+			->with( $mocked_indexable, $version_to_check );
 
 		$result = $health->get_index_versions_settings_diff_for_indexable( $mocked_indexable );
 
 		$this->assertCount( 1, $result );
-		$this->assertEquals( $expected_version, $result[0]['index_version'] );
+		$this->assertEquals( $version_to_check, $result[0]['index_version'] );
 		$this->assertNotEmpty( $result[0]['diff'] );
+	}
+
+	public function validate_index_posts_content_batch_mget_failure_data(): array {
+		return [
+			'HTTP error'           => [ 503, '{"error":"circuit_breaking_exception"}' ],
+			// The batch's post ID replaces %d
+			'document-level error' => [ 200, '{"docs":[{"_index":"vip-123-post-1","_id":"%d","error":{"type":"no_shard_available_action_exception"}}]}' ],
+		];
+	}
+
+	/**
+	 * @dataProvider validate_index_posts_content_batch_mget_failure_data
+	 */
+	public function test_validate_index_posts_content_batch_returns_error_when_mget_fails( int $code, string $body ): void {
+		$this->boot_search();
+		$post_id = self::factory()->post->create();
+
+		$this->with_es_http(
+			fn() => self::es_response( sprintf( $body, $post_id ), $code ),
+			function () use ( $post_id ) {
+				$indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+				$health    = new Health( $this->createMock( Search::class ) );
+
+				$this->assertWPError( $health->validate_index_posts_content_batch( $indexable, $post_id, $post_id + 1, [] ), 'A failed request must not report the batch as missing.' );
+			}
+		);
 	}
 
 	public function heal_index_settings_for_indexable_data() {
@@ -1253,7 +1320,7 @@ class Health_Test extends WP_UnitTestCase {
 	 *
 	 * @return array{0: Health, 1: Indexable&MockObject, 2: Versioning&MockObject}
 	 */
-	private function build_settings_diff_health( string $index_name, array $actual, array $desired, bool $index_exists = true ): array {
+	private function build_settings_diff_health( string $index_name, array $actual, array $desired, bool $index_exists = true, ?array $response = null ): array {
 		/** @var Search&MockObject */
 		$mock_search = $this->createMock( Search::class );
 
@@ -1268,7 +1335,7 @@ class Health_Test extends WP_UnitTestCase {
 			->onlyMethods( [ 'get_index_settings' ] )
 			->getMock();
 		$health->elasticsearch->method( 'get_index_settings' )
-			->willReturn( [
+			->willReturn( $response ?? [
 				$index_name => [
 					'settings' => $actual,
 				],

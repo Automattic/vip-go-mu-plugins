@@ -503,6 +503,7 @@ class Health {
 		$is_cli = defined( 'WP_CLI' ) && WP_CLI;
 
 		$results = [];
+		$errors  = [];
 
 		// To fully validate the index, we have to check batches of post IDs
 		// to compare the values in the DB with the index (and catch any that don't exist in either)
@@ -539,12 +540,15 @@ class Health {
 			$result = $this->validate_index_posts_content_batch( $indexable, $start_post_id, $next_batch_post_id, $options );
 
 			if ( is_wp_error( $result ) ) {
-				$result['errors'] = array( sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() ) );
-			} elseif ( count( $result ) && ! $do_not_heal ) {
-				self::reconcile_diff( $result );
-			}
+				// Kept apart from the diffs: the batch's posts weren't compared, so there's nothing to reconcile or report for them
+				$errors[] = sprintf( 'batch %d - %d (entity: %s) error: %s', $start_post_id, $next_batch_post_id - 1, $indexable->slug, $result->get_error_message() );
+			} else {
+				if ( count( $result ) && ! $do_not_heal ) {
+					self::reconcile_diff( $result );
+				}
 
-			$results = array_merge( $results, $result );
+				$results = array_merge( $results, $result );
+			}
 
 			// Limit $results size
 			if ( count( $results ) > $max_diff_size && ( $is_cli && ! $silent ) ) {
@@ -564,6 +568,9 @@ class Health {
 				return $error;
 			}
 
+			// Silent runs (e.g. the weekly cron) keep going past the limit, so cap the diffs they keep in memory
+			$results = array_slice( $results, 0, $max_diff_size );
+
 			$start_post_id += $batch_size;
 
 			if ( $dynamic_last_post_id ) {
@@ -576,7 +583,11 @@ class Health {
 			vip_reset_local_object_cache();
 
 			if ( $is_cli && ! $silent ) {
-				printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				if ( is_wp_error( $result ) ) {
+					printf( "...✘ (%s)\n", $result->get_error_message() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				} else {
+					printf( "...%s %s\n", empty( $result ) ? '✓' : '✘', $do_not_heal || empty( $result ) ? '' : '(attempted to reconcile)' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				}
 			}
 			if ( $is_cli && $silent ) {
 				// To prevent continuous hammering of clusters.
@@ -596,6 +607,14 @@ class Health {
 		}
 		if ( $track_process ) {
 			$this->remove_validate_content_process();
+		}
+
+		// Report the batches that couldn't be validated, along with the diffs of those that were
+		if ( $errors && ! is_wp_error( $results ) ) {
+			$error = new WP_Error( 'es_validate_content_batch_failed', sprintf( 'Could not validate %d batches. First error: %s', count( $errors ), $errors[0] ) );
+			$error->add_data( $results, 'diff' );
+
+			$results = $error;
 		}
 
 		return $results;
@@ -655,7 +674,10 @@ class Health {
 		$document_ids = self::get_document_ids_for_batch( $start_post_id, $next_batch_post_id - 1 );
 
 		// Grab all of the documents from ES
-		$documents = $indexable->multi_get( $document_ids );
+		$documents = $this->get_documents( $indexable, $document_ids );
+		if ( is_wp_error( $documents ) ) {
+			return $documents;
+		}
 
 		// Filter out any that weren't found
 		$documents = array_filter( $documents, function ( $document ) {
@@ -698,6 +720,41 @@ class Health {
 		}
 
 		return $diffs;
+	}
+
+	/**
+	 * Fetch documents from Elasticsearch
+	 *
+	 * ElasticPress's multi_get() keeps only the documents found, so a failed request would report every document as
+	 * missing: it returns [] on an HTTP error and false on a transport error, and a 200 response can carry an error in
+	 * place of a document (e.g. its shard is unavailable). This checks the response for both.
+	 *
+	 * @param \ElasticPress\Indexable $indexable    The Indexable
+	 * @param array                   $document_ids Document IDs
+	 * @return array|WP_Error Documents keyed by ID, or WP_Error if the request failed
+	 */
+	private function get_documents( $indexable, array $document_ids ) {
+		$request         = null;
+		$capture_request = static function ( $query ) use ( &$request ) {
+			$request = $query['request'];
+		};
+
+		add_action( 'ep_remote_request', $capture_request );
+		$documents = $indexable->multi_get( $document_ids );
+		remove_action( 'ep_remote_request', $capture_request );
+
+		$response_code = wp_remote_retrieve_response_code( $request );
+		if ( 200 !== $response_code ) {
+			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching documents from Elasticsearch failed (response code: %s)', $response_code ? $response_code : 'none' ) );
+		}
+
+		$docs   = json_decode( wp_remote_retrieve_body( $request ), true )['docs'] ?? [];
+		$errors = array_filter( (array) $docs, fn( $doc ) => isset( $doc['error'] ) );
+		if ( $errors ) {
+			return new WP_Error( 'es_mget_failed', sprintf( 'Fetching %d documents from Elasticsearch failed: %s', count( $errors ), wp_json_encode( reset( $errors )['error'] ) ) );
+		}
+
+		return $documents;
 	}
 
 	public static function simplified_get_missing_docs_or_posts_diff( $found_post_ids, $found_document_ids ) {
@@ -1015,29 +1072,27 @@ class Health {
 	}
 
 	public function get_index_versions_settings_diff_for_indexable( \ElasticPress\Indexable $indexable ) {
-		$versions         = $this->search->versioning->get_versions( $indexable );
-		$version_to_check = 1;
-
-		// Check if this is the default version 1 (no versions stored yet)
-		$is_default_version = isset( $versions[1] ) && null === $versions[1]['created_time']
-			&& null === $versions[1]['activated_time'];
-		if ( ! $is_default_version ) {
-			$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
-			if ( is_wp_error( $version_to_check ) ) {
+		// With no versions stored yet, the default version 1 is the active one
+		$version_to_check = $this->search->versioning->get_active_version_number( $indexable );
+		if ( is_wp_error( $version_to_check ) ) {
+			// With none active, the index name falls back to version 1's (see Search::filter__ep_index_name()), so a stored
+			// version 1 (e.g. a legacy one, with no created or activated time) is the index in use
+			if ( ! isset( $this->search->versioning->get_versions( $indexable )[1] ) ) {
 				return $version_to_check;
 			}
+
+			$version_to_check = 1;
 		}
 
 		$version_result = $this->get_index_settings_diff_for_indexable( $indexable, array(
 			'index_version' => $version_to_check,
 		) );
 
-		$diff = [];
-		if ( is_array( $version_result ) && ! empty( $version_result ) ) {
-			$diff[] = $version_result;
+		if ( is_wp_error( $version_result ) ) {
+			return $version_result;
 		}
 
-		return $diff;
+		return empty( $version_result ) ? [] : [ $version_result ];
 	}
 
 	public function get_index_settings_diff_for_indexable( \ElasticPress\Indexable $indexable, $options = array() ) {
@@ -1055,13 +1110,18 @@ class Health {
 			$index_name = $indexable->get_index_name();
 			$settings   = $this->elasticsearch->get_index_settings( $index_name );
 
-			if ( is_wp_error( $settings ) ) {
+			// ElasticPress returns an HTTP error's body (or null), not a WP_Error. Without the index's settings, every monitored
+			// key would read as a diff, and trigger an alert, a settings update and a shard rebuild. Transport and HTTP errors
+			// share one code, which SettingsHealthJob only logs.
+			if ( is_wp_error( $settings ) || ! isset( $settings[ $index_name ]['settings'] ) ) {
 				$this->search->versioning->reset_current_version_number( $indexable );
 
-				return $settings;
+				$reason = is_wp_error( $settings ) ? $settings->get_error_message() : 'no settings for the index in the response';
+
+				return new WP_Error( 'es_index_settings_failed', sprintf( 'Fetching the settings of index %s from Elasticsearch failed: %s', $index_name, $reason ) );
 			}
 
-			$actual_settings  = $settings[ $index_name ]['settings'] ?? [];
+			$actual_settings  = $settings[ $index_name ]['settings'];
 			$mapping          = $indexable->generate_mapping();
 			$desired_settings = $mapping['settings'];
 
