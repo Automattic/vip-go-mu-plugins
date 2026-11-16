@@ -655,17 +655,18 @@ class User {
 			revoke_super_admin( $user->ID );
 			return;
 		}
-		if ( ! self::user_has_vip_support_role( $user->ID ) ) {
-			return;
-		}
-		if ( ! $this->is_allowed_email( $user->user_email ) ) {
+		// The role is per site, so also go by the support user meta, which is network-wide:
+		// a support user may log in through a subsite where they do not have the role.
+		$has_support_role = self::user_has_vip_support_role( $user->ID );
+		$is_support_user  = $has_support_role || self::has_vip_support_meta( $user->ID );
+		if ( $is_support_user && ! $this->is_allowed_email( $user->user_email ) ) {
 			// This site limits which support users it allows, and this one is not listed
 			if ( is_super_admin( $user->ID ) ) {
 				revoke_super_admin( $user->ID );
 			}
 			return;
 		}
-		if ( $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
+		if ( $has_support_role && $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
 			// This user is VIP Support, verified, let's give them
 			// great power and responsibility
 			grant_super_admin( $user->ID );
