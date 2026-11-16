@@ -837,6 +837,9 @@ class WPCOM_VIP_Cache_Manager {
 			return false;
 		}
 
+		// Callers can pass a post object, but the functions and filters below take the ID.
+		$post_id = $post->ID;
+
 		if ( ! is_post_type_viewable( $post->post_type ) ) {
 			return false;
 		}
