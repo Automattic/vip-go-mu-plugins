@@ -1366,7 +1366,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 		$page_id   = $shared ? wp_cache_get( $cache_key, 'get_page_by_title' ) : false;
 
 		// Look the title up again if the cached page was hidden or deleted since, which the flush can miss for other spellings of its title
-		if ( false === $page_id || ( $page_id && ! is_post_status_viewable( get_post_status( $page_id ) ) ) ) {
+		if ( ! $page_id || ! is_post_status_viewable( get_post_status( $page_id ) ) ) {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
 			$query   = new WP_Query(
 				array(
@@ -1382,7 +1382,9 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 			);
 			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
 
-			if ( $shared ) {
+			// Only cache found pages: publishing a page can't clear a miss cached under another spelling of its title.
+			// WP_Query caches misses itself until posts change.
+			if ( $shared && $page_id ) {
 				wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
 			}
 		}
