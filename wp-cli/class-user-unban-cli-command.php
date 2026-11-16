@@ -71,10 +71,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 				continue;
 			}
 
-			wp_cache_delete( $ip, CACHE_GROUP_LOGIN_LIMIT );
-			wp_cache_delete( $ip, CACHE_GROUP_LOST_PASSWORD_LIMIT );
-			wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $ip, CACHE_GROUP_LOGIN_LIMIT );
-			wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $ip, CACHE_GROUP_LOST_PASSWORD_LIMIT );
+			self::delete_limits( [ _vip_login_cache_keys( '', $ip )['ip_cache_key'] ] );
 
 			self::log( sprintf( 'Unbanned IP %s', $ip ) );
 		}
@@ -101,10 +98,7 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 
 		$login = $user->user_login;
 
-		wp_cache_delete( $login, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( $login, CACHE_GROUP_LOST_PASSWORD_LIMIT );
-		wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $login, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $login, CACHE_GROUP_LOST_PASSWORD_LIMIT );
+		self::delete_limits( [ _vip_login_cache_keys( $login )['username_cache_key'] ] );
 
 		$num_args = count( $args );
 		for ( $i = 1; $i < $num_args; ++$i ) {
@@ -115,20 +109,25 @@ final class User_Unban_CLI_Command extends WPCOM_VIP_CLI_Command {
 				continue;
 			}
 
-			$keys   = [ $ip, $ip . '|' . $login ];
-			$groups = [ CACHE_GROUP_LOGIN_LIMIT, CACHE_GROUP_LOST_PASSWORD_LIMIT ];
-
-			foreach ( $keys as $key ) {
-				foreach ( $groups as $group ) {
-					wp_cache_delete( $key, $group );
-					wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $key, $group );
-				}
-			}
+			$cache_keys = _vip_login_cache_keys( $login, $ip );
+			self::delete_limits( [ $cache_keys['ip_cache_key'], $cache_keys['ip_username_cache_key'] ] );
 
 			self::log( sprintf( 'Unbanned user %s for IP %s', $login, $ip ) );
 		}
 
 		self::log( sprintf( 'Unbanned user %s', $login ) );
+	}
+
+	/**
+	 * Delete the login and password reset counters and lockouts for the given limiter cache keys.
+	 */
+	private static function delete_limits( array $keys ): void {
+		foreach ( $keys as $key ) {
+			foreach ( [ CACHE_GROUP_LOGIN_LIMIT, CACHE_GROUP_LOST_PASSWORD_LIMIT ] as $group ) {
+				wp_cache_delete( $key, $group );
+				wp_cache_delete( CACHE_KEY_LOCK_PREFIX . $key, $group );
+			}
+		}
 	}
 
 	private static function log( string $message ): void {
