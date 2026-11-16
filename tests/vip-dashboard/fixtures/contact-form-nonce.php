@@ -38,6 +38,9 @@ function wp_get_current_user() {
 		'user_login'   => 'requester',
 	];
 }
+function current_user_can( $capability, ...$args ) {
+	return false; // The requester holds no capabilities.
+}
 function wp_strip_all_tags( $value, $remove_breaks = false ) {
 	// phpcs:ignore WordPressVIPMinimum.Functions.StripTags.StripTagsOneParameter -- Test payload contains plain text only.
 	return strip_tags( $value );
@@ -87,6 +90,9 @@ $_POST = [
 ];
 
 switch ( $argv[1] ) {
+	case 'valid':
+		$_GET['_wpnonce'] = wp_create_nonce( 'vip-dashboard' );
+		break;
 	case 'invalid':
 		$_GET['_wpnonce'] = 'invalid';
 		break;
