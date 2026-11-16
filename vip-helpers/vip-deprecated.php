@@ -1351,7 +1351,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 	 * @param string $title Page title
 	 * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
 	 * @param string $post_type Optional. Post type; default is 'page'.
-	 * @return WP_Post|null WP_Post on success or null on failure
+	 * @return WP_Post|null Publicly visible WP_Post on success or null on failure
 	 * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
 	 */
 	function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
@@ -1360,7 +1360,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 			_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
 		}
 
-		$cache_key = $post_type . '_' . sanitize_key( $title );
+		$cache_key = wpcom_vip_get_page_by_title_cache_key( $title, $post_type );
 		$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
 
 		if ( false === $page_id ) {
@@ -1369,6 +1369,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 				array(
 					'title'          => $title,
 					'post_type'      => $post_type,
+					'post_status'    => get_post_stati( [ 'public' => true ] ), // The result is cached for every visitor, so match only what visitors can see
 					'posts_per_page' => 1,
 					'orderby'        => 'ID',
 					'order'          => 'ASC',

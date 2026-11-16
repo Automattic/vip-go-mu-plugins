@@ -98,6 +98,11 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 	return get_term_link( $term_object );
 }
 
+// Titles match case-insensitively in MySQL, so the wpcom_vip_get_page_by_title() cache key does too
+function wpcom_vip_get_page_by_title_cache_key( $title, $post_type ) {
+	return $post_type . '_' . md5( strtolower( $title ) );
+}
+
 /**
  * Flush the cache for published pages so we don't end up with stale data
  *
@@ -107,11 +112,16 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_flush_get_page_by_title_cache( $new_status, $old_status, $post ) {
-	if ( 'publish' === $new_status || 'publish' === $old_status ) {
-		wp_cache_delete( $post->post_type . '_' . sanitize_key( $post->post_title ), 'get_page_by_title' );
+	if ( is_post_status_viewable( $new_status ) || is_post_status_viewable( $old_status ) ) {
+		wp_cache_delete( wpcom_vip_get_page_by_title_cache_key( $post->post_title, $post->post_type ), 'get_page_by_title' );
 	}
 }
 add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_title_cache', 10, 3 );
+
+// Also forget a page's old title when it's renamed
+add_action( 'post_updated', function ( $post_id, $post_after, $post_before ) {
+	wpcom_vip_flush_get_page_by_title_cache( $post_after->post_status, $post_before->post_status, $post_before );
+}, 10, 3 );
 
 /**
  * Flush the cache for published pages so we don't end up with stale data
@@ -250,7 +260,8 @@ function wpcom_vip_count_user_posts( $user_id, $post_type = 'post', $public_only
 		return 0;
 	}
 
-	$cache_key   = 'vip_' . md5( wp_json_encode( $post_type ) ) . '_' . (int) $user_id;
+	// Key on the SQL count_user_posts() runs, which covers $public_only and the viewer's access to private posts
+	$cache_key   = 'vip_' . md5( get_posts_by_author_sql( $post_type, true, (int) $user_id, $public_only ) );
 	$cache_group = 'user_posts_count';
 
 	$count = wp_cache_get( $cache_key, $cache_group );
