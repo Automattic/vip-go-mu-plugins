@@ -1228,19 +1228,14 @@ class WPCOM_VIP_Cache_Manager {
 		$parsed = wp_parse_url( $this->normalize_purge_url( $url ) );
 		$host   = strtolower( $parsed['host'] ?? '' );
 
-		// Sites served from more than one domain, e.g. one per language, add their domains to the
-		// redirect hosts. The host the request came in on also belongs to this site.
-		$home_host  = wp_parse_url( home_url(), PHP_URL_HOST );
-		$site_hosts = array_merge(
-			/** This filter is documented in wp-includes/pluggable.php */
-			(array) apply_filters( 'allowed_redirect_hosts', [ $home_host ], $host ),
-			[
-				$home_host,
-				wp_parse_url( site_url(), PHP_URL_HOST ),
-				wp_parse_url( 'http://' . ( $_SERVER['HTTP_HOST'] ?? '' ), PHP_URL_HOST ), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against.
-			]
-		);
-		if ( '' === $host || ! in_array( $host, array_map( 'strtolower', array_filter( $site_hosts, 'is_string' ) ), true ) ) {
+		// This site's hosts: home, the hosts it allows redirects to (sites served from more than one domain,
+		// e.g. one per language, add theirs), and the host the request came in on.
+		$home_host = strtolower( (string) wp_parse_url( home_url(), PHP_URL_HOST ) );
+		/** This filter is documented in wp-includes/pluggable.php */
+		$site_hosts   = (array) apply_filters( 'allowed_redirect_hosts', [ $home_host ], $host );
+		$site_hosts[] = $home_host;
+		$site_hosts[] = strtolower( $_SERVER['HTTP_HOST'] ?? '' ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.MissingUnslash -- Only compared against.
+		if ( '' === $host || ! in_array( $host, $site_hosts, true ) ) {
 			return false;
 		}
 

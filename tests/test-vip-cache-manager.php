@@ -307,7 +307,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	public function test_user_url_purges_allow_the_site_domains(): void {
 		$is_user_purgeable_url = get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'is_user_purgeable_url' );
 		$_SERVER['HTTP_HOST']  = 'fr.example.org';
-		add_filter( 'allowed_redirect_hosts', fn( $hosts ) => array_merge( $hosts, [ 'DE.example.org' ] ) );
+		add_filter( 'allowed_redirect_hosts', fn( $hosts ) => array_merge( $hosts, [ 'de.example.org' ] ) );
 		try {
 			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://fr.example.org/page/' ) );
 			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://de.example.org/page/' ) );
