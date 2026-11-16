@@ -1351,7 +1351,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 	 * @param string $title Page title
 	 * @param string $output Optional. Output type; OBJECT*, ARRAY_N, or ARRAY_A.
 	 * @param string $post_type Optional. Post type; default is 'page'.
-	 * @return WP_Post|null Publicly visible WP_Post on success or null on failure
+	 * @return WP_Post|null WP_Post on success or null on failure
 	 * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
 	 */
 	function wpcom_vip_get_page_by_title( $title, $output = OBJECT, $post_type = 'page' ) {
@@ -1360,8 +1360,10 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 			_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
 		}
 
+		// Logged-in users can also find private and, in wp-admin, unpublished pages, so only share what logged-out visitors can see
+		$shared    = ! is_user_logged_in();
 		$cache_key = wpcom_vip_get_page_by_title_cache_key( $title, $post_type );
-		$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
+		$page_id   = $shared ? wp_cache_get( $cache_key, 'get_page_by_title' ) : false;
 
 		if ( false === $page_id ) {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
@@ -1369,7 +1371,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 				array(
 					'title'          => $title,
 					'post_type'      => $post_type,
-					'post_status'    => get_post_stati( [ 'public' => true ] ), // The result is cached for every visitor, so match only what visitors can see
+					'post_status'    => $shared ? get_post_stati( [ 'public' => true ] ) : '', // Logged-out wp-admin AJAX would otherwise match drafts
 					'posts_per_page' => 1,
 					'orderby'        => 'ID',
 					'order'          => 'ASC',
@@ -1378,7 +1380,10 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 				),
 			);
 			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
-			wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
+
+			if ( $shared ) {
+				wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
+			}
 		}
 
 		if ( $page_id ) {
