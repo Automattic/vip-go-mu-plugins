@@ -6,7 +6,9 @@
 namespace Automattic\VIP\Support_User;
 
 use Automattic\VIP\Utils\Context;
+use Throwable;
 use WP_Error;
+use WP_Session_Tokens;
 use WP_User;
 
 /**
@@ -1070,13 +1072,22 @@ class User {
 			return new WP_Error( 'not-support-user', 'Specified user is not a support user' );
 		}
 
+		// Revoke access before deleting, so the user loses it even if deletion fails part way.
+		revoke_super_admin( $user->ID );
+
+		foreach ( array_keys( get_blogs_of_user( $user->ID, true ) ) as $site_id ) {
+			// Empty the capabilities instead of deleting them: they are the site membership
+			// that deletion uses to find the user's posts.
+			$user->for_site( $site_id );
+			update_user_meta( $user->ID, $user->cap_key, array() );
+		}
+
+		WP_Session_Tokens::get_instance( $user->ID )->destroy_all();
+
 		/** Include admin user functions to get access to wp_delete_user() */
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 
-		// If the user already exists, we should delete and recreate them,
-		// it's the only way to be sure we get the right user_login
 		if ( is_multisite() ) {
-			revoke_super_admin( $user->ID );
 			return wpmu_delete_user( $user->ID );
 		}
 
@@ -1090,6 +1101,8 @@ class User {
 	 */
 	public static function remove_stale_support_users() {
 		$support_users = get_users( array(
+			// Search the whole network: on multisite, a support user may have no role on this site.
+			'blog_id'    => 0,
 			// Skip empty values: those users aren't support users.
 			'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Same meta_key lookup as before, plus a value check.
 				array(
@@ -1100,10 +1113,6 @@ class User {
 			),
 			'fields'     => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
 		) );
-
-		if ( empty( $support_users ) ) {
-			return array();
-		}
 
 		$processed_ids = [];
 
@@ -1126,7 +1135,19 @@ class User {
 				continue;
 			}
 
-			$rm = self::remove( $user->ID, 'id' );
+			// A failure, e.g. from a plugin hook fired while deleting the user's posts,
+			// must not stop the other users from being removed.
+			$switched_depth = count( $GLOBALS['_wp_switched_stack'] ?? array() );
+			try {
+				$rm = self::remove( $user->ID, 'id' );
+			} catch ( Throwable $e ) {
+				$rm = new WP_Error( 'remove-failed', sprintf( '%s in %s:%d', $e->getMessage(), $e->getFile(), $e->getLine() ) );
+
+				// On multisite, the failure can leave deletion switched to another site.
+				for ( $depth = count( $GLOBALS['_wp_switched_stack'] ?? array() ); $depth > $switched_depth; $depth-- ) {
+					restore_current_blog();
+				}
+			}
 
 			$removed[] = array(
 				'ID'      => $user->ID,
@@ -1143,7 +1164,10 @@ class User {
 	 * Remove stale users via cron
 	 */
 	public static function do_cron_cleanup() {
-		// TODO: search for some meta in case someone changes roles?
+		// Every site schedules this event, but the cleanup covers the whole network, so run it once.
+		if ( ! is_main_site() ) {
+			return;
+		}
 
 		$stale = self::remove_stale_support_users();
 
