@@ -652,32 +652,22 @@ class User {
 		// * Is a super admin
 		// …revoke their powers
 		if ( self::user_has_vip_support_role( $user->ID, false ) && is_super_admin( $user->ID ) ) {
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			revoke_super_admin( $user->ID );
 			return;
 		}
 		if ( ! self::user_has_vip_support_role( $user->ID ) ) {
-			// If the user is a super admin, but has been demoted to
-			// the inactive VIP Support role, we should remove
-			// their super powers
-			if ( is_super_admin( $user->ID ) && self::user_has_vip_support_role( $user->ID, false ) ) {
-				// This user is NOT VIP Support, remove
-				// their powers forthwith
-				require_once ABSPATH . '/wp-admin/includes/ms.php';
+			return;
+		}
+		if ( ! $this->is_allowed_email( $user->user_email ) ) {
+			// This site limits which support users it allows, and this one is not listed
+			if ( is_super_admin( $user->ID ) ) {
 				revoke_super_admin( $user->ID );
 			}
 			return;
 		}
-		if ( ! $this->user_has_verified_email( $user->ID ) ) {
-			return;
-		}
-		if ( is_super_admin( $user->ID ) ) {
-			return;
-		}
-		if ( ! is_super_admin( $user->ID ) ) {
+		if ( $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
 			// This user is VIP Support, verified, let's give them
 			// great power and responsibility
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			grant_super_admin( $user->ID );
 		}
 	}
@@ -951,13 +941,22 @@ class User {
 		}
 
 		$user->set_role( Role::VIP_SUPPORT_ROLE );
-		if ( is_multisite() ) {
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
-			grant_super_admin( $user_id );
-		}
+		self::grant_super_admin_if_allowed( $user );
 		update_user_meta( $user->ID, $GLOBALS['wpdb']->get_blog_prefix() . 'user_level', 10 );
 
 		return true;
+	}
+
+	/**
+	 * Make a support user a super admin on multisite, unless the site limits support
+	 * users to VIP_SUPPORT_USER_ALLOWED_EMAILS and the user's email is not listed.
+	 *
+	 * @param WP_User $user The support user
+	 */
+	public static function grant_super_admin_if_allowed( WP_User $user ) {
+		if ( self::init()->is_allowed_email( $user->user_email ) ) {
+			grant_super_admin( $user->ID );
+		}
 	}
 
 	/**
@@ -1036,9 +1035,7 @@ class User {
 		update_user_meta( $user_id, self::VIP_SUPPORT_USER_META_KEY, time() );
 
 		// If this is a multisite, commence super powers!
-		if ( is_multisite() ) {
-			grant_super_admin( $user->ID );
-		}
+		self::grant_super_admin_if_allowed( $user );
 
 		return $user_id;
 	}
