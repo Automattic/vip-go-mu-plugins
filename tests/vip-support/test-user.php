@@ -6,7 +6,9 @@
 namespace Automattic\VIP\Support_User;
 
 use Automattic\Test\Constant_Mocker;
+use WP_Session_Tokens;
 use WP_UnitTestCase;
+use WP_User;
 
 /**
  * @group vip_support_user
@@ -258,5 +260,50 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		$removed_user_obj = get_userdata( $new_user_id );
 
 		$this->assertFalse( $removed_user_obj, 'User was not deleted' );
+	}
+
+	public function test__remove_stale_support_users__revokes_access_when_removal_fails(): void {
+		$failing_user_id = $this->create_expired_support_user( 'vip_failing' );
+		$other_user_id   = $this->create_expired_support_user( 'vip_other' );
+		self::factory()->attachment->create_object( [
+			'file'           => 'image.jpg',
+			'post_author'    => $failing_user_id,
+			'post_mime_type' => 'image/jpeg',
+		] );
+		WP_Session_Tokens::get_instance( $failing_user_id )->create( time() + HOUR_IN_SECONDS );
+		add_action( 'delete_attachment', function () {
+			throw new \Exception( 'Plugin hook failed' );
+		} );
+
+		User::remove_stale_support_users();
+
+		$failing_user = get_userdata( $failing_user_id );
+		$this->assertInstanceOf( WP_User::class, $failing_user, 'User whose removal failed should still exist' );
+		$this->assertSame( [], $failing_user->caps, 'User whose removal failed kept capabilities' );
+		$this->assertFalse( is_super_admin( $failing_user_id ), 'User whose removal failed is still a super admin' );
+		$this->assertSame( [], WP_Session_Tokens::get_instance( $failing_user_id )->get_all(), 'User whose removal failed kept sessions' );
+		$this->assertFalse( get_userdata( $other_user_id ), 'Other expired user was not removed' );
+	}
+
+	public function test__remove_stale_support_users__removes_user_without_site_role(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		$user_id = $this->create_expired_support_user( 'vip_no_site_role' );
+		remove_user_from_blog( $user_id, get_current_blog_id() );
+
+		User::remove_stale_support_users();
+
+		$this->assertFalse( get_userdata( $user_id ), 'Super admin without a site role was not removed' );
+	}
+
+	private function create_expired_support_user( string $user_login ): int {
+		return User::add( [
+			'user_email'      => $user_login . '@automattic.com',
+			'user_login'      => $user_login,
+			'user_pass'       => 'password',
+			'user_registered' => gmdate( 'Y-m-d H:i:s', strtotime( '-9 hours' ) ),
+		] );
 	}
 }
