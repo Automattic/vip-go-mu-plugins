@@ -93,14 +93,19 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		$provider = sanitize_text_field( $_GET['provider'] ?? '' );
 		$method   = sanitize_text_field( $_SERVER['REQUEST_METHOD'] ?? '' );
 
+		$send_result = null;
 		if ( ( 'POST' === $method && 'validate_2fa' !== $action ) || ( 'GET' === $method || 'Two_Factor_SMS' === $provider ) ) {
-			$this->generate_and_send_token( $user );
+			$send_result = $this->generate_and_send_token( $user );
 		}
 
 		// Including template.php for submit_button()
 		require_once ABSPATH . '/wp-admin/includes/template.php';
 		?>
-		<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
+		<?php if ( is_wp_error( $send_result ) ) : ?>
+			<p><?php esc_html_e( 'A verification code could not be sent to the phone number associated with your account. Please try again later or use another method.', 'two-factor' ); ?></p>
+		<?php else : ?>
+			<p><?php esc_html_e( 'A verification code has been sent to the phone number associated with your account.', 'two-factor' ); ?></p>
+		<?php endif; ?>
 	<p>
 		<label for="authcode"><?php esc_html_e( 'Verification Code:', 'two-factor' ); ?></label>
 		<input type="tel" name="two-factor-sms-code" id="authcode" class="input" value="" size="20" pattern="[0-9]*" />

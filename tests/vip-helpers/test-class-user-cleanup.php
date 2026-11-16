@@ -122,8 +122,8 @@ class User_Cleanup_Test extends WP_UnitTestCase {
 			// emails will not match
 			'username match different host' => [ [ 'user+extra@different.com' ], [ 'user@example.com' ], [] ],
 			'host match different username' => [ [ 'different+extra@example.com' ], [ 'user@example.com' ], [] ],
-			// Should not return user since they are not a member of the blog anymore
-			'no caps'                       => [ [ 'user@example.com' ], [ 'user@example.com' ], [], true ],
+			// Users without a role (e.g. super admins) are still found
+			'no caps'                       => [ [ 'user@example.com' ], [ 'user@example.com' ], [ 0 ], true ],
 		];
 	}
 
