@@ -261,15 +261,16 @@ function _vip_login_cache_keys( $raw_username, $ip = null ) {
  *
  * @internal
  *
- * @param string $username The username to check.
+ * @param string $username    The username to check.
  * @param string $cache_group The cache group to use for the rate limiting.
+ * @param bool   $count_ip    Whether the attempt counted against the IP address. If not, the IP limit isn't checked.
  */
-function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
+function _vip_maybe_temporary_lock_account( $username, $cache_group, $count_ip = true ) {
 	$cache_keys = _vip_login_cache_keys( $username );
 	$defaults   = _vip_get_auth_count_limit_defaults();
 
 	$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], $cache_group );
-	$ip_count          = wp_cache_get( $cache_keys['ip_cache_key'], $cache_group );
+	$ip_count          = $count_ip ? wp_cache_get( $cache_keys['ip_cache_key'], $cache_group ) : 0;
 	$username_count    = wp_cache_get( $cache_keys['username_cache_key'], $cache_group );
 	$ip                = _vip_login_limit_ip();
 	$event_type        = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
@@ -379,7 +380,7 @@ function wpcom_vip_track_auth_attempt( $username, $cache_group, $count_ip = true
 		wp_cache_incr( $cache_keys[ "{$type}_cache_key" ], 1, $cache_group );
 	}
 
-	_vip_maybe_temporary_lock_account( $username, $cache_group );
+	_vip_maybe_temporary_lock_account( $username, $cache_group, $count_ip );
 }
 
 add_filter( 'vip_login_ip_username_window', function ( $window, $username ) {
