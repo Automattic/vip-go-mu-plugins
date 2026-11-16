@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- Tests log in through the logged-in cookie.
+
 use function Automattic\Test\Utils\http_response;
 
 require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
@@ -74,8 +76,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Remove HTTP request filter
 		remove_filter( 'pre_http_request', [ $this, 'mock_http_request' ] );
 
-		// Clear global $_REQUEST
+		// Clear request globals
 		$_REQUEST = [];
+		$_POST    = [];
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
 
 		parent::tearDown();
 
@@ -433,6 +437,40 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Verify that verification SID was not stored in user meta
 		$this->assertEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ), 'Verification SID should not be stored in user meta' );
 		$this->assertFalse( Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID )->has_pending_metadata() );
+	}
+
+	public function data_user_options_update_revalidation(): array {
+		return [
+			'session revalidated within the grace period' => [ 0, '' ],
+			'session past the grace period'               => [ 21 * MINUTE_IN_SECONDS, '+1234567890' ],
+		];
+	}
+
+	/**
+	 * Changing the SMS settings of a user who uses two-factor (here, emailed codes) needs a recently revalidated session.
+	 *
+	 * @dataProvider data_user_options_update_revalidation
+	 */
+	public function test_user_options_update_requires_revalidated_session( int $seconds_since_two_factor, string $expected_phone ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, [ 'Two_Factor_Email' ] );
+
+		// Log the user in with a session that passed two-factor $seconds_since_two_factor ago.
+		$expiration                  = time() + HOUR_IN_SECONDS;
+		$token                       = WP_Session_Tokens::get_instance( $user->ID )->create( $expiration );
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user->ID, $expiration, 'logged_in', $token );
+		wp_set_current_user( $user->ID );
+		Two_Factor_Core::update_current_user_session( [ 'two-factor-login' => time() - $seconds_since_two_factor ] );
+
+		$form     = [
+			'_nonce_user_two_factor_sms_options' => wp_create_nonce( 'user_two_factor_sms_options' ),
+			'vip-two-factor-phone-delete'        => 'Delete',
+		];
+		$_POST    = $form;
+		$_REQUEST = $form;
+		Two_Factor_SMS::get_instance()->user_options_update( $user->ID );
+
+		$this->assertSame( $expected_phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
 	}
 
 	// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
