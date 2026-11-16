@@ -232,7 +232,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
 			'uploads' => [ 'purge_uploads_cache', '/.vip/purge-all-uploads' ],
-			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-files' ],
+			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-assets' ],
 			'private' => [ 'purge_private_files_cache', '/.vip/purge-all-private-files' ],
 		];
 	}

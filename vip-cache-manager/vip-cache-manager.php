@@ -32,7 +32,7 @@ class WPCOM_VIP_Cache_Manager {
 	const SPECIAL_PURGE_PATHS    = [
 		'origin'        => '/.vip/purge-all-origin',
 		'uploads'       => '/.vip/purge-all-uploads',
-		'static'        => '/.vip/purge-all-static-files',
+		'static'        => '/.vip/purge-all-static-assets',
 		'private_files' => '/.vip/purge-all-private-files',
 	];
 
