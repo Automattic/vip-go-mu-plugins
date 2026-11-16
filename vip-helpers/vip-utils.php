@@ -610,7 +610,7 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 	$response = false;
 	$content  = false;
 
-	// Only make the remote request if no attempt failed in the last 60 seconds
+	// Only make the remote request if no attempt failed in the last 5 minutes
 	if ( false === wp_cache_get( $disable_get_key, $cache_group ) && false === wp_cache_get( $old_disable_get_key, $cache_group ) ) {
 		$http_api_args            = (array) $extra_args['http_api_args'];
 		$http_api_args['timeout'] = $timeout;
@@ -668,8 +668,8 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		}
 
 		if ( $response ) {
-			// The request failed, so don't try again for another 60 seconds, even when serving the backup
-			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+			// The request failed, so don't try again for another 5 minutes, even when serving the backup
+			wp_cache_set( $disable_get_key, 1, $cache_group, 5 * MINUTE_IN_SECONDS );
 
 			// If a remote request failed, log why it did
 			_wpcom_log_failed_request( $url, $response );
