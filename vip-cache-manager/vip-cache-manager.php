@@ -986,20 +986,16 @@ class WPCOM_VIP_Cache_Manager {
 	 *
 	 * We do not respect requests to clear caches for the entire taxonomy,
 	 * as this would be potentially hundreds or thousands of PURGE requests.
+	 * That includes calls with no IDs, which `clean_term_cache()` makes when
+	 * a term without children is deleted.
 	 *
 	 * @param array  $ids            An array of term IDs.
 	 * @param string $taxonomy       Taxonomy slug.
 	 * @param bool   $clean_taxonomy Whether or not to clean taxonomy-wide caches
 	 */
 	public function queue_terms_purges( $ids, $taxonomy ) {
-		// `clean_term_cache()` can pass no IDs, e.g. when deleting a term without children,
-		// and `get_terms()` with an empty `include` returns every term in the taxonomy.
-		if ( empty( $ids ) ) {
-			return;
-		}
-
 		$taxonomy_object = get_taxonomy( $taxonomy );
-		if ( ! $taxonomy_object ) {
+		if ( empty( $ids ) || ! $taxonomy_object ) {
 			return;
 		}
 
