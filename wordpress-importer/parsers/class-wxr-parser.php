@@ -11,22 +11,45 @@
  */
 class WXR_Parser {
 	public function parse( $file ) {
-		// Attempt to use proper XML parsers first
-		if ( extension_loaded( 'simplexml' ) ) {
-			$parser = new WXR_Parser_SimpleXML();
-			$result = $parser->parse( $file );
-
-			// If SimpleXML succeeds or this is an invalid WXR file then return the results
-			if ( ! is_wp_error( $result ) || 'SimpleXML_parse_error' != $result->get_error_code() ) {
-				return $result;
+		// Allow forcing a specific parser via WXR_PARSER: simplexml|xml|regex|xmlprocessor
+		$preferred_parser = defined( 'PREFERRED_WXR_PARSER' ) ? constant( 'PREFERRED_WXR_PARSER' ) : null;
+		if ( $preferred_parser ) {
+			$available_parsers = array(
+				'simplexml'    => 'WXR_Parser_SimpleXML',
+				'xml'          => 'WXR_Parser_XML',
+				'regex'        => 'WXR_Parser_Regex',
+				'xmlprocessor' => 'WXR_Parser_XML_Processor',
+			);
+			if ( isset( $available_parsers[ $preferred_parser ] ) ) {
+				$parser = new $available_parsers[ $preferred_parser ]();
+				$result = $parser->parse( $file );
+			} else {
+				_doing_it_wrong( __FUNCTION__, sprintf( __( 'Invalid parser specified: %s', 'wordpress-importer' ), $preferred_parser ), '0.9.0' );
+				$result = new WP_Error( 'invalid_parser', sprintf( __( 'Invalid parser specified: %s', 'wordpress-importer' ), $preferred_parser ) );
 			}
-		} elseif ( extension_loaded( 'xml' ) ) {
-			$parser = new WXR_Parser_XML();
-			$result = $parser->parse( $file );
 
 			// If XMLParser succeeds or this is an invalid WXR file then return the results
 			if ( ! is_wp_error( $result ) || 'XML_parse_error' != $result->get_error_code() ) {
 				return $result;
+			}
+		} else {
+			// Attempt to auto-select the best XML parser based on available extensions
+			if ( extension_loaded( 'simplexml' ) ) {
+				$parser = new WXR_Parser_SimpleXML();
+				$result = $parser->parse( $file );
+
+				// If SimpleXML succeeds or this is an invalid WXR file then return the results
+				if ( ! is_wp_error( $result ) || 'SimpleXML_parse_error' != $result->get_error_code() ) {
+					return $result;
+				}
+			} elseif ( extension_loaded( 'xml' ) ) {
+				$parser = new WXR_Parser_XML();
+				$result = $parser->parse( $file );
+
+				// If XMLParser succeeds or this is an invalid WXR file then return the results
+				if ( ! is_wp_error( $result ) || 'XML_parse_error' != $result->get_error_code() ) {
+					return $result;
+				}
 			}
 		}
 
@@ -47,7 +70,7 @@ class WXR_Parser {
 		}
 
 		// use regular expressions if nothing else available or this is bad XML
-		$parser = new WXR_Parser_Regex();
+		$parser = new WXR_Parser_XML_Processor();
 		return $parser->parse( $file );
 	}
 }
