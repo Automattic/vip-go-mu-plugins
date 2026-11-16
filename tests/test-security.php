@@ -207,13 +207,15 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * When a username is one account's login and another's email, core checks both passwords, so both count.
+	 * When a username is one account's login and another's email, core checks both passwords, so both count,
+	 * and the IP address counts once.
 	 */
 	public function test__failed_authentications_count_against_every_account_checked() {
 		$this->create_accounts_sharing_a_username();
 		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
 			$this->assertWPError( wp_authenticate( 'alice@example.com', 'wrong-password' ) );
 		}
+		$this->assertSame( 5, wp_cache_get( $this->cache_keys()['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT ) );
 
 		$logins = [
 			'alice@example.com' => 'alice-password',
@@ -257,6 +259,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
 			$this->assertSame( 'mallory', wp_authenticate( 'alice@example.com', 'mallory-password' )->user_login );
 		}
+		$this->assertFalse( wp_cache_get( $this->cache_keys()['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT ) );
 
 		$error = wp_authenticate( 'alice@example.com', 'alice-password' );
 		$this->assertWPError( $error );

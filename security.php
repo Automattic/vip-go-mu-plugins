@@ -161,8 +161,9 @@ function _vip_login_limit_count_other_accounts( $user, $username ) {
 		return $user;
 	}
 
+	// The attempt as a whole succeeded, so it doesn't count against the IP address.
 	foreach ( array_diff( _vip_login_limit_attempt_logins( $username ), [ $user->user_login ] ) as $account ) {
-		wpcom_vip_track_auth_attempt( $account, CACHE_GROUP_LOGIN_LIMIT );
+		wpcom_vip_track_auth_attempt( $account, CACHE_GROUP_LOGIN_LIMIT, false );
 	}
 
 	return $user;
@@ -353,14 +354,15 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group ) {
  * We're tracking IP, and IP|Username events for both login attempts and
  * password resets but only tracking Username events for password resets.
  *
- * @param string $username The username to track.
+ * @param string $username    The username to track.
  * @param string $cache_group The cache group to track the $username to.
+ * @param bool   $count_ip    Whether to count the attempt against the IP address too. Defaults to true.
  */
-function wpcom_vip_track_auth_attempt( $username, $cache_group ) {
+function wpcom_vip_track_auth_attempt( $username, $cache_group, $count_ip = true ) {
 	$cache_keys = _vip_login_cache_keys( $username );
 	$defaults   = _vip_get_auth_count_limit_defaults();
 
-	foreach ( [ 'ip', 'ip_username', 'username' ] as $type ) {
+	foreach ( $count_ip ? [ 'ip', 'ip_username', 'username' ] : [ 'ip_username', 'username' ] as $type ) {
 		$event_type = CACHE_GROUP_LOST_PASSWORD_LIMIT === $cache_group ? 'password_reset' : 'login';
 		$default    = $defaults[ "{$type}_window" ];
 
@@ -401,10 +403,11 @@ function wpcom_vip_login_limiter( $username, $error ) {
 		return;
 	}
 
-	// Count the attempt against each account core checked the password of, usually one, or else the username as entered.
+	// Count the attempt against each account core checked the password of, usually one, or else the username as entered,
+	// and once against the IP address.
 	$accounts = _vip_login_limit_attempt_logins( $username );
-	foreach ( $accounts ? $accounts : [ $username ] as $account ) {
-		wpcom_vip_track_auth_attempt( $account, CACHE_GROUP_LOGIN_LIMIT );
+	foreach ( $accounts ? $accounts : [ $username ] as $i => $account ) {
+		wpcom_vip_track_auth_attempt( $account, CACHE_GROUP_LOGIN_LIMIT, 0 === $i );
 	}
 }
 add_action( 'wp_login_failed', 'wpcom_vip_login_limiter', 10, 2 );
