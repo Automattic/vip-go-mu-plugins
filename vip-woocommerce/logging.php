@@ -24,7 +24,23 @@ add_action( 'plugins_loaded', function () {
 	}
 
 	add_filter( 'woocommerce_logger_log_message', __NAMESPACE__ . '\restrict_woocommerce_logging', 30, 4 );
+	add_filter( 'pre_option_woocommerce_logs_logging_enabled', __NAMESPACE__ . '\maybe_disable_woocommerce_logging' );
 } );
+
+/**
+ * Killswitch to quickly intervene if problems occur: setting the `vip_woocommerce_prevent_debug_logging` option
+ * forces WooCommerce's own "Enable logging" setting (WooCommerce 8.6+) off, so it can't be turned back on in wp-admin.
+ * Options come back from the database as strings ('1', 'yes', 'no', ...), so parse them as booleans.
+ *
+ * @param mixed $pre_option The value to return instead of the option value. False lets WordPress read the option.
+ */
+function maybe_disable_woocommerce_logging( $pre_option ) {
+	if ( filter_var( get_option( 'vip_woocommerce_prevent_debug_logging', false ), FILTER_VALIDATE_BOOLEAN ) ) {
+		return 'no';
+	}
+
+	return $pre_option;
+}
 
 /**
  * Add safety measures / restrictions for WooCommerce logging.
@@ -48,11 +64,6 @@ function restrict_woocommerce_logging( $message, $level, $context, $handler = nu
 	// Safety Measure #1: Mute some WooCommerce logging sources that do not need to be active by default.
 	$muted_sources = apply_filters( 'vip_woocommerce_muted_logging_sources', [ 'webhooks-delivery', 'fatal-errors' ] );
 	if ( is_a( $handler, 'WC_Log_Handler_DB' ) && isset( $context['source'] ) && in_array( $context['source'], $muted_sources, true ) ) {
-		return null;
-	}
-
-	// Safety Measure #2: Setup a killswitch to quickly intervene if problems occur.
-	if ( true === get_option( 'vip_woocommerce_prevent_debug_logging', false ) ) {
 		return null;
 	}
 
