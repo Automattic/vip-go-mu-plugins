@@ -1365,7 +1365,8 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 		$cache_key = wpcom_vip_get_page_by_title_cache_key( $title, $post_type );
 		$page_id   = $shared ? wp_cache_get( $cache_key, 'get_page_by_title' ) : false;
 
-		if ( false === $page_id ) {
+		// Look the title up again if the cached page was hidden or deleted since, which the flush can miss for other spellings of its title
+		if ( false === $page_id || ( $page_id && ! is_post_status_viewable( get_post_status( $page_id ) ) ) ) {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
 			$query   = new WP_Query(
 				array(
