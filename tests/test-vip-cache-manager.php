@@ -165,6 +165,23 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
 	}
 
+	/**
+	 * The API takes a post object too, and the purge filters still get the post ID.
+	 */
+	public function test_wpvip_purge_edge_cache_for_post_accepts_post_object() {
+		$post_id     = $this->factory()->post->create();
+		$filtered_id = null;
+		add_filter( 'wpcom_vip_cache_purge_urls', function ( $urls, $id ) use ( &$filtered_id ) {
+			$filtered_id = $id;
+			return $urls;
+		}, 10, 2 );
+
+		$this->assertTrue( wpvip_purge_edge_cache_for_post( get_post( $post_id ) ) );
+
+		$this->assertSame( $post_id, $filtered_id );
+		$this->assertContains( get_post_comments_feed_link( $post_id ), $this->cache_manager->get_queued_purge_urls() );
+	}
+
 	public function get_data_for_special_purge_actions() {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
