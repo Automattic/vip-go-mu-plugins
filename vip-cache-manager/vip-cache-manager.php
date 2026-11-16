@@ -66,6 +66,7 @@ class WPCOM_VIP_Cache_Manager {
 		add_action( 'switch_theme', array( $this, 'purge_site_cache' ) );
 		add_action( 'post_updated', array( $this, 'queue_old_permalink_purge' ), 10, 3 );
 		add_action( 'transition_post_status', array( $this, 'queue_unpublished_post_purge' ), 10, 3 );
+		add_action( 'before_delete_post', array( $this, 'queue_deleted_post_purge' ), 10, 2 );
 
 		add_action( 'admin_menu', array( $this, 'vip_purge_cache_page' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_dashboard_widget_assets' ) );
@@ -960,6 +961,21 @@ class WPCOM_VIP_Cache_Manager {
 		}
 
 		$this->queue_post_purge( $post->ID, true );
+	}
+
+	/**
+	 * Queue a purge for a published post that is about to be deleted.
+	 *
+	 * `clean_post_cache` fires after the post is deleted, when `queue_post_purge()` can no longer
+	 * build its URLs. Trashed posts aren't purged again: they were purged when they were trashed.
+	 *
+	 * @param int     $post_id Post ID.
+	 * @param WP_Post $post    Post object.
+	 */
+	public function queue_deleted_post_purge( $post_id, $post ) {
+		if ( 'publish' === $post->post_status ) {
+			$this->queue_post_purge( $post_id );
+		}
 	}
 
 	/**

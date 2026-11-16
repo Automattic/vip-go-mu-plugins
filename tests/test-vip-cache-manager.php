@@ -165,6 +165,29 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
 	}
 
+	public function get_data_for_deleted_post_purge_test() {
+		return [
+			'published post' => [ 'publish', true ],
+			// Already purged when it was trashed.
+			'trashed post'   => [ 'trash', false ],
+		];
+	}
+
+	/**
+	 * A deleted post is gone by the time its post cache is cleaned, so it's purged before deletion.
+	 *
+	 * @dataProvider get_data_for_deleted_post_purge_test
+	 */
+	public function test__force_deleted_post_purge( $status, $expected_purge ) {
+		$post_id   = $this->factory()->post->create( [ 'post_status' => $status ] );
+		$permalink = get_permalink( $post_id );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_delete_post( $post_id, true );
+
+		$this->assertSame( $expected_purge, in_array( $permalink, $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
 	public function get_data_for_special_purge_actions() {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
