@@ -1133,10 +1133,16 @@ class User {
 
 			// A failure, e.g. from a plugin hook fired while deleting the user's posts,
 			// must not stop the other users from being removed.
+			$switched_depth = count( $GLOBALS['_wp_switched_stack'] ?? array() );
 			try {
 				$rm = self::remove( $user->ID, 'id' );
 			} catch ( Throwable $e ) {
 				$rm = new WP_Error( 'remove-failed', sprintf( '%s in %s:%d', $e->getMessage(), $e->getFile(), $e->getLine() ) );
+
+				// On multisite, the failure can leave deletion switched to another site.
+				for ( $depth = count( $GLOBALS['_wp_switched_stack'] ?? array() ); $depth > $switched_depth; $depth-- ) {
+					restore_current_blog();
+				}
 			}
 
 			$removed[] = array(
