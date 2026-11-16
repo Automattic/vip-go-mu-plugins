@@ -89,6 +89,30 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected, $should_back_off->invoke( $connection_pilot ) );
 	}
 
+	public function test__new_subsite_schedules_pilot_on_new_subsite() {
+		$this->skipWithoutMultisite();
+		Connection_Pilot::instance()->init_actions();
+
+		$blog_id = self::factory()->blog->create();
+
+		switch_to_blog( $blog_id );
+		$scheduled_on_new_subsite = wp_next_scheduled( Connection_Pilot::CRON_ACTION );
+		restore_current_blog();
+
+		$this->assertIsInt( $scheduled_on_new_subsite );
+		$this->assertFalse( wp_next_scheduled( Connection_Pilot::CRON_ACTION ) );
+	}
+
+	public function test__publishing_does_not_schedule_pilot() {
+		$this->skipWithoutMultisite();
+		Connection_Pilot::instance()->init_actions();
+
+		// On multisite, publishing a post updates the site's `last_updated` through wp_update_site().
+		self::factory()->post->create( [ 'post_status' => 'publish' ] );
+
+		$this->assertFalse( wp_next_scheduled( Connection_Pilot::CRON_ACTION ) );
+	}
+
 	public function get_test_data__update_heartbeat_on_failure() {
 		$connection_pilot = Connection_Pilot::instance();
 		$increments       = $connection_pilot::BACKOFF_INCREMENTS;
