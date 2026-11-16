@@ -98,7 +98,6 @@ class Connection_Pilot {
 		}
 
 		add_action( 'wp_initialize_site', array( $this, 'schedule_immediate_cron' ) );
-		add_action( 'wp_update_site', array( $this, 'schedule_immediate_cron' ) );
 	}
 
 	public function schedule_cron() {
@@ -108,8 +107,16 @@ class Connection_Pilot {
 		}
 	}
 
-	public function schedule_immediate_cron() {
+	/**
+	 * Connect a new subsite right away instead of waiting for its hourly event.
+	 *
+	 * `wp_initialize_site` fires in the context of the site that created the subsite,
+	 * so the event has to be scheduled on the new site itself.
+	 */
+	public function schedule_immediate_cron( \WP_Site $new_site ) {
+		switch_to_blog( $new_site->id );
 		wp_schedule_single_event( time(), self::CRON_ACTION );
+		restore_current_blog();
 	}
 
 	public static function do_cron() {
