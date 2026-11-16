@@ -16,7 +16,8 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	public function tearDown(): void {
-		$_POST = $this->original_post;
+		$_POST                  = $this->original_post;
+		$_SERVER['REMOTE_ADDR'] = $this->test_ip; // phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
 
 		$this->clean_event_window_cache();
 
@@ -25,9 +26,12 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 	public function data_restricted_logins(): array {
 		return [
-			'admin username'        => [ 'admin', 'admin@example.com', 'admin' ],
-			'machine user username' => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_LOGIN ],
-			'machine user email'    => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_EMAIL ],
+			'admin username'             => [ 'admin', 'admin@example.com', 'admin' ],
+			'admin username, other case' => [ 'admin', 'admin@example.com', 'Admin' ],
+			'admin email'                => [ 'admin', 'admin@example.com', 'Admin@Example.com' ],
+			'admin username, fullwidth'  => [ 'admin', 'admin@example.com', "\u{FF41}\u{FF44}\u{FF4D}\u{FF49}\u{FF4E}" ],
+			'machine user username'      => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_LOGIN ],
+			'machine user email'         => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_EMAIL ],
 		];
 	}
 
@@ -35,22 +39,52 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	 * @dataProvider data_restricted_logins
 	 */
 	public function test__restricted_login( string $user_login, string $user_email, string $log_in_with ) {
-		// Nightly WordPress can retain the installer's admin account.
-		$user_id = username_exists( $user_login );
-		if ( $user_id ) {
-			wp_set_password( 'secret1', $user_id );
-		} else {
-			$this->factory()->user->create( [
-				'user_login' => $user_login,
-				'user_email' => $user_email,
-				'user_pass'  => 'secret1',
-			] );
-		}
+		$this->set_up_restricted_account( $user_login, $user_email );
 
 		$result = wp_authenticate( $log_in_with, 'secret1' );
 
 		$this->assertWPError( $result );
 		$this->assertEquals( 'restricted-login', $result->get_error_code() );
+	}
+
+	/**
+	 * A wrong password for a restricted account's email gets the usual error, not the restricted-login one.
+	 */
+	public function test__restricted_account_email_with_wrong_password_gets_usual_error() {
+		$this->set_up_restricted_account( 'admin', 'admin@example.com' );
+
+		$result = wp_authenticate( 'admin@example.com', 'wrong-password' );
+
+		$this->assertWPError( $result );
+		$this->assertSame( 'incorrect_password', $result->get_error_code() );
+	}
+
+	/**
+	 * Create alice, whose login is mallory's email, so core checks both accounts' passwords for that username.
+	 */
+	private function create_accounts_sharing_a_username(): void {
+		$this->factory()->user->create( [
+			'user_login' => 'alice@example.com',
+			'user_email' => 'alice-new@example.com',
+			'user_pass'  => 'alice-password',
+		] );
+		$this->factory()->user->create( [
+			'user_login' => 'mallory',
+			'user_email' => 'alice@example.com',
+			'user_pass'  => 'mallory-password',
+		] );
+	}
+
+	private function set_up_restricted_account( string $user_login, string $user_email ): void {
+		global $wpdb;
+
+		// VIP blocks creating `admin`, but sites can still have one, like the installer's account.
+		remove_filter( 'illegal_user_logins', 'vip_illegal_user_logins' );
+		$user_id = username_exists( $user_login ) ?: $this->factory()->user->create( [ 'user_login' => $user_login ] );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
+		$wpdb->update( $wpdb->users, [ 'user_email' => $user_email ], [ 'ID' => $user_id ] );
+		clean_user_cache( $user_id );
+		wp_set_password( 'secret1', $user_id );
 	}
 
 	public function data_unrestricted_logins(): array {
@@ -83,7 +117,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$_POST = [
 			'user_login' => $this->test_username,
 		];
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->test_username, true, CACHE_GROUP_LOST_PASSWORD_LIMIT );
+		$this->lock_username( $this->test_username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 		$errors = new WP_Error( 'original-error-code', 'Original Error Code' );
 
@@ -138,42 +172,255 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
 			$error = wp_authenticate( $user->user_login, 'wrong-password' );
 			$this->assertWPError( $error );
-			$this->assertSame( $attempt, wp_cache_get( $this->test_ip . '|' . $user->user_login, CACHE_GROUP_LOGIN_LIMIT ) );
+			$this->assertSame( $attempt, wp_cache_get( $this->cache_keys()['ip_username_cache_key'], CACHE_GROUP_LOGIN_LIMIT ) );
 		}
 		$error = wp_authenticate( $user->user_login, 'correct-password' );
 		$this->assertWPError( $error );
 		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
 	}
 
+	/**
+	 * Attempts count against the account core found, whatever form of the username they log in with,
+	 * and a locked account is refused before its password is checked.
+	 */
+	public function test__failed_authentications_count_against_the_account() {
+		$this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_email' => 'groot@example.com',
+			'user_pass'  => 'correct-password',
+		] );
+		foreach ( [ 'IAmGroot', 'groot@example.com', "\u{FF49}amgroot", 'iamGROOT', 'Groot@Example.com' ] as $log_in_with ) {
+			$this->assertWPError( wp_authenticate( $log_in_with, 'wrong-password' ) );
+		}
+
+		$password_checks = 0;
+		add_filter( 'check_password', function ( $check ) use ( &$password_checks ) {
+			$password_checks++;
+			return $check;
+		} );
+		foreach ( [ $this->test_username, 'Groot@Example.com' ] as $log_in_with ) {
+			$error = wp_authenticate( $log_in_with, 'correct-password' );
+			$this->assertWPError( $error );
+			$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+		}
+		$this->assertSame( 0, $password_checks );
+	}
+
+	/**
+	 * When a username is one account's login and another's email, core checks both passwords, so both count,
+	 * and the IP address counts once.
+	 */
+	public function test__failed_authentications_count_against_every_account_checked() {
+		$this->create_accounts_sharing_a_username();
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			$this->assertWPError( wp_authenticate( 'alice@example.com', 'wrong-password' ) );
+		}
+		$this->assertSame( 5, wp_cache_get( $this->cache_keys()['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT ) );
+
+		$logins = [
+			'alice@example.com' => 'alice-password',
+			'mallory'           => 'mallory-password',
+		];
+		foreach ( $logins as $log_in_with => $password ) {
+			$error = wp_authenticate( $log_in_with, $password );
+			$this->assertWPError( $error );
+			$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+		}
+	}
+
+	public function data_other_handler_locks(): array {
+		return [
+			'account locked'          => [ 'iamgroot' ],
+			'entered username locked' => [ 'member-12345' ],
+		];
+	}
+
+	/**
+	 * Both locks hold when another authentication handler logs the account in by a different username.
+	 *
+	 * @dataProvider data_other_handler_locks
+	 */
+	public function test__lockout_applies_to_account_found_by_other_handler( string $locked_username ) {
+		$user = $this->factory()->user->create_and_get( [ 'user_login' => $this->test_username ] );
+		$this->lock_username( $locked_username );
+		add_filter( 'authenticate', static fn( $result, $username ) => 'member-12345' === $username ? $user : $result, 10, 2 );
+
+		$error = wp_authenticate( 'member-12345', 'any-password' );
+		$this->assertWPError( $error );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
+	 * A failed check of one account counts even when the same attempt logs into another account,
+	 * including where wp_login doesn't fire, as on XML-RPC.
+	 */
+	public function test__failed_check_counts_when_attempt_logs_into_other_account() {
+		$this->create_accounts_sharing_a_username();
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			$this->assertSame( 'mallory', wp_authenticate( 'alice@example.com', 'mallory-password' )->user_login );
+		}
+		$this->assertFalse( wp_cache_get( $this->cache_keys()['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT ) );
+
+		$error = wp_authenticate( 'alice@example.com', 'alice-password' );
+		$this->assertWPError( $error );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
+	 * A locked account found by email keeps the lock error when a later handler replaces it,
+	 * as the application password handler does on XML-RPC.
+	 */
+	public function test__lock_error_survives_later_handler() {
+		$this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_email' => 'groot@example.com',
+		] );
+		$this->lock_username( $this->test_username );
+		add_filter( 'authenticate', static fn( $result ) => is_wp_error( $result ) ? new WP_Error( 'application_passwords_disabled', 'Disabled' ) : $result, 25 );
+
+		$error = wp_authenticate( 'groot@example.com', 'any-password' );
+		$this->assertWPError( $error );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
+	 * Fullwidth variants of a username share its limits even when no account has it.
+	 */
+	public function test__username_variants_share_limits_without_account() {
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			$this->assertWPError( wp_authenticate( "\u{FF4E}obody", 'wrong-password' ) );
+		}
+
+		$error = wp_authenticate( 'nobody', 'wrong-password' );
+		$this->assertWPError( $error );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
+	 * Limit filters get the account's login, so a site's per-user threshold applies however the user logs in.
+	 */
+	public function test__limit_filters_get_account_login() {
+		$this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_email' => 'groot@example.com',
+		] );
+		$filtered = [];
+		add_filter( 'wpcom_vip_ip_username_login_threshold', function ( $threshold, $ip, $username ) use ( &$filtered ) {
+			$filtered[] = $username;
+			return $threshold;
+		}, 10, 3 );
+
+		wp_authenticate( 'Groot@Example.com', 'wrong-password' );
+
+		$this->assertSame( [ $this->test_username ], $filtered );
+	}
+
+	/**
+	 * A locked account is refused before other wp_authenticate_user callbacks run, such as ones that check
+	 * its password, so they get the error instead of the account.
+	 */
+	public function test__locked_account_refused_before_other_callbacks() {
+		$this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_pass'  => 'correct-password',
+		] );
+		$this->lock_username( $this->test_username );
+		$received = null;
+		add_filter( 'wp_authenticate_user', function ( $user ) use ( &$received ) {
+			$received = $user;
+			return $user;
+		} );
+
+		$error = wp_authenticate( $this->test_username, 'correct-password' );
+
+		$this->assertWPError( $received );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
+	 * Sites that unhook the authenticate limiter, for example for API logins, keep the limit off.
+	 */
+	public function test__unhooked_login_limiter_allows_locked_account() {
+		$user_id = $this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_pass'  => 'correct-password',
+		] );
+		$this->lock_username( $this->test_username );
+		remove_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate', 30 );
+
+		$this->assertSame( $user_id, wp_authenticate( $this->test_username, 'correct-password' )->ID );
+	}
+
+	/**
+	 * A username shaped like an IP address has its own lockout, separate from that IP's.
+	 */
+	public function test__username_lockout_does_not_lock_out_matching_ip() {
+		add_filter( 'wpcom_vip_username_login_threshold', static fn() => 1 );
+		wpcom_vip_track_auth_attempt( '203.0.113.5', CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertWPError( wpcom_vip_username_is_limited( '203.0.113.5', CACHE_GROUP_LOGIN_LIMIT ) );
+
+		$_SERVER['REMOTE_ADDR'] = '203.0.113.5'; // phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.UserControlledHeaders, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___SERVER__REMOTE_ADDR__
+		$this->assertFalse( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
+	}
+
+	/**
+	 * Users are network-wide, so a lockout from one site applies on the others.
+	 */
+	public function test__lockout_applies_across_the_network() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		for ( $attempt = 1; $attempt <= 5; $attempt++ ) {
+			wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		}
+
+		switch_to_blog( self::factory()->blog->create() );
+		$result = wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		restore_current_blog();
+		$this->assertWPError( $result );
+	}
+
 	public function test__wpcom_vip_track_auth_attempt__defaults() {
+		$filtered_ip = null;
+		add_filter( 'wpcom_vip_ip_login_threshold', function ( $threshold, $ip ) use ( &$filtered_ip ) {
+			$filtered_ip = $ip;
+			return $threshold;
+		}, 10, 2 );
+
 		wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 
-		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$this->assertSame( $this->test_ip, $filtered_ip );
+
+		$cache_keys = $this->cache_keys();
+
+		$username_count = wp_cache_get( $cache_keys['username_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( 1, $username_count );
 
-		$ip_count = wp_cache_get( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
+		$ip_count = wp_cache_get( $cache_keys['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( 1, $ip_count );
 
-		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( 1, $ip_username_count );
 	}
 
 	public function test__wpcom_vip_login_limiter_on_success__decrease_count() {
 		$original_count  = 5;
 		$decreased_count = $original_count - 1;
-		wp_cache_set( $this->test_username, $original_count, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_set( $this->test_ip, $original_count, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_set( $this->test_ip . '|' . $this->test_username, $original_count, CACHE_GROUP_LOGIN_LIMIT );
+		$cache_keys      = $this->cache_keys();
+		wp_cache_set( $cache_keys['username_cache_key'], $original_count, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_set( $cache_keys['ip_cache_key'], $original_count, CACHE_GROUP_LOGIN_LIMIT );
+		wp_cache_set( $cache_keys['ip_username_cache_key'], $original_count, CACHE_GROUP_LOGIN_LIMIT );
 
 		wpcom_vip_login_limiter_on_success( $this->test_username );
 
-		$username_count = wp_cache_get( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$username_count = wp_cache_get( $cache_keys['username_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( $original_count, $username_count ); // username is NOT decreased
 
-		$ip_count = wp_cache_get( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
+		$ip_count = wp_cache_get( $cache_keys['ip_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( $decreased_count, $ip_count );
 
-		$ip_username_count = wp_cache_get( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		$ip_username_count = wp_cache_get( $cache_keys['ip_username_cache_key'], CACHE_GROUP_LOGIN_LIMIT );
 		$this->assertSame( $decreased_count, $ip_username_count );
 	}
 
@@ -277,15 +524,16 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		add_filter( 'vip_login_ip_username_window', static fn() => 11 );
 		add_filter( 'vip_login_username_window', static fn() => 13 );
 		add_filter( 'vip_login_ip_username_lockout', static fn() => 17 );
+		$cache_keys = $this->cache_keys();
 		try {
 			wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-			$this->assertSame( 7, $cache->expirations[ $this->test_ip ] );
-			$this->assertSame( 11, $cache->expirations[ $this->test_ip . '|' . $this->test_username ] );
-			$this->assertSame( 13, $cache->expirations[ $this->test_username ] );
+			$this->assertSame( 7, $cache->expirations[ $cache_keys['ip_cache_key'] ] );
+			$this->assertSame( 11, $cache->expirations[ $cache_keys['ip_username_cache_key'] ] );
+			$this->assertSame( 13, $cache->expirations[ $cache_keys['username_cache_key'] ] );
 			for ( $attempt = 1; $attempt < 5; $attempt++ ) {
 				wpcom_vip_track_auth_attempt( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
 			}
-			$this->assertSame( 17, $cache->expirations[ CACHE_KEY_LOCK_PREFIX . $this->test_ip . '|' . $this->test_username ] );
+			$this->assertSame( 17, $cache->expirations[ CACHE_KEY_LOCK_PREFIX . $cache_keys['ip_username_cache_key'] ] );
 			$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
 			$cache->now = 16;
 			$this->assertWPError( wpcom_vip_username_is_limited( $this->test_username, CACHE_GROUP_LOGIN_LIMIT ) );
@@ -296,10 +544,18 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		}
 	}
 
+	private function lock_username( string $username, string $cache_group = CACHE_GROUP_LOGIN_LIMIT ): void {
+		wp_cache_set( CACHE_KEY_LOCK_PREFIX . _vip_login_cache_keys( $username )['username_cache_key'], true, $cache_group );
+	}
+
+	private function cache_keys(): array {
+		return _vip_login_cache_keys( $this->test_username );
+	}
+
 	private function clean_event_window_cache() {
-		wp_cache_delete( $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( $this->test_ip, CACHE_GROUP_LOGIN_LIMIT );
-		wp_cache_delete( $this->test_ip . '|' . $this->test_username, CACHE_GROUP_LOGIN_LIMIT );
+		foreach ( $this->cache_keys() as $key ) {
+			wp_cache_delete( $key, CACHE_GROUP_LOGIN_LIMIT );
+		}
 	}
 
 	public function test_create_admin_user() {
