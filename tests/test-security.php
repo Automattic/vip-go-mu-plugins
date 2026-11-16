@@ -117,7 +117,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		$_POST = [
 			'user_login' => $this->test_username,
 		];
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->cache_keys()['username_cache_key'], true, CACHE_GROUP_LOST_PASSWORD_LIMIT );
+		$this->lock_username( $this->test_username, CACHE_GROUP_LOST_PASSWORD_LIMIT );
 
 		$errors = new WP_Error( 'original-error-code', 'Original Error Code' );
 
@@ -242,7 +242,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	 */
 	public function test__lockout_applies_to_account_found_by_other_handler( string $locked_username ) {
 		$user = $this->factory()->user->create_and_get( [ 'user_login' => $this->test_username ] );
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . _vip_login_cache_keys( $locked_username )['username_cache_key'], true, CACHE_GROUP_LOGIN_LIMIT );
+		$this->lock_username( $locked_username );
 		add_filter( 'authenticate', static fn( $result, $username ) => 'member-12345' === $username ? $user : $result, 10, 2 );
 
 		$error = wp_authenticate( 'member-12345', 'any-password' );
@@ -275,7 +275,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 			'user_login' => $this->test_username,
 			'user_email' => 'groot@example.com',
 		] );
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->cache_keys()['username_cache_key'], true, CACHE_GROUP_LOGIN_LIMIT );
+		$this->lock_username( $this->test_username );
 		add_filter( 'authenticate', static fn( $result ) => is_wp_error( $result ) ? new WP_Error( 'application_passwords_disabled', 'Disabled' ) : $result, 25 );
 
 		$error = wp_authenticate( 'groot@example.com', 'any-password' );
@@ -324,7 +324,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 			'user_login' => $this->test_username,
 			'user_pass'  => 'correct-password',
 		] );
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->cache_keys()['username_cache_key'], true, CACHE_GROUP_LOGIN_LIMIT );
+		$this->lock_username( $this->test_username );
 		$received = null;
 		add_filter( 'wp_authenticate_user', function ( $user ) use ( &$received ) {
 			$received = $user;
@@ -345,7 +345,7 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 			'user_login' => $this->test_username,
 			'user_pass'  => 'correct-password',
 		] );
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->cache_keys()['username_cache_key'], true, CACHE_GROUP_LOGIN_LIMIT );
+		$this->lock_username( $this->test_username );
 		remove_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate', 30 );
 
 		$this->assertSame( $user_id, wp_authenticate( $this->test_username, 'correct-password' )->ID );
@@ -542,6 +542,10 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		} finally {
 			$wp_object_cache = $original_cache;
 		}
+	}
+
+	private function lock_username( string $username, string $cache_group = CACHE_GROUP_LOGIN_LIMIT ): void {
+		wp_cache_set( CACHE_KEY_LOCK_PREFIX . _vip_login_cache_keys( $username )['username_cache_key'], true, $cache_group );
 	}
 
 	private function cache_keys(): array {

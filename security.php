@@ -20,14 +20,15 @@ use Automattic\VIP\Utils\Context;
 
 define( 'CACHE_GROUP_LOGIN_LIMIT', 'vip_login_limit' );
 define( 'CACHE_GROUP_LOST_PASSWORD_LIMIT', 'vip_lost_password_limit' );
+define( 'CACHE_GROUP_LOGIN_ATTEMPT', 'vip_login_limit_attempt' );
 define( 'CACHE_KEY_LOCK_PREFIX', 'locked_' );
 define( 'ERROR_CODE_LOGIN_LIMIT_EXCEEDED', 'login_limit_exceeded' );
 define( 'ERROR_CODE_LOST_PASSWORD_LIMIT_EXCEEDED', 'lost_password_limit_exceeded' );
 
 // Users are network-wide, so their limits are too.
-wp_cache_add_global_groups( [ CACHE_GROUP_LOGIN_LIMIT, CACHE_GROUP_LOST_PASSWORD_LIMIT, 'vip_login_limit_attempt' ] );
+wp_cache_add_global_groups( [ CACHE_GROUP_LOGIN_LIMIT, CACHE_GROUP_LOST_PASSWORD_LIMIT, CACHE_GROUP_LOGIN_ATTEMPT ] );
 // The current login attempt and the accounts core found for it, kept for the current request only.
-wp_cache_add_non_persistent_groups( [ 'vip_login_limit_attempt' ] );
+wp_cache_add_non_persistent_groups( [ CACHE_GROUP_LOGIN_ATTEMPT ] );
 
 // If the site has any privacy restrictions (enabled by constant, ip restriction, http basic auth), initialize the Private_Sites module
 if ( \Automattic\VIP\Security\Private_Sites::has_privacy_restrictions() ) {
@@ -69,7 +70,7 @@ function vip_strict_sanitize_username( $username ) {
  * @return string[]
  */
 function _vip_login_limit_attempt_logins( $username ) {
-	$attempt = wp_cache_get( 'attempt', 'vip_login_limit_attempt' );
+	$attempt = wp_cache_get( 'attempt', CACHE_GROUP_LOGIN_ATTEMPT );
 
 	return is_array( $attempt ) && $attempt['username'] === $username ? $attempt['logins'] : [];
 }
@@ -108,7 +109,7 @@ function _vip_login_limit_start_attempt( $user, $username ) {
 		'username' => $username,
 		'logins'   => [],
 	];
-	wp_cache_set( 'attempt', $attempt, 'vip_login_limit_attempt' );
+	wp_cache_set( 'attempt', $attempt, CACHE_GROUP_LOGIN_ATTEMPT );
 
 	return $user;
 }
@@ -130,10 +131,10 @@ function _vip_login_limit_check_user( $user ) {
 		return $user;
 	}
 
-	$attempt = wp_cache_get( 'attempt', 'vip_login_limit_attempt' );
+	$attempt = wp_cache_get( 'attempt', CACHE_GROUP_LOGIN_ATTEMPT );
 	if ( is_array( $attempt ) && ! in_array( $user->user_login, $attempt['logins'], true ) ) {
 		$attempt['logins'][] = $user->user_login;
-		wp_cache_set( 'attempt', $attempt, 'vip_login_limit_attempt' );
+		wp_cache_set( 'attempt', $attempt, CACHE_GROUP_LOGIN_ATTEMPT );
 	}
 
 	if ( false === has_filter( 'authenticate', 'wpcom_vip_login_limiter_authenticate' ) ) {
