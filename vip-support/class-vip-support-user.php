@@ -223,9 +223,13 @@ class User {
 	public function action_load_user_edit() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) && isset( $_GET['user_id'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			check_admin_referer( self::GET_TRIGGER_RESEND_VERIFICATION );
+
+			// This runs before the screen checks that the current user can edit this user.
 			$user_id = absint( $_GET['user_id'] );
-			$this->send_verification_email( $user_id );
+			if ( current_user_can( 'edit_user', $user_id ) ) {
+				$this->send_verification_email( $user_id );
+			}
 		}
 	}
 
@@ -236,8 +240,8 @@ class User {
 	public function action_load_profile() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
-			$user_id = get_current_user_id();
-			$this->send_verification_email( $user_id );
+			check_admin_referer( self::GET_TRIGGER_RESEND_VERIFICATION );
+			$this->send_verification_email( get_current_user_id() );
 		}
 	}
 
@@ -747,7 +751,7 @@ class User {
 	 * @return string A URL with a parameter to trigger a verification email
 	 */
 	protected function get_trigger_resend_verification_url() {
-		return add_query_arg( array( self::GET_TRIGGER_RESEND_VERIFICATION => '1' ) );
+		return wp_nonce_url( add_query_arg( array( self::GET_TRIGGER_RESEND_VERIFICATION => '1' ) ), self::GET_TRIGGER_RESEND_VERIFICATION );
 	}
 
 	/**
