@@ -477,7 +477,9 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function data_is_available_for_user(): array {
 		return [
-			'verified number'                      => [ '1', [], true ],
+			'verified number'                      => [ '+1234567890', [], true ],
+			'number verified before it was stored' => [ '1', [], true ],
+			'another number verified'              => [ '+1234567899', [ 'Two_Factor_SMS' ], false ],
 			'number without flag, SMS enabled'     => [ '', [ 'Two_Factor_SMS' ], true ],
 			'number without flag, SMS not enabled' => [ '', [], false ],
 			'unverified number, SMS enabled'       => [ '0', [ 'Two_Factor_SMS' ], false ],
@@ -499,25 +501,60 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function data_user_options_update_phone(): array {
 		return [
-			'same number'      => [ '+1234567890', '' ],
-			'different number' => [ '+1234567899', '0' ],
+			'same number'                => [ '', '+1234567890', '+1234567890', '' ],
+			'different number'           => [ '', '+1234567899', '+1234567899', '0' ],
+			'different number, verified' => [ '+1234567890', '+1234567899', '+1234567890', '+1234567890' ],
 		];
 	}
 
 	/**
 	 * Saving a different number marks it unverified, so a number without the flag can't be swapped for an unverified one.
+	 * A verified number stays until it is deleted.
 	 *
 	 * @dataProvider data_user_options_update_phone
 	 */
-	public function test_user_options_update_marks_changed_number_unverified( string $phone, string $expected_configured ): void {
+	public function test_user_options_update_changed_number( string $configured, string $phone, string $expected_phone, string $expected_configured ): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
-		delete_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, $configured );
 		wp_set_current_user( $user->ID );
 
 		$this->submit_sms_options( $user, [ 'vip-two-factor-phone' => $phone ] );
 
-		$this->assertSame( $phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
+		$this->assertSame( $expected_phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
 		$this->assertSame( $expected_configured, get_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, true ) );
+	}
+
+	public function data_user_options_update_verify_code(): array {
+		return [
+			'number unchanged during the check' => [ false, true ],
+			'number changed during the check'   => [ true, false ],
+		];
+	}
+
+	/**
+	 * An approved check verifies the number it was sent to, not a number saved by another request while it ran.
+	 *
+	 * @dataProvider data_user_options_update_verify_code
+	 */
+	public function test_user_options_update_verifies_checked_number( bool $change_number, bool $expected_available ): void {
+		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '0' );
+		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
+		wp_set_current_user( $user->ID );
+		$this->add_http_response_mock( self::VERIFICATION_CHECK_URL, http_response( 200, wp_json_encode( [ 'status' => 'approved' ] ) ) );
+		if ( $change_number ) {
+			add_filter( 'pre_http_request', function ( $preempt ) use ( $user ) {
+				update_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, '+1234567899' );
+				return $preempt;
+			}, 9 );
+		}
+
+		$this->submit_sms_options( $user, [
+			'vip-two-factor-phone-verify-code' => 'Submit',
+			'two-factor-sms-code'              => '123456',
+		] );
+
+		$this->assertSame( $expected_available, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
 	}
 
 	public function data_user_options_update_number_removed(): array {
@@ -534,6 +571,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 	 */
 	public function test_user_options_update_clears_pending_code_for_old_number( array $fields ): void {
 		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '0' );
 		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
 		wp_set_current_user( $user->ID );
 

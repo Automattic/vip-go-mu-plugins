@@ -138,12 +138,14 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @return boolean
 	 */
 	public function is_available_for_user( $user ) {
-		if ( empty( get_user_meta( $user->ID, self::PHONE_META_KEY, true ) ) ) {
+		$phone = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
+		if ( empty( $phone ) ) {
 			return false;
 		}
 
+		// Verification stores the number it checked (earlier verifications stored 1), so a number changed during a check stays unverified.
 		$configured = get_user_meta( $user->ID, self::SMS_CONFIGURED_META_KEY, true );
-		if ( '1' === $configured ) {
+		if ( $phone === $configured || '1' === $configured ) {
 			return true;
 		}
 
@@ -158,13 +160,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	 * @param WP_User $user WP_User object of the logged-in user.
 	 */
 	public function user_options( $user ) {
-		$sms            = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
-		$is_pending     = $this->get_sms_strategy( $user->ID )->has_pending_metadata();
-		$sms_configured = get_user_meta( $user->ID, self::SMS_CONFIGURED_META_KEY, true );
+		$sms        = get_user_meta( $user->ID, self::PHONE_META_KEY, true );
+		$is_pending = $this->get_sms_strategy( $user->ID )->has_pending_metadata();
 		wp_nonce_field( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options', false );
 		?>
 		<div>
-			<?php if ( '1' === $sms_configured ) : ?>
+			<?php if ( $this->is_available_for_user( $user ) ) : ?>
 				Correctly configured for <?php echo esc_attr( $sms ); ?>.
 				<input type="submit" class="button" name="vip-two-factor-phone-delete"
 					value="<?php esc_attr_e( 'Delete', 'two-factor' ); ?>"/>
@@ -201,11 +202,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			return;
 		}
 		check_admin_referer( 'user_two_factor_sms_options', '_nonce_user_two_factor_sms_options' );
+		$user = get_userdata( $user_id );
 
 		if ( isset( $_POST['vip-two-factor-phone-verify-code'] ) ) {
-			$user = get_userdata( $user_id );
+			$phone = get_user_meta( $user_id, self::PHONE_META_KEY, true );
 			if ( $this->validate_authentication( $user ) ) {
-				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 1 );
+				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, $phone );
 			}
 		}
 
@@ -216,7 +218,8 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			delete_user_meta( $user_id, self::PHONE_META_KEY );
 		}
 
-		if ( isset( $_POST['vip-two-factor-phone'] ) ) {
+		// A number in use has to be deleted before it can be replaced, so changing it never turns SMS off unnoticed.
+		if ( isset( $_POST['vip-two-factor-phone'] ) && ! $this->is_available_for_user( $user ) ) {
 			// Remove all characters except digits and +-
 			$sms = filter_var( $_POST['vip-two-factor-phone'], FILTER_SANITIZE_NUMBER_FLOAT );
 			// Every profile save resubmits an unverified number, so only a changed number has to be verified again.
@@ -228,7 +231,6 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		}
 
 		if ( isset( $_POST['vip-two-factor-phone-send-code'] ) ) {
-			$user = get_userdata( $user_id );
 			$this->generate_and_send_token( $user );
 		}
 	}
