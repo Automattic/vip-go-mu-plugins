@@ -98,11 +98,6 @@ function wpcom_vip_get_term_link( $term, $taxonomy = null ) {
 	return get_term_link( $term_object );
 }
 
-// Titles match case-insensitively in MySQL, so the wpcom_vip_get_page_by_title() cache key does too
-function wpcom_vip_get_page_by_title_cache_key( $title, $post_type ) {
-	return $post_type . '_' . md5( strtolower( $title ) );
-}
-
 /**
  * Flush the cache for published pages so we don't end up with stale data
  *
@@ -112,8 +107,8 @@ function wpcom_vip_get_page_by_title_cache_key( $title, $post_type ) {
  * @link https://docs.wpvip.com/technical-references/caching/uncached-functions/ Uncached Functions
  */
 function wpcom_vip_flush_get_page_by_title_cache( $new_status, $old_status, $post ) {
-	if ( is_post_status_viewable( $new_status ) || is_post_status_viewable( $old_status ) ) {
-		wp_cache_delete( wpcom_vip_get_page_by_title_cache_key( $post->post_title, $post->post_type ), 'get_page_by_title' );
+	if ( 'publish' === $new_status || 'publish' === $old_status ) {
+		wp_cache_delete( $post->post_type . '_' . sanitize_key( $post->post_title ), 'get_page_by_title' );
 	}
 }
 add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_title_cache', 10, 3 );

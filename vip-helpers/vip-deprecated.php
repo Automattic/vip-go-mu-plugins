@@ -1360,20 +1360,15 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 			_deprecated_function( __FUNCTION__, '6.2', 'WP_Query' );
 		}
 
-		// Logged-in users can also find private and, in wp-admin, unpublished pages, so only share what logged-out visitors can see
-		$shared    = ! is_user_logged_in();
-		$cache_key = wpcom_vip_get_page_by_title_cache_key( $title, $post_type );
-		$page_id   = $shared ? wp_cache_get( $cache_key, 'get_page_by_title' ) : false;
-		$page      = $page_id ? get_post( $page_id ) : null;
+		$cache_key = $post_type . '_' . sanitize_key( $title );
+		$page_id   = wp_cache_get( $cache_key, 'get_page_by_title' );
 
-		// Look the title up again if the cached page was hidden, deleted or renamed since, which the flush can miss for other spellings of its title
-		if ( ! $page || ! is_post_status_viewable( get_post_status( $page ) ) || wpcom_vip_get_page_by_title_cache_key( $page->post_title, $post_type ) !== $cache_key ) {
+		if ( false === $page_id ) {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
 			$query   = new WP_Query(
 				array(
 					'title'          => $title,
 					'post_type'      => $post_type,
-					'post_status'    => $shared ? get_post_stati( [ 'public' => true ] ) : '', // Logged-out wp-admin AJAX would otherwise match drafts
 					'posts_per_page' => 1,
 					'orderby'        => 'ID',
 					'order'          => 'ASC',
@@ -1382,12 +1377,7 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 				),
 			);
 			$page_id = ! empty( $query->posts ) ? $query->posts[0] : 0;
-
-			// Only cache found pages: publishing a page can't clear a miss cached under another spelling of its title.
-			// WP_Query caches misses itself until posts change.
-			if ( $shared && $page_id ) {
-				wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
-			}
+			wp_cache_set( $cache_key, $page_id, 'get_page_by_title', 3 * HOUR_IN_SECONDS ); // We only store the ID to keep our footprint small
 		}
 
 		if ( $page_id ) {
