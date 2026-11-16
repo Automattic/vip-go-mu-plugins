@@ -316,6 +316,28 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * A locked account is refused before other wp_authenticate_user callbacks run, such as ones that check
+	 * its password, so they get the error instead of the account.
+	 */
+	public function test__locked_account_refused_before_other_callbacks() {
+		$this->factory()->user->create( [
+			'user_login' => $this->test_username,
+			'user_pass'  => 'correct-password',
+		] );
+		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $this->cache_keys()['username_cache_key'], true, CACHE_GROUP_LOGIN_LIMIT );
+		$received = null;
+		add_filter( 'wp_authenticate_user', function ( $user ) use ( &$received ) {
+			$received = $user;
+			return $user;
+		} );
+
+		$error = wp_authenticate( $this->test_username, 'correct-password' );
+
+		$this->assertWPError( $received );
+		$this->assertSame( ERROR_CODE_LOGIN_LIMIT_EXCEEDED, $error->get_error_code() );
+	}
+
+	/**
 	 * Sites that unhook the authenticate limiter, for example for API logins, keep the limit off.
 	 */
 	public function test__unhooked_login_limiter_allows_locked_account() {

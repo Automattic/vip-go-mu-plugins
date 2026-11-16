@@ -115,10 +115,10 @@ function _vip_login_limit_start_attempt( $user, $username ) {
 add_filter( 'authenticate', '_vip_login_limit_start_attempt', PHP_INT_MIN, 2 );
 
 /**
- * Apply the login limits to an account core found, before core checks its password.
+ * Apply the login limits to an account core found, before core or any other callback checks its password.
  *
- * Records the account for the current attempt and refuses it without a password check when it's locked.
- * Sites that unhook wpcom_vip_login_limiter_authenticate() keep the limit off here too.
+ * Records the account for the current attempt and refuses it when it's locked, so later callbacks get the error
+ * instead of the account. Sites that unhook wpcom_vip_login_limiter_authenticate() keep the limit off here too.
  *
  * @internal
  *
@@ -142,7 +142,7 @@ function _vip_login_limit_check_user( $user ) {
 
 	return wpcom_vip_login_limiter_authenticate( $user, $user->user_login, '' );
 }
-add_filter( 'wp_authenticate_user', '_vip_login_limit_check_user', PHP_INT_MAX );
+add_filter( 'wp_authenticate_user', '_vip_login_limit_check_user', PHP_INT_MIN );
 
 /**
  * When a login attempt succeeds, count it against any other account core checked first: its password check failed.
