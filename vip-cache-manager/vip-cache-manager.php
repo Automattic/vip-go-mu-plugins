@@ -809,14 +809,10 @@ class WPCOM_VIP_Cache_Manager {
 	}
 
 	private function queue_special_purge_url( string $path ): bool {
-		if ( empty( $path ) ) {
-			return false;
-		}
+		// The edge only matches these paths at the root of the host, so leave out any subdirectory in home_url().
+		$home = wp_parse_url( home_url() );
 
-		$base = trailingslashit( home_url() );
-		$url  = $base . ltrim( $path, '/' );
-
-		return $this->queue_purge_url( $url );
+		return $this->queue_purge_url( $home['scheme'] . '://' . $home['host'] . $path );
 	}
 
 	/**
