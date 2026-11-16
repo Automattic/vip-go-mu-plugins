@@ -118,11 +118,6 @@ function wpcom_vip_flush_get_page_by_title_cache( $new_status, $old_status, $pos
 }
 add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_title_cache', 10, 3 );
 
-// Also forget a page's old title when it's renamed
-add_action( 'post_updated', function ( $post_id, $post_after, $post_before ) {
-	wpcom_vip_flush_get_page_by_title_cache( $post_after->post_status, $post_before->post_status, $post_before );
-}, 10, 3 );
-
 /**
  * Flush the cache for published pages so we don't end up with stale data
  *

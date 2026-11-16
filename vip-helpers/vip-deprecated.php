@@ -1364,9 +1364,10 @@ if ( ! function_exists( 'wpcom_vip_get_page_by_title' ) ) {
 		$shared    = ! is_user_logged_in();
 		$cache_key = wpcom_vip_get_page_by_title_cache_key( $title, $post_type );
 		$page_id   = $shared ? wp_cache_get( $cache_key, 'get_page_by_title' ) : false;
+		$page      = $page_id ? get_post( $page_id ) : null;
 
-		// Look the title up again if the cached page was hidden or deleted since, which the flush can miss for other spellings of its title
-		if ( ! $page_id || ! is_post_status_viewable( get_post_status( $page_id ) ) ) {
+		// Look the title up again if the cached page was hidden, deleted or renamed since, which the flush can miss for other spellings of its title
+		if ( ! $page || ! is_post_status_viewable( get_post_status( $page ) ) || wpcom_vip_get_page_by_title_cache_key( $page->post_title, $post_type ) !== $cache_key ) {
 			// WP 6.2 deprecates `get_page_by_title` in favor of `WP_Query`
 			$query   = new WP_Query(
 				array(
