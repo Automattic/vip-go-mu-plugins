@@ -66,10 +66,8 @@ function wpcom_vip_merge_role_caps( $role, $caps ) {
 		return;
 	}
 
-	$current_caps = (array) wpcom_vip_get_role_caps( $role );
-	$new_caps     = array_merge( $current_caps, (array) $caps );
-
-	foreach ( $new_caps as $cap => $role_can ) {
+	// Only change the caps passed in, so the role's other caps (including explicit denies) stay as they are
+	foreach ( (array) $caps as $cap => $role_can ) {
 		if ( $role_can ) {
 			$role_obj->add_cap( $cap );
 		} else {
