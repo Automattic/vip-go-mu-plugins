@@ -655,18 +655,16 @@ class User {
 			revoke_super_admin( $user->ID );
 			return;
 		}
-		// The role is per site, so also go by the support user meta, which is network-wide:
-		// a support user may log in through a subsite where they do not have the role.
-		$has_support_role = self::user_has_vip_support_role( $user->ID );
-		$is_support_user  = $has_support_role || self::has_vip_support_meta( $user->ID );
-		if ( $is_support_user && ! $this->is_allowed_email( $user->user_email ) ) {
-			// This site limits which support users it allows, and this one is not listed
-			if ( is_super_admin( $user->ID ) ) {
+		if ( ! $this->is_allowed_email( $user->user_email ) ) {
+			// This site limits which support users it allows, and this one is not listed. Roles are
+			// per site, so look for support users across the network: they may log in through a
+			// subsite where they do not have the role.
+			if ( is_super_admin( $user->ID ) && ( self::has_vip_support_meta( $user->ID ) || self::has_vip_support_role_on_any_site( $user->ID ) ) ) {
 				revoke_super_admin( $user->ID );
 			}
 			return;
 		}
-		if ( $has_support_role && $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
+		if ( self::user_has_vip_support_role( $user->ID ) && $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
 			// This user is VIP Support, verified, let's give them
 			// great power and responsibility
 			grant_super_admin( $user->ID );
@@ -844,6 +842,26 @@ class User {
 		}
 
 		return in_array( Role::VIP_SUPPORT_ROLE, $user_roles, true );
+	}
+
+	/**
+	 * Does the user have the active or inactive VIP Support role on any site of the network?
+	 *
+	 * @param int $user_id The ID of the user to check
+	 *
+	 * @return bool
+	 */
+	protected static function has_vip_support_role_on_any_site( $user_id ) {
+		global $wpdb;
+
+		foreach ( array_keys( get_blogs_of_user( $user_id, true ) ) as $site_id ) {
+			$caps = get_user_meta( $user_id, $wpdb->get_blog_prefix( $site_id ) . 'capabilities', true );
+			if ( ! empty( $caps[ Role::VIP_SUPPORT_ROLE ] ) || ! empty( $caps[ Role::VIP_SUPPORT_INACTIVE_ROLE ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
