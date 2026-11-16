@@ -164,9 +164,11 @@ class Tracks_Event extends Telemetry_Event {
 			}
 		}
 
-		// Validate User ID (_ui) and User ID Type (_ut).
+		// Validate User ID (_ui) and User ID Type (_ut). Events without a logged-in
+		// user (cron, WP-CLI, background requests) are expected, so they are dropped
+		// without logging.
 		if ( ! isset( $event->_ui ) && ! isset( $event->_ut ) ) {
-			return static::log_validation_error( $event, 'empty_user_information', __( 'Could not determine user identity and type', 'vip-telemetry' ) );
+			return new WP_Error( 'empty_user_information', __( 'Could not determine user identity and type', 'vip-telemetry' ) );
 		}
 
 		return null;

@@ -136,18 +136,12 @@ class OpCache_Collector implements CollectorInterface {
 				return true;
 			}
 
+			// PHP checks the running script's path, which php-fpm takes from SCRIPT_FILENAME (the PATH_TRANSLATED variable is something else).
+			// See validate_api_restriction() in https://github.com/php/php-src/blob/PHP-8.4/ext/opcache/zend_accelerator_module.c
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- only used in comparison
-			$path_translated = $_SERVER['PATH_TRANSLATED'] ?? '';
+			$script_filename = $_SERVER['SCRIPT_FILENAME'] ?? '';
 
-			// See https://heap.space/xref/PHP-8.0/ext/opcache/zend_accelerator_module.c?r=0571f094#49
-			if ( ! isset( $path_translated )
-				|| strlen( $path_translated ) < strlen( $restricted_to_path )
-				|| strncmp( $path_translated, $restricted_to_path, strlen( $restricted_to_path ) ) !== 0
-			) {
-				return false;
-			}
-
-			return true;
+			return str_starts_with( $script_filename, $restricted_to_path );
 		}
 
 		return false;

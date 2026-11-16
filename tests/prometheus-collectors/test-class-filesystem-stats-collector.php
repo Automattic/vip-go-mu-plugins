@@ -77,11 +77,13 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		Filesystem_Stats_Collector::record_write( $size, $path );
 	}
 
-	public function test_record_write_without_initialize_is_noop(): void {
-		// No initialize() this test; tearDown nulled the static handle.
+	public function test_record_without_initialize_is_noop(): void {
+		// No initialize() this test; tearDown nulled the static handles.
 		$this->expectNotToPerformAssertions(); // Reaching the end means no error/exception.
 
 		Filesystem_Stats_Collector::record_write( 1024, 'wp-content/uploads/a.jpg' );
+		Filesystem_Stats_Collector::record_read( 1024 );
+		Filesystem_Stats_Collector::observe_request_reads();
 	}
 
 	public function test_record_write_swallows_observe_exception(): void {
@@ -131,37 +133,24 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		return [ $collector, $spies ];
 	}
 
-	public function test_reads_accumulate_and_drain_once(): void {
+	public function test_first_read_hooks_one_observation_at_shutdown(): void {
 		[ $collector, $spies ] = $this->init_with_named_spies();
+		$observe_reads         = [ Filesystem_Stats_Collector::class, 'observe_request_reads' ];
+
+		// Requests without reads hook nothing.
+		self::assertFalse( has_action( 'shutdown', $observe_reads ) );
 
 		Filesystem_Stats_Collector::record_read( 100 );
 		Filesystem_Stats_Collector::record_read( 50 );
 
+		self::assertSame( PHP_INT_MAX, has_action( 'shutdown', $observe_reads ) );
+
+		// Observed once, and not again by the shutdown collection that only one request per site runs.
 		$spies['read_bytes']->expects( $this->once() )->method( 'observe' )->with( 150, [] );
 		$spies['read_files']->expects( $this->once() )->method( 'observe' )->with( 2, [] );
 
-		$collector->collect_metrics();
-	}
-
-	public function test_collect_metrics_observes_nothing_without_reads(): void {
-		[ $collector, $spies ] = $this->init_with_named_spies();
-
-		$spies['read_bytes']->expects( $this->never() )->method( 'observe' );
-		$spies['read_files']->expects( $this->never() )->method( 'observe' );
-
-		$collector->collect_metrics();
-	}
-
-	public function test_collect_metrics_does_not_double_drain(): void {
-		[ $collector, $spies ] = $this->init_with_named_spies();
-
-		Filesystem_Stats_Collector::record_read( 100 );
-
-		// observe must fire exactly once across two collect_metrics() calls.
-		$spies['read_bytes']->expects( $this->once() )->method( 'observe' )->with( 100, [] );
-		$spies['read_files']->expects( $this->once() )->method( 'observe' )->with( 1, [] );
-
-		$collector->collect_metrics();
+		Filesystem_Stats_Collector::observe_request_reads();
+		Filesystem_Stats_Collector::observe_request_reads();
 		$collector->collect_metrics();
 	}
 
@@ -201,7 +190,7 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 	}
 
 	public function test_stream_open_read_accumulates_and_drains(): void {
-		[ $collector, $spies ] = $this->init_with_named_spies();
+		[ , $spies ] = $this->init_with_named_spies();
 
 		// A real temp file with 100 bytes to be "fetched" from the service.
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_tempnam
@@ -220,7 +209,7 @@ class Test_Filesystem_Stats_Collector extends WP_UnitTestCase {
 		$spies['read_bytes']->expects( $this->once() )->method( 'observe' )->with( 100, [] );
 		$spies['read_files']->expects( $this->once() )->method( 'observe' )->with( 1, [] );
 
-		$collector->collect_metrics();
+		Filesystem_Stats_Collector::observe_request_reads();
 
 		unlink( $tmp ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink
 	}

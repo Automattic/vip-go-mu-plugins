@@ -73,8 +73,6 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( function_exists( 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'Restrict_Unpublished_Files\check_file_visibility() is not defined; restrict-unpublished-files.php may not have been require-d correctly' );
 		$this->assertEquals( 10, has_filter( 'vip_files_acl_file_visibility', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\check_file_visibility' ), 'vip_files_acl_file_visibility filter does not have correct callback attached' );
-		$this->assertEquals( 10, has_filter( 'wpcom_vip_cache_purge_urls', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\purge_attachments_for_post' ), 'wpcom_vip_cache_purge_urls filter does not have correct callback attached' );
-		$this->assertEquals( 10, has_action( 'wpcom_vip_cache_pre_execute_purges', 'Automattic\VIP\Files\Acl\Restrict_Unpublished_Files\send_derived_file_purges' ), 'wpcom_vip_cache_pre_execute_purges action does not have correct callback attached' );
 	}
 
 	public function data_provider__maybe_load_restrictions__option_false() {
@@ -96,9 +94,51 @@ class VIP_Files_Acl_Test extends WP_UnitTestCase {
 		$this->assertEquals( false, has_filter( 'vip_files_acl_file_visibility' ) );
 
 		// A request on this site can still switch to a site that restricts unpublished files.
+		$callbacks = [
+			[ 'wpcom_vip_cache_purge_urls', 'purge_attachments_for_post' ],
+			[ 'clean_post_cache', 'purge_restricted_attachment_files' ],
+			[ 'clean_attachment_cache', 'purge_restricted_attachment_files' ],
+		];
 		foreach ( PATH_CACHE_HOOKS as $hook ) {
-			$this->assertEquals( 10, has_action( $hook, 'Automattic\VIP\Files\Acl\clear_path_cache' ), "$hook action does not have correct callback attached" );
+			$callbacks[] = [ $hook, 'clear_path_cache' ];
 		}
+		foreach ( $callbacks as [ $hook, $callback ] ) {
+			$this->assertEquals( 10, has_action( $hook, __NAMESPACE__ . '\\' . $callback ), "$hook action does not have $callback attached" );
+		}
+	}
+
+	/**
+	 * Files are purged as they become restricted on a site that restricts unpublished files, even when the request
+	 * switched to it from a site that doesn't.
+	 */
+	public function test__maybe_load_restrictions__purges_on_switched_site() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped();
+		}
+
+		Constant_Mocker::define( 'VIP_FILES_ACL_ENABLED', true );
+		maybe_load_restrictions();
+		$cache_manager = \WPCOM_VIP_Cache_Manager::instance();
+		$cache_manager->clear_queued_purge_urls();
+
+		switch_to_blog( self::$subsite_ids[0] );
+		update_option( 'vip_files_acl_restrict_unpublished_enabled', 1 );
+		$attachment_id = self::factory()->attachment->create_object( '2021/01/switched-rotated.jpg', 0, [ 'post_mime_type' => 'image/jpeg' ] );
+		wp_update_attachment_metadata( $attachment_id, [ 'original_image' => 'switched.jpg' ] );
+		wp_update_post( [
+			'ID'          => $attachment_id,
+			'post_parent' => self::factory()->post->create( [ 'post_status' => 'draft' ] ),
+		] );
+		$main_url = wp_get_attachment_url( $attachment_id );
+		restore_current_blog();
+
+		// The cache manager fires this as it's about to send its purges.
+		do_action( 'wpcom_vip_cache_pre_execute_purges', $cache_manager->get_queued_purge_urls() );
+		$queued_urls = $cache_manager->get_queued_purge_urls();
+		$cache_manager->clear_queued_purge_urls();
+
+		$this->assertContains( $main_url, $queued_urls );
+		$this->assertContains( trailingslashit( dirname( $main_url ) ) . 'switched.jpg', $queued_urls );
 	}
 
 	public function test__get_option_as_bool__option_not_exists() {
