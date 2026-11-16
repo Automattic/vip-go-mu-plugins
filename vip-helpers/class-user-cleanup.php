@@ -45,38 +45,20 @@ class User_Cleanup {
 	public static function fetch_user_ids_for_emails( $emails ) {
 		global $wpdb;
 
-		$email_sql_where_array = [];
+		$email_conditions = [];
 		foreach ( $emails as $email ) {
-			$email_username_hostname_split = self::split_email( $email );
+			list( $email_username, $email_hostname ) = self::split_email( $email );
 
-			list( $email_username, $email_hostname ) = $email_username_hostname_split;
-
-			$username_wildcard = $wpdb->esc_like( $email_username . '+' ) . '%';
-			$hostname_wildcard = '%' . $wpdb->esc_like( '@' . $email_hostname );
-
-			// phpcs:disable Squiz.PHP.CommentedOutCode.Found
-			$email_sql_where_array[] = $wpdb->prepare(
-				'( user_email = %s OR ( user_email LIKE %s AND user_email LIKE %s ) )',
-				$email, // search for exact match
-				$username_wildcard, // search for `username+*`
-				$hostname_wildcard  // search for `*@example.com`
+			// Exact match, or `username+*@hostname`
+			$email_conditions[] = $wpdb->prepare(
+				'( user_email = %s OR user_email LIKE %s )',
+				$email,
+				$wpdb->esc_like( $email_username . '+' ) . '%' . $wpdb->esc_like( '@' . $email_hostname )
 			);
-			// phpcs:enable
 		}
 
-		$email_sql_where = implode( ' OR ', $email_sql_where_array );
-
-		//phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users -- gotta do the direct query for this :)
-		//phpcs:disable WordPress.DB.PreparedSQL.NotPrepared -- already escaped earlier
-		$sql = "SELECT ID FROM {$wpdb->users}
-			LEFT JOIN {$wpdb->usermeta} ON {$wpdb->users}.ID = {$wpdb->usermeta}.user_id
-			WHERE meta_key LIKE 'wp_%%capabilities'
-			AND ( {$email_sql_where} )";
-		//phpcs:enable WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		return $wpdb->get_col( $sql );
-		//phpcs:enable
+		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.user_meta__wpdb__users, WordPress.DB.PreparedSQL.NotPrepared, WordPress.DB.DirectDatabaseQuery -- conditions are prepared above
+		return $wpdb->get_col( "SELECT ID FROM {$wpdb->users} WHERE " . implode( ' OR ', $email_conditions ) );
 	}
 
 	public static function revoke_super_admin_for_users( $user_ids ) {
