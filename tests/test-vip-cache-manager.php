@@ -269,6 +269,54 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
 	}
 
+	public function get_urls_outside_the_site(): array {
+		return [
+			'other host'            => [ 'https://example.net/page/' ],
+			'reserved path'         => [ 'http://example.org/.vip/purge-all-origin' ],
+			'encoded reserved path' => [ 'http://example.org/%2Evip/purge-all-static-assets' ],
+		];
+	}
+
+	/**
+	 * Users can purge this site's pages only, not other hosts or the reserved purge-all paths.
+	 *
+	 * @dataProvider get_urls_outside_the_site
+	 */
+	public function test_ajax_url_purges_reject_urls_outside_the_site( string $url ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$dashboard = $this->dispatch_purge_ajax( 'wp_ajax_vip_cache_manager_dashboard_purge', [
+			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
+			'purge_action' => 'url',
+			'url'          => $url,
+		] );
+		$page      = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+
+		$this->assertSame( [ 'message' => 'Enter a valid URL on this site to purge.' ], $dashboard['data'] );
+		$this->assertSame( [ 'error' => 'No URLs' ], $page['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Sites served from more than one domain can purge pages on the domain the request came in on,
+	 * and on the domains they allow redirects to.
+	 */
+	public function test_user_url_purges_allow_the_site_domains(): void {
+		$is_user_purgeable_url = get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'is_user_purgeable_url' );
+		$_SERVER['HTTP_HOST']  = 'fr.example.org';
+		add_filter( 'allowed_redirect_hosts', fn( $hosts ) => array_merge( $hosts, [ 'DE.example.org' ] ) );
+		try {
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://fr.example.org/page/' ) );
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://de.example.org/page/' ) );
+			$this->assertFalse( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://es.example.org/page/' ) );
+		} finally {
+			$_SERVER['HTTP_HOST'] = WP_TESTS_DOMAIN;
+		}
+	}
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -305,10 +353,10 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
 			'nonce' => wp_create_nonce( 'purge-page' ),
-			'urls'  => [ $url ],
+			'urls'  => [ $url, 'https://example.net/page/' ],
 		] );
 		$this->assertSame( true, $decoded['success'] );
-		$this->assertContains( $url, $this->cache_manager->get_queued_purge_urls() );
+		$this->assertSame( [ $url ], $this->cache_manager->get_queued_purge_urls() );
 	}
 
 	/**
