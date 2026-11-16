@@ -112,7 +112,7 @@ runs:
     - name: Set up WordPress and WordPress Test Library
       id: wptl
       if: inputs.wordpress != 'nightly' && inputs.wordpress != 'trunk'
-      uses: sjinks/setup-wordpress-test-library@f16013cfa7cf0d83edd84b989a6401f7733db204 # v3.1.0
+      uses: sjinks/setup-wordpress-test-library@bb68ff8d3009843095ecaef40398b9ee5c36923c # v3.1.1
       continue-on-error: true
       with:
         version: ${{ inputs.wordpress }}
@@ -150,7 +150,7 @@ runs:
 
     - name: Set up WordPress and WordPress Test Library (with svn)
       if: steps.wptl.outcome != 'success'
-      uses: sjinks/setup-wordpress-test-library@f16013cfa7cf0d83edd84b989a6401f7733db204 # v3.1.0
+      uses: sjinks/setup-wordpress-test-library@bb68ff8d3009843095ecaef40398b9ee5c36923c # v3.1.1
       with:
         version: ${{ inputs.wordpress }}
 
