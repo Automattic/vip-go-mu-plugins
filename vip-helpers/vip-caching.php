@@ -151,21 +151,14 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
-add_action( 'transition_post_status', function ( $new_status, $old_status, $post ) {
-	if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
-		return;
+// Forget the lookups for a published post's old and new URLs when it's saved
+add_action( 'wp_after_insert_post', function ( $post_id, $post, $update, $post_before ) {
+	foreach ( array_filter( [ $post_before, $post ] ) as $version ) {
+		if ( 'publish' === $version->post_status ) {
+			wp_cache_delete( md5( get_permalink( $version ) ), 'url_to_postid' );
+		}
 	}
-
-	$url = get_permalink( $post->ID );
-	wp_cache_delete( md5( $url ), 'url_to_postid' );
-}, 10, 3 );
-
-add_action( 'post_updated', function ( $post_id, $post_after, $post_before ) {
-	// A published post's old URL stops mapping to it when its slug changes
-	if ( 'publish' === $post_before->post_status ) {
-		wp_cache_delete( md5( get_permalink( $post_before ) ), 'url_to_postid' );
-	}
-}, 10, 3 );
+}, 10, 4 );
 
 /**
  * Cached version of wp_old_slug_redirect.
@@ -537,7 +530,7 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
  */
 function wpcom_vip_flush_attachment_url_cache( $post_id ) {
 	// The original image URL differs from the attachment URL when a big image was scaled down
-	foreach ( array_unique( array_filter( [ wp_get_attachment_url( $post_id ), wp_get_original_image_url( $post_id ) ] ) ) as $url ) {
+	foreach ( [ wp_get_attachment_url( $post_id ), wp_get_original_image_url( $post_id ) ] as $url ) {
 		wp_cache_delete( wpcom_vip_attachment_cache_key( $url ), 'default' );
 	}
 }
