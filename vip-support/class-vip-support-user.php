@@ -1110,7 +1110,9 @@ class User {
 		$threshold = strtotime( '-8 hours' );
 
 		foreach ( $support_users as $user ) {
-			if ( in_array( $user->ID, $processed_ids, true ) ) {
+			// Skip users already seen, and users whose meta value is empty (the query matches
+			// those too, but they aren't support users).
+			if ( in_array( $user->ID, $processed_ids, true ) || ! self::has_vip_support_meta( $user->ID ) ) {
 				continue;
 			}
 
