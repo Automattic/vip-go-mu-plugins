@@ -172,9 +172,47 @@ class Test_Prometheus extends WP_UnitTestCase {
 		}
 
 		// JIT is disabled because enabling OPcache warns at startup when JIT is on and a coverage extension is loaded.
+		[ $output, $errors ] = self::run_endpoint( 'opcache.enable=1', 'opcache.enable_cli=1', 'opcache.jit=disable', 'opcache.restrict_api=' . $restrict_api );
+
+		self::assertSame( '', $errors );
+		self::assertStringContainsString( 'apcu_num_slots ', $output );
+		if ( $expect_opcache ) {
+			self::assertStringContainsString( 'opcache_hits ', $output );
+		} else {
+			self::assertStringNotContainsString( 'opcache_', $output );
+		}
+	}
+
+	/**
+	 * Mu-plugins deploys keep APCu, so metrics stored by an older release must not be exported once retired.
+	 */
+	public function test_endpoint_leaves_out_retired_metrics(): void {
+		if ( ! extension_loaded( 'apcu' ) ) {
+			self::markTestSkipped( 'Requires APCu.' );
+		}
+
+		[ $output, $errors ] = self::run_endpoint( 'auto_prepend_file=' . __DIR__ . '/fixtures/seed-retired-metrics.php' );
+
+		self::assertSame( '', $errors );
+		self::assertStringContainsString( 'object_cache_oprations_total{site_id="1",operation="get"} 1', $output );
+		self::assertStringNotContainsString( 'object_cache_cache_hits_total', $output );
+	}
+
+	/**
+	 * Run the standalone endpoint in its own PHP process, with APCu enabled and the given extra ini settings.
+	 *
+	 * @return string[] The endpoint's output and its errors.
+	 */
+	private static function run_endpoint( string ...$ini_settings ): array {
+		$command = [ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'display_errors=stderr' ];
+		foreach ( $ini_settings as $setting ) {
+			array_push( $command, '-d', $setting );
+		}
+		$command[] = dirname( __DIR__, 2 ) . '/prometheus/endpoint.php';
+
 		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- runs the standalone endpoint script
 		$process = proc_open(
-			[ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'opcache.enable=1', '-d', 'opcache.enable_cli=1', '-d', 'opcache.jit=disable', '-d', 'opcache.restrict_api=' . $restrict_api, '-d', 'display_errors=stderr', dirname( __DIR__, 2 ) . '/prometheus/endpoint.php' ],
+			$command,
 			[
 				1 => [ 'pipe', 'w' ],
 				2 => [ 'pipe', 'w' ],
@@ -187,13 +225,7 @@ class Test_Prometheus extends WP_UnitTestCase {
 		$errors  = stream_get_contents( $pipes[2] );
 		proc_close( $process );
 
-		self::assertSame( '', $errors );
-		self::assertStringContainsString( 'apcu_num_slots ', $output );
-		if ( $expect_opcache ) {
-			self::assertStringContainsString( 'opcache_hits ', $output );
-		} else {
-			self::assertStringNotContainsString( 'opcache_', $output );
-		}
+		return [ $output, $errors ];
 	}
 
 	public function test_safe_adapter(): void {
