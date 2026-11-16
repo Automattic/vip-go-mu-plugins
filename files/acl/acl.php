@@ -39,10 +39,16 @@ function maybe_load_restrictions() {
 		return;
 	}
 
-	// Keep cached path lookups current on every site, since a request can switch to a site that restricts unpublished files.
+	// Keep cached path lookups current and purge files as they become restricted on every site, since a request
+	// can switch to a site that restricts unpublished files. The purges check the current site's settings.
 	foreach ( PATH_CACHE_HOOKS as $hook ) {
 		add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 3 );
 	}
+	// Purge attachments for posts for better cacheability
+	add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\purge_attachments_for_post', 10, 2 );
+	// Purge an attachment's files when it's saved or attached while they're restricted (clear_path_cache() does when they change)
+	add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
 
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
@@ -52,14 +58,54 @@ function maybe_load_restrictions() {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
-		// Purge attachments for posts for better cacheability
-		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
-		add_action( 'wpcom_vip_cache_pre_execute_purges', __NAMESPACE__ . '\Restrict_Unpublished_Files\send_derived_file_purges' );
 	}
 }
 
 /**
- * Clear the cached attachment lookups for the files an attachment starts or stops using.
+ * Load restrict-unpublished-files.php if the current site restricts access to unpublished files, as decided
+ * in maybe_load_restrictions() for the site a request starts on.
+ *
+ * @return bool Whether the current site restricts access to unpublished files.
+ */
+function load_unpublished_restrictions() {
+	if ( true !== get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' ) || true === get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' ) ) {
+		return false;
+	}
+
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	return true;
+}
+
+/**
+ * Add the URLs of a post's attachments to purge, if the current site restricts unpublished files.
+ *
+ * @see Restrict_Unpublished_Files\purge_attachments_for_post()
+ *
+ * @param array $urls    URLs to purge.
+ * @param int   $post_id Post ID.
+ * @return array
+ */
+function purge_attachments_for_post( $urls, $post_id ) {
+	return load_unpublished_restrictions() ? Restrict_Unpublished_Files\purge_attachments_for_post( $urls, $post_id ) : $urls;
+}
+
+/**
+ * PURGE an attachment's files if they're restricted on the current site.
+ *
+ * @see Restrict_Unpublished_Files\purge_restricted_attachment_files()
+ *
+ * @param int $post_id Post ID. Posts that aren't attachments are skipped.
+ */
+function purge_restricted_attachment_files( $post_id ) {
+	if ( load_unpublished_restrictions() ) {
+		Restrict_Unpublished_Files\purge_restricted_attachment_files( $post_id );
+	}
+}
+
+/**
+ * Clear the cached attachment lookups for the files an attachment starts or stops using, and purge those files
+ * if they're restricted.
  *
  * Otherwise a lookup cached before the change (as not found, or as an attachment that has since
  * moved or been deleted while another one still uses the path) would return an outdated result until it expires.
@@ -90,6 +136,8 @@ function clear_path_cache( $meta_id, $post_id, $meta_key ) {
 			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path, 'image' ), Restrict_Unpublished_Files\CACHE_GROUP );
 		}
 	}
+
+	purge_restricted_attachment_files( $post_id );
 }
 
 /**
