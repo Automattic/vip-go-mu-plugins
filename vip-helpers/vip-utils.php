@@ -606,25 +606,19 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		_doing_it_wrong( __FUNCTION__, 'Using a timeout value of over 3 seconds is strongly discouraged because users have to wait for the remote request to finish before the rest of their page loads.', null );
 	}
 
-	$server_up = true;
-	$response  = false;
-	$content   = false;
+	// Stays false when we skip the request
+	$response = false;
+	$content  = false;
 
-	// Check to see if previous attempts have failed
-	if ( false !== wp_cache_get( $disable_get_key, $cache_group ) ) {
-		$server_up = false;
-	} elseif ( false !== wp_cache_get( $old_disable_get_key, $cache_group ) ) {
-		// Legacy
-		$server_up = false;
-	} else {
-		// Otherwise make the remote request
+	// Only make the remote request if no attempt failed in the last 5 minutes
+	if ( false === wp_cache_get( $disable_get_key, $cache_group ) && false === wp_cache_get( $old_disable_get_key, $cache_group ) ) {
 		$http_api_args            = (array) $extra_args['http_api_args'];
 		$http_api_args['timeout'] = $timeout;
 		$response                 = wp_remote_get( $url, $http_api_args );  // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
 	}
 
 	// Was the request successful?
-	if ( $server_up && ! is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
+	if ( $response && ! is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
 		$content = wp_remote_retrieve_body( $response );
 
 		$cache_header = wp_remote_retrieve_header( $response, 'cache-control' );
@@ -667,24 +661,23 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		do_action( 'wpcom_vip_remote_request_success', $url, $response );
 	} else {
 		// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
-		// If a remote request failed, log why it did
 		$content = wp_cache_get( $backup_key, $cache_group );
 		if ( ! $content ) {
 			// Legacy
 			$content = wp_cache_get( $old_backup_key, $cache_group );
 		}
 
-		if ( $content ) {
-			_wpcom_log_failed_request( $url, $response );
-		} elseif ( $response ) {
-			// We were unable to fetch any content, so don't try again for another 60 seconds
-			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+		if ( $response ) {
+			// The request failed, so don't try again for another 5 minutes, even when serving the backup
+			wp_cache_set( $disable_get_key, 1, $cache_group, 5 * MINUTE_IN_SECONDS );
 
 			// If a remote request failed, log why it did
 			_wpcom_log_failed_request( $url, $response );
 
-			// So we can hook in other places and do stuff
-			do_action( 'wpcom_vip_remote_request_error', $url, $response );
+			if ( ! $content ) {
+				// So we can hook in other places and do stuff
+				do_action( 'wpcom_vip_remote_request_error', $url, $response );
+			}
 		}
 	}
 
