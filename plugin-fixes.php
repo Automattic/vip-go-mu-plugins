@@ -148,13 +148,9 @@ function vip_divi_setup() {
 	if ( ! defined( 'ET_CORE_CACHE_DIR_URL' ) ) {
 			define( 'ET_CORE_CACHE_DIR_URL', $get_wp_vip_upload_dir['baseurl'] . '/et-cache' );
 	}
-
-	// Add filter to apply WP_Filesystem credentials
-	add_filter( 'et_cache_wpfs_credentials', function () {
-			return request_filesystem_credentials( site_url() );
-	});
 }
-add_action( 'after_setup_theme', 'vip_divi_setup' );
+// The Divi theme defines ET_CORE_VERSION in its own after_setup_theme callback at priority 10, so run after it.
+add_action( 'after_setup_theme', 'vip_divi_setup', 11 );
 
 // Disable WooCommerce background image regeneration - this is redundant
 add_filter( 'woocommerce_background_image_regeneration', '__return_false' );
