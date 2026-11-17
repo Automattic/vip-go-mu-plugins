@@ -40,6 +40,28 @@ function use_ambiguous_login_error( $error ): string {
 }
 add_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error', 99, 1 );
 
+/**
+ * Use the wrong-password error for every failed application password login that names an account, so API
+ * responses don't reveal whether the account exists.
+ *
+ * Runs last so other listeners still get the original error; the REST API reads this same error object later.
+ *
+ * @param WP_Error $error Authentication error.
+ */
+function use_ambiguous_application_password_error( $error ): void {
+	$account_codes = [ 'invalid_username', 'invalid_email', 'application_passwords_disabled_for_user' ];
+	if ( ! is_wp_error( $error ) || ! array_intersect( $error->get_error_codes(), $account_codes ) ) {
+		return;
+	}
+
+	foreach ( $error->get_error_codes() as $code ) {
+		$error->remove( $code );
+	}
+	// phpcs:ignore WordPress.WP.I18n.MissingArgDomain -- Core's message for a wrong application password.
+	$error->add( 'incorrect_password', __( 'The provided password is an invalid application password.' ) );
+}
+add_action( 'application_password_failed_authentication', __NAMESPACE__ . '\use_ambiguous_application_password_error', PHP_INT_MAX );
+
 function use_ambiguous_password_reset_confirmation( $errors ) {
 	if ( isset( $_SERVER['REQUEST_METHOD'] ) && 'POST' === $_SERVER['REQUEST_METHOD'] && is_wp_error( $errors ) && $errors->has_errors() && ! headers_sent() ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
