@@ -38,7 +38,7 @@ class Curl_Streamer {
 	public function handle_upload( $curl_handle, $file_stream, $length ) {
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
 		$data = fread( $file_stream, $length );
-		if ( ! $data ) {
+		if ( false === $data ) {
 			return '';
 		}
 
