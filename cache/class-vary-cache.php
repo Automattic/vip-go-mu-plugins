@@ -9,6 +9,7 @@ class Vary_Cache {
 	const COOKIE_SEGMENT = 'vip-go-seg';
 	const COOKIE_AUTH    = 'vip-go-auth';
 	const HEADER_AUTH    = 'HTTP_X_VIP_GO_AUTH';
+	const HEADER_SEGMENT = 'HTTP_X_VIP_GO_SEGMENTATION';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
 	const GROUP_SEPARATOR = '---__';
@@ -467,16 +468,20 @@ class Vary_Cache {
 		self::$request_group_cookie = [];
 		$cookie_name                = null;
 
+		// On VIP, the cache layer picks the cached variant from the group cookie as it reads it, and passes on what it
+		// read in a header. Use only that header there: PHP's cookie parsing can find a cookie the cache layer didn't,
+		// and content rendered for it would be cached as the variant for visitors without groups.
+		$is_behind_cache_layer = defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' );
+
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
 			$cookie_name = self::COOKIE_AUTH;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
-		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the cache layer didn't supply the header, decrypt the cookie here, applying the same checks.
-			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
-			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
-			// didn't vouch for must not stop a fresh one from being sent.
+		} elseif ( self::is_encryption_enabled() && ! $is_behind_cache_layer && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
+			// Without a cache layer (local development), decrypt the cookie here, applying the same checks as the cache
+			// layer: it only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed.
+			// Leave $cookie_name unset: a cookie the cache layer didn't vouch for must not stop a fresh one from being sent.
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			$auth_cookie = (string) self::get_raw_cookie( self::COOKIE_AUTH );
 
@@ -485,7 +490,11 @@ class Vary_Cache {
 			if ( 0 === strpos( $auth_cookie, $prefix ) ) {
 				$cookie_value = self::decrypt_cookie_value( substr( $auth_cookie, strlen( $prefix ) ) );
 			}
-		} elseif ( ! static::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
+		} elseif ( ! static::is_encryption_enabled() && $is_behind_cache_layer && ! empty( $_SERVER[ self::HEADER_SEGMENT ] ) ) {
+			$cookie_name = self::COOKIE_SEGMENT;
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			$cookie_value = $_SERVER[ self::HEADER_SEGMENT ];
+		} elseif ( ! static::is_encryption_enabled() && ! $is_behind_cache_layer && ! empty( $_COOKIE[ self::COOKIE_SEGMENT ] ) ) {
 			// The plaintext cookie is only read when encryption is off; encrypted requests ignore it.
 			$cookie_name = self::COOKIE_SEGMENT;
 			// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized

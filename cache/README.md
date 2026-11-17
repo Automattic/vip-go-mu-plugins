@@ -213,18 +213,17 @@ Because we have a few conditions to check, we'll need a logic block to verify in
 $enable_maintenance_mode = true;
 ```
 
-Now, if the cookie is set and includes the correct secret, we can skip enabling Maintenance Mode:
+Now, if the cookie is set and includes the correct secret, we can skip enabling Maintenance Mode. Read the cookie's value from the `X-VIP-Go-Segmentation` header, which the VIP CDN sets from the cookie: the CDN caches a page for each value of that header, and PHP can parse cookies the CDN doesn't, which would cache the bypassed page for everyone.
 
 ```
-if ( isset( $_COOKIE['vip-go-seg'] )
-	&& is_string( $_COOKIE['vip-go-seg'] )
-	&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
+if ( isset( $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] )
+	&& hash_equals( $maintenance_bypass_secret, $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] ) ) {
 	// Don't enable if the request has our secret key.
 	$enable_maintenance_mode = false;
 }
 ```
 
-Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack). The `is_string` check matters too: PHP parses a cookie sent as `vip-go-seg[]=…` into an array, and `hash_equals` throws a fatal error when it gets an array.
+Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack).
 
 Now, we can set our constant based on the outcome of the tests:
 
