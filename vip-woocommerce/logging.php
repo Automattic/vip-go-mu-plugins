@@ -24,23 +24,7 @@ add_action( 'plugins_loaded', function () {
 	}
 
 	add_filter( 'woocommerce_logger_log_message', __NAMESPACE__ . '\restrict_woocommerce_logging', 30, 4 );
-	add_filter( 'pre_option_woocommerce_logs_logging_enabled', __NAMESPACE__ . '\maybe_disable_woocommerce_logging' );
 } );
-
-/**
- * Killswitch to quickly intervene if problems occur: setting the `vip_woocommerce_prevent_debug_logging` option
- * forces WooCommerce's own "Enable logging" setting (WooCommerce 8.6+) off, so it can't be turned back on in wp-admin.
- * Options come back from the database as strings ('1', 'yes', 'no', ...), so parse them as booleans.
- *
- * @param mixed $pre_option The value to return instead of the option value. False lets WordPress read the option.
- */
-function maybe_disable_woocommerce_logging( $pre_option ) {
-	if ( filter_var( get_option( 'vip_woocommerce_prevent_debug_logging', false ), FILTER_VALIDATE_BOOLEAN ) ) {
-		return 'no';
-	}
-
-	return $pre_option;
-}
 
 /**
  * Add safety measures / restrictions for WooCommerce logging.
