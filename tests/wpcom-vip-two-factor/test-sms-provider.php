@@ -521,18 +521,29 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertSame( $expected, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
 	}
 
+	public function data_enable_provider_for_user(): array {
+		return [
+			'SMS enabled'                      => [ [], 'Two_Factor_SMS', false ],
+			'another enabled, SMS was enabled' => [ [ 'Two_Factor_SMS' ], 'Two_Factor_Email', true ],
+		];
+	}
+
 	/**
 	 * Enabling SMS outside the profile form, as `wp two-factor enable` does, doesn't make a number without the flag usable.
+	 * One that already had SMS enabled keeps working when the enabled providers are saved again.
+	 *
+	 * @dataProvider data_enable_provider_for_user
 	 */
-	public function test_enable_provider_for_user_does_not_make_unflagged_number_available(): void {
+	public function test_enable_provider_for_user_with_unflagged_number( array $enabled_providers, string $provider, bool $expected ): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, $enabled_providers );
 		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '' );
 		// The provider is a singleton, so an earlier test's hook reset may have removed the hooks its constructor added.
-		add_filter( 'update_user_metadata', [ Two_Factor_SMS::get_instance(), 'mark_unflagged_number_unverified_on_enable' ], 10, 4 );
+		add_filter( 'update_user_metadata', [ Two_Factor_SMS::get_instance(), 'mark_unavailable_number_unverified_on_enable' ], 10, 4 );
 
-		$this->assertTrue( Two_Factor_Core::enable_provider_for_user( $user->ID, 'Two_Factor_SMS' ) );
+		$this->assertTrue( Two_Factor_Core::enable_provider_for_user( $user->ID, $provider ) );
 
-		$this->assertFalse( Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
+		$this->assertSame( $expected, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
 	}
 
 	public function data_user_options_update_phone(): array {
@@ -561,32 +572,43 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 	}
 
 	public function data_user_options_update_verify_code(): array {
+		// Number saved when the check starts (the one the check approves), number saved when it ends.
 		return [
-			'number unchanged during the check' => [ false, true ],
-			'number changed during the check'   => [ true, false ],
+			'number unchanged'                => [ self::QATAR_PHONE, self::QATAR_PHONE, true ],
+			'number changed during the check' => [ self::QATAR_PHONE, '+1234567899', false ],
+			'number changed then restored'    => [ '+97476543211', self::QATAR_PHONE, false ],
 		];
 	}
 
 	/**
-	 * An approved check verifies the number it was sent to, not a number saved by another request while it ran.
+	 * An approved check verifies only the number the submitted code was for, not a number saved by another request
+	 * before or during the check.
 	 *
 	 * @dataProvider data_user_options_update_verify_code
 	 */
-	public function test_user_options_update_verifies_checked_number( bool $change_number, bool $expected_available ): void {
+	public function test_user_options_update_verifies_checked_number( string $phone_at_check, string $phone_after_check, bool $expected_available ): void {
 		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
 		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '0' );
 		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
 		wp_set_current_user( $user->ID );
 		$this->add_http_response_mock( self::VERIFICATION_CHECK_URL, http_response( 200, wp_json_encode( [
 			'status' => 'approved',
-			'to'     => self::QATAR_PHONE,
+			'to'     => $phone_at_check,
 		] ) ) );
-		if ( $change_number ) {
-			add_filter( 'pre_http_request', function ( $preempt ) use ( $user ) {
-				update_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, '+1234567899' );
-				return $preempt;
-			}, 9 );
-		}
+		// Other requests save $phone_at_check right after this request reads the number, and $phone_after_check during the check.
+		$save_number = function ( $value, $user_id, $meta_key ) use ( &$save_number, $phone_at_check ) {
+			if ( Two_Factor_SMS::PHONE_META_KEY === $meta_key ) {
+				remove_filter( 'get_user_metadata', $save_number );
+				$value = [ get_user_meta( $user_id, $meta_key, true ) ];
+				update_user_meta( $user_id, $meta_key, $phone_at_check );
+			}
+			return $value;
+		};
+		add_filter( 'get_user_metadata', $save_number, 10, 3 );
+		add_filter( 'pre_http_request', function ( $preempt ) use ( $user, $phone_after_check ) {
+			update_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, $phone_after_check );
+			return $preempt;
+		}, 9 );
 
 		$this->submit_sms_options( $user, [
 			'vip-two-factor-phone-verify-code' => 'Submit',

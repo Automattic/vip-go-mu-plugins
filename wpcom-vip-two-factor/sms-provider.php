@@ -37,16 +37,17 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		// Before the Two Factor plugin saves enabled providers, so a number verified in the same request can be enabled.
 		add_action( 'personal_options_update', array( $this, 'user_options_update' ), 9 );
 		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ), 9 );
-		add_filter( 'update_user_metadata', array( $this, 'mark_unflagged_number_unverified_on_enable' ), 10, 4 );
+		add_filter( 'update_user_metadata', array( $this, 'mark_unavailable_number_unverified_on_enable' ), 10, 4 );
 		parent::__construct();
 	}
 
 	/**
-	 * @param int $user_id
+	 * @param int         $user_id
+	 * @param string|null $phone Number to use instead of the stored one.
 	 * @return Two_Factor_Twilio_SMS
 	 */
-	public function get_sms_strategy( int $user_id ): Two_Factor_Twilio_SMS {
-		$phone = get_user_meta( $user_id, self::PHONE_META_KEY, true );
+	public function get_sms_strategy( int $user_id, ?string $phone = null ): Two_Factor_Twilio_SMS {
+		$phone ??= get_user_meta( $user_id, self::PHONE_META_KEY, true );
 
 		if ( Two_Factor_Twilio_Verify_API::is_available() ) {
 			if ( preg_match( self::QATAR_PHONE_REGEX, $phone ) ) {
@@ -119,17 +120,18 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 	/**
 	 * Validates the users input token.
 	 *
-	 * @param WP_User $user WP_User object of the logged-in user.
+	 * @param WP_User     $user  WP_User object of the logged-in user.
+	 * @param string|null $phone Number the code has to be for, instead of the stored one.
 	 * @return boolean
 	 */
-	public function validate_authentication( $user ) {
+	public function validate_authentication( $user, ?string $phone = null ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce is not available
 		if ( ! isset( $user->ID ) || ! is_string( $_REQUEST['two-factor-sms-code'] ?? null ) ) {
 			return false;
 		}
 
 		$code = self::sanitize_code_from_request( 'two-factor-sms-code' );
-		return $code && $this->get_sms_strategy( $user->ID )->verify_code( $code );
+		return $code && $this->get_sms_strategy( $user->ID, $phone )->verify_code( $code );
 	}
 
 	/**
@@ -199,13 +201,12 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 	/**
 	 * Enabling SMS outside the profile form (for example `wp two-factor enable`) skips the availability check, so a
-	 * number without the flag is marked unverified then. Only numbers that already had SMS enabled keep working unverified.
+	 * number that isn't available then is marked unverified, and can't count as one that already had SMS enabled.
 	 */
-	public function mark_unflagged_number_unverified_on_enable( $check, $user_id, $meta_key, $meta_value ) {
+	public function mark_unavailable_number_unverified_on_enable( $check, $user_id, $meta_key, $meta_value ) {
 		if ( Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY === $meta_key
 			&& in_array( __CLASS__, (array) $meta_value, true )
-			&& ! in_array( __CLASS__, (array) get_user_meta( $user_id, $meta_key, true ), true )
-			&& '' === get_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, true )
+			&& ! $this->is_available_for_user( new WP_User( $user_id ) )
 		) {
 			update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 0 );
 		}
@@ -222,8 +223,9 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		$user = get_userdata( $user_id );
 
 		if ( isset( $_POST['vip-two-factor-phone-verify-code'] ) ) {
+			// The code is checked for the number that is flagged, even if another request changes the stored number meanwhile.
 			$phone = get_user_meta( $user_id, self::PHONE_META_KEY, true );
-			if ( $this->validate_authentication( $user ) ) {
+			if ( $this->validate_authentication( $user, $phone ) ) {
 				update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, $phone );
 			}
 		}
