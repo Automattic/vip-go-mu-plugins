@@ -79,7 +79,7 @@ final class VIP_SMTP {
 			return $short_circuit;
 		}
 
-		$this->log_blocked_mail( $atts['subject'], implode( ', ', (array) $atts['to'] ) );
+		$this->log_blocked_mail( $atts['subject'], (array) $atts['to'] );
 		return false;
 	}
 
@@ -89,7 +89,7 @@ final class VIP_SMTP {
 	public function phpmailer_init( $phpmailer ): void {
 		if ( $this->is_mail_blocked() ) {
 			// Only mailers that skip pre_wp_mail get here, e.g. BuddyPress. PHPMailer won't send without recipients.
-			$this->log_blocked_mail( $phpmailer->Subject, implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) ) );
+			$this->log_blocked_mail( $phpmailer->Subject, array_keys( $phpmailer->getAllRecipientAddresses() ) );
 			$phpmailer->clearAllRecipients();
 			return;
 		}
@@ -111,8 +111,6 @@ final class VIP_SMTP {
 		if ( count( $all_smtp_servers ) > 1 ) {
 			shuffle( $all_smtp_servers );
 		}
-
-		/** @var PHPMailer $phpmailer */
 
 		$phpmailer->isSMTP();
 		$phpmailer->Host = current( $all_smtp_servers );
@@ -141,9 +139,9 @@ final class VIP_SMTP {
 			|| true === apply_filters( 'vip_block_wp_mail', false );
 	}
 
-	private function log_blocked_mail( $subject, string $recipients ): void {
+	private function log_blocked_mail( $subject, array $recipients ): void {
 		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, esc_html( $subject ), esc_html( $recipients ) ), E_USER_NOTICE );
+		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, esc_html( $subject ), esc_html( implode( ', ', $recipients ) ) ), E_USER_NOTICE );
 	}
 
 	protected function get_tracking_header( $key ) {

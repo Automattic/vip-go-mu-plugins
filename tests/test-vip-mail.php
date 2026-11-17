@@ -3,6 +3,7 @@ namespace Automattic\VIP\Mail;
 
 use PHPMailer\PHPMailer\PHPMailer;
 use Automattic\Test\Constant_Mocker;
+use Automattic\Test\Utils\Captures_Errors;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
 
@@ -10,6 +11,8 @@ use function Automattic\Test\Utils\get_class_method_as_public;
 // phpcs:disable WordPressVIPMinimum.Functions.RestrictedFunctions.wp_mail_wp_mail -- we are testing it
 
 class VIP_Mail_Test extends \WP_UnitTestCase {
+	use Captures_Errors;
+
 	public function setUp(): void {
 		parent::setUp();
 		reset_phpmailer_instance();
@@ -170,7 +173,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		}
 
 		$phpmailer_inits    = did_action( 'phpmailer_init' );
-		[ $sent, $notices ] = $this->capture_notices( fn() => wp_mail( 'test@example.com', 'Test', 'Body' ) );
+		[ $sent, $notices ] = $this->capture_errors( fn() => wp_mail( 'test@example.com', 'Test', 'Body' ), E_USER_NOTICE );
 
 		if ( $blocked ) {
 			$this->assertFalse( $sent );
@@ -192,31 +195,9 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$mailer->Subject = 'Test';
 		$mailer->addAddress( 'test@example.com' );
 
-		[ , $notices ] = $this->capture_notices( fn() => do_action( 'phpmailer_init', $mailer ) );
+		[ , $notices ] = $this->capture_errors( fn() => do_action( 'phpmailer_init', $mailer ), E_USER_NOTICE );
 
 		$this->assertSame( [], $mailer->getAllRecipientAddresses() );
 		$this->assertSame( [ 'Automattic\VIP\Mail\VIP_SMTP::log_blocked_mail: skipped sending email with subject `Test` to test@example.com' ], $notices );
-	}
-
-	/**
-	 * Run a callback and return its result and the E_USER_NOTICE messages it triggered.
-	 */
-	private function capture_notices( callable $callback ): array {
-		$notices = [];
-		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-			static function ( $errno, $errstr ) use ( &$notices ) {
-				$notices[] = $errstr;
-				return true;
-			},
-			E_USER_NOTICE
-		);
-
-		try {
-			$result = $callback();
-		} finally {
-			restore_error_handler();
-		}
-
-		return [ $result, $notices ];
 	}
 }
