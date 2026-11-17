@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Security;
 
+use WC_REST_Customers_V1_Controller;
 use WP_Error;
 use WP_REST_Request;
 use WP_REST_Users_Controller;
@@ -59,20 +60,34 @@ add_filter( 'rest_request_before_callbacks', __NAMESPACE__ . '\block_app_passwor
 function block_app_password_credential_changes( $response, $handler, $request ) {
 	// Not rest_get_authenticated_app_password(): core clears it on any failed authentication later in the request.
 	$callback = $handler['callback'] ?? null;
-	if ( ! did_action( 'application_password_did_authenticate' ) || ! is_array( $callback ) || ! $callback[0] instanceof WP_REST_Users_Controller ) {
+	if ( ! did_action( 'application_password_did_authenticate' ) || ! is_array( $callback ) ) {
 		return $response;
 	}
 
-	$user                = wp_get_current_user();
-	$is_own_account      = 'update_current_item' === $callback[1] || ( 'update_item' === $callback[1] && (int) $request['id'] === $user->ID );
-	$changes_credentials = isset( $request['password'] ) || ( isset( $request['email'] ) && $request['email'] !== $user->user_email );
+	$user                       = wp_get_current_user();
+	$is_users_controller        = $callback[0] instanceof WP_REST_Users_Controller;
+	$is_wc_customers_controller = $callback[0] instanceof WC_REST_Customers_V1_Controller; // Also the v2 and v3 controllers.
 
-	if ( $is_own_account && $changes_credentials ) {
-		return new WP_Error(
-			'rest_cannot_edit_credentials',
-			'Your password and email address cannot be changed with an application password. Sign in to WordPress to change them.',
-			array( 'status' => 403 )
-		);
+	if ( ( $is_users_controller || $is_wc_customers_controller ) && in_array( $callback[1], array( 'update_item', 'update_current_item' ), true ) ) {
+		$updates = array( $request );
+	} elseif ( $is_wc_customers_controller && 'batch_items' === $callback[1] ) {
+		// WooCommerce passes each batch update straight to update_item(), so this filter only sees the batch request.
+		$updates = array_filter( (array) $request['update'], 'is_array' );
+	} else {
+		return $response;
+	}
+
+	foreach ( $updates as $update ) {
+		$is_own_account      = 'update_current_item' === $callback[1] || (int) ( $update['id'] ?? 0 ) === $user->ID;
+		$changes_credentials = isset( $update['password'] ) || ( isset( $update['email'] ) && $update['email'] !== $user->user_email );
+
+		if ( $is_own_account && $changes_credentials ) {
+			return new WP_Error(
+				'rest_cannot_edit_credentials',
+				'Your password and email address cannot be changed with an application password. Sign in to WordPress to change them.',
+				array( 'status' => 403 )
+			);
+		}
 	}
 
 	return $response;
