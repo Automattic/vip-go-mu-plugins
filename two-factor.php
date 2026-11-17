@@ -149,6 +149,11 @@ function wpcom_vip_is_two_factor_forced() {
 function wpcom_vip_two_factor_user_state( $calculate = false ) {
 	static $state = [];
 
+	// Nothing to read before the first `set_current_user`, which may be before pluggable.php loads.
+	if ( ! $calculate && ! $state ) {
+		return [];
+	}
+
 	$user = wp_get_current_user();
 	if ( 'user' === $calculate ) {
 		// Start over even for a user seen earlier in the request, as their roles may have changed since.
@@ -156,7 +161,7 @@ function wpcom_vip_two_factor_user_state( $calculate = false ) {
 		if ( $user->exists() ) {
 			$state = [
 				'user_id'              => $user->ID,
-				'using_two_factor'     => Two_Factor_Core::is_user_using_two_factor( $user->ID ),
+				'using_two_factor'     => Two_Factor_Core::is_user_using_two_factor( $user ),
 				'jetpack_sso_two_step' => (bool) \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step(),
 				'limited'              => [],
 			];
