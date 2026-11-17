@@ -24,6 +24,11 @@ class HealthJob {
 	 */
 	const AUTOHEALED_ALERT_THRESHOLD = 0.1;
 
+	/**
+	 * @var int seconds a validate content run may take, under the cron request timeout; the next run resumes where it stopped.
+	 */
+	const VALIDATE_CONTENT_TIME_LIMIT = 105 * MINUTE_IN_SECONDS;
+
 	public $health_check_disabled_sites = array();
 
 	/**
@@ -130,7 +135,10 @@ class HealthJob {
 			)
 		);
 
-		$results = $this->health->validate_index_posts_content( [ 'silent' => true ] );
+		$results = $this->health->validate_index_posts_content( [
+			'silent'     => true,
+			'time_limit' => self::VALIDATE_CONTENT_TIME_LIMIT,
+		] );
 
 		\Automattic\VIP\Logstash\log2logstash(
 			array(
