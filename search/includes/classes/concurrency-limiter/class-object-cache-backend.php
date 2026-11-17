@@ -80,11 +80,9 @@ class Object_Cache_Backend implements BackendInterface {
 
 	public function dec_value(): void {
 		if ( $this->increments > 0 ) {
+			// false means the counter expired since this request incremented it, which is expected: its TTL is only set when it's created
 			$result = wp_cache_decr( self::KEY_NAME, 1, self::GROUP_NAME );
-			if ( false === $result ) {
-				// The counter expired since this request incremented it, taking this request's increments with it
-				$this->increments = 0;
-			} else {
+			if ( false !== $result ) {
 				--$this->increments;
 				if ( $result < 0 ) {
 					$this->reset();
