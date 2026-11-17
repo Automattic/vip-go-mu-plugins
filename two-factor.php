@@ -41,8 +41,9 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	// Don't force 2FA for Jetpack SSO users that have Two-step enabled
-	if ( wpcom_vip_two_factor_user_state()['jetpack_sso_two_step'] ?? \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
+	// Don't force 2FA for Jetpack SSO users that have Two-step enabled. Only a negative result is reused: the exemption
+	// is checked against the current session every time, so it ends if the session is revoked during the request.
+	if ( ( wpcom_vip_two_factor_user_state()['jetpack_sso_two_step'] ?? true ) && \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
 		return false;
 	}
 
