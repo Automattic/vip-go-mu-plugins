@@ -770,119 +770,61 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		// Check if destination is a local file
 		$to_is_local = static::is_local_file( $path_to );
 
-		// Both source and destination are local files
-		if ( $from_is_local && $to_is_local ) {
-			$local_from = static::get_local_tmp_path( $path_from );
-			$local_to   = static::get_local_tmp_path( $path_to );
-
-			if ( ! file_exists( $local_from ) ) {
-				return false;
-			}
-
-			// Create directory for destination if it doesn't exist
-			$dir = dirname( $local_to );
-			if ( ! file_exists( $dir ) ) {
-				\wp_mkdir_p( $dir );
-			}
-
-			return rename( $local_from, $local_to );
-		} elseif ( $from_is_local && ! $to_is_local ) { // // Source is local but destination is not
-			$local_from = static::get_local_tmp_path( $path_from );
-
-			if ( ! file_exists( $local_from ) ) {
-				return false;
-			}
-
-			// Read content from local file
-			$content = file_get_contents( $local_from );
-			if ( false === $content ) {
-				return false;
-			}
-
-			// Trim the destination path
-			$path_to = $this->trim_path( $path_to );
-
-			// Create a temporary file with the content
-			$tmp_file = tmpfile();
-			fwrite( $tmp_file, $content );
-			rewind( $tmp_file );
-
-			// Write content to remote file
-			$result = $this->client->upload_file( $tmp_file, $path_to );
-
-			// Close the temporary file
-			fclose( $tmp_file );
-
-			// If successful, delete the local file
-			if ( $result ) {
-				unlink( $local_from );
-			}
-
-			return $result;
-		} elseif ( ! $from_is_local && $to_is_local ) { // Source is not local but destination.
-			// Trim the source path
-			$path_from = $this->trim_path( $path_from );
-
-			// Get content from remote file
-			$content = $this->client->get_file( $path_from );
-			if ( false === $content ) {
-				return false;
-			}
-
-			// Write content to local file
-			$local_to = static::get_local_tmp_path( $path_to );
-
-			// Create directory for destination if it doesn't exist
-			$dir = dirname( $local_to );
-			if ( ! file_exists( $dir ) ) {
-				\wp_mkdir_p( $dir );
-			}
-
-			$result = file_put_contents( $local_to, $content ) !== false;
-
-			// If successful, delete the remote file
-			if ( $result ) {
-				$this->client->delete_file( $path_from );
-			}
-
-			return $result;
-		}
-
-		// Original implementation for non-local files
-		$path_from = $this->trim_path( $path_from );
-		$path_to   = $this->trim_path( $path_to );
-
 		try {
-			// Get original file first
-			// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
-			//       get really inefficient with large files
-			$result = $this->client->get_file( $path_from );
-			if ( is_wp_error( $result ) ) {
-				trigger_error(
-					sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', esc_html( $path_from ), esc_html( $result->get_error_message() ) ),
-					E_USER_WARNING
-				);
+			// Get the source as a file on local disk
+			if ( $from_is_local ) {
+				$file_path = static::get_local_tmp_path( $path_from );
+				if ( ! file_exists( $file_path ) ) {
+					return false;
+				}
 
-				return false;
+				if ( $to_is_local ) {
+					return rename( $file_path, static::get_local_tmp_path( $path_to ) );
+				}
+
+				// The File Service only stores files, not directories
+				if ( is_dir( $file_path ) ) {
+					return false;
+				}
+			} else {
+				$path_from = $this->trim_path( $path_from );
+
+				// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
+				//       get really inefficient with large files
+				$file_path = $this->client->get_file( $path_from );
+				if ( is_wp_error( $file_path ) ) {
+					trigger_error(
+						sprintf( 'rename/get_file/from failed for %s with error: %s #vip-go-streams', esc_html( $path_from ), esc_html( $file_path->get_error_message() ) ),
+						E_USER_WARNING
+					);
+
+					return false;
+				}
 			}
 
-			// Convert to actual file to upload to new path
-			$file      = fopen( $result, 'r' );          // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-			$meta      = stream_get_meta_data( $file );
-			$file_path = $meta['uri'];
+			// Write the destination
+			if ( $to_is_local ) {
+				// Copy, not move: a downloaded file belongs to the API cache
+				if ( ! copy( $file_path, static::get_local_tmp_path( $path_to ) ) ) {
+					return false;
+				}
+			} else {
+				$result = $this->client->upload_file( $file_path, $this->trim_path( $path_to ) );
+				if ( is_wp_error( $result ) ) {
+					trigger_error(
+						sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', esc_html( $file_path ), esc_html( $result->get_error_message() ) ),
+						E_USER_WARNING
+					);
 
-			// Upload to file service
-			$result = $this->client->upload_file( $file_path, $path_to );
-			if ( is_wp_error( $result ) ) {
-				trigger_error(
-					sprintf( 'rename/upload_file/to failed for %s with error: %s #vip-go-streams', esc_html( $file_path ), esc_html( $result->get_error_message() ) ),
-					E_USER_WARNING
-				);
-
-				return false;
+					return false;
+				}
 			}
 
-			// Delete old file
+			// Delete the source only once the destination is written
+			if ( $from_is_local ) {
+				return unlink( $file_path );
+			}
+
 			$result = $this->client->delete_file( $path_from );
 			if ( is_wp_error( $result ) ) {
 				trigger_error(
