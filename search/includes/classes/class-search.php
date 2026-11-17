@@ -1299,6 +1299,13 @@ class Search {
 			return;
 		}
 
+		// A broken query fails on every request that runs it, so log each error once per query family and window.
+		// The failed query counter above still counts every failure.
+		$family = wp_json_encode( [ $error_type, $error_message, ( new Query_Classifier() )->classify( $query['args']['body'] ?? null )['structure'] ] );
+		if ( ! wp_cache_add( 'search_error_logged:' . md5( $family ), 1, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS ) ) {
+			return;
+		}
+
 		global $wp;
 		if ( ! $is_cli && isset( $wp->query_vars ) && isset( $_SERVER['REQUEST_URI'] ) ) {
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized,WordPress.Security.ValidatedSanitizedInput.InputNotValidated
