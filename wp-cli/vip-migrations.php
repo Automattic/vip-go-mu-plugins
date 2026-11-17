@@ -270,7 +270,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		do {
 			$extra_count    = 0;
 			$attachments    = [];
-			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
+			$sql            = "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' " . $date_query . $wpdb->prepare( 'LIMIT %d,%d', $offset, $limit );
 			$attachment_ids = array_map(
 				function ( $attachment_ids ) {
 					return (int) $attachment_ids[0];
