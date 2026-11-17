@@ -217,13 +217,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$offset  = 0;
 		$limit   = 500;
 		$threads = 10;
-		$output  = array( array( 'url', 'status' ) );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- should be safe here
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
 			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $output_file ) );
 		}
+		WP_CLI\Utils\write_csv( $file_descriptor, [], [ 'url', 'status' ] );
 
 		global $wpdb;
 
@@ -363,10 +363,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					}
 
 					if ( $log_request ) {
-						$output[] = array(
-							$url,
-							$response_code,
-						);
+						WP_CLI\Utils\write_csv( $file_descriptor, [ [ $url, $response_code ] ] );
 					}
 				}
 
@@ -374,9 +371,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 
 			}
 
-			// Write this batch's rows now, so a run that dies later still leaves results, and free its cached posts.
-			WP_CLI\Utils\write_csv( $file_descriptor, $output );
-			$output = [];
+			// Free this batch's posts from the local object cache.
 			$this->vip_inmemory_cleanup();
 
 			// Pause.
