@@ -852,6 +852,11 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		$path_from = $this->trim_path( $path_from );
 		$path_to   = $this->trim_path( $path_to );
 
+		// The same file spelled differently (e.g. `vip:///wp-content/...`); uploading it onto itself and then deleting it would lose it.
+		if ( $path_from === $path_to ) {
+			return true;
+		}
+
 		try {
 			// Get original file first
 			// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
