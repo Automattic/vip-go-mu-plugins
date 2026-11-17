@@ -64,19 +64,21 @@ function block_app_password_credential_changes( $response, $handler, $request ) 
 		return $response;
 	}
 
-	$user                       = wp_get_current_user();
-	$is_users_controller        = $callback[0] instanceof WP_REST_Users_Controller;
-	$is_wc_customers_controller = $callback[0] instanceof WC_REST_Customers_V1_Controller; // Also the v2 and v3 controllers.
+	// WooCommerce's v2 and v3 customers controllers extend the v1 one.
+	if ( ! $callback[0] instanceof WP_REST_Users_Controller && ! $callback[0] instanceof WC_REST_Customers_V1_Controller ) {
+		return $response;
+	}
 
-	if ( ( $is_users_controller || $is_wc_customers_controller ) && in_array( $callback[1], array( 'update_item', 'update_current_item' ), true ) ) {
-		$updates = array( $request );
-	} elseif ( $is_wc_customers_controller && 'batch_items' === $callback[1] ) {
+	if ( 'batch_items' === $callback[1] ) {
 		// WooCommerce passes each batch update straight to update_item(), so this filter only sees the batch request.
 		$updates = array_filter( (array) $request['update'], 'is_array' );
+	} elseif ( in_array( $callback[1], array( 'update_item', 'update_current_item' ), true ) ) {
+		$updates = array( $request );
 	} else {
 		return $response;
 	}
 
+	$user = wp_get_current_user();
 	foreach ( $updates as $update ) {
 		$is_own_account      = 'update_current_item' === $callback[1] || (int) ( $update['id'] ?? 0 ) === $user->ID;
 		$changes_credentials = isset( $update['password'] ) || ( isset( $update['email'] ) && $update['email'] !== $user->user_email );
