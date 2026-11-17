@@ -9,7 +9,7 @@
  *
  *  - If logged-in user has the `view_query_monitor`
  *    capability, Query Monitor is enabled.
- *  - If a QM_COOKIE is detected, Query Monitor is enabled.
+ *  - If a QM_COOKIE holding a valid login is detected, Query Monitor is enabled.
  *
  * Note that we have to set the value for QM_COOKIE here,
  * in order to detect it.
@@ -35,8 +35,9 @@ function wpcom_vip_qm_enable( $enable ) {
 		return true;
 	}
 
-	// We're not validating the cookie here as QM will do that later
-	if ( isset( $_COOKIE[ QM_COOKIE ] ) ) {
+	// QM checks the user's capability later. Check the login here so a made-up cookie doesn't load QM.
+	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- validated as an auth cookie
+	if ( isset( $_COOKIE[ QM_COOKIE ] ) && wp_validate_auth_cookie( wp_unslash( $_COOKIE[ QM_COOKIE ] ), 'logged_in' ) ) {
 		return true;
 	}
 
@@ -86,6 +87,8 @@ function wpcom_vip_qm_require() {
 	// We know we haven't got the QM DB drop-in in place, so don't show the message
 	add_filter( 'qm/show_extended_query_prompt', '__return_false' );
 
+	add_filter( 'rest_send_nocache_headers', 'wpcom_vip_qm_rest_nocache' );
+
 	/**
 	 * Load QM plugins
 	 */
@@ -126,6 +129,18 @@ function wpcom_vip_qm_disable_on_404() {
 	}
 }
 add_action( 'wp', 'wpcom_vip_qm_disable_on_404' );
+
+/**
+ * QM sends its no-cache headers on send_headers, which REST requests never reach,
+ * and REST sends them only to logged-in users. Send them whenever QM can add its
+ * output to a REST response, so the response isn't cached.
+ *
+ * @param bool $send_nocache Whether to send no-cache headers.
+ * @return bool
+ */
+function wpcom_vip_qm_rest_nocache( $send_nocache ) {
+	return $send_nocache || QM_Dispatcher::user_can_view();
+}
 
 // We are putting dispatchers as last so that QM still can catch other operations in shutdown action
 // See https://github.com/johnbillion/query-monitor/pull/549
