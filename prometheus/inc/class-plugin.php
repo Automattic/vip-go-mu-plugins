@@ -170,8 +170,12 @@ class Plugin {
 			return $this->site_label;
 		}
 
-		$sites_count = wp_count_sites();
-		if ( $sites_count['all'] > self::MAX_NETWORK_SITES ) {
+		// wp_count_sites() would run six site queries per request for the one count needed here
+		$sites_count = get_sites( [
+			'network_id' => get_current_network_id(),
+			'count'      => true,
+		] );
+		if ( $sites_count > self::MAX_NETWORK_SITES ) {
 			$this->site_label = 'network';
 		}
 
