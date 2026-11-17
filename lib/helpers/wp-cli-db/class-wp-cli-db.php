@@ -28,12 +28,8 @@ class Wp_Cli_Db {
 
 		WP_CLI::add_hook( 'before_run_command', [ $this, 'before_run_command' ] );
 
-		$db_command_file = __DIR__ . '/class-vip-db-command.php';
-		if ( file_exists( $db_command_file ) ) {
-			require_once $db_command_file;
-		}
-
-		WP_CLI::add_command( 'db', __NAMESPACE__ . '\VIP_DB_Command' );
+		require_once __DIR__ . '/class-vip-db-command.php';
+		WP_CLI::add_command( 'db', new VIP_DB_Command( $this->config ) );
 	}
 
 	/**
@@ -79,16 +75,12 @@ class Wp_Cli_Db {
 	 * @return bool Whether query is allowed or not.
 	 */
 	public function validate_query( string $query ) {
-		$query = strtolower( $query );
+		// Leave out backslash sequences, which the mysql client handles before sending the SQL.
+		$query = preg_replace( '/\\\\./s', '', $query );
 
-		$disallowed_syntax = [ 'drop', 'create', 'truncate' ];
-
-		foreach ( $disallowed_syntax as $syntax ) {
-			if ( false !== strpos( $query, $syntax ) ) {
-				return false;
-			}
-		}
-		return true;
+		// Skip keywords that are part of identifiers, like `date_created_gmt` or `dropdown`.
+		// Only letters and `_` before a keyword are treated as part of an identifier.
+		return ! preg_match( '/(?<![a-z_])(?:drop|create|truncate|prepare|execute)\b/i', $query );
 	}
 
 	/**
