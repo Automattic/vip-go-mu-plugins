@@ -519,8 +519,10 @@ class Health {
 		}
 
 		$should_stop = false;
+		$out_of_time = false;
 		$deadline    = $time_limit > 0 ? time() + $time_limit : PHP_INT_MAX;
-		do {
+		// A checkpoint past the last post ID (e.g. the newest posts were deleted) leaves nothing to validate
+		while ( $start_post_id <= $last_post_id && ! $should_stop && ! $out_of_time ) {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
 			}
@@ -597,8 +599,8 @@ class Health {
 			}
 
 			$should_stop = wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true );
-			$out_of_time = time() >= $deadline && $start_post_id <= $last_post_id;
-		} while ( $start_post_id <= $last_post_id && ! $should_stop && ! $out_of_time );
+			$out_of_time = ! $should_stop && time() >= $deadline && $start_post_id <= $last_post_id;
+		}
 
 		if ( $process_parallel_execution_lock || $should_stop ) {
 			$this->remove_validate_content_lock();
