@@ -52,14 +52,23 @@ function check_file_visibility( $file_visibility, $file_path ) {
  * or that was deleted.
  *
  * @param WP_Post $attachment Attachment.
+ * @param int[]   $crop_ids   IDs of the cropped images already checked on the way to this attachment.
  * @return bool
  */
-function is_attachment_restricted( $attachment ) {
+function is_attachment_restricted( $attachment, $crop_ids = [] ) {
 	if ( 'inherit' !== $attachment->post_status || ! $attachment->post_parent ) {
 		return false;
 	}
 
 	$parent_post = get_post( $attachment->post_parent );
+
+	// A cropped image (custom logo, site icon) has the attachment it was cropped from as its parent, and follows it.
+	// A loop of attachments stays restricted.
+	if ( $parent_post && 'attachment' === $parent_post->post_type ) {
+		$crop_ids[] = $attachment->ID;
+
+		return in_array( $parent_post->ID, $crop_ids, true ) || is_attachment_restricted( $parent_post, $crop_ids );
+	}
 
 	return ! $parent_post || 'publish' !== $parent_post->post_status;
 }
