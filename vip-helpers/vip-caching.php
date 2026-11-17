@@ -545,21 +545,22 @@ function wpcom_vip_enable_old_slug_redirect_caching() {
 }
 
 /**
- * This works by first looking in the cache to see if there is a value saved based on the name query var.
+ * This works by first looking in the cache to see if there is a value saved for the request's query vars.
  * If one is found, redirect immediately. If nothing is found, including that there is no already cache "not_found" value we then add a hook to old_slug_redirect_url so that when the 'rea' wp_old_slug_redirect is run it will store the value in the cache @see wpcom_vip_set_old_slug_redirect_cache(). If we found a not_found we remove the template_redirect so the slow query is not run.
  */
 function wpcom_vip_wp_old_slug_redirect() {
 	global $wp_query;
 	if ( is_404() && '' !== ( $wp_query->query_vars['name'] ?? '' ) ) {
 
-		$redirect = wp_cache_get( 'old_slug' . $wp_query->query_vars['name'] );
+		$cache_key = wpcom_vip_old_slug_redirect_cache_key();
+		$redirect  = wp_cache_get( $cache_key );
 
 		if ( false === $redirect ) {
 			// Run the caching callback as the very first one in order to capture the value returned by WordPress from database. This allows devs from using `old_slug_redirect_url` filter w/o polluting the cache
 			add_filter( 'old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache', -9999, 1 );
 			// If an old slug is not found the function returns early and does not apply the old_slug_redirect_url filter. so we will set the cache for not found and if it is found it will be overwritten later in wpcom_vip_set_old_slug_redirect_cache()
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		} elseif ( 'not_found' === $redirect ) {
 			// wpcom_vip_set_old_slug_redirect_cache() will cache 'not_found' when a url is not found so we don't keep hammering the database
 			remove_action( 'template_redirect', 'wp_old_slug_redirect' );
@@ -572,12 +573,19 @@ function wpcom_vip_wp_old_slug_redirect() {
 	}
 }
 function wpcom_vip_set_old_slug_redirect_cache( $link ) {
-	global $wp_query;
 	if ( ! empty( $link ) ) {
-		wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], $link, 'default', 7 * DAY_IN_SECONDS );
+		wp_cache_set( wpcom_vip_old_slug_redirect_cache_key(), $link, 'default', 7 * DAY_IN_SECONDS );
 	}
 	return $link;
 }
+
+// Core's lookup depends on the request's effective query vars (post type, date, page, embed), not just the slug.
+// Hash query_vars rather than query, since hooks like pre_get_posts can change them after the request is parsed.
+function wpcom_vip_old_slug_redirect_cache_key() {
+	global $wp_query;
+	return 'old_slug:' . md5( wp_json_encode( $wp_query->query_vars ) ) . ':' . wp_cache_get_last_changed( 'old_slug_redirect' );
+}
+
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
 	// Don't bother if the slug or date hasn't changed.
 	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
@@ -589,15 +597,8 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 		return;
 	}
 
-	// Flush cache for all old slugs.
-	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug', false );
-
-	foreach ( $old_slugs as $old_slug ) {
-		wp_cache_delete( 'old_slug' . $old_slug, 'default' );
-	}
-
-	// FLush cache for new post_name since it could had been among old slugs before this update.
-	wp_cache_delete( 'old_slug' . $post->post_name, 'default' );
+	// Expire every cached lookup, since any of them may now resolve differently.
+	wp_cache_set_last_changed( 'old_slug_redirect' );
 }
 
 /**
