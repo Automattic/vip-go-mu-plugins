@@ -370,9 +370,14 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					}
 				}
 
-				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
+				$progress->tick( count( $attachments_array ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
 
 			}
+
+			// Write this batch's rows now, so a run that dies later still leaves results, and free its cached posts.
+			WP_CLI\Utils\write_csv( $file_descriptor, $output );
+			$output = [];
+			$this->vip_inmemory_cleanup();
 
 			// Pause.
 			sleep( 1 );
@@ -382,7 +387,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		} while ( $attachment_ids_count );
 
 		$progress->finish();
-		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
 
 		foreach ( $cache as $response_code => $url_array ) {
