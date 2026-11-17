@@ -132,6 +132,25 @@ class Query_Warning {
 		}
 	}
 
+	/**
+	 * Whether a failed query is the first with this error in its query family (as the warnings group queries) in
+	 * the default dedupe window, so that a query failing on every request is logged once per window. It doesn't use
+	 * the warning budget.
+	 *
+	 * @param array|string|null $request_body Elasticsearch request body.
+	 */
+	public function is_new_failure( $request_body, string $error ): bool {
+		try {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Arguments are excluded and only customer-relative paths are retained.
+			$origin = $this->origin( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
+			$family = $this->family_hash( $this->classifier->classify( $request_body ), $origin['key'] );
+
+			return true === $this->cache_add( 'query_failure_dedupe:' . hash( 'sha256', $family . '|' . $error ), 1, self::DEFAULT_DEDUPE_WINDOW_S );
+		} catch ( \Throwable $throwable ) {
+			return true;
+		}
+	}
+
 	/** @param mixed $value Filtered value. */
 	private function bounded_int( $value, int $default, int $minimum, int $maximum ): int {
 		$validated = filter_var( $value, FILTER_VALIDATE_INT );

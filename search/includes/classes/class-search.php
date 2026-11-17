@@ -1023,10 +1023,7 @@ class Search {
 
 			if ( 'query' === $type && isset( $query['url'] ) && is_string( $query['url'] ) && preg_match( '#/_search(?:[/?]|$)#', $query['url'] ) ) {
 				try {
-					if ( ! $this->query_warning ) {
-						$this->query_warning = new Query_Warning();
-					}
-
+					$this->query_warning ??= new Query_Warning();
 					$this->query_warning->maybe_emit(
 						$args['body'] ?? '',
 						is_array( $response_body ) ? $response_body : [],
@@ -1299,10 +1296,9 @@ class Search {
 			return;
 		}
 
-		// A broken query fails on every request that runs it, so log each error once per query family and window.
-		// The failed query counter above still counts every failure.
-		$family = wp_json_encode( [ $error_type, $error_message, ( new Query_Classifier() )->classify( $query['args']['body'] ?? null )['structure'] ] );
-		if ( ! wp_cache_add( 'search_error_logged:' . md5( $family ), 1, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS ) ) {
+		// A broken query fails on every request that runs it; the failed query counter above still counts every failure
+		$this->query_warning ??= new Query_Warning();
+		if ( ! $this->query_warning->is_new_failure( $query['args']['body'] ?? null, $error_type . '|' . $error_message ) ) {
 			return;
 		}
 
