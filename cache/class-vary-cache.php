@@ -451,13 +451,26 @@ class Vary_Cache {
 	}
 
 	/**
+	 * Whether requests come through VIP's cache layer, which decides from the cookies as it parses them whether to
+	 * cache a response and which variant it is. PHP's cookie parsing can find cookies the cache layer didn't, and
+	 * content rendered for those would be cached for visitors who don't have them.
+	 *
+	 * @return bool
+	 */
+	private static function is_behind_cache_layer() {
+		return defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' );
+	}
+
+	/**
 	 * Parses the nocache cookie to see if nocache mode is enabled.
 	 */
 	private static function parse_nocache_cookie() {
-		if ( isset( $_COOKIE[ self::COOKIE_NOCACHE ] ) ) {
-			self::$is_user_in_nocache = true;
+		if ( self::is_behind_cache_layer() ) {
+			// The cache layer bypasses the cache for `vip-go-cb=1` at the start of the Cookie header or after `;` and spaces.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			self::$is_user_in_nocache = 1 === preg_match( '/(?:^|;) *' . self::COOKIE_NOCACHE . '=1/', $_SERVER['HTTP_COOKIE'] ?? '' );
 		} else {
-			self::$is_user_in_nocache = false;
+			self::$is_user_in_nocache = isset( $_COOKIE[ self::COOKIE_NOCACHE ] );
 		}
 	}
 
@@ -468,10 +481,9 @@ class Vary_Cache {
 		self::$request_group_cookie = [];
 		$cookie_name                = null;
 
-		// On VIP, the cache layer picks the cached variant from the group cookie as it reads it, and passes on what it
-		// read in a header. Use only that header there: PHP's cookie parsing can find a cookie the cache layer didn't,
-		// and content rendered for it would be cached as the variant for visitors without groups.
-		$is_behind_cache_layer = defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' );
+		// On VIP, the cache layer passes on the group cookie as it read it in a header, and picks the cached variant
+		// from that header. Use only the header there.
+		$is_behind_cache_layer = self::is_behind_cache_layer();
 
 		// If the cache layer supplies a decrypted segmentation header, use that instead of decrypting it again.
 		if ( self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_AUTH ] ) ) {
