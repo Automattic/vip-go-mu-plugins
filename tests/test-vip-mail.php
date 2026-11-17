@@ -61,6 +61,11 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		$this->assertContains( $mailer->Host, $smtp_servers );
 		$this->assertStringContainsString( 'From: WordPress <donotreply@wpvip.com>', $header );
 		$this->assertMatchesRegularExpression( '/X-Automattic-Tracking: 1:\d+:.+:\d+:\d+:\d+(\\r\\n|\\r|\\n)/', $header );
+
+		// The encrypted tracking data names the function that called wp_mail().
+		preg_match( '/X-Automattic-Tracking: 1:\d+:([^.]+)\.([^:]+):/', $header, $matches );
+		$tracking_data = openssl_decrypt( $matches[2], 'AES-256-CBC', base64_decode( WPCOM_VIP_MAIL_TRACKING_KEY ), 0, base64_decode( $matches[1] ) );
+		$this->assertStringStartsWith( __CLASS__ . '->send_test_mail|', $tracking_data );
 	}
 
 	public function test__vip_smtp_enabled() {
