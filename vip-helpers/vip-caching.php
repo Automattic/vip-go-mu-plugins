@@ -579,10 +579,11 @@ function wpcom_vip_set_old_slug_redirect_cache( $link ) {
 	return $link;
 }
 
-// Core's lookup depends on all the request's query vars (post type, date, page, embed), not just the slug.
+// Core's lookup depends on the request's effective query vars (post type, date, page, embed), not just the slug.
+// Hash query_vars rather than query, since hooks like pre_get_posts can change them after the request is parsed.
 function wpcom_vip_old_slug_redirect_cache_key() {
 	global $wp_query;
-	return 'old_slug:' . md5( wp_json_encode( $wp_query->query ) ) . ':' . wp_cache_get_last_changed( 'old_slug_redirect' );
+	return 'old_slug:' . md5( wp_json_encode( $wp_query->query_vars ) ) . ':' . wp_cache_get_last_changed( 'old_slug_redirect' );
 }
 
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
