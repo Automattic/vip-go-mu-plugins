@@ -17,22 +17,18 @@ define( 'TWILIO_ACCOUNT', 'ACe16d3eaebadd491f285297e03b4d3234' );
  * @link http://www.twilio.com/docs/api/rest/sending-sms
  */
 function send_sms( $to, $message ) {
+	// A messaging service picks the right sender for each country, e.g. a local number or an alphanumeric sender ID.
+	$sender = defined( 'VIP_TWILIO_MESSAGING_SERVICE_SID' )
+		? array( 'MessagingServiceSid' => VIP_TWILIO_MESSAGING_SERVICE_SID )
+		: array( 'From' => SMS_FROM_NUMBER );
+
 	foreach ( (array) $to as $to_number ) {
 		$body = array(
 			'To'   => $to_number,
 			'Body' => $message,
 		);
-		/**
-		 * If defined, we want to use the MessagingServiceSid to leverage all the automatic logic of the messaging service to route the SMS from the right "From" number.
-		 * For example in some countries, the "From" number should be a local number to the recipient or an alphanumeric sender ID.
-		 */
-		if ( defined( 'VIP_TWILIO_MESSAGING_SERVICE_SID' ) ) {
-			$body['MessagingServiceSid'] = VIP_TWILIO_MESSAGING_SERVICE_SID;
-		} else {
-			$body['From'] = SMS_FROM_NUMBER;
-		}
 
-		$result = send_single_sms_via_rest( $body );
+		$result = send_single_sms_via_rest( $body + $sender );
 		if ( is_wp_error( $result ) ) {
 			$masked_number = substr( $to_number, 0, floor( strlen( $to_number ) / 1.5 ) ) . 'xxx';
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
