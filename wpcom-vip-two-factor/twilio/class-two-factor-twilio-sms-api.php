@@ -30,7 +30,7 @@ class Two_Factor_Twilio_SMS_API implements Two_Factor_Twilio_SMS {
 	public function send_code( string $code ): bool|WP_Error {
 		require_once WPVIP_MU_PLUGIN_DIR . '/lib/sms.php';
 
-		update_user_meta( $this->user_id, self::TOKEN_META_KEY, wp_hash( $code ) );
+		update_user_meta( $this->user_id, self::TOKEN_META_KEY, $this->hash_code( $code ) );
 
 		$message = $this->format_sms_message( $code );
 
@@ -60,12 +60,19 @@ class Two_Factor_Twilio_SMS_API implements Two_Factor_Twilio_SMS {
 	 */
 	public function verify_code( string $code ): bool {
 		$hashed_token = get_user_meta( $this->user_id, self::TOKEN_META_KEY, true );
-		$correct      = wp_hash( $code );
+		$correct      = $this->hash_code( $code );
 		if ( ! hash_equals( $hashed_token, $correct ) ) {
 			return false;
 		}
 		$this->cleanup_verification_data();
 		return true;
+	}
+
+	/**
+	 * Hash a code with the number it is sent to, so it can't verify a number saved after it was sent.
+	 */
+	private function hash_code( string $code ): string {
+		return wp_hash( $this->phone . ':' . $code );
 	}
 
 	/**
