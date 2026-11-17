@@ -45,29 +45,6 @@ if ( defined( 'USE_VIP_PHPMAILER' ) && true === constant( 'USE_VIP_PHPMAILER' ) 
 	$phpmailer = new VIP_PHPMailer( true ); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 }
 
-class VIP_Noop_Mailer {
-
-	/**
-	 * @var string
-	 */
-	public $subject;
-
-	/**
-	 * @var string
-	 */
-	public $recipients;
-
-	public function __construct( $phpmailer ) {
-		$this->subject    = $phpmailer->Subject ?? '[No Subject]';
-		$this->recipients = implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) );
-	}
-
-	public function send() {
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, esc_html( $this->subject ), esc_html( $this->recipients ) ), E_USER_NOTICE );
-	}
-}
-
 final class VIP_SMTP {
 	private static ?VIP_SMTP $instance = null;
 
@@ -80,8 +57,10 @@ final class VIP_SMTP {
 	}
 
 	private function __construct() {
+		// Runs first, so mailers that send from their own pre_wp_mail callback see the short-circuit.
+		add_filter( 'pre_wp_mail', array( $this, 'pre_wp_mail' ), PHP_INT_MIN, 2 );
+		// BuddyPress fires phpmailer_init after bp_phpmailer_init, so this covers its mail too.
 		add_action( 'phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
-		add_action( 'bp_phpmailer_init', array( $this, 'phpmailer_init' ), 99 );
 
 		if ( ! defined( 'WP_RUN_CORE_TESTS' ) || ! WP_RUN_CORE_TESTS ) {
 			add_filter( 'wp_mail_from', array( $this, 'filter_wp_mail_from' ), 1 );
@@ -89,16 +68,29 @@ final class VIP_SMTP {
 	}
 
 	/**
-	 * @param PHPMailer $phpmailer
+	 * Stop wp_mail() before any mailer sends the email when mail is blocked.
+	 *
+	 * @param null|bool $short_circuit Short-circuit return value.
+	 * @param array     $atts          wp_mail() arguments.
+	 * @return null|bool
 	 */
-	public function phpmailer_init( &$phpmailer ): void {
-		if ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) ) { // Constant will take precedence over filter
-			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
-			return;
+	public function pre_wp_mail( $short_circuit, $atts ) {
+		if ( ! $this->is_mail_blocked() ) {
+			return $short_circuit;
 		}
 
-		if ( true === apply_filters( 'vip_block_wp_mail', false ) ) {
-			$phpmailer = new VIP_Noop_Mailer( $phpmailer );
+		$this->log_blocked_mail( $atts['subject'], implode( ', ', (array) $atts['to'] ) );
+		return false;
+	}
+
+	/**
+	 * @param PHPMailer $phpmailer
+	 */
+	public function phpmailer_init( $phpmailer ): void {
+		if ( $this->is_mail_blocked() ) {
+			// Only mailers that skip pre_wp_mail get here, e.g. BuddyPress. PHPMailer won't send without recipients.
+			$this->log_blocked_mail( $phpmailer->Subject, implode( ', ', array_keys( $phpmailer->getAllRecipientAddresses() ) ) );
+			$phpmailer->clearAllRecipients();
 			return;
 		}
 
@@ -141,6 +133,17 @@ final class VIP_SMTP {
 
 	public function filter_wp_mail_from() {
 		return 'donotreply@wpvip.com';
+	}
+
+	private function is_mail_blocked(): bool {
+		// The constant takes precedence over the filter.
+		return ( defined( 'VIP_BLOCK_WP_MAIL' ) && true === constant( 'VIP_BLOCK_WP_MAIL' ) )
+			|| true === apply_filters( 'vip_block_wp_mail', false );
+	}
+
+	private function log_blocked_mail( $subject, string $recipients ): void {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( sprintf( '%s: skipped sending email with subject `%s` to %s', __METHOD__, esc_html( $subject ), esc_html( $recipients ) ), E_USER_NOTICE );
 	}
 
 	protected function get_tracking_header( $key ) {

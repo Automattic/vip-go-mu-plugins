@@ -144,7 +144,7 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 		self::assertSame( 1, has_filter( 'wp_mail_from', [ VIP_SMTP::instance(), 'filter_wp_mail_from' ] ) );
 	}
 
-	public function data_noop_mailer(): array {
+	public function data_block_wp_mail(): array {
 		// [ VIP_BLOCK_WP_MAIL, vip_block_wp_mail filter result, whether mail is blocked ]
 		return [
 			'filter only'                 => [ null, true, true ],
@@ -156,9 +156,11 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 	}
 
 	/**
-	 * @dataProvider data_noop_mailer
+	 * Blocked mail stops at pre_wp_mail, before PHPMailer or any phpmailer_init callback runs.
+	 *
+	 * @dataProvider data_block_wp_mail
 	 */
-	public function test_noop_mailer( ?bool $constant, ?bool $filter, bool $blocked ): void {
+	public function test_block_wp_mail( ?bool $constant, ?bool $filter, bool $blocked ): void {
 		if ( null !== $constant ) {
 			Constant_Mocker::define( 'VIP_BLOCK_WP_MAIL', $constant );
 		}
@@ -167,28 +169,54 @@ class VIP_Mail_Test extends \WP_UnitTestCase {
 			add_filter( 'vip_block_wp_mail', $filter ? '__return_true' : '__return_false' );
 		}
 
+		$phpmailer_inits    = did_action( 'phpmailer_init' );
+		[ $sent, $notices ] = $this->capture_notices( fn() => wp_mail( 'test@example.com', 'Test', 'Body' ) );
+
 		if ( $blocked ) {
-			$this->expectException( \Exception::class );
-			$this->expectExceptionMessage( 'VIP_Noop_Mailer::send: skipped sending email with subject `Test` to test@example.com' );
-
-			// Turn the Noop mailer's notice into an exception.
-			set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-				static function ( $errno, $errstr ) {
-					throw new \Exception( $errstr, $errno ); // phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped
-				},
-				E_ALL
-			);
+			$this->assertFalse( $sent );
+			$this->assertSame( $phpmailer_inits, did_action( 'phpmailer_init' ) );
+			$this->assertSame( [ 'Automattic\VIP\Mail\VIP_SMTP::log_blocked_mail: skipped sending email with subject `Test` to test@example.com' ], $notices );
+		} else {
+			$this->assertTrue( $sent );
+			$this->assertSame( [], $notices );
 		}
+	}
 
-		$body = 'Testing should send';
+	/**
+	 * Mailers that skip pre_wp_mail still fire phpmailer_init, some by value (e.g. Disable Emails). Blocked mail loses its recipients.
+	 */
+	public function test_block_wp_mail_phpmailer_init_by_value(): void {
+		add_filter( 'vip_block_wp_mail', '__return_true' );
+
+		$mailer          = new PHPMailer( true );
+		$mailer->Subject = 'Test';
+		$mailer->addAddress( 'test@example.com' );
+
+		[ , $notices ] = $this->capture_notices( fn() => do_action( 'phpmailer_init', $mailer ) );
+
+		$this->assertSame( [], $mailer->getAllRecipientAddresses() );
+		$this->assertSame( [ 'Automattic\VIP\Mail\VIP_SMTP::log_blocked_mail: skipped sending email with subject `Test` to test@example.com' ], $notices );
+	}
+
+	/**
+	 * Run a callback and return its result and the E_USER_NOTICE messages it triggered.
+	 */
+	private function capture_notices( callable $callback ): array {
+		$notices = [];
+		set_error_handler( // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+			static function ( $errno, $errstr ) use ( &$notices ) {
+				$notices[] = $errstr;
+				return true;
+			},
+			E_USER_NOTICE
+		);
+
 		try {
-			$mailer = $this->send_test_mail( null, $body );
+			$result = $callback();
 		} finally {
-			if ( $blocked ) {
-				restore_error_handler();
-			}
+			restore_error_handler();
 		}
 
-		$this->assertEquals( $body, $mailer->Body );
+		return [ $result, $notices ];
 	}
 }
