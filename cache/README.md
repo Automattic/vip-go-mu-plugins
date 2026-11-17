@@ -158,6 +158,8 @@ Let's understand our requirements:
 
 We'll need to generate a secret value to share with our service provider to allow the bypass. Note that this shouldn't be shared with anyone else.
 
+The `vip-go-seg` cookie's value is recorded in the VIP CDN's request logs, so anyone who can read those logs can see the secret. Use a secret only for this bypass, and replace it once the scans are done.
+
 Using the `openssl` tool, we can generate a random secret:
 
 ```
