@@ -136,49 +136,50 @@ function wpcom_vip_is_two_factor_forced() {
 }
 
 /**
- * Getter for the current user's two-factor state, calculated when `$calculate` is true.
+ * Getter for the current user's two-factor state on the current site.
  *
- * It's only calculated on `set_current_user` and `switch_blog`, outside map_meta_cap: calculating it there would loop
- * back into map_meta_cap, and the checks are too slow to repeat on every capability check.
+ * It's only calculated on `set_current_user` ('user') and `switch_blog` ('site', since roles differ per site), outside
+ * map_meta_cap: calculating it there would loop back into map_meta_cap, and the checks are too slow to repeat on
+ * every capability check.
  * see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
  *
- * It's kept per user, and the enforcement cap per site since roles differ per site, so it never carries over to
- * another user or site.
+ * @param string|false $calculate 'user' for a new current user, 'site' for a newly switched-to site, or false to read.
  */
 function wpcom_vip_two_factor_user_state( $calculate = false ) {
-	static $states  = [];
-	static $limited = [];
+	static $state = [];
 
 	$user = wp_get_current_user();
-	$key  = $user->ID . ':' . $user->get_site_id();
-	if ( $calculate && $user->exists() ) {
-		$states[ $user->ID ] ??= [
-			'using_two_factor'     => Two_Factor_Core::is_user_using_two_factor( $user->ID ),
-			'jetpack_sso_two_step' => (bool) \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step(),
-		];
-
-		if ( ! isset( $limited[ $key ] ) ) {
-			$limited[ $key ] = false; // So VIP's own limit doesn't restrict this check.
-			$cap             = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' );
-			$limited[ $key ] = current_user_can( $cap );
+	if ( 'user' === $calculate ) {
+		// Start over even for a user seen earlier in the request, as their roles may have changed since.
+		$state = [];
+		if ( $user->exists() ) {
+			$state = [
+				'user_id'              => $user->ID,
+				'using_two_factor'     => Two_Factor_Core::is_user_using_two_factor( $user->ID ),
+				'jetpack_sso_two_step' => (bool) \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step(),
+				'limited'              => [],
+			];
 		}
 	}
 
-	if ( ! isset( $states[ $user->ID ] ) ) {
+	if ( ( $state['user_id'] ?? null ) !== $user->ID ) {
 		return [];
 	}
 
-	$state            = $states[ $user->ID ];
-	$state['limited'] = $limited[ $key ] ?? true; // Fail closed on a site that hasn't been checked yet.
+	$site = $user->get_site_id();
+	if ( $calculate && ! isset( $state['limited'][ $site ] ) ) {
+		$state['limited'][ $site ] = false; // So VIP's own limit doesn't restrict this check.
+		$state['limited'][ $site ] = current_user_can( apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' ) );
+	}
 
-	return $state;
+	$current            = $state;
+	$current['limited'] = $state['limited'][ $site ] ?? true; // Fail closed on a site that hasn't been checked yet.
+
+	return $current;
 }
 
-/**
- * Roles differ per site, so check the enforcement cap on the site switch_to_blog() or restore_current_blog() moves to.
- */
 function wpcom_vip_two_factor_switch_blog() {
-	wpcom_vip_two_factor_user_state( true );
+	wpcom_vip_two_factor_user_state( 'site' );
 }
 
 function wpcom_vip_two_factor_is_limited( $is_forced ) {
@@ -190,14 +191,15 @@ function wpcom_vip_two_factor_is_user_using_two_factor( $is_using_two_factor ) {
 }
 
 function wpcom_vip_enforce_two_factor_plugin() {
-	if ( is_user_logged_in() ) {
-		wpcom_vip_two_factor_user_state( true );
+	wpcom_vip_two_factor_user_state( 'user' );
 
+	if ( is_user_logged_in() ) {
 		// While we could use the internal wpcom_vip_internal_is_two_factor_forced filter here, we intentionally don't to avoid taking precedence over existing customer filters.
 		add_filter( 'wpcom_vip_is_two_factor_forced', 'wpcom_vip_two_factor_is_limited', 9 );
 		add_filter( 'wpcom_vip_is_user_using_two_factor', 'wpcom_vip_two_factor_is_user_using_two_factor' );
 
-		add_action( 'switch_blog', 'wpcom_vip_two_factor_switch_blog' );
+		// Right after core's wp_switch_roles_and_user() (priority 1) loads the user's caps for the new site.
+		add_action( 'switch_blog', 'wpcom_vip_two_factor_switch_blog', 2 );
 
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
 		// Run last, so a later filter can't map a restricted cap back to one the user's role still has.
