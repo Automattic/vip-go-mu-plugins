@@ -201,7 +201,7 @@ final class VIP_SMTP {
 			}
 
 			if ( isset( $call['class'] ) ) {
-				if ( 'VIP_SMTP' === $call['class'] ) {
+				if ( self::class === $call['class'] ) {
 					continue;
 				}
 
