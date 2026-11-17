@@ -82,15 +82,34 @@ add_action( 'template_redirect', 'wpcom_vip_disable_newrelic_on_amp' );
  * See https://core.trac.wordpress.org/ticket/31245
  */
 function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
+	global $_wpcom_vip_autoloaded_options_before_write;
+
 	if ( ! wp_installing() ) {
 		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
 
-		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
+		//only if option is (or was, before a delete or autoload turned off) among alloptions
+		if ( isset( $alloptions[ $option ] ) || isset( $_wpcom_vip_autoloaded_options_before_write[ $option ] ) ) {
 			wp_cache_delete( 'alloptions', 'options' );
 		}
 	}
+
+	unset( $_wpcom_vip_autoloaded_options_before_write[ $option ] );
 }
 
+/**
+ * Core removes a deleted option, or one whose autoload is turned off, from alloptions
+ * before deleted_option / updated_option fire, so note autoloaded options before the write.
+ */
+function _wpcom_vip_note_autoloaded_option_before_write( $option ) {
+	global $_wpcom_vip_autoloaded_options_before_write;
+
+	if ( ! wp_installing() && isset( wp_load_alloptions()[ $option ] ) ) {
+		$_wpcom_vip_autoloaded_options_before_write[ $option ] = true;
+	}
+}
+
+add_action( 'update_option', '_wpcom_vip_note_autoloaded_option_before_write' );
+add_action( 'delete_option', '_wpcom_vip_note_autoloaded_option_before_write' );
 add_action( 'added_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
