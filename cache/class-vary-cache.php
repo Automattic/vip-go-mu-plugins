@@ -617,12 +617,13 @@ class Vary_Cache {
 	}
 
 	/**
-	 * Sends headers on REST requests if REST code called a group or nocache setter.
+	 * Sends headers on REST requests: Vary on GET and HEAD requests, and cookies if REST code called a group or nocache setter.
 	 *
-	 * Setter calls made before the REST request started, such as on `init`, don't count: sites often make them on every
-	 * request, and they have never been sent on REST requests. GET and HEAD requests are skipped, as the cache layer
-	 * stores their responses, and so are OPTIONS requests, as browsers ignore cookies on preflight responses. The HTTP
-	 * method decides, not the REST request's, which a `_method` override can change.
+	 * The cache layer stores GET and HEAD responses, so like pages they vary on the groups, but they don't set cookies,
+	 * which would make them uncacheable. Setter calls made before the REST request started, such as on `init`, don't
+	 * count: sites often make them on every request, and they have never been sent on REST requests. OPTIONS requests
+	 * are skipped, as browsers ignore cookies on preflight responses. The HTTP method decides, not the REST request's,
+	 * which a `_method` override can change.
 	 *
 	 * @access  private
 	 *
@@ -630,9 +631,11 @@ class Vary_Cache {
 	 * @return mixed Unchanged.
 	 */
 	public static function send_rest_headers( $served ) {
-		$is_skipped_method = in_array( $_SERVER['REQUEST_METHOD'] ?? '', [ 'GET', 'HEAD', 'OPTIONS' ], true );
+		$method = $_SERVER['REQUEST_METHOD'] ?? ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- compared only
 
-		if ( ! $is_skipped_method && self::$should_send_rest_headers ) {
+		if ( in_array( $method, [ 'GET', 'HEAD' ], true ) ) {
+			self::send_vary_headers();
+		} elseif ( 'OPTIONS' !== $method && self::$should_send_rest_headers ) {
 			self::send_headers();
 		}
 

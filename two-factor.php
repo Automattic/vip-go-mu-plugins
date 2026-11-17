@@ -232,6 +232,20 @@ function wpcom_enable_two_factor_plugin() {
 	remove_action( 'init', 'two_factor_register_admin_hooks' );
 
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || true !== VIP_JETPACK_SKIP_LOAD ) {
+		add_action( 'login_enqueue_scripts', 'wpcom_vip_two_factor_jetpack_sso_style' );
+	}
+}
+
+/**
+ * Keep the two-factor form visible when Jetpack SSO is active. Two Factor 0.17.0's override of Jetpack's
+ * login CSS prints before Jetpack's stylesheet and loses the tie. Remove once a release with the upstream
+ * fix is bundled: https://github.com/WordPress/two-factor/pull/1009
+ */
+function wpcom_vip_two_factor_jetpack_sso_style() {
+	if ( version_compare( TWO_FACTOR_VERSION, '0.17.0', '<=' ) && wp_style_is( 'user-edit-2fa' ) ) {
+		wp_add_inline_style( 'user-edit-2fa', 'body.jetpack-sso-form-display #loginform > p, body.jetpack-sso-form-display #loginform > div { display: block; }' );
+	}
 }
 
 /**

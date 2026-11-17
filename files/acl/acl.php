@@ -49,6 +49,8 @@ function maybe_load_restrictions() {
 	// Purge an attachment's files when it's saved or attached while they're restricted (clear_path_cache() does when they change)
 	add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
 	add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	// Keep the files of a deleted unpublished post restricted
+	add_action( 'before_delete_post', __NAMESPACE__ . '\keep_deleted_post_files_restricted', 10, 2 );
 
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
@@ -101,6 +103,50 @@ function purge_restricted_attachment_files( $post_id ) {
 	if ( load_unpublished_restrictions() ) {
 		Restrict_Unpublished_Files\purge_restricted_attachment_files( $post_id );
 	}
+}
+
+/**
+ * Keep the files of a deleted post that wasn't published restricted, if the current site restricts unpublished files.
+ *
+ * wp_delete_post() moves the post's attachments up to the post's own parent, usually none, which would make their
+ * files public. Point them back at the post before its row is deleted: attachments of a deleted parent stay
+ * restricted, the same as when a post is deleted without wp_delete_post().
+ *
+ * @param int      $post_id Post ID.
+ * @param \WP_Post $post    Post object.
+ */
+function keep_deleted_post_files_restricted( $post_id, $post ) {
+	global $wpdb;
+
+	if ( 'publish' === $post->post_status || 'revision' === $post->post_type || ! load_unpublished_restrictions() ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- must read the current parents, as wp_delete_post() does.
+	$attachment_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_parent = %d AND post_type = 'attachment'", $post_id ) );
+	if ( ! $attachment_ids ) {
+		return;
+	}
+
+	// `delete_post` fires after the attachments are moved, right before the post's row is deleted.
+	$restore = static function ( $deleted_post_id ) use ( $post_id, $attachment_ids, &$restore ) {
+		global $wpdb;
+
+		if ( (int) $deleted_post_id !== (int) $post_id ) {
+			return;
+		}
+
+		remove_action( 'delete_post', $restore );
+
+		$ids = implode( ',', array_map( 'intval', $attachment_ids ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- integer IDs; the cache is cleared below.
+		$wpdb->query( $wpdb->prepare( "UPDATE $wpdb->posts SET post_parent = %d WHERE ID IN ($ids)", $post_id ) );
+
+		// Like wp_delete_post()'s own update, this changes nothing else, and the files were already restricted:
+		// drop the cached posts in case one was cached unattached meanwhile, without clean_post_cache()'s purges.
+		wp_cache_delete_multiple( $attachment_ids, 'posts' );
+	};
+	add_action( 'delete_post', $restore );
 }
 
 /**

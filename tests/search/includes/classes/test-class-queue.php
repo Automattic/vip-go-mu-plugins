@@ -1082,8 +1082,8 @@ class Queue_Test extends WP_UnitTestCase {
 	public function test_free_deadlocked_jobs() {
 		global $wpdb;
 
-		$table_name    = $this->queue->schema->get_table_name();
-		$fixtures      = array(
+		$table_name = $this->queue->schema->get_table_name();
+		$fixtures   = array(
 			array( 1000, 'post', 1, 'running' ),
 			array( 1000, 'post', 1, 'queued' ),
 			array( 1000, 'post', 2, 'scheduled' ),
@@ -1091,6 +1091,15 @@ class Queue_Test extends WP_UnitTestCase {
 			array( 2000, 'user', 1, 'running' ),
 			array( 3000, 'post', 1, 'scheduled' ),
 			array( 3000, 'post', 1, 'running' ),
+			// Out of retries, and a newer job for the same object that hasn't run yet
+			array( 4000, 'post', 1, 'running', Queue::RETRY_PRIORITY + Queue::MAX_RETRIES ),
+			array( 4000, 'post', 1, 'scheduled' ),
+			// Out of retries, and the object was queued again while it crashed
+			array( 5000, 'post', 1, 'running', Queue::RETRY_PRIORITY + Queue::MAX_RETRIES ),
+			array( 5000, 'post', 1, 'queued' ),
+			// A retried job whose batch never started, and the object was queued again meanwhile
+			array( 6000, 'post', 1, 'scheduled', Queue::RETRY_PRIORITY + 2 ),
+			array( 6000, 'post', 1, 'queued' ),
 		);
 		$expected      = array();
 		$duplicate_ids = array();
@@ -1103,13 +1112,14 @@ class Queue_Test extends WP_UnitTestCase {
 				$this->queue->update_job( $job->job_id, array(
 					'status'         => $status,
 					'scheduled_time' => gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ),
+					'priority'       => $fixture[4] ?? Queue::INDEX_DEFAULT_PRIORITY,
 				) );
 			}
 			if ( 3000 === $object_id ) {
 				$duplicate_ids[] = (int) $job->job_id;
 			}
-			// Only the same-object/type/version duplicates should be removed.
-			if ( ! in_array( $offset, array( 0, 6 ), true ) ) {
+			// Only the same-object/type/version duplicates and the jobs out of retries should be removed.
+			if ( ! in_array( $offset, array( 0, 6, 7, 9, 11 ), true ) ) {
 				$expected[] = array(
 					'job_id'        => 3000 === $object_id ? 0 : (int) $job->job_id,
 					'object_id'     => $object_id,
@@ -1133,6 +1143,61 @@ class Queue_Test extends WP_UnitTestCase {
 		}
 		unset( $job );
 		$this->assertSame( $expected, $actual );
+		$this->assertEquals( Queue::RETRY_PRIORITY + 1, $this->queue->get_next_job_for_object( 1000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose job died should take over its next retry level' );
+		$this->assertEquals( Queue::RETRY_PRIORITY + Queue::MAX_RETRIES, $this->queue->get_next_job_for_object( 5000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose job ran out of retries should run alone, not in a full batch' );
+		$this->assertEquals( Queue::RETRY_PRIORITY + 1, $this->queue->get_next_job_for_object( 3000, 'post', array( 'index_version' => 1 ) )->priority, 'deduplicating should keep the retry level of the job that died' );
+		$this->assertEquals( Queue::RETRY_PRIORITY + Queue::MAX_RETRIES, $this->queue->get_next_job_for_object( 4000, 'post', array( 'index_version' => 1 ) )->priority, 'the stale job of an object whose job ran out of retries should run alone, not in a full batch' );
+		$this->assertEquals( Queue::RETRY_PRIORITY + 2, $this->queue->get_next_job_for_object( 6000, 'post', array( 'index_version' => 1 ) )->priority, 'the queued job of an object whose retried job never started should keep its retry level' );
+	}
+
+	public function test_free_deadlocked_jobs_leaves_a_batch_that_started_late_running(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		$this->queue->queue_objects( self::factory()->post->create_many( 2, array( 'post_status' => 'publish' ) ) );
+		$jobs = $this->queue->checkout_jobs( 500 );
+
+		// The batch's cron event ran late: it was checked out longer than DEADLOCK_TIME ago
+		$wpdb->query( $wpdb->prepare( 'UPDATE %i SET scheduled_time = %s', $table_name, gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ) ) );
+
+		// The sweeper runs while the batch is indexing
+		$handed_back = null;
+		add_filter( 'pre_http_request', function ( $preempt, $args, $url ) use ( &$handed_back, $table_name, $wpdb ) {
+			if ( false !== strpos( $url, '/_bulk' ) ) {
+				$this->queue->free_deadlocked_jobs();
+				$handed_back = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM %i WHERE status = 'queued'", $table_name ) );
+			}
+			return $preempt;
+		}, 10, 3 );
+
+		$this->queue->process_jobs( $jobs );
+
+		$this->assertSame( 0, $handed_back, 'a running batch should not be counted as one whose processing died, however late it started' );
+	}
+
+	public function test_queue_object_keeps_a_retried_jobs_level(): void {
+		$this->queue->queue_object( 5000, 'post' );
+		$job = $this->queue->get_next_job_for_object( 5000, 'post' );
+		$this->queue->update_job( $job->job_id, array( 'priority' => Queue::RETRY_PRIORITY + 2 ) );
+
+		$this->queue->queue_object( 5000, 'post' );
+
+		$this->assertEquals( Queue::RETRY_PRIORITY + 2, $this->queue->get_next_job_for_object( 5000, 'post' )->priority, 'queueing an object again should not reset its retry level' );
+	}
+
+	public function test_checkout_jobs_skips_an_object_whose_job_is_running(): void {
+		// A post's retried job is running (or died while running), and the post was queued again meanwhile
+		$this->queue->queue_object( 6000, 'post' );
+		$running = $this->queue->get_next_job_for_object( 6000, 'post' );
+		$this->queue->update_job( $running->job_id, array(
+			'status'   => 'running',
+			'priority' => Queue::RETRY_PRIORITY + 2,
+		) );
+		$this->queue->queue_object( 6000, 'post' );
+		$this->queue->queue_object( 6001, 'post' );
+
+		$this->assertSame( array( '6001' ), wp_list_pluck( $this->queue->checkout_jobs( 500 ), 'object_id' ), 'a post whose job is running should wait for it instead of joining another batch' );
 	}
 
 	/**
@@ -1569,6 +1634,75 @@ class Queue_Test extends WP_UnitTestCase {
 			];
 		}
 		return $request;
+	}
+
+	/**
+	 * A job that kills the processor on every attempt must not keep the rest of its batch from being indexed.
+	 */
+	public function test_free_deadlocked_jobs_isolates_and_drops_a_job_that_keeps_failing(): void {
+		global $wpdb;
+
+		$table_name = $this->queue->schema->get_table_name();
+
+		[ $healthy_1, $poisoned, $healthy_2, $edited ] = self::factory()->post->create_many( 4, array( 'post_status' => 'publish' ) );
+
+		$this->queue->logger = $this->createMock( Logger::class );
+		$this->queue->logger->expects( $this->once() )->method( 'log' )->with(
+			'warning',
+			'search_queue',
+			$this->anything(),
+			$this->callback( fn( $context ) => array( $poisoned ) === wp_list_pluck( $context['jobs'], 'object_id' ) )
+		);
+
+		// Simulates a fatal (OOM, TypeError, timeout) while preparing one document.
+		add_filter( 'ep_bulk_index_action_args', static function ( $action_args, $document ) use ( $poisoned ) {
+			if ( (int) ( $document['ID'] ?? 0 ) === $poisoned ) {
+				throw new \RuntimeException( 'simulated fatal' );
+			}
+			return $action_args;
+		}, 10, 2 );
+
+		$indexed = array();
+		add_filter( 'pre_http_request', static function ( $preempt, $args, $url ) use ( &$indexed ) {
+			if ( false !== strpos( $url, '/_bulk' ) && preg_match_all( '/"_id":(\d+)/', $args['body'], $matches ) ) {
+				$indexed = array_merge( $indexed, array_map( 'intval', $matches[1] ) );
+			}
+			return $preempt;
+		}, 10, 3 );
+
+		$this->queue->queue_objects( array( $healthy_1, $poisoned, $healthy_2 ) );
+
+		// Each round: check out a batch, the cron event dies if the batch holds the poisoned post, the jobs go stale,
+		// and the sweeper recovers them.
+		for ( $round = 0; $round < 10; $round++ ) {
+			if ( 1 === $round ) {
+				$this->queue->queue_object( $edited, 'post' );
+			}
+
+			$jobs = $this->queue->checkout_jobs( 500 );
+			if ( empty( $jobs ) ) {
+				break;
+			}
+
+			if ( 1 === $round ) {
+				$this->assertSame( array_map( 'strval', array( $healthy_1, $poisoned, $healthy_2 ) ), wp_list_pluck( $jobs, 'object_id' ), 'Retried jobs go first, without new work mixed in.' );
+			}
+
+			try {
+				$this->queue->process_jobs( $jobs );
+			} catch ( \RuntimeException $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch
+				// The cron event died.
+			}
+
+			$wpdb->query( $wpdb->prepare( "UPDATE %i SET scheduled_time = %s WHERE status IN ( 'scheduled', 'running' )", $table_name, gmdate( 'Y-m-d H:i:s', time() - Queue::DEADLOCK_TIME - 1 ) ) );
+			$this->queue->free_deadlocked_jobs();
+		}
+
+		sort( $indexed );
+		$expected = array( $healthy_1, $healthy_2, $edited );
+		sort( $expected );
+		$this->assertSame( $expected, $indexed, 'Every healthy post is indexed once, the poisoned one never.' );
+		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM %i', $table_name ) ), 'The poisoned job is dropped instead of retried forever.' );
 	}
 
 	/**
