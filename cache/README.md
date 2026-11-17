@@ -272,6 +272,7 @@ You can see the completed, working example here: https://github.com/Automattic/v
 - They're `Secure` on HTTPS requests to a site whose home URL uses HTTPS. Override that with the `vip_vary_cache_cookie_secure` filter, which also receives the cookie name.
 - They aren't `HttpOnly`, so client-side code can read them.
 - A response that sets one of these cookies isn't cached.
+- On VIP, `Vary_Cache` reads these cookies as the VIP cache reads them: the groups from the `X-VIP-Go-Segmentation` or `X-VIP-Go-Auth` header that the cache sets from the cookie, and nocache mode only from a `vip-go-cb=1` cookie that the cache bypasses for. A cookie the cache doesn't read doesn't count. Elsewhere, for example in local development, it reads the cookies directly.
 
 ### Groups
 
@@ -283,7 +284,7 @@ You can see the completed, working example here: https://github.com/Automattic/v
 
 - Call `Vary_Cache::enable_encryption()` before `init` priority 10. It needs the `VIP_GO_AUTH_COOKIE_KEY` and `VIP_GO_AUTH_COOKIE_IV` constants, which VIP Support provides for each environment; without them, it stops the request with a fatal error.
 - With encryption enabled, the plaintext `vip-go-seg` cookie is ignored. Users who only have that cookie, for example from before encryption was enabled, are in no groups until they're assigned again.
-- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired. When `Vary_Cache` decrypts the cookie itself, it applies the same checks.
+- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired, and on VIP, `Vary_Cache` only uses what the cache decrypted. Without the VIP cache, `Vary_Cache` decrypts the cookie itself and applies the same checks.
 
 ### Hooks
 
