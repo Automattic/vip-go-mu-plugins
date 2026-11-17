@@ -1087,18 +1087,19 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__rest_skipped_method(): array {
 		return [
-			'GET'     => [ 'GET' ],
-			'HEAD'    => [ 'HEAD' ],
-			'OPTIONS' => [ 'OPTIONS' ],
+			'GET'     => [ 'GET', [ 'Vary: X-VIP-Go-Segmentation' ] ],
+			'HEAD'    => [ 'HEAD', [ 'Vary: X-VIP-Go-Segmentation' ] ],
+			'OPTIONS' => [ 'OPTIONS', [] ],
 		];
 	}
 
 	/**
-	 * Writes on requests the cache stores, e.g. while rendering post content, must not make REST responses vary or uncacheable.
+	 * Writes on requests the cache stores, e.g. while rendering post content, must not make REST responses uncacheable.
+	 * The responses the cache stores still vary on the groups.
 	 *
 	 * @dataProvider get_test_data__rest_skipped_method
 	 */
-	public function test_rest_skipped_method_does_not_send_pending_write( string $http_method ): void {
+	public function test_rest_skipped_method_does_not_send_pending_write( string $http_method, array $expected_vary ): void {
 		Constant_Mocker::define( 'REST_REQUEST', true );
 		Vary_Cache::register_group( 'dev-group' );
 		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Write failed' );
@@ -1106,7 +1107,9 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 		$this->assertFalse( $this->serve_rest_request( $http_method, false ), 'Filter value was changed' );
 
-		$this->assert_rest_sent_nothing();
+		$this->assertSame( [], $this->did_send_headers_calls, 'Headers were sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+		$this->assertSame( $expected_vary, array_values( preg_grep( '/^Vary:/i', headers_list() ) ) );
 	}
 
 	/**
