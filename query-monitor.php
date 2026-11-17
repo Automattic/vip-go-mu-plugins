@@ -37,7 +37,7 @@ function wpcom_vip_qm_enable( $enable ) {
 
 	// QM checks the user's capability later. Check the login here so a made-up cookie doesn't load QM.
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- validated as an auth cookie
-	if ( isset( $_COOKIE[ QM_COOKIE ] ) && wp_validate_auth_cookie( wp_unslash( $_COOKIE[ QM_COOKIE ] ), 'logged_in' ) ) {
+	if ( isset( $_COOKIE[ QM_COOKIE ] ) && is_string( $_COOKIE[ QM_COOKIE ] ) && wp_validate_auth_cookie( wp_unslash( $_COOKIE[ QM_COOKIE ] ), 'logged_in' ) ) {
 		return true;
 	}
 
