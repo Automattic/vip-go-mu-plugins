@@ -217,13 +217,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$offset  = 0;
 		$limit   = 500;
 		$threads = 10;
-		$output  = array( array( 'url', 'status' ) );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- should be safe here
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
 			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $output_file ) );
 		}
+		WP_CLI\Utils\write_csv( $file_descriptor, [], [ 'url', 'status' ] );
 
 		global $wpdb;
 
@@ -270,7 +270,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		do {
 			$extra_count    = 0;
 			$attachments    = [];
-			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
+			$sql            = "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' " . $date_query . $wpdb->prepare( 'LIMIT %d,%d', $offset, $limit );
 			$attachment_ids = array_map(
 				function ( $attachment_ids ) {
 					return (int) $attachment_ids[0];
@@ -363,16 +363,16 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					}
 
 					if ( $log_request ) {
-						$output[] = array(
-							$url,
-							$response_code,
-						);
+						WP_CLI\Utils\write_csv( $file_descriptor, [ [ $url, $response_code ] ] );
 					}
 				}
 
-				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
+				$progress->tick( count( $attachments_array ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
 
 			}
+
+			// Free this batch's posts from the local object cache.
+			$this->vip_inmemory_cleanup();
 
 			// Pause.
 			sleep( 1 );
@@ -382,7 +382,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		} while ( $attachment_ids_count );
 
 		$progress->finish();
-		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
 
 		foreach ( $cache as $response_code => $url_array ) {

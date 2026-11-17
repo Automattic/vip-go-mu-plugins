@@ -55,13 +55,12 @@ function wpcom_vip_akismet_spam_count_incr( $val ) {
 add_filter( 'akismet_spam_count_incr', 'wpcom_vip_akismet_spam_count_incr' );
 
 /**
- * @return bool True if the Akismet key in the site is not existent or not valid
+ * @return bool True if the Akismet key in the site is not existent or not valid. False if the key is valid or couldn't be verified.
  */
 function is_akismet_key_invalid(): bool {
 	if ( class_exists( 'Akismet' ) ) {
-		$key        = Akismet::get_api_key();
-		$key_status = Akismet::check_key_status( $key );
-		return ! $key_status || ! $key_status[1] || 'invalid' === $key_status[1];
+		// verify_key() returns 'failed' when the request fails, so a network error doesn't count as an invalid key.
+		return 'invalid' === Akismet::verify_key( (string) Akismet::get_api_key() );
 	}
 
 	return false;

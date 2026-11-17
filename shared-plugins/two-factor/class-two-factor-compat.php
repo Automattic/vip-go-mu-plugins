@@ -11,10 +11,14 @@
  * Should be used with care because ideally we wouldn't need
  * any integration specific code for this plugin. Everything should
  * be handled through clever use of hooks and best practices.
+ *
+ * @since 0.5.0
  */
 class Two_Factor_Compat {
 	/**
 	 * Initialize all the custom hooks as necessary.
+	 *
+	 * @since 0.5.0
 	 *
 	 * @return void
 	 */
@@ -29,6 +33,8 @@ class Two_Factor_Compat {
 
 	/**
 	 * Jetpack single sign-on wants long-lived sessions for users.
+	 *
+	 * @since 0.5.0
 	 *
 	 * @param boolean $rememberme Current state of the "remember me" toggle.
 	 *
@@ -47,9 +53,17 @@ class Two_Factor_Compat {
 	/**
 	 * Helper to detect the presence of the active SSO module.
 	 *
+	 * @since 0.5.0
+	 *
 	 * @return boolean
 	 */
 	public function jetpack_is_sso_active() {
-		return ( class_exists( 'Jetpack' ) && method_exists( 'Jetpack', 'is_module_active' ) && Jetpack::is_module_active( 'sso' ) );
+		if ( ! class_exists( 'Jetpack' ) ) {
+			return false;
+		}
+
+		$jetpack_is_module_active = array( 'Jetpack', 'is_module_active' );
+
+		return is_callable( $jetpack_is_module_active ) && (bool) call_user_func( $jetpack_is_module_active, 'sso' );
 	}
 }

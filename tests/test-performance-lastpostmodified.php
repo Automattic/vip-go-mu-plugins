@@ -70,39 +70,59 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 		}
 	}
 
-	public function test__transition_post_status__ignore_when_locked() {
-		$before = did_action( 'wpcom_vip_bump_lastpostmodified' );
-		// The first update bumps and sets the lock, so the action should only fire once when updating twice
+	/**
+	 * A second change right after the first must still move the stored value forward.
+	 */
+	public function test__transition_post_status__records_consecutive_changes(): void {
 		\wp_transition_post_status( 'publish', 'publish', $this->post );
-		\wp_transition_post_status( 'publish', 'publish', $this->post );
-		$after = did_action( 'wpcom_vip_bump_lastpostmodified' );
+		// Backdate the first bump so the second one is visible within the same second.
+		Last_Post_Modified::update_lastpostmodified( '2000-01-01 00:00:00', 'gmt' );
 
-		$this->assertEquals( 1, $after - $before );
+		$before = current_time( 'mysql', true );
+		\wp_transition_post_status( 'publish', 'publish', $this->post );
+
+		$this->assertGreaterThanOrEqual( $before, Last_Post_Modified::get_lastpostmodified( 'gmt', 'any' ) );
+	}
+
+	/**
+	 * A scheduled post keeps the modified date from when it was scheduled, so publishing it must not move the stored value backwards.
+	 */
+	public function test__transition_post_status__scheduled_publish_moves_forward(): void {
+		$this->post->post_modified_gmt = '2000-01-01 00:00:00';
+
+		$before = current_time( 'mysql', true );
+		\wp_transition_post_status( 'publish', 'future', $this->post );
+
+		$this->assertGreaterThanOrEqual( $before, Last_Post_Modified::get_lastpostmodified( 'gmt', 'any' ) );
 	}
 
 	public function get_data__bump_lastpostmodified() {
 		return [
-			'any' => [ 'post', 'any', '1989-12-13 01:00:00', '1989-12-13 06:00:00' ],
-			'cpt' => [ 'book', 'book', '2003-05-27 00:00:00', '2003-05-27 05:00:00' ],
+			'any, zero modified date' => [ 'post', 'any', '0000-00-00 00:00:00' ],
+			'cpt, old modified date'  => [ 'book', 'book', '2003-05-27 00:00:00' ],
 		];
 	}
 
 	/**
+	 * The stored value is the time of the change, whatever the post's own modified date.
+	 *
 	 * @dataProvider get_data__bump_lastpostmodified
 	 */
-	public function test__bump_lastpostmodified( $post_type, $lastpostmodified_post_type, $post_modified, $post_modified_gmt ) {
+	public function test__bump_lastpostmodified( $post_type, $lastpostmodified_post_type, $post_modified ) {
 		$this->post->post_type         = $post_type;
 		$this->post->post_modified     = $post_modified;
-		$this->post->post_modified_gmt = $post_modified_gmt;
+		$this->post->post_modified_gmt = $post_modified;
 
+		$before = [
+			'gmt'    => current_time( 'mysql', true ),
+			'server' => current_time( 'mysql', true ),
+			'blog'   => current_time( 'mysql' ),
+		];
 		Last_Post_Modified::bump_lastpostmodified( $this->post );
 
-		$blog_actual = Last_Post_Modified::get_lastpostmodified( 'blog', $lastpostmodified_post_type );
-		$this->assertEquals( $post_modified, $blog_actual );
-		$gmt_actual = Last_Post_Modified::get_lastpostmodified( 'gmt', $lastpostmodified_post_type );
-		$this->assertEquals( $post_modified_gmt, $gmt_actual );
-		$server_actual = Last_Post_Modified::get_lastpostmodified( 'server', $lastpostmodified_post_type );
-		$this->assertEquals( $post_modified_gmt, $server_actual );
+		foreach ( $before as $timezone => $time ) {
+			$this->assertGreaterThanOrEqual( $time, Last_Post_Modified::get_lastpostmodified( $timezone, $lastpostmodified_post_type ) );
+		}
 	}
 
 	public function get_data__override_lastpostmodified() {
@@ -110,6 +130,7 @@ class lastpostmodified_Test extends WP_UnitTestCase {
 			'is set any'      => [ [ '1989-12-13', 'gmt' ], [ 'gmt' ], '1989-12-13' ],
 			'is set post'     => [ [ '2003-05-27', 'gmt', 'post' ], [ 'gmt', 'post' ], '2003-05-27' ],
 			'is not set post' => [ null, [ 'gmt', 'post' ], false ],
+			'is zero post'    => [ [ '0000-00-00 00:00:00', 'gmt', 'post' ], [ 'gmt', 'post' ], false ],
 		];
 	}
 

@@ -146,12 +146,11 @@ class Search {
 
 	private static $query_count_ttl;
 
-	private const DEFAULT_SEARCH_LENGTH          = 80;
-	private const MAX_SEARCH_LENGTH              = 510;
-	private const DISABLE_POST_META_ALLOW_LIST   = array();
-	private const STALE_QUEUE_WAIT_LIMIT         = 3600; // 1 hour in seconds
-	private const POST_FIELD_COUNT_LIMIT         = 5000;
-	private const QUERY_RATE_LIMITED_ALERT_LIMIT = 7200; // 2 hours in seconds
+	private const DEFAULT_SEARCH_LENGTH        = 80;
+	private const MAX_SEARCH_LENGTH            = 510;
+	private const DISABLE_POST_META_ALLOW_LIST = array();
+	private const STALE_QUEUE_WAIT_LIMIT       = 3600; // 1 hour in seconds
+	private const POST_FIELD_COUNT_LIMIT       = 5000;
 
 	private const DEFAULT_QUERY_COUNT_TTL     = 5 * \MINUTE_IN_SECONDS;
 	private const LOWER_BOUND_QUERY_COUNT_TTL = 1 * \MINUTE_IN_SECONDS;
@@ -634,13 +633,6 @@ class Search {
 		// Do not show the above compat notice since VIP Search will support whatever Elasticsearch version we're running
 		add_filter( 'pre_option_ep_hide_es_above_compat_notice', '__return_true' );
 
-		// If protected content is enabled, ensure that the attachment post type is an indexable post type.
-		// Set the priority to 9999 so customers can unset it if needed.
-		// The current usages of this filter have priority 10 in ElasticPress. May need to be adjusted if this changes.
-		if ( false !== $this->is_protected_content_enabled() ) {
-			add_filter( 'ep_indexable_post_types', array( $this, 'add_attachment_to_ep_indexable_post_types' ), 9999 );
-		}
-
 		add_filter( 'vip_search_post_meta_allow_list', array( $this, 'filter__vip_search_post_meta_allow_list_defaults' ) );
 
 		// Limit the max result window on index settings
@@ -865,6 +857,20 @@ class Search {
 	}
 
 	/**
+	 * Delete the cached index_exists response for an index
+	 *
+	 * @param string $option_name Name of the option holding the cached response
+	 */
+	private function delete_index_exists_option( $option_name ) {
+		delete_site_option( $option_name );
+
+		// Ensure the cache for the option was actually deleted.
+		if ( false !== wp_cache_get( $option_name, 'options' ) ) {
+			wp_cache_delete( $option_name, 'options' );
+		}
+	}
+
+	/**
 	 * Filter to intercept EP remote requests.
 	 *
 	 * @param  array|WP_Error $request  New remote request response
@@ -899,14 +905,9 @@ class Search {
 				if ( 'index_exists' === $type && in_array( $cached_index_exists_response_code, $valid_index_exists_response_codes, true ) ) {
 					// Return cached index_exists option.
 					return $cached_index_exists_request;
-				} else {
-					// Invalidate index_exists caching on certain actions.
-					delete_site_option( $index_exists_option_name );
-
-					// Ensure the cache for the option was actually deleted.
-					if ( false !== wp_cache_get( $index_exists_option_name, 'options' ) ) {
-						wp_cache_delete( $index_exists_option_name, 'options' );
-					}
+				} elseif ( 'bulk_index' !== $type ) {
+					// Invalidate index_exists caching on certain actions (bulks are handled after the request).
+					$this->delete_index_exists_option( $index_exists_option_name );
 				}
 			}
 		}
@@ -1075,6 +1076,15 @@ class Search {
 			}
 		}
 
+		// A bulk can create a missing index (ES auto-creates it), and a failed one may mean the index was deleted outside
+		// WordPress. Either makes the cached index_exists stale; a successful bulk into an existing index doesn't.
+		if ( 'bulk_index' === $type && false !== $cached_index_exists_request ) {
+			$bulk_failed = is_wp_error( $response ) || $response_code >= 400 || ! empty( $response_body['errors'] );
+			if ( $bulk_failed || 404 === $cached_index_exists_response_code ) {
+				$this->delete_index_exists_option( $index_exists_option_name );
+			}
+		}
+
 		if ( is_wp_error( $response ) ) {
 			// Return a generic VIP Search WP_Error instead of the one from wp_remote_request
 			return new \WP_Error( 'vip-search-upstream-request-failed', 'There was an error connecting to the upstream search server' );
@@ -1083,14 +1093,23 @@ class Search {
 		// Mirror write requests to migration ES hosts if in migration mode
 		$this->mirror_write_to_migration_hosts( $query, $args, $type, $is_testing_next_version );
 
+		if ( 'delete' === $type ) {
+			// EP fires no hook after a document delete, so drop the responses cached before it
+			SyncManager_Helper::instance()->bump_last_changed();
+		}
+
 		if ( 'index_exists' === $type && in_array( $response_code, $valid_index_exists_response_codes, true ) ) {
 			// Cache index_exists into option since we didn't return a cached value earlier.
 			add_site_option( $index_exists_option_name, $response );
 		}
 
 		if ( $is_cacheable && isset( $response_body_json ) && strlen( $response_body_json ) < 6 * MB_IN_BYTES ) {
+			// Partial results (a shard failed or the search timed out) are only kept briefly: enough to absorb repeats,
+			// without serving incomplete results for long
+			$is_partial = ! empty( $response_body['timed_out'] ) || ! empty( $response_body['_shards']['failed'] );
+
 			// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, 5 * MINUTE_IN_SECONDS );
+			wp_cache_set( $cache_key, $response, self::SEARCH_CACHE_GROUP, $is_partial ? MINUTE_IN_SECONDS : 5 * MINUTE_IN_SECONDS );
 		}
 
 		return $response;
@@ -1473,8 +1492,6 @@ class Search {
 
 			$this->handle_query_limiting_start_timestamp();
 
-			$this->maybe_alert_for_prolonged_query_limiting();
-
 			// $query_db_fallback_value is by default 5, which would result in roughly half offloaded to the db
 			// @see vip_search_query_db_fallback_value filter
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_rand -- rand() is OK, don't need a cryptographically secure value
@@ -1553,41 +1570,6 @@ class Search {
 	 */
 	public static function get_query_rate_limit_start() {
 		return wp_cache_get( self::QUERY_RATE_LIMITED_START_CACHE_KEY, self::SEARCH_CACHE_GROUP );
-	}
-
-	public function maybe_alert_for_prolonged_query_limiting() {
-		$query_limiting_start = static::get_query_rate_limit_start();
-
-		if ( false === $query_limiting_start ) {
-			return;
-		}
-
-		$query_limiting_time = $this->get_time() - $query_limiting_start;
-
-		if ( $query_limiting_time < self::QUERY_RATE_LIMITED_ALERT_LIMIT ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$query_limiting_time
-		);
-
-		if ( ! is_wp_error( $this->alerts ) ) {
-			$this->alerts->send_to_chat( self::SEARCH_ALERT_SLACK_CHAT, $message, self::SEARCH_ALERT_LEVEL );
-		}
-
-		trigger_error( $message, \E_USER_WARNING ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-
-		\Automattic\VIP\Logstash\log2logstash(
-			array(
-				'severity' => 'warning',
-				'feature'  => 'search_query_rate_limiting',
-				'message'  => $message,
-			)
-		);
 	}
 
 	/**
@@ -2370,26 +2352,6 @@ class Search {
 	}
 
 	/**
-	 * Since we've established that enabling the protected content feature causes attachments
-	 * to be indexed, we should ensure that 'attachment' is in the indexable post types if
-	 * protected content is enabled.
-	 *
-	 * @param array $indexable_post_types Current list indexable post types in VIP Search.
-	 * @return array New list of indexable post types in VIP Search.
-	 */
-	public function add_attachment_to_ep_indexable_post_types( $indexable_post_types ) {
-		if ( ! is_array( $indexable_post_types ) ) {
-			return $indexable_post_types;
-		}
-
-		if ( ! isset( $indexable_post_types['attachment'] ) ) {
-			$indexable_post_types['attachment'] = 'attachment';
-		}
-
-		return $indexable_post_types;
-	}
-
-	/**
 	 * Increment the number of queries that have been passed through VIP Search
 	 */
 	private static function query_count_incr() {
@@ -2522,7 +2484,10 @@ class Search {
 	}
 
 	public function action__init() {
-		remove_action( 'wp_initialize_site', [ \ElasticPress\Indexables::factory()->get( 'post' )->sync_manager, 'action_create_blog_index' ] );
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( $post_indexable ) {
+			remove_action( 'wp_initialize_site', [ $post_indexable->sync_manager, 'action_create_blog_index' ] );
+		}
 
 		$this->handle_testing_next_version_session_update();
 	}
@@ -2707,8 +2672,12 @@ class Search {
 	 * @return string $value Whether the index exists for the $blog_id.
 	 */
 	public function filter__blog_option_ep_indexable( $value, $blog_id ) {
-		$index_exists = \ElasticPress\Indexables::factory()->get( 'post' )->index_exists( $blog_id );
-		return false === $index_exists ? 'no' : 'yes';
+		$post_indexable = \ElasticPress\Indexables::factory()->get( 'post' );
+		if ( ! $post_indexable ) {
+			return $value;
+		}
+
+		return false === $post_indexable->index_exists( $blog_id ) ? 'no' : 'yes';
 	}
 
 	public function setup_collector(): void {

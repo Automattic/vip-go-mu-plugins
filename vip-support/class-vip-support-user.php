@@ -6,7 +6,9 @@
 namespace Automattic\VIP\Support_User;
 
 use Automattic\VIP\Utils\Context;
+use Throwable;
 use WP_Error;
+use WP_Session_Tokens;
 use WP_User;
 
 /**
@@ -223,9 +225,13 @@ class User {
 	public function action_load_user_edit() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) && isset( $_GET['user_id'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			check_admin_referer( self::GET_TRIGGER_RESEND_VERIFICATION );
+
+			// This runs before the screen checks that the current user can edit this user.
 			$user_id = absint( $_GET['user_id'] );
-			$this->send_verification_email( $user_id );
+			if ( current_user_can( 'edit_user', $user_id ) ) {
+				$this->send_verification_email( $user_id );
+			}
 		}
 	}
 
@@ -236,8 +242,8 @@ class User {
 	public function action_load_profile() {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
 		if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
-			$user_id = get_current_user_id();
-			$this->send_verification_email( $user_id );
+			check_admin_referer( self::GET_TRIGGER_RESEND_VERIFICATION );
+			$this->send_verification_email( get_current_user_id() );
 		}
 	}
 
@@ -652,32 +658,21 @@ class User {
 		// * Is a super admin
 		// …revoke their powers
 		if ( self::user_has_vip_support_role( $user->ID, false ) && is_super_admin( $user->ID ) ) {
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			revoke_super_admin( $user->ID );
 			return;
 		}
-		if ( ! self::user_has_vip_support_role( $user->ID ) ) {
-			// If the user is a super admin, but has been demoted to
-			// the inactive VIP Support role, we should remove
-			// their super powers
-			if ( is_super_admin( $user->ID ) && self::user_has_vip_support_role( $user->ID, false ) ) {
-				// This user is NOT VIP Support, remove
-				// their powers forthwith
-				require_once ABSPATH . '/wp-admin/includes/ms.php';
+		if ( ! $this->is_allowed_email( $user->user_email ) ) {
+			// This site limits which support users it allows, and this one is not listed. Roles are
+			// per site, so look for support users across the network: they may log in through a
+			// subsite where they do not have the role.
+			if ( is_super_admin( $user->ID ) && ( self::has_vip_support_meta( $user->ID ) || self::has_vip_support_role_on_any_site( $user->ID ) ) ) {
 				revoke_super_admin( $user->ID );
 			}
 			return;
 		}
-		if ( ! $this->user_has_verified_email( $user->ID ) ) {
-			return;
-		}
-		if ( is_super_admin( $user->ID ) ) {
-			return;
-		}
-		if ( ! is_super_admin( $user->ID ) ) {
+		if ( self::user_has_vip_support_role( $user->ID ) && $this->user_has_verified_email( $user->ID ) && ! is_super_admin( $user->ID ) ) {
 			// This user is VIP Support, verified, let's give them
 			// great power and responsibility
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
 			grant_super_admin( $user->ID );
 		}
 	}
@@ -747,7 +742,7 @@ class User {
 	 * @return string A URL with a parameter to trigger a verification email
 	 */
 	protected function get_trigger_resend_verification_url() {
-		return add_query_arg( array( self::GET_TRIGGER_RESEND_VERIFICATION => '1' ) );
+		return wp_nonce_url( add_query_arg( array( self::GET_TRIGGER_RESEND_VERIFICATION => '1' ) ), self::GET_TRIGGER_RESEND_VERIFICATION );
 	}
 
 	/**
@@ -856,6 +851,26 @@ class User {
 	}
 
 	/**
+	 * Does the user have the active or inactive VIP Support role on any site of the network?
+	 *
+	 * @param int $user_id The ID of the user to check
+	 *
+	 * @return bool
+	 */
+	protected static function has_vip_support_role_on_any_site( $user_id ) {
+		global $wpdb;
+
+		foreach ( array_keys( get_blogs_of_user( $user_id, true ) ) as $site_id ) {
+			$caps = get_user_meta( $user_id, $wpdb->get_blog_prefix( $site_id ) . 'capabilities', true );
+			if ( ! empty( $caps[ Role::VIP_SUPPORT_ROLE ] ) || ! empty( $caps[ Role::VIP_SUPPORT_INACTIVE_ROLE ] ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Provide a randomly generated verification code to share via
 	 * the email verification link.
 	 *
@@ -870,22 +885,15 @@ class User {
 	 * @return string A random hex string
 	 */
 	protected function get_user_email_verification_code( $user_id ) {
-		$generate_new_code = false;
-		$user              = get_user_by( 'id', $user_id );
+		$user = get_user_by( 'id', $user_id );
 
 		$verification_data = get_user_meta( $user_id, self::META_VERIFICATION_DATA, true );
-		if ( ! $verification_data ) {
-			$verification_data = array(
-				'touch' => time(), // GPL timestamp
-			);
-			$generate_new_code = true;
+		if ( ! is_array( $verification_data ) ) {
+			$verification_data = array();
 		}
 
-		if ( $verification_data['email'] != $user->user_email ) {
-			$generate_new_code = true;
-		}
-
-		if ( $generate_new_code ) {
+		// Generate a code the first time, and again when the email has changed.
+		if ( empty( $verification_data['code'] ) || ( $verification_data['email'] ?? '' ) !== $user->user_email ) {
 			$verification_data['code']  = bin2hex( openssl_random_pseudo_bytes( 16 ) );
 			$verification_data['touch'] = time();
 		}
@@ -951,13 +959,22 @@ class User {
 		}
 
 		$user->set_role( Role::VIP_SUPPORT_ROLE );
-		if ( is_multisite() ) {
-			require_once ABSPATH . '/wp-admin/includes/ms.php';
-			grant_super_admin( $user_id );
-		}
+		self::grant_super_admin_if_allowed( $user );
 		update_user_meta( $user->ID, $GLOBALS['wpdb']->get_blog_prefix() . 'user_level', 10 );
 
 		return true;
+	}
+
+	/**
+	 * Make a support user a super admin on multisite, unless the site limits support
+	 * users to VIP_SUPPORT_USER_ALLOWED_EMAILS and the user's email is not listed.
+	 *
+	 * @param WP_User $user The support user
+	 */
+	public static function grant_super_admin_if_allowed( WP_User $user ) {
+		if ( self::init()->is_allowed_email( $user->user_email ) ) {
+			grant_super_admin( $user->ID );
+		}
 	}
 
 	/**
@@ -1035,10 +1052,7 @@ class User {
 
 		update_user_meta( $user_id, self::VIP_SUPPORT_USER_META_KEY, time() );
 
-		// If this is a multisite, commence super powers!
-		if ( is_multisite() ) {
-			grant_super_admin( $user->ID );
-		}
+		self::grant_super_admin_if_allowed( $user );
 
 		return $user_id;
 	}
@@ -1073,13 +1087,22 @@ class User {
 			return new WP_Error( 'not-support-user', 'Specified user is not a support user' );
 		}
 
+		// Revoke access before deleting, so the user loses it even if deletion fails part way.
+		revoke_super_admin( $user->ID );
+
+		foreach ( array_keys( get_blogs_of_user( $user->ID, true ) ) as $site_id ) {
+			// Empty the capabilities instead of deleting them: they are the site membership
+			// that deletion uses to find the user's posts.
+			$user->for_site( $site_id );
+			update_user_meta( $user->ID, $user->cap_key, array() );
+		}
+
+		WP_Session_Tokens::get_instance( $user->ID )->destroy_all();
+
 		/** Include admin user functions to get access to wp_delete_user() */
 		require_once ABSPATH . 'wp-admin/includes/user.php';
 
-		// If the user already exists, we should delete and recreate them,
-		// it's the only way to be sure we get the right user_login
 		if ( is_multisite() ) {
-			revoke_super_admin( $user->ID );
 			return wpmu_delete_user( $user->ID );
 		}
 
@@ -1093,13 +1116,18 @@ class User {
 	 */
 	public static function remove_stale_support_users() {
 		$support_users = get_users( array(
-			'meta_key' => self::VIP_SUPPORT_USER_META_KEY,
-			'fields'   => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
+			// Search the whole network: on multisite, a support user may have no role on this site.
+			'blog_id'    => 0,
+			// Skip empty values: those users aren't support users.
+			'meta_query' => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Same meta_key lookup as before, plus a value check.
+				array(
+					'key'     => self::VIP_SUPPORT_USER_META_KEY,
+					'value'   => '',
+					'compare' => '!=',
+				),
+			),
+			'fields'     => [ 'ID', 'user_registered', 'user_email', 'user_login' ],
 		) );
-
-		if ( empty( $support_users ) ) {
-			return array();
-		}
 
 		$processed_ids = [];
 
@@ -1122,7 +1150,19 @@ class User {
 				continue;
 			}
 
-			$rm = self::remove( $user->ID, 'id' );
+			// A failure, e.g. from a plugin hook fired while deleting the user's posts,
+			// must not stop the other users from being removed.
+			$switched_depth = count( $GLOBALS['_wp_switched_stack'] ?? array() );
+			try {
+				$rm = self::remove( $user->ID, 'id' );
+			} catch ( Throwable $e ) {
+				$rm = new WP_Error( 'remove-failed', sprintf( '%s in %s:%d', $e->getMessage(), $e->getFile(), $e->getLine() ) );
+
+				// On multisite, the failure can leave deletion switched to another site.
+				for ( $depth = count( $GLOBALS['_wp_switched_stack'] ?? array() ); $depth > $switched_depth; $depth-- ) {
+					restore_current_blog();
+				}
+			}
 
 			$removed[] = array(
 				'ID'      => $user->ID,
@@ -1139,7 +1179,10 @@ class User {
 	 * Remove stale users via cron
 	 */
 	public static function do_cron_cleanup() {
-		// TODO: search for some meta in case someone changes roles?
+		// Every site schedules this event, but the cleanup covers the whole network, so run it once.
+		if ( ! is_main_site() ) {
+			return;
+		}
 
 		$stale = self::remove_stale_support_users();
 

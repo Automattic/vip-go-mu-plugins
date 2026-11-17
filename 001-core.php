@@ -94,6 +94,11 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// We manage the disk space, test gives bogus results.
 	unset( $tests['direct']['available_updates_disk_space'] );
 
+	// Disable "Opcode cache" test (WordPress 7.0+).
+	// OPcache is managed by VIP, but opcache.restrict_api blocks the
+	// opcache_get_status() call the test relies on, so it reports it as not enabled.
+	unset( $tests['direct']['opcode_cache'] );
+
 	return $tests;
 }
 
@@ -159,30 +164,6 @@ add_filter(
 	20,
 	2
 );
-
-/**
- * Prevent invalid query args from causing php errors & a limitless query.
- *
- * This patch can be removed when the following core ticket is resolved:
- * @see https://core.trac.wordpress.org/ticket/17737
- */
-function vip_prevent_invalid_core_query_args() {
-	if ( is_admin() ) {
-		return;
-	}
-
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['name'] ) && ! is_string( $_GET['name'] ) ) {
-		unset( $_GET['name'] );
-	}
-
-	if ( isset( $_GET['pagename'] ) && ! is_string( $_GET['pagename'] ) ) {
-		unset( $_GET['pagename'] );
-	}
-	// phpcs:enable
-}
-
-add_action( 'wp_loaded', 'vip_prevent_invalid_core_query_args', 1 );
 
 add_filter( 'allowed_http_origins', 'vip_only_https_origins' );
 

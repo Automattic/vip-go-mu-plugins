@@ -104,7 +104,7 @@ final class SyncManager_Helper {
 	 *
 	 * @return bool 
 	 */
-	private function bump_last_changed() {
+	public function bump_last_changed() {
 		return wp_cache_set( 'last_changed', microtime(), Search::SEARCH_CACHE_GROUP );
 	}
 

@@ -43,18 +43,18 @@ class WXR_Parser_Regex {
 				$importline  = rtrim( $this->fgets( $fp ) );
 
 				if ( ! $wxr_version && preg_match( '|<wp:wxr_version>(\d+\.\d+)</wp:wxr_version>|', $importline, $version ) ) {
-					$wxr_version = $version[1];
+					$wxr_version = isset( $version[1] ) ? $version[1] : '';
 				}
 
 				if ( false !== strpos( $importline, '<wp:base_site_url>' ) ) {
 					preg_match( '|<wp:base_site_url>(.*?)</wp:base_site_url>|is', $importline, $url );
-					$this->base_url = $url[1];
+					$this->base_url = isset( $url[1] ) ? $url[1] : '';
 					continue;
 				}
 
 				if ( false !== strpos( $importline, '<wp:base_blog_url>' ) ) {
 					preg_match( '|<wp:base_blog_url>(.*?)</wp:base_blog_url>|is', $importline, $blog_url );
-					$this->base_blog_url = $blog_url[1];
+					$this->base_blog_url = isset( $blog_url[1] ) ? $blog_url[1] : '';
 					continue;
 				} elseif ( empty( $this->base_blog_url ) ) {
 					$this->base_blog_url = $this->base_url;
@@ -62,8 +62,10 @@ class WXR_Parser_Regex {
 
 				if ( false !== strpos( $importline, '<wp:author>' ) ) {
 					preg_match( '|<wp:author>(.*?)</wp:author>|is', $importline, $author );
-					$a                                   = $this->process_author( $author[1] );
-					$this->authors[ $a['author_login'] ] = $a;
+					if ( isset( $author[1] ) ) {
+						$a                                   = $this->process_author( $author[1] );
+						$this->authors[ $a['author_login'] ] = $a;
+					}
 					continue;
 				}
 
@@ -72,7 +74,7 @@ class WXR_Parser_Regex {
 					$pos         = strpos( $importline, "<$tag>" );
 					$pos_closing = strpos( $importline, "</$tag>" );
 					if ( preg_match( '|<' . $tag . '>(.*?)</' . $tag . '>|is', $importline, $matches ) ) {
-						$this->{$handler[0]}[] = call_user_func( $handler[1], $matches[1] );
+						$this->{$handler[0]}[] = call_user_func( $handler[1], isset( $matches[1] ) ? $matches[1] : '' );
 
 					} elseif ( false !== $pos ) {
 						// Take note of any content after the opening tag
@@ -115,14 +117,19 @@ class WXR_Parser_Regex {
 	}
 
 	public function get_tag( $text, $tag ) {
+		if ( null === $text ) {
+			return '';
+		}
 		preg_match( "|<$tag.*?>(.*?)</$tag>|is", $text, $return );
 		if ( isset( $return[1] ) ) {
 			if ( substr( $return[1], 0, 9 ) == '<![CDATA[' ) {
 				if ( strpos( $return[1], ']]]]><![CDATA[>' ) !== false ) {
 					preg_match_all( '|<!\[CDATA\[(.*?)\]\]>|s', $return[1], $matches );
 					$return = '';
-					foreach ( $matches[1] as $match ) {
-						$return .= $match;
+					if ( isset( $matches[1] ) ) {
+						foreach ( $matches[1] as $match ) {
+							$return .= $match;
+						}
 					}
 				} else {
 					$return = preg_replace( '|^<!\[CDATA\[(.*)\]\]>$|s', '$1', $return[1] );

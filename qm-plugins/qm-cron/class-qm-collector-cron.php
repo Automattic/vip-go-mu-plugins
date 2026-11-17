@@ -47,6 +47,13 @@ class QM_Collector_Cron extends QM_DataCollector {
 	 * @return void
 	 */
 	public function process() {
+		// Only the HTML dispatcher shows this panel, but the REST, redirect and Ajax
+		// dispatchers process every collector too. Skip loading every cron event there.
+		$html_dispatcher = QM_Dispatchers::get( 'html' );
+		if ( ! $html_dispatcher || ! $html_dispatcher->should_dispatch() ) {
+			return;
+		}
+
 		$this->process_crons();
 		$this->process_schedules();
 	}
@@ -142,7 +149,7 @@ class QM_Collector_Cron extends QM_DataCollector {
 
 			$this->data->schedules[ $interval_hook ] = [
 				'interval' => $interval,
-				'display'  => $schedule['display'],
+				'display'  => $schedule['display'] ?? '',
 			];
 		}
 	}

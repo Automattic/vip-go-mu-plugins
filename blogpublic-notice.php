@@ -38,7 +38,8 @@ function dismiss_handler() {
 	jQuery('#blogpublic-notice').on('click', 'button', function() {
 		jQuery.ajax( ajaxurl, {
 			data : {
-				action:'blogpublic_notice_dismiss'
+				action:'blogpublic_notice_dismiss',
+				_ajax_nonce:'<?php echo esc_js( wp_create_nonce( 'blogpublic_notice_dismiss' ) ); ?>'
 			},
 			dataType: 'json',
 			success: function(data) {
@@ -56,6 +57,8 @@ function dismiss_handler() {
  * Ajax callback for dismiss button
  */
 function dismiss_callback() {
+	check_ajax_referer( 'blogpublic_notice_dismiss' );
+
 	if ( current_user_can( 'manage_options' ) ) {
 		update_option( 'blogpublic_notice_dismissed', true, 'no' );
 		wp_send_json_success();
