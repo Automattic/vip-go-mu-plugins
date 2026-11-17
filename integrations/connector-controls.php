@@ -8,6 +8,7 @@
 namespace Automattic\VIP\Integrations;
 
 use WordPress\AiClient\AiClient;
+use WordPress\AiClient\Common\Contracts\CachesDataInterface;
 use WordPress\AiClient\Providers\Http\DTO\ApiKeyRequestAuthentication;
 
 /**
@@ -148,6 +149,8 @@ class ConnectorControlsIntegration extends Integration {
 			add_action( 'wp_connectors_init', [ $this, 'apply_runtime_credential_fallbacks' ] );
 		}
 
+		// Invalidate after runtime credentials are finalized, before describing connectors.
+		add_action( 'wp_connectors_init', [ $this, 'invalidate_stale_model_caches' ], PHP_INT_MAX - 1 );
 		add_action( 'wp_connectors_init', [ $this, 'describe_managed_connectors' ], PHP_INT_MAX );
 		add_filter( 'script_module_data_options-connectors-wp-admin', [ $this, 'lock_connector_fields' ], PHP_INT_MAX );
 
@@ -304,6 +307,46 @@ class ConnectorControlsIntegration extends Integration {
 	}
 
 	/**
+	 * Drop a provider's cached models when its runtime credential changes.
+	 *
+	 * The AI Client caches each provider's model list per class, not per credential,
+	 * so availability checks keep succeeding after a key is removed or rotated.
+	 * Only a salted hash of the credential is stored.
+	 *
+	 * Temporary workaround until the credential-aware cache fix is available in Core:
+	 * https://github.com/WordPress/php-ai-client/pull/310
+	 */
+	public function invalidate_stale_model_caches(): void {
+		$cache = AiClient::getCache();
+		if ( null === $cache || get_current_blog_id() !== $this->configured_blog_id ) {
+			return;
+		}
+
+		$registry  = AiClient::defaultRegistry();
+		$cache_key = static fn ( string $connector_id ): string => 'vip_connector_controls_credential_' . $connector_id;
+		$stored    = $cache->getMultiple( array_map( $cache_key, array_keys( self::CONNECTORS ) ) );
+
+		foreach ( array_keys( self::CONNECTORS ) as $connector_id ) {
+			if ( ! $registry->hasProvider( $connector_id ) ) {
+				continue;
+			}
+
+			$authentication = $registry->getProviderRequestAuthentication( $connector_id );
+			$credential     = $authentication instanceof ApiKeyRequestAuthentication ? $authentication->getApiKey() : '';
+			$fingerprint    = wp_hash( $connector_id . '|' . $credential );
+			if ( ( $stored[ $cache_key( $connector_id ) ] ?? null ) === $fingerprint ) {
+				continue;
+			}
+
+			$directory = $registry->getProviderClassName( $connector_id )::modelMetadataDirectory();
+			if ( $directory instanceof CachesDataInterface ) {
+				$directory->invalidateCaches();
+			}
+			$cache->set( $cache_key( $connector_id ), $fingerprint );
+		}
+	}
+
+	/**
 	 * Resolve a credential while respecting explicit opt-outs at more-specific levels.
 	 *
 	 * @param array{config_key:string,blocked_key:string,constant:string,env:string,option:string} $connector Connector definition.
@@ -396,6 +439,7 @@ class ConnectorControlsIntegration extends Integration {
 	 * Core recognizes provider constants and environment variables as read-only.
 	 * Its constant marker also locks fields with no credential or a runtime
 	 * fallback, without exposing inert database values.
+	 * Suppress stale connected badges when runtime authentication is absent.
 	 *
 	 * @param array<string,mixed> $data Connector screen script-module data.
 	 * @return array<string,mixed>
@@ -405,6 +449,8 @@ class ConnectorControlsIntegration extends Integration {
 			return $data;
 		}
 
+		$report = $this->get_runtime_status();
+
 		foreach ( array_keys( self::CONNECTORS ) as $connector_id ) {
 			if ( ! isset( $data['connectors'][ $connector_id ]['authentication'] ) ) {
 				continue;
@@ -413,6 +459,12 @@ class ConnectorControlsIntegration extends Integration {
 			$key_source = $data['connectors'][ $connector_id ]['authentication']['keySource'] ?? 'none';
 			if ( ! in_array( $key_source, [ 'env', 'constant' ], true ) ) {
 				$data['connectors'][ $connector_id ]['authentication']['keySource'] = 'constant';
+			}
+
+			// Core's availability check can reuse cached models after a credential is removed.
+			$status = $report['providers'][ $connector_id ]['status'] ?? 'unknown';
+			if ( in_array( $status, [ 'unconfigured', 'provider_unavailable' ], true ) ) {
+				$data['connectors'][ $connector_id ]['authentication']['isConnected'] = false;
 			}
 		}
 

@@ -27,6 +27,21 @@ if ( file_exists( __DIR__ . '/001-core/options-api.php' ) ) {
  */
 add_filter( 'validate_current_theme', '__return_false' );
 
+/**
+ * Disable random content redirects
+ *
+ * WordPress 7.2 adds /random/ URLs that redirect to a post picked with
+ * ORDER BY RAND(). The query scans every eligible post and the response
+ * can't be cached, so repeated hits put heavy load on large sites. It can
+ * also surface publicly queryable content that was never meant to be browsed.
+ *
+ * Sites that want the feature can re-enable it with:
+ * add_filter( 'wp_enable_random_content_redirect', '__return_true' );
+ *
+ * @see https://make.wordpress.org/core/2026/11/05/your-content-is-going-to-get-more-random/
+ */
+add_filter( 'wp_enable_random_content_redirect', '__return_false' );
+
 if ( false !== WPCOM_IS_VIP_ENV ) {
 	add_action( 'muplugins_loaded', 'wpcom_vip_init_core_restrictions' );
 }

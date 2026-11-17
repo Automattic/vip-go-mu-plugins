@@ -45,6 +45,8 @@ function register_rest_routes() {
 					'type'              => 'string',
 					'required'          => true,
 					'validate_callback' => __NAMESPACE__ . '\rest_endpoint_url_validate_callback',
+					// Runs after validation, so the callback gets the URL's index names instead of the raw URL
+					'sanitize_callback' => __NAMESPACE__ . '\get_search_url_indexes',
 				],
 				'query' => [
 					'type'              => 'string',
@@ -66,7 +68,7 @@ function rest_callback( \WP_REST_Request $request ) {
 
 	$ep     = \ElasticPress\Elasticsearch::factory();
 	$result = $ep->remote_request(
-		trim( wp_parse_url( $request['url'], PHP_URL_PATH ), '/' ),
+		$request['url'] . '/_search',
 		[
 			'body'   => $request['query'],
 			'method' => 'POST',
@@ -140,32 +142,23 @@ function rest_endpoint_query_validate_callback( $value, $request, $param ) {
  * @return mixed true if valid, WP_Error if not.
  */
 function rest_endpoint_url_validate_callback( $value, $request, $param ) {
-	$error = new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) );
+	return null === get_search_url_indexes( $value )
+		? new \WP_Error( 'rest_invalid_param', sprintf( '%s is not a valid allowed URL', $param ) )
+		: true;
+}
 
-	// Not a valid URL.
-	if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
-		return $error;
-	}
+/**
+ * Get the comma-separated index names from a URL whose path is exactly `/{index}[,{index}...]/_search`
+ * with every index belonging to this site, or null for any other URL (e.g. with dot segments).
+ *
+ * @param mixed $url
+ * @return string|null
+ */
+function get_search_url_indexes( $url ): ?string {
+	$index = 'vip-' . preg_quote( (string) FILES_CLIENT_SITE_ID, '#' ) . '-[a-z0-9_-]+';
+	$path  = is_string( $url ) ? wp_parse_url( $url, PHP_URL_PATH ) : null;
 
-	// phpcs:ignore WordPress.WP.AlternativeFunctions.parse_url_parse_url
-	$path = trim( parse_url( $value, PHP_URL_PATH ), '/' );
-
-	// Not an allowed endpoint
-	if ( ! str_ends_with( $path, '_search' ) ) {
-		return $error;
-	}
-
-	$index_part   = strtok( $path, '/' );
-	$index_prefix = 'vip-' . FILES_CLIENT_SITE_ID . '-';
-
-	// Check for the allowed index names.
-	foreach ( explode( ',', $index_part ) as $idx ) {
-		if ( ! str_starts_with( $idx, $index_prefix ) ) {
-			return $error;
-		}
-	}
-
-	return true;
+	return is_string( $path ) && preg_match( "#^/($index(?:,$index)*)/_search$#D", $path, $matches ) ? $matches[1] : null;
 }
 
 /**

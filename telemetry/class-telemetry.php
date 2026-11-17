@@ -14,9 +14,6 @@ use WP_Error;
 /**
  * The default entry point for recording telemetry events. Events are sent to
  * Tracks.
- *
- * This wraps Tracks instead of extending it, because the previous release's
- * bootstrap loads this file before the Tracks class during a non-atomic deploy.
  */
 class Telemetry extends Telemetry_System {
 	/**

@@ -161,7 +161,8 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		);
 
 		$request = new \WP_REST_Request( 'POST' );
-		$request->set_param( 'url', 'https://elasticsearch:9200/vip-123-post-1/_search' );
+		// The route's sanitize_callback reduces `url` to its index names before the callback runs.
+		$request->set_param( 'url', 'vip-123-post-1' );
 		$request->set_param( 'query', '{}' );
 		return \Automattic\VIP\Search\Dev_Tools\rest_callback( $request )->get_data();
 	}
@@ -205,7 +206,7 @@ class Search_Dev_Tools_Test extends WP_UnitTestCase {
 		if ( $allowed ) {
 			$this->assertSame( 200, $response->get_status() );
 			$this->assertNotEmpty( $requests, 'An authorized request must reach Elasticsearch.' );
-			$this->assertStringContainsString( '_search', end( $requests ) );
+			$this->assertSame( 'https://elasticsearch:9200/vip-' . FILES_CLIENT_SITE_ID . '-post-1/_search', end( $requests ) );
 		} else {
 			$this->assertSame( null === $role ? 401 : 403, $response->get_status() );
 			$this->assertSame( 'rest_forbidden', $response->get_data()['code'] );
