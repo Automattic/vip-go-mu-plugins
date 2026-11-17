@@ -37,6 +37,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 		// Before the Two Factor plugin saves enabled providers, so a number verified in the same request can be enabled.
 		add_action( 'personal_options_update', array( $this, 'user_options_update' ), 9 );
 		add_action( 'edit_user_profile_update', array( $this, 'user_options_update' ), 9 );
+		add_filter( 'update_user_metadata', array( $this, 'mark_unflagged_number_unverified_on_enable' ), 10, 4 );
 		parent::__construct();
 	}
 
@@ -194,6 +195,29 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 			<?php endif; ?>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Enabling SMS outside the profile form (for example `wp two-factor enable`) skips the availability check, so a
+	 * number saved before verification was enforced is marked unverified then. Only numbers that already had SMS
+	 * enabled keep working without verification.
+	 *
+	 * @param null|bool $check      Whether to short-circuit the meta update; passed through.
+	 * @param int       $user_id    User ID.
+	 * @param string    $meta_key   Meta key being updated.
+	 * @param mixed     $meta_value New meta value.
+	 * @return null|bool
+	 */
+	public function mark_unflagged_number_unverified_on_enable( $check, $user_id, $meta_key, $meta_value ) {
+		if ( Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY === $meta_key
+			&& in_array( __CLASS__, (array) $meta_value, true )
+			&& ! in_array( __CLASS__, (array) get_user_meta( $user_id, $meta_key, true ), true )
+			&& '' === get_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, true )
+		) {
+			update_user_meta( $user_id, self::SMS_CONFIGURED_META_KEY, 0 );
+		}
+
+		return $check;
 	}
 
 	public function user_options_update( $user_id ) {
