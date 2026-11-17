@@ -8,6 +8,10 @@
 
 namespace Automattic\VIP\Files\Acl\Pre_WP_Utils;
 
+use Automattic\VIP\Files\Path_Utils;
+
+require_once __DIR__ . '/../class-path-utils.php';
+
 /**
  * Validates and sanitizes the submitted file URI.
  *
@@ -95,7 +99,12 @@ function validate_path( $file_path ) {
 function sanitize_and_split_path( $file_path ) {
 	$decoded    = urldecode( $file_path );
 	$compressed = preg_replace( '!/{2,}!', '/', $decoded );
-	list( $pre_wpcontent_path, $post_wpcontent_path ) = explode( '/wp-content/uploads/', $compressed, 2 );
+
+	// Strip the subsite directories the way the edge does before it serves the file, so this is the file that gets checked.
+	$uploads_path       = Path_Utils::trim_leading_multisite_directory( $compressed, 'wp-content/uploads' ) ?: $compressed;
+	$pre_wpcontent_path = substr( $compressed, 0, strlen( $compressed ) - strlen( $uploads_path ) );
+
+	list( , $post_wpcontent_path ) = explode( '/wp-content/uploads/', $uploads_path, 2 );
 
 	return [
 		$pre_wpcontent_path,
