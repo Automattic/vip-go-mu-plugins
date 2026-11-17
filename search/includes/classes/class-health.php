@@ -519,8 +519,7 @@ class Health {
 		}
 
 		$should_stop = false;
-		$out_of_time = false;
-		$deadline    = $time_limit > 0 ? time() + $time_limit : 0;
+		$deadline    = $time_limit > 0 ? time() + $time_limit : PHP_INT_MAX;
 		do {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
@@ -598,7 +597,7 @@ class Health {
 			}
 
 			$should_stop = wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true );
-			$out_of_time = $deadline && time() >= $deadline && $start_post_id <= $last_post_id;
+			$out_of_time = time() >= $deadline && $start_post_id <= $last_post_id;
 		} while ( $start_post_id <= $last_post_id && ! $should_stop && ! $out_of_time );
 
 		if ( $process_parallel_execution_lock || $should_stop ) {
@@ -608,13 +607,9 @@ class Health {
 				$results = new WP_Error( 'es_validate_content_aborted', 'Validation aborted by CLI command stop-validate-contents!' );
 			}
 		}
-		if ( $track_process ) {
-			if ( $out_of_time && ! $should_stop ) {
-				// Out of time: the next run picks up from here
-				$this->update_validate_content_process( $start_post_id );
-			} else {
-				$this->remove_validate_content_process();
-			}
+		// A run that ran out of time keeps its checkpoint, as a killed run does, so the next run resumes from it
+		if ( $track_process && ! $out_of_time ) {
+			$this->remove_validate_content_process();
 		}
 
 		// Report the batches that couldn't be validated, along with the diffs of those that were
