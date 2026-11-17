@@ -232,7 +232,9 @@ function wpcom_enable_two_factor_plugin() {
 	remove_action( 'init', 'two_factor_register_admin_hooks' );
 
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
-	add_action( 'login_enqueue_scripts', 'wpcom_vip_two_factor_jetpack_sso_style' );
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || true !== VIP_JETPACK_SKIP_LOAD ) {
+		add_action( 'login_enqueue_scripts', 'wpcom_vip_two_factor_jetpack_sso_style' );
+	}
 }
 
 /**
