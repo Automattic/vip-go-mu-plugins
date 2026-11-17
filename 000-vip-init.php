@@ -174,7 +174,8 @@ $internal_cron_events = array(
 	),
 );
 
-define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
+// Sites can define their own. VIP Support then schedules its cleanup as a regular event.
+defined( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS' ) || define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
 // Enable Jetpack private connection by default on non production sites
 if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
