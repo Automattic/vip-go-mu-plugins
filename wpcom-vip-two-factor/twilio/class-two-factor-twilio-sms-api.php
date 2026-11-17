@@ -69,9 +69,7 @@ class Two_Factor_Twilio_SMS_API implements Two_Factor_Twilio_SMS {
 	}
 
 	/**
-	 * Hash a code together with the number it is sent to, so it can't verify a number saved after it was sent.
-	 *
-	 * @param string $code Code sent to the user.
+	 * Hash a code with the number it is sent to, so it can't verify a number saved after it was sent.
 	 */
 	private function hash_code( string $code ): string {
 		return wp_hash( $this->phone . ':' . $code );

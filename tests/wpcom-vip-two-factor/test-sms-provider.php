@@ -369,7 +369,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function data_verify_check_failures(): array {
 		return [
-			'HTTP error with body'    => [
+			'HTTP error with body'        => [
 				http_response( 400, wp_json_encode( [
 					'code'      => 21211,
 					'message'   => 'Invalid verification code',
@@ -378,13 +378,20 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 				] ) ),
 			],
 			// Missing 'message' property - this should trigger fallback error format
-			'HTTP error without body' => [
+			'HTTP error without body'     => [
 				http_response( 500, wp_json_encode( [
 					'code'   => 20001,
 					'status' => 500,
 				] ) ),
 			],
-			'network error'           => [ self::network_error() ],
+			'network error'               => [ self::network_error() ],
+			// A send that finished after the number changed can store a verification for the old number.
+			'approved for another number' => [
+				http_response( 200, wp_json_encode( [
+					'status' => 'approved',
+					'to'     => '+97476543211',
+				] ) ),
+			],
 		];
 	}
 
@@ -440,23 +447,6 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Verify that verification SID remains in user meta after failed verification check
 		$this->assertNotEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ), 'Verification SID should remain in user meta after failed verification check' );
 		$this->assertTrue( Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID )->has_pending_metadata() );
-	}
-
-	/**
-	 * An approved verification for another number, stored by a send that finished after the number changed, is rejected.
-	 */
-	public function test_twilio_verify_approved_check_for_another_number_fails(): void {
-		$user = $this->setup_user_with_phone( '+97476543211' );
-		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
-		$_REQUEST['two-factor-sms-code'] = '123456';
-		$this->add_http_response_mock( self::VERIFICATION_CHECK_URL, http_response( 200, wp_json_encode( [
-			'sid'    => self::VERIFICATION_SID,
-			'status' => 'approved',
-			'to'     => self::QATAR_PHONE,
-		] ) ) );
-
-		$this->assertFalse( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
-		$this->assertEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ) );
 	}
 
 	public function test_twilio_verify_validate_authentication_failure_missing_verification_sid(): void {

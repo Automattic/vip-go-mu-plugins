@@ -199,14 +199,7 @@ class Two_Factor_SMS extends Two_Factor_Provider {
 
 	/**
 	 * Enabling SMS outside the profile form (for example `wp two-factor enable`) skips the availability check, so a
-	 * number saved before verification was enforced is marked unverified then. Only numbers that already had SMS
-	 * enabled keep working without verification.
-	 *
-	 * @param null|bool $check      Whether to short-circuit the meta update; passed through.
-	 * @param int       $user_id    User ID.
-	 * @param string    $meta_key   Meta key being updated.
-	 * @param mixed     $meta_value New meta value.
-	 * @return null|bool
+	 * number without the flag is marked unverified then. Only numbers that already had SMS enabled keep working unverified.
 	 */
 	public function mark_unflagged_number_unverified_on_enable( $check, $user_id, $meta_key, $meta_value ) {
 		if ( Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY === $meta_key
