@@ -49,6 +49,12 @@ class Two_Factor_Twilio_SMS_API implements Two_Factor_Twilio_SMS {
 
 		$format = '%1$s is your %2$s verification code.' . "\n\n" . '@%3$s #%1$s';
 
+		// Shorten a long site title so the message goes out whole, keeping the code and the last line phones use to autofill it.
+		$max_title_length = MAX_SMS_LENGTH - mb_strlen( sprintf( $format, $verification_code, '', $home_url_without_protocol ) );
+		if ( mb_strlen( $site_title ) > $max_title_length ) {
+			$site_title = wp_html_excerpt( $site_title, max( 0, $max_title_length - 3 ), '...' );
+		}
+
 		return sprintf( $format, $verification_code, $site_title, $home_url_without_protocol );
 	}
 

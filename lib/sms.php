@@ -4,6 +4,7 @@ namespace Automattic\VIP\SMS;
 
 use WP_Error;
 
+define( 'MAX_SMS_LENGTH', 1600 ); // Twilio rejects longer message bodies.
 define( 'SMS_FROM_NUMBER', '+14159695849' );
 define( 'TWILIO_BASE_URL', 'https://api.twilio.com/2010-04-01' );
 define( 'TWILIO_ACCOUNT', 'ACe16d3eaebadd491f285297e03b4d3234' );
@@ -12,7 +13,7 @@ define( 'TWILIO_ACCOUNT', 'ACe16d3eaebadd491f285297e03b4d3234' );
  * Send an SMS message to the specified numbers using the Twilio API
  *
  * @param int|array Number(s) to send an SMS to. Accepts formatted and unformatted US numbers, e.g. +14155551212, (415) 555-1212 or 415-555-1212.
- * @param string Message to send. Twilio splits long messages into segments that phones reassemble.
+ * @param string Message to send. Twilio splits long messages into segments that phones reassemble; messages over MAX_SMS_LENGTH characters are sent in parts.
  *
  * @link http://www.twilio.com/docs/api/rest/sending-sms
  */
@@ -22,18 +23,22 @@ function send_sms( $to, $message ) {
 		? array( 'MessagingServiceSid' => VIP_TWILIO_MESSAGING_SERVICE_SID )
 		: array( 'From' => SMS_FROM_NUMBER );
 
-	foreach ( (array) $to as $to_number ) {
-		$body = array(
-			'To'   => $to_number,
-			'Body' => $message,
-		);
+	$parts = mb_strlen( $message ) > MAX_SMS_LENGTH ? mb_str_split( $message, MAX_SMS_LENGTH ) : array( $message );
 
-		$result = send_single_sms_via_rest( $body + $sender );
-		if ( is_wp_error( $result ) ) {
-			$masked_number = substr( $to_number, 0, floor( strlen( $to_number ) / 1.5 ) ) . 'xxx';
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', esc_html( $masked_number ), esc_html( $result->get_error_message() ) ), E_USER_WARNING );
-			return $result;
+	foreach ( (array) $to as $to_number ) {
+		foreach ( $parts as $part ) {
+			$body = array(
+				'To'   => $to_number,
+				'Body' => $part,
+			);
+
+			$result = send_single_sms_via_rest( $body + $sender );
+			if ( is_wp_error( $result ) ) {
+				$masked_number = substr( $to_number, 0, floor( strlen( $to_number ) / 1.5 ) ) . 'xxx';
+				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+				trigger_error( sprintf( 'Failed to send SMS to %s: %s #vip-go-sms-error', esc_html( $masked_number ), esc_html( $result->get_error_message() ) ), E_USER_WARNING );
+				return $result;
+			}
 		}
 	}
 	return true;
