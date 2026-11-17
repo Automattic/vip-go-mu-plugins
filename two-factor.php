@@ -158,7 +158,8 @@ function wpcom_vip_enforce_two_factor_plugin() {
 		);
 
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
-		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
+		// Run last, so a later filter can't map a restricted cap back to one the user's role still has.
+		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', PHP_INT_MAX, 4 );
 	}
 }
 
