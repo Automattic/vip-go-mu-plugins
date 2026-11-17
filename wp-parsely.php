@@ -23,6 +23,7 @@ use Parsely\Parsely;
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
 const SUPPORTED_VERSIONS = [
+	'3.26',
 	'3.25',
 	'3.24',
 	'3.23',
