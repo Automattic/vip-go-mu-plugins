@@ -81,21 +81,14 @@ class Object_Cache_Backend implements BackendInterface {
 	public function dec_value(): void {
 		if ( $this->increments > 0 ) {
 			$result = wp_cache_decr( self::KEY_NAME, 1, self::GROUP_NAME );
-			if ( false !== $result ) {
+			if ( false === $result ) {
+				// The counter expired since this request incremented it, taking this request's increments with it
+				$this->increments = 0;
+			} else {
 				--$this->increments;
 				if ( $result < 0 ) {
 					$this->reset();
 				}
-			} else {
-				log2logstash( [
-					'severity' => 'warning',
-					'feature'  => 'search_concurrency_limiter',
-					'message'  => 'Failed to decrement the counter',
-					'extra'    => [
-						'counter'        => wp_cache_get( self::KEY_NAME, self::GROUP_NAME ),
-						'counter_remote' => wp_cache_get( self::KEY_NAME, self::GROUP_NAME, true ),
-					],
-				] );
 			}
 		}
 	}
