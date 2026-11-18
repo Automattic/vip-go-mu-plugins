@@ -121,6 +121,7 @@ function wp_cache_add_non_persistent_groups( $groups ) {
 	$wp_object_cache->add_non_persistent_groups( $groups );
 }
 
+#[AllowDynamicProperties]
 class WP_Object_Cache {
 	var $global_groups = array( 'WP_Object_Cache_global' );
 
