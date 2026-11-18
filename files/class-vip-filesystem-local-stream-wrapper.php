@@ -952,8 +952,9 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			return rmdir( static::get_local_tmp_path( $path ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir
 		}
 
-		// No such thing as a directory in File service.
-		return true;
+		// The File service has no directories to remove, and the files under this path stay, so report
+		// that nothing was removed. Returning false doesn't add a PHP warning.
+		return false;
 	}
 
 	/**
