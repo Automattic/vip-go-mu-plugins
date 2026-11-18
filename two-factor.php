@@ -114,15 +114,21 @@ function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
  * whether the current request is a REST API request for
  * /jetpack/v4/remote_authorize request that connects WordPress.com user
  * to a local user.
- * @return unmodified - it's attached to a filter.
+ *
+ * Matches the route rather than the handler, because Jetpack has moved the handler between classes.
+ *
+ * @param mixed           $response Result to send to the client.
+ * @param array           $handler  Route handler used for the request.
+ * @param WP_REST_Request $request  Request used to generate the response.
+ * @return mixed Unmodified response.
  */
-function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler ) {
-	if ( isset( $handler['callback'] ) && 'Jetpack_Core_Json_Api_Endpoints::remote_authorize' === $handler['callback'] ) {
+function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler, $request ) {
+	if ( '/jetpack/v4/remote_authorize' === $request->get_route() ) {
 		wpcom_vip_is_jetpack_authorize_rest_request( true );
 	}
 	return $response;
 }
-add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 2 );
+add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 3 );
 
 function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {
