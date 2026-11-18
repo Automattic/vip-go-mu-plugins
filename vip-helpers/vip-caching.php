@@ -139,7 +139,7 @@ add_action( 'transition_post_status', 'wpcom_vip_flush_get_page_by_path_cache', 
  * @return int Post ID, or 0 on failure.
  */
 function wpcom_vip_url_to_postid( $url ) {
-	$cache_key = md5( $url );
+	$cache_key = _wpcom_vip_url_to_postid_cache_key( $url );
 	$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
 
 	// Look the URL up again if its post was unpublished or deleted since it was cached
@@ -151,11 +151,48 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
+/**
+ * Cache key for wpcom_vip_url_to_postid().
+ *
+ * Leaves out tracking parameters, which don't change the post a URL is for, so links shared with
+ * fbclid or utm_source don't make every visitor's lookup a cache miss. Other parameters stay in the
+ * key because url_to_postid filters can use them (e.g. WPML's ?lang=).
+ *
+ * @param string $url URL passed to wpcom_vip_url_to_postid().
+ * @return string Cache key.
+ */
+function _wpcom_vip_url_to_postid_cache_key( $url ) {
+	$tracking_params = [
+		'utm_source',
+		'utm_medium',
+		'utm_campaign',
+		'utm_term',
+		'utm_content',
+		'utm_id',
+		'fbclid',
+		'gclid',
+		'gbraid',
+		'wbraid',
+		'dclid',
+		'msclkid',
+		'ttclid',
+		'twclid',
+		'igshid',
+		'mc_cid',
+		'mc_eid',
+		'_ga',
+		'_gl',
+	];
+
+	// Cast, since remove_query_arg() falls back to the current request's URL for false (e.g. no referer).
+	return md5( remove_query_arg( $tracking_params, (string) $url ) );
+}
+
 // Forget the lookups for a published post's old and new URLs when it's saved
 add_action( 'wp_after_insert_post', function ( $post_id, $post, $update, $post_before ) {
 	foreach ( array_filter( [ $post_before, $post ] ) as $version ) {
 		if ( 'publish' === $version->post_status ) {
-			wp_cache_delete( md5( get_permalink( $version ) ), 'url_to_postid' );
+			wp_cache_delete( _wpcom_vip_url_to_postid_cache_key( get_permalink( $version ) ), 'url_to_postid' );
 		}
 	}
 }, 10, 4 );
