@@ -144,8 +144,10 @@ class Query_Warning {
 			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace -- Arguments are excluded and only customer-relative paths are retained.
 			$origin = $this->origin( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ) );
 			$family = $this->family_hash( $this->classifier->classify( $request_body ), $origin['key'] );
+			$key    = 'query_failure_dedupe:' . hash( 'sha256', $family . '|' . $error );
 
-			return true === $this->cache_add( 'query_failure_dedupe:' . hash( 'sha256', $family . '|' . $error ), 1, self::DEFAULT_DEDUPE_WINDOW_S );
+			// wp_cache_add() also fails when the cache is down, so only skip a failure the cache has already seen
+			return true === $this->cache_add( $key, 1, self::DEFAULT_DEDUPE_WINDOW_S ) || false === wp_cache_get( $key, self::CACHE_GROUP );
 		} catch ( \Throwable $throwable ) {
 			return true;
 		}

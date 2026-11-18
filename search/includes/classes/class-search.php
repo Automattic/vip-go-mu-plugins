@@ -1021,7 +1021,7 @@ class Search {
 			$response_body_json = wp_remote_retrieve_body( $response );
 			$response_body      = json_decode( $response_body_json, true );
 
-			if ( 'query' === $type && isset( $query['url'] ) && is_string( $query['url'] ) && preg_match( '#/_search(?:[/?]|$)#', $query['url'] ) ) {
+			if ( $this->is_search_request( $type, $query ) ) {
 				try {
 					$this->query_warning ??= new Query_Warning();
 					$this->query_warning->maybe_emit(
@@ -1227,6 +1227,13 @@ class Search {
 	}
 
 	/**
+	 * Whether an ElasticPress request is a search, the only kind Query_Warning classifies into query families.
+	 */
+	private function is_search_request( $type, $query ): bool {
+		return 'query' === $type && isset( $query['url'] ) && is_string( $query['url'] ) && preg_match( '#/_search(?:[/?]|$)#', $query['url'] );
+	}
+
+	/**
 	 * Handle failed requests
 	 *
 	 * @param mixed $request
@@ -1296,10 +1303,13 @@ class Search {
 			return;
 		}
 
-		// A broken query fails on every request that runs it; the failed query counter above still counts every failure
-		$this->query_warning ??= new Query_Warning();
-		if ( ! $this->query_warning->is_new_failure( $query['args']['body'] ?? null, $error_type . '|' . $error_message ) ) {
-			return;
+		// A broken query fails on every request that runs it; the failed query counter above still counts every failure.
+		// Only search bodies classify into query families, so other requests (e.g. bulk indexing) are all logged.
+		if ( $this->is_search_request( $type, $query ) ) {
+			$this->query_warning ??= new Query_Warning();
+			if ( ! $this->query_warning->is_new_failure( $query['args']['body'] ?? null, $error_type . '|' . $error_message ) ) {
+				return;
+			}
 		}
 
 		global $wp;
