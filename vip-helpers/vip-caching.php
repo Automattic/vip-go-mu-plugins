@@ -184,8 +184,23 @@ function _wpcom_vip_url_to_postid_cache_key( $url ) {
 		'_gl',
 	];
 
-	// Cast, since remove_query_arg() falls back to the current request's URL for false (e.g. no referer).
-	return md5( remove_query_arg( $tracking_params, (string) $url ) );
+	// Split the way url_to_postid() does: the #fragment first, then the ?query
+	$url      = (string) $url;
+	$fragment = (string) strstr( $url, '#' );
+	$base     = substr( $url, 0, strlen( $url ) - strlen( $fragment ) );
+	$parts    = explode( '?', $base, 2 );
+
+	if ( isset( $parts[1] ) ) {
+		// Drop tracking args by their raw name and leave every other byte as given, since url_to_postid()
+		// and its filters can depend on order, duplicates and encoding. Args containing a "?" stay because
+		// url_to_postid() matches "?p=N" anywhere in the URL, including inside another arg's value.
+		$args = array_filter( explode( '&', $parts[1] ), function ( $arg ) use ( $tracking_params ) {
+			return str_contains( $arg, '?' ) || ! in_array( explode( '=', $arg, 2 )[0], $tracking_params, true );
+		} );
+		$base = $parts[0] . ( $args ? '?' . implode( '&', $args ) : '' );
+	}
+
+	return md5( $base . $fragment );
 }
 
 // Forget the lookups for a published post's old and new URLs when it's saved
