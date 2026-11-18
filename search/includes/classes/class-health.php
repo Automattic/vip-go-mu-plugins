@@ -609,9 +609,13 @@ class Health {
 				$results = new WP_Error( 'es_validate_content_aborted', 'Validation aborted by CLI command stop-validate-contents!' );
 			}
 		}
-		// A run that ran out of time keeps its checkpoint, as a killed run does, so the next run resumes from it
-		if ( $track_process && ! $out_of_time ) {
-			$this->remove_validate_content_process();
+		if ( $track_process ) {
+			if ( $out_of_time ) {
+				// Checkpoint the first post it didn't validate, so the next run resumes there instead of redoing the last batch
+				$this->update_validate_content_process( $start_post_id );
+			} else {
+				$this->remove_validate_content_process();
+			}
 		}
 
 		// Report the batches that couldn't be validated, along with the diffs of those that were
