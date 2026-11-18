@@ -70,6 +70,10 @@ if ( file_exists( __DIR__ . '/integrations/shareadraft.php' ) ) {
 	require_once __DIR__ . '/integrations/shareadraft.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/gist-answers.php' ) ) {
+	require_once __DIR__ . '/integrations/gist-answers.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -119,6 +123,10 @@ if ( class_exists( __NAMESPACE__ . '\\ClipisodeIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new ShareadraftIntegration( 'shareadraft' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\GistAnswersIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new GistAnswersIntegration( 'gist-answers' ) );
 }
 
 // @codeCoverageIgnoreEnd
