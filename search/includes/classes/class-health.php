@@ -452,6 +452,7 @@ class Health {
 		$silent                   = isset( $options['silent'] );
 		$do_not_heal              = isset( $options['do_not_heal'] );
 		$force_parallel_execution = isset( $options['force_parallel_execution'] );
+		$time_limit               = (int) ( $options['time_limit'] ?? 0 );
 
 		$process_parallel_execution_lock = ! $force_parallel_execution;
 		// We only work with process if we can guarantee no parallel execution and user did't pick specific start_post_id to avoid unexpected overwriting of that.
@@ -518,7 +519,10 @@ class Health {
 		}
 
 		$should_stop = false;
-		do {
+		$out_of_time = false;
+		$started_at  = time();
+		// A checkpoint past the last post ID (e.g. the newest posts were deleted) leaves nothing to validate
+		while ( $start_post_id <= $last_post_id && ! $should_stop && ! $out_of_time ) {
 			if ( $process_parallel_execution_lock ) {
 				$this->set_validate_content_lock();
 			}
@@ -571,11 +575,10 @@ class Health {
 			// Silent runs (e.g. the weekly cron) keep going past the limit, so cap the diffs they keep in memory
 			$results = array_slice( $results, 0, $max_diff_size );
 
-			$start_post_id += $batch_size;
+			$start_post_id = $next_batch_post_id;
 
-			if ( $dynamic_last_post_id ) {
-				// Requery for the last post id after each batch b/c the site is probably growing
-				// while this runs
+			if ( $dynamic_last_post_id && $start_post_id > $last_post_id ) {
+				// The site is probably growing while this runs, so look for newer posts before finishing
 				$last_post_id = self::get_last_post_id();
 			}
 
@@ -596,7 +599,8 @@ class Health {
 			}
 
 			$should_stop = wp_cache_get( self::STOP_VALIDATE_CONTENTS_KEY, self::CACHE_GROUP, true );
-		} while ( $start_post_id <= $last_post_id && ! $should_stop );
+			$out_of_time = ! $should_stop && $time_limit > 0 && time() - $started_at >= $time_limit && $start_post_id <= $last_post_id;
+		}
 
 		if ( $process_parallel_execution_lock || $should_stop ) {
 			$this->remove_validate_content_lock();
@@ -606,7 +610,12 @@ class Health {
 			}
 		}
 		if ( $track_process ) {
-			$this->remove_validate_content_process();
+			if ( $out_of_time ) {
+				// Checkpoint the first post it didn't validate, so the next run resumes there instead of redoing the last batch
+				$this->update_validate_content_process( $start_post_id );
+			} else {
+				$this->remove_validate_content_process();
+			}
 		}
 
 		// Report the batches that couldn't be validated, along with the diffs of those that were
