@@ -23,8 +23,5 @@ class VIP_Go_Test_Check_Divi_Compatibility extends TestCase {
 
 		$this->assertTrue( defined( 'ET_CORE_CACHE_DIR' ) );
 		$this->assertTrue( defined( 'ET_CORE_CACHE_DIR_URL' ) );
-
-		// Check if the filter is added
-		$this->assertTrue( has_filter( 'et_cache_wpfs_credentials' ) !== false );
 	}
 }

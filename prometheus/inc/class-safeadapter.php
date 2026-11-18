@@ -4,6 +4,7 @@ namespace Automattic\VIP\Prometheus;
 use Prometheus\Exception\StorageException;
 use Prometheus\MetricFamilySamples;
 use Prometheus\Storage\Adapter as StorageAdapter;
+use Prometheus\Storage\APCng;
 use Throwable;
 use UnexpectedValueException;
 
@@ -18,6 +19,13 @@ class SafeAdapter implements StorageAdapter {
 	 * @return MetricFamilySamples[]
 	 */
 	public function collect(): array {
+		if ( $this->wrapped instanceof APCng ) {
+			// APCng reads its metadata keys only when it rebuilds its metainfo cache, so they sit idle, and APCu drops
+			// entries idle for longer than apc.ttl whenever a new key lands in their hash slot. A dropped key makes
+			// collect() throw, which wipes every metric below. Rebuild the cache on each scrape to keep them in use.
+			apcu_delete( APCng::PROMETHEUS_PREFIX . ':metainfocache' );
+		}
+
 		try {
 			return $this->wrapped->collect();
 		} catch ( UnexpectedValueException $ex ) {

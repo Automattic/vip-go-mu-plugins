@@ -41,6 +41,9 @@ function init_privacy_compat_cleanup() {
 	// Replace core's privacy data delete handler with a custom one.
 	remove_action( 'wp_privacy_delete_old_export_files', 'wp_privacy_delete_old_export_files' );
 	add_action( 'wp_privacy_delete_old_export_files', __NAMESPACE__ . '\delete_old_export_files' );
+
+	// Expired archives are found through their request's meta, so a deleted request's archive would never be cleaned up.
+	add_filter( 'pre_delete_post', __NAMESPACE__ . '\delete_export_file_with_request', 10, 2 );
 }
 
 /**
@@ -508,20 +511,8 @@ function delete_old_export_files() {
 				continue;
 			}
 
-			// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
-			$file_name = get_post_meta( $request_id, '_export_file_name', true );
-			$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
-
-			$delete_result = $file_url ? _delete_archive_file( $file_url ) : true;
-			if ( is_wp_error( $delete_result ) ) {
-				// Log the request ID, not the file URL or API message: both contain the export's secret file name.
-				/* translators: 1: export request ID 2: error code */
-				$message = sprintf( __( 'Failed to delete expired personal data export for request %1$d: %2$s' ), $request_id, $delete_result->get_error_code() );
-
-				// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-				trigger_error( esc_html( $message ), E_USER_WARNING );
-
-				// Keep the timestamp so the next run retries this export.
+			// Keep the timestamp so the next run retries this export.
+			if ( ! _delete_export_file( $request_id ) ) {
 				continue;
 			}
 
@@ -531,6 +522,63 @@ function delete_old_export_files() {
 			_unlock_export( $request_id, $lock );
 		}
 	}
+}
+
+/**
+ * Delete an export request's archive before the request itself is deleted.
+ *
+ * The request stays if its archive can't be deleted, or is being generated or cleaned up, so the expiry
+ * cleanup can still find the archive through the request's meta.
+ *
+ * @param \WP_Post|false|null $delete Whether to go ahead with deletion; anything but null short-circuits it.
+ * @param \WP_Post            $post   Post object.
+ * @return \WP_Post|false|null
+ */
+function delete_export_file_with_request( $delete, $post ) {
+	if ( null !== $delete || 'user_request' !== $post->post_type ) {
+		return $delete;
+	}
+
+	$lock = _lock_export( $post->ID );
+	if ( ! $lock ) {
+		return false;
+	}
+
+	// Hold the lock until the request is deleted, so a generation can't upload the archive again in the meantime.
+	add_action( 'shutdown', function () use ( $post, $lock ) {
+		_unlock_export( $post->ID, $lock );
+	} );
+
+	// A generation may have named the archive since this request loaded the export's meta.
+	wp_cache_delete( $post->ID, 'post_meta' );
+
+	return _delete_export_file( $post->ID ) ? null : false;
+}
+
+/**
+ * Delete an export request's archive, if it has one.
+ *
+ * @param int $request_id Export request ID.
+ * @return bool Whether the archive is gone.
+ */
+function _delete_export_file( $request_id ) {
+	// Exports since WordPress 5.5 store the file name; older ones stored the full URL.
+	$file_name = get_post_meta( $request_id, '_export_file_name', true );
+	$file_url  = $file_name ? wp_privacy_exports_url() . $file_name : get_post_meta( $request_id, '_export_file_url', true );
+
+	$delete_result = $file_url ? _delete_archive_file( $file_url ) : true;
+	if ( is_wp_error( $delete_result ) ) {
+		// Log the request ID, not the file URL or API message: both contain the export's secret file name.
+		/* translators: 1: export request ID 2: error code */
+		$message = sprintf( __( 'Failed to delete personal data export for request %1$d: %2$s' ), $request_id, $delete_result->get_error_code() );
+
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+		trigger_error( esc_html( $message ), E_USER_WARNING );
+
+		return false;
+	}
+
+	return true;
 }
 
 /**

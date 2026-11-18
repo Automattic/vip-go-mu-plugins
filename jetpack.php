@@ -53,33 +53,30 @@ if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
 /**
- * Decide whether we need to enable JP staging mode, or prevent it.
+ * Decide whether we need to enable JP safe/staging mode, or prevent it.
  *
  * Mainly used to help prevent a site from accidentally taking over the connection
  * of another site. Happens if the database is copied over and the "auth" keys are then shared.
+ * Jetpack 13.6+ stops Sync, SSO and Stats in safe mode; older versions did so in staging mode.
  *
+ * @see https://jetpack.com/support/safe-mode/
  * @see https://jetpack.com/support/staging-sites/
  */
 function vip_toggle_jetpack_staging_mode() {
-	$is_vip_site = defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' );
-
-	if ( ! $is_vip_site ) {
-		// Default non-VIP sites to staging mode (likely local dev or custom staging).
-		add_filter( 'jetpack_is_staging_site', '__return_true' );
-		return;
-	}
-
+	$is_vip_site         = defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' );
 	$is_maintenance_mode = defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE;
 	$is_production_site  = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
-	if ( $is_maintenance_mode && ! $is_production_site ) {
-		// Specifically targeting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
-		add_filter( 'jetpack_is_staging_site', '__return_true' );
-		return;
+
+	// Specifically targeting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
+	$in_non_production_maintenance = $is_vip_site && $is_maintenance_mode && ! $is_production_site;
+	if ( $in_non_production_maintenance ) {
+		add_filter( 'jetpack_is_in_safe_mode', '__return_true' );
 	}
 
-	// By default, JP will set all non-production sites to staging. But on VIP, the preprod/develop sites should still have their own real connections.
-	// So we'll ensure here it's not set to staging mode since it will break SSO and prevent data from being passed to WPcom.
-	add_filter( 'jetpack_is_staging_site', '__return_false' );
+	// Non-VIP sites (likely local dev or custom staging) default to staging mode. By default, JP sets all non-production sites to staging,
+	// but on VIP the preprod/develop sites should keep their own real connections, since staging breaks SSO and stops data from being passed to WPcom.
+	$is_staging = ! $is_vip_site || $in_non_production_maintenance;
+	add_filter( 'jetpack_is_staging_site', $is_staging ? '__return_true' : '__return_false' );
 }
 
 /**

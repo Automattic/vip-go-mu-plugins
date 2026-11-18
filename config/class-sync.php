@@ -154,7 +154,10 @@ class Sync {
 
 	public function maybe_sync_jetpack_privacy_settings() {
 		if ( ! class_exists( '\\Automattic\\Jetpack\\Sync\\Actions' ) ) {
-			$this->log( 'error', '\\Automattic\\Jetpack\\Sync\\Actions class not found when syncing settings - unable to sync' );
+			// Sites that skip loading Jetpack have nothing to sync.
+			if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || ! VIP_JETPACK_SKIP_LOAD ) {
+				$this->log( 'error', '\\Automattic\\Jetpack\\Sync\\Actions class not found when syncing settings - unable to sync' );
+			}
 
 			return false;
 		}

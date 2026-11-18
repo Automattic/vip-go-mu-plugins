@@ -177,7 +177,8 @@ class Two_Factor_Twilio_Verify_API implements Two_Factor_Twilio_SMS {
 
 		if ( $body_data && isset( $body_data->status ) && 'approved' === $body_data->status ) {
 			$this->cleanup_verification_data();
-			return true;
+			// A send that finished after the number changed can store a verification for the old number.
+			return isset( $body_data->to ) && $this->phone === $body_data->to;
 		}
 
 		return false;

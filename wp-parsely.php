@@ -23,6 +23,7 @@ use Parsely\Parsely;
  * The default version is the first entry in the SUPPORTED_VERSIONS list.
  */
 const SUPPORTED_VERSIONS = [
+	'3.26',
 	'3.25',
 	'3.24',
 	'3.23',
@@ -218,7 +219,7 @@ function is_queued_for_activation() {
 	}
 
 	// phpcs:disable
-	if ( isset( $_GET['action'] ) && isset( $_GET['plugin'] ) ) {
+	if ( isset( $_GET['action'] ) && isset( $_GET['plugin'] ) && is_string( $_GET['plugin'] ) ) {
 		if ( 'activate' === $_GET['action'] && false !== strpos( wp_unslash( $_GET['plugin'] ), 'wp-parsely.php' ) ) {
 			return true;
 		}
@@ -231,7 +232,7 @@ function is_queued_for_activation() {
 		$plugins_being_activated = wp_unslash( $_POST['checked'] );
 
 		foreach ( $plugins_being_activated as $plugin ) {
-			if ( false !== strpos( $plugin, 'wp-parsely.php' ) ) {
+			if ( is_string( $plugin ) && false !== strpos( $plugin, 'wp-parsely.php' ) ) {
 				return true;
 			}
 		}

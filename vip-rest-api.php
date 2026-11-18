@@ -99,7 +99,13 @@ function wpcom_vip_basic_auth_user() {
 	$username = $_SERVER['PHP_AUTH_USER'];  // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 	$password = $_SERVER['PHP_AUTH_PW'];    // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 
-	return wp_authenticate( $username, $password );
+	// A request checks access twice: when authenticating, then in the route's permission callback.
+	// Authenticate once so a wrong password counts as one failed login.
+	static $users = [];
+
+	$users[ $username ][ $password ] ??= wp_authenticate( $username, $password );
+
+	return $users[ $username ][ $password ];
 	// phpcs:enable
 }
 

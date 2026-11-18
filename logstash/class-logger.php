@@ -18,15 +18,6 @@ class Logger {
 	protected static $entries = [];
 
 	/**
-	 * Processed entries?
-	 *
-	 * @since 2020-01-10
-	 *
-	 * @var bool
-	 */
-	protected static $processed_entries = false;
-
-	/**
 	 * Maximum log entries.
 	 *
 	 * @since 2020-01-10
@@ -497,7 +488,11 @@ class Logger {
 		static::$entries[] = $data;
 
 		// Sends data to logstash on shutdown.
-		if ( ! has_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ] ) ) {
+		if ( did_action( 'shutdown' ) ) {
+			// Logged during shutdown: our hook callback may already have run, or be at the priority being iterated
+			// (callbacks added there don't run). PHP shutdown functions registered now run after the hook.
+			register_shutdown_function( [ static::class, 'process_entries_on_shutdown' ] );
+		} elseif ( ! has_action( 'shutdown', [ static::class, 'process_entries_on_shutdown' ] ) ) {
 			// Due to usage of fastcgi_finish_request, we need to be mindful of priority and potential collisions.
 			// One example of a collision is if a fastcgi_finish_request runs before query monitor, it causes it to
 			// die silently and not load anything.
@@ -511,19 +506,16 @@ class Logger {
 	 * @since 2020-01-10
 	 */
 	public static function process_entries_on_shutdown(): void {
-		if ( static::$processed_entries ) {
-			return; // Already done.
-		}
-
-		static::$processed_entries = true;
-
 		if ( function_exists( 'fastcgi_finish_request' ) ) {
 			// Flush content to client first to prevent slow page load
 			fastcgi_finish_request();
 		}
 
-		// Process all entries.
-		foreach ( static::$entries as $entry ) {
+		// Process queued entries; any logged from here on are queued for the next run.
+		$entries         = static::$entries;
+		static::$entries = [];
+
+		foreach ( $entries as $entry ) {
 			if ( ! defined( 'VIP_GO_ENV' ) || ! VIP_GO_ENV || constant( 'VIP_GO_ENV' ) === 'local' ) {
 				static::maybe_wp_debug_log_entries( $entry );
 				continue; // Bypassing logstash log writing below in this case.
@@ -533,7 +525,7 @@ class Logger {
 
 			if ( ! $json_data ) {
 				trigger_error( 'log2logstash could not encode your log.', E_USER_WARNING );
-				return;
+				continue;
 			}
 
 			// Log to file

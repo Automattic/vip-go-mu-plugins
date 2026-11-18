@@ -7,6 +7,7 @@
 
 namespace Automattic\VIP\Integrations;
 
+use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
 use Org_Integration_Status;
 use Env_Integration_Status;
@@ -322,14 +323,22 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Simulate WordPress serving a REST request for the given route.
+	 */
+	private function serve_rest_route( string $rest_route ): void {
+		if ( ! Constant_Mocker::defined( 'REST_REQUEST' ) ) {
+			Constant_Mocker::define( 'REST_REQUEST', true );
+		}
+
+		$GLOBALS['wp']->query_vars['rest_route'] = $rest_route;
+	}
+
+	/**
 	 * @dataProvider data_mcp_adapter_rest_request
 	 */
-	public function test_is_mcp_adapter_rest_request( string $request_uri, ?string $rest_route, array $integration_config, bool $expected ): void {
+	public function test_is_mcp_adapter_rest_request( string $rest_route, array $integration_config, bool $expected ): void {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = $request_uri;
-		if ( null !== $rest_route ) {
-			$_GET['rest_route'] = $rest_route;
-		}
+		$this->serve_rest_route( $rest_route );
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 		if ( [] !== $integration_config ) {
@@ -342,20 +351,18 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 	public static function data_mcp_adapter_rest_request(): array {
 		return [
-			'pretty default REST url'                 => [ '/wp-json/mcp/mcp-adapter-default-server', null, [], true ],
-			'configured REST url'                     => [
-				'/wp-json/vip-mcp/v1/vip-mcp-server',
-				null,
+			'default REST route'                      => [ '/mcp/mcp-adapter-default-server', [], true ],
+			'configured REST route'                   => [
+				'/vip-mcp/v1/vip-mcp-server',
 				[
 					'server_namespace' => 'vip-mcp/v1',
 					'server_route'     => 'vip-mcp-server',
 				],
 				true,
 			],
-			'default namespace with configured route' => [ '/wp-json/mcp/vip-mcp-server', null, [ 'server_route' => 'vip-mcp-server' ], true ],
-			'default route with configured namespace' => [ '/wp-json/vip-mcp/v1/mcp-adapter-default-server', null, [ 'server_namespace' => 'vip-mcp/v1' ], true ],
-			'rest_route query arg'                    => [ '/index.php?rest_route=/mcp/mcp-adapter-default-server', '/mcp/mcp-adapter-default-server', [], true ],
-			'other REST url'                          => [ '/wp-json/wp/v2/posts', null, [], false ],
+			'default namespace with configured route' => [ '/mcp/vip-mcp-server', [ 'server_route' => 'vip-mcp-server' ], true ],
+			'default route with configured namespace' => [ '/vip-mcp/v1/mcp-adapter-default-server', [ 'server_namespace' => 'vip-mcp/v1' ], true ],
+			'other REST route'                        => [ '/wp/v2/posts', [], false ],
 		];
 	}
 
@@ -367,7 +374,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 	public function test_authenticate_mcp_request_ignores_missing_hmac_headers(): void {
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		$this->serve_rest_route( '/mcp/mcp-adapter-default-server' );
 
 		$wordpress_mcp_integration = new WordPressMcpIntegration( $this->slug );
 
@@ -381,7 +388,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		$timestamp = (string) time();
 
 		$_SERVER['REQUEST_METHOD'] = 'POST';
-		$_SERVER['REQUEST_URI']    = '/wp-json/mcp/mcp-adapter-default-server';
+		$this->serve_rest_route( '/mcp/mcp-adapter-default-server' );
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
 		$_SERVER['PHP_AUTH_USER'] = $email;
 		// phpcs:ignore WordPressVIPMinimum.Variables.ServerVariables.BasicAuthentication -- Test fixture for MCP Basic auth bridge.
@@ -419,7 +426,7 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 		} elseif ( 'disabled bridge' === $variant ) {
 			$_SERVER['HTTP_X_VIP_MCP_AUTH'] = 'false';
 		} elseif ( 'other route' === $variant ) {
-			$_SERVER['REQUEST_URI'] = '/wp-json/wp/v2/posts';
+			$this->serve_rest_route( '/wp/v2/posts' );
 		}
 		$integration = new WordPressMcpIntegration( $this->slug );
 		$integration->activate( [ 'config' => [ 'auth_key' => $auth_key ] ] );
@@ -455,8 +462,9 @@ class WordPress_Mcp_Integration_Test extends WP_UnitTestCase {
 
 		$this->sign_mcp_request( 'unknown-hook-user@example.com', $auth_key );
 		unset( $GLOBALS['current_user'] );
-		$this->assertSame( 0, get_current_user_id() );
+		// No lookup first: like after serve_request() clears the user, the REST check itself must authenticate.
 		$error = $server->check_authentication();
+		$this->assertSame( 0, get_current_user_id() );
 		$this->assertInstanceOf( \WP_Error::class, $error );
 		$this->assertSame( 'vip_mcp_user_not_found', $error->get_error_code() );
 		$this->assertStringContainsString( 'unknown-hook-user@example.com', $error->get_error_message() );

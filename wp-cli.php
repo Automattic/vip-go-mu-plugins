@@ -20,9 +20,16 @@ function init_is_ssl_toggle() {
 function init_is_ssl_toggle_for_multisite() {
 	add_action( 'switch_blog', function ( $new_blog_id, $prev_blog_id ) {
 		// Not a strict equality check to match core
-		if ( ! wp_is_site_initialized( $new_blog_id ) || $new_blog_id == $prev_blog_id ) {
+		if ( $new_blog_id == $prev_blog_id ) {
 			return;
 		}
+
+		// wp_is_site_initialized() runs a query each time. A site stays initialized, so remember the ones that pass.
+		static $initialized = [];
+		if ( ! isset( $initialized[ $new_blog_id ] ) && ! wp_is_site_initialized( $new_blog_id ) ) {
+			return;
+		}
+		$initialized[ $new_blog_id ] = true;
 
 		maybe_toggle_is_ssl();
 	}, 0, 2 ); // run early since this could impact other filters
