@@ -137,18 +137,11 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	private static $local_file_names = array();
 
 	/**
-	 * File handle for local files
+	 * File or directory handle for local files
 	 *
 	 * @var resource|null
 	 */
 	private $handle;
-
-	/**
-	 * Directory handle for local directories
-	 *
-	 * @var resource|false|null
-	 */
-	private $dir_handle;
 
 	/**
 	 * Whether this handle's upload has already been recorded to telemetry.
@@ -966,8 +959,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	/**
 	 * Called in response to opendir()
 	 *
-	 * The File service can't list directories, and url_stat() reports every
-	 * path without an extension as a directory, so those open as empty.
+	 * url_stat() reports every path without an extension as a directory, and
+	 * the File service can't list them, so they open as empty.
 	 *
 	 * @param   string  $path
 	 * @param   int     $options
@@ -977,9 +970,9 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
 	public function dir_opendir( $path, $options ) {
 		if ( static::is_local_file( $path ) ) {
-			$this->dir_handle = opendir( static::get_local_tmp_path( $path ) );
+			$this->handle = opendir( static::get_local_tmp_path( $path ) );
 
-			return false !== $this->dir_handle;
+			return false !== $this->handle;
 		}
 
 		return true;
@@ -988,10 +981,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	/**
 	 * Called in response to readdir()
 	 *
-	 * @return  string|false    The next entry, or false when there are no more
+	 * @return  string|false
 	 */
 	public function dir_readdir() {
-		return $this->dir_handle ? readdir( $this->dir_handle ) : false;
+		return $this->handle ? readdir( $this->handle ) : false;
 	}
 
 	/**
@@ -1000,8 +993,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function dir_rewinddir() {
-		if ( $this->dir_handle ) {
-			rewinddir( $this->dir_handle );
+		if ( $this->handle ) {
+			rewinddir( $this->handle );
 		}
 
 		return true;
@@ -1013,8 +1006,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return  bool
 	 */
 	public function dir_closedir() {
-		if ( $this->dir_handle ) {
-			closedir( $this->dir_handle );
+		if ( $this->handle ) {
+			closedir( $this->handle );
 		}
 
 		return true;
