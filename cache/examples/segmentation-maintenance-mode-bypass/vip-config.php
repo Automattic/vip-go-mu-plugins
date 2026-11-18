@@ -9,15 +9,11 @@ function x_maybe_enable_maintenance_mode() {
 
 	// Enabled by default but disabled conditionally below.
 	$enable_maintenance_mode = true;
-	if ( ! defined( 'VIP_GO_ENV' ) ) {
-		// Don't enable for non-VIP environments.
-		$enable_maintenance_mode = false;
-	} elseif ( isset( $_COOKIE['vip-go-seg'] )
-		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-		&& is_string( $_COOKIE['vip-go-seg'] )
-		// phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-		&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
-		// Don't enable if the request has our secret key.
+	if ( ! defined( 'VIP_GO_ENV' )
+		// The CDN sets this header from the `vip-go-seg` cookie and caches a page for each of its values.
+		|| ( isset( $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] )
+			&& hash_equals( $maintenance_bypass_secret, $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] ) ) ) {
+		// Don't enable for non-VIP environments, or if the request has our secret key.
 		$enable_maintenance_mode = false;
 	}
 
