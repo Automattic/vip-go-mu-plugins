@@ -282,16 +282,23 @@ function purge_attachments_for_post( $urls, $post_id ) {
 		return $urls;
 	}
 
-	$attachment_ids = get_posts( [
-		'post_parent'      => $post->ID,
-		'post_type'        => 'attachment',
-		'posts_per_page'   => 250,            // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- set a reasonably high limit (instead of -1 as default)
-		'orderby'          => 'ID',           // For performance (instead of date as default)
-		'order'            => 'ASC',
-		'fields'           => 'ids',
-		// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
-		'suppress_filters' => true,
-	] );
+	// Cropped images follow the attachment they were cropped from (see is_attachment_restricted()), so add the
+	// crops of the post's attachments, and their crops in turn. IDs already found end a loop of attachments.
+	$attachment_ids = [];
+	$parent_ids     = [ $post->ID ];
+	while ( $parent_ids ) {
+		$parent_ids     = array_diff( get_posts( [
+			'post_parent__in'  => $parent_ids,
+			'post_type'        => 'attachment',
+			'posts_per_page'   => 250,            // phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- set a reasonably high limit (instead of -1 as default)
+			'orderby'          => 'ID',           // For performance (instead of date as default)
+			'order'            => 'ASC',
+			'fields'           => 'ids',
+			// phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters
+			'suppress_filters' => true,
+		] ), $attachment_ids );
+		$attachment_ids = array_merge( $attachment_ids, $parent_ids );
+	}
 
 	// The other files (original, edited copies, sizes) only need purging when they become private, as only
 	// public answers are cached at the edges. Purging them on every update would evict them for nothing.
