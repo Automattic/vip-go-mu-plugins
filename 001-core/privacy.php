@@ -43,7 +43,7 @@ function init_privacy_compat_cleanup() {
 	add_action( 'wp_privacy_delete_old_export_files', __NAMESPACE__ . '\delete_old_export_files' );
 
 	// Expired archives are found through their request's meta, so a deleted request's archive would never be cleaned up.
-	add_action( 'before_delete_post', __NAMESPACE__ . '\delete_export_file_with_request', 10, 2 );
+	add_filter( 'pre_delete_post', __NAMESPACE__ . '\delete_export_file_with_request', 10, 2 );
 }
 
 /**
@@ -525,15 +525,34 @@ function delete_old_export_files() {
 }
 
 /**
- * Delete an export request's archive when the request itself is deleted.
+ * Delete an export request's archive before the request itself is deleted.
  *
- * @param int      $post_id Post ID.
- * @param \WP_Post $post    Post object.
+ * The request stays if its archive can't be deleted, or is being generated or cleaned up, so the expiry
+ * cleanup can still find the archive through the request's meta.
+ *
+ * @param \WP_Post|false|null $delete Whether to go ahead with deletion; anything but null short-circuits it.
+ * @param \WP_Post            $post   Post object.
+ * @return \WP_Post|false|null
  */
-function delete_export_file_with_request( $post_id, $post ) {
-	if ( 'user_request' === $post->post_type ) {
-		_delete_export_file( $post_id );
+function delete_export_file_with_request( $delete, $post ) {
+	if ( null !== $delete || 'user_request' !== $post->post_type ) {
+		return $delete;
 	}
+
+	$lock = _lock_export( $post->ID );
+	if ( ! $lock ) {
+		return false;
+	}
+
+	// Hold the lock until the request is deleted, so a generation can't upload the archive again in the meantime.
+	add_action( 'shutdown', function () use ( $post, $lock ) {
+		_unlock_export( $post->ID, $lock );
+	} );
+
+	// A generation may have named the archive since this request loaded the export's meta.
+	wp_cache_delete( $post->ID, 'post_meta' );
+
+	return _delete_export_file( $post->ID ) ? null : false;
 }
 
 /**
