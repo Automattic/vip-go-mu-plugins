@@ -144,6 +144,13 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	private $handle;
 
 	/**
+	 * Directory handle for local directories
+	 *
+	 * @var resource|false|null
+	 */
+	private $dir_handle;
+
+	/**
 	 * Whether this handle's upload has already been recorded to telemetry.
 	 *
 	 * @var bool
@@ -935,6 +942,81 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		// No such thing as a directory in File service.
+		return true;
+	}
+
+	/**
+	 * Called in response to rmdir()
+	 *
+	 * @param   string  $path
+	 * @param   int     $options
+	 *
+	 * @return  bool
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
+	public function rmdir( $path, $options ) {
+		if ( static::is_local_file( $path ) ) {
+			return rmdir( static::get_local_tmp_path( $path ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir
+		}
+
+		// No such thing as a directory in File service.
+		return true;
+	}
+
+	/**
+	 * Called in response to opendir()
+	 *
+	 * The File service can't list directories, and url_stat() reports every
+	 * path without an extension as a directory, so those open as empty.
+	 *
+	 * @param   string  $path
+	 * @param   int     $options
+	 *
+	 * @return  bool
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
+	public function dir_opendir( $path, $options ) {
+		if ( static::is_local_file( $path ) ) {
+			$this->dir_handle = opendir( static::get_local_tmp_path( $path ) );
+
+			return false !== $this->dir_handle;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Called in response to readdir()
+	 *
+	 * @return  string|false    The next entry, or false when there are no more
+	 */
+	public function dir_readdir() {
+		return $this->dir_handle ? readdir( $this->dir_handle ) : false;
+	}
+
+	/**
+	 * Called in response to rewinddir()
+	 *
+	 * @return  bool
+	 */
+	public function dir_rewinddir() {
+		if ( $this->dir_handle ) {
+			rewinddir( $this->dir_handle );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Called in response to closedir()
+	 *
+	 * @return  bool
+	 */
+	public function dir_closedir() {
+		if ( $this->dir_handle ) {
+			closedir( $this->dir_handle );
+		}
+
 		return true;
 	}
 
