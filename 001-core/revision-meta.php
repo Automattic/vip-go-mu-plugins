@@ -26,13 +26,13 @@ add_filter( 'rest_prepare_revision', __NAMESPACE__ . '\filter_revision_meta', 10
  * Omit defaults for metadata that is not stored on revisions.
  *
  * @param mixed            $response Prepared REST response, or a value returned by an earlier filter.
- * @param \WP_Post         $post     Revision or parent post (for own-draft autosaves).
+ * @param \WP_Post|null    $post     Revision or parent post (for own-draft autosaves). Core's autosave controller can pass null.
  * @param \WP_REST_Request $request  Request used to prepare the response.
  * @return mixed Filtered REST response, or the unchanged value from an earlier filter.
  */
-function filter_revision_meta( $response, \WP_Post $post, \WP_REST_Request $request ) {
+function filter_revision_meta( $response, $post, $request ) {
 	// Earlier filters may return an error or another value that must pass through.
-	if ( ! $response instanceof \WP_REST_Response || 'revision' !== $post->post_type || ! function_exists( 'wp_post_revision_meta_keys' ) ) {
+	if ( ! $response instanceof \WP_REST_Response || ! $post instanceof \WP_Post || ! $request instanceof \WP_REST_Request || 'revision' !== $post->post_type || ! function_exists( 'wp_post_revision_meta_keys' ) ) {
 		return $response;
 	}
 
