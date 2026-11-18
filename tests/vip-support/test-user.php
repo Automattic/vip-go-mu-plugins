@@ -12,23 +12,12 @@ use WP_UnitTestCase;
  * @group vip_support_user
  */
 class VIPSupportUserTest extends WP_UnitTestCase {
-	private $vip_support_user;
-
 	public function setUp(): void {
 		parent::setUp();
-		Constant_Mocker::clear();
-
-		$this->vip_support_user = User::add( array(
-			'user_email' => 'vip-support@example.test',
-			'user_login' => 'vip-support',
-			'user_pass'  => 'password',
-		) );
-
 		reset_phpmailer_instance();
 	}
 
 	public function tearDown(): void {
-		Constant_Mocker::clear();
 		reset_phpmailer_instance();
 		parent::tearDown();
 	}
@@ -82,19 +71,6 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 		$this->assertFalse( $instance->is_allowed_email( 'foo@automattic.com' ) );
 	}
 
-	public function test_is_verified_automattician(): void {
-		$user_id = $this->factory()->user->create( [
-			'user_email' => 'admin@automattic.com',
-			'user_login' => 'vip_admin',
-		] );
-
-		$instance = User::init();
-
-		$instance->mark_user_email_verified( $user_id, 'admin@automattic.com' );
-
-		$this->assertTrue( $instance->is_verified_automattician( $user_id ) );
-	}
-
 	public function test_is_verified_automattician_for_disallowed_user(): void {
 		Constant_Mocker::define( 'VIP_SUPPORT_USER_ALLOWED_EMAILS', array( 'admin@automattic.com' ) );
 
@@ -111,14 +87,113 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 	}
 
 	/**
+	 * Allowed company addresses require current ownership verification.
+	 */
+	public function test_unverified_and_changed_company_email_are_not_trusted(): void {
+		$user     = $this->factory()->user->create_and_get( [ 'user_email' => 'owner@automattic.com' ] );
+		$instance = User::init();
+		$this->assertFalse( $instance->is_verified_automattician( $user->ID ) );
+		$instance->mark_user_email_verified( $user->ID, $user->user_email );
+		$this->assertTrue( $instance->is_verified_automattician( $user->ID ) );
+		wp_update_user( [
+			'ID'         => $user->ID,
+			'user_email' => 'changed@automattic.com',
+		] );
+		$this->assertFalse( $instance->is_verified_automattician( $user->ID ) );
+	}
+
+	/**
+	 * A verification link opened by someone other than its owner, or without the A8C proxy, is rejected
+	 * before the signature is checked. The suite runs with the global A8C_PROXIED_REQUEST set to false.
+	 *
+	 * @dataProvider data_verification_link_denied_before_signature_check
+	 */
+	public function test_verification_link_denied_before_signature_check( bool $as_owner, string $expected_message ): void {
+		[ $instance, $user, $hash ] = $this->create_pending_verification();
+
+		$this->assert_verification_link_response( $instance, $user, $hash, $as_owner, $expected_message, false );
+	}
+
+	public function data_verification_link_denied_before_signature_check(): array {
+		return [
+			'wrong owner' => [ false, 'This email verification link' ],
+			'unproxied'   => [ true, 'please proxy' ],
+		];
+	}
+
+	/**
+	 * A proxied owner is rejected with a wrong signature, then verified and promoted with the right one.
+	 *
+	 * Runs in a separate process because it defines the namespaced A8C_PROXIED_REQUEST constant.
+	 *
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_proxied_verification_link_requires_signature_then_promotes(): void {
+		[ $instance, $user, $hash ] = $this->create_pending_verification();
+		\define( __NAMESPACE__ . '\\A8C_PROXIED_REQUEST', true );
+
+		$this->assert_verification_link_response( $instance, $user, 'wrong-hash', true, 'This email verification link', false );
+		$this->assert_verification_link_response( $instance, $user, $hash, true, 'Your email has been verified', true );
+	}
+
+	/**
+	 * Create an inactive support user with a pending challenge, as the email sender does, and independently sign its link.
+	 *
+	 * @return array{0: User, 1: \WP_User, 2: string}
+	 */
+	private function create_pending_verification(): array {
+		Role::init()->maybe_upgrade_version();
+		$user = $this->factory()->user->create_and_get( [
+			'user_email' => 'link-owner@automattic.com',
+			'role'       => Role::VIP_SUPPORT_INACTIVE_ROLE,
+		] );
+		$code = 'test-pending-email-code';
+		update_user_meta( $user->ID, User::META_VERIFICATION_DATA, [
+			'email' => $user->user_email,
+			'code'  => $code,
+			'touch' => time(),
+		] );
+
+		return [ User::init(), $user, wp_hash( $user->ID . $code . $user->user_email ) ];
+	}
+
+	private function assert_verification_link_response( User $instance, \WP_User $user, string $hash, bool $as_owner, string $expected_message, bool $expected_verified ): void {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Preserve request fixture state.
+		$original_get = $_GET;
+		try {
+			$_GET[ User::GET_EMAIL_USER_LOGIN ] = $user->user_login;
+			$_GET[ User::GET_EMAIL_VERIFY ]     = $hash;
+			wp_set_current_user( $as_owner ? $user->ID : 0 );
+			try {
+				$instance->action_parse_request();
+				$this->fail( 'Expected verification response.' );
+			} catch ( \WPDieException $error ) {
+				$this->assertStringContainsString( $expected_message, $error->getMessage() );
+			}
+			$this->assertSame( $expected_verified, $instance->is_verified_automattician( $user->ID ) );
+			$this->assertSame( $expected_verified, User::user_has_vip_support_role( $user->ID ) );
+		} finally {
+			$_GET = $original_get;
+			wp_set_current_user( 0 );
+		}
+	}
+
+	/**
 	 * Test that cron callback is registered properly
 	 */
 	public function test_cron_cleanup_has_callback(): void {
-		$this->assertEquals( 10, has_action( User::CRON_ACTION ) );
+		$this->assertSame( 10, has_action( User::CRON_ACTION, [ User::class, 'do_cron_cleanup' ] ) );
 	}
 
 	public function test__has_vip_support_meta__yep(): void {
-		$is_vip_support_user = User::has_vip_support_meta( $this->vip_support_user );
+		$vip_support_user = User::add( array(
+			'user_email' => 'vip-support@example.test',
+			'user_login' => 'vip-support',
+			'user_pass'  => 'password',
+		) );
+
+		$is_vip_support_user = User::has_vip_support_meta( $vip_support_user );
 		$this->assertTrue( $is_vip_support_user );
 	}
 
@@ -140,8 +215,6 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 			'user_login' => 'new-vip-support-user-123',
 			'user_pass'  => 'password',
 		] );
-
-		$this->vip_support_user = $new_user_id;
 
 		$this->assertNotEquals( $existing_user_id, $new_user_id, 'Existing and new IDs are the same which should not happen' );
 
@@ -165,8 +238,6 @@ class VIPSupportUserTest extends WP_UnitTestCase {
 			'display_name' => 'New User',
 			'user_pass'    => 'password',
 		] );
-
-		$this->vip_support_user = $new_user_id;
 
 		$this->assertEquals( $existing_user_id, $new_user_id, 'Existing and new IDs are not the same. Existing account was not updated.' );
 

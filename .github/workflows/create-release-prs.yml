@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Create Release PRs
+name: Release PRs
 
 on:
   schedule:
-    # GitHub cron is UTC. 18:00 UTC is 11:00 MST.
-    - cron: '0 18 * * 2'
+    # GitHub cron is UTC. 15:20 UTC is 9:20 MDT.
+    - cron: '20 15 * * 2'
   workflow_dispatch:
     inputs:
       release_pr:
@@ -27,46 +27,28 @@ permissions:
   pull-requests: write
 jobs:
   create-release-prs:
-    name: Create Release PRs
+    name: Release PRs
     runs-on: ubuntu-latest
     steps:
       - name: Resolve release date
         id: release
         env:
-          EVENT_NAME: ${{ github.event_name }}
           RELEASE_TIMEZONE: MST7
-          RELEASE_TIMEZONE_LABEL: MST
         run: |
           set -euo pipefail
 
-          local_hour="$(TZ="${RELEASE_TIMEZONE}" date '+%H')"
-          local_day="$(TZ="${RELEASE_TIMEZONE}" date '+%u')"
           release_date="$(TZ="${RELEASE_TIMEZONE}" date '+%Y%m%d')"
-          should_create=true
-
-          # Manual workflow_dispatch runs are not date/time gated.
-          # Scheduled runs already use a Tuesday 11:00 MST cron; keep day/hour guards in case the schedule is edited.
-          if [ "${EVENT_NAME}" = "schedule" ] && { [ "${local_day}" != "2" ] || [ "${local_hour}" != "11" ]; }; then
-            should_create=false
-          fi
 
           {
             echo "date=${release_date}"
-            echo "should_create=${should_create}"
           } >> "${GITHUB_OUTPUT}"
 
-          if [ "${should_create}" = "false" ]; then
-            echo "Skipping release PR creation because this scheduled run is outside the Tuesday 11:00 ${RELEASE_TIMEZONE_LABEL} window." >> "${GITHUB_STEP_SUMMARY}"
-          fi
-
       - name: Check out source code
-        if: steps.release.outputs.should_create == 'true'
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Fetch release branches and tags
-        if: steps.release.outputs.should_create == 'true'
         run: |
           set -euo pipefail
 
@@ -77,21 +59,16 @@ jobs:
           git fetch --depth=1 origin +refs/tags/*:refs/tags/*
 
       - name: Create selected release PRs
-        if: steps.release.outputs.should_create == 'true'
+        id: create_prs
         env:
-          EVENT_NAME: ${{ github.event_name }}
-          RELEASE_PR_TOKEN: ${{ secrets.RELEASE_PR_TOKEN }}
-          GH_TOKEN: ${{ secrets.RELEASE_PR_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
           RELEASE_DATE: ${{ steps.release.outputs.date }}
           RELEASE_PR_TARGET: ${{ github.event.inputs.release_pr || 'scheduled' }}
         run: |
           set -euo pipefail
 
-          if [ "${EVENT_NAME}" = "schedule" ] && [ -z "${RELEASE_PR_TOKEN}" ]; then
-            echo "RELEASE_PR_TOKEN secret is required for scheduled runs so that the created PR will trigger CI workflows. Configure RELEASE_PR_TOKEN (PAT or GitHub App token) and rerun." >&2
-            exit 1
-          fi
+          created_pr_links=()
 
           get_highest_existing_release_suffix() {
             local highest=-1
@@ -122,6 +99,7 @@ jobs:
             local base_branch="$2"
             local title_prefix="$3"
             local commit_count
+            local create_error_file
             local existing_pr
             local body_file
             local pr_url
@@ -134,7 +112,7 @@ jobs:
               return
             fi
 
-            commit_count="$(git rev-list --count "origin/${base_branch}..origin/${head_branch}")"
+            commit_count="$(gh api -X GET "repos/${GH_REPO}/compare/${base_branch}...${head_branch}" --jq '.ahead_by // 0')"
             if [ "${commit_count}" -eq 0 ]; then
               echo "- Skipped ${head_branch} -> ${base_branch}; there are no commits in ${head_branch} that are missing from ${base_branch}." >> "${GITHUB_STEP_SUMMARY}"
               return
@@ -155,14 +133,26 @@ jobs:
           Merge this PR after required checks pass.
           EOF
 
-            pr_url="$(gh pr create \
+            create_error_file="$(mktemp)"
+            if ! pr_url="$(gh pr create \
               --base "${base_branch}" \
               --head "${GH_REPO%%/*}:${head_branch}" \
               --title "${title}" \
-              --body-file "${body_file}")"
+              --body-file "${body_file}" 2> "${create_error_file}")"; then
+              if grep -qi 'no commits between' "${create_error_file}"; then
+                echo "- Skipped ${head_branch} -> ${base_branch}; GitHub reported no commits between the branches." >> "${GITHUB_STEP_SUMMARY}"
+                rm -f "${body_file}" "${create_error_file}"
+                return
+              fi
 
-            rm -f "${body_file}"
+              cat "${create_error_file}" >&2
+              rm -f "${body_file}" "${create_error_file}"
+              exit 1
+            fi
 
+            rm -f "${body_file}" "${create_error_file}"
+
+            created_pr_links+=( "<${pr_url}|${title}>" )
             echo "- Created [${title}](${pr_url}) from ${head_branch} -> ${base_branch} with ${commit_count} commit(s)." >> "${GITHUB_STEP_SUMMARY}"
           }
 
@@ -186,3 +176,117 @@ jobs:
               exit 1
               ;;
           esac
+
+          pr_links=''
+          for link in "${created_pr_links[@]}"; do
+            if [ -z "${pr_links}" ]; then
+              pr_links="${link}"
+            else
+              pr_links="${pr_links} | ${link}"
+            fi
+          done
+
+          echo "pr_links=${pr_links}" >> "${GITHUB_OUTPUT}"
+
+      - name: Resolve PagerDuty on-call
+        if: steps.create_prs.outputs.pr_links != ''
+        id: oncall
+        env:
+          FALLBACK_MENTION: '<!subteam^S01SYE0V8TA>'
+          PAGERDUTY_API_TOKEN: ${{ secrets.PAGERDUTY_API_TOKEN }}
+          PAGERDUTY_SCHEDULE_ID: PIE84TQ
+        run: |
+          set -euo pipefail
+
+          map_pagerduty_user_to_slack_mention() {
+            case "$1" in
+              # Luiz
+              P1Q0BNB)
+                echo '<@U02CW43K05P>'
+                ;;
+              # Luis
+              PGZLAIV)
+                echo '<@U026Z6XNRUY>'
+                ;;
+              # Rinat
+              P07608W)
+                echo '<@U9X53GDA5>'
+                ;;
+              # Rebecca
+              PE4D62Q)
+                echo '<@U5G7VSQLQ>'
+                ;;
+              # Vlod
+              PAEPLXJ)
+                echo '<@U0281LAHEDP>'
+                ;;
+              # Roberson
+              PP7KDRE)
+                echo '<@U01GHDXUEBT>'
+                ;;
+              *)
+                return 1
+                ;;
+            esac
+          }
+
+          mention="${FALLBACK_MENTION}"
+
+          if [ -z "${PAGERDUTY_API_TOKEN}" ]; then
+            echo "::warning::PagerDuty on-call lookup skipped because PAGERDUTY_API_TOKEN is not set."
+            echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          since="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+          until="$(date -u -d '+1 minute' '+%Y-%m-%dT%H:%M:%SZ')"
+
+          if ! oncalls_json="$(curl -fsS --get 'https://api.pagerduty.com/oncalls' \
+            --header "Authorization: Token token=${PAGERDUTY_API_TOKEN}" \
+            --header 'Accept: application/vnd.pagerduty+json;version=2' \
+            --data-urlencode "schedule_ids[]=${PAGERDUTY_SCHEDULE_ID}" \
+            --data-urlencode "since=${since}" \
+            --data-urlencode "until=${until}" \
+            --data-urlencode 'limit=100')"; then
+            echo "::warning::PagerDuty on-call lookup failed for schedule ${PAGERDUTY_SCHEDULE_ID}."
+            echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          mapfile -t pagerduty_user_ids < <(jq -r '.oncalls[]?.user.id // empty' <<< "${oncalls_json}" | sort -u)
+          slack_mentions=()
+
+          for pagerduty_user_id in "${pagerduty_user_ids[@]}"; do
+            if slack_mention="$(map_pagerduty_user_to_slack_mention "${pagerduty_user_id}")"; then
+              slack_mentions+=( "${slack_mention}" )
+            else
+              echo "::warning::No Slack user mapping for PagerDuty user ${pagerduty_user_id}."
+            fi
+          done
+
+          if [ "${#slack_mentions[@]}" -gt 0 ]; then
+            mention="${slack_mentions[*]}"
+          fi
+
+          echo "mention=${mention}" >> "${GITHUB_OUTPUT}"
+
+      - name: Release PRs
+        if: steps.create_prs.outputs.pr_links != ''
+        uses: slackapi/slack-github-action@dcb1066f776dd043e64d0e8ba94ca15cc7e1875d # v4.0.0
+        with:
+          errors: true
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ steps.oncall.outputs.mention }} :moo: VIP MU plugins release PRs ready for review: ${{ steps.create_prs.outputs.pr_links }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ steps.oncall.outputs.mention }} :moo: VIP MU plugins release PRs ready for review: ${{ steps.create_prs.outputs.pr_links }}"
+                  }
+                }
+              ]
+            }

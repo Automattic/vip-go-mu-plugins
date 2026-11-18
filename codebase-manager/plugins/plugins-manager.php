@@ -65,9 +65,10 @@ class PluginsManager {
 	private function fetch_plugins_with_updates(): array {
 		$update_cache = get_site_transient( 'update_plugins' );
 
-		// Maybe refresh.
+		// Maybe refresh. On `admin_init`, wp_update_plugins() doesn't request updates until the data is 12 hours old,
+		// so match that, like core's own _maybe_update_plugins() check. Core skips that check on multisite subsites.
 		$last_refreshed = isset( $update_cache->last_checked ) ? ( time() - $update_cache->last_checked ) : null;
-		if ( ! $last_refreshed || $last_refreshed > ( 6 * HOUR_IN_SECONDS ) ) {
+		if ( null === $last_refreshed || $last_refreshed >= 12 * HOUR_IN_SECONDS ) {
 			wp_update_plugins();
 			$update_cache = get_site_transient( 'update_plugins' );
 		}

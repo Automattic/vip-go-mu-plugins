@@ -3,11 +3,11 @@
 ## Prerequisites
 
 - Git (with submodule support)
-- PHP (8.0+ compatible; local CI images use newer versions)
+- PHP (8.2+ compatible; local CI images use newer versions)
 - Composer
 - Node.js + npm
 - Docker (required for `bin/test.sh`)
-- Optional: [VIP CLI](https://docs.wpvip.com/technical-references/vip-cli/installing-vip-cli/) for local dev/e2e
+- Optional: [VIP CLI](https://docs.wpvip.com/technical-references/vip-cli/installing-vip-cli/) for local dev. The e2e tests use the copy that `npm --prefix __tests__/e2e ci` installs.
 
 ## First run
 
@@ -77,3 +77,13 @@ npm run destroy-e2e-env
 - [Testing](testing.md)
 - [Release](release.md)
 - [Agent guide](../AGENTS.md)
+
+## Local Jetpack compatibility
+
+In local environments, the Jetpack loader checks each candidate's WordPress and
+PHP requirements before including it. Hosted environments retain the platform
+compatibility mapping. Candidate priority remains client override, pinned version,
+default version, then the unversioned plugin. If all installed candidates are
+incompatible, Jetpack and its VIP integration remain unloaded and a warning
+identifies the requirements. Install a compatible version or use a supported
+WordPress version. This does not add historical versions to dev-env images.

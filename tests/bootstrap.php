@@ -11,24 +11,6 @@ if ( '1' === getenv( 'VIP_JETPACK_SKIP_LOAD' ) ) {
 	define( 'VIP_JETPACK_SKIP_LOAD', true );
 }
 
-// TODO: Remove this once we drop WP 5.8 support
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\AssertFileDirectory::class ) ) {
-	require_once __DIR__ . '/trait-assertfiledirectory.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\NumericType::class ) ) {
-	require_once __DIR__ . '/trait-assertnumerictype.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectException::class ) ) {
-	require_once __DIR__ . '/trait-expectexception.php';
-}
-
-if ( ! trait_exists( Yoast\PHPUnitPolyfills\Polyfills\ExpectPHPException::class ) ) {
-	require_once __DIR__ . '/trait-expectphpexception.php';
-}
-// ---
-
 require_once $_tests_dir . '/includes/functions.php';
 
 define( 'VIP_GO_MUPLUGINS_TESTS__DIR__', __DIR__ );
@@ -41,7 +23,6 @@ define( 'WPCOM_VIP_MAIL_TRACKING_KEY', 'key' );
 define( 'WPCOM_VIP_DISABLE_REMOTE_REQUEST_ERROR_REPORTING', true );
 
 function _manually_load_plugin() {
-	require_once __DIR__ . '/../lib/helpers/php-compat.php';
 	require_once __DIR__ . '/../000-vip-init.php';
 	require_once __DIR__ . '/../001-core.php';
 	require_once __DIR__ . '/../a8c-files.php';
@@ -57,7 +38,6 @@ function _manually_load_plugin() {
 	require_once __DIR__ . '/../vip-jetpack/vip-jetpack.php';
 
 	// Proxy lib
-	require_once __DIR__ . '/proxy-helpers.php'; // Needs to be included before ip-forward.php
 	require_once __DIR__ . '/../lib/proxy/ip-forward.php';
 	require_once __DIR__ . '/../lib/proxy/class-iputils.php';
 
@@ -94,6 +74,16 @@ function _disable_core_legacy_widget_registration() {
 tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 tests_add_filter( 'muplugins_loaded', '_remove_init_hook_for_cache_manager' );
 tests_add_filter( 'muplugins_loaded', '_disable_core_legacy_widget_registration' );
+
+// WP_UnitTestCase lowers the bcrypt cost only while a test runs. Lower it everywhere, so users
+// created in wpSetUpBeforeClass() are as cheap to create and log in as users created in tests.
+tests_add_filter( 'wp_hash_password_options', function ( $options, $algorithm ) {
+	if ( PASSWORD_BCRYPT === $algorithm ) {
+		$options['cost'] = 5;
+	}
+
+	return $options;
+}, 1, 2 );
 
 // Disable calls to wordpress.org to get translations
 tests_add_filter( 'translations_api', function ( $res ) {

@@ -11,21 +11,19 @@ use Prometheus\Storage\InMemory;
 class Plugin {
 	protected static ?Plugin $instance     = null;
 	protected ?RegistryInterface $registry = null;
-	/** @var CollectorInterface[] */
+	/** @var array<string|int, CollectorInterface> Keyed by the slug used in the vip_prometheus_collectors filter */
 	protected array $collectors = [];
 
 	protected string $site_label = '';
 
 	const MAX_NETWORK_SITES = 50;
-	/**
-	 * @return static
-	 */
-	public static function get_instance(): self {
-		if ( ! self::$instance ) {
-			self::$instance = new static();
+
+	final public static function get_instance(): static {
+		if ( ! static::$instance ) {
+			static::$instance = new static();
 		}
 
-		return self::$instance;
+		return static::$instance;
 	}
 
 	/**
@@ -38,7 +36,6 @@ class Plugin {
 
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'init_registry' ], 9 );
 		add_action( 'vip_mu_plugins_loaded', [ $this, 'load_collectors' ] );
-		add_action( 'mu_plugins_loaded', [ $this, 'load_collectors' ] );
 		add_action( 'plugins_loaded', [ $this, 'load_collectors' ] );
 
 		// Currently there's no way to persist the storage on non-web requests because APCu is not available.
@@ -54,7 +51,13 @@ class Plugin {
 	}
 
 	public function init_registry() {
-		$this->registry = self::create_registry();
+		if ( null === $this->registry ) {
+			$this->registry = self::create_registry();
+		}
+	}
+
+	public function get_registry(): ?RegistryInterface {
+		return $this->registry;
 	}
 
 	public function load_collectors(): void {
@@ -63,17 +66,24 @@ class Plugin {
 			$available_collectors = [];
 		}
 
-		$available_collectors = array_filter( $available_collectors, fn ( $collector ) => $collector instanceof CollectorInterface );
+		foreach ( $available_collectors as $key => $collector ) {
+			if ( ! $collector instanceof CollectorInterface ) {
+				continue;
+			}
 
-		$available_collectors = array_udiff(
-			$available_collectors,
-			$this->collectors,
-			fn ( $a, $b ) => spl_object_id( $a ) - spl_object_id( $b )
-		);
+			// Filters may build a new instance on every call, so a slug that is already loaded must not be initialized again.
+			if ( ( is_string( $key ) && isset( $this->collectors[ $key ] ) ) || in_array( $collector, $this->collectors, true ) ) {
+				continue;
+			}
 
-		array_walk( $available_collectors, fn ( CollectorInterface $collector ) => $collector->initialize( $this->registry ) );
+			$collector->initialize( $this->registry );
 
-		$this->collectors = array_merge( $this->collectors, $available_collectors );
+			if ( is_string( $key ) ) {
+				$this->collectors[ $key ] = $collector;
+			} else {
+				$this->collectors[] = $collector;
+			}
+		}
 	}
 
 	private static function create_registry(): RegistryInterface {
@@ -160,8 +170,12 @@ class Plugin {
 			return $this->site_label;
 		}
 
-		$sites_count = wp_count_sites();
-		if ( $sites_count['all'] > self::MAX_NETWORK_SITES ) {
+		// wp_count_sites() would run six site queries per request for the one count needed here
+		$sites_count = get_sites( [
+			'network_id' => get_current_network_id(),
+			'count'      => true,
+		] );
+		if ( $sites_count > self::MAX_NETWORK_SITES ) {
 			$this->site_label = 'network';
 		}
 

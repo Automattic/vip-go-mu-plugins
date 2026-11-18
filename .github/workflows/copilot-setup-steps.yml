@@ -27,7 +27,7 @@ jobs:
           MYSQL_DATABASE: wordpress_test
     steps:
       - name: Check out source code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
         with:
           submodules: recursive
 
@@ -35,7 +35,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y subversion
 
       - name: Set up PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
         with:
           coverage: none
           ini-values: apc.enable_cli=1, opcache.enable_cli=1
@@ -47,7 +47,7 @@ jobs:
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
       - name: Set up WordPress and WordPress Test Library
-        uses: sjinks/setup-wordpress-test-library@9726426f2a40656274560a0394718177f8adb424 # v3.0.0
+        uses: sjinks/setup-wordpress-test-library@bb68ff8d3009843095ecaef40398b9ee5c36923c # v3.1.1
         with:
           version: latest
 

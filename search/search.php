@@ -24,6 +24,8 @@ if ( defined( 'VIP_ELASTICSEARCH_DISABLED' ) && true === constant( 'VIP_ELASTICS
 }
 
 require_once __DIR__ . '/includes/functions/utils.php';
+require_once __DIR__ . '/includes/classes/class-query-classifier.php';
+require_once __DIR__ . '/includes/classes/class-query-warning.php';
 require_once __DIR__ . '/includes/classes/class-search.php';
 
 if ( \Automattic\VIP\Search\Search::are_es_constants_defined() && ! wp_installing() ) {
@@ -31,12 +33,13 @@ if ( \Automattic\VIP\Search\Search::are_es_constants_defined() && ! wp_installin
 
 	require_once __DIR__ . '/search-dev-tools/search-dev-tools.php';
 
+	// Fire before the query integration check below, so integrations (e.g. Enterprise Search) can set offloading first
+	do_action( 'vip_search_loaded' );
+
 	// If VIP Search query integration is enabled, disable Jetpack Search
 	if ( ! $search_plugin::ep_skip_query_integration( false ) ) {
 		add_filter( 'jetpack_active_modules', array( $search_plugin, 'filter__jetpack_active_modules' ), PHP_INT_MAX );
 		add_filter( 'jetpack_widgets_to_include', array( $search_plugin, 'filter__jetpack_widgets_to_include' ), PHP_INT_MAX );
 		add_filter( 'jetpack_search_should_handle_query', '__return_false', PHP_INT_MAX );
 	}
-
-	do_action( 'vip_search_loaded' );
 }

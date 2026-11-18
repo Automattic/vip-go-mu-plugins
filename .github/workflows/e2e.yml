@@ -38,7 +38,7 @@ jobs:
       contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: block
           allowed-endpoints:
@@ -80,7 +80,12 @@ jobs:
             wordpress.org:443
 
       - name: Check out repository code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
+        env:
+          # Clone submodules in parallel instead of one at a time.
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: submodule.fetchJobs
+          GIT_CONFIG_VALUE_0: 8
         with:
           submodules: true
 
@@ -88,22 +93,22 @@ jobs:
         uses: ./.github/actions/prepare-source
 
       - name: Setup Node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 'lts/*'
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
 
+      # Install scripts only check versions or build optional native add-ons; the VIP CLI's keychain add-on
+      # is for logins, which e2e doesn't use.
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Install Playwright with Chromium
-        run: npx playwright install chromium
+        # Tests run headless, which only needs the headless shell (and ffmpeg for retry videos).
+        run: npx playwright install chromium --only-shell
         working-directory: __tests__/e2e
-
-      - name: Install VIP CLI
-        run: npm install -g @automattic/vip
 
       - name: Determine WP version
         run: |
@@ -120,9 +125,13 @@ jobs:
           echo "E2E_USER=${{ github.event.inputs.user }}" >> $GITHUB_ENV
           echo "E2E_PASSWORD=${{ github.event.inputs.password }}" >> $GITHUB_ENV
 
+      # `npm test` runs the VIP CLI installed by `npm ci`.
       - name: Run e2e tests
         run: npm test
         working-directory: __tests__/e2e
+        env:
+          # The runner is discarded after the job, so destroying the site only costs time.
+          E2E_PRESERVE_SITE: 'true'
 
       - name: Archive test results
         uses: actions/upload-artifact@v7
@@ -140,22 +149,22 @@ jobs:
       contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
       - name: Check out repository code
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
 
       - name: Setup Node
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v7.1.0
         with:
           node-version: 'lts/*'
           cache: npm
           cache-dependency-path: __tests__/e2e/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
         working-directory: __tests__/e2e
 
       - name: Run TypeScript typecheck

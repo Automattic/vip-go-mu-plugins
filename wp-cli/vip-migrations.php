@@ -19,7 +19,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 * [--skip-confirm]
 	 * : Skip the confirmation prompt
 	 */
-	public function cleanup( $args, $assoc_args ) {
+	public function cleanup( array $args, array $assoc_args ) {
 		global $wpdb;
 
 		$dry_run      = Utils\get_flag_value( $assoc_args, 'dry-run' );
@@ -107,7 +107,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *   - ms_global
 	 *   - ""
 	 */
-	public function dbdelta( $args, $assoc_args ) {
+	public function dbdelta( array $args, array $assoc_args ) {
 		global $wpdb;
 
 		$tables = isset( $args[1] ) ? $args[1] : '';
@@ -204,7 +204,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand validate-attachments
 	 */
-	public function validate_attachments( $args, $assoc_args ) {
+	public function validate_attachments( array $args, array $assoc_args ) {
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_init, WordPress.WP.AlternativeFunctions.curl_curl_init, WordPress.WP.AlternativeFunctions.curl_curl_setopt
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_multi_add_handle, WordPress.WP.AlternativeFunctions.curl_curl_multi_exec
 		// phpcs:disable WordPress.WP.AlternativeFunctions.curl_curl_getinfo, WordPress.WP.AlternativeFunctions.curl_curl_multi_remove_handle
@@ -217,13 +217,13 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		$offset  = 0;
 		$limit   = 500;
 		$threads = 10;
-		$output  = array( array( 'url', 'status' ) );
 
 		// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- should be safe here
 		$file_descriptor = fopen( $output_file, 'w' );
 		if ( false === $file_descriptor ) {
 			WP_CLI::error( sprintf( 'Cannot open file for writing: %s', $output_file ) );
 		}
+		WP_CLI\Utils\write_csv( $file_descriptor, [], [ 'url', 'status' ] );
 
 		global $wpdb;
 
@@ -263,13 +263,14 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		if ( ! file_exists( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ) ) {
 			$cache = [];
 		} else {
+			// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- fetching local data
 			$cache = json_decode( file_get_contents( get_temp_dir() . '/validate-files-' . md5( get_site_url() ) ), ARRAY_N );
 		}
 
 		do {
 			$extra_count    = 0;
 			$attachments    = [];
-			$sql            = $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' %s LIMIT %d,%d", $date_query ?? false, $offset, $limit );
+			$sql            = "SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' " . $date_query . $wpdb->prepare( 'LIMIT %d,%d', $offset, $limit );
 			$attachment_ids = array_map(
 				function ( $attachment_ids ) {
 					return (int) $attachment_ids[0];
@@ -299,7 +300,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 			}
 
 			$attachments        = array_unique( $attachments ); // Just in case, let's clear out any dupes.
-			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maxiumum 10 elements.
+			$attachments_arrays = array_chunk( $attachments, $threads ); // Break the attachments into groups of maximum 10 elements.
 			$mh                 = curl_multi_init();
 
 			// Loop through each block of 10 attachments.
@@ -362,16 +363,16 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					}
 
 					if ( $log_request ) {
-						$output[] = array(
-							$url,
-							$response_code,
-						);
+						WP_CLI\Utils\write_csv( $file_descriptor, [ [ $url, $response_code ] ] );
 					}
 				}
 
-				$progress->tick( count( $attachments_arrays ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
+				$progress->tick( count( $attachments_array ), 'Checking ' . number_format( $attachment_count ) . ' attachments' );
 
 			}
+
+			// Free this batch's posts from the local object cache.
+			$this->vip_inmemory_cleanup();
 
 			// Pause.
 			sleep( 1 );
@@ -381,7 +382,6 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 		} while ( $attachment_ids_count );
 
 		$progress->finish();
-		WP_CLI\Utils\write_csv( $file_descriptor, $output );
 		fclose( $file_descriptor );
 
 		foreach ( $cache as $response_code => $url_array ) {
@@ -437,7 +437,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 	 *
 	 * @subcommand import-user-meta
 	 */
-	public function import_user_meta( $args, $assoc_args ) {
+	public function import_user_meta( array $args, array $assoc_args ) {
 		$filename = $args[0];
 		$user_key = $assoc_args['user_key'] ?? 'user_login';
 		$dry_run  = Utils\get_flag_value( $assoc_args, 'dry-run', true );
@@ -474,6 +474,7 @@ class VIP_Go_Migrations_Command extends WPCOM_VIP_CLI_Command {
 					break;
 				default:
 					WP_CLI::warning( 'Error getting user ' . $user_value );
+					continue 2;
 			}
 
 			if ( ! $dry_run ) {

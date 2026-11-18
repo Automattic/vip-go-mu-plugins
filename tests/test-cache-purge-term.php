@@ -15,14 +15,12 @@ class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 		parent::setUp();
 
 		$this->cache_manager = WPCOM_VIP_Cache_Manager::instance();
+		$this->cache_manager->init();
 		$this->cache_manager->clear_queued_purge_urls();
-
-		// When we create our test term, these fire and pollute our tests :)
-		remove_all_actions( 'clean_term_cache' );
-		remove_all_actions( 'clean_post_cache' );
 	}
 
 	public function tearDown(): void {
+		$this->cache_manager->clear_queued_purge_urls();
 		unregister_taxonomy( self::TEST_TAXONOMY_SLUG );
 
 		parent::tearDown();
@@ -32,9 +30,12 @@ class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 		register_taxonomy( self::TEST_TAXONOMY_SLUG, 'post', $taxonomy_args );
 
 		$factory = new \WP_UnitTest_Factory_For_Term( null, self::TEST_TAXONOMY_SLUG );
-		return $factory->create_object( [
+		$term_id = $factory->create_object( [
 			'name' => 'my-cool-term',
 		] );
+		// Retain production hooks and discard only fixture-creation purges.
+		$this->cache_manager->clear_queued_purge_urls();
+		return $term_id;
 	}
 
 	public function test__invalid_taxonomy() {
@@ -90,15 +91,34 @@ class Cache_Purge_Term_Test extends WP_Test_REST_TestCase {
 	}
 
 	/**
+	 * A WordPress term update must dispatch the production purge registration.
+	 *
 	 * @dataProvider get_data_for_valid_term_and_taxonomy_tests
 	 */
-	public function test_valid_term_and_taxonomy( $taxonomy_args ) {
-		$term_id = $this->register_taxonomy_and_term( $taxonomy_args );
+	public function test_wordpress_term_update_queues_purge( array $taxonomy_args ): void {
+		$term_id  = $this->register_taxonomy_and_term( $taxonomy_args );
+		$old_link = get_term_link( $term_id, self::TEST_TAXONOMY_SLUG );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+		$result = wp_update_term( $term_id, self::TEST_TAXONOMY_SLUG, [
+			'name' => 'Updated term',
+			'slug' => 'updated-term',
+		] );
+		$this->assertNotWPError( $result );
+		$this->assertContains( get_term_link( $term_id, self::TEST_TAXONOMY_SLUG ), $this->cache_manager->get_queued_purge_urls() );
+		// A new slug moves the term archive, so the old one has to go too.
+		$this->assertContains( $old_link, $this->cache_manager->get_queued_purge_urls() );
+	}
 
-		$this->cache_manager->queue_terms_purges( $term_id, self::TEST_TAXONOMY_SLUG );
+	/**
+	 * Deleting a term with no children cleans the term cache with no IDs, which must not purge every other term.
+	 */
+	public function test_deleting_leaf_term_does_not_purge_other_terms(): void {
+		$term_id = $this->register_taxonomy_and_term( [ 'hierarchical' => true ] );
+		$leaf_id = self::factory()->term->create( [ 'taxonomy' => self::TEST_TAXONOMY_SLUG ] );
+		$this->cache_manager->clear_queued_purge_urls();
 
-		$expected_term_link = get_term_link( $term_id, self::TEST_TAXONOMY_SLUG );
-		$queued_purge_urls  = $this->cache_manager->get_queued_purge_urls();
-		$this->assertContains( $expected_term_link, $queued_purge_urls );
+		$this->assertTrue( wp_delete_term( $leaf_id, self::TEST_TAXONOMY_SLUG ) );
+
+		$this->assertNotContains( get_term_link( $term_id, self::TEST_TAXONOMY_SLUG ), $this->cache_manager->get_queued_purge_urls() );
 	}
 }

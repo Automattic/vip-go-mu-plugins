@@ -12,7 +12,6 @@ namespace Automattic\VIP\Telemetry\Tracks;
 use WP_Error;
 use WP_Http;
 use Automattic\VIP\Telemetry\Telemetry_Client;
-use function Automattic\VIP\Logstash\log2logstash;
 
 /**
  * Handles all operations related to the Tracks API.
@@ -40,7 +39,7 @@ class Tracks_Client extends Telemetry_Client {
 	 *
 	 * @param Tracks_Event[] $events Array of Tracks_Event objects to record
 	 * @return bool|WP_Error True if batch recording succeeded.
-	 *                       WP_Error is any error occured.
+	 *                       WP_Error is any error occurred.
 	 */
 	public function batch_record_events( array $events, array $common_props = [] ): bool|WP_Error {
 		// filter out invalid events
@@ -58,9 +57,12 @@ class Tracks_Client extends Telemetry_Client {
 			'commonProps' => $common_props,
 		];
 
+		// Blocking so the status can be checked, but with a short timeout: the request
+		// runs after the response, yet still holds the PHP worker until it finishes.
 		$response = $this->http->post(
 			static::TRACKS_ENDPOINT,
 			array(
+				'timeout'    => 1,
 				'body'       => wp_json_encode( $body ),
 				'user-agent' => 'viptelemetry',
 				'headers'    => array(
@@ -69,15 +71,13 @@ class Tracks_Client extends Telemetry_Client {
 			)
 		);
 
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( ! is_wp_error( $response ) && ( $status_code < 200 || $status_code >= 300 ) ) {
+			$response = new WP_Error( 'tracks_http_rejected', 'Telemetry endpoint rejected the event.', array( 'status' => $status_code ) );
+		}
+
 		if ( is_wp_error( $response ) ) {
-			log2logstash( [
-				'severity' => 'error',
-				'feature'  => 'telemetry',
-				'message'  => 'error batch recording events to Tracks',
-				'extra'    => [
-					'error' => $response->get_error_messages(),
-				],
-			] );
+			$this->log_recording_error( $response, $status_code, 'error batch recording events to Tracks' );
 			return $response;
 		}
 

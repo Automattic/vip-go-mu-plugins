@@ -144,6 +144,13 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	private $handle;
 
 	/**
+	 * Whether this handle's upload has already been recorded to telemetry.
+	 *
+	 * @var bool
+	 */
+	private $upload_recorded = false;
+
+	/**
 	 * Vip_Filesystem_Stream constructor.
 	 *
 	 * @param API_Client $client
@@ -240,7 +247,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		try {
-			$result = $this->client->get_file( $path );
+			$fetched = false;
+			$result  = $this->client->get_file( $path );
 
 			if ( is_wp_error( $result ) ) {
 				if ( 'file-not-found' !== $result->get_error_code() || 'r' === $mode ) {
@@ -256,7 +264,8 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				$file = $this->string_to_resource( '', $mode );
 			} else {
 				// phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
-				$file = fopen( $result, $mode );
+				$file    = fopen( $result, $mode );
+				$fetched = true;
 			}
 
 			// Get meta data
@@ -274,6 +283,14 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				'size'  => $stats['size'],
 				'mtime' => $stats['mtime'],
 			] );
+
+			// VIP File Service read telemetry. Only count actual remote fetches.
+			if ( $fetched && class_exists( '\Automattic\VIP\Prometheus\Filesystem_Stats_Collector' ) ) {
+				try {
+					\Automattic\VIP\Prometheus\Filesystem_Stats_Collector::record_read( (int) $stats['size'] );
+				} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Telemetry must never break a read.
+				}
+			}
 
 			return true;
 		} catch ( \Exception $e ) {
@@ -416,6 +433,19 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			}
 
 			$this->should_flush_empty = false;
+
+			// VIP File Service write telemetry. Must never affect the file op.
+			if ( ! $this->upload_recorded && class_exists( '\Automattic\VIP\Prometheus\Filesystem_Stats_Collector' ) ) {
+				try {
+					$stats = fstat( $this->file );
+					if ( is_array( $stats ) && isset( $stats['size'] ) ) {
+						\Automattic\VIP\Prometheus\Filesystem_Stats_Collector::record_write( (int) $stats['size'], (string) $this->path );
+						$this->upload_recorded = true;
+					}
+				} catch ( \Throwable $e ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement.DetectedCatch -- Telemetry must never break a flush.
+				}
+			}
+
 			return fflush( $this->file );
 		} catch ( \Exception $e ) {
 			trigger_error(
@@ -468,7 +498,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * Write to a file
 	 *
 	 * @since   1.0.0
-	 * @accesss public
+	 * @access public
 	 *
 	 * @param   string      $data   The data to be written
 	 *
@@ -822,6 +852,11 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		$path_from = $this->trim_path( $path_from );
 		$path_to   = $this->trim_path( $path_to );
 
+		// The same file spelled differently (e.g. `vip:///wp-content/...`); uploading it onto itself and then deleting it would lose it.
+		if ( $path_from === $path_to ) {
+			return true;
+		}
+
 		try {
 			// Get original file first
 			// Note: Subooptimal. Should figure out a way to do this without downloading the file as this could
@@ -977,7 +1012,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		$tmp_handler = tmpfile();
 		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_fwrite
 		if ( false === fwrite( $tmp_handler, $data ) ) {
-			trigger_error( 'Error creating temporary resource #vip-go-streams', E_USER_ERROR );
+			throw new \Error( 'Error creating temporary resource #vip-go-streams' );
 		}
 
 		switch ( $mode ) {

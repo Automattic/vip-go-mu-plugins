@@ -13,17 +13,17 @@ use WP_UnitTestCase;
  * We're using test fixtures so we don't have to muck around with a hard-coded client-mu-plugins path.
  */
 class Client_Mu_Plugins__Get__Tests extends WP_UnitTestCase {
-	public function test__invalid_dir() {
-		$dir = __DIR__ . '/fixtures/client-mu-plugins/this-doesnt-exist/';
-
-		$actual = wpcom_vip_get_client_mu_plugins( $dir );
-
-		$this->assertEmpty( $actual );
+	public function data_no_plugins(): array {
+		return [
+			'invalid dir' => [ __DIR__ . '/fixtures/client-mu-plugins/this-doesnt-exist/' ],
+			'empty dir'   => [ __DIR__ . '/fixtures/client-mu-plugins/empty/' ],
+		];
 	}
 
-	public function test__empty() {
-		$dir = __DIR__ . '/fixtures/client-mu-plugins/empty/';
-
+	/**
+	 * @dataProvider data_no_plugins
+	 */
+	public function test__no_plugins( string $dir ) {
 		$actual = wpcom_vip_get_client_mu_plugins( $dir );
 
 		$this->assertEmpty( $actual );

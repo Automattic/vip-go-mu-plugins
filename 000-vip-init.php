@@ -43,10 +43,6 @@ if ( ! defined( 'VIP_OVERDUE_LOCKOUT' ) ) {
 	define( 'VIP_OVERDUE_LOCKOUT', false );
 }
 
-if ( ! defined( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE' ) ) {
-	define( 'WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE', false );
-}
-
 if ( ! class_exists( Context::class ) ) {
 	require_once __DIR__ . '/lib/utils/class-context.php';
 }
@@ -54,10 +50,8 @@ if ( ! class_exists( Context::class ) ) {
 // Sites can be blocked for various reasons - usually maintenance, so exit
 // early if the constant has been set (defined by VIP Go in config/wp-config.php)
 if ( WPCOM_VIP_SITE_MAINTENANCE_MODE ) {
-	$allow_front_end = WPCOM_VIP_SITE_ADMIN_ONLY_MAINTENANCE && ! REST_REQUEST && ! WP_ADMIN;
-
 	// WP CLI is allowed, but disable cron
-	if ( Context::is_wp_cli() || $allow_front_end ) {
+	if ( Context::is_wp_cli() ) {
 		add_filter( 'pre_option_a8c_cron_control_disable_run', function () {
 			return 1;
 		}, 9999 );
@@ -92,6 +86,9 @@ if ( Context::is_vip_env() && Context::is_overdue_locked() && ! Context::is_wp_c
 		exit;
 	}
 }
+
+// Stats collection
+require_once __DIR__ . '/prometheus.php';
 
 if ( file_exists( __DIR__ . '/.secrets/vip-secrets.php' ) ) {
 	require __DIR__ . '/.secrets/vip-secrets.php';
@@ -177,7 +174,8 @@ $internal_cron_events = array(
 	),
 );
 
-define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
+// Sites can define their own. VIP Support then schedules its cleanup as a regular event.
+defined( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS' ) || define( 'CRON_CONTROL_ADDITIONAL_INTERNAL_EVENTS', $internal_cron_events );
 
 // Enable Jetpack private connection by default on non production sites
 if ( ! defined( 'VIP_JETPACK_IS_PRIVATE' ) && defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' !== VIP_GO_APP_ENVIRONMENT ) {
@@ -195,6 +193,11 @@ if ( ! defined( 'FS_METHOD' ) ) {
 	define( 'FS_METHOD', 'direct' );
 }
 
+// For the sandbox and debug badges below. They check class_exists(), since a non-atomic deploy can deliver them before this class.
+if ( file_exists( __DIR__ . '/vip-helpers/class-environment-badges.php' ) ) {
+	require_once __DIR__ . '/vip-helpers/class-environment-badges.php';
+}
+
 if ( WPCOM_SANDBOXED ) {
 	require __DIR__ . '/vip-helpers/sandbox.php';
 }
@@ -202,18 +205,12 @@ if ( WPCOM_SANDBOXED ) {
 // Feature flags
 require_once __DIR__ . '/lib/feature/class-feature.php';
 
-// Stats collection
-require_once __DIR__ . '/prometheus.php';
-
 // Logging
 require_once __DIR__ . '/logstash/logstash.php';
 
 // Debugging Tools
 require_once __DIR__ . '/000-debug/0-load.php';
 require_once __DIR__ . '/lib/utils/class-alerts.php';
-
-// Polyfills
-require_once __DIR__ . '/lib/helpers/php-compat.php';
 
 // Load our development and environment helpers
 require_once __DIR__ . '/vip-helpers/vip-notoptions-mitigation.php';
@@ -231,6 +228,9 @@ require_once __DIR__ . '/vip-helpers/vip-syndication-cache.php';
 require_once __DIR__ . '/vip-helpers/vip-migrations.php';
 require_once __DIR__ . '/vip-helpers/class-user-cleanup.php';
 require_once __DIR__ . '/vip-helpers/class-wpcomvip-restrictions.php';
+if ( file_exists( __DIR__ . '/vip-helpers/vip-connectors.php' ) ) {
+	require_once __DIR__ . '/vip-helpers/vip-connectors.php';
+}
 
 // Load the Telemetry files
 require_once __DIR__ . '/telemetry/class-telemetry-system.php';
@@ -243,18 +243,10 @@ require_once __DIR__ . '/telemetry/tracks/class-tracks-event-dto.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-event.php';
 require_once __DIR__ . '/telemetry/tracks/class-tracks-client.php';
 require_once __DIR__ . '/telemetry/tracks/tracks-utils.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-client.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event-dto.php';
-require_once __DIR__ . '/telemetry/pendo/class-pendo-track-event.php';
-require_once __DIR__ . '/telemetry/pendo/pendo-utils.php';
 
-// Temporary loader during rollout, remove and directly require after rollout.
-if ( file_exists( __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php' ) ) {
-	require_once __DIR__ . '/telemetry/pendo/class-pendo-javascript-library.php';
+require_once __DIR__ . '/telemetry/tracks/class-admin-page-view-tracker.php';
 
-	add_action( 'init', [ Automattic\VIP\Telemetry\Pendo::class, 'enable_javascript_library' ] );
-}
+add_action( 'admin_init', [ Automattic\VIP\Telemetry\Tracks\Admin_Page_View_Tracker::class, 'init' ] );
 
 add_action( 'init', [ WPComVIP_Restrictions::class, 'instance' ] );
 
@@ -300,21 +292,6 @@ if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && ! defined( 'WP_ENVIRONMENT_TYPE' ) )
 	}
 
 	define( 'WP_ENVIRONMENT_TYPE', $environment_type );
-}
-
-$non_prod_envs = [
-	'local',
-	'develop',
-	'preprod',
-	'staging',
-	'testing',
-	'uat',
-	'development',
-	'dev',
-	'stage',
-];
-if ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && in_array( constant( 'VIP_GO_APP_ENVIRONMENT' ), $non_prod_envs, true ) && file_exists( __DIR__ . '/vip-helpers/vip-non-production.php' ) ) {
-	require __DIR__ . '/vip-helpers/vip-non-production.php';
 }
 
 if ( ! defined( 'WP_INSTALLING' ) || ! WP_INSTALLING ) {

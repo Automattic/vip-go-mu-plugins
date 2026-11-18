@@ -22,7 +22,7 @@ interface BackendInterface {
 	/**
 	 * Increments the counter of the concurrent connections.
 	 *
-	 * @return bool True if the new value is withing the limit, false otherwise
+	 * @return bool True if the new value is within the limit, false otherwise
 	 */
 	public function inc_value(): bool;
 

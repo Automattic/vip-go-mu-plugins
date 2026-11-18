@@ -382,7 +382,7 @@ class VIP_Filesystem {
 
 		// Adding the leading slash because `wp_parse_url` reads the `wp-content` part
 		// of the path as `host` without any slashes
-		$file_uri = sprintf( '/%s%s', $url['host'], $url['path'] );
+		$file_uri = sprintf( '/%s%s', $url['host'] ?? '', $url['path'] ?? '' );
 
 		return $file_uri;
 	}

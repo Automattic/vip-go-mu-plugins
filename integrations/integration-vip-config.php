@@ -50,18 +50,22 @@ class IntegrationVipConfig {
 	 * Constructor.
 	 *
 	 * @param string $slug Slug of the integration.
+	 * @param array|null $config Config override.
 	 */
-	public function __construct( string $slug ) {
-		$this->set_config( $slug );
+	public function __construct( string $slug, ?array $config = null ) {
+		$this->set_config( $slug, $config );
 	}
 
 	/**
 	 * Set config provided by VIP from file.
 	 *
 	 * @param string $slug A unique identifier for the integration.
+	 * @param array|null $config Config override.
 	 */
-	private function set_config( string $slug ): void {
-		$config = $this->get_vip_config_from_file( $slug );
+	private function set_config( string $slug, ?array $config = null ): void {
+		if ( is_null( $config ) ) {
+			$config = $this->get_vip_config_from_file( $slug );
+		}
 
 		if ( ! is_array( $config ) ) {
 			return;
@@ -124,6 +128,13 @@ class IntegrationVipConfig {
 	}
 
 	/**
+	 * Returns `true` if the integration is enabled for the org.
+	 */
+	public function is_enabled_for_org(): bool {
+		return Org_Integration_Status::ENABLED === $this->get_value_from_config( 'org', 'status' );
+	}
+
+	/**
 	 * Get integration status for site.
 	 *
 	 * For single sites simply return global status.
@@ -165,6 +176,16 @@ class IntegrationVipConfig {
 	}
 
 	/**
+	 * Get organization-level configuration for this integration.
+	 *
+	 * @return array Organization configuration array, empty array if no config is defined.
+	 */
+	public function get_org_config(): array {
+		$config = $this->get_value_from_config( 'org', 'config' );
+		return is_array( $config ) ? $config : [];
+	}
+
+	/**
 	 * Get child integration configurations.
 	 *
 	 * Returns the 'children' array from the integration configuration, which contains
@@ -182,21 +203,41 @@ class IntegrationVipConfig {
 	}
 
 	/**
+	 * Get a single child integration configuration.
+	 *
+	 * @param string $slug Child integration slug.
+	 * @return array|null
+	 */
+	public function get_child_config( string $slug ): ?array {
+		$child_configs = $this->get_child_configs();
+
+		return isset( $child_configs[ $slug ] ) && is_array( $child_configs[ $slug ] ) ? $child_configs[ $slug ] : null;
+	}
+
+	/**
 	 * Get environment configurations for child integrations.
 	 *
-	 * Extracts the 'config' field from the 'env' section of each child configuration,
-	 * preserving the integration slug as the key. This maintains the associative structure
-	 * and consistency with get_env_config() which returns only the config portion.
+	 * Extracts the 'config' field from the 'env' section of each child configuration that is
+	 * enabled for the current site, preserving the integration slug as the key. This maintains
+	 * the associative structure and consistency with get_env_config() which returns only the
+	 * config portion.
 	 *
 	 * @return array Associative array of child environment configurations keyed by integration slug
 	 */
 	public function get_child_env_configs(): array {
-		$child_configs = $this->get_child_configs();
-		$child_envs    = [];
+		$child_envs = [];
 
-		foreach ( $child_configs as $child_slug => $child_config ) {
-			if ( isset( $child_config['env']['config'] ) && is_array( $child_config['env']['config'] ) ) {
-				$child_envs[ $child_slug ] = $child_config['env']['config'];
+		foreach ( $this->get_child_configs() as $child_slug => $child_config ) {
+			if ( ! is_array( $child_config ) ) {
+				continue;
+			}
+
+			$child_vip_config = new self( $child_slug, $child_config );
+			$child_env_config = $child_vip_config->get_env_config();
+
+			// VIP keeps the config of a disabled child, so check the child's own status too.
+			if ( $child_env_config && $child_vip_config->is_active_via_vip() ) {
+				$child_envs[ $child_slug ] = $child_env_config;
 			}
 		}
 

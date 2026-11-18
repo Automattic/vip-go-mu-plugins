@@ -82,15 +82,34 @@ add_action( 'template_redirect', 'wpcom_vip_disable_newrelic_on_amp' );
  * See https://core.trac.wordpress.org/ticket/31245
  */
 function _wpcom_vip_maybe_clear_alloptions_cache( $option ) {
+	global $_wpcom_vip_autoloaded_options_before_write;
+
 	if ( ! wp_installing() ) {
 		$alloptions = wp_load_alloptions(); //alloptions should be cached at this point
 
-		if ( isset( $alloptions[ $option ] ) ) { //only if option is among alloptions
+		//only if option is (or was, before a delete or autoload turned off) among alloptions
+		if ( isset( $alloptions[ $option ] ) || isset( $_wpcom_vip_autoloaded_options_before_write[ $option ] ) ) {
 			wp_cache_delete( 'alloptions', 'options' );
 		}
 	}
+
+	unset( $_wpcom_vip_autoloaded_options_before_write[ $option ] );
 }
 
+/**
+ * Core removes a deleted option, or one whose autoload is turned off, from alloptions
+ * before deleted_option / updated_option fire, so note autoloaded options before the write.
+ */
+function _wpcom_vip_note_autoloaded_option_before_write( $option ) {
+	global $_wpcom_vip_autoloaded_options_before_write;
+
+	if ( ! wp_installing() && isset( wp_load_alloptions()[ $option ] ) ) {
+		$_wpcom_vip_autoloaded_options_before_write[ $option ] = true;
+	}
+}
+
+add_action( 'update_option', '_wpcom_vip_note_autoloaded_option_before_write' );
+add_action( 'delete_option', '_wpcom_vip_note_autoloaded_option_before_write' );
 add_action( 'added_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'updated_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
 add_action( 'deleted_option', '_wpcom_vip_maybe_clear_alloptions_cache' );
@@ -133,7 +152,7 @@ function _vip_filter_rest_url_for_ssl( $url ) {
 }
 
 /**
- * Improve perfomance of the `_WP_Editors::wp_link_query` method
+ * Improve performance of the `_WP_Editors::wp_link_query` method
  *
  * The WordPress core is currently not setting `no_found_rows` inside the `_WP_Editors::wp_link_query`
  * See https://core.trac.wordpress.org/ticket/38784
@@ -154,7 +173,7 @@ function wpcom_vip_wp_link_query_args( $query ) {
 add_filter( 'wp_link_query_args', 'wpcom_vip_wp_link_query_args', 10, 1 );
 
 /**
- * Stop Woocommerce from trying to create files on read-only filesystem
+ * Stop WooCommerce from trying to create files on read-only filesystem
  */
 add_filter( 'woocommerce_install_skip_create_files', '__return_true' );
 

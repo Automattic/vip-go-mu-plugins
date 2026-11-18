@@ -1,0 +1,10 @@
+# Changes that only touch these paths skip the PHP test workflows: CI, CI (WP Core) and CI (Parse.ly).
+# One Bash pattern per line. `*` matches any characters, including `/`.
+*.md
+docs/*
+__tests__/e2e/*
+search/search-dev-tools/build/*
+search/search-dev-tools/src/*
+search/search-dev-tools/tests/*
+search/search-dev-tools/*.js
+search/search-dev-tools/*.json

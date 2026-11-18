@@ -8,16 +8,15 @@ import fs from 'fs';
  * Internal dependencies
  */
 import { SettingsWritingPage } from './pages/settings-writing-page';
-import { EditorPage } from './pages/wp-editor-page';
 import { LoginPage } from './pages/wp-login-page';
 import { goToPage } from './playwright-helpers';
 
 async function globalSetup( config: FullConfig ) {
 	const timeout = 30000;
 	const artifactsDir = 'test-results/setup/';
-	const { baseURL, storageState } = config.projects[ 0 ].use;
+	const { baseURL, contextOptions, storageState } = config.projects[ 0 ].use;
 	const browser = await chromium.launch( { headless: config.projects[ 0 ].use.headless } );
-	const context = await browser.newContext( { recordVideo: { dir: artifactsDir } } );
+	const context = await browser.newContext( { ...contextOptions, recordVideo: { dir: artifactsDir } } );
 	const page = await context.newPage();
 	const user = process.env.E2E_USER ? process.env.E2E_USER : 'vipgo';
 	const pass = process.env.E2E_PASSWORD ? process.env.E2E_PASSWORD : 'password';
@@ -45,9 +44,6 @@ async function globalSetup( config: FullConfig ) {
 		} else {
 			process.env.E2E_CLASSIC_TESTS = 'false';
 		}
-
-		await EditorPage.automaticallyDismissAnnoyingNuisances( page );
-		await goToPage( page, baseURL! + '/wp-admin/post-new.php' );
 	} catch ( error ) {
 		// eslint-disable-next-line no-console
 		console.log( error );

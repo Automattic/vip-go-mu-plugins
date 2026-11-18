@@ -2,6 +2,7 @@
 
 namespace Automattic\VIP\Prometheus;
 
+use Automattic\Test\Utils\Captures_Errors;
 use Prometheus\Counter;
 use Prometheus\Gauge;
 use Prometheus\RegistryInterface;
@@ -11,59 +12,56 @@ use WP_UnitTestCase;
 require_once __DIR__ . '/class-plugin-helper.php';
 
 class Test_Prometheus extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	public function setUp(): void {
 		parent::setUp();
 
 		remove_all_actions( 'vip_mu_plugins_loaded' );
-		remove_all_actions( 'mu_plugins_loaded' );
 		remove_all_actions( 'plugins_loaded' );
 		remove_all_actions( 'init' );
 
 		Plugin_Helper::clear_instance();
-
-		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ): never {
-			// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-			throw new \Exception( $errstr, $errno );
-		}, E_USER_WARNING );
 	}
 
 	public function tearDown(): void {
-		restore_error_handler();
-
 		Plugin::get_instance();
 		parent::tearDown();
 	}
 
-	public function test_collectors_filter(): void {
+	public function test_double_init(): void {
 		$plugin = Plugin_Helper::get_instance();
-		self::assertInstanceOf( Plugin_Helper::class, $plugin );
 
-		$filter_invoked = false;
+		$first = $plugin->get_registry();
+		$plugin->init_registry();
+		$second = $plugin->get_registry();
+		$plugin->init_registry();
+		$third = $plugin->get_registry();
 
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
-			$filter_invoked = true;
-			WP_UnitTestCase::assertIsArray( $collectors );
-			return $collectors;
-		};
-
-		add_filter( 'vip_prometheus_collectors', $available_collectors_filter );
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertTrue( $filter_invoked );
-		self::assertIsArray( $plugin->get_collectors() );
+		self::assertNull( $first );
+		self::assertInstanceOf( RegistryInterface::class, $second );
+		self::assertSame( $second, $third );
 	}
 
-	public function test_collectors_filter_wrong_return_type(): void {
+	public function get_data__collectors_filter_wrong_type(): array {
+		return [
+			'wrong return type'    => [ null ],
+			'wrong collector type' => [ [ new \stdClass() ] ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data__collectors_filter_wrong_type
+	 */
+	public function test_collectors_filter_wrong_type( $filtered_collectors ): void {
 		$plugin = Plugin_Helper::get_instance();
 
 		$filter_invoked = false;
 
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
+		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked, $filtered_collectors ) {
 			$filter_invoked = true;
 			WP_UnitTestCase::assertIsArray( $collectors );
-			return null;
+			return $filtered_collectors;
 		};
 
 		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
@@ -72,42 +70,20 @@ class Test_Prometheus extends WP_UnitTestCase {
 		self::assertTrue( $filter_invoked );
 		self::assertIsArray( $plugin->get_collectors() );
 		self::assertEmpty( $plugin->get_collectors() );
-	}
-
-	public function test_collectors_filter_wrong_collector_type(): void {
-		$plugin = Plugin_Helper::get_instance();
-
-		$filter_invoked = false;
-
-		$available_collectors_filter = function ( $collectors ) use ( &$filter_invoked ) {
-			$filter_invoked = true;
-			WP_UnitTestCase::assertIsArray( $collectors );
-			return [ new \stdClass() ];
-		};
-
-		add_filter( 'vip_prometheus_collectors', $available_collectors_filter, PHP_INT_MAX );
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertTrue( $filter_invoked );
-		self::assertEmpty( $plugin->get_collectors() );
-	}
-
-	public function test_create_registry(): void {
-		$plugin = Plugin_Helper::get_instance();
-		do_action( 'vip_mu_plugins_loaded' );
-
-		self::assertInstanceOf( RegistryInterface::class, $plugin->get_registry() );
 	}
 
 	public function test_create_registry_wrong_backend(): void {
-		Plugin_Helper::get_instance();
+		$plugin = Plugin_Helper::get_instance();
 
 		add_filter( 'vip_prometheus_storage_backend', function () {
 			return new \stdClass();
 		} );
 
-		$this->expectException( \Exception::class );
-		do_action( 'vip_mu_plugins_loaded' );
+		[ , $warnings ] = $this->capture_errors( fn() => do_action( 'vip_mu_plugins_loaded' ) );
+
+		self::assertSame( [ 'Invalid storage backend' ], $warnings );
+		// Falls back to the in-memory storage.
+		self::assertInstanceOf( RegistryInterface::class, $plugin->get_registry() );
 	}
 
 	public function test_merge_collectors(): void {
@@ -135,9 +111,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 		add_filter( 'vip_prometheus_collectors', function ( array $collectors, string $hook ) use ( $collector1, $collector2, $collector3 ): array {
 			switch ( $hook ) {
 				case 'vip_mu_plugins_loaded':
-					return [ $collector1 ];
-
-				case 'mu_plugins_loaded':
 					return [ $collector1, $collector2 ];
 
 				case 'plugins_loaded':
@@ -151,11 +124,6 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		do_action( 'vip_mu_plugins_loaded' );
 		self::assertEquals( 1, $collector1->initialize_called );
-		self::assertEquals( 0, $collector2->initialize_called );
-		self::assertEquals( 0, $collector3->initialize_called );
-
-		do_action( 'mu_plugins_loaded' );
-		self::assertEquals( 1, $collector1->initialize_called );
 		self::assertEquals( 1, $collector2->initialize_called );
 		self::assertEquals( 0, $collector3->initialize_called );
 
@@ -166,6 +134,98 @@ class Test_Prometheus extends WP_UnitTestCase {
 
 		$expected = [ $collector1, $collector2, $collector3 ];
 		self::assertEquals( $expected, $plugin->get_collectors() );
+	}
+
+	public function test_builtin_collectors_initialized_once_across_load_hooks(): void {
+		Plugin_Helper::get_instance();
+
+		// prometheus.php builds a new Cache_Collector on every filter call, and each initialization hooks `shutdown` to count cache stats.
+		$count_cache_shutdown_hooks = fn () => count(
+			array_filter(
+				$GLOBALS['wp_filter']['shutdown']->callbacks[10] ?? [],
+				fn ( $callback ) => is_array( $callback['function'] ) && $callback['function'][0] instanceof Cache_Collector
+			)
+		);
+
+		$before = $count_cache_shutdown_hooks();
+		do_action( 'vip_mu_plugins_loaded' );
+		do_action( 'plugins_loaded' );
+
+		self::assertSame( 1, $count_cache_shutdown_hooks() - $before );
+	}
+
+	public function get_data__endpoint_opcache_restrict_api(): array {
+		return [
+			'API allowed for the endpoint' => [ dirname( __DIR__, 2 ) . '/prometheus/', true ],
+			'API restricted elsewhere'     => [ '/usr/local/nginx/html/', false ],
+		];
+	}
+
+	/**
+	 * The endpoint runs without WordPress and refreshes the pod's APCu and OPcache gauges on each scrape.
+	 *
+	 * @dataProvider get_data__endpoint_opcache_restrict_api
+	 */
+	public function test_endpoint_refreshes_pod_gauges( string $restrict_api, bool $expect_opcache ): void {
+		if ( ! extension_loaded( 'apcu' ) || ! function_exists( 'opcache_get_status' ) ) {
+			self::markTestSkipped( 'Requires APCu and OPcache.' );
+		}
+
+		// JIT is disabled because enabling OPcache warns at startup when JIT is on and a coverage extension is loaded.
+		[ $output, $errors ] = self::run_endpoint( 'opcache.enable=1', 'opcache.enable_cli=1', 'opcache.jit=disable', 'opcache.restrict_api=' . $restrict_api );
+
+		self::assertSame( '', $errors );
+		self::assertStringContainsString( 'apcu_num_slots ', $output );
+		if ( $expect_opcache ) {
+			self::assertStringContainsString( 'opcache_hits ', $output );
+		} else {
+			self::assertStringNotContainsString( 'opcache_', $output );
+		}
+	}
+
+	/**
+	 * Mu-plugins deploys keep APCu, so metrics stored by an older release must not be exported once retired.
+	 */
+	public function test_endpoint_leaves_out_retired_metrics(): void {
+		if ( ! extension_loaded( 'apcu' ) ) {
+			self::markTestSkipped( 'Requires APCu.' );
+		}
+
+		[ $output, $errors ] = self::run_endpoint( 'auto_prepend_file=' . __DIR__ . '/fixtures/seed-retired-metrics.php' );
+
+		self::assertSame( '', $errors );
+		self::assertStringContainsString( 'object_cache_oprations_total{site_id="1",operation="get"} 1', $output );
+		self::assertStringNotContainsString( 'object_cache_cache_hits_total', $output );
+	}
+
+	/**
+	 * Run the standalone endpoint in its own PHP process, with APCu enabled and the given extra ini settings.
+	 *
+	 * @return string[] The endpoint's output and its errors.
+	 */
+	private static function run_endpoint( string ...$ini_settings ): array {
+		$command = [ PHP_BINARY, '-d', 'apc.enable_cli=1', '-d', 'display_errors=stderr' ];
+		foreach ( $ini_settings as $setting ) {
+			array_push( $command, '-d', $setting );
+		}
+		$command[] = dirname( __DIR__, 2 ) . '/prometheus/endpoint.php';
+
+		// phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.system_calls_proc_open -- runs the standalone endpoint script
+		$process = proc_open(
+			$command,
+			[
+				1 => [ 'pipe', 'w' ],
+				2 => [ 'pipe', 'w' ],
+			],
+			$pipes,
+			null,
+			[ 'REQUEST_URI' => '/.vip-prom-metrics' ]
+		);
+		$output  = stream_get_contents( $pipes[1] );
+		$errors  = stream_get_contents( $pipes[2] );
+		proc_close( $process );
+
+		return [ $output, $errors ];
 	}
 
 	public function test_safe_adapter(): void {

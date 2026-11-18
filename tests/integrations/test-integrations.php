@@ -16,8 +16,6 @@ use WP_UnitTestCase;
 use PHPUnit\Framework\MockObject\MockObject;
 use stdClass;
 
-use function Automattic\Test\Utils\get_class_method_as_public;
-
 require_once __DIR__ . '/fake-integration.php';
 
 class VIP_Integrations_Test extends WP_UnitTestCase {
@@ -103,33 +101,27 @@ class VIP_Integrations_Test extends WP_UnitTestCase {
 		$this->assertEquals( [], $integration_mock->get_env_config() );
 	}
 
-	public function test__get_integration_vip_config_returns_instance_of_IntegrationVipConfig(): void {
-		$integrations = new Integrations();
-
-		$integration_config = get_class_method_as_public( Integrations::class, 'get_integration_vip_config' )->invoke( $integrations, 'slug' );
-
-		$this->assertInstanceOf( IntegrationVipConfig::class, $integration_config );
-	}
-
 	public function test__load_active_loads_the_activated_integration(): void {
 		$integrations = new Integrations();
 
-		$integration = new FakeIntegration( 'fake' );
+		$integration = new RecordingFakeIntegration( 'fake' );
 		$integrations->register( $integration );
 		$integrations->activate( 'fake' );
 		$integrations->load_active();
 
 		$this->assertTrue( $integration->is_active() );
+		$this->assertSame( 1, $integration->load_count );
 	}
 
 	public function test__load_active_does_not_loads_the_non_activated_integration(): void {
 		$integrations = new Integrations();
-		$integration  = new FakeIntegration( 'fake' );
+		$integration  = new RecordingFakeIntegration( 'fake' );
 
 		$integrations->register( $integration );
 		$integrations->load_active();
 
 		$this->assertFalse( $integration->is_active() );
+		$this->assertSame( 0, $integration->load_count );
 	}
 
 	public function test__double_slug_registration_throws_invalidArgumentException(): void {

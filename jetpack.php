@@ -4,12 +4,12 @@
  * Plugin URI: https://jetpack.com
  * Description: Security, performance, and marketing tools made by WordPress experts. Jetpack keeps your site protected so you can focus on more important things.
  * Author: Automattic
- * Version: 15.7
+ * Version: 16.4
  * Author URI: https://jetpack.com
  * License: GPL2+
  * Text Domain: jetpack
- * Requires at least: 6.4
- * Requires PHP: 8.0
+ * Requires at least: 7.0
+ * Requires PHP: 7.4
  *
  * @package automattic/jetpack
  */
@@ -19,10 +19,7 @@
 function vip_default_jetpack_version() {
 	global $wp_version;
 
-	if ( version_compare( $wp_version, '6.5', '<' ) ) {
-		// WordPress 6.4.x
-		return '13.6';
-	} elseif ( version_compare( $wp_version, '6.6', '<' ) ) {
+	if ( version_compare( $wp_version, '6.6', '<' ) ) {
 		// WordPress 6.5.x
 		return '14.0';
 	} elseif ( version_compare( $wp_version, '6.7', '<' ) ) {
@@ -31,9 +28,15 @@ function vip_default_jetpack_version() {
 	} elseif ( version_compare( $wp_version, '6.8', '<' ) ) {
 		// WordPress 6.7.x
 		return '15.4';
-	} else {
-		// WordPress 6.8 and newer.
+	} elseif ( version_compare( $wp_version, '6.9', '<' ) ) {
+		// WordPress 6.8.x
 		return '15.7';
+	} elseif ( version_compare( $wp_version, '7.0', '<' ) ) {
+		// WordPress 6.9 and newer, before 7.0.
+		return '16.1';
+	} else {
+		// WordPress 7.0 and newer.
+		return '16.4';
 	}
 }
 
@@ -50,33 +53,30 @@ if ( ! defined( 'JP_SITEMAP_BATCH_SIZE' ) ) {
 add_filter( 'jetpack_client_verify_ssl_certs', '__return_true' );
 
 /**
- * Decide whether we need to enable JP staging mode, or prevent it.
+ * Decide whether we need to enable JP safe/staging mode, or prevent it.
  *
  * Mainly used to help prevent a site from accidentally taking over the connection
  * of another site. Happens if the database is copied over and the "auth" keys are then shared.
+ * Jetpack 13.6+ stops Sync, SSO and Stats in safe mode; older versions did so in staging mode.
  *
+ * @see https://jetpack.com/support/safe-mode/
  * @see https://jetpack.com/support/staging-sites/
  */
 function vip_toggle_jetpack_staging_mode() {
-	$is_vip_site = defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' );
-
-	if ( ! $is_vip_site ) {
-		// Default non-VIP sites to staging mode (likely local dev or custom staging).
-		add_filter( 'jetpack_is_staging_site', '__return_true' );
-		return;
-	}
-
+	$is_vip_site         = defined( 'WPCOM_IS_VIP_ENV' ) && constant( 'WPCOM_IS_VIP_ENV' );
 	$is_maintenance_mode = defined( 'WPCOM_VIP_SITE_MAINTENANCE_MODE' ) && WPCOM_VIP_SITE_MAINTENANCE_MODE;
 	$is_production_site  = defined( 'VIP_GO_APP_ENVIRONMENT' ) && 'production' === VIP_GO_APP_ENVIRONMENT;
-	if ( $is_maintenance_mode && ! $is_production_site ) {
-		// Specifically targetting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
-		add_filter( 'jetpack_is_staging_site', '__return_true' );
-		return;
+
+	// Specifically targeting data syncs here, we want to prevent Jetpack from contacting the site and potentially causing an identity crisis.
+	$in_non_production_maintenance = $is_vip_site && $is_maintenance_mode && ! $is_production_site;
+	if ( $in_non_production_maintenance ) {
+		add_filter( 'jetpack_is_in_safe_mode', '__return_true' );
 	}
 
-	// By default, JP will set all non-production sites to staging. But on VIP, the preprod/develop sites should still have their own real connections.
-	// So we'll ensure here it's not set to staging mode since it will break SSO and prevent data from being passed to WPcom.
-	add_filter( 'jetpack_is_staging_site', '__return_false' );
+	// Non-VIP sites (likely local dev or custom staging) default to staging mode. By default, JP sets all non-production sites to staging,
+	// but on VIP the preprod/develop sites should keep their own real connections, since staging breaks SSO and stops data from being passed to WPcom.
+	$is_staging = ! $is_vip_site || $in_non_production_maintenance;
+	add_filter( 'jetpack_is_staging_site', $is_staging ? '__return_true' : '__return_false' );
 }
 
 /**
@@ -500,6 +500,27 @@ add_filter( 'default_option_jetpack_active_plan', function ( $default_value ) {
 	return $default_value;
 } );
 
+/** Return an incompatibility reason before any plugin code is included. */
+function vip_jetpack_compatibility_error( $path ): string {
+	// Hosted sites use the platform mapping; local checkouts may lack its pinned versions.
+	if ( ! is_local_env() ) {
+		return '';
+	}
+	global $wp_version;
+
+	$requirements = get_file_data( $path, [
+		'wp'  => 'Requires at least',
+		'php' => 'Requires PHP',
+	] );
+	if ( $requirements['wp'] && version_compare( $wp_version, $requirements['wp'], '<' ) ) {
+		return 'requires WordPress ' . $requirements['wp'] . ' or newer';
+	}
+	if ( $requirements['php'] && version_compare( PHP_VERSION, $requirements['php'], '<' ) ) {
+		return 'requires PHP ' . $requirements['php'] . ' or newer';
+	}
+	return '';
+}
+
 /**
  * Load the jetpack plugin according to several defines:
  * - If VIP_JETPACK_SKIP_LOAD is true, Jetpack will not be loaded
@@ -533,7 +554,9 @@ function vip_jetpack_load() {
 	// to have a backup to unversioned "jetpack" folder
 	$jetpack_to_test[] = '';
 
-	// Walk through all versions to test, and load the first one that exists
+	$incompatible = [];
+
+	// Walk through all candidates and load the first compatible one.
 	foreach ( $jetpack_to_test as $version ) {
 		if ( 'local' === $version ) {
 			$path = WPCOM_VIP_CLIENT_MU_PLUGIN_DIR . '/jetpack/jetpack.php';
@@ -544,6 +567,11 @@ function vip_jetpack_load() {
 		}
 
 		if ( file_exists( $path ) ) {
+			$compatibility_error = vip_jetpack_compatibility_error( $path );
+			if ( $compatibility_error ) {
+				$incompatible[] = $path . ' ' . $compatibility_error;
+				continue;
+			}
 			// In a rare edge case, the plugin could be present in `active_plugins` option,
 			// That would lead to Jetpack Autoloader Guard trying to load autoloaders for `jetpack` and `jetpack-$version`
 			// This in turn would lead to a fatal error, when jetpack and jetpack-$version are the same version.
@@ -595,6 +623,11 @@ function vip_jetpack_load() {
 				trigger_error( 'Jetpack loading error: ' . constant( 'VIP_JETPACK_PINNED_VERSION' ) . ' could not be loaded, loading ' . constant( 'VIP_JETPACK_DEFAULT_VERSION' ) . ' instead.', E_USER_WARNING );
 			}
 		}
+	}
+
+	if ( ! defined( 'VIP_JETPACK_LOADED_VERSION' ) && $incompatible ) {
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Runtime diagnostic, not HTML.
+		trigger_error( 'Jetpack was not loaded: ' . implode( '; ', $incompatible ) . '. Install a compatible Jetpack version or use a supported WordPress version.', E_USER_WARNING );
 	}
 
 	/**

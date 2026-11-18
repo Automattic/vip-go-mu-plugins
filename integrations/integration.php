@@ -48,11 +48,25 @@ abstract class Integration {
 	protected bool $is_active = false;
 
 	/**
-	 * A boolean indicating if this integration should be tracked in Pendo. Defaults to false.
+	 * A boolean indicating if wp-admin page views should be recorded in Tracks for sites using this integration. Defaults to false.
 	 *
 	 * @var bool
 	 */
-	protected bool $enable_pendo_tracking = false;
+	protected bool $enable_admin_page_tracking = false;
+
+	/**
+	 * Parent integration slug for integrations stored as child config.
+	 *
+	 * @var string|null
+	 */
+	protected ?string $parent_integration_slug = null;
+
+	/**
+	 * Whether org status on the parent integration should gate this integration.
+	 *
+	 * @var bool
+	 */
+	protected bool $parent_integration_requires_org_enabled = false;
 
 	/**
 	 * Instance of VipIntegrationConfig. It's useful to have full configuration info
@@ -116,6 +130,29 @@ abstract class Integration {
 	}
 
 	/**
+	 * Return the organization-level configuration for this integration.
+	 *
+	 * @return array<string,mixed>
+	 */
+	public function get_org_config(): array {
+		if ( ! isset( $this->vip_config ) ) {
+			return [];
+		}
+
+		return $this->vip_config->get_org_config();
+	}
+
+	/**
+	 * Return whether the integration is enabled at the organization level.
+	 *
+	 * Manually activated integrations do not have platform configuration and are
+	 * treated as enabled for backward compatibility.
+	 */
+	public function is_enabled_for_org(): bool {
+		return ! isset( $this->vip_config ) || $this->vip_config->is_enabled_for_org();
+	}
+
+	/**
 	 * Get child integration configurations.
 	 *
 	 * @return array Associative array of child configurations keyed by integration slug
@@ -167,6 +204,20 @@ abstract class Integration {
 	}
 
 	/**
+	 * Get parent integration slug for child config lookup.
+	 */
+	public function get_parent_integration_slug(): ?string {
+		return $this->parent_integration_slug;
+	}
+
+	/**
+	 * Whether parent org status should gate this integration.
+	 */
+	public function parent_integration_requires_org_enabled(): bool {
+		return $this->parent_integration_requires_org_enabled;
+	}
+
+	/**
 	 * Set vip_config property.
 	 *
 	 * @param IntegrationVipConfig $vip_config Instance of IntegrationVipConfig.
@@ -178,12 +229,12 @@ abstract class Integration {
 	}
 
 	/**
-	 * Returns true if this integration should be tracked in Pendo.
+	 * Returns true if wp-admin page views should be recorded in Tracks for sites using this integration.
 	 *
 	 * @return bool
 	 */
-	final public function should_track_in_pendo(): bool {
-		return $this->enable_pendo_tracking;
+	final public function should_track_admin_pages(): bool {
+		return $this->enable_admin_page_tracking;
 	}
 
 	/**

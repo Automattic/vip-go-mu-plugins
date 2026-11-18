@@ -10,30 +10,25 @@ namespace Automattic\VIP\Config;
 
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\block_http_requests;
+use function Automattic\Test\Utils\reset_site_details_index;
+
 require_once __DIR__ . '/../../config/class-site-details-index.php';
 
-/**
- * @runTestsInSeparateProcesses
- * @preserveGlobalState disabled
- */
 class Site_Details_Index_Test extends WP_UnitTestCase {
 	public function setUp(): void {
 		parent::setUp();
-		add_filter( 'pre_http_request', function ( $result ) {
-			if ( false === $result ) {
-				$result = [
-					'headers'  => [],
-					'body'     => '',
-					'response' => [
-						'code'    => 418,
-						'message' => "I'm a teapot",
-					],
-					'cookies'  => [],
-				];
-			}
 
-			return $result;
-		}, 10 );
+		// Start without a singleton, so instance() creates (and hooks) a fresh one with the requested timestamp.
+		reset_site_details_index();
+		block_http_requests();
+	}
+
+	public function tearDown(): void {
+		// The singleton's filter is removed when hooks are restored, so don't leak the instance either.
+		reset_site_details_index();
+
+		parent::tearDown();
 	}
 
 	public function test__data_filter_should_not_be_hooked_if_no_init() {
@@ -42,21 +37,17 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertFalse( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) );
 	}
 
-	public function test__data_filter_should_be_hooked_if_init() {
-		// Getting the instance should call init which should add set_env_and_core to the hook.
-		$sdi = Site_Details_Index::instance();
-
-		$this->assertTrue( is_integer( has_filter( 'vip_site_details_index_data', [ $sdi, 'set_env_and_core' ] ) ) );
-	}
-
+	/**
+	 * Site_Details_Index::instance() hooks set_env_and_core(), which supplies all of the data checked here.
+	 */
 	public function test__vip_site_details_index_data_filter() {
 		global $wp_version;
 
 		$test_plugins = [
-			'hello.php' => [ 'Name' => 'Hello Tests', 'Version' => '4.5', 'UpdateURI' => '' ],
+			'hello.php' => [ 'Name' => 'Hello Tests', 'Version' => '4.5', 'UpdateURI' => 'https://wordpress.org/plugins/hello-wporg-slug/' ],
 			'world.php' => [ 'Name' => 'Test Plugin', 'Version' => '1.2', 'UpdateURI' => '' ],
-			'woocommerce-subscriptions/woocommerce-subscriptions.php' => [ 'Name' => 'WooCommerce Subscriptions', 'Version' => '4.1.0', 'UpdateURI' => '' ],
-			'custom.php' => [ 'Name' => 'Custom Plugin', 'Version' => '8.6', 'UpdateURI' => '' ],
+			'woocommerce-subscriptions/woocommerce-subscriptions.php' => [ 'Name' => 'WooCommerce Subscriptions', 'Version' => '4.1.0', 'UpdateURI' => 'https://woocommerce.com/products/woocommerce-subscriptions/' ],
+			'custom.php' => [ 'Name' => 'Custom Plugin', 'Version' => '8.6', 'UpdateURI' => 'false' ],
 		];
 
 		// Mock the list of plugins, setting which are active and which have available updates.
@@ -76,6 +67,11 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		$this->assertSame( get_site_url(), $site_details['core']['site_url'], 'site_url should be equal to get_site_url()' );
 		$this->assertSame( get_home_url(), $site_details['core']['home_url'], 'home_url should be equal to get_home_url()' );
 		$this->assertSame( is_multisite(), $site_details['core']['is_multisite'], 'is_multisite should be equal to is_multisite()' );
+		$this->assertSame(
+			\Automattic\VIP\Integrations\IntegrationsSingleton::instance()->get_integration( 'connector-controls' )->get_runtime_status(),
+			$site_details['connector_controls'],
+			'SDS should carry only the dedicated, secret-free runtime report.'
+		);
 		$this->assertEquals(
 			[
 				[
@@ -83,6 +79,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'hello.php',
 					'name'          => 'Hello Tests',
 					'version'       => '4.5',
+					'update_uri'    => 'https://wordpress.org/plugins/hello-wporg-slug/',
 					'active'        => true,
 					'activated_by'  => 'option',
 					'wporg_slug'    => 'hello-wporg-slug',
@@ -96,6 +93,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'world.php',
 					'name'          => 'Test Plugin',
 					'version'       => '1.2',
+					'update_uri'    => '',
 					'active'        => false,
 					'activated_by'  => null,
 					'wporg_slug'    => 'test-wporg-slug',
@@ -109,6 +107,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'         => 'woocommerce-subscriptions/woocommerce-subscriptions.php',
 					'name'         => 'WooCommerce Subscriptions',
 					'version'      => '4.1.0',
+					'update_uri'    => 'https://woocommerce.com/products/woocommerce-subscriptions/',
 					'active'       => false,
 					'activated_by' => null,
 					'wporg_slug'    => 'woocommerce-com-woocommerce-subscriptions',
@@ -122,6 +121,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 					'path'          => 'custom.php',
 					'name'          => 'Custom Plugin',
 					'version'       => '8.6',
+					'update_uri'    => 'false',
 					'active'        => false,
 					'activated_by'  => null,
 					'wporg_slug'    => null,
@@ -133,8 +133,44 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			],
 			$site_details['plugins']
 		);
+	}
 
-		remove_filter( 'pre_site_transient_update_plugins', [ $this, 'mock_update_plugins_transient' ], 999 );
+	/**
+	 * @dataProvider plugin_update_uri_provider
+	 */
+	public function test__plugin_update_uri_is_preserved_without_update_metadata( array $headers, ?string $expected, bool $active ) {
+		$test_plugin = array_merge( [ 'Name' => 'Custom Plugin', 'Version' => '1.0' ], $headers );
+		wp_cache_set( 'plugins', [ '' => [ 'custom.php' => $test_plugin ] ], 'plugins' );
+		update_option( 'active_plugins', $active ? [ 'custom.php' ] : [] );
+		add_filter( 'pre_site_transient_update_plugins', static function () {
+			return (object) [
+				'last_checked' => time(),
+				'checked' => [ 'custom.php' => '1.0' ],
+				'response' => [],
+				'no_update' => [],
+			];
+		}, 999 );
+
+		$plugins = ( new Site_Details_Index() )->get_plugin_info();
+
+		$this->assertCount( 1, $plugins );
+		$this->assertArrayHasKey( 'update_uri', $plugins[0] );
+		$this->assertSame( $expected, $plugins[0]['update_uri'] );
+		$this->assertSame( $active, $plugins[0]['active'] );
+		$this->assertNull( $plugins[0]['slug'] );
+		$this->assertNull( $plugins[0]['download_link'] );
+		$this->assertSame( $expected, json_decode( wp_json_encode( $plugins ), true )[0]['update_uri'] );
+	}
+
+	public static function plugin_update_uri_provider() {
+		return [
+			'missing header' => [ [], null, false ],
+			'null header' => [ [ 'UpdateURI' => null ], null, false ],
+			'empty header' => [ [ 'UpdateURI' => '' ], '', false ],
+			'inactive opt-out' => [ [ 'UpdateURI' => 'false' ], 'false', false ],
+			'active opt-out' => [ [ 'UpdateURI' => 'false' ], 'false', true ],
+			'custom Unicode URI' => [ [ 'UpdateURI' => 'https://vendor.example/plugins/🔌/' ], 'https://vendor.example/plugins/🔌/', false ],
+		];
 	}
 
 	public function mock_update_plugins_transient() {
@@ -173,9 +209,25 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 		];
 	}
 
-	public function test__get_current_timestamp() {
-		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+	public function test__get_user_roles_falls_back_to_the_slug_for_a_role_without_a_name() {
+		$wp_roles = wp_roles();
 
-		$this->assertEquals( gmdate( 'd-m-Y', (int) ( $timestamp / 1000 ) ), gmdate( 'd-m-Y', round( microtime( true ) ) ) );
+		$wp_roles->roles['role_without_name'] = [ 'capabilities' => [] ];
+
+		$roles = ( new Site_Details_Index() )->get_user_roles();
+
+		unset( $wp_roles->roles['role_without_name'] );
+
+		$this->assertContains( [ 'slug' => 'role_without_name', 'name' => 'role_without_name' ], $roles );
+	}
+
+	public function test__get_current_timestamp() {
+		// The implementation rounds to milliseconds; floor/ceil bound that rounding.
+		$before    = floor( microtime( true ) * 1000 );
+		$timestamp = Site_Details_Index::instance()->get_current_timestamp();
+		$after     = ceil( microtime( true ) * 1000 );
+
+		$this->assertGreaterThanOrEqual( $before, $timestamp );
+		$this->assertLessThanOrEqual( $after, $timestamp );
 	}
 }

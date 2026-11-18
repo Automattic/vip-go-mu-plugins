@@ -16,7 +16,7 @@ class Admin_Notice_Controller {
 	}
 
 	public function display_notices() {
-		$dismissed_notices = get_user_meta( get_current_user_id(), self::DISMISS_USER_META );
+		$dismissed_notices = get_user_meta( get_current_user_id(), self::DISMISS_USER_META, false );
 
 		$filtered_notices = array_filter( $this->all_notices, function ( $notice ) use ( $dismissed_notices ) {
 			if ( $notice->dismiss_identifier && in_array( $notice->dismiss_identifier, $dismissed_notices ) ) {
@@ -56,7 +56,7 @@ class Admin_Notice_Controller {
 	}
 
 	public function clean_stale_dismissed_notices() {
-		$dismissed_notices = get_user_meta( get_current_user_id(), self::DISMISS_USER_META );
+		$dismissed_notices = get_user_meta( get_current_user_id(), self::DISMISS_USER_META, false );
 		if ( ! is_array( $dismissed_notices ) ) {
 			return;
 		}

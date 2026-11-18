@@ -4,6 +4,9 @@ namespace Automattic\VIP\Security;
 
 use Automattic\Test\Constant_Mocker;
 use WP_UnitTestCase;
+use WP_User;
+
+use function Automattic\Test\Utils\get_class_method_as_public;
 
 require_once __DIR__ . '/../../security/class-lockout.php';
 require_once __DIR__ . '/../../vip-support/class-vip-support-user.php';
@@ -12,7 +15,6 @@ require_once __DIR__ . '/../../vip-support/class-vip-support-role.php';
 // phpcs:disable WordPress.DB.DirectDatabaseQuery
 
 class Lockout_Test extends WP_UnitTestCase {
-
 	/**
 	 * @var Lockout
 	 */
@@ -22,52 +24,32 @@ class Lockout_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->lockout = new Lockout();
-
-		Constant_Mocker::clear();
 	}
 
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
+	private function invoke_user_seen_notice( WP_User $user ): void {
+		get_class_method_as_public( Lockout::class, 'user_seen_notice' )->invokeArgs( $this->lockout, [ $user ] );
+	}
+
+	public function get_test_data__notice_states() {
+		return [
+			'warning' => [ Lockout::ACCOUNT_STATUS_WARNING ],
+			'locked'  => [ Lockout::ACCOUNT_STATUS_LOCK ],
+		];
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * @dataProvider get_test_data__notice_states
 	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( 'Automattic\VIP\Security\Lockout' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
-	public function test__user_seen_notice__warning() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
+	public function test__user_seen_notice( $state ) {
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', $state );
 
 		$user = $this->factory()->user->create_and_get();
 
-		$user_seen_notice = self::get_method( 'user_seen_notice' );
-		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
+		$this->invoke_user_seen_notice( $user );
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
-			Constant_Mocker::constant( 'VIP_LOCKOUT_STATE' )
-		);
-		$this->assertNotEmpty(
-			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, true )
-		);
-	}
-
-	public function test__user_seen_notice__locked() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
-
-		$user = $this->factory()->user->create_and_get();
-
-		$user_seen_notice = self::get_method( 'user_seen_notice' );
-		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
-
-		$this->assertEquals(
-			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
-			Constant_Mocker::constant( 'VIP_LOCKOUT_STATE' )
+			$state
 		);
 		$this->assertNotEmpty(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, true )
@@ -75,20 +57,19 @@ class Lockout_Test extends WP_UnitTestCase {
 	}
 
 	public function test__user_seen_notice__already_seen() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', Lockout::ACCOUNT_STATUS_LOCK );
 
 		$user = $this->factory()->user->create_and_get();
 
 		$date_str = gmdate( 'Y-m-d H:i:s' );
-		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, 'warning', true );
+		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, Lockout::ACCOUNT_STATUS_WARNING, true );
 		add_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, $date_str, true );
 
-		$user_seen_notice = self::get_method( 'user_seen_notice' );
-		$user_seen_notice->invokeArgs( $this->lockout, [ $user ] );
+		$this->invoke_user_seen_notice( $user );
 
 		$this->assertEquals(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_KEY, true ),
-			'warning'
+			Lockout::ACCOUNT_STATUS_WARNING
 		);
 		$this->assertEquals(
 			get_user_meta( $user->ID, Lockout::USER_SEEN_WARNING_TIME_KEY, true ),
@@ -96,125 +77,95 @@ class Lockout_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test__filter_user_has_cap__locked() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
+	public function get_test_data__filter_user_has_cap() {
+		return [
+			'locked'   => [ Lockout::ACCOUNT_STATUS_LOCK, true ],
+			'shutdown' => [ Lockout::ACCOUNT_STATUS_SHUTDOWN, true ],
+			'warning'  => [ Lockout::ACCOUNT_STATUS_WARNING, false ],
+			'no state' => [ null, false ],
+		];
+	}
+
+	/**
+	 * Locked states reduce an editor to the caps of a subscriber; other states leave the caps untouched.
+	 *
+	 * @dataProvider get_test_data__filter_user_has_cap
+	 */
+	public function test__filter_user_has_cap( $state, $expect_subscriber_caps ) {
+		if ( null !== $state ) {
+			Constant_Mocker::define( 'VIP_LOCKOUT_STATE', $state );
+		}
 
 		$user = $this->factory()->user->create_and_get( [
 			'role' => 'editor',
 		]);
 
 		$user_cap     = $user->get_role_caps();
-		$expected_cap = get_role( 'subscriber' )->capabilities;
+		$expected_cap = $expect_subscriber_caps ? get_role( 'subscriber' )->capabilities : $user_cap;
 
 		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
 
-		$this->assertEqualSets( $expected_cap, $actual_cap );
+		$this->assertSameSetsWithIndex( $expected_cap, $actual_cap );
 	}
 
-	public function test__filter_user_has_cap__warning() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
-
-		$user = $this->factory()->user->create_and_get( [
-			'role' => 'editor',
-		]);
-
-		$user_cap = $user->get_role_caps();
-
-		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
-
-		$this->assertEqualSets( $user_cap, $actual_cap );
-	}
-
-	public function test__filter_user_has_cap__no_state() {
-		$user = $this->factory()->user->create_and_get( [
-			'role' => 'editor',
-		]);
-
-		$user_cap = $user->get_role_caps();
-
-		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
-
-		$this->assertEqualSets( $user_cap, $actual_cap );
-	}
-
-	public function test__filter_user_has_cap__locked_vip_support() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
-
-		$user_id = \Automattic\VIP\Support_User\User::add( [
-			'user_email' => 'user@automattic.com',
-			'user_login' => 'vip-support',
+	/**
+	 * Lockout registration must restrict ordinary actors while preserving support access.
+	 */
+	public function test__locked_authorization_through_wordpress() {
+		$editor     = $this->factory()->user->create_and_get( [ 'role' => 'editor' ] );
+		$support_id = \Automattic\VIP\Support_User\User::add( [
+			'user_email' => 'hook-support@automattic.com',
+			'user_login' => 'hook-support',
 			'user_pass'  => 'password',
 		] );
-
-		$user = wp_set_current_user( $user_id );
-
-		$user_cap = $user->get_role_caps();
-
-		$actual_cap = $this->lockout->filter_user_has_cap( $user_cap, [], [], $user );
-
-		$this->assertEqualSets( $user_cap, $actual_cap );
-	}
-
-	public function test__filter_site_admin_option__locked() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
-
-		$pre_option = [ 'test1', 'test2' ];
-
-		$actual = $this->lockout->filter_site_admin_option( $pre_option, 'site_admin', 1, '' );
-
-		$this->assertEmpty( $actual );
-	}
-
-	public function test__filter_site_admin_option__warning() {
-		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'warning' );
-
-		$pre_option = [ 'test1', 'test2' ];
-
-		$actual = $this->lockout->filter_site_admin_option( $pre_option, 'site_admin', 1, '' );
-
-		$this->assertEqualSets( $pre_option, $actual );
-	}
-
-	/**
-	 * When locked, super admin changes should be blocked.
-	 */
-	public function test__filter_prevent_site_admin_option_updates__locked() {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite' );
-		}
-
-		global $wpdb;
-
-		// Arrange: Have an existing user that's a super admin
-		$user = $this->factory()->user->create_and_get();
-		grant_super_admin( $user->ID );
+		$support    = get_user_by( 'id', $support_id );
+		$support->add_cap( 'edit_posts' );
+		$this->assertTrue( is_automattician( $support_id ) );
+		$this->assertTrue( user_can( $editor, 'edit_posts' ) );
+		$this->assertTrue( user_can( $support_id, 'edit_posts' ) );
 
 		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', 'locked' );
-		Constant_Mocker::define( 'VIP_LOCKOUT_MESSAGE', 'Oh no!' );
-
-		// Recreate Lockout to re-init filters
 		$this->lockout = new Lockout();
 
-		$expected_site_admins = maybe_unserialize(
-			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
-		);
+		$this->assertTrue( $editor->has_cap( 'read' ) );
+		$this->assertFalse( $editor->has_cap( 'edit_posts' ) );
+		$this->assertFalse( user_can( $editor, 'delete_posts' ) );
+		$this->assertTrue( user_can( $support_id, 'edit_posts' ) );
+	}
 
-		// Act: Try granting another user super admin
-		$user2 = $this->factory()->user->create_and_get();
-		grant_super_admin( $user2->ID );
-
-		// Assert: Check the raw value to avoid conflicts with the filter
-		$actual_site_admins = maybe_unserialize(
-			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
-		);
-
-		$this->assertEquals( $expected_site_admins, $actual_site_admins );
+	public function get_test_data__filter_site_admin_option() {
+		return [
+			'locked'   => [ Lockout::ACCOUNT_STATUS_LOCK, [] ],
+			'shutdown' => [ Lockout::ACCOUNT_STATUS_SHUTDOWN, [] ],
+			'warning'  => [ Lockout::ACCOUNT_STATUS_WARNING, [ 'test1', 'test2' ] ],
+		];
 	}
 
 	/**
-	 * When not locked, super admin changes should work fine.
+	 * @dataProvider get_test_data__filter_site_admin_option
 	 */
-	public function test__filter_prevent_site_admin_option_updates__not_locked() {
+	public function test__filter_site_admin_option( $state, $expected ) {
+		Constant_Mocker::define( 'VIP_LOCKOUT_STATE', $state );
+
+		$actual = $this->lockout->filter_site_admin_option( [ 'test1', 'test2' ], 'site_admin', 1, '' );
+
+		$this->assertSame( $expected, $actual );
+	}
+
+	public function get_test_data__site_admin_option_updates() {
+		return [
+			'locked'     => [ Lockout::ACCOUNT_STATUS_LOCK, true ],
+			'shutdown'   => [ Lockout::ACCOUNT_STATUS_SHUTDOWN, true ],
+			'not locked' => [ null, false ],
+		];
+	}
+
+	/**
+	 * When locked, super admin changes should be blocked; otherwise they should work fine.
+	 *
+	 * @dataProvider get_test_data__site_admin_option_updates
+	 */
+	public function test__filter_prevent_site_admin_option_updates( $state, $expect_blocked ) {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only valid for multisite' );
 		}
@@ -225,7 +176,10 @@ class Lockout_Test extends WP_UnitTestCase {
 		$user = $this->factory()->user->create_and_get();
 		grant_super_admin( $user->ID );
 
-		// No lockout enabled
+		if ( null !== $state ) {
+			Constant_Mocker::define( 'VIP_LOCKOUT_STATE', $state );
+			Constant_Mocker::define( 'VIP_LOCKOUT_MESSAGE', 'Oh no!' );
+		}
 
 		// Recreate Lockout to re-init filters
 		$this->lockout = new Lockout();
@@ -243,7 +197,7 @@ class Lockout_Test extends WP_UnitTestCase {
 			$wpdb->get_var( "SELECT meta_value FROM $wpdb->sitemeta WHERE meta_key = 'site_admins' LIMIT 1" )
 		);
 
-		$this->assertNotEquals( $original_site_admins, $actual_site_admins, 'Before and after site_admins options were the same' );
-		$this->assertContains( $user2->user_login, $actual_site_admins );
+		$expected_site_admins = $expect_blocked ? $original_site_admins : array_merge( $original_site_admins, [ $user2->user_login ] );
+		$this->assertEquals( $expected_site_admins, $actual_site_admins );
 	}
 }

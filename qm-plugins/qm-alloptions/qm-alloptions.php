@@ -21,7 +21,7 @@ add_action('plugins_loaded', function () {
 
 	/**
 	 * Register output. The filter won't run if Query Monitor is not
-	 * installed so we don't have to explicity check for it.
+	 * installed so we don't have to explicitly check for it.
 	 */
 	add_filter( 'qm/outputter/html', function ( array $output ) {
 		if ( file_exists( __DIR__ . '/class-qm-output-html-alloptions.php' ) ) {

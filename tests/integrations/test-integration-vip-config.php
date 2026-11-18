@@ -8,43 +8,16 @@
 namespace Automattic\VIP\Integrations;
 
 // phpcs:disable Squiz.Commenting.ClassComment.Missing, Squiz.Commenting.FunctionComment.Missing, Squiz.Commenting.FunctionComment.MissingParamComment
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
 
 use Org_Integration_Status;
 use Env_Integration_Status;
-use ErrorException;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
 use function Automattic\Test\Utils\get_class_method_as_public;
 use function Automattic\Test\Utils\get_class_property_as_public;
 
-require_once __DIR__ . '/fake-integration.php';
-
 class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
-	private $original_error_reporting;
-
-	public function setUp(): void {
-		parent::setUp();
-
-		$this->original_error_reporting = error_reporting();
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno ); // NOSONAR
-			}
-
-			return false;
-		}, E_USER_WARNING );
-	}
-
-	public function tearDown(): void {
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
-		parent::tearDown();
-	}
-
 	public function test__get_vip_config_from_file_returns_null_if_config_file_does_not_exist(): void {
 		$slug               = 'dummy';
 		$integration_config = new IntegrationVipConfig( $slug );
@@ -55,140 +28,125 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 	}
 
 	public function test__set_config_does_not_set_the_config_if_received_content_from_file_is_not_of_type_array(): void {
-		$mock = $this->get_mock( 'invalid-config' );
+		/**
+		 * The constructor only accepts an array, so the non-array content has to come from the (mocked) config file.
+		 *
+		 * @var MockObject&IntegrationVipConfig
+		 */
+		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'get_vip_config_from_file' ] )
+			->getMock();
+		$mock->method( 'get_vip_config_from_file' )->willReturn( 'invalid-config' );
+		$mock->__construct( 'slug' );
 
 		$config = get_class_property_as_public( IntegrationVipConfig::class, 'config' )->getValue( $mock );
 
 		$this->assertEquals( [], $config );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_empty_config_is_provided(): void {
-		$this->do_test_is_active_via_vip( [], false );
-	}
-
-	public function test__is_active_via_vip_returns_false_if_organization_status_is_blocked(): void {
-		$this->do_test_is_active_via_vip( [ 'org' => [ 'status' => Org_Integration_Status::BLOCKED ] ], false );
-	}
-
-	public function test__is_active_via_vip_returns_false_if_environment_status_is_blocked(): void {
-		$this->do_test_is_active_via_vip( [ 'env' => [ 'status' => Org_Integration_Status::BLOCKED ] ], false );
-	}
-
-	public function test__is_active_via_vip_returns_false_if_integration_is_blocked_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
+	/**
+	 * @dataProvider data_is_active_via_vip
+	 */
+	public function test__is_active_via_vip( array $vip_config, bool $expected, bool $requires_multisite = false ): void {
+		if ( $requires_multisite ) {
+			$this->skipWithoutMultisite();
 		}
 
-		$this->do_test_is_active_via_vip(
-			[
-				'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
-				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::BLOCKED ] ],
-			],
-			false,
-		);
+		$this->assertSame( $expected, ( new IntegrationVipConfig( 'slug', $vip_config ) )->is_active_via_vip() );
 	}
 
-	public function test__is_active_via_vip_returns_false_if_integration_is_disabled_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_is_active_via_vip(
-			[
-				'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
-				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::DISABLED ] ],
-			],
-			false,
-		);
-	}
-
-	public function test__is_active_via_vip_returns_true_if_integration_is_enabled_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_is_active_via_vip(
-			[
-				'env'           => [ 'status' => Env_Integration_Status::DISABLED ],
-				'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::ENABLED ] ],
-			],
-			true,
-		);
-	}
-
-	public function test__is_active_via_vip_returns_true_if_integration_is_not_present_on_current_network_site_but_enabled_on_environment(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_is_active_via_vip(
-			[
-				'env' => [ 'status' => Env_Integration_Status::ENABLED ],
-			],
-			true,
-		);
-	}
-
-	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$this->do_test_is_active_via_vip( [
-			'network_sites' => [
-				'2' => [
-					'status' => Env_Integration_Status::ENABLED,
-					'config' => [ 'site config' ],
+	public static function data_is_active_via_vip(): array {
+		return [
+			'empty config'                              => [ [], false ],
+			'organization blocked'                      => [
+				[
+					'org' => [ 'status' => Org_Integration_Status::BLOCKED ],
+					'env' => [ 'status' => Env_Integration_Status::ENABLED ],
 				],
+				false,
 			],
-		], false );
-	}
-
-	public function test__is_active_via_vip_returns_false_if_integration_is_disabled_on_environment(): void {
-		$this->do_test_is_active_via_vip( [ 'env' => [ 'status' => Env_Integration_Status::DISABLED ] ], false );
-	}
-
-	public function test__is_active_via_vip_returns_true_if_integration_is_enabled_on_environment(): void {
-		$this->do_test_is_active_via_vip( [
-			'env' => [
-				'status' => Env_Integration_Status::ENABLED,
-			],
-		], true );
-	}
-
-	public function test__is_active_via_vip_returns_false_if_integration_is_not_provided_on_environment(): void {
-		$this->do_test_is_active_via_vip( [
-			'org'           => [
-				'status' => Env_Integration_Status::ENABLED,
-			],
-			'network_sites' => [
-				'2' => [
-					'status' => Env_Integration_Status::ENABLED,
-					'config' => [ 'site config' ],
+			'organization block overrides enabled site' => [
+				[
+					'org'           => [ 'status' => Org_Integration_Status::BLOCKED ],
+					'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
+					'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::ENABLED ] ],
 				],
+				false,
+				true,
 			],
-		], false );
+			'environment blocked'                       => [ [ 'env' => [ 'status' => Org_Integration_Status::BLOCKED ] ], false ],
+			'blocked on current network site'           => [
+				[
+					'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
+					'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::BLOCKED ] ],
+				],
+				false,
+				true,
+			],
+			'disabled on current network site'          => [
+				[
+					'env'           => [ 'status' => Env_Integration_Status::ENABLED ],
+					'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::DISABLED ] ],
+				],
+				false,
+				true,
+			],
+			'enabled on current network site'           => [
+				[
+					'env'           => [ 'status' => Env_Integration_Status::DISABLED ],
+					'network_sites' => [ '1' => [ 'status' => Env_Integration_Status::ENABLED ] ],
+				],
+				true,
+				true,
+			],
+			'not provided on current network site'      => [
+				[
+					'network_sites' => [
+						'2' => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [ 'site config' ],
+						],
+					],
+				],
+				false,
+				true,
+			],
+			'disabled on environment'                   => [ [ 'env' => [ 'status' => Env_Integration_Status::DISABLED ] ], false ],
+			'enabled on environment'                    => [ [ 'env' => [ 'status' => Env_Integration_Status::ENABLED ] ], true ],
+			'not provided on environment'               => [
+				[
+					'org'           => [ 'status' => Env_Integration_Status::ENABLED ],
+					'network_sites' => [
+						'2' => [
+							'status' => Env_Integration_Status::ENABLED,
+							'config' => [ 'site config' ],
+						],
+					],
+				],
+				false,
+			],
+		];
 	}
 
 	/**
-	 * Helper function for testing `is_active_via_vip`.
-	 *
-	 * @param array|null $vip_config
-	 * @param boolean    $expected_is_active_via_vip
-	 *
-	 * @return void
+	 * @dataProvider data_is_enabled_for_org
 	 */
-	private function do_test_is_active_via_vip(
-		$vip_config,
-		bool $expected_is_active_via_vip
-	) {
-		$mock = $this->get_mock( $vip_config );
+	public function test__is_enabled_for_org( string $org_status, bool $expected ): void {
+		$config = new IntegrationVipConfig( 'slug', [ 'org' => [ 'status' => $org_status ] ] );
 
-		$this->assertEquals( $expected_is_active_via_vip, $mock->is_active_via_vip() );
+		$this->assertSame( $expected, $config->is_enabled_for_org() );
 	}
 
-	public function test__get_env_config_returns_value_from_environment_config(): void {
-		$mock = $this->get_mock( [
+	public static function data_is_enabled_for_org(): array {
+		return [
+			'enabled'  => [ Org_Integration_Status::ENABLED, true ],
+			'disabled' => [ Org_Integration_Status::DISABLED, false ],
+		];
+	}
+
+	public function test__get_env_config_and_get_network_site_config_return_their_own_level(): void {
+		$config = new IntegrationVipConfig( 'slug', [
 			'env'           => [
 				'status' => Env_Integration_Status::ENABLED,
 				'config' => array( 'env-config' ),
@@ -201,51 +159,31 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 			],
 		] );
 
-		$this->assertEquals( array( 'env-config' ), $mock->get_env_config() );
+		$this->assertEquals( array( 'env-config' ), $config->get_env_config() );
+		$this->assertEquals( is_multisite() ? array( 'network-site-config' ) : array(), $config->get_network_site_config() );
 	}
 
-	public function test__get_env_config_returns_value_from_network_site_config(): void {
-		$mock = $this->get_mock( [
-			'env'           => [
-				'status' => Env_Integration_Status::ENABLED,
-				'config' => array( 'env-config' ),
-			],
-			'network_sites' => [
-				'1' => [
-					'status' => Env_Integration_Status::ENABLED,
-					'config' => array( 'network-site-config' ),
-				],
-			],
-		] );
+	/**
+	 * @dataProvider data_get_value_from_config
+	 */
+	public function test__get_value_from_vip_config( array $vip_config, string $config_type, string $key, $expected, bool $requires_multisite = false ): void {
+		if ( $requires_multisite ) {
+			$this->skipWithoutMultisite();
+		}
 
-		$expected = is_multisite() ? array( 'network-site-config' ) : array();
-		$this->assertEquals( $expected, $mock->get_network_site_config() );
+		$config_value = get_class_method_as_public( IntegrationVipConfig::class, 'get_value_from_config' )->invoke( new IntegrationVipConfig( 'slug', $vip_config ), $config_type, $key );
+
+		$this->assertEquals( $expected, $config_value );
 	}
 
-	public function test__get_value_from_vip_config_returns_null_if_given_config_type_have_no_data(): void {
-		$mocked_vip_configs = [];
-
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'org', 'status', null );
-	}
-
-	public function test__get_value_from_vip_config_returns_config_from_organization_data(): void {
-		$mocked_vip_configs = [
+	public static function data_get_value_from_config(): array {
+		$org_config     = [
 			'org' => [
 				'status' => Org_Integration_Status::BLOCKED,
 				'config' => array( 'client_configs' ),
 			],
 		];
-
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'org', 'status', Org_Integration_Status::BLOCKED );
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'org', 'config', array( 'client_configs' ) );
-	}
-
-	public function test__get_value_from_vip_config_returns_config_of_current_network_site(): void {
-		if ( ! is_multisite() ) {
-			$this->markTestSkipped( 'Only valid for multisite.' );
-		}
-
-		$mocked_vip_configs = [
+		$network_config = [
 			'env'           => [
 				'status' => Env_Integration_Status::BLOCKED,
 				'config' => array( 'env_configs' ),
@@ -261,88 +199,32 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 				],
 			],
 		];
-
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'network_sites', 'status', Env_Integration_Status::ENABLED );
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'network_sites', 'config', array( 'network_site_1_configs' ) );
-	}
-
-	public function test__get_value_from_vip_config_returns_null_if_non_existent_key_is_passed(): void {
-		$mocked_vip_configs = [
+		$env_config     = [
 			'env' => [
 				'status' => Env_Integration_Status::BLOCKED,
 				'config' => array( 'env_configs' ),
 			],
 		];
 
-		$this->do_test_get_value_from_config( $mocked_vip_configs, 'env', 'invalid_key', null );
+		return [
+			'config type without data'    => [ [], 'org', 'status', null ],
+			'organization status'         => [ $org_config, 'org', 'status', Org_Integration_Status::BLOCKED ],
+			'organization config'         => [ $org_config, 'org', 'config', array( 'client_configs' ) ],
+			'current network site status' => [ $network_config, 'network_sites', 'status', Env_Integration_Status::ENABLED, true ],
+			'current network site config' => [ $network_config, 'network_sites', 'config', array( 'network_site_1_configs' ), true ],
+			'non-existent key'            => [ $env_config, 'env', 'invalid_key', null ],
+		];
 	}
 
 	/**
-	 * Helper function for testing get_value_from_vip_config.
-	 *
-	 * @param array      $vip_config
-	 * @param string     $config_type
-	 * @param string     $key
-	 * @param null|array $expected_value_from_vip_config
-	 *
-	 * @return void
+	 * @dataProvider data_child_configs
 	 */
-	private function do_test_get_value_from_config(
-		array $vip_config,
-		string $config_type,
-		string $key,
-		$expected_value_from_vip_config
-	): void {
-		$mock = $this->get_mock( $vip_config );
-
-		$config_value = get_class_method_as_public( IntegrationVipConfig::class, 'get_value_from_config' )->invoke( $mock, $config_type, $key );
-
-		$this->assertEquals( $expected_value_from_vip_config, $config_value );
+	public function test__child_config_accessors( array $vip_config, string $method, array $args, $expected ): void {
+		$this->assertSame( $expected, ( new IntegrationVipConfig( 'slug', $vip_config ) )->$method( ...$args ) );
 	}
 
-	public function test__get_child_configs_returns_empty_array_when_no_children_defined(): void {
-		$mock = $this->get_mock( [] );
-
-		$this->assertEquals( [], $mock->get_child_configs() );
-	}
-
-	public function test__get_child_configs_returns_empty_array_when_children_is_not_array(): void {
-		$mock = $this->get_mock( [ 'children' => 'not-an-array' ] );
-
-		$this->assertEquals( [], $mock->get_child_configs() );
-	}
-
-	public function test__get_child_configs_returns_children_array_when_defined(): void {
-		$children_config = [
-			'airtable'      => [
-				'type' => 'airtable',
-				'env'  => [
-					'status' => 'enabled',
-					'config' => [ 'sources' => [] ],
-				],
-			],
-			'google-sheets' => [
-				'type' => 'google-sheets',
-				'env'  => [
-					'status' => 'enabled',
-					'config' => [ 'sources' => [] ],
-				],
-			],
-		];
-
-		$mock = $this->get_mock( [ 'children' => $children_config ] );
-
-		$this->assertEquals( $children_config, $mock->get_child_configs() );
-	}
-
-	public function test__get_child_env_configs_returns_empty_array_when_no_children_defined(): void {
-		$mock = $this->get_mock( [] );
-
-		$this->assertEquals( [], $mock->get_child_env_configs() );
-	}
-
-	public function test__get_child_env_configs_returns_only_config_portion_from_child_envs(): void {
-		$children_config = [
+	public static function data_child_configs(): array {
+		$children  = [
 			'airtable'      => [
 				'type' => 'airtable',
 				'env'  => [
@@ -357,62 +239,70 @@ class VIP_Integration_Vip_Config_Test extends WP_UnitTestCase {
 					'config' => [ 'sources' => [ [ 'uuid' => 'test-2' ] ] ],
 				],
 			],
-			'invalid-child' => [
-				'type' => 'invalid',
-				'env'  => [
-					'status' => 'enabled',
-					// No config field
-				],
+		];
+		$mcp_child = [
+			'type' => 'wordpress-mcp',
+			'env'  => [
+				'status' => 'enabled',
 			],
 		];
 
-		$expected = [
-			'airtable'      => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
-			'google-sheets' => [ 'sources' => [ [ 'uuid' => 'test-2' ] ] ],
-		];
-
-		$mock = $this->get_mock( [ 'children' => $children_config ] );
-
-		$this->assertEquals( $expected, $mock->get_child_env_configs() );
-	}
-
-	public function test__get_child_env_configs_handles_non_array_config_gracefully(): void {
-		$children_config = [
-			'airtable' => [
-				'type' => 'airtable',
-				'env'  => [
-					'status' => 'enabled',
-					'config' => 'not-an-array',
+		return [
+			'child configs without children'               => [ [], 'get_child_configs', [], [] ],
+			'child configs with non-array children'        => [ [ 'children' => 'not-an-array' ], 'get_child_configs', [], [] ],
+			'child configs with children'                  => [ [ 'children' => $children ], 'get_child_configs', [], $children ],
+			'single child config'                          => [ [ 'children' => [ 'wordpress-mcp' => $mcp_child ] ], 'get_child_config', [ 'wordpress-mcp' ], $mcp_child ],
+			'missing single child config'                  => [ [ 'children' => [] ], 'get_child_config', [ 'wordpress-mcp' ], null ],
+			'child env configs without children'           => [ [], 'get_child_env_configs', [], [] ],
+			'child env configs keep only the config value' => [
+				[
+					'children' => array_merge(
+						$children,
+						[
+							'invalid-child' => [
+								'type' => 'invalid',
+								'env'  => [ 'status' => 'enabled' ],
+							],
+						]
+					),
+				],
+				'get_child_env_configs',
+				[],
+				[
+					'airtable'      => [ 'sources' => [ [ 'uuid' => 'test-1' ] ] ],
+					'google-sheets' => [ 'sources' => [ [ 'uuid' => 'test-2' ] ] ],
 				],
 			],
+			'child env configs skip non-array config'      => [
+				[
+					'children' => [
+						'airtable' => [
+							'type' => 'airtable',
+							'env'  => [
+								'status' => 'enabled',
+								'config' => 'not-an-array',
+							],
+						],
+					],
+				],
+				'get_child_env_configs',
+				[],
+				[],
+			],
 		];
-
-		$mock = $this->get_mock( [ 'children' => $children_config ] );
-
-		$this->assertEquals( [], $mock->get_child_env_configs() );
 	}
 
-	/**
-	 * Get mock.
-	 *
-	 * @param array|null|string $vip_config
-	 *
-	 * @return MockObject&IntegrationVipConfig
-	 */
-	private function get_mock( $vip_config ) {
-		/**
-		 * Config Mock.
-		 *
-		 * @var MockObject&IntegrationVipConfig
-		 */
-		$mock = $this->getMockBuilder( IntegrationVipConfig::class )
-			->disableOriginalConstructor()
-			->onlyMethods( [ 'get_vip_config_from_file' ] )
-			->getMock();
+	public function test__get_org_config_returns_org_config(): void {
+		$config = new IntegrationVipConfig(
+			'slug',
+			[
+				'org' => [
+					'status' => Org_Integration_Status::ENABLED,
+					'config' => [ 'openai_api_key' => 'secret' ],
+				],
+			]
+		);
 
-		$mock->method( 'get_vip_config_from_file' )->willReturn( $vip_config );
-		$mock->__construct( 'slug' );
-
-		return $mock;
+		$this->assertSame( [ 'openai_api_key' => 'secret' ], $config->get_org_config() );
 	}
 }

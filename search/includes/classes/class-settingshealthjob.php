@@ -90,8 +90,8 @@ class SettingsHealthJob {
 		add_action( 'ep_cli_post_bulk_index', [ $this, 'update_last_processed_id' ] );
 
 		// Clean-up last processed ID option
-		add_action( 'ep_wp_cli_before_index', [ $this, 'delete_last_processed_id' ] );
-		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] );
+		add_action( 'ep_wp_cli_pre_index', [ $this, 'delete_last_processed_id' ], 10, 2 );
+		add_action( 'ep_wp_cli_after_index', [ $this, 'delete_last_processed_id' ] ); // 1 arg: always clears, even for a resumed build
 
 		if ( $this->is_enabled() ) {
 			$this->schedule_job();
@@ -159,17 +159,33 @@ class SettingsHealthJob {
 		}
 
 		foreach ( $results as $indexable_slug => $versions ) {
-			// If there's an error, alert
 			if ( is_wp_error( $versions ) ) {
-				$message = sprintf(
-					'Application %s: Error while validating index settings for indexable %s on %s: %s',
-					FILES_CLIENT_SITE_ID,
-					$indexable_slug,
-					home_url(),
-					$versions->get_error_message()
-				);
+				if ( 'es_index_settings_failed' === $versions->get_error_code() ) {
+					// Elasticsearch errors are already logged per request, and an outage would make every site's run alert, so only log
+					\Automattic\VIP\Logstash\log2logstash(
+						array(
+							'severity' => 'warning',
+							'feature'  => 'search_health_job',
+							'message'  => $versions->get_error_message(),
+							'extra'    => [
+								'homeurl'   => home_url(),
+								'indexable' => $indexable_slug,
+							],
+						)
+					);
+				} else {
+					$message = sprintf(
+						'Application %s: Error while validating index settings for indexable %s on %s: %s',
+						FILES_CLIENT_SITE_ID,
+						$indexable_slug,
+						home_url(),
+						$versions->get_error_message()
+					);
 
-				$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+					$this->send_alert( '#vip-go-es-alerts', $message, 2 );
+				}
+
+				continue;
 			}
 
 			// Each individual entry in $versions is an array of results, one per index version
@@ -310,10 +326,15 @@ class SettingsHealthJob {
 	/**
 	 * Delete last processed post ID as part of clean-up.
 	 *
+	 * @param array $args       CLI positional args, when called from a CLI index hook.
+	 * @param array $assoc_args CLI associative args, when called from ep_wp_cli_pre_index.
+	 *
 	 * @return void
 	 */
-	public function delete_last_processed_id() {
-		if ( ! wp_doing_cron() ) {
+	public function delete_last_processed_id( $args = [], $assoc_args = [] ) {
+		// A resumed build (upper-limit-object-id set) keeps its resume point until its first batch replaces it,
+		// so a run that dies before then can still be resumed.
+		if ( ! wp_doing_cron() || ! empty( $assoc_args['upper-limit-object-id'] ) ) {
 			return;
 		}
 

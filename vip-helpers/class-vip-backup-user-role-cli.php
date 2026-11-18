@@ -149,6 +149,11 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 			\WP_CLI::error( 'Specified backup time_key not found.' );
 		}
 
+		// Restoring anything but a list of roles would remove every role from the site
+		if ( ! is_array( $backup ) || ! $backup ) {
+			\WP_CLI::error( 'The selected backup has no roles, so it was not restored.' );
+		}
+
 		$current_roles = get_option( $wpdb->prefix . 'user_roles' );
 
 		if ( $current_roles === $backup ) {
@@ -334,7 +339,9 @@ class VIP_Backup_User_Role_CLI extends \WPCOM_VIP_CLI_Command {
 			\WP_CLI::confirm( 'This will remove the oldest backup. Ok?', $assoc_args );
 		}
 
-		\Automattic\VIP\do_user_role_backup();
+		if ( ! \Automattic\VIP\do_user_role_backup() ) {
+			\WP_CLI::error( 'The current roles are missing or empty, so they were not backed up.' );
+		}
 
 		\WP_CLI::success( 'Current roles backed up.' );
 	}

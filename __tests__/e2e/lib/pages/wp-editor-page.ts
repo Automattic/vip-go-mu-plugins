@@ -39,45 +39,25 @@ const selectors = {
 
 	// Block inserter
 	addBlockButton: 'button[aria-label="Add block"]',
-	blockInserterToggle: 'button.edit-post-header-toolbar__inserter-toggle',
-	blockInserterPanel: '.block-editor-inserter__content',
-	blockSearch: '.block-editor-inserter__search input[type="search"]',
-	blockInserterResultItem: '.block-editor-block-types-list__list-item',
 
 	// Within the editor body.
 	blockAppender: '.block-editor-default-block-appender',
-	blockInserter: '.block-editor-inserter__toggle',
 	paragraphBlocks: 'p.wp-block-paragraph',
-	block: '.wp-block[id*="block-"][data-empty="false"]',
-	blockWarning: '.block-editor-warning',
 	imageBlocks: '.editor-block-list-item-image',
 	uploadImageButton: '.block-editor-media-placeholder__upload-button',
-	firstEmptyBlock: '.wp-block-paragraph[data-empty="true"]',
 	spinner: '.components-spinner',
 
 	// Top bar selectors.
 	postToolbar: '.edit-post-header',
-	settingsToggle: '.edit-post-header__settings .interface-pinned-items button:first-child',
-	saveDraftButton: '.editor-post-save-draft',
-	previewButton: ':is(button:text("Preview"), a:text("Preview"))',
 	publishButton: ( parentSelector: string ) => `${ parentSelector } button:text("Publish")[aria-disabled=false]`,
 	updateButton: '.editor-post-publish-button',
-	// Settings panel.
-	settingsPanel: '.interface-complementary-area',
 
 	// Publish panel (including post-publish)
 	publishPanel: '.editor-post-publish-panel',
 	viewButton: '.editor-post-publish-panel a:has-text("View")',
-	addNewButton: '.editor-post-publish-panel a:text-matches("Add a New P(ost|age)")',
-	closePublishPanel: 'button[aria-label="Close panel"]',
 
 	// Welcome tour
 	welcomeTourCloseButton: '.edit-post-welcome-guide .components-modal__header button',
-
-	// Block editor sidebar
-	desktopEditorSidebarButton: 'button[aria-label="Block editor sidebar"]:visible',
-	desktopDashboardLink: 'a[aria-description="Returns to the dashboard"]:visible',
-	mobileDashboardLink: 'a[aria-current="page"]:visible',
 
 	// Choose a pattern
 	choosePatternCloseButton: '.components-modal__screen-overlay .components-modal__header button',
@@ -97,9 +77,6 @@ export class EditorPage {
 	}
 
 	private async editorContent(): Promise<Page | FrameLocator> {
-		const nuisanceTimeout = this.hasDismissedNuisances ? 0 : 1000;
-		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
-
 		const editorCanvas = this.page.locator( selectors.editorCanvas );
 		const editorRoot = this.page.locator( selectors.editorRoot );
 		const visibleEditor = await Promise.race( [
@@ -107,7 +84,8 @@ export class EditorPage {
 			editorRoot.waitFor( { state: 'visible' } ).then( () => 'page' as const ).catch( () => undefined ),
 		] );
 
-		await EditorPage.dismissAnnoyingNuisances( this.page, nuisanceTimeout );
+		// The welcome guide and pattern modal open once the editor has rendered, so only wait for them on first use.
+		await EditorPage.dismissAnnoyingNuisances( this.page, this.hasDismissedNuisances ? 0 : 1000 );
 		this.hasDismissedNuisances = true;
 
 		if ( 'iframe' === visibleEditor || await editorCanvas.isVisible() ) {
@@ -168,10 +146,6 @@ export class EditorPage {
 	private static async dismissAnnoyingNuisances( page: Page, timeout = 0 ): Promise<void> {
 		await EditorPage.clickIfVisible( page, selectors.welcomeTourCloseButton, timeout );
 		await EditorPage.clickIfVisible( page, selectors.choosePatternCloseButton, timeout );
-	}
-
-	public static automaticallyDismissAnnoyingNuisances( page: Page ): Promise<void> {
-		return EditorPage.dismissAnnoyingNuisances( page, 1000 );
 	}
 
 	/**
@@ -298,10 +272,21 @@ export class EditorPage {
 	}
 
 	/**
-	 * Updates the post or page.
+	 * Updates the post or page and waits until the changes are saved.
 	 */
-	public update(): Promise<void> {
-		return this.page.locator( selectors.updateButton ).click();
+	public async update(): Promise<void> {
+		const saveResponse = this.page.waitForResponse( ( response ) => {
+			const { pathname, searchParams } = new URL( response.url() );
+			const route = searchParams.get( 'rest_route' ) ?? pathname;
+			return [ 'POST', 'PUT' ].includes( response.request().method() ) && /\/wp\/v2\/(?:posts|pages)\/\d+$/.test( route );
+		} );
+
+		await this.page.locator( selectors.updateButton ).click();
+
+		const response = await saveResponse;
+		if ( ! response.ok() ) {
+			throw new Error( `Failed to save changes. HTTP error: ${ response.status() }` );
+		}
 	}
 
 	/**

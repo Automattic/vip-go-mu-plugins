@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Automattic\VIP\Telemetry\Tracks;
 
 use Automattic\Test\Constant_Mocker;
+use Automattic\VIP\Telemetry\Telemetry_Test_Helpers;
 use WP_UnitTestCase;
 use WP_Error;
 use WP_User;
 
+require_once __DIR__ . '/../trait-telemetry-test-helpers.php';
+
 class Tracks_Event_Test extends WP_UnitTestCase {
+	use Telemetry_Test_Helpers;
 
 	protected const VIP_TELEMETRY_SALT = 'test_salt';
 
@@ -20,21 +24,9 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	private WP_User $user;
 
 	public function setUp(): void {
-		$this->user = $this->factory()->user->create_and_get();
-		wp_set_current_user( $this->user->ID );
-
 		parent::setUp();
-	}
 
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
-	}
-
-	public function test_should_create_event() {
-		$event = new Tracks_Event( 'prefix_', 'test_event', [ 'property1' => 'value1' ] );
-
-		$this->assertInstanceOf( Tracks_Event::class, $event );
+		$this->user = get_userdata( $this->login_as() );
 	}
 
 	public function test_should_return_event_data() {
@@ -64,6 +56,8 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertSame( 'other', $event->get_data()->hosting_provider );
 		$this->assertSame( is_multisite(), $event->get_data()->is_multisite );
 		$this->assertSame( get_bloginfo( 'version' ), $event->get_data()->wp_version );
+		$this->assertSame( 'unknown', $event->get_data()->environment_type );
+		$this->assertSame( 'unknown', $event->get_data()->mu_plugins_version );
 		$this->assertFalse( $event->get_data()->is_vip_user );
 		$this->assertTrue( $event->is_recordable() );
 	}
@@ -131,6 +125,8 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 	public static function provide_non_routable_ips() {
 		yield [ '192.168.10.1' ];
 		yield [ '10.11.10.11' ];
+		yield [ '172.16.0.0' ];
+		yield [ '172.31.255.255' ];
 	}
 
 	/**
@@ -142,6 +138,22 @@ class Tracks_Event_Test extends WP_UnitTestCase {
 		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
 		$this->assertFalse( isset( $event->get_data()->_via_ip ) );
 		$this->assertStringNotContainsString( 'via_ip', wp_json_encode( $event ) );
+	}
+
+	public static function provide_public_ips() {
+		yield [ '1.2.3.4' ];
+		yield [ '172.15.255.255' ];
+		yield [ '172.32.0.0' ];
+	}
+
+	/**
+	 * @dataProvider provide_public_ips
+	 */
+	public function test_should_preserve_public_ips( string $ip ) {
+		$event = new Tracks_Event( 'prefix_', 'example', [ '_via_ip' => $ip ] );
+
+		$this->assertNotInstanceOf( WP_Error::class, $event->get_data() );
+		$this->assertSame( $ip, $event->get_data()->_via_ip );
 	}
 
 	public function test_should_return_error_on_missing_event_name() {

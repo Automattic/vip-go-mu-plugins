@@ -5,20 +5,14 @@ namespace Automattic\VIP\Jetpack;
 use DateTime;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 /**
  * @requires function Jetpack_Options::get_option
  */
 class Connection_Pilot_Test extends WP_UnitTestCase {
-	protected static function getMethod( $name ) {
-		$class  = new \ReflectionClass( 'Automattic\VIP\Jetpack\Connection_Pilot' );
-		$method = $class->getMethod( $name );
-
-		return $method;
-	}
-
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__update_heartbeat_on_failure
 	 */
 	public function test__update_heartbeat_on_failure( ?int $backoff_factor, int $expected_backoff, int $failed_attempts ) {
@@ -32,7 +26,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		] );
 
 		$connection_pilot      = Connection_Pilot::instance();
-		$update_backoff_factor = self::getMethod( 'update_heartbeat_on_failure' );
+		$update_backoff_factor = get_class_method_as_public( Connection_Pilot::class, 'update_heartbeat_on_failure' );
 		$update_backoff_factor->invoke( $connection_pilot );
 
 		$option = $this->get_heartbeat();
@@ -46,7 +40,6 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 */
 	public function test__update_heartbeat_on_success() {
 		$this->set_heartbeat( [
@@ -58,7 +51,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 		] );
 
 		$connection_pilot = Connection_Pilot::instance();
-		$update_heartbeat = self::getMethod( 'update_heartbeat_on_success' );
+		$update_heartbeat = get_class_method_as_public( Connection_Pilot::class, 'update_heartbeat_on_success' );
 		$update_heartbeat->invoke( $connection_pilot );
 
 		$option = $this->get_heartbeat();
@@ -74,22 +67,40 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 
 	/**
 	 * @group jetpack-required
-	 * @preserveGlobalState disabled
 	 * @dataProvider get_test_data__should_back_off
 	 */
 	public function test__should_back_off( ?int $backoff_factor, ?DateTime $failure_time, ?DateTime $legacy_time, int $failed_attempts, bool $expected ) {
 		if ( null !== $backoff_factor ) {
-			$this->set_heartbeat( [
-				'backoff_factor'    => $backoff_factor,
-				'failed_attempts'   => $failed_attempts,
-				'failure_timestamp' => null === $failure_time ? $legacy_time->getTimestamp() : $failure_time->getTimestamp(),
-			] );
+			$heartbeat = [
+				'backoff_factor'  => $backoff_factor,
+				'failed_attempts' => $failed_attempts,
+			];
+			if ( null === $failure_time ) {
+				$heartbeat['timestamp'] = $legacy_time->getTimestamp();
+			} else {
+				$heartbeat['failure_timestamp'] = $failure_time->getTimestamp();
+			}
+			$this->set_heartbeat( $heartbeat );
 		}
 
 		$connection_pilot = Connection_Pilot::instance();
-		$should_back_off  = self::getMethod( 'should_back_off' );
+		$should_back_off  = get_class_method_as_public( Connection_Pilot::class, 'should_back_off' );
 
 		$this->assertEquals( $expected, $should_back_off->invoke( $connection_pilot ) );
+	}
+
+	public function test__new_subsite_schedules_pilot_on_new_subsite() {
+		$this->skipWithoutMultisite();
+		Connection_Pilot::instance()->init_actions();
+
+		$blog_id = self::factory()->blog->create();
+
+		switch_to_blog( $blog_id );
+		$scheduled_on_new_subsite = wp_next_scheduled( Connection_Pilot::CRON_ACTION );
+		restore_current_blog();
+
+		$this->assertIsInt( $scheduled_on_new_subsite );
+		$this->assertFalse( wp_next_scheduled( Connection_Pilot::CRON_ACTION ) );
 	}
 
 	public function get_test_data__update_heartbeat_on_failure() {
@@ -135,7 +146,7 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 	}
 
 	private function set_heartbeat( $values = [] ) {
-		$saved = update_option( 'vip_jetpack_connection_pilot_heartbeat', [
+		$heartbeat = [
 			'site_url'          => $values['site_url'] ?? get_site_url(),
 			'hashed_site_url'   => isset( $values['site_url'] ) ? md5( $values['site_url'] ) : md5( get_site_url() ),
 			'cache_site_id'     => $values['cache_site_id'] ?? (int) \Jetpack_Options::get_option( 'id', - 1 ),
@@ -143,10 +154,18 @@ class Connection_Pilot_Test extends WP_UnitTestCase {
 			'backoff_factor'    => $values['backoff_factor'] ?? 0,
 			'failed_attempts'   => $values['failed_attempts'] ?? 0,
 			'failure_timestamp' => $values['failure_timestamp'] ?? 0,
-		], false );
+		];
+
+		// Heartbeats saved before `failure_timestamp` existed only have the legacy `timestamp`.
+		if ( isset( $values['timestamp'] ) ) {
+			unset( $heartbeat['failure_timestamp'] );
+			$heartbeat['timestamp'] = $values['timestamp'];
+		}
+
+		$saved = update_option( 'vip_jetpack_connection_pilot_heartbeat', $heartbeat, false );
 
 		if ( ! $saved ) {
-			throw new Error( 'Failed to set heartbeat' );
+			throw new \Error( 'Failed to set heartbeat' );
 		}
 	}
 }

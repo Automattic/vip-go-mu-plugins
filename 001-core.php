@@ -9,6 +9,10 @@
 
 require_once __DIR__ . '/001-core/privacy.php';
 
+if ( file_exists( __DIR__ . '/001-core/revision-meta.php' ) ) {
+	require_once __DIR__ . '/001-core/revision-meta.php';
+}
+
 if ( file_exists( __DIR__ . '/001-core/options-api.php' ) ) {
 	require_once __DIR__ . '/001-core/options-api.php';
 }
@@ -22,6 +26,21 @@ if ( file_exists( __DIR__ . '/001-core/options-api.php' ) ) {
  * of deactivated widgets and menu location assignments.
  */
 add_filter( 'validate_current_theme', '__return_false' );
+
+/**
+ * Disable random content redirects
+ *
+ * WordPress 7.2 adds /random/ URLs that redirect to a post picked with
+ * ORDER BY RAND(). The query scans every eligible post and the response
+ * can't be cached, so repeated hits put heavy load on large sites. It can
+ * also surface publicly queryable content that was never meant to be browsed.
+ *
+ * Sites that want the feature can re-enable it with:
+ * add_filter( 'wp_enable_random_content_redirect', '__return_true' );
+ *
+ * @see https://make.wordpress.org/core/2026/11/05/your-content-is-going-to-get-more-random/
+ */
+add_filter( 'wp_enable_random_content_redirect', '__return_false' );
 
 if ( false !== WPCOM_IS_VIP_ENV ) {
 	add_action( 'muplugins_loaded', 'wpcom_vip_init_core_restrictions' );
@@ -74,6 +93,11 @@ function vip_disable_unnecessary_site_health_tests( $tests ) {
 	// Disable "Available disk space" test.
 	// We manage the disk space, test gives bogus results.
 	unset( $tests['direct']['available_updates_disk_space'] );
+
+	// Disable "Opcode cache" test (WordPress 7.0+).
+	// OPcache is managed by VIP, but opcache.restrict_api blocks the
+	// opcache_get_status() call the test relies on, so it reports it as not enabled.
+	unset( $tests['direct']['opcode_cache'] );
 
 	return $tests;
 }
@@ -140,30 +164,6 @@ add_filter(
 	20,
 	2
 );
-
-/**
- * Prevent invalid query args from causing php errors & a limitless query.
- *
- * This patch can be removed when the following core ticket is resolved:
- * @see https://core.trac.wordpress.org/ticket/17737
- */
-function vip_prevent_invalid_core_query_args() {
-	if ( is_admin() ) {
-		return;
-	}
-
-	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['name'] ) && ! is_string( $_GET['name'] ) ) {
-		unset( $_GET['name'] );
-	}
-
-	if ( isset( $_GET['pagename'] ) && ! is_string( $_GET['pagename'] ) ) {
-		unset( $_GET['pagename'] );
-	}
-	// phpcs:enable
-}
-
-add_action( 'wp_loaded', 'vip_prevent_invalid_core_query_args', 1 );
 
 add_filter( 'allowed_http_origins', 'vip_only_https_origins' );
 

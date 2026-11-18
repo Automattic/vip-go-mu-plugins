@@ -65,6 +65,18 @@ namespace Automattic\VIP\Security {
 	}
 }
 
+namespace Automattic\VIP\Proxy {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
 namespace Automattic\VIP\Support_User {
 	use Automattic\Test\Constant_Mocker;
 
@@ -249,38 +261,6 @@ namespace Automattic\VIP\Integrations {
 	}
 }
 
-namespace Automattic\VIP\Telemetry {
-	use Automattic\Test\Constant_Mocker;
-
-	function define( $constant, $value ) {
-		Constant_Mocker::define( $constant, $value );
-	}
-
-	function defined( $constant ) {
-		return Constant_Mocker::defined( $constant );
-	}
-
-	function constant( $constant ) {
-		return Constant_Mocker::constant( $constant );
-	}
-}
-
-namespace Automattic\VIP\Telemetry\Pendo {
-	use Automattic\Test\Constant_Mocker;
-
-	function define( $constant, $value ) {
-		Constant_Mocker::define( $constant, $value );
-	}
-
-	function defined( $constant ) {
-		return Constant_Mocker::defined( $constant );
-	}
-
-	function constant( $constant ) {
-		return Constant_Mocker::constant( $constant );
-	}
-}
-
 namespace Automattic\VIP\Telemetry\Tracks {
 	use Automattic\Test\Constant_Mocker;
 
@@ -298,6 +278,42 @@ namespace Automattic\VIP\Telemetry\Tracks {
 }
 
 namespace Automattic\VIP\LargeMediaUploadWarning {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Migration {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Stats {
+	use Automattic\Test\Constant_Mocker;
+
+	function defined( $constant ) {
+		return Constant_Mocker::defined( $constant );
+	}
+
+	function constant( $constant ) {
+		return Constant_Mocker::constant( $constant );
+	}
+}
+
+namespace Automattic\VIP\Core\Privacy {
 	use Automattic\Test\Constant_Mocker;
 
 	function defined( $constant ) {

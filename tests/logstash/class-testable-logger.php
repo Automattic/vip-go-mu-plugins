@@ -6,9 +6,8 @@ class Testable_Logger extends Logger {
 	public static $logged_entries = [];
 
 	public static function set_entries( array $entries ): void {
-		self::$entries             = $entries;
-		static::$processed_entries = false;
-		static::$logged_entries    = [];
+		self::$entries          = $entries;
+		static::$logged_entries = [];
 	}
 
 	public static function wp_debug_log( array $entry ): void {

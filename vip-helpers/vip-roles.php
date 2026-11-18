@@ -66,10 +66,8 @@ function wpcom_vip_merge_role_caps( $role, $caps ) {
 		return;
 	}
 
-	$current_caps = (array) wpcom_vip_get_role_caps( $role );
-	$new_caps     = array_merge( $current_caps, (array) $caps );
-
-	foreach ( $new_caps as $cap => $role_can ) {
+	// Only change the caps passed in, so the role's other caps (including explicit denies) stay as they are
+	foreach ( (array) $caps as $cap => $role_can ) {
 		if ( $role_can ) {
 			$role_obj->add_cap( $cap );
 		} else {
@@ -160,7 +158,8 @@ function wpcom_vip_remove_role_caps( $role, $caps ) {
  * @param string $role Role name
  */
 function _wpcom_vip_maybe_refresh_current_user_caps( $role ) {
-	if ( is_user_logged_in() && current_user_can( $role ) ) {
+	// Roles can change before pluggable functions load, when there's no current user to refresh yet.
+	if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() && current_user_can( $role ) ) {
 		wp_get_current_user()->get_role_caps();
 	}
 }

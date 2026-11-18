@@ -18,13 +18,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@7c071dfe9dc99bdf297fa79cb49ea005b9fcadbc # 2.37.1
-
-      - name: Install
-        uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
 
       - name: Execute
         env:
@@ -44,7 +41,7 @@ jobs:
       pull-requests: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.1
 
       - name: Extract version from PR title
         id: version
@@ -56,7 +53,7 @@ jobs:
           echo "version=${version:-release}" >> "$GITHUB_OUTPUT"
 
       - name: Create changelog
-        uses: Automattic/vip-actions/changelog@2bcb000c7bae0a75493afed7cf47f4529cdd2c8e
+        uses: Automattic/vip-actions/changelog@74ecc705a97f2cb3e441f5dc8687e94687b18f47
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}

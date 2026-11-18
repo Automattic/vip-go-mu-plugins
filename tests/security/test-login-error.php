@@ -14,9 +14,28 @@ class Login_Error_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
+	/**
+	 * A late priority keeps other plugins' filters from restoring the specific messages.
+	 */
 	public function test_has_filters(): void {
 		self::assertEquals( 99, has_filter( 'login_errors', __NAMESPACE__ . '\use_ambiguous_login_error' ) );
 		self::assertEquals( 99, has_filter( 'wp_login_errors', __NAMESPACE__ . '\use_ambiguous_confirmation' ) );
+	}
+
+	/**
+	 * Protected login errors must have the same generic message through the real filter.
+	 */
+	public function test_protected_login_errors_have_identical_generic_output(): void {
+		global $errors;
+		// phpcs:disable WordPress.WP.GlobalVariablesOverride.Prohibited -- Real wp-login.php error state fixture.
+		$expected = '<strong>Error</strong>: The username/email address or password is incorrect. Please try again.';
+		foreach ( [ 'invalid_username', 'invalid_email', 'incorrect_password', 'invalidcombo' ] as $code ) {
+			$errors = new WP_Error( $code, 'Specific account information' );
+			$this->assertSame( $expected, apply_filters( 'login_errors', 'Specific account information' ), $code );
+		}
+		$errors = new WP_Error( 'unrelated_error', 'An unrelated failure' );
+		$this->assertSame( 'An unrelated failure', apply_filters( 'login_errors', 'An unrelated failure' ) );
+		// phpcs:enable WordPress.WP.GlobalVariablesOverride.Prohibited
 	}
 
 	public function test_use_ambiguous_confirmation(): void {
@@ -41,17 +60,17 @@ class Login_Error_Test extends WP_UnitTestCase {
 	}
 
 	public function test_ambiguous_reset(): void {
-		$location       = null;
-		$redirect_caled = false;
+		$location        = null;
+		$redirect_called = false;
 
 		add_filter( 'wp_redirect', function ( $dest ) use ( &$location ) {
 			$location = $dest;
 			return $dest;
 		} );
 
-		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
-		add_filter( 'wp_redirect_status', function () use ( &$redirect_caled ) {
-			$redirect_caled = true;
+		// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.TerminatingInsteadOfReturn
+		add_filter( 'wp_redirect_status', function () use ( &$redirect_called ) {
+			$redirect_called = true;
 			throw new WPDieException( 'Redirect called' );
 		} );
 
@@ -65,7 +84,7 @@ class Login_Error_Test extends WP_UnitTestCase {
 			static::fail( 'Expected exception' );
 		} catch ( WPDieException $e ) {
 			static::assertEquals( 'Redirect called', $e->getMessage() );
-			static::assertTrue( $redirect_caled );
+			static::assertTrue( $redirect_called );
 			static::assertIsString( $location );
 			static::assertStringContainsString( 'wp-login.php?checkemail=confirm', $location );
 		}

@@ -5,7 +5,7 @@ Playwright-based e2e tests for this repository.
 ## Prerequisites
 
 - Node.js + npm
-- VIP CLI (`@automattic/vip`)
+- Docker, for the locally managed VIP site. `npm ci` installs the VIP CLI (`@automattic/vip`) that `npm test` and `npm run setup-env` use.
 
 ## Run from repo root (recommended)
 
@@ -20,18 +20,24 @@ npm run test-e2e
 
 ```bash
 npm ci
-npm run setup-env
 npm run lint
 npm run typecheck
 npm test
-npm run destroy-env
 ```
+
+`npm test` creates a uniquely named local VIP site, runs Playwright, then destroys that site even if setup or a test fails. Set `E2E_PRESERVE_ON_FAILURE=true` to keep a failed local site for investigation, or `E2E_PRESERVE_SITE=true` to keep the site after every run (CI does this, since its runner is discarded). Set `E2E_SITE_SLUG` to choose a specific local site slug.
+
+Set `E2E_BASE_URL` to run against an existing site. In that mode the runner skips VIP setup and cleanup; the caller owns the target site's lifecycle. To reuse one local site, run `npm run setup-env` with `E2E_SITE_SLUG` set, point `E2E_BASE_URL` at `http://<slug>.vipdev.lndo.site` for `npm test`, and remove the site with `npm run destroy-env`.
 
 ## Optional environment variables
 
 - `E2E_BASE_URL`
 - `E2E_USER`
 - `E2E_PASSWORD`
+- `E2E_SITE_SLUG`
+- `E2E_PRESERVE_ON_FAILURE`
+- `E2E_PRESERVE_SITE`
+- `WORDPRESS_VERSION`
 
 Defaults are configured in `playwright.config.ts` and `lib/global-setup.ts`.
 

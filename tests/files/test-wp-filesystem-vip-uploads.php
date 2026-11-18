@@ -6,6 +6,8 @@ use PHPUnit\Framework\MockObject\MockObject;
 use WP_Error;
 use WP_UnitTestCase;
 
+use function Automattic\Test\Utils\get_class_method_as_public;
+
 require_once __DIR__ . '/../../files/class-wp-filesystem-vip-uploads.php';
 
 class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
@@ -32,15 +34,6 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		parent::tearDown();
 	}
 
-	/**
-	 * Helper function for accessing protected methods.
-	 */
-	protected static function get_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\WP_Filesystem_VIP_Uploads' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
 	public function filter_uploads_basedir( $upload_dir ) {
 		$upload_dir['basedir'] = '/tmp/uploads';
 		return $upload_dir;
@@ -50,7 +43,7 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$test_path               = '/tmp/uploads/file/to/path.txt';
 		$expected_sanitized_path = '/wp-content/uploads/file/to/path.txt';
 
-		$test_method = $this->get_method( 'sanitize_uploads_path' );
+		$test_method = get_class_method_as_public( WP_Filesystem_VIP_Uploads::class, 'sanitize_uploads_path' );
 
 		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
 			$test_path,
@@ -63,7 +56,7 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$test_path               = WP_CONTENT_DIR . '/uploads/path/to/file.jpg';
 		$expected_sanitized_path = '/wp-content/uploads/path/to/file.jpg';
 
-		$test_method = $this->get_method( 'sanitize_uploads_path' );
+		$test_method = get_class_method_as_public( WP_Filesystem_VIP_Uploads::class, 'sanitize_uploads_path' );
 
 		$actual_sanitized_path = $test_method->invokeArgs( $this->filesystem, [
 			$test_path,
@@ -155,29 +148,52 @@ class WP_Filesystem_VIP_Uploads_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_contents, $actual_contents );
 	}
 
-	public function test__put_contents__params() {
+	/**
+	 * Cover cleanup after both API success and API errors.
+	 */
+	public function get_upload_results(): array {
+		return [
+			'success' => [ true ],
+			'error'   => [ false ],
+		];
+	}
+
+	/**
+	 * Assert the uploaded temporary file contains the bytes and is then removed.
+	 *
+	 * @dataProvider get_upload_results
+	 */
+	public function test__put_contents__params( bool $success ): void {
 		$test_content = 'Howdy';
 		$test_file    = '/tmp/uploads/file.txt';
-
-		$tmp_file = false;
+		$tmp_file     = null;
+		$error        = new WP_Error( 'upload_failed', 'Upload failed.' );
 
 		$this->api_client_mock
+			->expects( $this->once() )
 			->method( 'upload_file' )
-			->with(
-				$this->callback( function ( $local_path ) use ( $test_content ) {
-					// Verify contents of the file
-					// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown
-					$tmp_file_contents = file_get_contents( $local_path );
-					return $test_content === $tmp_file_contents;
-				} ),
-				$this->equalTo( '/wp-content/uploads/file.txt' )
-			)
-			->willReturn( true );
+			->willReturnCallback( function ( $local_path, $remote_path ) use ( &$tmp_file, $test_content, $success, $error ) {
+				$tmp_file = $local_path;
+				$this->assertSame( '/wp-content/uploads/file.txt', $remote_path );
+				$this->assertFileExists( $local_path );
+				// phpcs:ignore WordPressVIPMinimum.Performance.FetchingRemoteData.FileGetContentsUnknown -- Local temporary file.
+				$this->assertSame( $test_content, file_get_contents( $local_path ) );
+				return $success ? true : $error;
+			} );
 
-		$this->filesystem->put_contents( $test_file, $test_content );
-
-		$tmp_file_exists = file_exists( $tmp_file );
-		$this->assertFalse( $tmp_file_exists, 'Temp file was not deleted' );
+		try {
+			$this->assertSame( $success, $this->filesystem->put_contents( $test_file, $test_content ) );
+			$this->assertIsString( $tmp_file, 'The API upload must receive a temporary file.' );
+			clearstatcache( true, $tmp_file );
+			$this->assertFileDoesNotExist( $tmp_file );
+			if ( ! $success ) {
+				$this->assertSame( $error, $this->filesystem->errors );
+			}
+		} finally {
+			if ( is_string( $tmp_file ) && file_exists( $tmp_file ) ) {
+				unlink( $tmp_file ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.file_ops_unlink -- Clean up a failed mutation.
+			}
+		}
 	}
 
 	public function get_test_data__is_dir() {

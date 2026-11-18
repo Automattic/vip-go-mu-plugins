@@ -15,6 +15,7 @@
 namespace Automattic\VIP\Security;
 
 class Private_Sites {
+	/** @var static|null */
 	private static $instance;
 
 	const FEEDBOT_USER_AGENT = 'wp.com feedbot';
@@ -59,6 +60,10 @@ class Private_Sites {
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 
+		// Core reads -1 as public, so keep its handling of sites that discourage search engines
+		add_filter( 'wp_robots', array( $this, 'filter_wp_robots' ) );
+		add_filter( 'option_ping_sites', array( $this, 'filter_ping_sites' ) );
+
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
 
@@ -91,7 +96,8 @@ class Private_Sites {
 
 		wp_register_script( 'vip-disable-blog-public-option-ui', false, array(), '0.1', true );
 		wp_enqueue_script( 'vip-disable-blog-public-option-ui' );
-		$js_code       = <<<JS
+
+		$js_code = <<<'JS'
 		function onContentLoaded(callback) {
 			if (document.readyState !== 'loading') {
 				callback();
@@ -117,6 +123,7 @@ class Private_Sites {
 			updateProperty('tr.option-site-visibility p.description', 'textContent', '%s');
 		});
 		JS;
+
 		$description   = esc_html__( 'This option is disabled when the constant VIP_JETPACK_IS_PRIVATE is enabled.', 'vip' );
 		$final_js_code = sprintf( $js_code, $description );
 		wp_add_inline_script( 'vip-disable-blog-public-option-ui', $final_js_code );
@@ -146,6 +153,10 @@ class Private_Sites {
 		}
 	}
 
+	/**
+	 * @param array $modules
+	 * @return array
+	 */
 	public function filter_jetpack_active_modules( $modules ) {
 		if ( ! is_array( $modules ) || empty( $modules ) ) {
 			return $modules;
@@ -155,9 +166,16 @@ class Private_Sites {
 			'json-api',
 			'enhanced-distribution',
 			'search',
+			// WP.com rejects Publicize requests from private sites, and Jetpack doesn't cache the failure,
+			// so Publicize would make a blocking call to WP.com on every uncached request.
+			'publicize',
 		] ) );
 	}
 
+	/**
+	 * @param array $modules
+	 * @return array
+	 */
 	public function filter_jetpack_get_available_modules( $modules ) {
 		if ( ! is_array( $modules ) || empty( $modules ) ) {
 			return $modules;
@@ -165,14 +183,57 @@ class Private_Sites {
 
 		unset( $modules['json-api'] );
 		unset( $modules['enhanced-distribution'] );
+		unset( $modules['publicize'] );
 
 		return $modules;
 	}
 
+	/**
+	 * @param string $current_value
+	 * @return string
+	 */
 	public function filter_restrict_blog_public( $current_value ) {
 		if ( '1' === $current_value || '0' === $current_value ) {
 			return '-1';
 		}
+
 		return $current_value;
+	}
+
+	/**
+	 * Use noindex, nofollow like core does for a site that discourages search engines.
+	 *
+	 * @param array $robots Robots directives.
+	 * @return array
+	 */
+	public function filter_wp_robots( $robots ) {
+		if ( $this->discourages_search_engines() ) {
+			unset( $robots['follow'], $robots['max-image-preview'] );
+			$robots['noindex']  = true;
+			$robots['nofollow'] = true;
+		}
+
+		return $robots;
+	}
+
+	/**
+	 * Skip update pings like core's privacy_ping_filter() does for a site that discourages search engines.
+	 *
+	 * @param string $sites Ping services, one per line.
+	 * @return string
+	 */
+	public function filter_ping_sites( $sites ) {
+		return $this->discourages_search_engines() ? '' : $sites;
+	}
+
+	/**
+	 * Whether the site's own setting discourages search engines, which filter_restrict_blog_public() reports as -1.
+	 */
+	private function discourages_search_engines(): bool {
+		remove_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		$blog_public = get_option( 'blog_public' );
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+
+		return '0' === $blog_public;
 	}
 }

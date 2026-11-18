@@ -76,6 +76,11 @@ class Stats {
 
 		$keys = $this->strip_memcached_keys( $keys );
 
+		// Callers can pass a null group, which is deprecated as an array offset since PHP 8.5.
+		if ( empty( $group ) ) {
+			$group = 'default';
+		}
+
 		if ( $time > $this->slow_op_microseconds && 'get_multi' !== $op ) {
 			$this->increment_stat( 'slow-ops' );
 

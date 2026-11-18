@@ -114,7 +114,8 @@ class IpUtils {
 		$bytes_addr = unpack( 'n*', @inet_pton( $address ) );      // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- inet_pton() spits a warning on failures
 		$bytes_test = unpack( 'n*', @inet_pton( $request_ip ) );   // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged
 
-		if ( ! $bytes_addr || ! $bytes_test ) {
+		// Both must be IPv6 (eight 16-bit words). IPv4 unpacks to two words, invalid input to none.
+		if ( 8 !== count( $bytes_addr ) || 8 !== count( $bytes_test ) ) {
 			return false;
 		}
 

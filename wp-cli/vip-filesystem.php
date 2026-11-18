@@ -53,7 +53,7 @@ class VIP_Files_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 *     wp vip files update-filesizes
 	 *
 	 * @subcommand update-filesizes
-	 * @sypnosis [--dry-run=<dry-run>] [--batch=<batch>]
+	 * @synopsis [--dry-run=<dry-run>] [--batch=<batch>]
 	 */
 	public function update_filesizes( $args, $assoc_args ) {
 		if ( ! defined( 'VIP_FILESYSTEM_USE_STREAM_WRAPPER' ) || true !== VIP_FILESYSTEM_USE_STREAM_WRAPPER ) {

@@ -12,4 +12,4 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: Automattic/vip-actions/stale@c8022b66e78461df4f802b935dc0dbb8399f96bc # trunk
+      - uses: Automattic/vip-actions/stale@ab67a34cd817b925d1cb7380ec2490e580b0bccd # trunk

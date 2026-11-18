@@ -16,6 +16,8 @@
  * about the request.
  */
 
+use Automattic\VIP\Helpers\Environment_Badges;
+
 use function Automattic\VIP\Stats\send_pixel;
 
 // How long should we enable Debug mode for?
@@ -36,13 +38,18 @@ function init_debug_mode() {
 	}
 }
 
-function is_debug_mode_enabled() {
+function has_debug_mode_cookies() {
 	$is_nocache = isset( $_COOKIE['vip-go-cb'] ) && '1' === $_COOKIE['vip-go-cb'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
 	$is_debug   = isset( $_COOKIE['a8c-debug'] ) && '1' === $_COOKIE['a8c-debug'];  // phpcs:ignore WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
+
+	return $is_nocache && $is_debug;
+}
+
+function is_debug_mode_enabled() {
 	$is_proxied = \is_proxied_request();
 	$is_local   = function_exists( 'is_local_env' ) && \is_local_env();
 
-	if ( ( $is_nocache && $is_debug && $is_proxied ) || $is_local ) {
+	if ( ( has_debug_mode_cookies() && $is_proxied ) || $is_local ) {
 		return true;
 	}
 
@@ -58,8 +65,11 @@ function redirect_back() {
 		'_cachebuster' => time(),
 	] );
 
-	// Note: this is called early so we can't use wp_safe_redirect
-	header( sprintf( 'Location: %s', esc_url_raw( $redirect_to ) ) );
+	// Note: this is called early so we can't use wp_safe_redirect.
+	// Always redirect to a path on this host: browsers read a leading `//` or `/\` as another host.
+	$redirect_to = '/' . ltrim( esc_url_raw( $redirect_to ), '/\\' );
+
+	header( sprintf( 'Location: %s', $redirect_to ) );
 	exit;
 }
 
@@ -73,9 +83,9 @@ function enable_debug_mode() {
 		wp_die( 'A8C: Please proxy to enable Debug Mode.', 'Proxy Required', [ 'response' => 403 ] );
 	}
 
-	$ttl = time() + COOKIE_TTL;
-	setcookie( 'vip-go-cb', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '1', $ttl );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() + COOKIE_TTL );
+	setcookie( 'vip-go-cb', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '1', $options );    // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'enable' ] );
 
@@ -85,13 +95,30 @@ function enable_debug_mode() {
 function disable_debug_mode() {
 	nocache_headers();
 
-	$ttl = time() - COOKIE_TTL;
-	setcookie( 'vip-go-cb', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
-	setcookie( 'a8c-debug', '', $ttl );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	$options = get_debug_mode_cookie_options( time() - COOKIE_TTL );
+	setcookie( 'vip-go-cb', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
+	setcookie( 'a8c-debug', '', $options );     // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.cookies_setcookie
 
 	send_pixel( [ 'vip-go-a8c-debug' => 'disable' ] );
 
 	redirect_back();
+}
+
+/**
+ * Shared so enable and disable always target the same cookies.
+ *
+ * @param int $expires Unix timestamp; in the past to clear the cookies.
+ * @return array
+ */
+function get_debug_mode_cookie_options( $expires ) {
+	return [
+		'expires'  => $expires,
+		// Without a path, browsers scope the cookies to the current directory, so Debug Mode wouldn't follow you around the site.
+		'path'     => '/',
+		'secure'   => is_ssl(),
+		// Only PHP and the edge cache read these cookies.
+		'httponly' => true,
+	];
 }
 
 /**
@@ -121,44 +148,26 @@ function enable_debug_tools() {
 		add_filter( 'show_admin_bar', '__return_true', PHP_INT_MAX );
 	}, 9999 );
 
-	add_action( 'wp_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
-	add_action( 'login_footer', __NAMESPACE__ . '\show_debug_flag', 9999 ); // output later in the page
+	// Local environments get the debug tools without entering Debug Mode, so only flag it when someone did.
+	if ( ! has_debug_mode_cookies() || ! class_exists( Environment_Badges::class ) ) {
+		return;
+	}
+
+	Environment_Badges::add( 'a8c-debug', [
+		'label'   => 'A8C',
+		'more'    => 'Debug',
+		// The visible label only says Debug Mode is on; tell screen readers what clicking does.
+		'sr_text' => ', turn off Debug Mode',
+		'title'   => 'Turn off Debug Mode',
+		'href'    => get_disable_debug_mode_url(),
+		'order'   => 40,
+	] );
 }
 
-function show_debug_flag() {
-	$disable_url = add_query_arg( [
+function get_disable_debug_mode_url() {
+	return add_query_arg( [
 		'a8c-debug' => 'false',
 		// Remove the cache-buster, if set.
 		'random'    => false,
 	] );
-
-	?>
-	<div id="a8c-debug-flag">
-		<a href="<?php echo esc_url( $disable_url ); ?>" title="Click to disable Debug Mode">A8C Debug</a>
-	</div>
-	<style>
-	#a8c-debug-flag {
-		z-index: 9991;
-		font: 14px/28px 'Helvetica Neue',Arial,Helvetica,sans-serif;
-		background: rgb(194,156,105);
-		bottom: 145px;
-		left: 20px;
-		position: fixed;
-		width: 93px;
-		height: 28px;
-	}
-
-	#a8c-debug-flag a {
-		text-transform: uppercase;
-		color: #fff;
-		letter-spacing: 0.2em;
-		font-size: 9px;
-		font-weight: bold;
-		text-align: center;
-		width: 100%;
-		display: block;
-		text-decoration: none;
-	}
-	</style>
-	<?php
 }

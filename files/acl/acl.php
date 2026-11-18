@@ -14,6 +14,12 @@ const FILE_IS_PUBLIC              = 'FILE_IS_PUBLIC';
 const FILE_IS_PRIVATE_AND_ALLOWED = 'FILE_IS_PRIVATE_AND_ALLOWED';
 const FILE_IS_PRIVATE_AND_DENIED  = 'FILE_IS_PRIVATE_AND_DENIED';
 
+// Meta hooks that run clear_path_cache(), including the ones before an update or delete.
+const PATH_CACHE_HOOKS = [ 'added_post_meta', 'update_post_meta', 'updated_post_meta', 'delete_post_meta' ];
+
+// Attachment meta that lists its files.
+const FILE_META_KEYS = [ '_wp_attached_file', '_wp_attachment_metadata', '_wp_attachment_backup_sizes' ];
+
 add_action( 'muplugins_loaded', __NAMESPACE__ . '\maybe_load_restrictions' );
 
 function maybe_load_restrictions() {
@@ -33,6 +39,19 @@ function maybe_load_restrictions() {
 		return;
 	}
 
+	// Keep cached path lookups current and purge files as they become restricted on every site, since a request
+	// can switch to a site that restricts unpublished files. The purges check the current site's settings.
+	foreach ( PATH_CACHE_HOOKS as $hook ) {
+		add_action( $hook, __NAMESPACE__ . '\clear_path_cache', 10, 3 );
+	}
+	// Purge attachments for posts for better cacheability
+	add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\purge_attachments_for_post', 10, 2 );
+	// Purge an attachment's files when it's saved or attached while they're restricted (clear_path_cache() does when they change)
+	add_action( 'clean_post_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	add_action( 'clean_attachment_cache', __NAMESPACE__ . '\purge_restricted_attachment_files' );
+	// Keep the files of a deleted unpublished post restricted
+	add_action( 'before_delete_post', __NAMESPACE__ . '\keep_deleted_post_files_restricted', 10, 2 );
+
 	if ( true === $is_restrict_all_enabled || ( $no_option_set && ( defined( 'VIP_GO_ENV' ) && 'production' !== VIP_GO_ENV ) ) ) {
 		require_once __DIR__ . '/restrict-all-files.php';
 
@@ -41,9 +60,130 @@ function maybe_load_restrictions() {
 		require_once __DIR__ . '/restrict-unpublished-files.php';
 
 		add_filter( 'vip_files_acl_file_visibility', __NAMESPACE__ . '\Restrict_Unpublished_Files\check_file_visibility', 10, 2 );
-		// Purge attachments for posts for better cacheability
-		add_filter( 'wpcom_vip_cache_purge_urls', __NAMESPACE__ . '\Restrict_Unpublished_Files\purge_attachments_for_post', 10, 2 );
 	}
+}
+
+/**
+ * Load restrict-unpublished-files.php if the current site restricts access to unpublished files, as decided
+ * in maybe_load_restrictions() for the site a request starts on.
+ *
+ * @return bool Whether the current site restricts access to unpublished files.
+ */
+function load_unpublished_restrictions() {
+	if ( true !== get_option_as_bool_if_exists( 'vip_files_acl_restrict_unpublished_enabled' ) || true === get_option_as_bool_if_exists( 'vip_files_acl_restrict_all_enabled' ) ) {
+		return false;
+	}
+
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	return true;
+}
+
+/**
+ * Add the URLs of a post's attachments to purge, if the current site restricts unpublished files.
+ *
+ * @see Restrict_Unpublished_Files\purge_attachments_for_post()
+ *
+ * @param array $urls    URLs to purge.
+ * @param int   $post_id Post ID.
+ * @return array
+ */
+function purge_attachments_for_post( $urls, $post_id ) {
+	return load_unpublished_restrictions() ? Restrict_Unpublished_Files\purge_attachments_for_post( $urls, $post_id ) : $urls;
+}
+
+/**
+ * PURGE an attachment's files if they're restricted on the current site.
+ *
+ * @see Restrict_Unpublished_Files\purge_restricted_attachment_files()
+ *
+ * @param int $post_id Post ID. Posts that aren't attachments are skipped.
+ */
+function purge_restricted_attachment_files( $post_id ) {
+	if ( load_unpublished_restrictions() ) {
+		Restrict_Unpublished_Files\purge_restricted_attachment_files( $post_id );
+	}
+}
+
+/**
+ * Keep the files of a deleted post that wasn't published restricted, if the current site restricts unpublished files.
+ *
+ * wp_delete_post() moves the post's attachments up to the post's own parent, usually none, which would make their
+ * files public. Point them back at the post before its row is deleted: attachments of a deleted parent stay
+ * restricted, the same as when a post is deleted without wp_delete_post().
+ *
+ * @param int      $post_id Post ID.
+ * @param \WP_Post $post    Post object.
+ */
+function keep_deleted_post_files_restricted( $post_id, $post ) {
+	global $wpdb;
+
+	if ( 'publish' === $post->post_status || 'revision' === $post->post_type || ! load_unpublished_restrictions() ) {
+		return;
+	}
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- must read the current parents, as wp_delete_post() does.
+	$attachment_ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM $wpdb->posts WHERE post_parent = %d AND post_type = 'attachment'", $post_id ) );
+	if ( ! $attachment_ids ) {
+		return;
+	}
+
+	// `delete_post` fires after the attachments are moved, right before the post's row is deleted.
+	$restore = static function ( $deleted_post_id ) use ( $post_id, $attachment_ids, &$restore ) {
+		global $wpdb;
+
+		if ( (int) $deleted_post_id !== (int) $post_id ) {
+			return;
+		}
+
+		remove_action( 'delete_post', $restore );
+
+		$ids = implode( ',', array_map( 'intval', $attachment_ids ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- integer IDs; the cache is cleared below.
+		$wpdb->query( $wpdb->prepare( "UPDATE $wpdb->posts SET post_parent = %d WHERE ID IN ($ids)", $post_id ) );
+
+		// Like wp_delete_post()'s own update, this changes nothing else, and the files were already restricted:
+		// drop the cached posts in case one was cached unattached meanwhile, without clean_post_cache()'s purges.
+		wp_cache_delete_multiple( $attachment_ids, 'posts' );
+	};
+	add_action( 'delete_post', $restore );
+}
+
+/**
+ * Clear the cached attachment lookups for the files an attachment starts or stops using, and purge those files
+ * if they're restricted.
+ *
+ * Otherwise a lookup cached before the change (as not found, or as an attachment that has since
+ * moved or been deleted while another one still uses the path) would return an outdated result until it expires.
+ *
+ * The attachment's files are read from its stored meta: on the hooks before an update or delete, they're
+ * the files it's about to stop using; on the hooks after an add or update, the ones it now uses.
+ *
+ * restrict-unpublished-files.php is loaded only once there's something to clear: some sites check whether
+ * it's loaded at `muplugins_loaded` to tell if they restrict unpublished files.
+ *
+ * @param int|int[] $meta_id  Meta ID, or IDs when deleted.
+ * @param int       $post_id  Post ID.
+ * @param string    $meta_key Meta key.
+ */
+function clear_path_cache( $meta_id, $post_id, $meta_key ) {
+	if ( ! in_array( $meta_key, FILE_META_KEYS, true ) ) {
+		return;
+	}
+
+	require_once __DIR__ . '/restrict-unpublished-files.php';
+
+	// Every stored main file, and the files derived from it (original, edited copies, sizes).
+	$paths = array_merge( get_post_meta( $post_id, '_wp_attached_file', false ), Restrict_Unpublished_Files\get_attachment_file_paths( $post_id ) );
+
+	foreach ( $paths as $path ) {
+		if ( is_string( $path ) ) {
+			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path ), Restrict_Unpublished_Files\CACHE_GROUP );
+			wp_cache_delete( Restrict_Unpublished_Files\get_path_cache_key( $path, 'image' ), Restrict_Unpublished_Files\CACHE_GROUP );
+		}
+	}
+
+	purge_restricted_attachment_files( $post_id );
 }
 
 /**
@@ -85,7 +225,7 @@ function is_valid_path_for_site( $file_path ) {
 			$is_valid = ! str_starts_with( $file_path, 'sites/' );
 		} else {
 			// Check if the file path matches the current site ID's directory.
-			$base_path = sprintf( 'sites/%d', get_current_blog_id() );
+			$base_path = sprintf( 'sites/%d/', get_current_blog_id() );
 			$is_valid  = str_starts_with( $file_path, $base_path );
 		}
 	}

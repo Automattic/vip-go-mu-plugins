@@ -65,8 +65,8 @@ function wpcom_vip_available_post_listing_months( $months, $post_type ) {
 	}
 
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['post_status'] ) ) {
-		// Avoid interferring if user filtered by a particular post status.
+	if ( isset( $_GET['post_status'] ) && 'trash' === $_GET['post_status'] ) {
+		// Core only changes the months query for the trash view, so let it run there.
 		return false;
 	}
 

@@ -2,8 +2,6 @@
 
 namespace Automattic\VIP\Tests;
 
-use Automattic\VIP\Proxy\Proxy_Verification_Helper;
-
 use function Automattic\VIP\Proxy\fix_remote_address_from_ip_trail_with_verification_key;
 
 require_once __DIR__ . '/class-ip-forward-test-base.php';
@@ -13,46 +11,25 @@ require_once __DIR__ . '/class-ip-forward-test-base.php';
 // phpcs:disable WordPress.Security.ValidatedSanitizedInput
 
 class Fix_Remote_Address_From_Ip_Trail_With_Verification_Key_Test extends IP_Forward_Test_Base {
-	public function setUp(): void {
-		parent::setUp();
+	const PROXY_VERIFICATION_KEY = 'valid-key';
 
-		// Mocks `define( 'WPCOM_VIP_PROXY_VERIFICATION', 'valid-key' )`
-		Proxy_Verification_Helper::set_proxy_verification_key( 'valid-key' );
+	public function data_fix_remote_address_from_ip_trail_with_verification_key(): array {
+		return [
+			'all valid'        => [ '1.2.3.4, 5.6.7.8', 'valid-key', true, '1.2.3.4' ],
+			'invalid key'      => [ '1.2.3.4, 5.6.7.8', 'invalid-key', false, self::DEFAULT_REMOTE_ADDR ],
+			'invalid IP trail' => [ '1.2.3.4, 5.6.7.eight', 'valid-key', false, self::DEFAULT_REMOTE_ADDR ],
+		];
 	}
 
-	public function test__all_valid() {
+	/**
+	 * @dataProvider data_fix_remote_address_from_ip_trail_with_verification_key
+	 */
+	public function test__fix_remote_address_from_ip_trail_with_verification_key( string $ip_trail, string $key, bool $expected, string $expected_remote_addr ) {
 		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail                        = '1.2.3.4, 5.6.7.8';
-
-		$key = 'valid-key';
 
 		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
 
-		self::assertTrue( $result );
-		self::assertEquals( '1.2.3.4', $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__invalid_key() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail                        = '1.2.3.4, 5.6.7.8';
-		
-		$key = 'invalid-key';
-
-		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
-
-		self::assertFalse( $result );
-		self::assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
-	}
-
-	public function test__invalid_ip_trail() {
-		$_SERVER['HTTP_X_FORWARDED_FOR'] = '5.6.7.8';
-		$ip_trail                        = '1.2.3.4, 5.6.7.eight';
-
-		$key = 'valid-key';
-
-		$result = fix_remote_address_from_ip_trail_with_verification_key( $ip_trail, $key );
-
-		self::assertFalse( $result );
-		self::assertEquals( self::DEFAULT_REMOTE_ADDR, $_SERVER['REMOTE_ADDR'] );
+		self::assertSame( $expected, $result );
+		self::assertEquals( $expected_remote_addr, $_SERVER['REMOTE_ADDR'] );
 	}
 }

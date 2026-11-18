@@ -34,8 +34,24 @@ class Telemetry_Event_Queue {
 	public function __construct( Telemetry_Client $client ) {
 		$this->client = $client;
 
-		// Register the shutdown hook to record any and all events
-		add_action( 'shutdown', array( $this, 'record_events' ) );
+		// Run last on shutdown, like the logstash and Prometheus shutdown work, so
+		// the request to the telemetry service doesn't delay the response.
+		add_action( 'shutdown', array( $this, 'record_events_after_response' ), PHP_INT_MAX );
+	}
+
+	/**
+	 * Sends the response to the client, then records all queued events.
+	 */
+	public function record_events_after_response(): void {
+		if ( empty( $this->events ) ) {
+			return;
+		}
+
+		if ( function_exists( 'fastcgi_finish_request' ) ) {
+			fastcgi_finish_request();
+		}
+
+		$this->record_events();
 	}
 
 	/**

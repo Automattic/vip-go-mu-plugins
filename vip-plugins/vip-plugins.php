@@ -1,101 +1,4 @@
 <?php
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-
-/**
- * Retrieve featured plugins from the wpvip.com API
- *
- * @return array an array of plugins
- */
-function wpcom_vip_fetch_vip_featured_plugins() {
-	$plugins = wp_cache_get( 'wpcom_vip_featured_plugins' );
-
-	if ( false === $plugins ) {
-		$plugins                  = array();
-		$url_for_featured_plugins = 'https://wpvip.com/wp-json/vip/v0/plugins?type=technology';
-		$response                 = vip_safe_wp_remote_get( $url_for_featured_plugins, false, 3, 5 );
-
-		if ( ! $response ) {
-			trigger_error( 'The API on wpvip.com is not responding (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
-		}
-
-		if ( is_wp_error( $response ) ) {
-			trigger_error( 'The API on wpvip.com is not responding (' . esc_url( $url_for_featured_plugins ) . '): ' . esc_html( $response->get_error_message() ), E_USER_WARNING );
-		}
-
-		if ( ! $response || is_wp_error( $response ) ) {
-			wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', MINUTE_IN_SECONDS );
-		} else {
-			$plugins = json_decode( $response['body'] );
-
-			if ( empty( $plugins ) ) {
-				trigger_error( 'The API on wpvip.com returned empty data (' . esc_url( $url_for_featured_plugins ) . ')', E_USER_WARNING );
-				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', MINUTE_IN_SECONDS );
-			} else {
-				wp_cache_set( 'wpcom_vip_featured_plugins', $plugins, '', HOUR_IN_SECONDS * 4 );
-			}
-		}
-	}
-
-	return $plugins;
-}
-
-/**
- * Render the featured partner plugins to the plugins screenReaderText
- * Uses the admin_notice hooks as that is all we have on these pages
- *
- * @return null
- */
-function wpcom_vip_render_vip_featured_plugins() {
-	$screen = get_current_screen();
-
-	if ( 'plugins' !== $screen->id && 'plugins-network' !== $screen->id ) {
-		return;
-	}
-
-	$plugins = wpcom_vip_fetch_vip_featured_plugins();
-
-	if ( empty( $plugins ) ) {
-		?>
-		<div class="notice notice-error">
-			<p><?php esc_html_e( 'Unable to display VIP Featured Technology Partners; try refreshing this page in a few minutes. If this error persists, please contact VIP Support.', 'vip-plugins-dashboard' ); ?></p>
-		</div>
-		<?php
-		return;
-	}
-
-	?>
-	<div class="featured-plugins notice">
-		<h3><?php esc_html_e( 'VIP Featured Technology Partners', 'vip-plugins-dashboard' ); ?></h3>
-		<div class="plugins-grid">
-		<?php
-		foreach ( $plugins as $plugin ) {
-			?>
-			<div class="plugin">
-				<a class="fp-content" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
-					<img src="<?php echo esc_url( $plugin->meta->listing_logo ); ?>" alt="<?php echo esc_attr( $plugin->post_title ); ?>" />
-					<h4><?php echo esc_html( $plugin->post_title ); ?></h4>
-					<p><?php echo esc_html( $plugin->meta->listing_description ); ?></p>
-				</a>
-				<a class="fp-overlay" href="<?php echo esc_url( $plugin->permalink ?? $plugin->meta->plugin_url ); ?>" target="_blank">
-					<div class="fp-overlay-inner">
-						<div class="fp-overlay-cell">
-							<span>
-								<?php _e( 'More Information', 'vip-plugins-dashboard' ); ?>
-							</span>
-						</div>
-					</div>
-				</a>
-			</div>
-			<?php
-		}
-		?>
-		</div>
-	</div>
-	<?php
-}
-// Priority set to 99 to push further down the page and to the bottom of other notices
-add_action( 'admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
-add_action( 'network_admin_notices', 'wpcom_vip_render_vip_featured_plugins', 99 );
 
 /**
  * Returns a filtered list of code activated plugins similar to core plugins option
@@ -254,14 +157,13 @@ function wpcom_vip_pre_update_site_option_active_sitewide_plugins( $value ) {
 add_filter( 'pre_update_site_option_active_sitewide_plugins', 'wpcom_vip_pre_update_site_option_active_sitewide_plugins' );
 
 /**
- * Custom CSS and JS for the plugins UIs
+ * Custom JavaScript for the plugins UIs
  *
  * @return null
  */
 function wpcom_vip_plugins_ui_admin_enqueue_scripts() {
 	$screen = get_current_screen();
 	if ( 'plugins' === $screen->id || 'plugins-network' === $screen->id ) {
-		wp_enqueue_style( 'vip-plugins-style', plugins_url( '/css/plugins-ui.css', __FILE__ ), array(), '3.0' );
 		wp_enqueue_script( 'vip-plugins-script', plugins_url( '/js/plugins-ui.js', __FILE__ ), array( 'jquery' ), '3.0', true );
 	}
 }

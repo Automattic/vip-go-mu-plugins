@@ -33,7 +33,7 @@ function register_qm_db_connections_output( array $output ) {
 	if ( $collector && file_exists( __DIR__ . '/class-qm-output-html-db-connections.php' ) ) {
 		require_once __DIR__ . '/class-qm-output-html-db-connections.php';
 
-		$output['qm-db-connections'] = new QM_Output_Html_DB_Connections( $collector );
+		$output['db-connections'] = new QM_Output_Html_DB_Connections( $collector );
 	}
 	return $output;
 }

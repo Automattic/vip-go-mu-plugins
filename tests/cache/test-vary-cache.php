@@ -3,18 +3,22 @@
 namespace Automattic\VIP\Cache;
 
 use Automattic\Test\Constant_Mocker;
-use ErrorException;
+use Automattic\Test\Utils\Captures_Errors;
 use WP_UnitTestCase;
+
+use function Automattic\Test\Utils\get_class_method_as_public;
 
 require_once __DIR__ . '/mock-header.php';
 
 // phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
 
 class Vary_Cache_Test extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	private $original_cookie;
-	private $original_server;
-	private $original_error_reporting;
+
+	/** @var array[] Arguments of each `vip_vary_cache_did_send_headers` action. */
+	private $did_send_headers_calls = [];
 
 	public static function wpSetUpBeforeClass() {
 		require_once __DIR__ . '/../../cache/class-vary-cache.php';
@@ -25,57 +29,32 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		parent::setUp();
 
 		$this->original_cookie = $_COOKIE;
-		$this->original_server = $_SERVER;
 
 		header_remove();
+		Cookie_Recorder::$calls = [];
 
 		Vary_Cache::load();
-		Constant_Mocker::clear();
 
-		$this->original_error_reporting = error_reporting();
-
-		// As of PHPUnit 10.x, expectWarning() is removed. We'll use a custom error handler to test for warnings.
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( $errno & error_reporting() ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
-			}
-
-			return false;
-		}, E_USER_WARNING );
+		$this->did_send_headers_calls = [];
 	}
 
 	public function tearDown(): void {
-		restore_error_handler();
+		Cookie_Recorder::$calls = [];
 
-		Constant_Mocker::clear();
 		Vary_Cache::unload();
 
 		$_COOKIE = $this->original_cookie;
-		$_SERVER = $this->original_server;
-
-		error_reporting( $this->original_error_reporting );
 
 		parent::tearDown();
 	}
 
 	/**
-	 * Helper function for accessing protected methods.
+	 * Record the arguments of each `vip_vary_cache_did_send_headers` action in $did_send_headers_calls.
 	 */
-	protected static function get_vary_cache_method( $name ) {
-		$class  = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
-		$method = $class->getMethod( $name );
-		return $method;
-	}
-
-	/**
-	 * Helper function for accessing protected properties.
-	 */
-	protected static function get_vary_cache_property( $name ) {
-		$class    = new \ReflectionClass( __NAMESPACE__ . '\Vary_Cache' );
-		$property = $class->getProperty( $name );
-		return $property->getValue();
+	private function record_did_send_headers(): void {
+		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
+			$this->did_send_headers_calls[] = [ $sent_vary, $sent_cookie ];
+		}, 10, 2 );
 	}
 
 	public function get_test_data__is_user_in_group_segment() {
@@ -124,6 +103,18 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				false,
 			],
 
+			'user-in-group-but-searching-for-array'        => [
+				[
+					'vip-go-seg' => 'dev-group_--_Array',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				[],
+				false,
+			],
+
 			'user-in-group-but-different-segment'          => [
 				[
 					'vip-go-seg' => 'dev-group_--_maybe',
@@ -157,6 +148,18 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				],
 				'dev-group',
 				'0',
+				true,
+			],
+
+			'user-in-group-and-int-segment'                => [
+				[
+					'vip-go-seg' => 'dev-group_--_1',
+				],
+				[
+					'dev-group',
+				],
+				'dev-group',
+				1,
 				true,
 			],
 		];
@@ -224,6 +227,41 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
+	public function get_test_data__non_string_segment(): array {
+		return [
+			'int'                   => [ 1, 1 ],
+			'int-checked-as-string' => [ 1, '1' ],
+			'bool-true'             => [ true, true ],
+		];
+	}
+
+	/**
+	 * Verify that a segment matches both on the request that sets it and on later requests, which parse it from the cookie.
+	 *
+	 * @dataProvider get_test_data__non_string_segment
+	 */
+	public function test_non_string_segment_matches_on_later_requests( $value, $segment ): void {
+		$_COOKIE = [];
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', $value ), 'Return value was not true' );
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', $segment ), 'Segment did not match on the request that set it' );
+
+		do_action( 'send_headers' );
+
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ , $name, $cookie ] = Cookie_Recorder::$calls[0];
+
+		// Start the next request with the cookie that was written.
+		Vary_Cache::unload();
+		Vary_Cache::load();
+		$_COOKIE = [ $name => $cookie ];
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', $segment ), 'Segment did not match on a later request' );
+	}
+
 	/**
 	 * @dataProvider get_test_data__is_user_in_group
 	 */
@@ -237,65 +275,85 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_result, $actual_result );
 	}
 
-	public function test__register_group() {
-		$expected_groups = [
-			'dev-group' => '',
+	public function get_test_data__get_group_value(): array {
+		return [
+			'value-from-cookie'            => [
+				[ 'vip-go-seg' => 'dev-group_--_yes' ],
+				'dev-group',
+				'yes',
+			],
+			'zero-value-from-cookie'       => [
+				[ 'vip-go-seg' => 'dev-group_--_0' ],
+				'dev-group',
+				'0',
+			],
+			'empty-value-from-cookie'      => [
+				[ 'vip-go-seg' => 'dev-group_--_' ],
+				'dev-group',
+				null,
+			],
+			'whitespace-value-from-cookie' => [
+				[ 'vip-go-seg' => 'dev-group_--_ ' ],
+				'dev-group',
+				null,
+			],
+			'registered-without-value'     => [
+				[],
+				'dev-group',
+				null,
+			],
+			'unknown-group'                => [
+				[ 'vip-go-seg' => 'dev-group_--_yes' ],
+				'design-group',
+				null,
+			],
 		];
-
-		$actual_result = Vary_Cache::register_group( 'dev-group' );
-
-		$this->assertTrue( $actual_result, 'register_group returned false' );
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups() );
 	}
 
-	public function test__register_groups__valid() {
-		$expected_groups = [
+	/**
+	 * @dataProvider get_test_data__get_group_value
+	 */
+	public function test__get_group_value( array $initial_cookie, string $test_group, ?string $expected_result ): void {
+		$_COOKIE = $initial_cookie;
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+
+		$this->assertSame( $expected_result, Vary_Cache::get_group_value( $test_group ) );
+	}
+
+	public function test__get_group_value__set_group_for_user(): void {
+		Vary_Cache::register_group( 'dev-group' );
+
+		Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+		$this->assertSame( 'yes', Vary_Cache::get_group_value( 'dev-group' ) );
+
+		Vary_Cache::set_group_for_user( 'dev-group', '' );
+		$this->assertNull( Vary_Cache::get_group_value( 'dev-group' ) );
+	}
+
+	public function test__register_group_and_groups() {
+		$this->assertTrue( Vary_Cache::register_group( 'dev-group' ), 'register_group returned false' );
+		$this->assertEquals( [ 'dev-group' => '' ], Vary_Cache::get_groups() );
+
+		// Later calls add to the registered groups.
+		$this->assertTrue( Vary_Cache::register_groups( [ 'design-group', 'qa-group' ] ), 'Valid register_groups call did not return true' );
+		$this->assertEquals( [
 			'dev-group'    => '',
 			'design-group' => '',
-		];
-
-		$actual_result = Vary_Cache::register_groups( [
-			'dev-group',
-			'design-group',
-		] );
-
-		$this->assertTrue( $actual_result, 'Valid register_groups call did not return true' );
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Registered groups do not match expected.' );
-	}
-
-	public function test__register_groups__multiple_calls() {
-		$expected_groups = [
-			'dev-group'    => '',
-			'design-group' => '',
-		];
-
-		Vary_Cache::register_groups( [ 'dev-group' ] );
-		Vary_Cache::register_groups( [ 'design-group' ] );
-
-		$this->assertEquals( $expected_groups, Vary_Cache::get_groups(), 'Multiple register_groups did not result in expected groups' );
-	}
-
-	public function test__register_groups__did_send_headers__warning() {
-		do_action( 'send_headers' );
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-
-		Vary_Cache::register_groups( [
-			'dev-group',
-			'design-group',
-		] );
+			'qa-group'     => '',
+		], Vary_Cache::get_groups(), 'Registered groups do not match expected.' );
 	}
 
 	public function test__register_groups__did_send_headers() {
 		do_action( 'send_headers' );
 
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
-		$result = Vary_Cache::register_groups( [
+		[ $result, $warnings ] = $this->capture_errors( fn() => Vary_Cache::register_groups( [
 			'dev-group',
 			'design-group',
-		] );
+		] ) );
 
 		self::assertFalse( $result );
+		self::assertSame( [ 'Failed to register_groups (dev-group, design-group); cannot be called after the `send_headers` hook has fired.' ], $warnings );
 		self::assertEmpty( Vary_Cache::get_groups(), 'Registered groups are not empty.' );
 	}
 
@@ -303,11 +361,11 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		return [
 			'invalid-group-array' => [
 				[ 'dev-group', 'dev-group---__' ],
-				'invalid_vary_group_name',
+				[ 'dev-group' => '' ],
 			],
 			'invalid-group-name'  => [
 				[ 'dev-group---__' ],
-				'invalid_vary_group_name',
+				[],
 			],
 		];
 	}
@@ -315,19 +373,13 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	/**
 	 * @dataProvider get_test_data__register_groups_invalid
 	 */
-	public function test__register_groups__invalid__warning( $invalid_groups ) {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		Vary_Cache::register_groups( $invalid_groups );
-	}
+	public function test__register_groups__invalid( $groups, $expected_groups ) {
+		[ $result, $warnings ] = $this->capture_errors( fn() => Vary_Cache::register_groups( $groups ) );
 
-	/**
-	 * @dataProvider get_test_data__register_groups_invalid
-	 */
-	public function test__register_groups__invalid( $invalid_groups ) {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
-		$result = Vary_Cache::register_groups( $invalid_groups );
 		self::assertTrue( $result );
+		self::assertCount( 1, $warnings );
+		self::assertStringStartsWith( 'Failed to register group (dev-group---__);', $warnings[0] );
+		self::assertEquals( $expected_groups, Vary_Cache::get_groups() );
 	}
 
 	public function get_test_data__set_group_for_user_invalid() {
@@ -362,44 +414,497 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				'yes%',
 				'invalid_vary_group_segment',
 			],
-
+			'group-not-registered'                  => [
+				'dev-group',
+				'yes',
+				'invalid_vary_group_notregistered',
+			],
 		];
 	}
 
-	public function test__set_group_for_user__valid() {
-
+	/**
+	 * Verify real group emission, raw encryption and custom cookie scope.
+	 *
+	 * @dataProvider get_cookie_encoding_cases
+	 */
+	public function test_group_cookie_parameters( bool $encrypted ): void {
+		$path_filter   = static function () {
+			return '/segmentation/';
+		};
+		$domain_filter = static function () {
+			return 'cookies.example.org';
+		};
+		add_filter( 'vip_vary_cache_cookie_path', $path_filter );
+		add_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+		Vary_Cache::set_cookie_expiry( HOUR_IN_SECONDS );
 		Vary_Cache::register_group( 'dev-group' );
-
-		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
-
-		$this->assertTrue( $actual_result, 'Return value was not true' );
-
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
 		$this->assertEquals( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'Groups did not match expected value' );
-
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_group_cookie' ), 'Did not update group cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertTrue( $sent_vary, 'Vary was not sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
+		$this->record_did_send_headers();
+		$before = time();
+		try {
+			do_action( 'send_headers' );
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
+			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		}
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertTrue( $raw );
+		$this->assertSame( $encrypted ? Vary_Cache::COOKIE_AUTH : Vary_Cache::COOKIE_SEGMENT, $name );
+		$this->assertGreaterThanOrEqual( $before + HOUR_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() + HOUR_IN_SECONDS, $expiry );
+		$this->assertSame( '/segmentation/', $path );
+		$this->assertSame( 'cookies.example.org', $domain );
+		if ( $encrypted ) {
+			$this->assertStringStartsWith( '123.', $value );
+			$payload = substr( $value, 4 );
+			$this->assertSame( $payload, base64_encode( base64_decode( $payload, true ) ) );
+			$value = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, $payload );
+		}
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
 	}
 
-	public function test__set_group_for_user_group_not_registered() {
+	/**
+	 * Verify that clearing the last group expires the existing group cookie.
+	 *
+	 * @dataProvider get_cookie_encoding_cases
+	 */
+	public function test_empty_group_expires_existing_cookie( bool $encrypted ): void {
+		$path_filter   = static function () {
+			return '/segmentation/';
+		};
+		$domain_filter = static function () {
+			return 'cookies.example.org';
+		};
+		add_filter( 'vip_vary_cache_cookie_path', $path_filter );
+		add_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
 
-		$expected_error_code = 'invalid_vary_group_notregistered';
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+			$_COOKIE[ Vary_Cache::COOKIE_AUTH ] = 'existing-cookie';
+			$_SERVER[ Vary_Cache::HEADER_AUTH ] = 'vc-v1__dev-group_--_yep';
+		} else {
+			$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yep';
+		}
 
-		$actual_result = Vary_Cache::set_group_for_user( 'dev-group', 'yes' );
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', '' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+		$before = time();
 
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
+		try {
+			do_action( 'send_headers' );
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
+			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+			unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		}
 
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertFalse( $raw );
+		$this->assertSame( $encrypted ? Vary_Cache::COOKIE_AUTH : Vary_Cache::COOKIE_SEGMENT, $name );
+		$this->assertSame( '', $value );
+		$this->assertGreaterThanOrEqual( $before - HOUR_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
+		$this->assertSame( '/segmentation/', $path );
+		$this->assertSame( 'cookies.example.org', $domain );
+	}
+
+	/**
+	 * Verify that clearing an empty group does not set a cookie when none exists.
+	 *
+	 * @dataProvider get_cookie_encoding_cases
+	 */
+	public function test_empty_group_without_existing_cookie_does_not_set_cookie( bool $encrypted ): void {
+		$_COOKIE = [];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', '' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, false ] ], $this->did_send_headers_calls, 'Only the Vary header should be sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+	}
+
+	public function get_test_data__unchanged_group_cookie(): array {
+		return [
+			'plain-cookie'     => [
+				false,
+				[ 'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes' ],
+				[],
+			],
+			'encrypted-header' => [
+				true,
+				[ 'vip-go-auth' => 'opaque' ],
+				[ 'HTTP_X_VIP_GO_AUTH' => 'vc-v1__design-group_--_no---__dev-group_--_yes' ],
+			],
+		];
+	}
+
+	/**
+	 * Verify that re-assigning the groups the request's cookie already carries keeps the response cacheable.
+	 *
+	 * @dataProvider get_test_data__unchanged_group_cookie
+	 */
+	public function test_unchanged_group_does_not_resend_cookie( bool $encrypted, array $cookies, array $server ): void {
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ], $_SERVER['HTTP_COOKIE'] );
+		$_SERVER = array_merge( $_SERVER, $server );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		Vary_Cache::register_groups( [ 'design-group', 'dev-group' ] );
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yes' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, false ] ], $this->did_send_headers_calls, 'Only the Vary header should be sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'An unchanged cookie was sent' );
+	}
+
+	public function get_test_data__changed_group_cookie(): array {
+		return [
+			'changed-value'                   => [ false, [ 'vip-go-seg' => 'vc-v1__dev-group_--_nope' ], false ],
+			'non-canonical-cookie'            => [ false, [ 'vip-go-seg' => 'dev-group_--_yep' ], false ],
+			'encrypted-with-plain-cookie'     => [ true, [ 'vip-go-seg' => 'vc-v1__dev-group_--_yep' ], false ],
+			'assigned-before-parse-no-cookie' => [ false, [], true ],
+		];
+	}
+
+	/**
+	 * Verify that the group cookie is sent unless the request carries the exact cookie that would be sent.
+	 *
+	 * @dataProvider get_test_data__changed_group_cookie
+	 */
+	public function test_changed_group_resends_cookie( bool $encrypted, array $cookies, bool $assign_before_parse ): void {
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ], $_SERVER['HTTP_COOKIE'] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		Vary_Cache::register_group( 'dev-group' );
+		if ( $assign_before_parse ) {
+			$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		}
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ , $name, $value ] = Cookie_Recorder::$calls[0];
+		$this->assertSame( $encrypted ? Vary_Cache::COOKIE_AUTH : Vary_Cache::COOKIE_SEGMENT, $name );
+		if ( $encrypted ) {
+			$value = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, substr( $value, 4 ) );
+		}
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
+	}
+
+	/**
+	 * Verify that an auth cookie the cache layer didn't decrypt into a header is re-sent, even when unchanged.
+	 *
+	 * The cache layer only sets the header for a cookie it can decrypt and that hasn't expired, so PHP's own
+	 * decryption can't vouch for the cookie.
+	 */
+	public function test_auth_cookie_without_cache_header_is_resent(): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+		Vary_Cache::enable_encryption();
+
+		$encrypt_cookie_value = get_class_method_as_public( Vary_Cache::class, 'encrypt_cookie_value' );
+		$auth_cookie          = '123.' . $encrypt_cookie_value->invoke( null, 'vc-v1__dev-group_--_yep' );
+		$_COOKIE              = [ Vary_Cache::COOKIE_AUTH => $auth_cookie ];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		$_SERVER['HTTP_COOKIE'] = Vary_Cache::COOKIE_AUTH . '=' . $auth_cookie;
+
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertSame( [ 'dev-group' => 'yep' ], Vary_Cache::get_groups(), 'The auth cookie was not decrypted' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ , $name, $value ] = Cookie_Recorder::$calls[0];
+		$this->assertSame( Vary_Cache::COOKIE_AUTH, $name );
+		$value = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, substr( $value, 4 ) );
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
+	}
+
+	public function test_refresh_filter_resends_unchanged_group_cookie(): void {
+		$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yep';
+		add_filter( 'vip_vary_cache_refresh_group_cookie', '__return_true' );
+
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Return value was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( [ [ true, true ] ], $this->did_send_headers_calls, 'Vary and cookie were not sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ , $name, $value ] = Cookie_Recorder::$calls[0];
+		$this->assertSame( Vary_Cache::COOKIE_SEGMENT, $name );
+		$this->assertSame( 'vc-v1__dev-group_--_yep', $value );
+	}
+
+	public function get_test_data__has_group_cookie(): array {
+		return [
+			'plain-without-cookie'             => [ false, [], '', false ],
+			'plain-with-segment-cookie'        => [ false, [ 'vip-go-seg' => 'value' ], '', true ],
+			'plain-with-auth-cookie'           => [ false, [ 'vip-go-auth' => 'value' ], '', false ],
+			'plain-with-decrypted-header'      => [ false, [], 'vc-v1__dev-group_--_yes', false ],
+			'encrypted-without-cookie'         => [ true, [], '', false ],
+			'encrypted-with-auth-cookie'       => [ true, [ 'vip-go-auth' => 'value' ], '', true ],
+			'encrypted-with-decrypted-header'  => [ true, [], 'vc-v1__dev-group_--_yes', true ],
+			'encrypted-with-segment-cookie'    => [ true, [ 'vip-go-seg' => 'value' ], '', false ],
+			'plain-with-array-segment-cookie'  => [ false, [ 'vip-go-seg' => [ 'value' ] ], '', true ],
+			'encrypted-with-array-auth-cookie' => [ true, [ 'vip-go-auth' => [ 'value' ] ], '', true ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__has_group_cookie
+	 */
+	public function test__has_group_cookie( bool $encrypted, array $cookies, string $auth_header, bool $expected ): void {
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Vary_Cache::enable_encryption();
+		}
+
+		if ( '' !== $auth_header ) {
+			$_SERVER[ Vary_Cache::HEADER_AUTH ] = $auth_header;
+		}
+
+		try {
+			$has_group_cookie_method = get_class_method_as_public( Vary_Cache::class, 'has_group_cookie' );
+			$this->assertSame( $expected, $has_group_cookie_method->invoke( null ) );
+		} finally {
+			unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		}
+	}
+
+	/**
+	 * Cover both plaintext and encrypted group cookies.
+	 */
+	public function get_cookie_encoding_cases(): array {
+		return [
+			'plain'     => [ false ],
+			'encrypted' => [ true ],
+		];
+	}
+
+	/**
+	 * Verify no-cache creation reaches the raw cookie writer.
+	 */
+	public function test_set_nocache_cookie_parameters(): void {
+		$this->assertTrue( Vary_Cache::set_nocache_for_user(), 'Result was not true' );
+		$this->assertTrue( Vary_Cache::is_user_in_nocache(), 'Did not switch on nocache mode' );
+		$this->record_did_send_headers();
+		$before = time();
+		do_action( 'send_headers' );
+		$this->assertSame( [ [ false, true ] ], $this->did_send_headers_calls, 'Only the cookie should be sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertTrue( $raw );
+		$this->assertSame( Vary_Cache::COOKIE_NOCACHE, $name );
+		$this->assertSame( 1, $value );
+		$this->assertGreaterThanOrEqual( $before + MONTH_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() + MONTH_IN_SECONDS, $expiry );
+		$this->assertSame( COOKIEPATH, $path );
+		$this->assertSame( (string) COOKIE_DOMAIN, $domain );
+	}
+
+	/**
+	 * Verify that removing no-cache expires the existing cookie.
+	 */
+	public function test_remove_nocache_expires_existing_cookie(): void {
+		$path_filter   = static function () {
+			return '/segmentation/';
+		};
+		$domain_filter = static function () {
+			return 'cookies.example.org';
+		};
+		add_filter( 'vip_vary_cache_cookie_path', $path_filter );
+		add_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+
+		$_COOKIE[ Vary_Cache::COOKIE_NOCACHE ] = '1';
+		Vary_Cache::parse_cookies();
+		$this->assertTrue( Vary_Cache::is_user_in_nocache(), 'Did not parse nocache mode' );
+		$this->assertTrue( Vary_Cache::remove_nocache_for_user(), 'Result was not true' );
+		$this->assertFalse( Vary_Cache::is_user_in_nocache(), 'Did not switch off nocache mode' );
+		$this->record_did_send_headers();
+		$before = time();
+
+		try {
+			do_action( 'send_headers' );
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_path', $path_filter );
+			remove_filter( 'vip_vary_cache_cookie_domain', $domain_filter );
+		}
+
+		$this->assertSame( [ [ false, true ] ], $this->did_send_headers_calls, 'Only the cookie should be sent' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		[ $raw, $name, $value, $expiry, $path, $domain ] = Cookie_Recorder::$calls[0];
+		$this->assertFalse( $raw );
+		$this->assertSame( Vary_Cache::COOKIE_NOCACHE, $name );
+		$this->assertSame( '', $value );
+		$this->assertGreaterThanOrEqual( $before - HOUR_IN_SECONDS, $expiry );
+		$this->assertLessThanOrEqual( time() - HOUR_IN_SECONDS, $expiry );
+		$this->assertSame( '/segmentation/', $path );
+		$this->assertSame( 'cookies.example.org', $domain );
+	}
+
+	public function get_test_data__remove_nocache_without_existing_cookie(): array {
+		return [
+			'without-groups' => [ false, [] ],
+			'with-group'     => [ true, [ [ true, false ] ] ],
+		];
+	}
+
+	/**
+	 * Verify that removing no-cache does not set a cookie when none exists.
+	 *
+	 * @dataProvider get_test_data__remove_nocache_without_existing_cookie
+	 */
+	public function test_remove_nocache_without_existing_cookie_does_not_set_cookie( bool $register_group, array $expected_calls ): void {
+		$_COOKIE = [];
+
+		if ( $register_group ) {
+			Vary_Cache::register_group( 'dev-group' );
+		}
+
+		$this->assertTrue( Vary_Cache::remove_nocache_for_user(), 'Result was not true' );
+		$this->record_did_send_headers();
+
+		do_action( 'send_headers' );
+
+		$this->assertSame( $expected_calls, $this->did_send_headers_calls, 'Unexpected vip_vary_cache_did_send_headers calls' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+	}
+
+	/**
+	 * Cover plain HTTP, HTTPS, HTTPS on a site with an http:// home URL, and a site that turns Secure off.
+	 */
+	public function get_cookie_secure_cases(): array {
+		return [
+			'http'                 => [ false, 'https://example.org', null, false ],
+			'https'                => [ true, 'https://example.org', null, true ],
+			'https-with-http-home' => [ true, 'http://example.org', null, false ],
+			'https-filtered-off'   => [ true, 'https://example.org', false, false ],
+		];
+	}
+
+	/**
+	 * Verify cookies are cleared with the attributes they were set with, and Secure follows the request and home URL schemes.
+	 *
+	 * @dataProvider get_cookie_secure_cases
+	 */
+	public function test_cookie_attributes_match_on_set_and_clear( bool $https, string $home, ?bool $filtered, bool $expected_secure ): void {
+		$original_https = $_SERVER['HTTPS'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		if ( $https ) {
+			$_SERVER['HTTPS'] = 'on';
+		} else {
+			unset( $_SERVER['HTTPS'] );
+		}
+
+		$filtered_names = [];
+		$secure_filter  = static function ( $secure, $name ) use ( $filtered, &$filtered_names ) {
+			$filtered_names[] = $name;
+			return $filtered ?? $secure;
+		};
+		add_filter( 'vip_vary_cache_cookie_secure', $secure_filter, 10, 2 );
+		$home_filter = static function () use ( $home ) {
+			return $home;
+		};
+		add_filter( 'pre_option_home', $home_filter );
+
+		try {
+			Vary_Cache::register_group( 'dev-group' );
+			Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+			Vary_Cache::set_nocache_for_user();
+			do_action( 'send_headers' );
+			$set_calls = Cookie_Recorder::$calls;
+
+			Vary_Cache::unload();
+			Vary_Cache::load();
+			Cookie_Recorder::$calls = [];
+
+			$_COOKIE[ Vary_Cache::COOKIE_SEGMENT ] = 'vc-v1__dev-group_--_yep';
+			$_COOKIE[ Vary_Cache::COOKIE_NOCACHE ] = '1';
+			Vary_Cache::register_group( 'dev-group' );
+			Vary_Cache::parse_cookies();
+			Vary_Cache::set_group_for_user( 'dev-group', '' );
+			Vary_Cache::remove_nocache_for_user();
+			do_action( 'send_headers' );
+			$clear_calls = Cookie_Recorder::$calls;
+		} finally {
+			remove_filter( 'vip_vary_cache_cookie_secure', $secure_filter, 10 );
+			remove_filter( 'pre_option_home', $home_filter );
+			if ( null === $original_https ) {
+				unset( $_SERVER['HTTPS'] );
+			} else {
+				$_SERVER['HTTPS'] = $original_https;
+			}
+		}
+
+		$attributes_by_name = static function ( array $calls ): array {
+			$attributes = [];
+			foreach ( $calls as [ , $name, , , $path, $domain, $secure, $httponly ] ) {
+				$attributes[ $name ] = [ $path, $domain, $secure, $httponly ];
+			}
+			return $attributes;
+		};
+		$expected           = [ COOKIEPATH, (string) COOKIE_DOMAIN, $expected_secure, false ];
+		$expected_by_name   = [
+			Vary_Cache::COOKIE_SEGMENT => $expected,
+			Vary_Cache::COOKIE_NOCACHE => $expected,
+		];
+
+		$this->assertSame( $expected_by_name, $attributes_by_name( $set_calls ), 'Cookies were set with unexpected attributes' );
+		$this->assertSame( $expected_by_name, $attributes_by_name( $clear_calls ), 'Cookies were cleared with unexpected attributes' );
+		$this->assertSame( [ Vary_Cache::COOKIE_SEGMENT, Vary_Cache::COOKIE_NOCACHE, Vary_Cache::COOKIE_SEGMENT, Vary_Cache::COOKIE_NOCACHE ], $filtered_names );
 	}
 
 	/**
@@ -414,43 +919,46 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
 	}
 
-	public function test__set_group_for_user__did_send_headers() {
+	public function get_test_data__did_send_headers() {
+		return [
+			'set_group_for_user'      => [ fn() => Vary_Cache::set_group_for_user( 'group', 'segment' ) ],
+			'set_nocache_for_user'    => [ fn() => Vary_Cache::set_nocache_for_user() ],
+			'remove_nocache_for_user' => [ fn() => Vary_Cache::remove_nocache_for_user() ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_test_data__did_send_headers
+	 */
+	public function test__did_send_headers( callable $set_after_headers ) {
 		do_action( 'send_headers' );
 
-		$expected_error_code = 'did_send_headers';
-
-		$actual_result = Vary_Cache::set_group_for_user( 'group', 'segment' );
+		$actual_result = $set_after_headers();
 
 		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-
-		$actual_error_code = $actual_result->get_error_code();
-		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
+		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
 	}
 
 	public function test__enable_encryption_invalid() {
-		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
-		$this->expectError();
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		$this->assert_enable_encryption_throws_error();
 	}
 
 	public function test__enable_encryption_invalid_empty_constants() {
-		$this->markTestSkipped( 'Skip for now until PHPUnit is updated in Travis' );
-		$this->expectError();
-
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '' );
 		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '' );
 
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		$this->assert_enable_encryption_throws_error();
 	}
 
-	public function test__enable_encryption_true_valid() {
-		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', 'abc' );
-		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', '123' );
+	private function assert_enable_encryption_throws_error(): void {
+		try {
+			Vary_Cache::enable_encryption();
+			$this->fail( 'Expected enable_encryption() to throw an Error' );
+		} catch ( \Error $e ) {
+			$this->assertStringContainsString( 'Cannot enable encryption', $e->getMessage() );
+		}
 
-		$actual_result = Vary_Cache::enable_encryption();
-		$this->assertNull( $actual_result );
+		$this->assertFalse( Vary_Cache::is_encryption_enabled() );
 	}
 
 	public function get_test_data__validate_cookie_value_invalid() {
@@ -474,7 +982,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__validate_cookie_value_invalid
 	 */
 	public function test__validate_cookie_values_invalid( $value, $expected_error_code ) {
-		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
+		$get_validate_cookie_value_method = get_class_method_as_public( Vary_Cache::class, 'validate_cookie_value' );
 
 		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
 			$value,
@@ -484,26 +992,6 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 		$actual_error_code = $actual_result->get_error_code();
 		$this->assertEquals( $expected_error_code, $actual_error_code, 'Incorrect error code' );
-	}
-
-	public function test__validate_cookie_value_valid() {
-		$get_validate_cookie_value_method = self::get_vary_cache_method( 'validate_cookie_value' );
-
-		$actual_result = $get_validate_cookie_value_method->invokeArgs(null, [
-			'dev-group',
-		] );
-
-		$this->assertTrue( $actual_result );
-	}
-
-	public function test__send_vary_headers__sent_for_group() {
-		Vary_Cache::register_group( 'dev-group' );
-
-		do_action( 'send_headers' );
-
-		$headers = headers_list();
-		self::assertIsArray( $headers );
-		self::assertContains( 'Vary: X-VIP-Go-Segmentation', $headers, '', true );
 	}
 
 	public function test__send_vary_headers__dont_override_headers() {
@@ -542,65 +1030,121 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		self::assertNotContains( 'Vary: X-VIP-Go-Auth', $headers, 'Response should not include Vary: X-VIP-Go-Auth header', true );
 	}
 
-	public function test__set_nocache_for_user__did_send_headers() {
-		do_action( 'send_headers' );
+	/**
+	 * Run the filter WP_REST_Server::serve_request() applies before output; REST requests never fire `send_headers`.
+	 *
+	 * The REST request always says POST, as a `_method` override can make it; only the HTTP method should matter.
+	 */
+	private function serve_rest_request( string $http_method, bool $served ) {
+		$original_method           = $_SERVER['REQUEST_METHOD'] ?? null; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- restored as is
+		$_SERVER['REQUEST_METHOD'] = $http_method;
 
-		$actual_result = Vary_Cache::set_nocache_for_user();
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
+		try {
+			return apply_filters( 'rest_pre_serve_request', $served, new \WP_REST_Response(), new \WP_REST_Request( 'POST' ), new \WP_REST_Server() );
+		} finally {
+			if ( null === $original_method ) {
+				unset( $_SERVER['REQUEST_METHOD'] );
+			} else {
+				$_SERVER['REQUEST_METHOD'] = $original_method;
+			}
+		}
 	}
 
-	public function test__set_nocache_for_user() {
-		$actual_result = Vary_Cache::set_nocache_for_user();
-
-		$this->assertTrue( $actual_result, 'Result was not true' );
-
-		$this->assertTrue( self::get_vary_cache_property( 'is_user_in_nocache' ), 'Did not switch on nocache mode' );
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
+	private function assert_rest_sent_nothing(): void {
+		$this->assertSame( [], $this->did_send_headers_calls, 'Headers were sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+		$this->assertEmpty( preg_grep( '/^Vary:/i', headers_list() ), 'A Vary header was sent' );
 	}
 
-	public function test__remove_nocache_for_user__did_send_headers() {
-		do_action( 'send_headers' );
-
-		$actual_result = Vary_Cache::remove_nocache_for_user();
-
-		$this->assertWPError( $actual_result, 'Not WP_Error object' );
-		$this->assertEquals( 'did_send_headers', $actual_result->get_error_code(), 'Incorrect error code' );
+	public function get_test_data__rest_pending_write(): array {
+		return [
+			'group'   => [
+				function () {
+					Vary_Cache::register_group( 'dev-group' );
+					return Vary_Cache::set_group_for_user( 'dev-group', 'yep' );
+				},
+				[ [ true, true ] ],
+				'vip-go-seg',
+			],
+			'nocache' => [ fn() => Vary_Cache::set_nocache_for_user(), [ [ false, true ] ], 'vip-go-cb' ],
+		];
 	}
 
-	public function test__remove_nocache_for_user() {
-		$actual_result = Vary_Cache::remove_nocache_for_user();
+	/**
+	 * @dataProvider get_test_data__rest_pending_write
+	 */
+	public function test_rest_request_sends_pending_write( callable $write, array $expected_calls, string $expected_cookie ): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		$this->assertTrue( $write(), 'Write failed' );
+		$this->record_did_send_headers();
 
-		$this->assertTrue( $actual_result, 'Result was not true' );
+		$this->assertFalse( $this->serve_rest_request( 'POST', false ), 'Filter value was changed' );
 
-		$this->assertFalse( self::get_vary_cache_property( 'is_user_in_nocache' ), 'Did not switch off nocache mode' );
-		$this->assertTrue( self::get_vary_cache_property( 'should_update_nocache_cookie' ), 'Did not update nocache cookie' );
-
-		// Verify cookie actions were taken
-		add_action( 'vip_vary_cache_did_send_headers', function ( $sent_vary, $sent_cookie ) {
-			$this->assertFalse( $sent_vary, 'Vary should not be sent' );
-			$this->assertTrue( $sent_cookie, 'Cookie was not sent' );
-		}, 10, 2 );
-
-		// Trigger headers to verify assertions
-		do_action( 'send_headers' );
-
-		$this->assertEquals( 1, did_action( 'vip_vary_cache_did_send_headers' ) );
+		$this->assertSame( $expected_calls, $this->did_send_headers_calls, 'Unexpected vip_vary_cache_did_send_headers calls' );
+		$this->assertCount( 1, Cookie_Recorder::$calls );
+		$this->assertSame( $expected_cookie, Cookie_Recorder::$calls[0][1] );
 	}
 
+	public function get_test_data__rest_skipped_method(): array {
+		return [
+			'GET'     => [ 'GET', [ 'Vary: X-VIP-Go-Segmentation' ] ],
+			'HEAD'    => [ 'HEAD', [ 'Vary: X-VIP-Go-Segmentation' ] ],
+			'OPTIONS' => [ 'OPTIONS', [] ],
+		];
+	}
 
+	/**
+	 * Writes on requests the cache stores, e.g. while rendering post content, must not make REST responses uncacheable.
+	 * The responses the cache stores still vary on the groups.
+	 *
+	 * @dataProvider get_test_data__rest_skipped_method
+	 */
+	public function test_rest_skipped_method_does_not_send_pending_write( string $http_method, array $expected_vary ): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Write failed' );
+		$this->record_did_send_headers();
+
+		$this->assertFalse( $this->serve_rest_request( $http_method, false ), 'Filter value was changed' );
+
+		$this->assertSame( [], $this->did_send_headers_calls, 'Headers were sent' );
+		$this->assertEmpty( Cookie_Recorder::$calls, 'A cookie was sent' );
+		$this->assertSame( $expected_vary, array_values( preg_grep( '/^Vary:/i', headers_list() ) ) );
+	}
+
+	/**
+	 * Writes made before the REST request started, e.g. on `init` on every request, have never been sent on REST requests.
+	 */
+	public function test_rest_request_does_not_send_write_made_before_it(): void {
+		Vary_Cache::register_group( 'dev-group' );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yep' ), 'Write failed' );
+		$this->assertTrue( Vary_Cache::set_nocache_for_user(), 'Nocache write failed' );
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		$this->record_did_send_headers();
+
+		$this->assertFalse( $this->serve_rest_request( 'POST', false ), 'Filter value was changed' );
+
+		$this->assert_rest_sent_nothing();
+	}
+
+	public function test_rest_request_without_pending_write_sends_nothing(): void {
+		Constant_Mocker::define( 'REST_REQUEST', true );
+		Vary_Cache::register_group( 'dev-group' );
+		$this->record_did_send_headers();
+
+		$this->assertTrue( $this->serve_rest_request( 'POST', true ), 'Filter value was changed' );
+
+		$this->assert_rest_sent_nothing();
+	}
+
+	public function test_unload_removes_rest_hook(): void {
+		$callback = [ Vary_Cache::class, 'send_rest_headers' ];
+		$this->assertSame( PHP_INT_MAX, has_filter( 'rest_pre_serve_request', $callback ) );
+
+		Vary_Cache::unload();
+
+		$this->assertFalse( has_filter( 'rest_pre_serve_request', $callback ) );
+	}
 
 	public function get_test_data__stringify_groups() {
 		return [
@@ -638,7 +1182,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	 * @dataProvider get_test_data__stringify_groups
 	 */
 	public function test__stringify_groups_valid( $groups, $group_values, $expected_result ) {
-		$get_stringify_groups_method = self::get_vary_cache_method( 'stringify_groups' );
+		$get_stringify_groups_method = get_class_method_as_public( Vary_Cache::class, 'stringify_groups' );
 		Vary_Cache::register_groups( $groups );
 		foreach ( $group_values as $key => $value ) {
 			Vary_Cache::set_group_for_user( $key, $value );
@@ -651,7 +1195,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 
 	public function get_test_data__parse_group_cookies() {
 		return [
-			'values_regular_group'             => [
+			'values_regular_group'          => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__design-group_--_no---__dev-group_--_yes',
@@ -662,7 +1206,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 					'dev-group'    => 'yes',
 				],
 			],
-			'values_encrypted_group_header'    => [
+			'values_encrypted_group_header' => [
 				[
 					'key'    => 'abc',
 					'iv'     => '1231231231231234',
@@ -677,24 +1221,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 					'dev-group'    => 'yes',
 				],
 			],
-			'values_encrypted_group_no_header' => [
-				[
-					'key'    => 'abc',
-					'iv'     => '1231231231231234',
-					'siteid' => 123,
-				],
-				[
-					'vip-go-auth' => '123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I',
-				],
-				[
-					'HTTP_COOKIE' => 'vip-go-auth=123.VyLXNl8VFvGE4+ZyW1jpbS677cXNgN4owowO0jIOq48LS3ImPe4l2RPUSd3YuD8bLS4UtV4Z6fxFW/E22qvKXaQwPI3fEnZghINwbwaqKhV0jqdovLCVfEIu9SAA4v6I;',
-				],
-				[
-					'design-group' => 'no',
-					'dev-group'    => 'yes',
-				],
-			],
-			'values_regular_nogroup'           => [
+			'values_regular_nogroup'        => [
 				[],
 				[
 					'vip-go-seg' => 'vc-v1__',
@@ -702,7 +1229,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 				[],
 				[],
 			],
-			'values_encrypted_nogroup'         => [
+			'values_encrypted_nogroup'      => [
 				[
 					'key'    => 'abc',
 					'iv'     => '1231231231231234',
@@ -726,7 +1253,7 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 	public function test__parse_group_cookie_valid( $secrets, $initial_cookie, $headers, $expected_result ) {
 		$_SERVER                       = array_merge( $_SERVER, $headers );
 		$_COOKIE                       = $initial_cookie;
-		$get_parse_group_cookie_method = self::get_vary_cache_method( 'parse_group_cookie' );
+		$get_parse_group_cookie_method = get_class_method_as_public( Vary_Cache::class, 'parse_group_cookie' );
 		if ( ! empty( $secrets ) ) {
 			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', $secrets['key'] );
 			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', $secrets['iv'] );
@@ -735,6 +1262,136 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		}
 		$get_parse_group_cookie_method->invokeArgs( null, [] );
 		$this->assertEquals( $expected_result, Vary_Cache::get_groups() );
+	}
+
+	public function get_test_data__parse_auth_cookie_without_header(): array {
+		// In the payload, `%d` is replaced with the expiry: now + the given offset. In the cookie, `%s` is the encrypted payload.
+		return [
+			'unexpired'          => [
+				'42|vc-v1__design-group_--_no---__dev-group_--_yes|%d',
+				HOUR_IN_SECONDS,
+				[
+					'design-group' => 'no',
+					'dev-group'    => 'yes',
+				],
+			],
+			'expired'            => [ '42|vc-v1__dev-group_--_yes|%d', -1, [] ],
+			'expires-now'        => [ '42|vc-v1__dev-group_--_yes|%d', 0, [] ],
+			'missing-expiry'     => [ '42|vc-v1__dev-group_--_yes', HOUR_IN_SECONDS, [] ],
+			'non-numeric-expiry' => [ '42|vc-v1__dev-group_--_yes|never', HOUR_IN_SECONDS, [] ],
+			'extra-part'         => [ '42|vc-v1__dev-group_--_yes|%d|42', HOUR_IN_SECONDS, [] ],
+			'double-dot'         => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123..%s' ],
+			'stray-space'        => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '123. %s' ],
+			'other-app-id'       => [ '42|vc-v1__dev-group_--_yes|%d', HOUR_IN_SECONDS, [], '456.%s' ],
+		];
+	}
+
+	/**
+	 * Verify that decrypting the auth cookie in PHP, when the cache layer didn't, applies the cache layer's checks.
+	 *
+	 * @dataProvider get_test_data__parse_auth_cookie_without_header
+	 */
+	public function test__parse_auth_cookie_without_header( string $payload_format, int $expires_in, array $expected_groups, string $cookie_format = '123.%s' ): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+		Vary_Cache::enable_encryption();
+
+		$payload     = sprintf( $payload_format, time() + $expires_in );
+		$auth_cookie = sprintf( $cookie_format, openssl_encrypt( $payload, 'aes-128-cbc', '0123456789abcdef', 0, 'fedcba9876543210' ) );
+		$_COOKIE     = [ Vary_Cache::COOKIE_AUTH => $auth_cookie ];
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+		$_SERVER['HTTP_COOKIE'] = Vary_Cache::COOKIE_AUTH . '=' . $auth_cookie;
+
+		Vary_Cache::parse_cookies();
+
+		$this->assertSame( $expected_groups, Vary_Cache::get_groups() );
+		// A rejected cookie must still count as present, so removing the user's last group expires it.
+		$this->assertTrue( get_class_method_as_public( Vary_Cache::class, 'has_group_cookie' )->invoke( null ) );
+	}
+
+	public function get_test_data__encrypted_segment_cookie(): array {
+		return [
+			'no-auth'                        => [ [], [] ],
+			'empty-auth-cookie'              => [ [ 'vip-go-auth' => '' ], [ 'HTTP_COOKIE' => 'vip-go-auth=' ] ],
+			'auth-cookie-without-raw-header' => [ [ 'vip-go-auth' => '123.value' ], [] ],
+		];
+	}
+
+	/**
+	 * Verify that encrypted requests ignore the plaintext segment cookie when no auth value is read.
+	 *
+	 * @dataProvider get_test_data__encrypted_segment_cookie
+	 */
+	public function test_encrypted_parse_ignores_segment_cookie( array $auth_cookie, array $server ): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+
+		$this->start_encrypted_request( [ Vary_Cache::COOKIE_SEGMENT => 'vc-v1__dev-group_--_yes' ] + $auth_cookie, $server );
+
+		$this->assertSame( [ 'dev-group' => '' ], Vary_Cache::get_groups() );
+	}
+
+	/**
+	 * Verify that a group cleared from the auth cookie stays cleared when a plaintext segment cookie is left over.
+	 */
+	public function test_cleared_encrypted_group_stays_cleared_with_segment_cookie(): void {
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+		Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+		$cookies = [ Vary_Cache::COOKIE_SEGMENT => 'vc-v1__dev-group_--_yes' ];
+
+		// Request 1: the user is assigned to the group.
+		$this->start_encrypted_request( $cookies );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', 'yes' ) );
+		do_action( 'send_headers' );
+		$cookies = $this->apply_recorded_cookies( $cookies );
+		$this->assertStringStartsWith( '123.', $cookies[ Vary_Cache::COOKIE_AUTH ] ?? '' );
+
+		// Request 2: the edge supplies the decrypted auth cookie, and the user leaves the group.
+		$auth_header = get_class_method_as_public( Vary_Cache::class, 'decrypt_cookie_value' )->invoke( null, substr( $cookies[ Vary_Cache::COOKIE_AUTH ], 4 ) );
+		$this->start_encrypted_request( $cookies, [ Vary_Cache::HEADER_AUTH => $auth_header ] );
+		$this->assertTrue( Vary_Cache::is_user_in_group_segment( 'dev-group', 'yes' ) );
+		$this->assertTrue( Vary_Cache::set_group_for_user( 'dev-group', '' ) );
+		do_action( 'send_headers' );
+		$cookies = $this->apply_recorded_cookies( $cookies );
+		$this->assertArrayNotHasKey( Vary_Cache::COOKIE_AUTH, $cookies );
+
+		// Request 3: the remaining cookies must not restore the group.
+		$this->start_encrypted_request( $cookies );
+
+		$this->assertFalse( Vary_Cache::is_user_in_group( 'dev-group' ), 'The cleared group was restored' );
+	}
+
+	/**
+	 * Reset Vary_Cache and parse a new encrypted request with the given cookies and server variables.
+	 */
+	private function start_encrypted_request( array $cookies, array $server = [] ): void {
+		Vary_Cache::unload();
+		Vary_Cache::load();
+		Cookie_Recorder::$calls = [];
+
+		$_COOKIE = $cookies;
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ], $_SERVER['HTTP_COOKIE'] );
+		$_SERVER = array_merge( $_SERVER, $server );
+
+		Vary_Cache::enable_encryption();
+		Vary_Cache::register_group( 'dev-group' );
+		Vary_Cache::parse_cookies();
+	}
+
+	/**
+	 * Apply the recorded Set-Cookie calls to a browser cookie jar.
+	 */
+	private function apply_recorded_cookies( array $cookies ): array {
+		foreach ( Cookie_Recorder::$calls as [ , $name, $value, $expiry ] ) {
+			if ( $expiry < time() ) {
+				unset( $cookies[ $name ] );
+			} else {
+				$cookies[ $name ] = $value;
+			}
+		}
+
+		return $cookies;
 	}
 
 	/**
@@ -749,5 +1406,67 @@ class Vary_Cache_Test extends WP_UnitTestCase {
 		} finally {
 			$_COOKIE = [];
 		}
+	}
+
+	public function get_test_data__parse_group_cookie_unusual_cookie_header(): array {
+		// $_COOKIE as PHP builds it from the raw header. In the raw header, `%s` is an encrypted `vc-v1__dev-group_--_yes`.
+		return [
+			'plain-array-only'          => [ false, [ 'vip-go-seg' => [ 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[]=vc-v1__dev-group_--_yes', [] ],
+			'plain-keyed-array-only'    => [ false, [ 'vip-go-seg' => [ 'a' => 'vc-v1__dev-group_--_yes' ] ], 'vip-go-seg[a]=vc-v1__dev-group_--_yes', [] ],
+			'plain-real-then-array'     => [ false, [ 'vip-go-seg' => [ 'x' ] ], 'vip-go-seg=vc-v1__dev-group_--_yes; vip-go-seg[]=x', [ 'dev-group' => 'yes' ] ],
+			'plain-array-then-real'     => [ false, [ 'vip-go-seg' => [ 'x' ] ], 'vip-go-seg[]=x; vip-go-seg=vc-v1__dev-group_--_yes', [ 'dev-group' => 'yes' ] ],
+			'encrypted-array-only'      => [ true, [ 'vip-go-auth' => [ 'x' ] ], 'vip-go-auth[]=x', [] ],
+			'encrypted-array-then-real' => [ true, [ 'vip-go-auth' => [ 'x' ] ], 'vip-go-auth[]=x; vip-go-auth=123.%s', [ 'dev-group' => 'yes' ] ],
+			'encrypted-without-prefix'  => [ true, [ 'vip-go-auth' => 'garbage' ], 'vip-go-auth=garbage', [] ],
+			'encrypted-without-space'   => [
+				true,
+				[
+					'a'           => 'b',
+					'vip-go-auth' => 'encrypted',
+				],
+				'a=b;vip-go-auth=123.%s',
+				[ 'dev-group' => 'yes' ],
+			],
+			'encrypted-after-valueless' => [
+				true,
+				[
+					'flag'        => '',
+					'vip-go-auth' => 'encrypted',
+				],
+				'flag; vip-go-auth=123.%s',
+				[ 'dev-group' => 'yes' ],
+			],
+		];
+	}
+
+	/**
+	 * Parsing reads the cookie the cache layer would see, without warnings, even when PHP's $_COOKIE disagrees.
+	 *
+	 * @dataProvider get_test_data__parse_group_cookie_unusual_cookie_header
+	 */
+	public function test_parse_group_cookie_unusual_cookie_header( bool $encrypted, array $cookies, string $raw_cookie, array $expected_groups ): void {
+		unset( $_SERVER[ Vary_Cache::HEADER_AUTH ] );
+
+		if ( $encrypted ) {
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_KEY', '0123456789abcdef' );
+			Constant_Mocker::define( 'VIP_GO_AUTH_COOKIE_IV', 'fedcba9876543210' );
+			Constant_Mocker::define( 'VIP_GO_APP_ID', 123 );
+			Vary_Cache::enable_encryption();
+
+			$encrypt_method = get_class_method_as_public( Vary_Cache::class, 'encrypt_cookie_value' );
+			$raw_cookie     = sprintf( $raw_cookie, $encrypt_method->invoke( null, 'vc-v1__dev-group_--_yes' ) );
+		}
+
+		$_COOKIE                = $cookies;
+		$_SERVER['HTTP_COOKIE'] = $raw_cookie;
+
+		try {
+			[ , $errors ] = $this->capture_errors( [ Vary_Cache::class, 'parse_cookies' ], E_ALL );
+		} finally {
+			unset( $_SERVER['HTTP_COOKIE'] );
+		}
+
+		$this->assertSame( [], $errors, 'Parsing raised an error' );
+		$this->assertSame( $expected_groups, Vary_Cache::get_groups() );
 	}
 }

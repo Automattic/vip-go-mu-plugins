@@ -35,11 +35,6 @@ class Versioning {
 	public $elastic_search_indexables;
 
 	/**
-	 * Injectable instance of \Automattic\VIP\Utils\Alerts
-	 */
-	public $alerts;
-
-	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
 	private $current_index_version_by_type = array();
@@ -71,7 +66,6 @@ class Versioning {
 
 		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
-		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
 	}
 
 	public function action__elasticpress_loaded() {
@@ -128,7 +122,7 @@ class Versioning {
 	 * Get the current index version number
 	 *
 	 * The current index number is the index that should be used for requests. It is different than the active index, which is the index
-	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indexs, such as
+	 * that has been designated as the default for all requests. The current index can be overridden to make requests to other indices, such as
 	 * for indexing content on them while they are still inactive
 	 *
 	 * This defaults to the active index, but can be overridden by calling Versioning::set_current_version_number()
@@ -292,12 +286,17 @@ class Versioning {
 	 * Given a version number, normalize it by translating any aliases into actual version numbers
 	 *
 	 * @param Indexable $indexable Indexable
-	 * @param int|string $version_number The version number to normalize, can be an id or alias like "next" or "previous"
+	 * @param mixed $version_number The version number to normalize, can be an id or alias like "next" or "previous"
 	 * @return int|WP_Error $version_number Normalized version number
 	 */
 	public function normalize_version_number( Indexable $indexable, $version_number ) {
 		if ( is_int( $version_number ) ) {
 			return $version_number;
+		}
+
+		// Request input such as ?vip-search-post-version[]=1 arrives as an array, which trim() can't take
+		if ( ! is_scalar( $version_number ) ) {
+			return new WP_Error( 'invalid-version-number', 'Version number must be an integer or a string' );
 		}
 
 		$version_number = trim( $version_number );
@@ -764,6 +763,9 @@ class Versioning {
 	 */
 	public function action__shutdown() {
 		$this->replicate_queued_objects_to_other_versions( $this->queued_objects_by_type_and_version );
+
+		// Also called before shutdown (e.g. between pages of a large term requeue), so don't replicate these again
+		$this->queued_objects_by_type_and_version = array();
 	}
 
 	/**
@@ -795,8 +797,9 @@ class Versioning {
 
 			$active_version_number = $this->get_active_version_number( $indexable );
 
-			// Is there an active version and no changes to the active version? If so, we skip - we don't keep replicate non-active indexes to others
-			if ( ! is_wp_error( $active_version_number ) && ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) ) {
+			// Without an active version there's nothing to replicate from. Otherwise, skip when the active version had no
+			// changes - we don't replicate non-active indexes to others
+			if ( is_wp_error( $active_version_number ) || empty( $objects_by_version[ $active_version_number ] ) ) {
 				continue;
 			}
 
@@ -958,19 +961,16 @@ class Versioning {
 			return;
 		}
 
-		$indicies = $this->get_all_accesible_indicies();
-		if ( is_wp_error( $indicies ) ) {
+		$indices = $this->get_all_accessible_indices();
+		if ( is_wp_error( $indices ) ) {
 			return;
 		}
 
 		foreach ( $indexables_to_heal as $indexable ) {
-			$this->alert_for_index_self_healing( $indexable->slug );
-
-			$versions = $this->reconstruct_versions_for_indexable( $indicies, $indexable );
+			$versions = $this->reconstruct_versions_for_indexable( $indices, $indexable );
 
 			if ( empty( $versions ) ) {
 				$this->mark_self_heal_ongoing( true );
-				$this->alert_for_index_self_healing_failed( $indexable->slug );
 			} else {
 				$this->update_versions( $indexable, $versions );
 
@@ -990,37 +990,7 @@ class Versioning {
 		}
 	}
 
-	public function alert_for_index_self_healing( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
-	}
-
-	public function alert_for_index_self_healing_failed( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s vip-search versioning FAILED to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
-	}
-
-	public function get_all_accesible_indicies() {
+	public function get_all_accessible_indices() {
 		$response = $this->elastic_search_instance->remote_request( '_cat/indices?format=json' );
 
 		if ( is_wp_error( $response ) ) {
@@ -1031,8 +1001,8 @@ class Versioning {
 
 		if ( $response_code >= 400 ) {
 			return new \WP_Error(
-				'failed-to-fetch-indicies',
-				sprintf( 'Request failed to fetch indicies with status %s', $response_code )
+				'failed-to-fetch-indices',
+				sprintf( 'Request failed to fetch indices with status %s', $response_code )
 			);
 		}
 
@@ -1053,14 +1023,14 @@ class Versioning {
 		return $found_indices;
 	}
 
-	public function reconstruct_versions_for_indexable( $indicies, $indexable ) {
-		if ( ! is_array( $indicies ) ) {
+	public function reconstruct_versions_for_indexable( $indices, $indexable ) {
+		if ( ! is_array( $indices ) ) {
 			return [];
 		}
 
 		$versions = [];
 
-		foreach ( $indicies as $index ) {
+		foreach ( $indices as $index ) {
 			$index_info = $this->parse_index_name( $index );
 
 			if ( is_wp_error( $index_info ) ) {

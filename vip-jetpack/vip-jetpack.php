@@ -316,6 +316,11 @@ function vip_remove_jetpack_search_menu_page() {
 add_action( 'admin_menu', 'vip_remove_jetpack_search_menu_page', PHP_INT_MAX );
 
 /**
+ * Hide the Jetpack Backup dashboard and menu item (added in Jetpack 16.3).
+ */
+add_filter( 'jetpack_backup_dashboard_enabled', '__return_false' );
+
+/**
  * Account for X-Mobile-Class header in jetpack_is_mobile()
  *
  * @param bool|string $matches Boolean if current UA matches $kind or not. If

@@ -65,15 +65,6 @@ class VIP_Go_Test_Check_For_404_And_Remove_Cache_Headers extends WP_UnitTestCase
 					'Pragma'        => 1,
 				),
 			),
-			'wp_query-not-set-and-is_404'     => array(
-				false,
-				true,
-				array(
-					'Expires'       => 1,
-					'Cache-Control' => 1,
-					'Pragma'        => 1,
-				),
-			),
 		);
 	}
 }

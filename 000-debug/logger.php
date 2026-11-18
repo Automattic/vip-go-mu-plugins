@@ -19,7 +19,7 @@
  *
  * The first call of l() will print an extra line containing a random ID & PID
  * and the script name or URL. The ID prefixes every l() log entry thereafter.
- * The extra line and ID will help you to indentify and correlate log entries.
+ * The extra line and ID will help you to identify and correlate log entries.
  *
  * Example:
  *  wpsh> l('yo')

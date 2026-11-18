@@ -403,20 +403,15 @@ function vip_redirects( $vip_redirects_array = array(), $case_insensitive = fals
 
 	$redirect_url = '';
 
-	// Sanitize the redirects array
-	$vip_redirects_array = array_map( 'untrailingslashit', $vip_redirects_array );
-
+	// Get the current path minus query string and trailing slash
 	// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-	$uri_unslashed = untrailingslashit( $_SERVER['REQUEST_URI'] ?? '' );
+	$parsed_uri_path = untrailingslashit( (string) wp_parse_url( $_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH ) );
 
 	if ( $case_insensitive ) {
 		$vip_redirects_array = array_change_key_case( $vip_redirects_array );
-		$uri_unslashed       = strtolower( $uri_unslashed );
+		$parsed_uri_path     = strtolower( $parsed_uri_path );
 	}
 
-	// Get the current URL minus query string
-	$parsed_uri_path         = wp_parse_url( $uri_unslashed, PHP_URL_PATH );
-	$parsed_uri_path         = $parsed_uri_path ? $parsed_uri_path : '';
 	$parsed_uri_path_slashed = trailingslashit( $parsed_uri_path );
 
 	if ( $parsed_uri_path && array_key_exists( $parsed_uri_path, $vip_redirects_array ) ) {
@@ -461,7 +456,7 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 	foreach ( $vip_redirects_array as $old_path => $new_url ) {
 		if ( substr( $request_uri, 0, strlen( $old_path ) ) == $old_path ) {
 			if ( $append_old_uri ) {
-				$new_url .= str_replace( $old_path, '', $request_uri );
+				$new_url .= substr( $request_uri, strlen( $old_path ) );
 			}
 
 			if ( function_exists( 'wp_redirect' ) ) {
@@ -606,25 +601,19 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		_doing_it_wrong( __FUNCTION__, 'Using a timeout value of over 3 seconds is strongly discouraged because users have to wait for the remote request to finish before the rest of their page loads.', null );
 	}
 
-	$server_up = true;
-	$response  = false;
-	$content   = false;
+	// Stays false when we skip the request
+	$response = false;
+	$content  = false;
 
-	// Check to see if previous attempts have failed
-	if ( false !== wp_cache_get( $disable_get_key, $cache_group ) ) {
-		$server_up = false;
-	} elseif ( false !== wp_cache_get( $old_disable_get_key, $cache_group ) ) {
-		// Legacy
-		$server_up = false;
-	} else {
-		// Otherwise make the remote request
+	// Only make the remote request if no attempt failed in the last 5 minutes
+	if ( false === wp_cache_get( $disable_get_key, $cache_group ) && false === wp_cache_get( $old_disable_get_key, $cache_group ) ) {
 		$http_api_args            = (array) $extra_args['http_api_args'];
 		$http_api_args['timeout'] = $timeout;
 		$response                 = wp_remote_get( $url, $http_api_args );  // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.wp_remote_get_wp_remote_get
 	}
 
 	// Was the request successful?
-	if ( $server_up && ! is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
+	if ( $response && ! is_wp_error( $response ) && 200 == wp_remote_retrieve_response_code( $response ) ) {
 		$content = wp_remote_retrieve_body( $response );
 
 		$cache_header = wp_remote_retrieve_header( $response, 'cache-control' );
@@ -667,24 +656,23 @@ function wpcom_vip_file_get_contents( $url, $timeout = 3, $cache_time = 900, $ex
 		do_action( 'wpcom_vip_remote_request_success', $url, $response );
 	} else {
 		// Okay, it wasn't successful. Perhaps we have a backup result from earlier.
-		// If a remote request failed, log why it did
 		$content = wp_cache_get( $backup_key, $cache_group );
 		if ( ! $content ) {
 			// Legacy
 			$content = wp_cache_get( $old_backup_key, $cache_group );
 		}
 
-		if ( $content ) {
-			_wpcom_log_failed_request( $url, $response );
-		} elseif ( $response ) {
-			// We were unable to fetch any content, so don't try again for another 60 seconds
-			wp_cache_set( $disable_get_key, 1, $cache_group, 60 );
+		if ( $response ) {
+			// The request failed, so don't try again for another 5 minutes, even when serving the backup
+			wp_cache_set( $disable_get_key, 1, $cache_group, 5 * MINUTE_IN_SECONDS );
 
 			// If a remote request failed, log why it did
 			_wpcom_log_failed_request( $url, $response );
 
-			// So we can hook in other places and do stuff
-			do_action( 'wpcom_vip_remote_request_error', $url, $response );
+			if ( ! $content ) {
+				// So we can hook in other places and do stuff
+				do_action( 'wpcom_vip_remote_request_error', $url, $response );
+			}
 		}
 	}
 
@@ -846,7 +834,7 @@ function vip_safe_wp_remote_request( $url, $fallback_value = '', $threshold = 3,
 	$threshold = abs( $threshold );
 
 	// Default max timeout is 5s.
-	// For POST requests for through WP-CLI, this needs to be event higher to makes things like VIP Search commands works more consitently without tinkering.
+	// For POST requests through WP-CLI, this needs to be even higher to make things like VIP Search commands work more consistently without tinkering.
 	// For POST requests for admins, this needs to be a bit higher due to Elasticsearch and other things.
 	$timeout         = (int) $timeout;
 	$is_post_request = 0 === strcasecmp( 'POST', $parsed_args['method'] );
@@ -1066,9 +1054,9 @@ function wpcom_vip_bulk_user_management_whitelist( $users ) {
  * places, such as sidebars.
  *
  * @param string $url The URL that should be embedded
- * @param array $args Addtional arguments and parameters the embed
- * @param int $ttl How long to cache for in seconds; minimum 18000 (5 Hours)
- * @return string
+ * @param array $args Additional arguments and parameters the embed
+ * @param int $ttl How long to cache for in seconds; minimum 18000 (5 Hours). Failures are cached for 5 minutes.
+ * @return string|false The embed HTML, or false on failure
  */
 function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 	// We want a min ttl of 5 hours (1800s).
@@ -1086,12 +1074,14 @@ function wpcom_vip_wp_oembed_get( $url, $args = array(), $ttl = false ) {
 
 	$html = wp_cache_get( $cache_key, 'wpcom_vip_wp_oembed' );
 	if ( false === $html ) {
-		$html = wp_oembed_get( $url, $args );
+		// A cached false reads back as a miss, so store a failure as an empty string, and only for 5 minutes
+		$html = (string) wp_oembed_get( $url, $args );
 		// phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', $ttl );
+		wp_cache_set( $cache_key, $html, 'wpcom_vip_wp_oembed', '' === $html ? 5 * MINUTE_IN_SECONDS : $ttl );
 	}
 
-	return $html;
+	// Failures come back as false, the same as from wp_oembed_get()
+	return '' === $html ? false : $html;
 }
 
 /**

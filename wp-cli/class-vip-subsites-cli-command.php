@@ -20,7 +20,7 @@ class VIP_Subsites_CLI_Command extends \WPCOM_VIP_CLI_Command {
 	 *     wp vip subsites update_wp_blogs 2 www.example.com subsite1
 	 *
 	 * @subcommand update-wp-blogs <blog-id> <domain>
-	 * @sypnosis [--subsite-path=<path>]
+	 * @synopsis [--subsite-path=<path>]
 	 */
 	public function update_wp_blogs( $args, $assoc_args ) {
 		global $wpdb;

@@ -9,57 +9,63 @@ use WP_UnitTestCase;
 use wpdb;
 
 class DB_Helpers_Test extends WP_UnitTestCase {
-	public function setUp(): void {
-		parent::setUp();
-		Constant_Mocker::clear();
-	}
-
-	public function tearDown(): void {
-		Constant_Mocker::clear();
-		parent::tearDown();
-	}
-
-	public function test_define_db_constants__constant_defined(): void {
-		global $wpdb;
-
-		Constant_Mocker::define( 'DB_HOST', 'localhost' );
-		define_db_constants( $wpdb );
-
-		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
-	}
-
-	public function test_define_db_constants__not_hyperdb(): void {
-		$db = false;
-
-		define_db_constants( $db );
-
-		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
-	}
-
-	public function test_define_db_constants__servers_not_array(): void {
-		$db = new class() extends wpdb {
+	/**
+	 * Build a HyperDB-like object without running the wpdb constructor.
+	 *
+	 * @param mixed $hyper_servers
+	 */
+	private static function hyperdb( $hyper_servers ): wpdb {
+		return new class( $hyper_servers ) extends wpdb {
 			public $hyper_servers;
 
-			public function __construct() {
-				$this->hyper_servers = false;
+			public function __construct( $hyper_servers ) {
+				// Do not call parent constructor
+				$this->hyper_servers = $hyper_servers;
 			}
 		};
-
-		define_db_constants( $db );
-
-		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
 	}
 
-	public function test_define_db_constants__db_not_array(): void {
-		$db = new class() extends wpdb {
-			public $hyper_servers;
+	private static function hyper_servers( int $priority ): array {
+		return [
+			'global' => [
+				'write' => [
+					$priority => [
+						[
+							'host'     => 'host',
+							'user'     => 'user',
+							'password' => 'pass',
+							'name'     => 'db',
+							'write'    => $priority,
+						],
+					],
+				],
+			],
+		];
+	}
 
-			public function __construct() {
-				// Do nothing, do not call parent constructor
-				$this->hyper_servers = [ null ];
-			}
-		};
+	public function data_define_db_constants__not_defined(): array {
+		// [ DB_* constant already defined, whether the database object is HyperDB-like, its hyper_servers ]
+		// The object is built in the test: declaring an anonymous class while PHPUnit collects
+		// data sets makes it register this test class twice.
+		return [
+			'DB constant already defined' => [ 'DB_HOST', true, self::hyper_servers( 1 ) ],
+			'not HyperDB'                 => [ null, false, null ],
+			'servers not an array'        => [ null, true, false ],
+			'no global dataset'           => [ null, true, [ null ] ],
+		];
+	}
 
+	/**
+	 * @dataProvider data_define_db_constants__not_defined
+	 *
+	 * @param mixed $hyper_servers
+	 */
+	public function test_define_db_constants__not_defined( ?string $defined_constant, bool $is_hyperdb, $hyper_servers ): void {
+		if ( null !== $defined_constant ) {
+			Constant_Mocker::define( $defined_constant, 'localhost' );
+		}
+
+		$db = $is_hyperdb ? self::hyperdb( $hyper_servers ) : false;
 		define_db_constants( $db );
 
 		self::assertFalse( Constant_Mocker::defined( 'DB_NAME' ) );
@@ -69,53 +75,23 @@ class DB_Helpers_Test extends WP_UnitTestCase {
 	 * @dataProvider data_define_db_constants__inputs
 	 */
 	public function test_define_db_constants__inputs( int $priority ): void {
-		$expected_user = 'user';
-		$expected_pass = 'pass';
-		$expected_host = 'host';
-		$expected_db   = 'db';
-
-		$db = new class( $priority, $expected_user, $expected_pass, $expected_host, $expected_db ) extends wpdb {
-			public $hyper_servers;
-			private int $priority;
-
-			public function __construct( int $priority, string $user, string $pass, string $host, string $db ) {
-				$db_details = [
-					'host'     => $host,
-					'user'     => $user,
-					'password' => $pass,
-					'name'     => $db,
-					'write'    => $priority,
-				];
-				// Do not call parent constructor
-				$this->hyper_servers = [
-					'global' => [
-						'write' => [
-							$priority => [
-								$db_details,
-							],
-						],
-					],
-				];
-			}
-		};
-
-		define_db_constants( $db );
+		define_db_constants( self::hyperdb( self::hyper_servers( $priority ) ) );
 
 		self::assertTrue( Constant_Mocker::defined( 'DB_NAME' ) );
 		self::assertTrue( Constant_Mocker::defined( 'DB_USER' ) );
 		self::assertTrue( Constant_Mocker::defined( 'DB_PASSWORD' ) );
 		self::assertTrue( Constant_Mocker::defined( 'DB_HOST' ) );
 
-		self::assertSame( $expected_db, Constant_Mocker::constant( 'DB_NAME' ) );
-		self::assertSame( $expected_user, Constant_Mocker::constant( 'DB_USER' ) );
-		self::assertSame( $expected_pass, Constant_Mocker::constant( 'DB_PASSWORD' ) );
-		self::assertSame( $expected_host, Constant_Mocker::constant( 'DB_HOST' ) );
+		self::assertSame( 'db', Constant_Mocker::constant( 'DB_NAME' ) );
+		self::assertSame( 'user', Constant_Mocker::constant( 'DB_USER' ) );
+		self::assertSame( 'pass', Constant_Mocker::constant( 'DB_PASSWORD' ) );
+		self::assertSame( 'host', Constant_Mocker::constant( 'DB_HOST' ) );
 	}
 
 	public function data_define_db_constants__inputs(): iterable {
 		return [
-			[ 1 ],
-			[ 10 ],
+			'default write priority' => [ 1 ],
+			'other write priority'   => [ 10 ],
 		];
 	}
 }

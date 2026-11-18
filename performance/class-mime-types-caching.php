@@ -13,7 +13,6 @@ namespace Automattic\VIP\Performance;
  * MIME Types Caching class.
  */
 class Mime_Types_Caching {
-	public const MINIMUM_WORDPRESS_VERSION  = '6.4';
 	public const CACHE_GROUP                = 'mime_types';
 	public const MIME_TYPES_CACHE_KEY       = 'vip_mime_types';
 	public const MAX_POSTS_TO_QUERY_DEFAULT = 500000;
@@ -22,12 +21,7 @@ class Mime_Types_Caching {
 	 * Class initialization.
 	 */
 	public static function init() {
-		global $wp_version;
-
-		if ( isset( $wp_version ) &&
-			version_compare( $wp_version, self::MINIMUM_WORDPRESS_VERSION, '>=' ) ) {
-			static::enable_post_mime_types_caching();
-		}
+		static::enable_post_mime_types_caching();
 	}
 
 	/**

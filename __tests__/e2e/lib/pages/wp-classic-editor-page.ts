@@ -1,11 +1,10 @@
+import path from 'path';
+
 import type { Page } from '@playwright/test';
 
 const selectors = {
 	editorTitle: '#title',
 	editorFrame: '#content_ifr',
-	editorBody: '#tinymce p',
-	saveDraftButton: '#save-post',
-	previewButton: '#post-preview',
 	publishButton: '#publish',
 	viewButton: '#message p a',
 	permalink: '#sample-permalink a',
@@ -13,7 +12,7 @@ const selectors = {
 	mediaUploadButton: '#__wp-uploader-id-1',
 	addMediaButton: '.media-button-insert',
 	uploadTab: '#menu-item-upload',
-	postImage: '#tinymce img',
+	postImage: ( fileName: string ) => `#tinymce img[src*="${ fileName }"]`,
 };
 
 export class ClassicEditorPage {
@@ -64,7 +63,11 @@ export class ClassicEditorPage {
 		] );
 		await fileChooser.setFiles( fileName );
 		await this.page.locator( selectors.addMediaButton ).click();
-		await this.page.waitForLoadState( 'load' );
+
+		// "Insert into post" fetches the image markup via AJAX before adding it to the editor;
+		// publishing before it lands saves the post without the image.
+		const insertedImage = this.page.frameLocator( selectors.editorFrame ).locator( selectors.postImage( path.parse( fileName ).name ) );
+		await insertedImage.first().waitFor();
 	}
 
 	/**

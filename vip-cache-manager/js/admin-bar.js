@@ -18,7 +18,7 @@
 	let btn;
 
 	/**
-	 * Grab all the necesary URLs (incl. scripts and CSS) for the purge.
+	 * Grab all the necessary URLs (incl. scripts and CSS) for the purge.
 	 */
 	const getURLsToPurge = () => {
 		const fullUrl = document.location.toString();

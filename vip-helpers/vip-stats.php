@@ -25,7 +25,7 @@
  */
 function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) && function_exists( 'stats_get_csv' ) ) {
 		
 		// WordPress.com stats defaults to current UTC date, default to site's local date instead
 		if ( ! $end_date ) {
@@ -62,16 +62,16 @@ function wpcom_vip_top_posts_array( $num_days = 30, $limit = 10, $end_date = fal
  *
  * @param int          $post_id   Optional. The post ID to fetch stats for. Defaults to the $post global's value.
  * @param int          $num_days  Optional. How many days to go back to include in the stats. Default is 1. Maximum 90 days.
- * @param string|bool  $end_data  Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is today's UTC date.
+ * @param string|bool  $end_date  Optional. The last day of the desired time frame. Format is 'Y-m-d' (e.g. 2007-05-01) and default is today's UTC date.
  * @return int|false Number of pageviews or false on error.
  */
 function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date = false ) {
 	// Check Jetpack is present and active
-	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) ) {
+	if ( class_exists( 'Jetpack' ) && Jetpack::is_active() && Jetpack::is_module_active( 'stats' ) && function_exists( 'stats_get_csv' ) ) {
 		$args = array(
-			'post_id'  => $post_id,
-			'num_days' => $num_days,
-			'end_date' => $end_date,
+			'post_id' => $post_id,
+			'days'    => $num_days,
+			'end'     => $end_date,
 		);
 
 		// Default post_id to the current post ID, and check it's an int
@@ -83,17 +83,20 @@ function wpcom_vip_get_post_pageviews( $post_id = null, $num_days = 1, $end_date
 			return false;
 		}
 
-		// Ensure num_days is least 1, but no more than 90
-		$args['num_days'] = max( 1, min( 90, absint( $args['num_days'] ) ) );
+		// Ensure days is at least 1, but no more than 90
+		$args['days'] = max( 1, min( 90, absint( $args['days'] ) ) );
 
-		$cache_key = 'views_' . $args['post_id'] . '_' . $args['num_days'] . '_' . $args['end_date'];
+		// A single post's stats come back as one row per day, and stats_get_csv() defaults to 3 rows
+		$args['limit'] = $args['days'];
+
+		$cache_key = 'views_' . $args['post_id'] . '_' . $args['days'] . '_' . $args['end'];
 
 		$views = wp_cache_get( $cache_key, 'vip_stats' );
 
 		if ( false === $views ) {
 			// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.stats_get_csv_stats_get_csv
-			$posts = stats_get_csv( 'postviews', $args );
-			$views = $posts[0]['views'] ?? 0;
+			$rows  = stats_get_csv( 'postviews', $args );
+			$views = array_sum( array_column( $rows, 'views' ) );
 			wp_cache_set( $cache_key, $views, 'vip_stats', 3600 );
 		}
 	} else {

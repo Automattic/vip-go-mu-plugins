@@ -2,6 +2,8 @@
 
 namespace Automattic\VIP\Config;
 
+use Automattic\VIP\Integrations\ConnectorControlsIntegration;
+use Automattic\VIP\Integrations\IntegrationsSingleton;
 use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
 
 class Site_Details_Index {
@@ -78,14 +80,29 @@ class Site_Details_Index {
 		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
-		$site_details['plugins']    = $this->get_plugin_info();
-		$site_details['themes']     = $this->get_theme_info();
-		$site_details['user_roles'] = $this->get_user_roles();
-		$site_details['search']     = $this->get_search_info();
-		$site_details['jetpack']    = $this->get_jetpack_info();
-		$site_details['parsely']    = $this->get_parsely_info();
+		$site_details['plugins']            = $this->get_plugin_info();
+		$site_details['themes']             = $this->get_theme_info();
+		$site_details['user_roles']         = $this->get_user_roles();
+		$site_details['search']             = $this->get_search_info();
+		$site_details['jetpack']            = $this->get_jetpack_info();
+		$site_details['parsely']            = $this->get_parsely_info();
+		$site_details['connector_controls'] = $this->get_connector_controls_info();
 
 		return $site_details;
+	}
+
+	/**
+	 * Include only credential-source metadata in the existing SDS report.
+	 *
+	 * @return array|null Runtime report, or null when unavailable on this blog.
+	 */
+	public function get_connector_controls_info(): ?array {
+		if ( ! class_exists( IntegrationsSingleton::class ) ) {
+			return null;
+		}
+
+		$integration = IntegrationsSingleton::instance()->get_integration( 'connector-controls' );
+		return $integration instanceof ConnectorControlsIntegration ? $integration->get_runtime_status() : null;
 	}
 
 	/**
@@ -119,6 +136,7 @@ class Site_Details_Index {
 				'path'          => $plugin_path,
 				'name'          => $plugin_data['Name'],
 				'version'       => $plugin_data['Version'],
+				'update_uri'    => $plugin_data['UpdateURI'] ?? null,
 				'active'        => null !== $activated_by,
 				'activated_by'  => $activated_by,
 				'wporg_slug'    => isset( $update_data[ $plugin_path ] ) ? $update_data[ $plugin_path ]['slug'] : null, // legacy, can be later removed.
@@ -135,7 +153,7 @@ class Site_Details_Index {
 	/**
 	 * Get plugin information related to updates, such as their proper slug / marketplace / and download package url.
 	 *
-	 * Offical WP.org plugin slugs require a pretty technical process to properly find.
+	 * Official WP.org plugin slugs require a pretty technical process to properly find.
 	 * WP core does this by querying a WPorg endpoint that checks for a valid plugin
 	 * based on various factors like name, author, path, and plugin header values.
 	 * So here we just piggyback off of the above process to locate the proper slugs.
@@ -154,20 +172,25 @@ class Site_Details_Index {
 		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
 
 		foreach ( $no_update as $plugin_path => $plugin_data ) {
+			// Cast, as an entry can be an array, or an incomplete object when its class isn't loaded.
+			$plugin_data = (array) $plugin_data;
+
 			$update_data[ $plugin_path ] = [
-				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
+				'slug'        => $plugin_data['slug'] ?? null,
+				'marketplace' => $this->get_marketplace( $plugin_data['url'] ?? '' ),
 				'new_version' => null,
 				'package'     => null,
 			];
 		}
 
 		foreach ( $has_update as $plugin_path => $plugin_data ) {
+			$plugin_data = (array) $plugin_data;
+
 			$update_data[ $plugin_path ] = [
-				'slug'        => $plugin_data->slug ?? null,
-				'marketplace' => $this->get_marketplace( $plugin_data->url ?? '' ),
-				'new_version' => $plugin_data->new_version ?? null,
-				'package'     => wp_http_validate_url( $plugin_data->package ?? '' ) !== false ? $plugin_data->package : null,
+				'slug'        => $plugin_data['slug'] ?? null,
+				'marketplace' => $this->get_marketplace( $plugin_data['url'] ?? '' ),
+				'new_version' => $plugin_data['new_version'] ?? null,
+				'package'     => wp_http_validate_url( $plugin_data['package'] ?? '' ) !== false ? $plugin_data['package'] : null,
 			];
 		}
 
@@ -236,6 +259,9 @@ class Site_Details_Index {
 		$has_update = isset( $update_cache->response ) && is_array( $update_cache->response ) ? $update_cache->response : [];
 
 		foreach ( $no_update as $theme_path => $theme_data ) {
+			// Cast, as an entry can be an object rather than the usual array.
+			$theme_data = (array) $theme_data;
+
 			$update_data[ $theme_path ] = [
 				'slug'        => $theme_data['theme'] ?? null,
 				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
@@ -245,6 +271,8 @@ class Site_Details_Index {
 		}
 
 		foreach ( $has_update as $theme_path => $theme_data ) {
+			$theme_data = (array) $theme_data;
+
 			$update_data[ $theme_path ] = [
 				'slug'        => $theme_data['theme'] ?? null,
 				'marketplace' => $this->get_marketplace( $theme_data['url'] ?? '' ),
@@ -267,7 +295,7 @@ class Site_Details_Index {
 			foreach ( $wp_roles->roles as $slug => $role ) {
 				$roles[] = [
 					'slug' => $slug,
-					'name' => $role['name'],
+					'name' => $role['name'] ?? $slug,
 				];
 			}
 		}

@@ -1,13 +1,18 @@
 <?php
 
-// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.runtime_configuration_error_reporting
-// phpcs:disable WordPress.PHP.DevelopmentFunctions.error_log_set_error_handler
+use Automattic\Test\Utils\Captures_Errors;
+
+use function Automattic\Test\Utils\block_http_requests;
+use function Automattic\Test\Utils\get_class_method_as_public;
+use function Automattic\Test\Utils\get_class_property_as_public;
+
+require_once __DIR__ . '/fixtures/class-cache-manager-input-stream.php';
 
 class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
+	use Captures_Errors;
+
 	/** @var WPCOM_VIP_Cache_Manager */
 	public $cache_manager;
-
-	private $original_error_reporting;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -17,22 +22,22 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->cache_manager->clear_queued_purge_urls();
 		$this->reset_cache_manager_state();
 
-		$this->original_error_reporting = error_reporting();
-		set_error_handler( static function ( int $errno, string $errstr ) {
-			if ( error_reporting() & $errno ) {
-				// phpcs:ignore WordPress.Security.EscapeOutput.ExceptionNotEscaped -- CLI
-				throw new ErrorException( $errstr, $errno );
-			}
-
-			return false;
-		}, E_USER_WARNING );
+		// The page-cache AJAX handler reports its outcome with a stats pixel request.
+		block_http_requests();
 	}
 
 	public function tearDown(): void {
 		$this->reset_cache_manager_state();
-		restore_error_handler();
-		error_reporting( $this->original_error_reporting );
 		parent::tearDown();
+	}
+
+	/**
+	 * Call the private WPCOM_VIP_Cache_Manager::current_user_can_purge_cache().
+	 *
+	 * @param string ...$scope Optional purge scope; omitted to use the method's default.
+	 */
+	private function can_purge( string ...$scope ): bool {
+		return get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' )->invoke( $this->cache_manager, ...$scope );
 	}
 
 	public function get_data_for_valid_queue_purge_url_test() {
@@ -89,20 +94,11 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 	 *
 	 * @dataProvider get_data_for_invalid_queue_purge_url_test
 	 */
-	public function test__invalid__queue_purge_url__warning( $queue_url ) {
-		$this->expectException( ErrorException::class );
-		$this->expectExceptionCode( E_USER_WARNING );
-		$this->cache_manager->queue_purge_url( $queue_url );
-	}
-
-	/**
-	 * @dataProvider get_data_for_invalid_queue_purge_url_test
-	 */
 	public function test__invalid__queue_purge_url( $queue_url ) {
-		error_reporting( $this->original_error_reporting & ~E_USER_WARNING );
+		[ $result, $warnings ] = $this->capture_errors( fn() => $this->cache_manager->queue_purge_url( $queue_url ) );
 
-		$result = $this->cache_manager->queue_purge_url( $queue_url );
 		self::assertFalse( $result );
+		self::assertSame( [ 'vip-cache-manager: Tried to PURGE invalid URL: ' . esc_html( $queue_url ) ], $warnings );
 		self::assertEmpty( $this->cache_manager->get_queued_purge_urls(), 'List of queued purge urls should be empty' );
 	}
 
@@ -127,11 +123,116 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}
 
+	public function get_data_for_unpublished_post_purge_test() {
+		return [
+			// 1: old status
+			// 2: new status
+			// 3: whether the post's URLs are queued
+
+			'publish to draft'   => [ 'publish', 'draft', true ],
+			'publish to private' => [ 'publish', 'private', true ],
+			// Already queued through `clean_post_cache`.
+			'publish to trash'   => [ 'publish', 'trash', false ],
+			'publish to publish' => [ 'publish', 'publish', false ],
+			'draft to pending'   => [ 'draft', 'pending', false ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_unpublished_post_purge_test
+	 */
+	public function test__queue_unpublished_post_purge( $old_status, $new_status, $expected_purge ) {
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => $new_status ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		$this->cache_manager->queue_unpublished_post_purge( $new_status, $old_status, $post );
+
+		$this->assertSame( $expected_purge, in_array( home_url( '/' ), $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
+	/**
+	 * A post made private keeps its permalink, so only the unpublish purge clears its cached page.
+	 */
+	public function test__unpublished_post_purge__private_post_permalink() {
+		$post_id = $this->factory()->post->create( [ 'post_status' => 'publish' ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_update_post( [
+			'ID'          => $post_id,
+			'post_status' => 'private',
+		] );
+
+		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Shutdown callbacks registered after the cache manager's, like bulk edit's deferred term counts, can queue purges.
+	 */
+	public function test_purges_queued_during_shutdown_are_sent() {
+		$sent = [];
+		add_action( 'wpcom_vip_cache_pre_execute_purges', function ( $urls ) use ( &$sent ) {
+			$sent = $urls;
+		} );
+		remove_all_actions( 'shutdown' );
+		$this->cache_manager->init();
+		add_action( 'shutdown', fn() => $this->cache_manager->queue_purge_url( home_url( '/late/' ) ) );
+
+		// With no purge server configured, sending the purges raises a notice instead.
+		$this->capture_errors( fn() => do_action( 'shutdown' ), E_USER_NOTICE );
+
+		$this->assertContains( home_url( '/late/' ), $sent );
+	}
+
+	/**
+	 * With `%category%` permalinks, a category change moves the post, and the new category is saved before `post_updated`.
+	 */
+	public function test__old_permalink_purge__category_change() {
+		$this->set_permalink_structure( '/%category%/%postname%/' );
+		try {
+			$post_id       = self::factory()->post->create( [ 'post_category' => [ self::factory()->category->create() ] ] );
+			$old_permalink = get_permalink( $post_id );
+			$this->cache_manager->clear_queued_purge_urls();
+
+			wp_update_post( [
+				'ID'            => $post_id,
+				'post_category' => [ self::factory()->category->create() ],
+			] );
+
+			$this->assertNotSame( $old_permalink, get_permalink( $post_id ) );
+			$this->assertContains( $old_permalink, $this->cache_manager->get_queued_purge_urls() );
+		} finally {
+			$this->set_permalink_structure( '' );
+		}
+	}
+
+	public function get_data_for_deleted_post_purge_test() {
+		return [
+			'published post' => [ 'publish', true ],
+			// Already purged when it was trashed.
+			'trashed post'   => [ 'trash', false ],
+		];
+	}
+
+	/**
+	 * A deleted post is gone by the time its post cache is cleaned, so it's purged before deletion.
+	 *
+	 * @dataProvider get_data_for_deleted_post_purge_test
+	 */
+	public function test__force_deleted_post_purge( $status, $expected_purge ) {
+		$post_id   = $this->factory()->post->create( [ 'post_status' => $status ] );
+		$permalink = get_permalink( $post_id );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_delete_post( $post_id, true );
+
+		$this->assertSame( $expected_purge, in_array( $permalink, $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
 	public function get_data_for_special_purge_actions() {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
 			'uploads' => [ 'purge_uploads_cache', '/.vip/purge-all-uploads' ],
-			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-files' ],
+			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-assets' ],
 			'private' => [ 'purge_private_files_cache', '/.vip/purge-all-private-files' ],
 		];
 	}
@@ -154,86 +255,237 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertFalse( $this->cache_manager->purge_site_cache(), 'Subsequent site purge should return false for same request.' );
 	}
 
-	public function test_current_user_can_purge_cache_filter_receives_scope_and_user() {
+	/**
+	 * Logged-out visitors can't purge by default. test_ajax_permissions_with_valid_nonce covers the default for roles.
+	 */
+	public function test_default_purge_permissions_deny_logged_out_users(): void {
+		wp_set_current_user( 0 );
+		$this->assertFalse( $this->can_purge( 'url' ) );
+	}
+
+	/**
+	 * Supply denied and allowed users for the real AJAX action.
+	 */
+	public function get_ajax_permission_cases(): array {
+		return [
+			'subscriber' => [ 'subscriber', false ],
+			'editor'     => [ 'editor', true ],
+		];
+	}
+
+	/**
+	 * Dispatch the production AJAX hook with a valid request.
+	 *
+	 * @dataProvider get_ajax_permission_cases
+	 */
+	public function test_ajax_permissions_with_valid_nonce( string $role, bool $allowed ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => $role ] ) );
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_cache_manager_dashboard_purge', [
+			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
+			'purge_action' => 'url',
+			'url'          => home_url( '/cache-permission-test/' ),
+		] );
+		$this->assertSame( $allowed, $decoded['success'] );
+		if ( $allowed ) {
+			$this->assertContains( home_url( '/cache-permission-test/' ), $this->cache_manager->get_queued_purge_urls() );
+		} else {
+			$this->assertSame( [ 'message' => 'Unauthorized.' ], $decoded['data'] );
+			$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+		}
+	}
+
+	public function get_ajax_nonce_cases(): array {
+		return [
+			'dashboard missing'        => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'missing' ],
+			'dashboard invalid'        => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'invalid' ],
+			'dashboard wrong purpose'  => [ 'wp_ajax_vip_cache_manager_dashboard_purge', 'wrong-purpose' ],
+			'page cache missing'       => [ 'wp_ajax_vip_purge_page_cache', 'missing' ],
+			'page cache invalid'       => [ 'wp_ajax_vip_purge_page_cache', 'invalid' ],
+			'page cache wrong purpose' => [ 'wp_ajax_vip_purge_page_cache', 'wrong-purpose' ],
+		];
+	}
+
+	/**
+	 * Both handlers reject the nonce before the page-cache success path reads VIP_GO_APP_ID, so these run in-process.
+	 *
+	 * @dataProvider get_ajax_nonce_cases
+	 */
+	public function test_ajax_rejects_bad_nonce_without_queueing( string $hook, string $nonce_case ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+		$is_dashboard  = 'wp_ajax_vip_cache_manager_dashboard_purge' === $hook;
+		$other_purpose = $is_dashboard ? 'purge-page' : 'vip_cache_manager_dashboard_purge';
+		$url           = home_url( '/cache-nonce-test/' );
+		$payload       = $is_dashboard ? [
+			'purge_action' => 'url',
+			'url'          => $url,
+		] : [ 'urls' => [ $url ] ];
+
+		if ( 'invalid' === $nonce_case ) {
+			$payload['nonce'] = 'invalid';
+		} elseif ( 'wrong-purpose' === $nonce_case ) {
+			$payload['nonce'] = wp_create_nonce( $other_purpose );
+		}
+
+		$decoded = $this->dispatch_purge_ajax( $hook, $payload );
+		$this->assertSame( false, $decoded['success'] );
+		$this->assertSame( $is_dashboard ? [ 'message' => 'Unauthorized.' ] : [ 'error' => 'Unauthorized' ], $decoded['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	public function get_urls_outside_the_site(): array {
+		return [
+			'other host'            => [ 'https://example.net/page/' ],
+			'reserved path'         => [ 'http://example.org/.vip/purge-all-origin' ],
+			'encoded reserved path' => [ 'http://example.org/%2Evip/purge-all-static-assets' ],
+		];
+	}
+
+	/**
+	 * Users can purge this site's pages only, not other hosts or the reserved purge-all paths.
+	 *
+	 * @dataProvider get_urls_outside_the_site
+	 */
+	public function test_ajax_url_purges_reject_urls_outside_the_site( string $url ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$dashboard = $this->dispatch_purge_ajax( 'wp_ajax_vip_cache_manager_dashboard_purge', [
+			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
+			'purge_action' => 'url',
+			'url'          => $url,
+		] );
+		$page      = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+
+		$this->assertSame( [ 'message' => 'Enter a valid URL on this site to purge.' ], $dashboard['data'] );
+		$this->assertSame( [ 'error' => 'No URLs' ], $page['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Sites served from more than one domain can purge pages on the domain the request came in on,
+	 * and on the domains they allow redirects to.
+	 */
+	public function test_user_url_purges_allow_the_site_domains(): void {
+		$is_user_purgeable_url = get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'is_user_purgeable_url' );
+		$_SERVER['HTTP_HOST']  = 'fr.example.org';
+		add_filter( 'allowed_redirect_hosts', fn( $hosts ) => array_merge( $hosts, [ 'de.example.org' ] ) );
+		try {
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://fr.example.org/page/' ) );
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://de.example.org/page/' ) );
+			$this->assertFalse( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://es.example.org/page/' ) );
+		} finally {
+			$_SERVER['HTTP_HOST'] = WP_TESTS_DOMAIN;
+		}
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_page_cache_ajax_denies_subscriber_with_valid_nonce(): void {
+		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
+			define( 'VIP_GO_APP_ID', 12345 );
+		}
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'subscriber' ] ) );
+		$url = home_url( '/cache-permission-test/' );
+
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+
+		$this->assertFalse( $decoded['success'] );
+		$this->assertSame( [ 'error' => 'Unauthorized' ], $decoded['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * @runInSeparateProcess
+	 * @preserveGlobalState disabled
+	 */
+	public function test_page_cache_ajax_valid_nonce_queues_url(): void {
+		if ( ! defined( 'VIP_GO_APP_ID' ) ) {
+			define( 'VIP_GO_APP_ID', 12345 );
+		}
+
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+		$url = home_url( '/cache-nonce-test/' );
+
+		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url, 'https://example.net/page/' ],
+		] );
+		$this->assertSame( true, $decoded['success'] );
+		$this->assertSame( [ $url ], $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Dispatch a JSON request through the registered production AJAX action.
+	 *
+	 * @return array Decoded JSON response.
+	 */
+	private function dispatch_purge_ajax( string $hook, array $payload ): array {
+		$previous_body                        = VIP_Cache_Manager_Input_Stream::$body;
+		VIP_Cache_Manager_Input_Stream::$body = wp_json_encode( $payload );
+		$die_handler                          = static function () {
+			return static function () {
+				throw new RuntimeException( 'AJAX complete' );
+			};
+		};
+		add_filter( 'wp_doing_ajax', '__return_true' );
+		add_filter( 'wp_die_ajax_handler', $die_handler );
+		$stream_replaced = false;
+		try {
+			$this->assertTrue( stream_wrapper_unregister( 'php' ) );
+			$stream_replaced = true;
+			$this->assertTrue( stream_wrapper_register( 'php', VIP_Cache_Manager_Input_Stream::class ) );
+			ob_start();
+			try {
+				do_action( $hook );
+				$this->fail( 'The AJAX response must terminate.' );
+			} catch ( RuntimeException $exception ) {
+				$this->assertSame( 'AJAX complete', $exception->getMessage() );
+			} finally {
+				$response = ob_get_clean();
+			}
+		} finally {
+			if ( $stream_replaced ) {
+				stream_wrapper_restore( 'php' );
+			}
+			VIP_Cache_Manager_Input_Stream::$body = $previous_body;
+			remove_filter( 'wp_die_ajax_handler', $die_handler );
+			remove_filter( 'wp_doing_ajax', '__return_true' );
+		}
+		$decoded = json_decode( $response, true );
+		$this->assertIsArray( $decoded, 'AJAX response must be JSON.' );
+		return $decoded;
+	}
+
+	public function test_current_user_can_purge_cache_filter() {
 		$user_id = self::factory()->user->create( [ 'role' => 'subscriber' ] );
 		wp_set_current_user( $user_id );
 
-		$captured_scope = null;
-		$captured_user  = null;
+		$calls = [];
+		add_filter( 'vip_cache_manager_can_purge_cache', static function ( $can_purge_cache, $user, $scope ) use ( &$calls ) {
+			$calls[] = [ $can_purge_cache, $user, $scope ];
 
-		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope, &$captured_user ) {
-			$captured_scope = $scope;
-			$captured_user  = $user;
-
-			return $can_purge_cache;
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$method->invoke( $this->cache_manager, 'url' );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertSame( 'url', $captured_scope, 'Scope should be passed to the permission filter.' );
-		$this->assertInstanceOf( WP_User::class, $captured_user, 'Current user should be passed to the permission filter.' );
-		$this->assertSame( $user_id, $captured_user->ID, 'Permission filter should receive the current user ID.' );
-	}
-
-	public function test_current_user_can_purge_cache_filter_scope_defaults_to_null() {
-		$captured_scope = 'not-set';
-
-		$callback = static function ( $can_purge_cache, $user, $scope ) use ( &$captured_scope ) {
-			$captured_scope = $scope;
-
-			return $can_purge_cache;
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$method->invoke( $this->cache_manager );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertNull( $captured_scope, 'Scope should default to null when no specific purge context is provided.' );
-	}
-
-	public function test_current_user_can_purge_cache_allows_scope_specific_permissions() {
-		$callback = static function ( $can_purge_cache, $user, $scope ) {
 			return 'url' === $scope;
-		};
+		}, 10, 3 );
 
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
+		$this->assertTrue( $this->can_purge( 'url' ), 'URL scope should be allowed by the filter callback.' );
+		$this->assertFalse( $this->can_purge( 'site' ), 'Non-URL scope should be denied by the filter callback.' );
+		$this->assertFalse( $this->can_purge(), 'No scope should be denied by the filter callback.' );
 
-		try {
-			$method = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'current_user_can_purge_cache' );
-			$this->assertTrue( $method->invoke( $this->cache_manager, 'url' ), 'URL scope should be allowed by the filter callback.' );
-			$this->assertFalse( $method->invoke( $this->cache_manager, 'site' ), 'Non-URL scope should be denied by the filter callback.' );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-	}
-
-	public function test_available_manual_purge_actions_are_filtered_by_scope_permissions() {
-		$callback = static function ( $can_purge_cache, $user, $scope ) {
-			return in_array( $scope, [ 'url', 'origin' ], true );
-		};
-
-		add_filter( 'vip_cache_manager_can_purge_cache', $callback, 10, 3 );
-
-		try {
-			$method          = new \ReflectionMethod( WPCOM_VIP_Cache_Manager::class, 'get_available_manual_purge_actions_config' );
-			$visible_actions = $method->invoke( $this->cache_manager );
-		} finally {
-			remove_filter( 'vip_cache_manager_can_purge_cache', $callback, 10 );
-		}
-
-		$this->assertSame( [ 'url', 'origin' ], array_keys( $visible_actions ), 'Only allowed purge scopes should be returned for rendering.' );
+		[ $can_purge_cache, $user, $scope ] = $calls[0];
+		$this->assertFalse( $can_purge_cache, 'Subscribers cannot purge the cache by default.' );
+		$this->assertInstanceOf( WP_User::class, $user, 'Current user should be passed to the permission filter.' );
+		$this->assertSame( $user_id, $user->ID, 'Permission filter should receive the current user ID.' );
+		$this->assertSame( 'url', $scope, 'Scope should be passed to the permission filter.' );
+		$this->assertSame( 'site', $calls[1][2], 'Scope should be passed to the permission filter.' );
+		$this->assertNull( $calls[2][2], 'Scope should default to null when no specific purge context is provided.' );
 	}
 
 	public function test_render_dashboard_widget_dropdown_only_shows_allowed_scopes() {
@@ -289,8 +541,7 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		];
 
 		foreach ( $properties as $property => $value ) {
-			$reflection = new \ReflectionProperty( WPCOM_VIP_Cache_Manager::class, $property );
-			$reflection->setValue( $this->cache_manager, $value );
+			get_class_property_as_public( WPCOM_VIP_Cache_Manager::class, $property )->setValue( $this->cache_manager, $value );
 		}
 	}
 }

@@ -225,6 +225,7 @@ class HealthCommand extends \WPCOM_VIP_CLI_Command {
 				if ( ! $indexable->index_exists( $site['blog_id'] ) ) {
 					$blog_id = $site['blog_id'];
 					WP_CLI::line( "Skipping validation of '$indexable_slug' index for site $blog_id as it doesn't exist.\n\n" );
+					restore_current_blog();
 					continue;
 				}
 

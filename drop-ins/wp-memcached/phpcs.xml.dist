@@ -15,15 +15,18 @@
 
 	<rule ref="PHPCompatibilityWP"/>
 	<config name="testVersion" value="7.4-"/>
-	<rule ref="WordPress-Extra"/>
-	<config name="minimum_supported_wp_version" value="5.7"/>
+	<rule ref="WordPress-Extra">
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax.Found" />
+		<exclude name="Universal.Operators.DisallowShortTernary.Found" />
+	</rule>
+	<config name="minimum_wp_version" value="5.7"/>
 
 	<rule ref="WordPress-VIP-Go">
 		<exclude name="PEAR.Functions.FunctionCallSignature.ContentAfterOpenBracket" />
 		<exclude name="PEAR.Functions.FunctionCallSignature.MultipleArguments" />
 		<exclude name="PEAR.Functions.FunctionCallSignature.CloseBracketLine" />
 		<exclude name="WordPress.Files.FileName.InvalidClassFileName" />
-		<exclude name="WordPress.PHP.DisallowShortTernary.Found" />
-		<exclude name="Generic.Arrays.DisallowShortArraySyntax.Found" />
+		<exclude name="Universal.Operators.DisallowShortTernary.Found" />
+		<exclude name="Universal.Arrays.DisallowShortArraySyntax.Found" />
 	</rule>
 </ruleset>

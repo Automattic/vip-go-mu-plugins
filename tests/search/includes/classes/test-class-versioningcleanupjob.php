@@ -7,7 +7,12 @@ use ElasticPress\Indexables;
 use PHPUnit\Framework\MockObject\MockObject;
 use WP_UnitTestCase;
 
+require_once __DIR__ . '/trait-es-http-mock.php';
+require_once __DIR__ . '/trait-search-test-bootstrap.php';
+
 class VersioningCleanupJob_Test extends WP_UnitTestCase {
+	use ES_HTTP_Mock;
+	use Search_Test_Bootstrap;
 
 	public function setUp(): void {
 		parent::setUp();
@@ -43,17 +48,60 @@ class VersioningCleanupJob_Test extends WP_UnitTestCase {
 		$partially_mocked_instance->indexables = $indexables_mock;
 		$partially_mocked_instance->versioning = $versioning_mock;
 
-		$call_index = 0;
+		$calls = array();
 		$partially_mocked_instance->expects( $this->exactly( 4 ) )
 			->method( 'delete_stale_inactive_version' )
-			->with( $this->callback( function ( $indexable ) use ( $indexables_mocks, &$call_index ) {
-				$expected_index  = intdiv( $call_index, 2 );
-				$expected_number = $call_index % 2 + 1;
-				++$call_index;
-				return $indexable === $indexables_mocks[ $expected_index ] && $expected_number;
-			}));
+			->willReturnCallback( static function ( $indexable, $version ) use ( &$calls ) {
+				$calls[] = array( $indexable, $version );
+			});
 
 		$partially_mocked_instance->versioning_cleanup();
+		$this->assertSame( array(
+			array( $indexables_mocks[0], 1 ),
+			array( $indexables_mocks[0], 2 ),
+			array( $indexables_mocks[1], 1 ),
+			array( $indexables_mocks[1], 2 ),
+		), $calls );
+	}
+
+	public function test__versioning_cleanup__deletes_real_inactive_index() {
+		$search = $this->boot_search();
+		$search->queue->schema->prepare_table();
+		$indexable = Indexables::factory()->get( 'post' );
+		$versions  = array(
+			1 => array(
+				'number'         => 1,
+				'active'         => true,
+				'activated_time' => time() - 3 * MONTH_IN_SECONDS,
+			),
+			2 => array(
+				'number'       => 2,
+				'active'       => false,
+				'created_time' => time() - 3 * MONTH_IN_SECONDS,
+			),
+		);
+		$search->versioning->update_versions( $indexable, $versions );
+		$search->versioning->set_current_version_number( $indexable, 2 );
+		$inactive_name = $indexable->get_index_name();
+		$search->versioning->reset_current_version_number( $indexable );
+		$active_name = $indexable->get_index_name();
+		$deletes     = array();
+		$responder   = static function ( $args, $url ) use ( &$deletes ) {
+			if ( 'DELETE' === $args['method'] ) {
+				$deletes[] = $url;
+			}
+			return self::es_response();
+		};
+
+		$this->with_es_http( $responder, function () use ( $search, $indexable, $inactive_name, $active_name, &$deletes ) {
+			( new VersioningCleanupJob( Indexables::factory(), $search->versioning ) )->versioning_cleanup();
+			$this->assertNotEmpty( $deletes );
+			foreach ( $deletes as $url ) {
+				$this->assertSame( '/' . $inactive_name, wp_parse_url( $url, PHP_URL_PATH ) );
+			}
+			$this->assertSame( $active_name, $indexable->get_index_name() );
+			$this->assertSame( array( 1 ), array_keys( $search->versioning->get_versions( $indexable ) ) );
+		} );
 	}
 
 	public function get_stale_inactive_versions_data() {

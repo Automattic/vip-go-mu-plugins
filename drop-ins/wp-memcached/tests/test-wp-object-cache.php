@@ -14,8 +14,8 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 	public function setUp(): void {
 		parent::setUp();
-		$host1 = getenv( 'MEMCACHED_HOST_1' );
-		$host2 = getenv( 'MEMCACHED_HOST_2' );
+		$host1 = getenv( 'MEMCACHED_HOST_1' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
+		$host2 = getenv( 'MEMCACHED_HOST_2' ) ?: getenv( 'VIP_TEST_MEMCACHED_SERVER' );
 
 		$host1 = $host1 ? "{$host1}" : 'localhost:11211';
 		$host2 = $host2 ? "{$host2}" : 'localhost:11212';
@@ -79,7 +79,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Fails to add now because it already exists in local cache.
@@ -88,6 +88,61 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		// Succeeds after removing from local cache because it never existed remotely.
 		unset( $this->object_cache->cache[ $cache_key ] );
 		self::assertTrue( $this->object_cache->add( 'key', $value, $group ) );
+	}
+
+	/**
+	 * A supported positive TTL must reach the persistent adapter unchanged.
+	 *
+	 * @dataProvider data_persistent_write_methods
+	 */
+	public function test_persistent_write_passes_positive_ttl_to_adapter( string $method ): void {
+		$adapter = $this->getMockBuilder( \Automattic\Memcached\Memcached_Adapter::class )
+			->disableOriginalConstructor()
+			->onlyMethods( [ 'add', 'replace', 'set' ] )
+			->getMock();
+		$adapter->expects( self::once() )
+			->method( $method )
+			->with( self::anything(), 'default', 'value', 17 )
+			->willReturn( true );
+
+		$cache = new WP_Object_Cache( $adapter );
+		$cache->flush_number[ $cache->blog_prefix ] = 1;
+		$cache->global_flush_number                = 1;
+		self::assertTrue( $cache->$method( 'ttl-key', 'value', 'default', 17 ) );
+	}
+
+	public function data_persistent_write_methods(): array {
+		return [
+			'add'     => [ 'add' ],
+			'replace' => [ 'replace' ],
+			'set'     => [ 'set' ],
+		];
+	}
+
+	/**
+	 * The pre-expiry read proves the write reached the owned Memcached backend.
+	 *
+	 * @dataProvider data_persistent_write_methods
+	 */
+	public function test_persistent_positive_ttl_expires_remotely( string $method ): void {
+		if ( ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) && ! getenv( 'MEMCACHED_HOST_1' ) ) || ! extension_loaded( $this->is_using_memcached_ext ? 'memcached' : 'memcache' ) ) {
+			self::markTestSkipped( 'Requires an owned backend through VIP_TEST_MEMCACHED_SERVER or MEMCACHED_HOST_1.' );
+		}
+
+		$key = 'ttl-' . bin2hex( random_bytes( 12 ) );
+		try {
+			if ( 'replace' === $method ) {
+				self::assertTrue( $this->object_cache->set( $key, 'old' ) );
+			}
+			self::assertTrue( $this->object_cache->$method( $key, 'value', 'default', 2 ) );
+			$this->object_cache->flush_runtime();
+			self::assertSame( 'value', $this->object_cache->get( $key ), 'The value must exist remotely before expiry.' );
+			usleep( 2200000 );
+			$this->object_cache->flush_runtime();
+			self::assertFalse( $this->object_cache->get( $key ), 'A fresh remote read must miss after expiry.' );
+		} finally {
+			$this->object_cache->delete( $key );
+		}
 	}
 
 	public function test_add_multiple() {
@@ -161,7 +216,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $replace_value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Can't replace a value that isn't set yet.
@@ -215,7 +270,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$cache_key = $this->object_cache->key( 'key', $group );
 		self::assertEquals( $this->object_cache->cache[ $cache_key ], [
 			'value' => $value,
-			'found' => false,
+			'found' => true,
 		] );
 
 		// Never made it's way to the remote cache.
@@ -310,11 +365,11 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertFalse( $this->object_cache->get( 'key', $group, true, $found ) );
 		self::assertFalse( $found );
 
-		// Set in local cache and check again. $found is still false by design.
+		// Set in local cache and check again.
 		self::assertTrue( $this->object_cache->set( 'key', $value, $group ) );
 		$found = null;
 		self::assertEquals( $this->object_cache->get( 'key', $group, true, $found ), $value );
-		self::assertFalse( $found );
+		self::assertTrue( $found );
 	}
 
 	public function test_get_multiple() {
@@ -379,9 +434,9 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 		// Test super large multiGets that should be broken up into multiple batches.
 		$large_mget_values = [
-			'mget_1' => '1',
-			'mget_500' => '500',
-			'mget_999' => '999',
+			'mget_1'    => '1',
+			'mget_500'  => '500',
+			'mget_999'  => '999',
 			'mget_1001' => '1001',
 			'mget_1500' => '1500',
 			'mget_1999' => '1999',
@@ -397,7 +452,7 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 
 		$expected_large_mget_values = [];
 		for ( $i = 0; $i < 4000; $i++ ) {
-			$key = 'mget_' . $i;
+			$key                                = 'mget_' . $i;
 			$expected_large_mget_values[ $key ] = isset( $large_mget_values[ $key ] ) ? $large_mget_values[ $key ] : false;
 		}
 
@@ -724,6 +779,71 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		self::assertNotEquals( $initial_global_flush_number, $new_global_flush_number );
 	}
 
+	/**
+	 * A subsite flush must rotate only that site's persistent prefix.
+	 */
+	public function test_non_main_site_flush_preserves_global_and_other_blog(): void {
+		if ( ! is_multisite() ) {
+			self::markTestSkipped( 'Requires the multisite test profile.' );
+		}
+		if ( ( ! getenv( 'VIP_TEST_MEMCACHED_SERVER' ) && ! getenv( 'MEMCACHED_HOST_1' ) ) || ! extension_loaded( $this->is_using_memcached_ext ? 'memcached' : 'memcache' ) ) {
+			self::markTestSkipped( 'Requires an owned backend through VIP_TEST_MEMCACHED_SERVER or MEMCACHED_HOST_1.' );
+		}
+
+		$main_blog = get_current_blog_id();
+		self::assertTrue( is_main_site( $main_blog ) );
+		$group = 'flush-global-' . bin2hex( random_bytes( 8 ) );
+		$key   = 'flush-site-' . bin2hex( random_bytes( 8 ) );
+		$other_blog = $this->factory()->blog->create();
+
+		try {
+			self::assertNotSame( $main_blog, $other_blog );
+			$this->object_cache->add_global_groups( $group );
+			self::assertTrue( $this->object_cache->set( $key, 'main' ) );
+			self::assertTrue( $this->object_cache->set( $key, 'global', $group ) );
+			switch_to_blog( $other_blog );
+			try {
+				self::assertFalse( is_main_site() );
+				self::assertTrue( $this->object_cache->set( $key, 'other' ) );
+				$this->object_cache->flush_runtime();
+				self::assertSame( 'other', $this->object_cache->get( $key ) );
+				self::assertTrue( $this->object_cache->flush() );
+				$this->object_cache->flush_runtime();
+				self::assertFalse( $this->object_cache->get( $key ), 'The flushed subsite must miss remotely.' );
+				self::assertSame( 'global', $this->object_cache->get( $key, $group ), 'A subsite flush must preserve global data.' );
+			} finally {
+				try {
+					$this->object_cache->delete( $key );
+				} finally {
+					restore_current_blog();
+				}
+			}
+			$this->object_cache->flush_runtime();
+			self::assertSame( 'main', $this->object_cache->get( $key ), 'The other blog must survive the subsite flush.' );
+			self::assertSame( 'global', $this->object_cache->get( $key, $group ) );
+		} finally {
+			try {
+				$this->object_cache->delete( $key );
+			} finally {
+				try {
+					$this->object_cache->delete( $key, $group );
+				} finally {
+					wpmu_delete_blog( $other_blog, true );
+				}
+			}
+		}
+	}
+
+	public function test_group_ops_stats_treats_empty_group_as_default() {
+		$this->object_cache->group_ops = [];
+
+		self::assertTrue( $this->object_cache->set( 'null-group', 'data', null ) );
+		self::assertTrue( $this->object_cache->set( 'empty-group', 'data', '' ) );
+
+		self::assertArrayNotHasKey( '', $this->object_cache->group_ops );
+		self::assertCount( 2, $this->object_cache->group_ops['default'] );
+	}
+
 	public function test_flush_runtime() {
 		// Add a value to memcached (local and remote)
 		self::assertTrue( $this->object_cache->add( 'key', 'data' ) );
@@ -851,22 +971,28 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		// Contains blog prefix for non-global groups.
 		$this->object_cache->blog_prefix = 'blog_prefix'; // Mock for non-multisite tests.
 		$this->assertStringContainsString( $this->object_cache->blog_prefix, $this->object_cache->key( 'foo', 'non-global-group' ) );
+
+		// Preserves whitespace as a placeholder so user keys do not collide.
+		self::assertStringContainsString( 'user%SP%name', $this->object_cache->key( 'user name', 'users' ) );
+		self::assertNotSame( $this->object_cache->key( 'user name', 'users' ), $this->object_cache->key( 'username', 'users' ) );
+		self::assertNotSame( $this->object_cache->key( 'user name', 'users' ), $this->object_cache->key( 'user%SP%name', 'users' ) );
+		self::assertNotSame( $this->object_cache->key( 'user  name', 'users' ), $this->object_cache->key( 'user name', 'users' ) );
 	}
 
 	public function test_non_persistent_themes_group() {
-		$key = 'theme-test-key';
-		$group = 'themes';
-		$data = [
-			'block_theme' => true,
+		$key        = 'theme-test-key';
+		$group      = 'themes';
+		$data       = [
+			'block_theme'            => true,
 			'block_template_folders' => [
-				'wp_template' => 'templates',
-				'wp_template_part' => 'parts'
+				'wp_template'      => 'templates',
+				'wp_template_part' => 'parts',
 			],
-			'headers' => [
+			'headers'                => [
 				'Name' => 'Test Theme',
 			],
-			'stylesheet' => 'test-theme',
-			'template' => 'test-theme'
+			'stylesheet'             => 'test-theme',
+			'template'               => 'test-theme',
 		];
 		$expiration = 300;
 
@@ -927,10 +1053,10 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->object_cache->add_non_persistent_groups( $group );
 
 		// Test 1: Verify get_multiple behavior
-		$keys = ['key1', 'key2', 'key3'];
+		$keys    = [ 'key1', 'key2', 'key3' ];
 		$results = $this->object_cache->get_multiple( $keys, $group );
 		foreach ( $keys as $key ) {
-			$this->assertFalse( $results[$key] );
+			$this->assertFalse( $results[ $key ] );
 		}
 
 		// Test 2: Verify an add() and a following get() still work
@@ -939,19 +1065,25 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->assertEquals( 'value', $get_result, 'Data should be retrieved immediately after adding to non-persistent group' );
 
 		// Test 3: Verify set_multiple and get_multiple
-		$data = ['key1' => 'value1', 'key2' => 'value2'];
+		$data = [
+			'key1' => 'value1',
+			'key2' => 'value2',
+		];
 		$this->assertEquals( $data, $this->object_cache->set_multiple( $data, $group ) );
 		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
 		$this->assertEquals( $data, $results );
 
 		// Test 4: Verify delete_multiple
 		$this->assertEquals(
-			['key1' => true, 'key2' => true],
+			[
+				'key1' => true,
+				'key2' => true,
+			],
 			$this->object_cache->delete_multiple( array_keys( $data ), $group )
-		 );
+		);
 		$results = $this->object_cache->get_multiple( array_keys( $data ), $group );
 		foreach ( array_keys( $data ) as $key ) {
-			$this->assertFalse( $results[$key] );
+			$this->assertFalse( $results[ $key ] );
 		}
 	}
 
@@ -1021,6 +1153,20 @@ class Test_WP_Object_Cache extends WP_UnitTestCase {
 		$this->object_cache->set( 'delete_me', 'delete_value', $group );
 		$this->object_cache->delete( 'delete_me', $group );
 		$this->assertFalse( $this->object_cache->replace( 'delete_me', 'after_delete_value', $group ) );
+	}
+
+	public function test_salt_keys() {
+		// Empty key salt
+		$this->object_cache->salt_keys( '', false );
+		self::assertEquals( '', $this->object_cache->key_salt );
+
+		// Key salt, no prefix
+		$this->object_cache->salt_keys( 'mysite', false );
+		self::assertEquals( 'mysite:', $this->object_cache->key_salt );
+
+		// Key salt and mc prefix
+		$this->object_cache->salt_keys( 'mysite', true );
+		self::assertEquals( 'mysite_mc:', $this->object_cache->key_salt );
 	}
 
 	/*

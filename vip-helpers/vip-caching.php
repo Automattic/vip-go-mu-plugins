@@ -142,7 +142,8 @@ function wpcom_vip_url_to_postid( $url ) {
 	$cache_key = md5( $url );
 	$post_id   = wp_cache_get( $cache_key, 'url_to_postid' );
 
-	if ( false === $post_id ) {
+	// Look the URL up again if its post was unpublished or deleted since it was cached
+	if ( false === $post_id || ( $post_id && 'publish' !== get_post_status( $post_id ) ) ) {
 		$post_id = url_to_postid( $url ); // returns 0 on failure, so need to catch the false condition
 		wp_cache_set( $cache_key, $post_id, 'url_to_postid', 3 * HOUR_IN_SECONDS );
 	}
@@ -150,14 +151,14 @@ function wpcom_vip_url_to_postid( $url ) {
 	return $post_id;
 }
 
-add_action( 'transition_post_status', function ( $new_status, $old_status, $post ) {
-	if ( 'publish' !== $new_status && 'publish' !== $old_status ) {
-		return;
+// Forget the lookups for a published post's old and new URLs when it's saved
+add_action( 'wp_after_insert_post', function ( $post_id, $post, $update, $post_before ) {
+	foreach ( array_filter( [ $post_before, $post ] ) as $version ) {
+		if ( 'publish' === $version->post_status ) {
+			wp_cache_delete( md5( get_permalink( $version ) ), 'url_to_postid' );
+		}
 	}
-
-	$url = get_permalink( $post->ID );
-	wp_cache_delete( md5( $url ), 'url_to_postid' );
-}, 10, 3 );
+}, 10, 4 );
 
 /**
  * Cached version of wp_old_slug_redirect.
@@ -168,7 +169,7 @@ add_action( 'transition_post_status', function ( $new_status, $old_status, $post
  */
 function wpcom_vip_old_slug_redirect() {
 	global $wp_query;
-	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
+	if ( is_404() && '' !== ( $wp_query->query_vars['name'] ?? '' ) ) {
 		global $wpdb;
 
 		// Guess the current post_type based on the query vars.
@@ -438,9 +439,10 @@ function wpcom_vip_get_adjacent_post( $in_same_term = false, $excluded_terms = '
 	$query_key     = 'wpcom_vip_adjacent_post_' . md5( $query );
 	$cached_result = wp_cache_get( $query_key );
 
+	// Reuse the cached result, unless its post was unpublished or deleted since
 	if ( 'not found' === $cached_result ) {
 		return false;
-	} elseif ( false !== $cached_result ) {
+	} elseif ( false !== $cached_result && 'publish' === get_post_status( $cached_result ) ) {
 		return get_post( $cached_result );
 	}
 
@@ -485,6 +487,7 @@ function wpcom_vip_attachment_cache_key( $url ) {
 }
 
 function wpcom_vip_attachment_url_to_postid( $url ) {
+	$url       = (string) $url;
 	$cache_key = wpcom_vip_attachment_cache_key( $url );
 	$id        = wp_cache_get( $cache_key );
 	if ( false === $id ) {
@@ -521,15 +524,18 @@ function wpcom_vip_attachment_url_to_postid( $url ) {
 }
 
 /**
- * Remove cached post ID when attachment post deleted
+ * Remove cached lookups for an attachment's URLs when it's added or deleted
  *
  * @see wpcom_vip_attachment_url_to_postid()
  */
-add_action( 'delete_attachment', function ( $post_id ) {
-	$url       = wp_get_attachment_url( $post_id );
-	$cache_key = wpcom_vip_attachment_cache_key( $url );
-	wp_cache_delete( $cache_key, 'default' );
-} );
+function wpcom_vip_flush_attachment_url_cache( $post_id ) {
+	// The original image URL differs from the attachment URL when a big image was scaled down
+	foreach ( [ wp_get_attachment_url( $post_id ), wp_get_original_image_url( $post_id ) ] as $url ) {
+		wp_cache_delete( wpcom_vip_attachment_cache_key( $url ), 'default' );
+	}
+}
+add_action( 'add_attachment', 'wpcom_vip_flush_attachment_url_cache' );
+add_action( 'delete_attachment', 'wpcom_vip_flush_attachment_url_cache' );
 
 function wpcom_vip_enable_old_slug_redirect_caching() {
 	add_action( 'template_redirect', 'wpcom_vip_wp_old_slug_redirect', 8 );
@@ -539,21 +545,22 @@ function wpcom_vip_enable_old_slug_redirect_caching() {
 }
 
 /**
- * This works by first looking in the cache to see if there is a value saved based on the name query var.
+ * This works by first looking in the cache to see if there is a value saved for the request's query vars.
  * If one is found, redirect immediately. If nothing is found, including that there is no already cache "not_found" value we then add a hook to old_slug_redirect_url so that when the 'rea' wp_old_slug_redirect is run it will store the value in the cache @see wpcom_vip_set_old_slug_redirect_cache(). If we found a not_found we remove the template_redirect so the slow query is not run.
  */
 function wpcom_vip_wp_old_slug_redirect() {
 	global $wp_query;
-	if ( is_404() && '' !== $wp_query->query_vars['name'] ) {
+	if ( is_404() && '' !== ( $wp_query->query_vars['name'] ?? '' ) ) {
 
-		$redirect = wp_cache_get( 'old_slug' . $wp_query->query_vars['name'] );
+		$cache_key = wpcom_vip_old_slug_redirect_cache_key();
+		$redirect  = wp_cache_get( $cache_key );
 
 		if ( false === $redirect ) {
-			// Run the caching callback as the very firts one in order to capture the value returned by WordPress from database. This allows devs from using `old_slug_redirect_url` filter w/o polluting the cache
+			// Run the caching callback as the very first one in order to capture the value returned by WordPress from database. This allows devs from using `old_slug_redirect_url` filter w/o polluting the cache
 			add_filter( 'old_slug_redirect_url', 'wpcom_vip_set_old_slug_redirect_cache', -9999, 1 );
 			// If an old slug is not found the function returns early and does not apply the old_slug_redirect_url filter. so we will set the cache for not found and if it is found it will be overwritten later in wpcom_vip_set_old_slug_redirect_cache()
 			// phpcs:ignore WordPress.WP.AlternativeFunctions.rand_mt_rand, WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
-			wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
+			wp_cache_set( $cache_key, 'not_found', 'default', 12 * HOUR_IN_SECONDS + mt_rand( 0, 12 * HOUR_IN_SECONDS ) );
 		} elseif ( 'not_found' === $redirect ) {
 			// wpcom_vip_set_old_slug_redirect_cache() will cache 'not_found' when a url is not found so we don't keep hammering the database
 			remove_action( 'template_redirect', 'wp_old_slug_redirect' );
@@ -566,12 +573,19 @@ function wpcom_vip_wp_old_slug_redirect() {
 	}
 }
 function wpcom_vip_set_old_slug_redirect_cache( $link ) {
-	global $wp_query;
 	if ( ! empty( $link ) ) {
-		wp_cache_set( 'old_slug' . $wp_query->query_vars['name'], $link, 'default', 7 * DAY_IN_SECONDS );
+		wp_cache_set( wpcom_vip_old_slug_redirect_cache_key(), $link, 'default', 7 * DAY_IN_SECONDS );
 	}
 	return $link;
 }
+
+// Core's lookup depends on the request's effective query vars (post type, date, page, embed), not just the slug.
+// Hash query_vars rather than query, since hooks like pre_get_posts can change them after the request is parsed.
+function wpcom_vip_old_slug_redirect_cache_key() {
+	global $wp_query;
+	return 'old_slug:' . md5( wp_json_encode( $wp_query->query_vars ) ) . ':' . wp_cache_get_last_changed( 'old_slug_redirect' );
+}
+
 function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_before ) {
 	// Don't bother if the slug or date hasn't changed.
 	if ( $post->post_name == $post_before->post_name && $post->post_date == $post_before->post_date ) {
@@ -583,15 +597,8 @@ function wpcom_vip_flush_wp_old_slug_redirect_cache( $post_id, $post, $post_befo
 		return;
 	}
 
-	// Flush cache for all old slugs.
-	$old_slugs = (array) get_post_meta( $post_id, '_wp_old_slug' );
-
-	foreach ( $old_slugs as $old_slug ) {
-		wp_cache_delete( 'old_slug' . $old_slug, 'default' );
-	}
-
-	// FLush cache for new post_name since it could had been among old slugs before this update.
-	wp_cache_delete( 'old_slug' . $post->post_name, 'default' );
+	// Expire every cached lookup, since any of them may now resolve differently.
+	wp_cache_set_last_changed( 'old_slug_redirect' );
 }
 
 /**

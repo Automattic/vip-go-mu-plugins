@@ -7,17 +7,25 @@ const config: PlaywrightTestConfig = {
 	retries: 1,
 	globalSetup: require.resolve( './lib/global-setup' ),
 	timeout: 120000,
-	reporter: process.env.CI ? [ [ 'github' ] ] : 'line',
+	// `list` prints per-test durations in CI logs; `github` adds failure annotations.
+	reporter: process.env.CI ? [ [ 'list' ], [ 'github' ] ] : 'line',
 	reportSlowTests: null,
-	workers: process.env.CI ? 1 : undefined,
+	// Every test creates its own content, so tests can be spread across workers individually.
+	// CI runners have 4 CPUs.
+	fullyParallel: true,
+	workers: process.env.CI ? 4 : undefined,
 	use: {
 		headless: process.env.DEBUG_TESTS !== 'true',
 		viewport: { width: 1280, height: 1000 },
 		ignoreHTTPSErrors: true,
-		video: 'retain-on-failure',
-		trace: 'retain-on-failure',
+		contextOptions: {
+			reducedMotion: 'reduce',
+		},
+		// Record artifacts only when a test is retried, instead of for every test.
+		video: 'on-first-retry',
+		trace: 'on-first-retry',
 		storageState: 'e2eStorageState.json',
-		baseURL: process.env.E2E_BASE_URL ? process.env.E2E_BASE_URL : 'http://e2e-test-site.vipdev.lndo.site',
+		baseURL: process.env.E2E_BASE_URL || `http://${ process.env.E2E_SITE_SLUG || 'e2e-test-site' }.vipdev.lndo.site`,
 	},
 };
 

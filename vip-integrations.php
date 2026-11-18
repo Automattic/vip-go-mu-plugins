@@ -26,6 +26,10 @@ require_once __DIR__ . '/integrations/vip-governance.php';
 require_once __DIR__ . '/integrations/enterprise-search.php';
 require_once __DIR__ . '/integrations/security-boost.php';
 
+if ( file_exists( __DIR__ . '/integrations/wordpress-mcp.php' ) ) {
+	require_once __DIR__ . '/integrations/wordpress-mcp.php';
+}
+
 if ( file_exists( __DIR__ . '/integrations/agentforce.php' ) ) {
 	require_once __DIR__ . '/integrations/agentforce.php';
 }
@@ -46,12 +50,36 @@ if ( file_exists( __DIR__ . '/integrations/safe-publish.php' ) ) {
 	require_once __DIR__ . '/integrations/safe-publish.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/vip-workflows.php' ) ) {
+	require_once __DIR__ . '/integrations/vip-workflows.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/connector-controls.php' ) ) {
+	require_once __DIR__ . '/integrations/connector-controls.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/content-for-agents.php' ) ) {
+	require_once __DIR__ . '/integrations/content-for-agents.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/clipisode.php' ) ) {
+	require_once __DIR__ . '/integrations/clipisode.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/shareadraft.php' ) ) {
+	require_once __DIR__ . '/integrations/shareadraft.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
 IntegrationsSingleton::instance()->register( new VipGovernanceIntegration( 'vip-governance' ) );
 IntegrationsSingleton::instance()->register( new EnterpriseSearchIntegration( 'enterprise-search' ) );
 IntegrationsSingleton::instance()->register( new SecurityBoostIntegration( 'security-boost' ) );
+
+if ( class_exists( __NAMESPACE__ . '\\WordPressMcpIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new WordPressMcpIntegration( 'wordpress-mcp' ) );
+}
 
 if ( class_exists( __NAMESPACE__ . '\\AgentforceIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new AgentforceIntegration( 'agentforce' ) );
@@ -71,6 +99,26 @@ if ( class_exists( __NAMESPACE__ . '\\RealTimeCollaborationIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\SafePublishIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new SafePublishIntegration( 'safe-publish' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\VipWorkflowsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new VipWorkflowsIntegration( 'vip-workflows' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ConnectorControlsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ConnectorControlsIntegration( 'connector-controls' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ContentForAgentsIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ContentForAgentsIntegration( 'content-for-agents' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ClipisodeIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ClipisodeIntegration( 'clipisode' ) );
+}
+
+if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
+	IntegrationsSingleton::instance()->register( new ShareadraftIntegration( 'shareadraft' ) );
 }
 
 // @codeCoverageIgnoreEnd

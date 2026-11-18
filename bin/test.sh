@@ -1,4 +1,6 @@
-#!/bin/sh
+#!/usr/bin/env bash
+
+ARGS=()
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -10,6 +12,10 @@ while [ $# -gt 0 ]; do
         --multisite)
             shift
             WP_MULTISITE="$1"
+        ;;
+
+        --memcached)
+            TEST_MEMCACHED=1
         ;;
 
         --php)
@@ -43,7 +49,7 @@ while [ $# -gt 0 ]; do
         ;;
 
         *)
-            ARGS="${ARGS} $1"
+            ARGS+=( "$1" )
         ;;
     esac
 
@@ -70,7 +76,8 @@ echo "Will test with WP_VERSION=${WP_VERSION} and WP_MULTISITE=${WP_MULTISITE}"
 echo "--------------"
 echo
 
-UUID=$(date +%s000)
+# The PID keeps runs started in the same second from sharing a network and database.
+UUID="$(date +%s)-$$"
 if [ -z "${NETWORK_NAME_OVERRIDE}" ]; then
     NETWORK_NAME="tests-${UUID}"
     docker network create "${NETWORK_NAME}"
@@ -92,7 +99,19 @@ fi
 
 export MYSQL_HOST
 
+memcached=""
+if [ "${TEST_MEMCACHED}" = "1" ]; then
+    VIP_TEST_MEMCACHED_SERVER="cache-${UUID}:11211"
+    memcached=$(docker run --rm --network "${NETWORK_NAME}" --name "cache-${UUID}" -d memcached:1.6-alpine)
+fi
+
+export VIP_TEST_MEMCACHED_SERVER
+
 cleanup() {
+    if [ -n "${memcached}" ]; then
+        docker rm -f "${memcached}"
+    fi
+
     if [ -n "${db}" ]; then
         docker rm -f "${db}"
     fi
@@ -110,7 +129,11 @@ else
     interactive=""
 fi
 
-# shellcheck disable=SC2086,SC2248,SC2312 # ARGS and DOCKER_OPTIONS must not be quoted
+# Mount at the runner image's project path, and set APP_HOME and the working directory
+# explicitly so vendor/ is found even on older images with a different default home.
+PROJECT_DIR=/home/debian/project
+
+# shellcheck disable=SC2086,SC2248,SC2312 # DOCKER_OPTIONS is an explicitly split multi-option interface
 docker run \
     ${interactive} \
     --rm \
@@ -125,9 +148,12 @@ docker run \
     -e MYSQL_DB="${MYSQL_DATABASE}" \
     -e MYSQL_HOST \
     -e DISABLE_XDEBUG=1 \
+    -e VIP_TEST_MEMCACHED_SERVER \
+    -e APP_HOME="${PROJECT_DIR}" \
     -e WPVIP_PARSELY_INTEGRATION_TEST_MODE="${WPVIP_PARSELY_INTEGRATION_TEST_MODE}" \
     -e WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION="${WPVIP_PARSELY_INTEGRATION_PLUGIN_VERSION}" \
     ${DOCKER_OPTIONS} \
-    -v "$(pwd):/home/circleci/project" \
+    -v "$(pwd):${PROJECT_DIR}" \
+    -w "${PROJECT_DIR}" \
     ghcr.io/automattic/vip-container-images/wp-test-runner:latest \
-    ${ARGS}
+    "${ARGS[@]}"
