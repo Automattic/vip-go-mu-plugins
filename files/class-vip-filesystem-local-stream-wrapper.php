@@ -961,7 +961,9 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * Called in response to opendir()
 	 *
 	 * url_stat() reports every path without an extension as a directory, and
-	 * the File service can't list them, so they open as empty.
+	 * the File service can't list them, so they open as empty. Only directories
+	 * registered by their exact path, and directories inside them, list their
+	 * local copies, since only their children are routed locally too.
 	 *
 	 * @param   string  $path
 	 * @param   int     $options
@@ -970,7 +972,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 */
 	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
 	public function dir_opendir( $path, $options ) {
-		if ( static::is_local_file( $path ) ) {
+		if ( static::is_in_local_directory( $path ) ) {
 			$this->handle = opendir( static::get_local_tmp_path( $path ) );
 
 			return false !== $this->handle;
@@ -1310,8 +1312,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	public static function is_local_file( $file_path ) {
 		$file_path = rtrim( $file_path, '/' );
 
-		// O(1) check for exact matches
-		if ( isset( static::$local_files_map[ $file_path ] ) || isset( static::$local_files_map[ $file_path . '/' ] ) ) {
+		if ( static::is_in_local_directory( $file_path ) ) {
 			return true;
 		}
 
@@ -1330,12 +1331,28 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			}
 		}
 
-		// A local directory's children must stay local when callers reconstruct their vip:// paths.
-		// In particular, WP_Filesystem_Direct::delete() does this after listing a directory.
-		$parent = dirname( $file_path );
-		if ( str_starts_with( $parent, 'vip://' ) ) {
-			return static::is_local_file( $parent );
-		}
+		return false;
+	}
+
+	/**
+	 * Check if a path is registered by its exact path, or is inside a directory that is.
+	 *
+	 * Children of a local directory must stay local when callers rebuild their vip:// paths from a listing, as
+	 * WP_Filesystem_Direct::delete() does. Only exact registrations count, so wildcard patterns and file names
+	 * still match only the paths they did before, and files below them stay on the File service.
+	 *
+	 * @param string $path Path to check.
+	 * @return bool
+	 */
+	private static function is_in_local_directory( $path ) {
+		$dir = rtrim( $path, '/' );
+		do {
+			if ( isset( static::$local_files_map[ $dir ] ) || isset( static::$local_files_map[ $dir . '/' ] ) ) {
+				return true;
+			}
+
+			$dir = dirname( $dir );
+		} while ( str_starts_with( $dir, 'vip://' ) );
 
 		return false;
 	}
