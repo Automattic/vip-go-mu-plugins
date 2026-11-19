@@ -1308,8 +1308,10 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return bool True if the file should be handled locally, false otherwise
 	 */
 	public static function is_local_file( $file_path ) {
+		$file_path = rtrim( $file_path, '/' );
+
 		// O(1) check for exact matches
-		if ( isset( static::$local_files_map[ $file_path ] ) ) {
+		if ( isset( static::$local_files_map[ $file_path ] ) || isset( static::$local_files_map[ $file_path . '/' ] ) ) {
 			return true;
 		}
 
@@ -1326,6 +1328,13 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 			if ( fnmatch( $pattern, $file_path, FNM_PATHNAME ) ) {
 				return true;
 			}
+		}
+
+		// A local directory's children must stay local when callers reconstruct their vip:// paths.
+		// In particular, WP_Filesystem_Direct::delete() does this after listing a directory.
+		$parent = dirname( $file_path );
+		if ( str_starts_with( $parent, 'vip://' ) ) {
+			return static::is_local_file( $parent );
 		}
 
 		return false;
@@ -1350,12 +1359,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		$tmp_path = get_temp_dir() . $relative_path;
-
-		// Ensure the directory exists
-		$dir = dirname( $tmp_path );
-		if ( ! file_exists( $dir ) ) {
-			\wp_mkdir_p( $dir );
-		}
 
 		return $tmp_path;
 	}
