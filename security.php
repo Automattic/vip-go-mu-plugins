@@ -248,6 +248,12 @@ function _vip_login_cache_keys( $raw_username, $ip = null ) {
 	$username = _vip_login_limit_username( $raw_username );
 	$ip       = $ip ?? _vip_login_limit_ip();
 
+	// One IPv6 client usually has a whole /64, so its addresses share limits. IPv4-mapped addresses (::ffff:0:0/96) are kept whole.
+	$packed_ip = (string) inet_pton( $ip );
+	if ( 16 === strlen( $packed_ip ) && ! str_starts_with( $packed_ip, str_repeat( "\0", 10 ) . "\xff\xff" ) ) {
+		$ip = inet_ntop( substr( $packed_ip, 0, 8 ) . str_repeat( "\0", 8 ) ) . '/64';
+	}
+
 	// Each key type has its own prefix so that a username can't match an IP address key.
 	return [
 		'ip_username_cache_key' => 'ip_username:' . $ip . '|' . $username,
