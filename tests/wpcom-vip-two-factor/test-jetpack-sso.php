@@ -9,6 +9,27 @@ require_once __DIR__ . '/../../two-factor.php';
 require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
 
 class Test_Jetpack_SSO_Session extends WP_UnitTestCase {
+	public function test_rest_authorize_exemption_is_scoped_to_its_dispatch(): void {
+		$authorize = new WP_REST_Request( 'POST', '/jetpack/v4/REMOTE_AUTHORIZE' );
+		$other     = new WP_REST_Request( 'POST', '/wp/v2/users' );
+		$handler   = [ 'callback' => '__return_true' ];
+
+		// A rejected batch item must not grant the exemption to the next item.
+		$error = new WP_Error( 'rest_batch_not_allowed' );
+		$this->assertSame( $error, apply_filters( 'rest_request_before_callbacks', $error, $handler, $authorize ) );
+		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
+		apply_filters( 'rest_request_after_callbacks', $error, $handler, $authorize );
+
+		apply_filters( 'rest_request_before_callbacks', null, $handler, $authorize );
+		$this->assertTrue( wpcom_vip_is_jetpack_authorize_rest_request() );
+		apply_filters( 'rest_request_before_callbacks', null, $handler, $other );
+		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
+		apply_filters( 'rest_request_after_callbacks', null, $handler, $other );
+		$this->assertTrue( wpcom_vip_is_jetpack_authorize_rest_request() );
+		apply_filters( 'rest_request_after_callbacks', null, $handler, $authorize );
+		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
+	}
+
 	private $cookies_backup;
 	private $user_id;
 	private $session_filter_backup;
