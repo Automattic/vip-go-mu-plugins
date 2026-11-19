@@ -96,21 +96,14 @@ function wpcom_vip_is_jetpack_authorize_request() {
 }
 
 /**
- * Track the current REST dispatch and restore its parent after nested dispatches.
- *
- * @param bool|string|null $set Whether this dispatch is an authorization request, 'restore' to end it, or null to read.
- * @return bool Whether the current dispatch is an authorization request.
+ * Setter/Getter to keep track of whether the current REST dispatch is a
+ * /jetpack/v4/remote_authorize request that connects a WordPress.com user
+ * to a local user. It's set before each dispatch's callbacks and cleared after them.
  */
 function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
 	static $is_jetpack_authorize_rest_request = false;
-	static $previous_requests                 = [];
-	if ( 'restore' === $set ) {
-		$is_jetpack_authorize_rest_request = array_pop( $previous_requests ) ?? false;
-		return $is_jetpack_authorize_rest_request;
-	}
 	if ( ! is_null( $set ) ) {
-		$previous_requests[]               = $is_jetpack_authorize_rest_request;
-		$is_jetpack_authorize_rest_request = (bool) $set;
+		$is_jetpack_authorize_rest_request = $set;
 	}
 
 	return $is_jetpack_authorize_rest_request;
@@ -135,11 +128,11 @@ function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler, 
 }
 add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 3 );
 
-function wpcom_vip_restore_jetpack_authorize_rest_request_hook( $response ) {
-	wpcom_vip_is_jetpack_authorize_rest_request( 'restore' );
+function wpcom_vip_clear_jetpack_authorize_rest_request_hook( $response ) {
+	wpcom_vip_is_jetpack_authorize_rest_request( false );
 	return $response;
 }
-add_filter( 'rest_request_after_callbacks', 'wpcom_vip_restore_jetpack_authorize_rest_request_hook' );
+add_filter( 'rest_request_after_callbacks', 'wpcom_vip_clear_jetpack_authorize_rest_request_hook' );
 
 function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {

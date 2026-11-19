@@ -22,12 +22,12 @@ class Test_Jetpack_SSO_Session extends WP_UnitTestCase {
 
 		apply_filters( 'rest_request_before_callbacks', null, $handler, $authorize );
 		$this->assertTrue( wpcom_vip_is_jetpack_authorize_rest_request() );
+		apply_filters( 'rest_request_after_callbacks', null, $handler, $authorize );
+		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
+
 		apply_filters( 'rest_request_before_callbacks', null, $handler, $other );
 		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
 		apply_filters( 'rest_request_after_callbacks', null, $handler, $other );
-		$this->assertTrue( wpcom_vip_is_jetpack_authorize_rest_request() );
-		apply_filters( 'rest_request_after_callbacks', null, $handler, $authorize );
-		$this->assertFalse( wpcom_vip_is_jetpack_authorize_rest_request() );
 	}
 
 	private $cookies_backup;
