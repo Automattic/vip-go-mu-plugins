@@ -1310,8 +1310,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return bool True if the file should be handled locally, false otherwise
 	 */
 	public static function is_local_file( $file_path ) {
-		$file_path = rtrim( $file_path, '/' );
-
 		if ( static::is_in_local_directory( $file_path ) ) {
 			return true;
 		}
