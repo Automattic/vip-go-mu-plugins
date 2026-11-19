@@ -184,23 +184,19 @@ function _wpcom_vip_url_to_postid_cache_key( $url ) {
 		'_gl',
 	];
 
-	// Split the way url_to_postid() does: the #fragment first, then the ?query
-	$url      = (string) $url;
-	$fragment = (string) strstr( $url, '#' );
-	$base     = substr( $url, 0, strlen( $url ) - strlen( $fragment ) );
-	$parts    = explode( '?', $base, 2 );
-
+	$url   = (string) $url;
+	$parts = explode( '?', $url, 2 );
 	if ( isset( $parts[1] ) ) {
 		// Drop tracking args by their raw name and leave every other byte as given, since url_to_postid()
-		// and its filters can depend on order, duplicates and encoding. Args containing a "?" stay because
-		// url_to_postid() matches "?p=N" anywhere in the URL, including inside another arg's value.
+		// and its filters can depend on order, duplicates and encoding. Args containing "?" or "#" stay
+		// because url_to_postid() matches "?p=N" anywhere in the URL, inside a value or the fragment too.
 		$args = array_filter( explode( '&', $parts[1] ), function ( $arg ) use ( $tracking_params ) {
-			return str_contains( $arg, '?' ) || ! in_array( explode( '=', $arg, 2 )[0], $tracking_params, true );
+			return strpbrk( $arg, '?#' ) || ! in_array( explode( '=', $arg, 2 )[0], $tracking_params, true );
 		} );
-		$base = $parts[0] . ( $args ? '?' . implode( '&', $args ) : '' );
+		$url  = $parts[0] . ( $args ? '?' . implode( '&', $args ) : '' );
 	}
 
-	return md5( $base . $fragment );
+	return md5( $url );
 }
 
 // Forget the lookups for a published post's old and new URLs when it's saved
