@@ -137,7 +137,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	private static $local_file_names = array();
 
 	/**
-	 * File handle for local files
+	 * File or directory handle for local files
 	 *
 	 * @var resource|null
 	 */
@@ -939,6 +939,84 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	}
 
 	/**
+	 * Called in response to rmdir()
+	 *
+	 * @param   string  $path
+	 * @param   int     $options
+	 *
+	 * @return  bool
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
+	public function rmdir( $path, $options ) {
+		if ( static::is_local_file( $path ) ) {
+			return rmdir( static::get_local_tmp_path( $path ) ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir
+		}
+
+		// The File service has no directories to remove, and the files under this path stay, so report
+		// that nothing was removed. Returning false doesn't add a PHP warning.
+		return false;
+	}
+
+	/**
+	 * Called in response to opendir()
+	 *
+	 * url_stat() reports every path without an extension as a directory, and
+	 * the File service can't list them, so they open as empty. Only directories
+	 * registered by their exact path, and directories inside them, list their
+	 * local copies, since only their children are routed locally too.
+	 *
+	 * @param   string  $path
+	 * @param   int     $options
+	 *
+	 * @return  bool
+	 */
+	// phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed -- args needed by spec
+	public function dir_opendir( $path, $options ) {
+		if ( static::is_in_local_directory( $path ) ) {
+			$this->handle = opendir( static::get_local_tmp_path( $path ) );
+
+			return false !== $this->handle;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Called in response to readdir()
+	 *
+	 * @return  string|false
+	 */
+	public function dir_readdir() {
+		return $this->handle ? readdir( $this->handle ) : false;
+	}
+
+	/**
+	 * Called in response to rewinddir()
+	 *
+	 * @return  bool
+	 */
+	public function dir_rewinddir() {
+		if ( $this->handle ) {
+			rewinddir( $this->handle );
+		}
+
+		return true;
+	}
+
+	/**
+	 * Called in response to closedir()
+	 *
+	 * @return  bool
+	 */
+	public function dir_closedir() {
+		if ( $this->handle ) {
+			closedir( $this->handle );
+		}
+
+		return true;
+	}
+
+	/**
 	 * Set metadata on a stream
 	 *
 	 * @link http://php.net/manual/en/streamwrapper.stream-metadata.php
@@ -1232,8 +1310,7 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 	 * @return bool True if the file should be handled locally, false otherwise
 	 */
 	public static function is_local_file( $file_path ) {
-		// O(1) check for exact matches
-		if ( isset( static::$local_files_map[ $file_path ] ) ) {
+		if ( static::is_in_local_directory( $file_path ) ) {
 			return true;
 		}
 
@@ -1251,6 +1328,29 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 				return true;
 			}
 		}
+
+		return false;
+	}
+
+	/**
+	 * Check if a path is registered by its exact path, or is inside a directory that is.
+	 *
+	 * Children of a local directory must stay local when callers rebuild their vip:// paths from a listing, as
+	 * WP_Filesystem_Direct::delete() does. Only exact registrations count, so wildcard patterns and file names
+	 * still match only the paths they did before, and files below them stay on the File service.
+	 *
+	 * @param string $path Path to check.
+	 * @return bool
+	 */
+	private static function is_in_local_directory( $path ) {
+		$dir = rtrim( $path, '/' );
+		do {
+			if ( isset( static::$local_files_map[ $dir ] ) || isset( static::$local_files_map[ $dir . '/' ] ) ) {
+				return true;
+			}
+
+			$dir = dirname( $dir );
+		} while ( str_starts_with( $dir, 'vip://' ) );
 
 		return false;
 	}
@@ -1274,12 +1374,6 @@ class VIP_Filesystem_Local_Stream_Wrapper {
 		}
 
 		$tmp_path = get_temp_dir() . $relative_path;
-
-		// Ensure the directory exists
-		$dir = dirname( $tmp_path );
-		if ( ! file_exists( $dir ) ) {
-			\wp_mkdir_p( $dir );
-		}
 
 		return $tmp_path;
 	}
