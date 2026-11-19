@@ -206,9 +206,14 @@ class Meta_Updater {
 		}
 
 		$status = wp_remote_retrieve_response_code( $response );
+		if ( 404 === $status ) {
+			// The file is gone; record a zero filesize so it isn't checked again.
+			return 0;
+		}
+
 		if ( 200 !== $status ) {
 			trigger_error( sprintf( '%s: HEAD attachment %s failed with HTTP error %d', __METHOD__, esc_html( $attachment_url ), (int) $status ), E_USER_WARNING );
-			return ( 404 === $status ) ? 0 : -1;
+			return -1;
 		}
 
 		$length = wp_remote_retrieve_header( $response, 'Content-Length' );
