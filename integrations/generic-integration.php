@@ -7,6 +7,8 @@
 
 namespace Automattic\VIP\Integrations;
 
+require_once __DIR__ . '/bundled-plugin-loader.php';
+
 /**
  * An integration with no class of its own. The platform lists it in the active-integrations mapping with its
  * plugin folder, entry file and version, and it's loaded from the bundles in vip-integrations/ like
@@ -18,6 +20,8 @@ namespace Automattic\VIP\Integrations;
  * @private
  */
 class GenericIntegration extends Integration {
+	use LoadsLatestBundledPlugin;
+
 	/**
 	 * Plugin folder from the manifest, also the bundle folder prefix: `<folder>-<version>`.
 	 *
@@ -54,6 +58,13 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
+	 * The bundle folder loaded from vip-integrations/, once it's loaded.
+	 *
+	 * @var string|null
+	 */
+	private ?string $loaded_bundle = null;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param string $slug  Slug of the integration.
@@ -71,13 +82,20 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * True when the plugin was already loaded some other way, e.g. from the customer's repo:
-	 * a file `<folder>/<entry_file>` has been included. A bundle from vip-integrations/ is in
-	 * `<folder>-<version>/`, so it doesn't count.
+	 * True once its bundle is loaded, or when the plugin was loaded some other way.
 	 *
 	 * @private
 	 */
 	public function is_loaded(): bool {
+		return null !== $this->loaded_bundle || $this->is_loaded_outside_bundle();
+	}
+
+	/**
+	 * True when the plugin was loaded some other way, e.g. from the customer's repo: a file
+	 * `<folder>/<entry_file>` has been included. A bundle from vip-integrations/ is in
+	 * `<folder>-<version>/`, so it doesn't count.
+	 */
+	private function is_loaded_outside_bundle(): bool {
 		$suffix = '/' . $this->folder . '/' . $this->entry_file;
 
 		foreach ( get_included_files() as $file ) {
@@ -99,7 +117,8 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Requires the bundle's entry file. With no bundle to load, the integration is no longer active.
+	 * Requires the bundle's entry file. With no bundle to load, or one that needs a newer WordPress
+	 * than the site's, the integration is no longer active.
 	 *
 	 * @private
 	 */
@@ -108,27 +127,41 @@ class GenericIntegration extends Integration {
 			return;
 		}
 
-		$load_path = $this->get_load_path();
-		if ( null === $load_path ) {
+		$folder = $this->get_bundle_folder();
+		if ( null === $folder || ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
 			$this->is_active = false;
 			return;
 		}
 
-		require_once $load_path;
+		require_once $this->get_bundle_path( $folder );
+
+		$this->loaded_bundle = $folder;
 	}
 
 	/**
 	 * The entry file of the bundle to load, or null when there's no bundle to load.
 	 */
 	public function get_load_path(): ?string {
+		$folder = $this->get_bundle_folder();
+
+		return null === $folder ? null : $this->get_bundle_path( $folder );
+	}
+
+	/**
+	 * The bundle folder to load, or null when there's none with a readable entry file.
+	 */
+	public function get_bundle_folder(): ?string {
 		$folder = $this->get_selected_version_folder( $this->get_versions() );
-		if ( null === $folder ) {
-			return null;
-		}
 
-		$load_path = $this->get_bundle_path( $folder );
+		return null !== $folder && is_readable( $this->get_bundle_path( $folder ) ) ? $folder : null;
+	}
 
-		return is_readable( $load_path ) ? $load_path : null;
+	/**
+	 * The bundle folder to load, for `LoadsLatestBundledPlugin`. It follows `version_strategy`, which
+	 * is `latest` for every entry in format 1.
+	 */
+	public function get_latest_version(): ?string {
+		return $this->get_bundle_folder();
 	}
 
 	/**
@@ -152,18 +185,22 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Keeps the `<folder>-<version>` bundles. `get_available_versions()` matches the folder prefix
-	 * anywhere in the name, so a folder `sync` would otherwise pick up `acme-sync-1.0`.
+	 * Keeps the `<folder>-<version>` bundles, where the version is numbers and dots. `get_available_versions()`
+	 * matches the folder prefix anywhere in the name, so a folder `sync` would otherwise pick up
+	 * `acme-sync-1.0`, or `sync-2fa-9.0` as version `2fa-9.0`.
 	 *
 	 * @param array<string,string> $versions Folder name => version.
 	 *
 	 * @return array<string,string> Folder name => version.
 	 */
 	public function filter_versions( array $versions ): array {
+		$prefix = $this->folder . '-';
+
 		return array_filter(
 			$versions,
-			fn( $version, $folder ) => str_starts_with( $folder, $this->folder . '-' ) && 1 === preg_match( '/^[0-9]/', (string) $version ),
-			ARRAY_FILTER_USE_BOTH
+			fn( $folder ) => str_starts_with( (string) $folder, $prefix )
+				&& 1 === preg_match( '/^[0-9]+(\.[0-9]+)*$/D', substr( (string) $folder, strlen( $prefix ) ) ),
+			ARRAY_FILTER_USE_KEY
 		);
 	}
 

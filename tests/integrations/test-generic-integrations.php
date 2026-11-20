@@ -415,6 +415,8 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 				'acme-sync-2.0' => 'acme-2.0',
 				'sync-1.0'      => '1.0',
 				'sync-abc'      => 'abc',
+				'sync-2fa-9.0'  => '2fa-9.0',
+				'sync-2-1.0'    => '2-1.0',
 			] )
 		);
 	}
@@ -455,14 +457,14 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	/**
 	 * A GenericIntegration whose bundles are the given folders in a temp dir, each with an entry
-	 * file when `$with_entry_file`.
+	 * file holding `$entry_file_contents` when `$with_entry_file`.
 	 */
-	private function integration_with_bundles( string $slug, array $versions, bool $with_entry_file = true ): GenericIntegration {
+	private function integration_with_bundles( string $slug, array $versions, bool $with_entry_file = true, string $entry_file_contents = '<?php' ): GenericIntegration {
 		$dir = $this->temp_dir();
 		foreach ( array_keys( $versions ) as $folder ) {
 			mkdir( $dir . '/' . $folder );
 			if ( $with_entry_file ) {
-				file_put_contents( $dir . '/' . $folder . '/' . $slug . '.php', '<?php' );
+				file_put_contents( $dir . '/' . $folder . '/' . $slug . '.php', $entry_file_contents );
 			}
 		}
 
@@ -507,6 +509,19 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertContains( $integration->get_load_path(), get_included_files() );
 		$this->assertTrue( $integration->is_active() );
+		$this->assertTrue( $integration->is_loaded() );
+	}
+
+	public function test__load_bundle_skips_a_bundle_that_needs_a_newer_wordpress(): void {
+		// A slug no other test uses: an included file stays included for the rest of the run.
+		$integration = $this->integration_with_bundles( 'newer-wp-sync', [ 'newer-wp-sync-1.2' => '1.2' ], true, "<?php\n/**\n * Plugin Name: Newer WP Sync\n * Requires at least: 99.0\n */\n" );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$this->assertNotContains( $integration->get_load_path(), get_included_files() );
+		$this->assertFalse( $integration->is_active() );
+		$this->assertFalse( $integration->is_loaded() );
 	}
 
 	public function test__load_bundle_deactivates_without_a_bundle(): void {
