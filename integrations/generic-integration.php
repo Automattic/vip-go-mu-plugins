@@ -58,7 +58,15 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
-	 * The bundle folder loaded from vip-integrations/, once it's loaded.
+	 * How loading went: null until `load_bundle()` runs, then `loaded`, `already_loaded`,
+	 * `missing_bundle` or `unsupported_wp`.
+	 *
+	 * @var string|null
+	 */
+	private ?string $load_status = null;
+
+	/**
+	 * The bundle folder that was loaded, e.g. `acme-sync-1.2`, or null.
 	 *
 	 * @var string|null
 	 */
@@ -108,6 +116,33 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
+	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. On
+	 * multisite that's the current network site's config, which is where the platform writes it, as
+	 * for the hand-written integrations (e.g. Parse.ly); otherwise the environment's. Values are typed
+	 * by the platform from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
+	 *
+	 * @private
+	 */
+	public function configure(): void {
+		$constant = $this->get_config_constant_name();
+		if ( defined( $constant ) ) {
+			return;
+		}
+
+		$config = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
+
+		define( $constant, $config );
+	}
+
+	/**
+	 * The plugin's config constant: the slug upper-cased, with `-` as `_`, e.g. `acme-sync` is
+	 * `VIP_ACME_SYNC_CONFIG`. The manifest doesn't name it; it's always derived from the slug.
+	 */
+	public function get_config_constant_name(): string {
+		return 'VIP_' . strtoupper( str_replace( '-', '_', $this->get_slug() ) ) . '_CONFIG';
+	}
+
+	/**
 	 * Loads the plugin's bundle on plugins_loaded, unless the plugin is already loaded.
 	 *
 	 * @private
@@ -117,24 +152,34 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Requires the bundle's entry file. With no bundle to load, or one that needs a newer WordPress
-	 * than the site's, the integration is no longer active.
+	 * Requires the bundle's entry file, and records how loading went for `get_runtime_status()`. With
+	 * no bundle to load, or one that needs a newer WordPress than the site's, the integration is no
+	 * longer active.
 	 *
 	 * @private
 	 */
 	public function load_bundle(): void {
 		if ( $this->is_loaded() ) {
+			$this->load_status = 'already_loaded';
 			return;
 		}
 
 		$folder = $this->get_bundle_folder();
-		if ( null === $folder || ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
-			$this->is_active = false;
+		if ( null === $folder ) {
+			$this->is_active   = false;
+			$this->load_status = 'missing_bundle';
+			return;
+		}
+
+		if ( ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
+			$this->is_active   = false;
+			$this->load_status = 'unsupported_wp';
 			return;
 		}
 
 		require_once $this->get_bundle_path( $folder );
 
+		$this->load_status   = 'loaded';
 		$this->loaded_bundle = $folder;
 	}
 
@@ -171,6 +216,32 @@ class GenericIntegration extends Integration {
 	 */
 	public function get_bundle_path( string $folder ): string {
 		return WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
+	}
+
+	/**
+	 * How the integration loaded, for the Site Details Service. Holds no config, so nothing secret.
+	 *
+	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
+	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
+	 * e.g. from the customer's repo), `missing_bundle` (no bundle in vip-integrations/, so nothing
+	 * was loaded) or `unsupported_wp` (the bundle needs a newer WordPress, so it wasn't loaded).
+	 * `bundle` is the folder that was loaded, or null.
+	 *
+	 * The mapping's own values (folder, version, scope) aren't repeated: the platform wrote them.
+	 *
+	 * @return array{status:string,bundle:?string}
+	 */
+	public function get_runtime_status(): array {
+		if ( null !== $this->load_status ) {
+			$status = $this->load_status;
+		} else {
+			$status = $this->is_active() ? 'pending' : 'inactive';
+		}
+
+		return [
+			'status' => $status,
+			'bundle' => $this->loaded_bundle,
+		];
 	}
 
 	/**
