@@ -84,8 +84,12 @@ class Integrations {
 			}
 
 			if ( $vip_config->is_active_via_vip() ) {
-				// Directly, not through activate(), which refuses what only the platform activates.
-				$integration->activate();
+				// A manifest-backed integration refuses activate(), which customer code can call too.
+				if ( $integration instanceof GenericIntegration ) {
+					$integration->activate_from_platform();
+				} else {
+					$this->activate( $slug );
+				}
 
 				// If integration is activated successfully without any error then configure.
 				if ( $integration->is_active() ) {
@@ -138,13 +142,6 @@ class Integrations {
 
 		if ( null === $integration ) {
 			trigger_error( sprintf( 'VIP Integration with slug "%s" is not a registered integration.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-			return;
-		}
-
-		// A manifest-backed integration is activated by the platform only, from its config, so its
-		// status and the platform's org gate can't be bypassed by activating it in code.
-		if ( $integration instanceof GenericIntegration ) {
-			trigger_error( sprintf( 'VIP Integration "%s" is activated by the platform and can\'t be activated in code.', esc_html( $slug ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
 			return;
 		}
 

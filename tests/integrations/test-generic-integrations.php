@@ -503,7 +503,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_bundle_requires_the_selected_bundle(): void {
 		// A slug no other test uses: an included file stays included for the rest of the run.
 		$integration = $this->integration_with_bundles( 'required-sync', [ 'required-sync-1.2' => '1.2' ] );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -515,7 +515,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__load_bundle_skips_a_bundle_that_needs_a_newer_wordpress(): void {
 		// A slug no other test uses: an included file stays included for the rest of the run.
 		$integration = $this->integration_with_bundles( 'newer-wp-sync', [ 'newer-wp-sync-1.2' => '1.2' ], true, "<?php\n/**\n * Plugin Name: Newer WP Sync\n * Requires at least: 99.0\n */\n" );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -526,7 +526,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__load_bundle_deactivates_without_a_bundle(): void {
 		$integration = $this->integration_with_bundles( 'nothing-sync', [] );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -747,7 +747,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__configure_refuses_a_constant_that_is_already_defined(): void {
 		Constant_Mocker::define( 'VIP_ACME_SYNC_CONFIG', [ 'api_key' => 'from-vip-config' ] );
 		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->configure();
 
@@ -794,6 +794,33 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 			[ 'VIP Integration "acme-sync" is activated by the platform and can\'t be activated in code.' ],
 			$this->warnings
 		);
+	}
+
+	public function test__a_generic_integration_cannot_be_activated_on_the_object(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
+
+		$integration->activate();
+
+		$this->assertFalse( $integration->is_active() );
+		$this->assertSame(
+			[ 'VIP Integration "acme-sync" is activated by the platform and can\'t be activated in code.' ],
+			$this->warnings
+		);
+	}
+
+	public function test__activating_the_object_in_code_leaves_the_platform_to_activate_it(): void {
+		$this->enable_feature_for_site();
+		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry( 'acme-sync', [ 'scope' => 'network' ] ) ] ] );
+		add_filter( 'vip_integrations_pre_load_config', fn( $config, $path, $slug ) => 'acme-sync' === $slug ? [ 'env' => [ 'status' => 'disabled' ] ] : $config, 10, 3 );
+
+		$integrations = new Integrations();
+		register_generic_integrations( $integrations );
+		$integrations->get_integration( 'acme-sync' )->activate();
+		$integrations->activate_platform_integrations();
+
+		// Disabled by the platform, so activating the object in code doesn't load it.
+		$this->assertFalse( $integrations->get_integration( 'acme-sync' )->is_active() );
+		$this->assertFalse( has_action( 'plugins_loaded', [ $integrations->get_integration( 'acme-sync' ), 'load_bundle' ] ) );
 	}
 
 	public function test__activating_in_code_leaves_the_platform_to_activate_it(): void {
@@ -853,7 +880,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__status_is_pending_until_the_bundle_is_loaded(): void {
 		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$this->assertSame( 'pending', $integration->get_runtime_status()['status'] );
 	}
@@ -864,7 +891,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 			'status-sync-2.0' => '2.0',
 			'status-sync-1.2' => '1.2',
 		] );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -876,7 +903,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__status_reports_a_missing_bundle_and_deactivates(): void {
 		$integration = $this->integration_with_bundles( 'missing-sync', [ 'missing-sync-1.2' => '1.2' ], false );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -888,7 +915,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__status_reports_a_bundle_that_needs_a_newer_wordpress(): void {
 		$integration = $this->integration_with_bundles( 'old-wp-sync', [ 'old-wp-sync-1.2' => '1.2' ], true, "<?php\n/**\n * Plugin Name: Old WP Sync\n * Requires at least: 99.0\n */\n" );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$integration->load_bundle();
 
@@ -911,7 +938,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__status_holds_no_config(): void {
 		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
-		$integration->activate();
+		$integration->activate_from_platform();
 
 		$status = wp_json_encode( $integration->get_runtime_status() );
 		$this->assertStringNotContainsString( 'env-key', $status );

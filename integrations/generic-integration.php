@@ -116,6 +116,26 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
+	 * Refuses with a warning. A manifest-backed integration is activated by the platform only, from
+	 * its config, so its status and the platform's org gate can't be bypassed in code, e.g. with
+	 * `wpvip_get_integration( 'acme-sync' )->activate()`. The platform calls `activate_from_platform()`.
+	 *
+	 * @param array $options Ignored.
+	 */
+	public function activate( array $options = [] ): void {
+		trigger_error( sprintf( 'VIP Integration "%s" is activated by the platform and can\'t be activated in code.', esc_html( $this->get_slug() ) ), E_USER_WARNING ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+	}
+
+	/**
+	 * Activates the integration. Only `Integrations::activate_platform_integrations()` calls this.
+	 *
+	 * @private
+	 */
+	public function activate_from_platform(): void {
+		parent::activate();
+	}
+
+	/**
 	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. On
 	 * multisite that's the current network site's config, which is where the platform writes it, as
 	 * for the hand-written integrations (e.g. Parse.ly); otherwise the environment's. Values are typed
