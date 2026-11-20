@@ -223,10 +223,13 @@ class GenericIntegration extends Integration {
 	 *
 	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
 	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
-	 * e.g. from the customer's repo) or `missing_bundle` (no bundle in vip-integrations/, so nothing
-	 * was loaded). `bundle` is the folder that was loaded, or null.
+	 * e.g. from the customer's repo), `missing_bundle` (no bundle in vip-integrations/, so nothing
+	 * was loaded) or `unsupported_wp` (the bundle needs a newer WordPress, so it wasn't loaded).
+	 * `bundle` is the folder that was loaded, or null.
 	 *
-	 * @return array{slug:string,folder:string,version:string,version_strategy:string,scope:string,active:bool,status:string,bundle:?string}
+	 * The mapping's own values (folder, version, scope) aren't repeated: the platform wrote them.
+	 *
+	 * @return array{status:string,bundle:?string}
 	 */
 	public function get_runtime_status(): array {
 		if ( null !== $this->load_status ) {
@@ -236,14 +239,8 @@ class GenericIntegration extends Integration {
 		}
 
 		return [
-			'slug'             => $this->get_slug(),
-			'folder'           => $this->folder,
-			'version'          => $this->version,
-			'version_strategy' => $this->version_strategy,
-			'scope'            => $this->scope,
-			'active'           => $this->is_active(),
-			'status'           => $status,
-			'bundle'           => $this->loaded_bundle,
+			'status' => $status,
+			'bundle' => $this->loaded_bundle,
 		];
 	}
 

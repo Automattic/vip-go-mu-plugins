@@ -776,14 +776,8 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertSame(
 			[
-				'slug'             => 'acme-sync',
-				'folder'           => 'acme-sync',
-				'version'          => '1.2.0',
-				'version_strategy' => 'latest',
-				'scope'            => 'site',
-				'active'           => false,
-				'status'           => 'inactive',
-				'bundle'           => null,
+				'status' => 'inactive',
+				'bundle' => null,
 			],
 			$status
 		);
@@ -807,7 +801,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$integration->load_bundle();
 
 		$status = $integration->get_runtime_status();
-		$this->assertTrue( $status['active'] );
+		$this->assertTrue( $integration->is_active() );
 		$this->assertSame( 'loaded', $status['status'] );
 		$this->assertSame( 'status-sync-2.0', $status['bundle'] );
 	}
@@ -819,9 +813,19 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$integration->load_bundle();
 
 		$status = $integration->get_runtime_status();
-		$this->assertFalse( $status['active'] );
+		$this->assertFalse( $integration->is_active() );
 		$this->assertSame( 'missing_bundle', $status['status'] );
 		$this->assertNull( $status['bundle'] );
+	}
+
+	public function test__status_reports_a_bundle_that_needs_a_newer_wordpress(): void {
+		$integration = $this->integration_with_bundles( 'old-wp-sync', [ 'old-wp-sync-1.2' => '1.2' ], true, "<?php\n/**\n * Plugin Name: Old WP Sync\n * Requires at least: 99.0\n */\n" );
+		$integration->activate();
+
+		$integration->load_bundle();
+
+		$this->assertSame( 'unsupported_wp', $integration->get_runtime_status()['status'] );
+		$this->assertNull( $integration->get_runtime_status()['bundle'] );
 	}
 
 	public function test__status_reports_a_plugin_loaded_some_other_way(): void {
