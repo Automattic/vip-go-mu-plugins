@@ -851,6 +851,114 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
 	}
 
+	public function test_process_jobs_sends_a_batch_over_the_size_limit_in_halves_as_prepared() {
+		$jobs = $this->schedule_jobs_for_new_posts( 3 );
+
+		// Every request with more than one document is over the size limit
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		$prepared = 0;
+		add_filter( 'ep_bulk_index_action_args', function ( $action_args ) use ( &$prepared ) {
+			++$prepared;
+			return $action_args;
+		} );
+
+		$after_bulk_index = 0;
+		add_action( 'ep_after_bulk_index', function () use ( &$after_bulk_index ) {
+			++$after_bulk_index;
+		} );
+
+		// Documents per bulk request sent
+		$bulk_requests = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				$bulk_requests[] = substr_count( $args['body'], '{"index"' );
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertSame( array( 1, 1, 1 ), $bulk_requests, 'a batch over the size limit should be sent in halves until each part fits, not whole' );
+		$this->assertSame( 3, $prepared, 'with the documents prepared for it, not prepared again' );
+		$this->assertSame( 4, $after_bulk_index, 'ep_after_bulk_index should fire for the batch, then for each part sent, not for a half refused again' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
+	}
+
+	public function test_process_jobs_splits_only_its_own_request_when_a_callback_sends_another() {
+		$jobs   = $this->schedule_jobs_for_new_posts( 2 );
+		$ids    = array_map( 'intval', wp_list_pluck( $jobs, 'object_id' ) );
+		$others = self::factory()->post->create_many( 2 );
+
+		// Every request with more than one document is over the size limit
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		// Once, a callback of ep_after_bulk_index indexes other posts in a bulk request of its own
+		$indexed_others = false;
+		add_action( 'ep_after_bulk_index', function () use ( &$indexed_others, $others ) {
+			if ( ! $indexed_others ) {
+				$indexed_others = true;
+				Indexables::factory()->get( 'post' )->bulk_index( $others );
+			}
+		}, 5 );
+
+		// IDs of the documents in each bulk request sent
+		$bulk_requests = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				preg_match_all( '/"_id":(\d+)/', $args['body'], $matches );
+				$bulk_requests[] = array_map( 'intval', $matches[1] );
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertSame( array( $others, array( $ids[0] ), array( $ids[1] ) ), $bulk_requests, 'the callback\'s request should be sent as it is, and the batch\'s own documents in halves' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the batch\'s jobs should be done' );
+	}
+
+	public function test_process_jobs_queues_the_rest_of_a_batch_over_the_size_limit_again_after_a_part_fails() {
+		global $wpdb;
+
+		$jobs = $this->schedule_jobs_for_new_posts( 3 );
+
+		// Every request with more than one document is over the size limit, so each document is sent on its own
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		// The last object, which won't be sent, has used up its retries
+		$attempts_key = "requeue_attempts_post_{$jobs[2]->index_version}_{$jobs[2]->object_id}";
+		wp_cache_set( $attempts_key, Queue::MAX_REQUEUE_ATTEMPTS, Queue::CACHE_GROUP );
+
+		// The second request fails
+		$bulk_requests = 0;
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				return 2 === ++$bulk_requests ? self::es_response( '{}', 503 ) : self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$table_name = $this->queue->schema->get_table_name();
+		$requeued   = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `start_time` > UTC_TIMESTAMP() ORDER BY object_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertSame( 2, $bulk_requests, 'the rest of the batch should not be sent after a part failed' );
+		$this->assertEquals( array( $jobs[1]->object_id, $jobs[2]->object_id ), $requeued, 'the part that failed and the rest should be queued again' );
+		$this->assertEquals( Queue::MAX_REQUEUE_ATTEMPTS, wp_cache_get( $attempts_key, Queue::CACHE_GROUP ), 'the rest without using up a retry' );
+	}
+
 	public function test_process_jobs_queues_a_failed_batch_again_at_its_priority() {
 		global $wpdb;
 
