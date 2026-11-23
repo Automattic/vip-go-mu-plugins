@@ -823,7 +823,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$batch       = range( 40, 42 );
 
 		do_action( 'ep_after_bulk_index_dynamically', $batch, 'post', array( $unavailable, $response( array( 40 => 201 ) ) ) );
-		$this->assertEquals( array(), $queued(), 'a failed request that bulk_index_dynamically() sent again should queue nothing' );
+		$this->assertEquals( $batch, $queued(), 'a failed request should queue all of the objects again, even if a later one went through' );
 
 		do_action( 'ep_after_bulk_index_dynamically', $batch, 'post', array( $response( array( 40 => 201 ) ), $unavailable, new \WP_Error( 'ep_too_big_request_skipped', 'Too big' ) ) );
 		$this->assertEquals( $batch, $queued(), 'a failed last request should queue all of the objects again' );
