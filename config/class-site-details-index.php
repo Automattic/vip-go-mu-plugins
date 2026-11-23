@@ -3,8 +3,6 @@
 namespace Automattic\VIP\Config;
 
 use Automattic\VIP\Integrations\ConnectorControlsIntegration;
-use Automattic\VIP\Integrations\GenericIntegration;
-use Automattic\VIP\Integrations\Integrations;
 use Automattic\VIP\Integrations\IntegrationsSingleton;
 use Automattic\VIP\WP_Parsely_Integration\Parsely_Loader_Info as ParselyInfo;
 
@@ -90,11 +88,6 @@ class Site_Details_Index {
 		$site_details['parsely']            = $this->get_parsely_info();
 		$site_details['connector_controls'] = $this->get_connector_controls_info();
 
-		// Left out while the feature is off, so every blog's data hash stays the same.
-		if ( function_exists( '\\Automattic\\VIP\\Integrations\\generic_integrations_enabled' ) && \Automattic\VIP\Integrations\generic_integrations_enabled() ) {
-			$site_details['generic_integrations'] = $this->get_generic_integrations_info();
-		}
-
 		return $site_details;
 	}
 
@@ -110,32 +103,6 @@ class Site_Details_Index {
 
 		$integration = IntegrationsSingleton::instance()->get_integration( 'connector-controls' );
 		return $integration instanceof ConnectorControlsIntegration ? $integration->get_runtime_status() : null;
-	}
-
-	/**
-	 * How each GenericIntegration loaded, keyed by slug.
-	 *
-	 * @param Integrations|null $integrations The registered integrations; the platform's by default.
-	 *
-	 * @return array<string,array> Each integration's `GenericIntegration::get_runtime_status()`.
-	 */
-	public function get_generic_integrations_info( ?Integrations $integrations = null ): array {
-		if ( null === $integrations ) {
-			if ( ! class_exists( IntegrationsSingleton::class ) ) {
-				return [];
-			}
-
-			$integrations = IntegrationsSingleton::instance();
-		}
-
-		$info = [];
-		foreach ( $integrations->get_all_integrations() as $slug => $integration ) {
-			if ( $integration instanceof GenericIntegration ) {
-				$info[ $slug ] = $integration->get_runtime_status();
-			}
-		}
-
-		return $info;
 	}
 
 	/**

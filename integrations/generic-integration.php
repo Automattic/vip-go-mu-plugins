@@ -59,14 +59,6 @@ class GenericIntegration extends Integration {
 	private string $scope;
 
 	/**
-	 * How loading went: null until `load_bundle()` runs, then `loaded`, `already_loaded`,
-	 * `missing_bundle` or `unsupported_wp`.
-	 *
-	 * @var string|null
-	 */
-	private ?string $load_status = null;
-
-	/**
 	 * The bundle folder that was loaded, e.g. `acme-sync-1.2`, or null.
 	 *
 	 * @var string|null
@@ -160,26 +152,22 @@ class GenericIntegration extends Integration {
 	 */
 	public function load_bundle(): void {
 		if ( $this->is_loaded() ) {
-			$this->load_status = 'already_loaded';
 			return;
 		}
 
 		$folder = $this->get_bundle_folder();
 		if ( null === $folder ) {
-			$this->is_active   = false;
-			$this->load_status = 'missing_bundle';
+			$this->is_active = false;
 			return;
 		}
 
 		if ( ! $this->is_supported_wp_version( $this->get_bundle_path( $folder ) ) ) {
-			$this->is_active   = false;
-			$this->load_status = 'unsupported_wp';
+			$this->is_active = false;
 			return;
 		}
 
 		require_once $this->get_bundle_path( $folder );
 
-		$this->load_status   = 'loaded';
 		$this->loaded_bundle = $folder;
 	}
 
@@ -206,31 +194,6 @@ class GenericIntegration extends Integration {
 	 */
 	public function get_bundle_path( string $folder ): string {
 		return WPVIP_MU_PLUGIN_DIR . '/vip-integrations/' . $folder . '/' . $this->entry_file;
-	}
-
-	/**
-	 * How the integration loaded, for the Site Details Service.
-	 *
-	 * `status` is `inactive`, `pending` (activated, not loaded yet), `loaded`, `already_loaded`
-	 * (the plugin was loaded some other way), `missing_bundle` or `unsupported_wp`. `bundle` is the
-	 * folder that was loaded, or null.
-	 *
-	 * @return array{status:string,bundle:?string}
-	 */
-	public function get_runtime_status(): array {
-		if ( null !== $this->load_status ) {
-			$status = $this->load_status;
-		} elseif ( $this->is_loaded_outside_bundle() ) {
-			// Loaded before activation, which activate() then skips, so load_bundle() never runs.
-			$status = 'already_loaded';
-		} else {
-			$status = $this->is_active() ? 'pending' : 'inactive';
-		}
-
-		return [
-			'status' => $status,
-			'bundle' => $this->loaded_bundle,
-		];
 	}
 
 	/**
