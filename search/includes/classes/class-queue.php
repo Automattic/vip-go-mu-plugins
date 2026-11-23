@@ -1067,14 +1067,59 @@ class Queue {
 	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
 	 * bulk_index() fires.
 	 *
+	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way before it's sent,
+	 * with the documents already prepared, so each part finishes well within the request timeout: a timeout then means
+	 * Elasticsearch had trouble, worth a retry, not a batch too slow to ever go through. After a part fails that way, the
+	 * rest isn't sent to a struggling cluster: it's queued again for later, like the part that failed.
+	 *
 	 * @param \ElasticPress\Indexable $indexable Indexable
 	 * @param array                   $ids       Object IDs
+	 * @param array                   $documents Their documents, if already prepared
+	 * @return WP_Error|null The error a request failed with, if it may pass later
 	 */
-	private function bulk_index_split_if_too_large( $indexable, array $ids ): void {
-		$result = $indexable->bulk_index( $ids );
+	private function bulk_index_split_if_too_large( $indexable, array $ids, array $documents = [] ): ?WP_Error {
+		// A single object can't be split, so it's sent whatever its size
+		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
+		$refused  = [];
+
+		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request, and keeps the documents of one too
+		// large: bulk_index() ends each with a blank line
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused ) {
+			if ( 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
+				return $request;
+			}
+
+			$refused = $documents ?: explode( "\n\n", $args['body'], -1 );
+			return new WP_Error( 413, 'Request Entity Too Large' );
+		};
+
+		// Only this batch's request (and any retry of it): bulk_index() fires ep_after_bulk_index before it returns, and a
+		// callback can send a bulk request of its own
+		$stop_after_request = static function ( $query, $type ) use ( $refuse_too_large ) {
+			if ( 'bulk_index' === $type ) {
+				remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+			}
+		};
+
+		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
+		add_action( 'ep_remote_request', $stop_after_request, 10, 2 );
+		try {
+			// With the documents already prepared, sent as bulk_index() sends them
+			$result = $documents
+				? \ElasticPress\Elasticsearch::factory()->bulk_index( $indexable->get_index_name(), $indexable->slug, implode( "\n\n", $documents ) . "\n\n" )
+				: $indexable->bulk_index( $ids );
+		} finally {
+			remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+			remove_action( 'ep_remote_request', $stop_after_request, 10 );
+		}
+
+		// Followed by ep_after_bulk_index as in bulk_index(), unless refused here: nothing was sent
+		if ( $documents && ! $refused ) {
+			do_action( 'ep_after_bulk_index', $ids, $indexable->slug, $result );
+		}
 
 		if ( ! is_wp_error( $result ) || 413 !== $result->get_error_code() ) {
-			return;
+			return is_wp_error( $result ) && self::is_transient_failure( $result->get_error_code() ) ? $result : null;
 		}
 
 		if ( 1 === count( $ids ) ) {
@@ -1084,12 +1129,21 @@ class Queue {
 				sprintf( 'Could not index %s %d: too large for a bulk request', $indexable->slug, reset( $ids ) ),
 				[ 'homeurl' => home_url() ]
 			);
-			return;
+			return null;
 		}
 
-		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
-			$this->bulk_index_split_if_too_large( $indexable, $half );
+		// Prepared again after a 413 from Elasticsearch, or if the documents can't be told apart
+		$documents = count( $refused ) === count( $ids ) ? $refused : [];
+		$half      = (int) ceil( count( $ids ) / 2 );
+
+		$failure = $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, 0, $half ), array_slice( $documents, 0, $half ) );
+		if ( $failure ) {
+			// Not sent: queued again for later, like the half that failed, but without using up a retry
+			$this->action__ep_after_bulk_index( array_slice( $ids, $half ), $indexable->slug, $failure, false );
+			return $failure;
 		}
+
+		return $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, $half ), array_slice( $documents, $half ) );
 	}
 
 	/**
@@ -1209,25 +1263,33 @@ class Queue {
 	}
 
 	/**
+	 * Whether a request or document that failed with this code may go through later: no response (which
+	 * Search::filter__ep_do_intercept_request() reports as 'vip-search-upstream-request-failed'), a 429 or a 5xx
+	 *
+	 * @param int|string $code Error code or HTTP status
+	 */
+	private static function is_transient_failure( $code ): bool {
+		return 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
+	}
+
+	/**
 	 * Hook after bulk indexing: queue the objects that failed for a reason that may pass (no response, a 429 or a 5xx) again,
 	 * after a backoff, and give up on (and log) one that still fails after MAX_REQUEUE_ATTEMPTS retries within a day, so one
 	 * that always fails isn't sent forever. Other errors (e.g. a 400) would fail again.
 	 *
 	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
 	 *
-	 * @param array  $document_ids IDs of the documents that were to be indexed
-	 * @param string $slug         Indexable slug
-	 * @param mixed  $return       The bulk_index() result (WP_Error or Elasticsearch response), or for
-	 *                             ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param array  $document_ids  IDs of the documents that were to be indexed
+	 * @param string $slug          Indexable slug
+	 * @param mixed  $return        The bulk_index() result (WP_Error or Elasticsearch response), or for
+	 *                              ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param bool   $count_attempt False for documents that weren't sent, which keep their retries
 	 * @return bool Whether anything was queued
 	 */
-	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return, bool $count_attempt = true ) {
 		if ( false === $this->is_enabled() || ! is_array( $document_ids ) ) {
 			return false;
 		}
-
-		// 'vip-search-upstream-request-failed' is Search::filter__ep_do_intercept_request() reporting no response
-		$is_transient = static fn( $code ) => 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
 
 		// A document skipped as too big to send isn't a request
 		$requests = array_filter(
@@ -1240,7 +1302,7 @@ class Queue {
 		foreach ( $requests as $result ) {
 			foreach ( is_wp_error( $result ) || empty( $result['errors'] ) ? [] : ( $result['items'] ?? [] ) as $item ) {
 				$item = reset( $item );
-				if ( isset( $item['_id'] ) && $is_transient( (int) ( $item['status'] ?? 200 ) ) ) {
+				if ( isset( $item['_id'] ) && self::is_transient_failure( (int) ( $item['status'] ?? 200 ) ) ) {
 					$failed_ids[ (int) $item['_id'] ] = true;
 				}
 			}
@@ -1250,7 +1312,7 @@ class Queue {
 		// bulk_index_dynamically() sends them again with the next request. Not during a sync (CLI, dashboard, shard rebuild):
 		// it reports its failed requests and is run again, and during an incident can fail every batch of a site in minutes.
 		$last_request = end( $requests );
-		if ( is_wp_error( $last_request ) && $is_transient( $last_request->get_error_code() ) && ! did_action( 'ep_pre_index_batch' ) ) {
+		if ( is_wp_error( $last_request ) && self::is_transient_failure( $last_request->get_error_code() ) && ! did_action( 'ep_pre_index_batch' ) ) {
 			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
 		}
 
@@ -1290,8 +1352,8 @@ class Queue {
 		$attempts  = [];
 		$given_up  = [];
 		foreach ( array_keys( $priorities ) as $object_id ) {
-			$attempt = (int) $counts[ $cache_key( $object_id ) ] + 1;
-			if ( $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
+			$attempt = (int) $counts[ $cache_key( $object_id ) ] + (int) $count_attempt;
+			if ( $count_attempt && $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
 				$given_up[] = $object_id;
 			} else {
 				$attempts[ $object_id ] = $attempt;
@@ -1315,11 +1377,13 @@ class Queue {
 			return false;
 		}
 
-		wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		if ( $count_attempt ) {
+			wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		}
 
 		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
 		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
-		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $attempts ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
+		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( 1, max( $attempts ) ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
 		$rows       = [];
 		foreach ( array_keys( $attempts ) as $object_id ) {
 			$rows[] = $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priorities[ $object_id ] );

@@ -881,7 +881,8 @@ class Search {
 	 * @return array  $request  New request
 	 */
 	public function filter__ep_do_intercept_request( $request, $query, $args, $failures = 0, $type = null ) {
-		if ( is_wp_error( $request ) && ( 503 === $request->get_error_code() || 429 === $request->get_error_code() ) ) {
+		// Refused before it was sent, e.g. by Concurrency_Limiter (429) or as too large by the queue (413)
+		if ( is_wp_error( $request ) && in_array( $request->get_error_code(), [ 413, 429, 503 ], true ) ) {
 			return $request;
 		}
 
