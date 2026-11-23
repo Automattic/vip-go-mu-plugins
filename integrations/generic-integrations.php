@@ -143,22 +143,13 @@ function get_valid_active_integration_entry( string $slug, $entry ): ?array {
 		return null;
 	}
 
+	// A missing optional key gets its default.
+	$entry   += array_map( fn( $rule ) => $rule[1], ACTIVE_INTEGRATION_OPTIONAL_KEYS );
+	$patterns = ACTIVE_INTEGRATION_REQUIRED_KEYS + array_map( fn( $rule ) => $rule[0], ACTIVE_INTEGRATION_OPTIONAL_KEYS );
+
 	$valid = [];
-	foreach ( ACTIVE_INTEGRATION_REQUIRED_KEYS as $key => $pattern ) {
+	foreach ( $patterns as $key => $pattern ) {
 		if ( ! is_valid_active_integration_value( $entry[ $key ] ?? null, $pattern ) ) {
-			return null;
-		}
-
-		$valid[ $key ] = $entry[ $key ];
-	}
-
-	foreach ( ACTIVE_INTEGRATION_OPTIONAL_KEYS as $key => [ $pattern, $default ] ) {
-		if ( ! array_key_exists( $key, $entry ) ) {
-			$valid[ $key ] = $default;
-			continue;
-		}
-
-		if ( ! is_valid_active_integration_value( $entry[ $key ], $pattern ) ) {
 			return null;
 		}
 
