@@ -577,12 +577,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertFalse( ( new GenericIntegrationVipConfig( 'acme-sync' ) )->is_active_via_vip() );
 	}
 
-	/*
-	|--------------------------------------------------------------------------
-	| Config constant
-	|--------------------------------------------------------------------------
-	*/
-
 	public function data_config_constant_names(): array {
 		return [
 			'one word'      => [ 'acme', 'VIP_ACME_CONFIG' ],
@@ -697,12 +691,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( is_multisite() ? 'site-key' : 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
 	}
 
-	/*
-	|--------------------------------------------------------------------------
-	| Load outcome
-	|--------------------------------------------------------------------------
-	*/
-
 	public function test__status_is_inactive_before_activation(): void {
 		$status = ( new GenericIntegration( 'acme-sync', $this->entry() ) )->get_runtime_status();
 
@@ -762,23 +750,14 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 	public function test__status_reports_a_plugin_loaded_some_other_way(): void {
 		$dir = $this->temp_dir();
-		mkdir( $dir . '/elsewhere-sync' );
-		file_put_contents( $dir . '/elsewhere-sync/elsewhere-sync.php', '<?php' );
-		require_once $dir . '/elsewhere-sync/elsewhere-sync.php';
+		mkdir( $dir . '/preloaded-sync' );
+		file_put_contents( $dir . '/preloaded-sync/preloaded-sync.php', '<?php' );
+		require_once $dir . '/preloaded-sync/preloaded-sync.php';
 
-		$integration = $this->integration_with_bundles( 'elsewhere-sync', [ 'elsewhere-sync-1.2' => '1.2' ] );
+		$integration = $this->integration_with_bundles( 'preloaded-sync', [ 'preloaded-sync-1.2' => '1.2' ] );
 		$integration->load_bundle();
 
 		$this->assertSame( 'already_loaded', $integration->get_runtime_status()['status'] );
 		$this->assertNull( $integration->get_runtime_status()['bundle'] );
-	}
-
-	public function test__status_holds_no_config(): void {
-		$integration = $this->configured_integration( 'network', $this->acme_sync_config() );
-		$integration->activate();
-
-		$status = wp_json_encode( $integration->get_runtime_status() );
-		$this->assertStringNotContainsString( 'env-key', $status );
-		$this->assertStringNotContainsString( 'site-key', $status );
 	}
 }

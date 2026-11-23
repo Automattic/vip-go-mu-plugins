@@ -109,8 +109,7 @@ class Site_Details_Index {
 	}
 
 	/**
-	 * How each manifest-backed integration loaded, keyed by slug. Empty while the
-	 * `vip-generic-integrations` feature is off, since none is registered.
+	 * How each GenericIntegration loaded, keyed by slug.
 	 *
 	 * @param Integrations|null $integrations The registered integrations; the platform's by default.
 	 *

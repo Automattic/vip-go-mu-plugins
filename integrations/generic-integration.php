@@ -114,10 +114,8 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Defines the plugin's config constant, `VIP_<SLUG>_CONFIG`, from the integration's config. On
-	 * multisite that's the current network site's config, which is where the platform writes it, as
-	 * for the hand-written integrations (e.g. Parse.ly); otherwise the environment's. Values are typed
-	 * by the platform from the manifest's fields. Left alone when it's already defined, e.g. in vip-config.php.
+	 * Defines `VIP_<SLUG>_CONFIG` from the integration's config, unless it's already defined. On
+	 * multisite that's the current network site's config, as for Parse.ly and Share a Draft.
 	 *
 	 * @private
 	 */
@@ -133,8 +131,7 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * The plugin's config constant: the slug upper-cased, with `-` as `_`, e.g. `acme-sync` is
-	 * `VIP_ACME_SYNC_CONFIG`. The manifest doesn't name it; it's always derived from the slug.
+	 * The name of the plugin's config constant, e.g. `VIP_ACME_SYNC_CONFIG` for `acme-sync`.
 	 */
 	public function get_config_constant_name(): string {
 		return 'VIP_' . strtoupper( str_replace( '-', '_', $this->get_slug() ) ) . '_CONFIG';
@@ -150,9 +147,8 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Requires the bundle's entry file, and records how loading went for `get_runtime_status()`. With
-	 * no bundle to load, or one that needs a newer WordPress than the site's, the integration is no
-	 * longer active.
+	 * Requires the bundle's entry file. With no bundle to load, or one that needs a newer WordPress
+	 * than the site's, the integration is no longer active.
 	 *
 	 * @private
 	 */
@@ -207,15 +203,11 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * How the integration loaded, for the Site Details Service. Holds no config, so nothing secret.
+	 * How the integration loaded, for the Site Details Service.
 	 *
-	 * `status` is `inactive` (not activated, or deactivated), `pending` (activated, not loaded yet),
-	 * `loaded` (its bundle was required), `already_loaded` (its plugin was loaded some other way,
-	 * e.g. from the customer's repo), `missing_bundle` (no bundle in vip-integrations/, so nothing
-	 * was loaded) or `unsupported_wp` (the bundle needs a newer WordPress, so it wasn't loaded).
-	 * `bundle` is the folder that was loaded, or null.
-	 *
-	 * The mapping's own values (folder, version, scope) aren't repeated: the platform wrote them.
+	 * `status` is `inactive`, `pending` (activated, not loaded yet), `loaded`, `already_loaded`
+	 * (the plugin was loaded some other way), `missing_bundle` or `unsupported_wp`. `bundle` is the
+	 * folder that was loaded, or null.
 	 *
 	 * @return array{status:string,bundle:?string}
 	 */
