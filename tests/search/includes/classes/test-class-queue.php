@@ -851,6 +851,65 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
 	}
 
+	public function test_process_jobs_sends_a_batch_over_the_size_limit_in_halves_as_prepared() {
+		$jobs = $this->schedule_jobs_for_new_posts( 3 );
+
+		// Every request with more than one document is over the size limit
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		$prepared = 0;
+		add_filter( 'ep_bulk_index_action_args', function ( $action_args ) use ( &$prepared ) {
+			++$prepared;
+			return $action_args;
+		} );
+
+		// Documents per bulk request sent
+		$bulk_requests = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				$bulk_requests[] = substr_count( $args['body'], '{"index"' );
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertSame( array( 1, 1, 1 ), $bulk_requests, 'a batch over the size limit should be sent in halves until each part fits, not whole' );
+		$this->assertSame( 3, $prepared, 'with the documents prepared for it, not prepared again' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
+	}
+
+	public function test_process_jobs_queues_only_the_failed_part_of_a_batch_over_the_size_limit_again() {
+		global $wpdb;
+
+		$jobs = $this->schedule_jobs_for_new_posts( 3 );
+
+		// Every request with more than one document is over the size limit, so each document is sent on its own
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		// The second request fails
+		$bulk_requests = 0;
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				return 2 === ++$bulk_requests ? self::es_response( '{}', 503 ) : self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$table_name = $this->queue->schema->get_table_name();
+		$requeued   = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `start_time` > UTC_TIMESTAMP()" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$this->assertEquals( array( $jobs[1]->object_id ), $requeued, 'only the objects of the request that failed should be queued again' );
+	}
+
 	public function test_process_jobs_queues_a_failed_batch_again_at_its_priority() {
 		global $wpdb;
 
