@@ -1081,12 +1081,11 @@ class Queue {
 		// A single object can't be split, so it's sent whatever its size
 		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
 		$refused  = [];
-		$done     = false;
 
 		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request, and keeps the documents of one too
 		// large: bulk_index() ends each with a blank line
-		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused, &$done ) {
-			if ( $done || 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused ) {
+			if ( 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
 				return $request;
 			}
 
@@ -1096,9 +1095,9 @@ class Queue {
 
 		// Only this batch's request (and any retry of it): bulk_index() fires ep_after_bulk_index before it returns, and a
 		// callback can send a bulk request of its own
-		$stop_after_request = static function ( $query, $type ) use ( &$done ) {
+		$stop_after_request = static function ( $query, $type ) use ( $refuse_too_large ) {
 			if ( 'bulk_index' === $type ) {
-				$done = true;
+				remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
 			}
 		};
 
@@ -1136,18 +1135,15 @@ class Queue {
 		// Prepared again after a 413 from Elasticsearch, or if the documents can't be told apart
 		$documents = count( $refused ) === count( $ids ) ? $refused : [];
 		$half      = (int) ceil( count( $ids ) / 2 );
-		$parts     = array_chunk( $ids, $half );
-		foreach ( $parts as $i => $part ) {
-			$failure = $this->bulk_index_split_if_too_large( $indexable, $part, array_slice( $documents, $i * $half, $half ) );
 
-			// Queue the parts not sent yet again, with the one that failed
-			if ( $failure ) {
-				$this->action__ep_after_bulk_index( array_merge( ...array_slice( $parts, $i + 1 ) ), $indexable->slug, $failure );
-				return $failure;
-			}
+		$failure = $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, 0, $half ), array_slice( $documents, 0, $half ) );
+		if ( $failure ) {
+			// Not sent: queued again for later, like the half that failed
+			$this->action__ep_after_bulk_index( array_slice( $ids, $half ), $indexable->slug, $failure );
+			return $failure;
 		}
 
-		return null;
+		return $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, $half ), array_slice( $documents, $half ) );
 	}
 
 	/**
