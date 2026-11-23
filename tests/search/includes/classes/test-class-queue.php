@@ -805,7 +805,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$objects = range( 10, 20 );
 
-		$this->queue->action__ep_after_bulk_index( $objects, 'post', new \WP_Error( 503, 'Service Unavailable' ) );
+		$this->queue->action__ep_after_bulk_index( $objects, 'post', new \WP_Error( 'vip-search-upstream-request-failed', 'No response' ) );
 		$this->assertEquals( $objects, $queued(), 'a failed request should queue all of its objects again, later' );
 
 		$this->queue->action__ep_after_bulk_index( $objects, 'post', $response( array(

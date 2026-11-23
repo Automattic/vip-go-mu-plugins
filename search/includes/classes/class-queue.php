@@ -1063,25 +1063,38 @@ class Queue {
 
 	/**
 	 * Index objects in one bulk request. A batch of large posts can exceed the request size limit (413), so send it again
-	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
+	 * in parts until each fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
 	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
 	 * bulk_index() fires.
 	 *
-	 * A batch of several objects over the size the dynamic bulk sync keeps to is split the same way, before it's sent, so it
-	 * doesn't outlast the request timeout.
+	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way, before it's sent,
+	 * so it finishes well within the request timeout: a timeout then means Elasticsearch had trouble, worth a retry, not
+	 * a batch too slow to ever go through.
 	 *
 	 * @param \ElasticPress\Indexable $indexable Indexable
 	 * @param array                   $ids       Object IDs
 	 */
 	private function bulk_index_split_if_too_large( $indexable, array $ids ): void {
+		// A single object can't be split, so it's sent whatever its size
+		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
+		$size     = 0;
+
 		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request
-		$refuse_too_large = static fn( $request, $query, $args, $failures, $type ) => 'bulk_index' === $type && count( $ids ) > 1 && strlen( $args['body'] ) > apply_filters( 'ep_dynamic_bulk_max_buffer_size', PHP_INT_MAX )
-			? new WP_Error( 413, 'Request Entity Too Large' )
-			: $request;
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, &$size ) {
+			if ( 'bulk_index' !== $type ) {
+				return $request;
+			}
+
+			$size = strlen( $args['body'] );
+			return $size > $max_size ? new WP_Error( 413, 'Request Entity Too Large' ) : $request;
+		};
 
 		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
-		$result = $indexable->bulk_index( $ids );
-		remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+		try {
+			$result = $indexable->bulk_index( $ids );
+		} finally {
+			remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+		}
 
 		if ( ! is_wp_error( $result ) || 413 !== $result->get_error_code() ) {
 			return;
@@ -1097,8 +1110,11 @@ class Queue {
 			return;
 		}
 
-		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
-			$this->bulk_index_split_if_too_large( $indexable, $half );
+		// In as many parts as it takes for each to fit, so an object is usually prepared again only once, or in halves after a
+		// 413 from Elasticsearch
+		$parts = max( 2, (int) ceil( $size / $max_size ) );
+		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / $parts ) ) as $part ) {
+			$this->bulk_index_split_if_too_large( $indexable, $part );
 		}
 	}
 
@@ -1219,9 +1235,9 @@ class Queue {
 	}
 
 	/**
-	 * Hook after bulk indexing: queue the objects that failed for a reason that may pass (a 429 or a 5xx) again, after a
-	 * backoff, and give up on (and log) one that still fails after MAX_REQUEUE_ATTEMPTS retries within a day, so one that
-	 * always fails isn't sent forever. Other errors (e.g. a 400) would fail again.
+	 * Hook after bulk indexing: queue the objects that failed for a reason that may pass (no response, a 429 or a 5xx) again,
+	 * after a backoff, and give up on (and log) one that still fails after MAX_REQUEUE_ATTEMPTS retries within a day, so one
+	 * that always fails isn't sent forever. Other errors (e.g. a 400) would fail again.
 	 *
 	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
 	 *
@@ -1236,9 +1252,8 @@ class Queue {
 			return false;
 		}
 
-		// A 429 or a 5xx may pass. Not no response (e.g. a timeout) or a 504: Elasticsearch carries on and most likely indexes
-		// the request, and the same batch sent again would time out the same way
-		$is_transient = static fn( $code ) => 429 === $code || ( is_int( $code ) && $code >= 500 && 504 !== $code );
+		// 'vip-search-upstream-request-failed' is Search::filter__ep_do_intercept_request() reporting no response
+		$is_transient = static fn( $code ) => 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
 
 		// A document skipped as too big to send isn't a request
 		$requests = array_filter(
