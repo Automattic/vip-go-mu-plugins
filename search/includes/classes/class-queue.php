@@ -1081,11 +1081,12 @@ class Queue {
 		// A single object can't be split, so it's sent whatever its size
 		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
 		$refused  = [];
+		$done     = false;
 
 		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request, and keeps the documents of one too
 		// large: bulk_index() ends each with a blank line
-		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused ) {
-			if ( 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused, &$done ) {
+			if ( $done || 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
 				return $request;
 			}
 
@@ -1093,17 +1094,29 @@ class Queue {
 			return new WP_Error( 413, 'Request Entity Too Large' );
 		};
 
-		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
-		try {
-			if ( $documents ) {
-				// As bulk_index() does, without preparing the documents again
-				$result = \ElasticPress\Elasticsearch::factory()->bulk_index( $indexable->get_index_name(), $indexable->slug, implode( "\n\n", $documents ) . "\n\n" );
-				do_action( 'ep_after_bulk_index', $ids, $indexable->slug, $result );
-			} else {
-				$result = $indexable->bulk_index( $ids );
+		// Only this batch's request (and any retry of it): bulk_index() fires ep_after_bulk_index before it returns, and a
+		// callback can send a bulk request of its own
+		$stop_after_request = static function ( $query, $type ) use ( &$done ) {
+			if ( 'bulk_index' === $type ) {
+				$done = true;
 			}
+		};
+
+		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
+		add_action( 'ep_remote_request', $stop_after_request, 10, 2 );
+		try {
+			// With the documents already prepared, sent as bulk_index() sends them
+			$result = $documents
+				? \ElasticPress\Elasticsearch::factory()->bulk_index( $indexable->get_index_name(), $indexable->slug, implode( "\n\n", $documents ) . "\n\n" )
+				: $indexable->bulk_index( $ids );
 		} finally {
 			remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+			remove_action( 'ep_remote_request', $stop_after_request, 10 );
+		}
+
+		// Followed by ep_after_bulk_index as in bulk_index(), unless refused here: nothing was sent
+		if ( $documents && ! $refused ) {
+			do_action( 'ep_after_bulk_index', $ids, $indexable->slug, $result );
 		}
 
 		if ( ! is_wp_error( $result ) || 413 !== $result->get_error_code() ) {

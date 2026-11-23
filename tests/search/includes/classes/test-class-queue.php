@@ -863,6 +863,11 @@ class Queue_Test extends WP_UnitTestCase {
 			return $action_args;
 		} );
 
+		$after_bulk_index = 0;
+		add_action( 'ep_after_bulk_index', function () use ( &$after_bulk_index ) {
+			++$after_bulk_index;
+		} );
+
 		// Documents per bulk request sent
 		$bulk_requests = array();
 		$this->with_es_http(
@@ -880,7 +885,45 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->assertSame( array( 1, 1, 1 ), $bulk_requests, 'a batch over the size limit should be sent in halves until each part fits, not whole' );
 		$this->assertSame( 3, $prepared, 'with the documents prepared for it, not prepared again' );
+		$this->assertSame( 4, $after_bulk_index, 'ep_after_bulk_index should fire for the batch, then for each part sent, not for a half refused again' );
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
+	}
+
+	public function test_process_jobs_splits_only_its_own_request_when_a_callback_sends_another() {
+		$jobs   = $this->schedule_jobs_for_new_posts( 2 );
+		$ids    = array_map( 'intval', wp_list_pluck( $jobs, 'object_id' ) );
+		$others = self::factory()->post->create_many( 2 );
+
+		// Every request with more than one document is over the size limit
+		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
+
+		// Once, a callback of ep_after_bulk_index indexes other posts in a bulk request of its own
+		$indexed_others = false;
+		add_action( 'ep_after_bulk_index', function () use ( &$indexed_others, $others ) {
+			if ( ! $indexed_others ) {
+				$indexed_others = true;
+				Indexables::factory()->get( 'post' )->bulk_index( $others );
+			}
+		}, 5 );
+
+		// IDs of the documents in each bulk request sent
+		$bulk_requests = array();
+		$this->with_es_http(
+			function ( $args, $url ) use ( &$bulk_requests ) {
+				if ( false === strpos( $url, '/_bulk' ) ) {
+					return self::es_response();
+				}
+
+				preg_match_all( '/"_id":(\d+)/', $args['body'], $matches );
+				$bulk_requests[] = array_map( 'intval', $matches[1] );
+
+				return self::es_response( '{"errors":false,"items":[]}' );
+			},
+			fn() => $this->queue->process_jobs( $jobs )
+		);
+
+		$this->assertSame( array( $others, array( $ids[0] ), array( $ids[1] ) ), $bulk_requests, 'the callback\'s request should be sent as it is, and the batch\'s own documents in halves' );
+		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'the batch\'s jobs should be done' );
 	}
 
 	public function test_process_jobs_queues_the_rest_of_a_batch_over_the_size_limit_again_after_a_part_fails() {
