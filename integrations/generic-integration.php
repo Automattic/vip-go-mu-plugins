@@ -250,7 +250,7 @@ class GenericIntegration extends Integration {
 		return array_filter(
 			$versions,
 			fn( $folder ) => str_starts_with( (string) $folder, $prefix )
-				&& 1 === preg_match( '/^[0-9]+(\.[0-9]+)*$/D', substr( (string) $folder, strlen( $prefix ) ) ),
+				&& 1 === preg_match( '/^\d+(\.\d+)*$/D', substr( (string) $folder, strlen( $prefix ) ) ),
 			ARRAY_FILTER_USE_KEY
 		);
 	}
