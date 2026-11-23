@@ -12,8 +12,7 @@
 
 namespace Automattic\VIP\Integrations;
 
-// The actual code here is tested individually in the unit tests.
-// @codeCoverageIgnoreStart
+// @codeCoverageIgnoreStart -- the actual code here is tested individually in the unit tests.
 defined( 'ABSPATH' ) || die();
 
 require_once __DIR__ . '/integrations/integration.php';
@@ -21,9 +20,6 @@ require_once __DIR__ . '/integrations/integration-utils.php';
 require_once __DIR__ . '/integrations/integrations.php';
 require_once __DIR__ . '/integrations/enums.php';
 require_once __DIR__ . '/integrations/integration-vip-config.php';
-require_once __DIR__ . '/integrations/generic-integration.php';
-require_once __DIR__ . '/integrations/generic-integration-vip-config.php';
-require_once __DIR__ . '/integrations/generic-integrations.php';
 require_once __DIR__ . '/integrations/block-data-api.php';
 require_once __DIR__ . '/integrations/parsely.php';
 require_once __DIR__ . '/integrations/vip-governance.php';
@@ -76,6 +72,18 @@ if ( file_exists( __DIR__ . '/integrations/shareadraft.php' ) ) {
 
 if ( file_exists( __DIR__ . '/integrations/gist-answers.php' ) ) {
 	require_once __DIR__ . '/integrations/gist-answers.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/generic-integration.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integration.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/generic-integration-vip-config.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integration-vip-config.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/generic-integrations.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integrations.php';
 }
 
 // Register VIP integrations here.
@@ -133,9 +141,10 @@ if ( class_exists( __NAMESPACE__ . '\\GistAnswersIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new GistAnswersIntegration( 'gist-answers' ) );
 }
 
-// Manifest-backed integrations from the active-integrations mapping, after the hand-written ones so
-// those keep their slugs. Behind the `vip-generic-integrations` feature, off by default.
-register_generic_integrations( IntegrationsSingleton::instance() );
+// After the integrations above, so those keep their slugs.
+if ( class_exists( __NAMESPACE__ . '\\GenericIntegration' ) && function_exists( __NAMESPACE__ . '\\register_generic_integrations' ) ) {
+	register_generic_integrations( IntegrationsSingleton::instance() );
+}
 
 // @codeCoverageIgnoreEnd
 
