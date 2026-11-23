@@ -883,7 +883,7 @@ class Queue_Test extends WP_UnitTestCase {
 		$this->assertEquals( 0, $this->queue->count_jobs( 'all' ), 'its jobs should be done, not queued again' );
 	}
 
-	public function test_process_jobs_queues_only_the_failed_part_of_a_batch_over_the_size_limit_again() {
+	public function test_process_jobs_queues_the_rest_of_a_batch_over_the_size_limit_again_after_a_part_fails() {
 		global $wpdb;
 
 		$jobs = $this->schedule_jobs_for_new_posts( 3 );
@@ -905,9 +905,10 @@ class Queue_Test extends WP_UnitTestCase {
 		);
 
 		$table_name = $this->queue->schema->get_table_name();
-		$requeued   = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `start_time` > UTC_TIMESTAMP()" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$requeued   = $wpdb->get_col( "SELECT object_id FROM `{$table_name}` WHERE `start_time` > UTC_TIMESTAMP() ORDER BY object_id" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
-		$this->assertEquals( array( $jobs[1]->object_id ), $requeued, 'only the objects of the request that failed should be queued again' );
+		$this->assertSame( 2, $bulk_requests, 'the rest of the batch should not be sent after a part failed' );
+		$this->assertEquals( array( $jobs[1]->object_id, $jobs[2]->object_id ), $requeued, 'the part that failed and the rest should be queued again' );
 	}
 
 	public function test_process_jobs_queues_a_failed_batch_again_at_its_priority() {
