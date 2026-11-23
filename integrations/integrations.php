@@ -104,7 +104,7 @@ class Integrations {
 	 */
 	protected function get_integration_vip_config( string $slug ): IntegrationVipConfig {
 		// Only a GenericIntegration falls back to the VIP_INTEGRATIONS constant for its config.
-		if ( $this->get_integration( $slug ) instanceof GenericIntegration ) {
+		if ( $this->get_integration( $slug ) instanceof GenericIntegration && class_exists( GenericIntegrationVipConfig::class ) ) {
 			return new GenericIntegrationVipConfig( $slug );
 		}
 

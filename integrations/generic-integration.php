@@ -1,21 +1,22 @@
 <?php
 /**
- * Generic Integration: loads a manifest-backed integration's plugin from the active-integrations mapping.
+ * Integration: Generic, for the entries of the active-integrations mapping.
  *
  * @package Automattic\VIP\Integrations
  */
 
 namespace Automattic\VIP\Integrations;
 
+// Deploys are non-atomic, so this file can arrive before the trait it uses. Without the trait, skip
+// declaring the class, which leaves these integrations unregistered until the deploy finishes.
+if ( ! file_exists( __DIR__ . '/bundled-plugin-loader.php' ) ) {
+	return;
+}
+
 require_once __DIR__ . '/bundled-plugin-loader.php';
 
 /**
- * An integration with no class of its own. The platform lists it in the active-integrations mapping with its
- * plugin folder, entry file and version, and it's loaded from the bundles in vip-integrations/ like
- * the hand-written integrations are.
- *
- * Registered only when the `vip-generic-integrations` feature is enabled for the site
- * (see generic-integrations.php).
+ * Loads an integration listed in the active-integrations mapping. See generic-integrations.php.
  *
  * @private
  */
@@ -23,7 +24,7 @@ class GenericIntegration extends Integration {
 	use LoadsLatestBundledPlugin;
 
 	/**
-	 * Plugin folder from the manifest, also the bundle folder prefix: `<folder>-<version>`.
+	 * Plugin folder, and the prefix of its bundle folders: `<folder>-<version>`.
 	 *
 	 * @var string
 	 */
@@ -37,7 +38,7 @@ class GenericIntegration extends Integration {
 	private string $entry_file;
 
 	/**
-	 * Plugin version from the manifest's release.
+	 * Plugin version.
 	 *
 	 * @var string
 	 */
@@ -51,7 +52,7 @@ class GenericIntegration extends Integration {
 	private string $version_strategy;
 
 	/**
-	 * `site` or `network`, from the manifest.
+	 * `site` or `network`.
 	 *
 	 * @var string
 	 */
@@ -68,8 +69,7 @@ class GenericIntegration extends Integration {
 	 * Constructor.
 	 *
 	 * @param string $slug  Slug of the integration.
-	 * @param array  $entry The integration's entry in the mapping, already validated: `folder`,
-	 *                      `entry_file`, `version`, `version_strategy` and `scope`.
+	 * @param array  $entry The integration's entry in the mapping, already validated.
 	 */
 	public function __construct( string $slug, array $entry ) {
 		parent::__construct( $slug );
@@ -91,9 +91,7 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * True when the plugin was loaded some other way, e.g. from the customer's repo: a file
-	 * `<folder>/<entry_file>` has been included. A bundle from vip-integrations/ is in
-	 * `<folder>-<version>/`, so it doesn't count.
+	 * Whether a file `<folder>/<entry_file>` has been included, e.g. the customer's own copy.
 	 */
 	private function is_loaded_outside_bundle(): bool {
 		$suffix = '/' . $this->folder . '/' . $this->entry_file;
@@ -139,15 +137,6 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * The entry file of the bundle to load, or null when there's no bundle to load.
-	 */
-	public function get_load_path(): ?string {
-		$folder = $this->get_bundle_folder();
-
-		return null === $folder ? null : $this->get_bundle_path( $folder );
-	}
-
-	/**
 	 * The bundle folder to load, or null when there's none with a readable entry file.
 	 */
 	public function get_bundle_folder(): ?string {
@@ -157,8 +146,7 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * The bundle folder to load, for `LoadsLatestBundledPlugin`. It follows `version_strategy`, which
-	 * is `latest` for every entry in format 1.
+	 * The bundle folder to load. LoadsLatestBundledPlugin requires this method.
 	 */
 	public function get_latest_version(): ?string {
 		return $this->get_bundle_folder();
@@ -185,9 +173,9 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Keeps the `<folder>-<version>` bundles, where the version is numbers and dots. `get_available_versions()`
-	 * matches the folder prefix anywhere in the name, so a folder `sync` would otherwise pick up
-	 * `acme-sync-1.0`, or `sync-2fa-9.0` as version `2fa-9.0`.
+	 * Keeps the `<folder>-<version>` bundles, where the version is numbers and dots.
+	 * get_available_versions() matches the prefix anywhere in the name, so `sync` would otherwise
+	 * pick up `acme-sync-1.0`.
 	 *
 	 * @param array<string,string> $versions Folder name => version.
 	 *
@@ -205,9 +193,8 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * Picks the bundle folder. `latest` takes the newest. Otherwise the bundle for `$version`: an
-	 * exact match, or its major.minor (bundles are committed as e.g. `acme-sync-1.2` for 1.2.0);
-	 * if there's none, the newest, as the hand-written integrations do.
+	 * Picks the bundle folder. `latest` takes the newest. Any other strategy takes the bundle for
+	 * `$version`, or for its major.minor (e.g. `acme-sync-1.2` for 1.2.0), or else the newest.
 	 *
 	 * @param array<string,string> $versions Folder name => version, newest first.
 	 */
@@ -227,40 +214,5 @@ class GenericIntegration extends Integration {
 		}
 
 		return array_key_first( $versions );
-	}
-
-	/**
-	 * The plugin folder from the manifest.
-	 */
-	public function get_folder(): string {
-		return $this->folder;
-	}
-
-	/**
-	 * The plugin entry file from the manifest.
-	 */
-	public function get_entry_file(): string {
-		return $this->entry_file;
-	}
-
-	/**
-	 * The plugin version from the manifest.
-	 */
-	public function get_version(): string {
-		return $this->version;
-	}
-
-	/**
-	 * How the bundle version is picked, from the manifest.
-	 */
-	public function get_version_strategy(): string {
-		return $this->version_strategy;
-	}
-
-	/**
-	 * `site` or `network`, from the manifest.
-	 */
-	public function get_scope(): string {
-		return $this->scope;
 	}
 }

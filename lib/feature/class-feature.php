@@ -36,8 +36,7 @@ class Feature {
 	 * @var array
 	 */
 	public static $feature_ids = [
-		// Loads manifest-backed integrations from the active-integrations mapping
-		// (vip-integrations.php). Off everywhere; enable per environment ID.
+		// Loads the integrations listed in the active-integrations mapping. See integrations/generic-integrations.php.
 		'vip-generic-integrations' => [],
 	];
 

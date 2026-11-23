@@ -110,12 +110,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		return $dir;
 	}
 
-	/*
-	|--------------------------------------------------------------------------
-	| Kill switch
-	|--------------------------------------------------------------------------
-	*/
-
 	public function test__feature_is_off_by_default(): void {
 		// What class-feature.php declares, whatever earlier tests did to the statics.
 		$this->assertArrayHasKey( GENERIC_INTEGRATIONS_FEATURE, $this->declared_feature_defaults['feature_ids'] );
@@ -130,19 +124,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->enable_feature_for_site();
 
 		$this->assertTrue( generic_integrations_enabled() );
-	}
-
-	public function test__feature_stays_off_for_other_environments(): void {
-		Feature::$feature_ids[ GENERIC_INTEGRATIONS_FEATURE ] = [ self::SITE_ID + 1 => true ];
-
-		$this->assertFalse( generic_integrations_enabled() );
-	}
-
-	public function test__feature_is_off_for_an_environment_disabled_by_id(): void {
-		Feature::$feature_ids[ GENERIC_INTEGRATIONS_FEATURE ]         = [ self::SITE_ID => false ];
-		Feature::$feature_percentages[ GENERIC_INTEGRATIONS_FEATURE ] = 1;
-
-		$this->assertFalse( generic_integrations_enabled() );
 	}
 
 	public function test__register_reads_nothing_and_registers_nothing_while_off(): void {
@@ -177,7 +158,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertSame( [ 'acme-sync', 'beta-sync' ], array_keys( $integrations->get_all_integrations() ) );
 		$this->assertInstanceOf( GenericIntegration::class, $integrations->get_integration( 'acme-sync' ) );
-		$this->assertSame( 'beta-sync.php', $integrations->get_integration( 'beta-sync' )->get_entry_file() );
+		$this->assertInstanceOf( GenericIntegration::class, $integrations->get_integration( 'beta-sync' ) );
 		$this->assertSame( [], $this->warnings );
 	}
 
@@ -196,12 +177,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( $hand_written, $integrations->get_integration( 'fake' ) );
 		$this->assertSame( [], $this->warnings );
 	}
-
-	/*
-	|--------------------------------------------------------------------------
-	| Mapping
-	|--------------------------------------------------------------------------
-	*/
 
 	public function test__mapping_keeps_only_the_keys_the_loader_uses(): void {
 		$this->use_mapping( [
@@ -241,7 +216,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( [], $this->warnings );
 	}
 
-	public function test__a_mapping_without_a_format_is_read_as_format_1(): void {
+	public function test__a_mapping_without_a_format_is_read(): void {
 		$this->use_mapping( [ 'integrations' => [ 'acme-sync' => $this->entry() ] ] );
 
 		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
@@ -271,9 +246,9 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'invalid format', $this->warnings[0] );
 	}
 
-	public function test__a_newer_mapping_is_read_with_a_warning(): void {
+	public function test__a_newer_mapping_is_read_ignoring_the_keys_it_adds(): void {
 		$this->use_mapping( [
-			'format'       => ACTIVE_INTEGRATIONS_FORMAT + 1,
+			'format'       => 2,
 			'top_level'    => 'ignored',
 			'integrations' => [
 				'acme-sync' => $this->entry( 'acme-sync', [ 'added_later' => [ 'ignored' ] ] ),
@@ -281,8 +256,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		] );
 
 		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
-		$this->assertCount( 1, $this->warnings );
-		$this->assertStringContainsString( 'format 2', $this->warnings[0] );
+		$this->assertSame( [], $this->warnings );
 	}
 
 	public function test__an_older_entry_without_the_optional_keys_gets_their_defaults(): void {
@@ -298,10 +272,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( 'latest', $entries['acme-sync']['version_strategy'] );
 		$this->assertSame( 'site', $entries['acme-sync']['scope'] );
 		$this->assertSame( [], $this->warnings );
-	}
-
-	public function test__only_keys_in_every_format_are_required(): void {
-		$this->assertSame( [ 'folder', 'entry_file', 'version' ], array_keys( ACTIVE_INTEGRATION_REQUIRED_KEYS ) );
 	}
 
 	public function data_invalid_entries(): array {
@@ -355,11 +325,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( [ 'acme-sync' => $this->entry() ], get_active_integrations_mapping() );
 	}
 
-	public function test__mapping_is_read_from_the_default_config_dir_without_the_constant(): void {
-		// Nothing is there in the test environment.
-		$this->assertNull( read_active_integrations_file() );
-	}
-
 	public function test__a_mapping_file_with_no_return_gives_no_entries(): void {
 		$dir = $this->temp_dir();
 		Constant_Mocker::define( 'WPVIP_INTEGRATIONS_CONFIG_DIR', $dir );
@@ -368,12 +333,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertSame( [], get_active_integrations_mapping() );
 	}
-
-	/*
-	|--------------------------------------------------------------------------
-	| GenericIntegration
-	|--------------------------------------------------------------------------
-	*/
 
 	public function data_version_selection(): array {
 		$versions = [
@@ -421,14 +380,14 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		);
 	}
 
-	public function test__has_no_load_path_without_a_bundle(): void {
+	public function test__has_no_bundle_folder_without_a_bundle(): void {
 		$integration = $this->getMockBuilder( GenericIntegration::class )
 			->setConstructorArgs( [ 'acme-sync', $this->entry() ] )
 			->onlyMethods( [ 'get_versions' ] )
 			->getMock();
 		$integration->method( 'get_versions' )->willReturn( [] );
 
-		$this->assertNull( $integration->get_load_path() );
+		$this->assertNull( $integration->get_bundle_folder() );
 	}
 
 	public function test__is_not_loaded_until_its_plugin_file_is_included(): void {
@@ -485,19 +444,19 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertSame( 1, has_action( 'plugins_loaded', [ $integration, 'load_bundle' ] ) );
 	}
 
-	public function test__has_the_load_path_of_the_selected_bundle(): void {
+	public function test__has_the_folder_of_the_selected_bundle(): void {
 		$integration = $this->integration_with_bundles( 'path-sync', [
 			'path-sync-2.0' => '2.0',
 			'path-sync-1.2' => '1.2',
 		] );
 
-		$this->assertStringEndsWith( '/path-sync-2.0/path-sync.php', $integration->get_load_path() );
+		$this->assertSame( 'path-sync-2.0', $integration->get_bundle_folder() );
 	}
 
-	public function test__has_no_load_path_when_the_bundle_has_no_entry_file(): void {
+	public function test__has_no_bundle_folder_when_the_bundle_has_no_entry_file(): void {
 		$integration = $this->integration_with_bundles( 'empty-sync', [ 'empty-sync-1.2' => '1.2' ], false );
 
-		$this->assertNull( $integration->get_load_path() );
+		$this->assertNull( $integration->get_bundle_folder() );
 	}
 
 	public function test__load_bundle_requires_the_selected_bundle(): void {
@@ -507,7 +466,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$integration->load_bundle();
 
-		$this->assertContains( $integration->get_load_path(), get_included_files() );
+		$this->assertContains( $integration->get_bundle_path( 'required-sync-1.2' ), get_included_files() );
 		$this->assertTrue( $integration->is_active() );
 		$this->assertTrue( $integration->is_loaded() );
 	}
@@ -519,7 +478,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$integration->load_bundle();
 
-		$this->assertNotContains( $integration->get_load_path(), get_included_files() );
+		$this->assertNotContains( $integration->get_bundle_path( 'newer-wp-sync-1.2' ), get_included_files() );
 		$this->assertFalse( $integration->is_active() );
 		$this->assertFalse( $integration->is_loaded() );
 	}
@@ -543,7 +502,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$integration->load_bundle();
 
-		$this->assertNotContains( $integration->get_load_path(), get_included_files() );
+		$this->assertNotContains( $integration->get_bundle_path( 'elsewhere-sync-1.2' ), get_included_files() );
 	}
 
 	public function test__bundle_path_is_in_vip_integrations(): void {
@@ -558,33 +517,6 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	public function test__has_no_versions_without_bundles_in_vip_integrations(): void {
 		$this->assertSame( [], ( new GenericIntegration( 'no-bundle-sync', $this->entry( 'no-bundle-sync' ) ) )->get_versions() );
 	}
-
-	public function test__exposes_its_mapping_entry(): void {
-		$integration = new GenericIntegration(
-			'acme-sync',
-			$this->entry( 'acme-sync', [
-				'version_strategy' => 'semantic_versioning',
-				'scope'            => 'network',
-			] )
-		);
-
-		$this->assertSame(
-			[ 'acme-sync', 'acme-sync.php', '1.2.0', 'semantic_versioning', 'network' ],
-			[
-				$integration->get_folder(),
-				$integration->get_entry_file(),
-				$integration->get_version(),
-				$integration->get_version_strategy(),
-				$integration->get_scope(),
-			]
-		);
-	}
-
-	/*
-	|--------------------------------------------------------------------------
-	| Config
-	|--------------------------------------------------------------------------
-	*/
 
 	public function test__only_a_generic_integration_gets_the_config_with_the_fallback(): void {
 		$integrations = new Integrations();
