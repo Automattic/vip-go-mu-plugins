@@ -1063,35 +1063,43 @@ class Queue {
 
 	/**
 	 * Index objects in one bulk request. A batch of large posts can exceed the request size limit (413), so send it again
-	 * in parts until each fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
+	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
 	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
 	 * bulk_index() fires.
 	 *
-	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way, before it's sent,
-	 * so it finishes well within the request timeout: a timeout then means Elasticsearch had trouble, worth a retry, not
-	 * a batch too slow to ever go through.
+	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way before it's sent,
+	 * with the documents already prepared, so each part finishes well within the request timeout: a timeout then means
+	 * Elasticsearch had trouble, worth a retry, not a batch too slow to ever go through.
 	 *
 	 * @param \ElasticPress\Indexable $indexable Indexable
 	 * @param array                   $ids       Object IDs
+	 * @param array                   $documents Their documents, if already prepared
 	 */
-	private function bulk_index_split_if_too_large( $indexable, array $ids ): void {
+	private function bulk_index_split_if_too_large( $indexable, array $ids, array $documents = [] ): void {
 		// A single object can't be split, so it's sent whatever its size
 		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
-		$size     = 0;
+		$refused  = [];
 
-		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request
-		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, &$size ) {
-			if ( 'bulk_index' !== $type ) {
+		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request, and keeps the documents of one too
+		// large: bulk_index() ends each with a blank line
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused ) {
+			if ( 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
 				return $request;
 			}
 
-			$size = strlen( $args['body'] );
-			return $size > $max_size ? new WP_Error( 413, 'Request Entity Too Large' ) : $request;
+			$refused = $documents ?: explode( "\n\n", $args['body'], -1 );
+			return new WP_Error( 413, 'Request Entity Too Large' );
 		};
 
 		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
 		try {
-			$result = $indexable->bulk_index( $ids );
+			if ( $documents ) {
+				// As bulk_index() does, without preparing the documents again
+				$result = \ElasticPress\Elasticsearch::factory()->bulk_index( $indexable->get_index_name(), $indexable->slug, implode( "\n\n", $documents ) . "\n\n" );
+				do_action( 'ep_after_bulk_index', $ids, $indexable->slug, $result );
+			} else {
+				$result = $indexable->bulk_index( $ids );
+			}
 		} finally {
 			remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
 		}
@@ -1110,11 +1118,11 @@ class Queue {
 			return;
 		}
 
-		// In as many parts as it takes for each to fit, so an object is usually prepared again only once, or in halves after a
-		// 413 from Elasticsearch
-		$parts = max( 2, (int) ceil( $size / $max_size ) );
-		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / $parts ) ) as $part ) {
-			$this->bulk_index_split_if_too_large( $indexable, $part );
+		// Prepared again after a 413 from Elasticsearch, or if the documents can't be told apart
+		$documents = count( $refused ) === count( $ids ) ? $refused : [];
+		$half      = (int) ceil( count( $ids ) / 2 );
+		foreach ( array_chunk( $ids, $half ) as $i => $part ) {
+			$this->bulk_index_split_if_too_large( $indexable, $part, array_slice( $documents, $i * $half, $half ) );
 		}
 	}
 
