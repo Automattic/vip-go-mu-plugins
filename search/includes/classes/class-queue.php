@@ -1138,8 +1138,8 @@ class Queue {
 
 		$failure = $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, 0, $half ), array_slice( $documents, 0, $half ) );
 		if ( $failure ) {
-			// Not sent: queued again for later, like the half that failed
-			$this->action__ep_after_bulk_index( array_slice( $ids, $half ), $indexable->slug, $failure );
+			// Not sent: queued again for later, like the half that failed, but without using up a retry
+			$this->action__ep_after_bulk_index( array_slice( $ids, $half ), $indexable->slug, $failure, false );
 			return $failure;
 		}
 
@@ -1279,13 +1279,14 @@ class Queue {
 	 *
 	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
 	 *
-	 * @param array  $document_ids IDs of the documents that were to be indexed
-	 * @param string $slug         Indexable slug
-	 * @param mixed  $return       The bulk_index() result (WP_Error or Elasticsearch response), or for
-	 *                             ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param array  $document_ids  IDs of the documents that were to be indexed
+	 * @param string $slug          Indexable slug
+	 * @param mixed  $return        The bulk_index() result (WP_Error or Elasticsearch response), or for
+	 *                              ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param bool   $count_attempt False for documents that weren't sent, which keep their retries
 	 * @return bool Whether anything was queued
 	 */
-	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return, bool $count_attempt = true ) {
 		if ( false === $this->is_enabled() || ! is_array( $document_ids ) ) {
 			return false;
 		}
@@ -1351,8 +1352,8 @@ class Queue {
 		$attempts  = [];
 		$given_up  = [];
 		foreach ( array_keys( $priorities ) as $object_id ) {
-			$attempt = (int) $counts[ $cache_key( $object_id ) ] + 1;
-			if ( $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
+			$attempt = (int) $counts[ $cache_key( $object_id ) ] + (int) $count_attempt;
+			if ( $count_attempt && $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
 				$given_up[] = $object_id;
 			} else {
 				$attempts[ $object_id ] = $attempt;
@@ -1376,11 +1377,13 @@ class Queue {
 			return false;
 		}
 
-		wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		if ( $count_attempt ) {
+			wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		}
 
 		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
 		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
-		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $attempts ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
+		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( 1, max( $attempts ) ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
 		$rows       = [];
 		foreach ( array_keys( $attempts ) as $object_id ) {
 			$rows[] = $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priorities[ $object_id ] );

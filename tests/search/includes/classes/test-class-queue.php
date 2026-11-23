@@ -934,6 +934,10 @@ class Queue_Test extends WP_UnitTestCase {
 		// Every request with more than one document is over the size limit, so each document is sent on its own
 		add_filter( 'ep_dynamic_bulk_min_buffer_size', fn() => 1, PHP_INT_MAX );
 
+		// The last object, which won't be sent, has used up its retries
+		$attempts_key = "requeue_attempts_post_{$jobs[2]->index_version}_{$jobs[2]->object_id}";
+		wp_cache_set( $attempts_key, Queue::MAX_REQUEUE_ATTEMPTS, Queue::CACHE_GROUP );
+
 		// The second request fails
 		$bulk_requests = 0;
 		$this->with_es_http(
@@ -952,6 +956,7 @@ class Queue_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 2, $bulk_requests, 'the rest of the batch should not be sent after a part failed' );
 		$this->assertEquals( array( $jobs[1]->object_id, $jobs[2]->object_id ), $requeued, 'the part that failed and the rest should be queued again' );
+		$this->assertEquals( Queue::MAX_REQUEUE_ATTEMPTS, wp_cache_get( $attempts_key, Queue::CACHE_GROUP ), 'the rest without using up a retry' );
 	}
 
 	public function test_process_jobs_queues_a_failed_batch_again_at_its_priority() {
