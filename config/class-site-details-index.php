@@ -82,14 +82,18 @@ class Site_Details_Index {
 		$site_details['core']['home_url']     = get_home_url();
 		$site_details['core']['is_multisite'] = is_multisite();
 
-		$site_details['plugins']              = $this->get_plugin_info();
-		$site_details['themes']               = $this->get_theme_info();
-		$site_details['user_roles']           = $this->get_user_roles();
-		$site_details['search']               = $this->get_search_info();
-		$site_details['jetpack']              = $this->get_jetpack_info();
-		$site_details['parsely']              = $this->get_parsely_info();
-		$site_details['connector_controls']   = $this->get_connector_controls_info();
-		$site_details['generic_integrations'] = $this->get_generic_integrations_info();
+		$site_details['plugins']            = $this->get_plugin_info();
+		$site_details['themes']             = $this->get_theme_info();
+		$site_details['user_roles']         = $this->get_user_roles();
+		$site_details['search']             = $this->get_search_info();
+		$site_details['jetpack']            = $this->get_jetpack_info();
+		$site_details['parsely']            = $this->get_parsely_info();
+		$site_details['connector_controls'] = $this->get_connector_controls_info();
+
+		// Left out while the feature is off, so every blog's data hash stays the same.
+		if ( function_exists( '\\Automattic\\VIP\\Integrations\\generic_integrations_enabled' ) && \Automattic\VIP\Integrations\generic_integrations_enabled() ) {
+			$site_details['generic_integrations'] = $this->get_generic_integrations_info();
+		}
 
 		return $site_details;
 	}

@@ -115,7 +115,7 @@ class GenericIntegration extends Integration {
 
 	/**
 	 * Defines `VIP_<SLUG>_CONFIG` from the integration's config, unless it's already defined. On
-	 * multisite that's the current network site's config, as for Parse.ly and Share a Draft.
+	 * multisite a network site inherits the environment's config, and its own values win.
 	 *
 	 * @private
 	 */
@@ -125,7 +125,10 @@ class GenericIntegration extends Integration {
 			return;
 		}
 
-		$config = is_multisite() ? $this->get_network_site_config() : $this->get_env_config();
+		$config = $this->get_env_config();
+		if ( is_multisite() ) {
+			$config = array_merge( $config, $this->get_network_site_config() );
+		}
 
 		define( $constant, $config );
 	}
@@ -143,6 +146,9 @@ class GenericIntegration extends Integration {
 	 * @private
 	 */
 	public function load(): void {
+		// An integration activated from site code skips activate_platform_integrations(), which calls this.
+		$this->configure();
+
 		add_action( 'plugins_loaded', [ $this, 'load_bundle' ], 1 );
 	}
 
@@ -214,6 +220,9 @@ class GenericIntegration extends Integration {
 	public function get_runtime_status(): array {
 		if ( null !== $this->load_status ) {
 			$status = $this->load_status;
+		} elseif ( $this->is_loaded_outside_bundle() ) {
+			// Loaded before activation, which activate() then skips, so load_bundle() never runs.
+			$status = 'already_loaded';
 		} else {
 			$status = $this->is_active() ? 'pending' : 'inactive';
 		}

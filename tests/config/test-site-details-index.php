@@ -73,7 +73,7 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 			$site_details['connector_controls'],
 			'SDS should carry only the dedicated, secret-free runtime report.'
 		);
-		$this->assertSame( [], $site_details['generic_integrations'], 'No generic integration is registered while the feature is off.' );
+		$this->assertArrayNotHasKey( 'generic_integrations', $site_details, 'Left out while the feature is off, so the data hash does not change.' );
 		$this->assertEquals(
 			[
 				[
@@ -231,6 +231,21 @@ class Site_Details_Index_Test extends WP_UnitTestCase {
 
 		$this->assertGreaterThanOrEqual( $before, $timestamp );
 		$this->assertLessThanOrEqual( $after, $timestamp );
+	}
+
+	public function test__generic_integrations_are_reported_while_the_feature_is_on() {
+		$feature_ids = \Automattic\VIP\Feature::$feature_ids;
+		\Automattic\VIP\Feature::$feature_ids['vip-generic-integrations'] = [ 123 => true ];
+		// Feature reads the site ID through the mocked constants.
+		\Automattic\Test\Constant_Mocker::define( 'FILES_CLIENT_SITE_ID', 123 );
+
+		Site_Details_Index::instance( 100 );
+		$site_details = apply_filters( 'vip_site_details_index_data', array() );
+
+		\Automattic\VIP\Feature::$feature_ids = $feature_ids;
+		\Automattic\Test\Constant_Mocker::clear();
+
+		$this->assertSame( [], $site_details['generic_integrations'] );
 	}
 
 	public function test__generic_integrations_report_each_generic_integration_by_slug() {

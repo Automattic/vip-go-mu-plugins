@@ -649,19 +649,37 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Whatever the scope, as the hand-written integrations do: the platform writes a multisite's
-	 * config per network site.
-	 *
 	 * @dataProvider data_scopes
 	 */
-	public function test__configure_defines_the_constant_from_the_network_site_config_on_multisite( string $scope ): void {
+	public function test__configure_lets_the_network_site_config_win_over_the_env_config_on_multisite( string $scope ): void {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Only on multisite.' );
 		}
 
 		$this->configured_integration( $scope, $this->acme_sync_config() )->configure();
 
-		$this->assertSame( [ 'api_key' => 'site-key' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
+		$this->assertSame(
+			[
+				'api_key' => 'site-key',
+				'retries' => 3,
+				'enabled' => false,
+			],
+			Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )
+		);
+	}
+
+	public function test__configure_keeps_the_env_config_for_a_network_site_with_an_empty_config(): void {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Only on multisite.' );
+		}
+
+		// The required key is on the environment, and the network site is enabled with no config of its own.
+		$config = $this->acme_sync_config();
+		$config['network_sites'][ get_current_blog_id() ]['config'] = [];
+
+		$this->configured_integration( 'site', $config )->configure();
+
+		$this->assertSame( $config['env']['config'], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
 	}
 
 	public function test__configure_defines_an_empty_config_when_there_is_none(): void {
@@ -689,6 +707,18 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertTrue( $integrations->get_integration( 'acme-sync' )->is_active() );
 		$this->assertSame( is_multisite() ? 'site-key' : 'env-key', Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' )['api_key'] );
+	}
+
+	public function test__an_integration_activated_from_site_code_gets_its_constant(): void {
+		$integrations = new Integrations();
+		$integrations->register( new GenericIntegration( 'acme-sync', $this->entry() ) );
+
+		$integrations->activate( 'acme-sync', [ 'config' => [ 'api_key' => 'site-code-key' ] ] );
+		$integrations->activate_platform_integrations();
+		$integrations->load_active();
+		remove_action( 'plugins_loaded', [ $integrations->get_integration( 'acme-sync' ), 'load_bundle' ], 1 );
+
+		$this->assertSame( [ 'api_key' => 'site-code-key' ], Constant_Mocker::constant( 'VIP_ACME_SYNC_CONFIG' ) );
 	}
 
 	public function test__status_is_inactive_before_activation(): void {
@@ -759,5 +789,25 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 
 		$this->assertSame( 'already_loaded', $integration->get_runtime_status()['status'] );
 		$this->assertNull( $integration->get_runtime_status()['bundle'] );
+	}
+
+	public function test__status_reports_a_customer_copy_loaded_before_platform_activation(): void {
+		$dir = $this->temp_dir();
+		mkdir( $dir . '/early-sync' );
+		file_put_contents( $dir . '/early-sync/early-sync.php', '<?php' );
+		require_once $dir . '/early-sync/early-sync.php';
+
+		$this->enable_feature_for_site();
+		$this->use_mapping( [ 'integrations' => [ 'early-sync' => $this->entry( 'early-sync' ) ] ] );
+		add_filter( 'vip_integrations_pre_load_config', fn() => [ 'env' => [ 'status' => 'enabled' ] ] );
+
+		$integrations = new Integrations();
+		register_generic_integrations( $integrations );
+		$integrations->activate_platform_integrations();
+		$integrations->load_active();
+
+		$integration = $integrations->get_integration( 'early-sync' );
+		$this->assertFalse( $integration->is_active() );
+		$this->assertSame( 'already_loaded', $integration->get_runtime_status()['status'] );
 	}
 }
