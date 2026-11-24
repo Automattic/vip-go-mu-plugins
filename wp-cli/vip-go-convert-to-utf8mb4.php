@@ -137,6 +137,11 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 			WP_CLI::line( '' );
 		}
 
+		if ( $this->dry_run ) {
+			WP_CLI::line( 'Dry run complete. Database default charset not changed.' );
+			return;
+		}
+
 		// Update DB's default charset/collation
 		$db_name = $wpdb->get_var( 'SELECT DATABASE() FROM DUAL;' );
 		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
@@ -291,17 +296,12 @@ class VIP_Go_Convert_To_utf8mb4 extends WPCOM_VIP_CLI_Command {
 		if ( is_multisite() ) {
 			$site_ids = get_sites( array(
 				'fields' => 'ids',
+				'number' => 0,
 			) );
 
-			if ( is_array( $site_ids ) && ! empty( $site_ids ) ) {
-				foreach ( $site_ids as $site_id ) {
-					$tables = array_merge( $tables, array_values( $wpdb->tables( 'blog', true, $site_id ) ) );
-				}
-
-				unset( $site_id );
+			foreach ( $site_ids as $site_id ) {
+				$tables = array_merge( $tables, array_values( $wpdb->tables( 'blog', true, $site_id ) ) );
 			}
-
-			unset( $site_ids );
 		} else {
 			$tables = array_merge( $tables, array_values( $wpdb->tables( 'blog' ) ) );
 		}

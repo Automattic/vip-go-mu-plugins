@@ -60,6 +60,10 @@ class Private_Sites {
 		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'disable_blog_public_ui' ) );
 
+		// Core reads -1 as public, so keep its handling of sites that discourage search engines
+		add_filter( 'wp_robots', array( $this, 'filter_wp_robots' ) );
+		add_filter( 'option_ping_sites', array( $this, 'filter_ping_sites' ) );
+
 		$this->disable_core_feeds();
 		$this->block_unnecessary_access();
 
@@ -194,5 +198,42 @@ class Private_Sites {
 		}
 
 		return $current_value;
+	}
+
+	/**
+	 * Use noindex, nofollow like core does for a site that discourages search engines.
+	 *
+	 * @param array $robots Robots directives.
+	 * @return array
+	 */
+	public function filter_wp_robots( $robots ) {
+		if ( $this->discourages_search_engines() ) {
+			unset( $robots['follow'], $robots['max-image-preview'] );
+			$robots['noindex']  = true;
+			$robots['nofollow'] = true;
+		}
+
+		return $robots;
+	}
+
+	/**
+	 * Skip update pings like core's privacy_ping_filter() does for a site that discourages search engines.
+	 *
+	 * @param string $sites Ping services, one per line.
+	 * @return string
+	 */
+	public function filter_ping_sites( $sites ) {
+		return $this->discourages_search_engines() ? '' : $sites;
+	}
+
+	/**
+	 * Whether the site's own setting discourages search engines, which filter_restrict_blog_public() reports as -1.
+	 */
+	private function discourages_search_engines(): bool {
+		remove_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+		$blog_public = get_option( 'blog_public' );
+		add_filter( 'option_blog_public', array( $this, 'filter_restrict_blog_public' ) );
+
+		return '0' === $blog_public;
 	}
 }

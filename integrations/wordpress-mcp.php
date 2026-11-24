@@ -308,42 +308,35 @@ class WordPressMcpIntegration extends Integration {
 	 * @return \WP_Error|null|true A WP_Error for failed MCP authentication, or the original value.
 	 */
 	public function report_auth_error( $errors ) {
+		// Core's next user lookup, which runs MCP authentication, may come after this filter.
+		if ( $this->is_mcp_adapter_rest_request() ) {
+			get_current_user_id();
+		}
+
 		return $errors ?? $this->auth_error;
 	}
 
 	/**
-	 * Check whether the current request targets the MCP adapter REST endpoint.
+	 * Check whether WordPress is serving the current request from the MCP adapter REST endpoint.
 	 *
-	 * Deliberately does not require REST_REQUEST: authentication runs on the
-	 * determine_current_user pass at $wp->init(), before the REST server defines
-	 * the constant, so the endpoint is matched on method and URL alone.
+	 * Uses the REST route WordPress parsed for dispatch, not the request URL. That route is only
+	 * known once the REST server runs, so MCP authentication happens on the user lookup after
+	 * serve_request() clears the anonymous user, not on the early one at $wp->init().
 	 */
 	public function is_mcp_adapter_rest_request(): bool {
+		global $wp;
+
+		if ( ! defined( 'REST_REQUEST' ) || ! constant( 'REST_REQUEST' ) ) {
+			return false;
+		}
+
 		if ( 'POST' !== $this->get_server_value( 'REQUEST_METHOD' ) ) {
 			return false;
 		}
 
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- REST route detection only.
-		if ( isset( $_GET['rest_route'] ) && is_string( $_GET['rest_route'] ) ) {
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- REST route detection only.
-			$rest_route = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );
+		$rest_route = $wp->query_vars['rest_route'] ?? null;
 
-			return untrailingslashit( $rest_route ) === $this->get_adapter_rest_route();
-		}
-
-		$request_uri = $this->get_server_value( 'REQUEST_URI' );
-		if ( null === $request_uri ) {
-			return false;
-		}
-
-		$path = wp_parse_url( $request_uri, PHP_URL_PATH );
-		if ( ! is_string( $path ) ) {
-			return false;
-		}
-
-		$rest_path = '/' . rest_get_url_prefix() . $this->get_adapter_rest_route();
-
-		return str_ends_with( untrailingslashit( $path ), $rest_path );
+		return is_string( $rest_route ) && untrailingslashit( $rest_route ) === $this->get_adapter_rest_route();
 	}
 
 	/**

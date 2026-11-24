@@ -65,8 +65,11 @@ function redirect_back() {
 		'_cachebuster' => time(),
 	] );
 
-	// Note: this is called early so we can't use wp_safe_redirect
-	header( sprintf( 'Location: %s', esc_url_raw( $redirect_to ) ) );
+	// Note: this is called early so we can't use wp_safe_redirect.
+	// Always redirect to a path on this host: browsers read a leading `//` or `/\` as another host.
+	$redirect_to = '/' . ltrim( esc_url_raw( $redirect_to ), '/\\' );
+
+	header( sprintf( 'Location: %s', $redirect_to ) );
 	exit;
 }
 

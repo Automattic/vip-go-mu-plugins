@@ -53,6 +53,7 @@ class Tracks_Client_Test extends WP_UnitTestCase {
 		$http->expects( $this->once() )
 			->method( 'post' )
 			->with( $this->stringContains( 'tracks/record' ), [
+				'timeout'    => 1,
 				'body'       => wp_json_encode([
 					'events'      => [ [ 'test_event' => true ] ],
 					'commonProps' => [ 'foo' => 'bar' ],

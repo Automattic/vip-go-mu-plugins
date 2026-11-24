@@ -722,7 +722,7 @@ var qrcode = function() {
       for (var row = 0; row < length; row++) {
         for (var col = 0; col < length; col++) {
           context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
-          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+          context.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
         }
       }
     }

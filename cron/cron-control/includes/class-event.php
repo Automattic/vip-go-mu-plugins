@@ -203,7 +203,7 @@ class Event {
 		$next_timestamp = $this->calculate_next_timestamp( $fresh_interval );
 
 		if ( $this->interval !== $fresh_interval ) {
-			$this->set_schedule( $this->schedule, $this->interval );
+			$this->set_schedule( $this->schedule, $fresh_interval );
 		}
 
 		$this->set_timestamp( $next_timestamp );

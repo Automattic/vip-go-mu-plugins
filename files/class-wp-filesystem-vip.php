@@ -741,7 +741,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 			return false;
 		}
 
-		$return = $transport->gethchmod( $file );
+		$return = $transport->getchmod( $file );
 		if ( false === $return ) {
 			$this->errors = $transport->errors;
 			return false;

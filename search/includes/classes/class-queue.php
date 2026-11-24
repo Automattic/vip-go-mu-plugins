@@ -12,6 +12,15 @@ class Queue {
 	const MAX_BATCH_SIZE = 500;
 	const DEADLOCK_TIME  = 5 * MINUTE_IN_SECONDS;
 
+	/**
+	 * Jobs whose processing died (fatal, OOM, timeout) are retried before other work, in smaller batches on each
+	 * attempt, and dropped after MAX_RETRIES. A retried job's priority is RETRY_PRIORITY plus its failed attempts.
+	 * Queueing the object again keeps its retry level, so an object that keeps killing the processor while it keeps being
+	 * queued again (e.g. a plugin updating its meta) is still isolated and dropped.
+	 */
+	const RETRY_PRIORITY = 100;
+	const MAX_RETRIES    = 3;
+
 	/** How many times, within a day, an object whose indexing failed for a reason that may pass is queued again */
 	const MAX_REQUEUE_ATTEMPTS = 3;
 
@@ -324,6 +333,12 @@ class Queue {
 			return new WP_Error( 'invalid-indexable', sprintf( 'Indexable not found for type %s', $indexable_slug ) );
 		}
 
+		// No active version (e.g. after `index-versions deactivate`) and none passed in
+		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
+		if ( is_wp_error( $index_version ) ) {
+			return $index_version;
+		}
+
 		if ( ! $indexable->index_exists() ) {
 			return new WP_Error( 'index-not-exists', sprintf( 'Index not found for type %s', $indexable_slug ) );
 		}
@@ -338,9 +353,8 @@ class Queue {
 			$next_index_time = null;
 		}
 
-		$index_version      = $this->get_index_version_number_from_options( $indexable_slug, $options );
 		$start_time_escaped = $next_index_time ? $wpdb->prepare( '%s', array( $next_index_time ) ) : 'NULL';
-		$priority           = (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY );
+		$priority           = min( (int) ( $options['priority'] ?? self::INDEX_DEFAULT_PRIORITY ), self::RETRY_PRIORITY - 1 );
 
 		$table_name = $this->schema->get_table_name();
 
@@ -350,14 +364,15 @@ class Queue {
 		// to de-duplicate queued jobs without first querying to see if the object is queued
 		$wpdb->suppress_errors( true );
 
-		// An object already queued keeps its job, at the higher priority and the earlier start time, so a change doesn't
-		// wait for a retry's backoff. LEAST() returns NULL (due now) if either start time is NULL.
+		// An object already queued keeps its job, at the higher priority (or its retry level, see RETRY_PRIORITY) and the
+		// earlier start time, so a change doesn't wait for a retry's backoff. LEAST() returns NULL (due now) if either start
+		// time is NULL.
 		// phpcs:disable WordPress.DB -- the code below breaks literally all DB rules :-)
 		$wpdb->query(
 			$wpdb->prepare( "INSERT INTO {$table_name} (object_id, object_type, status, index_version, start_time, priority)
 				VALUES (%d, %s, 'queued', %d, {$start_time_escaped}, %d)
-				ON DUPLICATE KEY UPDATE priority = LEAST(priority, %d), start_time = LEAST(start_time, {$start_time_escaped})",
-				[ $object_id, $indexable_slug, $index_version, $priority, $priority ]
+				ON DUPLICATE KEY UPDATE priority = IF(priority >= %d, priority, LEAST(priority, %d)), start_time = LEAST(start_time, {$start_time_escaped})",
+				[ $object_id, $indexable_slug, $index_version, $priority, self::RETRY_PRIORITY, $priority ]
 			)
 		);
 		// phpcs:enable
@@ -480,7 +495,8 @@ class Queue {
 	public function get_last_index_time_cache_key( $object_id, $indexable_slug, $options = array() ) {
 		$index_version = $this->get_index_version_number_from_options( $indexable_slug, $options );
 
-		return sprintf( '%s-%d-v%d', $indexable_slug, $object_id, $index_version );
+		// Without an active version there's no current version to key on; use 0 so the debounce still works
+		return sprintf( '%s-%d-v%d', $indexable_slug, $object_id, is_wp_error( $index_version ) ? 0 : $index_version );
 	}
 
 	/**
@@ -513,10 +529,13 @@ class Queue {
 	/**
 	 * Update a list of jobs
 	 *
+	 * A job whose update would duplicate another job's object, status and index version (the UNIQUE key) is skipped,
+	 * instead of failing the whole update.
+	 *
 	 * @param array $job_ids Array of job ids to update
 	 * @param array $data Data to update jobs with
 	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'scheduled')
-	 * @return array Array of jobs updated
+	 * @return int|bool Number of jobs updated, false on failure
 	 */
 	public function update_jobs( $job_ids, $data, $where_status = null ) {
 		global $wpdb;
@@ -533,21 +552,22 @@ class Queue {
 
 		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
 
-		$sql = "UPDATE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		$sql = "UPDATE IGNORE {$table_name} SET {$escaped_fields} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
 		if ( null !== $where_status ) {
 			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
 		}
 
-		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
+		return $wpdb->query( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
 
 	/**
 	 * Delete a list of jobs
 	 *
 	 * @param array $job_ids Array of job objects to delete
+	 * @param string $where_status Optional status to match in WHERE clause (e.g., 'running')
 	 * @return array Array of jobs deleted
 	 */
-	public function delete_jobs( $jobs ) {
+	public function delete_jobs( $jobs, $where_status = null ) {
 		global $wpdb;
 
 		$table_name = $this->schema->get_table_name();
@@ -557,6 +577,9 @@ class Queue {
 		$escaped_ids = implode( ', ', array_map( 'intval', $ids ) );
 
 		$sql = "DELETE FROM {$table_name} WHERE `job_id` IN ( {$escaped_ids} )"; // Cannot prepare table name. @codingStandardsIgnoreLine
+		if ( null !== $where_status ) {
+			$sql .= $wpdb->prepare( ' AND `status` = %s', $where_status );
+		}
 
 		return $wpdb->get_results( $sql ); // Already escaped. @codingStandardsIgnoreLine
 	}
@@ -734,11 +757,19 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		// TODO transaction
+		// Skip jobs whose object has a job checked out or running, so they don't take up the batch. The UNIQUE key keeps a
+		// scheduled object's job queued until that job starts running. And if a running job is killing the processor, this
+		// one would take a full batch down with it; if that job died, recovery gives this one its next retry level.
+		// Retried jobs come first, as they were waiting before their processing died.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE ( `start_time` <= NOW() OR `start_time` IS NULL ) AND `status` = 'queued' ORDER BY `priority`, `job_id` LIMIT %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				// Cannot prepare table name. @codingStandardsIgnoreStart
+				"SELECT queued.* FROM {$table_name} queued WHERE ( queued.`start_time` <= NOW() OR queued.`start_time` IS NULL ) AND queued.`status` = 'queued' AND NOT EXISTS (
+					SELECT 1 FROM {$table_name} busy WHERE busy.`object_id` = queued.`object_id` AND busy.`object_type` = queued.`object_type` AND busy.`index_version` = queued.`index_version` AND busy.`status` IN ( 'scheduled', 'running' )
+				) ORDER BY queued.`priority` >= %d DESC, queued.`priority`, queued.`job_id` LIMIT %d",
+				// @codingStandardsIgnoreEnd
+				self::RETRY_PRIORITY,
 				$count
 			)
 		);
@@ -747,20 +778,39 @@ class Queue {
 			return array();
 		}
 
+		// Never mix retried jobs with other work, and retry them in batches 10x smaller on each attempt, so a job that
+		// keeps killing the processor ends up alone instead of holding back the rest of its batch.
+		$attempts = self::get_failed_attempts( $jobs[0] );
+		$jobs     = array_filter( $jobs, fn( $job ) => self::get_failed_attempts( $job ) === $attempts );
+		$jobs     = array_slice( $jobs, 0, max( 1, intdiv( $count, 10 ** min( $attempts, self::MAX_RETRIES ) ) ) );
+
 		// Set them as scheduled
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
 		$scheduled_time = gmdate( 'Y-m-d H:i:s' );
 
-		$this->update_jobs( $job_ids, array(
+		// start_time only matters while a job is queued, so it holds a random past time that marks the jobs this call
+		// claims, apart from those a concurrent checkout claims in the same second. Being in the past, it keeps a job
+		// that free_deadlocked_jobs() queues again due right away, as it was when checked out.
+		$claim = gmdate( 'Y-m-d H:i:s', wp_rand( 0, time() ) );
+
+		$scheduled_count = $this->update_jobs( $job_ids, array(
 			'status'         => 'scheduled',
 			'scheduled_time' => $scheduled_time,
+			'start_time'     => $claim,
 		), 'queued' );
+
+		// Another checkout claimed some of these jobs first. Keep only the ones this call claimed.
+		if ( count( $job_ids ) !== $scheduled_count ) {
+			$claimed_ids = wp_list_pluck( wp_list_filter( $this->get_jobs_by_ids( $job_ids ), array( 'start_time' => $claim ) ), 'job_id' );
+			$jobs        = array_values( array_filter( $jobs, fn( $job ) => in_array( $job->job_id, $claimed_ids, true ) ) );
+		}
 
 		// Set right status on the already queried jobs objects
 		foreach ( $jobs as &$job ) {
 			$job->status         = 'scheduled';
 			$job->scheduled_time = $scheduled_time;
+			$job->start_time     = $claim;
 
 			// Set the last index time for rate limiting. Technically the object isn't yet re-indexed, but
 			// this is close enough for our purpose and prevents repeat jobs from being queued for immediate processing
@@ -785,13 +835,11 @@ class Queue {
 
 		$table_name = $this->schema->get_table_name();
 
-		// If job was scheduled before this time, it is considered deadlocked
-		$deadlocked_time = time() - self::DEADLOCK_TIME;
+		$deadlocked = self::get_deadlocked_condition();
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
 		$jobs = $wpdb->get_results( $wpdb->prepare(
-			"SELECT * FROM {$table_name} WHERE `status` IN ( 'scheduled', 'running' ) AND (`scheduled_time` <= %s OR `scheduled_time` IS NULL) LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
-			gmdate( 'Y-m-d H:i:s', $deadlocked_time ),
+			"SELECT * FROM {$table_name} WHERE {$deadlocked} LIMIT %d", // Cannot prepare table name. @codingStandardsIgnoreLine
 			$count
 		) );
 
@@ -799,9 +847,29 @@ class Queue {
 	}
 
 	/**
+	 * SQL condition matching the jobs considered deadlocked: scheduled (or, once their batch started, running) since
+	 * before DEADLOCK_TIME ago. Recovery checks it again on each job it changes, as a batch can start meanwhile.
+	 *
+	 * @param string $alias Table alias, if any
+	 * @return string Prepared SQL condition
+	 */
+	private static function get_deadlocked_condition( string $alias = '' ): string {
+		global $wpdb;
+
+		$prefix = $alias ? "{$alias}." : '';
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table alias only.
+		return $wpdb->prepare( "( {$prefix}status IN ( 'scheduled', 'running' ) AND ( {$prefix}scheduled_time <= %s OR {$prefix}scheduled_time IS NULL ) )", gmdate( 'Y-m-d H:i:s', time() - self::DEADLOCK_TIME ) );
+	}
+
+	/**
 	 * Find and release deadlocked jobs
 	 */
 	public function free_deadlocked_jobs() {
+		global $wpdb;
+
+		$table_name = $this->schema->get_table_name();
+
 		// Run this several times, to release potentially many jobs in reasonable batches
 		$batches = 5;
 
@@ -813,90 +881,111 @@ class Queue {
 				break;
 			}
 
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_same_object( $deadlocked_jobs );
-			$filtered_deadlocked_jobs = $this->delete_jobs_on_the_already_queued_object( $filtered_deadlocked_jobs );
+			// Delete the jobs that can't be queued again. Out of retries first, so a newer job for the same object is the one
+			// kept instead of a job that's about to be dropped.
+			$this->delete_jobs_out_of_retries( $deadlocked_jobs );
+			$this->delete_jobs_already_queued_or_duplicated( $deadlocked_jobs );
 
-			$deadlocked_job_ids = wp_list_pluck( $filtered_deadlocked_jobs, 'job_id' );
+			$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $deadlocked_jobs, 'job_id' ) ) );
+			$deadlocked  = self::get_deadlocked_condition();
 
-			$this->update_jobs( $deadlocked_job_ids, array(
-				'status'         => 'queued',
-				'scheduled_time' => null,
-			) );
+			// A 'running' job died while being processed, so it moves up one retry level. MySQL runs single-table
+			// assignments left to right, so `priority` is computed from the old `status`. A job whose object was queued since
+			// the deletion above would break the UNIQUE key: IGNORE skips it, and the next round deletes it.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+			$wpdb->query( $wpdb->prepare( "UPDATE IGNORE {$table_name} SET `priority` = IF( `status` = 'running', GREATEST( `priority`, %d ) + 1, `priority` ), `status` = 'queued', `scheduled_time` = NULL WHERE `job_id` IN ( {$escaped_ids} ) AND {$deadlocked}", self::RETRY_PRIORITY ) );
 		}
 	}
 
 	/**
-	 * In some cases there could be multiple jobs for the same object stuck in a deadlock state.
-	 * If we would try to update all of them at once we would break the DB constraint
-	 * (state + object_id + object_type + index_version).
+	 * How many times processing a job has failed, as recorded in its priority (see RETRY_PRIORITY).
 	 *
-	 * We will delete the duplicate from the DB table as well as from the list of jobs to be re-queued.
-	 *
-	 * @param array $all_deadlocked_jobs Array of all deadlocked jobs
-	 * @return array $filtered_deadlocked_jobs Unique deadlocked jobs
+	 * @param object $job Job
+	 * @return int Number of failed attempts
 	 */
-	private function delete_jobs_on_the_same_object( $all_deadlocked_jobs ) {
-		$found_objects            = [];
-		$filtered_deadlocked_jobs = [];
-		$jobs_to_be_deleted       = [];
-
-		foreach ( $all_deadlocked_jobs as $job ) {
-			$unique_key = sprintf( '%s_%s_%s',
-				$job->{'object_id'},
-				$job->{'object_type'},
-				$job->{'index_version'}
-			);
-
-			if ( array_key_exists( $unique_key, $found_objects ) ) {
-				$jobs_to_be_deleted[] = $job;
-			} else {
-				$found_objects[ $unique_key ] = true;
-
-				$filtered_deadlocked_jobs[] = $job;
-			}
-		}
-
-		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->delete_jobs( $jobs_to_be_deleted );
-		}
-
-		return $filtered_deadlocked_jobs;
+	private static function get_failed_attempts( $job ): int {
+		return max( 0, (int) $job->priority - self::RETRY_PRIORITY );
 	}
 
 	/**
-	 * We can't re-queue jobs that are already waiting in queue. We should remove such jobs instead.
+	 * A deadlocked 'running' job died while being processed. Give up on it, and log it, once it has used up its retries.
 	 *
 	 * @param array $deadlocked_jobs List of deadlocked jobs
-	 * @return array $deadlocked_jobs List of deadlocked jobs deleted from queue
 	 */
-	public function delete_jobs_on_the_already_queued_object( $deadlocked_jobs ) {
-		global $wpdb;
+	private function delete_jobs_out_of_retries( $deadlocked_jobs ) {
+		$exhausted = array_filter( $deadlocked_jobs, fn( $job ) => 'running' === $job->status && self::get_failed_attempts( $job ) >= self::MAX_RETRIES );
 
-		$table_name = $this->schema->get_table_name();
-
-		$job_ids = wp_list_pluck( $deadlocked_jobs, 'job_id' );
-
-		$escaped_ids = implode( ', ', array_map( 'intval', $job_ids ) );
-
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
-		$jobs_to_be_deleted = $wpdb->get_results(
-			 // Cannot prepare table name. @codingStandardsIgnoreStart
-			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE `job_id` IN ( {$escaped_ids} ) AND EXISTS (
-				 SELECT queued.* FROM {$table_name} queued
-				 WHERE queued.status = 'queued'
-				 AND queued.object_id = deadlocked.object_id
-				 AND queued.object_type = deadlocked.object_type
-				 AND queued.index_version = deadlocked.index_version
-				 AND queued.job_id != deadlocked.job_id
-			)",
-			 // @codingStandardsIgnoreEnd
-		);
-
-		if ( ! empty( $jobs_to_be_deleted ) ) {
-			$this->delete_jobs( $jobs_to_be_deleted );
+		if ( empty( $exhausted ) ) {
+			return;
 		}
 
-		return $deadlocked_jobs;
+		$this->carry_retry_level_to_waiting_jobs( $exhausted );
+		$this->delete_jobs( $exhausted );
+
+		$this->logger->log(
+			'warning',
+			'search_queue',
+			sprintf( 'Dropped %d jobs whose processing failed %d times', count( $exhausted ), self::MAX_RETRIES + 1 ),
+			array(
+				'homeurl' => home_url(),
+				'jobs'    => array_map( fn( $job ) => array(
+					'object_id'     => (int) $job->object_id,
+					'object_type'   => $job->object_type,
+					'index_version' => (int) $job->index_version,
+				), array_values( $exhausted ) ),
+			)
+		);
+	}
+
+	/**
+	 * A deadlocked job can't be queued again, as status + object_id + object_type + index_version is unique, when its
+	 * object is already queued or is also the object of an earlier deadlocked job. Delete those jobs instead.
+	 *
+	 * @param array $deadlocked_jobs List of deadlocked jobs
+	 */
+	private function delete_jobs_already_queued_or_duplicated( $deadlocked_jobs ) {
+		global $wpdb;
+
+		$table_name  = $this->schema->get_table_name();
+		$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $deadlocked_jobs, 'job_id' ) ) );
+		$deadlocked  = self::get_deadlocked_condition( 'deadlocked' );
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped.
+		$jobs_to_be_deleted = $wpdb->get_results(
+			"SELECT deadlocked.* FROM {$table_name} deadlocked WHERE deadlocked.job_id IN ( {$escaped_ids} ) AND {$deadlocked} AND EXISTS (
+				SELECT 1 FROM {$table_name} other
+				WHERE other.object_id = deadlocked.object_id
+				AND other.object_type = deadlocked.object_type
+				AND other.index_version = deadlocked.index_version
+				AND ( other.status = 'queued' OR ( other.job_id IN ( {$escaped_ids} ) AND other.job_id < deadlocked.job_id ) )
+			)"
+		);
+		// phpcs:enable
+
+		if ( ! empty( $jobs_to_be_deleted ) ) {
+			$this->carry_retry_level_to_waiting_jobs( $jobs_to_be_deleted );
+			$this->delete_jobs( $jobs_to_be_deleted );
+		}
+	}
+
+	/**
+	 * Before deadlocked jobs are deleted, the object's waiting job (queued, or deadlocked and about to be queued again)
+	 * takes over the retry level each would have been queued again at: the next one for a job that died while 'running',
+	 * else its own. Past the last level, the waiting job gets the last one, so it runs alone and is dropped if it crashes
+	 * too, instead of going back into a full batch.
+	 *
+	 * @param array $jobs Deadlocked jobs about to be deleted
+	 */
+	private function carry_retry_level_to_waiting_jobs( $jobs ) {
+		global $wpdb;
+
+		$table_name  = $this->schema->get_table_name();
+		$escaped_ids = implode( ', ', array_map( 'intval', wp_list_pluck( $jobs, 'job_id' ) ) );
+		$deadlocked  = self::get_deadlocked_condition( 'waiting' );
+		$level       = $wpdb->prepare( "IF( deleted.status = 'running', LEAST( GREATEST( deleted.priority, %d ) + 1, %d ), deleted.priority )", self::RETRY_PRIORITY, self::RETRY_PRIORITY + self::MAX_RETRIES );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name and ids are already escaped, and the rest prepared above.
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table_name} waiting JOIN {$table_name} deleted ON waiting.object_id = deleted.object_id AND waiting.object_type = deleted.object_type AND waiting.index_version = deleted.index_version SET waiting.priority = GREATEST( waiting.priority, {$level} ) WHERE ( waiting.status = 'queued' OR {$deadlocked} ) AND waiting.job_id NOT IN ( {$escaped_ids} ) AND deleted.job_id IN ( {$escaped_ids} ) AND {$level} >= %d", self::RETRY_PRIORITY ) );
 	}
 
 	/**
@@ -905,12 +994,18 @@ class Queue {
 	 * @param array $jobs List of jobs
 	 */
 	public function process_jobs( $jobs ) {
-		// Set them as running
+		// Set them as running, including any free_deadlocked_jobs() handed back to the queue because the batch started late,
+		// so they're deleted once indexed rather than indexed again. Restart their deadlock timer: time spent waiting for
+		// cron isn't time spent processing, and a handed-back job's scheduled_time is NULL, which counts as deadlocked.
 		$job_ids = wp_list_pluck( $jobs, 'job_id' );
 
-		$this->update_jobs( $job_ids, array( 'status' => 'running' ), 'scheduled' );
+		$this->update_jobs( $job_ids, array(
+			'status'         => 'running',
+			'scheduled_time' => gmdate( 'Y-m-d H:i:s' ),
+		) );
 
 		$indexables = Indexables::factory();
+		$versioning = \Automattic\VIP\Search\Search::instance()->versioning;
 
 		// Organize by version and type, so we can process each unique batch in bulk
 		$jobs_by_version_and_type = $this->organize_jobs_by_index_version_and_type( $jobs );
@@ -920,17 +1015,22 @@ class Queue {
 			foreach ( $jobs_by_type as $type => $jobs ) {
 				$indexable = $indexables->get( $type );
 
-				// If the index version no longer exists, just delete the jobs and don't bother with stats or anything
-				// since the jobs weren't actually processed
-				$index_versions = \Automattic\VIP\Search\Search::instance()->versioning->get_versions( $indexable );
-				if ( ! array_key_exists( intval( $index_version ), $index_versions ) ) {
+				// If the Indexable (e.g. its feature was turned off) or the index version no longer exists, there's nothing to index into
+				$ids = $indexable && array_key_exists( intval( $index_version ), $versioning->get_versions( $indexable ) ) ? wp_list_pluck( $jobs, 'object_id' ) : [];
+
+				// Posts deleted, trashed or unpublished since they were queued were already removed from the index by
+				// ElasticPress's sync, and indexing them would put them back
+				if ( $ids && 'post' === $type ) {
+					$ids = $this->filter_indexable_post_ids( $indexable, $ids );
+				}
+
+				// Nothing to index: just delete the jobs, without stats, since they weren't actually processed
+				if ( ! $ids ) {
 					$this->delete_jobs( $jobs );
 					continue;
 				}
 
-				\Automattic\VIP\Search\Search::instance()->versioning->set_current_version_number( $indexable, $index_version );
-
-				$ids = wp_list_pluck( $jobs, 'object_id' );
+				$versioning->set_current_version_number( $indexable, $index_version );
 
 				// Increment first to prevent overrunning ratelimiting
 				static::index_count_incr( count( $ids ) );
@@ -952,28 +1052,73 @@ class Queue {
 				$this->bulk_index_split_if_too_large( $indexable, $ids );
 
 				// Mark them as done in queue. Objects that failed for a reason that may pass were already queued again by
-				// action__ep_after_bulk_index(), as new rows.
-				$this->delete_jobs( $jobs );
+				// action__ep_after_bulk_index(), as new rows. Jobs free_deadlocked_jobs() handed back to the queue while the batch
+				// ran (it ran late) stay queued, to be indexed again: their row would block a failed object's.
+				$this->delete_jobs( $jobs, 'running' );
 
-				\Automattic\VIP\Search\Search::instance()->versioning->reset_current_version_number( $indexable );
+				$versioning->reset_current_version_number( $indexable );
 			}
 		}
 	}
 
 	/**
 	 * Index objects in one bulk request. A batch of large posts can exceed the request size limit (413), so send it again
-	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
-	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
-	 * bulk_index() fires.
+	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): customer code hooks
+	 * ep_after_bulk_index, which only bulk_index() fires.
+	 *
+	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way before it's sent,
+	 * with the documents already prepared, so each part finishes well within the request timeout: a timeout then means
+	 * Elasticsearch had trouble, worth a retry, not a batch too slow to ever go through. After a part fails that way, the
+	 * rest isn't sent to a struggling cluster: it's queued again for later, like the part that failed.
 	 *
 	 * @param \ElasticPress\Indexable $indexable Indexable
 	 * @param array                   $ids       Object IDs
+	 * @param array                   $documents Their documents, if already prepared
+	 * @return WP_Error|null The error a request failed with, if it may pass later
 	 */
-	private function bulk_index_split_if_too_large( $indexable, array $ids ): void {
-		$result = $indexable->bulk_index( $ids );
+	private function bulk_index_split_if_too_large( $indexable, array $ids, array $documents = [] ): ?WP_Error {
+		// A single object can't be split, so it's sent whatever its size
+		$max_size = count( $ids ) > 1 ? apply_filters( 'ep_dynamic_bulk_min_buffer_size', PHP_INT_MAX ) : PHP_INT_MAX;
+		$refused  = [];
+
+		// Runs before Search::filter__ep_do_intercept_request() (9999) sends the request, and keeps the documents of one too
+		// large: bulk_index() ends each with a blank line
+		$refuse_too_large = static function ( $request, $query, $args, $failures, $type ) use ( $max_size, $documents, &$refused ) {
+			if ( 'bulk_index' !== $type || strlen( $args['body'] ) <= $max_size ) {
+				return $request;
+			}
+
+			$refused = $documents ?: explode( "\n\n", $args['body'], -1 );
+			return new WP_Error( 413, 'Request Entity Too Large' );
+		};
+
+		// Only this batch's request (and any retry of it): bulk_index() fires ep_after_bulk_index before it returns, and a
+		// callback can send a bulk request of its own
+		$stop_after_request = static function ( $query, $type ) use ( $refuse_too_large ) {
+			if ( 'bulk_index' === $type ) {
+				remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+			}
+		};
+
+		add_filter( 'ep_do_intercept_request', $refuse_too_large, 9998, 5 );
+		add_action( 'ep_remote_request', $stop_after_request, 10, 2 );
+		try {
+			// With the documents already prepared, sent as bulk_index() sends them
+			$result = $documents
+				? \ElasticPress\Elasticsearch::factory()->bulk_index( $indexable->get_index_name(), $indexable->slug, implode( "\n\n", $documents ) . "\n\n" )
+				: $indexable->bulk_index( $ids );
+		} finally {
+			remove_filter( 'ep_do_intercept_request', $refuse_too_large, 9998 );
+			remove_action( 'ep_remote_request', $stop_after_request, 10 );
+		}
+
+		// Followed by ep_after_bulk_index as in bulk_index(), unless refused here: nothing was sent
+		if ( $documents && ! $refused ) {
+			do_action( 'ep_after_bulk_index', $ids, $indexable->slug, $result );
+		}
 
 		if ( ! is_wp_error( $result ) || 413 !== $result->get_error_code() ) {
-			return;
+			return is_wp_error( $result ) && self::is_transient_failure( $result->get_error_code() ) ? $result : null;
 		}
 
 		if ( 1 === count( $ids ) ) {
@@ -983,12 +1128,42 @@ class Queue {
 				sprintf( 'Could not index %s %d: too large for a bulk request', $indexable->slug, reset( $ids ) ),
 				[ 'homeurl' => home_url() ]
 			);
-			return;
+			return null;
 		}
 
-		foreach ( array_chunk( $ids, (int) ceil( count( $ids ) / 2 ) ) as $half ) {
-			$this->bulk_index_split_if_too_large( $indexable, $half );
+		// Prepared again after a 413 from Elasticsearch, or if the documents can't be told apart
+		$documents = count( $refused ) === count( $ids ) ? $refused : [];
+		$half      = (int) ceil( count( $ids ) / 2 );
+
+		$failure = $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, 0, $half ), array_slice( $documents, 0, $half ) );
+		if ( $failure ) {
+			// Not sent: queued again for later, like the half that failed, but without using up a retry
+			$this->action__ep_after_bulk_index( array_slice( $ids, $half ), $indexable->slug, $failure, false );
+			return $failure;
 		}
+
+		return $this->bulk_index_split_if_too_large( $indexable, array_slice( $ids, $half ), array_slice( $documents, $half ) );
+	}
+
+	/**
+	 * Of the given post IDs, return those whose post exists and has a post type and status ElasticPress indexes
+	 *
+	 * @param \ElasticPress\Indexable $indexable The post Indexable
+	 * @param array                   $ids       Post IDs
+	 * @return array Post IDs to index
+	 */
+	private function filter_indexable_post_ids( $indexable, array $ids ): array {
+		// One query for the batch instead of one per post, which also warms the term caches bulk_index() reads. Not meta:
+		// it can be large, and loading it for the whole batch at once could exhaust memory, so it's still read per post.
+		_prime_post_caches( $ids, true, false );
+
+		$post_types    = $indexable->get_indexable_post_types();
+		$post_statuses = $indexable->get_indexable_post_status();
+
+		return array_values( array_filter( $ids, function ( $id ) use ( $post_types, $post_statuses ) {
+			$post = get_post( $id );
+			return $post && in_array( $post->post_type, $post_types, true ) && in_array( $post->post_status, $post_statuses, true );
+		} ) );
 	}
 
 	/**
@@ -1087,25 +1262,33 @@ class Queue {
 	}
 
 	/**
+	 * Whether a request or document that failed with this code may go through later: no response (which
+	 * Search::filter__ep_do_intercept_request() reports as 'vip-search-upstream-request-failed'), a 429 or a 5xx
+	 *
+	 * @param int|string $code Error code or HTTP status
+	 */
+	private static function is_transient_failure( $code ): bool {
+		return 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
+	}
+
+	/**
 	 * Hook after bulk indexing: queue the objects that failed for a reason that may pass (no response, a 429 or a 5xx) again,
 	 * after a backoff, and give up on (and log) one that still fails after MAX_REQUEUE_ATTEMPTS retries within a day, so one
 	 * that always fails isn't sent forever. Other errors (e.g. a 400) would fail again.
 	 *
 	 * Inserted directly instead of via queue_objects(): its index_exists() check also fails while Elasticsearch is unavailable.
 	 *
-	 * @param array  $document_ids IDs of the documents that were to be indexed
-	 * @param string $slug         Indexable slug
-	 * @param mixed  $return       The bulk_index() result (WP_Error or Elasticsearch response), or for
-	 *                             ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param array  $document_ids  IDs of the documents that were to be indexed
+	 * @param string $slug          Indexable slug
+	 * @param mixed  $return        The bulk_index() result (WP_Error or Elasticsearch response), or for
+	 *                              ep_after_bulk_index_dynamically a list of them, one per request
+	 * @param bool   $count_attempt False for documents that weren't sent, which keep their retries
 	 * @return bool Whether anything was queued
 	 */
-	public function action__ep_after_bulk_index( $document_ids, $slug, $return ) {
+	public function action__ep_after_bulk_index( $document_ids, $slug, $return, bool $count_attempt = true ) {
 		if ( false === $this->is_enabled() || ! is_array( $document_ids ) ) {
 			return false;
 		}
-
-		// 'vip-search-upstream-request-failed' is Search::filter__ep_do_intercept_request() reporting no response
-		$is_transient = static fn( $code ) => 'vip-search-upstream-request-failed' === $code || 429 === $code || ( is_int( $code ) && $code >= 500 );
 
 		// A document skipped as too big to send isn't a request
 		$requests = array_filter(
@@ -1118,17 +1301,17 @@ class Queue {
 		foreach ( $requests as $result ) {
 			foreach ( is_wp_error( $result ) || empty( $result['errors'] ) ? [] : ( $result['items'] ?? [] ) as $item ) {
 				$item = reset( $item );
-				if ( isset( $item['_id'] ) && $is_transient( (int) ( $item['status'] ?? 200 ) ) ) {
+				if ( isset( $item['_id'] ) && self::is_transient_failure( (int) ( $item['status'] ?? 200 ) ) ) {
 					$failed_ids[ (int) $item['_id'] ] = true;
 				}
 			}
 		}
 
-		// A failed request doesn't say which documents it carried, so it lost all of them, unless a later one went through:
-		// bulk_index_dynamically() sends them again with the next request. Not during a sync (CLI, dashboard, shard rebuild):
-		// it reports its failed requests and is run again, and during an incident can fail every batch of a site in minutes.
-		$last_request = end( $requests );
-		if ( is_wp_error( $last_request ) && $is_transient( $last_request->get_error_code() ) && ! did_action( 'ep_pre_index_batch' ) ) {
+		// A failed request doesn't say which documents it carried, so all of them are queued again. Not during a sync (CLI,
+		// dashboard, shard rebuild): it reports its failed requests and is run again, and during an incident can fail every
+		// batch of a site in minutes.
+		$failed_requests = array_filter( $requests, static fn( $result ) => is_wp_error( $result ) && self::is_transient_failure( $result->get_error_code() ) );
+		if ( $failed_requests && ! did_action( 'ep_pre_index_batch' ) ) {
 			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
 		}
 
@@ -1168,8 +1351,8 @@ class Queue {
 		$attempts  = [];
 		$given_up  = [];
 		foreach ( array_keys( $priorities ) as $object_id ) {
-			$attempt = (int) $counts[ $cache_key( $object_id ) ] + 1;
-			if ( $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
+			$attempt = (int) $counts[ $cache_key( $object_id ) ] + (int) $count_attempt;
+			if ( $count_attempt && $attempt > self::MAX_REQUEUE_ATTEMPTS ) {
 				$given_up[] = $object_id;
 			} else {
 				$attempts[ $object_id ] = $attempt;
@@ -1193,11 +1376,13 @@ class Queue {
 			return false;
 		}
 
-		wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		if ( $count_attempt ) {
+			wp_cache_set_multiple( array_combine( array_map( $cache_key, array_keys( $attempts ) ), $attempts ), self::CACHE_GROUP, DAY_IN_SECONDS );
+		}
 
 		// Back off on each attempt not to add much load to a struggling cluster, with jitter so sites that failed in the same
 		// incident don't retry at the same moment: about 10-20 minutes after the first failure, 30-40 after the third
-		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( $attempts ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
+		$start_time = gmdate( 'Y-m-d H:i:s', time() + ( 10 * max( 1, max( $attempts ) ) + wp_rand( 0, 10 ) ) * MINUTE_IN_SECONDS );
 		$rows       = [];
 		foreach ( array_keys( $attempts ) as $object_id ) {
 			$rows[] = $wpdb->prepare( "(%d, %s, 'queued', %d, %s, %d)", $object_id, $slug, $index_version, $start_time, $priorities[ $object_id ] );

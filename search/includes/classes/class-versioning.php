@@ -35,11 +35,6 @@ class Versioning {
 	public $elastic_search_indexables;
 
 	/**
-	 * Injectable instance of \Automattic\VIP\Utils\Alerts
-	 */
-	public $alerts;
-
-	/**
 	 * The currently used index version, by type. This lets us override the active version for indexing while another index is active
 	 */
 	private $current_index_version_by_type = array();
@@ -71,7 +66,6 @@ class Versioning {
 
 		$this->elastic_search_instance   = \ElasticPress\Elasticsearch::factory();
 		$this->elastic_search_indexables = \ElasticPress\Indexables::factory();
-		$this->alerts                    = \Automattic\VIP\Utils\Alerts::instance();
 	}
 
 	public function action__elasticpress_loaded() {
@@ -769,6 +763,9 @@ class Versioning {
 	 */
 	public function action__shutdown() {
 		$this->replicate_queued_objects_to_other_versions( $this->queued_objects_by_type_and_version );
+
+		// Also called before shutdown (e.g. between pages of a large term requeue), so don't replicate these again
+		$this->queued_objects_by_type_and_version = array();
 	}
 
 	/**
@@ -800,8 +797,9 @@ class Versioning {
 
 			$active_version_number = $this->get_active_version_number( $indexable );
 
-			// Is there an active version and no changes to the active version? If so, we skip - we don't keep replicate non-active indexes to others
-			if ( ! is_wp_error( $active_version_number ) && ( ! isset( $objects_by_version[ $active_version_number ] ) || empty( $objects_by_version[ $active_version_number ] ) ) ) {
+			// Without an active version there's nothing to replicate from. Otherwise, skip when the active version had no
+			// changes - we don't replicate non-active indexes to others
+			if ( is_wp_error( $active_version_number ) || empty( $objects_by_version[ $active_version_number ] ) ) {
 				continue;
 			}
 
@@ -969,13 +967,10 @@ class Versioning {
 		}
 
 		foreach ( $indexables_to_heal as $indexable ) {
-			$this->alert_for_index_self_healing( $indexable->slug );
-
 			$versions = $this->reconstruct_versions_for_indexable( $indices, $indexable );
 
 			if ( empty( $versions ) ) {
 				$this->mark_self_heal_ongoing( true );
-				$this->alert_for_index_self_healing_failed( $indexable->slug );
 			} else {
 				$this->update_versions( $indexable, $versions );
 
@@ -993,36 +988,6 @@ class Versioning {
 				);
 			}
 		}
-	}
-
-	public function alert_for_index_self_healing( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s has had its vip-search versioning corrupted for "%s" indexable, will try to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
-	}
-
-	public function alert_for_index_self_healing_failed( string $slug ) {
-		if ( ! isset( $this->alert ) ) {
-			return;
-		}
-
-		$message = sprintf(
-			'Application %d - %s vip-search versioning FAILED to reconstruct',
-			FILES_CLIENT_SITE_ID,
-			home_url(),
-			$slug
-		);
-
-		$this->alerts->send_to_chat( Search::SEARCH_ALERT_SLACK_CHAT, $message, Search::SEARCH_ALERT_LEVEL );
 	}
 
 	public function get_all_accessible_indices() {

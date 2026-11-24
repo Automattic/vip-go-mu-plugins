@@ -24,6 +24,14 @@ class Cron_Test extends WP_UnitTestCase {
 	/** @var Cron */
 	private $cron;
 
+	public static function wpSetUpBeforeClass(): void {
+		self::create_queue_table();
+	}
+
+	public static function wpTearDownAfterClass(): void {
+		self::drop_queue_table();
+	}
+
 	public function setUp(): void {
 		parent::setUp();
 
@@ -35,8 +43,6 @@ class Cron_Test extends WP_UnitTestCase {
 		$this->add_es_http_mock();
 
 		$this->queue = $this->es->queue;
-
-		$this->queue->schema->prepare_table();
 
 		$this->queue->empty_queue();
 

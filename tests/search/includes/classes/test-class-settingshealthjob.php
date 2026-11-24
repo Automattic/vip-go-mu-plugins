@@ -46,13 +46,20 @@ class SettingsHealthJob_Test extends WP_UnitTestCase {
 		$error = new WP_Error( 'foo', 'Bar' );
 
 		return [
-			'whole check failed' => [ $error, 1 ],
-			'indexables failed'  => [
+			'whole check failed'                    => [ $error, 1 ],
+			'indexables failed'                     => [
 				[
 					'post' => $error,
 					'user' => $error,
 				],
 				2,
+			],
+			'settings request failed (only logged)' => [
+				[
+					'post' => new WP_Error( 'es_index_settings_failed', 'Fetching the settings of index vip-123-post-1 from Elasticsearch failed' ),
+					'user' => $error,
+				],
+				1,
 			],
 		];
 	}

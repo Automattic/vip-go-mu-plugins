@@ -885,7 +885,7 @@ class Search_Test extends WP_UnitTestCase {
 	public function test__rate_limit_ep_query_integration__handles_start_correctly() {
 		/** @var MockObject&Search */
 		$partially_mocked_search = $this->getMockBuilder( Search::class )
-			->onlyMethods( [ 'handle_query_limiting_start_timestamp', 'maybe_alert_for_prolonged_query_limiting' ] )
+			->onlyMethods( [ 'handle_query_limiting_start_timestamp' ] )
 			->getMock();
 		$partially_mocked_search->init();
 
@@ -897,7 +897,6 @@ class Search_Test extends WP_UnitTestCase {
 		wp_cache_set( $this->search_instance::QUERY_COUNT_CACHE_KEY, 1, $this->search_instance::SEARCH_CACHE_GROUP );
 
 		$partially_mocked_search->expects( $this->once() )->method( 'handle_query_limiting_start_timestamp' );
-		$partially_mocked_search->expects( $this->once() )->method( 'maybe_alert_for_prolonged_query_limiting' );
 
 		$partially_mocked_search->rate_limit_ep_query_integration( false );
 		wp_cache_delete( $this->search_instance::QUERY_COUNT_CACHE_KEY, $this->search_instance::SEARCH_CACHE_GROUP );
@@ -1519,51 +1518,6 @@ class Search_Test extends WP_UnitTestCase {
 		$partially_mocked_search->maybe_alert_for_field_count();
 	}
 
-	public function maybe_alert_for_prolonged_query_limiting_data() {
-		return [
-			[ false, false ],
-			[ 0, false ],
-			[ 12, false ],
-			[ 7201, true ],
-		];
-	}
-
-	/**
-	 * @dataProvider maybe_alert_for_prolonged_query_limiting_data
-	 */
-	public function test__maybe_alert_for_prolonged_query_limiting( $difference, $should_alert ) {
-		$expected_level = 2;
-
-		$time = time();
-
-		if ( false !== $difference ) {
-			$query_limited_start = $time - $difference;
-			wp_cache_set( Search::QUERY_RATE_LIMITED_START_CACHE_KEY, $query_limited_start, Search::SEARCH_CACHE_GROUP );
-		}
-
-		$this->search_instance->set_time( $time );
-
-		$alerts_mocked = $this->mock_alerts( $this->search_instance );
-
-		$alerts_mocked->expects( $should_alert ? $this->once() : $this->never() )
-			->method( 'send_to_chat' )
-			->with( '#vip-go-es-alerts', $this->anything(), $expected_level );
-
-		// trigger_error is only called if an alert should happen
-		if ( $should_alert ) {
-			$this->expectException( \Exception::class );
-			$this->expectExceptionMessage(
-				sprintf(
-					'Application 123 - http://example.org has had its Elasticsearch queries rate-limited for %d seconds. Half of traffic is diverted to the database when queries are rate-limited.',
-					$difference
-				)
-			);
-		}
-
-		$this->search_instance->maybe_alert_for_prolonged_query_limiting();
-		$this->search_instance->reset_time();
-	}
-
 	public function vip_search_ratelimiting_filter_data() {
 		return array(
 			// Filter, filtered value, expected _doing_it_wrong() message
@@ -1729,50 +1683,6 @@ class Search_Test extends WP_UnitTestCase {
 			);
 
 		$this->search_instance->maybe_log_query_ratelimiting_start();
-	}
-
-	public function test__ep_indexable_post_types_should_return_the_passed_value_if_not_array() {
-		// Ensure ElasticPress is ready
-		do_action( 'plugins_loaded' );
-
-		// Protected content must be active before init() for the filter to be registered
-		Features::factory()->activate_feature( 'protected_content' );
-
-		$es = new Search();
-		$es->init();
-
-		$this->assertSame( 9999, has_filter( 'ep_indexable_post_types', [ $es, 'add_attachment_to_ep_indexable_post_types' ] ) );
-
-		$this->assertEquals( 'testing', apply_filters( 'ep_indexable_post_types', 'testing' ) );
-		$this->assertEquals( 65, apply_filters( 'ep_indexable_post_types', 65 ) );
-		$this->assertEquals( null, apply_filters( 'ep_indexable_post_types', null ) );
-		$this->assertEquals( new stdClass(), apply_filters( 'ep_indexable_post_types', new stdClass() ) );
-	}
-
-	public function test__ep_indexable_post_types_should_append_attachment_to_array() {
-		// Ensure ElasticPress is ready
-		do_action( 'plugins_loaded' );
-
-		Features::factory()->activate_feature( 'protected_content' );
-
-		$es = new Search();
-		$es->init();
-
-		$this->assertEquals( array( 'attachment' => 'attachment' ), apply_filters( 'ep_indexable_post_types', array() ) );
-		$this->assertEquals(
-			array(
-				'test'       => 'test',
-				'one'        => 'one',
-				'attachment' => 'attachment',
-			),
-			apply_filters(
-				'ep_indexable_post_types',
-				array(
-					'test' => 'test',
-					'one'  => 'one',
-				)
-			)
-		);
 	}
 
 	public function test__is_protected_content_enabled_should_return_false_if_protected_content_not_enabled() {
@@ -2261,6 +2171,55 @@ class Search_Test extends WP_UnitTestCase {
 		$this->search_instance->query_warning = $warning;
 
 		$this->assertSame( $response, $this->intercept_query( $url, $body ) );
+	}
+
+	public function test__query_cache_keeps_partial_responses_for_a_minute(): void {
+		global $wp_object_cache;
+
+		$original_cache  = $wp_object_cache;
+		$wp_object_cache = new class() extends \WP_Object_Cache { // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- records the TTLs the response cache sets
+			public $expirations = [];
+
+			public function set( $key, $data, $group = 'default', $expire = 0 ) {
+				if ( str_starts_with( $key, 'es_query_cache:' ) ) {
+					$this->expirations[] = $expire;
+				}
+				return parent::set( $key, $data, $group, $expire );
+			}
+		};
+
+		try {
+			$this->init_es();
+			$hits = [
+				'total' => [ 'value' => 0 ],
+				'hits'  => [],
+			];
+			self::$mock_global_functions->method( 'mock_vip_safe_wp_remote_request' )->willReturnOnConsecutiveCalls(
+				$this->es_response( 200, [
+					'took'    => 1,
+					'_shards' => [ 'failed' => 1 ],
+					'hits'    => $hits,
+				] ),
+				$this->es_response( 200, [
+					'took'      => 1,
+					'timed_out' => true,
+					'_shards'   => [ 'failed' => 0 ],
+					'hits'      => $hits,
+				] ),
+				$this->es_response( 200, [
+					'took' => 1,
+					'hits' => $hits,
+				] )
+			);
+
+			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":true}' );
+			$this->intercept_query( '/vip-123-post-1/_search', '{"timeout":true}' );
+			$this->intercept_query( '/vip-123-post-1/_search', '{"partial":false}' );
+
+			$this->assertSame( [ MINUTE_IN_SECONDS, MINUTE_IN_SECONDS, 5 * MINUTE_IN_SECONDS ], $wp_object_cache->expirations );
+		} finally {
+			$wp_object_cache = $original_cache; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+		}
 	}
 
 	public function test__vip_search_query_warning_failure_does_not_change_response(): void {

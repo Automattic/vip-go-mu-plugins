@@ -82,8 +82,10 @@ class Concurrency_Limiter {
 	 * @return mixed 
 	 */
 	public function ep_do_intercept_request( $response, array $query ) {
+		// Only limit searches. A rejected _doc request is not retried: a 429 on DELETE _doc, or on the GET _doc that
+		// Versioning sends before deleting from inactive versions, leaves an unpublished post searchable.
 		$url = $query['url'];
-		if ( ! preg_match( '#/_(search|mget|doc)#', $url ) ) {
+		if ( ! preg_match( '#/_(search|mget)#', $url ) ) {
 			return $response;
 		}
 

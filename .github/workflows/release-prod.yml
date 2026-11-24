@@ -19,7 +19,7 @@ jobs:
       id: ${{ steps.id-generator.outputs.id }}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
+        uses: step-security/harden-runner@1d88384fd173af6ecb012dfd0264a306b711241a # v2.22.4
         with:
           egress-policy: audit
 
@@ -98,7 +98,7 @@ jobs:
           echo "version=${version:-release}" >> "$GITHUB_OUTPUT"
 
       - name: Create changelog
-        uses: Automattic/vip-actions/changelog@ab67a34cd817b925d1cb7380ec2490e580b0bccd
+        uses: Automattic/vip-actions/changelog@74ecc705a97f2cb3e441f5dc8687e94687b18f47
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}

@@ -123,11 +123,116 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertContains( $permalink, $this->cache_manager->get_queued_purge_urls(), 'Queued purge urls should contain page_for_posts permlink' );
 	}
 
+	public function get_data_for_unpublished_post_purge_test() {
+		return [
+			// 1: old status
+			// 2: new status
+			// 3: whether the post's URLs are queued
+
+			'publish to draft'   => [ 'publish', 'draft', true ],
+			'publish to private' => [ 'publish', 'private', true ],
+			// Already queued through `clean_post_cache`.
+			'publish to trash'   => [ 'publish', 'trash', false ],
+			'publish to publish' => [ 'publish', 'publish', false ],
+			'draft to pending'   => [ 'draft', 'pending', false ],
+		];
+	}
+
+	/**
+	 * @dataProvider get_data_for_unpublished_post_purge_test
+	 */
+	public function test__queue_unpublished_post_purge( $old_status, $new_status, $expected_purge ) {
+		$post = $this->factory()->post->create_and_get( [ 'post_status' => $new_status ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		$this->cache_manager->queue_unpublished_post_purge( $new_status, $old_status, $post );
+
+		$this->assertSame( $expected_purge, in_array( home_url( '/' ), $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
+	/**
+	 * A post made private keeps its permalink, so only the unpublish purge clears its cached page.
+	 */
+	public function test__unpublished_post_purge__private_post_permalink() {
+		$post_id = $this->factory()->post->create( [ 'post_status' => 'publish' ] );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_update_post( [
+			'ID'          => $post_id,
+			'post_status' => 'private',
+		] );
+
+		$this->assertContains( get_permalink( $post_id ), $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Shutdown callbacks registered after the cache manager's, like bulk edit's deferred term counts, can queue purges.
+	 */
+	public function test_purges_queued_during_shutdown_are_sent() {
+		$sent = [];
+		add_action( 'wpcom_vip_cache_pre_execute_purges', function ( $urls ) use ( &$sent ) {
+			$sent = $urls;
+		} );
+		remove_all_actions( 'shutdown' );
+		$this->cache_manager->init();
+		add_action( 'shutdown', fn() => $this->cache_manager->queue_purge_url( home_url( '/late/' ) ) );
+
+		// With no purge server configured, sending the purges raises a notice instead.
+		$this->capture_errors( fn() => do_action( 'shutdown' ), E_USER_NOTICE );
+
+		$this->assertContains( home_url( '/late/' ), $sent );
+	}
+
+	/**
+	 * With `%category%` permalinks, a category change moves the post, and the new category is saved before `post_updated`.
+	 */
+	public function test__old_permalink_purge__category_change() {
+		$this->set_permalink_structure( '/%category%/%postname%/' );
+		try {
+			$post_id       = self::factory()->post->create( [ 'post_category' => [ self::factory()->category->create() ] ] );
+			$old_permalink = get_permalink( $post_id );
+			$this->cache_manager->clear_queued_purge_urls();
+
+			wp_update_post( [
+				'ID'            => $post_id,
+				'post_category' => [ self::factory()->category->create() ],
+			] );
+
+			$this->assertNotSame( $old_permalink, get_permalink( $post_id ) );
+			$this->assertContains( $old_permalink, $this->cache_manager->get_queued_purge_urls() );
+		} finally {
+			$this->set_permalink_structure( '' );
+		}
+	}
+
+	public function get_data_for_deleted_post_purge_test() {
+		return [
+			'published post' => [ 'publish', true ],
+			// Already purged when it was trashed.
+			'trashed post'   => [ 'trash', false ],
+		];
+	}
+
+	/**
+	 * A deleted post is gone by the time its post cache is cleaned, so it's purged before deletion.
+	 *
+	 * @dataProvider get_data_for_deleted_post_purge_test
+	 */
+	public function test__force_deleted_post_purge( $status, $expected_purge ) {
+		$post_id   = $this->factory()->post->create( [ 'post_status' => $status ] );
+		$permalink = get_permalink( $post_id );
+		$this->cache_manager->clear_queued_purge_urls();
+
+		wp_delete_post( $post_id, true );
+
+		$this->assertSame( $expected_purge, in_array( $permalink, $this->cache_manager->get_queued_purge_urls(), true ) );
+	}
+
 	public function get_data_for_special_purge_actions() {
 		return [
 			'origin'  => [ 'purge_origin_cache', '/.vip/purge-all-origin' ],
 			'uploads' => [ 'purge_uploads_cache', '/.vip/purge-all-uploads' ],
-			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-files' ],
+			'static'  => [ 'purge_static_files_cache', '/.vip/purge-all-static-assets' ],
 			'private' => [ 'purge_private_files_cache', '/.vip/purge-all-private-files' ],
 		];
 	}
@@ -227,6 +332,54 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
 	}
 
+	public function get_urls_outside_the_site(): array {
+		return [
+			'other host'            => [ 'https://example.net/page/' ],
+			'reserved path'         => [ 'http://example.org/.vip/purge-all-origin' ],
+			'encoded reserved path' => [ 'http://example.org/%2Evip/purge-all-static-assets' ],
+		];
+	}
+
+	/**
+	 * Users can purge this site's pages only, not other hosts or the reserved purge-all paths.
+	 *
+	 * @dataProvider get_urls_outside_the_site
+	 */
+	public function test_ajax_url_purges_reject_urls_outside_the_site( string $url ): void {
+		wp_set_current_user( self::factory()->user->create( [ 'role' => 'editor' ] ) );
+
+		$dashboard = $this->dispatch_purge_ajax( 'wp_ajax_vip_cache_manager_dashboard_purge', [
+			'nonce'        => wp_create_nonce( 'vip_cache_manager_dashboard_purge' ),
+			'purge_action' => 'url',
+			'url'          => $url,
+		] );
+		$page      = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
+			'nonce' => wp_create_nonce( 'purge-page' ),
+			'urls'  => [ $url ],
+		] );
+
+		$this->assertSame( [ 'message' => 'Enter a valid URL on this site to purge.' ], $dashboard['data'] );
+		$this->assertSame( [ 'error' => 'No URLs' ], $page['data'] );
+		$this->assertEmpty( $this->cache_manager->get_queued_purge_urls() );
+	}
+
+	/**
+	 * Sites served from more than one domain can purge pages on the domain the request came in on,
+	 * and on the domains they allow redirects to.
+	 */
+	public function test_user_url_purges_allow_the_site_domains(): void {
+		$is_user_purgeable_url = get_class_method_as_public( WPCOM_VIP_Cache_Manager::class, 'is_user_purgeable_url' );
+		$_SERVER['HTTP_HOST']  = 'fr.example.org';
+		add_filter( 'allowed_redirect_hosts', fn( $hosts ) => array_merge( $hosts, [ 'de.example.org' ] ) );
+		try {
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://fr.example.org/page/' ) );
+			$this->assertTrue( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://de.example.org/page/' ) );
+			$this->assertFalse( $is_user_purgeable_url->invoke( $this->cache_manager, 'https://es.example.org/page/' ) );
+		} finally {
+			$_SERVER['HTTP_HOST'] = WP_TESTS_DOMAIN;
+		}
+	}
+
 	/**
 	 * @runInSeparateProcess
 	 * @preserveGlobalState disabled
@@ -263,10 +416,10 @@ class VIP_Go_Cache_Manager_Test extends WP_UnitTestCase {
 
 		$decoded = $this->dispatch_purge_ajax( 'wp_ajax_vip_purge_page_cache', [
 			'nonce' => wp_create_nonce( 'purge-page' ),
-			'urls'  => [ $url ],
+			'urls'  => [ $url, 'https://example.net/page/' ],
 		] );
 		$this->assertSame( true, $decoded['success'] );
-		$this->assertContains( $url, $this->cache_manager->get_queued_purge_urls() );
+		$this->assertSame( [ $url ], $this->cache_manager->get_queued_purge_urls() );
 	}
 
 	/**

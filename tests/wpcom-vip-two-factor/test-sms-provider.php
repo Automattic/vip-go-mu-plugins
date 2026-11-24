@@ -1,5 +1,7 @@
 <?php
 
+// phpcs:disable WordPressVIPMinimum.Variables.RestrictedVariables.cache_constraints___COOKIE -- Tests log in through the logged-in cookie.
+
 use function Automattic\Test\Utils\http_response;
 
 require_once __DIR__ . '/../../shared-plugins/two-factor/two-factor.php';
@@ -74,8 +76,10 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Remove HTTP request filter
 		remove_filter( 'pre_http_request', [ $this, 'mock_http_request' ] );
 
-		// Clear global $_REQUEST
+		// Clear request globals
 		$_REQUEST = [];
+		$_POST    = [];
+		unset( $_COOKIE[ LOGGED_IN_COOKIE ] );
 
 		parent::tearDown();
 
@@ -159,7 +163,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertEquals( 32, strlen( $stored_token ) );
 		$this->assertTrue( $strategy->has_pending_metadata() );
 		preg_match( '/^(\d{8}) is your/', $request_body['Body'], $matches );
-		$this->assertSame( wp_hash( $matches[1] ), $stored_token );
+		$this->assertSame( wp_hash( '+1234567890:' . $matches[1] ), $stored_token );
 
 		// Validating the sent code makes no further HTTP request (mock_http_request fails on unexpected ones).
 		$_REQUEST['two-factor-sms-code'] = $matches[1];
@@ -196,6 +200,28 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertFalse( $strategy->has_pending_metadata() );
 	}
 
+	public function data_authentication_page_send_result(): array {
+		return [
+			'code sent'     => [ http_response( 201, wp_json_encode( [ 'status' => 'queued' ] ) ), 'A verification code has been sent' ],
+			'code not sent' => [ new WP_Error( 'http_request_failed', 'Operation timed out after 30000 milliseconds' ), 'A verification code could not be sent' ],
+		];
+	}
+
+	/**
+	 * The login prompt says whether the code was sent (the test bootstrap's GET request sends one).
+	 *
+	 * @dataProvider data_authentication_page_send_result
+	 */
+	public function test_authentication_page_reports_send_result( array|WP_Error $response, string $expected_message ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		$this->add_http_response_mock( self::SMS_API_URL, $response );
+
+		ob_start();
+		Two_Factor_SMS::get_instance()->authentication_page( $user );
+
+		$this->assertStringContainsString( $expected_message, ob_get_clean() );
+	}
+
 	public function test_twilio_sms_api_validate_authentication_failure_invalid_code(): void {
 		$user = $this->setup_user_with_phone( '+1234567890' );
 
@@ -218,6 +244,29 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		// Verify that the token was NOT cleaned up (since validation failed)
 		$this->assertNotEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_SMS_API::TOKEN_META_KEY, true ), 'Token should remain for retry' );
 		$this->assertTrue( $strategy->has_pending_metadata() );
+	}
+
+	/**
+	 * A code only verifies the number it was sent to, so a send that finishes after the number changed can't verify the new one.
+	 */
+	public function test_twilio_sms_api_code_does_not_verify_changed_number(): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		$this->add_http_response_mock( self::SMS_API_URL, http_response( 201, wp_json_encode( [ 'status' => 'queued' ] ) ) );
+		Two_Factor_SMS::get_instance()->generate_and_send_token( $user );
+		preg_match( '/^(\d{8}) is your/', $this->assertHttpRequestMadeWithMethodAndUrl( 'POST', self::SMS_API_URL )['Body'], $matches );
+
+		update_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, '+1234567899' );
+		$_REQUEST['two-factor-sms-code'] = $matches[1];
+
+		$this->assertFalse( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
+	}
+
+	public function test_validate_authentication_rejects_non_string_code(): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Twilio_SMS_API::TOKEN_META_KEY, wp_hash( '22334455' ) );
+		$_REQUEST['two-factor-sms-code'] = [ '22334455' ];
+
+		$this->assertFalse( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
 	}
 
 	public function test_twilio_verify_generate_and_send_token_success(): void {
@@ -249,7 +298,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->add_http_response_mock( self::VERIFICATION_CHECK_URL, http_response( 200, wp_json_encode( [
 			'sid'    => self::VERIFICATION_SID,
 			'status' => 'approved',
-			'to'     => '+1234567890',
+			'to'     => self::QATAR_PHONE,
 		] ) ) );
 		$this->assertTrue( Two_Factor_SMS::get_instance()->validate_authentication( $user ) );
 		$this->assertHttpRequestMadeWithMethodAndUrl( 'POST', self::VERIFICATION_CHECK_URL, [
@@ -320,7 +369,7 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 
 	public function data_verify_check_failures(): array {
 		return [
-			'HTTP error with body'    => [
+			'HTTP error with body'        => [
 				http_response( 400, wp_json_encode( [
 					'code'      => 21211,
 					'message'   => 'Invalid verification code',
@@ -329,13 +378,20 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 				] ) ),
 			],
 			// Missing 'message' property - this should trigger fallback error format
-			'HTTP error without body' => [
+			'HTTP error without body'     => [
 				http_response( 500, wp_json_encode( [
 					'code'   => 20001,
 					'status' => 500,
 				] ) ),
 			],
-			'network error'           => [ self::network_error() ],
+			'network error'               => [ self::network_error() ],
+			// A send that finished after the number changed can store a verification for the old number.
+			'approved for another number' => [
+				http_response( 200, wp_json_encode( [
+					'status' => 'approved',
+					'to'     => '+97476543211',
+				] ) ),
+			],
 		];
 	}
 
@@ -413,6 +469,178 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 		$this->assertFalse( Two_Factor_SMS::get_instance()->get_sms_strategy( $user->ID )->has_pending_metadata() );
 	}
 
+	public function data_user_options_update_revalidation(): array {
+		return [
+			'session revalidated within the grace period' => [ 0, '' ],
+			'session past the grace period'               => [ 21 * MINUTE_IN_SECONDS, '+1234567890' ],
+		];
+	}
+
+	/**
+	 * Changing the SMS settings of a user who uses two-factor (here, emailed codes) needs a recently revalidated session.
+	 *
+	 * @dataProvider data_user_options_update_revalidation
+	 */
+	public function test_user_options_update_requires_revalidated_session( int $seconds_since_two_factor, string $expected_phone ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, [ 'Two_Factor_Email' ] );
+
+		// Log the user in with a session that passed two-factor $seconds_since_two_factor ago.
+		$expiration                  = time() + HOUR_IN_SECONDS;
+		$token                       = WP_Session_Tokens::get_instance( $user->ID )->create( $expiration );
+		$_COOKIE[ LOGGED_IN_COOKIE ] = wp_generate_auth_cookie( $user->ID, $expiration, 'logged_in', $token );
+		wp_set_current_user( $user->ID );
+		Two_Factor_Core::update_current_user_session( [ 'two-factor-login' => time() - $seconds_since_two_factor ] );
+
+		$this->submit_sms_options( $user, [ 'vip-two-factor-phone-delete' => 'Delete' ] );
+
+		$this->assertSame( $expected_phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
+	}
+
+	public function data_is_available_for_user(): array {
+		return [
+			'verified number'                      => [ '+1234567890', [], true ],
+			'number verified before it was stored' => [ '1', [], true ],
+			'another number verified'              => [ '+1234567899', [ 'Two_Factor_SMS' ], false ],
+			'number without flag, SMS enabled'     => [ '', [ 'Two_Factor_SMS' ], true ],
+			'number without flag, SMS not enabled' => [ '', [], false ],
+			'unverified number, SMS enabled'       => [ '0', [ 'Two_Factor_SMS' ], false ],
+		];
+	}
+
+	/**
+	 * Only a verified number can be enabled; numbers saved before verification was required keep working where SMS is enabled.
+	 *
+	 * @dataProvider data_is_available_for_user
+	 */
+	public function test_is_available_for_user( string $configured, array $enabled_providers, bool $expected ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, $enabled_providers );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, $configured );
+
+		$this->assertSame( $expected, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
+	}
+
+	public function data_enable_provider_for_user(): array {
+		return [
+			'SMS enabled'                      => [ [], 'Two_Factor_SMS', false ],
+			'another enabled, SMS was enabled' => [ [ 'Two_Factor_SMS' ], 'Two_Factor_Email', true ],
+		];
+	}
+
+	/**
+	 * Enabling SMS outside the profile form, as `wp two-factor enable` does, doesn't make a number without the flag usable.
+	 * One that already had SMS enabled keeps working when the enabled providers are saved again.
+	 *
+	 * @dataProvider data_enable_provider_for_user
+	 */
+	public function test_enable_provider_for_user_with_unflagged_number( array $enabled_providers, string $provider, bool $expected ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_Core::ENABLED_PROVIDERS_USER_META_KEY, $enabled_providers );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '' );
+		// The provider is a singleton, so an earlier test's hook reset may have removed the hooks its constructor added.
+		add_filter( 'update_user_metadata', [ Two_Factor_SMS::get_instance(), 'mark_unavailable_number_unverified_on_enable' ], 10, 4 );
+
+		$this->assertTrue( Two_Factor_Core::enable_provider_for_user( $user->ID, $provider ) );
+
+		$this->assertSame( $expected, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
+	}
+
+	public function data_user_options_update_phone(): array {
+		return [
+			'same number'                => [ '', '+1234567890', '+1234567890', '' ],
+			'different number'           => [ '', '+1234567899', '+1234567899', '0' ],
+			'different number, verified' => [ '+1234567890', '+1234567899', '+1234567890', '+1234567890' ],
+		];
+	}
+
+	/**
+	 * Saving a different number marks it unverified, so a number without the flag can't be swapped for an unverified one.
+	 * A verified number stays until it is deleted.
+	 *
+	 * @dataProvider data_user_options_update_phone
+	 */
+	public function test_user_options_update_changed_number( string $configured, string $phone, string $expected_phone, string $expected_configured ): void {
+		$user = $this->setup_user_with_phone( '+1234567890' );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, $configured );
+		wp_set_current_user( $user->ID );
+
+		$this->submit_sms_options( $user, [ 'vip-two-factor-phone' => $phone ] );
+
+		$this->assertSame( $expected_phone, get_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, true ) );
+		$this->assertSame( $expected_configured, get_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, true ) );
+	}
+
+	public function data_user_options_update_verify_code(): array {
+		// Number saved when the check starts (the one the check approves), number saved when it ends.
+		return [
+			'number unchanged'                => [ self::QATAR_PHONE, self::QATAR_PHONE, true ],
+			'number changed during the check' => [ self::QATAR_PHONE, '+1234567899', false ],
+			'number changed then restored'    => [ '+97476543211', self::QATAR_PHONE, false ],
+		];
+	}
+
+	/**
+	 * An approved check verifies only the number the submitted code was for, not a number saved by another request
+	 * before or during the check.
+	 *
+	 * @dataProvider data_user_options_update_verify_code
+	 */
+	public function test_user_options_update_verifies_checked_number( string $phone_at_check, string $phone_after_check, bool $expected_available ): void {
+		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '0' );
+		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
+		wp_set_current_user( $user->ID );
+		$this->add_http_response_mock( self::VERIFICATION_CHECK_URL, http_response( 200, wp_json_encode( [
+			'status' => 'approved',
+			'to'     => $phone_at_check,
+		] ) ) );
+		// Other requests save $phone_at_check right after this request reads the number, and $phone_after_check during the check.
+		$save_number = function ( $value, $user_id, $meta_key ) use ( &$save_number, $phone_at_check ) {
+			if ( Two_Factor_SMS::PHONE_META_KEY === $meta_key ) {
+				remove_filter( 'get_user_metadata', $save_number );
+				$value = [ get_user_meta( $user_id, $meta_key, true ) ];
+				update_user_meta( $user_id, $meta_key, $phone_at_check );
+			}
+			return $value;
+		};
+		add_filter( 'get_user_metadata', $save_number, 10, 3 );
+		add_filter( 'pre_http_request', function ( $preempt ) use ( $user, $phone_after_check ) {
+			update_user_meta( $user->ID, Two_Factor_SMS::PHONE_META_KEY, $phone_after_check );
+			return $preempt;
+		}, 9 );
+
+		$this->submit_sms_options( $user, [
+			'vip-two-factor-phone-verify-code' => 'Submit',
+			'two-factor-sms-code'              => '123456',
+		] );
+
+		$this->assertSame( $expected_available, Two_Factor_SMS::get_instance()->is_available_for_user( $user ) );
+	}
+
+	public function data_user_options_update_number_removed(): array {
+		return [
+			'number deleted' => [ [ 'vip-two-factor-phone-delete' => 'Delete' ] ],
+			'number changed' => [ [ 'vip-two-factor-phone' => '+1234567890' ] ],
+		];
+	}
+
+	/**
+	 * A code pending for the old number is cleared when the number is deleted or changed, including for Twilio Verify numbers.
+	 *
+	 * @dataProvider data_user_options_update_number_removed
+	 */
+	public function test_user_options_update_clears_pending_code_for_old_number( array $fields ): void {
+		$user = $this->setup_user_with_phone( self::QATAR_PHONE );
+		update_user_meta( $user->ID, Two_Factor_SMS::SMS_CONFIGURED_META_KEY, '0' );
+		update_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, self::VERIFICATION_SID );
+		wp_set_current_user( $user->ID );
+
+		$this->submit_sms_options( $user, $fields );
+
+		$this->assertEmpty( get_user_meta( $user->ID, Two_Factor_Twilio_Verify_API::VERIFICATION_SID_META_KEY, true ) );
+	}
+
 	// phpcs:ignore WordPressVIPMinimum.Hooks.AlwaysReturnInFilter.MissingReturnStatement
 	public function mock_http_request( false|array|WP_Error $preempt, array $args, string $url ): array|WP_Error {
 		$this->http_requests[] = [
@@ -469,6 +697,16 @@ class Test_Two_Factor_SMS_Provider extends WP_UnitTestCase {
 			'url'      => $url,
 			'response' => $response,
 		];
+	}
+
+	/**
+	 * Submit the SMS profile options with a valid nonce, as the profile form does.
+	 */
+	private function submit_sms_options( WP_User $user, array $fields ): void {
+		$form     = [ '_nonce_user_two_factor_sms_options' => wp_create_nonce( 'user_two_factor_sms_options' ) ] + $fields;
+		$_POST    = $form;
+		$_REQUEST = $form;
+		Two_Factor_SMS::get_instance()->user_options_update( $user->ID );
 	}
 
 	private function setup_user_with_phone( string $phone_number ): WP_User {

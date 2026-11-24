@@ -17,9 +17,6 @@ require_once __DIR__ . '/wpcom-vip-two-factor/set-providers.php';
 // Detect if the current user is logged in via Jetpack SSO
 require_once __DIR__ . '/wpcom-vip-two-factor/is-jetpack-sso.php';
 
-// Do not allow API requests from 2fa users.
-add_filter( 'two_factor_user_api_login_enable', '__return_false', 1 ); // Hook in early to allow overrides
-
 function wpcom_vip_should_force_two_factor() {
 
 	// Don't force 2FA by default in local environments
@@ -41,8 +38,9 @@ function wpcom_vip_should_force_two_factor() {
 		return false;
 	}
 
-	// Don't force 2FA for Jetpack SSO users that have Two-step enabled
-	if ( \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
+	// Don't force 2FA for Jetpack SSO users that have Two-step enabled. Only a negative result is reused: the exemption
+	// is checked against the current session every time, so it ends if the session is revoked during the request.
+	if ( ( wpcom_vip_two_factor_user_state()['jetpack_sso_two_step'] ?? true ) && \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step() ) {
 		return false;
 	}
 
@@ -135,30 +133,83 @@ function wpcom_vip_is_two_factor_forced() {
 	return apply_filters( 'wpcom_vip_internal_is_two_factor_forced', $is_enforced );
 }
 
+/**
+ * Getter for the current user's two-factor state on the current site.
+ *
+ * It's only calculated on `set_current_user` ('user') and `switch_blog` ('site', since roles differ per site), outside
+ * map_meta_cap: calculating it there would loop back into map_meta_cap, and the checks are too slow to repeat on
+ * every capability check.
+ * see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
+ *
+ * @param string|false $calculate 'user' for a new current user, 'site' for a newly switched-to site, or false to read.
+ */
+function wpcom_vip_two_factor_user_state( $calculate = false ) {
+	static $state = [];
+
+	// Nothing to read before the first `set_current_user`, which may be before pluggable.php loads.
+	if ( ! $calculate && ! $state ) {
+		return [];
+	}
+
+	$user = wp_get_current_user();
+	if ( 'user' === $calculate ) {
+		// Start over even for a user seen earlier in the request, as their roles may have changed since.
+		$state = [];
+		if ( $user->exists() ) {
+			$state = [
+				'user_id'              => $user->ID,
+				'using_two_factor'     => Two_Factor_Core::is_user_using_two_factor( $user ),
+				'jetpack_sso_two_step' => (bool) \Automattic\VIP\TwoFactor\is_jetpack_sso_two_step(),
+				'limited'              => [],
+			];
+		}
+	}
+
+	if ( ( $state['user_id'] ?? null ) !== $user->ID ) {
+		return [];
+	}
+
+	$site = $user->get_site_id();
+	if ( $calculate && ! isset( $state['limited'][ $site ] ) ) {
+		$state['limited'][ $site ] = false; // So VIP's own limit doesn't restrict this check.
+		$state['limited'][ $site ] = current_user_can( apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' ) );
+	}
+
+	$current            = $state;
+	$current['limited'] = $state['limited'][ $site ] ?? true; // Fail closed on a site that hasn't been checked yet.
+
+	return $current;
+}
+
+function wpcom_vip_two_factor_switch_blog() {
+	wpcom_vip_two_factor_user_state( 'site' );
+}
+
+function wpcom_vip_two_factor_is_limited( $is_forced ) {
+	return wpcom_vip_two_factor_user_state()['limited'] ?? $is_forced;
+}
+
+function wpcom_vip_two_factor_is_user_using_two_factor( $is_using_two_factor ) {
+	return wpcom_vip_two_factor_user_state()['using_two_factor'] ?? $is_using_two_factor;
+}
+
 function wpcom_vip_enforce_two_factor_plugin() {
+	wpcom_vip_two_factor_user_state( 'user' );
+
 	if ( is_user_logged_in() ) {
-		$cap     = apply_filters( 'wpcom_vip_two_factor_enforcement_cap', 'manage_options' );
-		$limited = current_user_can( $cap );
-
-		// Calculate current_user_can outside map_meta_cap to avoid callback loop
 		// While we could use the internal wpcom_vip_internal_is_two_factor_forced filter here, we intentionally don't to avoid taking precedence over existing customer filters.
-		add_filter( 'wpcom_vip_is_two_factor_forced', function () use ( $limited ) {
-			return $limited;
-		}, 9 );
+		add_filter( 'wpcom_vip_is_two_factor_forced', 'wpcom_vip_two_factor_is_limited', 9 );
+		add_filter( 'wpcom_vip_is_user_using_two_factor', 'wpcom_vip_two_factor_is_user_using_two_factor' );
 
-		// Calculate two factor authentication support outside map_meta_cap to avoid callback loop
-		// see: https://github.com/Automattic/vip-go-mu-plugins/pull/1445#issuecomment-592124810
-		$is_user_using_two_factor = Two_Factor_Core::is_user_using_two_factor();
-
-		add_filter(
-			'wpcom_vip_is_user_using_two_factor',
-			function () use ( $is_user_using_two_factor ) {
-				return $is_user_using_two_factor;
-			}
-		);
+		// Right after core's wp_switch_roles_and_user() (priority 1) loads the user's caps for the new site.
+		add_action( 'switch_blog', 'wpcom_vip_two_factor_switch_blog', 2 );
 
 		add_action( 'admin_notices', 'wpcom_vip_two_factor_admin_notice' );
-		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', 0, 4 );
+		// Run last, so a later filter can't map a restricted cap back to one the user's role still has.
+		add_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', PHP_INT_MAX, 4 );
+	} else {
+		// After wp_logout(), check caps as in a request that starts logged out.
+		remove_filter( 'map_meta_cap', 'wpcom_vip_two_factor_filter_caps', PHP_INT_MAX );
 	}
 }
 
@@ -175,19 +226,26 @@ function wpcom_enable_two_factor_plugin() {
 	// We loaded the two-factor plugin using wpcom_vip_load_plugin but that skips when skip-plugins is set.
 	// Switching to require_once so it no longer gets skipped
 	require_once WPVIP_MU_PLUGIN_DIR . '/shared-plugins/two-factor/two-factor.php';
+
+	// Providers are managed in code (`two_factor_providers`). Drop the Settings → Two-Factor page and its
+	// saved provider list, which could switch off SMS or every provider and lock users out.
+	remove_action( 'init', 'two_factor_register_admin_hooks' );
+
 	add_action( 'set_current_user', 'wpcom_vip_enforce_two_factor_plugin' );
-	add_filter( 'two_factor_providers', 'wpcom_vip_two_factor_remove_u2f' );
+	if ( ! defined( 'VIP_JETPACK_SKIP_LOAD' ) || true !== VIP_JETPACK_SKIP_LOAD ) {
+		add_action( 'login_enqueue_scripts', 'wpcom_vip_two_factor_jetpack_sso_style' );
+	}
 }
 
 /**
- * Remove U2F from the list of the available Two Factor providers.
- *
- * @param array $providers List of Two Factor providers.
- * @return array
+ * Keep the two-factor form visible when Jetpack SSO is active. Two Factor 0.17.0's override of Jetpack's
+ * login CSS prints before Jetpack's stylesheet and loses the tie. Remove once a release with the upstream
+ * fix is bundled: https://github.com/WordPress/two-factor/pull/1009
  */
-function wpcom_vip_two_factor_remove_u2f( $providers ) {
-	unset( $providers[ Two_Factor_FIDO_U2F::class ] );
-	return $providers;
+function wpcom_vip_two_factor_jetpack_sso_style() {
+	if ( version_compare( TWO_FACTOR_VERSION, '0.17.0', '<=' ) && wp_style_is( 'user-edit-2fa' ) ) {
+		wp_add_inline_style( 'user-edit-2fa', 'body.jetpack-sso-form-display #loginform > p, body.jetpack-sso-form-display #loginform > div { display: block; }' );
+	}
 }
 
 /**
