@@ -213,18 +213,17 @@ Because we have a few conditions to check, we'll need a logic block to verify in
 $enable_maintenance_mode = true;
 ```
 
-Now, if the cookie is set and includes the correct secret, we can skip enabling Maintenance Mode:
+Now, if the cookie is set and includes the correct secret, we can skip enabling Maintenance Mode. Read the cookie's value from the `X-VIP-Go-Segmentation` header, which the VIP CDN sets from the cookie: the CDN caches a page for each value of that header, and PHP can parse cookies the CDN doesn't, which would cache the bypassed page for everyone.
 
 ```
-if ( isset( $_COOKIE['vip-go-seg'] )
-	&& is_string( $_COOKIE['vip-go-seg'] )
-	&& hash_equals( $maintenance_bypass_secret, $_COOKIE['vip-go-seg'] ) ) {
+if ( isset( $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] )
+	&& hash_equals( $maintenance_bypass_secret, $_SERVER['HTTP_X_VIP_GO_SEGMENTATION'] ) ) {
 	// Don't enable if the request has our secret key.
 	$enable_maintenance_mode = false;
 }
 ```
 
-Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack). The `is_string` check matters too: PHP parses a cookie sent as `vip-go-seg[]=…` into an array, and `hash_equals` throws a fatal error when it gets an array.
+Note the use of `hash_equals` to safely verify the secret and avoid [timing attacks](https://en.wikipedia.org/wiki/Timing_attack).
 
 Now, we can set our constant based on the outcome of the tests:
 
@@ -273,6 +272,7 @@ You can see the completed, working example here: https://github.com/Automattic/v
 - They're `Secure` on HTTPS requests to a site whose home URL uses HTTPS. Override that with the `vip_vary_cache_cookie_secure` filter, which also receives the cookie name.
 - They aren't `HttpOnly`, so client-side code can read them.
 - A response that sets one of these cookies isn't cached.
+- On VIP, `Vary_Cache` reads these cookies as the VIP cache reads them: the groups from the `X-VIP-Go-Segmentation` or `X-VIP-Go-Auth` header that the cache sets from the cookie, and nocache mode only from a `vip-go-cb=1` cookie that the cache bypasses for. A cookie the cache doesn't read doesn't count. Elsewhere, for example in local development, it reads the cookies directly.
 
 ### Groups
 
@@ -284,7 +284,7 @@ You can see the completed, working example here: https://github.com/Automattic/v
 
 - Call `Vary_Cache::enable_encryption()` before `init` priority 10. It needs the `VIP_GO_AUTH_COOKIE_KEY` and `VIP_GO_AUTH_COOKIE_IV` constants, which VIP Support provides for each environment; without them, it stops the request with a fatal error.
 - With encryption enabled, the plaintext `vip-go-seg` cookie is ignored. Users who only have that cookie, for example from before encryption was enabled, are in no groups until they're assigned again.
-- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired. When `Vary_Cache` decrypts the cookie itself, it applies the same checks.
+- The VIP cache only uses a `vip-go-auth` cookie that it can decrypt and that hasn't expired, and on VIP, `Vary_Cache` only uses what the cache decrypted. Without the VIP cache, `Vary_Cache` decrypts the cookie itself and applies the same checks.
 
 ### Hooks
 

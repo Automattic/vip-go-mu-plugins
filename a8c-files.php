@@ -553,6 +553,7 @@ class A8C_Files {
 			}
 		} while ( empty( $attachments ) );
 
+		$counts = [];
 		if ( $attachments ) {
 			$counts = $updater->update_attachments( $attachments );
 		}

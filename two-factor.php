@@ -96,9 +96,9 @@ function wpcom_vip_is_jetpack_authorize_request() {
 }
 
 /**
- * Setter/Getter to keep track of whether the current request is a REST
- * API request for /jetpack/v4/remote_authorize request that connects a
- * WordPress.com user to a local user.
+ * Setter/Getter to keep track of whether the current REST dispatch is a
+ * /jetpack/v4/remote_authorize request that connects a WordPress.com user
+ * to a local user. It's set before each dispatch's callbacks and cleared after them.
  */
 function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
 	static $is_jetpack_authorize_rest_request = false;
@@ -114,15 +114,25 @@ function wpcom_vip_is_jetpack_authorize_rest_request( $set = null ) {
  * whether the current request is a REST API request for
  * /jetpack/v4/remote_authorize request that connects WordPress.com user
  * to a local user.
- * @return unmodified - it's attached to a filter.
+ *
+ * Matches the route rather than the handler, because Jetpack has moved the handler between classes.
+ *
+ * @param mixed           $response Result to send to the client.
+ * @param array           $handler  Route handler used for the request.
+ * @param WP_REST_Request $request  Request used to generate the response.
+ * @return mixed Unmodified response.
  */
-function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler ) {
-	if ( isset( $handler['callback'] ) && 'Jetpack_Core_Json_Api_Endpoints::remote_authorize' === $handler['callback'] ) {
-		wpcom_vip_is_jetpack_authorize_rest_request( true );
-	}
+function wpcom_vip_is_jetpack_authorize_rest_request_hook( $response, $handler, $request ) {
+	wpcom_vip_is_jetpack_authorize_rest_request( ! is_wp_error( $response ) && 0 === strcasecmp( '/jetpack/v4/remote_authorize', $request->get_route() ) );
 	return $response;
 }
-add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 2 );
+add_filter( 'rest_request_before_callbacks', 'wpcom_vip_is_jetpack_authorize_rest_request_hook', 10, 3 );
+
+function wpcom_vip_clear_jetpack_authorize_rest_request_hook( $response ) {
+	wpcom_vip_is_jetpack_authorize_rest_request( false );
+	return $response;
+}
+add_filter( 'rest_request_after_callbacks', 'wpcom_vip_clear_jetpack_authorize_rest_request_hook' );
 
 function wpcom_vip_is_two_factor_forced() {
 	if ( ! wpcom_vip_should_force_two_factor() ) {

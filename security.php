@@ -248,6 +248,12 @@ function _vip_login_cache_keys( $raw_username, $ip = null ) {
 	$username = _vip_login_limit_username( $raw_username );
 	$ip       = $ip ?? _vip_login_limit_ip();
 
+	// One IPv6 client usually has a whole /64, so its addresses share limits. IPv4-mapped addresses (::ffff:0:0/96) are kept whole.
+	$packed_ip = (string) inet_pton( $ip );
+	if ( 16 === strlen( $packed_ip ) && ! str_starts_with( $packed_ip, str_repeat( "\0", 10 ) . "\xff\xff" ) ) {
+		$ip = inet_ntop( substr( $packed_ip, 0, 8 ) . str_repeat( "\0", 8 ) ) . '/64';
+	}
+
 	// Each key type has its own prefix so that a username can't match an IP address key.
 	return [
 		'ip_username_cache_key' => 'ip_username:' . $ip . '|' . $username,
@@ -307,13 +313,6 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group, $count_ip =
 	}
 
 	if ( $ip_username_count >= $ip_username_threshold || $ip_count >= $ip_threshold || $username_count >= $username_threshold ) {
-		/**
-		 * Fires when a login limit or password reset is exceeded.
-		 *
-		 * @param string $username Username of the request.
-		 */
-		do_action( "{$event_type}_limit_exceeded", $username );
-
 		$lock_reason = 'username';
 		if ( $ip_username_count >= $ip_username_threshold ) {
 			$lock_reason = 'ip_username';
@@ -331,7 +330,17 @@ function _vip_maybe_temporary_lock_account( $username, $cache_group, $count_ip =
 		 */
 		$lock_interval = apply_filters( "vip_{$event_type}_{$lock_reason}_lockout", $default_lockout, $username );
 
-		wp_cache_set( CACHE_KEY_LOCK_PREFIX . $cache_keys[ "{$lock_reason}_cache_key" ], true, $cache_group, $lock_interval ); // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+		// Attempts refused while locked count too, but don't extend the lock or report it again.
+		if ( ! wp_cache_add( CACHE_KEY_LOCK_PREFIX . $cache_keys[ "{$lock_reason}_cache_key" ], true, $cache_group, $lock_interval ) ) { // phpcs:ignore WordPressVIPMinimum.Performance.LowExpiryCacheTime.CacheTimeUndetermined
+			return;
+		}
+
+		/**
+		 * Fires when a login limit or password reset is exceeded.
+		 *
+		 * @param string $username Username of the request.
+		 */
+		do_action( "{$event_type}_limit_exceeded", $username );
 
 		// Log which user was locked out, what type of lockout, the lockout duration, and the IP address
 		\Automattic\VIP\Logstash\log2logstash( array(

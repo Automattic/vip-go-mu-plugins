@@ -9,6 +9,7 @@ class Vary_Cache {
 	const COOKIE_SEGMENT = 'vip-go-seg';
 	const COOKIE_AUTH    = 'vip-go-auth';
 	const HEADER_AUTH    = 'HTTP_X_VIP_GO_AUTH';
+	const HEADER_SEGMENT = 'HTTP_X_VIP_GO_SEGMENTATION';
 
 	// Allowed values in cookie are alphanumerics (A-Za-z0-9) and underscore (_) and hyphen (-).
 	const GROUP_SEPARATOR = '---__';
@@ -450,13 +451,26 @@ class Vary_Cache {
 	}
 
 	/**
+	 * Whether requests come through VIP's cache layer, which decides from the cookies as it parses them whether to
+	 * cache a response and which variant it is. PHP's cookie parsing can find cookies the cache layer didn't, and
+	 * content rendered for those would be cached for visitors who don't have them.
+	 *
+	 * @return bool
+	 */
+	private static function is_behind_cache_layer() {
+		return defined( 'WPCOM_IS_VIP_ENV' ) && true === constant( 'WPCOM_IS_VIP_ENV' );
+	}
+
+	/**
 	 * Parses the nocache cookie to see if nocache mode is enabled.
 	 */
 	private static function parse_nocache_cookie() {
-		if ( isset( $_COOKIE[ self::COOKIE_NOCACHE ] ) ) {
-			self::$is_user_in_nocache = true;
+		if ( self::is_behind_cache_layer() ) {
+			// The cache layer bypasses the cache for `vip-go-cb=1` at the start of the Cookie header or after `;` and spaces.
+			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+			self::$is_user_in_nocache = 1 === preg_match( '/(?:^|;) *' . self::COOKIE_NOCACHE . '=1/', $_SERVER['HTTP_COOKIE'] ?? '' );
 		} else {
-			self::$is_user_in_nocache = false;
+			self::$is_user_in_nocache = isset( $_COOKIE[ self::COOKIE_NOCACHE ] );
 		}
 	}
 
@@ -472,11 +486,17 @@ class Vary_Cache {
 			$cookie_name = self::COOKIE_AUTH;
 			// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 			$cookie_value = $_SERVER[ self::HEADER_AUTH ];
+		} elseif ( self::is_behind_cache_layer() ) {
+			// Use only the group cookie as the cache layer read it: the decrypted header above, or the plaintext one here.
+			if ( ! self::is_encryption_enabled() && ! empty( $_SERVER[ self::HEADER_SEGMENT ] ) ) {
+				$cookie_name = self::COOKIE_SEGMENT;
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				$cookie_value = $_SERVER[ self::HEADER_SEGMENT ];
+			}
 		} elseif ( self::is_encryption_enabled() && ! empty( $_COOKIE[ self::COOKIE_AUTH ] ) && isset( $_SERVER['HTTP_COOKIE'] ) ) {
-			// If the cache layer didn't supply the header, decrypt the cookie here, applying the same checks.
-			// The cache layer only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed,
-			// and there's no cache layer in local development. Leave $cookie_name unset: a cookie the cache layer
-			// didn't vouch for must not stop a fresh one from being sent.
+			// Without a cache layer (local development), decrypt the cookie here, applying the same checks as the cache
+			// layer: it only sets the header for a cookie it can decrypt and whose embedded expiry hasn't passed.
+			// Leave $cookie_name unset: a cookie the cache layer didn't vouch for must not stop a fresh one from being sent.
 			// $_COOKIE is automatically urldecoded, so we need to search through the $_SERVER version to get the unencoded one.
 			$auth_cookie = (string) self::get_raw_cookie( self::COOKIE_AUTH );
 

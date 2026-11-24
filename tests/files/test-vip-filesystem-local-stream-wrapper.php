@@ -362,6 +362,46 @@ class VIP_Filesystem_Local_Stream_Wrapper_Test extends WP_UnitTestCase {
 		$this->assertFalse( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $test_file ) );
 	}
 
+	public function test_recursive_delete_keeps_local_directory_children_off_file_service(): void {
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-base.php';
+		require_once ABSPATH . 'wp-admin/includes/class-wp-filesystem-direct.php';
+
+		$directory = 'vip://wp-content/uploads/vip-local-delete-' . wp_unique_id();
+		$local_dir = get_class_method_as_public( VIP_Filesystem_Local_Stream_Wrapper::class, 'get_local_tmp_path' )->invoke( null, $directory );
+		$this->assertTrue( wp_mkdir_p( $local_dir . '/nested' ) );
+		$this->assertNotFalse( file_put_contents( $local_dir . '/child.txt', 'local child' ) );
+		$this->assertNotFalse( file_put_contents( $local_dir . '/nested/deep.txt', 'local grandchild' ) );
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $directory );
+
+		$this->api_client_mock->expects( $this->never() )->method( 'delete_file' );
+
+		try {
+			$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $directory . '/child.txt' ) );
+			$this->assertTrue( VIP_Filesystem_Local_Stream_Wrapper::is_local_file( $directory . '/nested/deep.txt' ) );
+			$this->assertTrue( ( new \WP_Filesystem_Direct( false ) )->delete( $directory, true ) );
+			$this->assertDirectoryDoesNotExist( $local_dir );
+			// The registered route remains local even if the directory was just removed.
+			$this->assertFalse( unlink( $directory . '/missing.txt' ) );
+		} finally {
+			( new \WP_Filesystem_Direct( false ) )->delete( $local_dir, true );
+		}
+	}
+
+	public function test_opening_missing_local_dot_path_does_not_create_directory(): void {
+		$directory = 'vip://wp-content/uploads/vip-local-dot-' . wp_unique_id();
+		$local_dir = get_class_method_as_public( VIP_Filesystem_Local_Stream_Wrapper::class, 'get_local_tmp_path' )->invoke( null, $directory );
+		VIP_Filesystem_Local_Stream_Wrapper::add_local_file( $directory . '/.' );
+
+		try {
+			$this->assertFalse( $this->stream_wrapper->dir_opendir( $directory . '/.', 0 ) );
+			$this->assertDirectoryDoesNotExist( $local_dir );
+		} finally {
+			if ( is_dir( $local_dir ) ) {
+				rmdir( $local_dir ); // phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.directory_rmdir
+			}
+		}
+	}
+
 	/**
 	 * Test wildcard pattern matching capabilities
 	 */

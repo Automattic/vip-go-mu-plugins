@@ -456,7 +456,12 @@ function vip_substr_redirects( $vip_redirects_array = array(), $append_old_uri =
 	foreach ( $vip_redirects_array as $old_path => $new_url ) {
 		if ( substr( $request_uri, 0, strlen( $old_path ) ) == $old_path ) {
 			if ( $append_old_uri ) {
+				$target   = $new_url;
 				$new_url .= substr( $request_uri, strlen( $old_path ) );
+
+				if ( ! _vip_redirect_keeps_target_origin( $new_url, $target ) ) {
+					continue;
+				}
 			}
 
 			if ( function_exists( 'wp_redirect' ) ) {
@@ -507,6 +512,9 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 		foreach ( $vip_redirects_array as $old_url => $new_url ) {
 			if ( preg_match( $old_url, $uri, $matches ) ) {
 				$redirect_uri = preg_replace( $old_url, $new_url, $uri );
+				if ( ! _vip_redirect_keeps_target_origin( $redirect_uri, $new_url ) ) {
+					continue;
+				}
 
 				if ( function_exists( 'wp_redirect' ) ) {
 					wp_redirect( $redirect_uri, 301 );   // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect, WordPressVIPMinimum.Security.ExitAfterRedirect.NoExit
@@ -517,6 +525,38 @@ function vip_regex_redirects( $vip_redirects_array = array(), $with_querystring 
 			}
 		}
 	}
+}
+
+/**
+ * Check that a redirect built from a configured target and the request keeps the target's scheme and host.
+ *
+ * @internal
+ *
+ * @param string $location The redirect location.
+ * @param string $target   The configured target, which may contain regex replacement references.
+ * @return bool
+ */
+function _vip_redirect_keeps_target_origin( $location, $target ) {
+	// A regex target that takes its host from the request, such as `https://$1.example.com/`, can't be checked.
+	if ( strpbrk( (string) wp_parse_url( $target, PHP_URL_HOST ), '$\\' ) ) {
+		return true;
+	}
+
+	$origin = function ( $url ) {
+		// Compare the location as it is sent, after wp_redirect() sanitizes it.
+		if ( function_exists( 'wp_sanitize_redirect' ) ) {
+			$url = wp_sanitize_redirect( $url );
+		}
+
+		// Browsers read a backslash in a URL as a slash.
+		$parts = wp_parse_url( str_replace( '\\', '/', $url ) );
+
+		return is_array( $parts ) ? array_diff_key( $parts, array_flip( [ 'path', 'query', 'fragment' ] ) ) : null;
+	};
+
+	$target_origin = $origin( $target );
+
+	return null !== $target_origin && $origin( $location ) === $target_origin;
 }
 
 /**

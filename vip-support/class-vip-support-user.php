@@ -340,11 +340,12 @@ class User {
 			if ( ! empty( $_GET[ self::GET_TRIGGER_RESEND_VERIFICATION ] ) ) {
 				$message_html = __( 'The verification email has been sent, please ask the user to check their inbox. Delivery may take a few minutes.', 'vip-support' );
 			} else {
-				// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-				$user_id     = absint( $_GET['user_id'] ?? 0 );
+				// Read the ID like user-edit.php does: after a failed save the form is shown again with the ID only in the POST body.
+				// phpcs:ignore WordPress.Security.NonceVerification.Missing, WordPress.Security.NonceVerification.Recommended
+				$user_id     = absint( $_POST['user_id'] ?? $_GET['user_id'] ?? 0 );
 				$user        = get_user_by( 'id', $user_id );
-				$resend_link = $this->get_trigger_resend_verification_url();
-				if ( self::is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) && self::user_has_vip_support_role( $user->ID ) ) {
+				$resend_link = add_query_arg( 'user_id', $user_id, $this->get_trigger_resend_verification_url() );
+				if ( $user && self::is_a8c_email( $user->user_email ) && ! $this->user_has_verified_email( $user->ID ) && self::user_has_vip_support_role( $user->ID ) ) {
 					// translators: 1 - link to resend the email
 					$error_html = sprintf( __( 'This user’s Automattic email address is not verified, <a href="%s">re-send verification email</a>.', 'vip-support' ), esc_url( $resend_link ) );
 				}
