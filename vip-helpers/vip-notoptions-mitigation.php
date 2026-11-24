@@ -43,6 +43,10 @@ function notoptions_mitigation() {
 		// Save the current "broken" state for future debugging
 		if ( wp_cache_add( 'notoptions_mitigation_debugging', 'lock', 'vip', MINUTE_IN_SECONDS ) ) {
 			update_option( 'vip_notoptions_mitigation_debugging', $notoptions, false );
+
+			if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+				trigger_error( 'VIP: Invalid values found in the notoptions cache. Flushing it; a copy is saved in the vip_notoptions_mitigation_debugging option.', E_USER_WARNING );
+			}
 		}
 
 		// Attempt repair of the notoptions cache by flushing it.

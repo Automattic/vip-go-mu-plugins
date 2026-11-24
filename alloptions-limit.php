@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: VIP AllOptions Safeguard
- * Description: Blocks requests when alloptions exceeds critical thresholds and fires an action when it nears them.
+ * Description: Logs a warning and fires an action when alloptions nears its size limit, and blocks requests once it exceeds it.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
@@ -88,10 +88,9 @@ function alloptions_safeguard_die() {
 }
 
 /**
- * Fire the vip_alloptions_safeguard_notify action, throttled to once per 30 minutes.
+ * Fire the vip_alloptions_safeguard_notify action and log a warning, throttled to once per 30 minutes.
  *
  * @param int $size            Uncompressed size of alloptions, in bytes.
- *                             Unused. Kept for signature compatibility.
  * @param int $size_compressed Compressed size of alloptions, in bytes.
  *                             0 unless $size exceeds the 4MB block check.
  *                             Unused. Kept for signature compatibility.
@@ -113,4 +112,12 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 	 * @param bool $really_blocked False if alloptions size is large. True if site loading is being blocked.
 	 */
 	do_action( 'vip_alloptions_safeguard_notify', $really_blocked );
+
+	if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
+		$message = $really_blocked
+			? 'VIP: alloptions is %s uncompressed, too large to cache. Requests return a 503 until it is smaller.'
+			: 'VIP: alloptions is %s uncompressed and nearing its size limit.';
+
+		trigger_error( esc_html( sprintf( $message, size_format( $size ) ) ), E_USER_WARNING );
+	}
 }
