@@ -8,8 +8,6 @@
 
 namespace Automattic\VIP;
 
-use Automattic\VIP\Utils\Alerts;
-
 if ( defined( 'WP_INSTALLING' ) && WP_INSTALLING ) {
 	return;
 }
@@ -23,7 +21,6 @@ if ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 add_action( __NAMESPACE__ . '-backup_roles', __NAMESPACE__ . '\do_user_role_backup' );
 
 function notoptions_mitigation() {
-	global $wpdb;
 	$notoptions = wp_cache_get( 'notoptions', 'options' );
 
 	if ( ! is_array( $notoptions ) ) {
@@ -46,60 +43,11 @@ function notoptions_mitigation() {
 		// Save the current "broken" state for future debugging
 		if ( wp_cache_add( 'notoptions_mitigation_debugging', 'lock', 'vip', MINUTE_IN_SECONDS ) ) {
 			update_option( 'vip_notoptions_mitigation_debugging', $notoptions, false );
+			trigger_error( 'VIP: Invalid values found in the notoptions cache. Flushing it; a copy is saved in the vip_notoptions_mitigation_debugging option.', E_USER_WARNING );
 		}
 
-		// attempt repair
-		$flushed = wp_cache_delete( 'notoptions', 'options' );
-
-		// begin prepping notification
-		$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
-		$environment = ( ( defined( 'VIP_GO_APP_ENVIRONMENT' ) && VIP_GO_APP_ENVIRONMENT ) ? VIP_GO_APP_ENVIRONMENT : 'unknown' );
-		$site_id     = defined( 'VIP_GO_APP_ID' ) ? VIP_GO_APP_ID : false;
-
-		// Send notices to VIP staff if this is happening on VIP-hosted sites
-		if ( $is_vip_env && $site_id ) {
-
-			$irc_alert_level      = 3; // CRITICAL
-			$opsgenie_alert_level = 'P3';
-
-			$subject = 'NOTOPTIONS: %s (%s VIP Go site ID: %s%s) - Invalid values found in notoptions. Cache flush was %ssuccessful.';
-
-			$subject = sprintf(
-				$subject,
-				esc_url( home_url() ),
-				esc_html( $environment ),
-				(int) $site_id,
-				( ( 0 !== $wpdb->blogid ) ? ", blog ID {$wpdb->blogid}" : '' ),
-				( $flushed ? '' : 'un' )
-			);
-
-			$to_irc = $subject . ' [https://wp.me/PCYsg-vqN] #vipnotoptions';
-
-			// Send to IRC, if we have a host configured
-			if ( defined( 'ALERT_SERVICE_ADDRESS' ) && ALERT_SERVICE_ADDRESS ) {
-
-				$alerts = Alerts::instance();
-				$alerts->send_to_chat( '#vip-deploy-on-call', $to_irc, $irc_alert_level, 'a8c-notoptions' );
-
-				if ( 'production' === $environment ) {
-
-					// Send to OpsGenie
-					$alerts->opsgenie(
-						$subject,
-						array(
-							'alias'       => 'notoptions/cache-corruption/' . $site_id,
-							'description' => 'Invalid values found in notoptions cache',
-							'entity'      => (string) $site_id,
-							'priority'    => $opsgenie_alert_level,
-							'source'      => 'sites/notoptions-value-monitor',
-						),
-						'notoptions-value-alert',
-						'10'
-					);
-
-				}
-			}
-		}
+		// Attempt repair of the notoptions cache by flushing it.
+		wp_cache_delete( 'notoptions', 'options' );
 	}
 }
 

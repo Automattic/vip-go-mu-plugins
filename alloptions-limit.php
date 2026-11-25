@@ -1,16 +1,12 @@
 <?php
 /**
  * Plugin Name: VIP AllOptions Safeguard
- * Description: Provides warnings and notifications for wp_options exceeding limits.
+ * Description: Logs a warning and fires an action when alloptions nears its size limit, and blocks requests once it exceeds it.
  * Author: Automattic
  * License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
  */
 
 namespace Automattic\VIP\AllOptions;
-
-use Automattic\VIP\Utils\Alerts;
-
-require_once __DIR__ . '/lib/utils/class-alerts.php';
 
 add_action( 'plugins_loaded', __NAMESPACE__ . '\run_alloptions_safeguard' );
 
@@ -92,17 +88,16 @@ function alloptions_safeguard_die() {
 }
 
 /**
- * Send notification
+ * Fire the vip_alloptions_safeguard_notify action and log a warning, throttled to once per 30 minutes.
  *
- * @param int $size            Uncompressed sized of alloptions, in bytes
- * @param int $size_compressed Compressed size of alloption, in bytes.
- *                             HOWEVER, this is only set if $size meets a threshold.
+ * @param int $size            Uncompressed size of alloptions, in bytes.
+ * @param int $size_compressed Compressed size of alloptions, in bytes.
+ *                             0 unless $size exceeds the 4MB block check.
+ *                             Unused. Kept for signature compatibility.
  *                             @see run_alloptions_safeguard()
  * @param bool $really_blocked True if the options size is large enough to cause site to be blocked from loading.
  */
 function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_blocked = true ) {
-	global $wpdb;
-
 	$throttle_was_set = wp_cache_add( 'alloptions', 1, 'throttle', 30 * MINUTE_IN_SECONDS );
 
 	// If adding to cache failed, we're already throttled (unless the operation actually failed),
@@ -118,60 +113,9 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 	 */
 	do_action( 'vip_alloptions_safeguard_notify', $really_blocked );
 
-	$is_vip_env  = ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV );
-	$environment = ( ( defined( 'VIP_GO_ENV' ) && VIP_GO_ENV ) ? VIP_GO_ENV : 'unknown' );
-	$site_id     = defined( 'FILES_CLIENT_SITE_ID' ) ? FILES_CLIENT_SITE_ID : false;
+	$message = $really_blocked
+		? 'VIP: alloptions is %s uncompressed, too large to cache. Requests return a 503 until it is smaller.'
+		: 'VIP: alloptions is %s uncompressed and nearing its size limit.';
 
-	// Send notices to VIP staff if this is happening on VIP-hosted sites
-	if (
-		! $is_vip_env ||
-		! $site_id ||
-		! defined( 'ALERT_SERVICE_ADDRESS' ) ||
-		! ALERT_SERVICE_ADDRESS ||
-		'production' !== $environment
-	) {
-		return;
-	}
-
-	$subject = 'ALLOPTIONS: %1$s (%2$s VIP Go site ID: %3$s';
-
-	if ( 0 !== $wpdb->blogid ) {
-		$subject .= ", blog ID {$wpdb->blogid}";
-	}
-
-	$subject .= ') options is up to %4$s';
-
-	$subject = sprintf(
-		$subject,
-		esc_url( home_url() ),
-		esc_html( $environment ),
-		(int) $site_id,
-		size_format( $size )
-	);
-
-	if ( $really_blocked ) {
-		$priority    = 'P2';
-		$description = sprintf( 'The size of AllOptions has breached %s bytes', VIP_ALLOPTIONS_ERROR_THRESHOLD );
-	} elseif ( $size_compressed > 0 ) {
-		$priority    = 'P3';
-		$description = sprintf( 'The size of AllOptions is at %1$s bytes (compressed), %2$s bytes (uncompressed)', $size_compressed, $size );
-	} else {
-		$priority    = 'P5';
-		$description = sprintf( 'The size of AllOptions is at %1$s bytes (uncompressed)', $size );
-	}
-
-	// Send to OpsGenie
-	$alerts = Alerts::instance();
-	$alerts->opsgenie(
-		$subject,
-		array(
-			'alias'       => 'alloptions/' . $site_id,
-			'description' => $description,
-			'entity'      => (string) $site_id,
-			'priority'    => $priority,
-			'source'      => 'sites/alloptions-size',
-		),
-		'alloptions-size-alert',
-		'10'
-	);
+	trigger_error( esc_html( sprintf( $message, size_format( $size ) ) ), E_USER_WARNING );
 }
