@@ -56,7 +56,7 @@ Useful variants:
 
 ```bash
 CI=1 ./bin/test.sh --multisite 1
-CI=1 ./bin/test.sh --wp 6.8.x --php 8.2
+CI=1 ./bin/test.sh --wp 6.8.x --php 8.3
 CI=1 ./bin/test.sh --filter test__super_admin_should_not_have_update_core_cap
 ```
 
@@ -143,7 +143,7 @@ Current workflows cover:
 - Unit/integration tests: `.github/workflows/ci.yml`, `.github/workflows/core-tests.yml`, `.github/workflows/parsely.yml`
 - Shared-cache worker contention: the dedicated `shared-cache-contention` job in `.github/workflows/ci.yml`
 
-`ci.yml` runs PHP 8.2 against every tested WordPress version, plus nightly. Newer PHP
+`ci.yml` runs PHP 8.3 against every tested WordPress version, plus nightly. Newer PHP
 versions run only against the oldest and the latest WordPress version tested with them.
 The jobs use the runner image's MySQL instead of a service container, and they restore
 `vip-go-mu-plugins-ext` from the Actions cache, keyed by its `HEAD` commit. Only `develop`
