@@ -108,9 +108,6 @@ jobs:
         # PHP 8.5
           - { wp: latest, ms: 'no',  jp: 'yes', php: '8.5', phpunit: '' }
           - { wp: latest, ms: 'yes', jp: 'yes', php: '8.5', phpunit: '' }
-        # PHP 8.6
-          - { wp: latest, ms: 'no',  jp: 'yes', php: '8.6', phpunit: '' }
-          - { wp: latest, ms: 'yes', jp: 'yes', php: '8.6', phpunit: '' }
     steps:
       - name: Check out source code
         uses: actions/checkout@v7.0.1
