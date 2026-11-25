@@ -113,11 +113,9 @@ function alloptions_safeguard_notify( $size, $size_compressed = 0, $really_block
 	 */
 	do_action( 'vip_alloptions_safeguard_notify', $really_blocked );
 
-	if ( defined( 'WPCOM_IS_VIP_ENV' ) && true === WPCOM_IS_VIP_ENV ) {
-		$message = $really_blocked
-			? 'VIP: alloptions is %s uncompressed, too large to cache. Requests return a 503 until it is smaller.'
-			: 'VIP: alloptions is %s uncompressed and nearing its size limit.';
+	$message = $really_blocked
+		? 'VIP: alloptions is %s uncompressed, too large to cache. Requests return a 503 until it is smaller.'
+		: 'VIP: alloptions is %s uncompressed and nearing its size limit.';
 
-		trigger_error( esc_html( sprintf( $message, size_format( $size ) ) ), E_USER_WARNING );
-	}
+	trigger_error( esc_html( sprintf( $message, size_format( $size ) ) ), E_USER_WARNING );
 }
