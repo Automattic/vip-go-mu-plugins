@@ -99,6 +99,9 @@ jobs:
 
       - name: Create changelog
         uses: Automattic/vip-actions/changelog@74ecc705a97f2cb3e441f5dc8687e94687b18f47
+        env:
+          # Apply the repository URL fix when the action installs vip-build-tools 1.7.0.
+          COMPOSER: ci/changelog/composer.json
         with:
           endpoint: 'https://docs.wpvip.com/wp-json/wp/v2/changelogs'
           endpoint-token: ${{ secrets.CHANGELOG_DOCS_POST_TOKEN }}

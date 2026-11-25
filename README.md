@@ -69,7 +69,7 @@ npm run destroy-e2e-env
 - [Architecture](docs/architecture.md)
 - [Setup](docs/setup.md)
 - [Testing](docs/testing.md)
-- [Release](docs/release.md)
+- [Release and changelog publishing](docs/release.md)
 - [Agent guide](AGENTS.md)
 
 Local SQL import cleanup removes imported service connection credentials even

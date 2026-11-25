@@ -57,6 +57,10 @@ Also verify required CI workflows are green.
    - PR labels updated
    - changelog published
 
+## Docs changelog
+
+The staging and production jobs collect changelog entries from pull requests in this repository. A commit can cite an upstream pull request without adding it to the release changelog. Both jobs use `ci/changelog/composer.json` to patch and test the URL parser installed by the shared action. Remove the patch when the pinned action includes the upstream fix.
+
 ## Rollback notes
 
 - Preferred rollback is a revert PR merged through normal branch flow.

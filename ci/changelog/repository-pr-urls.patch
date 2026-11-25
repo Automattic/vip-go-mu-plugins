@@ -1,0 +1,9 @@
+--- a/lib/github-changelog.php
++++ b/lib/github-changelog.php
+@@ -784,3 +784,3 @@
+-	// Match PR references in release notes format
+-	// Example: "* chore: Update dependency by @user in https://github.com/Automattic/vip-cli/pull/1234"
+-	if ( preg_match_all( '/\/pull\/(\d+)/', $message, $matches ) ) {
++	// Only fetch PR links that belong to the repository queried by fetch_pr().
++	$repo_url = rtrim( $_SERVER['GITHUB_SERVER_URL'] ?? 'https://github.com', '/' ) . '/' . PROJECT_USERNAME . '/' . PROJECT_REPONAME;
++	if ( preg_match_all( '~' . preg_quote( $repo_url, '~' ) . '/pull/([0-9]+)\b~i', $message, $matches ) ) {
