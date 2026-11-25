@@ -1063,9 +1063,8 @@ class Queue {
 
 	/**
 	 * Index objects in one bulk request. A batch of large posts can exceed the request size limit (413), so send it again
-	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): after a failed request it
-	 * sends it again with no limit, and with no delay on a 5xx, while customer code hooks ep_after_bulk_index, which only
-	 * bulk_index() fires.
+	 * in halves until each part fits or is a single document. Not with bulk_index_dynamically(): customer code hooks
+	 * ep_after_bulk_index, which only bulk_index() fires.
 	 *
 	 * A batch of several objects over the size the dynamic bulk sync starts with is split the same way before it's sent,
 	 * with the documents already prepared, so each part finishes well within the request timeout: a timeout then means
@@ -1308,11 +1307,11 @@ class Queue {
 			}
 		}
 
-		// A failed request doesn't say which documents it carried, so it lost all of them, unless a later one went through:
-		// bulk_index_dynamically() sends them again with the next request. Not during a sync (CLI, dashboard, shard rebuild):
-		// it reports its failed requests and is run again, and during an incident can fail every batch of a site in minutes.
-		$last_request = end( $requests );
-		if ( is_wp_error( $last_request ) && self::is_transient_failure( $last_request->get_error_code() ) && ! did_action( 'ep_pre_index_batch' ) ) {
+		// A failed request doesn't say which documents it carried, so all of them are queued again. Not during a sync (CLI,
+		// dashboard, shard rebuild): it reports its failed requests and is run again, and during an incident can fail every
+		// batch of a site in minutes.
+		$failed_requests = array_filter( $requests, static fn( $result ) => is_wp_error( $result ) && self::is_transient_failure( $result->get_error_code() ) );
+		if ( $failed_requests && ! did_action( 'ep_pre_index_batch' ) ) {
 			$failed_ids += array_fill_keys( array_map( 'intval', $document_ids ), true );
 		}
 
