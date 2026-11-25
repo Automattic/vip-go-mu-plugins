@@ -123,10 +123,18 @@ class WP_Filesystem_VIP_Test extends WP_UnitTestCase {
 		$this->assertSame( $this->fs_direct_mock, $this->get_transport_for_path( '/test/foo/bar', 'write' ) );
 	}
 
-	public function test__get_transport_for_path__disallowed_write() {
+	public function test__is_writable__unsupported_path_returns_false_quietly() {
+		[ $result, $warnings ] = $this->capture_errors( fn() => $this->filesystem->is_writable( '/test/random/directory/file.file' ) );
+
+		self::assertFalse( $result );
+		self::assertSame( [], $warnings );
+		self::assertSame( 'unsupported-filepath', $this->filesystem->errors->get_error_code() );
+	}
+
+	public function test__put_contents__disallowed_write() {
 		$upload_dir = wp_get_upload_dir();
 
-		[ $result, $warnings ] = $this->capture_errors( fn() => $this->get_transport_for_path( '/test/random/directory/file.file', 'write' ) );
+		[ $result, $warnings ] = $this->capture_errors( fn() => $this->filesystem->put_contents( '/test/random/directory/file.file', 'contents' ) );
 
 		self::assertFalse( $result );
 		self::assertSame( [ 'The `/test/random/directory/file.file` file cannot be managed by the `Automattic\VIP\Files\WP_Filesystem_VIP` class. Writes are only allowed for the `/tmp/` and `' . $upload_dir['basedir'] . '` directories and reads can be performed everywhere.' ], $warnings );
