@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "post-update-cmd": "patch --forward -p1 -d vendor/automattic/vip-build-tools < ci/changelog/repository-pr-urls.patch"
+    }
+}

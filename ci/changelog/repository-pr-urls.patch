@@ -1,0 +1,7 @@
+--- a/lib/github-changelog.php
++++ b/lib/github-changelog.php
+@@ -785,3 +785,3 @@
+ 	// Example: "* chore: Update dependency by @user in https://github.com/Automattic/vip-cli/pull/1234"
+-	if ( preg_match_all( '/\/pull\/(\d+)/', $message, $matches ) ) {
++	if ( preg_match_all( '~/' . preg_quote( PROJECT_USERNAME . '/' . PROJECT_REPONAME, '~' ) . '/pull/(\d+)~i', $message, $matches ) ) {
+ 		$pr_ids = array_merge( $pr_ids, $matches[1] );

@@ -57,6 +57,10 @@ Also verify required CI workflows are green.
    - PR labels updated
    - changelog published
 
+## Docs changelog
+
+Both release jobs set `COMPOSER=ci/changelog/composer.json` so the shared changelog action patches vip-build-tools to skip PR links to other repositories. Remove the patch once the pinned action ships that fix.
+
 ## Rollback notes
 
 - Preferred rollback is a revert PR merged through normal branch flow.
