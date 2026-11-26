@@ -121,13 +121,17 @@ add_filter( 'authenticate', '_vip_login_limit_start_attempt', PHP_INT_MIN, 2 );
  * Records the account for the current attempt and refuses it when it's locked, so later callbacks get the error
  * instead of the account. Sites that unhook wpcom_vip_login_limiter_authenticate() keep the limit off here too.
  *
+ * Accounts with a restricted login are skipped: logging in by that login is refused anyway, and counting guesses
+ * of it against the account would lock the account out of logging in by email. Their limits stay with the
+ * username as entered.
+ *
  * @internal
  *
  * @param WP_User|WP_Error $user The account core found for the login attempt.
  * @return WP_User|WP_Error
  */
 function _vip_login_limit_check_user( $user ) {
-	if ( ! $user instanceof WP_User ) {
+	if ( ! $user instanceof WP_User || wpcom_vip_is_restricted_username( $user->user_login ) ) {
 		return $user;
 	}
 
@@ -188,6 +192,7 @@ function wpcom_vip_is_restricted_username( $username ) {
 
 	return 'admin' === $username
 		|| strtolower( WPCOM_VIP_MACHINE_USER_LOGIN ) === $username
+		|| strtolower( WPCOM_VIP_MACHINE_USER_EMAIL ) === $username
 		|| ( 'vipgo' === $username && defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' !== constant( 'WP_ENVIRONMENT_TYPE' ) );
 }
 
@@ -432,10 +437,8 @@ function wpcom_vip_login_limiter_on_success( $username ) {
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success' );
 
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
-	// Also check the account that was logged in, which another handler may have found by a different username.
-	$is_restricted_username = wpcom_vip_is_restricted_username( $username )
-		|| ( $user instanceof WP_User && ! empty( $username ) && wpcom_vip_is_restricted_username( $user->user_login ) );
-	if ( $is_restricted_username ) {
+	// Only the username as entered: an account with a restricted login can still log in by its email.
+	if ( wpcom_vip_is_restricted_username( $username ) ) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
 	}
 
@@ -449,7 +452,9 @@ function wpcom_vip_login_limiter_authenticate( $user, $username, $password ) {
 	}
 
 	// Check the username as entered and its accounts: the one logged in, else the ones core found.
-	$accounts = $user instanceof WP_User ? [ $user->user_login ] : _vip_login_limit_attempt_logins( $username );
+	// A restricted account's limits stay with the username as entered, as in _vip_login_limit_check_user().
+	$logged_in = $user instanceof WP_User && ! wpcom_vip_is_restricted_username( $user->user_login );
+	$accounts  = $logged_in ? [ $user->user_login ] : _vip_login_limit_attempt_logins( $username );
 	foreach ( array_unique( array_merge( [ $username ], $accounts ) ) as $account ) {
 		$is_login_limited = wpcom_vip_username_is_limited( $account, CACHE_GROUP_LOGIN_LIMIT );
 		if ( is_wp_error( $is_login_limited ) ) {
