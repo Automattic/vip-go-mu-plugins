@@ -59,7 +59,7 @@ Also verify required CI workflows are green.
 
 ## Docs changelog
 
-The staging and production jobs collect changelog entries from pull requests in this repository. A commit can cite an upstream pull request without adding it to the release changelog. Both jobs use `ci/changelog/composer.json` to patch and test the URL parser installed by the shared action. Remove the patch when the pinned action includes the upstream fix.
+Both release jobs set `COMPOSER=ci/changelog/composer.json` so the shared changelog action patches vip-build-tools to skip PR links to other repositories. Remove the patch once the pinned action ships that fix.
 
 ## Rollback notes
 
