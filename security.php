@@ -192,7 +192,6 @@ function wpcom_vip_is_restricted_username( $username ) {
 
 	return 'admin' === $username
 		|| strtolower( WPCOM_VIP_MACHINE_USER_LOGIN ) === $username
-		|| strtolower( WPCOM_VIP_MACHINE_USER_EMAIL ) === $username
 		|| ( 'vipgo' === $username && defined( 'WP_ENVIRONMENT_TYPE' ) && 'local' !== constant( 'WP_ENVIRONMENT_TYPE' ) );
 }
 
@@ -437,8 +436,12 @@ function wpcom_vip_login_limiter_on_success( $username ) {
 add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success' );
 
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
-	// Only the username as entered: an account with a restricted login can still log in by its email.
-	if ( wpcom_vip_is_restricted_username( $username ) ) {
+	// Also check the account that was logged in, which another handler may have found by a different username.
+	// Except accounts named admin: that name is restricted because it's guessed, and they can still log in by email.
+	$is_restricted_account = $user instanceof WP_User && ! empty( $username )
+		&& wpcom_vip_is_restricted_username( $user->user_login )
+		&& 'admin' !== _vip_login_limit_username( $user->user_login );
+	if ( wpcom_vip_is_restricted_username( $username ) || $is_restricted_account ) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
 	}
 
