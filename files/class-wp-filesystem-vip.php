@@ -41,10 +41,11 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 *
 	 * @param $filename
 	 * @param $context string "read" or "write"
+	 * @param bool $warn_on_unsupported_path Whether to emit a warning when the path is unsupported.
 	 *
 	 * @return WP_Filesystem_VIP_Uploads|bool|mixed|WP_Filesystem_Direct
 	 */
-	private function get_transport_for_path( $filename, $context = 'read' ) {
+	private function get_transport_for_path( $filename, $context = 'read', $warn_on_unsupported_path = true ) {
 		// If we're not in a VIP environment, allow some WP_CLI functionality to work.
 		if ( ! defined( 'VIP_GO_ENV' ) || true !== constant( 'VIP_GO_ENV' ) ) {
 			// Allow access to the maintenance file used by WP-CLI.
@@ -89,9 +90,10 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 
 		$this->errors->add( 'unsupported-filepath', $error_msg );
 
-		// TODO: Do we want to trigger_error in all environments? (Or just a small batch to start).
-		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
-		trigger_error( esc_html( $error_msg ), E_USER_WARNING );
+		if ( $warn_on_unsupported_path ) {
+			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_trigger_error
+			trigger_error( esc_html( $error_msg ), E_USER_WARNING );
+		}
 
 		return false;
 	}
@@ -409,7 +411,7 @@ class WP_Filesystem_VIP extends \WP_Filesystem_Base {
 	 * @return bool
 	 */
 	public function is_writable( $file ) {
-		$transport = $this->get_transport_for_path( $file, 'write' );
+		$transport = $this->get_transport_for_path( $file, 'write', false );
 		if ( ! $transport ) {
 			return false;
 		}
