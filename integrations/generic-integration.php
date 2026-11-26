@@ -82,27 +82,13 @@ class GenericIntegration extends Integration {
 	}
 
 	/**
-	 * True once its bundle is loaded, or when the plugin was loaded some other way.
+	 * True once its bundle is loaded, or when the plugin's entry file has defined `VIP_<SLUG>_LOADED`,
+	 * e.g. from the customer's own copy.
 	 *
 	 * @private
 	 */
 	public function is_loaded(): bool {
-		return null !== $this->loaded_bundle || $this->is_loaded_outside_bundle();
-	}
-
-	/**
-	 * Whether a file `<folder>/<entry_file>` has been included, e.g. the customer's own copy.
-	 */
-	private function is_loaded_outside_bundle(): bool {
-		$suffix = '/' . $this->folder . '/' . $this->entry_file;
-
-		foreach ( get_included_files() as $file ) {
-			if ( str_ends_with( str_replace( '\\', '/', $file ), $suffix ) ) {
-				return true;
-			}
-		}
-
-		return false;
+		return null !== $this->loaded_bundle || defined( $this->get_constant_name( 'LOADED' ) );
 	}
 
 	/**
@@ -129,7 +115,16 @@ class GenericIntegration extends Integration {
 	 * The name of the plugin's config constant, e.g. `VIP_ACME_SYNC_CONFIG` for `acme-sync`.
 	 */
 	public function get_config_constant_name(): string {
-		return 'VIP_' . strtoupper( str_replace( '-', '_', $this->get_slug() ) ) . '_CONFIG';
+		return $this->get_constant_name( 'CONFIG' );
+	}
+
+	/**
+	 * The name of one of the plugin's constants, e.g. `VIP_ACME_SYNC_LOADED` for `acme-sync`.
+	 *
+	 * @param string $suffix `CONFIG` or `LOADED`.
+	 */
+	private function get_constant_name( string $suffix ): string {
+		return 'VIP_' . strtoupper( str_replace( '-', '_', $this->get_slug() ) ) . '_' . $suffix;
 	}
 
 	/**

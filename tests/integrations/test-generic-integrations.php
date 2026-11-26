@@ -390,28 +390,13 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 		$this->assertNull( $integration->get_bundle_folder() );
 	}
 
-	public function test__is_not_loaded_until_its_plugin_file_is_included(): void {
-		// A slug no other test uses: an included file stays included for the rest of the run.
-		$integration = new GenericIntegration( 'loaded-sync', $this->entry( 'loaded-sync' ) );
+	public function test__is_loaded_once_the_plugin_defines_its_loaded_constant(): void {
+		$integration = new GenericIntegration( 'acme-sync', $this->entry() );
 		$this->assertFalse( $integration->is_loaded() );
 
-		$dir = $this->temp_dir();
-		mkdir( $dir . '/loaded-sync' );
-		file_put_contents( $dir . '/loaded-sync/loaded-sync.php', '<?php' );
-		require_once $dir . '/loaded-sync/loaded-sync.php';
+		Constant_Mocker::define( 'VIP_ACME_SYNC_LOADED', true );
 
 		$this->assertTrue( $integration->is_loaded() );
-	}
-
-	public function test__a_bundle_from_vip_integrations_does_not_count_as_loaded(): void {
-		$integration = new GenericIntegration( 'bundled-sync', $this->entry( 'bundled-sync' ) );
-
-		$dir = $this->temp_dir();
-		mkdir( $dir . '/bundled-sync-1.2' );
-		file_put_contents( $dir . '/bundled-sync-1.2/bundled-sync.php', '<?php' );
-		require_once $dir . '/bundled-sync-1.2/bundled-sync.php';
-
-		$this->assertFalse( $integration->is_loaded() );
 	}
 
 	/**
@@ -493,10 +478,7 @@ class Generic_Integrations_Test extends WP_UnitTestCase {
 	}
 
 	public function test__load_bundle_leaves_a_plugin_loaded_some_other_way(): void {
-		$dir = $this->temp_dir();
-		mkdir( $dir . '/elsewhere-sync' );
-		file_put_contents( $dir . '/elsewhere-sync/elsewhere-sync.php', '<?php' );
-		require_once $dir . '/elsewhere-sync/elsewhere-sync.php';
+		Constant_Mocker::define( 'VIP_ELSEWHERE_SYNC_LOADED', true );
 
 		$integration = $this->integration_with_bundles( 'elsewhere-sync', [ 'elsewhere-sync-1.2' => '1.2' ] );
 
