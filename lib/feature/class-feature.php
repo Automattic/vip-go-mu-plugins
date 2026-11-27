@@ -35,7 +35,10 @@ class Feature {
 	 *
 	 * @var array
 	 */
-	public static $feature_ids = [];
+	public static $feature_ids = [
+		// Loads the integrations listed in the active-integrations mapping. See integrations/generic-integrations.php.
+		'vip-generic-integrations' => [],
+	];
 
 	/**
 	 * Holds feature slug and then, key of environments with bool value to enable E.g.

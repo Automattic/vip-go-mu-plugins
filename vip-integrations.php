@@ -74,6 +74,18 @@ if ( file_exists( __DIR__ . '/integrations/gist-answers.php' ) ) {
 	require_once __DIR__ . '/integrations/gist-answers.php';
 }
 
+if ( file_exists( __DIR__ . '/integrations/generic-integration.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integration.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/generic-integration-vip-config.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integration-vip-config.php';
+}
+
+if ( file_exists( __DIR__ . '/integrations/generic-integrations.php' ) ) {
+	require_once __DIR__ . '/integrations/generic-integrations.php';
+}
+
 // Register VIP integrations here.
 IntegrationsSingleton::instance()->register( new BlockDataApiIntegration( 'block-data-api' ) );
 IntegrationsSingleton::instance()->register( new ParselyIntegration( 'parsely' ) );
@@ -127,6 +139,11 @@ if ( class_exists( __NAMESPACE__ . '\\ShareadraftIntegration' ) ) {
 
 if ( class_exists( __NAMESPACE__ . '\\GistAnswersIntegration' ) ) {
 	IntegrationsSingleton::instance()->register( new GistAnswersIntegration( 'gist-answers' ) );
+}
+
+// After the integrations above, so those keep their slugs.
+if ( class_exists( __NAMESPACE__ . '\\GenericIntegration' ) && function_exists( __NAMESPACE__ . '\\register_generic_integrations' ) ) {
+	register_generic_integrations( IntegrationsSingleton::instance() );
 }
 
 // @codeCoverageIgnoreEnd
