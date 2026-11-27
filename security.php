@@ -438,9 +438,10 @@ add_action( 'wp_login', 'wpcom_vip_login_limiter_on_success' );
 function wpcom_vip_limit_logins_for_restricted_usernames( $user, $username ) {
 	// Also check the account that was logged in, which another handler may have found by a different username.
 	// Except accounts named admin: that name is restricted because it's guessed, and they can still log in by email.
+	// The machine account stays refused even when its login is configured as admin.
 	$is_restricted_account = $user instanceof WP_User && ! empty( $username )
 		&& wpcom_vip_is_restricted_username( $user->user_login )
-		&& 'admin' !== _vip_login_limit_username( $user->user_login );
+		&& ( 'admin' !== _vip_login_limit_username( $user->user_login ) || 'admin' === strtolower( WPCOM_VIP_MACHINE_USER_LOGIN ) );
 	if ( wpcom_vip_is_restricted_username( $username ) || $is_restricted_account ) {
 		return new WP_Error( 'restricted-login', 'Logins are restricted for that user. Please try a different user account.' );
 	}
