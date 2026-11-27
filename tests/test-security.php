@@ -28,7 +28,6 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 		return [
 			'admin username'             => [ 'admin', 'admin@example.com', 'admin' ],
 			'admin username, other case' => [ 'admin', 'admin@example.com', 'Admin' ],
-			'admin email'                => [ 'admin', 'admin@example.com', 'Admin@Example.com' ],
 			'admin username, fullwidth'  => [ 'admin', 'admin@example.com', "\u{FF41}\u{FF44}\u{FF4D}\u{FF49}\u{FF4E}" ],
 			'machine user username'      => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_LOGIN ],
 			'machine user email'         => [ WPCOM_VIP_MACHINE_USER_LOGIN, WPCOM_VIP_MACHINE_USER_EMAIL, WPCOM_VIP_MACHINE_USER_EMAIL ],
@@ -57,6 +56,21 @@ class VIP_Go_Security_Test extends WP_UnitTestCase {
 
 		$this->assertWPError( $result );
 		$this->assertSame( 'incorrect_password', $result->get_error_code() );
+	}
+
+	/**
+	 * Enough guesses of a restricted username to lock it don't lock its account out of logging in by email.
+	 */
+	public function test__restricted_username_guesses_do_not_lock_out_account_email_login() {
+		$this->set_up_restricted_account( 'admin', 'admin@example.com' );
+		for ( $attempt = 1; $attempt <= 25; $attempt++ ) {
+			$this->assertWPError( wp_authenticate( 'admin', 'wrong-password' ) );
+		}
+
+		$result = wp_authenticate( 'Admin@Example.com', 'secret1' );
+
+		$this->assertInstanceOf( WP_User::class, $result );
+		$this->assertSame( 'admin', $result->user_login );
 	}
 
 	/**
